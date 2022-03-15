@@ -442,7 +442,7 @@ namespace BDArmory.Control
 
         public bool SaveState(string stateFile)
         {
-            if (rounds == null) return true; // Nothing to save.
+            if (rounds == null) return false; // Nothing to save.
             try
             {
                 List<string> strings = new List<string>();
@@ -455,6 +455,7 @@ namespace BDArmory.Control
                 if (!Directory.GetParent(stateFile).Exists)
                 { Directory.GetParent(stateFile).Create(); }
                 File.WriteAllLines(stateFile, strings);
+                Debug.Log($"[BDArmory.BDATournament]: Tournament state saved to {stateFile}");
                 return true;
             }
             catch (Exception e)
@@ -671,14 +672,7 @@ namespace BDArmory.Control
                 if (!Directory.Exists(saveToDir)) Directory.CreateDirectory(saveToDir);
                 saveTo = Path.ChangeExtension(Path.Combine(saveToDir, Path.GetFileName(stateFile)), $".state-{tournamentID}");
             }
-            if (tournamentState.SaveState(saveTo))
-                message = "Tournament state saved to " + saveTo;
-            else
-                message = "Failed to save tournament state.";
-            Debug.Log("[BDArmory.BDATournament]: " + message);
-            // if (BDACompetitionMode.Instance != null)
-            //     BDACompetitionMode.Instance.competitionStatus.Add(message);
-            return true;
+            return tournamentState.SaveState(saveTo);
         }
 
         public void SetupTournament(string folder, int rounds, int vesselsPerHeat = 0, int teamsPerHeat = 0, int vesselsPerTeam = 0, int numberOfTeams = 0, int tournamentStyle = 0, string stateFile = "")
@@ -1013,8 +1007,6 @@ namespace BDArmory.Control
         string savesDir;
         string savegame;
         string save = "persistent";
-        string cleansave = "clean";
-        bool useCleanSave = true;
         string game;
         bool sceneLoaded = false;
         public static float memoryUsage
@@ -1064,71 +1056,37 @@ namespace BDArmory.Control
             yield return new WaitForSeconds(0.5f);
             var tic = Time.realtimeSinceStartup;
             yield return new WaitUntil(() => (BDArmorySettings.ready || Time.realtimeSinceStartup - tic > 10)); // Wait until the settings are ready or timed out.
-            Debug.Log($"[BDArmory.BDATournament]: BDArmory settings loaded, auto-resume tournaments: {BDArmorySettings.AUTO_RESUME_TOURNAMENT}, auto-resume evolution: {BDArmorySettings.AUTO_RESUME_EVOLUTION}.");
-            if (BDArmorySettings.AUTO_RESUME_TOURNAMENT || BDArmorySettings.AUTO_RESUME_EVOLUTION)
+            Debug.Log($"[BDArmory.BDATournament]: BDArmory settings loaded, auto-load to KSC: {BDArmorySettings.AUTO_LOAD_TO_KSC}, auto-resume tournaments: {BDArmorySettings.AUTO_RESUME_TOURNAMENT}, auto-resume evolution: {BDArmorySettings.AUTO_RESUME_EVOLUTION}.");
+            if (BDArmorySettings.AUTO_RESUME_TOURNAMENT || BDArmorySettings.AUTO_RESUME_EVOLUTION || BDArmorySettings.AUTO_LOAD_TO_KSC)
             { yield return StartCoroutine(AutoResumeTournament()); }
         }
 
         IEnumerator AutoResumeTournament()
         {
+            bool resumingEvolution = false;
+            bool resumingTournament = false;
             bool generateNewTournament = false;
             EvolutionWorkingState evolutionState = null;
             if (BDArmorySettings.AUTO_RESUME_EVOLUTION) // Auto-resume evolution overrides auto-resume tournament.
             {
-                Debug.Log("[BDArmory.BDATournament]: Attempting to auto-resume evolution.");
-                evolutionState = BDAModuleEvolution.LoadState();
-                if (string.IsNullOrEmpty(evolutionState.savegame)) { Debug.Log($"[BDArmory.BDATournament]: No savegame found in evolution state."); yield break; }
-                if (string.IsNullOrEmpty(evolutionState.evolutionId) || !File.Exists(Path.Combine(BDAModuleEvolution.configDirectory, evolutionState.evolutionId + ".cfg"))) { Debug.Log($"[BDArmory.BDATournament]: No saved evolution configured."); yield break; }
-                savegame = Path.Combine(savesDir, evolutionState.savegame, cleansave + ".sfs"); // First check for a "clean" save file.
-                if (!File.Exists(savegame))
-                {
-                    useCleanSave = false;
-                    savegame = Path.Combine(savesDir, evolutionState.savegame, save + ".sfs");
-                }
-                game = evolutionState.savegame;
+                evolutionState = TryLoadEvolutionState();
+                resumingEvolution = evolutionState != null;
             }
-            else
+            if (!resumingEvolution && BDArmorySettings.AUTO_RESUME_TOURNAMENT)
             {
-                // Check that there is an incomplete tournament, otherwise abort.
-                bool incompleteTournament = false;
-                if (File.Exists(TournamentState.defaultStateFile)) // Tournament state file exists.
-                {
-                    var tournamentState = new TournamentState();
-                    if (!tournamentState.LoadState(TournamentState.defaultStateFile)) yield break; // Failed to load
-                    savegame = Path.Combine(savesDir, tournamentState.savegame, cleansave + ".sfs"); // First check for a "clean" save file.
-                    if (!File.Exists(savegame))
-                    {
-                        useCleanSave = false;
-                        savegame = Path.Combine(savesDir, tournamentState.savegame, save + ".sfs");
-                    }
-                    if (File.Exists(savegame) && tournamentState.rounds.Select(r => r.Value.Count).Sum() - tournamentState.completed.Select(c => c.Value.Count).Sum() > 0) // Tournament state includes the savegame and has some rounds remaining —> Let's try resuming it! 
-                    {
-                        incompleteTournament = true;
-                        game = tournamentState.savegame;
-                    }
-                }
-                if (!incompleteTournament && BDArmorySettings.AUTO_GENERATE_TOURNAMENT_ON_RESUME) // Generate a new tournament based on the current settings.
-                {
-                    generateNewTournament = true;
-                    game = BDArmorySettings.LAST_USED_SAVEGAME;
-                    savegame = Path.Combine(savesDir, game, cleansave + ".sfs"); // First check for a "clean" save file.
-                    if (!File.Exists(savegame))
-                    {
-                        useCleanSave = false;
-                        savegame = Path.Combine(savesDir, game, save + ".sfs");
-                    }
-                    if (File.Exists(savegame)) // Found a usable savegame and we assume the generated tournament will be usable. (It should just show error messages in-game otherwise.)
-                        incompleteTournament = true;
-                }
-                if (!incompleteTournament)
-                    yield break;
+                resumingTournament = TryLoadTournamentState(out generateNewTournament);
+            }
+            if (!(resumingEvolution || resumingTournament)) // Auto-Load To KSC
+            {
+                if (!TryLoadCleanSlate()) yield break; // This shouldn't fail, but anyway...
             }
             // Load saved game.
             var tic = Time.time;
             sceneLoaded = false;
-            if (!LoadGame()) yield break;
+            if (!(BDArmorySettings.GENERATE_CLEAN_SAVE ? GenerateCleanGame() : LoadGame())) yield break;
             yield return new WaitUntil(() => (sceneLoaded || Time.time - tic > 10));
-            if (!sceneLoaded) { Debug.Log("[BDArmory.BDATournament]: Failed to load space center scene."); yield break; }
+            if (!sceneLoaded) { Debug.Log("[BDArmory.BDATournament]: Failed to load scene."); yield break; }
+            if (!(resumingEvolution || resumingTournament)) yield break; // Just load to the KSC.
             // Switch to flight mode.
             sceneLoaded = false;
             FlightDriver.StartWithNewLaunch(VesselSpawner.spawnProbeLocation, "GameData/Squad/Flags/default.png", FlightDriver.LaunchSiteName, new VesselCrewManifest()); // This triggers an error for SpaceCenterCamera2, but I don't see how to fix it and it doesn't appear to be harmful.
@@ -1137,7 +1095,7 @@ namespace BDArmory.Control
             if (!sceneLoaded) { Debug.Log("[BDArmory.BDATournament]: Failed to load flight scene."); yield break; }
             // Resume the tournament.
             yield return new WaitForSeconds(1);
-            if (BDArmorySettings.AUTO_RESUME_EVOLUTION) // Auto-resume evolution overrides auto-resume tournament.
+            if (resumingEvolution) // Auto-resume evolution overrides auto-resume tournament.
             {
                 tic = Time.time;
                 yield return new WaitWhile(() => (BDAModuleEvolution.Instance == null && Time.time - tic < 10)); // Wait for the tournament to be loaded or time out.
@@ -1147,7 +1105,7 @@ namespace BDArmory.Control
                 BDArmorySetup.Instance.showEvolutionGUI = true;
                 BDAModuleEvolution.Instance.ResumeEvolution(evolutionState);
             }
-            else
+            else if (resumingTournament)
             {
                 tic = Time.time;
                 if (generateNewTournament)
@@ -1173,9 +1131,88 @@ namespace BDArmory.Control
             }
         }
 
+        EvolutionWorkingState TryLoadEvolutionState()
+        {
+            Debug.Log("[BDArmory.BDATournament]: Attempting to auto-resume evolution.");
+            EvolutionWorkingState evolutionState = null;
+            evolutionState = BDAModuleEvolution.LoadState();
+            if (string.IsNullOrEmpty(evolutionState.savegame)) { Debug.Log($"[BDArmory.BDATournament]: No savegame found in evolution state."); return null; }
+            if (string.IsNullOrEmpty(evolutionState.evolutionId) || !File.Exists(Path.Combine(BDAModuleEvolution.configDirectory, evolutionState.evolutionId + ".cfg"))) { Debug.Log($"[BDArmory.BDATournament]: No saved evolution configured."); return null; }
+            savegame = Path.Combine(savesDir, evolutionState.savegame, save + ".sfs");
+            game = evolutionState.savegame;
+            return evolutionState;
+        }
+        bool TryLoadTournamentState(out bool generateNewTournament)
+        {
+            generateNewTournament = false;
+            // Check that there is an incomplete tournament, otherwise abort.
+            bool incompleteTournament = false;
+            if (File.Exists(TournamentState.defaultStateFile)) // Tournament state file exists.
+            {
+                var tournamentState = new TournamentState();
+                if (!tournamentState.LoadState(TournamentState.defaultStateFile)) return false; // Failed to load
+                savegame = Path.Combine(savesDir, tournamentState.savegame, save + ".sfs");
+                if (File.Exists(savegame) && tournamentState.rounds.Select(r => r.Value.Count).Sum() - tournamentState.completed.Select(c => c.Value.Count).Sum() > 0) // Tournament state includes the savegame and has some rounds remaining —> Let's try resuming it! 
+                {
+                    incompleteTournament = true;
+                    game = tournamentState.savegame;
+                }
+            }
+            if (!incompleteTournament && BDArmorySettings.AUTO_GENERATE_TOURNAMENT_ON_RESUME) // Generate a new tournament based on the current settings.
+            {
+                generateNewTournament = true;
+                game = BDArmorySettings.LAST_USED_SAVEGAME;
+                savegame = Path.Combine(savesDir, game, save + ".sfs");
+                if (File.Exists(savegame)) // Found a usable savegame and we assume the generated tournament will be usable. (It should just show error messages in-game otherwise.)
+                    incompleteTournament = true;
+            }
+            return incompleteTournament;
+        }
+        bool TryLoadCleanSlate()
+        {
+            game = BDArmorySettings.LAST_USED_SAVEGAME;
+            savegame = Path.Combine(savesDir, game, save + ".sfs");
+            return true;
+        }
+
+        bool GenerateCleanGame()
+        {
+            // Grab the scenarios from the previous persistent game.
+            HighLogic.CurrentGame = GamePersistence.LoadGame("persistent", game, true, false);
+            var scenarios = HighLogic.CurrentGame.scenarios;
+
+            if (BDArmorySettings.GENERATE_CLEAN_SAVE)
+            {
+                // Generate a new clean game and add in the scenarios.
+                HighLogic.CurrentGame = new Game();
+                HighLogic.CurrentGame.startScene = GameScenes.SPACECENTER;
+                HighLogic.CurrentGame.Mode = Game.Modes.SANDBOX;
+                HighLogic.SaveFolder = game;
+                foreach (var scenario in scenarios) { CheckForScenario(scenario.moduleName, scenario.targetScenes); }
+
+                // Generate the default roster and make them all badass pilots.
+                HighLogic.CurrentGame.CrewRoster = KerbalRoster.GenerateInitialCrewRoster(HighLogic.CurrentGame.Mode);
+                foreach (var kerbal in HighLogic.CurrentGame.CrewRoster.Kerbals(ProtoCrewMember.RosterStatus.Available))
+                {
+                    kerbal.isBadass = true; // Make them badass.
+                    KerbalRoster.SetExperienceTrait(kerbal, KerbalRoster.pilotTrait); // Make the kerbal a pilot (so they can use SAS properly).
+                    KerbalRoster.SetExperienceLevel(kerbal, KerbalRoster.GetExperienceMaxLevel()); // Make them experienced.
+                }
+            }
+            else
+            {
+                GamePersistence.UpdateScenarioModules(HighLogic.CurrentGame);
+            }
+            // Update the game state and save it to the persistent save (sine that's what eventually ends up getting loaded when we call Start()).
+            HighLogic.CurrentGame.Updated();
+            GamePersistence.SaveGame("persistent", game, SaveMode.OVERWRITE);
+            HighLogic.CurrentGame.Start();
+            return true;
+        }
+
         bool LoadGame()
         {
-            var gameNode = GamePersistence.LoadSFSFile(useCleanSave ? cleansave : save, game);
+            var gameNode = GamePersistence.LoadSFSFile(save, game);
             if (gameNode == null)
             {
                 Debug.LogWarning($"[BDArmory.BDATournament]: Unable to load the save game: {savegame}");
@@ -1194,11 +1231,33 @@ namespace BDArmory.Control
             {
                 if (node != null)
                 { GameEvents.onGameStatePostLoad.Fire(node); }
-                GamePersistence.SaveGame(HighLogic.CurrentGame, useCleanSave ? cleansave : save, game, SaveMode.OVERWRITE);
+                GamePersistence.SaveGame(HighLogic.CurrentGame, save, game, SaveMode.OVERWRITE);
             }
             HighLogic.CurrentGame.startScene = GameScenes.SPACECENTER;
             HighLogic.SaveFolder = game;
             HighLogic.CurrentGame.Start();
+        }
+
+        /// <summary>
+        /// Look for the scenario in the currently loaded assemblies and add the scenario to the requested scenes.
+        /// These come from a previous persistent.sfs save.
+        /// </summary>
+        /// <param name="scenarioName">Name of the scenario.</param>
+        /// <param name="targetScenes">The scenes the scenario should be present in.</param>
+        void CheckForScenario(string scenarioName, List<GameScenes> targetScenes)
+        {
+            foreach (var assy in AssemblyLoader.loadedAssemblies)
+            {
+                foreach (var type in assy.assembly.GetTypes())
+                {
+                    if (type == null) continue;
+                    if (type.Name == scenarioName)
+                    {
+                        HighLogic.CurrentGame.AddProtoScenarioModule(type, targetScenes.ToArray());
+                        return;
+                    }
+                }
+            }
         }
 
         /// <summary>

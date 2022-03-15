@@ -421,9 +421,9 @@ namespace BDArmory.UI
                     inputFields["evasionTimeThreshold"].maxValue = ActivePilot.UpToEleven ? 1 : 3;
                     inputFields["vesselStandoffDistance"].maxValue = ActivePilot.UpToEleven ? 5000 : 1000;
                     // inputFields["extendMult"].maxValue = ActivePilot.UpToEleven ? 200 : 2;
-                    inputFields["extendAirToAir"].maxValue = ActivePilot.UpToEleven ? 20000 : 2000;
-                    inputFields["extendAirToGroundGuns"].maxValue = ActivePilot.UpToEleven ? 20000 : 5000;
-                    inputFields["extendAirToGround"].maxValue = ActivePilot.UpToEleven ? 20000 : 5000;
+                    inputFields["extendDistanceAirToAir"].maxValue = ActivePilot.UpToEleven ? 20000 : 2000;
+                    inputFields["extendDistanceAirToGroundGuns"].maxValue = ActivePilot.UpToEleven ? 20000 : 5000;
+                    inputFields["extendDistanceAirToGround"].maxValue = ActivePilot.UpToEleven ? 20000 : 5000;
 
                     inputFields["turnRadiusTwiddleFactorMin"].maxValue = ActivePilot.UpToEleven ? 10 : 5;
                     inputFields["turnRadiusTwiddleFactorMax"].maxValue = ActivePilot.UpToEleven ? 10 : 5;
