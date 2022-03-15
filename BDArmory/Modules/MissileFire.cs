@@ -3933,7 +3933,7 @@ namespace BDArmory.Modules
                                 candidateDetDist = ((BDModularGuidance)item.Current).warheadYield;
                                 //candidateAccel = (((MissileLauncher)item.Current).thrust / ((MissileLauncher)item.Current).part.mass); 
                                 candidateAccel = 1; 
-                                candidatePriority = Mathf.RoundToInt(((MissileLauncher)item.Current).priority);
+                                candidatePriority = Mathf.RoundToInt(((BDModularGuidance)item.Current).priority);
 
                                 if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue;
                                 if (targetWeapon != null && targetWeaponPriority > candidatePriority)
