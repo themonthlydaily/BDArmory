@@ -521,7 +521,6 @@ namespace BDArmory.Modules
         public float rocketMass = 1;
         public float thrust = 1;
         public float thrustTime = 1;
-        public float stayTime = 0.04f;
         public float blastRadius = 1;
         public bool choker = false;
         public bool descendingOrder = true;
@@ -2363,7 +2362,6 @@ namespace BDArmory.Modules
                                 rocket.blastRadius = blastRadius;
                                 rocket.thrust = thrust;
                                 rocket.thrustTime = thrustTime;
-                                rocket.stayTime = stayTime;
                                 rocket.flak = proximityDetonation;
                                 rocket.detonationRange = detonationRange;
                                 rocket.maxAirDetonationRange = maxAirDetonationRange;
@@ -2442,7 +2440,6 @@ namespace BDArmory.Modules
                                             rocket.blastRadius = blastRadius;
                                             rocket.thrust = thrust;
                                             rocket.thrustTime = thrustTime;
-                                            rocket.stayTime = stayTime;
                                             rocket.flak = proximityDetonation;
                                             rocket.detonationRange = detonationRange;
                                             rocket.maxAirDetonationRange = maxAirDetonationRange;
@@ -3138,7 +3135,7 @@ namespace BDArmory.Modules
                 }
                 else if (eWeaponType == WeaponTypes.Rocket)
                 {
-                    float simTime = stayTime; // The rocket doesn't start moving until this time.
+                    float simTime = 0;
                     Vector3 pointingDirection = fireTransform.forward;
                     Vector3 simVelocity = part.rb.velocity + Krakensbane.GetFrameVelocityV3f();
                     Vector3 simCurrPos = fireTransform.position;
@@ -3265,7 +3262,7 @@ namespace BDArmory.Modules
                         }
 
                         // Rotation (aero stabilize).
-                        pointingDirection = Vector3.RotateTowards(pointingDirection, simVelocity + Krakensbane.GetFrameVelocityV3f(), atmosMultiplier * (0.5f * (simTime - stayTime)) * 50 * simDeltaTime * Mathf.Deg2Rad, 0);
+                        pointingDirection = Vector3.RotateTowards(pointingDirection, simVelocity + Krakensbane.GetFrameVelocityV3f(), atmosMultiplier * (0.5f * simTime) * 50 * simDeltaTime * Mathf.Deg2Rad, 0);
 
                         // Velocity update (half of current time and half of the next... that's why it's called leapfrog).
                         if (simTime < thrustTime)
@@ -3315,7 +3312,7 @@ namespace BDArmory.Modules
 
                     Vector3 pointingPos = fireTransform.position + (fireTransform.forward * targetDistance);
                     trajectoryOffset = pointingPos - bulletPrediction;
-                    predictedFlightTime = simTime - stayTime;
+                    predictedFlightTime = simTime;
                 }
             }
         }
@@ -4784,7 +4781,6 @@ namespace BDArmory.Modules
                 caliber = rocketInfo.caliber;
                 thrust = rocketInfo.thrust;
                 thrustTime = rocketInfo.thrustTime;
-                stayTime = rocketInfo.stayTime;
                 ProjectileCount = rocketInfo.subProjectileCount;
                 rocketModelPath = rocketInfo.rocketModelPath;
                 SelectedAmmoType = rocketInfo.name; //store selected ammo name as string for retrieval by web orc filter/later GUI implementation
