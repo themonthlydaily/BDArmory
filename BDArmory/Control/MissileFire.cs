@@ -1248,7 +1248,7 @@ namespace BDArmory.Control
                          selectedWeapon != null &&
                          ((selectedWeapon.GetWeaponClass() == WeaponClasses.Gun
                          || selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket
-                         || selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser) && currentGun.canRippleFire ))//&& currentGun.roundsPerMinute < 1500)) //set this based on if the WG can ripple vs if first weapon in the WG happens to be > 1500 RPM
+                         || selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser) && currentGun.canRippleFire))//&& currentGun.roundsPerMinute < 1500)) //set this based on if the WG can ripple vs if first weapon in the WG happens to be > 1500 RPM
                 {
                     canRipple = true;
                 }
@@ -4187,13 +4187,14 @@ namespace BDArmory.Control
                         {
                             if (missilesAway >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                             MissileLauncher mlauncher = item.Current as MissileLauncher;
-                            float candidateDetDist = ((MissileLauncher)item.Current).DetonationDistance;
-                            float candidateTurning = ((MissileLauncher)item.Current).maxTurnRateDPS; //for anti-aircraft, prioritize detonation dist and turn capability
-                            int candidatePriority = Mathf.RoundToInt(((MissileLauncher)item.Current).priority);
                             float candidateTDPS = 0f;
-
+                            int candidatePriority = 0;
                             if (mlauncher != null)
                             {
+                                float candidateDetDist = ((MissileLauncher)item.Current).DetonationDistance;
+                                float candidateTurning = ((MissileLauncher)item.Current).maxTurnRateDPS; //for anti-aircraft, prioritize detonation dist and turn capability
+                                candidatePriority = Mathf.RoundToInt(((MissileLauncher)item.Current).priority);
+
                                 bool EMP = ((MissileLauncher)item.Current).EMP;
 
                                 if (EMP) continue;
@@ -4421,7 +4422,7 @@ namespace BDArmory.Control
                             if (EMP) continue;
                             if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                 continue; //keep higher priority weapon
-                            if (distance < candidateYield) 
+                            if (distance < candidateYield)
                                 continue;// don't drop bombs when within blast radius
                             bool candidateUnguided = false;
                             if (!vessel.LandedOrSplashed)
