@@ -3911,10 +3911,10 @@ namespace BDArmory.Modules
 
                             if (mlauncher != null)
                             {
-                                candidateDetDist = ((MissileLauncher)item.Current).DetonationDistance;
-                                candidateAccel = (((MissileLauncher)item.Current).thrust / ((MissileLauncher)item.Current).part.mass); //for anti-missile, prioritize proxidetonation and accel
-                                bool EMP = ((MissileLauncher)item.Current).EMP;
-                                candidatePriority = Mathf.RoundToInt(((MissileLauncher)item.Current).priority);
+                                candidateDetDist = mlauncher.DetonationDistance;
+                                candidateAccel = mlauncher.thrust / mlauncher.part.mass; //for anti-missile, prioritize proxidetonation and accel
+                                bool EMP = mlauncher.EMP;
+                                candidatePriority = Mathf.RoundToInt(mlauncher.priority);
 
                                 if (EMP) continue;
                                 if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue;
@@ -3930,10 +3930,10 @@ namespace BDArmory.Modules
                                 BDModularGuidance mm = item.Current as BDModularGuidance; //need to work out priority stuff for MMGs
                                 candidateTDPS = 5000;
 
-                                candidateDetDist = ((BDModularGuidance)item.Current).warheadYield;
+                                candidateDetDist = mm.warheadYield;
                                 //candidateAccel = (((MissileLauncher)item.Current).thrust / ((MissileLauncher)item.Current).part.mass); 
                                 candidateAccel = 1; 
-                                candidatePriority = Mathf.RoundToInt(((BDModularGuidance)item.Current).priority);
+                                candidatePriority = Mathf.RoundToInt(mm.priority);
 
                                 if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue;
                                 if (targetWeapon != null && targetWeaponPriority > candidatePriority)
@@ -4207,10 +4207,10 @@ namespace BDArmory.Modules
                             MissileLauncher mlauncher = item.Current as MissileLauncher;
                             if (mlauncher != null)
                             {
-                                candidateDetDist = ((MissileLauncher)item.Current).DetonationDistance;
-                                candidateTurning = ((MissileLauncher)item.Current).maxTurnRateDPS; //for anti-aircraft, prioritize detonation dist and turn capability
-                                candidatePriority = Mathf.RoundToInt(((MissileLauncher)item.Current).priority);
-                                bool EMP = ((MissileLauncher)item.Current).EMP;
+                                candidateDetDist = mlauncher.DetonationDistance;
+                                candidateTurning = mlauncher.maxTurnRateDPS; //for anti-aircraft, prioritize detonation dist and turn capability
+                                candidatePriority = Mathf.RoundToInt(mlauncher.priority);
+                                bool EMP = mlauncher.EMP;
 
                                 if (EMP) continue;
                                 if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue;
@@ -4230,9 +4230,9 @@ namespace BDArmory.Modules
                             { //is modular missile
                                 BDModularGuidance mm = item.Current as BDModularGuidance; //need to work out priority stuff for MMGs
                                 candidateTDPS = 5000;
-                                candidateDetDist = ((BDModularGuidance)item.Current).warheadYield;
+                                candidateDetDist = mm.warheadYield;
                                 //candidateTurning = ((MissileLauncher)item.Current).maxTurnRateDPS; //for anti-aircraft, prioritize detonation dist and turn capability
-                                candidatePriority = Mathf.RoundToInt(((BDModularGuidance)item.Current).priority);                               
+                                candidatePriority = Mathf.RoundToInt(mm.priority);                               
 
                                 if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue; 
                                 if (targetWeapon != null && targetWeaponPriority > candidatePriority)
