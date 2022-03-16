@@ -147,6 +147,7 @@
     <Compile Include="Competition\RemoteOrchestration\BDAScoreService.cs" />
     <Compile Include="Competition\RemoteOrchestration\VesselSource.cs" />
     <Compile Include="Competition\RemoteTournamentCoordinator.cs" />
+    <Compile Include="Competition\Scoring.cs" />
     <Compile Include="Competition\SpawnStrategies\CircularSpawnStrategy.cs" />
     <Compile Include="Competition\SpawnStrategies\ListSpawnStrategy.cs" />
     <Compile Include="Competition\SpawnStrategies\PointSpawnStrategy.cs" />

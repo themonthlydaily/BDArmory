@@ -6,6 +6,8 @@
 - Fix DebugLines not disabling when toggled off.
 IMPROVEMENTS
 - General:
+	- Major internal refactor for code organisation and maintainability.
+	- BDArmory is now a single DLL (the old BDArmory.Core.dll will be detected and removed).
 	- Add a 'Generate Clean Save' toggle for auto-loading to the KSC without generating a clean save (tournaments and evolution still generate a clean save).
 - Armor:
 	- Explosive Reactive Armor HP is now customizable.
