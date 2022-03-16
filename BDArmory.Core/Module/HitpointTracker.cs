@@ -716,8 +716,9 @@ namespace BDArmory.Core.Module
                 }
                 else
                 {
-                    hitpoints = ArmorRemaining * armorVolume * 10;
-                    hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
+                    hitpoints = ArmorRemaining; // * armorVolume * 10;
+                    //hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
+					//armorpanel HP is panel integrity, as 'HP' is the slab of armor; having a secondary unused HP pool will only make armor massively more effective against explosions than it should due to how isInLineOfSight calculates intermediate parts
                 }
             }
             else
@@ -838,7 +839,7 @@ namespace BDArmory.Core.Module
             }
             if (ArmorPanel)
             {
-                Hitpoints = ArmorRemaining * armorVolume * 10;
+                Hitpoints = ArmorRemaining; // * armorVolume * 10;
                 if (Armor <= 0)
                 {
                     DestroyPart();

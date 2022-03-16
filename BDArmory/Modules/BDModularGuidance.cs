@@ -43,6 +43,10 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true, guiActive = true, guiName = "#LOC_BDArmory_WeaponName", guiActiveEditor = true), UI_Label(affectSymCounterparts = UI_Scene.All, scene = UI_Scene.All)]//Weapon Name 
         public string WeaponName;
 
+        [KSPField(advancedTweakable = true, isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_FiringPriority"),
+    UI_FloatRange(minValue = 0, maxValue = 10, stepIncrement = 1, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
+        public float priority = 0; //per-weapon priority selection override
+
         [KSPField(isPersistant = false, guiActive = true, guiName = "#LOC_BDArmory_GuidanceType", guiActiveEditor = true)]//Guidance Type 
         public string GuidanceLabel = "AGM/STS";
 
@@ -101,7 +105,7 @@ namespace BDArmory.Modules
         private double lastRollAngle;
         private double angularVelocity;
 
-
+        public float warheadYield = 0;
         #endregion KSP FIELDS
 
         public TransformAxisVectors ForwardTransformAxis { get; set; }
@@ -433,7 +437,10 @@ namespace BDArmory.Modules
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                     Debug.Log("[BDArmory.BDModularGuidance]: OnStart missile " + shortName + ": setting default locktrackcurve with maxrange/minrcs: " + activeRadarLockTrackCurve.maxTime + "/" + RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS);
             }
-
+            foreach (var explosivePart in VesselModuleRegistry.GetModules<BDExplosivePart>(vessel))
+            {
+                if (warheadYield < explosivePart.blastRadius) warheadYield = explosivePart.blastRadius;
+            }
         }
 
         private void SetupsFields()
