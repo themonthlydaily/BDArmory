@@ -20,6 +20,8 @@ namespace BDArmory.Competition
 
         public string vesselPath = "";
 
+        public string NPCPath = "";
+
         private string competitionHash = "";
 
         public bool pendingRequest = false;
@@ -42,6 +44,7 @@ namespace BDArmory.Competition
             this.baseUrl = "https://" + BDArmorySettings.REMOTE_ORCHESTRATION_BASE_URL;
             this.service = service;
             this.vesselPath = vesselPath + "/" + hash;
+            this.NPCPath = Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn" + Path.DirectorySeparatorChar + "NPC") + "/";
             this.competitionHash = hash;
         }
 
@@ -354,6 +357,33 @@ namespace BDArmory.Competition
                 .ToArray();
             File.WriteAllLines(filename, modifiedLines);
             Debug.Log(string.Format("[BDArmory.BDAScoreClient] Saved craft for player {0}", vesselName));
+            if (vesselName.Contains(BDArmorySettings.REMOTE_ORCHESTRATION_NPC_SWAPPER)) //grab either ships or players that contain NPC identifier
+            {
+                SwapCraftFiles(vesselName); //doing this after initial load/editing to make sure nothing breaks by swapping earlier
+            }
+        }
+
+        public void SwapCraftFiles(string vesselname)
+        {
+            string filename = string.Format("{0}/{1}.craft", vesselPath, vesselname);
+
+            Debug.Log("[BDArmory.BDAScoreClient] Swapping existing craft in spawn directory " + vesselPath);
+            DirectoryInfo info = new DirectoryInfo(NPCPath);
+            FileInfo[] craftFiles = info.GetFiles("*.craft")
+                .Where(e => e.Extension == ".craft")
+                .ToArray();
+            int i;
+            i = (int)UnityEngine.Random.Range(0, craftFiles.Count() - 1);
+
+            string NPCfilename = string.Format("{0}/{1}", NPCPath, craftFiles[i].Name); //.craft included in the craftFiles[i].name
+            string[] NPClines = File.ReadAllLines(NPCfilename); //kludge, probably easier to just copy the file from NPC dir to the autospawn dir
+            string pattern = ".*ship = (.+)";
+            string[] modifiedLines = NPClines
+                .Select(e => Regex.Replace(e, pattern, "ship = " + vesselname))
+                .Where(e => !e.Contains("VESSELNAMING"))
+                .ToArray();
+            File.WriteAllLines(filename, modifiedLines);
+            Debug.Log(string.Format("[BDArmory.BDAScoreClient] Swapped craft for player {0}", vesselname));
         }
 
         public IEnumerator StartHeat(string hash, HeatModel heat)

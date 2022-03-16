@@ -1040,9 +1040,9 @@ namespace BDArmory.Control
                                     postFix = " is taking damage from " + vData.lastPersonWhoDamagedMe;
                                     if (BDArmorySettings.ENABLE_HOS && vData.lastPersonWhoDamagedMe == BDArmorySettings.HALL_OF_SHAME)
                                     {
-                                        if (!string.IsNullOrEmpty(BDArmorySetup.Instance.HoSTag))
+                                        if (!string.IsNullOrEmpty(BDArmorySettings.HOS_BADGE))
                                         {
-                                            postFix += "(" + BDArmorySetup.Instance.HoSTag + ")";
+                                            postFix += "(" + BDArmorySettings.HOS_BADGE + ")";
                                         }
                                     }
                                 }
@@ -3003,9 +3003,9 @@ namespace BDArmory.Control
                         Scores.RegisterDeath(player, GMKillReason.None, timeOfDeath);
 						pilotActions[player] = " is Dead";
 						var statusMessage = player;
-                        if (BDArmorySettings.ENABLE_HOS && player == BDArmorySettings.HALL_OF_SHAME && !string.IsNullOrEmpty(BDArmorySetup.Instance.HoSTag))
+                        if (BDArmorySettings.ENABLE_HOS && player == BDArmorySettings.HALL_OF_SHAME && !string.IsNullOrEmpty(BDArmorySettings.HOS_BADGE))
                         {
-                            statusMessage += $" ({BDArmorySetup.Instance.HoSTag})";
+                            statusMessage += $" ({BDArmorySettings.HOS_BADGE})";
                         }
                         switch (Scores.ScoreData[player].lastDamageWasFrom)
                         {
@@ -3032,9 +3032,9 @@ namespace BDArmory.Control
                         switch (Scores.ScoreData[player].aliveState)
                         {
                             case AliveState.CleanKill: // Damaged recently and only ever took damage from the killer.
-                                if (BDArmorySettings.ENABLE_HOS && Scores.ScoreData[player].lastPersonWhoDamagedMe == BDArmorySettings.HALL_OF_SHAME && !string.IsNullOrEmpty(BDArmorySetup.Instance.HoSTag))
+                                if (BDArmorySettings.ENABLE_HOS && Scores.ScoreData[player].lastPersonWhoDamagedMe == BDArmorySettings.HALL_OF_SHAME && !string.IsNullOrEmpty(BDArmorySettings.HOS_BADGE))
                                 {
-                                    statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + "(" + BDArmorySetup.Instance.HoSTag + ")" + " (NAILED 'EM! CLEAN KILL!)";
+                                    statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + "(" + BDArmorySettings.HOS_BADGE + ")" + " (NAILED 'EM! CLEAN KILL!)";
                                 }
                                 else
                                 {
@@ -3043,9 +3043,9 @@ namespace BDArmory.Control
                                 canAssignMutator = true;
                                 break;
                             case AliveState.HeadShot: // Damaged recently, but took damage a while ago from someone else.
-                                if (BDArmorySettings.ENABLE_HOS && Scores.ScoreData[player].lastPersonWhoDamagedMe == BDArmorySettings.HALL_OF_SHAME && !string.IsNullOrEmpty(BDArmorySetup.Instance.HoSTag))
+                                if (BDArmorySettings.ENABLE_HOS && Scores.ScoreData[player].lastPersonWhoDamagedMe == BDArmorySettings.HALL_OF_SHAME && !string.IsNullOrEmpty(BDArmorySettings.HOS_BADGE))
                                 {
-                                    statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + "(" + BDArmorySetup.Instance.HoSTag + ")" + " (BOOM! HEAD SHOT!)";
+                                    statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + "(" + BDArmorySettings.HOS_BADGE + ")" + " (BOOM! HEAD SHOT!)";
                                 }
                                 else
                                 {
@@ -3054,9 +3054,9 @@ namespace BDArmory.Control
                                 canAssignMutator = true;
                                 break;
                             case AliveState.KillSteal: // Damaged recently, but took damage from someone else recently too.
-                                if (BDArmorySettings.ENABLE_HOS && Scores.ScoreData[player].lastPersonWhoDamagedMe == BDArmorySettings.HALL_OF_SHAME && !string.IsNullOrEmpty(BDArmorySetup.Instance.HoSTag))
+                                if (BDArmorySettings.ENABLE_HOS && Scores.ScoreData[player].lastPersonWhoDamagedMe == BDArmorySettings.HALL_OF_SHAME && !string.IsNullOrEmpty(BDArmorySettings.HOS_BADGE))
                                 {
-                                    statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + "(" + BDArmorySetup.Instance.HoSTag + ")" + " (KILL STEAL!)";
+                                    statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + "(" + BDArmorySettings.HOS_BADGE + ")" + " (KILL STEAL!)";
                                 }
                                 else
                                 {
