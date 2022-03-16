@@ -10,7 +10,12 @@ using BDArmory.Control;
 using BDArmory.Settings;
 using BDArmory.Utils;
 
-namespace BDArmory.Competition{
+namespace BDArmory.Competition
+{
+    public enum DamageFrom { None, Guns, Rockets, Missiles, Ramming, Incompetence };
+    public enum AliveState { Alive, CleanKill, HeadShot, KillSteal, AssistedKill, Dead };
+    public enum GMKillReason { None, GM, OutOfAmmo, BigRedButton, LandedTooLong };
+
     public class CompetitionScores
     {
         #region Public fields
@@ -558,7 +563,7 @@ namespace BDArmory.Competition{
             }
             return true;
         }
-        
+
         // AUBRANIUM, add waypoint helpers for the ScoringData waypoint fields here.
         // In principle, multiple sets of waypoints could be followed within a single competition (for a complicated competition) and the scores accumulated here.
         // Alternatively, you may want to be able to reset the waypoint scores within a single competition if they're being reported to the score service for each set of waypoints, in which case you'll want a function to do that too.
@@ -907,8 +912,4 @@ namespace BDArmory.Competition{
         public HashSet<string> everyoneWhoDamagedMe = new HashSet<string>(); // Every other vessel that damaged this vessel.
         #endregion
     }
-    public enum DamageFrom { None, Guns, Rockets, Missiles, Ramming, Incompetence };
-    public enum AliveState { Alive, CleanKill, HeadShot, KillSteal, AssistedKill, Dead };
-    public enum GMKillReason { None, GM, OutOfAmmo, BigRedButton, LandedTooLong };
-
 }
