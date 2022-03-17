@@ -198,6 +198,7 @@
     <Compile Include="Modules\BDModularGuidance.cs" />
     <Compile Include="Modules\BDModulePilotAI.cs" />
     <Compile Include="Modules\BDModuleSurfaceAI.cs" />
+    <Compile Include="Modules\BDModuleVTOLAI.cs" />
     <Compile Include="Modules\BDRotaryRail.cs" />
     <Compile Include="Modules\CFEnable.cs" />
     <Compile Include="Modules\ClusterBomb.cs" />
@@ -376,6 +377,7 @@
     <None Include="Distribution\GameData\BDArmory\Parts\aiPilot\model.mu" />
     <None Include="Distribution\GameData\BDArmory\Parts\aiPilot\part.cfg" />
     <None Include="Distribution\GameData\BDArmory\Parts\aiPilot\surface_ai.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\aiPilot\vtol_ai.cfg" />
     <None Include="Distribution\GameData\BDArmory\Parts\AIR-2\Model.mu" />
     <None Include="Distribution\GameData\BDArmory\Parts\AIR-2\part.cfg" />
     <None Include="Distribution\GameData\BDArmory\Parts\AmmoBox\20mm.cfg" />
@@ -631,6 +633,7 @@
     <Content Include="Distribution\GameData\BDArmory\Parts\aim-120\texture.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\aiPilot\SAI1.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\aiPilot\texture.png" />
+    <Content Include="Distribution\GameData\BDArmory\Parts\aiPilot\VAI1.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\AIR-2\AIR-2 Genie.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\AmmoBox\texture.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\AmmoBox\texture20x102.png" />
