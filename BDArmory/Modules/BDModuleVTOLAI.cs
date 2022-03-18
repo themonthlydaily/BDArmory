@@ -66,7 +66,8 @@ namespace BDArmory.Modules
         // values currently hard-coded since VTOL AI is adapted from surface AI, but should be removed/changed as AI behavior is improved
         public string SurfaceTypeName = "Amphibious"; // hard code this for the moment until we have something better
         public bool PoweredSteering = true;
-        public float MaxDrift = 180; 
+        public float MaxDrift = 180;
+        public float AvoidMass = 0f;
 
         public AIUtils.VehicleMovementType SurfaceType
             => (AIUtils.VehicleMovementType)Enum.Parse(typeof(AIUtils.VehicleMovementType), SurfaceTypeName);
@@ -127,10 +128,6 @@ namespace BDArmory.Modules
             UI_Toggle(enabledText = "#LOC_BDArmory_ManeuverRCS_enabledText", disabledText = "#LOC_BDArmory_ManeuverRCS_disabledText", scene = UI_Scene.All),]//Maneuvers--Combat
         public bool ManeuverRCS = false;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MinObstacleMass", advancedTweakable = true),//Min obstacle mass
-            UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1f, scene = UI_Scene.All),]
-        public float AvoidMass = 0f;
-
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_PreferredBroadsideDirection", advancedTweakable = true),//Preferred broadside direction
             UI_ChooseOption(options = new string[3] { "Port", "Either", "Starboard" }, scene = UI_Scene.All),]
         public string OrbitDirectionName = "Either";
@@ -148,14 +145,17 @@ namespace BDArmory.Modules
 
         Dictionary<string, float> altMaxValues = new Dictionary<string, float>
         {
+            { nameof(defaultAltitude), 100000f },
+            { nameof(CombatAltitude), 100000f },
+            { nameof(minAltitude), 100000f },
+            { nameof(steerMult), 200f },
+            { nameof(steerKiAdjust), 20f },
+            { nameof(steerDamping), 100f },
             { nameof(MaxPitchAngle), 90f },
             { nameof(CombatSpeed), 300f },
             { nameof(MaxSpeed), 400f },
-            { nameof(steerMult), 200f },
-            { nameof(steerDamping), 100f },
             { nameof(MinEngagementRange), 20000f },
             { nameof(MaxEngagementRange), 30000f },
-            { nameof(AvoidMass), 1000000f },
         };
 
         #endregion Declarations
@@ -213,6 +213,9 @@ namespace BDArmory.Modules
                 altitudeControl.vessel = vessel;
             }
             altitudeControl.Activate();
+
+            if (initialTakeOff && !vessel.LandedOrSplashed) // In case we activate pilot after taking off manually.
+                initialTakeOff = false;
 
             if (BroadsideAttack && sideSlipDirection == 0)
             {
@@ -351,7 +354,7 @@ namespace BDArmory.Modules
             AdjustThrottle(targetVelocity); // set throttle according to our targets and movement
         }
 
-        void PilotLogic()
+        void PilotLogic_Depreciated() // Surface AI-based with byass target still enabled 
         {
             // check for belowMinAlt
             belowMinAltitude = (float)vessel.radarAltitude < minAltitude;
@@ -543,7 +546,7 @@ namespace BDArmory.Modules
             targetDirection = vesselTransform.up;
         }
 
-        void PilotLogic2()
+        void PilotLogic() // Surface AI-based with byass target disabled
         {
             // check for belowMinAlt
             belowMinAltitude = (float)vessel.radarAltitude < minAltitude;
@@ -582,8 +585,6 @@ namespace BDArmory.Modules
                 leftPath = true;
                 return;
             }
-
-
 
             // check for enemy targets and engage
             // not checking for guard mode, because if guard mode is off now you can select a target manually and if it is of opposing team, the AI will try to engage while you can man the turrets
@@ -655,7 +656,7 @@ namespace BDArmory.Modules
                                         if ((gun.yawRange == 0 || gun.maxPitch == gun.minPitch) && gun.FiringSolutionVector != null)
                                         {
                                             aimingMode = true;
-                                            if (Vector3.Angle((Vector3)gun.FiringSolutionVector, vessel.transform.up) < 20)
+                                            if (Vector3.Angle((Vector3)gun.FiringSolutionVector, Vector3.ProjectOnPlane(targetDirection, upDir)) < MaxPitchAngle)
                                                 targetDirection = (Vector3)gun.FiringSolutionVector;
                                         }
                                         break;
@@ -746,7 +747,7 @@ namespace BDArmory.Modules
             {
                 weaveAdjustment = 0;
             }
-            DebugLine($"underFire {weaponManager.underFire}, weaveAdjustment {weaveAdjustment}");
+            DebugLine($"underFire {weaponManager.underFire}, aimingMode {aimingMode}, weaveAdjustment {weaveAdjustment}");
         }
 
         void AdjustThrottle(float targetSpeed)

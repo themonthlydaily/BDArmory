@@ -265,21 +265,18 @@ namespace BDArmory.Control
         public Vessel vessel;
         public bool preventNegativeZeroPoint = false;
 
-        private float lastThrottle;
         private float altIntegral;
         public float zeroPoint { get; private set; }
 
         private const float Kp = 0.5f;
-        private const float Kd = 0.5f;
-        private const float Ki = 0.02f;
-        private const float zeroMult = 0.02f;
+        private const float Kd = 0.55f;
+        private const float Ki = 0.03f;
+
 
         public void Activate()
         {
             vessel.OnFlyByWire -= AltitudeControl;
             vessel.OnFlyByWire += AltitudeControl;
-            zeroPoint = 0;
-            lastThrottle = 0;
             altIntegral = 0;
         }
 
@@ -298,17 +295,11 @@ namespace BDArmory.Control
             }
             else
             {
-                // float throttle = zeroPoint + (targetAltitude - (float)vessel.radarAltitude) * gain;
-                // lastThrottle = Mathf.Clamp(throttle, -1, 1);
-                // zeroPoint = (zeroPoint + lastThrottle * zeroMult) * (1 - zeroMult);
-                // if (preventNegativeZeroPoint && zeroPoint < 0) zeroPoint = 0;
-                // s.mainThrottle = lastThrottle;
-
                 float altError = (targetAltitude - (float)vessel.radarAltitude);
                 float altP = Kp * (targetAltitude - (float)vessel.radarAltitude);
                 float altD = Kd * (float)vessel.verticalSpeed;
                 altIntegral = Ki * Mathf.Clamp(altIntegral + altError * Time.deltaTime, -1f, 1f);
-
+                
                 float throttle = altP + altIntegral - altD;
                 s.mainThrottle = Mathf.Clamp01(throttle);
 
