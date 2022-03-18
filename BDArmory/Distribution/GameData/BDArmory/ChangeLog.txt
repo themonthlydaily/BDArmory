@@ -1,4 +1,28 @@
-﻿v1.4.17.0
+﻿FIXES
+- Add checks to only adjust scores when a competition is active.
+- Fix interpretation of demo vessel optimisation script.
+- Fix CASE-2 ammo reduction when cloning part.
+- Fix laser battledaamge.
+- Fix DebugLines not disabling when toggled off.
+IMPROVEMENTS
+- General:
+	- Add a 'Generate Clean Save' toggle for auto-loading to the KSC without generating a clean save (tournaments and evolution still generate a clean save).
+- Armor:
+	- Explosive Reactive Armor HP is now customizable.
+- Weapons:
+	- Remove the 0.04s delay on firing a rocket.
+	- Add explModelPath and explSoundPath to Sidam.
+	- Clean up rocket aiming, switch it to use the more accurate leap-frog numerical integrator and use ballistic aiming once the thrust period is over.
+	- Set laser weapons to use standard FX pipeline.
+- GameModes:
+	- Paintball Mode now affects Nukes.
+- Tournamements:
+	- Add checks to only adjust scores when a competition is active (fixes differences in the API scores due to timing issues).
+	- Use base64 encoded vessel names internally in the parser to avoid issues with craft naming (e.g., craft with ':' in the name).
+- RWP:
+	- Add Hall of Shame code.
+
+v1.4.17.0
 FIXES
 - Fix auto-resume evolution not finding the evolution.state file.
 - Fix localization for target priority on weapons manager.

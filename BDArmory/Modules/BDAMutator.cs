@@ -164,16 +164,16 @@ namespace BDArmory.Modules
                             if (MM == null)
                             {
                                 MM = (ModuleMassAdjust)part.Current.AddModule("ModuleMassAdjust");
-                                if (BDArmorySettings.MUTATOR_DURATION > 0 && BDArmorySettings.MUTATOR_APPLY_TIMER)
-                                {
-                                    MM.duration = BDArmorySettings.MUTATOR_DURATION; //MMA will time out and remove itself when mutator expires
-                                }
-                                else
-                                {
-                                    MM.duration = BDArmorySettings.COMPETITION_DURATION;
-                                }
-                                MM.massMod += mutatorInfo.MassMod / vessel.Parts.Count; //evenly distribute mass change across entire vessel
                             }
+                            if (BDArmorySettings.MUTATOR_DURATION > 0 && BDArmorySettings.MUTATOR_APPLY_TIMER)
+                            {
+                                MM.duration = BDArmorySettings.MUTATOR_DURATION; //MMA will time out and remove itself when mutator expires
+                            }
+                            else
+                            {
+                                MM.duration = BDArmorySettings.COMPETITION_DURATION;
+                            }
+                            MM.massMod += mutatorInfo.MassMod / vessel.Parts.Count; //evenly distribute mass change across entire vessel
                         }
                     }
                 if (!Vengeance && mutatorInfo.Vengeance)

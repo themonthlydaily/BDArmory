@@ -473,6 +473,7 @@ namespace BDArmory.FX
                         }
                         if (FlightGlobals.currentMainBody != null && hit.collider.gameObject == FlightGlobals.currentMainBody.gameObject) return false; // Terrain hit. Full absorption. Should avoid NREs in the following.
                         var partHP = partHit.Damage();
+						if (part.name.ToLower().Contains("armor")) partHP = 100;
                         var partArmour = partHit.GetArmorThickness();
                         var RA = partHit.FindModuleImplementing<ModuleReactiveArmor>();
                         if (RA != null)
@@ -788,7 +789,7 @@ namespace BDArmory.FX
                                 else
                                 {
                                     damage = part.AddExplosiveDamage(blastInfo.Damage, Caliber, ExplosionSource, dmgMult);
-                                    penetrationFactor = damage / 10; //closer to the explosion/greater magnitude of the explosion at point blank, the breater the blowthrough
+                                    penetrationFactor = damage / 10; //closer to the explosion/greater magnitude of the explosion at point blank, the greater the blowthrough
                                     if (float.IsNaN(damage)) Debug.LogError("DEBUG NaN damage!");
                                 }
                             }

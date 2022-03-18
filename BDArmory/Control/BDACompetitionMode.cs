@@ -13,6 +13,7 @@ using BDArmory.Radar;
 using BDArmory.UI;
 using UnityEngine;
 using KSP.Localization;
+using BDArmory.FX;
 
 namespace BDArmory.Control
 {
@@ -78,6 +79,7 @@ namespace BDArmory.Control
         /// <returns>true if successfully registered, false otherwise</returns>
         public bool RegisterShot(string shooter)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (shooter == null || !ScoreData.ContainsKey(shooter)) return false;
             if (ScoreData[shooter].aliveState != AliveState.Alive) return false; // Ignore shots fired after the vessel is dead.
             ++ScoreData[shooter].shotsFired;
@@ -102,6 +104,7 @@ namespace BDArmory.Control
         /// <returns>true if successfully registered, false otherwise</returns>
         public bool RegisterBulletHit(string attacker, string victim, string weaponName = "", double distanceTraveled = 0)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore hits after the victim is dead.
 
@@ -160,6 +163,7 @@ namespace BDArmory.Control
         /// <returns>true if successfully registered, false otherwise</returns>
         public bool RegisterBulletDamage(string attacker, string victim, float damage)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (damage <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore damage after the victim is dead.
             if (float.IsNaN(damage))
@@ -185,6 +189,7 @@ namespace BDArmory.Control
         /// <returns>true if successfully registered, false otherwise</returns>
         public bool RegisterRocketFired(string shooter)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (shooter == null || !ScoreData.ContainsKey(shooter)) return false;
             if (ScoreData[shooter].aliveState != AliveState.Alive) return false; // Ignore shots fired after the vessel is dead.
             ++ScoreData[shooter].rocketsFired;
@@ -199,6 +204,7 @@ namespace BDArmory.Control
         /// <returns></returns>
         public bool RegisterRocketStrike(string attacker, string victim)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore hits after the victim is dead.
 
@@ -222,6 +228,7 @@ namespace BDArmory.Control
         /// <returns></returns>
         public bool RegisterRocketHit(string attacker, string victim, int partsHit = 1)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (partsHit <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore hits after the victim is dead.
 
@@ -260,6 +267,7 @@ namespace BDArmory.Control
         /// <returns></returns>
         public bool RegisterRocketDamage(string attacker, string victim, float damage)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (damage <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore damage after the victim is dead.
 
@@ -282,6 +290,7 @@ namespace BDArmory.Control
         /// <returns></returns>
         public bool RegisterBattleDamage(string attacker, Vessel victimVessel, float damage)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (victimVessel == null) return false;
             var victim = victimVessel.vesselName;
             if (damage <= 0 || attacker == null || victim == null || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false; // Note: we allow attacker=victim here to track self damage.
@@ -303,6 +312,7 @@ namespace BDArmory.Control
         /// <returns>true if successfully registered, false otherwise</returns>
         public bool RegisterRam(string attacker, string victim, double timeOfCollision, int partsLost)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (partsLost <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore rams after the victim is dead.
 
@@ -346,6 +356,7 @@ namespace BDArmory.Control
         /// <returns>true if successfully registered, false otherwise</returns>
         public bool RegisterMissileStrike(string attacker, string victim)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore hits after the victim is dead.
 
@@ -368,6 +379,7 @@ namespace BDArmory.Control
         /// <returns>true if successfully registered, false otherwise</returns>
         public bool RegisterMissileHit(string attacker, string victim, int partsHit = 1)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (partsHit <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore hits after the victim is dead.
 
@@ -406,6 +418,7 @@ namespace BDArmory.Control
         /// <returns>true if successfully registered, false otherwise</returns>
         public bool RegisterMissileDamage(string attacker, string victim, float damage)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (damage <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore damage after the victim is dead.
 
@@ -426,6 +439,7 @@ namespace BDArmory.Control
         /// <returns>true if successfully registered, false otherwise</returns>
         public bool RegisterDeath(string vesselName, GMKillReason gmKillReason = GMKillReason.None, double timeOfDeath = -1)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (vesselName == null || !ScoreData.ContainsKey(vesselName)) return false;
             if (ScoreData[vesselName].aliveState != AliveState.Alive) return false; // They're already dead!
 
@@ -1015,12 +1029,23 @@ namespace BDArmory.Control
                             var vesselName = FlightGlobals.ActiveVessel.GetName();
                             string postFix = "";
                             if (pilotActions.ContainsKey(vesselName))
+                            {
                                 postFix = pilotActions[vesselName];
+                            }
                             if (Scores.Players.Contains(vesselName))
                             {
                                 ScoringData vData = Scores.ScoreData[vesselName];
                                 if (Planetarium.GetUniversalTime() - vData.lastDamageTime < 2)
+                                {
                                     postFix = " is taking damage from " + vData.lastPersonWhoDamagedMe;
+                                    if (BDArmorySettings.ENABLE_HOS && vData.lastPersonWhoDamagedMe == BDArmorySettings.HALL_OF_SHAME)
+                                    {
+                                        if (!string.IsNullOrEmpty(BDArmorySetup.Instance.HoSTag))
+                                        {
+                                            postFix += "(" + BDArmorySetup.Instance.HoSTag + ")";
+                                        }
+                                    }
+                                }
                             }
                             if (postFix != "" || vesselName != competitionStatus.lastActiveVessel)
                                 currentVesselStatus = vesselName + postFix;
@@ -1321,6 +1346,41 @@ namespace BDArmory.Control
                     {
                         MM.EnableMutator(); //random mutator
                     }
+                }
+                if (BDArmorySettings.ENABLE_HOS && !string.IsNullOrEmpty(BDArmorySettings.HALL_OF_SHAME))
+                {
+                    if (pilot.vessel.GetName() != BDArmorySettings.HALL_OF_SHAME) continue;
+                    using (List<Part>.Enumerator part = pilot.vessel.Parts.GetEnumerator())
+                        while (part.MoveNext())
+                        {
+                            if (BDArmorySettings.HOS_FIRE > 0.1f)
+                            {
+                                BulletHitFX.AttachFire(part.Current.transform.position, part.Current, BDArmorySettings.HOS_FIRE * 50, "GM", BDArmorySettings.COMPETITION_DURATION * 60, 1, true);
+                            }
+                            if (BDArmorySettings.HOS_MASS  != 0)
+                            {
+                                var MM = part.Current.FindModuleImplementing<ModuleMassAdjust>();
+                                if (MM == null)
+                                {
+                                    MM = (ModuleMassAdjust)part.Current.AddModule("ModuleMassAdjust");
+                                }
+                                MM.duration = BDArmorySettings.COMPETITION_DURATION * 60;
+                                MM.massMod += (float)(BDArmorySettings.HOS_MASS / pilot.vessel.Parts.Count); //evenly distribute mass change across entire vessel
+                            }
+							if (BDArmorySettings.HOS_DMG != 1)
+							{
+								var HPT = part.Current.FindModuleImplementing<HitpointTracker>();
+								HPT.defenseMutator = (float)(1 / BDArmorySettings.HOS_DMG);
+							}
+                            if (BDArmorySettings.HOS_THRUST != 100)
+                            {
+                                using (var engine = VesselModuleRegistry.GetModuleEngines(pilot.vessel).GetEnumerator())
+                                    while (engine.MoveNext())
+                                    {
+                                        engine.Current.thrustPercentage = BDArmorySettings.HOS_THRUST;
+                                    }
+                            }
+                        }
                 }
                 if (BDArmorySettings.HACK_INTAKES)
                 {
@@ -2222,6 +2282,33 @@ namespace BDArmory.Control
                                             MM.EnableMutator(); //random mutator
                                         }
                                     }
+                                    if (BDArmorySettings.ENABLE_HOS && !string.IsNullOrEmpty(BDArmorySettings.HALL_OF_SHAME))
+                                    {
+                                        if (pilot.vessel.GetName() != BDArmorySettings.HALL_OF_SHAME) continue;
+                                        using (List<Part>.Enumerator part = pilot.vessel.Parts.GetEnumerator())
+                                            while (part.MoveNext())
+                                            {
+                                                if (BDArmorySettings.HOS_FIRE > 0.1f)
+                                                {
+                                                    BulletHitFX.AttachFire(part.Current.transform.position, part.Current, BDArmorySettings.HOS_FIRE * 50, "GM", BDArmorySettings.COMPETITION_DURATION * 60, 1, true);
+                                                }
+                                                if (BDArmorySettings.HOS_MASS != 0)
+                                                {
+                                                    var MM = part.Current.FindModuleImplementing<ModuleMassAdjust>();
+                                                    if (MM == null)
+                                                    {
+                                                        MM = (ModuleMassAdjust)part.Current.AddModule("ModuleMassAdjust");
+                                                    }
+                                                    MM.duration = BDArmorySettings.COMPETITION_DURATION * 60;
+                                                    MM.massMod += (BDArmorySettings.HOS_MASS / pilot.vessel.Parts.Count); //evenly distribute mass change across entire vessel
+                                                }
+                                                if (BDArmorySettings.HOS_DMG != 1)
+                                                {
+                                                    var HPT = part.Current.FindModuleImplementing<HitpointTracker>();
+                                                    HPT.defenseMutator = (float)(1 / BDArmorySettings.HOS_DMG);
+                                                }
+                                            }
+                                    }
                                 }
                             }
 
@@ -2293,6 +2380,18 @@ namespace BDArmory.Control
                                 if (BDArmorySettings.HACK_INTAKES)
                                 {
                                     VesselSpawner.Instance.HackIntakes(pilot.vessel, true);
+                                }
+                                if (BDArmorySettings.ENABLE_HOS && !string.IsNullOrEmpty(BDArmorySettings.HALL_OF_SHAME))
+                                {
+                                    if(pilot.vessel.GetName() != BDArmorySettings.HALL_OF_SHAME) continue;
+                                    if (BDArmorySettings.HOS_THRUST != 100)
+                                    {
+                                        using (var engine = VesselModuleRegistry.GetModuleEngines(pilot.vessel).GetEnumerator())
+                                            while (engine.MoveNext())
+                                            {
+                                                engine.Current.thrustPercentage = BDArmorySettings.HOS_THRUST;
+                                            }
+                                    }
                                 }
                             }
                             break;
@@ -2902,8 +3001,12 @@ namespace BDArmory.Control
                                 break;
                         }
                         Scores.RegisterDeath(player, GMKillReason.None, timeOfDeath);
-                        pilotActions[player] = " is Dead";
-                        var statusMessage = player;
+						pilotActions[player] = " is Dead";
+						var statusMessage = player;
+                        if (BDArmorySettings.ENABLE_HOS && player == BDArmorySettings.HALL_OF_SHAME && !string.IsNullOrEmpty(BDArmorySetup.Instance.HoSTag))
+                        {
+                            statusMessage += $" ({BDArmorySetup.Instance.HoSTag})";
+                        }
                         switch (Scores.ScoreData[player].lastDamageWasFrom)
                         {
                             case DamageFrom.Guns:
@@ -2929,15 +3032,36 @@ namespace BDArmory.Control
                         switch (Scores.ScoreData[player].aliveState)
                         {
                             case AliveState.CleanKill: // Damaged recently and only ever took damage from the killer.
-                                statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (NAILED 'EM! CLEAN KILL!)";
+                                if (BDArmorySettings.ENABLE_HOS && Scores.ScoreData[player].lastPersonWhoDamagedMe == BDArmorySettings.HALL_OF_SHAME && !string.IsNullOrEmpty(BDArmorySetup.Instance.HoSTag))
+                                {
+                                    statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + "(" + BDArmorySetup.Instance.HoSTag + ")" + " (NAILED 'EM! CLEAN KILL!)";
+                                }
+                                else
+                                {
+                                    statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (NAILED 'EM! CLEAN KILL!)";
+                                }
                                 canAssignMutator = true;
                                 break;
                             case AliveState.HeadShot: // Damaged recently, but took damage a while ago from someone else.
-                                statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (BOOM! HEAD SHOT!)";
+                                if (BDArmorySettings.ENABLE_HOS && Scores.ScoreData[player].lastPersonWhoDamagedMe == BDArmorySettings.HALL_OF_SHAME && !string.IsNullOrEmpty(BDArmorySetup.Instance.HoSTag))
+                                {
+                                    statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + "(" + BDArmorySetup.Instance.HoSTag + ")" + " (BOOM! HEAD SHOT!)";
+                                }
+                                else
+                                {
+                                    statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (BOOM! HEAD SHOT!)";
+                                }
                                 canAssignMutator = true;
                                 break;
                             case AliveState.KillSteal: // Damaged recently, but took damage from someone else recently too.
-                                statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (KILL STEAL!)";
+                                if (BDArmorySettings.ENABLE_HOS && Scores.ScoreData[player].lastPersonWhoDamagedMe == BDArmorySettings.HALL_OF_SHAME && !string.IsNullOrEmpty(BDArmorySetup.Instance.HoSTag))
+                                {
+                                    statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + "(" + BDArmorySetup.Instance.HoSTag + ")" + " (KILL STEAL!)";
+                                }
+                                else
+                                {
+                                    statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (KILL STEAL!)";
+                                }
                                 canAssignMutator = true;
                                 break;
                             case AliveState.AssistedKill: // Assist (not damaged recently or GM kill).
