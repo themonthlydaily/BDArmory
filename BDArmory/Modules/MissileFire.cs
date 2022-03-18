@@ -2777,7 +2777,28 @@ namespace BDArmory.Modules
                         }
                 }
 
-                if (CurrentMissile.inCargoBay)
+                if (uint.Parse(CurrentMissile.customBayGroup) > 0) // Missile uses a custom bay, open it to fire
+                {
+                    uint customBayGroup = uint.Parse(CurrentMissile.customBayGroup);
+                    if (!baysOpened.Contains(customBayGroup)) // We haven't opened this bay yet
+                    {
+                        vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)customBayGroup]);
+                        openingBays = true;
+                        baysOpened.Add(customBayGroup);
+                    }
+                    else
+                    {
+                        foreach (var bay in baysOpened.Where(e => e <= 16).ToList()) // Close other custom bays that might be open 
+                        {
+                            if (bay != customBayGroup)
+                            {
+                                vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)bay]);
+                                baysOpened.Remove(bay); // Bay is no longer open
+                            }
+                        }
+                    }
+                }
+                else if (CurrentMissile.inCargoBay)
                 {
                     using (var bay = VesselModuleRegistry.GetModules<ModuleCargoBay>(vessel).GetEnumerator())
                         while (bay.MoveNext())
@@ -2815,27 +2836,6 @@ namespace BDArmory.Modules
                                 }
                             }
                         }
-                }
-                else if (uint.Parse(CurrentMissile.customBayGroup) > 0) // Missile uses a custom bay, open it to fire
-                {
-                    uint customBayGroup = uint.Parse(CurrentMissile.customBayGroup);
-                    if (!baysOpened.Contains(customBayGroup)) // We haven't opened this bay yet
-                    {
-                        vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)customBayGroup]);
-                        openingBays = true;
-                        baysOpened.Add(customBayGroup);
-                    }
-                    else
-                    {
-                        foreach (var bay in baysOpened.Where(e => e <= 16).ToList()) // Close other custom bays that might be open 
-                        {
-                            if (bay != customBayGroup)
-                            {
-                                vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)bay]);
-                                baysOpened.Remove(bay); // Bay is no longer open
-                            }
-                        }
-                    }
                 }
                 else
                 {
@@ -3793,7 +3793,7 @@ namespace BDArmory.Modules
 
                         if (candidateClass == WeaponClasses.DefenseLaser)
                         {
-                            ModuleWeapon Laser = item.Current as ModuleWeapon; 
+                            ModuleWeapon Laser = item.Current as ModuleWeapon;
                             float candidateYTraverse = Laser.yawRange;
                             float candidatePTraverse = Laser.maxPitch;
                             bool electrolaser = Laser.electroLaser;
@@ -3936,7 +3936,7 @@ namespace BDArmory.Modules
 
                                 candidateDetDist = mm.warheadYield;
                                 //candidateAccel = (((MissileLauncher)item.Current).thrust / ((MissileLauncher)item.Current).part.mass); 
-                                candidateAccel = 1; 
+                                candidateAccel = 1;
                                 candidatePriority = Mathf.RoundToInt(mm.priority);
 
                                 if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue;
@@ -3944,7 +3944,7 @@ namespace BDArmory.Modules
                                     continue; //keep higher priority weapon
                                 if (candidateDetDist + candidateAccel > targetWeaponTDPS)
                                 {
-                                    candidateTDPS = candidateDetDist + candidateAccel; 
+                                    candidateTDPS = candidateDetDist + candidateAccel;
                                 }
                             }
                             if (distance < ((EngageableWeapon)item.Current).engageRangeMin)
@@ -4238,9 +4238,9 @@ namespace BDArmory.Modules
                                 candidateTDPS = 5000;
                                 candidateDetDist = mm.warheadYield;
                                 //candidateTurning = ((MissileLauncher)item.Current).maxTurnRateDPS; //for anti-aircraft, prioritize detonation dist and turn capability
-                                candidatePriority = Mathf.RoundToInt(mm.priority);                               
+                                candidatePriority = Mathf.RoundToInt(mm.priority);
 
-                                if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue; 
+                                if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue;
                                 if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                     continue; //keep higher priority weapon
 
