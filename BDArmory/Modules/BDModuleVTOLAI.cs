@@ -25,9 +25,6 @@ namespace BDArmory.Modules
         float targetVelocity; // the forward/reverse velocity the craft should target, not the velocity of its target
         float targetLatVelocity; // the left/right velocity the craft should target, not the velocity of its target
         float targetAltitude; // the altitude the craft should hold, not the altitude of its target
-        float targetPitch;
-        float targetRoll;
-        float targetYaw;
         Vector3 rollTarget;
         bool aimingMode = false;
 
@@ -58,119 +55,21 @@ namespace BDArmory.Modules
         Vector3d intermediatePositionGeo;
         public override Vector3d commandGPS => finalPositionGeo;
 
-        private BDVTOLSpeedControl altitudeControl;
-
-        //wing command
-        bool useRollHint;
+        private BDVTOLSpeedControl altitudeControl; // Throttle is used to control altitude in most quadcopter control systems (position error feeds pitch/roll control), this works decently well for helicopters in BDA
 
         // Terrain avoidance and below minimum altitude globals.
-        int terrainAlertTicker = 0; // A ticker to reduce the frequency of terrain alert checks.
         bool belowMinAltitude; // True when below minAltitude or avoiding terrain.
-        bool gainAltInhibited = false; // Inhibit gain altitude to minimum altitude when chasing or evading someone as long as we're pointing upwards.
         bool avoidingTerrain = false; // True when avoiding terrain.
-        bool initialTakeOff = true; // False after the initial take-off.
-        float terrainAlertDetectionRadius = 30.0f; // Sphere radius that the vessel occupies. Should cover most vessels. FIXME This could be based on the vessel's maximum width/height.
-        float terrainAlertThreatRange; // The distance to the terrain to consider (based on turn radius).
-        float terrainAlertThreshold; // The current threshold for triggering terrain avoidance based on various factors.
-        float terrainAlertDistance; // Distance to the terrain (in the direction of the terrain normal).
+        bool initialTakeOff = true; // False after the initial take-off
         Vector3 terrainAlertNormal; // Approximate surface normal at the terrain intercept.
-        Vector3 terrainAlertDirection; // Terrain slope in the direction of the velocity at the terrain intercept.
-        Vector3 terrainAlertCorrectionDirection; // The direction to go to avoid the terrain.
-        float terrainAlertCoolDown = 0; // Cool down period before allowing other special modes to take effect (currently just "orbitting").
-        Vector3 relativeVelocityRightDirection; // Right relative to current velocity and upDirection.
-        Vector3 relativeVelocityDownDirection; // Down relative to current velocity and upDirection.
-        Vector3 terrainAlertDebugPos, terrainAlertDebugDir, terrainAlertDebugPos2, terrainAlertDebugDir2; // Debug vector3's for drawing lines.
-        bool terrainAlertDebugDraw2 = false;
 
-        float turnRadius;
-        float bodyGravity = (float)PhysicsGlobals.GravitationalAcceleration;
-
-        float dynDynPresGRecorded = 1f; // Start at reasonable non-zero value.
-        float dynVelocityMagSqr = 1f; // Start at reasonable non-zero value.
-        float dynDecayRate = 1f; // Decay rate for dynamic measurements. Set to a half-life of 60s in Start.
-        float dynVelSmoothingCoef = 1f; // Decay rate for smoothing the dynVelocityMagSqr
-
-        public float TurnRadius
-        {
-            get { return turnRadius; }
-            private set { turnRadius = value; }
-        }
-
-        float maxLiftAcceleration;
-
-        public float MaxLiftAcceleration
-        {
-            get { return maxLiftAcceleration; }
-            private set { maxLiftAcceleration = value; }
-        }
-
-        //settings
-
-
-        // Max pitch
-        // - Don't pitch beyond this when gaining speed
-        // Max speed
-        // Default alt
-        // - Default behavior outside of combat
-        // Climb rate
-        // Climb speed
-        // - How AI transitions between altitudes
-        // Combat Alt
-        // Combat Speed
-        // - Maintain these in combat
-
-        // Use throttle/pitch to control:
-        // - Speed
-        // - Altitude
-        // - Climb rate
-
-
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_VehicleType"),//Vehicle type
-            UI_ChooseOption(options = new string[4] { "Stationary", "Land", "Water", "Amphibious" })]
-        public string SurfaceTypeName = "Land";
+        // values currently hard-coded since VTOL AI is adapted from surface AI, but should be removed/changed as AI behavior is improved
+        public string SurfaceTypeName = "Amphibious"; // hard code this for the moment until we have something better
+        public bool PoweredSteering = true;
+        public float MaxDrift = 180; 
 
         public AIUtils.VehicleMovementType SurfaceType
             => (AIUtils.VehicleMovementType)Enum.Parse(typeof(AIUtils.VehicleMovementType), SurfaceTypeName);
-
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MaxPitchAngle"),//Max pitch angle
-            UI_FloatRange(minValue = 1f, maxValue = 90f, stepIncrement = 1f, scene = UI_Scene.All)]
-        public float MaxPitchAngle = 30f;
-
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CombatAltitude"), //Combat Alt.
-            UI_FloatRange(minValue = 50f, maxValue = 5000f, stepIncrement = 50f, scene = UI_Scene.All)]
-        public float CombatAltitude = 100;
-
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CombatSpeed"),//Combat speed
-            UI_FloatRange(minValue = 5f, maxValue = 100f, stepIncrement = 1f, scene = UI_Scene.All)]
-        public float CombatSpeed = 40;
-
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DefaultAltitude"), //Default Alt.
-            UI_FloatRange(minValue = 50f, maxValue = 5000f, stepIncrement = 50f, scene = UI_Scene.All)]
-        public float defaultAltitude = 1000;
-
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MinAltitude"), //Min Altitude
-            UI_FloatRange(minValue = 10f, maxValue = 1000, stepIncrement = 10f, scene = UI_Scene.All)]
-        public float minAltitude = 200f;
-
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ClimbRate"),//Climb Rate
-            UI_FloatRange(minValue = 5f, maxValue = 100f, stepIncrement = 1f, scene = UI_Scene.All)]
-        public float ClimbRate = 20;
-
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MaxSpeed"),//Max speed
-            UI_FloatRange(minValue = 5f, maxValue = 200f, stepIncrement = 1f, scene = UI_Scene.All)]
-        public float MaxSpeed = 30;
-
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MaxDrift"),//Max drift
-            UI_FloatRange(minValue = 1f, maxValue = 180f, stepIncrement = 1f, scene = UI_Scene.All)]
-        public float MaxDrift = 10;
-
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPitch"),//Moving pitch
-            UI_FloatRange(minValue = -10f, maxValue = 40f, stepIncrement = .1f, scene = UI_Scene.All)]
-        public float TargetPitch = 20;
-
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MaxBankAngle"),// Max Bank angle
-            UI_FloatRange(minValue = 0f, maxValue = 90f, stepIncrement = 1f, scene = UI_Scene.All)]
-        public float MaxBankAngle = 0;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_SteerFactor"),//Steer Factor
             UI_FloatRange(minValue = 0.2f, maxValue = 20f, stepIncrement = .1f, scene = UI_Scene.All)]
@@ -184,13 +83,33 @@ namespace BDArmory.Modules
             UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = .1f, scene = UI_Scene.All)]
         public float steerDamping = 3;
 
-        //[KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Steering"),
-        //	UI_Toggle(enabledText = "Powered", disabledText = "Passive")]
-        public bool PoweredSteering = true;
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DefaultAltitude"), //Default Alt.
+            UI_FloatRange(minValue = 25f, maxValue = 5000f, stepIncrement = 50f, scene = UI_Scene.All)]
+        public float defaultAltitude = 300;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_BroadsideAttack"),//Attack vector
-            UI_Toggle(enabledText = "#LOC_BDArmory_BroadsideAttack_enabledText", disabledText = "#LOC_BDArmory_BroadsideAttack_disabledText")]//Broadside--Bow
-        public bool BroadsideAttack = false;
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CombatAltitude"), //Combat Alt.
+            UI_FloatRange(minValue = 25f, maxValue = 5000f, stepIncrement = 50f, scene = UI_Scene.All)]
+        public float CombatAltitude = 150;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MinAltitude"), //Min Altitude
+            UI_FloatRange(minValue = 10f, maxValue = 1000, stepIncrement = 10f, scene = UI_Scene.All)]
+        public float minAltitude = 100f;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MaxSpeed"),//Max speed
+            UI_FloatRange(minValue = 5f, maxValue = 200f, stepIncrement = 1f, scene = UI_Scene.All)]
+        public float MaxSpeed = 80;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CombatSpeed"),//Combat speed
+            UI_FloatRange(minValue = 5f, maxValue = 100f, stepIncrement = 1f, scene = UI_Scene.All)]
+        public float CombatSpeed = 40;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MaxPitchAngle"),//Max pitch angle
+            UI_FloatRange(minValue = 1f, maxValue = 90f, stepIncrement = 1f, scene = UI_Scene.All)]
+        public float MaxPitchAngle = 30f;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MaxBankAngle"),// Max Bank angle
+            UI_FloatRange(minValue = 0f, maxValue = 90f, stepIncrement = 1f, scene = UI_Scene.All)]
+        public float MaxBankAngle = 30;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MinEngagementRange"),//Min engagement range
             UI_FloatRange(minValue = 0f, maxValue = 6000f, stepIncrement = 100f, scene = UI_Scene.All)]
@@ -200,13 +119,9 @@ namespace BDArmory.Modules
             UI_FloatRange(minValue = 500f, maxValue = 8000f, stepIncrement = 100f, scene = UI_Scene.All)]
         public float MaxEngagementRange = 4000;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, category = "DoubleSlider", guiName = "#LOC_BDArmory_TurnRadiusTwiddleFactorMin", advancedTweakable = true),//Turn radius twiddle factors (category seems to have no effect)
-            UI_FloatRange(minValue = 1f, maxValue = 5f, stepIncrement = 0.1f, scene = UI_Scene.All)]
-        public float turnRadiusTwiddleFactorMin = 2.0f; // Minimum and maximum twiddle factors for the turn radius. Depends on roll rate and how the vessel behaves under fire.
-
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, category = "DoubleSlider", guiName = "#LOC_BDArmory_TurnRadiusTwiddleFactorMax", advancedTweakable = true),//Turn radius twiddle factors (category seems to have no effect)
-            UI_FloatRange(minValue = 1f, maxValue = 5f, stepIncrement = 0.1f, scene = UI_Scene.All)]
-        public float turnRadiusTwiddleFactorMax = 3.0f; // Minimum and maximum twiddle factors for the turn radius. Depends on roll rate and how the vessel behaves under fire.
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_BroadsideAttack"),//Attack vector
+            UI_Toggle(enabledText = "#LOC_BDArmory_BroadsideAttack_enabledText", disabledText = "#LOC_BDArmory_BroadsideAttack_disabledText")]//Broadside--Bow
+        public bool BroadsideAttack = false;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ManeuverRCS"),//RCS active
             UI_Toggle(enabledText = "#LOC_BDArmory_ManeuverRCS_enabledText", disabledText = "#LOC_BDArmory_ManeuverRCS_disabledText", scene = UI_Scene.All),]//Maneuvers--Combat
@@ -427,7 +342,7 @@ namespace BDArmory.Modules
                 Takeoff();
             }
             // pilot logic figures out what we're supposed to be doing, and sets the base state
-            PilotLogic2(); // TODO: pitch based on targetVelocity, roll always 0
+            PilotLogic(); // TODO: pitch based on targetVelocity, roll always 0
             // situational awareness modifies the base as best as it can (evasive mainly)
             Tactical();
             CheckLandingGear();
