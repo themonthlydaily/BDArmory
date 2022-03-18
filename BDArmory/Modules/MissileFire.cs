@@ -2776,7 +2776,28 @@ namespace BDArmory.Modules
                         }
                 }
 
-                if (CurrentMissile.inCargoBay)
+                if (uint.Parse(CurrentMissile.customBayGroup) > 0) // Missile uses a custom bay, open it to fire
+                {
+                    uint customBayGroup = uint.Parse(CurrentMissile.customBayGroup);
+                    if (!baysOpened.Contains(customBayGroup)) // We haven't opened this bay yet
+                    {
+                        vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)customBayGroup]);
+                        openingBays = true;
+                        baysOpened.Add(customBayGroup);
+                    }
+                    else
+                    {
+                        foreach (var bay in baysOpened.Where(e => e <= 16).ToList()) // Close other custom bays that might be open 
+                        {
+                            if (bay != customBayGroup)
+                            {
+                                vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)bay]);
+                                baysOpened.Remove(bay); // Bay is no longer open
+                            }
+                        }
+                    }
+                }
+                else if (CurrentMissile.inCargoBay)
                 {
                     using (var bay = VesselModuleRegistry.GetModules<ModuleCargoBay>(vessel).GetEnumerator())
                         while (bay.MoveNext())
@@ -2814,27 +2835,6 @@ namespace BDArmory.Modules
                                 }
                             }
                         }
-                }
-                else if (uint.Parse(CurrentMissile.customBayGroup) > 0) // Missile uses a custom bay, open it to fire
-                {
-                    uint customBayGroup = uint.Parse(CurrentMissile.customBayGroup);
-                    if (!baysOpened.Contains(customBayGroup)) // We haven't opened this bay yet
-                    {
-                        vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)customBayGroup]);
-                        openingBays = true;
-                        baysOpened.Add(customBayGroup);
-                    }
-                    else
-                    {
-                        foreach (var bay in baysOpened.Where(e => e <= 16).ToList()) // Close other custom bays that might be open 
-                        {
-                            if (bay != customBayGroup)
-                            {
-                                vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)bay]);
-                                baysOpened.Remove(bay); // Bay is no longer open
-                            }
-                        }
-                    }
                 }
                 else
                 {
