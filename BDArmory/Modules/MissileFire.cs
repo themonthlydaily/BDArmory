@@ -3792,7 +3792,7 @@ namespace BDArmory.Modules
 
                         if (candidateClass == WeaponClasses.DefenseLaser)
                         {
-                            ModuleWeapon Laser = item.Current as ModuleWeapon; 
+                            ModuleWeapon Laser = item.Current as ModuleWeapon;
                             float candidateYTraverse = Laser.yawRange;
                             float candidatePTraverse = Laser.maxPitch;
                             bool electrolaser = Laser.electroLaser;
@@ -3935,7 +3935,7 @@ namespace BDArmory.Modules
 
                                 candidateDetDist = mm.warheadYield;
                                 //candidateAccel = (((MissileLauncher)item.Current).thrust / ((MissileLauncher)item.Current).part.mass); 
-                                candidateAccel = 1; 
+                                candidateAccel = 1;
                                 candidatePriority = Mathf.RoundToInt(mm.priority);
 
                                 if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue;
@@ -3943,7 +3943,7 @@ namespace BDArmory.Modules
                                     continue; //keep higher priority weapon
                                 if (candidateDetDist + candidateAccel > targetWeaponTDPS)
                                 {
-                                    candidateTDPS = candidateDetDist + candidateAccel; 
+                                    candidateTDPS = candidateDetDist + candidateAccel;
                                 }
                             }
                             if (distance < ((EngageableWeapon)item.Current).engageRangeMin)
@@ -4237,9 +4237,9 @@ namespace BDArmory.Modules
                                 candidateTDPS = 5000;
                                 candidateDetDist = mm.warheadYield;
                                 //candidateTurning = ((MissileLauncher)item.Current).maxTurnRateDPS; //for anti-aircraft, prioritize detonation dist and turn capability
-                                candidatePriority = Mathf.RoundToInt(mm.priority);                               
+                                candidatePriority = Mathf.RoundToInt(mm.priority);
 
-                                if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue; 
+                                if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue;
                                 if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                     continue; //keep higher priority weapon
 
