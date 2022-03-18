@@ -656,7 +656,7 @@ namespace BDArmory.Modules
                                         if ((gun.yawRange == 0 || gun.maxPitch == gun.minPitch) && gun.FiringSolutionVector != null)
                                         {
                                             aimingMode = true;
-                                            if (Vector3.Angle((Vector3)gun.FiringSolutionVector, Vector3.ProjectOnPlane(targetDirection, upDir)) < MaxPitchAngle)
+                                            if (Vector3.Angle(vesselTransform.up, Vector3.ProjectOnPlane((Vector3)gun.FiringSolutionVector, vesselTransform.right)) < MaxPitchAngle)
                                                 targetDirection = (Vector3)gun.FiringSolutionVector;
                                         }
                                         break;
