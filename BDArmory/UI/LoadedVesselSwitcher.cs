@@ -260,10 +260,10 @@ namespace BDArmory.UI
                     // Utils.fireNextNonEmptyStage(weaponManager.vessel);
                     // Trigger AG10 and then activate all engines if nothing was set on AG10.
                     weaponManager.vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[10]);
-                    if (!BDArmorySettings.NO_ENGINES && VesselSpawner.Instance.CountActiveEngines(weaponManager.vessel) == 0)
+                    if (!BDArmorySettings.NO_ENGINES && SpawnUtils.CountActiveEngines(weaponManager.vessel) == 0)
                     {
-                        if (VesselSpawner.Instance.CountActiveEngines(weaponManager.vessel) == 0)
-                            VesselSpawner.Instance.ActivateAllEngines(weaponManager.vessel);
+                        if (SpawnUtils.CountActiveEngines(weaponManager.vessel) == 0)
+                            SpawnUtils.ActivateAllEngines(weaponManager.vessel);
                     }
                 }
                 else
@@ -757,10 +757,10 @@ namespace BDArmory.UI
                     {
                         // Trigger AG10 and then activate all engines if nothing was set on AG10.
                         wm.vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[10]);
-                        if (!BDArmorySettings.NO_ENGINES && VesselSpawner.Instance.CountActiveEngines(wm.vessel) == 0)
+                        if (!BDArmorySettings.NO_ENGINES && SpawnUtils.CountActiveEngines(wm.vessel) == 0)
                         {
-                            if (VesselSpawner.Instance.CountActiveEngines(wm.vessel) == 0)
-                                VesselSpawner.Instance.ActivateAllEngines(wm.vessel);
+                            if (SpawnUtils.CountActiveEngines(wm.vessel) == 0)
+                                SpawnUtils.ActivateAllEngines(wm.vessel);
                         }
                     }
                 }
