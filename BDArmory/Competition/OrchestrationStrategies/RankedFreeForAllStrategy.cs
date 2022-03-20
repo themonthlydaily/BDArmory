@@ -5,7 +5,7 @@ using BDArmory.Settings;
 using BDArmory.Competition.RemoteOrchestration;
 using static BDArmory.Competition.RemoteOrchestration.BDAScoreService;
 
-namespace BDArmory.Competition
+namespace BDArmory.Competition.OrchestrationStrategies
 {
     public class RankedFreeForAllStrategy : OrchestrationStrategy
     {
@@ -48,10 +48,7 @@ namespace BDArmory.Competition
             BDACompetitionMode.Instance.competitionStatus.Add(message);
 
             // Wait for the competition to actually start.
-            while (BDACompetitionMode.Instance.competitionStarting || BDACompetitionMode.Instance.sequencedCompetitionStarting)
-            {
-                yield return new WaitForFixedUpdate();
-            }
+            yield return new WaitWhile(() => BDACompetitionMode.Instance.competitionStarting || BDACompetitionMode.Instance.sequencedCompetitionStarting);
 
             if (!BDACompetitionMode.Instance.competitionIsActive)
             {
@@ -62,11 +59,14 @@ namespace BDArmory.Competition
             }
 
             // Wait for the competition to finish (limited duration and log dumping is handled directly by the competition now).
-            while (BDACompetitionMode.Instance.competitionIsActive)
-            {
-                yield return new WaitForSeconds(1);
-            }
+            yield return new WaitWhile(() => BDACompetitionMode.Instance.competitionIsActive);
+
+            CleanUp();
         }
 
+        public void CleanUp()
+        {
+            if (BDACompetitionMode.Instance.competitionIsActive) BDACompetitionMode.Instance.StopCompetition(); // Competition is done, so stop it and do the rest of the book-keeping.
+        }
     }
 }

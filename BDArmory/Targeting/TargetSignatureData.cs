@@ -178,7 +178,7 @@ namespace BDArmory.Targeting
         {
             get
             {
-                return new TargetSignatureData(Vector3.zero, Vector3.zero, Vector3.zero, false, 0);
+                return new TargetSignatureData(Vector3.zero, Vector3.zero, Vector3.zero, false, (float)RadarWarningReceiver.RWRThreatTypes.None);
             }
         }
 

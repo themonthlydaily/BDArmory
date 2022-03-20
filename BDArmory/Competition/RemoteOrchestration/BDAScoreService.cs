@@ -289,7 +289,7 @@ namespace BDArmory.Competition.RemoteOrchestration
             ClearScores();
 
             // run heat using tournament coordinator
-            var coordinator = TournamentCoordinator.BuildFromDescriptor(client.competition);
+            var coordinator = RemoteTournamentCoordinator.BuildFromDescriptor(client.competition);
             if( coordinator == null )
             {
                 Debug.Log("[BDArmory.BDAScoreService] Failed to build tournament coordinator");

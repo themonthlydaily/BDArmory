@@ -102,6 +102,8 @@ namespace BDArmory.Weapons
         public float heat;
         public bool isOverheated;
 
+		private bool isRippleFiring = false;//used to tell when weapon has started firing for initial ripple delay
+		
         private bool wasFiring;
         //used for knowing when to stop looped audio clip (when you're not shooting, but you were)
 
@@ -833,6 +835,7 @@ namespace BDArmory.Weapons
 
         IEnumerator IncrementRippleIndex(float delay)
         {
+			if (isRippleFiring) delay = 0;
             if (delay > 0)
             {
                 yield return new WaitForSeconds(delay);
@@ -1902,6 +1905,7 @@ namespace BDArmory.Weapons
                         if ((!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag))) && barrelIndex + 1 > fireTransforms.Length) //only advance ripple index if weapon isn't brustfire, has finished burst, or has fired with all barrels
                         {
                             StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
+							isRippleFiring = true;
                             if (barrelIndex + 1 > fireTransforms.Length)
                             {
                                 barrelIndex = 0;
@@ -1913,7 +1917,8 @@ namespace BDArmory.Weapons
                     {
                         if (!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag)))
                         {
-                            StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
+                            StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate)); //this is why ripplefire is slower, delay to stagger guns should only be being called once
+							isRippleFiring = true;
                         }
                     }
                 }
@@ -1982,6 +1987,7 @@ namespace BDArmory.Weapons
                                 if ((!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag))) && barrelIndex + 1 > fireTransforms.Length) //only advance ripple index if weapon isn't brustfire, has finished burst, or has fired with all barrels
                                 {
                                     StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
+									isRippleFiring = true;
                                     if (barrelIndex + 1 > fireTransforms.Length)
                                     {
                                         barrelIndex = 0;
@@ -1994,6 +2000,7 @@ namespace BDArmory.Weapons
                                 if (!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag)))
                                 {
                                     StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
+									isRippleFiring = true;
                                 }
                             }
                         }
@@ -2509,6 +2516,7 @@ namespace BDArmory.Weapons
                         if ((!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag))) && barrelIndex + 1 > fireTransforms.Length) //only advance ripple index if weapon isn't brustfire, has finished burst, or has fired with all barrels
                         {
                             StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
+							isRippleFiring = true;
                             if (barrelIndex + 1 > fireTransforms.Length)
                             {
                                 barrelIndex = 0;
@@ -2521,6 +2529,7 @@ namespace BDArmory.Weapons
                         if (!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag)))
                         {
                             StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
+							isRippleFiring = true;
                         }
                     }
                 }
@@ -2614,6 +2623,7 @@ namespace BDArmory.Weapons
                 return true;
             }
             StartCoroutine(IncrementRippleIndex(useRippleFire ? initialFireDelay * TimeWarp.CurrentRate : 0)); //if out of ammo (howitzers, say, or other weapon with internal ammo, move on to next weapon; maybe it still has ammo
+			isRippleFiring = true;
             return false;
         }
 
@@ -3595,6 +3605,7 @@ namespace BDArmory.Weapons
                     {
                         //StartCoroutine(IncrementRippleIndex(0));
                         StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
+						isRippleFiring = true;
                     }
                 }
                 else
@@ -3644,6 +3655,7 @@ namespace BDArmory.Weapons
                 if (weaponManager != null && weaponManager.gunRippleIndex == rippleIndex)
                 {
                     StartCoroutine(IncrementRippleIndex(0));
+					isRippleFiring = false;
                 }
                 if (eWeaponType == WeaponTypes.Laser)
                 {

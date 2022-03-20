@@ -7,7 +7,9 @@ using System.Text;
 using UnityEngine;
 
 using BDArmory.Extensions;
+using BDArmory.Competition;
 using BDArmory.Guidances;
+using BDArmory.Radar;
 using BDArmory.Settings;
 using BDArmory.Targeting;
 using BDArmory.UI;
@@ -604,7 +606,6 @@ namespace BDArmory.Control
         List<Vector3> waypoints = null;
         int activeWaypointIndex = -1;
         Vector3 lastTargetPosition;
-        List<float> waypointScores = null; // AUBRANIUM, this would be better located in the Scores in BDACompetitionMode.cs.
 
         LineRenderer lr;
         Vector3 flyingToPosition;
@@ -1278,7 +1279,7 @@ namespace BDArmory.Control
                             for (int i = 0; i < weaponManager.rwr.pingsData.Length; i++)
                             {
                                 TargetSignatureData threat = weaponManager.rwr.pingsData[i];
-                                if (threat.exists && threat.signalStrength == 4)
+                                if (threat.exists && threat.signalStrength == (float)RadarWarningReceiver.RWRThreatTypes.MissileLock)
                                 {
                                     missileThreatDetected = true;
                                     float dist = (weaponManager.rwr.pingWorldPositions[i] - vesselTransform.position).sqrMagnitude;
@@ -1320,7 +1321,6 @@ namespace BDArmory.Control
                 var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
                 var waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
                 var rangeToTarget = (vesselTransform.position - waypointPosition).magnitude;
-                SetStatus(string.Format("Waypoint {0} ({1})", activeWaypointIndex, rangeToTarget));
                 FlyWaypoints(s);
             }
             else if (!extending && weaponManager && targetVessel != null && targetVessel.transform != null)
@@ -1681,7 +1681,6 @@ namespace BDArmory.Control
         Vector3 debugPos;
         bool useVelRollTarget;
 
-        // AUBRANIUM, this shouldn't be public (I removed the attribute). Nothing should call it from outside the AI as it'll mess with the AI's internal logic.
         void FlyToPosition(FlightCtrlState s, Vector3 targetPosition, bool overrideThrottle = false)
         {
             if (!belowMinAltitude) // Includes avoidingTerrain
@@ -2081,7 +2080,7 @@ namespace BDArmory.Control
         #region Waypoints
         public void ClearWaypoints()
         {
-            Debug.Log("[BDArmory.BDModulePilotAI] Cleared waypoints");
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDModulePilotAI]: Cleared waypoints");
             this.waypoints = null;
             this.activeWaypointIndex = -1;
         }
@@ -2091,28 +2090,22 @@ namespace BDArmory.Control
             {
                 this.activeWaypointIndex = -1;
                 this.waypoints = null;
-                this.waypointScores = null;
                 return;
             }
-            Debug.Log(string.Format("[BDArmory.BDModulePilotAI] Set {0} waypoints", waypoints.Count));
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log(string.Format("[BDArmory.BDModulePilotAI]: Set {0} waypoints", waypoints.Count));
             this.waypoints = waypoints;
-            this.waypointScores = new List<float>();
             this.activeWaypointIndex = 0;
             CommandFollowWaypoints();
         }
         public bool IsFlyingWaypoints => command == PilotCommands.Waypoints && activeWaypointIndex >= 0 && waypoints != null && waypoints.Count > 0;
 
-        public List<float> GetWaypointScores() // AUBRANIUM, this should use CompetitionScores in BDACompetitionMode.cs.
-        {
-            return this.waypointScores;
-        }
         public int GetWaypointIndex()
         {
             return this.activeWaypointIndex;
         }
 
-        private double lastRange = 0;
-        private double dRange = 0;
+        private float lastRange = 0;
+        private float dRange = 0;
         void FlyWaypoints(FlightCtrlState s)
         {
             if (activeWaypointIndex < 0 || waypoints == null || waypoints.Count == 0)
@@ -2124,20 +2117,20 @@ namespace BDArmory.Control
             var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
             var waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
             // vessel has arrived if its distance to the target is within a range threshold
-            var rangeToTarget = (vesselTransform.position - waypointPosition).magnitude;
+            var rangeToTarget = (float)(vesselTransform.position - waypointPosition).magnitude;
             dRange = rangeToTarget - lastRange;
             //Debug.Log(string.Format("[BDArmory.BDModulePilotAI] Distance from {0}, {1} to {2}, {3} is {4} ({5})", vessel.latitude, vessel.longitude, waypoint.x, waypoint.y, rangeToTarget, dRange));
             if (dRange > 0 && rangeToTarget < 500)
             {
                 // moving away, proceed to next point
-                Debug.Log(string.Format("[BDArmory.BDModulePilotAI] Reached waypoint {0} with range {1}", activeWaypointIndex, rangeToTarget));
-                this.waypointScores.Add((float)rangeToTarget); // AUBRANIUM, this should use CompetitionScores in BDACompetitionMode.cs
-                this.activeWaypointIndex += 1;
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log(string.Format("[BDArmory.BDModulePilotAI]: Reached waypoint {0} with range {1}", activeWaypointIndex, rangeToTarget));
+                BDACompetitionMode.Instance.Scores.RegisterWaypointReached(vessel.vesselName, activeWaypointIndex, rangeToTarget);
+                ++activeWaypointIndex;
                 lastRange = 999;
                 dRange = 0;
                 if (activeWaypointIndex >= waypoints.Count)
                 {
-                    Debug.Log("[BDArmory.BDModulePilotAI] Waypoints complete");
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDModulePilotAI]: Waypoints complete");
                     waypoints = null;
                     ReleaseCommand();
                     return;
@@ -2149,21 +2142,7 @@ namespace BDArmory.Control
                 }
             }
             lastRange = rangeToTarget;
-            FlyToPosition(s, waypointPosition, false);
-        }
-
-        // AUBRANIUM, FlyToNext is no longer called, can we remove it or do you have other plans for it?
-        private void FlyToNext(FlightCtrlState s)
-        {
-            if (activeWaypointIndex < 0 || waypoints == null || activeWaypointIndex >= waypoints.Count)
-            {
-                Debug.Log("[BDArmory.BDModulePilotAI] Skipping FlyToNext without valid waypoint data");
-                return;
-            }
-            // compute Vector3 from waypoint lat/lng/alt and command fly-to
-            var waypoint = waypoints[activeWaypointIndex];
-            var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
-            var waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
+            SetStatus($"Waypoint {activeWaypointIndex} ({rangeToTarget:F0}m)");
             FlyToPosition(s, waypointPosition, false);
         }
         #endregion

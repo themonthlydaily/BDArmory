@@ -314,8 +314,8 @@ namespace BDArmory.Competition.VesselSpawning
                     catch { vessel = null; }
                     if (vessel == null)
                     {
-                        var craftName = craftUrl.Substring(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", spawnConfig.folder).Length + 1);
-                        Debug.LogWarning("[BDArmory.CircularSpawning]: Failed to spawn craft " + craftName);
+                        var craftName = Path.GetFileNameWithoutExtension(craftUrl);
+                        Debug.LogWarning("[BDArmory.CircularSpawning]: Failed to spawn craft " + craftUrl);
                         failedVessels += "\n  -  " + craftName;
                         continue;
                     }

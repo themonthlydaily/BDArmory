@@ -23,6 +23,7 @@ namespace BDArmory.Radar
 
         public enum RWRThreatTypes
         {
+            None = -1,
             SAM = 0,
             Fighter = 1,
             AWACS = 2,

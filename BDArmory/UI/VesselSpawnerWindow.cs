@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
+using BDArmory.Competition.OrchestrationStrategies;
+using BDArmory.Competition.SpawnStrategies;
 using BDArmory.Competition.VesselSpawning;
 using BDArmory.Competition;
 using BDArmory.Settings;
@@ -564,6 +566,56 @@ namespace BDArmory.UI
                             }
                         }
                         break;
+                }
+            }
+
+            if (GUI.Button(SLineRect(++line), (BDArmorySettings.SHOW_WAYPOINTS_OPTIONS ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_WaypointsOptions"), BDArmorySettings.SHOW_WAYPOINTS_OPTIONS ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))//Show/hide waypoints section
+            {
+                BDArmorySettings.SHOW_WAYPOINTS_OPTIONS = !BDArmorySettings.SHOW_WAYPOINTS_OPTIONS;
+            }
+            if (BDArmorySettings.SHOW_WAYPOINTS_OPTIONS)
+            {
+                // FIXME This is a hack to interface with the Waypoint Spawn Strategy, which isn't written to play nice with local usage.
+                GUI.Label(SLeftSliderRect(++line), $"Waypoint Altitude: ({BDArmorySettings.WAYPOINTS_ALTITUDE:F0}m)", leftLabel);
+                BDArmorySettings.WAYPOINTS_ALTITUDE = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.WAYPOINTS_ALTITUDE, 50f, 1000f), 50f);
+
+                if (GUI.Button(SLineRect(++line), "Test waypoints", BDArmorySetup.BDGuiSkin.button))
+                {
+                    if (TournamentCoordinator.Instance.IsRunning) TournamentCoordinator.Instance.Stop();
+
+                    TournamentCoordinator.Instance.Configure(new SpawnConfigStrategy(
+                        new SpawnConfig(
+                            1,
+                            28f,// BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
+                            -39f,// BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
+                            BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+                            BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
+                            BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
+                            BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
+                            true,
+                            BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS,
+                            BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS,
+                            null,
+                            null,
+                            BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION)
+                        ),
+                        new WaypointFollowingStrategy(
+                            new List<WaypointFollowingStrategy.Waypoint> {
+                                new WaypointFollowingStrategy.Waypoint(28.33f, -39.11f, BDArmorySettings.WAYPOINTS_ALTITUDE),
+                                new WaypointFollowingStrategy.Waypoint(28.83f, -38.06f, BDArmorySettings.WAYPOINTS_ALTITUDE),
+                                new WaypointFollowingStrategy.Waypoint(29.54f, -38.68f, BDArmorySettings.WAYPOINTS_ALTITUDE),
+                                new WaypointFollowingStrategy.Waypoint(30.15f, -38.6f, BDArmorySettings.WAYPOINTS_ALTITUDE),
+                                new WaypointFollowingStrategy.Waypoint(30.83f, -38.87f, BDArmorySettings.WAYPOINTS_ALTITUDE),
+                                new WaypointFollowingStrategy.Waypoint(30.73f, -39.6f, BDArmorySettings.WAYPOINTS_ALTITUDE),
+                                new WaypointFollowingStrategy.Waypoint(30.9f, -40.23f, BDArmorySettings.WAYPOINTS_ALTITUDE),
+                                new WaypointFollowingStrategy.Waypoint(30.83f, -41.26f, BDArmorySettings.WAYPOINTS_ALTITUDE)
+                            }
+                        ),
+                        CircularSpawning.Instance
+                    );
+
+                    // Run the waypoint competition.
+                    TournamentCoordinator.Instance.Run();
                 }
             }
 

@@ -1,7 +1,8 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
+
 using BDArmory.Competition.RemoteOrchestration;
-namespace BDArmory.Competition
+
+namespace BDArmory.Competition.OrchestrationStrategies
 {
     public interface OrchestrationStrategy
     {
@@ -14,5 +15,10 @@ namespace BDArmory.Competition
         /// <param name="service"></param>
         /// <returns></returns>
         public IEnumerator Execute(BDAScoreClient client, BDAScoreService service);
+
+        /// <summary>
+        /// Perform any necessary cleanup if the Execute coroutine is interrupted early.
+        /// </summary>
+        public void CleanUp();
     }
 }

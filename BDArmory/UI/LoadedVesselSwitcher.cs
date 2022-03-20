@@ -257,7 +257,14 @@ namespace BDArmory.UI
                 if (_autoPilotEnabled)
                 {
                     weaponManager.AI.ActivatePilot();
-                    VesselUtils.fireNextNonEmptyStage(weaponManager.vessel);
+                    // Utils.fireNextNonEmptyStage(weaponManager.vessel);
+                    // Trigger AG10 and then activate all engines if nothing was set on AG10.
+                    weaponManager.vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[10]);
+                    if (!BDArmorySettings.NO_ENGINES && SpawnUtils.CountActiveEngines(weaponManager.vessel) == 0)
+                    {
+                        if (SpawnUtils.CountActiveEngines(weaponManager.vessel) == 0)
+                            SpawnUtils.ActivateAllEngines(weaponManager.vessel);
+                    }
                 }
                 else
                 {
@@ -442,7 +449,7 @@ namespace BDArmory.UI
                                 if (BDTISetup.Instance.ColorAssignments.ContainsKey(teamManager.Item1))
                                 {
                                     BDTISetup.TILabel.normal.textColor = BDTISetup.Instance.ColorAssignments[teamManager.Item1];
-                                }                                                                                                                                          
+                                }
                                 GUI.Label(new Rect(_margin, height, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 2 * _margin, _buttonHeight), $"{teamManager.Item1}:" + (weaponManager.Team.Neutral ? (weaponManager.Team.Name != "Neutral" ? "(Neutral)" : "") : ""), BDTISetup.TILabel);
 
                                 teamNameShowing = true;
@@ -744,7 +751,19 @@ namespace BDArmory.UI
                 Rect aiButtonRect = new Rect(_margin + vesselButtonWidth + _offset + 2 * _buttonHeight, height, _buttonHeight,
                     _buttonHeight);
                 if (GUI.Button(aiButtonRect, "P", aiStyle))
+                {
                     wm.AI.TogglePilot();
+                    if (Event.current.button == 1 && !wm.AI.pilotEnabled) // Right click, trigger AG10 / activate engines
+                    {
+                        // Trigger AG10 and then activate all engines if nothing was set on AG10.
+                        wm.vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[10]);
+                        if (!BDArmorySettings.NO_ENGINES && SpawnUtils.CountActiveEngines(wm.vessel) == 0)
+                        {
+                            if (SpawnUtils.CountActiveEngines(wm.vessel) == 0)
+                                SpawnUtils.ActivateAllEngines(wm.vessel);
+                        }
+                    }
+                }
             }
 
             //team toggle
@@ -1028,6 +1047,9 @@ namespace BDArmory.UI
                                     float HP = 0;
                                     float WreckFactor = 0;
                                     var AI = VesselModuleRegistry.GetBDModulePilotAI(v.Current, true);
+                                    
+                                    // If we're running a waypoints competition, only focus on vessels still running waypoints.
+                                    if (BDACompetitionMode.Instance.competitionType == CompetitionType.WAYPOINTS && AI != null && AI.currentCommand != Control.PilotCommands.Waypoints) continue;
 
                                     HP = (wms.Current.currentHP / wms.Current.totalHP) * 100;
                                     if (HP < 100)

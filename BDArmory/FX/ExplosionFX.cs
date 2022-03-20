@@ -472,6 +472,7 @@ namespace BDArmory.FX
                         }
                         if (FlightGlobals.currentMainBody != null && hit.collider.gameObject == FlightGlobals.currentMainBody.gameObject) return false; // Terrain hit. Full absorption. Should avoid NREs in the following.
                         var partHP = partHit.Damage();
+						if (part.name.ToLower().Contains("armor")) partHP = 100;
                         var partArmour = partHit.GetArmorThickness();
                         var RA = partHit.FindModuleImplementing<ModuleReactiveArmor>();
                         if (RA != null)
