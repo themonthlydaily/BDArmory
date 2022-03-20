@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
+using BDArmory.Competition.OrchestrationStrategies;
 using BDArmory.Competition.SpawnStrategies;
 using BDArmory.Competition.VesselSpawning;
 using BDArmory.Competition;

@@ -8,7 +8,7 @@ using BDArmory.Core;
 using BDArmory.UI;
 using UnityEngine;
 
-namespace BDArmory.Competition
+namespace BDArmory.Competition.OrchestrationStrategies
 {
     public class WaypointFollowingStrategy : OrchestrationStrategy
     {

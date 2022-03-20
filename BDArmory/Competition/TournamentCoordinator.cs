@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
+using BDArmory.Competition.OrchestrationStrategies;
 using BDArmory.Competition.SpawnStrategies;
 using BDArmory.Competition.VesselSpawning;
 
@@ -42,6 +43,7 @@ namespace BDArmory.Competition
             {
                 StopCoroutine(executing);
                 executing = null;
+                orchestrator.CleanUp();
             }
         }
 

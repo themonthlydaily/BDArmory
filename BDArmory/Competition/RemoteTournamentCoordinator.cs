@@ -2,12 +2,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using BDArmory.Competition.OrchestrationStrategies;
 using BDArmory.Competition.RemoteOrchestration;
 using BDArmory.Competition.SpawnStrategies;
 using BDArmory.Competition.VesselSpawning;
 using BDArmory.Core;
 using UnityEngine;
-using static BDArmory.Competition.WaypointFollowingStrategy;
+using static BDArmory.Competition.OrchestrationStrategies.WaypointFollowingStrategy;
 
 namespace BDArmory.Competition
 {
