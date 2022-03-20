@@ -133,7 +133,7 @@ namespace BDArmory.Competition
             };
             var orchestrationStrategy = new WaypointFollowingStrategy(waypoints);
             // var vesselSpawner = SingleVesselSpawning.Instance;
-            var vesselSpawner = CircularSpawning.Instance;
+            var vesselSpawner = CircularSpawning.Instance; // The CircularSpawning spawner handles single-vessel spawning using the SpawnConfig strategy and the SingleVesselSpawning spawner is not ready yet.
             return new RemoteTournamentCoordinator(spawnStrategy, orchestrationStrategy, vesselSpawner);
         }
 
