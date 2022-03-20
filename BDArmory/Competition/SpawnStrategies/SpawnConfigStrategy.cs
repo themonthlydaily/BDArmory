@@ -1,0 +1,36 @@
+using System.Collections;
+using UnityEngine;
+
+using BDArmory.Competition.VesselSpawning;
+
+namespace BDArmory.Competition.SpawnStrategies
+{
+    /// <summary>
+    /// A simple pass-through strategy to be able to use the current spawning functions properly.
+    /// </summary>
+    public class SpawnConfigStrategy : SpawnStrategy
+    {
+        private SpawnConfig spawnConfig;
+        private bool success = false;
+
+        public SpawnConfigStrategy(SpawnConfig spawnConfig) { this.spawnConfig = spawnConfig; }
+
+        public IEnumerator Spawn(VesselSpawner spawner)
+        {
+            yield return spawner.Spawn(spawnConfig);
+
+            if (!spawner.vesselSpawnSuccess)
+            {
+                Debug.Log($"[BDArmory.SpawnConfigStrategy]: Vessel spawning failed: {spawner.spawnFailureReason}");
+                yield break;
+            }
+
+            success = true;
+        }
+
+        public bool DidComplete()
+        {
+            return success;
+        }
+    }
+}

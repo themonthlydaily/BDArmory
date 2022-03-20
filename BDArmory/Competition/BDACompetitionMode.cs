@@ -516,6 +516,7 @@ namespace BDArmory.Competition
             return true;
         }
 
+        #region Tag
         public bool RegisterIsIT(string vesselName)
         {
             if (string.IsNullOrEmpty(vesselName) || !ScoreData.ContainsKey(vesselName))
@@ -567,10 +568,22 @@ namespace BDArmory.Competition
             }
             return true;
         }
-        
+        #endregion
+
+        #region Waypoints
         // AUBRANIUM, add waypoint helpers for the ScoringData waypoint fields here.
         // In principle, multiple sets of waypoints could be followed within a single competition (for a complicated competition) and the scores accumulated here.
         // Alternatively, you may want to be able to reset the waypoint scores within a single competition if they're being reported to the score service for each set of waypoints, in which case you'll want a function to do that too.
+        public bool RegisterWaypointReached(string vesselName, int waypointIndex, float distance)
+        {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
+            if (vesselName == null || !ScoreData.ContainsKey(vesselName)) return false;
+
+            ScoreData[vesselName].waypointsReached.Add(new ScoringData.WaypointReached(waypointIndex, distance, Planetarium.GetUniversalTime() - BDACompetitionMode.Instance.competitionStartTime));
+
+            return true;
+        }
+        #endregion
         #endregion
 
         public void LogResults(string CompetitionID, string message = "", string tag = "")
@@ -821,6 +834,12 @@ namespace BDArmory.Competition
                         logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: TIMESIT:" + player + ":" + ScoreData[player].tagTimesIt);
             }
 
+            // Waypoints
+            foreach (var player in Players)
+            {
+                logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: WAYPOINTS:" + player + ":" + string.Join(";", ScoreData[player].waypointsReached.Select(wp => wp.waypointIndex + ":" + wp.deviation.ToString("F2") + ":" + wp.timestamp.ToString("F2"))));
+            }
+
             // Dump the log results to a file
             var folder = Path.GetFullPath(Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "BDArmory", "Logs"));
             if (BDATournament.Instance.tournamentStatus == TournamentStatus.Running)
@@ -895,10 +914,14 @@ namespace BDArmory.Competition
         #endregion
 
         #region Waypoint
-        // AUBRANIUM, these aren't being used currently, but I think they should be used instead of managing the waypoint scores in BDModulePilotAI.cs.
-        public int waypoints = 0; // Number of waypoints this vessel reached
-        public float deviation = 0f; // Total deviation from waypoint centers
-        public float elapsedTime = 0f; // Elapsed time at death or course completion
+        public struct WaypointReached
+        {
+            public WaypointReached(int waypointIndex, float deviation, double timestamp) { this.waypointIndex = waypointIndex; this.deviation = deviation; this.timestamp = timestamp; }
+            public int waypointIndex; // Number of waypoints this vessel reached.
+            public float deviation; // Deviation from waypoint.
+            public double timestamp; // Timestamp of reaching waypoint.
+        }
+        public List<WaypointReached> waypointsReached = new List<WaypointReached>();
         #endregion
 
         #region Misc
@@ -920,6 +943,7 @@ namespace BDArmory.Competition
     public enum AliveState { Alive, CleanKill, HeadShot, KillSteal, AssistedKill, Dead };
     public enum GMKillReason { None, GM, OutOfAmmo, BigRedButton, LandedTooLong };
     public enum CompetitionStartFailureReason { None, OnlyOneTeam, TeamsChanged, TeamLeaderDisappeared, PilotDisappeared, Other };
+    public enum CompetitionType { FFA, SEQUENCED, WAYPOINTS };
 
 
     [KSPAddon(KSPAddon.Startup.Flight, false)]
@@ -930,11 +954,9 @@ namespace BDArmory.Competition
         #region Flags and variables
         // Score tracking flags and variables.
         public CompetitionScores Scores = new CompetitionScores(); // TODO Switch to using this for tracking scores instead.
-        public Dictionary<string, string> whoCleanShotWho = new Dictionary<string, string>();
-        public Dictionary<string, string> whoCleanShotWhoWithMissiles = new Dictionary<string, string>();
-        public Dictionary<string, string> whoCleanRammedWho = new Dictionary<string, string>();
 
         // Competition flags and variables
+        public CompetitionType competitionType = CompetitionType.FFA;
         public int CompetitionID; // time competition was started
         public double competitionStartTime = -1;
         public double MutatorResetTime = -1;
@@ -1298,6 +1320,7 @@ namespace BDArmory.Competition
         IEnumerator DogfightCompetitionModeRoutine(float distance)
         {
             competitionStarting = true;
+            competitionType = CompetitionType.FFA;
             startTag = true; // Tag entry condition, should be true even if tag is not currently enabled, so if tag is enabled later in the competition it will function
             competitionStatus.Add("Competition: Pilots are taking off.");
             var pilots = new Dictionary<BDTeam, List<IBDAIControl>>();
@@ -1371,7 +1394,7 @@ namespace BDArmory.Competition
                             {
                                 BulletHitFX.AttachFire(part.Current.transform.position, part.Current, BDArmorySettings.HOS_FIRE * 50, "GM", BDArmorySettings.COMPETITION_DURATION * 60, 1, true);
                             }
-                            if (BDArmorySettings.HOS_MASS  != 0)
+                            if (BDArmorySettings.HOS_MASS != 0)
                             {
                                 var MM = part.Current.FindModuleImplementing<ModuleMassAdjust>();
                                 if (MM == null)
@@ -1381,11 +1404,11 @@ namespace BDArmory.Competition
                                 MM.duration = BDArmorySettings.COMPETITION_DURATION * 60;
                                 MM.massMod += (float)(BDArmorySettings.HOS_MASS / pilot.vessel.Parts.Count); //evenly distribute mass change across entire vessel
                             }
-							if (BDArmorySettings.HOS_DMG != 1)
-							{
-								var HPT = part.Current.FindModuleImplementing<HitpointTracker>();
-								HPT.defenseMutator = (float)(1 / BDArmorySettings.HOS_DMG);
-							}
+                            if (BDArmorySettings.HOS_DMG != 1)
+                            {
+                                var HPT = part.Current.FindModuleImplementing<HitpointTracker>();
+                                HPT.defenseMutator = (float)(1 / BDArmorySettings.HOS_DMG);
+                            }
                             if (BDArmorySettings.HOS_THRUST != 100)
                             {
                                 using (var engine = VesselModuleRegistry.GetModuleEngines(pilot.vessel).GetEnumerator())
@@ -2159,6 +2182,7 @@ namespace BDArmory.Competition
                 yield break;
             }
             sequencedCompetitionStarting = true;
+            competitionType = CompetitionType.SEQUENCED;
             double startTime = Planetarium.GetUniversalTime();
             double nextStep = startTime;
 
@@ -2397,7 +2421,7 @@ namespace BDArmory.Competition
                                 }
                                 if (BDArmorySettings.ENABLE_HOS && !string.IsNullOrEmpty(BDArmorySettings.HALL_OF_SHAME))
                                 {
-                                    if(pilot.vessel.GetName() != BDArmorySettings.HALL_OF_SHAME) continue;
+                                    if (pilot.vessel.GetName() != BDArmorySettings.HALL_OF_SHAME) continue;
                                     if (BDArmorySettings.HOS_THRUST != 100)
                                     {
                                         using (var engine = VesselModuleRegistry.GetModuleEngines(pilot.vessel).GetEnumerator())
@@ -2758,6 +2782,7 @@ namespace BDArmory.Competition
         public void DoUpdate()
         {
             if (competitionStartTime < 0) return; // Note: this is the same condition as competitionIsActive and could probably be dropped.
+            if (competitionType == CompetitionType.WAYPOINTS) return; // Don't do anything below when running waypoints (for now).
             // Example usage of UpcomingCollisions(). Note that the timeToCPA values are only updated after an interval of half the current timeToCPA.
             // if (competitionIsActive)
             //     foreach (var upcomingCollision in UpcomingCollisions(100f).Take(3))
@@ -3016,8 +3041,8 @@ namespace BDArmory.Competition
                                 break;
                         }
                         Scores.RegisterDeath(player, GMKillReason.None, timeOfDeath);
-						pilotActions[player] = " is Dead";
-						var statusMessage = player;
+                        pilotActions[player] = " is Dead";
+                        var statusMessage = player;
                         if (BDArmorySettings.ENABLE_HOS && player == BDArmorySettings.HALL_OF_SHAME && !string.IsNullOrEmpty(BDArmorySetup.Instance.HoSTag))
                         {
                             statusMessage += $" ({BDArmorySetup.Instance.HoSTag})";

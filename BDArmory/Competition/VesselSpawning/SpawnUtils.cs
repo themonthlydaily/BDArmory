@@ -353,7 +353,10 @@ namespace BDArmory.Competition.VesselSpawning
             {
                 var overLand = (worldIndex != -1 ? FlightGlobals.Bodies[worldIndex] : FlightGlobals.currentMainBody).TerrainAltitude(latitude, longitude) > 0;
                 FlightGlobals.fetch.SetVesselPosition(worldIndex != -1 ? worldIndex : FlightGlobals.currentMainBody.flightGlobalsIndex, latitude, longitude, overLand ? Math.Max(5, altitude) : altitude, FlightGlobals.ActiveVessel.vesselType == VesselType.Plane ? 0 : 90, 0, true, overLand); // FIXME This should be using the vessel reference transform to determine the inclination. Also below.
-                FlightCamera.fetch.SetDistance(distance);
+                var flightCamera = FlightCamera.fetch;
+                flightCamera.SetDistance(distance);
+                var radialUnitVector = (flightCamera.transform.parent.position - FlightGlobals.currentMainBody.transform.position).normalized;
+                flightCamera.transform.parent.rotation = Quaternion.LookRotation(flightCamera.transform.parent.forward, radialUnitVector);
                 VehiclePhysics.Gravity.Refresh();
             }
             else

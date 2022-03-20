@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using BDArmory.Competition.RemoteOrchestration;
 using BDArmory.Modules;
+using BDArmory.Core;
 using BDArmory.UI;
 using UnityEngine;
 
@@ -25,13 +26,7 @@ namespace BDArmory.Competition
         }
 
         private List<Waypoint> waypoints;
-        private Vessel vessel;
-        private BDModulePilotAI pilot;
-
-        //private double expectedWaypointTraversalDuration = 20.0;
-        //private double expectedArrival;
-        //private double error = double.MaxValue;
-        //private double dError = -1.0;
+        private List<BDModulePilotAI> pilots;
 
         public WaypointFollowingStrategy(List<Waypoint> waypoints)
         {
@@ -40,47 +35,53 @@ namespace BDArmory.Competition
 
         public IEnumerator Execute(BDAScoreClient client, BDAScoreService service)
         {
-            Debug.Log("[BDArmory.WaypointFollowingStrategy] Started");
-            var startedAt = Planetarium.GetUniversalTime();
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.WaypointFollowingStrategy]: Started");
+            pilots = LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Select(wm => wm.vessel).Where(v => v != null && v.loaded).Select(v => VesselModuleRegistry.GetBDModulePilotAI(v)).Where(p => p != null).ToList();
+            PrepareCompetition();
 
-            var vessels = LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Select(wm => wm.vessel).ToList();
-            if( vessels.Any() )
-            {
-                this.vessel = vessels.First();
-            }
-            if ( vessel == null )
-            {
-                Debug.Log("[BDArmory.WaypointFollowingStrategy] Null vessel");
-                yield break;
-            }
-
-            if( !vessel.loaded )
-            {
-                Debug.Log("[BDArmory.WaypointFollowingStrategy] Vessel not loaded!");
-                yield break;
-            }
-
-            this.pilot = VesselModuleRegistry.GetBDModulePilotAI(vessel);
-            if( this.pilot == null )
-            {
-                Debug.Log("[BDArmory.WaypointFollowingStrategy] Failed to acquire pilot");
-                yield break;
-            }
-
+            // Configure the pilots' waypoints.
             var mappedWaypoints = waypoints.Select(e => new Vector3(e.latitude, e.longitude, e.altitude)).ToList();
-            Debug.Log(string.Format("[BDArmory.WaypointFollowingStrategy] Setting {0} waypoints", mappedWaypoints.Count));
-            this.pilot.SetWaypoints(mappedWaypoints);
+            BDACompetitionMode.Instance.competitionStatus.Add($"Starting waypoints competition {BDACompetitionMode.Instance.CompetitionID}.");
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log(string.Format("[BDArmory.WaypointFollowingStrategy]: Setting {0} waypoints", mappedWaypoints.Count));
+            foreach (var pilot in pilots)
+                pilot.SetWaypoints(mappedWaypoints);
 
-            yield return new WaitWhile(() => pilot != null && pilot.IsFlyingWaypoints && !(pilot.vessel.Landed || pilot.vessel.Splashed));
-
-            // AUBRANIUM, this needs to handle the case of pilot being null (if they kill themselves while running the waypoints), which is another reason for the waypoint scoring to use the Scores in BDACompetitionMode.cs
+            // Wait for the pilots to complete the course.
+            var startedAt = Planetarium.GetUniversalTime();
+            yield return new WaitWhile(() => pilots.Any(pilot => pilot != null && pilot.IsFlyingWaypoints && !(pilot.vessel.Landed || pilot.vessel.Splashed)));
             var endedAt = Planetarium.GetUniversalTime();
-            var elapsedTime = endedAt - startedAt;
-            var deviation = pilot.GetWaypointScores().Sum();
-            var waypointCount = pilot.GetWaypointIndex();
-            service.TrackWaypoint(vessel.GetName(), (float)elapsedTime, waypointCount, deviation);
 
-            Debug.Log(string.Format("[BDArmory.WaypointFollowingStrategy] Finished {0}, elapsed={1:0.00}, count={2}, deviation={3:0.00}", vessel.GetName(), elapsedTime, waypointCount, deviation));
+            BDACompetitionMode.Instance.competitionStatus.Add("Waypoints competition finished. Scores:");
+            foreach (var player in BDACompetitionMode.Instance.Scores.Players)
+            {
+                var waypointScores = BDACompetitionMode.Instance.Scores.ScoreData[player].waypointsReached;
+                var waypointCount = waypointScores.Count();
+                var deviation = waypointScores.Sum(w => w.deviation);
+                var elapsedTime = waypointCount == 0 ? endedAt - startedAt : waypointScores.Last().timestamp - waypointScores.First().timestamp;
+                if (service != null) service.TrackWaypoint(player, (float)elapsedTime, waypointCount, deviation);
+
+                BDACompetitionMode.Instance.competitionStatus.Add($"  - {player}: Time: {elapsedTime:F1}s, Waypoints reached: {waypointCount}, Deviation: {deviation}");
+                Debug.Log(string.Format("[BDArmory.WaypointFollowingStrategy]: Finished {0}, elapsed={1:0.00}, count={2}, deviation={3:0.00}", player, elapsedTime, waypointCount, deviation));
+            }
+
+            CleanUp();
+        }
+
+        void PrepareCompetition()
+        {
+            if (BDACompetitionMode.Instance.competitionIsActive) BDACompetitionMode.Instance.StopCompetition(); // Stop any currently active competition.
+            BDACompetitionMode.Instance.competitionIsActive = true; // Set the competition as now active so the competition start type is correct.
+            BDACompetitionMode.Instance.ResetCompetitionStuff(); // Reset a bunch of stuff related to competitions so they don't interfere.
+            BDACompetitionMode.Instance.competitionType = CompetitionType.WAYPOINTS;
+            BDACompetitionMode.Instance.Scores.ConfigurePlayers(pilots.Select(p => p.vessel).ToList());
+            if (BDArmorySettings.AUTO_ENABLE_VESSEL_SWITCHING)
+                LoadedVesselSwitcher.Instance.EnableAutoVesselSwitching(true);
+            Debug.Log("[BDArmory.BDACompetitionMode:" + BDACompetitionMode.Instance.CompetitionID.ToString() + "]: Starting Competition");
+        }
+
+        public void CleanUp()
+        {
+            if (BDACompetitionMode.Instance.competitionIsActive) BDACompetitionMode.Instance.StopCompetition(); // Competition is done, so stop it and do the rest of the book-keeping.
         }
     }
 }

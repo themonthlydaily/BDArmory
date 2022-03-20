@@ -143,8 +143,10 @@
     <Compile Include="Competition\SpawnStrategies\CircularSpawnStrategy.cs" />
     <Compile Include="Competition\SpawnStrategies\ListSpawnStrategy.cs" />
     <Compile Include="Competition\SpawnStrategies\PointSpawnStrategy.cs" />
+    <Compile Include="Competition\SpawnStrategies\SpawnConfigStrategy.cs" />
     <Compile Include="Competition\SpawnStrategies\SpawnStrategy.cs" />
     <Compile Include="Competition\TournamentCoordinator.cs" />
+    <Compile Include="Competition\RemoteTournamentCoordinator.cs" />
     <Compile Include="Competition\VesselSpawning\CircularSpawning.cs" />
     <Compile Include="Competition\VesselSpawning\ContinuousSpawning.cs" />
     <Compile Include="Competition\VesselSpawning\SingleVesselSpawning.cs" />
