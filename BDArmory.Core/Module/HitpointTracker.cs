@@ -554,7 +554,8 @@ namespace BDArmory.Core.Module
                     if (part.Modules.Contains("ModuleSelfSealingTank"))
                     {
                         var SST = part.Modules["ModuleSelfSealingTank"];
-                        Safetymass = SST.Fields["FBmass"].GetValue<float>(SST) + SST.Fields["FISmass"].GetValue<float>(SST);
+                        // Safetymass = SST.Fields["FBmass"].GetValue<float>(SST) + SST.Fields["FISmass"].GetValue<float>(SST); // SST.Fields["FBmass"] and SST.Fields["FISmass] are both null.
+                        Safetymass = SST.Fields.GetValue<float>("FBmass") + SST.Fields.GetValue<float>("FISmass");
                     }
                     partMass = part.mass - armorMass - HullMassAdjust - Safetymass;
                 }
@@ -717,8 +718,8 @@ namespace BDArmory.Core.Module
                 else
                 {
                     hitpoints = ArmorRemaining; // * armorVolume * 10;
-                    //hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
-					//armorpanel HP is panel integrity, as 'HP' is the slab of armor; having a secondary unused HP pool will only make armor massively more effective against explosions than it should due to how isInLineOfSight calculates intermediate parts
+                                                //hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
+                                                //armorpanel HP is panel integrity, as 'HP' is the slab of armor; having a secondary unused HP pool will only make armor massively more effective against explosions than it should due to how isInLineOfSight calculates intermediate parts
                 }
             }
             else
@@ -968,7 +969,7 @@ namespace BDArmory.Core.Module
                 Hardness = 300;
                 Strength = 200;
                 SafeUseTemp = 993;
-				Armor = 10;
+                Armor = 10;
                 if (ArmorPanel) Armor = 25;
             }
             var oldArmorMass = armorMass;
