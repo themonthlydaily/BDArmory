@@ -605,7 +605,6 @@ namespace BDArmory.Modules
         List<Vector3> waypoints = null;
         int activeWaypointIndex = -1;
         Vector3 lastTargetPosition;
-        List<float> waypointScores = null; // AUBRANIUM, this would be better located in the Scores in BDACompetitionMode.cs.
 
         LineRenderer lr;
         Vector3 flyingToPosition;
@@ -2090,21 +2089,15 @@ namespace BDArmory.Modules
             {
                 this.activeWaypointIndex = -1;
                 this.waypoints = null;
-                this.waypointScores = null;
                 return;
             }
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log(string.Format("[BDArmory.BDModulePilotAI]: Set {0} waypoints", waypoints.Count));
             this.waypoints = waypoints;
-            this.waypointScores = new List<float>();
             this.activeWaypointIndex = 0;
             CommandFollowWaypoints();
         }
         public bool IsFlyingWaypoints => command == PilotCommands.Waypoints && activeWaypointIndex >= 0 && waypoints != null && waypoints.Count > 0;
 
-        public List<float> GetWaypointScores() // AUBRANIUM, this should use CompetitionScores in BDACompetitionMode.cs.
-        {
-            return this.waypointScores;
-        }
         public int GetWaypointIndex()
         {
             return this.activeWaypointIndex;

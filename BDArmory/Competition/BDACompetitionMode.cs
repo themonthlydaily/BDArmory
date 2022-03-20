@@ -571,9 +571,6 @@ namespace BDArmory.Competition
         #endregion
 
         #region Waypoints
-        // AUBRANIUM, add waypoint helpers for the ScoringData waypoint fields here.
-        // In principle, multiple sets of waypoints could be followed within a single competition (for a complicated competition) and the scores accumulated here.
-        // Alternatively, you may want to be able to reset the waypoint scores within a single competition if they're being reported to the score service for each set of waypoints, in which case you'll want a function to do that too.
         public bool RegisterWaypointReached(string vesselName, int waypointIndex, float distance)
         {
             if (!BDACompetitionMode.Instance.competitionIsActive) return false;
