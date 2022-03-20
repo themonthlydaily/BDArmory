@@ -564,9 +564,17 @@ namespace BDArmory.Competition
             return true;
         }
 
-        // AUBRANIUM, add waypoint helpers for the ScoringData waypoint fields here.
-        // In principle, multiple sets of waypoints could be followed within a single competition (for a complicated competition) and the scores accumulated here.
-        // Alternatively, you may want to be able to reset the waypoint scores within a single competition if they're being reported to the score service for each set of waypoints, in which case you'll want a function to do that too.
+        #region Waypoints
+        public bool RegisterWaypointReached(string vesselName, int waypointIndex, float distance)
+        {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
+            if (vesselName == null || !ScoreData.ContainsKey(vesselName)) return false;
+
+            ScoreData[vesselName].waypointsReached.Add(new ScoringData.WaypointReached(waypointIndex, distance, Planetarium.GetUniversalTime() - BDACompetitionMode.Instance.competitionStartTime));
+
+            return true;
+        }
+        #endregion
         #endregion
 
         public void LogResults(string CompetitionID, string message = "", string tag = "")
@@ -817,6 +825,12 @@ namespace BDArmory.Competition
                         logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: TIMESIT:" + player + ":" + ScoreData[player].tagTimesIt);
             }
 
+            // Waypoints
+            foreach (var player in Players)
+            {
+                logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: WAYPOINTS:" + player + ":" + string.Join(";", ScoreData[player].waypointsReached.Select(wp => wp.waypointIndex + ":" + wp.deviation.ToString("F2") + ":" + wp.timestamp.ToString("F2"))));
+            }
+
             // Dump the log results to a file
             var folder = Path.GetFullPath(Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "BDArmory", "Logs"));
             if (BDATournament.Instance.tournamentStatus == TournamentStatus.Running)
@@ -891,10 +905,15 @@ namespace BDArmory.Competition
         #endregion
 
         #region Waypoint
-        // AUBRANIUM, these aren't being used currently, but I think they should be used instead of managing the waypoint scores in BDModulePilotAI.cs.
-        public int waypoints = 0; // Number of waypoints this vessel reached
-        public float deviation = 0f; // Total deviation from waypoint centers
-        public float elapsedTime = 0f; // Elapsed time at death or course completion
+        public struct WaypointReached
+        {
+            public WaypointReached(int waypointIndex, float deviation, double timestamp) { this.waypointIndex = waypointIndex; this.deviation = deviation; this.timestamp = timestamp; }
+            public int waypointIndex; // Number of waypoints this vessel reached.
+            public float deviation; // Deviation from waypoint.
+            public double timestamp; // Timestamp of reaching waypoint.
+        }
+        public List<WaypointReached> waypointsReached = new List<WaypointReached>();
+
         #endregion
 
         #region Misc
