@@ -1256,6 +1256,7 @@ namespace BDArmory.Competition
             competitionIsActive = false;
             sequencedCompetitionStarting = false;
             competitionStartTime = -1;
+            competitionType = CompetitionType.FFA;
             if (PhysicsGlobals.GraviticForceMultiplier != 1)
             {
                 lastGravityMultiplier = 1f;

@@ -1047,6 +1047,9 @@ namespace BDArmory.UI
                                     float HP = 0;
                                     float WreckFactor = 0;
                                     var AI = VesselModuleRegistry.GetBDModulePilotAI(v.Current, true);
+                                    
+                                    // If we're running a waypoints competition, only focus on vessels still running waypoints.
+                                    if (BDACompetitionMode.Instance.competitionType == CompetitionType.WAYPOINTS && AI != null && AI.currentCommand != Control.PilotCommands.Waypoints) continue;
 
                                     HP = (wms.Current.currentHP / wms.Current.totalHP) * 100;
                                     if (HP < 100)

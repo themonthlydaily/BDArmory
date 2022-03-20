@@ -57,7 +57,7 @@ namespace BDArmory.Competition
                 var waypointScores = BDACompetitionMode.Instance.Scores.ScoreData[player].waypointsReached;
                 var waypointCount = waypointScores.Count();
                 var deviation = waypointScores.Sum(w => w.deviation);
-                var elapsedTime = waypointCount == 0 ? endedAt - startedAt : waypointScores.Last().timestamp - waypointScores.First().timestamp;
+                var elapsedTime = waypointCount == 0 ? 0 : waypointScores.Last().timestamp - waypointScores.First().timestamp;
                 if (service != null) service.TrackWaypoint(player, (float)elapsedTime, waypointCount, deviation);
 
                 BDACompetitionMode.Instance.competitionStatus.Add($"  - {player}: Time: {elapsedTime:F1}s, Waypoints reached: {waypointCount}, Deviation: {deviation}");
