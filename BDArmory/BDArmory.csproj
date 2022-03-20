@@ -198,13 +198,13 @@
     <Compile Include="Evolution\WeaponManagerNudgeMutation.cs" />
     <Compile Include="Extensions\BodyExtensions.cs" />
     <Compile Include="Extensions\CrewExtensions.cs" />
-    <Compile Include="Extensions\DamageFX.cs" />
     <Compile Include="Extensions\PartExtensions.cs" />
     <Compile Include="Extensions\VesselExtensions.cs" />
     <Compile Include="FX\BDAGaplessParticleEmitter.cs" />
     <Compile Include="FX\BDAParticleSelfDestruct.cs" />
     <Compile Include="FX\BulletHitFX.cs" />
     <Compile Include="FX\CameraBulletRenderer.cs" />
+    <Compile Include="FX\DamageFX.cs" />
     <Compile Include="FX\DecalEmitterScript.cs" />
     <Compile Include="FX\DecalGaplessParticleEmitter.cs" />
     <Compile Include="FX\ExplosionFX.cs" />
