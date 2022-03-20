@@ -156,7 +156,8 @@ namespace BDArmory.UI
                     while (weapon.MoveNext())
                         {
                             if (weapon.Current == null) continue;
-                            if (weapon.Current.GetShortName() != selectedWeapon.GetShortName()) continue;
+                            if (weapon.Current.part.partName != selectedWeapon.part.partName) continue;
+							if (weapon.Current. GetShortName()!= selectedWeapon.GetShortName()) continue;
                             weapon.Current.ammoBelt = beltString;
                             if (!string.IsNullOrEmpty(beltString))
                             {
