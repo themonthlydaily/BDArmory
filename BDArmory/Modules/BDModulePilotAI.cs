@@ -1278,7 +1278,7 @@ namespace BDArmory.Modules
                             for (int i = 0; i < weaponManager.rwr.pingsData.Length; i++)
                             {
                                 TargetSignatureData threat = weaponManager.rwr.pingsData[i];
-                                if (threat.exists && threat.signalStrength == 4)
+                                if (threat.exists && threat.signalStrength == (float)RadarWarningReceiver.RWRThreatTypes.MissileLock)
                                 {
                                     missileThreatDetected = true;
                                     float dist = (weaponManager.rwr.pingWorldPositions[i] - vesselTransform.position).sqrMagnitude;
