@@ -8,6 +8,7 @@ using UnityEngine;
 
 using BDArmory.Armor;
 using BDArmory.Extensions;
+using BDArmory.Modules;
 using BDArmory.Settings;
 using BDArmory.Utils;
 
@@ -554,12 +555,9 @@ namespace BDArmory.Damage
                 if (isProcWing)
                 {
                     float Safetymass = 0;
-                    if (part.Modules.Contains("ModuleSelfSealingTank"))
-                    {
-                        var SST = part.Modules["ModuleSelfSealingTank"];
-                        // Safetymass = SST.Fields["FBmass"].GetValue<float>(SST) + SST.Fields["FISmass"].GetValue<float>(SST); // SST.Fields["FBmass"] and SST.Fields["FISmass] are both null.
-                        Safetymass = SST.Fields.GetValue<float>("FBmass") + SST.Fields.GetValue<float>("FISmass");
-                    }
+                    var SST = part.GetComponent<ModuleSelfSealingTank>();
+                    if (SST != null)
+                    { Safetymass = SST.FBmass + SST.FISmass; }
                     partMass = part.mass - armorMass - HullMassAdjust - Safetymass;
                 }
                 CalculateDryCost(); //recalc if modify event added a fueltank -resource swap, etc

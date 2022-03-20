@@ -197,9 +197,9 @@ namespace BDArmory.Modules
         [KSPField(advancedTweakable = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_AddedMass")]//safety systems mass
         public float partmass = 0f;
 
-        private float FBmass = 0f;
+        public float FBmass { get; private set; } = 0f;
+        public float FISmass { get; private set; } = 0f;
         private float ArmorMass = 0f;
-        private float FISmass = 0f;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FireBottles"),//Fire Bottles
         UI_FloatRange(minValue = 0, maxValue = 5, stepIncrement = 1, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
