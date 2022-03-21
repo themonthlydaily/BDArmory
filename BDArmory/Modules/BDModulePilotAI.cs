@@ -405,12 +405,12 @@ namespace BDArmory.Modules
         #region Terrain
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, category = "DoubleSlider", guiName = "#LOC_BDArmory_TurnRadiusTwiddleFactorMin", advancedTweakable = true,//Turn radius twiddle factors (category seems to have no effect)
             groupName = "pilotAI_Terrain", groupDisplayName = "#LOC_BDArmory_PilotAI_Terrain", groupStartCollapsed = true),
-            UI_FloatRange(minValue = 1f, maxValue = 5f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 0.1f, maxValue = 5f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float turnRadiusTwiddleFactorMin = 2.0f; // Minimum and maximum twiddle factors for the turn radius. Depends on roll rate and how the vessel behaves under fire.
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, category = "DoubleSlider", guiName = "#LOC_BDArmory_TurnRadiusTwiddleFactorMax", advancedTweakable = true,//Turn radius twiddle factors (category seems to have no effect)
             groupName = "pilotAI_Terrain", groupDisplayName = "#LOC_BDArmory_PilotAI_Terrain", groupStartCollapsed = true),
-            UI_FloatRange(minValue = 1f, maxValue = 5f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 0.1f, maxValue = 5f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float turnRadiusTwiddleFactorMax = 3.0f; // Minimum and maximum twiddle factors for the turn radius. Depends on roll rate and how the vessel behaves under fire.
         #endregion
 
