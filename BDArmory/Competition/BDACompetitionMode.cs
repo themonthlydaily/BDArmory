@@ -834,7 +834,8 @@ namespace BDArmory.Competition
             // Waypoints
             foreach (var player in Players)
             {
-                logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: WAYPOINTS:" + player + ":" + string.Join(";", ScoreData[player].waypointsReached.Select(wp => wp.waypointIndex + ":" + wp.deviation.ToString("F2") + ":" + wp.timestamp.ToString("F2"))));
+                if (ScoreData[player].waypointsReached.Count > 0)
+                    logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: WAYPOINTS:" + player + ":" + string.Join(";", ScoreData[player].waypointsReached.Select(wp => wp.waypointIndex + ":" + wp.deviation.ToString("F2") + ":" + wp.timestamp.ToString("F2"))));
             }
 
             // Dump the log results to a file
