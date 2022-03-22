@@ -26,6 +26,9 @@ namespace BDArmory.Competition.RemoteOrchestration
 
         public string competitionHash = "";
 
+        public string NPCPath = "";
+
+
         public bool pendingRequest = false;
 
         public CompetitionModel competition = null;
@@ -48,10 +51,11 @@ namespace BDArmory.Competition.RemoteOrchestration
             Debug.Log("[BDArmory.BDAScoreService] Client started with working directory: " + basePath);
             //this.baseUrl = "http://localhost:3000";
             this.baseUrl = "https://" + BDArmorySettings.REMOTE_ORCHESTRATION_BASE_URL;
-            this.basePath = basePath;
+            this.basePath = Path.GetFullPath(basePath); // Removes the 'KSP_x64_Data/../'
             this.service = service;
             this.vesselPath = basePath + "/" + hash;
             this.vesselStagingPath = basePath + "/" + hash + "/staging";
+            this.NPCPath = Path.Combine(basePath, "NPC");
             this.competitionHash = hash;
         }
 
@@ -478,6 +482,33 @@ namespace BDArmory.Competition.RemoteOrchestration
                 .ToArray();
             File.WriteAllLines(filename, modifiedLines);
             Debug.Log(string.Format("[BDArmory.BDAScoreClient] Saved craft for player {0}", vesselName));
+            if (vesselName.Contains(BDArmorySettings.REMOTE_ORCHESTRATION_NPC_SWAPPER)) //grab either ships or players that contain NPC identifier
+            {
+                SwapCraftFiles(vesselName); //doing this after initial load/editing to make sure nothing breaks by swapping earlier
+            }
+        }
+
+        public void SwapCraftFiles(string vesselname)
+        {
+            string filename = string.Format("{0}/{1}.craft", vesselPath, vesselname);
+
+            Debug.Log("[BDArmory.BDAScoreClient] Swapping existing craft in spawn directory " + vesselPath);
+            DirectoryInfo info = new DirectoryInfo(NPCPath);
+            FileInfo[] craftFiles = info.GetFiles("*.craft")
+                .Where(e => e.Extension == ".craft")
+                .ToArray();
+            int i;
+            i = (int)UnityEngine.Random.Range(0, craftFiles.Count() - 1);
+
+            string NPCfilename = string.Format("{0}/{1}", NPCPath, craftFiles[i].Name); //.craft included in the craftFiles[i].name
+            string[] NPClines = File.ReadAllLines(NPCfilename); //kludge, probably easier to just copy the file from NPC dir to the autospawn dir
+            string pattern = ".*ship = (.+)";
+            string[] modifiedLines = NPClines
+                .Select(e => Regex.Replace(e, pattern, "ship = " + vesselname))
+                .Where(e => !e.Contains("VESSELNAMING"))
+                .ToArray();
+            File.WriteAllLines(filename, modifiedLines);
+            Debug.Log(string.Format("[BDArmory.BDAScoreClient] Swapped craft for player {0}", vesselname));
         }
 
         /// <summary>
@@ -528,7 +559,7 @@ namespace BDArmory.Competition.RemoteOrchestration
         /// <param name="heat">heat model</param>
         public IEnumerator StopHeat(string hash, HeatModel heat)
         {
-            if( this.activeHeat == null )
+            if (this.activeHeat == null)
             {
                 Debug.Log("[BDArmory.BDAScoreClient] Attempted to stop a heat when none is active");
                 yield break;

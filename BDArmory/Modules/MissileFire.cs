@@ -1408,9 +1408,10 @@ namespace BDArmory.Modules
                     {
                         if (rwr && rwr.rwrEnabled && rwr.displayRWR)
                         {
+                            MissileLauncher ml = CurrentMissile as MissileLauncher;
                             for (int i = 0; i < rwr.pingsData.Length; i++)
                             {
-                                if (rwr.pingsData[i].exists && (rwr.pingsData[i].signalStrength == (float)RadarWarningReceiver.RWRThreatTypes.SAM || rwr.pingsData[i].signalStrength == (float)RadarWarningReceiver.RWRThreatTypes.Detection) && Vector3.Dot(rwr.pingWorldPositions[i] - missile.transform.position, missile.GetForwardTransform()) > 0)
+                                if (rwr.pingsData[i].exists && (ml.antiradTargets.Contains(rwr.pingsData[i].signalStrength)) && Vector3.Dot(rwr.pingWorldPositions[i] - missile.transform.position, missile.GetForwardTransform()) > 0)
                                 {
                                     BDGUIUtils.DrawTextureOnWorldPos(rwr.pingWorldPositions[i], BDArmorySetup.Instance.greenDiamondTexture, new Vector2(22, 22), 0);
                                 }
@@ -4570,7 +4571,7 @@ namespace BDArmory.Modules
                             {// make it so this only selects antirad when hostile radar
                                 for (int i = 0; i < rwr.pingsData.Length; i++)
                                 {
-                                    if (rwr.pingsData[i].signalStrength == (float)RadarWarningReceiver.RWRThreatTypes.SAM || rwr.pingsData[i].signalStrength == (float)RadarWarningReceiver.RWRThreatTypes.Detection)
+                                    if (Missile.antiradTargets.Contains(rwr.pingsData[i].signalStrength))
                                     {
                                         if ((rwr.pingWorldPositions[i] - guardTarget.CoM).sqrMagnitude < 20 * 20) //is current target a hostile radar source?
                                         {
@@ -4911,13 +4912,15 @@ namespace BDArmory.Modules
                         if (distanceToTarget < engageableWeapon.GetEngagementRangeMin()) return false;
                         // lock radar if needed
                         if (ml.TargetingMode == MissileBase.TargetingModes.Radar)
+                        {
+                            if (results.foundAntiRadiationMissile) return false; // Don't try to fire radar missiles while we have an incoming anti-rad missile
                             using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
                                 while (rd.MoveNext())
                                 {
                                     if (rd.Current != null || rd.Current.canLock)
                                         rd.Current.EnableRadar();
                                 }
-
+                        }
                         // check DLZ
                         MissileLaunchParams dlz = MissileLaunchParams.GetDynamicLaunchParams(ml, guardTarget.Velocity(), guardTarget.transform.position);
                         if (vessel.srfSpeed > ml.minLaunchSpeed && distanceToTarget < dlz.maxLaunchRange && distanceToTarget > dlz.minLaunchRange)
@@ -5078,9 +5081,11 @@ namespace BDArmory.Modules
 
                 if (missile.TargetingMode != MissileBase.TargetingModes.AntiRad) return;
 
+                MissileLauncher ml = CurrentMissile as MissileLauncher;
+
                 for (int i = 0; i < rwr.pingsData.Length; i++)
                 {
-                    if (rwr.pingsData[i].exists && (rwr.pingsData[i].signalStrength == (float)RadarWarningReceiver.RWRThreatTypes.SAM || rwr.pingsData[i].signalStrength == (float)RadarWarningReceiver.RWRThreatTypes.Detection))
+                    if (rwr.pingsData[i].exists && (ml.antiradTargets.Contains(rwr.pingsData[i].signalStrength)))
                     {
                         float angle = Vector3.Angle(rwr.pingWorldPositions[i] - missile.transform.position, missile.GetForwardTransform());
 
@@ -5416,6 +5421,19 @@ namespace BDArmory.Modules
                         //targetScanTimer = Mathf.Min(targetScanInterval, Time.time - targetScanInterval + 0.5f);
                         targetScanTimer -= targetScanInterval / 2;
                     }
+                }
+
+                if (results.foundAntiRadiationMissile)
+                {
+                    StartCoroutine(UnderAttackRoutine());
+
+                    // Turn off the radars
+                    using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
+                        while (rd.MoveNext())
+                        {
+                            if (rd.Current != null || rd.Current.canLock)
+                                rd.Current.DisableRadar();
+                        }
                 }
             }
             else

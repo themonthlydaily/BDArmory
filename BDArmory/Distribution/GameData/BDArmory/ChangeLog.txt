@@ -4,9 +4,22 @@
 - Fix CASE-2 ammo reduction when cloning part.
 - Fix laser battledaamge.
 - Fix DebugLines not disabling when toggled off.
+- Reorder custom bay toggle branch so it's not overwritten by airstream check (fixes custom cargo bay not being deployed).
+- Don't set noTarget to have a signal strength of 0 (gets interpreted as valid SAM RWR detection). Looks like this fixed Anti-Rad missiles not working properly.
+- Fix barrage mode fire rate decrease/guns never overheating.
+- Fix armor panels being too protective against HE.
+- Fix selection logic for missiles when targeting missiles.
+- Fix ammo belt exploit.
 IMPROVEMENTS
 - General:
 	- Add a 'Generate Clean Save' toggle for auto-loading to the KSC without generating a clean save (tournaments and evolution still generate a clean save).
+- AI:
+	- Don't treat passive (non-radar-guided) missiles outside visual range as incoming missile threats until they enter visual range.
+	- First working version of the VTOL AI: combines a modified surface AI with PIDs for forward and lateral speeds, altitude control and pitch, yaw and roll control.
+- WM:
+	- Extend MMG smartpick selection logic.
+	- Craft in guard mode will turn off their radars if they have an incoming anti-radiation missile within visual range.
+	- Don't warn targets in guard mode about missile launches outside their visual range.
 - Armor:
 	- Explosive Reactive Armor HP is now customizable.
 - Weapons:
@@ -14,13 +27,18 @@ IMPROVEMENTS
 	- Add explModelPath and explSoundPath to Sidam.
 	- Clean up rocket aiming, switch it to use the more accurate leap-frog numerical integrator and use ballistic aiming once the thrust period is over.
 	- Set laser weapons to use standard FX pipeline.
+	- Create new antiradTargetTypes variable for missiles that allows you to specify the RWR Threat Type that the anti-radiation missile should target. Default is 0,5 (SAM,Detection).
 - GameModes:
 	- Paintball Mode now affects Nukes.
 - Tournamements:
 	- Add checks to only adjust scores when a competition is active (fixes differences in the API scores due to timing issues).
 	- Use base64 encoded vessel names internally in the parser to avoid issues with craft naming (e.g., craft with ':' in the name).
+	- Adds NPC swapper functionality to remote orchestration tournaments.
 - RWP:
 	- Add Hall of Shame code.
+- Internal:
+	- Replace hard-coded RWR threat types with RWRThreatType reference.
+	- Remove reference to TargetingModeTerminal since TargetingMode is updated to be equal to TargetingModeTerminal once terminal guidance activates.
 
 v1.4.17.0
 FIXES
