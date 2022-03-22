@@ -2105,7 +2105,7 @@ namespace BDArmory.Modules
                     AdjustThrottle(targetSpeed, false, useAB);
                 }
 
-                if ((weaponManager.isChaffing || weaponManager.isFlaring) && weaponManager.incomingMissileVessel != null) // Missile evasion
+                if (weaponManager.incomingMissileVessel != null && (weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= weaponManager.cmThreshold)) // Missile evasion
                 {
                     if ((weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= 1.5f) && (!weaponManager.isChaffing)) // Missile is about to impact, pull a hard turn
                     {

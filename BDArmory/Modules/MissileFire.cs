@@ -4911,13 +4911,15 @@ namespace BDArmory.Modules
                         if (distanceToTarget < engageableWeapon.GetEngagementRangeMin()) return false;
                         // lock radar if needed
                         if (ml.TargetingMode == MissileBase.TargetingModes.Radar)
+                        {
+                            if (results.foundAntiRadiationMissile) return false; // Don't try to fire radar missiles while we have an incoming anti-rad missile
                             using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
                                 while (rd.MoveNext())
                                 {
                                     if (rd.Current != null || rd.Current.canLock)
                                         rd.Current.EnableRadar();
                                 }
-
+                        }
                         // check DLZ
                         MissileLaunchParams dlz = MissileLaunchParams.GetDynamicLaunchParams(ml, guardTarget.Velocity(), guardTarget.transform.position);
                         if (vessel.srfSpeed > ml.minLaunchSpeed && distanceToTarget < dlz.maxLaunchRange && distanceToTarget > dlz.minLaunchRange)
@@ -5418,6 +5420,19 @@ namespace BDArmory.Modules
                         //targetScanTimer = Mathf.Min(targetScanInterval, Time.time - targetScanInterval + 0.5f);
                         targetScanTimer -= targetScanInterval / 2;
                     }
+                }
+
+                if (results.foundAntiRadiationMissile)
+                {
+                    StartCoroutine(UnderAttackRoutine());
+
+                    // Turn off the radars
+                    using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
+                        while (rd.MoveNext())
+                        {
+                            if (rd.Current != null || rd.Current.canLock)
+                                rd.Current.DisableRadar();
+                        }
                 }
             }
             else
