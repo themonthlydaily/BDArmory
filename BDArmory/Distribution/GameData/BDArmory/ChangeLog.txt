@@ -9,6 +9,7 @@
 - Fix barrage mode fire rate decrease/guns never overheating.
 - Fix armor panels being too protective against HE.
 - Fix selection logic for missiles when targeting missiles.
+- Fix ammo belt exploit.
 IMPROVEMENTS
 - General:
 	- Add a 'Generate Clean Save' toggle for auto-loading to the KSC without generating a clean save (tournaments and evolution still generate a clean save).
@@ -32,6 +33,7 @@ IMPROVEMENTS
 - Tournamements:
 	- Add checks to only adjust scores when a competition is active (fixes differences in the API scores due to timing issues).
 	- Use base64 encoded vessel names internally in the parser to avoid issues with craft naming (e.g., craft with ':' in the name).
+	- Adds NPC swapper functionality to remote orchestration tournaments.
 - RWP:
 	- Add Hall of Shame code.
 - Internal:
