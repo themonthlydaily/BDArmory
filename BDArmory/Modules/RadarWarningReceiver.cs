@@ -21,6 +21,7 @@ namespace BDArmory.Modules
 
         public enum RWRThreatTypes
         {
+            None = -1,
             SAM = 0,
             Fighter = 1,
             AWACS = 2,
