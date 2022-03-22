@@ -90,8 +90,8 @@ namespace BDArmory.Competition
             //var latitude = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x;
             //var longitude = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y;
             var worldIndex = 1;
-            var latitude = 28.3f;
-            var longitude = -39.2f;
+            var latitude = 27.97f;
+            var longitude = -39.35f;
             var altitude = BDArmorySettings.VESSEL_SPAWN_ALTITUDE;
             var spawnRadius = BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR;
             // var spawnStrategy = new PointSpawnStrategy(craftUrl, latitude, longitude, 2*altitude, 315.0f);

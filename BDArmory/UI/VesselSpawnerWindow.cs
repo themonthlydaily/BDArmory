@@ -580,15 +580,15 @@ namespace BDArmory.UI
                 GUI.Label(SLeftSliderRect(++line), $"Waypoint Altitude: ({BDArmorySettings.WAYPOINTS_ALTITUDE:F0}m)", leftLabel);
                 BDArmorySettings.WAYPOINTS_ALTITUDE = Utils.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.WAYPOINTS_ALTITUDE, 50f, 1000f), 50f);
 
-                if (GUI.Button(SLineRect(++line), "Test waypoints", BDArmorySetup.BDGuiSkin.button))
+                if (GUI.Button(SLineRect(++line), "Run waypoints", BDArmorySetup.BDGuiSkin.button))
                 {
                     if (TournamentCoordinator.Instance.IsRunning) TournamentCoordinator.Instance.Stop();
 
                     TournamentCoordinator.Instance.Configure(new SpawnConfigStrategy(
                         new SpawnConfig(
                             1,
-                            28f,// BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
-                            -39f,// BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
+                            27.97f,// BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
+                            -39.35f,// BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
                             BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
                             BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                             BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
