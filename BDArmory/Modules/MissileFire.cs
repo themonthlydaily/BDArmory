@@ -1407,9 +1407,10 @@ namespace BDArmory.Modules
                     {
                         if (rwr && rwr.rwrEnabled && rwr.displayRWR)
                         {
+                            MissileLauncher ml = CurrentMissile as MissileLauncher;
                             for (int i = 0; i < rwr.pingsData.Length; i++)
                             {
-                                if (rwr.pingsData[i].exists && (rwr.pingsData[i].signalStrength == 0 || rwr.pingsData[i].signalStrength == 5) && Vector3.Dot(rwr.pingWorldPositions[i] - missile.transform.position, missile.GetForwardTransform()) > 0)
+                                if (rwr.pingsData[i].exists && (ml.antiradTargets.Contains(rwr.pingsData[i].signalStrength)) && Vector3.Dot(rwr.pingWorldPositions[i] - missile.transform.position, missile.GetForwardTransform()) > 0)
                                 {
                                     BDGUIUtils.DrawTextureOnWorldPos(rwr.pingWorldPositions[i], BDArmorySetup.Instance.greenDiamondTexture, new Vector2(22, 22), 0);
                                 }
@@ -2776,7 +2777,28 @@ namespace BDArmory.Modules
                         }
                 }
 
-                if (CurrentMissile.inCargoBay)
+                if (uint.Parse(CurrentMissile.customBayGroup) > 0) // Missile uses a custom bay, open it to fire
+                {
+                    uint customBayGroup = uint.Parse(CurrentMissile.customBayGroup);
+                    if (!baysOpened.Contains(customBayGroup)) // We haven't opened this bay yet
+                    {
+                        vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)customBayGroup]);
+                        openingBays = true;
+                        baysOpened.Add(customBayGroup);
+                    }
+                    else
+                    {
+                        foreach (var bay in baysOpened.Where(e => e <= 16).ToList()) // Close other custom bays that might be open 
+                        {
+                            if (bay != customBayGroup)
+                            {
+                                vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)bay]);
+                                baysOpened.Remove(bay); // Bay is no longer open
+                            }
+                        }
+                    }
+                }
+                else if (CurrentMissile.inCargoBay)
                 {
                     using (var bay = VesselModuleRegistry.GetModules<ModuleCargoBay>(vessel).GetEnumerator())
                         while (bay.MoveNext())
@@ -2814,27 +2836,6 @@ namespace BDArmory.Modules
                                 }
                             }
                         }
-                }
-                else if (uint.Parse(CurrentMissile.customBayGroup) > 0) // Missile uses a custom bay, open it to fire
-                {
-                    uint customBayGroup = uint.Parse(CurrentMissile.customBayGroup);
-                    if (!baysOpened.Contains(customBayGroup)) // We haven't opened this bay yet
-                    {
-                        vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)customBayGroup]);
-                        openingBays = true;
-                        baysOpened.Add(customBayGroup);
-                    }
-                    else
-                    {
-                        foreach (var bay in baysOpened.Where(e => e <= 16).ToList()) // Close other custom bays that might be open 
-                        {
-                            if (bay != customBayGroup)
-                            {
-                                vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)bay]);
-                                baysOpened.Remove(bay); // Bay is no longer open
-                            }
-                        }
-                    }
                 }
                 else
                 {
@@ -3792,7 +3793,7 @@ namespace BDArmory.Modules
 
                         if (candidateClass == WeaponClasses.DefenseLaser)
                         {
-                            ModuleWeapon Laser = item.Current as ModuleWeapon; 
+                            ModuleWeapon Laser = item.Current as ModuleWeapon;
                             float candidateYTraverse = Laser.yawRange;
                             float candidatePTraverse = Laser.maxPitch;
                             bool electrolaser = Laser.electroLaser;
@@ -3935,7 +3936,7 @@ namespace BDArmory.Modules
 
                                 candidateDetDist = mm.warheadYield;
                                 //candidateAccel = (((MissileLauncher)item.Current).thrust / ((MissileLauncher)item.Current).part.mass); 
-                                candidateAccel = 1; 
+                                candidateAccel = 1;
                                 candidatePriority = Mathf.RoundToInt(mm.priority);
 
                                 if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue;
@@ -3943,7 +3944,7 @@ namespace BDArmory.Modules
                                     continue; //keep higher priority weapon
                                 if (candidateDetDist + candidateAccel > targetWeaponTDPS)
                                 {
-                                    candidateTDPS = candidateDetDist + candidateAccel; 
+                                    candidateTDPS = candidateDetDist + candidateAccel;
                                 }
                             }
                             if (distance < ((EngageableWeapon)item.Current).engageRangeMin)
@@ -4237,9 +4238,9 @@ namespace BDArmory.Modules
                                 candidateTDPS = 5000;
                                 candidateDetDist = mm.warheadYield;
                                 //candidateTurning = ((MissileLauncher)item.Current).maxTurnRateDPS; //for anti-aircraft, prioritize detonation dist and turn capability
-                                candidatePriority = Mathf.RoundToInt(mm.priority);                               
+                                candidatePriority = Mathf.RoundToInt(mm.priority);
 
-                                if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue; 
+                                if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue;
                                 if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                     continue; //keep higher priority weapon
 
@@ -4569,7 +4570,7 @@ namespace BDArmory.Modules
                             {// make it so this only selects antirad when hostile radar
                                 for (int i = 0; i < rwr.pingsData.Length; i++)
                                 {
-                                    if (rwr.pingsData[i].signalStrength == 0 || rwr.pingsData[i].signalStrength == 5)
+                                    if (Missile.antiradTargets.Contains(rwr.pingsData[i].signalStrength))
                                     {
                                         if ((rwr.pingWorldPositions[i] - guardTarget.CoM).sqrMagnitude < 20 * 20) //is current target a hostile radar source?
                                         {
@@ -4910,13 +4911,15 @@ namespace BDArmory.Modules
                         if (distanceToTarget < engageableWeapon.GetEngagementRangeMin()) return false;
                         // lock radar if needed
                         if (ml.TargetingMode == MissileBase.TargetingModes.Radar)
+                        {
+                            if (results.foundAntiRadiationMissile) return false; // Don't try to fire radar missiles while we have an incoming anti-rad missile
                             using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
                                 while (rd.MoveNext())
                                 {
                                     if (rd.Current != null || rd.Current.canLock)
                                         rd.Current.EnableRadar();
                                 }
-
+                        }
                         // check DLZ
                         MissileLaunchParams dlz = MissileLaunchParams.GetDynamicLaunchParams(ml, guardTarget.Velocity(), guardTarget.transform.position);
                         if (vessel.srfSpeed > ml.minLaunchSpeed && distanceToTarget < dlz.maxLaunchRange && distanceToTarget > dlz.minLaunchRange)
@@ -5077,9 +5080,11 @@ namespace BDArmory.Modules
 
                 if (missile.TargetingMode != MissileBase.TargetingModes.AntiRad) return;
 
+                MissileLauncher ml = CurrentMissile as MissileLauncher;
+
                 for (int i = 0; i < rwr.pingsData.Length; i++)
                 {
-                    if (rwr.pingsData[i].exists && (rwr.pingsData[i].signalStrength == 0 || rwr.pingsData[i].signalStrength == 5))
+                    if (rwr.pingsData[i].exists && (ml.antiradTargets.Contains(rwr.pingsData[i].signalStrength)))
                     {
                         float angle = Vector3.Angle(rwr.pingWorldPositions[i] - missile.transform.position, missile.GetForwardTransform());
 
@@ -5415,6 +5420,19 @@ namespace BDArmory.Modules
                         //targetScanTimer = Mathf.Min(targetScanInterval, Time.time - targetScanInterval + 0.5f);
                         targetScanTimer -= targetScanInterval / 2;
                     }
+                }
+
+                if (results.foundAntiRadiationMissile)
+                {
+                    StartCoroutine(UnderAttackRoutine());
+
+                    // Turn off the radars
+                    using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
+                        while (rd.MoveNext())
+                        {
+                            if (rd.Current != null || rd.Current.canLock)
+                                rd.Current.DisableRadar();
+                        }
                 }
             }
             else

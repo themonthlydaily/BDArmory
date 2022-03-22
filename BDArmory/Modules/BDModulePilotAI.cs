@@ -1275,7 +1275,7 @@ namespace BDArmory.Modules
                             for (int i = 0; i < weaponManager.rwr.pingsData.Length; i++)
                             {
                                 TargetSignatureData threat = weaponManager.rwr.pingsData[i];
-                                if (threat.exists && threat.signalStrength == 4)
+                                if (threat.exists && threat.signalStrength == (float)RadarWarningReceiver.RWRThreatTypes.MissileLock)
                                 {
                                     missileThreatDetected = true;
                                     float dist = (weaponManager.rwr.pingWorldPositions[i] - vesselTransform.position).sqrMagnitude;
@@ -2105,7 +2105,7 @@ namespace BDArmory.Modules
                     AdjustThrottle(targetSpeed, false, useAB);
                 }
 
-                if ((weaponManager.isChaffing || weaponManager.isFlaring) && weaponManager.incomingMissileVessel != null) // Missile evasion
+                if (weaponManager.incomingMissileVessel != null && (weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= weaponManager.cmThreshold)) // Missile evasion
                 {
                     if ((weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= 1.5f) && (!weaponManager.isChaffing)) // Missile is about to impact, pull a hard turn
                     {
