@@ -2333,7 +2333,7 @@ namespace BDArmory.Modules
         {
             if (!vessel.LandedOrSplashed)
             {
-                if (vessel.radarAltitude > 50.0f)
+                if (vessel.radarAltitude > 25.0f)
                     vessel.ActionGroups.SetGroup(KSPActionGroup.Gear, false);
                 else
                     vessel.ActionGroups.SetGroup(KSPActionGroup.Gear, true);

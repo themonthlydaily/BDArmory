@@ -333,6 +333,18 @@ namespace BDArmory.Competition.VesselSpawning
         float originalCameraNearClipPlane;
         Coroutine delayedShowSpawnPointCoroutine;
         private readonly WaitForFixedUpdate waitForFixedUpdate = new WaitForFixedUpdate();
+        /// <summary>
+        /// Show the given location.
+        /// 
+        /// Note: if spawning is true, then the spawnLocationCamera takes over the camera and RevertSpawnLocationCamera should be called at some point to allow KSP to do its own camera stuff.
+        /// </summary>
+        /// <param name="worldIndex"></param>
+        /// <param name="latitude"></param>
+        /// <param name="longitude"></param>
+        /// <param name="altitude"></param>
+        /// <param name="distance"></param>
+        /// <param name="spawning"></param>
+        /// <param name="recurse"></param>
         public void ShowSpawnPoint(int worldIndex, double latitude, double longitude, double altitude = 0, float distance = 100, bool spawning = false, bool recurse = true)
         {
             if (BDArmorySettings.ASTEROID_RAIN) { AsteroidRain.Instance.Reset(); }
@@ -378,8 +390,8 @@ namespace BDArmory.Competition.VesselSpawning
                 spawnLocationCamera.transform.rotation = Quaternion.LookRotation(-cameraPosition, radialUnitVector);
                 flightCamera.transform.parent = spawnLocationCamera.transform;
                 flightCamera.SetTarget(spawnLocationCamera.transform);
-                flightCamera.transform.position = spawnPoint + cameraPosition;
-                flightCamera.transform.rotation = Quaternion.LookRotation(-flightCamera.transform.position, radialUnitVector);
+                flightCamera.transform.localPosition = cameraPosition;
+                flightCamera.transform.localRotation = Quaternion.identity;
                 flightCamera.SetDistance(distance);
             }
         }

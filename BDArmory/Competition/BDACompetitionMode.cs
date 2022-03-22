@@ -577,6 +577,7 @@ namespace BDArmory.Competition
             if (vesselName == null || !ScoreData.ContainsKey(vesselName)) return false;
 
             ScoreData[vesselName].waypointsReached.Add(new ScoringData.WaypointReached(waypointIndex, distance, Planetarium.GetUniversalTime() - BDACompetitionMode.Instance.competitionStartTime));
+            BDACompetitionMode.Instance.competitionStatus.Add($"{vesselName}: Waypoint {waypointIndex} reached! Time: {ScoreData[vesselName].waypointsReached.Last().timestamp - ScoreData[vesselName].waypointsReached.First().timestamp:F2}s, Deviation: {distance:F1}m");
 
             return true;
         }
@@ -3040,8 +3041,8 @@ namespace BDArmory.Competition
                                 break;
                         }
                         Scores.RegisterDeath(player, GMKillReason.None, timeOfDeath);
-						pilotActions[player] = " is Dead";
-						var statusMessage = player;
+                        pilotActions[player] = " is Dead";
+                        var statusMessage = player;
                         if (BDArmorySettings.ENABLE_HOS && player == BDArmorySettings.HALL_OF_SHAME && !string.IsNullOrEmpty(BDArmorySettings.HOS_BADGE))
                         {
                             statusMessage += $" ({BDArmorySettings.HOS_BADGE})";
