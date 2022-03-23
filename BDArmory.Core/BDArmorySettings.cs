@@ -249,8 +249,8 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static bool SHOW_WAYPOINTS_OPTIONS = true;               // Waypoint section of Vessel Spawner Window.
 
         // Waypoints
-        [BDAPersistentSettingsField] public static float WAYPOINTS_ALTITUDE = 100f;               // Altitude above ground of the waypoints.
-        [BDAPersistentSettingsField] public static bool WAYPOINTS_ONE_AT_A_TIME = false;          // Send the craft one-at-a-time through the course.
+        [BDAPersistentSettingsField] public static float WAYPOINTS_ALTITUDE = 50f;               // Altitude above ground of the waypoints.
+        [BDAPersistentSettingsField] public static bool WAYPOINTS_ONE_AT_A_TIME = true;          // Send the craft one-at-a-time through the course.
 
         // Heartbleed
         [BDAPersistentSettingsField] public static float HEART_BLEED_RATE = 0.01f;
