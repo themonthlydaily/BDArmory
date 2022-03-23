@@ -15,6 +15,8 @@ IMPROVEMENTS
 	- Add a 'Generate Clean Save' toggle for auto-loading to the KSC without generating a clean save (tournaments and evolution still generate a clean save).
 - AI:
 	- Don't treat passive (non-radar-guided) missiles outside visual range as incoming missile threats until they enter visual range.
+	- Lower the altitude at which gear is toggled to 25m.
+	- Lower the minimum of the terrain avoidance sliders to allow values below 1.
 	- First working version of the VTOL AI: combines a modified surface AI with PIDs for forward and lateral speeds, altitude control and pitch, yaw and roll control.
 - WM:
 	- Extend MMG smartpick selection logic.
@@ -30,6 +32,7 @@ IMPROVEMENTS
 	- Create new antiradTargetTypes variable for missiles that allows you to specify the RWR Threat Type that the anti-radiation missile should target. Default is 0,5 (SAM,Detection).
 - GameModes:
 	- Paintball Mode now affects Nukes.
+	- Waypoint Mode
 - Tournamements:
 	- Add checks to only adjust scores when a competition is active (fixes differences in the API scores due to timing issues).
 	- Use base64 encoded vessel names internally in the parser to avoid issues with craft naming (e.g., craft with ':' in the name).
@@ -39,6 +42,8 @@ IMPROVEMENTS
 - Internal:
 	- Replace hard-coded RWR threat types with RWRThreatType reference.
 	- Remove reference to TargetingModeTerminal since TargetingMode is updated to be equal to TargetingModeTerminal once terminal guidance activates.
+	- New spawn and orchestration strategies are partially implemented.
+	- Some refactoring of the spawning code is in progress.
 
 v1.4.17.0
 FIXES

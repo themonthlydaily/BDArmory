@@ -1927,7 +1927,7 @@ namespace BDArmory.Competition
                             "5:ToggleGuard:1", // t=65, Enable guard mode
                         };
                         break;
-                    case 50: //change this later (orbital deployment)
+                    case 60: //change this later (orbital deployment)
                         commandSequence = new List<string>{
                             "0:ActionGroup:13:1", // t=0, AG4 - Enable SAS
                             "0:ActionGroup:16:0", // t=0, Retract gear (if it's not retracted)
