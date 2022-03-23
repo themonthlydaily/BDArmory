@@ -2,6 +2,7 @@ using KSP.Localization;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 
 using BDArmory.Competition.OrchestrationStrategies;
@@ -590,26 +591,31 @@ namespace BDArmory.UI
             {
                 if (GUI.Button(SLineRect(++line), "Run waypoints", BDArmorySetup.BDGuiSkin.button))
                 {
-                    if (TournamentCoordinator.Instance.IsRunning) TournamentCoordinator.Instance.Stop();
-
-                    TournamentCoordinator.Instance.Configure(new SpawnConfigStrategy(
-                        new SpawnConfig(
-                            1,
-                            27.97f,// BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
-                            -39.35f,// BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
-                            BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
-                            BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
-                            BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
-                            BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
-                            true,
-                            BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS,
-                            BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS,
-                            null,
-                            null,
-                            BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION)
-                        ),
-                        new WaypointFollowingStrategy(
-                            new List<WaypointFollowingStrategy.Waypoint> {
+                    if (TournamentCoordinator.Instance.IsRunning) // Stop either case.
+                    {
+                        TournamentCoordinator.Instance.Stop();
+                        TournamentCoordinator.Instance.StopForEach();
+                    }
+                    if (!BDArmorySettings.WAYPOINTS_ONE_AT_A_TIME)
+                    {
+                        TournamentCoordinator.Instance.Configure(new SpawnConfigStrategy(
+                            new SpawnConfig(
+                                1,
+                                27.97f,// BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
+                                -39.35f,// BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
+                                BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+                                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
+                                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
+                                BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
+                                true,
+                                BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS,
+                                BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS,
+                                null,
+                                null,
+                                BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION)
+                            ),
+                            new WaypointFollowingStrategy(
+                                new List<WaypointFollowingStrategy.Waypoint> {
                                 new WaypointFollowingStrategy.Waypoint(28.33f, -39.11f, BDArmorySettings.WAYPOINTS_ALTITUDE),
                                 new WaypointFollowingStrategy.Waypoint(28.83f, -38.06f, BDArmorySettings.WAYPOINTS_ALTITUDE),
                                 new WaypointFollowingStrategy.Waypoint(29.54f, -38.68f, BDArmorySettings.WAYPOINTS_ALTITUDE),
@@ -618,13 +624,50 @@ namespace BDArmory.UI
                                 new WaypointFollowingStrategy.Waypoint(30.73f, -39.6f, BDArmorySettings.WAYPOINTS_ALTITUDE),
                                 new WaypointFollowingStrategy.Waypoint(30.9f, -40.23f, BDArmorySettings.WAYPOINTS_ALTITUDE),
                                 new WaypointFollowingStrategy.Waypoint(30.83f, -41.26f, BDArmorySettings.WAYPOINTS_ALTITUDE)
-                            }
-                        ),
-                        CircularSpawning.Instance
-                    );
+                                }
+                            ),
+                            CircularSpawning.Instance
+                        );
 
-                    // Run the waypoint competition.
-                    TournamentCoordinator.Instance.Run();
+                        // Run the waypoint competition.
+                        TournamentCoordinator.Instance.Run();
+                    }
+                    else
+                    {
+                        var craftFiles = Directory.GetFiles(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION)).Where(f => f.EndsWith(".craft")).ToList();
+                        var strategies = craftFiles.Select(craftFile => new SpawnConfigStrategy(
+                            new SpawnConfig(
+                                1,
+                                27.97f,// BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
+                                -39.35f,// BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
+                                BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+                                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
+                                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
+                                BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
+                                true,
+                                BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS,
+                                BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS,
+                                null,
+                                null,
+                                null,
+                                new List<string>() { craftFile }
+                            ))).ToList();
+                        TournamentCoordinator.Instance.RunForEach(strategies,
+                            new WaypointFollowingStrategy(
+                                new List<WaypointFollowingStrategy.Waypoint> {
+                                new WaypointFollowingStrategy.Waypoint(28.33f, -39.11f, BDArmorySettings.WAYPOINTS_ALTITUDE),
+                                new WaypointFollowingStrategy.Waypoint(28.83f, -38.06f, BDArmorySettings.WAYPOINTS_ALTITUDE),
+                                new WaypointFollowingStrategy.Waypoint(29.54f, -38.68f, BDArmorySettings.WAYPOINTS_ALTITUDE),
+                                new WaypointFollowingStrategy.Waypoint(30.15f, -38.6f, BDArmorySettings.WAYPOINTS_ALTITUDE),
+                                new WaypointFollowingStrategy.Waypoint(30.83f, -38.87f, BDArmorySettings.WAYPOINTS_ALTITUDE),
+                                new WaypointFollowingStrategy.Waypoint(30.73f, -39.6f, BDArmorySettings.WAYPOINTS_ALTITUDE),
+                                new WaypointFollowingStrategy.Waypoint(30.9f, -40.23f, BDArmorySettings.WAYPOINTS_ALTITUDE),
+                                new WaypointFollowingStrategy.Waypoint(30.83f, -41.26f, BDArmorySettings.WAYPOINTS_ALTITUDE)
+                                }
+                            ),
+                            CircularSpawning.Instance
+                        );
+                    }
                 }
             }
             else
