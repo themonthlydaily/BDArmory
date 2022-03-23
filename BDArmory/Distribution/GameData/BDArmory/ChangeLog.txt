@@ -1,4 +1,5 @@
-﻿FIXES
+﻿v1.4.18.0
+FIXES
 - Add checks to only adjust scores when a competition is active.
 - Fix interpretation of demo vessel optimisation script.
 - Fix CASE-2 ammo reduction when cloning part.
@@ -32,7 +33,7 @@ IMPROVEMENTS
 	- Create new antiradTargetTypes variable for missiles that allows you to specify the RWR Threat Type that the anti-radiation missile should target. Default is 0,5 (SAM,Detection).
 - GameModes:
 	- Paintball Mode now affects Nukes.
-	- Waypoint Mode
+	- Waypoint Mode added for racing/time trials instead of combat.
 - Tournamements:
 	- Add checks to only adjust scores when a competition is active (fixes differences in the API scores due to timing issues).
 	- Use base64 encoded vessel names internally in the parser to avoid issues with craft naming (e.g., craft with ':' in the name).
