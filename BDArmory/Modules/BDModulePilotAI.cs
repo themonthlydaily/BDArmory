@@ -1226,7 +1226,7 @@ namespace BDArmory.Modules
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
-                if (lastStatus != currentStatus && !(lastStatus.StartsWith("Gain Alt.") && currentStatus.StartsWith("Gain Alt.")) && !(lastStatus.StartsWith("Terrain") && currentStatus.StartsWith("Terrain")))
+                if (lastStatus != currentStatus && !(lastStatus.StartsWith("Gain Alt.") && currentStatus.StartsWith("Gain Alt.")) && !(lastStatus.StartsWith("Terrain") && currentStatus.StartsWith("Terrain")) && !(lastStatus.StartsWith("Waypoint") && currentStatus.StartsWith("Waypoint")))
                 {
                     Debug.Log("[BDArmory.BDModulePilotAI]: Status of " + vessel.vesselName + " changed from " + lastStatus + " to " + currentStatus);
                 }
@@ -2122,8 +2122,8 @@ namespace BDArmory.Modules
             if (dRange > 0 && rangeToTarget < 500)
             {
                 // moving away, proceed to next point
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log(string.Format("[BDArmory.BDModulePilotAI]: Reached waypoint {0} with range {1}", activeWaypointIndex, rangeToTarget));
-                BDACompetitionMode.Instance.Scores.RegisterWaypointReached(vessel.vesselName, activeWaypointIndex, rangeToTarget);
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log(string.Format("[BDArmory.BDModulePilotAI]: Reached waypoint {0} with range {1}", activeWaypointIndex, lastRange));
+                BDACompetitionMode.Instance.Scores.RegisterWaypointReached(vessel.vesselName, activeWaypointIndex, lastRange);
                 ++activeWaypointIndex;
                 lastRange = 999;
                 dRange = 0;
