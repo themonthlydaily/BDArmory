@@ -4,7 +4,7 @@ FIXES
 - Add checks to only adjust scores when a competition is active.
 - Fix interpretation of demo vessel optimisation script.
 - Fix CASE-2 ammo reduction when cloning part.
-- Fix laser battledaamge.
+- Fix laser battledamage.
 - Fix DebugLines not disabling when toggled off.
 - Reorder custom bay toggle branch so it's not overwritten by airstream check (fixes custom cargo bay not being deployed).
 - Fixed Anti-Radiation missiles not working properly.
@@ -22,7 +22,7 @@ IMPROVEMENTS
 		- The AI will try to stay above the minimum altitude at all times and if it can, at the default altitude outside of combat and the combat altitude during combat.
 		- The AI will obey the max pitch and max bank settings and fly no faster than the set maximum and combat speed settings.
 	- Don't treat passive (non-radar-guided) missiles outside visual range as incoming missile threats until they enter visual range.
-	- Lower the altitude at which gear is toggled to 25m.
+	- Lower the altitude at which gear is toggled to the minimum of 50m or minAltitude/2.
 	- Lower the minimum of the terrain avoidance sliders to allow values below 1.
 - WM:
 	- Extend MMG smartpick selection logic.
