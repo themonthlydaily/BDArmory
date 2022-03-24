@@ -2142,7 +2142,8 @@ namespace BDArmory.Modules
             }
             lastRange = rangeToTarget;
             SetStatus($"Waypoint {activeWaypointIndex} ({rangeToTarget:F0}m)");
-            FlyToPosition(s, waypointPosition, false);
+            var waypointDirection = (waypointPosition - vessel.transform.position).normalized;
+            FlyToPosition(s, vessel.transform.position + waypointDirection * Mathf.Min(500f, rangeToTarget), false); // Target up to 500m ahead so that max altitude restrictions apply reasonably.
         }
         #endregion
 
