@@ -1195,6 +1195,8 @@ namespace BDArmory.Modules
 
             UpdateVelocityRelativeDirections();
             CheckLandingGear();
+            if (IsFlyingWaypoints) UpdateWaypoint(); // Update the waypoint state.
+
             if (!vessel.LandedOrSplashed && (FlyAvoidTerrain(s) || (!ramming && FlyAvoidOthers(s))))
             { turningTimer = 0; }
             else if (belowMinAltitude && !(gainAltInhibited || BDArmorySettings.SF_REPULSOR)) // If we're below minimum altitude, gain altitude unless we're being inhibited or the space friction repulsor field is enabled.
@@ -1316,10 +1318,10 @@ namespace BDArmory.Modules
             else if (!extending && IsFlyingWaypoints)
             {
                 // FIXME To avoid getting stuck circling a waypoint, a check should be made (maybe use the turningTimer for this?), in which case the plane should RequestExtend away from the waypoint.
-                var waypoint = waypoints[activeWaypointIndex];
-                var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
-                var waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
-                var rangeToTarget = (vesselTransform.position - waypointPosition).magnitude;
+                // var waypoint = waypoints[activeWaypointIndex];
+                // var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
+                // var waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
+                // var rangeToTarget = (vesselTransform.position - waypointPosition).magnitude;
                 FlyWaypoints(s);
             }
             else if (!extending && weaponManager && targetVessel != null && targetVessel.transform != null)
@@ -2067,7 +2069,7 @@ namespace BDArmory.Modules
             if (command != PilotCommands.Free && (vessel.transform.position - flightCenter).sqrMagnitude < radius * radius * 1.5f)
             {
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDModulePilotAI]: AI Pilot reached command destination.");
-                command = PilotCommands.Free;
+                ReleaseCommand();
             }
 
             useVelRollTarget = true;
@@ -2094,6 +2096,10 @@ namespace BDArmory.Modules
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log(string.Format("[BDArmory.BDModulePilotAI]: Set {0} waypoints", waypoints.Count));
             this.waypoints = waypoints;
             this.activeWaypointIndex = 0;
+            var waypoint = waypoints[activeWaypointIndex];
+            var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
+            waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
+            waypointsLastOffset = vessel.transform.position - waypointPosition;
             CommandFollowWaypoints();
         }
         public bool IsFlyingWaypoints => command == PilotCommands.Waypoints && activeWaypointIndex >= 0 && waypoints != null && waypoints.Count > 0;
@@ -2103,9 +2109,20 @@ namespace BDArmory.Modules
             return this.activeWaypointIndex;
         }
 
-        private float lastRange = 0;
-        private float dRange = 0;
+        private Vector3 waypointPosition;
+        private Vector3 waypointsLastOffset = Vector3.zero;
+        private float waypointsLastRange = 999f;
+        private float waypointsRange = 999f;
+        private float waypointsRangeDelta = 0;
         void FlyWaypoints(FlightCtrlState s)
+        {
+            // Note: UpdateWaypoint is called separately before this in case FlyWaypoints doesn't get called.
+            SetStatus($"Waypoint {activeWaypointIndex} ({waypointsRange:F0}m)");
+            var waypointDirection = (waypointPosition - vessel.transform.position).normalized;
+            FlyToPosition(s, vessel.transform.position + waypointDirection * Mathf.Min(500f, waypointsRange), false); // Target up to 500m ahead so that max altitude restrictions apply reasonably.
+        }
+
+        void UpdateWaypoint()
         {
             if (activeWaypointIndex < 0 || waypoints == null || waypoints.Count == 0)
             {
@@ -2114,19 +2131,22 @@ namespace BDArmory.Modules
             }
             var waypoint = waypoints[activeWaypointIndex];
             var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
-            var waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
+            waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
             // vessel has arrived if its distance to the target is within a range threshold
-            var rangeToTarget = (float)(vesselTransform.position - waypointPosition).magnitude;
-            dRange = rangeToTarget - lastRange;
-            //Debug.Log(string.Format("[BDArmory.BDModulePilotAI] Distance from {0}, {1} to {2}, {3} is {4} ({5})", vessel.latitude, vessel.longitude, waypoint.x, waypoint.y, rangeToTarget, dRange));
-            if (dRange > 0 && rangeToTarget < 500)
+            waypointsRange = (float)(vesselTransform.position - waypointPosition).magnitude;
+            waypointsRangeDelta = waypointsRange - waypointsLastRange;
+            if (waypointsRangeDelta > 0 && waypointsLastRange < 500)
             {
                 // moving away, proceed to next point
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log(string.Format("[BDArmory.BDModulePilotAI]: Reached waypoint {0} with range {1}", activeWaypointIndex, lastRange));
-                BDACompetitionMode.Instance.Scores.RegisterWaypointReached(vessel.vesselName, activeWaypointIndex, lastRange);
+                var timeToCPA = AIUtils.ClosestTimeToCPA(waypointsLastOffset, vessel.Velocity(), vessel.acceleration, Time.fixedDeltaTime); // Assume velocity and acceleration are the same as last frame (should be good enough to first order).
+                if (timeToCPA == 0) // It was the previous time step
+                    timeToCPA = -AIUtils.ClosestTimeToCPA(waypointsLastOffset, -vessel.Velocity(), vessel.acceleration, Time.fixedDeltaTime);
+                var deviation = AIUtils.PredictPosition(waypointsLastOffset, vessel.Velocity(), vessel.acceleration, timeToCPA).magnitude;
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log(string.Format("[BDArmory.BDModulePilotAI]: Reached waypoint {0} with range {1}", activeWaypointIndex, deviation));
+                BDACompetitionMode.Instance.Scores.RegisterWaypointReached(vessel.vesselName, activeWaypointIndex, deviation);
                 ++activeWaypointIndex;
-                lastRange = 999;
-                dRange = 0;
+                waypointsLastRange = 999;
+                waypointsRangeDelta = 0;
                 if (activeWaypointIndex >= waypoints.Count)
                 {
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDModulePilotAI]: Waypoints complete");
@@ -2136,14 +2156,16 @@ namespace BDArmory.Modules
                 }
                 else
                 {
-                    FlyWaypoints(s); // Call ourselves again for the new waypoint to follow.
+                    waypoint = waypoints[activeWaypointIndex];
+                    terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
+                    waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
+                    waypointsLastOffset = vessel.transform.position - waypointPosition;
+                    UpdateWaypoint(); // Call ourselves again for the new waypoint to follow.
                     return;
                 }
             }
-            lastRange = rangeToTarget;
-            SetStatus($"Waypoint {activeWaypointIndex} ({rangeToTarget:F0}m)");
-            var waypointDirection = (waypointPosition - vessel.transform.position).normalized;
-            FlyToPosition(s, vessel.transform.position + waypointDirection * Mathf.Min(500f, rangeToTarget), false); // Target up to 500m ahead so that max altitude restrictions apply reasonably.
+            waypointsLastRange = waypointsRange;
+            waypointsLastOffset = vessel.transform.position - waypointPosition;
         }
         #endregion
 
