@@ -554,7 +554,8 @@ namespace BDArmory.Core.Module
                     if (part.Modules.Contains("ModuleSelfSealingTank"))
                     {
                         var SST = part.Modules["ModuleSelfSealingTank"];
-                        Safetymass = SST.Fields["FBmass"].GetValue<float>(SST) + SST.Fields["FISmass"].GetValue<float>(SST);
+                        // Safetymass = SST.Fields["FBmass"].GetValue<float>(SST) + SST.Fields["FISmass"].GetValue<float>(SST); // SST.Fields["FBmass"] and SST.Fields["FISmass] are both null.
+                        Safetymass = SST.Fields.GetValue<float>("FBmass") + SST.Fields.GetValue<float>("FISmass");
                     }
                     partMass = part.mass - armorMass - HullMassAdjust - Safetymass;
                 }
@@ -716,8 +717,9 @@ namespace BDArmory.Core.Module
                 }
                 else
                 {
-                    hitpoints = ArmorRemaining * armorVolume * 10;
-                    hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
+                    hitpoints = ArmorRemaining; // * armorVolume * 10;
+                                                //hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
+                                                //armorpanel HP is panel integrity, as 'HP' is the slab of armor; having a secondary unused HP pool will only make armor massively more effective against explosions than it should due to how isInLineOfSight calculates intermediate parts
                 }
             }
             else
@@ -838,7 +840,7 @@ namespace BDArmory.Core.Module
             }
             if (ArmorPanel)
             {
-                Hitpoints = ArmorRemaining * armorVolume * 10;
+                Hitpoints = ArmorRemaining; // * armorVolume * 10;
                 if (Armor <= 0)
                 {
                     DestroyPart();
@@ -957,7 +959,7 @@ namespace BDArmory.Core.Module
                 Strength = 940;
                 SafeUseTemp = 2500;
             }
-            else if (BDArmorySettings.RESET_ARMOUR && ArmorThickness <= 10) //don't reset armor panels
+            else if (BDArmorySettings.RESET_ARMOUR) //don't reset armor panels
             {
                 guiArmorTypeString = "None";
                 SelectedArmorType = "None";
@@ -968,6 +970,7 @@ namespace BDArmory.Core.Module
                 Strength = 200;
                 SafeUseTemp = 993;
                 Armor = 10;
+                if (ArmorPanel) Armor = 25;
             }
             var oldArmorMass = armorMass;
             armorMass = 0;

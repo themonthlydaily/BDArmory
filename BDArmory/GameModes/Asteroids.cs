@@ -3,11 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using BDArmory.Competition;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
+using BDArmory.Misc;
 using BDArmory.UI;
 
-namespace BDArmory.Control
+namespace BDArmory.GameModes
 {
     public class AsteroidUtils
     {
@@ -242,7 +244,7 @@ namespace BDArmory.Control
                 spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude);
             }
             upDirection = (spawnPoint - FlightGlobals.currentMainBody.transform.position).normalized;
-            spawnPoint += (altitude - Misc.Misc.GetRadarAltitudeAtPos(spawnPoint, false)) * upDirection; // Adjust for terrain height.
+            spawnPoint += (altitude - Utils.GetRadarAltitudeAtPos(spawnPoint, false)) * upDirection; // Adjust for terrain height.
             refDirection = Math.Abs(Vector3d.Dot(Vector3.up, upDirection)) < 0.71f ? Vector3d.up : Vector3d.forward; // Avoid that the reference direction is colinear with the local surface normal.
 
             var a = -(float)FlightGlobals.getGeeForceAtPosition(FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude)).magnitude / 2f;
@@ -369,7 +371,7 @@ namespace BDArmory.Control
             {
                 spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude);
                 var position = spawnPoint + offset;
-                position += (altitude - Misc.Misc.GetRadarAltitudeAtPos(position, false)) * upDirection;
+                position += (altitude - Utils.GetRadarAltitudeAtPos(position, false)) * upDirection;
                 asteroid.transform.position = position;
                 asteroid.SetWorldVelocity(initialSpeed * upDirection);
                 // Apply a gaussian random torque to the asteroid.
@@ -715,7 +717,7 @@ namespace BDArmory.Control
                 var distance = Mathf.Sqrt(1f - x) * radius;
                 var height = RNG.NextDouble() * (altitude - 50f) + 50f;
                 var position = spawnPoint + direction * distance;
-                position += (height - Misc.Misc.GetRadarAltitudeAtPos(position)) * upDirection;
+                position += (height - Utils.GetRadarAltitudeAtPos(position)) * upDirection;
                 var asteroid = GetAsteroid();
                 if (asteroid != null)
                 {

@@ -1,15 +1,15 @@
 ﻿using KSP.Localization;
-using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System;
 using UnityEngine;
-using BDArmory.Core.Utils;
-using BDArmory.FX;
-using BDArmory.UI;
+
 using BDArmory.Core;
-using System.Collections;
+using BDArmory.FX;
+using BDArmory.Misc;
+using BDArmory.UI;
 
 namespace BDArmory.Modules
 {
@@ -52,7 +52,7 @@ namespace BDArmory.Modules
                         resource.Current.amount = Math.Min(resource.Current.amount, resource.Current.maxAmount);
                     }
             }
-            Misc.Misc.RefreshAssociatedWindows(part);
+            Utils.RefreshAssociatedWindows(part);
             using (List<Part>.Enumerator pSym = part.symmetryCounterparts.GetEnumerator())
                 while (pSym.MoveNext())
                 {
@@ -87,7 +87,7 @@ namespace BDArmory.Modules
                                 resource.Current.amount = Math.Min(resource.Current.amount, resource.Current.maxAmount);
                             }
                     }
-                    Misc.Misc.RefreshAssociatedWindows(pSym.Current);
+                    Utils.RefreshAssociatedWindows(pSym.Current);
                 }
         }
 
@@ -115,7 +115,7 @@ namespace BDArmory.Modules
                 Fields["FBRemaining"].guiActive = false;
             }
             partmass = (FISmass + ArmorMass + FBmass);
-            Misc.Misc.RefreshAssociatedWindows(part);
+            Utils.RefreshAssociatedWindows(part);
             using (List<Part>.Enumerator pSym = part.symmetryCounterparts.GetEnumerator())
                 while (pSym.MoveNext())
                 {
@@ -141,7 +141,7 @@ namespace BDArmory.Modules
                         tank.Fields["FBRemaining"].guiActive = false;
                     }
                     tank.partmass = (tank.FISmass + tank.ArmorMass + tank.FBmass);
-                    Misc.Misc.RefreshAssociatedWindows(pSym.Current);
+                    Utils.RefreshAssociatedWindows(pSym.Current);
                 }
             if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch != null)
                 GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
@@ -165,7 +165,7 @@ namespace BDArmory.Modules
                 ArmorMass = 0.2f * part.CrewCapacity;
             }
             partmass = (FISmass + ArmorMass + FBmass);
-            Misc.Misc.RefreshAssociatedWindows(part);
+            Utils.RefreshAssociatedWindows(part);
             using (List<Part>.Enumerator pSym = part.symmetryCounterparts.GetEnumerator())
                 while (pSym.MoveNext())
                 {
@@ -187,7 +187,7 @@ namespace BDArmory.Modules
                         tank.ArmorMass = 0.2f * part.CrewCapacity;
                     }
                     tank.partmass = (tank.FISmass + tank.ArmorMass + tank.FBmass);
-                    Misc.Misc.RefreshAssociatedWindows(pSym.Current);
+                    Utils.RefreshAssociatedWindows(pSym.Current);
                 }
             if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch != null)
                 GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
@@ -298,7 +298,7 @@ namespace BDArmory.Modules
                 Fields["FireBottles"].guiActiveEditor = false;
                 Fields["FBRemaining"].guiActive = false;
             }
-            Misc.Misc.RefreshAssociatedWindows(part);
+            Utils.RefreshAssociatedWindows(part);
             partmass = (FISmass + ArmorMass + FBmass);
             if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch != null)
                 GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
@@ -307,7 +307,7 @@ namespace BDArmory.Modules
                 if (cockpit == null && engine == null && fuel == null) part.RemoveModule(this); //PWing with no tank
             }
             FBSetup(null, null);
-            Debug.Log("[SelfSealingTank] SST: " + SSTank + "; Inerting: " + InertTank + "; armored cockpit: " + armoredCockpit);
+            //Debug.Log("[SelfSealingTank] SST: " + SSTank + "; Inerting: " + InertTank + "; armored cockpit: " + armoredCockpit);
         }
         /*
         public override void OnLoad(ConfigNode node)
@@ -414,9 +414,9 @@ namespace BDArmory.Modules
                     tank.FBRemaining = FBRemaining;
                     tank.partmass = partmass + FISmass + ArmorMass;
                     tank.externallyCalled = false;
-                    Misc.Misc.RefreshAssociatedWindows(pSym.Current);
+                    Utils.RefreshAssociatedWindows(pSym.Current);
                 }
-            Misc.Misc.RefreshAssociatedWindows(part);
+            Utils.RefreshAssociatedWindows(part);
         }
 
         public override string GetInfo()
@@ -454,7 +454,7 @@ namespace BDArmory.Modules
                     {
                         firebottleRoutine = StartCoroutine(ExtinguishRoutine(4, true));
                     }
-                    Debug.Log("[SelfSealingTank] Fire detected; beginning ExtinguishRoutine. Firebottles remaining: " + FireBottles);
+                    //Debug.Log("[SelfSealingTank] Fire detected; beginning ExtinguishRoutine. Firebottles remaining: " + FireBottles);
                 }
             }
             else
@@ -468,7 +468,7 @@ namespace BDArmory.Modules
                         if (firebottleRoutine == null)
                         {
                             firebottleRoutine = StartCoroutine(ExtinguishRoutine(10, false));
-                            Debug.Log("[SelfSealingTank] Fire detected; beginning ExtinguishRoutine. Toggling Engine");
+                            //Debug.Log("[SelfSealingTank] Fire detected; beginning ExtinguishRoutine. Toggling Engine");
                         }
                     }
                     //though if it is diving, then there isn't a second call to cycle engines. Add an Ienumerator to check once every couple sec?
@@ -477,9 +477,9 @@ namespace BDArmory.Modules
         }
         IEnumerator ExtinguishRoutine(float time, bool useBottle)
         {
-            Debug.Log("[SelfSealingTank] ExtinguishRoutine started. Time left: " + time);
+            //Debug.Log("[SelfSealingTank] ExtinguishRoutine started. Time left: " + time);
             yield return new WaitForSeconds(time);
-            Debug.Log("[SelfSealingTank] Timer finished. Extinguishing");
+            //Debug.Log("[SelfSealingTank] Timer finished. Extinguishing");
             foreach (var existingFire in part.GetComponentsInChildren<FireFX>())
             {
                 if (!existingFire.surfaceFire) existingFire.burnTime = 0.05f; //kill all fires
@@ -488,8 +488,8 @@ namespace BDArmory.Modules
             {
                 FireBottles--;
                 FBRemaining = FireBottles;
-                Misc.Misc.RefreshAssociatedWindows(part);
-                Debug.Log("[SelfSealingTank] Consuming firebottle. FB remaining: " + FireBottles);
+                Utils.RefreshAssociatedWindows(part);
+                //Debug.Log("[SelfSealingTank] Consuming firebottle. FB remaining: " + FireBottles);
                 isOnFire = false;
             }
             ResetCoroutine();

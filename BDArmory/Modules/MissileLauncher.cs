@@ -27,6 +27,10 @@ namespace BDArmory.Modules
         [KSPField]
         public string targetingType = "none";
 
+        [KSPField]
+        public string antiradTargetTypes = "0,5";
+        public float[] antiradTargets;
+
         public MissileTurret missileTurret = null;
         public BDRotaryRail rotaryRail = null;
         public BDDeployableRail deployableRail = null;
@@ -384,6 +388,7 @@ namespace BDArmory.Modules
             }
 
             ParseModes();
+            ParseAntiRadTargetTypes();
             // extension for feature_engagementenvelope
             InitializeEngagementRange(minStaticLaunchRange, maxStaticLaunchRange);
 
@@ -573,7 +578,7 @@ namespace BDArmory.Modules
 
             if (deployAnimationName != "")
             {
-                deployStates = Misc.Misc.SetUpAnimation(deployAnimationName, part);
+                deployStates = Utils.SetUpAnimation(deployAnimationName, part);
             }
             else
             {
@@ -582,7 +587,7 @@ namespace BDArmory.Modules
 
             if (flightAnimationName != "")
             {
-                animStates = Misc.Misc.SetUpAnimation(flightAnimationName, part);
+                animStates = Utils.SetUpAnimation(flightAnimationName, part);
             }
 
             SetInitialDetonationDistance();
@@ -2046,6 +2051,11 @@ namespace BDArmory.Modules
             float AoA = Vector3.Angle(part.transform.forward, vessel.Velocity());
             AoA /= 20;
             part.rb.AddTorque(AoA * simpleStableTorque * dragMagnitude * torqueAxis);
+        }
+
+        void ParseAntiRadTargetTypes()
+        {
+            antiradTargets = Utils.ParseToFloatArray(antiradTargetTypes);
         }
 
         void ParseModes()

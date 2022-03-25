@@ -1,17 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using BDArmory.Bullets;
+using UnityEngine;
+
 using BDArmory.Competition;
-using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Module;
 using BDArmory.Core.Utils;
+using BDArmory.GameModes;
 using BDArmory.Misc;
 using BDArmory.Modules;
 using BDArmory.UI;
-using UnityEngine;
 
 namespace BDArmory.FX
 {
@@ -111,7 +111,7 @@ namespace BDArmory.FX
                 Debug.Log("[BDArmory.ExplosionFX]: Explosion started tntMass: {" + Power + "}  BlastRadius: {" + Range + "} StartTime: {" + StartTime + "}, Duration: {" + MaxTime + "}");
             }
             /*
-            if (BDArmorySettings.PERSISTENT_FX && Caliber > 30 && Misc.Misc.GetRadarAltitudeAtPos(transform.position) > Caliber / 60)
+            if (BDArmorySettings.PERSISTENT_FX && Caliber > 30 && Utils.GetRadarAltitudeAtPos(transform.position) > Caliber / 60)
             {
                 if (FlightGlobals.getAltitudeAtPos(transform.position) > Caliber / 60)
                 {
@@ -473,6 +473,7 @@ namespace BDArmory.FX
                         }
                         if (FlightGlobals.currentMainBody != null && hit.collider.gameObject == FlightGlobals.currentMainBody.gameObject) return false; // Terrain hit. Full absorption. Should avoid NREs in the following.
                         var partHP = partHit.Damage();
+						if (part.name.ToLower().Contains("armor")) partHP = 100;
                         var partArmour = partHit.GetArmorThickness();
                         var RA = partHit.FindModuleImplementing<ModuleReactiveArmor>();
                         if (RA != null)
@@ -712,7 +713,7 @@ namespace BDArmory.FX
                             eventToExecute.HitPoint + rb.velocity * TimeIndex);
                     }
                     var damage = 0f;
-                    float penetrationFactor = 0;
+                    float penetrationFactor = 0.5f;
                     if (dmgMult < 0)
                     {
                         part.AddInstagibDamage();
@@ -788,6 +789,7 @@ namespace BDArmory.FX
                                 else
                                 {
                                     damage = part.AddExplosiveDamage(blastInfo.Damage, Caliber, ExplosionSource, dmgMult);
+                                    penetrationFactor = damage / 10; //closer to the explosion/greater magnitude of the explosion at point blank, the greater the blowthrough
                                     if (float.IsNaN(damage)) Debug.LogError("DEBUG NaN damage!");
                                 }
                             }
@@ -796,7 +798,7 @@ namespace BDArmory.FX
                         {
                             if (BDArmorySettings.BATTLEDAMAGE)
                             {
-                                Misc.BattleDamageHandler.CheckDamageFX(part, Caliber, penetrationFactor, true, warheadType == WarheadTypes.ShapedCharge ? true : false, SourceVesselName, eventToExecute.Hit);
+                                BattleDamageHandler.CheckDamageFX(part, Caliber, penetrationFactor, true, warheadType == WarheadTypes.ShapedCharge ? true : false, SourceVesselName, eventToExecute.Hit);
                             }
                             // Update scoring structures
                             //damage = Mathf.Clamp(damage, 0, part.Damage()); //if we want to clamp overkill score inflation
@@ -868,7 +870,7 @@ namespace BDArmory.FX
                 eFx.audioSource.maxDistance = 5500;
                 eFx.audioSource.spatialBlend = 1;
                 eFx.LightFx = explosionFXTemplate.AddComponent<Light>();
-                eFx.LightFx.color = Misc.Misc.ParseColor255("255,238,184,255");
+                eFx.LightFx.color = Utils.ParseColor255("255,238,184,255");
                 eFx.LightFx.intensity = 8;
                 eFx.LightFx.shadows = LightShadows.None;
                 explosionFXTemplate.SetActive(false);

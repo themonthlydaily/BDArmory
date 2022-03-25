@@ -5,6 +5,7 @@ using BDArmory.Modules;
 using UnityEngine;
 using KSP.Localization;
 using System.Collections.Generic;
+using static UnityEngine.GUILayout;
 using BDArmory.Bullets;
 using System;
 
@@ -37,18 +38,62 @@ namespace BDArmory.UI
         public string SelectedAmmoType; //presumably Aubranium can use this to filter allowed/banned ammotypes
 
         public List<string> AList = new List<string>();
+        public List<string> BList = new List<string>();
         public List<string> ammoDesc = new List<string>();
         private BulletInfo bulletInfo;
         public string guiAmmoTypeString = Localizer.Format("#LOC_BDArmory_Ammo_Slug");
+
+        GUIStyle labelStyle;
+        GUIStyle titleStyle;
+        private Vector2 scrollInfoVector;
+        void Start()
+        {
+            labelStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.label);
+            labelStyle.alignment = TextAnchor.UpperLeft;
+            labelStyle.normal.textColor = Color.white;
+
+            titleStyle = new GUIStyle();
+            titleStyle.normal.textColor = BDArmorySetup.BDGuiSkin.window.normal.textColor;
+            titleStyle.font = BDArmorySetup.BDGuiSkin.window.font;
+            titleStyle.fontSize = BDArmorySetup.BDGuiSkin.window.fontSize;
+            titleStyle.fontStyle = BDArmorySetup.BDGuiSkin.window.fontStyle;
+            titleStyle.alignment = TextAnchor.UpperCenter;
+        }
 
         public void Open(ModuleWeapon weapon, Vector2 position)
         {
             open = true;
             selectedWeapon = weapon;
             windowLocation = position;
-            if (weapon.ammoBelt != "def") beltString = weapon.ammoBelt;
+            beltString = String.Empty;
+            GUIstring = String.Empty;
+            countString = String.Empty;
+            lastGUIstring = String.Empty;
+            roundCounter = 1;
+            if (weapon.ammoBelt != "def")
+            {
+                beltString = weapon.ammoBelt;
+                BList = BDAcTools.ParseNames(beltString);
+                for (int i = 0; i < BList.Count; i++)
+                {
+                    BulletInfo binfo = BulletInfo.bullets[BList[i].ToString()];
+                    if (BList[i] != lastGUIstring)
+                    {
+                        GUIstring += countString.ToString();
+                        GUIstring += binfo.DisplayName;
+                        lastGUIstring = binfo.DisplayName;
+                        roundCounter = 1;
+                        countString = "; ";
+                    }
+                    else
+                    {
+                        roundCounter++;
+                        countString = " X" + roundCounter + "; ";
+                    }
+                }
+            }
             AList = BDAcTools.ParseNames(weapon.bulletType);
-            
+
             for (int a = 0; a < AList.Count; a++)
             {
                 bulletInfo = BulletInfo.bullets[AList[a].ToString()];
@@ -95,35 +140,35 @@ namespace BDArmory.UI
                 }
                 ammoDesc.Add(guiAmmoTypeString);
             }
-           
+
         }
         protected virtual void OnGUI()
         {
             if (save)
             {
                 save = false;
-                List<Part>.Enumerator craftPart = EditorLogic.fetch.ship.parts.GetEnumerator();
-                while (craftPart.MoveNext())
-                {
-                    if (craftPart.Current == null) continue;
-                    if (craftPart.Current.name != selectedWeapon.name) continue;
-                    List<ModuleWeapon>.Enumerator weapon = craftPart.Current.FindModulesImplementing<ModuleWeapon>().GetEnumerator();
-                    while (weapon.MoveNext())
+
+                using (List<Part>.Enumerator craftPart = EditorLogic.fetch.ship.parts.GetEnumerator())
+                    while (craftPart.MoveNext())
                     {
-                        if (weapon.Current == null) continue;
-                        weapon.Current.ammoBelt = beltString;
-                        if (!string.IsNullOrEmpty(beltString))
-                        {
-                            weapon.Current.useCustomBelt = true;
-                        }
-                        else
-                        {
-                            weapon.Current.useCustomBelt = false;
-                        }
+                        if (craftPart.Current == null) continue;
+                        using (List<ModuleWeapon>.Enumerator weapon = craftPart.Current.FindModulesImplementing<ModuleWeapon>().GetEnumerator())
+                            while (weapon.MoveNext())
+                            {
+                                if (weapon.Current == null) continue;
+                                if (weapon.Current.part.partName != selectedWeapon.part.partName) continue;
+                                if (weapon.Current.GetShortName() != selectedWeapon.GetShortName()) continue;
+                                weapon.Current.ammoBelt = beltString;
+                                if (!string.IsNullOrEmpty(beltString))
+                                {
+                                    weapon.Current.useCustomBelt = true;
+                                }
+                                else
+                                {
+                                    weapon.Current.useCustomBelt = false;
+                                }
+                            }
                     }
-                    weapon.Dispose();
-                }
-                craftPart.Dispose();
             }
             if (open)
             {
@@ -135,22 +180,30 @@ namespace BDArmory.UI
         {
             float line = 0.5f;
             string labelString = GUIstring.ToString() + countString.ToString();
-            GUIStyle labelStyle = BDArmorySetup.BDGuiSkin.label;
-            GUI.Label(new Rect(margin, 0.5f * buttonHeight, width - 2 * margin, buttonHeight), Localizer.Format("#LOC_BDArmory_Ammo_Setup"), labelStyle);
+            GUI.Label(new Rect(margin, 0.5f * buttonHeight, width - 2 * margin, buttonHeight), Localizer.Format("#LOC_BDArmory_Ammo_Setup"), titleStyle);
             if (GUI.Button(new Rect(width - 18, 2, 16, 16), "X"))
             {
                 open = false;
                 beltString = String.Empty;
                 GUIstring = String.Empty;
                 countString = String.Empty;
+                lastGUIstring = String.Empty;
             }
-            line ++;
+            line++;
+            GUI.Label(new Rect(margin, line * buttonHeight, width - 2 * margin, buttonHeight), Localizer.Format("#LOC_BDArmory_Ammo_Weapon") + " " + selectedWeapon.GetShortName(), labelStyle);
+            line++;
             GUI.Label(new Rect(margin, line * buttonHeight, width - 2 * margin, buttonHeight), Localizer.Format("#LOC_BDArmory_Ammo_Belt"), labelStyle);
             line += 1.2f;
-            GUI.Label(new Rect(margin, line * buttonHeight, width - 2 * margin, buttonHeight*labelLines), labelString, labelStyle);
+            labelLines = Mathf.Clamp(Mathf.CeilToInt(labelString.Length / 50), 1, 4);
+            BeginArea(new Rect(margin, line * buttonHeight, width - 2 * margin, labelLines * buttonHeight));
+            using (var scrollViewScope = new ScrollViewScope(scrollInfoVector, Width(width - 2 * margin), Height(labelLines * buttonHeight)))
+            {
+                scrollInfoVector = scrollViewScope.scrollPosition;
+                GUILayout.Label(labelString, labelStyle, Width(width - 50 - 2 * margin));
+            }
+            EndArea();
             line++;
 
-            labelLines = Mathf.CeilToInt((GUIstring.Length / 50));
             float ammolines = 0.1f;
             for (int i = 0; i < AList.Count; i++)
             {
@@ -180,11 +233,12 @@ namespace BDArmory.UI
                     ammolines += 1.1f;
                 }
             }
-            if (GUI.Button(new Rect(margin * 5, (line + labelLines + ammolines) * buttonHeight, (width - (10 * margin))/2, buttonHeight), Localizer.Format("#LOC_BDArmory_reset")))
+            if (GUI.Button(new Rect(margin * 5, (line + labelLines + ammolines) * buttonHeight, (width - (10 * margin)) / 2, buttonHeight), Localizer.Format("#LOC_BDArmory_reset")))
             {
                 beltString = String.Empty;
                 GUIstring = String.Empty;
                 countString = String.Empty;
+                lastGUIstring = String.Empty;
                 labelLines = 1;
                 roundCounter = 1;
             }
@@ -193,7 +247,7 @@ namespace BDArmory.UI
                 save = true;
                 open = false;
             }
-            line +=1.5f;
+            line += 1.5f;
             height = Mathf.Lerp(height, (line + labelLines + ammolines) * buttonHeight, 0.15f);
             windowRect.height = height;
             GUI.DragWindow();
@@ -205,7 +259,7 @@ namespace BDArmory.UI
             if (Instance)
                 Destroy(Instance);
             Instance = this;
-            windowRect = new Rect( (Screen.width/2) - (width/2), (Screen.height/2) - (height/2), width, height);
+            windowRect = new Rect((Screen.width / 2) - (width / 2), (Screen.height / 2) - (height / 2), width, height);
         }
 
         private void OnDestroy()

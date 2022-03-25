@@ -1,4 +1,5 @@
-﻿using BDArmory.Control;
+﻿using BDArmory.Competition;
+using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.UI;
 using System.Collections;

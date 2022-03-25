@@ -1,8 +1,9 @@
 ﻿using System.Collections;
 using UnityEngine;
 using BDArmory.Core;
+using BDArmory.Misc;
 using KSP.Localization;
-using BDArmory.Competition;
+using BDArmory.Competition.RemoteOrchestration;
 
 namespace BDArmory.UI
 {
@@ -65,7 +66,7 @@ namespace BDArmory.UI
                 Localizer.Format("#LOC_BDArmory_BDARemoteOrchestration_Title"),//"BDA Remote Orchestration"
                 BDArmorySetup.BDGuiSkin.window
             );
-            Misc.Misc.UpdateGUIRect(BDArmorySetup.WindowRectRemoteOrchestration, _guiCheckIndex);
+            Utils.UpdateGUIRect(BDArmorySetup.WindowRectRemoteOrchestration, _guiCheckIndex);
         }
 
         private void SetNewHeight(float windowHeight)
@@ -98,7 +99,7 @@ namespace BDArmory.UI
             service = BDAScoreService.Instance;
             UpdateClientStatus();
             ready = true;
-            _guiCheckIndex = Misc.Misc.RegisterGUIRect(new Rect());
+            _guiCheckIndex = Utils.RegisterGUIRect(new Rect());
         }
 
         private void WindowRemoteOrchestration(int id)
@@ -120,7 +121,7 @@ namespace BDArmory.UI
             switch (service.status)
             {
                 case BDAScoreService.StatusType.Waiting:
-                    statusLine = status + " " + (BDArmorySettings.REMOTE_INTERHEAT_DELAY - (Planetarium.GetUniversalTime() - service.retryFindStartedAt)).ToString("0") + "s";
+                    statusLine = status + " " + (service.TimeUntilNextHeat()).ToString("0") + "s";
                     break;
                 default:
                     statusLine = status;
@@ -163,10 +164,10 @@ namespace BDArmory.UI
                         break;
                 }
             }
-            if (nextButton && GUI.Button(new Rect(2 * width / 3, offset, width / 3 - _margin, _titleHeight), "Next", BDArmorySetup.BDGuiSkin.button))
-            {
-                BDAScoreService.Instance.retryFindStartedAt = -1;
-            }
+            //if (nextButton && GUI.Button(new Rect(2 * width / 3, offset, width / 3 - _margin, _titleHeight), "Next", BDArmorySetup.BDGuiSkin.button))
+            //{
+            //    BDAScoreService.Instance.waitStartedAt = -1;
+            //}
             offset += _titleHeight + _margin;
 
             _windowHeight = offset;

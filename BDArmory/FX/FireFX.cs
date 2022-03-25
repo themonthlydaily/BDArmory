@@ -1,5 +1,5 @@
 ﻿using System;
-using BDArmory.Control;
+using BDArmory.Competition;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Utils;
@@ -38,6 +38,7 @@ namespace BDArmory.FX
         private string explModelPath = "BDArmory/Models/explosion/explosion";
         private string explSoundPath = "BDArmory/Sounds/explode1";
         int explosionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23); // Why 19 and 23?
+        bool parentBeingDestroyed = false;
 
         PartResource fuel;
         PartResource solid;
@@ -120,7 +121,7 @@ namespace BDArmory.FX
                             enginerestartTime = Time.time;
                         }
                         burnTime = 4;
-                        Misc.Misc.RefreshAssociatedWindows(parentPart);
+                        Utils.RefreshAssociatedWindows(parentPart);
                         Debug.Log("[FireFX] firebottles remaining in " + parentPart.name + ": " + FBX.FireBottles);
                     }
                     else
@@ -139,6 +140,7 @@ namespace BDArmory.FX
                     */
                 }
             }
+            parentBeingDestroyed = false;
         }
 
         void OnDisable()
@@ -336,7 +338,12 @@ namespace BDArmory.FX
                     }
                     else
                     {
-                        parentPart.AddDamage(BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
+                        if (BDArmorySettings.ENABLE_HOS && parentPart.vessel.GetName() == BDArmorySettings.HALL_OF_SHAME)
+                        {
+                            parentPart.AddDamage(BDArmorySettings.HOS_FIRE * Time.deltaTime);
+                        }
+                        else
+                            parentPart.AddDamage(BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
                     }
 
                     BDACompetitionMode.Instance.Scores.RegisterBattleDamage(SourceVessel, parentPart.vessel, BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
@@ -416,8 +423,8 @@ namespace BDArmory.FX
                     tntMassEquivalent += tntEC;
                     ec.maxAmount = 0;
                     ec.isVisible = false;
-                    parentPart.RemoveResource(ec);//destroy battery. not calling part.destroy, since some batteries in cockpits.
-                    Misc.Misc.RefreshAssociatedWindows(parentPart);
+                    if (!parentBeingDestroyed) parentPart.RemoveResource(ec);//destroy battery. not calling part.destroy, since some batteries in cockpits.
+                    Utils.RefreshAssociatedWindows(parentPart);
                 }
                 //tntMassEquivilent *= BDArmorySettings.BD_AMMO_DMG_MULT; //handled by EXP_DMG_MOD_BATTLE_DAMAGE
                 if (BDArmorySettings.DRAW_DEBUG_LABELS && tntMassEquivalent > 0)
@@ -498,6 +505,7 @@ namespace BDArmory.FX
         {
             if (parentPart != null)
             {
+                parentBeingDestroyed = true;
                 parentPart.OnJustAboutToDie -= OnParentDestroy;
                 parentPart.OnJustAboutToBeDestroyed -= OnParentDestroy;
                 if (!surfaceFire) Detonate();

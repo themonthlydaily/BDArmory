@@ -78,6 +78,8 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static bool LEGACY_ARMOR = false;
         [BDAPersistentSettingsField] public static bool HACK_INTAKES = false;
         [BDAPersistentSettingsField] public static bool COMPETITION_CLOSE_SETTINGS_ON_COMPETITION_START = false; // Close the settings window when clicking the start competition button.
+        [BDAPersistentSettingsField] public static bool AUTO_LOAD_TO_KSC = false;                      // Automatically load the last used save and go to the KSC.
+        [BDAPersistentSettingsField] public static bool GENERATE_CLEAN_SAVE = false;                   // Use a clean save instead of the persistent one when loading to the KSC.
 
         // General slider settings
         [BDAPersistentSettingsField] public static int COMPETITION_DURATION = 5;                       // Competition duration in minutes
@@ -145,6 +147,8 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static float TARGET_WINDOW_SCALE_MAX = 2f;
         [BDAPersistentSettingsField] public static float TARGET_CAM_RESOLUTION = 1024f;
         [BDAPersistentSettingsField] public static bool BW_TARGET_CAM = true;
+        [BDAPersistentSettingsField] public static bool TARGET_WINDOW_INVERT_MOUSE_X = false;
+        [BDAPersistentSettingsField] public static bool TARGET_WINDOW_INVERT_MOUSE_Y = false;
 
         // Game modes
         [BDAPersistentSettingsField] public static bool PEACE_MODE = false;
@@ -171,6 +175,7 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static bool ZOMBIE_MODE = false;
         [BDAPersistentSettingsField] public static bool DISCO_MODE = false;
         [BDAPersistentSettingsField] public static bool NO_ENGINES = false;
+        [BDAPersistentSettingsField] public static bool WAYPOINTS_MODE = false;         // Waypoint section of Vessel Spawner Window.
 
         //Battle Damage settings
         [BDAPersistentSettingsField] public static bool BATTLEDAMAGE_TOGGLE = false;    // Main battle damage toggle.
@@ -202,7 +207,14 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static float BD_FIRE_CHANCE_TRACER = 10;
         [BDAPersistentSettingsField] public static float BD_FIRE_CHANCE_HE = 25;
         [BDAPersistentSettingsField] public static float BD_FIRE_CHANCE_INCENDIARY = 90;
-        [BDAPersistentSettingsField] public static bool ALLOW_ZOMBIE_BD = false;          // Allow battle damage to proc when using zombie mode?
+		[BDAPersistentSettingsField] public static bool ALLOW_ZOMBIE_BD = false;          // Allow battle damage to proc when using zombie mode?
+        [BDAPersistentSettingsField] public static bool ENABLE_HOS = false;
+        [BDAPersistentSettingsField] public static string HALL_OF_SHAME = "";
+        [BDAPersistentSettingsField] public static float HOS_FIRE = 0;
+        [BDAPersistentSettingsField] public static float HOS_MASS = 0;
+        [BDAPersistentSettingsField] public static float HOS_DMG = 0;
+        [BDAPersistentSettingsField] public static float HOS_THRUST = 0;
+        [BDAPersistentSettingsField] public static string HOS_BADGE = "";
 
         // Remote logging
         [BDAPersistentSettingsField] public static bool REMOTE_LOGGING_VISIBLE = false;                                   // Show/hide the remote orchestration toggle
@@ -212,6 +224,7 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static string COMPETITION_HASH = "";                                          // Competition hash used for orchestration
         [BDAPersistentSettingsField] public static float REMOTE_INTERHEAT_DELAY = 30;                                     // Delay between heats.
         [BDAPersistentSettingsField] public static int RUNWAY_PROJECT_ROUND = 10;                                         // RWP round index.
+        [BDAPersistentSettingsField] public static string REMOTE_ORCHESTRATION_NPC_SWAPPER = "Rammer";
 
         // Spawner settings
         [BDAPersistentSettingsField] public static bool SHOW_SPAWN_OPTIONS = true;                 // Show spawn options.
@@ -233,6 +246,11 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static int VESSEL_SPAWN_NUMBER_OF_TEAMS = 0;           // Number of Teams: 0 - FFA, 1 - Folders, 2-10 specified directly
         [BDAPersistentSettingsField] public static string VESSEL_SPAWN_FILES_LOCATION = "";        // Spawn files location (under AutoSpawn).
         [BDAPersistentSettingsField] public static bool VESSEL_SPAWN_RANDOM_ORDER = true;          // Shuffle vessels before spawning them.
+        [BDAPersistentSettingsField] public static bool SHOW_WAYPOINTS_OPTIONS = true;               // Waypoint section of Vessel Spawner Window.
+
+        // Waypoints
+        [BDAPersistentSettingsField] public static float WAYPOINTS_ALTITUDE = 50f;               // Altitude above ground of the waypoints.
+        [BDAPersistentSettingsField] public static bool WAYPOINTS_ONE_AT_A_TIME = true;          // Send the craft one-at-a-time through the course.
 
         // Heartbleed
         [BDAPersistentSettingsField] public static float HEART_BLEED_RATE = 0.01f;
@@ -240,6 +258,8 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static float HEART_BLEED_THRESHOLD = 10f;
 
         // Resource steal
+        [BDAPersistentSettingsField] public static bool RESOURCE_STEAL_RESPECT_FLOWSTATE_IN = true;     // Respect resource flow state in (stealing).
+        [BDAPersistentSettingsField] public static bool RESOURCE_STEAL_RESPECT_FLOWSTATE_OUT = false;   // Respect resource flow state out (stolen).
         [BDAPersistentSettingsField] public static float RESOURCE_STEAL_FUEL_RATION = 0.2f;
         [BDAPersistentSettingsField] public static float RESOURCE_STEAL_AMMO_RATION = 0.2f;
         [BDAPersistentSettingsField] public static float RESOURCE_STEAL_CM_RATION = 0f;

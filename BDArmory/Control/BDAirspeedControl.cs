@@ -258,4 +258,53 @@ namespace BDArmory.Control
             }
         }
     }
+
+    public class BDVTOLSpeedControl : MonoBehaviour
+    {
+        public float targetAltitude;
+        public Vessel vessel;
+        public bool preventNegativeZeroPoint = false;
+
+        private float altIntegral;
+        public float zeroPoint { get; private set; }
+
+        private const float Kp = 0.5f;
+        private const float Kd = 0.55f;
+        private const float Ki = 0.03f;
+
+
+        public void Activate()
+        {
+            vessel.OnFlyByWire -= AltitudeControl;
+            vessel.OnFlyByWire += AltitudeControl;
+            altIntegral = 0;
+        }
+
+        public void Deactivate()
+        {
+            vessel.OnFlyByWire -= AltitudeControl;
+        }
+
+        void AltitudeControl(FlightCtrlState s)
+        {
+
+            if (targetAltitude == 0)
+            {
+                vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
+                s.mainThrottle = 0;
+            }
+            else
+            {
+                float altError = (targetAltitude - (float)vessel.radarAltitude);
+                float altP = Kp * (targetAltitude - (float)vessel.radarAltitude);
+                float altD = Kd * (float)vessel.verticalSpeed;
+                altIntegral = Ki * Mathf.Clamp(altIntegral + altError * Time.deltaTime, -1f, 1f);
+                
+                float throttle = altP + altIntegral - altD;
+                s.mainThrottle = Mathf.Clamp01(throttle);
+
+                vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, throttle < -5f);
+            }
+        }
+    }
 }

@@ -1,5 +1,6 @@
 ﻿using BDArmory.Core;
-using BDArmory.Control;
+using BDArmory.Competition;
+using BDArmory.GameModes;
 using BDArmory.Misc;
 using System.Collections.Generic;
 using UnityEngine;
@@ -164,16 +165,16 @@ namespace BDArmory.Modules
                             if (MM == null)
                             {
                                 MM = (ModuleMassAdjust)part.Current.AddModule("ModuleMassAdjust");
-                                if (BDArmorySettings.MUTATOR_DURATION > 0 && BDArmorySettings.MUTATOR_APPLY_TIMER)
-                                {
-                                    MM.duration = BDArmorySettings.MUTATOR_DURATION; //MMA will time out and remove itself when mutator expires
-                                }
-                                else
-                                {
-                                    MM.duration = BDArmorySettings.COMPETITION_DURATION;
-                                }
-                                MM.massMod += mutatorInfo.MassMod / vessel.Parts.Count; //evenly distribute mass change across entire vessel
                             }
+                            if (BDArmorySettings.MUTATOR_DURATION > 0 && BDArmorySettings.MUTATOR_APPLY_TIMER)
+                            {
+                                MM.duration = BDArmorySettings.MUTATOR_DURATION; //MMA will time out and remove itself when mutator expires
+                            }
+                            else
+                            {
+                                MM.duration = BDArmorySettings.COMPETITION_DURATION;
+                            }
+                            MM.massMod += mutatorInfo.MassMod / vessel.Parts.Count; //evenly distribute mass change across entire vessel
                         }
                     }
                 if (!Vengeance && mutatorInfo.Vengeance)
@@ -360,7 +361,7 @@ namespace BDArmory.Modules
 
                             iconPath = MutatorInfo.mutators[mutators[i]].icon;
                             iconcolor = MutatorInfo.mutators[mutators[i]].iconColor;
-                            iconColor = Misc.Misc.ParseColor255(iconcolor);
+                            iconColor = Utils.ParseColor255(iconcolor);
                             switch (iconPath)
                             {
                                 case "IconAccuracy":

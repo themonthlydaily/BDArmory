@@ -15,7 +15,7 @@ using UnityEngine;
 
 namespace BDArmory.Misc
 {
-    public static class Misc
+    public static class Utils
     {
         public static Texture2D resizeTexture = GameDatabase.Instance.GetTexture(BDArmorySetup.textureDir + "resizeSquare", false);
 
@@ -433,5 +433,10 @@ namespace BDArmory.Misc
             }
         }
 
+        public static float RoundToUnit(float value, float unit=1f)
+        {
+            var rounded =  Mathf.Round(value / unit) * unit;
+            return (unit % 1 != 0) ? rounded : Mathf.Round(rounded); // Fix near-integer loss of precision.
+        }
     }
 }

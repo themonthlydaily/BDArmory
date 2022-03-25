@@ -1,12 +1,14 @@
-﻿﻿using BDArmory.Control;
-using BDArmory.Core;
-using BDArmory.Core.Extension;
-using BDArmory.Core.Module;
-using BDArmory.FX;
-using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+
+using BDArmory.Competition;
+using BDArmory.Core.Extension;
+using BDArmory.Core.Module;
+using BDArmory.Core;
+using BDArmory.FX;
+using BDArmory.GameModes;
 
 namespace BDArmory.Misc
 {
@@ -192,7 +194,7 @@ namespace BDArmory.Misc
                     spallMass = (spallCaliber * spallCaliber * Mathf.PI / 400) * (thickness / 10) * (density / 1000000000);
                     if (BDArmorySettings.DRAW_ARMOR_LABELS)
                     {
-                        Debug.Log("[BDArmory.ProjectileUtils]: " + hitPart + ", " + hitPart.vessel.GetName() + ": Armor spalling! Diameter: " + spallCaliber + "; mass: " + (spallMass*1000) + "kg");
+                        Debug.Log("[BDArmory.ProjectileUtils]: " + hitPart + ", " + hitPart.vessel.GetName() + ": Armor spalling! Diameter: " + spallCaliber + "; mass: " + (spallMass * 1000) + "kg");
                     }
                 }
                 if (penetrationFactor > 0.75 && penetrationFactor < 2) //material deformed around impact point
@@ -229,7 +231,7 @@ namespace BDArmory.Misc
                         if (BDArmorySettings.DRAW_ARMOR_LABELS)
                         {
                             Debug.Log("[BDArmory.ProjectileUtils{CalcArmorDamage}]: Armor failure on " + hitPart + ", " + hitPart.vessel.GetName() + "!");
-                            Debug.Log("[BDArmory.ProjectileUtils{CalcArmorDamage}]: Armor spalling! Diameter: " + spallCaliber + "; mass: " + (spallMass*1000) + "kg");
+                            Debug.Log("[BDArmory.ProjectileUtils{CalcArmorDamage}]: Armor spalling! Diameter: " + spallCaliber + "; mass: " + (spallMass * 1000) + "kg");
                         }
                     }
                 }
@@ -421,7 +423,7 @@ namespace BDArmory.Misc
             float damage;
             var Armor = hitPart.FindModuleImplementing<HitpointTracker>();
             if (Armor != null)
-            {                
+            {
                 if (hitPart.name.ToLower().Contains("armor"))
                 {
                     spallArea = hitPart.Modules.GetModule<HitpointTracker>().armorVolume * 10000;
@@ -441,8 +443,8 @@ namespace BDArmory.Misc
                 float Density = Armor.Density;
                 if (Armor.ArmorPanel) spallArea = Armor.armorVolume;
 
-				float ArmorTolerance = Strength * (1 + ductility) * (thickness/10); //FIXME - this is going to return a value an order of magnitude greater than blast
-                                                                                    //Trying thickness /10, so the 10x increase in thickness in mm isn't massively increasing value
+                float ArmorTolerance = Strength * (1 + ductility) * (thickness / 10); //FIXME - this is going to return a value an order of magnitude greater than blast
+                                                                                      //Trying thickness /10, so the 10x increase in thickness in mm isn't massively increasing value
 
                 float blowthroughFactor = (float)BlastPressure / ArmorTolerance;
                 if (BDArmorySettings.DRAW_ARMOR_LABELS)
@@ -956,13 +958,15 @@ namespace BDArmory.Misc
 
         private static void StealResource(Vessel src, Vessel dst, HashSet<string> resourceNames, double ration, bool integerAmounts = false)
         {
+            if (src == null || dst == null) return;
+
             // identify all parts on source vessel with resource
             Dictionary<string, HashSet<PartResource>> srcParts = new Dictionary<string, HashSet<PartResource>>();
-            DeepFind(src.rootPart, resourceNames, srcParts);
+            DeepFind(src.rootPart, resourceNames, srcParts, BDArmorySettings.RESOURCE_STEAL_RESPECT_FLOWSTATE_OUT);
 
             // identify all parts on destination vessel with resource
             Dictionary<string, HashSet<PartResource>> dstParts = new Dictionary<string, HashSet<PartResource>>();
-            DeepFind(dst.rootPart, resourceNames, dstParts);
+            DeepFind(dst.rootPart, resourceNames, dstParts, BDArmorySettings.RESOURCE_STEAL_RESPECT_FLOWSTATE_IN);
 
             foreach (var resourceName in resourceNames)
             {
@@ -1057,12 +1061,13 @@ namespace BDArmory.Misc
             }
         }
 
-        private static void DeepFind(Part p, HashSet<string> resourceNames, Dictionary<string, HashSet<PartResource>> accumulator)
+        private static void DeepFind(Part p, HashSet<string> resourceNames, Dictionary<string, HashSet<PartResource>> accumulator, bool respectFlowState)
         {
             foreach (PartResource r in p.Resources)
             {
                 if (resourceNames.Contains(r.resourceName))
                 {
+                    if (respectFlowState && !r.flowState) continue; // Ignore locked resources.
                     if (!accumulator.ContainsKey(r.resourceName))
                         accumulator[r.resourceName] = new HashSet<PartResource>();
                     accumulator[r.resourceName].Add(r);
@@ -1070,7 +1075,7 @@ namespace BDArmory.Misc
             }
             foreach (Part child in p.children)
             {
-                DeepFind(child, resourceNames, accumulator);
+                DeepFind(child, resourceNames, accumulator, respectFlowState);
             }
         }
     }
