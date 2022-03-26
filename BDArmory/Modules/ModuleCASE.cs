@@ -1,8 +1,7 @@
 using BDArmory.Competition;
-using BDArmory.Control;
+using BDArmory.Competition.VesselSpawning;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
-using BDArmory.Core.Module;
 using BDArmory.Core.Utils;
 using BDArmory.FX;
 using BDArmory.Misc;
@@ -11,7 +10,6 @@ using System.Text;
 using System.Collections.Generic;
 using UniLinq;
 using UnityEngine;
-using System.Collections;
 
 namespace BDArmory.Modules
 {
@@ -343,7 +341,7 @@ namespace BDArmory.Modules
 
         void OnDestroy()
         {
-            if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_AMMOBINS && BDArmorySettings.BD_VOLATILE_AMMO && HighLogic.LoadedSceneIsFlight && !(VesselSpawner.Instance != null && VesselSpawner.Instance.vesselsSpawning))
+            if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_AMMOBINS && BDArmorySettings.BD_VOLATILE_AMMO && HighLogic.LoadedSceneIsFlight && !VesselSpawnerStatus.vesselsSpawning)
             {
                 if (!hasDetonated) DetonateIfPossible();
             }

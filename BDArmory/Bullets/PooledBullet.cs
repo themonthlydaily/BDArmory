@@ -8,7 +8,7 @@ using BDArmory.Core.Extension;
 using BDArmory.FX;
 using BDArmory.Parts;
 using BDArmory.Shaders;
-using BDArmory.Control;
+using BDArmory.Competition;
 using UnityEngine;
 using BDArmory.Misc;
 using BDArmory.Modules;

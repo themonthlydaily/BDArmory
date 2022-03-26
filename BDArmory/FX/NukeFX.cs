@@ -1,14 +1,15 @@
-﻿using BDArmory.Control;
-using BDArmory.Core;
-using BDArmory.Core.Extension;
-using BDArmory.Core.Utils;
-using BDArmory.Misc;
-using BDArmory.Modules;
-using BDArmory.UI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+
+using BDArmory.Competition;
+using BDArmory.Core.Extension;
+using BDArmory.Core.Utils;
+using BDArmory.Core;
+using BDArmory.GameModes;
+using BDArmory.Misc;
+using BDArmory.Modules;
 
 namespace BDArmory.FX
 {
@@ -466,7 +467,7 @@ namespace BDArmory.FX
                             {
                                 if (BDArmorySettings.BATTLEDAMAGE)
                                 {
-                                    Misc.BattleDamageHandler.CheckDamageFX(part, 50, 0.5f, true, false, SourceVesselName, eventToExecute.Hit);
+                                    BattleDamageHandler.CheckDamageFX(part, 50, 0.5f, true, false, SourceVesselName, eventToExecute.Hit);
                                 }
                                 // Update scoring structures
                                 if (BDACompetitionMode.Instance) //moving this here - only give scores to stuff still inside blast radius when blastfront arrives

@@ -1,14 +1,7 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using BDArmory.Core;
-using BDArmory.Core.Extension;
-using BDArmory.Misc;
-using BDArmory.Modules;
-using BDArmory.UI;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
-namespace BDArmory.Misc
+namespace BDArmory.GameModes
 {
     public class BattleDamageTracker : MonoBehaviour
     {

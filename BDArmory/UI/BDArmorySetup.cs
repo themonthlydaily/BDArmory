@@ -7,10 +7,11 @@ using System.Linq;
 using System.Reflection;
 using BDArmory.Bullets;
 using BDArmory.Competition;
-using BDArmory.Control;
+using BDArmory.Competition.RemoteOrchestration;
+using BDArmory.Competition.VesselSpawning;
+using BDArmory.GameModes;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
-using BDArmory.Core.Utils;
 using BDArmory.CounterMeasure;
 using BDArmory.FX;
 using BDArmory.Misc;
@@ -2387,13 +2388,13 @@ namespace BDArmory.UI
                 {
                     if (HighLogic.LoadedSceneIsFlight)
                     {
-                        VesselSpawner.Instance.HackIntakesOnNewVessels(BDArmorySettings.HACK_INTAKES);
+                        SpawnUtils.HackIntakesOnNewVessels(BDArmorySettings.HACK_INTAKES);
                         if (BDArmorySettings.HACK_INTAKES) // Add the hack to all in-game intakes.
                         {
                             foreach (var vessel in FlightGlobals.Vessels)
                             {
                                 if (vessel == null || !vessel.loaded) continue;
-                                VesselSpawner.Instance.HackIntakes(vessel, true);
+                                SpawnUtils.HackIntakes(vessel, true);
                             }
                         }
                         else // Reset all the in-game intakes back to their part-defined settings.
@@ -2401,7 +2402,7 @@ namespace BDArmory.UI
                             foreach (var vessel in FlightGlobals.Vessels)
                             {
                                 if (vessel == null || !vessel.loaded) continue;
-                                VesselSpawner.Instance.HackIntakes(vessel, false);
+                                SpawnUtils.HackIntakes(vessel, false);
                             }
                         }
                     }
@@ -2788,6 +2789,7 @@ namespace BDArmory.UI
                     }
                     line -= 0.25f;
                 }
+                BDArmorySettings.WAYPOINTS_MODE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.WAYPOINTS_MODE, Localizer.Format("#LOC_BDArmory_Settings_WaypointsMode"));
                 if (BDArmorySettings.ADVANDED_USER_SETTINGS)
                 {
                     BDArmorySettings.RUNWAY_PROJECT = GUI.Toggle(SLeftRect(++line), BDArmorySettings.RUNWAY_PROJECT, Localizer.Format("#LOC_BDArmory_Settings_RunwayProject"));//Runway Project
@@ -2795,7 +2797,7 @@ namespace BDArmory.UI
                     if (BDArmorySettings.RUNWAY_PROJECT)
                     {
                         GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_RunwayProjectRound")}: ({(BDArmorySettings.RUNWAY_PROJECT_ROUND > 10 ? $"S{(BDArmorySettings.RUNWAY_PROJECT_ROUND - 1) / 10}R{(BDArmorySettings.RUNWAY_PROJECT_ROUND - 1) % 10 + 1}" : "—")})", leftLabel); // RWP round
-                        BDArmorySettings.RUNWAY_PROJECT_ROUND = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.RUNWAY_PROJECT_ROUND, 10f, 50f));
+                        BDArmorySettings.RUNWAY_PROJECT_ROUND = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.RUNWAY_PROJECT_ROUND, 10f, 60f));
 
                         if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                         {
@@ -3126,6 +3128,10 @@ namespace BDArmory.UI
                     foreach (var vessel in FlightGlobals.VesselsLoaded)
                         FireSpitter.CheckStatus(vessel);
                 }
+                if (GUI.Button(SLeftRect(++line), "Spawn spawn probe here."))
+                {
+                    SpawnUtils.SpawnSpawnProbe();
+                }
                 if (GUI.Button(SLeftRect(++line), "Quit KSP."))
                 {
                     QuitKSP();
@@ -3307,7 +3313,7 @@ namespace BDArmory.UI
                                 case 44:
                                     startCompetitionText = Localizer.Format("#LOC_BDArmory_Settings_LowGravDeployment");
                                     break;
-                                case 50: // FIXME temporary index, to be assigned later
+                                case 60: // FIXME temporary index, to be assigned later
                                     startCompetitionText = Localizer.Format("#LOC_BDArmory_Settings_StartOrbitalDeployment");
                                     break;
                             }
@@ -3327,7 +3333,7 @@ namespace BDArmory.UI
                                     case 44:
                                         BDACompetitionMode.Instance.StartRapidDeployment(0);
                                         break;
-                                    case 50: // FIXME temporary index, to be assigned later
+                                    case 60: // FIXME temporary index, to be assigned later
                                         BDACompetitionMode.Instance.StartRapidDeployment(0);
                                         break;
                                     default:

@@ -1,17 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using BDArmory.Bullets;
+using UnityEngine;
+
 using BDArmory.Competition;
-using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Module;
 using BDArmory.Core.Utils;
+using BDArmory.GameModes;
 using BDArmory.Misc;
 using BDArmory.Modules;
 using BDArmory.UI;
-using UnityEngine;
 
 namespace BDArmory.FX
 {
@@ -798,7 +798,7 @@ namespace BDArmory.FX
                         {
                             if (BDArmorySettings.BATTLEDAMAGE)
                             {
-                                Misc.BattleDamageHandler.CheckDamageFX(part, Caliber, penetrationFactor, true, warheadType == WarheadTypes.ShapedCharge ? true : false, SourceVesselName, eventToExecute.Hit);
+                                BattleDamageHandler.CheckDamageFX(part, Caliber, penetrationFactor, true, warheadType == WarheadTypes.ShapedCharge ? true : false, SourceVesselName, eventToExecute.Hit);
                             }
                             // Update scoring structures
                             //damage = Mathf.Clamp(damage, 0, part.Damage()); //if we want to clamp overkill score inflation

@@ -1,5 +1,6 @@
 ﻿using BDArmory.Core;
-using BDArmory.Control;
+using BDArmory.Competition;
+using BDArmory.GameModes;
 using BDArmory.Misc;
 using System.Collections.Generic;
 using UnityEngine;

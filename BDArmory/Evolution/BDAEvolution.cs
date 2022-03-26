@@ -3,11 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using BDArmory.Control;
+using BDArmory.Competition;
+using BDArmory.Competition.VesselSpawning;
 using BDArmory.Core;
-using BDArmory.Core.Extension;
-using BDArmory.Evolution;
-using BDArmory.UI;
 using UnityEngine;
 
 namespace BDArmory.Evolution
@@ -38,7 +36,7 @@ namespace BDArmory.Evolution
     {
         public string savegame;
         public string evolutionId;
-        public VesselSpawner.SpawnConfig spawnConfig;
+        public SpawnConfig spawnConfig;
         // public Dictionary<string, Dictionary<string, float>> aggregateScores;
     }
 
@@ -113,7 +111,7 @@ namespace BDArmory.Evolution
         private VariantEngine engine = null;
 
         // Spawn settings
-        private static VesselSpawner.SpawnConfig spawnConfig;
+        private static SpawnConfig spawnConfig;
 
         // config node for evolution details
         private ConfigNode config = null;
@@ -186,7 +184,7 @@ namespace BDArmory.Evolution
             nextVariantId = 1;
             groupId = 1;
             evolutionId = DateTimeOffset.Now.ToUnixTimeSeconds().ToString();
-            spawnConfig = new VesselSpawner.SpawnConfig(
+            spawnConfig = new SpawnConfig(
                 BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
                 BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
                 BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
@@ -328,7 +326,7 @@ namespace BDArmory.Evolution
                 {
                     var strings = File.ReadAllLines(stateFile);
                     state = JsonUtility.FromJson<EvolutionWorkingState>(strings[0]);
-                    state.spawnConfig = JsonUtility.FromJson<VesselSpawner.SpawnConfig>(strings[1]);
+                    state.spawnConfig = JsonUtility.FromJson<SpawnConfig>(strings[1]);
                 }
                 catch (Exception e)
                 {
@@ -502,7 +500,7 @@ namespace BDArmory.Evolution
 
         private IEnumerator ExecuteTournament()
         {
-            var spawner = VesselSpawner.Instance;
+            var spawner = CircularSpawning.Instance;
 
             // clear scores
             aggregateScores.Clear();

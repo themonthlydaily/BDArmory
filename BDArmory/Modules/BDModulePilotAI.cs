@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using BDArmory.Competition;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
@@ -404,12 +405,12 @@ namespace BDArmory.Modules
         #region Terrain
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, category = "DoubleSlider", guiName = "#LOC_BDArmory_TurnRadiusTwiddleFactorMin", advancedTweakable = true,//Turn radius twiddle factors (category seems to have no effect)
             groupName = "pilotAI_Terrain", groupDisplayName = "#LOC_BDArmory_PilotAI_Terrain", groupStartCollapsed = true),
-            UI_FloatRange(minValue = 1f, maxValue = 5f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 0.1f, maxValue = 5f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float turnRadiusTwiddleFactorMin = 2.0f; // Minimum and maximum twiddle factors for the turn radius. Depends on roll rate and how the vessel behaves under fire.
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, category = "DoubleSlider", guiName = "#LOC_BDArmory_TurnRadiusTwiddleFactorMax", advancedTweakable = true,//Turn radius twiddle factors (category seems to have no effect)
             groupName = "pilotAI_Terrain", groupDisplayName = "#LOC_BDArmory_PilotAI_Terrain", groupStartCollapsed = true),
-            UI_FloatRange(minValue = 1f, maxValue = 5f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 0.1f, maxValue = 5f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float turnRadiusTwiddleFactorMax = 3.0f; // Minimum and maximum twiddle factors for the turn radius. Depends on roll rate and how the vessel behaves under fire.
         #endregion
 
@@ -601,6 +602,8 @@ namespace BDArmory.Modules
         float turningTimer;
         float evasiveTimer;
         float threatRating;
+        List<Vector3> waypoints = null;
+        int activeWaypointIndex = -1;
         Vector3 lastTargetPosition;
 
         LineRenderer lr;
@@ -1192,6 +1195,8 @@ namespace BDArmory.Modules
 
             UpdateVelocityRelativeDirections();
             CheckLandingGear();
+            if (IsFlyingWaypoints) UpdateWaypoint(); // Update the waypoint state.
+
             if (!vessel.LandedOrSplashed && (FlyAvoidTerrain(s) || (!ramming && FlyAvoidOthers(s))))
             { turningTimer = 0; }
             else if (belowMinAltitude && !(gainAltInhibited || BDArmorySettings.SF_REPULSOR)) // If we're below minimum altitude, gain altitude unless we're being inhibited or the space friction repulsor field is enabled.
@@ -1206,7 +1211,7 @@ namespace BDArmory.Modules
             }
             else
             {
-                if (command != PilotCommands.Free)
+                if (command != PilotCommands.Free && command != PilotCommands.Waypoints)
                 { UpdateCommand(s); }
                 else
                 { UpdateAI(s); }
@@ -1223,7 +1228,7 @@ namespace BDArmory.Modules
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
-                if (lastStatus != currentStatus && !(lastStatus.StartsWith("Gain Alt.") && currentStatus.StartsWith("Gain Alt.")) && !(lastStatus.StartsWith("Terrain") && currentStatus.StartsWith("Terrain")))
+                if (lastStatus != currentStatus && !(lastStatus.StartsWith("Gain Alt.") && currentStatus.StartsWith("Gain Alt.")) && !(lastStatus.StartsWith("Terrain") && currentStatus.StartsWith("Terrain")) && !(lastStatus.StartsWith("Waypoint") && currentStatus.StartsWith("Waypoint")))
                 {
                     Debug.Log("[BDArmory.BDModulePilotAI]: Status of " + vessel.vesselName + " changed from " + lastStatus + " to " + currentStatus);
                 }
@@ -1275,7 +1280,7 @@ namespace BDArmory.Modules
                             for (int i = 0; i < weaponManager.rwr.pingsData.Length; i++)
                             {
                                 TargetSignatureData threat = weaponManager.rwr.pingsData[i];
-                                if (threat.exists && threat.signalStrength == 4)
+                                if (threat.exists && threat.signalStrength == (float)RadarWarningReceiver.RWRThreatTypes.MissileLock)
                                 {
                                     missileThreatDetected = true;
                                     float dist = (weaponManager.rwr.pingWorldPositions[i] - vesselTransform.position).sqrMagnitude;
@@ -1309,6 +1314,15 @@ namespace BDArmory.Modules
                     evasiveTimer = 0;
                     collisionDetectionTicker = vesselCollisionAvoidanceTickerFreq + 1; //check for collision again after exiting evasion routine
                 }
+            }
+            else if (!extending && IsFlyingWaypoints)
+            {
+                // FIXME To avoid getting stuck circling a waypoint, a check should be made (maybe use the turningTimer for this?), in which case the plane should RequestExtend away from the waypoint.
+                // var waypoint = waypoints[activeWaypointIndex];
+                // var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
+                // var waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
+                // var rangeToTarget = (vesselTransform.position - waypointPosition).magnitude;
+                FlyWaypoints(s);
             }
             else if (!extending && weaponManager && targetVessel != null && targetVessel.transform != null)
             {
@@ -2002,7 +2016,7 @@ namespace BDArmory.Modules
 
         void FlyExtend(FlightCtrlState s, Vector3 tPosition)
         {
-            var extendVector = extendHorizontally ? Vector3.ProjectOnPlane(vessel.transform.position - tPosition, upDirection): vessel.transform.position - tPosition;
+            var extendVector = extendHorizontally ? Vector3.ProjectOnPlane(vessel.transform.position - tPosition, upDirection) : vessel.transform.position - tPosition;
             if (extendVector.sqrMagnitude < extendDistance * extendDistance) // Extend from position is closer (horizontally) than the extend distance.
             {
                 Vector3 targetDirection = extendVector.normalized * extendDistance;
@@ -2055,7 +2069,7 @@ namespace BDArmory.Modules
             if (command != PilotCommands.Free && (vessel.transform.position - flightCenter).sqrMagnitude < radius * radius * 1.5f)
             {
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDModulePilotAI]: AI Pilot reached command destination.");
-                command = PilotCommands.Free;
+                ReleaseCommand();
             }
 
             useVelRollTarget = true;
@@ -2063,6 +2077,97 @@ namespace BDArmory.Modules
             AdjustThrottle(speed, false);
             FlyToPosition(s, targetPosition);
         }
+
+        #region Waypoints
+        public void ClearWaypoints()
+        {
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDModulePilotAI]: Cleared waypoints");
+            this.waypoints = null;
+            this.activeWaypointIndex = -1;
+        }
+        public void SetWaypoints(List<Vector3> waypoints)
+        {
+            if (waypoints == null || waypoints.Count == 0)
+            {
+                this.activeWaypointIndex = -1;
+                this.waypoints = null;
+                return;
+            }
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log(string.Format("[BDArmory.BDModulePilotAI]: Set {0} waypoints", waypoints.Count));
+            this.waypoints = waypoints;
+            this.activeWaypointIndex = 0;
+            var waypoint = waypoints[activeWaypointIndex];
+            var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
+            waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
+            waypointsLastOffset = vessel.transform.position - waypointPosition;
+            CommandFollowWaypoints();
+        }
+        public bool IsFlyingWaypoints => command == PilotCommands.Waypoints && activeWaypointIndex >= 0 && waypoints != null && waypoints.Count > 0;
+
+        public int GetWaypointIndex()
+        {
+            return this.activeWaypointIndex;
+        }
+
+        private Vector3 waypointPosition;
+        private Vector3 waypointsLastOffset = Vector3.zero;
+        private float waypointsLastRange = 999f;
+        private float waypointsRange = 999f;
+        private float waypointsRangeDelta = 0;
+        void FlyWaypoints(FlightCtrlState s)
+        {
+            // Note: UpdateWaypoint is called separately before this in case FlyWaypoints doesn't get called.
+            SetStatus($"Waypoint {activeWaypointIndex} ({waypointsRange:F0}m)");
+            var waypointDirection = (waypointPosition - vessel.transform.position).normalized;
+            FlyToPosition(s, vessel.transform.position + waypointDirection * Mathf.Min(500f, waypointsRange), false); // Target up to 500m ahead so that max altitude restrictions apply reasonably.
+        }
+
+        void UpdateWaypoint()
+        {
+            if (activeWaypointIndex < 0 || waypoints == null || waypoints.Count == 0)
+            {
+                if (command == PilotCommands.Waypoints) ReleaseCommand();
+                return;
+            }
+            var waypoint = waypoints[activeWaypointIndex];
+            var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
+            waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
+            // vessel has arrived if its distance to the target is within a range threshold
+            waypointsRange = (float)(vesselTransform.position - waypointPosition).magnitude;
+            waypointsRangeDelta = waypointsRange - waypointsLastRange;
+            if (waypointsRangeDelta > 0 && waypointsLastRange < 500)
+            {
+                // moving away, proceed to next point
+                var timeToCPA = AIUtils.ClosestTimeToCPA(waypointsLastOffset, vessel.Velocity(), vessel.acceleration, Time.fixedDeltaTime); // Assume velocity and acceleration are the same as last frame (should be good enough to first order).
+                if (timeToCPA == 0) // It was the previous time step
+                    timeToCPA = -AIUtils.ClosestTimeToCPA(waypointsLastOffset, -vessel.Velocity(), vessel.acceleration, Time.fixedDeltaTime);
+                var deviation = AIUtils.PredictPosition(waypointsLastOffset, vessel.Velocity(), vessel.acceleration, timeToCPA).magnitude;
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log(string.Format("[BDArmory.BDModulePilotAI]: Reached waypoint {0} with range {1}", activeWaypointIndex, deviation));
+                BDACompetitionMode.Instance.Scores.RegisterWaypointReached(vessel.vesselName, activeWaypointIndex, deviation);
+                ++activeWaypointIndex;
+                waypointsLastRange = 999;
+                waypointsRangeDelta = 0;
+                if (activeWaypointIndex >= waypoints.Count)
+                {
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDModulePilotAI]: Waypoints complete");
+                    waypoints = null;
+                    ReleaseCommand();
+                    return;
+                }
+                else
+                {
+                    waypoint = waypoints[activeWaypointIndex];
+                    terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
+                    waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
+                    waypointsLastOffset = vessel.transform.position - waypointPosition;
+                    UpdateWaypoint(); // Call ourselves again for the new waypoint to follow.
+                    return;
+                }
+            }
+            waypointsLastRange = waypointsRange;
+            waypointsLastOffset = vessel.transform.position - waypointPosition;
+        }
+        #endregion
 
         //sends target speed to speedController
         void AdjustThrottle(float targetSpeed, bool useBrakes, bool allowAfterburner = true, bool forceAfterburner = false, float throttleOverride = -1f)
@@ -2105,7 +2210,7 @@ namespace BDArmory.Modules
                     AdjustThrottle(targetSpeed, false, useAB);
                 }
 
-                if ((weaponManager.isChaffing || weaponManager.isFlaring) && weaponManager.incomingMissileVessel != null) // Missile evasion
+                if (weaponManager.incomingMissileVessel != null && (weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= weaponManager.cmThreshold)) // Missile evasion
                 {
                     if ((weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= 1.5f) && (!weaponManager.isChaffing)) // Missile is about to impact, pull a hard turn
                     {
@@ -2159,6 +2264,7 @@ namespace BDArmory.Modules
                     debugString.Append($"Dodging gunfire");
                     float threatDirectionFactor = Vector3.Dot(vesselTransform.up, threatRelativePosition.normalized);
                     //Vector3 axis = -Vector3.Cross(vesselTransform.up, threatRelativePosition);
+                    // FIXME AUBRANIUM When evading while in waypoint following mode, the breakTarget ought to be roughly in the direction of the waypoint.
 
                     Vector3 breakTarget = threatRelativePosition * 2f;       //for the most part, we want to turn _towards_ the threat in order to increase the rel ang vel and get under its guns
 
@@ -2250,7 +2356,7 @@ namespace BDArmory.Modules
         {
             if (!vessel.LandedOrSplashed)
             {
-                if (vessel.radarAltitude > 50.0f)
+                if (vessel.radarAltitude > Mathf.Min(50f, minAltitude / 2f))
                     vessel.ActionGroups.SetGroup(KSPActionGroup.Gear, false);
                 else
                     vessel.ActionGroups.SetGroup(KSPActionGroup.Gear, true);
@@ -2605,7 +2711,8 @@ namespace BDArmory.Modules
             // if (maxPosG > maxDynPresGRecorded)
             //     maxDynPresGRecorded = maxPosG;
 
-            dynDynPresGRecorded *= dynDecayRate; // Decay the highest observed G-force from dynamic pressure (we want a fairly recent value in case the planes dynamics have changed).
+            if (command != PilotCommands.Waypoints) // Don't decay the highest recorded G-force when following waypoints as we're likely to be heading in straight lines for longer periods.
+                dynDynPresGRecorded *= dynDecayRate; // Decay the highest observed G-force from dynamic pressure (we want a fairly recent value in case the planes dynamics have changed).
             if (!vessel.LandedOrSplashed && Math.Abs(gLoadMovingAvg) > dynDynPresGRecorded)
                 dynDynPresGRecorded = Math.Abs(gLoadMovingAvg);
 
@@ -3119,6 +3226,12 @@ namespace BDArmory.Modules
         {
             base.CommandTakeOff();
             standbyMode = false;
+        }
+
+        public override void CommandFollowWaypoints()
+        {
+            if (standbyMode) CommandTakeOff();
+            base.CommandFollowWaypoints();
         }
 
         protected override void OnGUI()

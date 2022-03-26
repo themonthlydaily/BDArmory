@@ -1,12 +1,39 @@
-﻿FIXES
+﻿v1.4.18.1
+FIXES
+- Check waypoint completion when in waypoints mode even if a different action is being taken (fixes extra large deviations and missed waypoints).
+IMPROVEMENTS
+- Interpolate the waypoint deviation to give a better estimate of the minimum deviation.
+
+v1.4.18.0
+Note: Due to some internal refactoring, CameraTools also needs to be updated to version 1.21.0 to work with this version of BDArmory.
+FIXES
 - Add checks to only adjust scores when a competition is active.
 - Fix interpretation of demo vessel optimisation script.
 - Fix CASE-2 ammo reduction when cloning part.
-- Fix laser battledaamge.
+- Fix laser battledamage.
 - Fix DebugLines not disabling when toggled off.
+- Reorder custom bay toggle branch so it's not overwritten by airstream check (fixes custom cargo bay not being deployed).
+- Fixed Anti-Radiation missiles not working properly.
+- Fix barrage mode fire rate decrease/guns never overheating.
+- Fix armor panels being too protective against HE.
+- Fix selection logic for missiles when targeting missiles.
+- Fix ammo belt exploit.
 IMPROVEMENTS
 - General:
 	- Add a 'Generate Clean Save' toggle for auto-loading to the KSC without generating a clean save (tournaments and evolution still generate a clean save).
+- AI:
+	- New AI part: AI Vertical Takeoff and Landing Pilot (for helicopters, VTOL jets, and airships). 
+		- The VTOL AI behaves like the Surface AI in combat.
+		- The AI flies your craft by using throttle to control altitude and pitch to control speed.
+		- The AI will try to stay above the minimum altitude at all times and if it can, at the default altitude outside of combat and the combat altitude during combat.
+		- The AI will obey the max pitch and max bank settings and fly no faster than the set maximum and combat speed settings.
+	- Don't treat passive (non-radar-guided) missiles outside visual range as incoming missile threats until they enter visual range.
+	- Lower the altitude at which gear is toggled to the minimum of 50m or minAltitude/2.
+	- Lower the minimum of the terrain avoidance sliders to allow values below 1.
+- WM:
+	- Extend MMG smartpick selection logic.
+	- Targets in guard mode no longer receive RWR warnings for missile launches outside their visual range.
+	- Craft in guard mode will turn off their radars if they have an incoming anti-radiation missile within visual range.
 - Armor:
 	- Explosive Reactive Armor HP is now customizable.
 - Weapons:
@@ -14,13 +41,23 @@ IMPROVEMENTS
 	- Add explModelPath and explSoundPath to Sidam.
 	- Clean up rocket aiming, switch it to use the more accurate leap-frog numerical integrator and use ballistic aiming once the thrust period is over.
 	- Set laser weapons to use standard FX pipeline.
+	- Create new antiradTargetTypes variable for missiles that allows you to specify the RWR Threat Type that the anti-radiation missile should target. Default is 0,5 (SAM,Detection). See the HARM config file for more details.
 - GameModes:
 	- Paintball Mode now affects Nukes.
+	- Waypoint Mode added for racing/time trials instead of combat.
 - Tournamements:
 	- Add checks to only adjust scores when a competition is active (fixes differences in the API scores due to timing issues).
 	- Use base64 encoded vessel names internally in the parser to avoid issues with craft naming (e.g., craft with ':' in the name).
+	- Adds NPC swapper functionality to remote orchestration tournaments.
 - RWP:
 	- Add Hall of Shame code.
+- UI:
+	- Add a Waypoints Mode section to the Vessel Spawner window when the Waypoints game mode is enabled.
+- Internal:
+	- Replace hard-coded RWR threat types with RWRThreatType reference.
+	- Remove reference to TargetingModeTerminal since TargetingMode is updated to be equal to TargetingModeTerminal once terminal guidance activates.
+	- New spawn and orchestration strategies are partially implemented.
+	- Some refactoring of the spawning code is in progress.
 
 v1.4.17.0
 FIXES

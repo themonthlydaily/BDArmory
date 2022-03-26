@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace BDArmory.Competition
+namespace BDArmory.Competition.RemoteOrchestration
 {
 
     [Serializable]
@@ -17,8 +17,14 @@ namespace BDArmory.Competition
         public string ended_at;
         public string created_at;
         public string updated_at;
+        public string mode;
 
-        public override string ToString() { return "{id: " + id + ", name: " + name + ", status: " + status + ", stage: " + stage + ", started_at: " + started_at + ", ended_at: " + ended_at + ", created_at: " + created_at + ", updated_at: " + updated_at + "}"; }
+        public override string ToString() { return "{id: " + id + ", name: " + name + ", status: " + status + ", stage: " + stage + ", mode: " + mode + ", started_at: " + started_at + ", ended_at: " + ended_at + ", created_at: " + created_at + ", updated_at: " + updated_at + "}"; }
+
+        public bool IsActive()
+        {
+            return ended_at == null || ended_at == "";
+        }
     }
 
     [Serializable]
@@ -38,7 +44,8 @@ namespace BDArmory.Competition
     {
         public int id;
         public string name;
-        public override string ToString() { return "{id: " + id + ", name: " + name + "}"; }
+        public bool is_human;
+        public override string ToString() { return "{id: " + id + ", name: " + name + ", is_human: " + is_human + "}"; }
         public static List<PlayerModel> FromCsv(string csv)
         {
             List<PlayerModel> results = new List<PlayerModel>();
@@ -55,11 +62,14 @@ namespace BDArmory.Competition
                     try
                     {
                         string[] values = lines[k].Split(',');
+                        // AUBRANIUM, please consider encoding the player and vessel names on the API in base64 in the CSV file. This would allow any UTF8 character to be used for the player and vessel names (they would still need to be stripped of leading and trailing whitespace). Similarly for VesselModel. Not required for HeatModel. This uses System.Linq and System.Text.
+                        // string[] values = lines[k].Split(',').Select(v => Encoding.UTF8.GetString(Convert.FromBase64String(v))).ToArray();
                         if (values.Length > 0)
                         {
                             PlayerModel model = new PlayerModel();
                             model.id = int.Parse(values[0]);
                             model.name = values[1];
+                            model.is_human = bool.Parse(values[2]);
                             results.Add(model);
                         }
                     }
@@ -213,6 +223,9 @@ namespace BDArmory.Competition
         public float death_order;
         public float death_time;
         public int wins;
+        public int waypoints;
+        public float elapsed_time;
+        public float deviation;
 
         public string ToJSON()
         {

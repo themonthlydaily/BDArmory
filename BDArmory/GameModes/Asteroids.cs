@@ -3,12 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using BDArmory.Competition;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Misc;
 using BDArmory.UI;
 
-namespace BDArmory.Control
+namespace BDArmory.GameModes
 {
     public class AsteroidUtils
     {
