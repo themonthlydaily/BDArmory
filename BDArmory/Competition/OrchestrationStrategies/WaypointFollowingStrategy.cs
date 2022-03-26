@@ -84,12 +84,15 @@ namespace BDArmory.Competition.OrchestrationStrategies
             Debug.Log("[BDArmory.BDACompetitionMode:" + BDACompetitionMode.Instance.CompetitionID.ToString() + "]: Starting Competition");
             if (BDArmorySettings.WAYPOINTS_VISUALIZE)
             {
+                Vector3 previousLocation = FlightGlobals.ActiveVessel.transform.position;
                 for (int i = 0; i < waypoints.Count; i++)
                 {
                     float terrainAltitude = (float)FlightGlobals.currentMainBody.TerrainAltitude(waypoints[i].latitude, waypoints[i].longitude);
                     Vector3d WorldCoords = VectorUtils.GetWorldSurfacePostion(new Vector3(waypoints[i].latitude, waypoints[i].longitude, waypoints[i].altitude + terrainAltitude), FlightGlobals.currentMainBody);
                     //FlightGlobals.currentMainBody.GetLatLonAlt(new Vector3(waypoints[i].latitude, waypoints[i].longitude, waypoints[i].altitude), out WorldCoords.x, out WorldCoords.y, out WorldCoords.z);
-                    WayPointMarker.CreateWaypoint(WorldCoords, ModelPath);
+                    var direction = (WorldCoords - previousLocation).normalized;
+                    WayPointMarker.CreateWaypoint(WorldCoords, direction, ModelPath);
+                    previousLocation = WorldCoords;
                     var location = string.Format("({0:##.###}, {1:##.###}, {2:####}", waypoints[i].latitude, waypoints[i].longitude, waypoints[i].altitude);
                     Debug.Log("[BDArmory.Waypoints]: Creating waypoint marker at  " + " " + location);
                 }
@@ -120,11 +123,11 @@ namespace BDArmory.Competition.OrchestrationStrategies
             WaypointPool = ObjectPool.CreateObjectPool(WPTemplate, 10, true, true);
         }
 
-        public static void CreateWaypoint(Vector3 position, string ModelPath)
+        public static void CreateWaypoint(Vector3 position, Vector3 direction, string ModelPath)
         {
             CreateObjectPool(ModelPath);
 
-            Quaternion rotation = Quaternion.LookRotation(VectorUtils.GetUpDirection(position)); //change this to look at the previous/next waypoint instead of camera orientation?
+            Quaternion rotation = Quaternion.LookRotation(direction);
 
             GameObject newWayPoint = WaypointPool.GetPooledObject();
             newWayPoint.transform.SetPositionAndRotation(position, rotation);
@@ -149,7 +152,6 @@ namespace BDArmory.Competition.OrchestrationStrategies
                 gameObject.SetActive(false);
                 return;
             }
-            this.transform.LookAt(FlightCamera.fetch.mainCamera.transform); //Always face the camera
         }
     }
 }
