@@ -7,6 +7,7 @@ using BDArmory.Modules;
 using BDArmory.Core;
 using BDArmory.UI;
 using UnityEngine;
+using BDArmory.Misc;
 
 namespace BDArmory.Competition.OrchestrationStrategies
 {
@@ -27,6 +28,8 @@ namespace BDArmory.Competition.OrchestrationStrategies
 
         private List<Waypoint> waypoints;
         private List<BDModulePilotAI> pilots;
+
+        static string ModelPath = "BDArmory/Models/WayPoint/model";
 
         public WaypointFollowingStrategy(List<Waypoint> waypoints)
         {
@@ -77,11 +80,68 @@ namespace BDArmory.Competition.OrchestrationStrategies
             if (BDArmorySettings.AUTO_ENABLE_VESSEL_SWITCHING)
                 LoadedVesselSwitcher.Instance.EnableAutoVesselSwitching(true);
             Debug.Log("[BDArmory.BDACompetitionMode:" + BDACompetitionMode.Instance.CompetitionID.ToString() + "]: Starting Competition");
+            if (BDArmorySettings.WAYPOINTS_VISUALIZE)
+            {
+                for (int i = 0; i < waypoints.Count; i++)
+                {
+                    Vector3d WorldCoords = VectorUtils.GetWorldSurfacePostion(new Vector3(waypoints[i].latitude, waypoints[i].longitude, waypoints[i].altitude), FlightGlobals.currentMainBody);
+                    //FlightGlobals.currentMainBody.GetLatLonAlt(new Vector3(waypoints[i].latitude, waypoints[i].longitude, waypoints[i].altitude), out WorldCoords.x, out WorldCoords.y, out WorldCoords.z);
+                    WayPointMarker.CreateWaypoint(WorldCoords, ModelPath);
+                    var location = string.Format("({0:##.###}, {1:##.###}, {2:####}", waypoints[i].latitude, waypoints[i].longitude, waypoints[i].altitude);
+                    Debug.Log("[BDArmory.Waypoints]: Creating waypoint marker at  " + " " + location);
+                }
+            }
         }
 
         public void CleanUp()
         {
             if (BDACompetitionMode.Instance.competitionIsActive) BDACompetitionMode.Instance.StopCompetition(); // Competition is done, so stop it and do the rest of the book-keeping.
+        }
+    }
+
+    public class WayPointMarker : MonoBehaviour
+    {
+        public static ObjectPool WaypointPool;
+
+        public Vector3 Position { get; set; }
+
+        public bool disabled = false;
+
+        static void CreateObjectPool(string ModelPath)
+        {
+            if (WaypointPool != null) return;
+            GameObject WPTemplate = GameDatabase.Instance.GetModel(ModelPath);
+            WPTemplate.SetActive(false);
+            WPTemplate.AddComponent<WayPointMarker>();
+            WaypointPool = ObjectPool.CreateObjectPool(WPTemplate, 10, true, true);
+        }
+
+        public static void CreateWaypoint(Vector3 position, string ModelPath)
+        {
+            CreateObjectPool(ModelPath);
+
+            Quaternion rotation = Quaternion.LookRotation(VectorUtils.GetUpDirection(position)); //change this to look at the previous/next waypoint instead of camera orientation?
+
+            GameObject newWayPoint = WaypointPool.GetPooledObject();
+            newWayPoint.transform.SetPositionAndRotation(position, rotation);
+            WayPointMarker NWP = newWayPoint.GetComponent<WayPointMarker>();
+            NWP.Position = position;
+
+            newWayPoint.SetActive(true);
+        }
+        void Awake()
+        {
+            transform.parent = FlightGlobals.ActiveVessel.mainBody.transform; //FIXME need to update this to grab worldindex for non-kerbin spawns for custom track building
+        }
+        private void OnEnable()
+        {
+            disabled = false;
+        }
+        void Update()
+        {
+            this.transform.LookAt(FlightCamera.fetch.mainCamera.transform); //Always face the camera
+            if (disabled) 
+            if (!BDACompetitionMode.Instance.competitionIsActive) gameObject.SetActive(false);
         }
     }
 }
