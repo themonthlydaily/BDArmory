@@ -86,7 +86,8 @@ namespace BDArmory.Competition.OrchestrationStrategies
             {
                 for (int i = 0; i < waypoints.Count; i++)
                 {
-                    Vector3d WorldCoords = VectorUtils.GetWorldSurfacePostion(new Vector3(waypoints[i].latitude, waypoints[i].longitude, waypoints[i].altitude), FlightGlobals.currentMainBody);
+                    float terrainAltitude = (float)FlightGlobals.currentMainBody.TerrainAltitude(waypoints[i].latitude, waypoints[i].longitude);
+                    Vector3d WorldCoords = VectorUtils.GetWorldSurfacePostion(new Vector3(waypoints[i].latitude, waypoints[i].longitude, waypoints[i].altitude + terrainAltitude), FlightGlobals.currentMainBody);
                     //FlightGlobals.currentMainBody.GetLatLonAlt(new Vector3(waypoints[i].latitude, waypoints[i].longitude, waypoints[i].altitude), out WorldCoords.x, out WorldCoords.y, out WorldCoords.z);
                     WayPointMarker.CreateWaypoint(WorldCoords, ModelPath);
                     var location = string.Format("({0:##.###}, {1:##.###}, {2:####}", waypoints[i].latitude, waypoints[i].longitude, waypoints[i].altitude);
