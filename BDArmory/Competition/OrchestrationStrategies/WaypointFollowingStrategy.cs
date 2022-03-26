@@ -96,6 +96,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
         public void CleanUp()
         {
             if (BDACompetitionMode.Instance.competitionIsActive) BDACompetitionMode.Instance.StopCompetition(); // Competition is done, so stop it and do the rest of the book-keeping.
+
         }
     }
 
@@ -139,9 +140,13 @@ namespace BDArmory.Competition.OrchestrationStrategies
         }
         void Update()
         {
+            if (!gameObject.activeInHierarchy) return;
+            if (disabled || !BDACompetitionMode.Instance.competitionIsActive || !HighLogic.LoadedSceneIsFlight)
+            {
+                gameObject.SetActive(false);
+                return;
+            }
             this.transform.LookAt(FlightCamera.fetch.mainCamera.transform); //Always face the camera
-            if (disabled) 
-            if (!BDACompetitionMode.Instance.competitionIsActive) gameObject.SetActive(false);
         }
     }
 }
