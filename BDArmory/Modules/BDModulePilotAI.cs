@@ -1128,9 +1128,9 @@ namespace BDArmory.Modules
         void FixedUpdate()
         {
             //floating origin and velocity offloading corrections
-            if (lastTargetPosition != null && (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero()))
+            if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
             {
-                lastTargetPosition -= FloatingOrigin.OffsetNonKrakensbane;
+                if (lastTargetPosition != null) lastTargetPosition -= FloatingOrigin.OffsetNonKrakensbane;
             }
         }
 
@@ -1318,10 +1318,6 @@ namespace BDArmory.Modules
             else if (!extending && IsFlyingWaypoints)
             {
                 // FIXME To avoid getting stuck circling a waypoint, a check should be made (maybe use the turningTimer for this?), in which case the plane should RequestExtend away from the waypoint.
-                // var waypoint = waypoints[activeWaypointIndex];
-                // var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
-                // var waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
-                // var rangeToTarget = (vesselTransform.position - waypointPosition).magnitude;
                 FlyWaypoints(s);
             }
             else if (!extending && weaponManager && targetVessel != null && targetVessel.transform != null)
@@ -1841,7 +1837,12 @@ namespace BDArmory.Modules
                     requiresLowAltitudeRollTargetCorrection = true; // For simplicity, we'll apply the correction after the projections have occurred.
                 }
             }
-            if (useVelRollTarget && !belowMinAltitude)
+            if (useWaypointRollTarget && IsFlyingWaypoints)
+            {
+                var angle = waypointRollTargetStrength * Vector3.Angle(waypointRollTarget, rollTarget);
+                rollTarget = Vector3.ProjectOnPlane(Vector3.RotateTowards(rollTarget, waypointRollTarget, angle * Mathf.Deg2Rad, 0f), vessel.Velocity());
+            }
+            else if (useVelRollTarget && !belowMinAltitude)
             {
                 rollTarget = Vector3.ProjectOnPlane(rollTarget, vessel.Velocity());
                 currentRoll = Vector3.ProjectOnPlane(currentRoll, vessel.Velocity());
@@ -2099,7 +2100,6 @@ namespace BDArmory.Modules
             var waypoint = waypoints[activeWaypointIndex];
             var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
             waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
-            waypointsLastOffset = vessel.transform.position - waypointPosition;
             CommandFollowWaypoints();
         }
         public bool IsFlyingWaypoints => command == PilotCommands.Waypoints && activeWaypointIndex >= 0 && waypoints != null && waypoints.Count > 0;
@@ -2109,17 +2109,69 @@ namespace BDArmory.Modules
             return this.activeWaypointIndex;
         }
 
-        private Vector3 waypointPosition;
-        private Vector3 waypointsLastOffset = Vector3.zero;
-        private float waypointsLastRange = 999f;
-        private float waypointsRange = 999f;
-        private float waypointsRangeDelta = 0;
+        private Vector3 waypointPosition = default;
+        private float waypointRadius = 500f;
+        private float waypointRange = 999f;
+        private Vector3 waypointRollTarget = default;
+        private float waypointRollTargetStrength = 0;
+        private bool useWaypointRollTarget = false;
         void FlyWaypoints(FlightCtrlState s)
         {
             // Note: UpdateWaypoint is called separately before this in case FlyWaypoints doesn't get called.
-            SetStatus($"Waypoint {activeWaypointIndex} ({waypointsRange:F0}m)");
+            SetStatus($"Waypoint {activeWaypointIndex} ({waypointRange:F0}m)");
             var waypointDirection = (waypointPosition - vessel.transform.position).normalized;
-            FlyToPosition(s, vessel.transform.position + waypointDirection * Mathf.Min(500f, waypointsRange), false); // Target up to 500m ahead so that max altitude restrictions apply reasonably.
+            // var waypointDirection = (WaypointSpline() - vessel.transform.position).normalized;
+            SetWaypointRollTarget();
+            steerMode = SteerModes.NormalFlight; // Make sure we're using the correct steering mode.
+            FlyToPosition(s, vessel.transform.position + waypointDirection * Mathf.Min(500f, waypointRange), false); // Target up to 500m ahead so that max altitude restrictions apply reasonably.
+        }
+
+        private Vector3 WaypointSpline() // FIXME This doesn't work that well yet.
+        {
+            // Note: here we're using distance instead of time as the waypoint parameter.
+            float minDistance = (float)vessel.speed * 2f; // Consider the radius of 2s around the waypoint.
+
+            Vector3 point1 = waypointPosition + (vessel.transform.position - waypointPosition).normalized * minDistance; //waypointsRange > minDistance ? vessel.transform.position : waypointPosition + (vessel.transform.position - waypointPosition).normalized * minDistance;
+            Vector3 point2 = waypointPosition;
+            Vector3 point3;
+            if (activeWaypointIndex < waypoints.Count() - 1)
+            {
+                var nextWaypoint = waypoints[activeWaypointIndex + 1];
+                var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(nextWaypoint.x, nextWaypoint.y);
+                var nextWaypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(nextWaypoint.x, nextWaypoint.y, nextWaypoint.z + terrainAltitude);
+                point3 = waypointPosition + (nextWaypointPosition - waypointPosition).normalized * minDistance;
+            }
+            else
+            {
+                point3 = waypointPosition + (waypointPosition - vessel.transform.position).normalized * minDistance; // Straight out the other side.
+            }
+            var distance1 = (point2 - point1).magnitude;
+            var distance2 = (point3 - point2).magnitude;
+            Vector3 slope1 = SplineUtils.EstimateSlope(point1, point2, distance1);
+            Vector3 slope2 = SplineUtils.EstimateSlope(point1, point2, point3, distance1, distance2);
+            if (Mathf.Max(minDistance - waypointRange + (float)vessel.speed * 0.1f, 0f) < distance1)
+            {
+                return SplineUtils.EvaluateSpline(point1, slope1, point2, slope2, Mathf.Max(minDistance - waypointRange + (float)vessel.speed * 0.1f, 0f), 0f, distance1); // 0.1s ahead along the spline. 
+            }
+            else
+            {
+                var slope3 = SplineUtils.EstimateSlope(point2, point3, distance2);
+                return SplineUtils.EvaluateSpline(point2, slope2, point3, slope3, Mathf.Max(minDistance - waypointRange + (float)vessel.speed * 0.1f - distance1, 0f), 0f, distance2); // 0.1s ahead along the next section of the spline.
+            }
+        }
+
+        private void SetWaypointRollTarget()
+        {
+            var range = (float)vessel.speed * 0.5f; // 0.5s ahead of the waypoint.
+            if (waypointRange < range && activeWaypointIndex < waypoints.Count() - 1) // Within range of a waypoint and it's not the final one => use the waypoint roll target.
+            {
+                var nextWaypoint = waypoints[activeWaypointIndex + 1];
+                var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(nextWaypoint.x, nextWaypoint.y);
+                var nextWaypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(nextWaypoint.x, nextWaypoint.y, nextWaypoint.z + terrainAltitude);
+                waypointRollTarget = Vector3.ProjectOnPlane(nextWaypointPosition - waypointPosition, vessel.Velocity()).normalized;
+                waypointRollTargetStrength = Mathf.Min(1f, Vector3.Angle(nextWaypointPosition - waypointPosition, vessel.Velocity()) / maxAllowedAoA) * Mathf.Max(0, 1f - waypointRange / range); // Full strength at maxAllowedAoA and at the waypoint.
+                useWaypointRollTarget = true;
+            }
         }
 
         void UpdateWaypoint()
@@ -2129,24 +2181,20 @@ namespace BDArmory.Modules
                 if (command == PilotCommands.Waypoints) ReleaseCommand();
                 return;
             }
+            useWaypointRollTarget = false; // Reset this so that it's only set when actively flying waypoints.
             var waypoint = waypoints[activeWaypointIndex];
             var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
             waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
-            // vessel has arrived if its distance to the target is within a range threshold
-            waypointsRange = (float)(vesselTransform.position - waypointPosition).magnitude;
-            waypointsRangeDelta = waypointsRange - waypointsLastRange;
-            if (waypointsRangeDelta > 0 && waypointsLastRange < 500)
+            waypointRange = (float)(vesselTransform.position - waypointPosition).magnitude;
+            var timeToCPA = AIUtils.ClosestTimeToCPA(vessel.transform.position - waypointPosition, vessel.Velocity(), vessel.acceleration, Time.fixedDeltaTime);
+            // if (waypointsRange < waypointRadius) Debug.Log($"DEBUG waypoint {activeWaypointIndex}, distance: {waypointsRange:F1} @ {Time.time}, TtCPA: {timeToCPA:F3}");
+            if (waypointRange < waypointRadius && timeToCPA < Time.fixedDeltaTime) // Within waypointRadius and reaching a minimum within the next frame. Looking forwards like this avoids a frame where the fly-to direction is backwards allowing smoother waypoint traversal.
             {
                 // moving away, proceed to next point
-                var timeToCPA = AIUtils.ClosestTimeToCPA(waypointsLastOffset, vessel.Velocity(), vessel.acceleration, Time.fixedDeltaTime); // Assume velocity and acceleration are the same as last frame (should be good enough to first order).
-                if (timeToCPA == 0) // It was the previous time step
-                    timeToCPA = -AIUtils.ClosestTimeToCPA(waypointsLastOffset, -vessel.Velocity(), vessel.acceleration, Time.fixedDeltaTime);
-                var deviation = AIUtils.PredictPosition(waypointsLastOffset, vessel.Velocity(), vessel.acceleration, timeToCPA).magnitude;
+                var deviation = AIUtils.PredictPosition(vessel.transform.position - waypointPosition, vessel.Velocity(), vessel.acceleration, timeToCPA).magnitude;
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log(string.Format("[BDArmory.BDModulePilotAI]: Reached waypoint {0} with range {1}", activeWaypointIndex, deviation));
                 BDACompetitionMode.Instance.Scores.RegisterWaypointReached(vessel.vesselName, activeWaypointIndex, deviation);
                 ++activeWaypointIndex;
-                waypointsLastRange = 999;
-                waypointsRangeDelta = 0;
                 if (activeWaypointIndex >= waypoints.Count)
                 {
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDModulePilotAI]: Waypoints complete");
@@ -2157,15 +2205,10 @@ namespace BDArmory.Modules
                 else
                 {
                     waypoint = waypoints[activeWaypointIndex];
-                    terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
-                    waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
-                    waypointsLastOffset = vessel.transform.position - waypointPosition;
                     UpdateWaypoint(); // Call ourselves again for the new waypoint to follow.
                     return;
                 }
             }
-            waypointsLastRange = waypointsRange;
-            waypointsLastOffset = vessel.transform.position - waypointPosition;
         }
         #endregion
 
