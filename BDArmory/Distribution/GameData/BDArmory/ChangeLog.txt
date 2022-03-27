@@ -1,4 +1,11 @@
-﻿v1.4.18.3
+﻿v1.4.18.4
+IMPROVEMENTS
+- Add slider in the pilot AI for controlling the waypoint pre-roll time.
+- Add slider in the pilot AI for waypoint yaw authority time to switch from normal steering mode control of yaw to aiming steering mode of yaw when approaching waypoints.
+- Add relevant AI GUI entries for these too.
+- Also check for WM when checking that a waypoint competition is running.
+
+v1.4.18.3
 IMPROVEMENTS
 - Waypoint visualization added.
 	- 3 rings with radii 500m, 100m and 10m, with a central crosshair and animated arrows.

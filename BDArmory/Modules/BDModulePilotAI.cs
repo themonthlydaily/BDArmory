@@ -302,6 +302,16 @@ namespace BDArmory.Modules
             UI_FloatRange(minValue = 10f, maxValue = 180f, stepIncrement = 5f, scene = UI_Scene.All)]
         public float maxBank = 180f;
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_WaypointPreRollTime", advancedTweakable = true, //Waypoint Pre-Roll Time
+            groupName = "pilotAI_ControlLimits", groupDisplayName = "#LOC_BDArmory_PilotAI_ControlLimits", groupStartCollapsed = true),
+            UI_FloatRange(minValue = 0f, maxValue = 2f, stepIncrement = 0.05f, scene = UI_Scene.All)]
+        public float waypointPreRollTime = 0.5f;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_WaypointYawAuthorityTime", advancedTweakable = true, //Waypoint Yaw Authority Time
+            groupName = "pilotAI_ControlLimits", groupDisplayName = "#LOC_BDArmory_PilotAI_ControlLimits", groupStartCollapsed = true),
+            UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float waypointYawAuthorityTime = 5f;
+
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_maxAllowedGForce", //Max G
             groupName = "pilotAI_ControlLimits", groupDisplayName = "#LOC_BDArmory_PilotAI_ControlLimits", groupStartCollapsed = true),
             UI_FloatRange(minValue = 2f, maxValue = 45f, stepIncrement = 0.25f, scene = UI_Scene.All)]
@@ -1758,8 +1768,17 @@ namespace BDArmory.Modules
                 targetDirection = velocityTransform.InverseTransformDirection(targetPosition - velocityTransform.position).normalized;
                 targetDirection = Vector3.RotateTowards(Vector3.up, targetDirection, 45 * Mathf.Deg2Rad, 0);
 
-                targetDirectionYaw = vesselTransform.InverseTransformDirection(vessel.Velocity()).normalized;
-                targetDirectionYaw = Vector3.RotateTowards(Vector3.up, targetDirectionYaw, 45 * Mathf.Deg2Rad, 0);
+                if (useWaypointYawAuthority && IsFlyingWaypoints)
+                {
+                    var refYawDir = Vector3.RotateTowards(Vector3.up, vesselTransform.InverseTransformDirection(targetPosition - vesselTransform.position), 25 * Mathf.Deg2Rad, 0).normalized;
+                    var velYawDir = Vector3.RotateTowards(Vector3.up, vesselTransform.InverseTransformDirection(vessel.Velocity()), 45 * Mathf.Deg2Rad, 0).normalized;
+                    targetDirectionYaw = waypointYawAuthorityStrength * refYawDir + (1f - waypointYawAuthorityStrength) * velYawDir;
+                }
+                else
+                {
+                    targetDirectionYaw = vesselTransform.InverseTransformDirection(vessel.Velocity()).normalized;
+                    targetDirectionYaw = Vector3.RotateTowards(Vector3.up, targetDirectionYaw, 45 * Mathf.Deg2Rad, 0);
+                }
             }
             else//(steerMode == SteerModes.Aiming)
             {
@@ -2115,13 +2134,15 @@ namespace BDArmory.Modules
         private Vector3 waypointRollTarget = default;
         private float waypointRollTargetStrength = 0;
         private bool useWaypointRollTarget = false;
+        private float waypointYawAuthorityStrength = 0;
+        private bool useWaypointYawAuthority = false;
         void FlyWaypoints(FlightCtrlState s)
         {
             // Note: UpdateWaypoint is called separately before this in case FlyWaypoints doesn't get called.
             SetStatus($"Waypoint {activeWaypointIndex} ({waypointRange:F0}m)");
             var waypointDirection = (waypointPosition - vessel.transform.position).normalized;
             // var waypointDirection = (WaypointSpline() - vessel.transform.position).normalized;
-            SetWaypointRollTarget();
+            SetWaypointRollAndYaw();
             steerMode = SteerModes.NormalFlight; // Make sure we're using the correct steering mode.
             FlyToPosition(s, vessel.transform.position + waypointDirection * Mathf.Min(500f, waypointRange), false); // Target up to 500m ahead so that max altitude restrictions apply reasonably.
         }
@@ -2160,17 +2181,26 @@ namespace BDArmory.Modules
             }
         }
 
-        private void SetWaypointRollTarget()
+        private void SetWaypointRollAndYaw()
         {
-            var range = (float)vessel.speed * 0.5f; // 0.5s ahead of the waypoint.
-            if (waypointRange < range && activeWaypointIndex < waypoints.Count() - 1) // Within range of a waypoint and it's not the final one => use the waypoint roll target.
+            if (waypointPreRollTime > 0)
             {
-                var nextWaypoint = waypoints[activeWaypointIndex + 1];
-                var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(nextWaypoint.x, nextWaypoint.y);
-                var nextWaypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(nextWaypoint.x, nextWaypoint.y, nextWaypoint.z + terrainAltitude);
-                waypointRollTarget = Vector3.ProjectOnPlane(nextWaypointPosition - waypointPosition, vessel.Velocity()).normalized;
-                waypointRollTargetStrength = Mathf.Min(1f, Vector3.Angle(nextWaypointPosition - waypointPosition, vessel.Velocity()) / maxAllowedAoA) * Mathf.Max(0, 1f - waypointRange / range); // Full strength at maxAllowedAoA and at the waypoint.
-                useWaypointRollTarget = true;
+                var range = (float)vessel.speed * waypointPreRollTime; // Pre-roll ahead of the waypoint.
+                if (waypointRange < range && activeWaypointIndex < waypoints.Count() - 1) // Within range of a waypoint and it's not the final one => use the waypoint roll target.
+                {
+                    var nextWaypoint = waypoints[activeWaypointIndex + 1];
+                    var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(nextWaypoint.x, nextWaypoint.y);
+                    var nextWaypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(nextWaypoint.x, nextWaypoint.y, nextWaypoint.z + terrainAltitude);
+                    waypointRollTarget = Vector3.ProjectOnPlane(nextWaypointPosition - waypointPosition, vessel.Velocity()).normalized;
+                    waypointRollTargetStrength = Mathf.Min(1f, Vector3.Angle(nextWaypointPosition - waypointPosition, vessel.Velocity()) / maxAllowedAoA) * Mathf.Max(0, 1f - waypointRange / range); // Full strength at maxAllowedAoA and at the waypoint.
+                    useWaypointRollTarget = true;
+                }
+            }
+            if (waypointYawAuthorityTime > 0)
+            {
+                var range = (float)vessel.speed * waypointYawAuthorityTime;
+                waypointYawAuthorityStrength = Mathf.Clamp01((2f * range - waypointRange) / range);
+                useWaypointYawAuthority = true;
             }
         }
 
@@ -2182,6 +2212,7 @@ namespace BDArmory.Modules
                 return;
             }
             useWaypointRollTarget = false; // Reset this so that it's only set when actively flying waypoints.
+            useWaypointYawAuthority = false; // Reset this so that it's only set when actively flying waypoints.
             var waypoint = waypoints[activeWaypointIndex];
             var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
             waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
