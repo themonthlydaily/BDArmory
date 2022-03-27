@@ -5687,7 +5687,7 @@ namespace BDArmory.Modules
         }
 
         // moved from pilot AI, as it does not really do anything AI related?
-        bool GetLaunchAuthorization(Vessel targetV, MissileFire mf)
+        public bool GetLaunchAuthorization(Vessel targetV, MissileFire mf)
         {
             bool launchAuthorized = false;
             MissileBase missile = mf.CurrentMissile;
