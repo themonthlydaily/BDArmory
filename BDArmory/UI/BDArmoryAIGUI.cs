@@ -337,6 +337,8 @@ namespace BDArmory.UI
                         { "maxSteerAtMaxSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxSteerAtMaxSpeed, 0.1, 1) },
                         { "cornerSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.cornerSpeed, 10, 500) },
                         { "maxBank", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxBank, 10, 180) },
+                        { "waypointPreRollTime", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.waypointPreRollTime, 0, 2) },
+                        { "waypointYawAuthorityTime", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.waypointYawAuthorityTime, 0, 10) },
                         { "maxAllowedGForce", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAllowedGForce, 2, 45) },
                         { "maxAllowedAoA", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAllowedAoA, 0, 85) },
 
@@ -1471,6 +1473,46 @@ namespace BDArmory.UI
                             ActivePilot.maxBank = (float)inputFields["maxBank"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_BankLimiter") + ": " + ActivePilot.maxBank.ToString("0"), Label);//"dynamic damping min"
+
+                        ctrlLines++;
+                        if (contextTipsEnabled)
+                        {
+                            GUI.Label(ContextLabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_WPPreRoll"), contextLabel);// Waypoint Pre-Roll Time
+                            ctrlLines++;
+                        }
+                        if (!NumFieldsEnabled)
+                        {
+                            ActivePilot.waypointPreRollTime =
+                                GUI.HorizontalSlider(SettingSliderRect(leftIndent, ctrlLines, contentWidth),
+                                    ActivePilot.waypointPreRollTime, 0, 2);
+                            ActivePilot.waypointPreRollTime = Utils.RoundToUnit(ActivePilot.waypointPreRollTime, 0.05f);
+                        }
+                        else
+                        {
+                            inputFields["waypointPreRollTime"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), inputFields["waypointPreRollTime"].possibleValue, 6));
+                            ActivePilot.waypointPreRollTime = (float)inputFields["waypointPreRollTime"].currentValue;
+                        }
+                        GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_WaypointPreRollTime") + ": " + ActivePilot.waypointPreRollTime.ToString("0.00"), Label);//
+
+                        ctrlLines++;
+                        if (contextTipsEnabled)
+                        {
+                            GUI.Label(ContextLabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_WPYawAuth"), contextLabel);// Waypoint Yaw Authority Time
+                            ctrlLines++;
+                        }
+                        if (!NumFieldsEnabled)
+                        {
+                            ActivePilot.waypointYawAuthorityTime =
+                                GUI.HorizontalSlider(SettingSliderRect(leftIndent, ctrlLines, contentWidth),
+                                    ActivePilot.waypointYawAuthorityTime, 0, 10);
+                            ActivePilot.waypointYawAuthorityTime = Utils.RoundToUnit(ActivePilot.waypointYawAuthorityTime, 0.1f);
+                        }
+                        else
+                        {
+                            inputFields["waypointYawAuthorityTime"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), inputFields["waypointYawAuthorityTime"].possibleValue, 6));
+                            ActivePilot.waypointYawAuthorityTime = (float)inputFields["waypointYawAuthorityTime"].currentValue;
+                        }
+                        GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_WaypointYawAuthorityTime") + ": " + ActivePilot.waypointYawAuthorityTime.ToString("0.00"), Label);//
 
                         ctrlLines++;
                         if (contextTipsEnabled)
