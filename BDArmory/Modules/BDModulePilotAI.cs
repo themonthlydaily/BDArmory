@@ -3130,7 +3130,11 @@ namespace BDArmory.Modules
 
         private float GetDampingFactor(float angleToTarget, float dynamicSteerDampingFactorAxis, float DynamicDampingMinAxis, float DynamicDampingMaxAxis)
         {
-            return Mathf.Clamp((float)(Math.Pow((180 - angleToTarget) / 180, dynamicSteerDampingFactorAxis) * (DynamicDampingMaxAxis - DynamicDampingMinAxis) + DynamicDampingMinAxis), Mathf.Min(DynamicDampingMinAxis, DynamicDampingMaxAxis), Mathf.Max(DynamicDampingMinAxis, DynamicDampingMaxAxis));
+            return Mathf.Clamp(
+                (float)(Math.Pow((180 - angleToTarget) / 175, dynamicSteerDampingFactorAxis) * (DynamicDampingMaxAxis - DynamicDampingMinAxis) + DynamicDampingMinAxis), // Make a 5° dead zone around being on target.
+                Mathf.Min(DynamicDampingMinAxis, DynamicDampingMaxAxis),
+                Mathf.Max(DynamicDampingMinAxis, DynamicDampingMaxAxis)
+            );
         }
 
         public override bool IsValidFixedWeaponTarget(Vessel target)
