@@ -1,4 +1,30 @@
-﻿v1.4.18.0
+﻿v1.4.18.4
+IMPROVEMENTS
+- Add slider in the pilot AI for controlling the waypoint pre-roll time.
+- Add slider in the pilot AI for waypoint yaw authority time to switch from normal steering mode control of yaw to aiming steering mode of yaw when approaching waypoints.
+- Add relevant AI GUI entries for these too.
+- Also check for WM when checking that a waypoint competition is running.
+
+v1.4.18.3
+IMPROVEMENTS
+- Waypoint visualization added.
+	- 3 rings with radii 500m, 100m and 10m, with a central crosshair and animated arrows.
+	- Togglable in the Waypoints Options section of the Vessel Spawner window.
+	- Waypoint model can be customized to whatever, provided the model URL is "BDArmory/Models/WayPoint/model".
+
+v1.4.18.2
+IMPROVEMENTS
+- Predict the minimum deviation on the frame before passing a waypoint to avoid the bad fly-to direction for the frame after passing that waypoint.
+- Roll into waypoints 0.5s ahead of the waypoint in preparation for the next one.
+- Add initial support for using splines.
+
+v1.4.18.1
+FIXES
+- Check waypoint completion when in waypoints mode even if a different action is being taken (fixes extra large deviations and missed waypoints).
+IMPROVEMENTS
+- Interpolate the waypoint deviation to give a better estimate of the minimum deviation.
+
+v1.4.18.0
 Note: Due to some internal refactoring, CameraTools also needs to be updated to version 1.21.0 to work with this version of BDArmory.
 FIXES
 - Add checks to only adjust scores when a competition is active.
