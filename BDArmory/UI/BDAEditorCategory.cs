@@ -11,6 +11,7 @@ using BDArmory.Settings;
 using BDArmory.Targeting;
 using BDArmory.Utils;
 using BDArmory.Weapons;
+using BDArmory.Weapons.Missiles;
 using BDArmory.WeaponMounts;
 
 namespace BDArmory.UI

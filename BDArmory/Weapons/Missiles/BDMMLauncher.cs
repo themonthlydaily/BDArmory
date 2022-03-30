@@ -3,7 +3,7 @@ using UnityEngine;
 using BDArmory.Control;
 using BDArmory.Utils;
 
-namespace BDArmory.Weapons
+namespace BDArmory.Weapons.Missiles
 {
     public class BDMMLauncher : PartModule
     {

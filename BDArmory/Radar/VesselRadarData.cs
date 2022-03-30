@@ -4,12 +4,12 @@ using UnityEngine;
 
 using BDArmory.Competition;
 using BDArmory.Control;
-using BDArmory.Modules;
 using BDArmory.Settings;
 using BDArmory.Targeting;
 using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.Weapons;
+using BDArmory.Weapons.Missiles;
 
 namespace BDArmory.Radar
 {

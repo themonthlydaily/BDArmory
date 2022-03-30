@@ -6,11 +6,11 @@ using System.Text;
 using UnityEngine;
 
 using BDArmory.Extensions;
-using BDArmory.Modules;
 using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.Weapons;
+using BDArmory.Weapons.Missiles;
 
 namespace BDArmory.Control
 {

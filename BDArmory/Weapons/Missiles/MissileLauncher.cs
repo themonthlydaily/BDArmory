@@ -16,7 +16,7 @@ using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.WeaponMounts;
 
-namespace BDArmory.Weapons
+namespace BDArmory.Weapons.Missiles
 {
     public class MissileLauncher : MissileBase
     {

@@ -14,12 +14,12 @@ using BDArmory.Damage;
 using BDArmory.Extensions;
 using BDArmory.FX;
 using BDArmory.GameModes;
-using BDArmory.Modules;
 using BDArmory.Radar;
 using BDArmory.Settings;
 using BDArmory.Targeting;
 using BDArmory.UI;
 using BDArmory.Utils;
+using BDArmory.Weapons.Missiles;
 using BDArmory.WeaponMounts;
 
 namespace BDArmory.Weapons

@@ -4,7 +4,7 @@ using UnityEngine;
 using BDArmory.Extensions;
 using BDArmory.Settings;
 using BDArmory.Utils;
-using BDArmory.Weapons;
+using BDArmory.Weapons.Missiles;
 
 namespace BDArmory.Guidances
 {

@@ -4,7 +4,7 @@ using BDArmory.Control;
 using BDArmory.Extensions;
 using BDArmory.Settings;
 
-namespace BDArmory.Weapons
+namespace BDArmory.Weapons.Missiles
 {
     public struct MissileLaunchParams
     {

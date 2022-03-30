@@ -6,6 +6,7 @@ using BDArmory.CounterMeasure;
 using BDArmory.Radar;
 using BDArmory.Settings;
 using BDArmory.Weapons;
+using BDArmory.Weapons.Missiles;
 
 namespace BDArmory.Utils
 {

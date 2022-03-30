@@ -4,17 +4,16 @@ using System;
 using UniLinq;
 using UnityEngine;
 
+using BDArmory.Control;
 using BDArmory.Extensions;
 using BDArmory.Guidances;
-using BDArmory.Modules;
 using BDArmory.Radar;
 using BDArmory.Settings;
 using BDArmory.Targeting;
 using BDArmory.UI;
 using BDArmory.Utils;
-using BDArmory.Weapons;
 
-namespace BDArmory.Control
+namespace BDArmory.Weapons.Missiles
 {
     public class BDModularGuidance : MissileBase
     {

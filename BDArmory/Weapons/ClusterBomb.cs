@@ -6,6 +6,7 @@ using UnityEngine;
 using BDArmory.Extensions;
 using BDArmory.Utils;
 using BDArmory.FX;
+using BDArmory.Weapons.Missiles;
 
 namespace BDArmory.Weapons
 {

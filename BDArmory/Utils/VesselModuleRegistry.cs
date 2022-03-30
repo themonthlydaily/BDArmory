@@ -6,9 +6,9 @@ using UnityEngine;
 
 using BDArmory.Competition;
 using BDArmory.Control;
-using BDArmory.Modules;
 using BDArmory.Settings;
 using BDArmory.Weapons;
+using BDArmory.Weapons.Missiles;
 
 namespace BDArmory.Utils
 {

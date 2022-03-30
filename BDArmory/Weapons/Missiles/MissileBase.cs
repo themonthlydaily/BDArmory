@@ -10,14 +10,13 @@ using BDArmory.CounterMeasure;
 using BDArmory.Extensions;
 using BDArmory.FX;
 using BDArmory.Guidances;
-using BDArmory.Modules;
 using BDArmory.Radar;
 using BDArmory.Settings;
 using BDArmory.Targeting;
 using BDArmory.UI;
 using BDArmory.Utils;
 
-namespace BDArmory.Weapons
+namespace BDArmory.Weapons.Missiles
 {
     public abstract class MissileBase : EngageableWeapon, IBDWeapon
     {

@@ -164,7 +164,6 @@
     <Compile Include="Competition\VesselSpawning\VesselSpawner.cs" />
     <Compile Include="Control\BDAirspeedControl.cs" />
     <Compile Include="Control\BDGenericAIBase.cs" />
-    <Compile Include="Control\BDModularGuidance.cs" />
     <Compile Include="Control\BDModulePilotAI.cs" />
     <Compile Include="Control\BDModuleSurfaceAI.cs" />
     <Compile Include="Control\IBDAIControl.cs" />
@@ -204,7 +203,6 @@
     <Compile Include="FX\BDAParticleSelfDestruct.cs" />
     <Compile Include="FX\BulletHitFX.cs" />
     <Compile Include="FX\CameraBulletRenderer.cs" />
-    <Compile Include="FX\DamageFX.cs" />
     <Compile Include="FX\DecalEmitterScript.cs" />
     <Compile Include="FX\DecalGaplessParticleEmitter.cs" />
     <Compile Include="FX\ExplosionFX.cs" />
@@ -310,16 +308,17 @@
     <Compile Include="WeaponMounts\ModuleTurret.cs" />
     <Compile Include="WeaponMounts\WMTurretGroup.cs" />
     <Compile Include="Weapons\BDExplosivePart.cs" />
-    <Compile Include="Weapons\BDMMLauncher.cs" />
     <Compile Include="Weapons\BDModuleNuke.cs" />
     <Compile Include="Weapons\ClusterBomb.cs" />
     <Compile Include="Weapons\EngageableWeapon.cs" />
     <Compile Include="Weapons\IBDWeapon.cs" />
-    <Compile Include="Weapons\MissileBase.cs" />
-    <Compile Include="Weapons\MissileLaunchParams.cs" />
-    <Compile Include="Weapons\MissileLauncher.cs" />
+    <Compile Include="Weapons\Missiles\BDMMLauncher.cs" />
+    <Compile Include="Weapons\Missiles\BDModularGuidance.cs" />
+    <Compile Include="Weapons\Missiles\MissileBase.cs" />
+    <Compile Include="Weapons\Missiles\MissileLaunchParams.cs" />
+    <Compile Include="Weapons\Missiles\MissileLauncher.cs" />
+    <Compile Include="Weapons\Missiles\ModuleMissileRearm.cs" />
     <Compile Include="Weapons\ModuleEMP.cs" />
-    <Compile Include="Weapons\ModuleMissileRearm.cs" />
     <Compile Include="Weapons\ModuleWeapon.cs" />
     <Compile Include="Weapons\RippleOption.cs" />
   </ItemGroup>

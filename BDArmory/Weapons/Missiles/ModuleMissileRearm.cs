@@ -8,7 +8,7 @@ using UnityEngine;
 
 using BDArmory.WeaponMounts;
 
-namespace BDArmory.Weapons
+namespace BDArmory.Weapons.Missiles
 {
     public class ModuleMissileRearm : PartModule
     {

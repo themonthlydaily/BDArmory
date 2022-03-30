@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-using BDArmory.Weapons;
+using BDArmory.Weapons.Missiles;
 
 namespace BDArmory.Guidances
 {

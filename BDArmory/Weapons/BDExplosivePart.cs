@@ -7,7 +7,7 @@ using BDArmory.Extensions;
 using BDArmory.FX;
 using BDArmory.Settings;
 using BDArmory.Utils;
-using BDArmory.Weapons;
+using BDArmory.Weapons.Missiles;
 
 namespace BDArmory.Weapons
 {

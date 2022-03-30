@@ -5,7 +5,7 @@ using UnityEngine;
 
 using BDArmory.Control;
 using BDArmory.Utils;
-using BDArmory.Weapons;
+using BDArmory.Weapons.Missiles;
 
 namespace BDArmory.WeaponMounts
 {
