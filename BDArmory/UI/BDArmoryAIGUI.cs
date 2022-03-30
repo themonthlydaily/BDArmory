@@ -337,6 +337,8 @@ namespace BDArmory.UI
                         { "maxSteerAtMaxSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxSteerAtMaxSpeed, 0.1, 1) },
                         { "cornerSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.cornerSpeed, 10, 500) },
                         { "maxBank", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxBank, 10, 180) },
+                        { "waypointPreRollTime", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.waypointPreRollTime, 0, 2) },
+                        { "waypointYawAuthorityTime", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.waypointYawAuthorityTime, 0, 10) },
                         { "maxAllowedGForce", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAllowedGForce, 2, 45) },
                         { "maxAllowedAoA", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAllowedAoA, 0, 85) },
 
@@ -356,8 +358,8 @@ namespace BDArmory.UI
                         { "extendTargetAngle", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendTargetAngle, 0, 180) },
                         { "extendTargetDist", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendTargetDist, 0, 5000) },
 
-                        { "turnRadiusTwiddleFactorMin", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.turnRadiusTwiddleFactorMin, 1, 5) },
-                        { "turnRadiusTwiddleFactorMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.turnRadiusTwiddleFactorMax, 1, 5) },
+                        { "turnRadiusTwiddleFactorMin", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.turnRadiusTwiddleFactorMin, 0.1, 5) },
+                        { "turnRadiusTwiddleFactorMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.turnRadiusTwiddleFactorMax, 0.1, 5) },
 
                         { "controlSurfaceLag", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.controlSurfaceLag, 0, 0.2) },
                     };
@@ -1475,6 +1477,46 @@ namespace BDArmory.UI
                         ctrlLines++;
                         if (contextTipsEnabled)
                         {
+                            GUI.Label(ContextLabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_WPPreRoll"), contextLabel);// Waypoint Pre-Roll Time
+                            ctrlLines++;
+                        }
+                        if (!NumFieldsEnabled)
+                        {
+                            ActivePilot.waypointPreRollTime =
+                                GUI.HorizontalSlider(SettingSliderRect(leftIndent, ctrlLines, contentWidth),
+                                    ActivePilot.waypointPreRollTime, 0, 2);
+                            ActivePilot.waypointPreRollTime = BDAMath.RoundToUnit(ActivePilot.waypointPreRollTime, 0.05f);
+                        }
+                        else
+                        {
+                            inputFields["waypointPreRollTime"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), inputFields["waypointPreRollTime"].possibleValue, 6));
+                            ActivePilot.waypointPreRollTime = (float)inputFields["waypointPreRollTime"].currentValue;
+                        }
+                        GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_WaypointPreRollTime") + ": " + ActivePilot.waypointPreRollTime.ToString("0.00"), Label);//
+
+                        ctrlLines++;
+                        if (contextTipsEnabled)
+                        {
+                            GUI.Label(ContextLabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_WPYawAuth"), contextLabel);// Waypoint Yaw Authority Time
+                            ctrlLines++;
+                        }
+                        if (!NumFieldsEnabled)
+                        {
+                            ActivePilot.waypointYawAuthorityTime =
+                                GUI.HorizontalSlider(SettingSliderRect(leftIndent, ctrlLines, contentWidth),
+                                    ActivePilot.waypointYawAuthorityTime, 0, 10);
+                            ActivePilot.waypointYawAuthorityTime = BDAMath.RoundToUnit(ActivePilot.waypointYawAuthorityTime, 0.1f);
+                        }
+                        else
+                        {
+                            inputFields["waypointYawAuthorityTime"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), inputFields["waypointYawAuthorityTime"].possibleValue, 6));
+                            ActivePilot.waypointYawAuthorityTime = (float)inputFields["waypointYawAuthorityTime"].currentValue;
+                        }
+                        GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_WaypointYawAuthorityTime") + ": " + ActivePilot.waypointYawAuthorityTime.ToString("0.00"), Label);//
+
+                        ctrlLines++;
+                        if (contextTipsEnabled)
+                        {
                             GUI.Label(ContextLabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_bankLimit"), contextLabel);//"dynamic damp min"
                             ctrlLines++;
                         }
@@ -1863,7 +1905,7 @@ namespace BDArmory.UI
                         {
                             ActivePilot.turnRadiusTwiddleFactorMin =
                                 GUI.HorizontalSlider(SettingSliderRect(leftIndent, gndLines, contentWidth),
-                                    ActivePilot.turnRadiusTwiddleFactorMin, 1, ActivePilot.UpToEleven ? 10 : 5);
+                                    ActivePilot.turnRadiusTwiddleFactorMin, 0.1f, ActivePilot.UpToEleven ? 10 : 5);
                             ActivePilot.turnRadiusTwiddleFactorMin = Mathf.Round(ActivePilot.turnRadiusTwiddleFactorMin * 10f) / 10f;
                         }
                         else
@@ -1889,7 +1931,7 @@ namespace BDArmory.UI
                         {
                             ActivePilot.turnRadiusTwiddleFactorMax =
                                 GUI.HorizontalSlider(SettingSliderRect(leftIndent, gndLines, contentWidth),
-                                    ActivePilot.turnRadiusTwiddleFactorMax, 1, ActivePilot.UpToEleven ? 10 : 5);
+                                    ActivePilot.turnRadiusTwiddleFactorMax, 0.1f, ActivePilot.UpToEleven ? 10 : 5);
                             ActivePilot.turnRadiusTwiddleFactorMax = Mathf.Round(ActivePilot.turnRadiusTwiddleFactorMax * 10) / 10;
                         }
                         else

@@ -5,6 +5,7 @@ using UnityEngine;
 
 using BDArmory.Competition.RemoteOrchestration;
 using BDArmory.Control;
+using BDArmory.Modules;
 using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
@@ -29,6 +30,8 @@ namespace BDArmory.Competition.OrchestrationStrategies
         private List<Waypoint> waypoints;
         private List<BDModulePilotAI> pilots;
 
+        static string ModelPath = "BDArmory/Models/WayPoint/model";
+
         public WaypointFollowingStrategy(List<Waypoint> waypoints)
         {
             this.waypoints = waypoints;
@@ -49,7 +52,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
 
             // Wait for the pilots to complete the course.
             var startedAt = Planetarium.GetUniversalTime();
-            yield return new WaitWhile(() => pilots.Any(pilot => pilot != null && pilot.IsFlyingWaypoints && !(pilot.vessel.Landed || pilot.vessel.Splashed)));
+            yield return new WaitWhile(() => pilots.Any(pilot => pilot != null && pilot.weaponManager != null && pilot.IsFlyingWaypoints && !(pilot.vessel.Landed || pilot.vessel.Splashed)));
             var endedAt = Planetarium.GetUniversalTime();
 
             BDACompetitionMode.Instance.competitionStatus.Add("Waypoints competition finished. Scores:");
@@ -77,12 +80,81 @@ namespace BDArmory.Competition.OrchestrationStrategies
             BDACompetitionMode.Instance.Scores.ConfigurePlayers(pilots.Select(p => p.vessel).ToList());
             if (BDArmorySettings.AUTO_ENABLE_VESSEL_SWITCHING)
                 LoadedVesselSwitcher.Instance.EnableAutoVesselSwitching(true);
+            if (KerbalSafetyManager.Instance.safetyLevel != KerbalSafetyLevel.Off)
+                KerbalSafetyManager.Instance.CheckAllVesselsForKerbals();
+            if (BDArmorySettings.TIME_OVERRIDE && BDArmorySettings.TIME_SCALE != 0)
+            { Time.timeScale = BDArmorySettings.TIME_SCALE; }
             Debug.Log("[BDArmory.BDACompetitionMode:" + BDACompetitionMode.Instance.CompetitionID.ToString() + "]: Starting Competition");
+            if (BDArmorySettings.WAYPOINTS_VISUALIZE)
+            {
+                Vector3 previousLocation = FlightGlobals.ActiveVessel.transform.position;
+                for (int i = 0; i < waypoints.Count; i++)
+                {
+                    float terrainAltitude = (float)FlightGlobals.currentMainBody.TerrainAltitude(waypoints[i].latitude, waypoints[i].longitude);
+                    Vector3d WorldCoords = VectorUtils.GetWorldSurfacePostion(new Vector3(waypoints[i].latitude, waypoints[i].longitude, waypoints[i].altitude + terrainAltitude), FlightGlobals.currentMainBody);
+                    //FlightGlobals.currentMainBody.GetLatLonAlt(new Vector3(waypoints[i].latitude, waypoints[i].longitude, waypoints[i].altitude), out WorldCoords.x, out WorldCoords.y, out WorldCoords.z);
+                    var direction = (WorldCoords - previousLocation).normalized;
+                    WayPointMarker.CreateWaypoint(WorldCoords, direction, ModelPath);
+                    previousLocation = WorldCoords;
+                    var location = string.Format("({0:##.###}, {1:##.###}, {2:####}", waypoints[i].latitude, waypoints[i].longitude, waypoints[i].altitude);
+                    Debug.Log("[BDArmory.Waypoints]: Creating waypoint marker at  " + " " + location);
+                }
+            }
         }
 
         public void CleanUp()
         {
             if (BDACompetitionMode.Instance.competitionIsActive) BDACompetitionMode.Instance.StopCompetition(); // Competition is done, so stop it and do the rest of the book-keeping.
+
+        }
+    }
+
+    public class WayPointMarker : MonoBehaviour
+    {
+        public static ObjectPool WaypointPool;
+
+        public Vector3 Position { get; set; }
+
+        public bool disabled = false;
+
+        static void CreateObjectPool(string ModelPath)
+        {
+            if (WaypointPool != null) return;
+            GameObject WPTemplate = GameDatabase.Instance.GetModel(ModelPath);
+            WPTemplate.SetActive(false);
+            WPTemplate.AddComponent<WayPointMarker>();
+            WaypointPool = ObjectPool.CreateObjectPool(WPTemplate, 10, true, true);
+        }
+
+        public static void CreateWaypoint(Vector3 position, Vector3 direction, string ModelPath)
+        {
+            CreateObjectPool(ModelPath);
+
+            Quaternion rotation = Quaternion.LookRotation(direction);
+
+            GameObject newWayPoint = WaypointPool.GetPooledObject();
+            newWayPoint.transform.SetPositionAndRotation(position, rotation);
+            WayPointMarker NWP = newWayPoint.GetComponent<WayPointMarker>();
+            NWP.Position = position;
+
+            newWayPoint.SetActive(true);
+        }
+        void Awake()
+        {
+            transform.parent = FlightGlobals.ActiveVessel.mainBody.transform; //FIXME need to update this to grab worldindex for non-kerbin spawns for custom track building
+        }
+        private void OnEnable()
+        {
+            disabled = false;
+        }
+        void Update()
+        {
+            if (!gameObject.activeInHierarchy) return;
+            if (disabled || !BDACompetitionMode.Instance.competitionIsActive || !HighLogic.LoadedSceneIsFlight)
+            {
+                gameObject.SetActive(false);
+                return;
+            }
         }
     }
 }

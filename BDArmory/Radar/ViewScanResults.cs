@@ -12,6 +12,7 @@ namespace BDArmory.Radar
         public bool foundMissile;
         public bool foundHeatMissile;
         public bool foundRadarMissile;
+        public bool foundAntiRadiationMissile;
         public bool foundAGM;
         public List<IncomingMissile> incomingMissiles; // List of incoming missiles sorted by distance.
         #endregion

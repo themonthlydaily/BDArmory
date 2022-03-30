@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
-VERSION = "1.15.0"
+VERSION = "1.16.0"
 
 parser = argparse.ArgumentParser(description="Tournament log parser", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('tournament', type=str, nargs='*', help="Tournament folder to parse.")
@@ -19,7 +19,7 @@ parser.add_argument('-q', '--quiet', action='store_true', help="Don't print resu
 parser.add_argument('-n', '--no-files', action='store_true', help="Don't create summary files.")
 parser.add_argument('-s', '--score', action='store_false', help="Compute scores.")
 parser.add_argument('-so', '--scores-only', action='store_true', help="Only display the scores in the summary on the console.")
-parser.add_argument('-w', '--weights', type=str, default="1,0,0,-1,1,2e-3,3,1.5,4e-3,0,1e-4,4e-5,0.035,0,6e-4,0,1.5e-4,5e-5,0.15,0,0.002,0,3e-5,1.5e-5,0.075,0,0,0,0,0", help="Score weights (in order of main columns from 'Wins' to 'Ram', plus others). Use --show-weights to see them.")
+parser.add_argument('-w', '--weights', type=str, default="1,0,0,-1,1,2e-3,3,1.5,4e-3,0,1e-4,4e-5,0.035,0,6e-4,0,1.5e-4,5e-5,0.15,0,0.002,0,3e-5,1.5e-5,0.075,0,0,0,0,0,10,-1,-1", help="Score weights (in order of main columns from 'Wins' to 'Ram', plus others). Use --show-weights to see them.")
 # Note: in non-ranked FFA tournaments, a 'Wins' weight of 1 is good, but in ranked rounds this pushes the top ranked plane's score extra high, so a lower value should be used, e.g., 0.25.
 # Old weights: 0.1,0,0,-1,1,2e-3,2,1,2e-2,0,2e-4,1e-4,0.05,0,2e-3,0,1e-4,5e-5,0.5,0,0.01,0,2e-5,1e-5,0.01,0,0,0,0,0
 parser.add_argument('-c', '--current-dir', action='store_true', help="Parse the logs in the current directory as if it was a tournament without the folder structure.")
@@ -54,7 +54,7 @@ else:
         tournamentDirs = [Path(tournamentDir) for tournamentDir in args.tournament]  # Specified tournament dir
 
 if args.score:
-    score_fields = ('wins', 'survivedCount', 'miaCount', 'deathCount', 'deathOrder', 'deathTime', 'cleanKills', 'assists', 'hits', 'hitsTaken', 'bulletDamage', 'bulletDamageTaken', 'rocketHits', 'rocketHitsTaken', 'rocketPartsHit', 'rocketPartsHitTaken', 'rocketDamage', 'rocketDamageTaken', 'missileHits', 'missileHitsTaken', 'missilePartsHit', 'missilePartsHitTaken', 'missileDamage', 'missileDamageTaken', 'ramScore', 'ramScoreTaken', 'battleDamage', 'HPremaining', 'accuracy', 'rocket_accuracy')
+    score_fields = ('wins', 'survivedCount', 'miaCount', 'deathCount', 'deathOrder', 'deathTime', 'cleanKills', 'assists', 'hits', 'hitsTaken', 'bulletDamage', 'bulletDamageTaken', 'rocketHits', 'rocketHitsTaken', 'rocketPartsHit', 'rocketPartsHitTaken', 'rocketDamage', 'rocketDamageTaken', 'missileHits', 'missileHitsTaken', 'missilePartsHit', 'missilePartsHitTaken', 'missileDamage', 'missileDamageTaken', 'ramScore', 'ramScoreTaken', 'battleDamage', 'HPremaining', 'accuracy', 'rocket_accuracy', 'waypointCount', 'waypointTime', 'waypointDeviation')
     try:
         weights = list(float(w) for w in args.weights.split(','))
     except:
@@ -333,11 +333,6 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                 'HPremaining': CalculateAvgHP(sum([heat['craft'][craft]['HPremaining'] for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'HPremaining' in heat['craft'][craft] and heat['craft'][craft]['state'] == 'ALIVE']), len([1 for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and heat['craft'][craft]['state'] == 'ALIVE'])),
                 'accuracy': CalculateAccuracy(sum([heat['craft'][craft]['hits'] for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'hits' in heat['craft'][craft]]), sum([heat['craft'][craft]['shots'] for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'shots' in heat['craft'][craft]])),
                 'rocket_accuracy': CalculateAccuracy(sum([heat['craft'][craft]['rocket_strikes'] for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'rocket_strikes' in heat['craft'][craft]]), sum([heat['craft'][craft]['rockets_fired'] for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'rockets_fired' in heat['craft'][craft]])),
-                'waypoints': {
-                    'count': sum(len(heat['craft'][craft]['waypoints']) for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'waypoints' in heat['craft'][craft]),
-                    'deviation': sum(sum(float(waypoint[1]) for waypoint in heat['craft'][craft]['waypoints']) for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'waypoints' in heat['craft'][craft]),
-                    'elapsedTime': sum((float(heat['craft'][craft]['waypoints'][-1][2]) - float(heat['craft'][craft]['waypoints'][0][2])) for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'waypoints' in heat['craft'][craft])
-                },
             }
             for craft in craftNames
         },
@@ -357,9 +352,23 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
             'damage/spawn': craft['bulletDamage'] / spawns if spawns > 0 else 0,
         })
 
+    hasWaypoints = False
+    if any('waypoints' in heat['craft'][craft].keys() for round in tournamentData.values() for heat in round.values() for craft in craftNames if craft in heat['craft']):
+        hasWaypoints = True
+        for craft in craftNames:
+            WPbestCount = max(len(heat['craft'][craft]['waypoints']) for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'waypoints' in heat['craft'][craft])
+            summary['craft'][craft].update({
+                'waypointCount': sum(len(heat['craft'][craft]['waypoints']) for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'waypoints' in heat['craft'][craft]),
+                'waypointTime': sum((float(heat['craft'][craft]['waypoints'][-1][2]) - float(heat['craft'][craft]['waypoints'][0][2])) for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'waypoints' in heat['craft'][craft]),
+                'waypointDeviation': sum(sum(float(waypoint[1]) for waypoint in heat['craft'][craft]['waypoints']) for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'waypoints' in heat['craft'][craft]),
+                'waypointBestCount' : WPbestCount,
+                'waypointBestTime': min((float(heat['craft'][craft]['waypoints'][-1][2]) - float(heat['craft'][craft]['waypoints'][0][2])) for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'waypoints' in heat['craft'][craft] and len(heat['craft'][craft]['waypoints']) == WPbestCount),
+                'waypointBestDeviation': min(sum(float(waypoint[1]) for waypoint in heat['craft'][craft]['waypoints']) for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'waypoints' in heat['craft'][craft] and len(heat['craft'][craft]['waypoints']) == WPbestCount),
+                })
+
     if args.score:
         for craft in summary['craft'].values():
-            craft.update({'score': sum(w * craft[f] if not isinstance(craft[f], tuple) else w * craft[f][0] for w, f in zip(weights, score_fields))})
+            craft.update({'score': sum(w * craft[f][0] if isinstance(craft[f], tuple) else w * craft[f] for w, f in zip(weights, score_fields))})
         if args.zero_lowest_score and len(summary['craft']) > 0:
             offset = min(craft['score'] for craft in summary['craft'].values())
             for craft in summary['craft'].values():
@@ -375,7 +384,6 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
             csv_summary = ["craft," + ",".join(
                 ",".join(('deathCount', 'dcB', 'dcR', 'dcM', 'dcR', 'dcA', 'dcS')) if k == 'deathCount' else
                 ",".join(('cleanKills', 'ckB', 'ckR', 'ckM', 'ckR')) if k == 'cleanKills' else
-                ",".join(('wpCount', 'wpDeviation', 'wpTime')) if k == 'waypoints' else
                 k for k in headers), ]
             for craft, score in sorted(summary['craft'].items(), key=lambda i: i[1]['score'], reverse=True):
                 csv_summary.append(craft + "," + ",".join(
@@ -387,11 +395,11 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
             with open(tournamentDir / 'summary.csv', 'w') as outFile:
                 outFile.write("\n".join(csv_summary))
 
-        teamNames=sorted(list(set([team for result_type in summary['team results'].values() for team in result_type])))
-        default_team_names=[chr(k) for k in range(ord('A'), ord('A') + len(summary['craft']))]
+        teamNames = sorted(list(set([team for result_type in summary['team results'].values() for team in result_type])))
+        default_team_names = [chr(k) for k in range(ord('A'), ord('A') + len(summary['craft']))]
 
-        if args.score:  # Per round scores.
-            per_round_summary={
+        if args.score and not args.no_cumulative:  # Per round scores.
+            per_round_summary = {
                 craft: [
                     {
                         'wins': len([1 for heat in round.values() if heat['result']['result'] == "Win" and craft in next(iter(heat['result']['teams'].values())).split(", ")]),
@@ -439,28 +447,33 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                         'HPremaining': CalculateAvgHP(sum([heat['craft'][craft]['HPremaining'] for heat in round.values() if craft in heat['craft'] and 'HPremaining' in heat['craft'][craft] and heat['craft'][craft]['state'] == 'ALIVE']), len([1 for heat in round.values() if craft in heat['craft'] and heat['craft'][craft]['state'] == 'ALIVE'])),
                         'accuracy': CalculateAccuracy(sum([heat['craft'][craft]['hits'] for heat in round.values() if craft in heat['craft'] and 'hits' in heat['craft'][craft]]), sum([heat['craft'][craft]['shots'] for heat in round.values() if craft in heat['craft'] and 'shots' in heat['craft'][craft]])),
                         'rocket_accuracy': CalculateAccuracy(sum([heat['craft'][craft]['rocket_strikes'] for heat in round.values() if craft in heat['craft'] and 'rocket_strikes' in heat['craft'][craft]]), sum([heat['craft'][craft]['rockets_fired'] for heat in round.values() if craft in heat['craft'] and 'rockets_fired' in heat['craft'][craft]])),
+                        'waypointCount': sum(len(heat['craft'][craft]['waypoints']) for heat in round.values() if craft in heat['craft'] and 'waypoints' in heat['craft'][craft]),
+                        'waypointDeviation': sum(float(waypoint[1]) for heat in round.values() if craft in heat['craft'] and 'waypoints' in heat['craft'][craft] for waypoint in heat['craft'][craft]['waypoints']),
+                        'waypointTime': sum(float(heat['craft'][craft]['waypoints'][-1][2]) - float(heat['craft'][craft]['waypoints'][0][2]) for heat in round.values() if craft in heat['craft'] and 'waypoints' in heat['craft'][craft]),
                     } for round in tournamentData.values()
                 ] for craft in craftNames
             }
-            per_round_scores={
+            per_round_scores = {
                 craft: [
                     sum(
-                        w * scores[round][f] if not isinstance(scores[round][f], tuple) else w * scores[round][f][0] for w, f in zip(weights, score_fields)
+                        w * scores[round][f][0] if isinstance(scores[round][f], tuple) else w * scores[round][f] for w, f in zip(weights, score_fields)
                     ) for round in range(len(scores))
                 ] for craft, scores in per_round_summary.items()
             }
 
         if not args.quiet:  # Write results to console
-            strings=[]
+            strings = []
             if not args.current_dir and 'duration' in tournamentMetadata:
                 strings.append(f"Tournament {tournamentMetadata.get('ID', '???')} of duration {tournamentMetadata['duration'][1]-tournamentMetadata['duration'][0]} starting at {tournamentMetadata['duration'][0]}")
-            headers=['Name', 'Wins', 'Survive', 'MIA', 'Deaths (BRMRAS)', 'D.Order', 'D.Time', 'Kills (BRMR)', 'Assists', 'Hits', 'Damage', 'DmgTaken', 'RocHits', 'RocParts', 'RocDmg', 'HitByRoc', 'MisHits', 'MisParts', 'MisDmg', 'HitByMis', 'Ram', 'BD dealt', 'BD taken', 'Acc%', 'RktAcc%', 'HP%', 'Dmg/Hit', 'Hits/Sp', 'Dmg/Sp', 'WPcount', 'WPdev', 'WPtime'] if not args.scores_only else ['Name']
+            headers = ['Name', 'Wins', 'Survive', 'MIA', 'Deaths (BRMRAS)', 'D.Order', 'D.Time', 'Kills (BRMR)', 'Assists', 'Hits', 'Damage', 'DmgTaken', 'RocHits', 'RocParts', 'RocDmg', 'HitByRoc', 'MisHits', 'MisParts', 'MisDmg', 'HitByMis', 'Ram', 'BD dealt', 'BD taken', 'Acc%', 'RktAcc%', 'HP%', 'Dmg/Hit', 'Hits/Sp', 'Dmg/Sp'] if not args.scores_only else ['Name']
+            if hasWaypoints and not args.scores_only:
+                headers.extend(['WPcount', 'WPtime', 'WPdev', 'WPbestC', 'WPbestT', 'WPbestD'])
             if args.score:
                 headers.insert(1, 'Score')
-            summary_strings={'header': {field: field for field in headers}}
+            summary_strings = {'header': {field: field for field in headers}}
             for craft in sorted(summary['craft']):
-                tmp=summary['craft'][craft]
-                spawns=tmp['survivedCount'] + tmp['deathCount'][0]
+                tmp = summary['craft'][craft]
+                spawns = tmp['survivedCount'] + tmp['deathCount'][0]
                 summary_strings.update({
                     craft: {
                         'Name': craft,
@@ -492,29 +505,35 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                         'Dmg/Hit': f"{tmp['damage/hit']:.1f}",
                         'Hits/Sp': f"{tmp['hits/spawn']:.1f}",
                         'Dmg/Sp': f"{tmp['damage/spawn']:.1f}",
-                        'WPcount': f"{tmp['waypoints']['count']}",
-                        'WPdev': f"{tmp['waypoints']['deviation']:.1f}",
-                        'WPtime': f"{tmp['waypoints']['elapsedTime']:.1f}",
                     }
                 })
+                if hasWaypoints:
+                    summary_strings[craft].update({
+                        'WPcount': f"{tmp['waypointCount']}",
+                        'WPtime': f"{tmp['waypointTime']:.1f}",
+                        'WPdev': f"{tmp['waypointDeviation']:.1f}",
+                        'WPbestC': f"{tmp['waypointBestCount']}",
+                        'WPbestT': f"{tmp['waypointBestTime']:.1f}",
+                        'WPbestD': f"{tmp['waypointBestDeviation']:.1f}",
+                    })
                 if args.score:
-                    summary_strings[craft]['Score']=f"{tmp['score']:.3f}"
-            columns_to_show=[header for header in headers if not all(craft[header] == "0" for craft in list(summary_strings.values())[1:])]
-            column_widths={column: max(len(craft[column]) + 2 for craft in summary_strings.values()) for column in headers}
+                    summary_strings[craft]['Score'] = f"{tmp['score']:.3f}"
+            columns_to_show = [header for header in headers if not all(craft[header] == "0" for craft in list(summary_strings.values())[1:])]
+            column_widths = {column: max(len(craft[column]) + 2 for craft in summary_strings.values()) for column in headers}
             strings.append(''.join(f"{header:{column_widths[header]}s}" for header in columns_to_show))
             for craft in sorted(summary['craft'], key=None if not args.score else lambda craft: summary['craft'][craft]['score'], reverse=False if not args.score else True):
                 strings.append(''.join(f"{summary_strings[craft][header]:{column_widths[header]}s}" for header in columns_to_show))
 
             # Teams summary
             if len(teamNames) > 0 and not all(name in default_team_names for name in teamNames):  # Don't do teams if they're assigned as 'A', 'B', ... as they won't be consistent between rounds.
-                name_length=max([len(team) for team in teamNames])
+                name_length = max([len(team) for team in teamNames])
                 strings.append(f"\nTeam{' '*(name_length-4)}\tWins\tDraws\tDeaths\tVessels")
                 for team in sorted(teamNames, key=lambda team: teamWins[team], reverse=True):
                     strings.append(f"{team}{' '*(name_length-len(team))}\t{teamWins[team]}\t{teamDraws[team]}\t{teamDeaths[team]}\t{summary['teams'][team]}")
 
             # Per round cumulative score
             if args.score and not args.no_cumulative:
-                name_length=max([len(name) for name in per_round_scores.keys()] + [23])
+                name_length = max([len(name) for name in per_round_scores.keys()] + [23])
                 strings.append(f"\nName \\ Cumulative Score{' '*(name_length-22)}\t" + "\t".join(f"{r:>7d}" for r in range(len(next(iter(per_round_scores.values()))))))
                 strings.append('\n'.join(f"{craft}:{' '*(name_length-len(craft))}\t" + "\t".join(f"{s:>7.2f}" for s in cumsum(per_round_scores[craft])) for craft in sorted(per_round_scores, key=lambda craft: summary['craft'][craft]['score'], reverse=True)))
 

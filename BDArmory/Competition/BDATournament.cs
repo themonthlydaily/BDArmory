@@ -5,6 +5,8 @@ using System.IO;
 using System.Linq;
 using UnityEngine;
 
+using BDArmory.Competition.OrchestrationStrategies;
+using BDArmory.Competition.SpawnStrategies;
 using BDArmory.Competition.VesselSpawning;
 using BDArmory.Evolution;
 using BDArmory.Settings;
@@ -114,12 +116,12 @@ namespace BDArmory.Competition
             int fullHeatCount;
             switch (vesselsPerHeat)
             {
-                case 0: // Auto
+                case -1: // Auto
                     var autoVesselsPerHeat = OptimiseVesselsPerHeat(craftFiles.Count);
                     vesselsPerHeat = autoVesselsPerHeat.Item1;
                     fullHeatCount = Mathf.CeilToInt(craftFiles.Count / vesselsPerHeat) - autoVesselsPerHeat.Item2;
                     break;
-                case 1: // Unlimited (all vessels in one heat).
+                case 0: // Unlimited (all vessels in one heat).
                     vesselsPerHeat = craftFiles.Count;
                     fullHeatCount = 1;
                     break;
@@ -688,6 +690,7 @@ namespace BDArmory.Competition
                 }
             }
             if (stateFile != "") this.stateFile = stateFile;
+            if ((BDArmorySettings.WAYPOINTS_MODE || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 50)) && BDArmorySettings.WAYPOINTS_ONE_AT_A_TIME) vesselsPerHeat = 1; // Override vessels per heat.
             tournamentState = new TournamentState();
             if (numberOfTeams == 0) // FFA
             {
@@ -752,7 +755,10 @@ namespace BDArmory.Competition
                     while (!competitionStarted && attempts++ < 3) // 3 attempts is plenty
                     {
                         tournamentStatus = TournamentStatus.Running;
-                        yield return ExecuteHeat(roundIndex, heatIndex);
+                        if (BDArmorySettings.WAYPOINTS_MODE || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 50))
+                            yield return ExecuteWaypointHeat(roundIndex, heatIndex);
+                        else
+                            yield return ExecuteHeat(roundIndex, heatIndex);
                         if (!competitionStarted)
                             switch (CircularSpawning.Instance.spawnFailureReason)
                             {
@@ -849,6 +855,36 @@ namespace BDArmory.Competition
             }
         }
 
+        IEnumerator ExecuteWaypointHeat(int roundIndex, int heatIndex)
+        {
+            if (TournamentCoordinator.Instance.IsRunning) TournamentCoordinator.Instance.Stop();
+            var spawnConfig = tournamentState.rounds[roundIndex][heatIndex];
+            spawnConfig.worldIndex = 1;
+            spawnConfig.latitude = 27.97f;
+            spawnConfig.longitude = -39.35f;
+
+            TournamentCoordinator.Instance.Configure(new SpawnConfigStrategy(spawnConfig),
+                new WaypointFollowingStrategy(
+                    new List<WaypointFollowingStrategy.Waypoint> {
+                        new WaypointFollowingStrategy.Waypoint(28.33f, -39.11f, BDArmorySettings.WAYPOINTS_ALTITUDE),
+                        new WaypointFollowingStrategy.Waypoint(28.83f, -38.06f, BDArmorySettings.WAYPOINTS_ALTITUDE),
+                        new WaypointFollowingStrategy.Waypoint(29.54f, -38.68f, BDArmorySettings.WAYPOINTS_ALTITUDE),
+                        new WaypointFollowingStrategy.Waypoint(30.15f, -38.6f, BDArmorySettings.WAYPOINTS_ALTITUDE),
+                        new WaypointFollowingStrategy.Waypoint(30.83f, -38.87f, BDArmorySettings.WAYPOINTS_ALTITUDE),
+                        new WaypointFollowingStrategy.Waypoint(30.73f, -39.6f, BDArmorySettings.WAYPOINTS_ALTITUDE),
+                        new WaypointFollowingStrategy.Waypoint(30.9f, -40.23f, BDArmorySettings.WAYPOINTS_ALTITUDE),
+                        new WaypointFollowingStrategy.Waypoint(30.83f, -41.26f, BDArmorySettings.WAYPOINTS_ALTITUDE)
+                    }
+                ),
+                CircularSpawning.Instance
+            );
+
+            // Run the waypoint competition.
+            TournamentCoordinator.Instance.Run();
+            competitionStarted = true;
+            yield return new WaitWhile(() => TournamentCoordinator.Instance.IsRunning);
+        }
+
         IEnumerator ExecuteHeat(int roundIndex, int heatIndex)
         {
             CircularSpawning.Instance.SpawnAllVesselsOnce(tournamentState.rounds[roundIndex][heatIndex]);
@@ -872,7 +908,7 @@ namespace BDArmory.Competition
                     case 44:
                         BDACompetitionMode.Instance.StartRapidDeployment(0);
                         break;
-                    case 50: // FIXME temporary index, to be assigned later
+                    case 60: // FIXME temporary index, to be assigned later
                         BDACompetitionMode.Instance.StartRapidDeployment(0);
                         break;
                     default:

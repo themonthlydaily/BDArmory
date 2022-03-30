@@ -22,9 +22,6 @@ namespace BDArmory.Competition.VesselSpawning
             // If we're on another planetary body, first switch to the proper one.
             if (spawnConfig.worldIndex != FlightGlobals.currentMainBody.flightGlobalsIndex)
             { SpawnUtils.ShowSpawnPoint(spawnConfig.worldIndex, spawnConfig.latitude, spawnConfig.longitude, spawnConfig.altitude, 20); }
-
-            // Then revert the camera, but keep the new location.
-            SpawnUtils.RevertSpawnLocationCamera(true);
         }
 
         public bool vesselsSpawning { get { return VesselSpawnerStatus.vesselsSpawning; } set { VesselSpawnerStatus.vesselsSpawning = value; } }

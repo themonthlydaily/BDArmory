@@ -512,6 +512,7 @@ namespace BDArmory.Competition
             return true;
         }
 
+        #region Tag
         public bool RegisterIsIT(string vesselName)
         {
             if (string.IsNullOrEmpty(vesselName) || !ScoreData.ContainsKey(vesselName))
@@ -563,6 +564,7 @@ namespace BDArmory.Competition
             }
             return true;
         }
+        #endregion
 
         #region Waypoints
         public bool RegisterWaypointReached(string vesselName, int waypointIndex, float distance)
@@ -571,6 +573,7 @@ namespace BDArmory.Competition
             if (vesselName == null || !ScoreData.ContainsKey(vesselName)) return false;
 
             ScoreData[vesselName].waypointsReached.Add(new ScoringData.WaypointReached(waypointIndex, distance, Planetarium.GetUniversalTime() - BDACompetitionMode.Instance.competitionStartTime));
+            BDACompetitionMode.Instance.competitionStatus.Add($"{vesselName}: Waypoint {waypointIndex} reached! Time: {ScoreData[vesselName].waypointsReached.Last().timestamp - ScoreData[vesselName].waypointsReached.First().timestamp:F2}s, Deviation: {distance:F1}m");
 
             return true;
         }
@@ -828,7 +831,8 @@ namespace BDArmory.Competition
             // Waypoints
             foreach (var player in Players)
             {
-                logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: WAYPOINTS:" + player + ":" + string.Join(";", ScoreData[player].waypointsReached.Select(wp => wp.waypointIndex + ":" + wp.deviation.ToString("F2") + ":" + wp.timestamp.ToString("F2"))));
+                if (ScoreData[player].waypointsReached.Count > 0)
+                    logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: WAYPOINTS:" + player + ":" + string.Join(";", ScoreData[player].waypointsReached.Select(wp => wp.waypointIndex + ":" + wp.deviation.ToString("F2") + ":" + wp.timestamp.ToString("F2"))));
             }
 
             // Dump the log results to a file
@@ -913,7 +917,6 @@ namespace BDArmory.Competition
             public double timestamp; // Timestamp of reaching waypoint.
         }
         public List<WaypointReached> waypointsReached = new List<WaypointReached>();
-
         #endregion
 
         #region Misc
