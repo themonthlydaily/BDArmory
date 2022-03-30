@@ -1134,6 +1134,20 @@ namespace BDArmory.Weapons
                         if (!string.IsNullOrEmpty(ammoBelt) && ammoBelt != "def")
                         {
                             customAmmoBelt = BDAcTools.ParseNames(ammoBelt);
+                            List<string> testAmmo = BDAcTools.ParseNames(bulletType);
+                            for (int i = 0; i < customAmmoBelt.Count; i++)
+                            {
+                                bool validAmmo = false;
+                                for (int t = 0; t < testAmmo.Count; t++)
+                                {
+                                    if (customAmmoBelt[i].Contains(testAmmo[t]))
+                                    {
+                                        validAmmo = true;
+                                        break;
+                                    }
+                                    if (!validAmmo) customAmmoBelt[i] = testAmmo[0];
+                                }
+                            }
                             baseBulletVelocity = BulletInfo.bullets[customAmmoBelt[0].ToString()].bulletVelocity;
                         }
                         else

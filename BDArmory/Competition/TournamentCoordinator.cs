@@ -1,10 +1,12 @@
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 using BDArmory.Competition.OrchestrationStrategies;
 using BDArmory.Competition.SpawnStrategies;
 using BDArmory.Competition.VesselSpawning;
-
+using BDArmory.Settings;
 
 namespace BDArmory.Competition
 {
@@ -16,6 +18,7 @@ namespace BDArmory.Competition
         private OrchestrationStrategy orchestrator;
         private VesselSpawner vesselSpawner;
         private Coroutine executing = null;
+        private Coroutine executingForEach = null;
         public bool IsRunning { get; private set; }
 
         void Awake()
@@ -67,6 +70,42 @@ namespace BDArmory.Competition
             yield return orchestrator.Execute(null, null);
 
             IsRunning = false;
+        }
+
+        public void RunForEach<T>(List<T> strategies, OrchestrationStrategy orchestrator, VesselSpawner spawner) where T : SpawnStrategy
+        {
+            StopForEach();
+            executingForEach = StartCoroutine(ExecuteForEach(strategies, orchestrator, spawner));
+        }
+
+        public void StopForEach()
+        {
+            if (executingForEach != null)
+            {
+                StopCoroutine(executingForEach);
+                executingForEach = null;
+                orchestrator.CleanUp();
+            }
+        }
+
+        IEnumerator ExecuteForEach<T>(List<T> strategies, OrchestrationStrategy orchestrator, VesselSpawner spawner) where T : SpawnStrategy
+        {
+            int i = 0;
+            foreach (var strategy in strategies)
+            {
+                Configure(strategy, orchestrator, spawner);
+                Run();
+                yield return new WaitWhile(() => IsRunning);
+                if (++i < strategies.Count())
+                {
+                    double startTime = Planetarium.GetUniversalTime();
+                    while ((Planetarium.GetUniversalTime() - startTime) < BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS)
+                    {
+                        BDACompetitionMode.Instance.competitionStatus.Add("Waiting " + (BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS - (Planetarium.GetUniversalTime() - startTime)).ToString("0") + "s, then running the next round.");
+                        yield return new WaitForSeconds(1);
+                    }
+                }
+            }
         }
     }
 }

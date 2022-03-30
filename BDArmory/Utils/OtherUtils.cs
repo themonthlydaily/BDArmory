@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace BDArmory.Utils
 {
-    public static class OtherUtils
+    public static class OtherUtils // FIXME Suggestions for a better name?
     {
         /// <summary>
         /// Parses the string to a curve.
@@ -111,7 +111,5 @@ namespace BDArmory.Utils
         {
             return json.Replace('<', '{').Replace('>', '}');
         }
-
-
     }
 }

@@ -28,6 +28,10 @@ namespace BDArmory.Weapons
         [KSPField]
         public string targetingType = "none";
 
+        [KSPField]
+        public string antiradTargetTypes = "0,5";
+        public float[] antiradTargets;
+
         public MissileTurret missileTurret = null;
         public BDRotaryRail rotaryRail = null;
         public BDDeployableRail deployableRail = null;
@@ -385,6 +389,7 @@ namespace BDArmory.Weapons
             }
 
             ParseModes();
+            ParseAntiRadTargetTypes();
             // extension for feature_engagementenvelope
             InitializeEngagementRange(minStaticLaunchRange, maxStaticLaunchRange);
 
@@ -2047,6 +2052,11 @@ namespace BDArmory.Weapons
             float AoA = Vector3.Angle(part.transform.forward, vessel.Velocity());
             AoA /= 20;
             part.rb.AddTorque(AoA * simpleStableTorque * dragMagnitude * torqueAxis);
+        }
+
+        void ParseAntiRadTargetTypes()
+        {
+            antiradTargets = OtherUtils.ParseToFloatArray(antiradTargetTypes);
         }
 
         void ParseModes()
