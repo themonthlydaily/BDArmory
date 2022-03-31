@@ -36,6 +36,7 @@ namespace BDArmory.UI
         private int previous_index = 1;
         private bool planetslist = false;
         int selected_index = 1;
+        int WaygateCount = 1;
         #endregion
         #region GUI strings
         string tournamentStyle = "RNG";
@@ -111,6 +112,7 @@ namespace BDArmory.UI
             if (Instance)
                 Destroy(this);
             Instance = this;
+            WaygateCount = 1;
         }
 
         private void Start()
@@ -488,6 +490,12 @@ namespace BDArmory.UI
                     BDArmorySettings.WAYPOINTS_ALTITUDE = Utils.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.WAYPOINTS_ALTITUDE, 50f, 1000f), 50f);
                     BDArmorySettings.WAYPOINTS_ONE_AT_A_TIME = GUI.Toggle(SLeftRect(++line), BDArmorySettings.WAYPOINTS_ONE_AT_A_TIME, Localizer.Format("#LOC_BDArmory_Settings_WaypointsOneAtATime"));
                     BDArmorySettings.WAYPOINTS_VISUALIZE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.WAYPOINTS_VISUALIZE, Localizer.Format("#LOC_BDArmory_Settings_WaypointsShow"));
+                    if (BDArmorySettings.WAYPOINTS_VISUALIZE)
+                    {
+                        string SelectedModel = BDArmorySettings.WAYPOINTS_MODEL == 0 ? "Ring" : "Torii";
+                        GUI.Label(SLeftSliderRect(++line), $"Select Gate Model: " + SelectedModel, leftLabel);
+                        BDArmorySettings.WAYPOINTS_MODEL = Utils.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.WAYPOINTS_MODEL, 0, WaygateCount), 1);
+                    }
                 }
             }
 

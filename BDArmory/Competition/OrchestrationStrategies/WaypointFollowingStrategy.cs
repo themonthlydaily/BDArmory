@@ -8,6 +8,7 @@ using BDArmory.Core;
 using BDArmory.UI;
 using UnityEngine;
 using BDArmory.Misc;
+using System.IO;
 
 namespace BDArmory.Competition.OrchestrationStrategies
 {
@@ -29,7 +30,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
         private List<Waypoint> waypoints;
         private List<BDModulePilotAI> pilots;
 
-        static string ModelPath = "BDArmory/Models/WayPoint/model";
+        static string ModelPath = "BDArmory/Models/WayPoint/Torii";
 
         public WaypointFollowingStrategy(List<Waypoint> waypoints)
         {
@@ -82,11 +83,19 @@ namespace BDArmory.Competition.OrchestrationStrategies
             Debug.Log("[BDArmory.BDACompetitionMode:" + BDACompetitionMode.Instance.CompetitionID.ToString() + "]: Starting Competition");
             if (BDArmorySettings.WAYPOINTS_VISUALIZE)
             {
+                Vector3 previousLocation = FlightGlobals.ActiveVessel.transform.position;
+                //FlightGlobals.currentMainBody.GetLatLonAlt(FlightGlobals.ActiveVessel.transform.position, out previousLocation.x, out previousLocation.y, out previousLocation.z);
+                //previousLocation.z = BDArmorySettings.WAYPOINTS_ALTITUDE;
+                if (BDArmorySettings.WAYPOINTS_MODEL == 0) ModelPath = "BDArmory/Models/WayPoint/Ring";
+                if(BDArmorySettings.WAYPOINTS_MODEL == 1) ModelPath = "BDArmory/Models/WayPoint/Torii";
                 for (int i = 0; i < waypoints.Count; i++)
                 {
-                    Vector3d WorldCoords = VectorUtils.GetWorldSurfacePostion(new Vector3(waypoints[i].latitude, waypoints[i].longitude, waypoints[i].altitude), FlightGlobals.currentMainBody);
+                    float terrainAltitude = (float)FlightGlobals.currentMainBody.TerrainAltitude(waypoints[i].latitude, waypoints[i].longitude);
+                    Vector3d WorldCoords = VectorUtils.GetWorldSurfacePostion(new Vector3(waypoints[i].latitude, waypoints[i].longitude, waypoints[i].altitude + terrainAltitude), FlightGlobals.currentMainBody);
                     //FlightGlobals.currentMainBody.GetLatLonAlt(new Vector3(waypoints[i].latitude, waypoints[i].longitude, waypoints[i].altitude), out WorldCoords.x, out WorldCoords.y, out WorldCoords.z);
-                    WayPointMarker.CreateWaypoint(WorldCoords, ModelPath);
+                    var direction = (WorldCoords - previousLocation).normalized;
+                    WayPointMarker.CreateWaypoint(WorldCoords, direction, ModelPath);
+                    previousLocation = WorldCoords;
                     var location = string.Format("({0:##.###}, {1:##.###}, {2:####}", waypoints[i].latitude, waypoints[i].longitude, waypoints[i].altitude);
                     Debug.Log("[BDArmory.Waypoints]: Creating waypoint marker at  " + " " + location);
                 }
@@ -96,38 +105,56 @@ namespace BDArmory.Competition.OrchestrationStrategies
         public void CleanUp()
         {
             if (BDACompetitionMode.Instance.competitionIsActive) BDACompetitionMode.Instance.StopCompetition(); // Competition is done, so stop it and do the rest of the book-keeping.
-
         }
     }
 
     public class WayPointMarker : MonoBehaviour
     {
-        public static ObjectPool WaypointPool;
-
+        //public static ObjectPool WaypointPool;
+        public static Dictionary<string, ObjectPool> WaypointPools = new Dictionary<string, ObjectPool>();
         public Vector3 Position { get; set; }
 
         public bool disabled = false;
-
+        private static int gateCount = 0;
         static void CreateObjectPool(string ModelPath)
         {
+            /*
             if (WaypointPool != null) return;
             GameObject WPTemplate = GameDatabase.Instance.GetModel(ModelPath);
             WPTemplate.SetActive(false);
             WPTemplate.AddComponent<WayPointMarker>();
             WaypointPool = ObjectPool.CreateObjectPool(WPTemplate, 10, true, true);
+            */
+            var key = ModelPath;
+            if (!WaypointPools.ContainsKey(key) || WaypointPools[key] == null)
+            {
+                var WPTemplate = GameDatabase.Instance.GetModel(ModelPath);
+                if (WPTemplate == null)
+                {
+                    Debug.LogError("[BDArmory.WayPointMarker]: " + ModelPath + " was not found, using the default explosion instead. Please fix your model.");
+                    WPTemplate = GameDatabase.Instance.GetModel("BDArmory/Models/WayPoint/model");
+                }
+                WPTemplate.SetActive(false);
+                WPTemplate.AddComponent<WayPointMarker>();
+                WaypointPools[key] = ObjectPool.CreateObjectPool(WPTemplate, 10, true, true);
+            }
         }
 
-        public static void CreateWaypoint(Vector3 position, string ModelPath)
+        public static void CreateWaypoint(Vector3 position, Vector3 direction, string ModelPath)
         {
             CreateObjectPool(ModelPath);
 
-            Quaternion rotation = Quaternion.LookRotation(VectorUtils.GetUpDirection(position)); //change this to look at the previous/next waypoint instead of camera orientation?
+            Quaternion rotation = Quaternion.LookRotation(VectorUtils.GetUpDirection(position)); //this needs to go, so the model is aligned to the ground normal, not the body transform orientation
 
-            GameObject newWayPoint = WaypointPool.GetPooledObject();
+            GameObject newWayPoint = WaypointPools[ModelPath].GetPooledObject();
+
+            newWayPoint.transform.SetPositionAndRotation(position, rotation);
+            rotation = Quaternion.LookRotation(direction);
             newWayPoint.transform.SetPositionAndRotation(position, rotation);
             WayPointMarker NWP = newWayPoint.GetComponent<WayPointMarker>();
             NWP.Position = position;
 
+            //adding a scale value to allow size customization would be a godd idea - FIXME for custom waypoints dev
             newWayPoint.SetActive(true);
         }
         void Awake()
@@ -146,7 +173,9 @@ namespace BDArmory.Competition.OrchestrationStrategies
                 gameObject.SetActive(false);
                 return;
             }
-            this.transform.LookAt(FlightCamera.fetch.mainCamera.transform); //Always face the camera
+            //this.transform.LookAt(FlightCamera.fetch.mainCamera.transform); //Always face the camera
+            //if adding Races! style waypoint customization for building custom tracks, have the camera follow be a toggle, to allow for different models? Aub's Torii, etc.
         }
     }
 }
+           

@@ -252,7 +252,8 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static float WAYPOINTS_ALTITUDE = 50f;               // Altitude above ground of the waypoints.
         [BDAPersistentSettingsField] public static bool WAYPOINTS_ONE_AT_A_TIME = true;          // Send the craft one-at-a-time through the course.
         [BDAPersistentSettingsField] public static bool WAYPOINTS_VISUALIZE = true;              // Add Waypoint models to indicate the path
-
+        [BDAPersistentSettingsField] public static int WAYPOINTS_SCALE = 500;                    // Have model(or maybe WP radius proper) scale?
+        [BDAPersistentSettingsField] public static float WAYPOINTS_MODEL = 1;
         // Heartbleed
         [BDAPersistentSettingsField] public static float HEART_BLEED_RATE = 0.01f;
         [BDAPersistentSettingsField] public static float HEART_BLEED_INTERVAL = 10f;
