@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
-VERSION = "1.16.0"
+VERSION = "1.16.1"
 
 parser = argparse.ArgumentParser(description="Tournament log parser", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('tournament', type=str, nargs='*', help="Tournament folder to parse.")
@@ -257,15 +257,15 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                     if (len(heat_result) > 2):
                         teams = json.loads(heat_result[2])
                         if isinstance(teams, dict):  # Win, single team
-                            tournamentData[round.name][heat.name]['result'] = {'result': result_type, 'teams': {teams['team']: ', '.join(teams['members'])}}
+                            tournamentData[round.name][heat.name]['result'] = {'result': result_type, 'teams': {teams['team']: ', '.join((encoded_craft_names[craft] for craft in teams['members']))}}
                         elif isinstance(teams, list):  # Draw, multiple teams
-                            tournamentData[round.name][heat.name]['result'] = {'result': result_type, 'teams': {team['team']: ', '.join(team['members']) for team in teams}}
+                            tournamentData[round.name][heat.name]['result'] = {'result': result_type, 'teams': {team['team']: ', '.join((encoded_craft_names[craft] for craft in team['members'])) for team in teams}}
                     else:  # Mutual Annihilation
                         tournamentData[round.name][heat.name]['result'] = {'result': result_type}
                 elif field.startswith('DEADTEAMS:'):
                     dead_teams = json.loads(field.split(':', 1)[1])
                     if len(dead_teams) > 0:
-                        tournamentData[round.name][heat.name]['result'].update({'dead teams': {team['team']: ', '.join(team['members']) for team in dead_teams}})
+                        tournamentData[round.name][heat.name]['result'].update({'dead teams': {team['team']: ', '.join((encoded_craft_names[craft] for craft in team['members'])) for team in dead_teams}})
                 # Ignore Tag mode for now.
                 elif field.startswith('WAYPOINTS:'):
                     _, craft, waypoints_str = field.split(':', 2)
@@ -368,7 +368,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 
     if args.score:
         for craft in summary['craft'].values():
-            craft.update({'score': sum(w * craft[f][0] if isinstance(craft[f], tuple) else w * craft[f] for w, f in zip(weights, score_fields))})
+            craft.update({'score': sum(w * craft[f][0] if isinstance(craft[f], tuple) else w * craft[f] for w, f in zip(weights, score_fields) if f in craft)})
         if args.zero_lowest_score and len(summary['craft']) > 0:
             offset = min(craft['score'] for craft in summary['craft'].values())
             for craft in summary['craft'].values():
