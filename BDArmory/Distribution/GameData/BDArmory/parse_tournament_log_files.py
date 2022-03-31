@@ -368,7 +368,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 
     if args.score:
         for craft in summary['craft'].values():
-            craft.update({'score': sum(w * craft[f][0] if isinstance(craft[f], tuple) else w * craft[f] for w, f in zip(weights, score_fields))})
+            craft.update({'score': sum(w * craft[f][0] if isinstance(craft[f], tuple) else w * craft[f] for w, f in zip(weights, score_fields) if f in craft)})
         if args.zero_lowest_score and len(summary['craft']) > 0:
             offset = min(craft['score'] for craft in summary['craft'].values())
             for craft in summary['craft'].values():
