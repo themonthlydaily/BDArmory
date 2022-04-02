@@ -614,8 +614,8 @@ namespace BDArmory.Control
         float turningTimer;
         float evasiveTimer;
         float threatRating;
-        List<Vector3> waypoints = null;
-        int activeWaypointIndex = -1;
+        // List<Vector3> waypoints = null;
+        // int activeWaypointIndex = -1;
         Vector3 lastTargetPosition;
 
         LineRenderer lr;
@@ -1207,7 +1207,7 @@ namespace BDArmory.Control
 
             UpdateVelocityRelativeDirections();
             CheckLandingGear();
-            if (IsFlyingWaypoints) UpdateWaypoint(); // Update the waypoint state.
+            if (IsRunningWaypoints) UpdateWaypoint(); // Update the waypoint state.
 
             if (!vessel.LandedOrSplashed && (FlyAvoidTerrain(s) || (!ramming && FlyAvoidOthers(s))))
             { turningTimer = 0; }
@@ -1327,7 +1327,7 @@ namespace BDArmory.Control
                     collisionDetectionTicker = vesselCollisionAvoidanceTickerFreq + 1; //check for collision again after exiting evasion routine
                 }
             }
-            else if (!extending && IsFlyingWaypoints)
+            else if (!extending && IsRunningWaypoints)
             {
                 // FIXME To avoid getting stuck circling a waypoint, a check should be made (maybe use the turningTimer for this?), in which case the plane should RequestExtend away from the waypoint.
                 FlyWaypoints(s);
@@ -1782,7 +1782,7 @@ namespace BDArmory.Control
                 targetDirection = velocityTransform.InverseTransformDirection(targetPosition - velocityTransform.position).normalized;
                 targetDirection = Vector3.RotateTowards(Vector3.up, targetDirection, 45 * Mathf.Deg2Rad, 0);
 
-                if (useWaypointYawAuthority && IsFlyingWaypoints)
+                if (useWaypointYawAuthority && IsRunningWaypoints)
                 {
                     var refYawDir = Vector3.RotateTowards(Vector3.up, vesselTransform.InverseTransformDirection(targetPosition - vesselTransform.position), 25 * Mathf.Deg2Rad, 0).normalized;
                     var velYawDir = Vector3.RotateTowards(Vector3.up, vesselTransform.InverseTransformDirection(vessel.Velocity()), 45 * Mathf.Deg2Rad, 0).normalized;
@@ -1867,7 +1867,7 @@ namespace BDArmory.Control
                     requiresLowAltitudeRollTargetCorrection = true; // For simplicity, we'll apply the correction after the projections have occurred.
                 }
             }
-            if (useWaypointRollTarget && IsFlyingWaypoints)
+            if (useWaypointRollTarget && IsRunningWaypoints)
             {
                 var angle = waypointRollTargetStrength * Vector3.Angle(waypointRollTarget, rollTarget);
                 rollTarget = Vector3.ProjectOnPlane(Vector3.RotateTowards(rollTarget, waypointRollTarget, angle * Mathf.Deg2Rad, 0f), vessel.Velocity());
@@ -2110,38 +2110,6 @@ namespace BDArmory.Control
         }
 
         #region Waypoints
-        public void ClearWaypoints()
-        {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDModulePilotAI]: Cleared waypoints");
-            this.waypoints = null;
-            this.activeWaypointIndex = -1;
-        }
-        public void SetWaypoints(List<Vector3> waypoints)
-        {
-            if (waypoints == null || waypoints.Count == 0)
-            {
-                this.activeWaypointIndex = -1;
-                this.waypoints = null;
-                return;
-            }
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log(string.Format("[BDArmory.BDModulePilotAI]: Set {0} waypoints", waypoints.Count));
-            this.waypoints = waypoints;
-            this.activeWaypointIndex = 0;
-            var waypoint = waypoints[activeWaypointIndex];
-            var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
-            waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
-            CommandFollowWaypoints();
-        }
-        public bool IsFlyingWaypoints => command == PilotCommands.Waypoints && activeWaypointIndex >= 0 && waypoints != null && waypoints.Count > 0;
-
-        public int GetWaypointIndex()
-        {
-            return this.activeWaypointIndex;
-        }
-
-        private Vector3 waypointPosition = default;
-        private float waypointRadius = 500f;
-        private float waypointRange = 999f;
         private Vector3 waypointRollTarget = default;
         private float waypointRollTargetStrength = 0;
         private bool useWaypointRollTarget = false;
@@ -2215,42 +2183,11 @@ namespace BDArmory.Control
             }
         }
 
-        void UpdateWaypoint()
+        protected override void UpdateWaypoint()
         {
-            if (activeWaypointIndex < 0 || waypoints == null || waypoints.Count == 0)
-            {
-                if (command == PilotCommands.Waypoints) ReleaseCommand();
-                return;
-            }
+            base.UpdateWaypoint();
             useWaypointRollTarget = false; // Reset this so that it's only set when actively flying waypoints.
             useWaypointYawAuthority = false; // Reset this so that it's only set when actively flying waypoints.
-            var waypoint = waypoints[activeWaypointIndex];
-            var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
-            waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
-            waypointRange = (float)(vesselTransform.position - waypointPosition).magnitude;
-            var timeToCPA = AIUtils.ClosestTimeToCPA(vessel.transform.position - waypointPosition, vessel.Velocity(), vessel.acceleration, Time.fixedDeltaTime);
-            // if (waypointsRange < waypointRadius) Debug.Log($"DEBUG waypoint {activeWaypointIndex}, distance: {waypointsRange:F1} @ {Time.time}, TtCPA: {timeToCPA:F3}");
-            if (waypointRange < waypointRadius && timeToCPA < Time.fixedDeltaTime) // Within waypointRadius and reaching a minimum within the next frame. Looking forwards like this avoids a frame where the fly-to direction is backwards allowing smoother waypoint traversal.
-            {
-                // moving away, proceed to next point
-                var deviation = AIUtils.PredictPosition(vessel.transform.position - waypointPosition, vessel.Velocity(), vessel.acceleration, timeToCPA).magnitude;
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log(string.Format("[BDArmory.BDModulePilotAI]: Reached waypoint {0} with range {1}", activeWaypointIndex, deviation));
-                BDACompetitionMode.Instance.Scores.RegisterWaypointReached(vessel.vesselName, activeWaypointIndex, deviation);
-                ++activeWaypointIndex;
-                if (activeWaypointIndex >= waypoints.Count)
-                {
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDModulePilotAI]: Waypoints complete");
-                    waypoints = null;
-                    ReleaseCommand();
-                    return;
-                }
-                else
-                {
-                    waypoint = waypoints[activeWaypointIndex];
-                    UpdateWaypoint(); // Call ourselves again for the new waypoint to follow.
-                    return;
-                }
-            }
         }
         #endregion
 

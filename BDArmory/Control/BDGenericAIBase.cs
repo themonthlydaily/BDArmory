@@ -1,8 +1,12 @@
-﻿using System.Text;
-using UnityEngine;
+﻿using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using KSP.Localization;
 
 using BDArmory.Competition;
+using BDArmory.Extensions;
 using BDArmory.Settings;
 using BDArmory.Targeting;
 using BDArmory.UI;
@@ -417,5 +421,108 @@ namespace BDArmory.Control
         }
 
         #endregion WingCommander
+
+        #region Waypoints
+        protected List<Vector3> waypoints = null;
+        protected int activeWaypointIndex = -1;
+        protected Vector3 waypointPosition = default;
+        protected float waypointRadius = 500f;
+        protected float waypointRange = 999f;
+
+        public bool IsRunningWaypoints => command == PilotCommands.Waypoints && activeWaypointIndex >= 0 && waypoints != null && waypoints.Count > 0;
+        public int CurrentWaypointIndex => this.activeWaypointIndex;
+
+        public void ClearWaypoints()
+        {
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDGenericAIBase]: Cleared waypoints");
+            this.waypoints = null;
+            this.activeWaypointIndex = -1;
+        }
+
+        public void SetWaypoints(List<Vector3> waypoints)
+        {
+            if (waypoints == null || waypoints.Count == 0)
+            {
+                this.activeWaypointIndex = -1;
+                this.waypoints = null;
+                return;
+            }
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log(string.Format("[BDArmory.BDGenericAIBase]: Set {0} waypoints", waypoints.Count));
+            this.waypoints = waypoints;
+            this.activeWaypointIndex = 0;
+            var waypoint = waypoints[activeWaypointIndex];
+            var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
+            waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
+            CommandFollowWaypoints();
+        }
+
+        protected virtual void UpdateWaypoint()
+        {
+            if (activeWaypointIndex < 0 || waypoints == null || waypoints.Count == 0)
+            {
+                if (command == PilotCommands.Waypoints) ReleaseCommand();
+                return;
+            }
+            var waypoint = waypoints[activeWaypointIndex];
+            var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
+            waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
+            waypointRange = (float)(vesselTransform.position - waypointPosition).magnitude;
+            var timeToCPA = AIUtils.ClosestTimeToCPA(vessel.transform.position - waypointPosition, vessel.Velocity(), vessel.acceleration, Time.fixedDeltaTime);
+            // if (waypointsRange < waypointRadius) Debug.Log($"DEBUG waypoint {activeWaypointIndex}, distance: {waypointsRange:F1} @ {Time.time}, TtCPA: {timeToCPA:F3}");
+            if (waypointRange < waypointRadius && timeToCPA < Time.fixedDeltaTime) // Within waypointRadius and reaching a minimum within the next frame. Looking forwards like this avoids a frame where the fly-to direction is backwards allowing smoother waypoint traversal.
+            {
+                // moving away, proceed to next point
+                var deviation = AIUtils.PredictPosition(vessel.transform.position - waypointPosition, vessel.Velocity(), vessel.acceleration, timeToCPA).magnitude;
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log(string.Format("[BDArmory.BDGenericAIBase]: Reached waypoint {0} with range {1}", activeWaypointIndex, deviation));
+                BDACompetitionMode.Instance.Scores.RegisterWaypointReached(vessel.vesselName, activeWaypointIndex, deviation);
+                ++activeWaypointIndex;
+                if (activeWaypointIndex >= waypoints.Count)
+                {
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDGenericAIBase]: Waypoints complete");
+                    waypoints = null;
+                    ReleaseCommand();
+                    return;
+                }
+                else
+                {
+                    waypoint = waypoints[activeWaypointIndex];
+                    UpdateWaypoint(); // Call ourselves again for the new waypoint to follow.
+                    return;
+                }
+            }
+        }
+
+        Coroutine maintainingFuelLevelsCoroutine;
+        /// <summary>
+        /// Prevent fuel resource drain until the next waypoint.
+        /// </summary>
+        public void MaintainFuelLevelsUntilWaypoint()
+        {
+            if (maintainingFuelLevelsCoroutine != null) StopCoroutine(maintainingFuelLevelsCoroutine);
+            maintainingFuelLevelsCoroutine = StartCoroutine(MaintainFuelLevelsUntilWaypointCoroutine());
+        }
+        /// <summary>
+        /// Prevent fuel resource drain until the next waypoint (coroutine).
+        /// </summary>
+        IEnumerator MaintainFuelLevelsUntilWaypointCoroutine()
+        {
+            if (vessel == null) yield break;
+            var vesselName = vessel.vesselName;
+            var wait = new WaitForFixedUpdate();
+            var fuelResourceParts = new Dictionary<string, HashSet<PartResource>>();
+            var currentWaypointIndex = CurrentWaypointIndex;
+            ResourceUtils.DeepFind(vessel.rootPart, ResourceUtils.FuelResources, fuelResourceParts, true);
+            var fuelResources = fuelResourceParts.ToDictionary(t => t.Key, t => t.Value.ToDictionary(p => p, p => p.amount));
+            while (vessel != null && IsRunningWaypoints && CurrentWaypointIndex == currentWaypointIndex)
+            {
+                foreach (var fuelResource in fuelResources.Values)
+                {
+                    foreach (var partResource in fuelResource.Keys)
+                    { partResource.amount = fuelResource[partResource]; }
+                }
+                yield return wait;
+            }
+        }
+        #endregion
     }
 }

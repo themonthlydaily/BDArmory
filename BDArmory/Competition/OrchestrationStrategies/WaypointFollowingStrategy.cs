@@ -50,9 +50,12 @@ namespace BDArmory.Competition.OrchestrationStrategies
             foreach (var pilot in pilots)
                 pilot.SetWaypoints(mappedWaypoints);
 
+            if (BDArmorySettings.WAYPOINTS_INFINITE_FUEL_AT_START)
+            { foreach (var pilot in pilots) pilot.MaintainFuelLevelsUntilWaypoint(); }
+
             // Wait for the pilots to complete the course.
             var startedAt = Planetarium.GetUniversalTime();
-            yield return new WaitWhile(() => pilots.Any(pilot => pilot != null && pilot.weaponManager != null && pilot.IsFlyingWaypoints && !(pilot.vessel.Landed || pilot.vessel.Splashed)));
+            yield return new WaitWhile(() => pilots.Any(pilot => pilot != null && pilot.weaponManager != null && pilot.IsRunningWaypoints && !(pilot.vessel.Landed || pilot.vessel.Splashed)));
             var endedAt = Planetarium.GetUniversalTime();
 
             BDACompetitionMode.Instance.competitionStatus.Add("Waypoints competition finished. Scores:");
@@ -105,7 +108,6 @@ namespace BDArmory.Competition.OrchestrationStrategies
         public void CleanUp()
         {
             if (BDACompetitionMode.Instance.competitionIsActive) BDACompetitionMode.Instance.StopCompetition(); // Competition is done, so stop it and do the rest of the book-keeping.
-
         }
     }
 

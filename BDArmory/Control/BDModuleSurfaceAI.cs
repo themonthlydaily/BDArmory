@@ -36,7 +36,7 @@ namespace BDArmory.Control
         Vector3 upDir;
 
         AIUtils.TraversabilityMatrix pathingMatrix;
-        List<Vector3> waypoints = new List<Vector3>();
+        List<Vector3> pathingWaypoints = new List<Vector3>();
         bool leftPath = false;
 
         protected override Vector3d assignedPositionGeo
@@ -293,7 +293,7 @@ namespace BDArmory.Control
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + targetDirection * 10f, 2, Color.blue);
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position + (0.05f * vesselTransform.right), vesselTransform.position + (0.05f * vesselTransform.right), 2, Color.green);
 
-            pathingMatrix.DrawDebug(vessel.CoM, waypoints);
+            pathingMatrix.DrawDebug(vessel.CoM, pathingWaypoints);
         }
 
         #endregion events
@@ -493,7 +493,7 @@ namespace BDArmory.Control
             {
                 if (bypassTarget != null)
                     targetVelocity = MaxSpeed;
-                else if (waypoints.Count > 1)
+                else if (pathingWaypoints.Count > 1)
                     targetVelocity = command == PilotCommands.Attack ? MaxSpeed : CruiseSpeed;
                 else
                     targetVelocity = Mathf.Clamp((targetDirection.magnitude - targetRadius / 2) / 5f,
@@ -694,14 +694,14 @@ namespace BDArmory.Control
             {
                 bypassTarget = target;
                 bypassTargetPos = VectorUtils.WorldPositionToGeoCoords(target.CoM, vessel.mainBody);
-                waypoints = pathingMatrix.Pathfind(
+                pathingWaypoints = pathingMatrix.Pathfind(
                     VectorUtils.WorldPositionToGeoCoords(vessel.CoM, vessel.mainBody),
                     VectorUtils.WorldPositionToGeoCoords(target.CoM, vessel.mainBody),
                     vessel.mainBody, SurfaceType, MaxSlopeAngle, AvoidMass);
-                if (VectorUtils.GeoDistance(waypoints[waypoints.Count - 1], bypassTargetPos, vessel.mainBody) < 200)
-                    waypoints.RemoveAt(waypoints.Count - 1);
-                if (waypoints.Count > 0)
-                    intermediatePositionGeo = waypoints[0];
+                if (VectorUtils.GeoDistance(pathingWaypoints[pathingWaypoints.Count - 1], bypassTargetPos, vessel.mainBody) < 200)
+                    pathingWaypoints.RemoveAt(pathingWaypoints.Count - 1);
+                if (pathingWaypoints.Count > 0)
+                    intermediatePositionGeo = pathingWaypoints[0];
                 else
                     bypassTarget = null;
             }
@@ -709,22 +709,22 @@ namespace BDArmory.Control
 
         private void Pathfind(Vector3 destination)
         {
-            waypoints = pathingMatrix.Pathfind(
+            pathingWaypoints = pathingMatrix.Pathfind(
                                     VectorUtils.WorldPositionToGeoCoords(vessel.CoM, vessel.mainBody),
                                     destination, vessel.mainBody, SurfaceType, MaxSlopeAngle, AvoidMass);
-            intermediatePositionGeo = waypoints[0];
+            intermediatePositionGeo = pathingWaypoints[0];
         }
 
         void cycleWaypoint()
         {
-            if (waypoints.Count > 1)
+            if (pathingWaypoints.Count > 1)
             {
-                waypoints.RemoveAt(0);
-                intermediatePositionGeo = waypoints[0];
+                pathingWaypoints.RemoveAt(0);
+                intermediatePositionGeo = pathingWaypoints[0];
             }
             else if (bypassTarget != null)
             {
-                waypoints.Clear();
+                pathingWaypoints.Clear();
                 bypassTarget = null;
                 leftPath = true;
             }
