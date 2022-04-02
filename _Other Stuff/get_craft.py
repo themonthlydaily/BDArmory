@@ -35,7 +35,7 @@ with open(manifest_file, 'r') as f:
     print(f"Fetching {len(manifest)} craft files...", end='', flush=True)
     for craft in manifest:
         craft_name = f"{playerIDs[craft['player_id']]}_{craft['name']}"
-        subprocess.run([args.curl_command, "-s", "-C", "-", f"{craft['craft_url']}", "-o", f"{craft_name}.craft"])
+        subprocess.run([args.curl_command, "-s", f"{craft['craft_url']}", "-o", f"{craft_name}.craft"])
         with open(f"{craft_name}.craft", 'r+') as f:
             lines = f.read().splitlines()
             lines[0] = f"ship = {craft_name}"
