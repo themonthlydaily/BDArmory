@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
-VERSION = "1.16.1"
+VERSION = "1.16.2"
 
 parser = argparse.ArgumentParser(description="Tournament log parser", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('tournament', type=str, nargs='*', help="Tournament folder to parse.")
@@ -356,14 +356,14 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
     if any('waypoints' in heat['craft'][craft].keys() for round in tournamentData.values() for heat in round.values() for craft in craftNames if craft in heat['craft']):
         hasWaypoints = True
         for craft in craftNames:
-            WPbestCount = max(len(heat['craft'][craft]['waypoints']) for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'waypoints' in heat['craft'][craft])
+            WPbestCount = max((len(heat['craft'][craft]['waypoints']) for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'waypoints' in heat['craft'][craft]), default=0)
             summary['craft'][craft].update({
                 'waypointCount': sum(len(heat['craft'][craft]['waypoints']) for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'waypoints' in heat['craft'][craft]),
                 'waypointTime': sum((float(heat['craft'][craft]['waypoints'][-1][2]) - float(heat['craft'][craft]['waypoints'][0][2])) for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'waypoints' in heat['craft'][craft]),
                 'waypointDeviation': sum(sum(float(waypoint[1]) for waypoint in heat['craft'][craft]['waypoints']) for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'waypoints' in heat['craft'][craft]),
-                'waypointBestCount' : WPbestCount,
-                'waypointBestTime': min((float(heat['craft'][craft]['waypoints'][-1][2]) - float(heat['craft'][craft]['waypoints'][0][2])) for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'waypoints' in heat['craft'][craft] and len(heat['craft'][craft]['waypoints']) == WPbestCount),
-                'waypointBestDeviation': min(sum(float(waypoint[1]) for waypoint in heat['craft'][craft]['waypoints']) for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'waypoints' in heat['craft'][craft] and len(heat['craft'][craft]['waypoints']) == WPbestCount),
+                'waypointBestCount': WPbestCount,
+                'waypointBestTime': min(((float(heat['craft'][craft]['waypoints'][-1][2]) - float(heat['craft'][craft]['waypoints'][0][2])) for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'waypoints' in heat['craft'][craft] and len(heat['craft'][craft]['waypoints']) == WPbestCount), default=0),
+                'waypointBestDeviation': min((sum(float(waypoint[1]) for waypoint in heat['craft'][craft]['waypoints']) for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'waypoints' in heat['craft'][craft] and len(heat['craft'][craft]['waypoints']) == WPbestCount), default=0),
                 })
 
     if args.score:
