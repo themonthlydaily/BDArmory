@@ -297,6 +297,7 @@
     <Compile Include="Utils\OtherUtils.cs" />
     <Compile Include="Utils\PartExploderSystem.cs" />
     <Compile Include="Utils\ProjectileUtils.cs" />
+    <Compile Include="Utils\ResourceUtils.cs" />
     <Compile Include="Utils\SplineUtils.cs" />
     <Compile Include="Utils\VectorUtils.cs" />
     <Compile Include="Utils\VesselModuleRegistry.cs" />
