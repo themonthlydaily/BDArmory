@@ -343,7 +343,7 @@ namespace BDArmory.Bullets
                             {
                                 ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, 1, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team, ExplosionSourceType.Rocket, true, true, true);
                             }
-                            ProjectileUtils.StealResources(hitPart, sourceVessel, thief);
+                            ResourceUtils.StealResources(hitPart, sourceVessel, thief);
                             Detonate(hit.point, false);
                             return;
                         }
@@ -476,7 +476,7 @@ namespace BDArmory.Bullets
                                     BDACompetitionMode.Instance.Scores.RegisterRocketStrike(sourceVesselName, hitPart.vessel.GetName()); //if non-explosive hit, add rocketstrike, else ExplosionFX adds rocketstrike from HE detonation
                                 }
                             }
-                            ProjectileUtils.StealResources(hitPart, sourceVessel, thief);
+                            ResourceUtils.StealResources(hitPart, sourceVessel, thief);
 
                             penTicker += 1;
                             //ProjectileUtils.CheckPartForExplosion(hitPart);

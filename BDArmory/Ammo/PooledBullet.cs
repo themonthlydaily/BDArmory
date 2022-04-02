@@ -745,7 +745,7 @@ namespace BDArmory.Bullets
                     ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, 1, caliber, bulletMass, impactSpeed, bulletDmgMult, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet, true, true, true);
                 }
                 ExplosiveDetonation(hitPart, hit, bulletRay);
-                ProjectileUtils.StealResources(hitPart, sourceVessel, stealResources);
+                ResourceUtils.StealResources(hitPart, sourceVessel, stealResources);
                 KillBullet(); // Kerbals are too thick-headed for penetration...
                 return true;
             }
@@ -978,7 +978,7 @@ namespace BDArmory.Bullets
                 hasPenetrated = true;
                 bool viableBullet = ProjectileUtils.CalculateBulletStatus(bulletMass, caliber, sabot);
 
-                ProjectileUtils.StealResources(hitPart, sourceVessel, stealResources);
+                ResourceUtils.StealResources(hitPart, sourceVessel, stealResources);
                 //ProjectileUtils.CheckPartForExplosion(hitPart);
 
                 if (dmgMult < 0)
