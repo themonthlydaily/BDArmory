@@ -592,6 +592,7 @@ namespace BDArmory.UI
             {
                 if (GUI.Button(SLineRect(++line), "Run waypoints", BDArmorySetup.BDGuiSkin.button))
                 {
+                    BDATournament.Instance.StopTournament();
                     if (TournamentCoordinator.Instance.IsRunning) // Stop either case.
                     {
                         TournamentCoordinator.Instance.Stop();
@@ -601,9 +602,9 @@ namespace BDArmory.UI
                     {
                         TournamentCoordinator.Instance.Configure(new SpawnConfigStrategy(
                             new SpawnConfig(
-                                1,
-                                27.97f,// BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
-                                -39.35f,// BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
+                                Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_WORLDINDEX : 1,
+                                Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x : 27.97f,
+                                Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y : -39.35f,
                                 BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
@@ -638,9 +639,9 @@ namespace BDArmory.UI
                         var craftFiles = Directory.GetFiles(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION)).Where(f => f.EndsWith(".craft")).ToList();
                         var strategies = craftFiles.Select(craftFile => new SpawnConfigStrategy(
                             new SpawnConfig(
-                                1,
-                                27.97f,// BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
-                                -39.35f,// BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
+                                Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_WORLDINDEX : 1,
+                                Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x : 27.97f,
+                                Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y : -39.35f,
                                 BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
