@@ -35,8 +35,6 @@ namespace BDArmory.Competition.VesselSpawning
 
         private int spawnedVesselCount = 0;
         private string message;
-        Ray ray;
-        RaycastHit hit;
         public int vesselsSpawningCount = 0;
         Dictionary<string, Vessel> spawnedVessels = new Dictionary<string, Vessel>();
         Dictionary<string, string> spawnedVesselNames = new Dictionary<string, string>();
@@ -991,6 +989,7 @@ namespace BDArmory.Competition.VesselSpawning
 
             // Now rotate the vessel and put it at the right altitude.
             var ray = new Ray(vesselSpawnConfig.position, radialUnitVector);
+            RaycastHit hit;
             var distanceToCoMainBody = (ray.origin - FlightGlobals.currentMainBody.transform.position).magnitude;
             float distance;
             if (terrainAltitude > 0 && Physics.Raycast(ray, out hit, distanceToCoMainBody, (int)LayerMasks.Scenery))
