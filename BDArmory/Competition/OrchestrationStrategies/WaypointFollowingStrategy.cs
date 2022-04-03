@@ -97,6 +97,18 @@ namespace BDArmory.Competition.OrchestrationStrategies
                     Debug.Log("[BDArmory.Waypoints]: Creating waypoint marker at  " + " " + location);
                 }
             }
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 50) // S4R10
+            {
+                foreach (var pilot in pilots)
+                {
+                    if (pilot == null) continue;
+                    // Max Altitude must be 100.
+                    pilot.maxAltitudeToggle = true;
+                    pilot.maxAltitude = 100f;
+                    pilot.minAltitude = Mathf.Min(pilot.minAltitude, 50f); // Waypoints are at 50, so anything higher than this is going to trigger gain alt all the time.
+                    pilot.defaultAltitude = Mathf.Min(pilot.defaultAltitude, 100f);
+                }
+            }
         }
 
         public void CleanUp()
