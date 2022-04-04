@@ -438,9 +438,14 @@ namespace BDArmory.Weapons.Missiles
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                     Debug.Log("[BDArmory.BDModularGuidance]: OnStart missile " + shortName + ": setting default locktrackcurve with maxrange/minrcs: " + activeRadarLockTrackCurve.maxTime + "/" + RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS);
             }
-            foreach (var explosivePart in VesselModuleRegistry.GetModules<BDExplosivePart>(vessel))
+
+            var explosiveParts = VesselModuleRegistry.GetModules<BDExplosivePart>(vessel);
+            if (explosiveParts != null)
             {
-                if (warheadYield < explosivePart.blastRadius) warheadYield = explosivePart.blastRadius;
+                foreach (var explosivePart in explosiveParts)
+                {
+                    if (warheadYield < explosivePart.blastRadius) warheadYield = explosivePart.blastRadius;
+                }
             }
         }
 
@@ -1117,12 +1122,16 @@ namespace BDArmory.Weapons.Missiles
             }
             else
             {
-                foreach (var explosivePart in VesselModuleRegistry.GetModules<BDExplosivePart>(vessel))
-                { if (!explosivePart.manualOverride) explosivePart.DetonateIfPossible(); }
-                if (VesselModuleRegistry.GetModules<BDExplosivePart>(vessel).Any(explosivePart => explosivePart.hasDetonated))
+                var explosiveParts = VesselModuleRegistry.GetModules<BDExplosivePart>(vessel);
+                if (explosiveParts != null)
                 {
-                    HasExploded = true;
-                    AutoDestruction();
+                    foreach (var explosivePart in explosiveParts)
+                    { if (!explosivePart.manualOverride) explosivePart.DetonateIfPossible(); }
+                    if (explosiveParts.Any(explosivePart => explosivePart.hasDetonated))
+                    {
+                        HasExploded = true;
+                        AutoDestruction();
+                    }
                 }
             }
         }
@@ -1207,7 +1216,7 @@ namespace BDArmory.Weapons.Missiles
 
         private Vector2 scrollPos;
 
-        [KSPField(isPersistant = false, guiActiveEditor = true, guiActive = false, guiName = "#LOC_BDArmory_RollCorrection_showRFGUI"), UI_Toggle(enabledText = "#LOC_BDArmory_showRFGUI_enabledText", disabledText = "#LOC_BDArmory_showRFGUI_disabledText")] [NonSerialized] public bool showRFGUI;//Show Weapon Name Editor--Weapon Name GUI--GUI
+        [KSPField(isPersistant = false, guiActiveEditor = true, guiActive = false, guiName = "#LOC_BDArmory_RollCorrection_showRFGUI"), UI_Toggle(enabledText = "#LOC_BDArmory_showRFGUI_enabledText", disabledText = "#LOC_BDArmory_showRFGUI_disabledText")][NonSerialized] public bool showRFGUI;//Show Weapon Name Editor--Weapon Name GUI--GUI
 
         private bool styleSetup;
 
