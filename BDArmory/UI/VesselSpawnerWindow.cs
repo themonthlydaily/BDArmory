@@ -6,8 +6,8 @@ using System.Linq;
 using UnityEngine;
 
 using BDArmory.Competition.OrchestrationStrategies;
-using BDArmory.Competition.SpawnStrategies;
 using BDArmory.Competition.VesselSpawning;
+using BDArmory.Competition.VesselSpawning.SpawnStrategies;
 using BDArmory.Competition;
 using BDArmory.Settings;
 using BDArmory.Utils;

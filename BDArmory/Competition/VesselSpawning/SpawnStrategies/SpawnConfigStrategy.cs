@@ -3,7 +3,7 @@ using UnityEngine;
 
 using BDArmory.Competition.VesselSpawning;
 
-namespace BDArmory.Competition.SpawnStrategies
+namespace BDArmory.Competition.VesselSpawning.SpawnStrategies
 {
     /// <summary>
     /// A simple pass-through strategy to be able to use the current spawning functions properly.

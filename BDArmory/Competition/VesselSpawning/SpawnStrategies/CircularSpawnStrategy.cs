@@ -7,7 +7,7 @@ using UnityEngine;
 using BDArmory.Competition.RemoteOrchestration;
 using static BDArmory.Competition.VesselSpawning.VesselSpawnerBase;
 
-namespace BDArmory.Competition.SpawnStrategies
+namespace BDArmory.Competition.VesselSpawning.SpawnStrategies
 {
     public class CircularSpawnStrategy : SpawnStrategy
     {

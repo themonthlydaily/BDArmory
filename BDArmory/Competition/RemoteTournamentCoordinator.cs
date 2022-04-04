@@ -6,8 +6,8 @@ using UnityEngine;
 
 using BDArmory.Competition.OrchestrationStrategies;
 using BDArmory.Competition.RemoteOrchestration;
-using BDArmory.Competition.SpawnStrategies;
 using BDArmory.Competition.VesselSpawning;
+using BDArmory.Competition.VesselSpawning.SpawnStrategies;
 using BDArmory.Settings;
 using static BDArmory.Competition.OrchestrationStrategies.WaypointFollowingStrategy;
 

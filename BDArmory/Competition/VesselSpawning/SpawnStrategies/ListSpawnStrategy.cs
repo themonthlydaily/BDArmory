@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using BDArmory.Competition.VesselSpawning;
 
-namespace BDArmory.Competition.SpawnStrategies
+namespace BDArmory.Competition.VesselSpawning.SpawnStrategies
 {
     public class ListSpawnStrategy : SpawnStrategy
     {
