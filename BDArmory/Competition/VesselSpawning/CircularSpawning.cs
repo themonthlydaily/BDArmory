@@ -127,14 +127,24 @@ namespace BDArmory.Competition.VesselSpawning
             // Tally up the craft to spawn and figure out teams.
             if (spawnConfig.teamsSpecific == null)
             {
+                var spawnFolder = Path.GetFullPath(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", spawnConfig.folder));
+                if (!Directory.Exists(spawnFolder))
+                {
+                    message = $"Spawn folder {spawnFolder} doesn't exist!";
+                    Debug.Log("[BDArmory.CircularSpawning]: " + message);
+                    BDACompetitionMode.Instance.competitionStatus.Add(message);
+                    vesselsSpawning = false;
+                    spawnFailureReason = SpawnFailureReason.NoCraft;
+                    yield break;
+                }
                 if (spawnConfig.numberOfTeams == 1) // Scan subfolders
                 {
                     spawnConfig.teamsSpecific = new List<List<string>>();
-                    var teamDirs = Directory.GetDirectories(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", spawnConfig.folder));
+                    var teamDirs = Directory.GetDirectories(spawnFolder);
                     if (teamDirs.Length == 0) // Make teams from each vessel in the spawn folder.
                     {
                         spawnConfig.numberOfTeams = -1; // Flag for treating craft files as folder names.
-                        spawnConfig.craftFiles = Directory.GetFiles(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", spawnConfig.folder)).Where(f => f.EndsWith(".craft")).ToList();
+                        spawnConfig.craftFiles = Directory.GetFiles(spawnFolder).Where(f => f.EndsWith(".craft")).ToList();
                         spawnConfig.teamsSpecific = spawnConfig.craftFiles.Select(f => new List<string> { f }).ToList();
                     }
                     else
@@ -151,7 +161,7 @@ namespace BDArmory.Competition.VesselSpawning
                 else // Just the specified folder.
                 {
                     if (spawnConfig.craftFiles == null) // Prioritise the list of craftFiles if we're given them.
-                        spawnConfig.craftFiles = Directory.GetFiles(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", spawnConfig.folder)).Where(f => f.EndsWith(".craft")).ToList();
+                        spawnConfig.craftFiles = Directory.GetFiles(spawnFolder).Where(f => f.EndsWith(".craft")).ToList();
                 }
             }
             else // Spawn the specific vessels.
