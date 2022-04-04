@@ -50,7 +50,7 @@ namespace BDArmory.Competition.VesselSpawning
             Vessel vessel = null;
             try
             {
-                vessel = VesselLoader.SpawnVesselFromCraftFile(craftUrl, craftGeoCoords, initialHeading, initialPitch, 0f, out shipFacility); // SPAWN
+                vessel = VesselSpawner.SpawnVesselFromCraftFile(craftUrl, craftGeoCoords, initialHeading, initialPitch, 0f, out shipFacility); // SPAWN
             }
             catch { vessel = null; }
             if (vessel == null)

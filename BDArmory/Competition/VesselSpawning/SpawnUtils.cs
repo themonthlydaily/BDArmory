@@ -18,36 +18,6 @@ namespace BDArmory.Competition.VesselSpawning
 
     public static class SpawnUtils
     {
-        private static string _spawnProbeLocation = null;
-        public static string spawnProbeLocation
-        {
-            get
-            {
-                if (_spawnProbeLocation != null) return _spawnProbeLocation;
-                _spawnProbeLocation = Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "BDArmory", "craft", "SpawnProbe.craft"); // SpaceDock location
-                if (!File.Exists(_spawnProbeLocation)) _spawnProbeLocation = Path.Combine(KSPUtil.ApplicationRootPath, "Ships", "SPH", "SpawnProbe.craft"); // CKAN location
-                if (!File.Exists(_spawnProbeLocation))
-                {
-                    _spawnProbeLocation = null;
-                    var message = "SpawnProbe.craft is missing. Your installation is likely corrupt.";
-                    BDACompetitionMode.Instance.competitionStatus.Add(message);
-                    Debug.LogError("[BDArmory.SpawnUtils]: " + message);
-                }
-                return _spawnProbeLocation;
-            }
-        }
-
-        public static Vessel SpawnSpawnProbe()
-        {
-            // Spawn in the SpawnProbe at the camera position and switch to it so that we can clean up the other vessels properly.
-            var dummyVar = EditorFacility.None;
-            Vector3d dummySpawnCoords;
-            FlightGlobals.currentMainBody.GetLatLonAlt(FlightCamera.fetch.transform.position, out dummySpawnCoords.x, out dummySpawnCoords.y, out dummySpawnCoords.z);
-            if (spawnProbeLocation == null) return null;
-            Vessel spawnProbe = VesselLoader.SpawnVesselFromCraftFile(spawnProbeLocation, dummySpawnCoords, 0f, 0f, 0f, out dummyVar);
-            return spawnProbe;
-        }
-
         // Cancel all spawning modes.
         public static void CancelSpawning()
         {
@@ -324,11 +294,7 @@ namespace BDArmory.Competition.VesselSpawning
         {
             var vesselsToKill = FlightGlobals.Vessels.ToList();
             // Spawn in the SpawnProbe at the camera position.
-            var dummyVar = EditorFacility.None;
-            Vector3d dummySpawnCoords;
-            FlightGlobals.currentMainBody.GetLatLonAlt(FlightCamera.fetch.transform.position + 100f * (FlightCamera.fetch.transform.position - FlightGlobals.currentMainBody.transform.position).normalized, out dummySpawnCoords.x, out dummySpawnCoords.y, out dummySpawnCoords.z);
-            if (SpawnUtils.spawnProbeLocation == null) yield break;
-            Vessel spawnProbe = VesselLoader.SpawnVesselFromCraftFile(SpawnUtils.spawnProbeLocation, dummySpawnCoords, 0f, 0f, 0f, out dummyVar);
+            var spawnProbe = VesselSpawner.SpawnSpawnProbe();
             if (spawnProbe != null) // If the spawnProbe is null, then just try to kill everything anyway.
             {
                 spawnProbe.Landed = false; // Tell KSP that it's not landed so KSP doesn't mess with its position.
@@ -425,10 +391,7 @@ namespace BDArmory.Competition.VesselSpawning
 
         IEnumerator DelayedShowSpawnPoint(int worldIndex, double latitude, double longitude, double altitude = 0, float distance = 100, bool spawning = false)
         {
-            var dummyVar = EditorFacility.None;
-            Vector3d dummySpawnCoords;
-            FlightGlobals.currentMainBody.GetLatLonAlt(FlightCamera.fetch.transform.position + 1000f * (FlightCamera.fetch.transform.position - FlightGlobals.currentMainBody.transform.position).normalized, out dummySpawnCoords.x, out dummySpawnCoords.y, out dummySpawnCoords.z);
-            Vessel spawnProbe = VesselLoader.SpawnVesselFromCraftFile(SpawnUtils.spawnProbeLocation, dummySpawnCoords, 0f, 0f, 0f, out dummyVar);
+            Vessel spawnProbe = VesselSpawner.SpawnSpawnProbe();
             if (spawnProbe != null)
             {
                 spawnProbe.Landed = false;

@@ -942,7 +942,7 @@ namespace BDArmory.Competition.VesselSpawning
             try
             {
                 // Spawn the craft with zero pitch, roll and yaw as the final rotation depends on the root transform, which takes some time to be populated.
-                vessel = VesselLoader.SpawnVesselFromCraftFile(vesselSpawnConfig.craftUrl, craftGeoCoords, 0f, 0f, 0f, out editorFacility); // SPAWN
+                vessel = VesselSpawner.SpawnVesselFromCraftFile(vesselSpawnConfig.craftUrl, craftGeoCoords, 0f, 0f, 0f, out editorFacility); // SPAWN
             }
             catch { vessel = null; }
             if (vessel == null)

@@ -3135,7 +3135,7 @@ namespace BDArmory.UI
                 }
                 if (GUI.Button(SLeftRect(++line), "Spawn spawn probe here."))
                 {
-                    SpawnUtils.SpawnSpawnProbe();
+                    VesselSpawner.SpawnSpawnProbe();
                 }
                 if (GUI.Button(SLeftRect(++line), "Quit KSP."))
                 {

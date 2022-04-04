@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 using BDArmory.Control;
@@ -18,8 +19,42 @@ namespace BDArmory.Competition.VesselSpawning
     /// position and orientation of the vessel can be finally assigned.
     /// Note: KSP sometimes packs and unpacks vessels between frames (possibly due to external seats), which can reset positions and rotations and reset things!
     /// </summary>
-    public static class VesselLoader
+    public static class VesselSpawner
     {
+        public static string spawnProbeLocation
+        {
+            get
+            {
+                if (_spawnProbeLocation != null) return _spawnProbeLocation;
+                _spawnProbeLocation = Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "BDArmory", "craft", "SpawnProbe.craft"); // SpaceDock location
+                if (!File.Exists(_spawnProbeLocation)) _spawnProbeLocation = Path.Combine(KSPUtil.ApplicationRootPath, "Ships", "SPH", "SpawnProbe.craft"); // CKAN location
+                if (!File.Exists(_spawnProbeLocation))
+                {
+                    _spawnProbeLocation = null;
+                    var message = "SpawnProbe.craft is missing. Your installation is likely corrupt.";
+                    BDACompetitionMode.Instance.competitionStatus.Add(message);
+                    Debug.LogError("[BDArmory.SpawnUtils]: " + message);
+                }
+                return _spawnProbeLocation;
+            }
+        }
+        private static string _spawnProbeLocation = null;
+
+        /// <summary>
+        /// Spawn a spawn-probe at the camera's coordinates.
+        /// </summary>
+        /// <returns>The spawn probe on success, else null.</returns>
+        public static Vessel SpawnSpawnProbe()
+        {
+            // Spawn in the SpawnProbe at the camera position and switch to it so that we can clean up the other vessels properly.
+            var dummyVar = EditorFacility.None;
+            Vector3d dummySpawnCoords;
+            FlightGlobals.currentMainBody.GetLatLonAlt(FlightCamera.fetch.transform.position, out dummySpawnCoords.x, out dummySpawnCoords.y, out dummySpawnCoords.z);
+            if (spawnProbeLocation == null) return null;
+            Vessel spawnProbe = VesselSpawner.SpawnVesselFromCraftFile(spawnProbeLocation, dummySpawnCoords, 0f, 0f, 0f, out dummyVar);
+            return spawnProbe;
+        }
+
         /// <summary>
         /// Spawn a craft at the given coordinates with the given orientation.
         /// Note: This does not take into account control point orientation, which only exists once the reference transform for the vessel is loaded (not the protovessel here). See the class description for details.

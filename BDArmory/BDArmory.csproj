@@ -160,7 +160,7 @@
     <Compile Include="Competition\VesselSpawning\SpawnConfig.cs" />
     <Compile Include="Competition\VesselSpawning\SpawnLocations.cs" />
     <Compile Include="Competition\VesselSpawning\SpawnUtils.cs" />
-    <Compile Include="Competition\VesselSpawning\VesselLoader.cs" />
+    <Compile Include="Competition\VesselSpawning\VesselSpawner.cs" />
     <Compile Include="Competition\VesselSpawning\VesselSpawnerBase.cs" />
     <Compile Include="Control\BDAirspeedControl.cs" />
     <Compile Include="Control\BDGenericAIBase.cs" />
