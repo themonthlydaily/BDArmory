@@ -15,7 +15,7 @@ namespace BDArmory.Competition.SpawnStrategies
 
         public SpawnConfigStrategy(SpawnConfig spawnConfig) { this.spawnConfig = spawnConfig; }
 
-        public IEnumerator Spawn(VesselSpawner spawner)
+        public IEnumerator Spawn(VesselSpawnerBase spawner)
         {
             yield return spawner.Spawn(spawnConfig);
 

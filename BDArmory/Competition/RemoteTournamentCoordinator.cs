@@ -17,9 +17,9 @@ namespace BDArmory.Competition
     {
         private SpawnStrategy spawnStrategy;
         private OrchestrationStrategy orchestrator;
-        private VesselSpawner vesselSpawner;
+        private VesselSpawnerBase vesselSpawner;
 
-        public RemoteTournamentCoordinator(SpawnStrategy spawner, OrchestrationStrategy orchestrator, VesselSpawner vesselSpawner)
+        public RemoteTournamentCoordinator(SpawnStrategy spawner, OrchestrationStrategy orchestrator, VesselSpawnerBase vesselSpawner)
         {
             this.spawnStrategy = spawner;
             this.orchestrator = orchestrator;

@@ -10,7 +10,7 @@ using BDArmory.Utils;
 namespace BDArmory.Competition.VesselSpawning
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
-    public class SingleVesselSpawning : VesselSpawner
+    public class SingleVesselSpawning : VesselSpawnerBase
     {
         public static SingleVesselSpawning Instance;
 

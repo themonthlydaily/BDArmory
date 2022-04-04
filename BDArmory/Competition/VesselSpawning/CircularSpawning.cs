@@ -22,7 +22,7 @@ namespace BDArmory.Competition.VesselSpawning
     /// The central block of the SpawnAllVesselsOnce function should eventually switch to using SingleVesselSpawning.Instance.SpawnVessel (plus local coroutines for the extra stuff) to do the actual spawning of the vessels once that's ready.
     /// </summary>
     [KSPAddon(KSPAddon.Startup.Flight, false)]
-    public class CircularSpawning : VesselSpawner
+    public class CircularSpawning : VesselSpawnerBase
     {
         public static CircularSpawning Instance;
 

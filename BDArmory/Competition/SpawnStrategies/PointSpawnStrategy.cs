@@ -24,7 +24,7 @@ namespace BDArmory.Competition.SpawnStrategies
             this.pitch = pitch;
         }
 
-        public IEnumerator Spawn(VesselSpawner spawner)
+        public IEnumerator Spawn(VesselSpawnerBase spawner)
         {
             Debug.Log("[BDArmory.BDAScoreService] PointSpawnStrategy spawning.");
 

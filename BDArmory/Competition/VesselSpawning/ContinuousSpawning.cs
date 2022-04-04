@@ -20,7 +20,7 @@ namespace BDArmory.Competition.VesselSpawning
     /// The central block of the SpawnVesselsContinuouslyCoroutine function should eventually switch to using SingleVesselSpawning.Instance.SpawnVessel (plus local coroutines for the extra stuff) to do the actual spawning of the vessels once that's ready.
     /// </summary>
     [KSPAddon(KSPAddon.Startup.Flight, false)]
-    public class ContinuousSpawning : VesselSpawner
+    public class ContinuousSpawning : VesselSpawnerBase
     {
         public static ContinuousSpawning Instance;
 

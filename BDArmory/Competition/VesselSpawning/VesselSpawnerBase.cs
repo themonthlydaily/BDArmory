@@ -7,7 +7,7 @@ using BDArmory.Utils;
 namespace BDArmory.Competition.VesselSpawning
 {
     /// Base class for VesselSpawner classes so that it can work with spawn strategies.
-    public abstract class VesselSpawner : MonoBehaviour
+    public abstract class VesselSpawnerBase : MonoBehaviour
     {
         public abstract IEnumerator Spawn(SpawnConfig spawnConfig); // AUBRANIUM, this is essentially a kludge to get the VesselSpawner class to be functional with the way that the SpawnStrategy interface is defined.
 

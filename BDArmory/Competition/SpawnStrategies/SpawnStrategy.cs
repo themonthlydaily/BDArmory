@@ -13,7 +13,7 @@ namespace BDArmory.Competition.SpawnStrategies
         /// </summary>
         /// <param name="spawner"></param>
         /// <returns></returns>
-        public IEnumerator Spawn(VesselSpawner spawner);
+        public IEnumerator Spawn(VesselSpawnerBase spawner);
 
         public bool DidComplete();
     }

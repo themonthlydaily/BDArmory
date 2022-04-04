@@ -20,7 +20,7 @@ namespace BDArmory.Competition.SpawnStrategies
             return success;
         }
 
-        public IEnumerator Spawn(VesselSpawner spawner)
+        public IEnumerator Spawn(VesselSpawnerBase spawner)
         {
             success = false;
             foreach (var item in strategies)
