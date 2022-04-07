@@ -558,6 +558,7 @@ namespace BDArmory.UI
             MutatorInfo.Load();
 
             compDistGui = BDArmorySettings.COMPETITION_DISTANCE.ToString();
+            HoSTag = BDArmorySettings.HOS_BADGE;
 
             if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor)
             { StartCoroutine(ToolbarButtonRoutine()); }

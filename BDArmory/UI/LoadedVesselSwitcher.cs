@@ -696,7 +696,7 @@ namespace BDArmory.UI
             */
             if (BDArmorySettings.HALL_OF_SHAME_LIST.Contains(vesselName))
             {
-                vesselName += "(HoS)";
+                vesselName += " (HoS)";
             }
             if (GUI.Button(buttonRect, vesselName + status + postStatus, vButtonStyle))
                 ForceSwitchVessel(wm.vessel);

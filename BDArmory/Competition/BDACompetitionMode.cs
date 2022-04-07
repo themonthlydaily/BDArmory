@@ -577,7 +577,12 @@ namespace BDArmory.Competition
             if (vesselName == null || !ScoreData.ContainsKey(vesselName)) return false;
 
             ScoreData[vesselName].waypointsReached.Add(new ScoringData.WaypointReached(waypointIndex, distance, Planetarium.GetUniversalTime() - BDACompetitionMode.Instance.competitionStartTime));
-            BDACompetitionMode.Instance.competitionStatus.Add($"{vesselName}: Waypoint {waypointIndex} reached! Time: {ScoreData[vesselName].waypointsReached.Last().timestamp - ScoreData[vesselName].waypointsReached.First().timestamp:F2}s, Deviation: {distance:F1}m");
+            var displayName = vesselName;
+            if (BDArmorySettings.ENABLE_HOS && BDArmorySettings.HALL_OF_SHAME_LIST.Contains(vesselName) && !string.IsNullOrEmpty(BDArmorySettings.HOS_BADGE))
+            {
+                displayName += " (" + BDArmorySettings.HOS_BADGE + ")";
+            }
+            BDACompetitionMode.Instance.competitionStatus.Add($"{displayName}: Waypoint {waypointIndex} reached! Time: {ScoreData[vesselName].waypointsReached.Last().timestamp - ScoreData[vesselName].waypointsReached.First().timestamp:F2}s, Deviation: {distance:F1}m");
 
             return true;
         }
@@ -1077,7 +1082,7 @@ namespace BDArmory.Competition
                                     {
                                         if (!string.IsNullOrEmpty(BDArmorySettings.HOS_BADGE))
                                         {
-                                            postFix += "(" + BDArmorySettings.HOS_BADGE + ")";
+                                            postFix += " (" + BDArmorySettings.HOS_BADGE + ")";
                                         }
                                     }
                                 }
@@ -3080,7 +3085,7 @@ namespace BDArmory.Competition
                             case AliveState.CleanKill: // Damaged recently and only ever took damage from the killer.
                                 if (BDArmorySettings.ENABLE_HOS && BDArmorySettings.HALL_OF_SHAME_LIST.Contains(Scores.ScoreData[player].lastPersonWhoDamagedMe) && !string.IsNullOrEmpty(BDArmorySettings.HOS_BADGE))
                                 {
-                                    statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + "(" + BDArmorySettings.HOS_BADGE + ")" + " (NAILED 'EM! CLEAN KILL!)";
+                                    statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (" + BDArmorySettings.HOS_BADGE + ")" + " (NAILED 'EM! CLEAN KILL!)";
                                 }
                                 else
                                 {
@@ -3091,7 +3096,7 @@ namespace BDArmory.Competition
                             case AliveState.HeadShot: // Damaged recently, but took damage a while ago from someone else.
                                 if (BDArmorySettings.ENABLE_HOS && BDArmorySettings.HALL_OF_SHAME_LIST.Contains(Scores.ScoreData[player].lastPersonWhoDamagedMe) && !string.IsNullOrEmpty(BDArmorySettings.HOS_BADGE))
                                 {
-                                    statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + "(" + BDArmorySettings.HOS_BADGE + ")" + " (BOOM! HEAD SHOT!)";
+                                    statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (" + BDArmorySettings.HOS_BADGE + ")" + " (BOOM! HEAD SHOT!)";
                                 }
                                 else
                                 {
@@ -3102,7 +3107,7 @@ namespace BDArmory.Competition
                             case AliveState.KillSteal: // Damaged recently, but took damage from someone else recently too.
                                 if (BDArmorySettings.ENABLE_HOS && BDArmorySettings.HALL_OF_SHAME_LIST.Contains(Scores.ScoreData[player].lastPersonWhoDamagedMe) && !string.IsNullOrEmpty(BDArmorySettings.HOS_BADGE))
                                 {
-                                    statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + "(" + BDArmorySettings.HOS_BADGE + ")" + " (KILL STEAL!)";
+                                    statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (" + BDArmorySettings.HOS_BADGE + ")" + " (KILL STEAL!)";
                                 }
                                 else
                                 {

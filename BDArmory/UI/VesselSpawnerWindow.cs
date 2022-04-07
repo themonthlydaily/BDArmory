@@ -1,4 +1,5 @@
 using KSP.Localization;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -36,11 +37,11 @@ namespace BDArmory.UI
         private int previous_index = 1;
         private bool planetslist = false;
         int selected_index = 1;
-		int WaygateCount = 1;
+        int WaygateCount = -1;
         public float SelectedGate = 0;
-        float oldSelectedGate = 0;
+        public static string Gatepath;
         public string SelectedModel;
-        FileInfo[] gateFiles;
+        string[] gateFiles;
         #endregion
         #region GUI strings
         string tournamentStyle = "RNG";
@@ -116,7 +117,6 @@ namespace BDArmory.UI
             if (Instance)
                 Destroy(this);
             Instance = this;
-            WaygateCount = 1;
         }
 
         private void Start()
@@ -136,16 +136,19 @@ namespace BDArmory.UI
             };
             selected_index = FlightGlobals.currentMainBody != null ? FlightGlobals.currentMainBody.flightGlobalsIndex : 1;
 
-            string Gatepath = Path.Combine(KSPUtil.ApplicationRootPath, "GameData/BDArmory/Models/WayPoint");
-            DirectoryInfo info = new DirectoryInfo(Gatepath);
-            gateFiles = info.GetFiles("*.mu")
-                .Where(e => e.Extension == ".mu")
-                .ToArray();
-            string modelname = gateFiles[(int)SelectedGate].Name.ToString(); //.mu included in the File name, 
-            List<string> source = modelname.Split('.').ToList<string>();
-            SelectedModel = source[0];
-            oldSelectedGate = SelectedGate;
-            if (gateFiles != null) WaygateCount = gateFiles.Count()-1;
+            try
+            {
+                Gatepath = Path.GetFullPath(Path.GetDirectoryName(Path.Combine(KSPUtil.ApplicationRootPath, "GameData", WaypointFollowingStrategy.ModelPath)));
+                gateFiles = Directory.GetFiles(Gatepath, "*.mu").Select(f => Path.GetFileName(f)).ToArray();
+                Array.Sort(gateFiles, StringComparer.Ordinal); // Sort them alphabetically, uppercase first.
+                WaygateCount = gateFiles.Count() - 1;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[BDArmory.VesselSpawnerWindow]: Failed to locate waypoint marker models: {e.Message}");
+            }
+            if (WaygateCount >= 0) SelectedModel = Path.GetFileNameWithoutExtension(gateFiles[(int)SelectedGate]);
+            else Debug.LogWarning($"[BDArmory.VesselSpawnerWindow]: No waypoint gate models found in {Gatepath}!");
         }
 
         private IEnumerator WaitForBdaSettings()
@@ -502,27 +505,22 @@ namespace BDArmory.UI
                 {
                     // FIXME This is a hack to interface with the Waypoint Spawn Strategy, which isn't written to play nice with local usage.
                     GUI.Label(SLeftSliderRect(++line), $"Waypoint Altitude: ({BDArmorySettings.WAYPOINTS_ALTITUDE:F0}m)", leftLabel);
-                    BDArmorySettings.WAYPOINTS_ALTITUDE = Utils.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.WAYPOINTS_ALTITUDE, 50f, 1000f), 50f);                  
+                    BDArmorySettings.WAYPOINTS_ALTITUDE = Utils.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.WAYPOINTS_ALTITUDE, 50f, 1000f), 50f);
                     BDArmorySettings.WAYPOINTS_ONE_AT_A_TIME = GUI.Toggle(SLeftRect(++line), BDArmorySettings.WAYPOINTS_ONE_AT_A_TIME, Localizer.Format("#LOC_BDArmory_Settings_WaypointsOneAtATime"));
                     BDArmorySettings.WAYPOINTS_VISUALIZE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.WAYPOINTS_VISUALIZE, Localizer.Format("#LOC_BDArmory_Settings_WaypointsShow"));
                     if (BDArmorySettings.WAYPOINTS_VISUALIZE)
                     {
-                        
+
                         GUI.Label(SLeftSliderRect(++line), $"Waypoint Size: ({BDArmorySettings.WAYPOINTS_SCALE:F0}m)", leftLabel);
                         BDArmorySettings.WAYPOINTS_SCALE = Utils.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.WAYPOINTS_SCALE, 50f, 1000f), 50f);
 
-                        GUI.Label(SLeftSliderRect(++line), $"Select Gate Model: " + SelectedModel, leftLabel);
-                        SelectedGate = Utils.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), SelectedGate, 0, WaygateCount), 1);
-                        if (SelectedGate != oldSelectedGate)
+                        if (WaygateCount >= 0)
                         {
-                            string modelname = gateFiles[(int)SelectedGate].Name.ToString(); //.mu included in the File name, 
-							//SelectedModel.Replace(".mu",""); // so remove the .mu
-							//SelectedModel.Remove(SelectedModel.Length - 3, 3); //not clipping the .mu extension, why?
-							//SelectedModel = modelname;
-							//SelectedModel.Remove(modelname.IndexOf("."), 3); // ....
-							List<string> source = modelname.Split('.').ToList<string>();
-                            SelectedModel = source[0];
-                            oldSelectedGate = SelectedGate;
+                            GUI.Label(SLeftSliderRect(++line), $"Select Gate Model: " + SelectedModel, leftLabel);
+                            if (SelectedGate != (SelectedGate = Utils.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), SelectedGate, 0, WaygateCount), 1)))
+                            {
+                                SelectedModel = Path.GetFileNameWithoutExtension(gateFiles[(int)SelectedGate]);
+                            }
                         }
                     }
                 }
@@ -672,7 +670,7 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        var craftFiles = Directory.GetFiles(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION)).Where(f => f.EndsWith(".craft")).ToList();
+                        var craftFiles = Directory.GetFiles(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION), "*.craft").ToList();
                         var strategies = craftFiles.Select(craftFile => new SpawnConfigStrategy(
                             new SpawnConfig(
                                 1,

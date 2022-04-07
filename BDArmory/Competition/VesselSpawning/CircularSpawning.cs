@@ -126,7 +126,7 @@ namespace BDArmory.Competition.VesselSpawning
                     if (teamDirs.Length == 0) // Make teams from each vessel in the spawn folder.
                     {
                         spawnConfig.numberOfTeams = -1; // Flag for treating craft files as folder names.
-                        spawnConfig.craftFiles = Directory.GetFiles(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", spawnConfig.folder)).Where(f => f.EndsWith(".craft")).ToList();
+                        spawnConfig.craftFiles = Directory.GetFiles(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", spawnConfig.folder), "*.craft").ToList();
                         spawnConfig.teamsSpecific = spawnConfig.craftFiles.Select(f => new List<string> { f }).ToList();
                     }
                     else
@@ -135,7 +135,7 @@ namespace BDArmory.Competition.VesselSpawning
                         Debug.Log("[BDArmory.CircularSpawning]: Spawning teams from folders " + string.Join(", ", teamDirs.Select(d => d.Substring(stripStartCount))));
                         foreach (var teamDir in teamDirs)
                         {
-                            spawnConfig.teamsSpecific.Add(Directory.GetFiles(teamDir).Where(f => f.EndsWith(".craft")).ToList());
+                            spawnConfig.teamsSpecific.Add(Directory.GetFiles(teamDir, "*.craft").ToList());
                         }
                         spawnConfig.craftFiles = spawnConfig.teamsSpecific.SelectMany(v => v.ToList()).ToList();
                     }
@@ -143,7 +143,7 @@ namespace BDArmory.Competition.VesselSpawning
                 else // Just the specified folder.
                 {
                     if (spawnConfig.craftFiles == null) // Prioritise the list of craftFiles if we're given them.
-                        spawnConfig.craftFiles = Directory.GetFiles(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", spawnConfig.folder)).Where(f => f.EndsWith(".craft")).ToList();
+                        spawnConfig.craftFiles = Directory.GetFiles(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", spawnConfig.folder), "*.craft").ToList();
                 }
             }
             else // Spawn the specific vessels.
