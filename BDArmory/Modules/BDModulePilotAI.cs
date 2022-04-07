@@ -2135,7 +2135,7 @@ namespace BDArmory.Modules
             // vessel has arrived if its distance to the target is within a range threshold
             waypointsRange = (float)(vesselTransform.position - waypointPosition).magnitude;
             waypointsRangeDelta = waypointsRange - waypointsLastRange;
-            if (waypointsRangeDelta > 0 && waypointsLastRange < 500)
+            if (waypointsRangeDelta > 0 && waypointsLastRange < BDArmorySettings.WAYPOINTS_SCALE)
             {
                 // moving away, proceed to next point
                 var timeToCPA = AIUtils.ClosestTimeToCPA(waypointsLastOffset, vessel.Velocity(), vessel.acceleration, Time.fixedDeltaTime); // Assume velocity and acceleration are the same as last frame (should be good enough to first order).

@@ -713,6 +713,9 @@ namespace BDArmory.Core.Module
                                 hitpoints = maxHitPoints;
                                 break;
                         }
+						hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
+                        if (hitpoints <= 0) hitpoints = HpRounding;
+						if (BDArmorySettings.DRAW_DEBUG_LABELS && maxHitPoints <= 0 && Hitpoints != hitpoints) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} updated HP: {Hitpoints}->{hitpoints} at time {Time.time}");
                     }
                 }
                 else
@@ -958,6 +961,10 @@ namespace BDArmory.Core.Module
                 Hardness = 1176;
                 Strength = 940;
                 SafeUseTemp = 2500;
+                if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                {
+                    Debug.Log("[ARMOR] Armor of " + part.name + " reset  by LEGACY_ARMOUR");
+                }
             }
             else if (BDArmorySettings.RESET_ARMOUR) //don't reset armor panels
             {
@@ -971,6 +978,10 @@ namespace BDArmory.Core.Module
                 SafeUseTemp = 993;
                 Armor = 10;
                 if (ArmorPanel) Armor = 25;
+                if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                {
+                    Debug.Log("[ARMOR] Armor of " + part.name + " reset to defaults by RESET_ARMOUR");
+                }
             }
             var oldArmorMass = armorMass;
             armorMass = 0;

@@ -816,7 +816,17 @@ namespace BDArmory.Competition
                 {
                     message = "All heats in round " + roundIndex + " have been run.";
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
-                    Debug.Log("[BDArmory.BDATournament]: " + message);
+					Debug.Log("[BDArmory.BDATournament]: " + message);
+                    if (BDArmorySettings.WAYPOINTS_MODE || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 50))
+                    {
+                        /* commented out until this is made functional
+                        foreach (var tracer in WaypointFollowingStrategy.Ghosts) //clear and reset vessel ghosts each new Round
+                        {
+                            tracer.gameObject.SetActive(false);
+                        }
+                        WaypointFollowingStrategy.Ghosts.Clear();
+                        */
+                    }
                     if (heatsRemaining > 0)
                     {
                         if (BDArmorySettings.TOURNAMENT_TIMEWARP_BETWEEN_ROUNDS > 0)

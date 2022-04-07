@@ -36,7 +36,11 @@ namespace BDArmory.UI
         private int previous_index = 1;
         private bool planetslist = false;
         int selected_index = 1;
-        int WaygateCount = 1;
+		int WaygateCount = 1;
+        public float SelectedGate = 0;
+        float oldSelectedGate = 0;
+        public string SelectedModel;
+        FileInfo[] gateFiles;
         #endregion
         #region GUI strings
         string tournamentStyle = "RNG";
@@ -131,6 +135,17 @@ namespace BDArmory.UI
                 { "alt", gameObject.AddComponent<NumericInputField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_ALTITUDE) },
             };
             selected_index = FlightGlobals.currentMainBody != null ? FlightGlobals.currentMainBody.flightGlobalsIndex : 1;
+
+            string Gatepath = Path.Combine(KSPUtil.ApplicationRootPath, "GameData/BDArmory/Models/WayPoint");
+            DirectoryInfo info = new DirectoryInfo(Gatepath);
+            gateFiles = info.GetFiles("*.mu")
+                .Where(e => e.Extension == ".mu")
+                .ToArray();
+            string modelname = gateFiles[(int)SelectedGate].Name.ToString(); //.mu included in the File name, 
+            List<string> source = modelname.Split('.').ToList<string>();
+            SelectedModel = source[0];
+            oldSelectedGate = SelectedGate;
+            if (gateFiles != null) WaygateCount = gateFiles.Count()-1;
         }
 
         private IEnumerator WaitForBdaSettings()
@@ -487,14 +502,28 @@ namespace BDArmory.UI
                 {
                     // FIXME This is a hack to interface with the Waypoint Spawn Strategy, which isn't written to play nice with local usage.
                     GUI.Label(SLeftSliderRect(++line), $"Waypoint Altitude: ({BDArmorySettings.WAYPOINTS_ALTITUDE:F0}m)", leftLabel);
-                    BDArmorySettings.WAYPOINTS_ALTITUDE = Utils.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.WAYPOINTS_ALTITUDE, 50f, 1000f), 50f);
+                    BDArmorySettings.WAYPOINTS_ALTITUDE = Utils.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.WAYPOINTS_ALTITUDE, 50f, 1000f), 50f);                  
                     BDArmorySettings.WAYPOINTS_ONE_AT_A_TIME = GUI.Toggle(SLeftRect(++line), BDArmorySettings.WAYPOINTS_ONE_AT_A_TIME, Localizer.Format("#LOC_BDArmory_Settings_WaypointsOneAtATime"));
                     BDArmorySettings.WAYPOINTS_VISUALIZE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.WAYPOINTS_VISUALIZE, Localizer.Format("#LOC_BDArmory_Settings_WaypointsShow"));
                     if (BDArmorySettings.WAYPOINTS_VISUALIZE)
                     {
-                        string SelectedModel = BDArmorySettings.WAYPOINTS_MODEL == 0 ? "Ring" : "Torii";
+                        
+                        GUI.Label(SLeftSliderRect(++line), $"Waypoint Size: ({BDArmorySettings.WAYPOINTS_SCALE:F0}m)", leftLabel);
+                        BDArmorySettings.WAYPOINTS_SCALE = Utils.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.WAYPOINTS_SCALE, 50f, 1000f), 50f);
+
                         GUI.Label(SLeftSliderRect(++line), $"Select Gate Model: " + SelectedModel, leftLabel);
-                        BDArmorySettings.WAYPOINTS_MODEL = Utils.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.WAYPOINTS_MODEL, 0, WaygateCount), 1);
+                        SelectedGate = Utils.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), SelectedGate, 0, WaygateCount), 1);
+                        if (SelectedGate != oldSelectedGate)
+                        {
+                            string modelname = gateFiles[(int)SelectedGate].Name.ToString(); //.mu included in the File name, 
+							//SelectedModel.Replace(".mu",""); // so remove the .mu
+							//SelectedModel.Remove(SelectedModel.Length - 3, 3); //not clipping the .mu extension, why?
+							//SelectedModel = modelname;
+							//SelectedModel.Remove(modelname.IndexOf("."), 3); // ....
+							List<string> source = modelname.Split('.').ToList<string>();
+                            SelectedModel = source[0];
+                            oldSelectedGate = SelectedGate;
+                        }
                     }
                 }
             }
