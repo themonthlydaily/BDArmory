@@ -68,7 +68,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
             }
             // Wait for the pilots to complete the course.
             var startedAt = Planetarium.GetUniversalTime();
-            yield return new WaitWhile(() => pilots.Any(pilot => pilot != null && pilot.IsFlyingWaypoints && !(pilot.vessel.Landed || pilot.vessel.Splashed)));
+            yield return new WaitWhile(() => pilots.Any(pilot => pilot != null && pilot.weaponManager != null && pilot.IsFlyingWaypoints && !(pilot.vessel.Landed || pilot.vessel.Splashed)));
             var endedAt = Planetarium.GetUniversalTime();
 
             BDACompetitionMode.Instance.competitionStatus.Add("Waypoints competition finished. Scores:");
@@ -96,13 +96,14 @@ namespace BDArmory.Competition.OrchestrationStrategies
             BDACompetitionMode.Instance.Scores.ConfigurePlayers(pilots.Select(p => p.vessel).ToList());
             if (BDArmorySettings.AUTO_ENABLE_VESSEL_SWITCHING)
                 LoadedVesselSwitcher.Instance.EnableAutoVesselSwitching(true);
+            if (BDArmorySettings.TIME_OVERRIDE && BDArmorySettings.TIME_SCALE != 0)
+            { Time.timeScale = BDArmorySettings.TIME_SCALE; }
             Debug.Log("[BDArmory.BDACompetitionMode:" + BDACompetitionMode.Instance.CompetitionID.ToString() + "]: Starting Competition");
             if (BDArmorySettings.WAYPOINTS_VISUALIZE)
             {
                 Vector3 previousLocation = FlightGlobals.ActiveVessel.transform.position;
                 //FlightGlobals.currentMainBody.GetLatLonAlt(FlightGlobals.ActiveVessel.transform.position, out previousLocation.x, out previousLocation.y, out previousLocation.z);
                 //previousLocation.z = BDArmorySettings.WAYPOINTS_ALTITUDE;
-                Debug.Log("[WAYPOINT_GATE_DEBUG] current gate model is " + VesselSpawnerWindow.Instance.SelectedModel);
                 ModelPath = "BDArmory/Models/WayPoint/" + VesselSpawnerWindow.Instance.SelectedModel;
                 for (int i = 0; i < waypoints.Count; i++)
                 {
