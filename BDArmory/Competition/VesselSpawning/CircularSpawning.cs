@@ -153,7 +153,7 @@ namespace BDArmory.Competition.VesselSpawning
                         Debug.Log("[BDArmory.CircularSpawning]: Spawning teams from folders " + string.Join(", ", teamDirs.Select(d => d.Substring(stripStartCount))));
                         foreach (var teamDir in teamDirs)
                         {
-                            spawnConfig.teamsSpecific.Add(Directory.GetFiles(teamDir).Where(f => f.EndsWith(".craft")).ToList());
+                            spawnConfig.teamsSpecific.Add(Directory.GetFiles(teamDir, "*.craft").ToList());
                         }
                         spawnConfig.craftFiles = spawnConfig.teamsSpecific.SelectMany(v => v.ToList()).ToList();
                     }

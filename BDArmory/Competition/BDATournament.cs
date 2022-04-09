@@ -111,7 +111,7 @@ namespace BDArmory.Competition
                 Debug.Log("[BDArmory.BDATournament]: " + message);
                 return false;
             }
-            craftFiles = Directory.GetFiles(abs_folder).Where(f => f.EndsWith(".craft")).ToList();
+            craftFiles = Directory.GetFiles(abs_folder, "*.craft").ToList();
             vesselCount = craftFiles.Count;
             int fullHeatCount;
             switch (vesselsPerHeat)
@@ -238,7 +238,7 @@ namespace BDArmory.Competition
             }
             if (numberOfTeams > 1) // Make teams from the files in the spawn folder.
             {
-                craftFiles = Directory.GetFiles(abs_folder).Where(f => f.EndsWith(".craft")).ToList();
+                craftFiles = Directory.GetFiles(abs_folder, "*.craft").ToList();
                 if (craftFiles.Count < numberOfTeams)
                 {
                     message = "Insufficient vessels in AutoSpawn" + (!string.IsNullOrEmpty(folder) ? "/" + folder : "") + " to make " + numberOfTeams + " teams.";
@@ -264,7 +264,7 @@ namespace BDArmory.Competition
                 if (teamDirs.Length == 0) // Make teams from each vessel in the spawn folder.
                 {
                     numberOfTeams = -1; // Flag for treating craft files as folder names.
-                    craftFiles = Directory.GetFiles(abs_folder).Where(f => f.EndsWith(".craft")).ToList();
+                    craftFiles = Directory.GetFiles(abs_folder, "*.craft").ToList();
                     teamFiles = craftFiles.Select(f => new List<string> { f }).ToList();
                 }
                 else
@@ -272,7 +272,7 @@ namespace BDArmory.Competition
                     teamFiles = new List<List<string>>();
                     foreach (var teamDir in teamDirs)
                     {
-                        var currentTeamFiles = Directory.GetFiles(teamDir).Where(f => f.EndsWith(".craft")).ToList();
+                        var currentTeamFiles = Directory.GetFiles(teamDir, "*.craft").ToList();
                         if (currentTeamFiles.Count > 0)
                             teamFiles.Add(currentTeamFiles);
                     }
@@ -817,6 +817,16 @@ namespace BDArmory.Competition
                     message = "All heats in round " + roundIndex + " have been run.";
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
                     Debug.Log("[BDArmory.BDATournament]: " + message);
+                    if (BDArmorySettings.WAYPOINTS_MODE || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 50))
+                    {
+                        /* commented out until this is made functional
+                        foreach (var tracer in WaypointFollowingStrategy.Ghosts) //clear and reset vessel ghosts each new Round
+                        {
+                            tracer.gameObject.SetActive(false);
+                        }
+                        WaypointFollowingStrategy.Ghosts.Clear();
+                        */
+                    }
                     if (heatsRemaining > 0)
                     {
                         if (BDArmorySettings.TOURNAMENT_TIMEWARP_BETWEEN_ROUNDS > 0)

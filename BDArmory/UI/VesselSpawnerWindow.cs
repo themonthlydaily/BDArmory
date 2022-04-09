@@ -1,4 +1,5 @@
 using KSP.Localization;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -35,6 +36,11 @@ namespace BDArmory.UI
         private int previous_index = 1;
         private bool planetslist = false;
         int selected_index = 1;
+        int WaygateCount = -1;
+        public float SelectedGate = 0;
+        public static string Gatepath;
+        public string SelectedModel;
+        string[] gateFiles;
         #endregion
         #region GUI strings
         string tournamentStyle = "RNG";
@@ -128,6 +134,20 @@ namespace BDArmory.UI
                 { "alt", gameObject.AddComponent<NumericInputField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_ALTITUDE) },
             };
             selected_index = FlightGlobals.currentMainBody != null ? FlightGlobals.currentMainBody.flightGlobalsIndex : 1;
+
+            try
+            {
+                Gatepath = Path.GetFullPath(Path.GetDirectoryName(Path.Combine(KSPUtil.ApplicationRootPath, "GameData", WaypointFollowingStrategy.ModelPath)));
+                gateFiles = Directory.GetFiles(Gatepath, "*.mu").Select(f => Path.GetFileName(f)).ToArray();
+                Array.Sort(gateFiles, StringComparer.Ordinal); // Sort them alphabetically, uppercase first.
+                WaygateCount = gateFiles.Count() - 1;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[BDArmory.VesselSpawnerWindow]: Failed to locate waypoint marker models: {e.Message}");
+            }
+            if (WaygateCount >= 0) SelectedModel = Path.GetFileNameWithoutExtension(gateFiles[(int)SelectedGate]);
+            else Debug.LogWarning($"[BDArmory.VesselSpawnerWindow]: No waypoint gate models found in {Gatepath}!");
         }
 
         private IEnumerator WaitForBdaSettings()
@@ -488,6 +508,21 @@ namespace BDArmory.UI
                     BDArmorySettings.WAYPOINTS_ONE_AT_A_TIME = GUI.Toggle(SLeftRect(++line), BDArmorySettings.WAYPOINTS_ONE_AT_A_TIME, Localizer.Format("#LOC_BDArmory_Settings_WaypointsOneAtATime"));
                     BDArmorySettings.WAYPOINTS_INFINITE_FUEL_AT_START = GUI.Toggle(SRightRect(line), BDArmorySettings.WAYPOINTS_INFINITE_FUEL_AT_START, Localizer.Format("#LOC_BDArmory_Settings_WaypointsInfFuelAtStart"));
                     BDArmorySettings.WAYPOINTS_VISUALIZE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.WAYPOINTS_VISUALIZE, Localizer.Format("#LOC_BDArmory_Settings_WaypointsShow"));
+                    if (BDArmorySettings.WAYPOINTS_VISUALIZE)
+                    {
+
+                        GUI.Label(SLeftSliderRect(++line), $"Waypoint Size: ({BDArmorySettings.WAYPOINTS_SCALE:F0}m)", leftLabel);
+                        BDArmorySettings.WAYPOINTS_SCALE = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.WAYPOINTS_SCALE, 50f, 1000f), 50f);
+
+                        if (WaygateCount >= 0)
+                        {
+                            GUI.Label(SLeftSliderRect(++line), $"Select Gate Model: " + SelectedModel, leftLabel);
+                            if (SelectedGate != (SelectedGate = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), SelectedGate, 0, WaygateCount), 1)))
+                            {
+                                SelectedModel = Path.GetFileNameWithoutExtension(gateFiles[(int)SelectedGate]);
+                            }
+                        }
+                    }
                 }
             }
 
@@ -636,7 +671,7 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        var craftFiles = Directory.GetFiles(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION)).Where(f => f.EndsWith(".craft")).ToList();
+                        var craftFiles = Directory.GetFiles(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION), "*.craft").ToList();
                         var strategies = craftFiles.Select(craftFile => new SpawnConfigStrategy(
                             new SpawnConfig(
                                 Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_WORLDINDEX : 1,

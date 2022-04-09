@@ -562,6 +562,7 @@ namespace BDArmory.UI
             MutatorInfo.Load();
 
             compDistGui = BDArmorySettings.COMPETITION_DISTANCE.ToString();
+            HoSTag = BDArmorySettings.HOS_BADGE;
 
             if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor)
             { StartCoroutine(ToolbarButtonRoutine()); }
@@ -2863,8 +2864,22 @@ namespace BDArmory.UI
                                 enteredHoS = GUI.Toggle(SRightRect(line), enteredHoS, Localizer.Format("Enter to Hall of Shame"));
                                 {
                                     if (enteredHoS)
-                                    {
-                                        BDArmorySettings.HALL_OF_SHAME = HoSString;
+                                    {                                        
+                                        if (HoSString == "Clear()")
+                                        {
+                                            BDArmorySettings.HALL_OF_SHAME_LIST.Clear();
+                                        }
+                                        else
+                                        {
+                                            if (!BDArmorySettings.HALL_OF_SHAME_LIST.Contains(HoSString))
+                                            {
+                                                BDArmorySettings.HALL_OF_SHAME_LIST.Add(HoSString);
+                                            }
+                                            else
+                                            {
+                                                BDArmorySettings.HALL_OF_SHAME_LIST.Remove(HoSString);
+                                            }
+                                        }
                                         HoSString = "";
                                         enteredHoS = false;
                                     }

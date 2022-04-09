@@ -171,7 +171,7 @@ namespace BDArmory.Armor
         {
             Width = width;
             Length = length;
-            
+
             //if (!isCurvedPanel)
             {
                 for (int i = 0; i < armorTransforms.Length; i++)
@@ -226,7 +226,7 @@ namespace BDArmory.Armor
                     if (localSpace.z > 0.9f * (oldLength / 2))
                     {
                         //Debug.Log("[BDAA DEBUG] srfAttack detected on N1 edge, moving");
-                        TranslatePart(p, N1Transform.up * (trans / 2)); 
+                        TranslatePart(p, N1Transform.up * (trans / 2));
                     }
                     if (!isTriangularPanel)
                     {
@@ -237,13 +237,13 @@ namespace BDArmory.Armor
                         }
                     }
                 }
-            }            
+            }
         }
-   
+
         public virtual void HandleWidthChange(float width, float oldWidth)
         {
             float trans = width - oldWidth;
-            N2.position.x = N2.position.x + (-trans / 2); 
+            N2.position.x = N2.position.x + (-trans / 2);
             if (N2.attachedPart is Part N2pushTarget)
             {
                 TranslatePart(N2pushTarget, -N2Transform.right * (trans / 2));
@@ -280,9 +280,9 @@ namespace BDArmory.Armor
                         }
                     }
                 }
-            }            
+            }
         }
-        
+
         public Part GetEldestParent(Part p) => (p.parent is null) ? p : GetEldestParent(p.parent);
         public void TranslatePart(Part pushTarget, Vector3 translation)
         {
@@ -368,7 +368,7 @@ namespace BDArmory.Armor
                     }
                 }
                 Oldthickness = armorthickness;
-            }            
+            }
         }
         private void OnEditorShipModifiedEvent(ShipConstruct data)
         {

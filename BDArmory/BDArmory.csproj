@@ -832,6 +832,7 @@
 
       @echo Copying assemblies to Distribution $(Targetname) files...
       if not exist "$(ProjectDir)Distribution\GameData\%25ModName%25\Plugins\" mkdir "$(ProjectDir)Distribution\GameData\%25ModName%25\Plugins\"
+      del "$(ProjectDir)Distribution/GameData/${ModName}/Plugins/"BDArmory*
       xcopy /E /Y "$(TargetDir)"BDArmory*.dll "$(ProjectDir)Distribution\GameData\%25ModName%25\Plugins\"
 
       if $(ConfigurationName) == Debug (
@@ -856,6 +857,7 @@
       export ModName=BDArmory
       echo Copying $(ConfigurationName) assemblies to Distribution $(Targetname) files...
       mkdir -p "$(ProjectDir)/Distribution/GameData/${ModName}/Plugins/"
+      rm "$(ProjectDir)Distribution/GameData/${ModName}/Plugins/"BDArmory*
       cp -a "$(TargetDir)"BDArmory*.dll "$(ProjectDir)Distribution/GameData/${ModName}/Plugins/"
       if [ "$(ConfigurationName)" = "Debug" ]
       then

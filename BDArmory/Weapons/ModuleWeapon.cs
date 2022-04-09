@@ -506,6 +506,8 @@ namespace BDArmory.Weapons
         public float LaserGrowTime = -1; //time laser to be fired to go from base to max damage
         [KSPField] public bool DynamicBeamColor = false; //beam color changes longer laser fired, for growlasers
         bool dynamicFX = false;
+        [KSPField] public float beamScrollRate = 0.5f; //Beam texture scroll rate, for plasma beams, etc
+        private float Offset = 0;
         [KSPField] public float beamScalar = 0.01f; //x scaling for beam texture. lower is more stretched
         [KSPField] public bool pulseLaser = false; //pulse vs beam
         public bool pulseInConfig = false; //record if pulse laser in config for resetting lasers post mutator
@@ -2264,7 +2266,7 @@ namespace BDArmory.Weapons
                     tracerEndWidth = Mathf.Lerp(tracerEndWidth, grow ? 1 : 0.05f, 0.35f); //add new tracerGrowWidth field?
                     if (grow && tracerStartWidth > 0.95) grow = false;
                     if (!grow && tracerStartWidth < 0.06f) grow = true;
-                    UpdateLaserSpecifics(true, dynamicFX, true);
+                    UpdateLaserSpecifics(true, dynamicFX, true, false);
                 }
             }
         }
@@ -2301,7 +2303,7 @@ namespace BDArmory.Weapons
                 laserRenderers[i].enabled = false;
             }
         }
-        public void UpdateLaserSpecifics(bool newColor, bool newTex, bool newWidth)
+        public void UpdateLaserSpecifics(bool newColor, bool newTex, bool newWidth, bool newOffset)
         {
             if (laserRenderers == null)
             {
@@ -2322,6 +2324,11 @@ namespace BDArmory.Weapons
                 {
                     laserRenderers[i].startWidth = tracerStartWidth;
                     laserRenderers[i].endWidth = tracerEndWidth;
+                }
+                if (newOffset)
+                {
+                    Offset += beamScrollRate;
+                    laserRenderers[i].material.SetTextureOffset("_MainTex", new Vector2(Offset, 0));
                 }
             }
         }
@@ -3578,6 +3585,7 @@ namespace BDArmory.Weapons
                         laserDamage = baseLaserdamage;
                         tracerStartWidth = tracerBaseSWidth;
                         tracerEndWidth = tracerBaseEWidth;
+                        Offset = 0;
                     }
                 }
             }
@@ -3602,6 +3610,7 @@ namespace BDArmory.Weapons
                         laserDamage = baseLaserdamage;
                         tracerStartWidth = tracerBaseSWidth;
                         tracerEndWidth = tracerBaseEWidth;
+                        Offset = 0;
                     }
                 }
             }
@@ -3660,7 +3669,7 @@ namespace BDArmory.Weapons
                                 projectileColorC[i] = Single.Parse(startColorS[i]) / 255;
                             }
                         }
-                        UpdateLaserSpecifics(DynamicBeamColor, dynamicFX, LaserGrowTime > 0);
+                        UpdateLaserSpecifics(DynamicBeamColor, dynamicFX, LaserGrowTime > 0, beamScrollRate != 0);
                     }
                 }
             }
@@ -3680,6 +3689,7 @@ namespace BDArmory.Weapons
                         laserDamage = baseLaserdamage;
                         tracerStartWidth = tracerBaseSWidth;
                         tracerEndWidth = tracerBaseEWidth;
+                        Offset = 0;
                     }
                     if ((!pulseLaser && !BurstFire) || (!pulseLaser && BurstFire && (RoundsRemaining >= RoundsPerMag)) || (pulseLaser && Time.time - timeFired > beamDuration))
                     {

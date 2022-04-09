@@ -98,7 +98,7 @@ namespace BDArmory.Competition.VesselSpawning
             #region Initialisation and sanity checks
             // Tally up the craft to spawn.
             if (spawnConfig.craftFiles == null) // Prioritise the list of craftFiles if we're given them.
-                spawnConfig.craftFiles = Directory.GetFiles(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", spawnConfig.folder)).Where(f => f.EndsWith(".craft")).ToList();
+                spawnConfig.craftFiles = Directory.GetFiles(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", spawnConfig.folder), "*.craft").ToList();
             if (spawnConfig.craftFiles.Count == 0)
             {
                 message = "Vessel spawning: found no craft files in " + Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", spawnConfig.folder);

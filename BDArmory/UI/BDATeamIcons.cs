@@ -249,11 +249,9 @@ namespace BDArmory.UI
                             }
                         }
                     }
-                int Teamcount = 0;
                 using (var teamManagers = BDTISetup.Instance.weaponManagers.GetEnumerator())
                     while (teamManagers.MoveNext())
                     {
-                        Teamcount++;
                         using (var wm = teamManagers.Current.Value.GetEnumerator())
                             while (wm.MoveNext())
                             {

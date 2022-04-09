@@ -338,7 +338,7 @@ namespace BDArmory.FX
                     }
                     else
                     {
-                        if (BDArmorySettings.ENABLE_HOS && parentPart.vessel.GetName() == BDArmorySettings.HALL_OF_SHAME)
+                        if (BDArmorySettings.ENABLE_HOS && BDArmorySettings.HALL_OF_SHAME_LIST.Contains(parentPart.vessel.GetName()))
                         {
                             parentPart.AddDamage(BDArmorySettings.HOS_FIRE * Time.deltaTime);
                         }
@@ -349,7 +349,7 @@ namespace BDArmory.FX
                     BDACompetitionMode.Instance.Scores.RegisterBattleDamage(SourceVessel, parentPart.vessel, BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
                 }
             }
-            if (disableTime < 0 && (!hasFuel || (burnTime >= 0 && Time.time - startTime > burnTime)))
+            if (disableTime < 0 && ((!hasFuel && burnTime < 0)|| (burnTime >= 0 && Time.time - startTime > burnTime)))
             {
                 disableTime = Time.time; //grab time when emission stops
                 foreach (var pe in pEmitters)
