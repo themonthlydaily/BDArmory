@@ -694,7 +694,10 @@ namespace BDArmory.UI
                 postStatus += " [" + sc.ToString() + "]";
             }
             */
-
+            if (BDArmorySettings.HALL_OF_SHAME_LIST.Contains(vesselName))
+            {
+                vesselName += " (HoS)";
+            }
             if (GUI.Button(buttonRect, vesselName + status + postStatus, vButtonStyle))
                 ForceSwitchVessel(wm.vessel);
 
