@@ -2138,7 +2138,6 @@ namespace BDArmory.Modules
         }
 
         private Vector3 waypointPosition = default;
-        private float waypointRadius = 500f;
         private float waypointRange = 999f;
         private Vector3 waypointRollTarget = default;
         private float waypointRollTargetStrength = 0;
@@ -2225,10 +2224,11 @@ namespace BDArmory.Modules
             var waypoint = waypoints[activeWaypointIndex];
             var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
             waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
+
             waypointRange = (float)(vesselTransform.position - waypointPosition).magnitude;
             var timeToCPA = AIUtils.ClosestTimeToCPA(vessel.transform.position - waypointPosition, vessel.Velocity(), vessel.acceleration, Time.fixedDeltaTime);
             // if (waypointsRange < waypointRadius) Debug.Log($"DEBUG waypoint {activeWaypointIndex}, distance: {waypointsRange:F1} @ {Time.time}, TtCPA: {timeToCPA:F3}");
-            if (waypointRange < waypointRadius && timeToCPA < Time.fixedDeltaTime) // Within waypointRadius and reaching a minimum within the next frame. Looking forwards like this avoids a frame where the fly-to direction is backwards allowing smoother waypoint traversal.
+            if (waypointRange < BDArmorySettings.WAYPOINTS_SCALE && timeToCPA < Time.fixedDeltaTime) // Within waypointRadius and reaching a minimum within the next frame. Looking forwards like this avoids a frame where the fly-to direction is backwards allowing smoother waypoint traversal.
             {
                 // moving away, proceed to next point
                 var deviation = AIUtils.PredictPosition(vessel.transform.position - waypointPosition, vessel.Velocity(), vessel.acceleration, timeToCPA).magnitude;
