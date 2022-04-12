@@ -505,6 +505,18 @@ namespace BDArmory.UI
                     // FIXME This is a hack to interface with the Waypoint Spawn Strategy, which isn't written to play nice with local usage.
                     GUI.Label(SLeftSliderRect(++line), $"Waypoint Altitude: ({BDArmorySettings.WAYPOINTS_ALTITUDE:F0}m)", leftLabel);
                     BDArmorySettings.WAYPOINTS_ALTITUDE = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.WAYPOINTS_ALTITUDE, 50f, 1000f), 50f);
+                    // Select waypoint course
+                    string waypointCourseName;
+                    switch (BDArmorySettings.WAYPOINT_COURSE_INDEX)
+                    {
+                        default:
+                        case 1: waypointCourseName = "Canyon"; break;
+                        case 2: waypointCourseName = "Slalom"; break;
+                        case 3: waypointCourseName = "Coastal"; break;
+                    }
+                    GUI.Label(SLeftSliderRect(++line), $"Waypoint Course: ({waypointCourseName})", leftLabel);
+                    BDArmorySettings.WAYPOINT_COURSE_INDEX = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.WAYPOINT_COURSE_INDEX, 1, 3));
+
                     BDArmorySettings.WAYPOINTS_ONE_AT_A_TIME = GUI.Toggle(SLeftRect(++line), BDArmorySettings.WAYPOINTS_ONE_AT_A_TIME, Localizer.Format("#LOC_BDArmory_Settings_WaypointsOneAtATime"));
                     BDArmorySettings.WAYPOINTS_INFINITE_FUEL_AT_START = GUI.Toggle(SRightRect(line), BDArmorySettings.WAYPOINTS_INFINITE_FUEL_AT_START, Localizer.Format("#LOC_BDArmory_Settings_WaypointsInfFuelAtStart"));
                     BDArmorySettings.WAYPOINTS_VISUALIZE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.WAYPOINTS_VISUALIZE, Localizer.Format("#LOC_BDArmory_Settings_WaypointsShow"));
@@ -633,13 +645,34 @@ namespace BDArmory.UI
                         TournamentCoordinator.Instance.Stop();
                         TournamentCoordinator.Instance.StopForEach();
                     }
+                    float spawnLatitude, spawnLongitude;
+                    List<WaypointFollowingStrategy.Waypoint> course;
+                    switch (BDArmorySettings.WAYPOINT_COURSE_INDEX)
+                    {
+                        default:
+                        case 1:
+                            spawnLatitude = TournamentCoordinator.canyonSpawnLatitude;
+                            spawnLongitude = TournamentCoordinator.canyonSpawnLongitude;
+                            course = TournamentCoordinator.BuildCanyonCourse();
+                            break;
+                        case 2:
+                            spawnLatitude = TournamentCoordinator.slalomSpawnLatitude;
+                            spawnLongitude = TournamentCoordinator.slalomSpawnLongitude;
+                            course = TournamentCoordinator.BuildSlalomCourse();
+                            break;
+                        case 3:
+                            spawnLatitude = TournamentCoordinator.coastalCircuitSpawnLatitude;
+                            spawnLongitude = TournamentCoordinator.coastalCircuitSpawnLongitude;
+                            course = TournamentCoordinator.BuildCoastalCircuit();
+                            break;
+                    }
                     if (!BDArmorySettings.WAYPOINTS_ONE_AT_A_TIME)
                     {
                         TournamentCoordinator.Instance.Configure(new SpawnConfigStrategy(
                             new SpawnConfig(
-                                Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_WORLDINDEX : 1,
-                                Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x : 27.97f,
-                                Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y : -39.35f,
+                                Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_WORLDINDEX : 1, // Right-click => use the VesselSpawnerWindow settings instead of the defaults.
+                                Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x : spawnLatitude,
+                                Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y : spawnLongitude,
                                 BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
@@ -651,18 +684,7 @@ namespace BDArmory.UI
                                 null,
                                 BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION)
                             ),
-                            new WaypointFollowingStrategy(
-                                new List<WaypointFollowingStrategy.Waypoint> {
-                                new WaypointFollowingStrategy.Waypoint(28.33f, -39.11f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                                new WaypointFollowingStrategy.Waypoint(28.83f, -38.06f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                                new WaypointFollowingStrategy.Waypoint(29.54f, -38.68f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                                new WaypointFollowingStrategy.Waypoint(30.15f, -38.6f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                                new WaypointFollowingStrategy.Waypoint(30.83f, -38.87f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                                new WaypointFollowingStrategy.Waypoint(30.73f, -39.6f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                                new WaypointFollowingStrategy.Waypoint(30.9f, -40.23f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                                new WaypointFollowingStrategy.Waypoint(30.83f, -41.26f, BDArmorySettings.WAYPOINTS_ALTITUDE)
-                                }
-                            ),
+                            new WaypointFollowingStrategy(course),
                             CircularSpawning.Instance
                         );
 
@@ -675,8 +697,8 @@ namespace BDArmory.UI
                         var strategies = craftFiles.Select(craftFile => new SpawnConfigStrategy(
                             new SpawnConfig(
                                 Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_WORLDINDEX : 1,
-                                Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x : 27.97f,
-                                Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y : -39.35f,
+                                Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x : spawnLatitude,
+                                Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y : spawnLongitude,
                                 BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
@@ -690,18 +712,7 @@ namespace BDArmory.UI
                                 new List<string>() { craftFile }
                             ))).ToList();
                         TournamentCoordinator.Instance.RunForEach(strategies,
-                            new WaypointFollowingStrategy(
-                                new List<WaypointFollowingStrategy.Waypoint> {
-                                new WaypointFollowingStrategy.Waypoint(28.33f, -39.11f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                                new WaypointFollowingStrategy.Waypoint(28.83f, -38.06f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                                new WaypointFollowingStrategy.Waypoint(29.54f, -38.68f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                                new WaypointFollowingStrategy.Waypoint(30.15f, -38.6f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                                new WaypointFollowingStrategy.Waypoint(30.83f, -38.87f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                                new WaypointFollowingStrategy.Waypoint(30.73f, -39.6f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                                new WaypointFollowingStrategy.Waypoint(30.9f, -40.23f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                                new WaypointFollowingStrategy.Waypoint(30.83f, -41.26f, BDArmorySettings.WAYPOINTS_ALTITUDE)
-                                }
-                            ),
+                            new WaypointFollowingStrategy(course),
                             CircularSpawning.Instance
                         );
                     }

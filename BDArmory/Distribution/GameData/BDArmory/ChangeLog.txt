@@ -8,6 +8,9 @@
 		- Add waypoint scaling from 50-1000m.
 		- Altitude overrides for S4R10.
 		- Remember the previously used HoSTag.
+		- Add multiple courses and a selection UI.
+- Weapons:
+	- Use min of missile drop time or 2 sec instead of fixed two second period for check target will be within missile maxOffBoresight at future time.
 - RWP:
 	- Hall of Shame now supports multiple craft.
 	- Add HoS support to Waypoint mode.
