@@ -307,7 +307,8 @@ namespace BDArmory.Modules
         //guard mode vars
         float targetScanTimer;
         Vessel guardTarget;
-        public TargetInfo currentTarget;
+		public TargetInfo currentTarget;
+        public int engagedTargets = 0;
         public List<TargetInfo> targetsAssigned; //secondary targets list
         public List<TargetInfo> missilesAssigned; //secondary missile targets list
         TargetInfo overrideTarget; //used for setting target next guard scan for stuff like assisting teammates
@@ -1272,7 +1273,7 @@ namespace BDArmory.Modules
                     if (firedMissiles.Current == null) continue;
 
                     var missileBase = firedMissiles.Current as MissileBase;
-
+                    if (missileBase.legacyTargetVessel == null) continue;
                     if (missileBase.SourceVessel != this.vessel) continue;
                     //if (missileBase.MissileState != MissileBase.MissileStates.PostThrust && !missileBase.HasMissed && !missileBase.HasExploded)
                     if (missileBase.HasFired && !missileBase.HasMissed && !missileBase.HasExploded) //culling post-thrust missiles makes AGMs get cleared almost immediately after launch
@@ -1452,7 +1453,8 @@ namespace BDArmory.Modules
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
                     debugString.Length = 0;
-                    debugString.AppendLine("Missiles away: " + firedMissiles);
+                    debugString.AppendLine("Missiles away: " + firedMissiles + "; targeted vessels: " + engagedTargets);
+
                     if (missileIsIncoming)
                     {
                         foreach (var incomingMissile in results.incomingMissiles)
@@ -1716,7 +1718,7 @@ namespace BDArmory.Modules
                 {
                     if (vesselRadarData && vesselRadarData.locked) // FIXME This wipes radar guided missiles' targeting data when switching to a heat guided missile. Radar is used to allow heat seeking missiles with allAspect = true to lock on target and fire when the target is not within sensor FOV
                     {
-                        vesselRadarData.UnlockAllTargets();
+                        vesselRadarData.UnlockAllTargets(); //maybe use vrd.UnlockCurrentTarget() instead?
                         vesselRadarData.UnslaveTurrets();
                     }
 
@@ -3332,7 +3334,7 @@ namespace BDArmory.Modules
         {
             var lastTarget = currentTarget;
             List<TargetInfo> targetsTried = new List<TargetInfo>();
-
+            engagedTargets = 0;
             string targetDebugText = "";
 
             if (firedMissiles >= maxMissilesOnTarget && (multiTargetNum > 1 && BDATargetManager.TargetList(Team).Count > 1)) //if there are multiple potential targets, see how many can be fired at with missiles
@@ -3340,7 +3342,11 @@ namespace BDArmory.Modules
                 Debug.Log("[MissileFire] max missiles on target; switching to new target!");
 				heatTarget = TargetSignatureData.noTarget; //clear holdover targets when switching targets
 				antiRadTargetAcquired = false;
-                //vesselRadarData.UnlockCurrentTarget(); // this one will take some work; don't want to unlock current target if it's a radar missile slaved to ship radar guidance, not missile radar
+                MissileBase ml = CurrentMissile;
+                if (ml && ml.TargetingMode == MissileBase.TargetingModes.Radar && ml.radarLOAL)
+                {
+                    vesselRadarData.UnlockCurrentTarget();//unlock current target only if missile isn't slaved to ship radar guidance to allow new F&F lock
+                } //FIXME - will need to look into multi-track locking radars and how they are assigning targets to missiles to allow SARH against multiple targets (Ask Josue?)
 
                 using (List<TargetInfo>.Enumerator target = BDATargetManager.TargetList(Team).GetEnumerator())
                 {
@@ -3348,7 +3354,8 @@ namespace BDArmory.Modules
                     {
                         if (missilesAway.ContainsKey(target.Current))
                         {
-                            if (missilesAway[target.Current] >= maxMissilesOnTarget) targetsTried.Add(target.Current);
+							if (missilesAway[target.Current] >= maxMissilesOnTarget) targetsTried.Add(target.Current);
+                            engagedTargets++;
                         }
                     }
                 }
@@ -3611,7 +3618,7 @@ namespace BDArmory.Modules
                 CycleWeapon(0);
                 SetTarget(null);
 
-                if (vesselRadarData && vesselRadarData.locked && missilesAway.Count > 0) // Don't unlock targets while we've got missiles in the air.
+                if (vesselRadarData && vesselRadarData.locked && missilesAway.Count == 0) // Don't unlock targets while we've got missiles in the air.
                 {
                     vesselRadarData.UnlockAllTargets();
                 }
