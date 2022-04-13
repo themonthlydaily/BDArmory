@@ -117,6 +117,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
                     Debug.Log("[BDArmory.Waypoints]: Creating waypoint marker at  " + " " + location);
                 }
             }
+
             if (BDArmorySettings.WAYPOINTS_MODE || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 50))
             {
                 float terrainAltitude = (float)FlightGlobals.currentMainBody.TerrainAltitude(waypoints[0].latitude, waypoints[0].longitude);
@@ -216,20 +217,13 @@ namespace BDArmory.Competition.OrchestrationStrategies
         public bool disabled = false;
         static void CreateObjectPool(string ModelPath)
         {
-            /*
-            if (WaypointPool != null) return;
-            GameObject WPTemplate = GameDatabase.Instance.GetModel(ModelPath);
-            WPTemplate.SetActive(false);
-            WPTemplate.AddComponent<WayPointMarker>();
-            WaypointPool = ObjectPool.CreateObjectPool(WPTemplate, 10, true, true);
-            */
             var key = ModelPath;
             if (!WaypointPools.ContainsKey(key) || WaypointPools[key] == null)
             {
                 var WPTemplate = GameDatabase.Instance.GetModel(ModelPath);
                 if (WPTemplate == null)
                 {
-                    Debug.LogError("[BDArmory.WayPointMarker]: " + ModelPath + " was not found, using the default explosion instead. Please fix your model.");
+                    Debug.LogError("[BDArmory.WayPointMarker]: " + ModelPath + " was not found, using the default model instead. Please fix your model.");
                     WPTemplate = GameDatabase.Instance.GetModel("BDArmory/Models/WayPoint/model");
                 }
                 WPTemplate.SetActive(false);
@@ -237,7 +231,6 @@ namespace BDArmory.Competition.OrchestrationStrategies
                 WaypointPools[key] = ObjectPool.CreateObjectPool(WPTemplate, 10, true, true);
             }
         }
-
         public static void CreateWaypoint(Vector3 position, Vector3 direction, string ModelPath, float scale)
         {
             CreateObjectPool(ModelPath);
@@ -245,18 +238,18 @@ namespace BDArmory.Competition.OrchestrationStrategies
             GameObject newWayPoint = WaypointPools[ModelPath].GetPooledObject();
             Quaternion rotation = Quaternion.LookRotation(direction, -FlightGlobals.getGeeForceAtPosition(Vector3.zero).normalized); //this needed, so the model is aligned to the ground normal, not the body transform orientation
 
+
             newWayPoint.transform.SetPositionAndRotation(position, rotation);
 
             //newWayPoint.transform.SetPositionAndRotation(position, rotation);
+            //rotation based on root(partTools) transform of the model, with Z+ forward, and Y+ up
             newWayPoint.transform.RotateAround(position, newWayPoint.transform.up, Vector3.Angle(newWayPoint.transform.forward, direction)); //rotate model on horizontal plane towards last gate
-            newWayPoint.transform.RotateAround(position, newWayPoint.transform.right, Vector3.Angle(newWayPoint.transform.forward, direction)); //and on vertical plane if elevation change betwee nthe two
+            newWayPoint.transform.RotateAround(position, newWayPoint.transform.right, Vector3.Angle(newWayPoint.transform.forward, direction)); //and on vertical plane if elevation change between the two
 
             float WPScale = scale / 500; //default ring/torii models scaled for 500m
             newWayPoint.transform.localScale = new Vector3(WPScale, WPScale, WPScale);
             WayPointMarker NWP = newWayPoint.GetComponent<WayPointMarker>();
             NWP.Position = position;
-
-            //adding a scale value to allow size customization would be a good idea - FIXME for custom waypoints dev
             newWayPoint.SetActive(true);
         }
         void Awake()
@@ -293,7 +286,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
         public bool replayGhost = false;
         static void CreateObjectPool()
         {
-            GameObject ghost = GameDatabase.Instance.GetModel("BDArmory/Models/shell/model");
+            GameObject ghost = GameDatabase.Instance.GetModel("BDArmory/Models/shell/model"); //could have just done this as a gameObject instead of a tiny model.
             ghost.SetActive(false);
             ghost.AddComponent<WayPointTracing>();
             TracePool = ObjectPool.CreateObjectPool(ghost, 120, true, true);
@@ -322,7 +315,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
         }
         void Start()
         {
-            setupRenderer();
+            setupRenderer(); //one linerenderer per vessel
             nodes = 0;
             timer = 0;
         }
@@ -331,7 +324,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
             disabled = false;
             setupRenderer();
             pathPoints.Clear();
-			nodes = 0;
+			      nodes = 0;
             timer = 0;
         }
         void setupRenderer()
@@ -343,7 +336,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
             Debug.Log("[WayPointTracer] setting up Renderer");
             Transform tf = this.transform;
             tracerRenderer = tf.gameObject.AddOrGetComponent<LineRenderer>();
-            Color Color = BDTISetup.Instance.ColorAssignments[vessel.weaponManager.Team.Name];
+            Color Color = BDTISetup.Instance.ColorAssignments[vessel.weaponManager.Team.Name]; //hence the incrementing teams in One-at-a-Time mode
             tracerRenderer.material = new Material(Shader.Find("KSP/Particles/Alpha Blended"));
             tracerRenderer.material.SetColor("_TintColor", Color);
             tracerRenderer.material.mainTexture = GameDatabase.Instance.GetTexture("BDArmory/Textures/laser", false);
@@ -360,7 +353,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
             tracerRenderer.enabled = false;
         }
         public void resetRenderer()
-        {
+        {//reset things for ghost mode replay while the current vessel races
             if (tracerRenderer == null)
             {
                 return;
@@ -410,7 +403,8 @@ namespace BDArmory.Competition.OrchestrationStrategies
                             for (int i = 0; i < nodes - 1; i++)
                             {
                                 tracerRenderer.SetPosition(i, pathPoints[i]); //add Linerender positions for all but last position
-                            }
+                            } //this is working, to a point, at which the render diverges from where the vessel has gone. Need a krakenbane offset?
+                              //renderer was attached to a WayPointTrace class so positions would always remain consistant relative the tracer, not the ship
                         }
                     }
                     if (!replayGhost && nodes > 1) tracerRenderer.SetPosition(tracerRenderer.positionCount - 1, vessel.vessel.CoM); //have last position update real-time with vessel position
