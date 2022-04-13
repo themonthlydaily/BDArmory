@@ -36,6 +36,7 @@ namespace BDArmory.Control
 
         bool requestedExtend;
         Vector3 requestedExtendTpos;
+        float extendRequestMinDistance = 0;
 
         public bool IsExtending
         {
@@ -51,6 +52,7 @@ namespace BDArmory.Control
             extending = false;
             extendingReason = "";
             extendTarget = null;
+            extendRequestMinDistance = 0;
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.BDModulePilotAI]: {vessel.vesselName} stopped extending due to {reason}.");
         }
 
@@ -61,10 +63,11 @@ namespace BDArmory.Control
         /// <param name="reason">Reason for extending</param>
         /// <param name="target">The target to extend from</param>
         /// <param name="tPosition">The position to extend from if the target is null</param>
-        public void RequestExtend(string reason = "requested", Vessel target = null, Vector3 tPosition = default)
+        public void RequestExtend(string reason = "requested", Vessel target = null, float minDistance = 0, Vector3 tPosition = default)
         {
             requestedExtend = true;
             extendTarget = target;
+            extendRequestMinDistance = minDistance;
             requestedExtendTpos = extendTarget != null ? target.CoM : tPosition;
             extendingReason = reason;
         }
@@ -1234,7 +1237,7 @@ namespace BDArmory.Control
             // Perform the check here since we're now allowing evading/engaging while below mininum altitude.
             if (belowMinAltitude && vessel.radarAltitude > minAltitude && Vector3.Dot(vessel.Velocity(), vessel.upAxis) > 0) // We're good.
             {
-                terrainAlertCoolDown = 1.0f; // 1s cool down after avoiding terrain or gaining altitude. (Only used for delaying "orbitting" for now.)
+                terrainAlertCoolDown = 1.0f; // 1s cool down after gaining altitude.
                 belowMinAltitude = false;
             }
 
@@ -1632,12 +1635,13 @@ namespace BDArmory.Control
                 debugString.AppendLine($"Enemy on tail. Braking!");
                 AdjustThrottle(minSpeed, true);
             }
+            var minDynamicLaunchRange = MissileLaunchParams.GetDynamicLaunchParams(missile, v.Velocity(), v.transform.position).minLaunchRange;
             if (missile != null
                 && targetDot > 0
-                && distanceToTarget < MissileLaunchParams.GetDynamicLaunchParams(missile, v.Velocity(), v.transform.position).minLaunchRange
+                && distanceToTarget < minDynamicLaunchRange
                 && vessel.srfSpeed > idleSpeed)
             {
-                RequestExtend("too close for missile", v); // Get far enough away to use the missile.
+                RequestExtend("too close for missile", v, minDynamicLaunchRange); // Get far enough away to use the missile.
             }
 
             if (regainEnergy && angleToTarget > 30f)
@@ -1681,7 +1685,7 @@ namespace BDArmory.Control
             debugString.AppendLine($"possibleAccel: {possibleAccel}");
 
             float limiter = ((speed - minSpeed) / 2 / minSpeed) + possibleAccel / 15f; // FIXME The calculation for possibleAccel needs further investigation.
-            debugString.AppendLine($"unclamped limiter: { limiter}");
+            debugString.AppendLine($"unclamped limiter: {limiter}");
 
             return Mathf.Clamp01(limiter);
         }
@@ -1971,8 +1975,11 @@ namespace BDArmory.Control
             if (requestedExtend)
             {
                 requestedExtend = false;
-                extending = true;
-                lastTargetPosition = requestedExtendTpos;
+                if (CheckRequestedExtendDistance())
+                {
+                    extending = true;
+                    lastTargetPosition = requestedExtendTpos;
+                }
             }
             if (checkType == ExtendChecks.RequestsOnly) return extending;
             if (extending && extendParametersSet)
@@ -2033,7 +2040,7 @@ namespace BDArmory.Control
             // Air target (from requests, where extendParameters haven't been set yet).
             if (extending && extendTarget != null && !extendTarget.LandedOrSplashed) // We have a flying target, only extend a short distance and don't climb.
             {
-                extendDistance = extendDistanceAirToAir;
+                extendDistance = Mathf.Max(extendDistanceAirToAir, extendRequestMinDistance);
                 extendHorizontally = false;
                 desiredMinAltitude = (float)vessel.radarAltitude * 0.95f; // Extend mostly horizontally
                 extendParametersSet = true;
@@ -2043,6 +2050,24 @@ namespace BDArmory.Control
 
             if (extending) StopExtending("no valid extend reason");
             return false;
+        }
+
+        /// <summary>
+        /// Check whether the extend distance condition would not already be satisfied.
+        /// </summary>
+        /// <returns>True if the requested extend distance is not already satisfied.</returns>
+        bool CheckRequestedExtendDistance()
+        {
+            if (extendTarget == null) return true; // Dropping a bomb or similar.
+            float localExtendDistance = 1f;
+            Vector3 extendVector = default;
+            if (!extendTarget.LandedOrSplashed) // Airborne target.
+            {
+                localExtendDistance = Mathf.Max(extendDistanceAirToAir, extendRequestMinDistance);
+                extendVector = vessel.transform.position - requestedExtendTpos;
+            }
+            else return true; // Ignore non-airborne targets for now. Currently, requests are only made for air-to-air targets and for dropping bombs.
+            return extendVector.sqrMagnitude < localExtendDistance * localExtendDistance; // Extend from position is further than the extend distance.
         }
 
         void FlyExtend(FlightCtrlState s, Vector3 tPosition)
@@ -2586,7 +2611,7 @@ namespace BDArmory.Control
                 }
                 // Update status and book keeping.
                 SetStatus("Terrain (" + (int)terrainAlertDistance + "m)");
-                terrainAlertCoolDown = 0.5f; // 0.5s cool down after avoiding terrain or gaining altitude. (Only used for delaying "orbitting" for now.)
+                terrainAlertCoolDown = 0.5f; // 0.5s cool down after avoiding terrain.
                 return true;
             }
 

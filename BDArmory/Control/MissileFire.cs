@@ -1991,7 +1991,7 @@ namespace BDArmory.Control
                             yield return new WaitForSeconds(1f);
                             if (pilotAI)
                             {
-                                pilotAI.RequestExtend("bombs away!", null, guardTarget.CoM); // Extend from the place the bomb is expected to fall.
+                                pilotAI.RequestExtend("bombs away!", null, 0, guardTarget.CoM); // Extend from the place the bomb is expected to fall.
                             }
                         }
                     }
