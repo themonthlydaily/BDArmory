@@ -43,7 +43,8 @@ namespace BDArmory.Modules
         Transform cameraTransform;
 
         float startTime;
-        public int missilesAway;
+        public int firedMissiles;
+        public Dictionary<TargetInfo, int> missilesAway;
 
         public float totalHP;
         public float currentHP;
@@ -1039,7 +1040,8 @@ namespace BDArmory.Modules
                 BDArmorySetup.OnSavedSettings += ClampVisualRange;
 
                 StartCoroutine(StartupListUpdater());
-                missilesAway = 0;
+                firedMissiles = 0;
+                missilesAway = new Dictionary<TargetInfo, int>();
 
                 GameEvents.onVesselCreate.Add(OnVesselCreate);
                 GameEvents.onPartJointBreak.Add(OnPartJointBreak);
@@ -1163,7 +1165,7 @@ namespace BDArmory.Modules
             { currentHP = GetTotalHP(); }
         }
 
-        public override void OnUpdate()
+        public override void OnUpdate() //shouldn't most of this stuff be in onFixedUpdate instead?
         {
             if (!HighLogic.LoadedSceneIsFlight)
             {
@@ -1258,9 +1260,12 @@ namespace BDArmory.Modules
             }
         }
 
-        private void CalculateMissilesAway() //for multi-missile targeting, would need to change this from a list of all missile fired; instead track missile launch vessel, and missiletarget
-        { //then ask for num of misiles fired at currentTarget, instead of total. And some code to swap targets if missilesAway > limit
-            int tempMissilesAway = 0;
+        private void CalculateMissilesAway()
+        {
+            missilesAway.Clear();
+            //int tempMissilesAway = 0;
+            firedMissiles = 0;
+            if (!guardMode) return;
             using (List<IBDWeapon>.Enumerator firedMissiles = BDATargetManager.FiredMissiles.GetEnumerator())
                 while (firedMissiles.MoveNext())
                 {
@@ -1269,14 +1274,22 @@ namespace BDArmory.Modules
                     var missileBase = firedMissiles.Current as MissileBase;
 
                     if (missileBase.SourceVessel != this.vessel) continue;
-
-                    if (missileBase.MissileState != MissileBase.MissileStates.PostThrust && !missileBase.HasMissed && !missileBase.HasExploded)
+                    //if (missileBase.MissileState != MissileBase.MissileStates.PostThrust && !missileBase.HasMissed && !missileBase.HasExploded)
+                    if (missileBase.HasFired && !missileBase.HasMissed && !missileBase.HasExploded) //culling post-thrust missiles makes AGMs get cleared almost immediately after launch
                     {
-                        tempMissilesAway++;
+                        if (!missilesAway.ContainsKey(missileBase.legacyTargetVessel))
+                        {
+                            missilesAway.Add(missileBase.legacyTargetVessel, 1);
+                        }
+                        else
+                        missilesAway[missileBase.legacyTargetVessel]++;
                     }
                 }
-
-            this.missilesAway = tempMissilesAway;
+            if (currentTarget != null && missilesAway.ContainsKey(currentTarget))
+            {
+                firedMissiles = missilesAway[currentTarget];
+            }
+            //this.missilesAway = tempMissilesAway;
         }
 
         public override void OnFixedUpdate()
@@ -1436,7 +1449,7 @@ namespace BDArmory.Modules
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
                     debugString.Length = 0;
-                    debugString.AppendLine("Missiles away: " + missilesAway);
+                    debugString.AppendLine("Missiles away: " + firedMissiles);
                     if (missileIsIncoming)
                     {
                         foreach (var incomingMissile in results.incomingMissiles)
@@ -1942,9 +1955,9 @@ namespace BDArmory.Modules
             bool doProxyCheck = true;
 
             float prevDist = 2 * radius;
-            radius = Mathf.Max(radius, 50f);
+			radius = Mathf.Max(radius, 50f);
             while (guardTarget && Time.time - bombStartTime < bombAttemptDuration && weaponIndex > 0 &&
-                   weaponArray[weaponIndex].GetWeaponClass() == WeaponClasses.Bomb && missilesAway < maxMissilesOnTarget)
+                   weaponArray[weaponIndex].GetWeaponClass() == WeaponClasses.Bomb && firedMissiles < maxMissilesOnTarget)
             {
                 float targetDist = Vector3.Distance(bombAimerPosition, guardTarget.CoM);
 
@@ -1984,13 +1997,13 @@ namespace BDArmory.Modules
                         FireCurrentMissile(true);
                         timeBombReleased = Time.time;
                         yield return new WaitForSeconds(rippleFire ? 60f / rippleRPM : 0.06f);
-                        if (missilesAway >= maxMissilesOnTarget)
+                        if (firedMissiles >= maxMissilesOnTarget)
                         {
                             yield return new WaitForSeconds(1f);
                             if (pilotAI)
                             {
                                 pilotAI.RequestExtend("bombs away!", null, guardTarget.CoM); // Extend from the place the bomb is expected to fall.
-                            }
+                            }   //maybe something similar should be adapted for any missiles with nuke warheards...?
                         }
                     }
                     else
@@ -2334,9 +2347,9 @@ namespace BDArmory.Modules
             }
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS && distance < 1000f) Debug.Log("[BDArmory.MissileFire]: Legacy missile warning for " + vessel.vesselName + " at distance " + distance.ToString("0.0") + "m from " + ml.shortName);
-            missileIsIncoming = true;
-            incomingMissileLastDetected = Time.time;
-            incomingMissileDistance = distance;
+            //missileIsIncoming = true;
+            //incomingMissileLastDetected = Time.time;
+            //incomingMissileDistance = distance;
         }
 
         #endregion CounterMeasure
@@ -2424,7 +2437,7 @@ namespace BDArmory.Modules
             {
                 return;
             }
-            if (guardMode && (missilesAway >= maxMissilesOnTarget))
+            if (guardMode && (firedMissiles >= maxMissilesOnTarget))
             {
                 return;
             }
@@ -3316,7 +3329,27 @@ namespace BDArmory.Modules
         {
             var lastTarget = currentTarget;
             List<TargetInfo> targetsTried = new List<TargetInfo>();
+
             string targetDebugText = "";
+
+            if (multiTargetNum > 1 && BDATargetManager.TargetList(Team).Count > 1) //if there are multiple potential targets, see how many can be fired at with missiles
+            {
+                Debug.Log("[MissileFire] max missiles on target; switching to new target!");
+                using (List<TargetInfo>.Enumerator target = BDATargetManager.TargetList(Team).GetEnumerator())
+                {
+                    while (target.MoveNext())
+                    {
+                        if (missilesAway.ContainsKey(target.Current))
+                        {
+                            if (missilesAway[target.Current] >= maxMissilesOnTarget) targetsTried.Add(target.Current);
+                        }
+                    }
+                }
+                if (targetsTried.Count == BDATargetManager.TargetList(Team).Count) //oops, already fired missiles at all available targets
+                {
+                    targetsTried.Clear(); //clear targets tried, so AI can track best current target until such time as it can fire again
+                }
+            }
 
             targetsAssigned.Clear(); //fixes fixed guns not firing if Multitargeting >1
             missilesAssigned.Clear();
@@ -3570,7 +3603,8 @@ namespace BDArmory.Modules
                 }
                 CycleWeapon(0);
                 SetTarget(null);
-                if (vesselRadarData && vesselRadarData.locked && missilesAway == 0) // Don't unlock targets while we've got missiles in the air.
+
+                if (vesselRadarData && vesselRadarData.locked && missilesAway.Count > 0) // Don't unlock targets while we've got missiles in the air.
                 {
                     vesselRadarData.UnlockAllTargets();
                 }
@@ -3907,7 +3941,7 @@ namespace BDArmory.Modules
 
                         if (candidateClass == WeaponClasses.Missile)
                         {
-                            if (missilesAway >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
+                            if (firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                             MissileLauncher mlauncher = item.Current as MissileLauncher;
                             float candidateDetDist = 0;
                             float candidateAccel = 0; //for anti-missile, prioritize proxidetonation and accel
@@ -4205,7 +4239,7 @@ namespace BDArmory.Modules
                         //projectile weapon selected, any missiles that take precedence?
                         if (candidateClass == WeaponClasses.Missile)
                         {
-                            if (missilesAway >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
+                            if (firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                             float candidateDetDist = 0;
                             float candidateTurning = 0;
                             int candidatePriority = 0;
@@ -4453,7 +4487,7 @@ namespace BDArmory.Modules
                         {
                             MissileLauncher Bomb = item.Current as MissileLauncher;
                             if (targetWeapon != null && targetWeapon.GetWeaponClass() == WeaponClasses.Missile) continue;
-                            if (missilesAway >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
+                            if (firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                             // only useful if we are flying
                             float candidateYield = Bomb.GetBlastRadius();
                             int candidateCluster = Bomb.clusterbomb;
@@ -4542,7 +4576,7 @@ namespace BDArmory.Modules
                             // - add code to choose optimal missile based on target profile - i.e. use bigger bombs on large landcruisers, smaller bombs on small Vees that don't warrant that sort of overkill?
                             MissileLauncher Missile = item.Current as MissileLauncher;
                             if (vessel.Splashed && FlightGlobals.getAltitudeAtPos(item.Current.GetPart().transform.position) < -2) continue;
-                            if (missilesAway >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
+                            if (firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                             float candidateYield = Missile.GetBlastRadius();
                             double srfSpeed = currentTarget.Vessel.horizontalSrfSpeed;
                             bool EMP = Missile.EMP;
@@ -4614,7 +4648,7 @@ namespace BDArmory.Modules
                         // almost as good as STS missiles, which we don't have.
                         if (candidateClass == WeaponClasses.SLW && target.isSplashed)
                         {
-                            if (missilesAway >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
+                            if (firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                             MissileLauncher SLW = item.Current as MissileLauncher;
                             float candidateYield = SLW.GetBlastRadius();
                             bool EMP = SLW.EMP;
@@ -4677,7 +4711,7 @@ namespace BDArmory.Modules
                             {
                                 if (item.Current.GetMissileType().ToLower() != "torpedo") continue;
                                 if (distance < candidateYield) continue; //don't use explosives within their blast radius
-                                if (missilesAway >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
+                                if(firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                                 targetWeapon = item.Current;
                                 targetWeaponPriority = candidatePriority;
                                 break;
@@ -5204,6 +5238,7 @@ namespace BDArmory.Modules
                 ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(antiRadiationTarget,
                         vessel.mainBody);
             }
+            ml.legacyTargetVessel = currentTarget; 
         }
 
         #endregion Targeting
@@ -5285,9 +5320,8 @@ namespace BDArmory.Modules
             {
                 targetScanTimer = Time.time;
 
-                if (!guardFiringMissile)
+                if (!guardFiringMissile || (firedMissiles >= maxMissilesOnTarget && multiTargetNum > 1 && BDATargetManager.TargetList(Team).Count > 1)) //grab new target, if possible
                 {
-
                     SmartFindTarget();
 
                     if (guardTarget == null || selectedWeapon == null)
@@ -5323,9 +5357,9 @@ namespace BDArmory.Modules
                             launchAuthorized = launchAuthorized && GetLaunchAuthorization(guardTarget, this);
 
                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                                Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " launchAuth=" + launchAuthorized + ", pilotAut=" + pilotAuthorized + ", missilesAway/Max=" + missilesAway + "/" + maxMissilesOnTarget);
+                                Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " launchAuth=" + launchAuthorized + ", pilotAut=" + pilotAuthorized + ", missilesAway/Max=" + firedMissiles + "/" + maxMissilesOnTarget);
 
-                            if (missilesAway < maxMissilesOnTarget)
+                            if (firedMissiles < maxMissilesOnTarget)
                             {
                                 if (!guardFiringMissile && launchAuthorized
                                     && (CurrentMissile != null && (CurrentMissile.TargetingMode != MissileBase.TargetingModes.Radar || (vesselRadarData != null && (!vesselRadarData.locked || vesselRadarData.lockedTargetData.vessel == guardTarget))))) // Allow firing multiple missiles at the same target. FIXME This is a stop-gap until proper multi-locking support is available.

@@ -279,7 +279,7 @@ namespace BDArmory.Modules
 
         protected float lockFailTimer = -1;
 
-        public Vessel legacyTargetVessel;
+        public TargetInfo legacyTargetVessel;
 
         public Transform MissileReferenceTransform;
 

@@ -238,7 +238,7 @@ namespace BDArmory.Targeting
             if (radarMassAtUpdate > 0)
             {
                 float massPercentageDifference = (radarMassAtUpdate - vessel.GetTotalMass()) / radarMassAtUpdate;
-                if ((massPercentageDifference > 0.025f) && (weaponManager) && (weaponManager.missilesAway == 0) && !weaponManager.guardFiringMissile)
+                if ((massPercentageDifference > 0.025f) && (weaponManager) && (weaponManager.missilesAway[weaponManager.currentTarget] == 0) && !weaponManager.guardFiringMissile)
                 {
                     alreadyScheduledRCSUpdate = true;
                     yield return new WaitForSeconds(1.0f);    // Wait for any explosions to finish
