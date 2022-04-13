@@ -1282,12 +1282,15 @@ namespace BDArmory.Modules
                             missilesAway.Add(missileBase.legacyTargetVessel, 1);
                         }
                         else
-                        missilesAway[missileBase.legacyTargetVessel]++;
+                        {
+                            missilesAway[missileBase.legacyTargetVessel]++; //tabulate all missiles fired by the vessel at various targets; only need # missiles fired at current target forlaunching, but need all vessels with missiles targeting them for vessel targeting
+                        }
                     }
                 }
             if (currentTarget != null && missilesAway.ContainsKey(currentTarget))
             {
-                firedMissiles = missilesAway[currentTarget];
+				missilesAway.TryGetValue(currentTarget, out int missiles);
+                this.firedMissiles = missiles;
             }
             //this.missilesAway = tempMissilesAway;
         }
@@ -3332,9 +3335,13 @@ namespace BDArmory.Modules
 
             string targetDebugText = "";
 
-            if (multiTargetNum > 1 && BDATargetManager.TargetList(Team).Count > 1) //if there are multiple potential targets, see how many can be fired at with missiles
+            if (firedMissiles >= maxMissilesOnTarget && (multiTargetNum > 1 && BDATargetManager.TargetList(Team).Count > 1)) //if there are multiple potential targets, see how many can be fired at with missiles
             {
                 Debug.Log("[MissileFire] max missiles on target; switching to new target!");
+				heatTarget = TargetSignatureData.noTarget; //clear holdover targets when switching targets
+				antiRadTargetAcquired = false;
+                //vesselRadarData.UnlockCurrentTarget(); // this one will take some work; don't want to unlock current target if it's a radar missile slaved to ship radar guidance, not missile radar
+
                 using (List<TargetInfo>.Enumerator target = BDATargetManager.TargetList(Team).GetEnumerator())
                 {
                     while (target.MoveNext())
