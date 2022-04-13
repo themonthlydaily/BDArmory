@@ -463,6 +463,10 @@ namespace BDArmory.Modules
          UI_FloatRange(minValue = 1, maxValue = 10, stepIncrement = 1, scene = UI_Scene.All)]
         public float multiTargetNum = 1;
 
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_WMWindow_MultiMissileNum"),//Max Turret Targets
+ UI_FloatRange(minValue = 1, maxValue = 10, stepIncrement = 1, scene = UI_Scene.All)]
+        public float multiMissileTgtNum = 1;
+
         public const float maxAllowableMissilesOnTarget = 18f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MissilesORTarget"), UI_FloatRange(minValue = 1f, maxValue = maxAllowableMissilesOnTarget, stepIncrement = 1f, scene = UI_Scene.All)]//Missiles/Target
@@ -3337,7 +3341,7 @@ namespace BDArmory.Modules
             engagedTargets = 0;
             string targetDebugText = "";
 
-            if (firedMissiles >= maxMissilesOnTarget && (multiTargetNum > 1 && BDATargetManager.TargetList(Team).Count > 1)) //if there are multiple potential targets, see how many can be fired at with missiles
+            if (firedMissiles >= maxMissilesOnTarget && (multiMissileTgtNum > 1 && BDATargetManager.TargetList(Team).Count > 1)) //if there are multiple potential targets, see how many can be fired at with missiles
             {
                 Debug.Log("[MissileFire] max missiles on target; switching to new target!");
 				heatTarget = TargetSignatureData.noTarget; //clear holdover targets when switching targets
@@ -5334,7 +5338,7 @@ namespace BDArmory.Modules
             {
                 targetScanTimer = Time.time;
 
-                if (!guardFiringMissile || (firedMissiles >= maxMissilesOnTarget && multiTargetNum > 1 && BDATargetManager.TargetList(Team).Count > 1)) //grab new target, if possible
+                if (!guardFiringMissile || (firedMissiles >= maxMissilesOnTarget && multiMissileTgtNum > 1 && BDATargetManager.TargetList(Team).Count > 1)) //grab new target, if possible
                 {
                     SmartFindTarget();
 
