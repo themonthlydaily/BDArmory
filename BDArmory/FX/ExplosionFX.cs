@@ -183,7 +183,7 @@ namespace BDArmory.FX
             {
                 Ray SCRay = new Ray(Position, (Direction.normalized * Range));
                 var hits = Physics.RaycastAll(SCRay, Range, explosionLayerMask);
-                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ExplosionFX] SC plasmaJet raycast hits: " + hits.Length);
+                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[BDArmory.ExplosionFX]: SC plasmaJet raycast hits: " + hits.Length);
                 if (hits.Length > 0)
                 {
                     var orderedHits = hits.OrderBy(x => x.distance);
@@ -401,12 +401,12 @@ namespace BDArmory.FX
         {
             if (direction == default(Vector3))
             {
-                //Debug.Log("[ExplosionFX] Default Direction param! " + p.name + " angle from explosion dir irrelevant!");
+                //if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ExplosionFX]: Default Direction param! " + p.name + " angle from explosion dir irrelevant!");
                 return true;
             }
             if (warheadType == WarheadTypes.ContinuousRod)
             {
-                Debug.Log("[ExplosionFX] " + p.name + " at " + Vector3.Angle(direction, (hit.point - Position).normalized) + " angle from CR explosion direction");
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ExplosionFX]: " + p.name + " at " + Vector3.Angle(direction, (hit.point - Position).normalized) + " angle from CR explosion direction");
                 if (Vector3.Angle(direction, (hit.point - Position).normalized) >= 75 && Vector3.Angle(direction, (hit.point - Position).normalized) <= 105)
                 {
                     return true;
@@ -415,7 +415,7 @@ namespace BDArmory.FX
             }
             else
             {
-                Debug.Log("[ExplosionFX] " + p.name + " at " + Vector3.Angle(direction, (hit.point - Position).normalized) + $" angle from {warheadType} explosion direction");
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ExplosionFX]: " + p.name + " at " + Vector3.Angle(direction, (hit.point - Position).normalized) + $" angle from {warheadType} explosion direction");
                 return (Vector3.Angle(direction, (hit.point - Position).normalized) <= AngleOfEffect);
             }
         }
@@ -655,7 +655,7 @@ namespace BDArmory.FX
                     }
                     else return;
                 }
-                //Debug.Log("[ExplosionFX] " + part.name + " Within AoE of detonation: " + eventToExecute.withinAngleofEffect);
+                //if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ExplosionFX]: " + part.name + " Within AoE of detonation: " + eventToExecute.withinAngleofEffect);
                 // Overly simplistic approach: simply reduce damage by amount of HP/2 and Armor in the way. (HP/2 to simulate weak parts not fully blocking damage.) Does not account for armour reduction or angle of incidence of intermediate parts.
                 // A better approach would be to properly calculate the damage and pressure in CalculatePartBlastEffects due to the series of parts in the way.
                 var damageWithoutIntermediateParts = blastInfo.Damage;
@@ -716,7 +716,7 @@ namespace BDArmory.FX
                     if (dmgMult < 0)
                     {
                         part.AddInstagibDamage();
-                        //Debug.Log("[ExplosionFX] applying instagib!");
+                        //if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ExplosionFX]: applying instagib!");
                     }
                     var RA = part.FindModuleImplementing<ModuleReactiveArmor>();
 
@@ -753,7 +753,7 @@ namespace BDArmory.FX
                                     if (penetrationFactor > 1)
                                     {
                                         float thicknessModifier = RA.armorModifier;
-                                        if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ExplosionFX] Beginning Reactive Armor Hit; NXRA: " + RA.NXRA + "; thickness Mod: " + RA.armorModifier);
+                                        if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[BDArmory.ExplosionFX]: Beginning Reactive Armor Hit; NXRA: " + RA.NXRA + "; thickness Mod: " + RA.armorModifier);
                                         if (RA.NXRA) //non-explosive RA, always active
                                         {
                                             thickness *= thicknessModifier;
@@ -933,7 +933,7 @@ namespace BDArmory.FX
             if (direction == default(Vector3) && explosionSourceType == ExplosionSourceType.Missile)
             {
                 eFx.warheadType = WarheadTypes.Standard;
-                Debug.Log("[BDArmory.ExplosionFX]: No direction param specified, defaulting warhead type!");
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ExplosionFX]: No direction param specified, defaulting warhead type!");
             }
             if (tntMassEquivalent <= 5)
             {
