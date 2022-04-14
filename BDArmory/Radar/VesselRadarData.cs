@@ -1006,8 +1006,7 @@ namespace BDArmory.Radar
             DisplayRadarControls();
 
             // Resizing code block.
-            RADARresizeRect =
-                new Rect(BDArmorySetup.WindowRectRadar.width - 18, BDArmorySetup.WindowRectRadar.height - 19, 16, 16);
+            RADARresizeRect = new Rect(BDArmorySetup.WindowRectRadar.width - 18, BDArmorySetup.WindowRectRadar.height - 19, 16, 16);
             GUI.DrawTexture(RADARresizeRect, GUIUtils.resizeTexture, ScaleMode.StretchToFill, true);
             if (Event.current.type == EventType.MouseDown && RADARresizeRect.Contains(Event.current.mousePosition))
             {

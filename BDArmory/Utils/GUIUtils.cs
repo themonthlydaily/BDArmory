@@ -204,7 +204,15 @@ namespace BDArmory.Utils
             return newRect;
         }
 
-        public static Texture2D resizeTexture = GameDatabase.Instance.GetTexture(BDArmorySetup.textureDir + "resizeSquare", false);
+        public static Texture2D resizeTexture
+        {
+            get
+            {
+                if (_resizeTexture == null) _resizeTexture = GameDatabase.Instance.GetTexture(BDArmorySetup.textureDir + "resizeSquare", false);
+                return _resizeTexture;
+            }
+        }
+        static Texture2D _resizeTexture;
 
         public static Color ParseColor255(string color)
         {
