@@ -427,6 +427,12 @@ namespace BDArmory.Control
             groupName = "pilotAI_Terrain", groupDisplayName = "#LOC_BDArmory_PilotAI_Terrain", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0.1f, maxValue = 5f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float turnRadiusTwiddleFactorMax = 3.0f; // Minimum and maximum twiddle factors for the turn radius. Depends on roll rate and how the vessel behaves under fire.
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_WaypointTerrainAvoidance", advancedTweakable = true,//Waypoint terrain avoidance.
+            groupName = "pilotAI_Terrain", groupDisplayName = "#LOC_BDArmory_PilotAI_Terrain", groupStartCollapsed = true),
+            UI_FloatRange(minValue = 0f, maxValue = 1f, stepIncrement = 0.01f, scene = UI_Scene.All)]
+        public float waypointTerrainAvoidance = 0.5f;
+        float waypointTerrainAvoidanceSmoothingFactor = 0.933f;
         #endregion
 
         #region Ramming
@@ -1037,6 +1043,7 @@ namespace BDArmory.Control
             // SetSliderClamps("DynamicDampingRollMin", "DynamicDampingRollMax");
             SetAltitudeClamps();
             SetMinCollisionAvoidanceLookAheadPeriod();
+            SetWaypointTerrainAvoidance();
             dynamicDamping = dynamicSteerDamping;
             CustomDynamicAxisField = CustomDynamicAxisFields;
             ToggleDynamicDampingFields();
@@ -2135,17 +2142,37 @@ namespace BDArmory.Control
         }
 
         #region Waypoints
-        private Vector3 waypointRollTarget = default;
-        private float waypointRollTargetStrength = 0;
-        private bool useWaypointRollTarget = false;
-        private float waypointYawAuthorityStrength = 0;
-        private bool useWaypointYawAuthority = false;
+        Vector3 waypointRollTarget = default;
+        float waypointRollTargetStrength = 0;
+        bool useWaypointRollTarget = false;
+        float waypointYawAuthorityStrength = 0;
+        bool useWaypointYawAuthority = false;
+        Ray waypointRay;
+        RaycastHit waypointRayHit;
+        bool waypointTerrainAvoidanceActive = false;
+        Vector3 waypointTerrainSmoothedNormal = default;
         void FlyWaypoints(FlightCtrlState s)
         {
             // Note: UpdateWaypoint is called separately before this in case FlyWaypoints doesn't get called.
             SetStatus($"Waypoint {activeWaypointIndex} ({waypointRange:F0}m)");
             var waypointDirection = (waypointPosition - vessel.transform.position).normalized;
             // var waypointDirection = (WaypointSpline() - vessel.transform.position).normalized;
+            waypointRay = new Ray(vessel.transform.position, waypointDirection);
+            if (Physics.Raycast(waypointRay, out waypointRayHit, waypointRange, (int)LayerMasks.Scenery))
+            {
+                var angle = 90f + 90f * (1f - waypointTerrainAvoidance) * (waypointRayHit.distance - defaultAltitude) / (waypointRange + 1000f); // Parallel to the terrain at the default altitude (in the direction of the waypoint), adjusted for relative distance to the terrain and the waypoint. 1000 added to waypointRange to provide a stronger effect if the distance to the waypoint is small.
+                waypointTerrainSmoothedNormal = waypointTerrainAvoidanceActive ? Vector3.Lerp(waypointTerrainSmoothedNormal, waypointRayHit.normal, 0.5f - 0.4862327f * waypointTerrainAvoidanceSmoothingFactor) : waypointRayHit.normal; // Smooth out varying terrain normals at a rate depending on the terrain avoidance strength (half-life of 1s at max avoidance, 0.29s at mid and 0.02s at min avoidance).
+                waypointDirection = Vector3.RotateTowards(waypointTerrainSmoothedNormal, waypointDirection, angle * Mathf.Deg2Rad, 0f);
+                waypointTerrainAvoidanceActive = true;
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) debugString.AppendLine($"Waypoint Terrain: {waypointRayHit.distance:F1}m @ {angle:F2}°");
+            }
+            else
+            {
+                if (waypointTerrainAvoidanceActive) // Reset stuff
+                {
+                    waypointTerrainAvoidanceActive = false;
+                }
+            }
             SetWaypointRollAndYaw();
             steerMode = SteerModes.NormalFlight; // Make sure we're using the correct steering mode.
             FlyToPosition(s, vessel.transform.position + waypointDirection * Mathf.Min(500f, waypointRange), false); // Target up to 500m ahead so that max altitude restrictions apply reasonably.
@@ -2213,6 +2240,19 @@ namespace BDArmory.Control
             base.UpdateWaypoint();
             useWaypointRollTarget = false; // Reset this so that it's only set when actively flying waypoints.
             useWaypointYawAuthority = false; // Reset this so that it's only set when actively flying waypoints.
+        }
+        
+        void SetWaypointTerrainAvoidance()
+        {
+            UI_FloatRange field = (UI_FloatRange)Fields["waypointTerrainAvoidance"].uiControlEditor;
+            field.onFieldChanged = OnWaypointTerrainAvoidanceUpdated;
+            field = (UI_FloatRange)Fields["waypointTerrainAvoidance"].uiControlFlight;
+            field.onFieldChanged = OnWaypointTerrainAvoidanceUpdated;
+            OnWaypointTerrainAvoidanceUpdated(null, null);
+        }
+        void OnWaypointTerrainAvoidanceUpdated(BaseField field, object obj)
+        {
+            waypointTerrainAvoidanceSmoothingFactor = Mathf.Pow(waypointTerrainAvoidance, 0.1f);
         }
         #endregion
 
@@ -3320,6 +3360,11 @@ namespace BDArmory.Control
                 GUIUtils.DrawLineBetweenWorldPositions(vessel.transform.position, vessel.transform.position + 1.5f * terrainAlertDetectionRadius * (vessel.srf_vel_direction + relativeVelocityDownDirection).normalized, 1, Color.grey);
                 GUIUtils.DrawLineBetweenWorldPositions(vessel.transform.position, vessel.transform.position + 1.5f * terrainAlertDetectionRadius * (vessel.srf_vel_direction - relativeVelocityRightDirection).normalized, 1, Color.grey);
                 GUIUtils.DrawLineBetweenWorldPositions(vessel.transform.position, vessel.transform.position + 1.5f * terrainAlertDetectionRadius * (vessel.srf_vel_direction + relativeVelocityRightDirection).normalized, 1, Color.grey);
+            }
+            if (waypointTerrainAvoidanceActive)
+            {
+                GUIUtils.DrawLineBetweenWorldPositions(vessel.transform.position, waypointRayHit.point, 2, Color.cyan); // Technically, it's from 1 frame behind the current position, but close enough for visualisation.
+                GUIUtils.DrawLineBetweenWorldPositions(waypointRayHit.point, waypointRayHit.point + waypointTerrainSmoothedNormal * 50f, 2, Color.cyan);
             }
         }
     }

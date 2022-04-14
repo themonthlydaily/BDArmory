@@ -7,6 +7,8 @@ IMPROVEMENTS
 - AI:
 	- Add a 5° deadzone around being on target for dynamic damping to avoid feed-back loop in PID.
 	- Add a check for requested extending already being satisfied.
+	- Add terrain awareness to the pilot AI's waypoint fly-to direction.
+	- Add a 'Waypoint Terrain Avoidance' slider to the pilot AI to control the range and strength of the waypoint terrain avoidance reaction.
 - GameModes:
 	- Waypoints:
 		- Add support for multiple waypoint gate models.

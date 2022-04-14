@@ -360,6 +360,7 @@ namespace BDArmory.UI
 
                         { "turnRadiusTwiddleFactorMin", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.turnRadiusTwiddleFactorMin, 0.1, 5) },
                         { "turnRadiusTwiddleFactorMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.turnRadiusTwiddleFactorMax, 0.1, 5) },
+                        { "waypointTerrainAvoidance", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.waypointTerrainAvoidance, 0, 1) },
 
                         { "controlSurfaceLag", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.controlSurfaceLag, 0, 0.2) },
                     };
@@ -1899,13 +1900,13 @@ namespace BDArmory.UI
                         gndLines += 0.25f;
 
                         GUI.Label(SettinglabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_PilotAI_Terrain"), BoldLabel);//"Speed"
-                        gndLines++;
+
+                        #region Terrain Avoidance Min
+                        GUI.Label(SettinglabelRect(leftIndent, ++gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_TurnRadiusMin") + ": " + ActivePilot.turnRadiusTwiddleFactorMin.ToString("0.0"), Label); //"dynamic damping min"
                         var oldMinTwiddle = ActivePilot.turnRadiusTwiddleFactorMin;
                         if (!NumFieldsEnabled)
                         {
-                            ActivePilot.turnRadiusTwiddleFactorMin =
-                                GUI.HorizontalSlider(SettingSliderRect(leftIndent, gndLines, contentWidth),
-                                    ActivePilot.turnRadiusTwiddleFactorMin, 0.1f, ActivePilot.UpToEleven ? 10 : 5);
+                            ActivePilot.turnRadiusTwiddleFactorMin = GUI.HorizontalSlider(SettingSliderRect(leftIndent, gndLines, contentWidth), ActivePilot.turnRadiusTwiddleFactorMin, 0.1f, ActivePilot.UpToEleven ? 10 : 5);
                             ActivePilot.turnRadiusTwiddleFactorMin = Mathf.Round(ActivePilot.turnRadiusTwiddleFactorMin * 10f) / 10f;
                         }
                         else
@@ -1918,20 +1919,18 @@ namespace BDArmory.UI
                             ActivePilot.OnMinUpdated(null, null);
                             inputFields["turnRadiusTwiddleFactorMax"].currentValue = ActivePilot.turnRadiusTwiddleFactorMax;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_TurnRadiusMin") + ": " + ActivePilot.turnRadiusTwiddleFactorMin.ToString("0.0"), Label); //"dynamic damping min"
-
-                        gndLines++;
                         if (contextTipsEnabled)
                         {
-                            GUI.Label(ContextLabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_terrainMin"), contextLabel);//"dynamic damp min"
-                            gndLines++;
+                            GUI.Label(ContextLabelRect(leftIndent, ++gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_terrainMin"), contextLabel);//"dynamic damp min"
                         }
+                        #endregion
+
+                        #region Terrain Avoidance Max
+                        GUI.Label(SettinglabelRect(leftIndent, ++gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_TurnRadiusMax") + ": " + ActivePilot.turnRadiusTwiddleFactorMax.ToString("0.0"), Label);//"dynamic damping min"
                         var oldMaxTwiddle = ActivePilot.turnRadiusTwiddleFactorMax;
                         if (!NumFieldsEnabled)
                         {
-                            ActivePilot.turnRadiusTwiddleFactorMax =
-                                GUI.HorizontalSlider(SettingSliderRect(leftIndent, gndLines, contentWidth),
-                                    ActivePilot.turnRadiusTwiddleFactorMax, 0.1f, ActivePilot.UpToEleven ? 10 : 5);
+                            ActivePilot.turnRadiusTwiddleFactorMax = GUI.HorizontalSlider(SettingSliderRect(leftIndent, gndLines, contentWidth), ActivePilot.turnRadiusTwiddleFactorMax, 0.1f, ActivePilot.UpToEleven ? 10 : 5);
                             ActivePilot.turnRadiusTwiddleFactorMax = Mathf.Round(ActivePilot.turnRadiusTwiddleFactorMax * 10) / 10;
                         }
                         else
@@ -1944,14 +1943,31 @@ namespace BDArmory.UI
                             ActivePilot.OnMaxUpdated(null, null);
                             inputFields["turnRadiusTwiddleFactorMin"].currentValue = ActivePilot.turnRadiusTwiddleFactorMin;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_TurnRadiusMax") + ": " + ActivePilot.turnRadiusTwiddleFactorMax.ToString("0.0"), Label);//"dynamic damping min"
-
-                        gndLines++;
                         if (contextTipsEnabled)
                         {
-                            GUI.Label(ContextLabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_terrainMax"), contextLabel);//"dynamic damp min"
-                            gndLines++;
+                            GUI.Label(ContextLabelRect(leftIndent, ++gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_terrainMax"), contextLabel);//"dynamic damp max"
                         }
+                        #endregion
+
+                        #region Waypoint Terrain Avoidance
+                        GUI.Label(SettinglabelRect(leftIndent, ++gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_WaypointTerrainAvoidance") + ": " + ActivePilot.waypointTerrainAvoidance.ToString("0.00"), Label);
+                        if (!NumFieldsEnabled)
+                        {
+                            ActivePilot.waypointTerrainAvoidance = GUI.HorizontalSlider(SettingSliderRect(leftIndent, gndLines, contentWidth), ActivePilot.waypointTerrainAvoidance, 0f, 1f);
+                            ActivePilot.waypointTerrainAvoidance = BDAMath.RoundToUnit(ActivePilot.waypointTerrainAvoidance, 0.01f);
+                        }
+                        else
+                        {
+                            inputFields["waypointTerrainAvoidance"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, gndLines, contentWidth), inputFields["waypointTerrainAvoidance"].possibleValue, 6));
+                            ActivePilot.waypointTerrainAvoidance = (float)inputFields["waypointTerrainAvoidance"].currentValue;
+                        }
+                        if (contextTipsEnabled)
+                        {
+                            GUI.Label(ContextLabelRect(leftIndent, ++gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_WaypointTerrainAvoidanceContext"), contextLabel);
+                        }
+                        #endregion
+
+                        ++gndLines;
                         GUI.EndGroup();
                         terrainHeight = Mathf.Lerp(terrainHeight, gndLines, 0.15f);
                         gndLines += 0.1f;
