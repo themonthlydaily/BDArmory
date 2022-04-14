@@ -1642,13 +1642,14 @@ namespace BDArmory.Control
                 debugString.AppendLine($"Enemy on tail. Braking!");
                 AdjustThrottle(minSpeed, true);
             }
-            var minDynamicLaunchRange = MissileLaunchParams.GetDynamicLaunchParams(missile, v.Velocity(), v.transform.position).minLaunchRange;
-            if (missile != null
-                && targetDot > 0
-                && distanceToTarget < minDynamicLaunchRange
-                && vessel.srfSpeed > idleSpeed)
+
+            if (missile != null)
             {
-                RequestExtend("too close for missile", v, minDynamicLaunchRange); // Get far enough away to use the missile.
+                var minDynamicLaunchRange = MissileLaunchParams.GetDynamicLaunchParams(missile, v.Velocity(), v.transform.position).minLaunchRange;
+                if (targetDot > 0 && distanceToTarget < minDynamicLaunchRange && vessel.srfSpeed > idleSpeed)
+                {
+                    RequestExtend("too close for missile", v, minDynamicLaunchRange); // Get far enough away to use the missile.
+                }
             }
 
             if (regainEnergy && angleToTarget > 30f)
@@ -2241,7 +2242,7 @@ namespace BDArmory.Control
             useWaypointRollTarget = false; // Reset this so that it's only set when actively flying waypoints.
             useWaypointYawAuthority = false; // Reset this so that it's only set when actively flying waypoints.
         }
-        
+
         void SetWaypointTerrainAvoidance()
         {
             UI_FloatRange field = (UI_FloatRange)Fields["waypointTerrainAvoidance"].uiControlEditor;
