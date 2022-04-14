@@ -3343,29 +3343,25 @@ namespace BDArmory.Modules
 
             if (firedMissiles >= maxMissilesOnTarget && (multiMissileTgtNum > 1 && BDATargetManager.TargetList(Team).Count > 1)) //if there are multiple potential targets, see how many can be fired at with missiles
             {
-                Debug.Log("[MissileFire] max missiles on target; switching to new target!");
-				heatTarget = TargetSignatureData.noTarget; //clear holdover targets when switching targets
-				antiRadTargetAcquired = false;
                 MissileBase ml = CurrentMissile;
-                if (ml && ml.TargetingMode == MissileBase.TargetingModes.Radar && ml.radarLOAL)
+                if (ml && ml.TargetingMode != MissileBase.TargetingModes.Laser) //don't switch from current target if using LASMs to keep current target painted
                 {
-                    vesselRadarData.UnlockCurrentTarget();//unlock current target only if missile isn't slaved to ship radar guidance to allow new F&F lock
-                } //FIXME - will need to look into multi-track locking radars and how they are assigning targets to missiles to allow SARH against multiple targets (Ask Josue?)
-
-                using (List<TargetInfo>.Enumerator target = BDATargetManager.TargetList(Team).GetEnumerator())
-                {
-                    while (target.MoveNext())
+                    Debug.Log("[MissileFire] max missiles on target; switching to new target!");
+                    using (List<TargetInfo>.Enumerator target = BDATargetManager.TargetList(Team).GetEnumerator())
                     {
-                        if (missilesAway.ContainsKey(target.Current))
+                        while (target.MoveNext())
                         {
-							if (missilesAway[target.Current] >= maxMissilesOnTarget) targetsTried.Add(target.Current);
-                            engagedTargets++;
+                            if (missilesAway.ContainsKey(target.Current))
+                            {
+                                if (missilesAway[target.Current] >= maxMissilesOnTarget) targetsTried.Add(target.Current);
+                                engagedTargets++;
+                            }
                         }
                     }
-                }
-                if (targetsTried.Count == BDATargetManager.TargetList(Team).Count) //oops, already fired missiles at all available targets
-                {
-                    targetsTried.Clear(); //clear targets tried, so AI can track best current target until such time as it can fire again
+                    if (targetsTried.Count == BDATargetManager.TargetList(Team).Count) //oops, already fired missiles at all available targets
+                    {
+                        targetsTried.Clear(); //clear targets tried, so AI can track best current target until such time as it can fire again
+                    }
                 }
             }
 
@@ -5069,6 +5065,20 @@ namespace BDArmory.Modules
                 }
                 guardTarget = null;
                 currentTarget = null;
+            }
+            if (engagedTargets > 0)
+            {
+                heatTarget = TargetSignatureData.noTarget; //clear holdover targets when switching targets
+                antiRadTargetAcquired = false;
+                MissileBase ml = CurrentMissile;
+                if (ml && ml.TargetingMode == MissileBase.TargetingModes.Radar && ml.radarLOAL)
+                {
+                    vesselRadarData.UnlockCurrentTarget();//unlock current target only if missile isn't slaved to ship radar guidance to allow new F&F lock
+                } 
+                else
+                {
+                    vesselRadarData.SwitchActiveLockedTarget(guardTarget);
+                }
             }
         }
 
