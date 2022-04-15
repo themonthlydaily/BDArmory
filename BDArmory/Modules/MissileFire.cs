@@ -307,7 +307,7 @@ namespace BDArmory.Modules
         //guard mode vars
         float targetScanTimer;
         Vessel guardTarget;
-		public TargetInfo currentTarget;
+        public TargetInfo currentTarget;
         public int engagedTargets = 0;
         public List<TargetInfo> targetsAssigned; //secondary targets list
         public List<TargetInfo> missilesAssigned; //secondary missile targets list
@@ -429,47 +429,48 @@ namespace BDArmory.Modules
         #region KSPFields,events,actions
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FiringInterval"),//Firing Interval
-         UI_FloatRange(minValue = 0.5f, maxValue = 60f, stepIncrement = 0.5f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 0.5f, maxValue = 60f, stepIncrement = 0.5f, scene = UI_Scene.All)]
         public float targetScanInterval = 1;
 
         // extension for feature_engagementenvelope: burst length for guns
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FiringBurstLength"),//Firing Burst Length
-         UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.05f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.05f, scene = UI_Scene.All)]
         public float fireBurstLength = 1;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FiringTolerance"),//Firing Tolerance
-        UI_FloatRange(minValue = 0f, maxValue = 4f, stepIncrement = 0.05f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 0f, maxValue = 4f, stepIncrement = 0.05f, scene = UI_Scene.All)]
         public float AutoFireCosAngleAdjustment = 1.4f; //tune Autofire angle in WM GUI
 
         public float adjustedAutoFireCosAngle = 0.99970f; //increased to 3 deg from 1, max increased to v1.3.8 default of 4
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FieldOfView"),//Field of View
-         UI_FloatRange(minValue = 10f, maxValue = 360f, stepIncrement = 10f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 10f, maxValue = 360f, stepIncrement = 10f, scene = UI_Scene.All)]
         public float
             guardAngle = 360;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_VisualRange"),//Visual Range
-         UI_FloatRange(minValue = 100f, maxValue = 200000f, stepIncrement = 100f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 100f, maxValue = 200000f, stepIncrement = 100f, scene = UI_Scene.All)]
         public float
             guardRange = 200000f;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_GunsRange"),//Guns Range
-         UI_FloatRange(minValue = 0f, maxValue = 10000f, stepIncrement = 10f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 0f, maxValue = 10000f, stepIncrement = 10f, scene = UI_Scene.All)]
         public float
             gunRange = 2500f;
         public float maxGunRange = 0f;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_WMWindow_MultiTargetNum"),//Max Turret Targets
-         UI_FloatRange(minValue = 1, maxValue = 10, stepIncrement = 1, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 1, maxValue = 10, stepIncrement = 1, scene = UI_Scene.All)]
         public float multiTargetNum = 1;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_WMWindow_MultiMissileNum"),//Max Turret Targets
- UI_FloatRange(minValue = 1, maxValue = 10, stepIncrement = 1, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 1, maxValue = 10, stepIncrement = 1, scene = UI_Scene.All)]
         public float multiMissileTgtNum = 1;
 
         public const float maxAllowableMissilesOnTarget = 18f;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MissilesORTarget"), UI_FloatRange(minValue = 1f, maxValue = maxAllowableMissilesOnTarget, stepIncrement = 1f, scene = UI_Scene.All)]//Missiles/Target
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MissilesORTarget"),//Missiles/Target
+            UI_FloatRange(minValue = 1f, maxValue = maxAllowableMissilesOnTarget, stepIncrement = 1f, scene = UI_Scene.All)]
         public float maxMissilesOnTarget = 1;
 
         #region TargetSettings
@@ -511,97 +512,97 @@ namespace BDArmory.Modules
 
         private string targetBiasLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_CurrentTargetBias");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_CurrentTargetBias", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Current target bias
-         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetBias = 1.1f;
 
         private string targetRangeLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetProximity");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetProximity", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Range
-         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightRange = 1f;
 
         private string targetATALabel = Localizer.Format("#LOC_BDArmory_TargetPriority_CloserAngleToTarget");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_CloserAngleToTarget", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Antenna Train Angle
-         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightATA = 1f;
 
         private string targetAoDLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_AngleOverDistance");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_AngleOverDistance", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Angle/Distance
-         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightAoD = 0f;
 
         private string targetAccelLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetAcceleration");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetAcceleration", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Acceleration
-         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightAccel = 0;
 
         private string targetClosureTimeLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_ShorterClosingTime");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_ShorterClosingTime", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Closure Time
-         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightClosureTime = 0f;
 
         private string targetWeaponNumberLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetWeaponNumber");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetWeaponNumber", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Weapon Number
-         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightWeaponNumber = 0;
 
         private string targetMassLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetMass");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetMass", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Mass
-         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightMass = 0;
 
         private string targetFriendliesEngagingLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_FewerTeammatesEngaging");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_FewerTeammatesEngaging", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Number Friendlies Engaging
-         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightFriendliesEngaging = 1f;
 
         private string targetThreatLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetThreat");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetThreat", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target threat
-         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightThreat = 1f;
 
         private string targetProtectTeammateLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetProtectTeammate");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetProtectTeammate", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Protect Teammates
-         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightProtectTeammate = 0f;
 
         private string targetProtectVIPLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetProtectVIP");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetProtectVIP", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Protect VIPs
-         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightProtectVIP = 0f;
 
         private string targetAttackVIPLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetAttackVIP");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetAttackVIP", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Attack Enemy VIPs
-         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightAttackVIP = 0f;
         #endregion
 
         #region Countermeasure Settings
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMThreshold", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Countermeasure dispensing time threshold
-         UI_FloatRange(minValue = 1f, maxValue = 60f, stepIncrement = 0.5f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 1f, maxValue = 60f, stepIncrement = 0.5f, scene = UI_Scene.All)]
         public float cmThreshold = 5f; // Works well
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMRepetition", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Flare dispensing repetition
-         UI_FloatRange(minValue = 1f, maxValue = 20f, stepIncrement = 1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 1f, maxValue = 20f, stepIncrement = 1f, scene = UI_Scene.All)]
         public float cmRepetition = 3f; // Prior default was 4
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMInterval", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Flare dispensing interval
-         UI_FloatRange(minValue = 0.1f, maxValue = 1f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 0.1f, maxValue = 1f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float cmInterval = 0.2f; // Prior default was 0.6
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMWaitTime", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Flare dispensing wait time
-         UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float cmWaitTime = 0.7f; // Works well
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ChaffRepetition", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Chaff dispensing repetition
-         UI_FloatRange(minValue = 1f, maxValue = 20f, stepIncrement = 1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 1f, maxValue = 20f, stepIncrement = 1f, scene = UI_Scene.All)]
         public float chaffRepetition = 2f; // Prior default was 4
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ChaffInterval", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Chaff dispensing interval
-         UI_FloatRange(minValue = 0.1f, maxValue = 1f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 0.1f, maxValue = 1f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float chaffInterval = 0.5f; // Prior default was 0.6
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ChaffWaitTime", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Chaff dispensing wait time
-         UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float chaffWaitTime = 0.6f; // Works well
         #endregion
 
@@ -1075,10 +1076,10 @@ namespace BDArmory.Modules
                 UpdateMaxGunRange(part);
             }
             targetingString = (targetCoM ? Localizer.Format("#LOC_BDArmory_TargetCOM") + "; " : "")
-            + (targetMass ? Localizer.Format("#LOC_BDArmory_Mass") + "; " : "")
-            + (targetCommand ? Localizer.Format("#LOC_BDArmory_Command") + "; " : "")
-            + (targetEngine ? Localizer.Format("#LOC_BDArmory_Engines") + "; " : "")
-            + (targetWeapon ? Localizer.Format("#LOC_BDArmory_Weapons") + "; " : "");
+                + (targetMass ? Localizer.Format("#LOC_BDArmory_Mass") + "; " : "")
+                + (targetCommand ? Localizer.Format("#LOC_BDArmory_Command") + "; " : "")
+                + (targetEngine ? Localizer.Format("#LOC_BDArmory_Engines") + "; " : "")
+                + (targetWeapon ? Localizer.Format("#LOC_BDArmory_Weapons") + "; " : "");
         }
 
         void OnPartDie()
@@ -1294,7 +1295,7 @@ namespace BDArmory.Modules
                 }
             if (currentTarget != null && missilesAway.ContainsKey(currentTarget))
             {
-				missilesAway.TryGetValue(currentTarget, out int missiles);
+                missilesAway.TryGetValue(currentTarget, out int missiles);
                 this.firedMissiles = missiles;
             }
             //this.missilesAway = tempMissilesAway;
@@ -1964,7 +1965,7 @@ namespace BDArmory.Modules
             bool doProxyCheck = true;
 
             float prevDist = 2 * radius;
-			radius = Mathf.Max(radius, 50f);
+            radius = Mathf.Max(radius, 50f);
             while (guardTarget && Time.time - bombStartTime < bombAttemptDuration && weaponIndex > 0 &&
                    weaponArray[weaponIndex].GetWeaponClass() == WeaponClasses.Bomb && firedMissiles < maxMissilesOnTarget)
             {
@@ -4725,7 +4726,7 @@ namespace BDArmory.Modules
                             {
                                 if (item.Current.GetMissileType().ToLower() != "torpedo") continue;
                                 if (distance < candidateYield) continue; //don't use explosives within their blast radius
-                                if(firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
+                                if (firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                                 targetWeapon = item.Current;
                                 targetWeaponPriority = candidatePriority;
                                 break;
@@ -5074,7 +5075,7 @@ namespace BDArmory.Modules
                 if (ml && ml.TargetingMode == MissileBase.TargetingModes.Radar && ml.radarLOAL)
                 {
                     vesselRadarData.UnlockCurrentTarget();//unlock current target only if missile isn't slaved to ship radar guidance to allow new F&F lock
-                } 
+                }
                 else
                 {
                     vesselRadarData.SwitchActiveLockedTarget(guardTarget);
@@ -5266,7 +5267,7 @@ namespace BDArmory.Modules
                 ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(antiRadiationTarget,
                         vessel.mainBody);
             }
-            ml.legacyTargetVessel = currentTarget; 
+            ml.legacyTargetVessel = currentTarget;
         }
 
         #endregion Targeting

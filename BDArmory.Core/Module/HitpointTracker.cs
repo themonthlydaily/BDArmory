@@ -675,8 +675,8 @@ namespace BDArmory.Core.Module
                             {
                                 //procwing hp already modified by mass, because it is mass
                                 //so using base part mass is it can be properly modified by material HP mod below
-                                hitpoints = (partMass * 1000f) * 3.5f * hitpointMultiplier * 0.333f; //To account for FAR's Strength-mass Scalar.                                                                                                 //unfortunately the same trick can't be used for FAR wings, so mass hack it is.
-								armorVolume = (float)Math.Round(hitpoints / hitpointMultiplier / 0.333 / 175, 1); //half of HP due to wing's 0.5x area modifier to prevent double armor
+                                hitpoints = (partMass * 1000f) * 3.5f * hitpointMultiplier * 0.333f; //To account for FAR's Strength-mass Scalar.  //unfortunately the same trick can't be used for FAR wings, so mass hack it is.
+                                armorVolume = (float)Math.Round(hitpoints / hitpointMultiplier / 0.333 / 175, 1); //half of HP due to wing's 0.5x area modifier to prevent double armor
                             }
                             else
                             {
@@ -714,9 +714,9 @@ namespace BDArmory.Core.Module
                                 hitpoints = maxHitPoints;
                                 break;
                         }
-						hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
+                        hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
                         if (hitpoints <= 0) hitpoints = HpRounding;
-						if (BDArmorySettings.DRAW_DEBUG_LABELS && maxHitPoints <= 0 && Hitpoints != hitpoints) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} updated HP: {Hitpoints}->{hitpoints} at time {Time.time}");
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS && maxHitPoints <= 0 && Hitpoints != hitpoints) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} updated HP: {Hitpoints}->{hitpoints} at time {Time.time}");
                     }
                 }
                 else

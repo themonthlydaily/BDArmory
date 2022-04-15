@@ -2880,7 +2880,7 @@ namespace BDArmory.UI
                                 enteredHoS = GUI.Toggle(SRightRect(line), enteredHoS, Localizer.Format("Enter to Hall of Shame"));
                                 {
                                     if (enteredHoS)
-                                    {                                        
+                                    {
                                         if (HoSString == "Clear()")
                                         {
                                             BDArmorySettings.HALL_OF_SHAME_LIST.Clear();
