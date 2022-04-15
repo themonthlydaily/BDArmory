@@ -279,7 +279,7 @@ namespace BDArmory.Modules
 
         protected float lockFailTimer = -1;
 
-        public TargetInfo legacyTargetVessel;
+        public TargetInfo targetVessel;
 
         public Transform MissileReferenceTransform;
 
@@ -449,7 +449,7 @@ namespace BDArmory.Modules
 
             if (lockFailTimer > 1)
             {
-                legacyTargetVessel = null;
+                targetVessel = null;
                 TargetAcquired = false;
                 predictedHeatTarget.exists = false;
                 predictedHeatTarget.signalStrength = 0;
@@ -637,7 +637,7 @@ namespace BDArmory.Modules
                             {
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileBase]: Semi-Active Radar guidance failed. Parent radar lost target.");
                                 radarTarget = TargetSignatureData.noTarget;
-                                legacyTargetVessel = null;
+                                targetVessel = null;
                                 return;
                             }
                             else
@@ -665,7 +665,7 @@ namespace BDArmory.Modules
                     {
                         if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileBase]: Semi-Active Radar guidance failed. Out of range and no data feed.");
                         radarTarget = TargetSignatureData.noTarget;
-                        legacyTargetVessel = null;
+                        targetVessel = null;
                         return;
                     }
                 }
@@ -678,7 +678,7 @@ namespace BDArmory.Modules
                     {
                         if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileBase]: Active Radar guidance failed.  Target is out of active seeker gimbal limits.");
                         radarTarget = TargetSignatureData.noTarget;
-                        legacyTargetVessel = null;
+                        targetVessel = null;
                         return;
                     }
                     else
@@ -777,7 +777,7 @@ namespace BDArmory.Modules
                         {
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileBase]: Active Radar guidance failed.  No target locked.");
                             radarTarget = TargetSignatureData.noTarget;
-                            legacyTargetVessel = null;
+                            targetVessel = null;
                             radarLOALSearching = false;
                             TargetAcquired = false;
                             ActiveRadar = false;
@@ -869,7 +869,7 @@ namespace BDArmory.Modules
                     {
                         if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileBase]: Active Radar guidance failed. LOAL could not lock a target.");
                         radarTarget = TargetSignatureData.noTarget;
-                        legacyTargetVessel = null;
+                        targetVessel = null;
                         radarLOALSearching = false;
                         TargetAcquired = false;
                         ActiveRadar = false;
@@ -880,7 +880,7 @@ namespace BDArmory.Modules
 
             if (!radarTarget.exists)
             {
-                legacyTargetVessel = null;
+                targetVessel = null;
             }
         }
 

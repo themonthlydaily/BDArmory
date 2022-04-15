@@ -1247,18 +1247,18 @@ namespace BDArmory.Modules
                     if (firedMissiles.Current == null) continue;
 
                     var missileBase = firedMissiles.Current as MissileBase;
-                    if (missileBase.legacyTargetVessel == null) continue;
+                    if (missileBase.targetVessel == null) continue;
                     if (missileBase.SourceVessel != this.vessel) continue;
                     //if (missileBase.MissileState != MissileBase.MissileStates.PostThrust && !missileBase.HasMissed && !missileBase.HasExploded)
                     if (missileBase.HasFired && !missileBase.HasMissed && !missileBase.HasExploded) //culling post-thrust missiles makes AGMs get cleared almost immediately after launch
                     {
-                        if (!missilesAway.ContainsKey(missileBase.legacyTargetVessel))
+                        if (!missilesAway.ContainsKey(missileBase.targetVessel))
                         {
-                            missilesAway.Add(missileBase.legacyTargetVessel, 1);
+                            missilesAway.Add(missileBase.targetVessel, 1);
                         }
                         else
                         {
-                            missilesAway[missileBase.legacyTargetVessel]++; //tabulate all missiles fired by the vessel at various targets; only need # missiles fired at current target forlaunching, but need all vessels with missiles targeting them for vessel targeting
+                            missilesAway[missileBase.targetVessel]++; //tabulate all missiles fired by the vessel at various targets; only need # missiles fired at current target forlaunching, but need all vessels with missiles targeting them for vessel targeting
                         }
                     }
                 }
@@ -5269,7 +5269,7 @@ namespace BDArmory.Modules
                 ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(antiRadiationTarget,
                         vessel.mainBody);
             }
-            ml.legacyTargetVessel = currentTarget;
+            ml.targetVessel = currentTarget;
         }
 
         #endregion Targeting
