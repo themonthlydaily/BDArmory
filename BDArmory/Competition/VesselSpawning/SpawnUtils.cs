@@ -52,7 +52,7 @@ namespace BDArmory.Competition.VesselSpawning
         public static void CancelSpawning()
         {
             // Single spawn
-            if (CircularSpawning.Instance.vesselsSpawning)
+            if (CircularSpawning.Instance.vesselsSpawning || CircularSpawning.Instance.vesselsSpawningOnceContinuously)
             { CircularSpawning.Instance.CancelSpawning(); }
 
             // Continuous spawn
