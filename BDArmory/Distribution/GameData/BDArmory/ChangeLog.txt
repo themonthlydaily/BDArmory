@@ -1,9 +1,14 @@
 ﻿v1.5.0.0
+FIXES
+- Fix 'resizeSquare' texture not being loaded sometimes (due to a race condition?).
+- Clean up log spam from ExplosionFX.
 IMPROVEMENTS
 - Major internal refactor to better organise code.
 - Switch to a single DLL release.
 - General:
 	- Add missing HP rounding to some parts.
+	- Optimise the PartExploderSystem to minimise creation of new vessels.
+	- Add a toggle to the UI settings section to disable flare smoke (which can kill performance and is purely visual).
 - AI:
 	- Add a 5° deadzone around being on target for dynamic damping to avoid feed-back loop in PID.
 	- Add a check for requested extending already being satisfied.

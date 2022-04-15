@@ -53,6 +53,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool SHOW_AMMO_GAUGES = false;
         [BDAPersistentSettingsField] public static bool SHELL_COLLISIONS = true;
         [BDAPersistentSettingsField] public static bool BULLET_DECALS = true;
+        [BDAPersistentSettingsField] public static bool FLARE_SMOKE = true;                       // Disable the GPU intensive flare smoke.
         [BDAPersistentSettingsField] public static bool DISABLE_RAMMING = true;                   // Prevent craft from going into ramming mode when out of ammo.
         [BDAPersistentSettingsField] public static bool DEFAULT_FFA_TARGETING = false;            // Free-for-all combat style instead of teams (changes target selection behaviour)
         [BDAPersistentSettingsField] public static bool RUNWAY_PROJECT = false;                    // Enable/disable Runway Project specific enhancements.

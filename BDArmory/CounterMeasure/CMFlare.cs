@@ -82,7 +82,8 @@ namespace BDArmory.CounterMeasure
                         {
                             BDAGaplessParticleEmitter gpe = pe.Current.gameObject.AddComponent<BDAGaplessParticleEmitter>();
                             gaplessEmitters.Add(gpe);
-                            gpe.emit = true;
+                            if (!BDArmorySettings.FLARE_SMOKE && gpe.name != "pEmitter")
+                                gpe.emit = true;
                         }
                         else
                         {
@@ -96,6 +97,7 @@ namespace BDArmory.CounterMeasure
             while (gEmitter.MoveNext())
             {
                 if (gEmitter.Current == null) continue;
+                if (!BDArmorySettings.FLARE_SMOKE && gEmitter.Current.name == "pEmitter") continue;
                 gEmitter.Current.emit = true;
             }
             gEmitter.Dispose();
