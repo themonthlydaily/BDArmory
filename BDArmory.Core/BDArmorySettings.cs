@@ -255,6 +255,8 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static bool WAYPOINTS_ONE_AT_A_TIME = true;          // Send the craft one-at-a-time through the course.
         [BDAPersistentSettingsField] public static bool WAYPOINTS_VISUALIZE = true;              // Add Waypoint models to indicate the path
         [BDAPersistentSettingsField] public static float WAYPOINTS_SCALE = 500;                    // Have model(or maybe WP radius proper) scale?
+        [BDAPersistentSettingsField] public static int WAYPOINT_COURSE_INDEX = 1;                // Select from a set of courses
+
         // Heartbleed
         [BDAPersistentSettingsField] public static float HEART_BLEED_RATE = 0.01f;
         [BDAPersistentSettingsField] public static float HEART_BLEED_INTERVAL = 10f;

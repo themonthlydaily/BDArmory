@@ -1,4 +1,21 @@
-﻿v1.4.18.4
+﻿- General:
+	- Add missing HP rounding to some parts.
+- AI:
+	- Add a 5° deadzone around being on target for dynamic damping to avoid feed-back loop in PID.
+- GameModes:
+	- Waypoints:
+		- Add support for multiple waypoint gate models.
+		- Add waypoint scaling from 50-1000m.
+		- Altitude overrides for S4R10.
+		- Remember the previously used HoSTag.
+		- Add multiple courses and a selection UI.
+- Weapons:
+	- Use min of missile drop time or 2 sec instead of fixed two second period for check target will be within missile maxOffBoresight at future time.
+- RWP:
+	- Hall of Shame now supports multiple craft.
+	- Add HoS support to Waypoint mode.
+
+v1.4.18.4
 IMPROVEMENTS
 - Add slider in the pilot AI for controlling the waypoint pre-roll time.
 - Add slider in the pilot AI for waypoint yaw authority time to switch from normal steering mode control of yaw to aiming steering mode of yaw when approaching waypoints.

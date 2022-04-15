@@ -1684,6 +1684,18 @@ namespace BDArmory.Modules
             return Mathf.Clamp01(limiter);
         }
 
+        float GetUserDefinedSteerLimit()
+        {
+            float limiter = 1;
+            if (maxSteer > maxSteerAtMaxSpeed)
+                limiter *= Mathf.Clamp((maxSteerAtMaxSpeed - maxSteer) / (cornerSpeed - lowSpeedSwitch + 0.001f) * ((float)vessel.srfSpeed - lowSpeedSwitch) + maxSteer, maxSteerAtMaxSpeed, maxSteer); // Linearly varies between two limits, clamped at limit values
+            else
+                limiter *= Mathf.Clamp((maxSteerAtMaxSpeed - maxSteer) / (cornerSpeed - lowSpeedSwitch + 0.001f) * ((float)vessel.srfSpeed - lowSpeedSwitch) + maxSteer, maxSteer, maxSteerAtMaxSpeed); // Linearly varies between two limits, clamped at limit values
+            limiter *= 1.225f / (float)vessel.atmDensity; // Scale based on atmospheric density relative to sea level Kerbin (since dynamic pressure depends on density)
+
+            return Mathf.Clamp01(limiter);
+        }
+
         Vector3 prevTargetDir;
         Vector3 debugPos;
         bool useVelRollTarget;
@@ -1803,11 +1815,8 @@ namespace BDArmory.Modules
             yawError = VectorUtils.SignedAngle(Vector3.up, Vector3.ProjectOnPlane(targetDirectionYaw, Vector3.forward), Vector3.right);
 
             // User-set steer limits
-            if (maxSteer > maxSteerAtMaxSpeed)
-                finalMaxSteer *= Mathf.Clamp((maxSteerAtMaxSpeed - maxSteer) / (cornerSpeed - lowSpeedSwitch + 0.001f) * ((float)vessel.srfSpeed - lowSpeedSwitch) + maxSteer, maxSteerAtMaxSpeed, maxSteer); // Linearly varies between two limits, clamped at limit values
-            else
-                finalMaxSteer *= Mathf.Clamp((maxSteerAtMaxSpeed - maxSteer) / (cornerSpeed - lowSpeedSwitch + 0.001f) * ((float)vessel.srfSpeed - lowSpeedSwitch) + maxSteer, maxSteer, maxSteerAtMaxSpeed); // Linearly varies between two limits, clamped at limit values
-            finalMaxSteer *= 1.225f / (float)vessel.atmDensity; // Scale based on atmospheric density relative to sea level Kerbin (since dynamic pressure depends on density)
+            float userLimit = GetUserDefinedSteerLimit();
+            finalMaxSteer *= userLimit;
             finalMaxSteer = Mathf.Clamp(finalMaxSteer, 0.1f, 1f); // added just in case to ensure some input is retained no matter what happens
 
             //roll
@@ -1923,9 +1932,9 @@ namespace BDArmory.Modules
             steerYaw *= dynamicAdjustment;
             steerRoll *= dynamicAdjustment;
 
-            s.pitch = Mathf.Clamp(steerPitch, Mathf.Min(-finalMaxSteer, -0.2f), finalMaxSteer); // finalMaxSteer for pitch and yaw, but not roll.
+            s.pitch = Mathf.Clamp(steerPitch, Mathf.Min(-finalMaxSteer, -0.2f), finalMaxSteer); // finalMaxSteer for pitch and yaw, user-defined steer limit for roll.
             s.yaw = Mathf.Clamp(steerYaw, -finalMaxSteer, finalMaxSteer);
-            s.roll = Mathf.Clamp(steerRoll, -maxSteer, maxSteer);
+            s.roll = Mathf.Clamp(steerRoll, -userLimit, userLimit);
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {

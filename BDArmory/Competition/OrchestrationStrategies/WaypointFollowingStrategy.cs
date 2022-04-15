@@ -33,7 +33,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
         public static List<BDModulePilotAI> activePilots;
         public static List<WayPointTracing> Ghosts = new List<WayPointTracing>();
 
-        static string ModelPath = "BDArmory/Models/WayPoint/model";
+        public static string ModelPath = "BDArmory/Models/WayPoint/model";
 
         public WaypointFollowingStrategy(List<Waypoint> waypoints)
         {
@@ -48,12 +48,8 @@ namespace BDArmory.Competition.OrchestrationStrategies
                 LoadedVesselSwitcher.Instance.MassTeamSwitch(true);
             else //increment team each heat
             {
-                char T = 'A';
+                char T = (Char)(Convert.ToUInt16('A') + BDATournament.Instance.currentHeat);
                 pilots[0].weaponManager.SetTeam(BDTeam.Get(T.ToString()));
-                for (int i = 0; i < BDATournament.Instance.currentHeat; i++)
-                {
-                    T++;
-                }
             }
             PrepareCompetition();
 
@@ -80,7 +76,12 @@ namespace BDArmory.Competition.OrchestrationStrategies
                 var elapsedTime = waypointCount == 0 ? 0 : waypointScores.Last().timestamp - waypointScores.First().timestamp;
                 if (service != null) service.TrackWaypoint(player, (float)elapsedTime, waypointCount, deviation);
 
-                BDACompetitionMode.Instance.competitionStatus.Add($"  - {player}: Time: {elapsedTime:F1}s, Waypoints reached: {waypointCount}, Deviation: {deviation}");
+                var displayName = player;
+                if (BDArmorySettings.ENABLE_HOS && BDArmorySettings.HALL_OF_SHAME_LIST.Contains(player) && !string.IsNullOrEmpty(BDArmorySettings.HOS_BADGE))
+                {
+                    displayName += " (" + BDArmorySettings.HOS_BADGE + ")";
+                }
+                BDACompetitionMode.Instance.competitionStatus.Add($"  - {displayName}: Time: {elapsedTime:F1}s, Waypoints reached: {waypointCount}, Deviation: {deviation}");
                 Debug.Log(string.Format("[BDArmory.WaypointFollowingStrategy]: Finished {0}, elapsed={1:0.00}, count={2}, deviation={3:0.00}", player, elapsedTime, waypointCount, deviation));
             }
 
@@ -96,6 +97,8 @@ namespace BDArmory.Competition.OrchestrationStrategies
             BDACompetitionMode.Instance.Scores.ConfigurePlayers(pilots.Select(p => p.vessel).ToList());
             if (BDArmorySettings.AUTO_ENABLE_VESSEL_SWITCHING)
                 LoadedVesselSwitcher.Instance.EnableAutoVesselSwitching(true);
+            if (KerbalSafetyManager.Instance.safetyLevel != KerbalSafetyLevel.Off)
+                KerbalSafetyManager.Instance.CheckAllVesselsForKerbals();
             if (BDArmorySettings.TIME_OVERRIDE && BDArmorySettings.TIME_SCALE != 0)
             { Time.timeScale = BDArmorySettings.TIME_SCALE; }
             Debug.Log("[BDArmory.BDACompetitionMode:" + BDACompetitionMode.Instance.CompetitionID.ToString() + "]: Starting Competition");
@@ -104,7 +107,8 @@ namespace BDArmory.Competition.OrchestrationStrategies
                 Vector3 previousLocation = FlightGlobals.ActiveVessel.transform.position;
                 //FlightGlobals.currentMainBody.GetLatLonAlt(FlightGlobals.ActiveVessel.transform.position, out previousLocation.x, out previousLocation.y, out previousLocation.z);
                 //previousLocation.z = BDArmorySettings.WAYPOINTS_ALTITUDE;
-                ModelPath = "BDArmory/Models/WayPoint/" + VesselSpawnerWindow.Instance.SelectedModel;
+                if (!string.IsNullOrEmpty(VesselSpawnerWindow.Instance.SelectedModel))
+                    ModelPath = "BDArmory/Models/WayPoint/" + VesselSpawnerWindow.Instance.SelectedModel;
                 for (int i = 0; i < waypoints.Count; i++)
                 {
                     float terrainAltitude = (float)FlightGlobals.currentMainBody.TerrainAltitude(waypoints[i].latitude, waypoints[i].longitude);
@@ -324,7 +328,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
             disabled = false;
             setupRenderer();
             pathPoints.Clear();
-			      nodes = 0;
+            nodes = 0;
             timer = 0;
         }
         void setupRenderer()
@@ -422,4 +426,3 @@ namespace BDArmory.Competition.OrchestrationStrategies
     }
 }
 
-           

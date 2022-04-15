@@ -7,6 +7,7 @@ using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Utils;
+using BDArmory.Guidances;
 using BDArmory.Misc;
 using BDArmory.UI;
 using UnityEngine;
@@ -354,198 +355,6 @@ namespace BDArmory.Modules
             AdjustThrottle(targetVelocity); // set throttle according to our targets and movement
         }
 
-        void PilotLogic_Depreciated() // Surface AI-based with byass target still enabled 
-        {
-            // check for belowMinAlt
-            belowMinAltitude = (float)vessel.radarAltitude < minAltitude;
-            
-            // check for collisions, but not every frame
-            if (collisionDetectionTicker == 0)
-            {
-                collisionDetectionTicker = 20;
-                float predictMult = Mathf.Clamp(10 / MaxDrift, 1, 10);
-
-                dodgeVector = null;
-
-                using (var vs = BDATargetManager.LoadedVessels.GetEnumerator())
-                    while (vs.MoveNext())
-                    {
-                        if (vs.Current == null || vs.Current == vessel || vs.Current.GetTotalMass() < AvoidMass) continue;
-                        if (!VesselModuleRegistry.ignoredVesselTypes.Contains(vs.Current.vesselType))
-                        {
-                            var ibdaiControl = VesselModuleRegistry.GetModule<IBDAIControl>(vs.Current);
-                            if (!vs.Current.LandedOrSplashed || (ibdaiControl != null && ibdaiControl.commandLeader != null && ibdaiControl.commandLeader.vessel == vessel))
-                                continue;
-                        }
-                        dodgeVector = PredictCollisionWithVessel(vs.Current, 5f * predictMult, 0.5f);
-                        if (dodgeVector != null) break;
-                    }
-            }
-            else
-                collisionDetectionTicker--;
-
-            // avoid collisions if any are found
-            if (dodgeVector != null)
-            {
-                targetVelocity = PoweredSteering ? MaxSpeed : CombatSpeed;
-                targetDirection = (Vector3)dodgeVector;
-                SetStatus($"Avoiding Collision");
-                leftPath = true;
-                return;
-            }
-
-            // if bypass target is no longer relevant, remove it
-            if (bypassTarget != null && ((bypassTarget != targetVessel && bypassTarget != (commandLeader != null ? commandLeader.vessel : null))
-                || (VectorUtils.GetWorldSurfacePostion(bypassTargetPos, vessel.mainBody) - bypassTarget.CoM).sqrMagnitude > 500000))
-            {
-                bypassTarget = null;
-            }
-
-            if (bypassTarget == null)
-            {
-                // check for enemy targets and engage
-                // not checking for guard mode, because if guard mode is off now you can select a target manually and if it is of opposing team, the AI will try to engage while you can man the turrets
-                if (weaponManager && targetVessel != null && !BDArmorySettings.PEACE_MODE)
-                {
-                    leftPath = true;
-                    if (collisionDetectionTicker == 5)
-                        checkBypass(targetVessel);
-
-                    Vector3 vecToTarget = targetVessel.CoM - vessel.CoM;
-                    float distance = vecToTarget.magnitude;
-                    // lead the target a bit, where 1km/s is a ballpark estimate of the average bullet velocity
-                    float shotSpeed = 1000f;
-                    if ((weaponManager != null ? weaponManager.selectedWeapon : null) is ModuleWeapon wep)
-                        shotSpeed = wep.bulletVelocity;
-                    vecToTarget = targetVessel.PredictPosition(distance / shotSpeed) - vessel.CoM;
-
-                    if (BroadsideAttack)
-                    {
-                        Vector3 sideVector = Vector3.Cross(vecToTarget, upDir); //find a vector perpendicular to direction to target
-                        if (collisionDetectionTicker == 10
-                                && !pathingMatrix.TraversableStraightLine(
-                                        VectorUtils.WorldPositionToGeoCoords(vessel.CoM, vessel.mainBody),
-                                        VectorUtils.WorldPositionToGeoCoords(vessel.PredictPosition(10), vessel.mainBody),
-                                        vessel.mainBody, SurfaceType, MaxPitchAngle, AvoidMass))
-                            sideSlipDirection = -Math.Sign(Vector3.Dot(vesselTransform.up, sideVector)); // switch sides if we're running ashore
-                        sideVector *= sideSlipDirection;
-
-                        float sidestep = distance >= MaxEngagementRange ? Mathf.Clamp01((MaxEngagementRange - distance) / (CombatSpeed * Mathf.Clamp(90 / MaxDrift, 0, 10)) + 1) * AttackAngleAtMaxRange / 90 : // direct to target to attackAngle degrees if over maxrange
-                            (distance <= MinEngagementRange ? 1.5f - distance / (MinEngagementRange * 2) : // 90 to 135 degrees if closer than minrange
-                            (MaxEngagementRange - distance) / (MaxEngagementRange - MinEngagementRange) * (1 - AttackAngleAtMaxRange / 90) + AttackAngleAtMaxRange / 90); // attackAngle to 90 degrees from maxrange to minrange
-                        targetDirection = Vector3.LerpUnclamped(vecToTarget.normalized, sideVector.normalized, sidestep); // interpolate between the side vector and target direction vector based on sidestep
-                        targetVelocity = MaxSpeed;
-                        targetAltitude = CombatAltitude;
-                        DebugLine($"Broadside attack angle {sidestep}");
-                    }
-                    else // just point at target and go
-                    {
-                        targetAltitude = CombatAltitude;
-                        if ((targetVessel.horizontalSrfSpeed < 10 || Vector3.Dot(Vector3.ProjectOnPlane(targetVessel.srf_vel_direction, upDir), vessel.up) < 0) //if target is stationary or we're facing in opposite directions
-                            && (distance < MinEngagementRange || (distance < (MinEngagementRange * 3 + MaxEngagementRange) / 4 //and too close together
-                            && extendingTarget != null && targetVessel != null && extendingTarget == targetVessel)))
-                        {
-                            extendingTarget = targetVessel;
-                            // not sure if this part is very smart, potential for improvement
-                            targetDirection = -vecToTarget; //extend
-                            targetVelocity = MaxSpeed;
-                            targetAltitude = CombatAltitude;
-                            SetStatus($"Extending");
-                            return;
-                        }
-                        else
-                        {
-                            extendingTarget = null;
-                            targetDirection = Vector3.ProjectOnPlane(vecToTarget, upDir);
-                            if (Vector3.Dot(targetDirection, vesselTransform.up) < 0)
-                                targetVelocity = PoweredSteering ? MaxSpeed : 0; // if facing away from target
-                            else if (distance >= MaxEngagementRange || distance <= MinEngagementRange)
-                                targetVelocity = MaxSpeed;
-                            else
-                            {
-                                targetVelocity = CombatSpeed / 10 + (MaxSpeed - CombatSpeed / 10) * (distance - MinEngagementRange) / (MaxEngagementRange - MinEngagementRange); //slow down if inside engagement range to extend shooting opportunities
-                                if (weaponManager != null && weaponManager.selectedWeapon != null)
-                                {
-                                    switch (weaponManager.selectedWeapon.GetWeaponClass())
-                                    {
-                                        case WeaponClasses.Gun:
-                                        case WeaponClasses.Rocket:
-                                        case WeaponClasses.DefenseLaser:
-                                            var gun = (ModuleWeapon)weaponManager.selectedWeapon;
-                                            if ((gun.yawRange == 0 || gun.maxPitch == gun.minPitch) && gun.FiringSolutionVector != null)
-                                            {
-                                                aimingMode = true;
-                                                if (Vector3.Angle((Vector3)gun.FiringSolutionVector, vessel.transform.up) < 20)
-                                                    targetDirection = (Vector3)gun.FiringSolutionVector;
-                                            }
-                                            break;
-                                    }
-                                }
-                            }
-                            targetVelocity = Mathf.Clamp(targetVelocity, PoweredSteering ? CombatSpeed / 5 : 0, MaxSpeed); // maintain a bit of speed if using powered steering
-                        }
-                    }
-                    SetStatus($"Engaging target");
-                    return;
-                }
-
-                // follow
-                if (command == PilotCommands.Follow)
-                {
-                    leftPath = true;
-                    if (collisionDetectionTicker == 5)
-                        checkBypass(commandLeader.vessel);
-
-                    Vector3 targetPosition = GetFormationPosition();
-                    Vector3 targetDistance = targetPosition - vesselTransform.position;
-                    if (Vector3.Dot(targetDistance, vesselTransform.up) < 0
-                        && Vector3.ProjectOnPlane(targetDistance, upDir).sqrMagnitude < 250f * 250f
-                        && Vector3.Angle(vesselTransform.up, commandLeader.vessel.srf_velocity) < 0.8f)
-                    {
-                        targetDirection = Vector3.RotateTowards(Vector3.ProjectOnPlane(commandLeader.vessel.srf_vel_direction, upDir), targetDistance, 0.2f, 0);
-                    }
-                    else
-                    {
-                        targetDirection = Vector3.ProjectOnPlane(targetDistance, upDir);
-                    }
-                    targetVelocity = (float)(commandLeader.vessel.horizontalSrfSpeed + (vesselTransform.position - targetPosition).magnitude / 15);
-                    if (Vector3.Dot(targetDirection, vesselTransform.up) < 0 && !PoweredSteering) targetVelocity = 0;
-                    SetStatus($"Following");
-                    return;
-                }
-            }
-
-            // goto
-            if (leftPath && bypassTarget == null)
-            {
-                Pathfind(finalPositionGeo);
-                leftPath = false;
-            }
-
-            const float targetRadius = 250f;
-            targetDirection = Vector3.ProjectOnPlane(assignedPositionWorld - vesselTransform.position, upDir);
-
-            if (targetDirection.sqrMagnitude > targetRadius * targetRadius)
-            {
-                if (bypassTarget != null)
-                    targetVelocity = MaxSpeed;
-                else if (waypoints.Count > 1)
-                    targetVelocity = command == PilotCommands.Attack ? MaxSpeed : CombatSpeed;
-                else
-                    targetVelocity = Mathf.Clamp((targetDirection.magnitude - targetRadius / 2) / 5f,
-                    0, command == PilotCommands.Attack ? MaxSpeed : CombatSpeed);
-
-                if (Vector3.Dot(targetDirection, vesselTransform.up) < 0 && !PoweredSteering) targetVelocity = 0;
-                SetStatus(bypassTarget ? "Repositioning" : "Moving");
-                return;
-            }
-
-            cycleWaypoint();
-
-            SetStatus($"Not doing anything in particular");
-            targetDirection = vesselTransform.up;
-        }
-
         void PilotLogic() // Surface AI-based with byass target disabled
         {
             // check for belowMinAlt
@@ -649,6 +458,23 @@ namespace BDArmory.Modules
                             {
                                 switch (weaponManager.selectedWeapon.GetWeaponClass())
                                 {
+                                    case WeaponClasses.Missile:
+                                        MissileBase missile = weaponManager.CurrentMissile;
+                                        if (missile.TargetingMode == MissileBase.TargetingModes.Heat && !weaponManager.heatTarget.exists)
+                                        {
+                                            DebugLine($"Attempting heat lock");
+                                            aimingMode = true;
+                                            targetDirection = MissileGuidance.GetAirToAirFireSolution(missile, targetVessel);
+                                        }
+                                        else
+                                        {
+                                            if (!weaponManager.GetLaunchAuthorization(targetVessel, weaponManager) && (Vector3.SqrMagnitude(targetVessel.vesselTransform.position - vesselTransform.position) < (missile.engageRangeMax * missile.engageRangeMax)))
+                                            {
+                                                aimingMode = true;
+                                                targetDirection = MissileGuidance.GetAirToAirFireSolution(missile, targetVessel);
+                                            }
+                                        }
+                                        break;
                                     case WeaponClasses.Gun:
                                     case WeaponClasses.Rocket:
                                     case WeaponClasses.DefenseLaser:
@@ -862,7 +688,7 @@ namespace BDArmory.Modules
         {
             if (!vessel.LandedOrSplashed)
             {
-                if (!belowMinAltitude)
+                if (vessel.radarAltitude > Mathf.Min(50f, minAltitude / 2f))
                     vessel.ActionGroups.SetGroup(KSPActionGroup.Gear, false);
                 else
                     vessel.ActionGroups.SetGroup(KSPActionGroup.Gear, true);

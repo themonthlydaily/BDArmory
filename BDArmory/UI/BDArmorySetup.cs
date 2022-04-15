@@ -189,7 +189,7 @@ namespace BDArmory.UI
             }
         }
         string CheatCodeGUI = "";
-		string HoSString = "";
+        string HoSString = "";
         public string HoSTag = "";
         bool enteredHoS = false;
 
@@ -558,6 +558,7 @@ namespace BDArmory.UI
             MutatorInfo.Load();
 
             compDistGui = BDArmorySettings.COMPETITION_DISTANCE.ToString();
+            HoSTag = BDArmorySettings.HOS_BADGE;
 
             if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor)
             { StartCoroutine(ToolbarButtonRoutine()); }
@@ -2447,6 +2448,7 @@ namespace BDArmory.UI
                     BDArmorySettings.AUTO_RESUME_TOURNAMENT = GUI.Toggle(SLeftRect(++line), BDArmorySettings.AUTO_RESUME_TOURNAMENT, Localizer.Format("#LOC_BDArmory_Settings_AutoResumeTournaments")); // Auto-Resume Tournaments
                     if (BDArmorySettings.AUTO_RESUME_TOURNAMENT)
                     {
+                        BDArmorySettings.AUTO_QUIT_AT_END_OF_TOURNAMENT = GUI.Toggle(SRightRect(line), BDArmorySettings.AUTO_QUIT_AT_END_OF_TOURNAMENT, Localizer.Format("#LOC_BDArmory_Settings_AutoQuitAtEndOfTournament")); // Auto Quit At End Of Tournament
                         GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AutoQuitMemoryUsage")}:  ({(BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD > SystemMaxMemory ? "Off" : $"{BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD}GB")})", leftLabel); // Auto-Quit Memory Threshold
                         BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD, 1f, SystemMaxMemory + 1));
                         if (BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD <= SystemMaxMemory)
@@ -2909,7 +2911,7 @@ namespace BDArmory.UI
                             GUI.Label(SLeftSliderRect(++line, 2f), $"{Localizer.Format("Thrust")}:  ({(float)Math.Round(BDArmorySettings.HOS_THRUST, 1)}%) Engine Thrust", leftLabel);
                             BDArmorySettings.HOS_THRUST = (GUI.HorizontalSlider(SRightSliderRect(line), (float)Math.Round(BDArmorySettings.HOS_THRUST, 1), 0, 200));
                             GUI.Label(SLeftRect(++line), Localizer.Format("--Shame badge--"));
-							HoSTag = GUI.TextField(SLeftRect(++line, 1, true), HoSTag);
+                            HoSTag = GUI.TextField(SLeftRect(++line, 1, true), HoSTag);
                             BDArmorySettings.HOS_BADGE = HoSTag;
                         }
                         else
@@ -2918,7 +2920,7 @@ namespace BDArmory.UI
                             BDArmorySettings.HOS_MASS = 0;
                             BDArmorySettings.HOS_DMG = 100;
                             BDArmorySettings.HOS_THRUST = 100;
-							//partloss = false; //- would need special module, but could also be a mutator mode
+                            //partloss = false; //- would need special module, but could also be a mutator mode
                             //timebomb = false //same
                             //might be more elegant to simply have this use Mutator framework and load the HoS craft with a select mutator(s) instead... Something to look into later, maybe, but ideally this shouldn't need to be used in the first place.
                         }
@@ -3031,8 +3033,8 @@ namespace BDArmory.UI
                 }
 
                 GUI.Label(SLeftRect(++line), Localizer.Format("#LOC_BDArmory_Settings_TargetWindowInvertMouse"), leftLabel);
-                BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_X = GUI.Toggle(SEighthRect(line,5), BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_X, "X");
-                BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_Y = GUI.Toggle(SEighthRect(line,6), BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_Y, "Y");
+                BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_X = GUI.Toggle(SEighthRect(line, 5), BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_X, "X");
+                BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_Y = GUI.Toggle(SEighthRect(line, 6), BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_Y, "Y");
 
                 line += 0.5f;
             }

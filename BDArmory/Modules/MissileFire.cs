@@ -5749,7 +5749,7 @@ namespace BDArmory.Modules
         }
 
         // moved from pilot AI, as it does not really do anything AI related?
-        bool GetLaunchAuthorization(Vessel targetV, MissileFire mf)
+        public bool GetLaunchAuthorization(Vessel targetV, MissileFire mf)
         {
             bool launchAuthorized = false;
             MissileBase missile = mf.CurrentMissile;
@@ -5770,7 +5770,7 @@ namespace BDArmory.Modules
 
                 if (launchAuthorized)
                 {
-                    float fTime = 2f;
+                    float fTime = Mathf.Min(missile.dropTime, 2f);
                     Vector3 futurePos = target + (targetV.Velocity() * fTime);
                     Vector3 myFuturePos = vessel.ReferenceTransform.position + (vessel.Velocity() * fTime);
                     launchAuthorized = launchAuthorized && (Vector3.Angle(vessel.ReferenceTransform.up, futurePos - myFuturePos) < missile.maxOffBoresight * boresightFactor); // Launch is likely also possible at fTime
