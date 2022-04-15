@@ -1020,7 +1020,7 @@ namespace BDArmory.Bullets
                             }
                         }
                     }
-                    else //impact by impact, Timed, Prox and Flak, if for whatever those last two have 0 proxi range
+                    else //impact by impact, Timed, Prox and Flak, if for whatever reason those last two have 0 proxi range
                     {
                         //Debug.Log("[BDArmory.PooledBullet]: impact Fuze detonation");
                         ExplosiveDetonation(hitPart, hit, bulletRay, true);

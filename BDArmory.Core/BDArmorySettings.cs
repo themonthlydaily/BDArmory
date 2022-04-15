@@ -65,6 +65,8 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static bool RESET_HULL = false;                     // Automatically reset hull material of parts of vessels when they're spawned in flight mode.
         [BDAPersistentSettingsField] public static int KERBAL_SAFETY = 1;                         // Try to save kerbals by ejecting/leaving seats and deploying parachutes.
         [BDAPersistentSettingsField] public static bool TRACE_VESSELS_DURING_COMPETITIONS = false; // Trace vessel positions and rotations during competitions.
+        [BDAPersistentSettingsField] public static bool DRAW_VESSEL_TRAILS = true;                // Draw a trail to visualize vessel path during the heat
+        [BDAPersistentSettingsField] public static int VESSEL_TRAIL_LENGTH = 300;                   //Max length of trails, in seconds. Defaults to competition length
         [BDAPersistentSettingsField] public static bool DUMB_IR_SEEKERS = false;                  // IR missiles will go after hottest thing they can see
         [BDAPersistentSettingsField] public static bool AUTOCATEGORIZE_PARTS = true;
         [BDAPersistentSettingsField] public static bool SHOW_CATEGORIES = true;
@@ -209,7 +211,7 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static float BD_FIRE_CHANCE_INCENDIARY = 90;
 		[BDAPersistentSettingsField] public static bool ALLOW_ZOMBIE_BD = false;          // Allow battle damage to proc when using zombie mode?
         [BDAPersistentSettingsField] public static bool ENABLE_HOS = false;
-        [BDAPersistentSettingsField] public static string HALL_OF_SHAME = "";
+        [BDAPersistentSettingsField] public static List<string> HALL_OF_SHAME_LIST = new List<string>();
         [BDAPersistentSettingsField] public static float HOS_FIRE = 0;
         [BDAPersistentSettingsField] public static float HOS_MASS = 0;
         [BDAPersistentSettingsField] public static float HOS_DMG = 0;
@@ -252,7 +254,7 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static float WAYPOINTS_ALTITUDE = 50f;               // Altitude above ground of the waypoints.
         [BDAPersistentSettingsField] public static bool WAYPOINTS_ONE_AT_A_TIME = true;          // Send the craft one-at-a-time through the course.
         [BDAPersistentSettingsField] public static bool WAYPOINTS_VISUALIZE = true;              // Add Waypoint models to indicate the path
-
+        [BDAPersistentSettingsField] public static float WAYPOINTS_SCALE = 500;                    // Have model(or maybe WP radius proper) scale?
         // Heartbleed
         [BDAPersistentSettingsField] public static float HEART_BLEED_RATE = 0.01f;
         [BDAPersistentSettingsField] public static float HEART_BLEED_INTERVAL = 10f;
