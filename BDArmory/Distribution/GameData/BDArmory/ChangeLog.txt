@@ -1,4 +1,16 @@
-﻿- General:
+﻿- Fix AI GUI slider increments to match AI PAW.
+- Add Dynamic Damping P/Y/R readouts to AI GUI.
+- Fix ATG missiles not respecting maxMissilesPerTarget.
+- Add Missile multi-targeting.
+- Adds new Max Missile Tgts setting in WM to set max targets to engage with missiles.
+- Craft now once again get alarm SFX when incoming missiles.
+- Fix ProcWing armor calculations.
+- Adds missing FFAR rocket ammo to universal ammo boxes.
+- Fix TOW missile FX.
+- Shift some missile targeting code from OnUpdate to OnFixedUpdate.
+- Stop continuous single spawn when running a tournament.
+
+- General:
 	- Add missing HP rounding to some parts.
 - AI:
 	- Add a 5° deadzone around being on target for dynamic damping to avoid feed-back loop in PID.
