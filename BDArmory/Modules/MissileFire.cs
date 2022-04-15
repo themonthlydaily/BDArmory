@@ -1179,37 +1179,6 @@ namespace BDArmory.Modules
             }
 
             base.OnUpdate();
-            if (!vessel.packed)
-            {
-                if (weaponIndex >= weaponArray.Length)
-                {
-                    hasSingleFired = true;
-                    triggerTimer = 0;
-
-                    weaponIndex = Mathf.Clamp(weaponIndex, 0, weaponArray.Length - 1);
-
-                    SetDeployableWeapons();
-                    DisplaySelectedWeaponMessage();
-                }
-                if (weaponArray.Length > 0 && selectedWeapon != weaponArray[weaponIndex])
-                    selectedWeapon = weaponArray[weaponIndex];
-
-                //finding next rocket to shoot (for aimer)
-                //FindNextRocket();
-
-                //targeting
-                if (weaponIndex > 0 &&
-                    (selectedWeapon.GetWeaponClass() == WeaponClasses.Missile ||
-                    selectedWeapon.GetWeaponClass() == WeaponClasses.SLW ||
-                     selectedWeapon.GetWeaponClass() == WeaponClasses.Bomb))
-                {
-                    SearchForLaserPoint();
-                    SearchForHeatTarget();
-                    SearchForRadarSource();
-                }
-
-                CalculateMissilesAway();
-            }
 
             UpdateTargetingAudio();
 
@@ -1304,6 +1273,39 @@ namespace BDArmory.Modules
         public override void OnFixedUpdate()
         {
             if (vessel == null) return;
+
+            if (!vessel.packed)
+            {
+                if (weaponIndex >= weaponArray.Length)
+                {
+                    hasSingleFired = true;
+                    triggerTimer = 0;
+
+                    weaponIndex = Mathf.Clamp(weaponIndex, 0, weaponArray.Length - 1);
+
+                    SetDeployableWeapons();
+                    DisplaySelectedWeaponMessage();
+                }
+                if (weaponArray.Length > 0 && selectedWeapon != weaponArray[weaponIndex])
+                    selectedWeapon = weaponArray[weaponIndex];
+
+                //finding next rocket to shoot (for aimer)
+                //FindNextRocket();
+
+                //targeting
+                if (weaponIndex > 0 &&
+                    (selectedWeapon.GetWeaponClass() == WeaponClasses.Missile ||
+                    selectedWeapon.GetWeaponClass() == WeaponClasses.SLW ||
+                     selectedWeapon.GetWeaponClass() == WeaponClasses.Bomb))
+                {
+                    SearchForLaserPoint();
+                    SearchForHeatTarget();
+                    SearchForRadarSource();
+                }
+
+                CalculateMissilesAway();
+            }
+
             if (guardMode && vessel.IsControllable)
             {
                 GuardMode();
