@@ -864,7 +864,7 @@ namespace BDArmory.Weapons.Missiles
         {
             if (!HasFired)
             {
-                legacyTargetVessel = v;
+                targetVessel = v.gameObject.GetComponent<TargetInfo>();
                 FireMissile();
             }
         }
@@ -1078,11 +1078,11 @@ namespace BDArmory.Weapons.Missiles
                 {
                     WarnTarget();
 
-                    if (legacyTargetVessel && legacyTargetVessel.loaded)
-                    {
-                        Vector3 targetCoMPos = legacyTargetVessel.CoM;
-                        TargetPosition = targetCoMPos + legacyTargetVessel.Velocity() * Time.fixedDeltaTime;
-                    }
+                    //if (targetVessel && targetVessel.loaded)
+                    //{
+                    //   Vector3 targetCoMPos = targetVessel.CoM;
+                    //    TargetPosition = targetCoMPos + targetVessel.Velocity() * Time.fixedDeltaTime;
+                    //}
 
                     //increaseTurnRate after launch
                     float turnRateDPS = Mathf.Clamp(((TimeIndex - dropTime) / boostTime) * maxTurnRateDPS * 25f, 0, maxTurnRateDPS);
@@ -1860,17 +1860,17 @@ namespace BDArmory.Weapons.Missiles
 
             BDArmorySetup.numberOfParticleEmitters--;
             HasExploded = true;
-
-            if (legacyTargetVessel != null)
+            /*
+            if (targetVessel != null)
             {
-                using (var wpm = VesselModuleRegistry.GetModules<MissileFire>(legacyTargetVessel).GetEnumerator())
+                using (var wpm = VesselModuleRegistry.GetModules<MissileFire>(targetVessel).GetEnumerator())
                     while (wpm.MoveNext())
                     {
                         if (wpm.Current == null) continue;
-                        wpm.Current.missileIsIncoming = false;
+                        wpm.Current.missileIsIncoming = false; //handled by attacked vessel
                     }
             }
-
+            */
             if (SourceVessel == null) SourceVessel = vessel;
 
             if (part.FindModuleImplementing<BDExplosivePart>() != null)
@@ -1930,9 +1930,9 @@ namespace BDArmory.Weapons.Missiles
 
         void WarnTarget()
         {
-            if (legacyTargetVessel == null) return;
-            var wpm = VesselModuleRegistry.GetMissileFire(legacyTargetVessel, true);
-            if (wpm != null) wpm.MissileWarning(Vector3.Distance(transform.position, legacyTargetVessel.transform.position), this);
+            if (targetVessel == null) return;
+            var wpm = VesselModuleRegistry.GetMissileFire(targetVessel.Vessel, true);
+            if (wpm != null) wpm.MissileWarning(Vector3.Distance(transform.position, targetVessel.transform.position), this);
         }
 
         void SetupRCS()

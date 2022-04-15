@@ -975,6 +975,8 @@ namespace BDArmory.UI
 
                                 if (ActivePilot.dynamicDampingPitch)
                                 {
+                                    GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingPitch") + ": " + ActivePilot.dynSteerDampingPitchValue.ToString(), Label);//"dynamic damp pitch"
+                                    dynPidLines++;
                                     if (!NumFieldsEnabled)
                                     {
                                         ActivePilot.DynamicDampingPitchMin =
@@ -1041,6 +1043,8 @@ namespace BDArmory.UI
                                 dynPidLines += 1.25f;
                                 if (ActivePilot.dynamicDampingYaw)
                                 {
+                                    GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingYaw") + ": " + ActivePilot.dynSteerDampingYawValue.ToString(), Label);//"dynamic damp yaw"
+                                    dynPidLines++;
                                     if (!NumFieldsEnabled)
                                     {
                                         ActivePilot.DynamicDampingYawMin =
@@ -1108,6 +1112,8 @@ namespace BDArmory.UI
                                 dynPidLines += 1.25f;
                                 if (ActivePilot.dynamicDampingRoll)
                                 {
+                                    GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingRoll") + ": " + ActivePilot.dynSteerDampingRollValue.ToString(), Label);//"dynamic damp roll"
+                                    dynPidLines++;
                                     if (!NumFieldsEnabled)
                                     {
                                         ActivePilot.DynamicDampingRollMin =
@@ -1194,7 +1200,7 @@ namespace BDArmory.UI
                             ActivePilot.defaultAltitude =
                                 GUI.HorizontalSlider(SettingSliderRect(leftIndent, altLines, contentWidth),
                                     ActivePilot.defaultAltitude, 100, ActivePilot.UpToEleven ? 100000 : 15000);
-                            ActivePilot.defaultAltitude = Mathf.Round(ActivePilot.defaultAltitude / 25) * 25;
+                            ActivePilot.defaultAltitude = Mathf.Round(ActivePilot.defaultAltitude / 50) * 50;
                         }
                         else
                         {
@@ -1220,7 +1226,7 @@ namespace BDArmory.UI
                             ActivePilot.minAltitude =
                                 GUI.HorizontalSlider(SettingSliderRect(leftIndent, altLines, contentWidth),
                                     ActivePilot.minAltitude, 25, ActivePilot.UpToEleven ? 60000 : 6000);
-                            ActivePilot.minAltitude = Mathf.Round(ActivePilot.minAltitude / 25) * 25;
+                            ActivePilot.minAltitude = Mathf.Round(ActivePilot.minAltitude / 10) * 10;
                         }
                         else
                         {
@@ -1253,7 +1259,7 @@ namespace BDArmory.UI
                                 ActivePilot.maxAltitude =
                                     GUI.HorizontalSlider(SettingSliderRect(leftIndent, altLines, contentWidth),
                                         ActivePilot.maxAltitude, 100, ActivePilot.UpToEleven ? 100000 : 15000);
-                                ActivePilot.maxAltitude = Mathf.Round(ActivePilot.maxAltitude / 25) * 25;
+                                ActivePilot.maxAltitude = Mathf.Round(ActivePilot.maxAltitude / 100) * 100;
                             }
                             else
                             {
@@ -1291,7 +1297,7 @@ namespace BDArmory.UI
                         if (!NumFieldsEnabled)
                         {
                             ActivePilot.maxSpeed = GUI.HorizontalSlider(SettingSliderRect(leftIndent, ++spdLines, contentWidth), ActivePilot.maxSpeed, 20, ActivePilot.UpToEleven ? 3000 : 800);
-                            ActivePilot.maxSpeed = Mathf.Round(ActivePilot.maxSpeed);
+                            ActivePilot.maxSpeed = Mathf.Round(ActivePilot.maxSpeed / 5) * 5;
                         }
                         else
                         {
@@ -1768,7 +1774,7 @@ namespace BDArmory.UI
                                 ActivePilot.extendDistanceAirToAir =
                                     GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth),
                                         ActivePilot.extendDistanceAirToAir, 0, ActivePilot.UpToEleven ? 20000 : 2000);
-                                ActivePilot.extendDistanceAirToAir = BDAMath.RoundToUnit(ActivePilot.extendDistanceAirToAir, 50f);
+                                ActivePilot.extendDistanceAirToAir = BDAMath.RoundToUnit(ActivePilot.extendDistanceAirToAir, 10f);
                             }
                             else
                             {
@@ -1788,7 +1794,7 @@ namespace BDArmory.UI
                                 ActivePilot.extendDistanceAirToGroundGuns =
                                     GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth),
                                         ActivePilot.extendDistanceAirToGroundGuns, 0, ActivePilot.UpToEleven ? 20000 : 5000);
-                                ActivePilot.extendDistanceAirToGroundGuns = BDAMath.RoundToUnit(ActivePilot.extendDistanceAirToGroundGuns, 100f);
+                                ActivePilot.extendDistanceAirToGroundGuns = BDAMath.RoundToUnit(ActivePilot.extendDistanceAirToGroundGuns, 50f);
                             }
                             else
                             {
@@ -1808,7 +1814,7 @@ namespace BDArmory.UI
                                 ActivePilot.extendDistanceAirToGround =
                                     GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth),
                                         ActivePilot.extendDistanceAirToGround, 0, ActivePilot.UpToEleven ? 20000 : 5000);
-                                ActivePilot.extendDistanceAirToGround = BDAMath.RoundToUnit(ActivePilot.extendDistanceAirToGround, 100f);
+                                ActivePilot.extendDistanceAirToGround = BDAMath.RoundToUnit(ActivePilot.extendDistanceAirToGround, 50f);
                             }
                             else
                             {

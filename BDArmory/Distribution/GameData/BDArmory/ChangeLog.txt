@@ -5,6 +5,19 @@ FIXES
 IMPROVEMENTS
 - Major internal refactor to better organise code.
 - Switch to a single DLL release.
+
+- Fix AI GUI slider increments to match AI PAW.
+- Add Dynamic Damping P/Y/R readouts to AI GUI.
+- Fix ATG missiles not respecting maxMissilesPerTarget.
+- Add Missile multi-targeting.
+- Adds new Max Missile Tgts setting in WM to set max targets to engage with missiles.
+- Craft now once again get alarm SFX when incoming missiles.
+- Fix ProcWing armor calculations.
+- Adds missing FFAR rocket ammo to universal ammo boxes.
+- Fix TOW missile FX.
+- Shift some missile targeting code from OnUpdate to OnFixedUpdate.
+- Stop continuous single spawn when running a tournament.
+
 - General:
 	- Add missing HP rounding to some parts.
 	- Optimise the PartExploderSystem to minimise creation of new vessels.

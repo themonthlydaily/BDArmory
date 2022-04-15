@@ -622,6 +622,8 @@ namespace BDArmory.UI
                         {
                             if (GUI.Button(SRightRect(line), Localizer.Format("#LOC_BDArmory_Settings_TournamentRun"), BDArmorySetup.BDGuiSkin.button)) // Run tournament
                             {
+                                _vesselsSpawned = false;
+                                SpawnUtils.CancelSpawning(); // Stop any spawning that's currently happening.
                                 BDATournament.Instance.RunTournament();
                                 if (BDArmorySettings.VESSEL_SPAWNER_WINDOW_WIDTH < 480 && BDATournament.Instance.numberOfRounds * BDATournament.Instance.numberOfHeats > 99) // Expand the window a bit to compensate for long tournaments.
                                 {

@@ -45,7 +45,8 @@ namespace BDArmory.Control
         Transform cameraTransform;
 
         float startTime;
-        public int missilesAway;
+        public int firedMissiles;
+        public Dictionary<TargetInfo, int> missilesAway;
 
         public float totalHP;
         public float currentHP;
@@ -309,6 +310,7 @@ namespace BDArmory.Control
         float targetScanTimer;
         Vessel guardTarget;
         public TargetInfo currentTarget;
+        public int engagedTargets = 0;
         public List<TargetInfo> targetsAssigned; //secondary targets list
         public List<TargetInfo> missilesAssigned; //secondary missile targets list
         TargetInfo overrideTarget; //used for setting target next guard scan for stuff like assisting teammates
@@ -429,43 +431,48 @@ namespace BDArmory.Control
         #region KSPFields,events,actions
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FiringInterval"),//Firing Interval
-         UI_FloatRange(minValue = 0.5f, maxValue = 60f, stepIncrement = 0.5f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 0.5f, maxValue = 60f, stepIncrement = 0.5f, scene = UI_Scene.All)]
         public float targetScanInterval = 1;
 
         // extension for feature_engagementenvelope: burst length for guns
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FiringBurstLength"),//Firing Burst Length
-         UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.05f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.05f, scene = UI_Scene.All)]
         public float fireBurstLength = 1;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FiringTolerance"),//Firing Tolerance
-        UI_FloatRange(minValue = 0f, maxValue = 4f, stepIncrement = 0.05f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 0f, maxValue = 4f, stepIncrement = 0.05f, scene = UI_Scene.All)]
         public float AutoFireCosAngleAdjustment = 1.4f; //tune Autofire angle in WM GUI
 
         public float adjustedAutoFireCosAngle = 0.99970f; //increased to 3 deg from 1, max increased to v1.3.8 default of 4
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FieldOfView"),//Field of View
-         UI_FloatRange(minValue = 10f, maxValue = 360f, stepIncrement = 10f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 10f, maxValue = 360f, stepIncrement = 10f, scene = UI_Scene.All)]
         public float
             guardAngle = 360;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_VisualRange"),//Visual Range
-         UI_FloatRange(minValue = 100f, maxValue = 200000f, stepIncrement = 100f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 100f, maxValue = 200000f, stepIncrement = 100f, scene = UI_Scene.All)]
         public float
             guardRange = 200000f;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_GunsRange"),//Guns Range
-         UI_FloatRange(minValue = 0f, maxValue = 10000f, stepIncrement = 10f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 0f, maxValue = 10000f, stepIncrement = 10f, scene = UI_Scene.All)]
         public float
             gunRange = 2500f;
         public float maxGunRange = 0f;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_WMWindow_MultiTargetNum"),//Max Turret Targets
-         UI_FloatRange(minValue = 1, maxValue = 10, stepIncrement = 1, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 1, maxValue = 10, stepIncrement = 1, scene = UI_Scene.All)]
         public float multiTargetNum = 1;
+
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_WMWindow_MultiMissileNum"),//Max Turret Targets
+            UI_FloatRange(minValue = 1, maxValue = 10, stepIncrement = 1, scene = UI_Scene.All)]
+        public float multiMissileTgtNum = 1;
 
         public const float maxAllowableMissilesOnTarget = 18f;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MissilesORTarget"), UI_FloatRange(minValue = 1f, maxValue = maxAllowableMissilesOnTarget, stepIncrement = 1f, scene = UI_Scene.All)]//Missiles/Target
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MissilesORTarget"),//Missiles/Target
+            UI_FloatRange(minValue = 1f, maxValue = maxAllowableMissilesOnTarget, stepIncrement = 1f, scene = UI_Scene.All)]
         public float maxMissilesOnTarget = 1;
 
         #region TargetSettings
@@ -507,97 +514,97 @@ namespace BDArmory.Control
 
         private string targetBiasLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_CurrentTargetBias");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_CurrentTargetBias", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Current target bias
-         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetBias = 1.1f;
 
         private string targetRangeLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetProximity");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetProximity", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Range
-         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightRange = 1f;
 
         private string targetATALabel = Localizer.Format("#LOC_BDArmory_TargetPriority_CloserAngleToTarget");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_CloserAngleToTarget", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Antenna Train Angle
-         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightATA = 1f;
 
         private string targetAoDLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_AngleOverDistance");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_AngleOverDistance", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Angle/Distance
-         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightAoD = 0f;
 
         private string targetAccelLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetAcceleration");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetAcceleration", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Acceleration
-         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightAccel = 0;
 
         private string targetClosureTimeLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_ShorterClosingTime");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_ShorterClosingTime", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Closure Time
-         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightClosureTime = 0f;
 
         private string targetWeaponNumberLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetWeaponNumber");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetWeaponNumber", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Weapon Number
-         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightWeaponNumber = 0;
 
         private string targetMassLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetMass");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetMass", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Mass
-         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightMass = 0;
 
         private string targetFriendliesEngagingLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_FewerTeammatesEngaging");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_FewerTeammatesEngaging", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Number Friendlies Engaging
-         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightFriendliesEngaging = 1f;
 
         private string targetThreatLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetThreat");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetThreat", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target threat
-         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightThreat = 1f;
 
         private string targetProtectTeammateLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetProtectTeammate");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetProtectTeammate", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Protect Teammates
-         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightProtectTeammate = 0f;
 
         private string targetProtectVIPLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetProtectVIP");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetProtectVIP", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Protect VIPs
-         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightProtectVIP = 0f;
 
         private string targetAttackVIPLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetAttackVIP");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetAttackVIP", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Attack Enemy VIPs
-         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightAttackVIP = 0f;
         #endregion
 
         #region Countermeasure Settings
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMThreshold", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Countermeasure dispensing time threshold
-         UI_FloatRange(minValue = 1f, maxValue = 60f, stepIncrement = 0.5f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 1f, maxValue = 60f, stepIncrement = 0.5f, scene = UI_Scene.All)]
         public float cmThreshold = 5f; // Works well
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMRepetition", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Flare dispensing repetition
-         UI_FloatRange(minValue = 1f, maxValue = 20f, stepIncrement = 1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 1f, maxValue = 20f, stepIncrement = 1f, scene = UI_Scene.All)]
         public float cmRepetition = 3f; // Prior default was 4
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMInterval", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Flare dispensing interval
-         UI_FloatRange(minValue = 0.1f, maxValue = 1f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 0.1f, maxValue = 1f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float cmInterval = 0.2f; // Prior default was 0.6
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMWaitTime", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Flare dispensing wait time
-         UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float cmWaitTime = 0.7f; // Works well
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ChaffRepetition", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Chaff dispensing repetition
-         UI_FloatRange(minValue = 1f, maxValue = 20f, stepIncrement = 1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 1f, maxValue = 20f, stepIncrement = 1f, scene = UI_Scene.All)]
         public float chaffRepetition = 2f; // Prior default was 4
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ChaffInterval", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Chaff dispensing interval
-         UI_FloatRange(minValue = 0.1f, maxValue = 1f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 0.1f, maxValue = 1f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float chaffInterval = 0.5f; // Prior default was 0.6
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ChaffWaitTime", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Chaff dispensing wait time
-         UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float chaffWaitTime = 0.6f; // Works well
         #endregion
 
@@ -1041,7 +1048,8 @@ namespace BDArmory.Control
                 BDArmorySetup.OnSavedSettings += ClampVisualRange;
 
                 StartCoroutine(StartupListUpdater());
-                missilesAway = 0;
+                firedMissiles = 0;
+                missilesAway = new Dictionary<TargetInfo, int>();
 
                 GameEvents.onVesselCreate.Add(OnVesselCreate);
                 GameEvents.onPartJointBreak.Add(OnPartJointBreak);
@@ -1070,10 +1078,10 @@ namespace BDArmory.Control
                 UpdateMaxGunRange(part);
             }
             targetingString = (targetCoM ? Localizer.Format("#LOC_BDArmory_TargetCOM") + "; " : "")
-            + (targetMass ? Localizer.Format("#LOC_BDArmory_Mass") + "; " : "")
-            + (targetCommand ? Localizer.Format("#LOC_BDArmory_Command") + "; " : "")
-            + (targetEngine ? Localizer.Format("#LOC_BDArmory_Engines") + "; " : "")
-            + (targetWeapon ? Localizer.Format("#LOC_BDArmory_Weapons") + "; " : "");
+                + (targetMass ? Localizer.Format("#LOC_BDArmory_Mass") + "; " : "")
+                + (targetCommand ? Localizer.Format("#LOC_BDArmory_Command") + "; " : "")
+                + (targetEngine ? Localizer.Format("#LOC_BDArmory_Engines") + "; " : "")
+                + (targetWeapon ? Localizer.Format("#LOC_BDArmory_Weapons") + "; " : "");
         }
 
         void OnPartDie()
@@ -1165,7 +1173,7 @@ namespace BDArmory.Control
             { currentHP = GetTotalHP(); }
         }
 
-        public override void OnUpdate()
+        public override void OnUpdate() //shouldn't most of this stuff be in onFixedUpdate instead?
         {
             if (!HighLogic.LoadedSceneIsFlight)
             {
@@ -1173,37 +1181,6 @@ namespace BDArmory.Control
             }
 
             base.OnUpdate();
-            if (!vessel.packed)
-            {
-                if (weaponIndex >= weaponArray.Length)
-                {
-                    hasSingleFired = true;
-                    triggerTimer = 0;
-
-                    weaponIndex = Mathf.Clamp(weaponIndex, 0, weaponArray.Length - 1);
-
-                    SetDeployableWeapons();
-                    DisplaySelectedWeaponMessage();
-                }
-                if (weaponArray.Length > 0 && selectedWeapon != weaponArray[weaponIndex])
-                    selectedWeapon = weaponArray[weaponIndex];
-
-                //finding next rocket to shoot (for aimer)
-                //FindNextRocket();
-
-                //targeting
-                if (weaponIndex > 0 &&
-                    (selectedWeapon.GetWeaponClass() == WeaponClasses.Missile ||
-                    selectedWeapon.GetWeaponClass() == WeaponClasses.SLW ||
-                     selectedWeapon.GetWeaponClass() == WeaponClasses.Bomb))
-                {
-                    SearchForLaserPoint();
-                    SearchForHeatTarget();
-                    SearchForRadarSource();
-                }
-
-                CalculateMissilesAway();
-            }
 
             UpdateTargetingAudio();
 
@@ -1260,30 +1237,77 @@ namespace BDArmory.Control
             }
         }
 
-        private void CalculateMissilesAway() //for multi-missile targeting, would need to change this from a list of all missile fired; instead track missile launch vessel, and missiletarget
-        { //then ask for num of misiles fired at currentTarget, instead of total. And some code to swap targets if missilesAway > limit
-            int tempMissilesAway = 0;
+        private void CalculateMissilesAway()
+        {
+            missilesAway.Clear();
+            //int tempMissilesAway = 0;
+            firedMissiles = 0;
+            if (!guardMode) return;
             using (List<IBDWeapon>.Enumerator firedMissiles = BDATargetManager.FiredMissiles.GetEnumerator())
                 while (firedMissiles.MoveNext())
                 {
                     if (firedMissiles.Current == null) continue;
 
                     var missileBase = firedMissiles.Current as MissileBase;
-
+                    if (missileBase.targetVessel == null) continue;
                     if (missileBase.SourceVessel != this.vessel) continue;
-
-                    if (missileBase.MissileState != MissileBase.MissileStates.PostThrust && !missileBase.HasMissed && !missileBase.HasExploded)
+                    //if (missileBase.MissileState != MissileBase.MissileStates.PostThrust && !missileBase.HasMissed && !missileBase.HasExploded)
+                    if (missileBase.HasFired && !missileBase.HasMissed && !missileBase.HasExploded) //culling post-thrust missiles makes AGMs get cleared almost immediately after launch
                     {
-                        tempMissilesAway++;
+                        if (!missilesAway.ContainsKey(missileBase.targetVessel))
+                        {
+                            missilesAway.Add(missileBase.targetVessel, 1);
+                        }
+                        else
+                        {
+                            missilesAway[missileBase.targetVessel]++; //tabulate all missiles fired by the vessel at various targets; only need # missiles fired at current target forlaunching, but need all vessels with missiles targeting them for vessel targeting
+                        }
                     }
                 }
-
-            this.missilesAway = tempMissilesAway;
+            if (currentTarget != null && missilesAway.ContainsKey(currentTarget))
+            {
+                missilesAway.TryGetValue(currentTarget, out int missiles);
+                this.firedMissiles = missiles;
+            }
+            //this.missilesAway = tempMissilesAway;
         }
 
         public override void OnFixedUpdate()
         {
             if (vessel == null) return;
+
+            if (!vessel.packed)
+            {
+                if (weaponIndex >= weaponArray.Length)
+                {
+                    hasSingleFired = true;
+                    triggerTimer = 0;
+
+                    weaponIndex = Mathf.Clamp(weaponIndex, 0, weaponArray.Length - 1);
+
+                    SetDeployableWeapons();
+                    DisplaySelectedWeaponMessage();
+                }
+                if (weaponArray.Length > 0 && selectedWeapon != weaponArray[weaponIndex])
+                    selectedWeapon = weaponArray[weaponIndex];
+
+                //finding next rocket to shoot (for aimer)
+                //FindNextRocket();
+
+                //targeting
+                if (weaponIndex > 0 &&
+                    (selectedWeapon.GetWeaponClass() == WeaponClasses.Missile ||
+                    selectedWeapon.GetWeaponClass() == WeaponClasses.SLW ||
+                     selectedWeapon.GetWeaponClass() == WeaponClasses.Bomb))
+                {
+                    SearchForLaserPoint();
+                    SearchForHeatTarget();
+                    SearchForRadarSource();
+                }
+
+                CalculateMissilesAway();
+            }
+
             if (guardMode && vessel.IsControllable)
             {
                 GuardMode();
@@ -1438,7 +1462,8 @@ namespace BDArmory.Control
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
                     debugString.Length = 0;
-                    debugString.AppendLine("Missiles away: " + missilesAway);
+                    debugString.AppendLine("Missiles away: " + firedMissiles + "; targeted vessels: " + engagedTargets);
+
                     if (missileIsIncoming)
                     {
                         foreach (var incomingMissile in results.incomingMissiles)
@@ -1702,7 +1727,7 @@ namespace BDArmory.Control
                 {
                     if (vesselRadarData && vesselRadarData.locked) // FIXME This wipes radar guided missiles' targeting data when switching to a heat guided missile. Radar is used to allow heat seeking missiles with allAspect = true to lock on target and fire when the target is not within sensor FOV
                     {
-                        vesselRadarData.UnlockAllTargets();
+                        vesselRadarData.UnlockAllTargets(); //maybe use vrd.UnlockCurrentTarget() instead?
                         vesselRadarData.UnslaveTurrets();
                     }
 
@@ -1946,7 +1971,7 @@ namespace BDArmory.Control
             float prevDist = 2 * radius;
             radius = Mathf.Max(radius, 50f);
             while (guardTarget && Time.time - bombStartTime < bombAttemptDuration && weaponIndex > 0 &&
-                   weaponArray[weaponIndex].GetWeaponClass() == WeaponClasses.Bomb && missilesAway < maxMissilesOnTarget)
+                   weaponArray[weaponIndex].GetWeaponClass() == WeaponClasses.Bomb && firedMissiles < maxMissilesOnTarget)
             {
                 float targetDist = Vector3.Distance(bombAimerPosition, guardTarget.CoM);
 
@@ -1986,13 +2011,13 @@ namespace BDArmory.Control
                         FireCurrentMissile(true);
                         timeBombReleased = Time.time;
                         yield return new WaitForSeconds(rippleFire ? 60f / rippleRPM : 0.06f);
-                        if (missilesAway >= maxMissilesOnTarget)
+                        if (firedMissiles >= maxMissilesOnTarget)
                         {
                             yield return new WaitForSeconds(1f);
                             if (pilotAI)
                             {
                                 pilotAI.RequestExtend("bombs away!", null, 0, guardTarget.CoM); // Extend from the place the bomb is expected to fall.
-                            }
+                            }   //maybe something similar should be adapted for any missiles with nuke warheards...?
                         }
                     }
                     else
@@ -2336,9 +2361,9 @@ namespace BDArmory.Control
             }
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS && distance < 1000f) Debug.Log("[BDArmory.MissileFire]: Legacy missile warning for " + vessel.vesselName + " at distance " + distance.ToString("0.0") + "m from " + ml.shortName);
-            missileIsIncoming = true;
-            incomingMissileLastDetected = Time.time;
-            incomingMissileDistance = distance;
+            //missileIsIncoming = true;
+            //incomingMissileLastDetected = Time.time;
+            //incomingMissileDistance = distance;
         }
 
         #endregion CounterMeasure
@@ -2426,7 +2451,7 @@ namespace BDArmory.Control
             {
                 return;
             }
-            if (guardMode && (missilesAway >= maxMissilesOnTarget))
+            if (guardMode && (firedMissiles >= maxMissilesOnTarget))
             {
                 return;
             }
@@ -3318,7 +3343,32 @@ namespace BDArmory.Control
         {
             var lastTarget = currentTarget;
             List<TargetInfo> targetsTried = new List<TargetInfo>();
+            engagedTargets = 0;
             string targetDebugText = "";
+
+            if (firedMissiles >= maxMissilesOnTarget && (multiMissileTgtNum > 1 && BDATargetManager.TargetList(Team).Count > 1)) //if there are multiple potential targets, see how many can be fired at with missiles
+            {
+                MissileBase ml = CurrentMissile;
+                if (ml && ml.TargetingMode != MissileBase.TargetingModes.Laser) //don't switch from current target if using LASMs to keep current target painted
+                {
+                    Debug.Log("[MissileFire] max missiles on target; switching to new target!");
+                    using (List<TargetInfo>.Enumerator target = BDATargetManager.TargetList(Team).GetEnumerator())
+                    {
+                        while (target.MoveNext())
+                        {
+                            if (missilesAway.ContainsKey(target.Current))
+                            {
+                                if (missilesAway[target.Current] >= maxMissilesOnTarget) targetsTried.Add(target.Current);
+                                engagedTargets++;
+                            }
+                        }
+                    }
+                    if (targetsTried.Count == BDATargetManager.TargetList(Team).Count) //oops, already fired missiles at all available targets
+                    {
+                        targetsTried.Clear(); //clear targets tried, so AI can track best current target until such time as it can fire again
+                    }
+                }
+            }
 
             targetsAssigned.Clear(); //fixes fixed guns not firing if Multitargeting >1
             missilesAssigned.Clear();
@@ -3572,7 +3622,8 @@ namespace BDArmory.Control
                 }
                 CycleWeapon(0);
                 SetTarget(null);
-                if (vesselRadarData && vesselRadarData.locked && missilesAway == 0) // Don't unlock targets while we've got missiles in the air.
+
+                if (vesselRadarData && vesselRadarData.locked && missilesAway.Count == 0) // Don't unlock targets while we've got missiles in the air.
                 {
                     vesselRadarData.UnlockAllTargets();
                 }
@@ -3909,7 +3960,7 @@ namespace BDArmory.Control
 
                         if (candidateClass == WeaponClasses.Missile)
                         {
-                            if (missilesAway >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
+                            if (firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                             MissileLauncher mlauncher = item.Current as MissileLauncher;
                             float candidateDetDist = 0;
                             float candidateAccel = 0; //for anti-missile, prioritize proxidetonation and accel
@@ -4207,7 +4258,7 @@ namespace BDArmory.Control
                         //projectile weapon selected, any missiles that take precedence?
                         if (candidateClass == WeaponClasses.Missile)
                         {
-                            if (missilesAway >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
+                            if (firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                             float candidateDetDist = 0;
                             float candidateTurning = 0;
                             int candidatePriority = 0;
@@ -4455,7 +4506,7 @@ namespace BDArmory.Control
                         {
                             MissileLauncher Bomb = item.Current as MissileLauncher;
                             if (targetWeapon != null && targetWeapon.GetWeaponClass() == WeaponClasses.Missile) continue;
-                            if (missilesAway >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
+                            if (firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                             // only useful if we are flying
                             float candidateYield = Bomb.GetBlastRadius();
                             int candidateCluster = Bomb.clusterbomb;
@@ -4544,7 +4595,7 @@ namespace BDArmory.Control
                             // - add code to choose optimal missile based on target profile - i.e. use bigger bombs on large landcruisers, smaller bombs on small Vees that don't warrant that sort of overkill?
                             MissileLauncher Missile = item.Current as MissileLauncher;
                             if (vessel.Splashed && FlightGlobals.getAltitudeAtPos(item.Current.GetPart().transform.position) < -2) continue;
-                            if (missilesAway >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
+                            if (firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                             float candidateYield = Missile.GetBlastRadius();
                             double srfSpeed = currentTarget.Vessel.horizontalSrfSpeed;
                             bool EMP = Missile.EMP;
@@ -4616,7 +4667,7 @@ namespace BDArmory.Control
                         // almost as good as STS missiles, which we don't have.
                         if (candidateClass == WeaponClasses.SLW && target.isSplashed)
                         {
-                            if (missilesAway >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
+                            if (firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                             MissileLauncher SLW = item.Current as MissileLauncher;
                             float candidateYield = SLW.GetBlastRadius();
                             bool EMP = SLW.EMP;
@@ -4679,7 +4730,7 @@ namespace BDArmory.Control
                             {
                                 if (item.Current.GetMissileType().ToLower() != "torpedo") continue;
                                 if (distance < candidateYield) continue; //don't use explosives within their blast radius
-                                if (missilesAway >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
+                                if (firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                                 targetWeapon = item.Current;
                                 targetWeaponPriority = candidatePriority;
                                 break;
@@ -5020,6 +5071,20 @@ namespace BDArmory.Control
                 guardTarget = null;
                 currentTarget = null;
             }
+            if (engagedTargets > 0)
+            {
+                heatTarget = TargetSignatureData.noTarget; //clear holdover targets when switching targets
+                antiRadTargetAcquired = false;
+                MissileBase ml = CurrentMissile;
+                if (ml && ml.TargetingMode == MissileBase.TargetingModes.Radar && ml.radarLOAL)
+                {
+                    vesselRadarData.UnlockCurrentTarget();//unlock current target only if missile isn't slaved to ship radar guidance to allow new F&F lock
+                }
+                else
+                {
+                    vesselRadarData.SwitchActiveLockedTarget(guardTarget);
+                }
+            }
         }
 
         #endregion Smart Targeting
@@ -5206,6 +5271,7 @@ namespace BDArmory.Control
                 ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(antiRadiationTarget,
                         vessel.mainBody);
             }
+            ml.targetVessel = currentTarget;
         }
 
         #endregion Targeting
@@ -5287,9 +5353,8 @@ namespace BDArmory.Control
             {
                 targetScanTimer = Time.time;
 
-                if (!guardFiringMissile)
+                if (!guardFiringMissile || (firedMissiles >= maxMissilesOnTarget && multiMissileTgtNum > 1 && BDATargetManager.TargetList(Team).Count > 1)) //grab new target, if possible
                 {
-
                     SmartFindTarget();
 
                     if (guardTarget == null || selectedWeapon == null)
@@ -5325,9 +5390,9 @@ namespace BDArmory.Control
                             launchAuthorized = launchAuthorized && GetLaunchAuthorization(guardTarget, this);
 
                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                                Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " launchAuth=" + launchAuthorized + ", pilotAut=" + pilotAuthorized + ", missilesAway/Max=" + missilesAway + "/" + maxMissilesOnTarget);
+                                Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " launchAuth=" + launchAuthorized + ", pilotAut=" + pilotAuthorized + ", missilesAway/Max=" + firedMissiles + "/" + maxMissilesOnTarget);
 
-                            if (missilesAway < maxMissilesOnTarget)
+                            if (firedMissiles < maxMissilesOnTarget)
                             {
                                 if (!guardFiringMissile && launchAuthorized
                                     && (CurrentMissile != null && (CurrentMissile.TargetingMode != MissileBase.TargetingModes.Radar || (vesselRadarData != null && (!vesselRadarData.locked || vesselRadarData.lockedTargetData.vessel == guardTarget))))) // Allow firing multiple missiles at the same target. FIXME This is a stop-gap until proper multi-locking support is available.

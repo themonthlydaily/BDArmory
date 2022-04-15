@@ -809,7 +809,7 @@ namespace BDArmory.Competition.VesselSpawning
 
         // TODO Continuous Single Spawning and Team Spawning should probably, at some point, be separated into their own spawn strategies that make use of the above spawning functions. Also, they need cleaning up, which would probably remove the need for some of the SpawnAllVesselsOnce variants above.
         #region Continuous Single Spawning
-        private bool vesselsSpawningOnceContinuously = false;
+        public bool vesselsSpawningOnceContinuously = false;
         public Coroutine spawnAllVesselsOnceContinuouslyCoroutine = null;
 
         public void SpawnAllVesselsOnceContinuously(int worldIndex, double latitude, double longitude, double altitude = 0, float distance = 10f, bool absDistanceOrFactor = false, float easeInSpeed = 1f, bool killEverythingFirst = true, bool assignTeams = true, int numberOfTeams = 0, List<int> teamCounts = null, List<List<string>> teamsSpecific = null, string spawnFolder = null, List<string> craftFiles = null)
@@ -827,7 +827,7 @@ namespace BDArmory.Competition.VesselSpawning
 
         public IEnumerator SpawnAllVesselsOnceContinuouslyCoroutine(SpawnConfig spawnConfig)
         {
-            while ((vesselsSpawningOnceContinuously) && (BDArmorySettings.VESSEL_SPAWN_CONTINUE_SINGLE_SPAWNING))
+            while (vesselsSpawningOnceContinuously && BDArmorySettings.VESSEL_SPAWN_CONTINUE_SINGLE_SPAWNING)
             {
                 SpawnAllVesselsOnce(spawnConfig);
                 while (vesselsSpawning)
@@ -863,9 +863,9 @@ namespace BDArmory.Competition.VesselSpawning
 
                 // Wait 10s for any user action
                 double startTime = Planetarium.GetUniversalTime();
-                if ((vesselsSpawningOnceContinuously) && (BDArmorySettings.VESSEL_SPAWN_CONTINUE_SINGLE_SPAWNING))
+                if (BDArmorySettings.VESSEL_SPAWN_CONTINUE_SINGLE_SPAWNING)
                 {
-                    while ((Planetarium.GetUniversalTime() - startTime) < BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS)
+                    while (vesselsSpawningOnceContinuously && Planetarium.GetUniversalTime() - startTime < BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS)
                     {
                         BDACompetitionMode.Instance.competitionStatus.Add("Waiting " + (BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS - (Planetarium.GetUniversalTime() - startTime)).ToString("0") + "s, then respawning pilots");
                         yield return new WaitForSeconds(1);

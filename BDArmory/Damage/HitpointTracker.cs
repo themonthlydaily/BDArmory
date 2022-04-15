@@ -652,7 +652,7 @@ namespace BDArmory.Damage
 
                         var structuralMass = density * structuralVolume; //this just means hp = mass if the density is within the limits.
 
-                        //biger things need more hp; but things that are denser, should also have more hp, so it's a bit mroe complicated than have hp = volume * hp mult
+                        //bigger things need more hp; but things that are denser, should also have more hp, so it's a bit more complicated than have hp = volume * hp mult
                         //hp = (volume * Hp mult) * density mod?
                         //lets take some examples; 3 identical size parts, mk1 cockpit(930kg), mk1 stuct tube (100kg), mk1 LF tank (250kg)
                         //if, say, a Hp mod of 300, so 2.55m3 * 300 = 765 -> 800hp
@@ -675,16 +675,17 @@ namespace BDArmory.Damage
                             if (part.Modules.Contains("FARWingAerodynamicModel") || part.Modules.Contains("FARControllableSurface"))
                             {
                                 //procwing hp already modified by mass, because it is mass
-                                //so using base part mass is it can be properly modified my material HP mod below
-                                hitpoints = (partMass * 1000f) * 3.5f * hitpointMultiplier * 0.333f; //To account for FAR's Strength-mass Scalar.
-                                //unfortunately the same trick can't be used for FAR wings, so mass hack it is.
+                                //so using base part mass is it can be properly modified by material HP mod below
+                                hitpoints = (partMass * 1000f) * 3.5f * hitpointMultiplier * 0.333f; //To account for FAR's Strength-mass Scalar.  //unfortunately the same trick can't be used for FAR wings, so mass hack it is.
+                                armorVolume = (float)Math.Round(hitpoints / hitpointMultiplier / 0.333 / 175, 1); //half of HP due to wing's 0.5x area modifier to prevent double armor
                             }
                             else
                             {
                                 //hitpoints = (partMass * 1000f) * 7f * hitpointMultiplier * 0.333f; // since wings are basically a 2d object, lets have mass be our scalar - afterall, 2x the mass will ~= 2x the surfce area
                                 hitpoints = (float)Math.Round(part.Modules.GetModule<ModuleLiftingSurface>().deflectionLiftCoeff, 2) * 700 * hitpointMultiplier * 0.333f; //this yields the same result, but not beholden to mass changes
+                                armorVolume = (float)Math.Round(hitpoints / hitpointMultiplier / 0.333 / 350, 1); //stock is 0.25 lift/m2, so...
                             } //breaks when pWings are made stupidly thick/large  //should really figure out a fix for that someday
-
+                            ArmorModified(null, null);
                         }
 
                         switch (HullTypeNum)
@@ -714,9 +715,9 @@ namespace BDArmory.Damage
                                 hitpoints = maxHitPoints;
                                 break;
                         }
-						hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
+                        hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
                         if (hitpoints <= 0) hitpoints = HpRounding;
-						if (BDArmorySettings.DRAW_DEBUG_LABELS && maxHitPoints <= 0 && Hitpoints != hitpoints) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} updated HP: {Hitpoints}->{hitpoints} at time {Time.time}");
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS && maxHitPoints <= 0 && Hitpoints != hitpoints) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} updated HP: {Hitpoints}->{hitpoints} at time {Time.time}");
                     }
                 }
                 else
