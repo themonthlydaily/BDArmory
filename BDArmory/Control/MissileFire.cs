@@ -1,28 +1,24 @@
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using System.Text;
+using System;
 using UnityEngine;
 using KSP.Localization;
 
 using BDArmory.Competition;
-
 using BDArmory.CounterMeasure;
 using BDArmory.Extensions;
 using BDArmory.GameModes;
 using BDArmory.Guidances;
-
 using BDArmory.Radar;
 using BDArmory.Settings;
 using BDArmory.Targeting;
 using BDArmory.UI;
 using BDArmory.Utils;
-using BDArmory.Weapons;
-using BDArmory.Weapons.Missiles;
 using BDArmory.WeaponMounts;
-
-using System.Collections;
-using System;
-
+using BDArmory.Weapons.Missiles;
+using BDArmory.Weapons;
 
 namespace BDArmory.Control
 {
@@ -1246,7 +1242,7 @@ namespace BDArmory.Control
         private void CalculateMissilesAway()
         {
             missilesAway.Clear();
-            int tempMissilesAway = 0;
+            // int tempMissilesAway = 0;
             //firedMissiles = 0;
             if (!guardMode) return;
             using (List<IBDWeapon>.Enumerator Missiles = BDATargetManager.FiredMissiles.GetEnumerator())
@@ -3392,7 +3388,7 @@ namespace BDArmory.Control
                         {
                             if (missilesAway[target.Current] >= maxMissilesOnTarget)
                             {
-								targetsAssigned.Add(target.Current);
+								                targetsAssigned.Add(target.Current);
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[MissileFire] Adding " + target.Current.Vessel.GetName() + " to exclusion list; length: " + targetsAssigned.Count);
                             }
                         }
@@ -5297,7 +5293,7 @@ namespace BDArmory.Control
                 ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(antiRadiationTarget,
                         vessel.mainBody);
             }
-            ml.targetVessel = currentTarget; 
+            ml.targetVessel = currentTarget;
         }
 
         #endregion Targeting

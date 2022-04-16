@@ -750,7 +750,7 @@ namespace BDArmory.UI
                 while (target.MoveNext())
                 {
                     if (target.Current == null) continue;
-					if (target.Current.NumFriendliesEngaging(mf.Team) >= 2) continue;
+                    if (target.Current.NumFriendliesEngaging(mf.Team) >= 2) continue;
                     if ((mf.multiTargetNum > 1 || mf.multiMissileTgtNum > 1) && mf.targetsAssigned.Contains(target.Current)) continue;
                     if (target.Current && target.Current.Vessel && target.Current.isFlying && !target.Current.isMissile && target.Current.isThreat)
                     {
@@ -924,7 +924,7 @@ namespace BDArmory.UI
                 while (target.MoveNext())
                 {
                     Debug.Log("[BDATargetmanager] evaluating " + target.Current.Vessel.GetName());
-                    if ((mf.multiTargetNum > 1 || mf.multiMissileTgtNum > 1) && mf.targetsAssigned.Contains(target.Current)) continue;            
+                    if ((mf.multiTargetNum > 1 || mf.multiMissileTgtNum > 1) && mf.targetsAssigned.Contains(target.Current)) continue;
                     if (target.Current != null && target.Current.Vessel && mf.CanSeeTarget(target.Current) && !target.Current.isMissile && target.Current.isThreat)
                     {
                         float targetScore = (target.Current == mf.currentTarget ? mf.targetBias : 1f) * (
