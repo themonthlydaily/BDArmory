@@ -747,7 +747,7 @@ namespace BDArmory.Radar
 
             for (int i = 0; i < lockedTargetIndexes.Count; i++)
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DRAW_RADAR_LABELS)
                 {
                     string label = string.Empty;
                     if (i == activeLockedTargetIndex)
@@ -1192,7 +1192,7 @@ namespace BDArmory.Radar
 
         private void UnlinkVRD(VesselRadarData vrd)
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselRadarData]: Unlinking VRD: " + vrd.vessel.vesselName);
+            if (BDArmorySettings.DRAW_RADAR_LABELS) Debug.Log("[BDArmory.VesselRadarData]: Unlinking VRD: " + vrd.vessel.vesselName);
             externalVRDs.Remove(vrd);
 
             List<ModuleRadar> radarsToUnlink = new List<ModuleRadar>();
@@ -1212,7 +1212,7 @@ namespace BDArmory.Radar
             while (mr.MoveNext())
             {
                 if (mr.Current == null) continue;
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselRadarData]:  - Unlinking radar: " + mr.Current.radarName);
+                if (BDArmorySettings.DRAW_RADAR_LABELS) Debug.Log("[BDArmory.VesselRadarData]:  - Unlinking radar: " + mr.Current.radarName);
                 UnlinkRadar(mr.Current);
             }
             mr.Dispose();
@@ -1324,7 +1324,7 @@ namespace BDArmory.Radar
                 yield return null;
             }
             LinkVRD(vrd);
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselRadarData]: Radar data link recovered: Local - " + vessel.vesselName + ", External - " +
+            if (BDArmorySettings.DRAW_RADAR_LABELS) Debug.Log("[BDArmory.VesselRadarData]: Radar data link recovered: Local - " + vessel.vesselName + ", External - " +
                        vrd.vessel.vesselName);
         }
 
@@ -1720,7 +1720,7 @@ namespace BDArmory.Radar
                         }
                     }
 
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    if (BDArmorySettings.DRAW_RADAR_LABELS)
                     {
                         GUI.Label(new Rect(pingPosition.x + (pingSize.x / 2), pingPosition.y, 100, 24),
                             lockedTarget.signalStrength.ToString("0.0"));
@@ -1994,7 +1994,7 @@ namespace BDArmory.Radar
                         TryLockTarget(displayedTargets[i]);
                     }
 
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    if (BDArmorySettings.DRAW_RADAR_LABELS)
                     {
                         GUI.Label(new Rect(pingPosition.x + (pingSize.x / 2), pingPosition.y, 100, 24),
                             displayedTargets[i].targetData.signalStrength.ToString("0.0"));

@@ -105,7 +105,7 @@ namespace BDArmory.FX
             LightFx = gameObject.GetComponent<Light>();
             LightFx.range = Range * 3f;
 
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DRAW_DAMAGE_LABELS)
             {
                 Debug.Log("[BDArmory.ExplosionFX]: Explosion started tntMass: {" + Power + "}  BlastRadius: {" + Range + "} StartTime: {" + StartTime + "}, Duration: {" + MaxTime + "}");
             }
@@ -148,7 +148,7 @@ namespace BDArmory.FX
                 {
                     if (enuEvents.Current == null) continue;
 
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    if (BDArmorySettings.DRAW_DAMAGE_LABELS)
                     {
                         Debug.Log("[BDArmory.ExplosionFX]: Enqueueing Blast Event");
                     }
@@ -406,7 +406,7 @@ namespace BDArmory.FX
             }
             if (warheadType == WarheadTypes.ContinuousRod)
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ExplosionFX]: " + p.name + " at " + Vector3.Angle(direction, (hit.point - Position).normalized) + " angle from CR explosion direction");
+                if (BDArmorySettings.DRAW_DAMAGE_LABELS) Debug.Log("[BDArmory.ExplosionFX]: " + p.name + " at " + Vector3.Angle(direction, (hit.point - Position).normalized) + " angle from CR explosion direction");
                 if (Vector3.Angle(direction, (hit.point - Position).normalized) >= 75 && Vector3.Angle(direction, (hit.point - Position).normalized) <= 105)
                 {
                     return true;
@@ -415,7 +415,7 @@ namespace BDArmory.FX
             }
             else
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ExplosionFX]: " + p.name + " at " + Vector3.Angle(direction, (hit.point - Position).normalized) + $" angle from {warheadType} explosion direction");
+                if (BDArmorySettings.DRAW_DAMAGE_LABELS) Debug.Log("[BDArmory.ExplosionFX]: " + p.name + " at " + Vector3.Angle(direction, (hit.point - Position).normalized) + $" angle from {warheadType} explosion direction");
                 return (Vector3.Angle(direction, (hit.point - Position).normalized) <= AngleOfEffect);
             }
         }
@@ -620,7 +620,7 @@ namespace BDArmory.FX
                 {
                     building.Demolish();
                 }
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DRAW_DAMAGE_LABELS)
                 {
                     Debug.Log("[BDArmory.ExplosionFX]: Explosion hit destructible building! Hitpoints Applied: " + Mathf.Round(damageToBuilding) +
                              ", Building Damage : " + Mathf.Round(building.Damage) +
@@ -677,7 +677,7 @@ namespace BDArmory.FX
 
                 if (blastInfo.Damage > 0)
                 {
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    if (BDArmorySettings.DRAW_DAMAGE_LABELS)
                     {
                         Debug.Log(
                             "[BDArmory.ExplosionFX]: Executing blast event Part: {" + part.name + "}, " +
@@ -821,14 +821,14 @@ namespace BDArmory.FX
                         }
                     }
                 }
-                else if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                else if (BDArmorySettings.DRAW_DAMAGE_LABELS)
                 {
                     Debug.Log("[BDArmory.ExplosiveFX]: Part " + part.name + " at distance " + realDistance + "m took no damage due to parts with " + cumulativeHPOfIntermediateParts + "HP and " + cumulativeArmorOfIntermediateParts + " Armor in the way.");
                 }
             }
             else
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DRAW_DAMAGE_LABELS)
                 {
                     Debug.Log(
                         "[BDArmory.ExplosionFX]: Executing blast event Part: {" + part.name + "}, " +
@@ -933,7 +933,7 @@ namespace BDArmory.FX
             if (direction == default(Vector3) && explosionSourceType == ExplosionSourceType.Missile)
             {
                 eFx.warheadType = WarheadTypes.Standard;
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ExplosionFX]: No direction param specified, defaulting warhead type!");
+                if (BDArmorySettings.DRAW_DAMAGE_LABELS) Debug.Log("[BDArmory.ExplosionFX]: No direction param specified, defaulting warhead type!");
             }
             if (tntMassEquivalent <= 5)
             {
@@ -951,7 +951,7 @@ namespace BDArmory.FX
             //////////////////////////////////////////////////////////
             if (rb == null || rb.mass == 0) return;
             rb.AddForceAtPosition(force, position, ForceMode.VelocityChange);
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DRAW_DAMAGE_LABELS)
             {
                 Debug.Log("[BDArmory.ExplosionFX]: Force Applied | Explosive : " + Math.Round(force.magnitude, 2));
             }

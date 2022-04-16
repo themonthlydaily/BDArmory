@@ -46,7 +46,13 @@ namespace BDArmory.Settings
         // Debug Labels
         [BDAPersistentSettingsField] public static bool DRAW_DEBUG_LINES = false;                   //AI/Weapon aim visualizers
         [BDAPersistentSettingsField] public static bool DRAW_DEBUG_LABELS = false;
-        [BDAPersistentSettingsField] public static bool DRAW_ARMOR_LABELS = false;                 //armor only debug messages, for testing/debugging. remove/revert back to debug_labels later
+        [BDAPersistentSettingsField] public static bool DRAW_ARMOR_LABELS = false;                 //armor and HP
+		[BDAPersistentSettingsField] public static bool DRAW_WEAPON_LABELS = false;                //Debug messages for guns/rockets/lasers and their projectiles
+        [BDAPersistentSettingsField] public static bool DRAW_MISSILE_LABELS = false;               //Missile launch, tracking and targeting debug labels
+        [BDAPersistentSettingsField] public static bool DRAW_DAMAGE_LABELS = false;                //Explosions and battle damage logging
+        [BDAPersistentSettingsField] public static bool DRAW_AI_LABELS = false;                    //AI debugging
+        [BDAPersistentSettingsField] public static bool DRAW_RADAR_LABELS = false;                 //FLIR/Radar and RCS debugging
+
 
         [BDAPersistentSettingsField] public static bool REMOTE_SHOOTING = false;
         [BDAPersistentSettingsField] public static bool BOMB_CLEARANCE_CHECK = false;

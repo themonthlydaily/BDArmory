@@ -454,7 +454,7 @@ namespace BDArmory.FX
                                     existingLeakFX.lifeTime = 0; //kill leakFX, start fire
                                     leakcount++;
                                 }
-                                //Debug.Log("[BullethitFX] Adding fire. HE? " + explosive + "; Inc? " + incendiary + "; inerttank? " + inertTank);
+                                //if (BDArmorySettings.DRAW_DAMAGE_LABELS) Debug.Log("[BullethitFX] Adding fire. HE? " + explosive + "; Inc? " + incendiary + "; inerttank? " + inertTank);
                                 AttachFire(hit.point, hitPart, caliber, sourcevessel, -1, leakcount);
                             }
                         }
@@ -472,7 +472,7 @@ namespace BDArmory.FX
                         leakFX.lifeTime = (10 * BDArmorySettings.BD_TANK_LEAK_TIME);
                     }
                 }
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BulletHitFX]: BulletHit attaching fuel leak, drainrate: " + leakFX.drainRate);
+                if (BDArmorySettings.DRAW_DAMAGE_LABELS) Debug.Log("[BDArmory.BulletHitFX]: BulletHit attaching fuel leak, drainrate: " + leakFX.drainRate);
 
                 fuelLeak.SetActive(true);
             }
@@ -491,7 +491,7 @@ namespace BDArmory.FX
                 fireFX.surfaceFire = surfaceFire;
                 //fireFX.transform.localScale = Vector3.one * (caliber/10);
 
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BulletHitFX]: BulletHit fire, burn rate: " + fireFX.burnRate + "; Surface fire: " + surfaceFire);
+                if (BDArmorySettings.DRAW_DAMAGE_LABELS) Debug.Log("[BDArmory.BulletHitFX]: BulletHit fire, burn rate: " + fireFX.burnRate + "; Surface fire: " + surfaceFire);
                 fire.SetActive(true);
             }
         }

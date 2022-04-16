@@ -50,7 +50,7 @@ namespace BDArmory.Utils
 
             float finalDamage = (float)totalDamage;
 
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DRAW_DAMAGE_LABELS)
             {
                 Debug.Log(
                     "[BDArmory.BlastPhysicsUtils]: Blast Debug data: {" + part.name + "}, " +

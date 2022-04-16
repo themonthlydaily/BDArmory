@@ -1,6 +1,7 @@
 using UnityEngine;
 
 using BDArmory.UI;
+using BDArmory.Settings;
 
 namespace BDArmory.Damage
 {
@@ -42,7 +43,7 @@ namespace BDArmory.Damage
         {
             startMass = this.part.mass;
             hasSetup = true;
-            Debug.Log("[BDArmory.ModuleMassAdjust]: Applying ME field to " + this.part.name + ", orig mass: " + startMass + ", massMod = " + massMod);
+            if (BDArmorySettings.DRAW_DAMAGE_LABELS) Debug.Log("[BDArmory.ModuleMassAdjust]: Applying ME field to " + this.part.name + ", orig mass: " + startMass + ", massMod = " + massMod);
 
             if (massMod < 0) //for negative mass modifier - i.e. MassEffect sytyle antigrav/weight reduction
             {

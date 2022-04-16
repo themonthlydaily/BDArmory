@@ -137,7 +137,7 @@ namespace BDArmory.UI
 
         void Update()
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS && FlightGlobals.ready)
+            if (BDArmorySettings.DRAW_AI_LABELS && FlightGlobals.ready)
             {
                 updateTimer -= Time.fixedDeltaTime;
                 if (updateTimer < 0)
@@ -491,7 +491,7 @@ namespace BDArmory.UI
         public void SaveGPSTargets(ConfigNode saveNode = null)
         {
             string saveTitle = HighLogic.CurrentGame.Title;
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDATargetManager]: Save title: " + saveTitle);
+            if (BDArmorySettings.DRAW_RADAR_LABELS) Debug.Log("[BDArmory.BDATargetManager]: Save title: " + saveTitle);
             ConfigNode fileNode = ConfigNode.Load(gpsTargetsCfg);
             if (fileNode == null)
             {
@@ -549,7 +549,7 @@ namespace BDArmory.UI
                 string targetString = GPSListToString();
                 gpsNode.SetValue("Targets", targetString, true);
                 fileNode.Save(gpsTargetsCfg);
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDATargetManager]: ==== Saved BDA GPS Targets ====");
+                if (BDArmorySettings.DRAW_RADAR_LABELS) Debug.Log("[BDArmory.BDATargetManager]: ==== Saved BDA GPS Targets ====");
             }
         }
 
@@ -932,7 +932,7 @@ namespace BDArmory.UI
             using (var target = TargetList(mf.Team).GetEnumerator())
                 while (target.MoveNext())
                 {
-                    Debug.Log("[BDATargetmanager] evaluating " + target.Current.Vessel.GetName());
+                    //Debug.Log("[BDATargetmanager] evaluating " + target.Current.Vessel.GetName());
                     if ((mf.multiTargetNum > 1 || mf.multiMissileTgtNum > 1) && mf.targetsAssigned.Contains(target.Current)) continue;            
                     if (target.Current != null && target.Current.Vessel && mf.CanSeeTarget(target.Current) && !target.Current.isMissile && target.Current.isThreat)
                     {
@@ -957,7 +957,7 @@ namespace BDArmory.UI
                         }
                     }
                 }
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DRAW_AI_LABELS)
                 Debug.Log("[BDArmory.BDATargetManager]: Selected " + (finalTarget != null ? finalTarget.Vessel.GetDisplayName() : "null") + " with target score of " + finalTargetScore.ToString("0.00"));
 
             mf.UpdateTargetPriorityUI(finalTarget);
@@ -995,7 +995,7 @@ namespace BDArmory.UI
                         }
                         else
                         {
-                            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                            if (BDArmorySettings.DRAW_MISSILE_LABELS)
                                 Debug.LogWarning("[BDArmory.BDATargetManager]: checking target missile -  doesn't have missile module");
                         }
 
@@ -1079,7 +1079,7 @@ namespace BDArmory.UI
 
         void OnGUI()
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DRAW_AI_LABELS)
             {
                 GUI.Label(new Rect(600, 100, 600, 600), debugString.ToString());
             }

@@ -453,7 +453,7 @@ namespace BDArmory.Radar
 
         IEnumerator StartUpRoutine()
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DRAW_RADAR_LABELS)
                 Debug.Log("[BDArmory.ModuleRadar]: StartupRoutine: " + radarName + " enabled: " + radarEnabled);
             while (!FlightGlobals.ready || vessel.packed)
             {
@@ -674,7 +674,7 @@ namespace BDArmory.Radar
                 return false;
             }
 
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DRAW_RADAR_LABELS)
             {
                 if (targetVessel == null)
                     Debug.Log("[BDArmory.ModuleRadar]: Trying to radar lock target with (" + radarName + ")");
@@ -684,7 +684,7 @@ namespace BDArmory.Radar
 
             if (currentLocks == maxLocks)
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DRAW_RADAR_LABELS)
                     Debug.Log("[BDArmory.ModuleRadar]: - Failed, this radar already has the maximum allowed targets locked.");
                 return false;
             }
@@ -717,7 +717,7 @@ namespace BDArmory.Radar
                     lockedTargets.Add(attemptedLocks[i]);
                     currLocks = lockedTargets.Count;
 
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    if (BDArmorySettings.DRAW_RADAR_LABELS)
                         Debug.Log("[BDArmory.ModuleRadar]: - Acquired lock on target (" + (attemptedLocks[i].vessel != null ? attemptedLocks[i].vessel.name : null) + ")");
 
                     vesselRadarData.AddRadarContact(this, lockedTarget, true);
@@ -726,7 +726,7 @@ namespace BDArmory.Radar
                 }
             }
 
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DRAW_RADAR_LABELS)
                 Debug.Log("[BDArmory.ModuleRadar]: - Failed to lock on target.");
 
             return false;
@@ -837,7 +837,7 @@ namespace BDArmory.Radar
                 vesselRadarData.UnlockAllTargetsOfRadar(this);
             }
 
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DRAW_RADAR_LABELS)
                 Debug.Log("[BDArmory.ModuleRadar]: Radar Targets were cleared (" + radarName + ").");
         }
 

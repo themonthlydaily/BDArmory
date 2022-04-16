@@ -2362,11 +2362,16 @@ namespace BDArmory.UI
                     }
                 }
 
-                BDArmorySettings.DRAW_DEBUG_LABELS = GUI.Toggle(SLineThirdRect(++line, 0), BDArmorySettings.DRAW_DEBUG_LABELS, Localizer.Format("#LOC_BDArmory_Settings_DebugLabels"));//"Debug Labels"
                 if (BDArmorySettings.ADVANDED_USER_SETTINGS)
                 {
-                    BDArmorySettings.DRAW_ARMOR_LABELS = GUI.Toggle(SLineThirdRect(line, 1), BDArmorySettings.DRAW_ARMOR_LABELS, Localizer.Format("#LOC_BDArmory_Settings_DebugArmor"));//"Armor debug Lines"
-                    BDArmorySettings.DRAW_DEBUG_LINES = GUI.Toggle(SLineThirdRect(line, 2), BDArmorySettings.DRAW_DEBUG_LINES, Localizer.Format("#LOC_BDArmory_Settings_DebugLines"));//"Debug Lines"
+                    BDArmorySettings.DRAW_WEAPON_LABELS = GUI.Toggle(SLineThirdRect(++line, 0), BDArmorySettings.DRAW_DEBUG_LABELS, Localizer.Format("#LOC_BDArmory_Settings_DebugWeapons"));//"Debug Weapons"
+                    BDArmorySettings.DRAW_ARMOR_LABELS = GUI.Toggle(SLineThirdRect(line, 1), BDArmorySettings.DRAW_ARMOR_LABELS, Localizer.Format("#LOC_BDArmory_Settings_DebugArmor"));//"Debug Armor"
+                    BDArmorySettings.DRAW_DAMAGE_LABELS = GUI.Toggle(SLineThirdRect(line, 2), BDArmorySettings.DRAW_DEBUG_LINES, Localizer.Format("#LOC_BDArmory_Settings_DebugDamage"));//"Debug Damage"
+                    BDArmorySettings.DRAW_MISSILE_LABELS = GUI.Toggle(SLineThirdRect(++line, 0), BDArmorySettings.DRAW_DEBUG_LABELS, Localizer.Format("#LOC_BDArmory_Settings_DebugMissiles"));//"Debug Missiles"
+                    BDArmorySettings.DRAW_AI_LABELS = GUI.Toggle(SLineThirdRect(line, 1), BDArmorySettings.DRAW_ARMOR_LABELS, Localizer.Format("#LOC_BDArmory_Settings_DebugAI"));//"Debug AI"
+                    BDArmorySettings.DRAW_RADAR_LABELS = GUI.Toggle(SLineThirdRect(line, 2), BDArmorySettings.DRAW_DEBUG_LINES, Localizer.Format("#LOC_BDArmory_Settings_DebugRadar"));//"Debug Detectors"
+                    BDArmorySettings.DRAW_DEBUG_LABELS = GUI.Toggle(SLineThirdRect(++line, 0), BDArmorySettings.DRAW_DEBUG_LABELS, Localizer.Format("#LOC_BDArmory_Settings_DebugLabels"));//"Debug Labels"
+                    BDArmorySettings.DRAW_DEBUG_LINES = GUI.Toggle(SLineThirdRect(line, 1), BDArmorySettings.DRAW_ARMOR_LABELS, Localizer.Format("#LOC_BDArmory_Settings_DebugLines"));//"Debug Lines"
                 }
 
                 line += 0.5f;

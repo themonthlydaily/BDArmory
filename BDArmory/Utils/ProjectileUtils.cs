@@ -32,6 +32,7 @@ namespace BDArmory.Utils
             // Apply damage
             float damage;
             damage = hitPart.AddBallisticDamage(projmass, caliber, multiplier, penetrationfactor, DmgMult, impactVelocity, explosionSource);
+            if (BDArmorySettings.DRAW_WEAPON_LABELS) Debug.Log("[BDArmory.PartExtensions]: Ballistic Hitpoints Applied to " + hitPart.name + ": " + damage);
 
             if (BDArmorySettings.BATTLEDAMAGE)
             {
@@ -634,7 +635,7 @@ namespace BDArmory.Utils
                     Debug.Log("[BDArmory.ProjectileUtils{Calc Deformation}]: Bullet Deformation modifier " + newCaliber);
                 }
                 newCaliber *= caliber;
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ProjectileUtils{Calc Deformation}]: bullet now " + (newCaliber) + " mm");
+                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[BDArmory.ProjectileUtils{Calc Deformation}]: bullet now " + (newCaliber) + " mm");
                 return newCaliber;
             }
         }
@@ -741,7 +742,7 @@ namespace BDArmory.Utils
                 {
                     building.Demolish();
                 }
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DRAW_WEAPON_LABELS)
                     Debug.Log("[BDArmory.ProjectileUtils]: Ballistic hit destructible building! Hitpoints Applied: " + Mathf.Round(damageToBuilding) +
                              ", Building Damage : " + Mathf.Round(building.Damage) +
                              " Building Threshold : " + building.impactMomentumThreshold);
@@ -803,7 +804,7 @@ namespace BDArmory.Utils
             if (fuelPct == 1f || fuelPct == 0f)
                 probability = 0f;
 
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DRAW_WEAPON_LABELS)
             {
                 Debug.Log("[BDArmory.ProjectileUtils]: Explosive Probablitliy " + probability);
             }
@@ -830,7 +831,7 @@ namespace BDArmory.Utils
                 }
             }
 
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DRAW_WEAPON_LABELS)
             {
                 Debug.Log("[BDArmory.ProjectileUtils]: Penetration of bullet detonated fuel!");
             }

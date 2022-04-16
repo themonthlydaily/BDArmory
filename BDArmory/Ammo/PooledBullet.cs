@@ -940,7 +940,7 @@ namespace BDArmory.Bullets
 
                         hitPart.rb.AddForceAtPosition(impactVelocity.normalized * accelerationMagnitude, hit.point, ForceMode.Acceleration);
 
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                        if (BDArmorySettings.DRAW_WEAPON_LABELS)
                             Debug.Log("[BDArmory.PooledBullet]: Force Applied " + Math.Round(accelerationMagnitude, 2) + "| Vessel mass in kgs=" + hitPart.vessel.GetTotalMass() * 1000 + "| bullet effective mass =" + (bulletMass - tntMass));
                     }
                     distanceTraveled += hit.distance;
@@ -1005,7 +1005,7 @@ namespace BDArmory.Bullets
                         //distanceTraveled += hit.distance;
                         if (!fuzeTriggered)
                         {
-                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.PooledBullet]: Delay Fuze Tripped");
+                            if (BDArmorySettings.DRAW_WEAPON_LABELS) Debug.Log("[BDArmory.PooledBullet]: Delay Fuze Tripped");
                             fuzeTriggered = true;
                             StartCoroutine(DelayedDetonationRoutine());
                         }
@@ -1050,7 +1050,7 @@ namespace BDArmory.Bullets
             //smaller caliber rounds would be too deformed to do any further damage
             if (currentVelocity.magnitude <= 100 && hasPenetrated)
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DRAW_WEAPON_LABELS)
                 {
                     Debug.Log("[BDArmory.PooledBullet]: Bullet Velocity too low, stopping");
                 }
@@ -1213,8 +1213,8 @@ namespace BDArmory.Bullets
             {
                 if (Vector3.Distance(transform.position, tgtShell != null ? tgtShell.transform.position : tgtRocket.transform.position) < detonationRange / 2)
                 {
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                        Debug.Log("[BDArmory.PooledRocket]: rocket proximity to APS target | Distance overlap = " + detonationRange + "| tgt name = " + tgtShell != null ? tgtShell.name : tgtRocket.name);
+                    if (BDArmorySettings.DRAW_WEAPON_LABELS)
+                        Debug.Log("[BDArmory.PooledBullet]: bullet proximity to APS target | Distance overlap = " + detonationRange + "| tgt name = " + tgtShell != null ? tgtShell.name : tgtRocket.name);
                     return detonate = true;
                 }
             }
@@ -1240,7 +1240,7 @@ namespace BDArmory.Bullets
                             if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
 
 
-                            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                            if (BDArmorySettings.DRAW_WEAPON_LABELS)
                                 Debug.Log("[BDArmory.PooledBullet]: Bullet proximity sphere hit | Distance overlap = " + detonationRange + "| Part name = " + partHit.name);
 
                             return detonate = true;
@@ -1321,7 +1321,7 @@ namespace BDArmory.Bullets
                 //if bullet hits and is HE, detonate and kill bullet
                 if ((explosive || nuclear) && tntMass > 0)
                 {
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    if (BDArmorySettings.DRAW_WEAPON_LABELS)
                     {
                         Debug.Log("[BDArmory.PooledBullet]: Detonation Triggered | penetration: " + hasPenetrated + " penTick: " + penTicker + " airDet: " + (fuzeType == BulletFuzeTypes.Timed || fuzeType == BulletFuzeTypes.Flak));
                     }
@@ -1392,7 +1392,7 @@ namespace BDArmory.Bullets
             //15 degrees should virtually guarantee a ricochet, but 75 degrees should nearly always be fine
             float chance = (((angleFromNormal - 5) / 75) * (hitTolerance / 150)) * 100 / Mathf.Clamp01(impactVel / 600);
             float random = UnityEngine.Random.Range(0f, 100f);
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.PooledBullet]: Ricochet chance: " + chance);
+            if (BDArmorySettings.DRAW_WEAPON_LABELS) Debug.Log("[BDArmory.PooledBullet]: Ricochet chance: " + chance);
             if (random < chance)
             {
                 DoRicochet(p, hit, angleFromNormal, fractionOfDistance, period);

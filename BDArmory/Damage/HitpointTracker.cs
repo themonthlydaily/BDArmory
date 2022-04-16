@@ -190,7 +190,7 @@ namespace BDArmory.Damage
                             try
                             {
                                 maxHitPoints = float.Parse(maxHPString);
-                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitpointTracker]: setting maxHitPoints of " + part + " on " + part.vessel.vesselName + " to " + maxHitPoints);
+                                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[BDArmory.HitpointTracker]: setting maxHitPoints of " + part + " on " + part.vessel.vesselName + " to " + maxHitPoints);
                                 _updateHitpoints = true;
                             }
                             catch (Exception e)
@@ -243,7 +243,7 @@ namespace BDArmory.Damage
             }
             else
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitpointTracker]: OnStart part is null");
+                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[BDArmory.HitpointTracker]: OnStart part is null");
             }
         }
 
@@ -564,7 +564,7 @@ namespace BDArmory.Damage
                 HullMassAdjust = oldHullMassAdjust; // Put the HullmassAdjust back so we can test against it when we update the hull mass.
                 if (oldPartMass != partMass)
                 {
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} updated mass at {Time.time}: part.mass {part.mass}, partMass {oldPartMass}->{partMass}, armorMass {armorMass}, hullMassAdjust {HullMassAdjust}");
+                    if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} updated mass at {Time.time}: part.mass {part.mass}, partMass {oldPartMass}->{partMass}, armorMass {armorMass}, hullMassAdjust {HullMassAdjust}");
                     _hullModified = true; // Modifying the mass modifies the hull.
                     _updateHitpoints = true;
                 }
@@ -636,12 +636,12 @@ namespace BDArmory.Damage
                         var density = (partMass * 1000f) / structuralVolume;
                         if (density > 1e5f || density < 10)
                         {
-                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} extreme density detected: {density}! Trying alternate approach based on partSize.");
+                            if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} extreme density detected: {density}! Trying alternate approach based on partSize.");
                             structuralVolume = (partSize.x * partSize.y + partSize.x * partSize.z + partSize.y * partSize.z) * 2f * sizeAdjust * Mathf.PI / 6f * 0.1f; // Box area * sphere/cube ratio * 10cm. We use sphere/cube ratio to get similar results as part.GetAverageBoundSize().
                             density = (partMass * 1000f) / structuralVolume;
                             if (density > 1e5f || density < 10)
                             {
-                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} still has extreme density: {density}! Setting HP based only on mass instead.");
+                                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} still has extreme density: {density}! Setting HP based only on mass instead.");
                                 clampHP = true;
                             }
                         }
@@ -666,7 +666,7 @@ namespace BDArmory.Damage
                         //hitpoints = (structuralVolume * Mathf.Pow(density, .333f) * Mathf.Clamp(80 - (structuralVolume / 2), 80 / 4, 80)) * hitpointMultiplier * 0.333f; //volume * cuberoot of density * HP mult scaled by size
                         if (clampHP)
                         {
-                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: Clamping hitpoints for part {part.name} from {hitpoints} to {hitpointMultiplier * (partMass + HullMassAdjust) * 333f}");
+                            if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: Clamping hitpoints for part {part.name} from {hitpoints} to {hitpointMultiplier * (partMass + HullMassAdjust) * 333f}");
                             hitpoints = hitpointMultiplier * partMass * 333f;
                         }
                         // SuicidalInsanity B9 patch //should this come before the hp clamping?
@@ -699,7 +699,7 @@ namespace BDArmory.Damage
                         }
                         hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
                         if (hitpoints <= 0) hitpoints = HpRounding;
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS && maxHitPoints <= 0 && Hitpoints != hitpoints) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} updated HP: {Hitpoints}->{hitpoints} at time {Time.time}, partMass: {partMass}, density: {density}, structuralVolume: {structuralVolume}, structuralMass {structuralMass}");
+                        if (BDArmorySettings.DRAW_ARMOR_LABELS && maxHitPoints <= 0 && Hitpoints != hitpoints) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} updated HP: {Hitpoints}->{hitpoints} at time {Time.time}, partMass: {partMass}, density: {density}, structuralVolume: {structuralVolume}, structuralMass {structuralMass}");
                     }
                     else // Override based on part configuration for custom parts
                     {
@@ -717,7 +717,7 @@ namespace BDArmory.Damage
                         }
                         hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
                         if (hitpoints <= 0) hitpoints = HpRounding;
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS && maxHitPoints <= 0 && Hitpoints != hitpoints) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} updated HP: {Hitpoints}->{hitpoints} at time {Time.time}");
+                        if (BDArmorySettings.DRAW_ARMOR_LABELS && maxHitPoints <= 0 && Hitpoints != hitpoints) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} updated HP: {Hitpoints}->{hitpoints} at time {Time.time}");
                     }
                 }
                 else
@@ -767,7 +767,7 @@ namespace BDArmory.Damage
 
             if (Hitpoints <= 0)
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitPointTracker] Setting HP to " + Hitpoints + ", destroying");
+                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[BDArmory.HitPointTracker] Setting HP to " + Hitpoints + ", destroying");
                 DestroyPart();
             }
         }
@@ -1003,7 +1003,7 @@ namespace BDArmory.Damage
             //part.RefreshAssociatedWindows(); //having this fire every time a change happens prevents sliders from being used. Add delay timer?
             if (OldArmorType != ArmorTypeNum || oldArmorMass != armorMass)
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} updated armour mass {oldArmorMass}->{armorMass} or type {OldArmorType}->{ArmorTypeNum} at time {Time.time}");
+                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} updated armour mass {oldArmorMass}->{armorMass} or type {OldArmorType}->{ArmorTypeNum} at time {Time.time}");
                 OldArmorType = ArmorTypeNum;
                 _updateMass = true;
                 part.UpdateMass();
@@ -1127,7 +1127,7 @@ namespace BDArmory.Damage
             }
             if (OldHullType != HullTypeNum || OldHullMassAdjust != HullMassAdjust)
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} updated hull mass {OldHullMassAdjust}->{HullMassAdjust} (part mass {partMass}, total mass {part.mass + HullMassAdjust - OldHullMassAdjust}) or type {OldHullType}->{HullTypeNum} at time {Time.time}");
+                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} updated hull mass {OldHullMassAdjust}->{HullMassAdjust} (part mass {partMass}, total mass {part.mass + HullMassAdjust - OldHullMassAdjust}) or type {OldHullType}->{HullTypeNum} at time {Time.time}");
                 OldHullType = HullTypeNum;
                 _updateMass = true;
                 part.UpdateMass();

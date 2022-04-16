@@ -1332,12 +1332,12 @@ namespace BDArmory.Weapons
                 {
                     if (rocketInfo == null)
                     {
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                        //if (BDArmorySettings.DRAW_WEAPON_LABELS)
                             Debug.Log("[BDArmory.ModuleWeapon]: Failed To load rocket : " + currentType);
                     }
                     else
                     {
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                        if (BDArmorySettings.DRAW_WEAPON_LABELS)
                             Debug.Log("[BDArmory.ModuleWeapon]: AmmoType Loaded : " + currentType);
                     }
                 }
@@ -1345,12 +1345,12 @@ namespace BDArmory.Weapons
                 {
                     if (bulletInfo == null)
                     {
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                        //if (BDArmorySettings.DRAW_WEAPON_LABELS)
                             Debug.Log("[BDArmory.ModuleWeapon]: Failed To load bullet : " + currentType);
                     }
                     else
                     {
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                        if (BDArmorySettings.DRAW_WEAPON_LABELS)
                             Debug.Log("[BDArmory.ModuleWeapon]: BulletType Loaded : " + currentType);
                     }
                 }
@@ -1541,7 +1541,7 @@ namespace BDArmory.Weapons
                 {
                     if (!(weaponState == WeaponStates.PoweringDown || weaponState == WeaponStates.Disabled))
                     {
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Vessel is uncontrollable, disabling weapon " + part.name);
+                        if (BDArmorySettings.DRAW_WEAPON_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Vessel is uncontrollable, disabling weapon " + part.name);
                         DisableWeapon();
                     }
                     return;
@@ -3090,7 +3090,7 @@ namespace BDArmory.Weapons
                     debugAccAdj = 0.5f * targetAcceleration * timeToCPA * timeToCPA;
                     debugGravAdj = bulletDropOffset;
                     // var missDistance = AIUtils.PredictPosition(bulletRelativePosition, bulletRelativeVelocity, bulletRelativeAcceleration, timeToCPA);
-                    // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG δt: " + timeToCPA + ", miss: " + missDistance + ", bullet drop: " + bulletDropOffset + ", final: " + finalTarget + ", target: " + targetPosition + ", " + targetVelocity + ", " + targetAcceleration + ", distance: " + targetDistance);
+                    // if (BDArmorySettings.DRAW_WEAPON_LABELS) Debug.Log("DEBUG δt: " + timeToCPA + ", miss: " + missDistance + ", bullet drop: " + bulletDropOffset + ", final: " + finalTarget + ", target: " + targetPosition + ", " + targetVelocity + ", " + targetAcceleration + ", distance: " + targetDistance);
 #endif
                 }
                 if ((BDArmorySettings.AIM_ASSIST || aiControlled) && eWeaponType == WeaponTypes.Rocket) //Rocket targeting
@@ -4007,7 +4007,7 @@ namespace BDArmory.Weapons
                         TargetInfo currentTarget = visualTargetVessel.gameObject.GetComponent<TargetInfo>();
                         if (currentTarget == null)
                         {
-                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + (visualTargetVessel != null ? visualTargetVessel.vesselName : "'unknown'") + " has no TargetInfo.");
+                            if (BDArmorySettings.DRAW_WEAPON_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + (visualTargetVessel != null ? visualTargetVessel.vesselName : "'unknown'") + " has no TargetInfo.");
                             return;
                         }
                         List<Part> targetparts = new List<Part>();
@@ -4081,7 +4081,7 @@ namespace BDArmory.Weapons
                             }
                             if (targetparts.Count == 0)
                             {
-                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + visualTargetVessel.vesselName + " has no targetable parts.");
+                                if (BDArmorySettings.DRAW_WEAPON_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + visualTargetVessel.vesselName + " has no targetable parts.");
                                 targetPosition = visualTargetVessel.CoM;
                             }
                             else
@@ -4912,7 +4912,7 @@ namespace BDArmory.Weapons
                     proximityDetonation = false;
                 }
             }
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DRAW_WEAPON_LABELS)
             {
                 Debug.Log("[BDArmory.ModuleWeapon]: DetonationDistance = : " + detonationRange);
             }
