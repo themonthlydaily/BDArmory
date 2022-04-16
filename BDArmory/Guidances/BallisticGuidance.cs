@@ -1,8 +1,9 @@
 ﻿using System;
-using BDArmory.Core.Extension;
-using BDArmory.Misc;
-using BDArmory.Modules;
 using UnityEngine;
+
+using BDArmory.Extensions;
+using BDArmory.Utils;
+using BDArmory.Weapons.Missiles;
 
 namespace BDArmory.Guidances
 {

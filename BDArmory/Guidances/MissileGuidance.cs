@@ -1,11 +1,10 @@
 using System;
-using BDArmory.Control;
-using BDArmory.Core;
-using BDArmory.Core.Extension;
-using BDArmory.Core.Utils;
-using BDArmory.Misc;
-using BDArmory.Modules;
 using UnityEngine;
+
+using BDArmory.Extensions;
+using BDArmory.Settings;
+using BDArmory.Utils;
+using BDArmory.Weapons.Missiles;
 
 namespace BDArmory.Guidances
 {

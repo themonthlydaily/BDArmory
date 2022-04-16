@@ -1,12 +1,17 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using BDArmory.Core;
-using BDArmory.Core.Extension;
-using BDArmory.Misc;
-using BDArmory.Modules;
-using BDArmory.UI;
 using UnityEngine;
+
+using BDArmory.Competition;
+using BDArmory.Control;
+using BDArmory.Extensions;
+using BDArmory.Settings;
+using BDArmory.UI;
+using BDArmory.Utils;
+using BDArmory.Weapons;
+using BDArmory.Weapons.Missiles;
+using BDArmory.WeaponMounts;
 
 namespace BDArmory.Targeting
 {
@@ -238,7 +243,7 @@ namespace BDArmory.Targeting
             if (radarMassAtUpdate > 0)
             {
                 float massPercentageDifference = (radarMassAtUpdate - vessel.GetTotalMass()) / radarMassAtUpdate;
-                if ((massPercentageDifference > 0.025f) && (weaponManager) && (weaponManager.missilesAway == 0) && !weaponManager.guardFiringMissile)
+                if ((massPercentageDifference > 0.025f) && (weaponManager) && (weaponManager.missilesAway.Count == 0) && !weaponManager.guardFiringMissile)
                 {
                     alreadyScheduledRCSUpdate = true;
                     yield return new WaitForSeconds(1.0f);    // Wait for any explosions to finish

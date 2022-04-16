@@ -1,14 +1,13 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using BDArmory.Core;
-using BDArmory.Core.Extension;
-using BDArmory.Core.Module;
-using BDArmory.Control;
-using BDArmory.Misc;
+
+using BDArmory.Competition;
+using BDArmory.Extensions;
+using BDArmory.Settings;
 using BDArmory.UI;
+using BDArmory.Utils;
 
 namespace BDArmory.Modules
 {

@@ -1,12 +1,12 @@
 using System;
-using System.Collections.Generic;
-using BDArmory.Core;
-using BDArmory.Core.Extension;
-using BDArmory.CounterMeasure;
-using BDArmory.Misc;
-using BDArmory.Modules;
-using BDArmory.Radar;
 using UnityEngine;
+
+using BDArmory.Competition;
+using BDArmory.CounterMeasure;
+using BDArmory.Extensions;
+using BDArmory.Radar;
+using BDArmory.Settings;
+using BDArmory.Utils;
 
 namespace BDArmory.Targeting
 {
@@ -178,7 +178,7 @@ namespace BDArmory.Targeting
         {
             get
             {
-                return new TargetSignatureData(Vector3.zero, Vector3.zero, Vector3.zero, false, 0);
+                return new TargetSignatureData(Vector3.zero, Vector3.zero, Vector3.zero, false, (float)RadarWarningReceiver.RWRThreatTypes.None);
             }
         }
 

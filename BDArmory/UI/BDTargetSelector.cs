@@ -1,9 +1,9 @@
 using System.Collections;
-using BDArmory.Core;
-using BDArmory.Misc;
-using BDArmory.Modules;
 using UnityEngine;
 using KSP.Localization;
+
+using BDArmory.Control;
+using BDArmory.Utils;
 
 namespace BDArmory.UI
 {
@@ -143,8 +143,8 @@ namespace BDArmory.UI
                 + (targetWeaponManager.targetCommand ? Localizer.Format("#LOC_BDArmory_Command") + "; " : "")
                 + (targetWeaponManager.targetEngine ? Localizer.Format("#LOC_BDArmory_Engines") + "; " : "")
                 + (targetWeaponManager.targetWeapon ? Localizer.Format("#LOC_BDArmory_Weapons") + "; " : "");
-            BDGUIUtils.RepositionWindow(ref window);
-            BDGUIUtils.UseMouseEventInRect(window);
+            GUIUtils.RepositionWindow(ref window);
+            GUIUtils.UseMouseEventInRect(window);
         }
 
         protected virtual void OnGUI()
@@ -160,7 +160,7 @@ namespace BDArmory.UI
                         width,
                         height);
                     window = GUI.Window(10591029, clientRect, TargetingSelectorWindow, "", BDArmorySetup.BDGuiSkin.window);
-                    Utils.UpdateGUIRect(window, guiCheckIndex);
+                    GUIUtils.UpdateGUIRect(window, guiCheckIndex);
             }
         }
 
@@ -187,7 +187,7 @@ namespace BDArmory.UI
                 yield return null;
 
             ready = true;
-            guiCheckIndex = Utils.RegisterGUIRect(new Rect());
+            guiCheckIndex = GUIUtils.RegisterGUIRect(new Rect());
         }
     }
 }

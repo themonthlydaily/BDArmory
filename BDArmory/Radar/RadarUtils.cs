@@ -1,15 +1,16 @@
 using System.Collections.Generic;
+using UnityEngine;
+
 using BDArmory.Control;
-using BDArmory.Core;
-using BDArmory.Core.Extension;
-using BDArmory.Core.Utils;
 using BDArmory.CounterMeasure;
-using BDArmory.Misc;
-using BDArmory.Modules;
+using BDArmory.Extensions;
+using BDArmory.Settings;
 using BDArmory.Shaders;
 using BDArmory.Targeting;
 using BDArmory.UI;
-using UnityEngine;
+using BDArmory.Utils;
+using BDArmory.Weapons;
+using BDArmory.Weapons.Missiles;
 
 namespace BDArmory.Radar
 {
@@ -1208,6 +1209,7 @@ namespace BDArmory.Radar
                 foundMissile = false,
                 foundHeatMissile = false,
                 foundRadarMissile = false,
+                foundAntiRadiationMissile = false,
                 foundAGM = false,
                 firingAtMe = false,
                 missDistance = float.MaxValue,
@@ -1279,6 +1281,9 @@ namespace BDArmory.Radar
                                             case MissileBase.TargetingModes.Laser:
                                                 results.foundAGM = true;
                                                 break;
+                                            case MissileBase.TargetingModes.AntiRad:
+                                                results.foundAntiRadiationMissile = true;
+                                                break;
                                         }
                                     }
                                 }
@@ -1333,12 +1338,13 @@ namespace BDArmory.Radar
         public static bool MissileIsThreat(MissileBase missile, MissileFire mf, bool threatToMeOnly = true)
         {
             if (missile == null || missile.part == null) return false;
+            Vector3 vectorFromMissile = mf.vessel.CoM - missile.part.transform.position;
+            if ((vectorFromMissile.sqrMagnitude > (mf.guardRange * mf.guardRange)) && (missile.TargetingMode != MissileBase.TargetingModes.Radar)) return false;
             if (threatToMeOnly)
             {
-                Vector3 vectorFromMissile = mf.vessel.CoM - missile.part.transform.position;
                 Vector3 relV = missile.vessel.Velocity() - mf.vessel.Velocity();
                 bool approaching = Vector3.Dot(relV, vectorFromMissile) > 0;
-                bool withinRadarFOV = (missile.TargetingMode == MissileBase.TargetingModes.Radar || missile.TargetingModeTerminal == MissileBase.TargetingModes.Radar) ?
+                bool withinRadarFOV = (missile.TargetingMode == MissileBase.TargetingModes.Radar) ?
                     (Vector3.Angle(missile.GetForwardTransform(), vectorFromMissile) <= Mathf.Clamp(missile.lockedSensorFOV, 40f, 90f) / 2f) : false;
                 var missileBlastRadiusSqr = 3f * missile.GetBlastRadius();
                 missileBlastRadiusSqr *= missileBlastRadiusSqr;
@@ -1362,10 +1368,9 @@ namespace BDArmory.Radar
                         if (wms == null || wms.Team != mf.Team)
                             continue;
 
-                        Vector3 vectorFromMissile = wms.vessel.CoM - missile.part.transform.position;
                         Vector3 relV = missile.vessel.Velocity() - wms.vessel.Velocity();
                         bool approaching = Vector3.Dot(relV, vectorFromMissile) > 0;
-                        bool withinRadarFOV = (missile.TargetingMode == MissileBase.TargetingModes.Radar || missile.TargetingModeTerminal == MissileBase.TargetingModes.Radar) ?
+                        bool withinRadarFOV = (missile.TargetingMode == MissileBase.TargetingModes.Radar) ?
                             (Vector3.Angle(missile.GetForwardTransform(), vectorFromMissile) <= Mathf.Clamp(missile.lockedSensorFOV, 40f, 90f) / 2f) : false;
                         var missileBlastRadiusSqr = 3f * missile.GetBlastRadius();
                         missileBlastRadiusSqr *= missileBlastRadiusSqr;
@@ -1403,7 +1408,7 @@ namespace BDArmory.Radar
         /// <summary>
         /// Helper method: check if line intersects terrain
         /// </summary>
-		public static bool TerrainCheck(Vector3 start, Vector3 end)
+        public static bool TerrainCheck(Vector3 start, Vector3 end)
         {
             if (!BDArmorySettings.IGNORE_TERRAIN_CHECK)
             {

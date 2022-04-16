@@ -3,17 +3,19 @@ using System.IO;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
-using BDArmory.Core;
-using BDArmory.Core.Extension;
-using BDArmory.Core.Utils;
-using BDArmory.CounterMeasure;
-using BDArmory.Misc;
-using BDArmory.Modules;
-using BDArmory.Parts;
-using BDArmory.Radar;
-using BDArmory.Targeting;
-using BDArmory.Bullets;
 using UnityEngine;
+
+using BDArmory.Bullets;
+using BDArmory.Competition;
+using BDArmory.Control;
+using BDArmory.CounterMeasure;
+using BDArmory.Extensions;
+using BDArmory.Radar;
+using BDArmory.Settings;
+using BDArmory.Targeting;
+using BDArmory.Utils;
+using BDArmory.Weapons;
+using BDArmory.Weapons.Missiles;
 
 namespace BDArmory.UI
 {
@@ -364,7 +366,7 @@ namespace BDArmory.UI
 
                     if (!allAspect)
                     {
-                        if (!Utils.CheckSightLineExactDistance(ray.origin, vessel.CoM + vessel.Velocity(), Vector3.Distance(vessel.CoM, ray.origin), 5, 5))
+                        if (!OtherUtils.CheckSightLineExactDistance(ray.origin, vessel.CoM + vessel.Velocity(), Vector3.Distance(vessel.CoM, ray.origin), 5, 5))
                             continue;
                     }
 
@@ -635,14 +637,14 @@ namespace BDArmory.UI
         //format: very mangled json :(
         private string GPSListToString()
         {
-            return Utils.JsonCompat(JsonUtility.ToJson(new SerializableGPSData(GPSTargets)));
+            return OtherUtils.JsonCompat(JsonUtility.ToJson(new SerializableGPSData(GPSTargets)));
         }
 
         private void StringToGPSList(string listString)
         {
             try
             {
-                GPSTargets = JsonUtility.FromJson<SerializableGPSData>(Utils.JsonDecompat(listString)).Load();
+                GPSTargets = JsonUtility.FromJson<SerializableGPSData>(OtherUtils.JsonDecompat(listString)).Load();
 
                 Debug.Log("[BDArmory.BDATargetManager]: Loaded GPS Targets.");
             }

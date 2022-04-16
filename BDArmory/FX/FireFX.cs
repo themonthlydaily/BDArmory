@@ -1,14 +1,14 @@
 ﻿using System;
-using BDArmory.Control;
-using BDArmory.Core;
-using BDArmory.Core.Extension;
-using BDArmory.Core.Utils;
-using BDArmory.Core.Module;
-using BDArmory.Misc;
-using BDArmory.Modules;
-using BDArmory.UI;
 using System.Linq;
 using UnityEngine;
+
+using BDArmory.Competition;
+using BDArmory.Damage;
+using BDArmory.Extensions;
+using BDArmory.Modules;
+using BDArmory.Settings;
+using BDArmory.UI;
+using BDArmory.Utils;
 
 namespace BDArmory.FX
 {
@@ -121,7 +121,7 @@ namespace BDArmory.FX
                             enginerestartTime = Time.time;
                         }
                         burnTime = 4;
-                        Utils.RefreshAssociatedWindows(parentPart);
+                        GUIUtils.RefreshAssociatedWindows(parentPart);
                         Debug.Log("[FireFX] firebottles remaining in " + parentPart.name + ": " + FBX.FireBottles);
                     }
                     else
@@ -338,7 +338,7 @@ namespace BDArmory.FX
                     }
                     else
                     {
-                        if (BDArmorySettings.ENABLE_HOS && parentPart.vessel.GetName() == BDArmorySettings.HALL_OF_SHAME)
+                        if (BDArmorySettings.ENABLE_HOS && BDArmorySettings.HALL_OF_SHAME_LIST.Contains(parentPart.vessel.GetName()))
                         {
                             parentPart.AddDamage(BDArmorySettings.HOS_FIRE * Time.deltaTime);
                         }
@@ -349,7 +349,7 @@ namespace BDArmory.FX
                     BDACompetitionMode.Instance.Scores.RegisterBattleDamage(SourceVessel, parentPart.vessel, BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
                 }
             }
-            if (disableTime < 0 && (!hasFuel || (burnTime >= 0 && Time.time - startTime > burnTime)))
+            if (disableTime < 0 && ((!hasFuel && burnTime < 0)|| (burnTime >= 0 && Time.time - startTime > burnTime)))
             {
                 disableTime = Time.time; //grab time when emission stops
                 foreach (var pe in pEmitters)
@@ -424,7 +424,7 @@ namespace BDArmory.FX
                     ec.maxAmount = 0;
                     ec.isVisible = false;
                     if (!parentBeingDestroyed) parentPart.RemoveResource(ec);//destroy battery. not calling part.destroy, since some batteries in cockpits.
-                    Utils.RefreshAssociatedWindows(parentPart);
+                    GUIUtils.RefreshAssociatedWindows(parentPart);
                 }
                 //tntMassEquivilent *= BDArmorySettings.BD_AMMO_DMG_MULT; //handled by EXP_DMG_MOD_BATTLE_DAMAGE
                 if (BDArmorySettings.DRAW_DEBUG_LABELS && tntMassEquivalent > 0)

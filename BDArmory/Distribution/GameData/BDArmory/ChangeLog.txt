@@ -1,12 +1,104 @@
-﻿FIXES
+﻿v1.5.0.0
+FIXES
+- Fix 'resizeSquare' texture not being loaded sometimes (due to a race condition?).
+- Clean up log spam from ExplosionFX.
+IMPROVEMENTS
+- Major internal refactor to better organise code.
+- Switch to a single DLL release.
+
+- Fix AI GUI slider increments to match AI PAW.
+- Add Dynamic Damping P/Y/R readouts to AI GUI.
+- Fix ATG missiles not respecting maxMissilesPerTarget.
+- Add Missile multi-targeting.
+- Adds new Max Missile Tgts setting in WM to set max targets to engage with missiles.
+- Craft now once again get alarm SFX when incoming missiles.
+- Fix ProcWing armor calculations.
+- Adds missing FFAR rocket ammo to universal ammo boxes.
+- Fix TOW missile FX.
+- Shift some missile targeting code from OnUpdate to OnFixedUpdate.
+- Stop continuous single spawn when running a tournament.
+
+- General:
+	- Add missing HP rounding to some parts.
+	- Optimise the PartExploderSystem to minimise creation of new vessels.
+	- Add a toggle to the UI settings section to disable flare smoke (which can kill performance and is purely visual).
+- AI:
+	- Add a 5° deadzone around being on target for dynamic damping to avoid feed-back loop in PID.
+	- Add a check for requested extending already being satisfied.
+	- Add terrain awareness to the pilot AI's waypoint fly-to direction.
+	- Add a 'Waypoint Terrain Avoidance' slider to the pilot AI to control the range and strength of the waypoint terrain avoidance reaction.
+- GameModes:
+	- Waypoints:
+		- Add support for multiple waypoint gate models.
+		- Add waypoint scaling from 50-1000m.
+		- Altitude overrides for S4R10.
+		- Remember the previously used HoSTag.
+		- Add right click to 'Run waypoints' to spawn with the vessel spawner coordinates instead of the hard-coded ones.
+		- Add multiple courses and a selection UI.
+- Weapons:
+	- Use min of missile drop time or 2 sec instead of fixed two second period for check target will be within missile maxOffBoresight at future time.
+- RWP:
+	- Hall of Shame now supports multiple craft.
+	- Add HoS support to Waypoint mode.
+
+v1.4.18.4
+IMPROVEMENTS
+- Add slider in the pilot AI for controlling the waypoint pre-roll time.
+- Add slider in the pilot AI for waypoint yaw authority time to switch from normal steering mode control of yaw to aiming steering mode of yaw when approaching waypoints.
+- Add relevant AI GUI entries for these too.
+- Also check for WM when checking that a waypoint competition is running.
+
+v1.4.18.3
+IMPROVEMENTS
+- Waypoint visualization added.
+	- 3 rings with radii 500m, 100m and 10m, with a central crosshair and animated arrows.
+	- Togglable in the Waypoints Options section of the Vessel Spawner window.
+	- Waypoint model can be customized to whatever, provided the model URL is "BDArmory/Models/WayPoint/model".
+
+v1.4.18.2
+IMPROVEMENTS
+- Predict the minimum deviation on the frame before passing a waypoint to avoid the bad fly-to direction for the frame after passing that waypoint.
+- Roll into waypoints 0.5s ahead of the waypoint in preparation for the next one.
+- Add initial support for using splines.
+
+v1.4.18.1
+FIXES
+- Check waypoint completion when in waypoints mode even if a different action is being taken (fixes extra large deviations and missed waypoints).
+IMPROVEMENTS
+- Interpolate the waypoint deviation to give a better estimate of the minimum deviation.
+
+v1.4.18.0
+Note: Due to some internal refactoring, CameraTools also needs to be updated to version 1.21.0 to work with this version of BDArmory.
+FIXES
 - Add checks to only adjust scores when a competition is active.
 - Fix interpretation of demo vessel optimisation script.
 - Fix CASE-2 ammo reduction when cloning part.
-- Fix laser battledaamge.
+- Fix laser battledamage.
 - Fix DebugLines not disabling when toggled off.
+- Reorder custom bay toggle branch so it's not overwritten by airstream check (fixes custom cargo bay not being deployed).
+- Fixed Anti-Radiation missiles not working properly.
+- Fix barrage mode fire rate decrease/guns never overheating.
+- Fix armor panels being too protective against HE.
+- Fix selection logic for missiles when targeting missiles.
+- Fix ammo belt exploit.
 IMPROVEMENTS
 - General:
+	- Major internal refactor for code organisation and maintainability.
+	- BDArmory is now a single DLL (the old BDArmory.Core.dll will be detected and removed).
 	- Add a 'Generate Clean Save' toggle for auto-loading to the KSC without generating a clean save (tournaments and evolution still generate a clean save).
+- AI:
+	- New AI part: AI Vertical Takeoff and Landing Pilot (for helicopters, VTOL jets, and airships). 
+		- The VTOL AI behaves like the Surface AI in combat.
+		- The AI flies your craft by using throttle to control altitude and pitch to control speed.
+		- The AI will try to stay above the minimum altitude at all times and if it can, at the default altitude outside of combat and the combat altitude during combat.
+		- The AI will obey the max pitch and max bank settings and fly no faster than the set maximum and combat speed settings.
+	- Don't treat passive (non-radar-guided) missiles outside visual range as incoming missile threats until they enter visual range.
+	- Lower the altitude at which gear is toggled to the minimum of 50m or minAltitude/2.
+	- Lower the minimum of the terrain avoidance sliders to allow values below 1.
+- WM:
+	- Extend MMG smartpick selection logic.
+	- Targets in guard mode no longer receive RWR warnings for missile launches outside their visual range.
+	- Craft in guard mode will turn off their radars if they have an incoming anti-radiation missile within visual range.
 - Armor:
 	- Explosive Reactive Armor HP is now customizable.
 - Weapons:
@@ -14,13 +106,23 @@ IMPROVEMENTS
 	- Add explModelPath and explSoundPath to Sidam.
 	- Clean up rocket aiming, switch it to use the more accurate leap-frog numerical integrator and use ballistic aiming once the thrust period is over.
 	- Set laser weapons to use standard FX pipeline.
+	- Create new antiradTargetTypes variable for missiles that allows you to specify the RWR Threat Type that the anti-radiation missile should target. Default is 0,5 (SAM,Detection). See the HARM config file for more details.
 - GameModes:
 	- Paintball Mode now affects Nukes.
+	- Waypoint Mode added for racing/time trials instead of combat.
 - Tournamements:
 	- Add checks to only adjust scores when a competition is active (fixes differences in the API scores due to timing issues).
 	- Use base64 encoded vessel names internally in the parser to avoid issues with craft naming (e.g., craft with ':' in the name).
+	- Adds NPC swapper functionality to remote orchestration tournaments.
 - RWP:
 	- Add Hall of Shame code.
+- UI:
+	- Add a Waypoints Mode section to the Vessel Spawner window when the Waypoints game mode is enabled.
+- Internal:
+	- Replace hard-coded RWR threat types with RWRThreatType reference.
+	- Remove reference to TargetingModeTerminal since TargetingMode is updated to be equal to TargetingModeTerminal once terminal guidance activates.
+	- New spawn and orchestration strategies are partially implemented.
+	- Some refactoring of the spawning code is in progress.
 
 v1.4.17.0
 FIXES

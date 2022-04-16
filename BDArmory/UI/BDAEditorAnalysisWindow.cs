@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using BDArmory.Misc;
-using BDArmory.Modules;
-using BDArmory.Radar;
 using KSP.UI.Screens;
 using UnityEngine;
+
+using BDArmory.CounterMeasure;
+using BDArmory.Radar;
+using BDArmory.Utils;
 
 namespace BDArmory.UI
 {
@@ -256,7 +257,7 @@ namespace BDArmory.UI
             previous_index = selected_index;
 
             GUI.DragWindow();
-            BDGUIUtils.RepositionWindow(ref windowRect);
+            GUIUtils.RepositionWindow(ref windowRect);
         }
 
         void WindowRcsLegacy(int windowID)
@@ -373,7 +374,7 @@ namespace BDArmory.UI
             previous_index = selected_index;
 
             GUI.DragWindow();
-            BDGUIUtils.RepositionWindow(ref windowRect);
+            GUIUtils.RepositionWindow(ref windowRect);
         }
 
         void takeRadarSnapshot()
