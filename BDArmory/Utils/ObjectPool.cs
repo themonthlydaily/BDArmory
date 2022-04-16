@@ -15,7 +15,7 @@ namespace BDArmory.Utils
         public bool forceReUse;
         public int lastIndex = 0;
 
-        List<GameObject> pool;
+        public List<GameObject> pool;
 
         public string poolObjectName;
 

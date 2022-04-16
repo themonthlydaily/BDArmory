@@ -2335,8 +2335,18 @@ namespace BDArmory.UI
                 }
 
                 BDArmorySettings.SHOW_AMMO_GAUGES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.SHOW_AMMO_GAUGES, Localizer.Format("#LOC_BDArmory_Settings_AmmoGauges"));//"Ammo Gauges"
-                BDArmorySettings.FLARE_SMOKE = GUI.Toggle(SRightRect(line), BDArmorySettings.FLARE_SMOKE, Localizer.Format("#LOC_BDArmory_Settings_FlareSmoke"));//"Flare Smoke"
                 //BDArmorySettings.PERSISTENT_FX = GUI.Toggle(SRightRect(line), BDArmorySettings.PERSISTENT_FX, Localizer.Format("#LOC_BDArmory_Settings_PersistentFX"));//"Persistent FX"
+                BDArmorySettings.GAPLESS_PARTICLE_EMITTERS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.GAPLESS_PARTICLE_EMITTERS, Localizer.Format("#LOC_BDArmory_Settings_GaplessParticleEmitters"));//"Gapless Particle Emitters"
+                if (BDArmorySettings.FLARE_SMOKE != (BDArmorySettings.FLARE_SMOKE = GUI.Toggle(SRightRect(line), BDArmorySettings.FLARE_SMOKE, Localizer.Format("#LOC_BDArmory_Settings_FlareSmoke"))))//"Flare Smoke"
+                {
+                    foreach(var flareObj in CMDropper.flarePool.pool)
+                        if(flareObj.activeInHierarchy)
+                        {
+                            var flare = flareObj.GetComponent<CMFlare>();
+                            if (flare == null) continue;
+                            flare.EnableEmitters(BDArmorySettings.FLARE_SMOKE);
+                        }
+                }
                 BDArmorySettings.STRICT_WINDOW_BOUNDARIES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.STRICT_WINDOW_BOUNDARIES, Localizer.Format("#LOC_BDArmory_Settings_StrictWindowBoundaries"));//"Strict Window Boundaries"
                 if (BDArmorySettings.AI_TOOLBAR_BUTTON != (BDArmorySettings.AI_TOOLBAR_BUTTON = GUI.Toggle(SRightRect(line), BDArmorySettings.AI_TOOLBAR_BUTTON, Localizer.Format("#LOC_BDArmory_Settings_AIToolbarButton")))) // AI Toobar Button
                 {

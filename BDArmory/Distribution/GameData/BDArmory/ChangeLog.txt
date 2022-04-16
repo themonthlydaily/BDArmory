@@ -24,7 +24,8 @@ IMPROVEMENTS
 	- Add missing HP rounding to some parts.
 	- Optimise the PartExploderSystem to minimise creation of new vessels.
 	- CM Flares optimized, now have much reduced performance hit.
-	- Add a toggle to the UI settings section to disable flare smoke (which can kill performance and is purely visual).
+	- Add a toggle to the UI settings section to disable flare smoke.
+	- Add a toggle to the UI settings section to disable gapless particle emitters (mostly used for engine trails).
 - AI:
 	- Add a 5° deadzone around being on target for dynamic damping to avoid feed-back loop in PID.
 	- Add a check for requested extending already being satisfied.

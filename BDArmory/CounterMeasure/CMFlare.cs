@@ -12,8 +12,7 @@ namespace BDArmory.CounterMeasure
 {
     public class CMFlare : MonoBehaviour
     {
-        List<KSPParticleEmitter> pEmitters; // = new List<KSPParticleEmitter>(); // pEmitter2 * 2 + pEmitter KSPParticleEmitter per flare.
-        //List<BDAGaplessParticleEmitter> gaplessEmitters; // = new List<BDAGaplessParticleEmitter>();
+        List<KSPParticleEmitter> pEmitters;
 
         Light[] lights;
         float startTime;
@@ -69,49 +68,20 @@ namespace BDArmory.CounterMeasure
             minThermal = startThermal * 0.34f; // 0.3 is original value, but doesn't work well for Tigers, 0.4f gives decent performance for Tigers, 0.65 decay gives best flare performance overall based on some monte carlo analysis
             if (pEmitters == null)
             {
-                //gaplessEmitters = new List<BDAGaplessParticleEmitter>();
-
                 pEmitters = new List<KSPParticleEmitter>();
 
                 using (var pe = gameObject.GetComponentsInChildren<KSPParticleEmitter>().Cast<KSPParticleEmitter>().GetEnumerator())
                     while (pe.MoveNext())
                     {
                         if (pe.Current == null) continue;
-                        //if (pe.Current.useWorldSpace)
-                        //{
-                        //    BDAGaplessParticleEmitter gpe = pe.Current.gameObject.AddComponent<BDAGaplessParticleEmitter>();
-                        //    gaplessEmitters.Add(gpe);
-                        //    gpe.emit = true;
-                        //}
-                        //else
                         {
                             EffectBehaviour.AddParticleEmitter(pe.Current);
                             pEmitters.Add(pe.Current);
-                            if (!BDArmorySettings.FLARE_SMOKE)
-                            {
-                                pe.Current.emit = true;
-                            }
                         }
                     }
             }
-            //List<BDAGaplessParticleEmitter>.Enumerator gEmitter = gaplessEmitters.GetEnumerator();
-            //while (gEmitter.MoveNext())
-            //{
-            //    if (gEmitter.Current == null) continue;
-            //    gEmitter.Current.emit = true;
-            //}
-            //gEmitter.Dispose();
 
-            List<KSPParticleEmitter>.Enumerator pEmitter = pEmitters.GetEnumerator();
-            while (pEmitter.MoveNext())
-            {
-                if (pEmitter.Current == null) continue;
-                if (!BDArmorySettings.FLARE_SMOKE)
-                {
-                    pEmitter.Current.emit = true;
-                }
-            }
-            pEmitter.Dispose();
+            EnableEmitters(BDArmorySettings.FLARE_SMOKE);
 
             BDArmorySetup.numberOfParticleEmitters++;
 
@@ -162,12 +132,10 @@ namespace BDArmory.CounterMeasure
             Vector3 downForce = (Mathf.Clamp(velocity.magnitude, 0.1f, 150) / 150) * 20 * -upDirection;
 
             //turbulence
-            //using (List<BDAGaplessParticleEmitter>.Enumerator gEmitter = gaplessEmitters.GetEnumerator())
             using (List<KSPParticleEmitter>.Enumerator pEmitter = pEmitters.GetEnumerator())
                 while (pEmitter.MoveNext())
                 {
                     if (pEmitter.Current == null) continue;
-                    //if (!gEmitter.Current.pEmitter) continue;
                     try
                     {
                         pEmitter.Current.worldVelocity = 2 * ParticleTurbulence.flareTurbulence + downForce;
@@ -190,7 +158,7 @@ namespace BDArmory.CounterMeasure
                     }
                 }
             //
-            
+
             //thermal decay
             thermal = Mathf.MoveTowards(thermal, minThermal,
                 ((thermal - minThermal) / lifeTime) * Time.fixedDeltaTime);
@@ -206,14 +174,6 @@ namespace BDArmory.CounterMeasure
                         if (pe.Current == null) continue;
                         pe.Current.emit = false;
                     }
-                /*
-                using (List<BDAGaplessParticleEmitter>.Enumerator gpe = gaplessEmitters.GetEnumerator())
-                    while (gpe.MoveNext())
-                    {
-                        if (gpe.Current == null) continue;
-                        gpe.Current.emit = false;
-                    }
-                */
                 using (IEnumerator<Light> lgt = lights.AsEnumerable().GetEnumerator())
                     while (lgt.MoveNext())
                     {
@@ -249,6 +209,17 @@ namespace BDArmory.CounterMeasure
                 velocity += FlightGlobals.getGeeForceAtPosition(transform.position) * Time.fixedDeltaTime;
 
             transform.position += velocity * Time.fixedDeltaTime;
+        }
+
+        public void EnableEmitters(bool enable)
+        {
+            if (pEmitters == null) return;
+            using (var emitter = pEmitters.GetEnumerator())
+                while (emitter.MoveNext())
+                {
+                    if (emitter.Current == null) continue;
+                    emitter.Current.emit = enable;
+                }
         }
     }
 }
