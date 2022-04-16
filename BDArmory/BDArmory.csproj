@@ -58,82 +58,87 @@
   <ItemGroup>
     <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\_LocalDev\KSPRefs\Assembly-CSharp.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="KSPAssets, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\_LocalDev\KSPRefs\KSPAssets.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\KSPAssets.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.AnimationModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.AnimationModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.AnimationModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.AssetBundleModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.AssetBundleModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.AssetBundleModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.AudioModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.AudioModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.AudioModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.ImageConversionModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.ImageConversionModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.ImageConversionModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.IMGUIModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.IMGUIModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.IMGUIModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.InputLegacyModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.InputLegacyModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.InputLegacyModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.InputModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.InputModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.InputModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.JSONSerializeModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.JSONSerializeModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.JSONSerializeModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.ParticleSystemModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.ParticleSystemModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.ParticleSystemModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.PhysicsModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.PhysicsModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.PhysicsModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.TextCoreModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.TextCoreModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.TextCoreModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.TextRenderingModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.TextRenderingModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.TextRenderingModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UI, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.UI.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.UI.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UIElementsModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.UIElementsModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.UIElementsModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UIModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.UIModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.UIModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UnityWebRequestModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.UnityWebRequestModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.UnityWebRequestModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UnityWebRequestWWWModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.UnityWebRequestWWWModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.UnityWebRequestWWWModule.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Bullets\BulletInfo.cs" />
-    <Compile Include="Bullets\PooledBullet.cs" />
-    <Compile Include="Bullets\PooledRocket.cs" />
-    <Compile Include="Bullets\RocketInfo.cs" />
+    <Compile Include="Ammo\BulletInfo.cs" />
+    <Compile Include="Ammo\ModuleAmmoSwitch.cs" />
+    <Compile Include="Ammo\ModuleCASE.cs" />
+    <Compile Include="Ammo\PooledBullet.cs" />
+    <Compile Include="Ammo\PooledRocket.cs" />
+    <Compile Include="Ammo\RocketInfo.cs" />
+    <Compile Include="Armor\ArmorInfo.cs" />
+    <Compile Include="Armor\BDAdjustableArmor.cs" />
+    <Compile Include="Armor\ModuleReactiveArmor.cs" />
     <Compile Include="Competition\BDACompetitionMode.cs" />
     <Compile Include="Competition\BDATournament.cs" />
-    <Compile Include="Competition\BodyExtensions.cs" />
+    <Compile Include="Competition\BDTeam.cs" />
     <Compile Include="Competition\OrchestrationStrategies\OrchestrationStrategy.cs" />
     <Compile Include="Competition\OrchestrationStrategies\RankedFreeForAllStrategy.cs" />
     <Compile Include="Competition\OrchestrationStrategies\WaypointFollowingStrategy.cs" />
@@ -142,29 +147,42 @@
     <Compile Include="Competition\RemoteOrchestration\BDAScoreService.cs" />
     <Compile Include="Competition\RemoteOrchestration\VesselSource.cs" />
     <Compile Include="Competition\RemoteTournamentCoordinator.cs" />
-    <Compile Include="Competition\SpawnStrategies\CircularSpawnStrategy.cs" />
-    <Compile Include="Competition\SpawnStrategies\ListSpawnStrategy.cs" />
-    <Compile Include="Competition\SpawnStrategies\PointSpawnStrategy.cs" />
-    <Compile Include="Competition\SpawnStrategies\SpawnConfigStrategy.cs" />
-    <Compile Include="Competition\SpawnStrategies\SpawnStrategy.cs" />
+    <Compile Include="Competition\Scoring.cs" />
     <Compile Include="Competition\TournamentCoordinator.cs" />
     <Compile Include="Competition\VesselSpawning\CircularSpawning.cs" />
     <Compile Include="Competition\VesselSpawning\ContinuousSpawning.cs" />
     <Compile Include="Competition\VesselSpawning\SingleVesselSpawning.cs" />
     <Compile Include="Competition\VesselSpawning\SpawnConfig.cs" />
     <Compile Include="Competition\VesselSpawning\SpawnLocations.cs" />
+    <Compile Include="Competition\VesselSpawning\SpawnStrategies\CircularSpawnStrategy.cs" />
+    <Compile Include="Competition\VesselSpawning\SpawnStrategies\ListSpawnStrategy.cs" />
+    <Compile Include="Competition\VesselSpawning\SpawnStrategies\PointSpawnStrategy.cs" />
+    <Compile Include="Competition\VesselSpawning\SpawnStrategies\SpawnConfigStrategy.cs" />
+    <Compile Include="Competition\VesselSpawning\SpawnStrategies\SpawnStrategy.cs" />
     <Compile Include="Competition\VesselSpawning\SpawnUtils.cs" />
-    <Compile Include="Competition\VesselSpawning\VesselLoader.cs" />
     <Compile Include="Competition\VesselSpawning\VesselSpawner.cs" />
-    <Compile Include="Control\AIUtils.cs" />
+    <Compile Include="Competition\VesselSpawning\VesselSpawnerBase.cs" />
     <Compile Include="Control\BDAirspeedControl.cs" />
+    <Compile Include="Control\BDGenericAIBase.cs" />
+    <Compile Include="Control\BDModulePilotAI.cs" />
+    <Compile Include="Control\BDModuleSurfaceAI.cs" />
     <Compile Include="Control\IBDAIControl.cs" />
+    <Compile Include="Control\MissileFire.cs" />
+    <Compile Include="Control\ModuleWingCommander.cs" />
     <Compile Include="CounterMeasure\CMChaff.cs" />
     <Compile Include="CounterMeasure\CMDropper.cs" />
     <Compile Include="CounterMeasure\CMFlare.cs" />
     <Compile Include="CounterMeasure\CMSmoke.cs" />
+    <Compile Include="CounterMeasure\ModuleECMJammer.cs" />
     <Compile Include="CounterMeasure\VesselChaffInfo.cs" />
     <Compile Include="CounterMeasure\VesselECMJInfo.cs" />
+    <Compile Include="Damage\BuildingDamage.cs" />
+    <Compile Include="Damage\DamageService.cs" />
+    <Compile Include="Damage\HitpointTracker.cs" />
+    <Compile Include="Damage\ModuleDamageService.cs" />
+    <Compile Include="Damage\ModuleDrainEC.cs" />
+    <Compile Include="Damage\ModuleDrainIntakes.cs" />
+    <Compile Include="Damage\ModuleMassAdjust.cs" />
     <Compile Include="Evolution\BDAEvolution.cs" />
     <Compile Include="Evolution\ControlSurfaceAxisNudgeMutation.cs" />
     <Compile Include="Evolution\ControlSurfaceNudgeMutation.cs" />
@@ -177,6 +195,10 @@
     <Compile Include="Evolution\VariantMutation.cs" />
     <Compile Include="Evolution\WeaponManagerMutation.cs" />
     <Compile Include="Evolution\WeaponManagerNudgeMutation.cs" />
+    <Compile Include="Extensions\BodyExtensions.cs" />
+    <Compile Include="Extensions\CrewExtensions.cs" />
+    <Compile Include="Extensions\PartExtensions.cs" />
+    <Compile Include="Extensions\VesselExtensions.cs" />
     <Compile Include="FX\BDAGaplessParticleEmitter.cs" />
     <Compile Include="FX\BDAParticleSelfDestruct.cs" />
     <Compile Include="FX\BulletHitFX.cs" />
@@ -189,109 +211,62 @@
     <Compile Include="FX\FuelLeakFX.cs" />
     <Compile Include="FX\NukeFX.cs" />
     <Compile Include="FX\ParticleTurbulence.cs" />
+    <Compile Include="FX\SeismicChargeFX.cs" />
     <Compile Include="FX\ShellCasing.cs" />
     <Compile Include="GameModes\Asteroids.cs" />
-    <Compile Include="GameModes\BattleDamageHandler.cs" />
-    <Compile Include="GameModes\BattleDamageTracker.cs" />
-    <Compile Include="GameModes\MutatorInfo.cs" />
+    <Compile Include="GameModes\BattleDamage\BattleDamageHandler.cs" />
+    <Compile Include="GameModes\BattleDamage\BattleDamageTracker.cs" />
+    <Compile Include="GameModes\ModuleSpaceFriction.cs" />
+    <Compile Include="GameModes\Mutators\BDAMutator.cs" />
+    <Compile Include="GameModes\Mutators\MutatorInfo.cs" />
     <Compile Include="Guidances\BallisticGuidance.cs" />
     <Compile Include="Guidances\CruiseGuidance.cs" />
     <Compile Include="Guidances\IGuidance.cs" />
     <Compile Include="Guidances\MissileGuidance.cs" />
-    <Compile Include="Misc\BDAEditorTools.cs" />
-    <Compile Include="Misc\BDAModuleInfos.cs" />
-    <Compile Include="Misc\BDATooltips.cs" />
-    <Compile Include="Misc\BDAcTools.cs" />
-    <Compile Include="Misc\BDTeam.cs" />
-    <Compile Include="Misc\DecoupledBooster.cs" />
-    <Compile Include="Misc\FireSpitter.cs" />
-    <Compile Include="Misc\IBDWeapon.cs" />
-    <Compile Include="Misc\KSPForceApplier.cs" />
-    <Compile Include="Misc\MissileLaunchParams.cs" />
-    <Compile Include="Misc\ObjectPool.cs" />
-    <Compile Include="Misc\ProjectileUtils.cs" />
-    <Compile Include="Misc\RippleOption.cs" />
-    <Compile Include="Misc\SplineUtils.cs" />
-    <Compile Include="Misc\Utils.cs" />
-    <Compile Include="Misc\VectorUtils.cs" />
-    <Compile Include="Misc\ViewScanResults.cs" />
-    <Compile Include="Misc\WMTurretGroup.cs" />
-    <Compile Include="Modules\Animation\BDALookConstraintUp.cs" />
-    <Compile Include="Modules\Animation\BDAScaleByDistance.cs" />
-    <Compile Include="Modules\BDAMutator.cs" />
-    <Compile Include="Modules\BDAdjustableArmor.cs" />
-    <Compile Include="Modules\BDAdjustableRail.cs" />
-    <Compile Include="Modules\BDDeployableRail.cs" />
-    <Compile Include="Modules\BDExplosivePart.cs" />
-    <Compile Include="Modules\BDGenericAIBase.cs" />
-    <Compile Include="Modules\BDMMLauncher.cs" />
-    <Compile Include="Modules\BDModularGuidance.cs" />
-    <Compile Include="Modules\BDModuleNuke.cs" />
-    <Compile Include="Modules\BDModulePilotAI.cs" />
-    <Compile Include="Modules\BDModuleSurfaceAI.cs" />
-    <Compile Include="Modules\BDModuleVTOLAI.cs" />
-    <Compile Include="Modules\BDRotaryRail.cs" />
+    <Compile Include="Initialization\Bootstrapper.cs" />
+    <Compile Include="Initialization\Cleanup.cs" />
+    <Compile Include="Initialization\Dependencies.cs" />
     <Compile Include="Modules\CFEnable.cs" />
-    <Compile Include="Modules\ClusterBomb.cs" />
-    <Compile Include="Modules\EngageableWeapon.cs" />
-    <Compile Include="Modules\IEngageService.cs" />
     <Compile Include="Modules\KerbalSafety.cs" />
-    <Compile Include="Modules\MissileBase.cs" />
-    <Compile Include="Modules\MissileFire.cs" />
-    <Compile Include="Modules\MissileLauncher.cs" />
-    <Compile Include="Modules\MissileTurret.cs" />
-    <Compile Include="Modules\ModuleAmmoSwitch.cs" />
-    <Compile Include="Modules\ModuleCASE.cs" />
-    <Compile Include="Modules\ModuleDrainEC.cs" />
-    <Compile Include="Modules\ModuleDrainIntakes.cs" />
-    <Compile Include="Modules\ModuleECMJammer.cs" />
-    <Compile Include="Modules\ModuleEMP.cs" />
-    <Compile Include="Modules\ModuleMassAdjust.cs" />
-    <Compile Include="Modules\ModuleMissileRearm.cs" />
     <Compile Include="Modules\ModuleMovingPart.cs" />
-    <Compile Include="Modules\ModuleRadar.cs" />
-    <Compile Include="Modules\ModuleReactiveArmor.cs" />
     <Compile Include="Modules\ModuleSelfSealingTank.cs" />
-    <Compile Include="Modules\ModuleSpaceFriction.cs" />
-    <Compile Include="Modules\ModuleSpaceRadar.cs" />
-    <Compile Include="Modules\ModuleTargetingCamera.cs" />
-    <Compile Include="Modules\ModuleTurret.cs" />
-    <Compile Include="Modules\ModuleWWC.cs" />
-    <Compile Include="Modules\ModuleWeapon.cs" />
-    <Compile Include="Modules\ModuleWingCommander.cs" />
-    <Compile Include="Modules\RadarWarningReceiver.cs" />
-    <Compile Include="Modules\VesselModuleRegistry.cs" />
-    <Compile Include="Parts\GPSTargetInfo.cs" />
-    <Compile Include="Parts\SeismicChargeFX.cs" />
-    <Compile Include="Parts\TGPCamRotator.cs" />
-    <Compile Include="Parts\TGPCameraEffects.cs" />
-    <Compile Include="Parts\TargetingCamera.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Radar\ModuleRadar.cs" />
+    <Compile Include="Radar\ModuleSpaceRadar.cs" />
     <Compile Include="Radar\RadarDisplayData.cs" />
     <Compile Include="Radar\RadarUtils.cs" />
+    <Compile Include="Radar\RadarWarningReceiver.cs" />
     <Compile Include="Radar\VesselRadarData.cs" />
+    <Compile Include="Radar\ViewScanResults.cs" />
+    <Compile Include="Services\IEngageService.cs" />
+    <Compile Include="Services\INotificableService.cs" />
+    <Compile Include="Services\NotificableService.cs" />
+    <Compile Include="Settings/BDAPersistentSettingsField.cs" />
+    <Compile Include="Settings/BDArmorySettings.cs" />
+    <Compile Include="Settings\BDAWindowSettingsField.cs" />
+    <Compile Include="Settings\BDInputSettingsFields.cs" />
+    <Compile Include="Settings\BDTISettings.cs" />
+    <Compile Include="Settings\BDTISettingsFields.cs" />
     <Compile Include="Shaders\BDAShaderLoader.cs" />
+    <Compile Include="Targeting\GPSTargetInfo.cs" />
+    <Compile Include="Targeting\ModuleTargetingCamera.cs" />
+    <Compile Include="Targeting\TGPCamRotator.cs" />
+    <Compile Include="Targeting\TGPCameraEffects.cs" />
     <Compile Include="Targeting\TargetInfo.cs" />
     <Compile Include="Targeting\TargetSignatureData.cs" />
+    <Compile Include="Targeting\TargetingCamera.cs" />
     <Compile Include="UI\BDAEditorAnalysisWindow.cs" />
     <Compile Include="UI\BDAEditorArmorWindow.cs" />
     <Compile Include="UI\BDAEditorCategory.cs" />
     <Compile Include="UI\BDATargetManager.cs" />
     <Compile Include="UI\BDATeamIcons.cs" />
-    <Compile Include="UI\BDAWindowSettingsField.cs" />
+    <Compile Include="UI\BDATooltips.cs" />
     <Compile Include="UI\BDAmmoSelector.cs" />
     <Compile Include="UI\BDArmoryAIGUI.cs" />
     <Compile Include="UI\BDArmorySetup.cs" />
     <Compile Include="UI\BDColorPicker.cs" />
     <Compile Include="UI\BDGUIComboBox.cs" />
-    <Compile Include="UI\BDGUIUtils.cs" />
-    <Compile Include="UI\BDInputInfo.cs" />
-    <Compile Include="UI\BDInputSettingsFields.cs" />
-    <Compile Include="UI\BDInputUtils.cs" />
-    <Compile Include="UI\BDKeyBinder.cs" />
     <Compile Include="UI\BDStagingAreaGauge.cs" />
-    <Compile Include="UI\BDTISettings.cs" />
-    <Compile Include="UI\BDTISettingsFields.cs" />
     <Compile Include="UI\BDTISetup.cs" />
     <Compile Include="UI\BDTargetSelector.cs" />
     <Compile Include="UI\BDTeamSelector.cs" />
@@ -300,12 +275,53 @@
     <Compile Include="UI\LoadedVesselSwitcher.cs" />
     <Compile Include="UI\RemoteOrchestrationWindow.cs" />
     <Compile Include="UI\VesselSpawnerWindow.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\BDArmory.Core\BDArmory.Core.csproj">
-      <Project>{A6F1753E-9570-4C40-AF72-A179890582E5}</Project>
-      <Name>BDArmory.Core</Name>
-    </ProjectReference>
+    <Compile Include="Utils\AIUtils.cs" />
+    <Compile Include="Utils\BDAEditorTools.cs" />
+    <Compile Include="Utils\BDAMath.cs" />
+    <Compile Include="Utils\BDAModuleInfos.cs" />
+    <Compile Include="Utils\BDAcTools.cs" />
+    <Compile Include="Utils\BDInputInfo.cs" />
+    <Compile Include="Utils\BDInputUtils.cs" />
+    <Compile Include="Utils\BDKeyBinder.cs" />
+    <Compile Include="Utils\BlastPhysicsUtils.cs" />
+    <Compile Include="Utils\BodyUtils.cs" />
+    <Compile Include="Utils\BulletPhysics.cs" />
+    <Compile Include="Utils\ConfigNodeUtils.cs" />
+    <Compile Include="Utils\DebugUtils.cs" />
+    <Compile Include="Utils\DecoupledBooster.cs" />
+    <Compile Include="Utils\FireSpitterUtils.cs" />
+    <Compile Include="Utils\GUIUtils.cs" />
+    <Compile Include="Utils\KSPForceApplier.cs" />
+    <Compile Include="Utils\LayerMask.cs" />
+    <Compile Include="Utils\ObjectPool.cs" />
+    <Compile Include="Utils\OtherUtils.cs" />
+    <Compile Include="Utils\PartExploderSystem.cs" />
+    <Compile Include="Utils\ProjectileUtils.cs" />
+    <Compile Include="Utils\ResourceUtils.cs" />
+    <Compile Include="Utils\SplineUtils.cs" />
+    <Compile Include="Utils\VectorUtils.cs" />
+    <Compile Include="Utils\VesselModuleRegistry.cs" />
+    <Compile Include="Utils\VesselUtils.cs" />
+    <Compile Include="WeaponMounts\BDAdjustableRail.cs" />
+    <Compile Include="WeaponMounts\BDDeployableRail.cs" />
+    <Compile Include="WeaponMounts\BDRotaryRail.cs" />
+    <Compile Include="WeaponMounts\MissileTurret.cs" />
+    <Compile Include="WeaponMounts\ModuleTurret.cs" />
+    <Compile Include="WeaponMounts\WMTurretGroup.cs" />
+    <Compile Include="Weapons\BDExplosivePart.cs" />
+    <Compile Include="Weapons\BDModuleNuke.cs" />
+    <Compile Include="Weapons\ClusterBomb.cs" />
+    <Compile Include="Weapons\EngageableWeapon.cs" />
+    <Compile Include="Weapons\IBDWeapon.cs" />
+    <Compile Include="Weapons\Missiles\BDMMLauncher.cs" />
+    <Compile Include="Weapons\Missiles\BDModularGuidance.cs" />
+    <Compile Include="Weapons\Missiles\MissileBase.cs" />
+    <Compile Include="Weapons\Missiles\MissileLaunchParams.cs" />
+    <Compile Include="Weapons\Missiles\MissileLauncher.cs" />
+    <Compile Include="Weapons\Missiles\ModuleMissileRearm.cs" />
+    <Compile Include="Weapons\ModuleEMP.cs" />
+    <Compile Include="Weapons\ModuleWeapon.cs" />
+    <Compile Include="Weapons\RippleOption.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Shaders\GrayscaleEffectShader.shader" />
@@ -816,6 +832,7 @@
 
       @echo Copying assemblies to Distribution $(Targetname) files...
       if not exist "$(ProjectDir)Distribution\GameData\%25ModName%25\Plugins\" mkdir "$(ProjectDir)Distribution\GameData\%25ModName%25\Plugins\"
+      del "$(ProjectDir)Distribution/GameData/${ModName}/Plugins/"BDArmory*
       xcopy /E /Y "$(TargetDir)"BDArmory*.dll "$(ProjectDir)Distribution\GameData\%25ModName%25\Plugins\"
 
       if $(ConfigurationName) == Debug (
@@ -840,6 +857,7 @@
       export ModName=BDArmory
       echo Copying $(ConfigurationName) assemblies to Distribution $(Targetname) files...
       mkdir -p "$(ProjectDir)/Distribution/GameData/${ModName}/Plugins/"
+      rm "$(ProjectDir)Distribution/GameData/${ModName}/Plugins/"BDArmory*
       cp -a "$(TargetDir)"BDArmory*.dll "$(ProjectDir)Distribution/GameData/${ModName}/Plugins/"
       if [ "$(ConfigurationName)" = "Debug" ]
       then
@@ -875,7 +893,7 @@
       <Output TaskParameter="Assemblies" ItemName="Targets" />
     </GetAssemblyIdentity>
     <ItemGroup>
-      <VersionNumber Include="@(Targets-&gt;'%(Version)')" />
+      <VersionNumber Include="@(Targets->'%(Version)')" />
     </ItemGroup>
   </Target>
   <PropertyGroup>

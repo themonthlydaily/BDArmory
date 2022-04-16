@@ -1,4 +1,47 @@
-﻿v1.4.18.4
+﻿v1.5.0.0
+FIXES
+- Fix 'resizeSquare' texture not being loaded sometimes (due to a race condition?).
+- Clean up log spam from ExplosionFX.
+IMPROVEMENTS
+- Major internal refactor to better organise code.
+- Switch to a single DLL release.
+
+- Fix AI GUI slider increments to match AI PAW.
+- Add Dynamic Damping P/Y/R readouts to AI GUI.
+- Fix ATG missiles not respecting maxMissilesPerTarget.
+- Add Missile multi-targeting.
+- Adds new Max Missile Tgts setting in WM to set max targets to engage with missiles.
+- Craft now once again get alarm SFX when incoming missiles.
+- Fix ProcWing armor calculations.
+- Adds missing FFAR rocket ammo to universal ammo boxes.
+- Fix TOW missile FX.
+- Shift some missile targeting code from OnUpdate to OnFixedUpdate.
+- Stop continuous single spawn when running a tournament.
+
+- General:
+	- Add missing HP rounding to some parts.
+	- Optimise the PartExploderSystem to minimise creation of new vessels.
+	- Add a toggle to the UI settings section to disable flare smoke (which can kill performance and is purely visual).
+- AI:
+	- Add a 5° deadzone around being on target for dynamic damping to avoid feed-back loop in PID.
+	- Add a check for requested extending already being satisfied.
+	- Add terrain awareness to the pilot AI's waypoint fly-to direction.
+	- Add a 'Waypoint Terrain Avoidance' slider to the pilot AI to control the range and strength of the waypoint terrain avoidance reaction.
+- GameModes:
+	- Waypoints:
+		- Add support for multiple waypoint gate models.
+		- Add waypoint scaling from 50-1000m.
+		- Altitude overrides for S4R10.
+		- Remember the previously used HoSTag.
+		- Add right click to 'Run waypoints' to spawn with the vessel spawner coordinates instead of the hard-coded ones.
+		- Add multiple courses and a selection UI.
+- Weapons:
+	- Use min of missile drop time or 2 sec instead of fixed two second period for check target will be within missile maxOffBoresight at future time.
+- RWP:
+	- Hall of Shame now supports multiple craft.
+	- Add HoS support to Waypoint mode.
+
+v1.4.18.4
 IMPROVEMENTS
 - Add slider in the pilot AI for controlling the waypoint pre-roll time.
 - Add slider in the pilot AI for waypoint yaw authority time to switch from normal steering mode control of yaw to aiming steering mode of yaw when approaching waypoints.
@@ -40,6 +83,8 @@ FIXES
 - Fix ammo belt exploit.
 IMPROVEMENTS
 - General:
+	- Major internal refactor for code organisation and maintainability.
+	- BDArmory is now a single DLL (the old BDArmory.Core.dll will be detected and removed).
 	- Add a 'Generate Clean Save' toggle for auto-loading to the KSC without generating a clean save (tournaments and evolution still generate a clean save).
 - AI:
 	- New AI part: AI Vertical Takeoff and Landing Pilot (for helicopters, VTOL jets, and airships). 

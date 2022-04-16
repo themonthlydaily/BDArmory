@@ -1,14 +1,14 @@
 ﻿using System;
-using BDArmory.Competition;
-using BDArmory.Core;
-using BDArmory.Core.Extension;
-using BDArmory.Core.Utils;
-using BDArmory.Core.Module;
-using BDArmory.Misc;
-using BDArmory.Modules;
-using BDArmory.UI;
 using System.Linq;
 using UnityEngine;
+
+using BDArmory.Competition;
+using BDArmory.Damage;
+using BDArmory.Extensions;
+using BDArmory.Modules;
+using BDArmory.Settings;
+using BDArmory.UI;
+using BDArmory.Utils;
 
 namespace BDArmory.FX
 {
@@ -121,7 +121,7 @@ namespace BDArmory.FX
                             enginerestartTime = Time.time;
                         }
                         burnTime = 4;
-                        Utils.RefreshAssociatedWindows(parentPart);
+                        GUIUtils.RefreshAssociatedWindows(parentPart);
                         Debug.Log("[FireFX] firebottles remaining in " + parentPart.name + ": " + FBX.FireBottles);
                     }
                     else
@@ -424,7 +424,7 @@ namespace BDArmory.FX
                     ec.maxAmount = 0;
                     ec.isVisible = false;
                     if (!parentBeingDestroyed) parentPart.RemoveResource(ec);//destroy battery. not calling part.destroy, since some batteries in cockpits.
-                    Utils.RefreshAssociatedWindows(parentPart);
+                    GUIUtils.RefreshAssociatedWindows(parentPart);
                 }
                 //tntMassEquivilent *= BDArmorySettings.BD_AMMO_DMG_MULT; //handled by EXP_DMG_MOD_BATTLE_DAMAGE
                 if (BDArmorySettings.DRAW_DEBUG_LABELS && tntMassEquivalent > 0)

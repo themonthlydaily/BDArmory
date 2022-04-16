@@ -1,7 +1,8 @@
-﻿using BDArmory.Core;
+﻿using KSP.Localization;
 using KSP.UI.Screens;
 using UnityEngine;
-using KSP.Localization;
+
+using BDArmory.Settings;
 
 namespace BDArmory.UI
 {

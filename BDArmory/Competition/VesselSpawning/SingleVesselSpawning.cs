@@ -3,13 +3,14 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-using BDArmory.Modules;
+using BDArmory.Control;
 using BDArmory.UI;
+using BDArmory.Utils;
 
 namespace BDArmory.Competition.VesselSpawning
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
-    public class SingleVesselSpawning : VesselSpawner
+    public class SingleVesselSpawning : VesselSpawnerBase
     {
         public static SingleVesselSpawning Instance;
 
@@ -49,7 +50,7 @@ namespace BDArmory.Competition.VesselSpawning
             Vessel vessel = null;
             try
             {
-                vessel = VesselLoader.SpawnVesselFromCraftFile(craftUrl, craftGeoCoords, initialHeading, initialPitch, 0f, out shipFacility); // SPAWN
+                vessel = VesselSpawner.SpawnVesselFromCraftFile(craftUrl, craftGeoCoords, initialHeading, initialPitch, 0f, out shipFacility); // SPAWN
             }
             catch { vessel = null; }
             if (vessel == null)

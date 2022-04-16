@@ -1,15 +1,15 @@
-﻿using System.Collections;
-using BDArmory.Core;
+﻿using KSP.Localization;
+using KSP.UI.Screens;
+using System.Collections.Generic;
+using System.Collections;
+using System;
+using UnityEngine;
+using static UnityEngine.GUILayout;
+
 using BDArmory.Control;
 using BDArmory.Modules;
-using UnityEngine;
-using KSP.Localization;
-using KSP.UI.Screens;
-using static UnityEngine.GUILayout;
-using System;
-using System.Collections.Generic;
-using static BDArmory.UI.VesselSpawnerWindow;
-using BDArmory.Misc;
+using BDArmory.Settings;
+using BDArmory.Utils;
 
 namespace BDArmory.UI
 {
@@ -360,6 +360,7 @@ namespace BDArmory.UI
 
                         { "turnRadiusTwiddleFactorMin", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.turnRadiusTwiddleFactorMin, 0.1, 5) },
                         { "turnRadiusTwiddleFactorMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.turnRadiusTwiddleFactorMax, 0.1, 5) },
+                        { "waypointTerrainAvoidance", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.waypointTerrainAvoidance, 0, 1) },
 
                         { "controlSurfaceLag", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.controlSurfaceLag, 0, 0.2) },
                     };
@@ -557,7 +558,7 @@ namespace BDArmory.UI
             if (!windowBDAAIGUIEnabled || (!HighLogic.LoadedSceneIsFlight && !HighLogic.LoadedSceneIsEditor)) return;
             //BDArmorySetup.WindowRectAI = new Rect(BDArmorySetup.WindowRectAI.x, BDArmorySetup.WindowRectAI.y, WindowWidth, WindowHeight);
             BDArmorySetup.WindowRectAI = GUI.Window(GetInstanceID(), BDArmorySetup.WindowRectAI, WindowRectAI, "", BDArmorySetup.BDGuiSkin.window);//"BDA Weapon Manager"
-            BDGUIUtils.UseMouseEventInRect(BDArmorySetup.WindowRectAI);
+            GUIUtils.UseMouseEventInRect(BDArmorySetup.WindowRectAI);
         }
 
         float pidHeight;
@@ -1491,7 +1492,7 @@ namespace BDArmory.UI
                             ActivePilot.waypointPreRollTime =
                                 GUI.HorizontalSlider(SettingSliderRect(leftIndent, ctrlLines, contentWidth),
                                     ActivePilot.waypointPreRollTime, 0, 2);
-                            ActivePilot.waypointPreRollTime = Utils.RoundToUnit(ActivePilot.waypointPreRollTime, 0.05f);
+                            ActivePilot.waypointPreRollTime = BDAMath.RoundToUnit(ActivePilot.waypointPreRollTime, 0.05f);
                         }
                         else
                         {
@@ -1511,7 +1512,7 @@ namespace BDArmory.UI
                             ActivePilot.waypointYawAuthorityTime =
                                 GUI.HorizontalSlider(SettingSliderRect(leftIndent, ctrlLines, contentWidth),
                                     ActivePilot.waypointYawAuthorityTime, 0, 10);
-                            ActivePilot.waypointYawAuthorityTime = Utils.RoundToUnit(ActivePilot.waypointYawAuthorityTime, 0.1f);
+                            ActivePilot.waypointYawAuthorityTime = BDAMath.RoundToUnit(ActivePilot.waypointYawAuthorityTime, 0.1f);
                         }
                         else
                         {
@@ -1773,7 +1774,7 @@ namespace BDArmory.UI
                                 ActivePilot.extendDistanceAirToAir =
                                     GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth),
                                         ActivePilot.extendDistanceAirToAir, 0, ActivePilot.UpToEleven ? 20000 : 2000);
-                                ActivePilot.extendDistanceAirToAir = Utils.RoundToUnit(ActivePilot.extendDistanceAirToAir, 10);
+                                ActivePilot.extendDistanceAirToAir = BDAMath.RoundToUnit(ActivePilot.extendDistanceAirToAir, 10f);
                             }
                             else
                             {
@@ -1793,7 +1794,7 @@ namespace BDArmory.UI
                                 ActivePilot.extendDistanceAirToGroundGuns =
                                     GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth),
                                         ActivePilot.extendDistanceAirToGroundGuns, 0, ActivePilot.UpToEleven ? 20000 : 5000);
-                                ActivePilot.extendDistanceAirToGroundGuns = Utils.RoundToUnit(ActivePilot.extendDistanceAirToGroundGuns, 50);
+                                ActivePilot.extendDistanceAirToGroundGuns = BDAMath.RoundToUnit(ActivePilot.extendDistanceAirToGroundGuns, 50f);
                             }
                             else
                             {
@@ -1813,7 +1814,7 @@ namespace BDArmory.UI
                                 ActivePilot.extendDistanceAirToGround =
                                     GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth),
                                         ActivePilot.extendDistanceAirToGround, 0, ActivePilot.UpToEleven ? 20000 : 5000);
-                                ActivePilot.extendDistanceAirToGround = Utils.RoundToUnit(ActivePilot.extendDistanceAirToGround, 50);
+                                ActivePilot.extendDistanceAirToGround = BDAMath.RoundToUnit(ActivePilot.extendDistanceAirToGround, 50f);
                             }
                             else
                             {
@@ -1905,13 +1906,13 @@ namespace BDArmory.UI
                         gndLines += 0.25f;
 
                         GUI.Label(SettinglabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_PilotAI_Terrain"), BoldLabel);//"Speed"
-                        gndLines++;
+
+                        #region Terrain Avoidance Min
+                        GUI.Label(SettinglabelRect(leftIndent, ++gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_TurnRadiusMin") + ": " + ActivePilot.turnRadiusTwiddleFactorMin.ToString("0.0"), Label); //"dynamic damping min"
                         var oldMinTwiddle = ActivePilot.turnRadiusTwiddleFactorMin;
                         if (!NumFieldsEnabled)
                         {
-                            ActivePilot.turnRadiusTwiddleFactorMin =
-                                GUI.HorizontalSlider(SettingSliderRect(leftIndent, gndLines, contentWidth),
-                                    ActivePilot.turnRadiusTwiddleFactorMin, 0.1f, ActivePilot.UpToEleven ? 10 : 5);
+                            ActivePilot.turnRadiusTwiddleFactorMin = GUI.HorizontalSlider(SettingSliderRect(leftIndent, gndLines, contentWidth), ActivePilot.turnRadiusTwiddleFactorMin, 0.1f, ActivePilot.UpToEleven ? 10 : 5);
                             ActivePilot.turnRadiusTwiddleFactorMin = Mathf.Round(ActivePilot.turnRadiusTwiddleFactorMin * 10f) / 10f;
                         }
                         else
@@ -1924,20 +1925,18 @@ namespace BDArmory.UI
                             ActivePilot.OnMinUpdated(null, null);
                             inputFields["turnRadiusTwiddleFactorMax"].currentValue = ActivePilot.turnRadiusTwiddleFactorMax;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_TurnRadiusMin") + ": " + ActivePilot.turnRadiusTwiddleFactorMin.ToString("0.0"), Label); //"dynamic damping min"
-
-                        gndLines++;
                         if (contextTipsEnabled)
                         {
-                            GUI.Label(ContextLabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_terrainMin"), contextLabel);//"dynamic damp min"
-                            gndLines++;
+                            GUI.Label(ContextLabelRect(leftIndent, ++gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_terrainMin"), contextLabel);//"dynamic damp min"
                         }
+                        #endregion
+
+                        #region Terrain Avoidance Max
+                        GUI.Label(SettinglabelRect(leftIndent, ++gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_TurnRadiusMax") + ": " + ActivePilot.turnRadiusTwiddleFactorMax.ToString("0.0"), Label);//"dynamic damping min"
                         var oldMaxTwiddle = ActivePilot.turnRadiusTwiddleFactorMax;
                         if (!NumFieldsEnabled)
                         {
-                            ActivePilot.turnRadiusTwiddleFactorMax =
-                                GUI.HorizontalSlider(SettingSliderRect(leftIndent, gndLines, contentWidth),
-                                    ActivePilot.turnRadiusTwiddleFactorMax, 0.1f, ActivePilot.UpToEleven ? 10 : 5);
+                            ActivePilot.turnRadiusTwiddleFactorMax = GUI.HorizontalSlider(SettingSliderRect(leftIndent, gndLines, contentWidth), ActivePilot.turnRadiusTwiddleFactorMax, 0.1f, ActivePilot.UpToEleven ? 10 : 5);
                             ActivePilot.turnRadiusTwiddleFactorMax = Mathf.Round(ActivePilot.turnRadiusTwiddleFactorMax * 10) / 10;
                         }
                         else
@@ -1950,14 +1949,31 @@ namespace BDArmory.UI
                             ActivePilot.OnMaxUpdated(null, null);
                             inputFields["turnRadiusTwiddleFactorMin"].currentValue = ActivePilot.turnRadiusTwiddleFactorMin;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_TurnRadiusMax") + ": " + ActivePilot.turnRadiusTwiddleFactorMax.ToString("0.0"), Label);//"dynamic damping min"
-
-                        gndLines++;
                         if (contextTipsEnabled)
                         {
-                            GUI.Label(ContextLabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_terrainMax"), contextLabel);//"dynamic damp min"
-                            gndLines++;
+                            GUI.Label(ContextLabelRect(leftIndent, ++gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_terrainMax"), contextLabel);//"dynamic damp max"
                         }
+                        #endregion
+
+                        #region Waypoint Terrain Avoidance
+                        GUI.Label(SettinglabelRect(leftIndent, ++gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_WaypointTerrainAvoidance") + ": " + ActivePilot.waypointTerrainAvoidance.ToString("0.00"), Label);
+                        if (!NumFieldsEnabled)
+                        {
+                            ActivePilot.waypointTerrainAvoidance = GUI.HorizontalSlider(SettingSliderRect(leftIndent, gndLines, contentWidth), ActivePilot.waypointTerrainAvoidance, 0f, 1f);
+                            ActivePilot.waypointTerrainAvoidance = BDAMath.RoundToUnit(ActivePilot.waypointTerrainAvoidance, 0.01f);
+                        }
+                        else
+                        {
+                            inputFields["waypointTerrainAvoidance"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, gndLines, contentWidth), inputFields["waypointTerrainAvoidance"].possibleValue, 6));
+                            ActivePilot.waypointTerrainAvoidance = (float)inputFields["waypointTerrainAvoidance"].currentValue;
+                        }
+                        if (contextTipsEnabled)
+                        {
+                            GUI.Label(ContextLabelRect(leftIndent, ++gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_WaypointTerrainAvoidanceContext"), contextLabel);
+                        }
+                        #endregion
+
+                        ++gndLines;
                         GUI.EndGroup();
                         terrainHeight = Mathf.Lerp(terrainHeight, gndLines, 0.15f);
                         gndLines += 0.1f;
@@ -2386,7 +2402,7 @@ namespace BDArmory.UI
             BDArmorySetup.WindowRectAI.width = WindowWidth;
             if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES && WindowHeight < previousWindowHeight && Mathf.Round(BDArmorySetup.WindowRectAI.y + previousWindowHeight) == Screen.height) // Window shrunk while being at edge of screen.
                 BDArmorySetup.WindowRectAI.y = Screen.height - BDArmorySetup.WindowRectAI.height;
-            BDGUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectAI);
+            GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectAI);
         }
         #endregion GUI
 
