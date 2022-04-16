@@ -87,7 +87,10 @@ namespace BDArmory.CounterMeasure
                         {
                             EffectBehaviour.AddParticleEmitter(pe.Current);
                             pEmitters.Add(pe.Current);
-                            pe.Current.emit = true;
+                            if (!BDArmorySettings.FLARE_SMOKE)
+                            {
+                                pe.Current.emit = true;
+                            }
                         }
                     }
             }
@@ -103,7 +106,10 @@ namespace BDArmory.CounterMeasure
             while (pEmitter.MoveNext())
             {
                 if (pEmitter.Current == null) continue;
-                pEmitter.Current.emit = true;
+                if (!BDArmorySettings.FLARE_SMOKE)
+                {
+                    pEmitter.Current.emit = true;
+                }
             }
             pEmitter.Dispose();
 
