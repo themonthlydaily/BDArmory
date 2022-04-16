@@ -4645,7 +4645,7 @@ namespace BDArmory.Control
                                       Missile.GuidanceMode == MissileBase.GuidanceModes.None))
                                 {
                                     if (targetWeapon != null && targetYield > candidateYield) continue; //prioritize biggest Boom
-                                    if (distance > Missile.engageRangeMin) continue; //select missiles we can use now
+                                    if (distance < Missile.engageRangeMin) continue; //select missiles we can use now
                                     targetYield = candidateYield;
                                     candidateAGM = true;
                                     targetWeapon = item.Current;
