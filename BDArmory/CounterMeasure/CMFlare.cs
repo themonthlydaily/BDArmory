@@ -13,7 +13,7 @@ namespace BDArmory.CounterMeasure
     public class CMFlare : MonoBehaviour
     {
         List<KSPParticleEmitter> pEmitters; // = new List<KSPParticleEmitter>(); // pEmitter2 * 2 + pEmitter KSPParticleEmitter per flare.
-        List<BDAGaplessParticleEmitter> gaplessEmitters; // = new List<BDAGaplessParticleEmitter>();
+        //List<BDAGaplessParticleEmitter> gaplessEmitters; // = new List<BDAGaplessParticleEmitter>();
 
         Light[] lights;
         float startTime;
@@ -67,10 +67,9 @@ namespace BDArmory.CounterMeasure
         {
             startThermal = thermal;
             minThermal = startThermal * 0.34f; // 0.3 is original value, but doesn't work well for Tigers, 0.4f gives decent performance for Tigers, 0.65 decay gives best flare performance overall based on some monte carlo analysis
-
-            if (gaplessEmitters == null || pEmitters == null)
+            if (pEmitters == null)
             {
-                gaplessEmitters = new List<BDAGaplessParticleEmitter>();
+                //gaplessEmitters = new List<BDAGaplessParticleEmitter>();
 
                 pEmitters = new List<KSPParticleEmitter>();
 
@@ -78,35 +77,39 @@ namespace BDArmory.CounterMeasure
                     while (pe.MoveNext())
                     {
                         if (pe.Current == null) continue;
-                        if (pe.Current.useWorldSpace)
-                        {
-                            BDAGaplessParticleEmitter gpe = pe.Current.gameObject.AddComponent<BDAGaplessParticleEmitter>();
-                            gaplessEmitters.Add(gpe);
-                            if (!BDArmorySettings.FLARE_SMOKE && gpe.name != "pEmitter")
-                                gpe.emit = true;
-                        }
-                        else
+                        //if (pe.Current.useWorldSpace)
+                        //{
+                        //    BDAGaplessParticleEmitter gpe = pe.Current.gameObject.AddComponent<BDAGaplessParticleEmitter>();
+                        //    gaplessEmitters.Add(gpe);
+                        //    gpe.emit = true;
+                        //}
+                        //else
                         {
                             EffectBehaviour.AddParticleEmitter(pe.Current);
                             pEmitters.Add(pe.Current);
-                            pe.Current.emit = true;
+                            if (!BDArmorySettings.FLARE_SMOKE)
+                            {
+                                pe.Current.emit = true;
+                            }
                         }
                     }
             }
-            List<BDAGaplessParticleEmitter>.Enumerator gEmitter = gaplessEmitters.GetEnumerator();
-            while (gEmitter.MoveNext())
-            {
-                if (gEmitter.Current == null) continue;
-                if (!BDArmorySettings.FLARE_SMOKE && gEmitter.Current.name == "pEmitter") continue;
-                gEmitter.Current.emit = true;
-            }
-            gEmitter.Dispose();
+            //List<BDAGaplessParticleEmitter>.Enumerator gEmitter = gaplessEmitters.GetEnumerator();
+            //while (gEmitter.MoveNext())
+            //{
+            //    if (gEmitter.Current == null) continue;
+            //    gEmitter.Current.emit = true;
+            //}
+            //gEmitter.Dispose();
 
             List<KSPParticleEmitter>.Enumerator pEmitter = pEmitters.GetEnumerator();
             while (pEmitter.MoveNext())
             {
                 if (pEmitter.Current == null) continue;
-                pEmitter.Current.emit = true;
+                if (!BDArmorySettings.FLARE_SMOKE)
+                {
+                    pEmitter.Current.emit = true;
+                }
             }
             pEmitter.Dispose();
 
@@ -132,6 +135,8 @@ namespace BDArmory.CounterMeasure
             BDArmorySetup.Flares.Add(this);
 
             upDirection = VectorUtils.GetUpDirection(transform.position);
+
+            this.transform.localScale = Vector3.one;
         }
 
         void FixedUpdate()
@@ -157,35 +162,35 @@ namespace BDArmory.CounterMeasure
             Vector3 downForce = (Mathf.Clamp(velocity.magnitude, 0.1f, 150) / 150) * 20 * -upDirection;
 
             //turbulence
-            List<BDAGaplessParticleEmitter>.Enumerator gEmitter = gaplessEmitters.GetEnumerator();
-            while (gEmitter.MoveNext())
-            {
-                if (gEmitter.Current == null) continue;
-                if (!gEmitter.Current.pEmitter) continue;
-                try
+            //using (List<BDAGaplessParticleEmitter>.Enumerator gEmitter = gaplessEmitters.GetEnumerator())
+            using (List<KSPParticleEmitter>.Enumerator pEmitter = pEmitters.GetEnumerator())
+                while (pEmitter.MoveNext())
                 {
-                    gEmitter.Current.pEmitter.worldVelocity = 2 * ParticleTurbulence.flareTurbulence + downForce;
-                }
-                catch (NullReferenceException e)
-                {
-                    Debug.LogWarning("[BDArmory.CMFlare]: NRE setting worldVelocity: " + e.Message);
-                }
-
-                try
-                {
-                    if (FlightGlobals.ActiveVessel && FlightGlobals.ActiveVessel.atmDensity <= 0)
+                    if (pEmitter.Current == null) continue;
+                    //if (!gEmitter.Current.pEmitter) continue;
+                    try
                     {
-                        gEmitter.Current.emit = false;
+                        pEmitter.Current.worldVelocity = 2 * ParticleTurbulence.flareTurbulence + downForce;
+                    }
+                    catch (NullReferenceException e)
+                    {
+                        Debug.LogWarning("[BDArmory.CMFlare]: NRE setting worldVelocity: " + e.Message);
+                    }
+
+                    try
+                    {
+                        if (FlightGlobals.ActiveVessel && FlightGlobals.ActiveVessel.atmDensity <= 0)
+                        {
+                            pEmitter.Current.emit = false;
+                        }
+                    }
+                    catch (NullReferenceException e)
+                    {
+                        Debug.LogWarning("[BDArmory.CMFlare]: NRE checking density: " + e.Message);
                     }
                 }
-                catch (NullReferenceException e)
-                {
-                    Debug.LogWarning("[BDArmory.CMFlare]: NRE checking density: " + e.Message);
-                }
-            }
-            gEmitter.Dispose();
             //
-
+            
             //thermal decay
             thermal = Mathf.MoveTowards(thermal, minThermal,
                 ((thermal - minThermal) / lifeTime) * Time.fixedDeltaTime);
@@ -194,30 +199,27 @@ namespace BDArmory.CounterMeasure
             {
                 alive = false;
                 BDArmorySetup.Flares.Remove(this);
-
-                List<KSPParticleEmitter>.Enumerator pe = pEmitters.GetEnumerator();
-                while (pe.MoveNext())
-                {
-                    if (pe.Current == null) continue;
-                    pe.Current.emit = false;
-                }
-                pe.Dispose();
-
-                List<BDAGaplessParticleEmitter>.Enumerator gpe = gaplessEmitters.GetEnumerator();
-                while (gpe.MoveNext())
-                {
-                    if (gpe.Current == null) continue;
-                    gpe.Current.emit = false;
-                }
-                gpe.Dispose();
-
-                IEnumerator<Light> lgt = lights.AsEnumerable().GetEnumerator();
-                while (lgt.MoveNext())
-                {
-                    if (lgt.Current == null) continue;
-                    lgt.Current.enabled = false;
-                }
-                lgt.Dispose();
+                this.transform.localScale = Vector3.zero;
+                using (List<KSPParticleEmitter>.Enumerator pe = pEmitters.GetEnumerator())
+                    while (pe.MoveNext())
+                    {
+                        if (pe.Current == null) continue;
+                        pe.Current.emit = false;
+                    }
+                /*
+                using (List<BDAGaplessParticleEmitter>.Enumerator gpe = gaplessEmitters.GetEnumerator())
+                    while (gpe.MoveNext())
+                    {
+                        if (gpe.Current == null) continue;
+                        gpe.Current.emit = false;
+                    }
+                */
+                using (IEnumerator<Light> lgt = lights.AsEnumerable().GetEnumerator())
+                    while (lgt.MoveNext())
+                    {
+                        if (lgt.Current == null) continue;
+                        lgt.Current.enabled = false;
+                    }
             }
 
             if (Time.time - startTime > lifeTime + 11) //disable object after x seconds
