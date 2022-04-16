@@ -1,28 +1,24 @@
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using System.Text;
+using System;
 using UnityEngine;
 using KSP.Localization;
 
 using BDArmory.Competition;
-
 using BDArmory.CounterMeasure;
 using BDArmory.Extensions;
 using BDArmory.GameModes;
 using BDArmory.Guidances;
-
 using BDArmory.Radar;
 using BDArmory.Settings;
 using BDArmory.Targeting;
 using BDArmory.UI;
 using BDArmory.Utils;
-using BDArmory.Weapons;
-using BDArmory.Weapons.Missiles;
 using BDArmory.WeaponMounts;
-
-using System.Collections;
-using System;
-
+using BDArmory.Weapons.Missiles;
+using BDArmory.Weapons;
 
 namespace BDArmory.Control
 {
@@ -1244,7 +1240,7 @@ namespace BDArmory.Control
         private void CalculateMissilesAway()
         {
             missilesAway.Clear();
-            int tempMissilesAway = 0;
+            // int tempMissilesAway = 0;
             //firedMissiles = 0;
             if (!guardMode) return;
             using (List<IBDWeapon>.Enumerator Missiles = BDATargetManager.FiredMissiles.GetEnumerator())
@@ -3361,7 +3357,7 @@ namespace BDArmory.Control
                 if (Vector3.Distance(transform.position + vessel.Velocity(), currentTarget.position + currentTarget.velocity) < gunRange * 0.75f) //don't swap away from current target if about to enter gunrange
                 {
                     //Debug.Log("[MissileFire] max targets fired on, but about to enter Gun range; keeping current target");
-                    return; 
+                    return;
                 }
                 MissileBase ml = CurrentMissile;
                 if (ml.TargetingMode == MissileBase.TargetingModes.Laser) //don't switch from current target if using LASMs to keep current target painted
@@ -3372,7 +3368,7 @@ namespace BDArmory.Control
                 if (ml && !(ml.TargetingMode == MissileBase.TargetingModes.Radar && !ml.radarLOAL))
                 {
                     //if (vesselRadarData != null) vesselRadarData.UnlockCurrentTarget();//unlock current target only if missile isn't slaved to ship radar guidance to allow new F&F lock
-					//enabling this has the radar blip off after firing missile, having it on requires waiting 2 sec for the radar do decide it needs to swap to another targer, but will continue to guide current missile (assuming sufficient radar FOV)
+                    //enabling this has the radar blip off after firing missile, having it on requires waiting 2 sec for the radar do decide it needs to swap to another targer, but will continue to guide current missile (assuming sufficient radar FOV)
                 }
                 heatTarget = TargetSignatureData.noTarget; //clear holdover targets when switching targets
                 antiRadTargetAcquired = false;
@@ -3386,7 +3382,7 @@ namespace BDArmory.Control
                         {
                             if (missilesAway[target.Current] >= maxMissilesOnTarget)
                             {
-								targetsAssigned.Add(target.Current);
+                                targetsAssigned.Add(target.Current);
                                 //Debug.Log("[MissileFire] Adding " + target.Current.Vessel.GetName() + " to exclusion list; length: " + targetsAssigned.Count);
                             }
                         }
@@ -5291,7 +5287,7 @@ namespace BDArmory.Control
                 ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(antiRadiationTarget,
                         vessel.mainBody);
             }
-            ml.targetVessel = currentTarget; 
+            ml.targetVessel = currentTarget;
         }
 
         #endregion Targeting
