@@ -21,7 +21,7 @@ namespace BDArmory.UI
 
         void OnGUI()
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_LABELS)
             {
                 var frameVelocity = Krakensbane.GetFrameVelocityV3f();
                 //var rFrameVelocity = FlightGlobals.currentMainBody.getRFrmVel(Vector3d.zero);

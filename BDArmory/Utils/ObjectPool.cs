@@ -50,7 +50,7 @@ namespace BDArmory.Utils
                 pool.RemoveRange(count, size - count);
                 lastIndex = 0;
             }
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ObjectPool]: Resizing " + poolObjectName + " pool to " + size);
+            if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.ObjectPool]: Resizing " + poolObjectName + " pool to " + size);
         }
 
         private void AddObjectsToPool(int count)
@@ -106,7 +106,7 @@ namespace BDArmory.Utils
             if (canGrow)
             {
                 var size = (int)(pool.Count * 1.2) + 1; // Grow by 20% + 1
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ObjectPool]: Increasing pool size to " + size + " for " + poolObjectName);
+                if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.ObjectPool]: Increasing pool size to " + size + " for " + poolObjectName);
                 AddObjectsToPool(size - pool.Count);
 
                 if (disableAfterDelay > 0f) DisableAfterDelay(pool[pool.Count - 1], disableAfterDelay);
@@ -141,7 +141,7 @@ namespace BDArmory.Utils
 
         public static ObjectPool CreateObjectPool(GameObject obj, int size, bool canGrow, bool destroyOnLoad, float disableAfterDelay = 0f, bool forceReUse = false)
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ObjectPool]: Creating object pool of size " + size + " for " + obj.name);
+            if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.ObjectPool]: Creating object pool of size " + size + " for " + obj.name);
             GameObject poolObject = new GameObject(obj.name + "Pool");
             ObjectPool op = poolObject.AddComponent<ObjectPool>();
             op.poolObject = obj;

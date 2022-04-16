@@ -44,15 +44,15 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool AIM_ASSIST = true;
         [BDAPersistentSettingsField] public static bool DRAW_AIMERS = true;
         // Debug Labels
-        [BDAPersistentSettingsField] public static bool DRAW_DEBUG_LINES = false;                   //AI/Weapon aim visualizers
-        [BDAPersistentSettingsField] public static bool DRAW_DEBUG_LABELS = false;
-        [BDAPersistentSettingsField] public static bool DRAW_ARMOR_LABELS = false;                 //armor and HP
-		[BDAPersistentSettingsField] public static bool DRAW_WEAPON_LABELS = false;                //Debug messages for guns/rockets/lasers and their projectiles
-        [BDAPersistentSettingsField] public static bool DRAW_MISSILE_LABELS = false;               //Missile launch, tracking and targeting debug labels
-        [BDAPersistentSettingsField] public static bool DRAW_DAMAGE_LABELS = false;                //Explosions and battle damage logging
-        [BDAPersistentSettingsField] public static bool DRAW_AI_LABELS = false;                    //AI debugging
-        [BDAPersistentSettingsField] public static bool DRAW_RADAR_LABELS = false;                 //FLIR/Radar and RCS debugging
-
+        [BDAPersistentSettingsField] public static bool DEBUG_LINES = false;                 //AI/Weapon aim visualizers
+        [BDAPersistentSettingsField] public static bool DEBUG_LABELS = false;                //internal debugging
+        [BDAPersistentSettingsField] public static bool DEBUG_ARMOR = false;                 //armor and HP
+		[BDAPersistentSettingsField] public static bool DEBUG_WEAPONS = false;               //Debug messages for guns/rockets/lasers and their projectiles
+        [BDAPersistentSettingsField] public static bool DEBUG_MISSILES = false;              //Missile launch, tracking and targeting debug labels
+        [BDAPersistentSettingsField] public static bool DEBUG_DAMAGE = false;                //Explosions and battle damage logging
+        [BDAPersistentSettingsField] public static bool DEBUG_AI = false;                    //AI debugging
+        [BDAPersistentSettingsField] public static bool DEBUG_RADAR = false;                 //FLIR/Radar and RCS debugging
+        [BDAPersistentSettingsField] public static bool DEBUG_TELEMETRY = false;             //AI/WM UI debug telemetry display
 
         [BDAPersistentSettingsField] public static bool REMOTE_SHOOTING = false;
         [BDAPersistentSettingsField] public static bool BOMB_CLEARANCE_CHECK = false;

@@ -947,7 +947,7 @@ namespace BDArmory.Control
         public void OnAFCAAUpdated(BaseField field, object obj)
         {
             adjustedAutoFireCosAngle = Mathf.Cos((AutoFireCosAngleAdjustment * Mathf.Deg2Rad));
-            //if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: Setting AFCAA to " + adjustedAutoFireCosAngle);
+            //if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: Setting AFCAA to " + adjustedAutoFireCosAngle);
         }
         #endregion KSPFields,events,actions
 
@@ -1106,7 +1106,7 @@ namespace BDArmory.Control
                 }
                 catch (Exception e)
                 {
-                    //if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: Error OnPartDie: " + e.Message);
+                    //if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: Error OnPartDie: " + e.Message);
                     Debug.Log("[BDArmory.MissileFire]: Error OnPartDie: " + e.Message);
                 }
             }
@@ -1350,7 +1350,7 @@ namespace BDArmory.Control
             if (HighLogic.LoadedSceneIsFlight && vessel == FlightGlobals.ActiveVessel &&
                 BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled)
             {
-                if (BDArmorySettings.DRAW_DEBUG_LINES)
+                if (BDArmorySettings.DEBUG_LINES)
                 {
                     if (incomingMissileVessel)
                     {
@@ -1428,7 +1428,8 @@ namespace BDArmory.Control
                             Vector3 fsDirection = (fireSolution - ml.MissileReferenceTransform.position).normalized;
                             GUIUtils.DrawTextureOnWorldPos(ml.MissileReferenceTransform.position + (distanceToTarget * fsDirection), BDArmorySetup.Instance.greenDotTexture, new Vector2(6, 6), 0);
 
-                            if (BDArmorySettings.DRAW_MISSILE_LABELS)
+                            //if (BDArmorySettings.DEBUG_MISSILES)
+                            if (BDArmorySettings.DEBUG_TELEMETRY)
                             {
                                 string dynRangeDebug = string.Empty;
                                 MissileLaunchParams dlz = MissileLaunchParams.GetDynamicLaunchParams(missile, vesselRadarData.lockedTargetData.targetData.velocity, vesselRadarData.lockedTargetData.targetData.predictedPosition);
@@ -1467,8 +1468,9 @@ namespace BDArmory.Control
                         GUIUtils.DrawTextureOnWorldPos(VectorUtils.GetWorldSurfacePostion(designatedGPSCoords, vessel.mainBody), BDArmorySetup.Instance.greenSpikedPointCircleTexture, new Vector2(22, 22), 0);
                     }
                 }
-                if (BDArmorySettings.DRAW_MISSILE_LABELS || BDArmorySettings.DRAW_WEAPON_LABELS) debugString.Length = 0;
-                if (BDArmorySettings.DRAW_MISSILE_LABELS)
+                //if (BDArmorySettings.DEBUG_MISSILES || BDArmorySettings.DEBUG_WEAPONS) 
+                    debugString.Length = 0;
+                if (BDArmorySettings.DEBUG_TELEMETRY) //&& BDArmorySettings.DEBUG_MISSILES)
                 {
                     debugString.AppendLine("Missiles away: " + firedMissiles + "; targeted vessels: " + engagedTargets);
 
@@ -1483,7 +1485,7 @@ namespace BDArmory.Control
                     if (isFlaring) debugString.AppendLine("Flaring");
                     if (isECMJamming) debugString.AppendLine("ECMJamming");
                 }
-                if (BDArmorySettings.DRAW_WEAPON_LABELS)
+                //if (BDArmorySettings.DEBUG_TELEMETRY && BDArmorySettings.DEBUG_WEAPONS)
                 {
                     if (weaponArray != null) // Heat debugging
                     {
@@ -1535,9 +1537,9 @@ namespace BDArmory.Control
             while (enabled)
             {
                 yield return new WaitUntil(() => missileIsIncoming); // Wait until missile is incoming.
-                if (BDArmorySettings.DRAW_AI_LABELS) { Debug.Log("[BDArmory.MissileFire]: Triggering missile warning on " + vessel.vesselName); }
+                if (BDArmorySettings.DEBUG_AI) { Debug.Log("[BDArmory.MissileFire]: Triggering missile warning on " + vessel.vesselName); }
                 yield return new WaitUntil(() => Time.time - incomingMissileLastDetected > 1f); // Wait until 1s after no missiles are detected.
-                if (BDArmorySettings.DRAW_AI_LABELS) { Debug.Log("[BDArmory.MissileFire]: Silencing missile warning on " + vessel.vesselName); }
+                if (BDArmorySettings.DEBUG_AI) { Debug.Log("[BDArmory.MissileFire]: Silencing missile warning on " + vessel.vesselName); }
                 missileIsIncoming = false;
             }
         }
@@ -1547,9 +1549,9 @@ namespace BDArmory.Control
             underFireLastNotified = Time.time; // Update the last notification.
             if (underFire) yield break; // Already under fire, we only want 1 timer.
             underFire = true;
-            if (BDArmorySettings.DRAW_AI_LABELS) { Debug.Log("[BDArmory.MissileFire]: Triggering under fire warning on " + vessel.vesselName + " by " + priorGunThreatVessel.vesselName); }
+            if (BDArmorySettings.DEBUG_AI) { Debug.Log("[BDArmory.MissileFire]: Triggering under fire warning on " + vessel.vesselName + " by " + priorGunThreatVessel.vesselName); }
             yield return new WaitUntil(() => Time.time - underFireLastNotified > 1f); // Wait until 1s after being under fire.
-            if (BDArmorySettings.DRAW_AI_LABELS) { Debug.Log("[BDArmory.MissileFire]: Silencing under fire warning on " + vessel.vesselName); }
+            if (BDArmorySettings.DEBUG_AI) { Debug.Log("[BDArmory.MissileFire]: Silencing under fire warning on " + vessel.vesselName); }
             underFire = false;
             priorGunThreatVessel = null;
         }
@@ -1559,9 +1561,9 @@ namespace BDArmory.Control
             underAttackLastNotified = Time.time; // Update the last notification.
             if (underAttack) yield break; // Already under attack, we only want 1 timer.
             underAttack = true;
-            if (BDArmorySettings.DRAW_AI_LABELS) { Debug.Log("[BDArmory.MissileFire]: Triggering under attack warning on " + vessel.vesselName + " by " + incomingThreatVessel.vesselName); }
+            if (BDArmorySettings.DEBUG_AI) { Debug.Log("[BDArmory.MissileFire]: Triggering under attack warning on " + vessel.vesselName + " by " + incomingThreatVessel.vesselName); }
             yield return new WaitUntil(() => Time.time - underAttackLastNotified > 1f); // Wait until 3s after being under attack.
-            if (BDArmorySettings.DRAW_AI_LABELS) { Debug.Log("[BDArmory.MissileFire]: Silencing under attack warning on " + vessel.vesselName); }
+            if (BDArmorySettings.DEBUG_AI) { Debug.Log("[BDArmory.MissileFire]: Silencing under attack warning on " + vessel.vesselName); }
             underAttack = false;
         }
 
@@ -1726,7 +1728,7 @@ namespace BDArmory.Control
                     // if (ml && guardTarget && vesselRadarData.locked && (!AIMightDirectFire() || GetLaunchAuthorization(guardTarget, this)))
                     if (ml && guardTarget && vesselRadarData.locked && GetLaunchAuthorization(guardTarget, this))
                     {
-                        if (BDArmorySettings.DRAW_MISSILE_LABELS)
+                        if (BDArmorySettings.DEBUG_MISSILES)
                         {
                             Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " firing on target " + guardTarget.GetName());
                         }
@@ -1820,7 +1822,7 @@ namespace BDArmory.Control
                     // if (guardTarget && ml && heatTarget.exists && (!AIMightDirectFire() || GetLaunchAuthorization(guardTarget, this)))
                     if (guardTarget && ml && heatTarget.exists && GetLaunchAuthorization(guardTarget, this))
                     {
-                        if (BDArmorySettings.DRAW_MISSILE_LABELS)
+                        if (BDArmorySettings.DEBUG_MISSILES)
                         {
                             Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " firing on target " + guardTarget.GetName());
                         }
@@ -1904,7 +1906,7 @@ namespace BDArmory.Control
                     }
                     else
                     {
-                        if (BDArmorySettings.DRAW_MISSILE_LABELS) Debug.Log("[BDArmory.MissileFire]: Laser Target Error");
+                        if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: Laser Target Error");
                     }
                 }
                 guardFiringMissile = false;
@@ -2267,7 +2269,7 @@ namespace BDArmory.Control
         IEnumerator ChaffRoutine(int repetition, float interval)
         {
             isChaffing = true;
-            if (BDArmorySettings.DRAW_MISSILE_LABELS) Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " starting chaff routine");
+            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " starting chaff routine");
             // yield return new WaitForSeconds(0.2f); // Reaction time delay
             for (int i = 0; i < repetition; i++)
             {
@@ -2285,13 +2287,13 @@ namespace BDArmory.Control
             }
             yield return new WaitForSeconds(chaffWaitTime);
             isChaffing = false;
-            if (BDArmorySettings.DRAW_MISSILE_LABELS) Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " ending chaff routine");
+            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " ending chaff routine");
         }
 
         IEnumerator FlareRoutine(int repetition, float interval)
         {
             isFlaring = true;
-            if (BDArmorySettings.DRAW_MISSILE_LABELS) Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " starting flare routine");
+            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " starting flare routine");
             // yield return new WaitForSeconds(0.2f); // Reaction time delay
             for (int i = 0; i < repetition; i++)
             {
@@ -2308,7 +2310,7 @@ namespace BDArmory.Control
             }
             yield return new WaitForSeconds(cmWaitTime);
             isFlaring = false;
-            if (BDArmorySettings.DRAW_MISSILE_LABELS) Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " ending flare routine");
+            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " ending flare routine");
         }
 
         IEnumerator AllCMRoutine(int count)
@@ -2316,7 +2318,7 @@ namespace BDArmory.Control
             // Use this routine for missile threats that are outside of the cmThreshold
             isFlaring = true;
             isChaffing = true;
-            if (BDArmorySettings.DRAW_MISSILE_LABELS) Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " starting All CM routine");
+            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " starting All CM routine");
             for (int i = 0; i < count; i++)
             {
                 using (var cm = VesselModuleRegistry.GetModules<CMDropper>(vessel).GetEnumerator())
@@ -2334,7 +2336,7 @@ namespace BDArmory.Control
             }
             isFlaring = false;
             isChaffing = false;
-            if (BDArmorySettings.DRAW_MISSILE_LABELS) Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " ending All CM routine");
+            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " ending All CM routine");
         }
 
         IEnumerator LegacyCMRoutine()
@@ -2371,7 +2373,7 @@ namespace BDArmory.Control
                 StartCoroutine(WarningSoundRoutine(distance, ml));
             }
 
-            //if (BDArmorySettings.DRAW_DEBUG_LABELS && distance < 1000f) Debug.Log("[BDArmory.MissileFire]: Legacy missile warning for " + vessel.vesselName + " at distance " + distance.ToString("0.0") + "m from " + ml.shortName);
+            //if (BDArmorySettings.DEBUG_LABELS && distance < 1000f) Debug.Log("[BDArmory.MissileFire]: Legacy missile warning for " + vessel.vesselName + " at distance " + distance.ToString("0.0") + "m from " + ml.shortName);
             //missileIsIncoming = true;
             //incomingMissileLastDetected = Time.time;
             //incomingMissileDistance = distance;
@@ -3235,7 +3237,7 @@ namespace BDArmory.Control
                 {
                     //debug lines
                     LineRenderer lr = null;
-                    if (BDArmorySettings.DRAW_DEBUG_LINES && BDArmorySettings.DRAW_AIMERS)
+                    if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DRAW_AIMERS)
                     {
                         lr = GetComponent<LineRenderer>();
                         if (!lr)
@@ -3301,7 +3303,7 @@ namespace BDArmory.Control
                                     Part p = t1.Current.collider.GetComponentInParent<Part>();
 
                                     if ((p == null || p == ml.part) && p != null) continue;
-                                    if (BDArmorySettings.DRAW_MISSILE_LABELS)
+                                    if (BDArmorySettings.DEBUG_MISSILES)
                                         Debug.Log("[BDArmory.MissileFire]: RAYCAST HIT, clearance is FALSE! part=" + (p != null ? p.name : null) + ", collider=" + (p != null ? p.collider : null));
                                     return false;
                                 }
@@ -3316,7 +3318,7 @@ namespace BDArmory.Control
                     {
                         Part p = t.Current.collider.GetComponentInParent<Part>();
                         if ((p == null || p == ml.part) && p != null) continue;
-                        if (BDArmorySettings.DRAW_MISSILE_LABELS)
+                        if (BDArmorySettings.DEBUG_MISSILES)
                             Debug.Log("[BDArmory.MissileFire]: RAYCAST HIT, clearance is FALSE! part=" + (p != null ? p.name : null) + ", collider=" + (p != null ? p.collider : null));
                         return false;
                     }
@@ -3360,7 +3362,7 @@ namespace BDArmory.Control
             //FIXME - add check for identically named vessels
             if (firedMissiles >= maxMissilesOnTarget && (multiMissileTgtNum > 1 && BDATargetManager.TargetList(Team).Count > 1)) //if there are multiple potential targets, see how many can be fired at with missiles
             {
-                if (BDArmorySettings.DRAW_MISSILE_LABELS) Debug.Log("[MissileFire] max missiles on target; switching to new target!");
+                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[MissileFire] max missiles on target; switching to new target!");
                 if (Vector3.Distance(transform.position + vessel.Velocity(), currentTarget.position + currentTarget.velocity) < gunRange * 0.75f) //don't swap away from current target if about to enter gunrange
                 {
                     //Debug.Log("[MissileFire] max targets fired on, but about to enter Gun range; keeping current target");
@@ -3396,7 +3398,7 @@ namespace BDArmory.Control
                 }
                 if (targetsAssigned.Count == BDATargetManager.TargetList(Team).Count) //oops, already fired missiles at all available targets
                 {
-                    if (BDArmorySettings.DRAW_MISSILE_LABELS) Debug.Log("[MissileFire] max targets fired on, resetting target list!");
+                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[MissileFire] max targets fired on, resetting target list!");
                     targetsAssigned.Clear(); //clear targets tried, so AI can track best current target until such time as it can fire again
                 }
             }
@@ -3407,14 +3409,14 @@ namespace BDArmory.Control
                 SetTarget(overrideTarget);
                 if (SmartPickWeapon_EngagementEnvelope(overrideTarget))
                 {
-                    if (BDArmorySettings.DRAW_AI_LABELS)
+                    if (BDArmorySettings.DEBUG_AI)
                     {
                         Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " is engaging an override target with " + selectedWeapon);
                     }
                     overrideTimer = 15f;
                     return;
                 }
-                else if (BDArmorySettings.DRAW_AI_LABELS)
+                else if (BDArmorySettings.DEBUG_AI)
                 {
                     Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " is engaging an override target with failed to engage its override target!");
                 }
@@ -3436,7 +3438,7 @@ namespace BDArmory.Control
                     SetTarget(potentialTarget);
                     if (SmartPickWeapon_EngagementEnvelope(potentialTarget))
                     {
-                        if (BDArmorySettings.DRAW_AI_LABELS)
+                        if (BDArmorySettings.DEBUG_AI)
                         {
                             Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " is engaging incoming missile (" + potentialTarget.Vessel.vesselName + ") with " + selectedWeapon);
                         }
@@ -3452,7 +3454,7 @@ namespace BDArmory.Control
                     SetTarget(potentialTarget);
                     if (SmartPickWeapon_EngagementEnvelope(potentialTarget))
                     {
-                        if (BDArmorySettings.DRAW_AI_LABELS)
+                        if (BDArmorySettings.DEBUG_AI)
                         {
                             Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " is engaging unengaged missile (" + potentialTarget.Vessel.vesselName + ") with " + selectedWeapon);
                         }
@@ -3499,7 +3501,7 @@ namespace BDArmory.Control
                     //  || targetPriorityEnabled || BDArmorySettings.DEFAULT_FFA_TARGETING
                     if (SmartPickWeapon_EngagementEnvelope(potentialAirTarget) && HasWeaponsAndAmmo())
                     {
-                        if (BDArmorySettings.DRAW_AI_LABELS)
+                        if (BDArmorySettings.DEBUG_AI)
                         {
                             Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + targetDebugText + selectedWeapon);
                         }
@@ -3509,7 +3511,7 @@ namespace BDArmory.Control
                     {
                         if (!HasWeaponsAndAmmo() && pilotAI != null && pilotAI.allowRamming)
                         {
-                            if (BDArmorySettings.DRAW_AI_LABELS)
+                            if (BDArmorySettings.DEBUG_AI)
                             {
                                 Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + targetDebugText + "ramming.");
                             }
@@ -3544,7 +3546,7 @@ namespace BDArmory.Control
                 /*
                 if (CrossCheckWithRWR(potentialTarget) && TryPickAntiRad(potentialTarget))
                 {
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    if (BDArmorySettings.DEBUG_LABELS)
                     {
                         Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " is engaging the least engaged radar target with " +
                                     selectedWeapon.GetShortName());
@@ -3556,7 +3558,7 @@ namespace BDArmory.Control
                 // Pick target if we have a viable weapon or target priority/FFA targeting is in use
                 if (SmartPickWeapon_EngagementEnvelope(potentialTarget) || this.targetPriorityEnabled || BDArmorySettings.DEFAULT_FFA_TARGETING)
                 {
-                    if (BDArmorySettings.DRAW_AI_LABELS)
+                    if (BDArmorySettings.DEBUG_AI)
                     {
                         Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + targetDebugText + (selectedWeapon != null ? selectedWeapon.GetShortName() : ""));
                     }
@@ -3573,7 +3575,7 @@ namespace BDArmory.Control
                 /*
                 if (CrossCheckWithRWR(potentialTarget) && TryPickAntiRad(potentialTarget))
                 {
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    if (BDArmorySettings.DEBUG_LABELS)
                     {
                         Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " is engaging the closest radar target with " +
                                     selectedWeapon.GetShortName());
@@ -3583,7 +3585,7 @@ namespace BDArmory.Control
                 */
                 if (SmartPickWeapon_EngagementEnvelope(potentialTarget))
                 {
-                    if (BDArmorySettings.DRAW_AI_LABELS)
+                    if (BDArmorySettings.DEBUG_AI)
                     {
                         Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " is engaging the closest target (" + potentialTarget.Vessel.vesselName + ") with " + selectedWeapon.GetShortName());
                     }
@@ -3603,7 +3605,7 @@ namespace BDArmory.Control
                     SetTarget(potentialTarget);
                     if (SmartPickWeapon_EngagementEnvelope(potentialTarget))
                     {
-                        if (BDArmorySettings.DRAW_AI_LABELS)
+                        if (BDArmorySettings.DEBUG_AI)
                         {
                             Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " is engaging the least engaged missile (" + potentialTarget.Vessel.vesselName + ") with " + selectedWeapon.GetShortName());
                         }
@@ -3619,7 +3621,7 @@ namespace BDArmory.Control
                     SetTarget(potentialTarget);
                     if (SmartPickWeapon_EngagementEnvelope(potentialTarget))
                     {
-                        if (BDArmorySettings.DRAW_AI_LABELS)
+                        if (BDArmorySettings.DEBUG_AI)
                         {
                             Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " is engaging the closest hostile missile (" + potentialTarget.Vessel.vesselName + ") with " + selectedWeapon.GetShortName());
                         }
@@ -3636,7 +3638,7 @@ namespace BDArmory.Control
                     if (finalTargets.Current == null) continue;
                     SetTarget(finalTargets.Current);
                     if (!SmartPickWeapon_EngagementEnvelope(finalTargets.Current)) continue;
-                    if (BDArmorySettings.DRAW_AI_LABELS)
+                    if (BDArmorySettings.DEBUG_AI)
                     {
                         Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " is engaging a final target with " +
                                   selectedWeapon.GetShortName());
@@ -3647,7 +3649,7 @@ namespace BDArmory.Control
             //no valid targets found
             if (potentialTarget == null || selectedWeapon == null)
             {
-                if (BDArmorySettings.DRAW_AI_LABELS)
+                if (BDArmorySettings.DEBUG_AI)
                 {
                     Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " is disengaging - no valid weapons - no valid targets");
                 }
@@ -4881,7 +4883,7 @@ namespace BDArmory.Control
                     }
                 }
 
-                if (BDArmorySettings.DRAW_AI_LABELS)
+                if (BDArmorySettings.DEBUG_AI)
                 {
                     Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " - Selected weapon " + selectedWeapon.GetShortName());
                 }
@@ -4893,7 +4895,7 @@ namespace BDArmory.Control
             }
             else
             {
-                if (BDArmorySettings.DRAW_AI_LABELS)
+                if (BDArmorySettings.DEBUG_AI)
                 {
                     Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " - No weapon selected for target " + target.Vessel.vesselName);
                     // Debug.Log("DEBUG target isflying:" + target.isFlying + ", isLorS:" + target.isLandedOrSurfaceSplashed + ", isUW:" + target.isUnderwater);
@@ -4951,7 +4953,7 @@ namespace BDArmory.Control
                         // check ammo
                         if (CheckAmmo(laser))
                         {
-                            if (BDArmorySettings.DRAW_WEAPON_LABELS)
+                            if (BDArmorySettings.DEBUG_WEAPONS)
                             {
                                 Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " - Firing possible with " + weaponCandidate.GetShortName());
                             }
@@ -4981,7 +4983,7 @@ namespace BDArmory.Control
                         // check ammo
                         if (CheckAmmo(gun))
                         {
-                            if (BDArmorySettings.DRAW_WEAPON_LABELS)
+                            if (BDArmorySettings.DEBUG_WEAPONS)
                             {
                                 Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " - Firing possible with " + weaponCandidate.GetShortName());
                             }
@@ -5011,7 +5013,7 @@ namespace BDArmory.Control
                         {
                             return true;
                         }
-                        if (BDArmorySettings.DRAW_MISSILE_LABELS)
+                        if (BDArmorySettings.DEBUG_MISSILES)
                         {
                             Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " - Failed DLZ test: " + weaponCandidate.GetShortName() + ", distance: " + distanceToTarget + ", DLZ min/max: " + dlz.minLaunchRange + "/" + dlz.maxLaunchRange);
                         }
@@ -5043,7 +5045,7 @@ namespace BDArmory.Control
                         // check ammo
                         if (CheckAmmo(rocket))
                         {
-                            if (BDArmorySettings.DRAW_WEAPON_LABELS)
+                            if (BDArmorySettings.DEBUG_WEAPONS)
                             {
                                 Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " - Firing possible with " + weaponCandidate.GetShortName());
                             }
@@ -5414,7 +5416,7 @@ namespace BDArmory.Control
                             // Check that launch is possible before entering GuardMissileRoutine
                             launchAuthorized = launchAuthorized && GetLaunchAuthorization(guardTarget, this);
 
-                            if (BDArmorySettings.DRAW_MISSILE_LABELS)
+                            if (BDArmorySettings.DEBUG_MISSILES)
                                 Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " launchAuth=" + launchAuthorized + ", pilotAut=" + pilotAuthorized + ", missilesAway/Max=" + firedMissiles + "/" + maxMissilesOnTarget);
 
                             if (firedMissiles < maxMissilesOnTarget)
@@ -5425,7 +5427,7 @@ namespace BDArmory.Control
                                     StartCoroutine(GuardMissileRoutine());
                                 }
                             }
-                            else if (BDArmorySettings.DRAW_MISSILE_LABELS)
+                            else if (BDArmorySettings.DEBUG_MISSILES)
                             {
                                 Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " waiting for missile to be ready...");
                             }
@@ -5472,7 +5474,7 @@ namespace BDArmory.Control
 
             if (results.foundMissile)
             {
-                if (BDArmorySettings.DRAW_AI_LABELS && (!missileIsIncoming || results.incomingMissiles[0].distance < 1000f))
+                if (BDArmorySettings.DEBUG_AI && (!missileIsIncoming || results.incomingMissiles[0].distance < 1000f))
                 {
                     foreach (var incomingMissile in results.incomingMissiles)
                         Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " incoming missile (" + incomingMissile.vessel.vesselName + " of type " + incomingMissile.guidanceType + " from " + (incomingMissile.weaponManager != null && incomingMissile.weaponManager.vessel != null ? incomingMissile.weaponManager.vessel.vesselName : "unknown") + ") found at distance " + incomingMissile.distance + "m");
@@ -5567,7 +5569,7 @@ namespace BDArmory.Control
                             {
                                 SetOverrideTarget(nearbyFriendly.weaponManager.currentTarget);
                                 nearbyFriendly.weaponManager.SetOverrideTarget(nearbyThreat);
-                                if (BDArmorySettings.DRAW_AI_LABELS)
+                                if (BDArmorySettings.DEBUG_AI)
                                     Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " called for help from " + nearbyFriendly.Vessel.vesselName + " and took its target in return");
                                 //basically, swap targets to cover each other
                             }
@@ -5575,7 +5577,7 @@ namespace BDArmory.Control
                             {
                                 //otherwise, continue engaging the current target for now
                                 nearbyFriendly.weaponManager.SetOverrideTarget(nearbyThreat);
-                                if (BDArmorySettings.DRAW_AI_LABELS)
+                                if (BDArmorySettings.DEBUG_AI)
                                     Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " called for help from " + nearbyFriendly.Vessel.vesselName);
                             }
                         }
@@ -5739,7 +5741,7 @@ namespace BDArmory.Control
             rangeEditor.maxValue = maxGunRange;
             if (BDArmorySetup.Instance.textNumFields != null && BDArmorySetup.Instance.textNumFields.ContainsKey("gunRange")) { BDArmorySetup.Instance.textNumFields["gunRange"].maxValue = maxGunRange; }
             gunRange = Mathf.Min(gunRange, maxGunRange);
-            if (BDArmorySettings.DRAW_AI_LABELS) Debug.Log("[BDArmory.MissileFire]: Updating gun range of " + v.vesselName + " to " + gunRange + " of " + maxGunRange);
+            if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.MissileFire]: Updating gun range of " + v.vesselName + " to " + gunRange + " of " + maxGunRange);
         }
 
         public void UpdateMaxGunRange(Part eventPart)
@@ -5762,7 +5764,7 @@ namespace BDArmory.Control
             if (gunRange == rangeEditor.maxValue) { gunRange = maxGunRange; }
             rangeEditor.maxValue = maxGunRange;
             gunRange = Mathf.Min(gunRange, maxGunRange);
-            if (BDArmorySettings.DRAW_AI_LABELS) Debug.Log("[BDArmory.MissileFire]: Updating gun range of " + EditorLogic.fetch.ship.shipName + " to " + gunRange + " of " + maxGunRange);
+            if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.MissileFire]: Updating gun range of " + EditorLogic.fetch.ship.shipName + " to " + gunRange + " of " + maxGunRange);
         }
 
         public float ThreatClosingTime(Vessel threat)
@@ -5834,7 +5836,7 @@ namespace BDArmory.Control
             {
                 return 2;
             }
-            if (BDArmorySettings.DRAW_WEAPON_LABELS)
+            if (BDArmorySettings.DEBUG_WEAPONS)
             {
                 Debug.Log("[BDArmory.MissileFire]: Checking turrets");
             }
@@ -5851,7 +5853,7 @@ namespace BDArmory.Control
                     {
                         if (weapon.Current.isOverheated)
                         {
-                            if (BDArmorySettings.DRAW_WEAPON_LABELS)
+                            if (BDArmorySettings.DEBUG_WEAPONS)
                             {
                                 Debug.Log("[BDArmory.MissileFire]: " + selectedWeapon + " is overheated!");
                             }
@@ -5859,7 +5861,7 @@ namespace BDArmory.Control
                         }
                         if (weapon.Current.isReloading)
                         {
-                            if (BDArmorySettings.DRAW_WEAPON_LABELS)
+                            if (BDArmorySettings.DEBUG_WEAPONS)
                             {
                                 Debug.Log("[BDArmory.MissileFire]: " + selectedWeapon + " is reloading!");
                             }
@@ -5867,7 +5869,7 @@ namespace BDArmory.Control
                         }
                         if (!weapon.Current.hasGunner)
                         {
-                            if (BDArmorySettings.DRAW_WEAPON_LABELS)
+                            if (BDArmorySettings.DEBUG_WEAPONS)
                             {
                                 Debug.Log("[BDArmory.MissileFire]: " + selectedWeapon + " has no gunner!");
                             }
@@ -5875,19 +5877,19 @@ namespace BDArmory.Control
                         }
                         if (CheckAmmo(weapon.Current) || BDArmorySettings.INFINITE_AMMO)
                         {
-                            if (BDArmorySettings.DRAW_WEAPON_LABELS)
+                            if (BDArmorySettings.DEBUG_WEAPONS)
                             {
                                 Debug.Log("[BDArmory.MissileFire]: " + selectedWeapon + " is valid!");
                             }
                             return 1;
                         }
-                        if (BDArmorySettings.DRAW_WEAPON_LABELS)
+                        if (BDArmorySettings.DEBUG_WEAPONS)
                         {
                             Debug.Log("[BDArmory.MissileFire]: " + selectedWeapon + " has no ammo.");
                         }
                         return -1;
                     }
-                    if (BDArmorySettings.DRAW_WEAPON_LABELS)
+                    if (BDArmorySettings.DEBUG_WEAPONS)
                     {
                         Debug.Log("[BDArmory.MissileFire]: " + selectedWeapon + " cannot reach target (" + distance + " vs " + weapon.Current.maxEffectiveDistance + ", yawRange: " + weapon.Current.yawRange + "). Continuing.");
                     }
@@ -5905,7 +5907,7 @@ namespace BDArmory.Control
 
             if (!guardTarget)
             {
-                if (BDArmorySettings.DRAW_WEAPON_LABELS)
+                if (BDArmorySettings.DEBUG_WEAPONS)
                 {
                     Debug.Log("[BDArmory.MissileFire]: Checking turret range but no guard target");
                 }
@@ -5943,7 +5945,7 @@ namespace BDArmory.Control
 
             if (angleYaw < (turret.yawRange / 2) + tolerance && withinPitchRange)
             {
-                if (BDArmorySettings.DRAW_WEAPON_LABELS)
+                if (BDArmorySettings.DEBUG_WEAPONS)
                 {
                     Debug.Log("[BDArmory.MissileFire]: Checking turret range - target is INSIDE gimbal limits! signedAnglePitch: " + signedAnglePitch + ", minPitch: " + turret.minPitch + ", maxPitch: " + turret.maxPitch + ", tolerance: " + tolerance);
                 }
@@ -5951,7 +5953,7 @@ namespace BDArmory.Control
             }
             else
             {
-                if (BDArmorySettings.DRAW_WEAPON_LABELS)
+                if (BDArmorySettings.DEBUG_WEAPONS)
                 {
                     Debug.Log("[BDArmory.MissileFire]: Checking turret range - target is OUTSIDE gimbal limits! signedAnglePitch: " + signedAnglePitch + ", minPitch: " + turret.minPitch + ", maxPitch: " + turret.maxPitch + ", angleYaw: " + angleYaw + ", tolerance: " + tolerance);
                 }
@@ -6174,7 +6176,7 @@ namespace BDArmory.Control
             }
 
             //debug lines
-            if (BDArmorySettings.DRAW_DEBUG_LINES && BDArmorySettings.DRAW_AIMERS)
+            if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DRAW_AIMERS)
             {
                 Vector3[] pointsArray = pointPositions.ToArray();
                 LineRenderer lr = GetComponent<LineRenderer>();

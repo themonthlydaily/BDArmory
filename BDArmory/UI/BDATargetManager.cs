@@ -137,7 +137,7 @@ namespace BDArmory.UI
 
         void Update()
         {
-            if (BDArmorySettings.DRAW_AI_LABELS && FlightGlobals.ready)
+            if (BDArmorySettings.DEBUG_AI && FlightGlobals.ready)
             {
                 updateTimer -= Time.fixedDeltaTime;
                 if (updateTimer < 0)
@@ -491,7 +491,7 @@ namespace BDArmory.UI
         public void SaveGPSTargets(ConfigNode saveNode = null)
         {
             string saveTitle = HighLogic.CurrentGame.Title;
-            if (BDArmorySettings.DRAW_RADAR_LABELS) Debug.Log("[BDArmory.BDATargetManager]: Save title: " + saveTitle);
+            if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[BDArmory.BDATargetManager]: Save title: " + saveTitle);
             ConfigNode fileNode = ConfigNode.Load(gpsTargetsCfg);
             if (fileNode == null)
             {
@@ -549,7 +549,7 @@ namespace BDArmory.UI
                 string targetString = GPSListToString();
                 gpsNode.SetValue("Targets", targetString, true);
                 fileNode.Save(gpsTargetsCfg);
-                if (BDArmorySettings.DRAW_RADAR_LABELS) Debug.Log("[BDArmory.BDATargetManager]: ==== Saved BDA GPS Targets ====");
+                if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[BDArmory.BDATargetManager]: ==== Saved BDA GPS Targets ====");
             }
         }
 
@@ -957,7 +957,7 @@ namespace BDArmory.UI
                         }
                     }
                 }
-            if (BDArmorySettings.DRAW_AI_LABELS)
+            if (BDArmorySettings.DEBUG_AI)
                 Debug.Log("[BDArmory.BDATargetManager]: Selected " + (finalTarget != null ? finalTarget.Vessel.GetDisplayName() : "null") + " with target score of " + finalTargetScore.ToString("0.00"));
 
             mf.UpdateTargetPriorityUI(finalTarget);
@@ -995,7 +995,7 @@ namespace BDArmory.UI
                         }
                         else
                         {
-                            if (BDArmorySettings.DRAW_MISSILE_LABELS)
+                            if (BDArmorySettings.DEBUG_MISSILES)
                                 Debug.LogWarning("[BDArmory.BDATargetManager]: checking target missile -  doesn't have missile module");
                         }
 
@@ -1079,7 +1079,7 @@ namespace BDArmory.UI
 
         void OnGUI()
         {
-            if (BDArmorySettings.DRAW_AI_LABELS)
+            if (BDArmorySettings.DEBUG_AI)
             {
                 GUI.Label(new Rect(600, 100, 600, 600), debugString.ToString());
             }

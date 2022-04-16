@@ -460,7 +460,7 @@ namespace BDArmory.WeaponMounts
                     while (t.MoveNext())
                     {
                         if (t.Current == null) continue;
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                        if (BDArmorySettings.DEBUG_LABELS)
                             Debug.Log("[BDArmory.MissileTurret] : MissileTurret moving transform: " + t.Current.gameObject.name);
                         t.Current.parent = mTf;
                     }

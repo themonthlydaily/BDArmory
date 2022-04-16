@@ -44,7 +44,7 @@ namespace BDArmory.Utils
         void CheckDump()
         {
             // dump parts to .CSV list
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_LABELS)
                 dumpParts();
         }
 

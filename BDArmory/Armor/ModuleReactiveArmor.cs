@@ -74,7 +74,7 @@ namespace BDArmory.Armor
             direction = -sections[sectionsRemaining-1].up; 
 
             ExplosionFx.CreateExplosion(sections[sectionsRemaining - 1].transform.position, 1, ExploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 30, part, SourceVessel, armorName, direction, 30, true);
-            if (BDArmorySettings.DRAW_DAMAGE_LABELS) Debug.Log("[ReactiveArmor] removing section, " + sectionsRemaining + " sections left");
+            if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[ReactiveArmor] removing section, " + sectionsRemaining + " sections left");
             sectionsRemaining--;
             if (sectionsRemaining < 1)
             {

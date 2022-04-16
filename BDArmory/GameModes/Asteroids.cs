@@ -253,7 +253,7 @@ namespace BDArmory.GameModes
             var c = altitude;
             var timeToFall = (-b - Math.Sqrt(b * b - 4f * a * c)) / 2f / a;
             spawnRate = numberOfAsteroids / timeToFall * Time.fixedDeltaTime;
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.Asteroids]: SpawnRate: {spawnRate} asteroids / frame");
+            if (BDArmorySettings.DEBUG_LABELS) Debug.Log($"[BDArmory.Asteroids]: SpawnRate: {spawnRate} asteroids / frame");
             if (raining) SetupAsteroidPool(Mathf.RoundToInt(numberOfAsteroids * 1.1f)); // Give ourselves a 10% buffer.
         }
 
@@ -351,7 +351,7 @@ namespace BDArmory.GameModes
             {
                 if (Vector3d.Dot(upDirection, (FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude) - FlightGlobals.currentMainBody.transform.position).normalized) < 0.99) // Planet rotation has moved the spawn point and direction significantly.
                 {
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.Asteroids]: Planet has rotated significantly, updating settings.");
+                    if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.Asteroids]: Planet has rotated significantly, updating settings.");
                 }
             }
             UpdateSettings();
@@ -426,7 +426,7 @@ namespace BDArmory.GameModes
                 beingRemoved.Remove(asteroid);
             }
             else
-            { if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.Asteroids]: Asteroid {asteroid.vesselName} is null, unable to remove."); }
+            { if (BDArmorySettings.DEBUG_LABELS) Debug.Log($"[BDArmory.Asteroids]: Asteroid {asteroid.vesselName} is null, unable to remove."); }
         }
         #endregion
 
@@ -473,7 +473,7 @@ namespace BDArmory.GameModes
         /// <param name="i"></param>
         void ReplacePooledAsteroid(int i)
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.Asteroids]: Replacing asteroid at position {i}.");
+            if (BDArmorySettings.DEBUG_LABELS) Debug.Log($"[BDArmory.Asteroids]: Replacing asteroid at position {i}.");
             var asteroid = AsteroidUtils.SpawnAsteroid(FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude + 10000));
             if (asteroid != null)
             {
@@ -822,7 +822,7 @@ namespace BDArmory.GameModes
         /// <param name="i"></param>
         void ReplacePooledAsteroid(int i)
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.Asteroids]: Replacing asteroid at position {i}.");
+            if (BDArmorySettings.DEBUG_LABELS) Debug.Log($"[BDArmory.Asteroids]: Replacing asteroid at position {i}.");
             var asteroid = AsteroidUtils.SpawnAsteroid(FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude + 10000));
             if (asteroid != null)
             {

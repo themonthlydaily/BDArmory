@@ -565,7 +565,7 @@ namespace BDArmory.Modules
                             fireStarter = part.vessel.GetName();
                         }
                         BulletHitFX.AttachFire(transform.position, part, 50, fireStarter);
-                        if (BDArmorySettings.DRAW_DAMAGE_LABELS) Debug.Log("[SelfSealingTank] Fuel auto-ignition! " + part.name + " is on fire! Fuel quantity: " + fuel.amount + "; temperature: " + part.temperature);
+                        if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[SelfSealingTank] Fuel auto-ignition! " + part.name + " is on fire! Fuel quantity: " + fuel.amount + "; temperature: " + part.temperature);
                         Extinguishtank();
                         isOnFire = true;
                     }

@@ -84,7 +84,7 @@ namespace BDArmory.FX
             StartTime = Time.time;
             MaxTime = Mathf.Sqrt((thermalRadius / ExplosionVelocity) * 3f) * 2f; // Scale MaxTime to get a reasonable visualisation of the explosion.
             scale = Mathf.Sqrt(400 * (6 * yield)) / 219;
-            if (BDArmorySettings.DRAW_DAMAGE_LABELS)
+            if (BDArmorySettings.DEBUG_DAMAGE)
             {
                 Debug.Log("[BDArmory.NukeFX]: Explosion started tntMass: {" + yield + "}  BlastRadius: {" + thermalRadius + "} StartTime: {" + StartTime + "}, Duration: {" + MaxTime + "}");
             }
@@ -396,7 +396,7 @@ namespace BDArmory.FX
 			{
                 if (!eventToExecute.IsNegativePressure)
                 {
-                    if (BDArmorySettings.DRAW_DAMAGE_LABELS && double.IsNaN(part.radiativeArea))
+                    if (BDArmorySettings.DEBUG_DAMAGE && double.IsNaN(part.radiativeArea))
                     {
                         Debug.Log("[BDArmory.NukeFX]: radiative area of part " + part + " was NaN, using approximate area " + radiativeArea + " instead.");
                     }
@@ -427,7 +427,7 @@ namespace BDArmory.FX
                             }
                             else
                             {
-                                if (BDArmorySettings.DRAW_DAMAGE_LABELS) Debug.Log("[BDArmory.NukeTest]: Applying " + blastImpulse.ToString("0.0") + " impulse to " + part + " of mass " + part.mass + " at distance " + realDistance + "m");
+                                if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.NukeTest]: Applying " + blastImpulse.ToString("0.0") + " impulse to " + part + " of mass " + part.mass + " at distance " + realDistance + "m");
                                 part.rb.AddForceAtPosition((part.transform.position - transform.position).normalized * ((float)blastImpulse * (radiativeArea / 3f)), part.transform.position, ForceMode.Impulse);
                             }
                         }
@@ -494,7 +494,7 @@ namespace BDArmory.FX
                             }
                         }
                     }
-                    else if (BDArmorySettings.DRAW_DAMAGE_LABELS)
+                    else if (BDArmorySettings.DEBUG_DAMAGE)
                     {
                         Debug.Log("[BDArmory.NukeFX]: Part " + part.name + " at distance " + realDistance + "m took no damage");
                     }
@@ -509,7 +509,7 @@ namespace BDArmory.FX
                         }
                         else
                         {
-                            if (BDArmorySettings.DRAW_DAMAGE_LABELS) Debug.Log("[BDArmory.NukeTest]: Applying " + eventToExecute.NegativeForce.ToString("0.0") + " impulse to " + part + " of mass " + part.mass + " at distance " + realDistance + "m");
+                            if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.NukeTest]: Applying " + eventToExecute.NegativeForce.ToString("0.0") + " impulse to " + part + " of mass " + part.mass + " at distance " + realDistance + "m");
                             part.rb.AddForceAtPosition((Position - part.transform.position).normalized * eventToExecute.NegativeForce * BDArmorySettings.EXP_IMP_MOD * 0.25f, part.transform.position, ForceMode.Impulse);
                         }
                     }

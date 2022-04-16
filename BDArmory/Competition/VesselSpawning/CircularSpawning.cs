@@ -503,12 +503,12 @@ namespace BDArmory.Competition.VesselSpawning
             //     {
             //         distance = hit.distance;
             //         localSurfaceNormal = hit.normal;
-            //         if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.CircularSpawning]: found terrain for spawn adjustments");
+            //         if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.CircularSpawning]: found terrain for spawn adjustments");
             //     }
             //     else
             //     {
             //         distance = FlightGlobals.getAltitudeAtPos(craftSpawnPosition) - (float)terrainAltitude; // If the raycast fails or we're spawning over water, use the value from FlightGlobals and terrainAltitude of the original spawn point.
-            //         if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.CircularSpawning]: failed to find terrain for spawn adjustments");
+            //         if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.CircularSpawning]: failed to find terrain for spawn adjustments");
             //     }
 
             //     if (!spawnAirborne || BDArmorySettings.SF_GRAVITY) //spawn parallel to ground if surface or space spawning
@@ -734,7 +734,7 @@ namespace BDArmory.Competition.VesselSpawning
 
                             if (!BDArmorySettings.NO_ENGINES && SpawnUtils.CountActiveEngines(vessel) == 0) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
                             {
-                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.CircularSpawning]: " + vessel.vesselName + " didn't activate engines on AG10! Activating ALL their engines.");
+                                if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.CircularSpawning]: " + vessel.vesselName + " didn't activate engines on AG10! Activating ALL their engines.");
                                 SpawnUtils.ActivateAllEngines(vessel);
                             }
                             else if (BDArmorySettings.NO_ENGINES && SpawnUtils.CountActiveEngines(vessel) > 0) // Vessel had some active engines. Turn them off if possible.
@@ -1006,13 +1006,13 @@ namespace BDArmory.Competition.VesselSpawning
             {
                 distance = hit.distance;
                 localSurfaceNormal = hit.normal;
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.CircularSpawning]: found terrain for spawn adjustments");
+                if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.CircularSpawning]: found terrain for spawn adjustments");
             }
             else
             {
                 distance = FlightGlobals.getAltitudeAtPos(ray.origin) - (float)terrainAltitude; // If the raycast fails or we're spawning over water, use the value from FlightGlobals and terrainAltitude of the original spawn point.
                 localSurfaceNormal = radialUnitVector;
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.CircularSpawning]: failed to find terrain for spawn adjustments");
+                if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.CircularSpawning]: failed to find terrain for spawn adjustments");
             }
             // Rotation
             vessel.SetRotation(Quaternion.FromToRotation(editorFacility == EditorFacility.SPH ? -vessel.ReferenceTransform.forward : vessel.ReferenceTransform.up, localSurfaceNormal) * vessel.transform.rotation); // Re-orient the vessel to the terrain normal (or radial unit vector).

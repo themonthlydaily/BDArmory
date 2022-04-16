@@ -699,12 +699,12 @@ namespace BDArmory.Targeting
                     }
                 }
 
-                if (BDArmorySettings.DRAW_RADAR_LABELS)
+                if (BDArmorySettings.DEBUG_RADAR)
                 {
                     GUI.Label(new Rect(600, 1000, 100, 100), "Slew rate: " + finalSlewSpeed);
                 }
 
-                if (BDArmorySettings.DRAW_DEBUG_LINES)
+                if (BDArmorySettings.DEBUG_LINES)
                 {
                     if (groundStabilized)
                     {
@@ -1354,7 +1354,7 @@ namespace BDArmory.Targeting
                 }
             }
 
-            if (BDArmorySettings.DRAW_RADAR_LABELS)
+            if (BDArmorySettings.DEBUG_RADAR)
             {
                 MoveDebugSphere();
             }

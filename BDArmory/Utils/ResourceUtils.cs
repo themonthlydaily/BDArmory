@@ -138,7 +138,7 @@ namespace BDArmory.Utils
             {
                 if (!srcParts.ContainsKey(resourceName) || !dstParts.ContainsKey(resourceName))
                 {
-                    // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log(string.Format("[BDArmory.ProjectileUtils]: Steal resource {0} failed; no parts.", resourceName));
+                    // if (BDArmorySettings.DEBUG_LABELS) Debug.Log(string.Format("[BDArmory.ProjectileUtils]: Steal resource {0} failed; no parts.", resourceName));
                     continue;
                 }
 
@@ -150,7 +150,7 @@ namespace BDArmory.Utils
                 }
                 double amount = remainingAmount * ration;
                 if (integerAmounts) { amount = Math.Ceiling(amount); } // Round up steal amount so that something is always stolen if there's something to steal.
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ProjectileUtils]: " + dst.vesselName + " is trying to steal " + amount.ToString("F1") + " of " + resourceName + " from " + src.vesselName);
+                if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.ProjectileUtils]: " + dst.vesselName + " is trying to steal " + amount.ToString("F1") + " of " + resourceName + " from " + src.vesselName);
 
                 // transfer resource from src->dst parts, honoring their priorities
                 PriorityQueue sourceQueue = new PriorityQueue(srcParts[resourceName]);
@@ -192,7 +192,7 @@ namespace BDArmory.Utils
                     var transferFractionAvailable = totalTransfer / totalContainerSizeAvailable;
                     var transferFractionOpportunity = totalTransfer / totalContainerSizeOpportunity;
 
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.ProjectileUtils]: Transferring {totalTransfer:F1} of {resourceName} from {string.Join(", ", availability.Select(a => $"{a.part.name} ({a.amount:F1}/{a.maxAmount:F1})").ToList())} on {src.vesselName} to {string.Join(", ", opportunity.Select(o => $"{o.part.name} ({o.amount:F1}/{o.maxAmount:F1})").ToList())} on {dst.vesselName}");
+                    if (BDArmorySettings.DEBUG_LABELS) Debug.Log($"[BDArmory.ProjectileUtils]: Transferring {totalTransfer:F1} of {resourceName} from {string.Join(", ", availability.Select(a => $"{a.part.name} ({a.amount:F1}/{a.maxAmount:F1})").ToList())} on {src.vesselName} to {string.Join(", ", opportunity.Select(o => $"{o.part.name} ({o.amount:F1}/{o.maxAmount:F1})").ToList())} on {dst.vesselName}");
                     // Transfer directly between parts doesn't seem to be working properly (it leaves the source, but doesn't arrive at the destination).
                     var measuredOut = 0d;
                     var measuredIn = 0d;
@@ -210,7 +210,7 @@ namespace BDArmory.Utils
                         if (availability.Sum(r => r.amount) < opportunity.Sum(r => r.maxAmount - r.amount)) { sources = null; } else { destinations = null; }
                     }
                 }
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.ProjectileUtils]: Final amount of {resourceName} stolen: {amountTaken:F1}");
+                if (BDArmorySettings.DEBUG_LABELS) Debug.Log($"[BDArmory.ProjectileUtils]: Final amount of {resourceName} stolen: {amountTaken:F1}");
             }
         }
 

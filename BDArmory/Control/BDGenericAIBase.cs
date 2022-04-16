@@ -237,7 +237,7 @@ namespace BDArmory.Control
         protected virtual void OnGUI()
         {
             if (!pilotEnabled || !vessel.isActiveVessel) return;
-            if (BDArmorySettings.DRAW_AI_LABELS)
+            if (BDArmorySettings.DEBUG_TELEMETRY)
             {
                 GUI.Label(new Rect(200, Screen.height - 300, 600, 300), $"{vessel.name}\n{debugString.ToString()}");
             }
@@ -366,7 +366,7 @@ namespace BDArmory.Control
             {
                 commandLeader = null;
             }
-            if (BDArmorySettings.DRAW_AI_LABELS) Debug.Log("[BDArmory.BDGenericAIBase]:" + vessel.vesselName + " was released from command.");
+            if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDGenericAIBase]:" + vessel.vesselName + " was released from command.");
             command = PilotCommands.Free;
 
             assignedPositionWorld = vesselTransform.position;
@@ -377,7 +377,7 @@ namespace BDArmory.Control
             if (!pilotEnabled) return;
             if (leader == vessel || followerIndex < 0) return;
 
-            if (BDArmorySettings.DRAW_AI_LABELS) Debug.Log("[BDArmory.BDGenericAIBase]:" + vessel.vesselName + " was commanded to follow.");
+            if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDGenericAIBase]:" + vessel.vesselName + " was commanded to follow.");
             command = PilotCommands.Follow;
             commandLeader = leader;
             commandFollowIndex = followerIndex;
@@ -393,7 +393,7 @@ namespace BDArmory.Control
         {
             if (!pilotEnabled) return;
 
-            if (BDArmorySettings.DRAW_AI_LABELS) Debug.Log("[BDArmory.BDGenericAIBase]:" + vessel.vesselName + " was commanded to go to.");
+            if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDGenericAIBase]:" + vessel.vesselName + " was commanded to go to.");
             assignedPositionGeo = gpsCoords;
             command = PilotCommands.FlyTo;
         }
@@ -402,7 +402,7 @@ namespace BDArmory.Control
         {
             if (!pilotEnabled) return;
 
-            if (BDArmorySettings.DRAW_AI_LABELS) Debug.Log("[BDArmory.BDGenericAIBase]:" + vessel.vesselName + " was commanded to attack.");
+            if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDGenericAIBase]:" + vessel.vesselName + " was commanded to attack.");
             assignedPositionGeo = gpsCoords;
             command = PilotCommands.Attack;
         }
@@ -416,7 +416,7 @@ namespace BDArmory.Control
         {
             if (!pilotEnabled) return; // Do nothing if we haven't taken off (or activated with airspawn) yet.
 
-            if (BDArmorySettings.DRAW_AI_LABELS) Debug.Log("[BDArmory.BDGenericAIBase]:" + vessel.vesselName + " was commanded to follow waypoints.");
+            if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDGenericAIBase]:" + vessel.vesselName + " was commanded to follow waypoints.");
             command = PilotCommands.Waypoints;
         }
 
@@ -434,7 +434,7 @@ namespace BDArmory.Control
 
         public void ClearWaypoints()
         {
-            if (BDArmorySettings.DRAW_AI_LABELS) Debug.Log("[BDArmory.BDGenericAIBase]: Cleared waypoints");
+            if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDGenericAIBase]: Cleared waypoints");
             this.waypoints = null;
             this.activeWaypointIndex = -1;
         }
@@ -447,7 +447,7 @@ namespace BDArmory.Control
                 this.waypoints = null;
                 return;
             }
-            if (BDArmorySettings.DRAW_AI_LABELS) Debug.Log(string.Format("[BDArmory.BDGenericAIBase]: Set {0} waypoints", waypoints.Count));
+            if (BDArmorySettings.DEBUG_AI) Debug.Log(string.Format("[BDArmory.BDGenericAIBase]: Set {0} waypoints", waypoints.Count));
             this.waypoints = waypoints;
             this.activeWaypointIndex = 0;
             var waypoint = waypoints[activeWaypointIndex];
@@ -473,12 +473,12 @@ namespace BDArmory.Control
             {
                 // moving away, proceed to next point
                 var deviation = AIUtils.PredictPosition(vessel.transform.position - waypointPosition, vessel.Velocity(), vessel.acceleration, timeToCPA).magnitude;
-                if (BDArmorySettings.DRAW_AI_LABELS) Debug.Log(string.Format("[BDArmory.BDGenericAIBase]: Reached waypoint {0} with range {1}", activeWaypointIndex, deviation));
+                if (BDArmorySettings.DEBUG_AI) Debug.Log(string.Format("[BDArmory.BDGenericAIBase]: Reached waypoint {0} with range {1}", activeWaypointIndex, deviation));
                 BDACompetitionMode.Instance.Scores.RegisterWaypointReached(vessel.vesselName, activeWaypointIndex, deviation);
                 ++activeWaypointIndex;
                 if (activeWaypointIndex >= waypoints.Count)
                 {
-                    if (BDArmorySettings.DRAW_AI_LABELS) Debug.Log("[BDArmory.BDGenericAIBase]: Waypoints complete");
+                    if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDGenericAIBase]: Waypoints complete");
                     waypoints = null;
                     ReleaseCommand();
                     return;

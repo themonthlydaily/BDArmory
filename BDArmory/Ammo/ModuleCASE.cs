@@ -234,19 +234,19 @@ namespace BDArmory.Ammo
                 if (CASELevel == 0)
                 {
                     ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield, explModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 120, part, SourceVessel, "Ammunition (CASE-0)", direction, -1, false, part.mass + ((float)ammoExplosionYield * 10f), 1200 * BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE);
-                    if (BDArmorySettings.DRAW_DAMAGE_LABELS) Debug.Log("[BDArmory.ModuleCASE] CASE 0 explosion, tntMassEquivilent: " + ammoExplosionYield);
+                    if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ModuleCASE] CASE 0 explosion, tntMassEquivilent: " + ammoExplosionYield);
                 }
                 else
                 {
                     direction = part.transform.up;
                     ExplosionFx.CreateExplosion(part.transform.position, ((float)ammoExplosionYield / 2), limitEdexploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 60, part, SourceVessel, "Ammunition (CASE-I)", direction, -1, false, part.mass + ((float)ammoExplosionYield * 10f), 600 * BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE);
-                    if (BDArmorySettings.DRAW_DAMAGE_LABELS) Debug.Log("[BDArmory.ModuleCASE] CASE I explosion, tntMassEquivilent: " + ammoExplosionYield + ", part: " + part + ", vessel: " + vesselName);
+                    if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ModuleCASE] CASE I explosion, tntMassEquivilent: " + ammoExplosionYield + ", part: " + part + ", vessel: " + vesselName);
                 }
             }
             else //if (CASELevel == 2) //blast contained, shunted out side of hull, minimal damage
             {
                 ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield / 4f, shuntExploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 30, part, SourceVessel, "Ammunition (CASE-II)", direction, -1, true);
-                if (BDArmorySettings.DRAW_DAMAGE_LABELS) Debug.Log("[BDArmory.ModuleCASE] CASE II explosion, tntMassEquivilent: " + ammoExplosionYield);
+                if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ModuleCASE] CASE II explosion, tntMassEquivilent: " + ammoExplosionYield);
                 Ray BlastRay = new Ray(part.transform.position, part.transform.up);
                 var hits = Physics.RaycastAll(BlastRay, blastRadius, explosionLayerMask);
                 if (hits.Length > 0)
@@ -335,7 +335,7 @@ namespace BDArmory.Ammo
             float armorToReduce = hitPart.GetArmorThickness() * 0.25f;
             hitPart.ReduceArmor(armorToReduce);
 
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE]" + hitPart.name + " damaged, armor reduced by " + armorToReduce);
+            if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE]" + hitPart.name + " damaged, armor reduced by " + armorToReduce);
 
             BDACompetitionMode.Instance.Scores.RegisterBattleDamage(SourceVessel, hitPart.vessel, explDamage);
         }

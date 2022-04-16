@@ -38,7 +38,7 @@ namespace BDArmory.FX
                 gameObject.SetActive(false);
                 return;
             }
-            if (BDArmorySettings.DRAW_DAMAGE_LABELS) Debug.Log($"[BDArmory.LeakFX]: Leak added to {parentPart.name}" + (parentPart.vessel != null ? $" on {parentPart.vessel.vesselName}" : ""));
+            if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.LeakFX]: Leak added to {parentPart.name}" + (parentPart.vessel != null ? $" on {parentPart.vessel.vesselName}" : ""));
 
             engine = parentPart.FindModuleImplementing<ModuleEngines>();
             var solid = parentPart.Resources.Where(pr => pr.resourceName == "SolidFuel").FirstOrDefault();

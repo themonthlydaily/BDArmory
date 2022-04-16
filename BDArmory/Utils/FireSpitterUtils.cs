@@ -41,7 +41,7 @@ namespace BDArmory.Utils
                 {
                     FSAssembly = assy.assembly;
                     hasFireSpitter = true;
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.FireSpitter]: Found FireSpitter Assembly: {FSAssembly.FullName}");
+                    if (BDArmorySettings.DEBUG_LABELS) Debug.Log($"[BDArmory.FireSpitter]: Found FireSpitter Assembly: {FSAssembly.FullName}");
                 }
             }
             return hasFireSpitter;
@@ -58,7 +58,7 @@ namespace BDArmory.Utils
                 {
                     FSEngineType = type;
                     hasFSEngine = true;
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.FireSpitter]: Found FSengine type.");
+                    if (BDArmorySettings.DEBUG_LABELS) Debug.Log($"[BDArmory.FireSpitter]: Found FSengine type.");
                 }
             }
             return hasFSEngine;
@@ -75,12 +75,12 @@ namespace BDArmory.Utils
                     {
                         if (activate)
                         {
-                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.FireSpitter]: Found {module} on {vessel.vesselName}, attempting to call 'Activate'.");
+                            if (BDArmorySettings.DEBUG_LABELS) Debug.Log($"[BDArmory.FireSpitter]: Found {module} on {vessel.vesselName}, attempting to call 'Activate'.");
                             FSEngineType.InvokeMember("Activate", BindingFlags.InvokeMethod, null, module, new object[] { }); // Note: this activates the engines, but the throttle on the engines aren't controlled unless they're on the active vessel.
                         }
                         else
                         {
-                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.FireSpitter]: Found {module} on {vessel.vesselName}, attempting to call 'Shutdown'.");
+                            if (BDArmorySettings.DEBUG_LABELS) Debug.Log($"[BDArmory.FireSpitter]: Found {module} on {vessel.vesselName}, attempting to call 'Shutdown'.");
                             FSEngineType.InvokeMember("Shutdown", BindingFlags.InvokeMethod, null, module, new object[] { });
                         }
                     }
