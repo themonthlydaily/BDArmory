@@ -306,7 +306,7 @@ namespace BDArmory.UI
             return flareTarget;
         }
 
-        public static TargetSignatureData GetHeatTarget(Vessel sourceVessel, Vessel missileVessel, Ray ray, TargetSignatureData priorHeatTarget, float scanRadius, float highpassThreshold, bool allAspect, FloatCurve lockedSensorFOVBias, FloatCurve lockedSensorVelocityBias, MissileFire mf = null, bool favorGroundTargets = false)
+        public static TargetSignatureData GetHeatTarget(Vessel sourceVessel, Vessel missileVessel, Ray ray, TargetSignatureData priorHeatTarget, float scanRadius, float highpassThreshold, bool allAspect, FloatCurve lockedSensorFOVBias, FloatCurve lockedSensorVelocityBias, MissileFire mf = null)
         {
             float minMass = 0.05f;  //otherwise the RAMs have trouble shooting down incoming missiles
             TargetSignatureData finalData = TargetSignatureData.noTarget;
@@ -321,11 +321,8 @@ namespace BDArmory.UI
                     continue;
                 if (vessel == sourceVessel || vessel == missileVessel)
                     continue;
-                if (favorGroundTargets && !vessel.LandedOrSplashed)
-                {
-                    // for AGM heat guidance
+                if (vessel.vesselType == VesselType.Debris)
                     continue;
-                }
 
                 TargetInfo tInfo = vessel.gameObject.GetComponent<TargetInfo>();
 
@@ -375,13 +372,7 @@ namespace BDArmory.UI
 
                     // Add bias targets closer to center of seeker FOV, only once missile seeker can see target
                     if ((priorHeatScore > 0f) && (angle < scanRadius))
-
                         score *= GetSeekerBias(angle, Vector3.Angle(vessel.Velocity(), priorHeatTarget.velocity), lockedSensorFOVBias, lockedSensorVelocityBias);
-
-                    if (vessel.LandedOrSplashed && !favorGroundTargets)
-                    {
-                        score /= 4;
-                    }
 
                     score *= Mathf.Clamp(Vector3.Angle(vessel.transform.position - ray.origin, -VectorUtils.GetUpDirection(ray.origin)) / 90, 0.5f, 1.5f);
 
