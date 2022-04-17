@@ -5,14 +5,13 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-using BDArmory.Control;
 using BDArmory.Extensions;
 using BDArmory.Guidances;
-using BDArmory.Misc;
 using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.Weapons;
+using BDArmory.Weapons.Missiles;
 
 namespace BDArmory.Control
 {
