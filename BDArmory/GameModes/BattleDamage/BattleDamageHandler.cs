@@ -80,7 +80,7 @@ namespace BDArmory.GameModes
                         {
                             Diceroll *= 0.66;
                         }
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Battery Dice Roll: " + Diceroll);
+                        if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.BattleDamageHandler]: Battery Dice Roll: " + Diceroll);
                         if (Diceroll <= BDArmorySettings.BD_DAMAGE_CHANCE)
                         {
                             BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker);
@@ -96,7 +96,7 @@ namespace BDArmory.GameModes
                     if (incendiary)
                     {
                         double Diceroll = UnityEngine.Random.Range(0, 100);
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Wood part Dice Roll: " + Diceroll);
+                        if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.BattleDamageHandler]: Wood part Dice Roll: " + Diceroll);
                         if (Diceroll <= BDArmorySettings.BD_DAMAGE_CHANCE)
                         {
                             BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker, 90);
@@ -118,7 +118,7 @@ namespace BDArmory.GameModes
                         {
                             Diceroll *= 0.66;
                         }
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Ammo TAC DiceRoll: " + Diceroll + "; needs: " + damageChance);
+                        if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.BattleDamageHandler]: Ammo TAC DiceRoll: " + Diceroll + "; needs: " + damageChance);
                         if (Diceroll <= (damageChance) && part.GetDamagePercentage() < 0.95f)
                         {
                             ammo.DetonateIfPossible();
@@ -145,7 +145,7 @@ namespace BDArmory.GameModes
                             engine.thrustPercentage -= ((((tracker.oldDamagePercent - part.GetDamagePercentage())) * (penetrationFactor / 2)) * BDArmorySettings.BD_PROP_DAM_RATE) * 10; //convert from damagepercent to thrustpercent
                             //use difference in old Hp and current, not just current, else it doesn't matter if its a heavy hit or chipped paint, thrust reduction is the same
                             engine.thrustPercentage = Mathf.Clamp(engine.thrustPercentage, BDArmorySettings.BD_PROP_FLOOR, 100); //even heavily damaged engines will still put out something
-                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: engine thrust: " + engine.thrustPercentage);
+                            if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.BattleDamageHandler]: engine thrust: " + engine.thrustPercentage);
                             engine.PlayFlameoutFX(true);
                             tracker.oldDamagePercent = part.GetDamagePercentage();
                             /*
@@ -244,7 +244,7 @@ namespace BDArmory.GameModes
 
                         intake.area -= (tracker.origIntakeArea * (((tracker.oldDamagePercent - part.GetDamagePercentage()) * HEBonus) * BDArmorySettings.BD_PROP_DAM_RATE)); //HE does bonus damage
                         intake.area = Mathf.Clamp((float)intake.area, ((float)tracker.origIntakeArea / 4), 99999); //even shredded intake ducting will still get some air to engines
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Intake damage: Orig Area: " + tracker.origIntakeArea + "; Current Area: " + intake.area + "; Intake Speed: " + intake.intakeSpeed + "; intake damage: " + (1 - ((((tracker.oldDamagePercent - part.GetDamagePercentage())) * HEBonus) / BDArmorySettings.BD_PROP_DAM_RATE)));
+                        if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.BattleDamageHandler]: Intake damage: Orig Area: " + tracker.origIntakeArea + "; Current Area: " + intake.area + "; Intake Speed: " + intake.intakeSpeed + "; intake damage: " + (1 - ((((tracker.oldDamagePercent - part.GetDamagePercentage())) * HEBonus) / BDArmorySettings.BD_PROP_DAM_RATE)));
                     }
                 }
                 if (BDArmorySettings.BD_GIMBALS) //engine gimbal damage
@@ -263,7 +263,7 @@ namespace BDArmory.GameModes
                         }
                         //gimbal.gimbalRange *= (1 - (((1 - part.GetDamagePercentatge()) * HEBonus) / BDArmorySettings.BD_PROP_DAM_RATE)); //HE does bonus damage
                         double Diceroll = UnityEngine.Random.Range(0, 100);
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Gimbal DiceRoll: " + Diceroll);
+                        if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.BattleDamageHandler]: Gimbal DiceRoll: " + Diceroll);
                         if (Diceroll <= (BDArmorySettings.BD_DAMAGE_CHANCE * HEBonus))
                         {
                             gimbal.enabled = false;
@@ -294,7 +294,7 @@ namespace BDArmory.GameModes
                     if (wing.deflectionLiftCoeff > ((part.mass * 5) + liftDam)) //stock mass/lift ratio is 10; 0.2t wing has 2.0 lift; clamp lift lost at half
                     {
                         wing.deflectionLiftCoeff -= liftDam;                        
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: " + part.name + "hit by " + caliber + " round, penFactor " + penetrationFactor + "; took lift damage: " + liftDam + ", current lift: " + wing.deflectionLiftCoeff);
+                        if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.BattleDamageHandler]: " + part.name + "hit by " + caliber + " round, penFactor " + penetrationFactor + "; took lift damage: " + liftDam + ", current lift: " + wing.deflectionLiftCoeff);
                     }
                 }
                 if (BDArmorySettings.BD_CTRL_SRF && firsthit)
@@ -343,7 +343,7 @@ namespace BDArmory.GameModes
             if (BDArmorySettings.BD_SUBSYSTEMS && firsthit)
             {
                 double Diceroll = UnityEngine.Random.Range(0, 100);
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Subsystem DiceRoll: " + Diceroll + "; needs: " + damageChance);
+                if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.BattleDamageHandler]: Subsystem DiceRoll: " + Diceroll + "; needs: " + damageChance);
                 if (Diceroll <= (damageChance) && part.GetDamagePercentage() < 0.95f)
                 {
                     if (part.GetComponent<ModuleReactionWheel>() != null) //should have this be separate dice rolls, else a part with more than one of these will lose them all
@@ -406,7 +406,7 @@ namespace BDArmory.GameModes
                         cam = part.GetComponent<ModuleTargetingCamera>(); // gimbal range??
                         part.RemoveModule(cam);
                     }
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: " + part.name + "took subsystem damage");
+                    if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.BattleDamageHandler]: " + part.name + "took subsystem damage");
                     if (Diceroll <= (damageChance / 2))
                     {
                         if (incendiary)
@@ -422,7 +422,7 @@ namespace BDArmory.GameModes
                 if (part.GetComponent<ModuleCommand>() != null)
                 {
                     double ControlDiceRoll = UnityEngine.Random.Range(0, 100);
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Command DiceRoll: " + ControlDiceRoll);
+                    if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.BattleDamageHandler]: Command DiceRoll: " + ControlDiceRoll);
                     if (ControlDiceRoll <= (BDArmorySettings.BD_DAMAGE_CHANCE * 2))
                     {
                         using (List<Part>.Enumerator craftPart = part.vessel.parts.GetEnumerator())
@@ -451,7 +451,7 @@ namespace BDArmory.GameModes
                                     }
                                 }
                             //GuardRange reduction to sim canopy/sensor damage?
-                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: " + part.name + "took command damage");
+                            if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.BattleDamageHandler]: " + part.name + "took command damage");
                         }
                     }
                 }
@@ -471,7 +471,7 @@ namespace BDArmory.GameModes
                 {
                     float PilotTAC = Mathf.Clamp((BDArmorySettings.BD_DAMAGE_CHANCE / part.mass), 0.01f, 100); //larger cockpits = greater volume = less chance any hit will pass through a region of volume containing a pilot
                     float killchance = UnityEngine.Random.Range(0, 100);
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Pilot TAC: " + PilotTAC + "; dice roll: " + killchance);
+                    if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.BattleDamageHandler]: Pilot TAC: " + PilotTAC + "; dice roll: " + killchance);
                     if (killchance <= PilotTAC) //add penetrationfactor threshold? hp threshold?
                     {
                         ProtoCrewMember crewMember = part.protoModuleCrew.FirstOrDefault(x => x != null);
@@ -495,7 +495,7 @@ namespace BDArmory.GameModes
                                 crewMember.StartRespawnPeriod();
                             }
                             //ScreenMessages.PostScreenMessage(crewMember.name + " killed by damage to " + part.vessel.name + part.partName + ".", 5.0f, ScreenMessageStyle.UPPER_LEFT);
-                            ScreenMessages.PostScreenMessage("Cockpit snipe on " + part.vessel.GetName() + "! " + crewMember.name + " killed!", 5.0f, ScreenMessageStyle.UPPER_LEFT);
+                            ScreenMessages.PostScreenMessage("Cockpit snipe on " + part.vessel.GetName() + "! " + crewMember.name + " killed!", 5.0f, ScreenMessageStyle.UPPER_CENTER);
                             BDACompetitionMode.Instance.OnVesselModified(part.vessel);
 
                         }

@@ -2751,7 +2751,7 @@ v0.9.6
 - IVA gun audio low-pass filter frequency is now configurable in settings.cfg
 - Removed redundant filter effects on lower depth TGP camera
 - Tracer size updates in OnWillRenderObject instead of looping through all pooled bullets for each camera
-- Stopped guard debug log entries unless DRAW_DEBUG_LABELS is enabled
+- Stopped guard debug log entries unless DEBUG_LABELS is enabled
 - Updated laser damage (Yski)
 - Guard will use long-range turrets for distant targets if no missiles available (Yski)
 
