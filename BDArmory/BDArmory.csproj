@@ -166,6 +166,7 @@
     <Compile Include="Control\BDGenericAIBase.cs" />
     <Compile Include="Control\BDModulePilotAI.cs" />
     <Compile Include="Control\BDModuleSurfaceAI.cs" />
+    <Compile Include="Control\BDModuleVTOLAI.cs" />
     <Compile Include="Control\IBDAIControl.cs" />
     <Compile Include="Control\MissileFire.cs" />
     <Compile Include="Control\ModuleWingCommander.cs" />
@@ -893,7 +894,7 @@
       <Output TaskParameter="Assemblies" ItemName="Targets" />
     </GetAssemblyIdentity>
     <ItemGroup>
-      <VersionNumber Include="@(Targets-&gt;'%(Version)')" />
+      <VersionNumber Include="@(Targets->'%(Version)')" />
     </ItemGroup>
   </Target>
   <PropertyGroup>
