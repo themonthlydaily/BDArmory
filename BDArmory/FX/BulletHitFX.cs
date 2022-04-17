@@ -454,7 +454,7 @@ namespace BDArmory.FX
                                     existingLeakFX.lifeTime = 0; //kill leakFX, start fire
                                     leakcount++;
                                 }
-                                //if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BullethitFX] Adding fire. HE? " + explosive + "; Inc? " + incendiary + "; inerttank? " + inertTank);
+                                //if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.BullethitFX]: Adding fire. HE? " + explosive + "; Inc? " + incendiary + "; inerttank? " + inertTank);
                                 AttachFire(hit.point, hitPart, caliber, sourcevessel, -1, leakcount);
                             }
                         }

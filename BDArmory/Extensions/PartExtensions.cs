@@ -340,12 +340,12 @@ namespace BDArmory.Extensions
             float armorthickness = Dependencies.Get<DamageService>().GetPartArmor_svc(p);
             if (float.IsNaN(armorthickness))
             {
-                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[PartExtensions] GetArmorThickness; thickness is NaN");
+                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.PartExtensions]: GetArmorThickness; thickness is NaN");
                 return 0f;
             }
             else
             {
-                //if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[PartExtensions] GetArmorThickness; thickness is: " + armorthickness);
+                //if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.PartExtensions]: GetArmorThickness; thickness is: " + armorthickness);
                 return armorthickness;
             }
             //return Dependencies.Get<DamageService>().GetPartArmor_svc(p);
