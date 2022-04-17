@@ -3361,18 +3361,18 @@ namespace BDArmory.Control
             //FIXME - add check for identically named vessels
             if (firedMissiles >= maxMissilesOnTarget && (multiMissileTgtNum > 1 && BDATargetManager.TargetList(Team).Count > 1)) //if there are multiple potential targets, see how many can be fired at with missiles
             {
-                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[MissileFire] max missiles on target; switching to new target!");
+                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: max missiles on target; switching to new target!");
                 if (Vector3.Distance(transform.position + vessel.Velocity(), currentTarget.position + currentTarget.velocity) < gunRange * 0.75f) //don't swap away from current target if about to enter gunrange
                 {
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[MissileFire] max targets fired on, but about to enter Gun range; keeping current target");
-                    return; 
+                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: max targets fired on, but about to enter Gun range; keeping current target");
+                    return;
                 }
                 if (PreviousMissile)
                 {
                     MissileBase ml = PreviousMissile;
                     if (ml.TargetingMode == MissileBase.TargetingModes.Laser) //don't switch from current target if using LASMs to keep current target painted
                     {
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[MissileFire] max targets fired on with LASMs, keeping target painted!");
+                        if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: max targets fired on with LASMs, keeping target painted!");
                         return;
                     }
                     if (ml && !(ml.TargetingMode == MissileBase.TargetingModes.Radar && !ml.radarLOAL))
@@ -3384,7 +3384,7 @@ namespace BDArmory.Control
                 heatTarget = TargetSignatureData.noTarget; //clear holdover targets when switching targets
                 antiRadTargetAcquired = false;
 
-                if (BDArmorySettings..DEBUG_MISSILES) Debug.Log("[MissileFire] max missiles on target; switching to new target!");
+                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: max missiles on target; switching to new target!");
 
                 using (List<TargetInfo>.Enumerator target = BDATargetManager.TargetList(Team).GetEnumerator())
                 {
@@ -3394,15 +3394,15 @@ namespace BDArmory.Control
                         {
                             if (missilesAway[target.Current] >= maxMissilesOnTarget)
                             {
-								                targetsAssigned.Add(target.Current);
-                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[MissileFire] Adding " + target.Current.Vessel.GetName() + " to exclusion list; length: " + targetsAssigned.Count);
+                                targetsAssigned.Add(target.Current);
+                                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: Adding " + target.Current.Vessel.GetName() + " to exclusion list; length: " + targetsAssigned.Count);
                             }
                         }
                     }
                 }
                 if (targetsAssigned.Count == BDATargetManager.TargetList(Team).Count) //oops, already fired missiles at all available targets
                 {
-                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[MissileFire] max targets fired on, resetting target list!");
+                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: max targets fired on, resetting target list!");
                     targetsAssigned.Clear(); //clear targets tried, so AI can track best current target until such time as it can fire again
                 }
             }
