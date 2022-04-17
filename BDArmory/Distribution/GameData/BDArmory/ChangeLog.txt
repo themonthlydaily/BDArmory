@@ -26,6 +26,7 @@ IMPROVEMENTS
 	- CM Flares optimized, now have much reduced performance hit.
 	- Add a toggle to the UI settings section to disable flare smoke.
 	- Add a toggle to the UI settings section to disable gapless particle emitters (mostly used for engine trails).
+	- Refactor the debug settings to be more specific and to have an on-screen only debug labels.
 - AI:
 	- Add a 5° deadzone around being on target for dynamic damping to avoid feed-back loop in PID.
 	- Add a check for requested extending already being satisfied.
