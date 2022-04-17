@@ -401,9 +401,9 @@ namespace BDArmory.Bullets
                             float safeTemp = Armor.SafeUseTemp;
                             float Density = Armor.Density;
                             int armorType = (int)Armor.ArmorTypeNum;
-                            if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                            if (BDArmorySettings.DEBUG_ARMOR)
                             {
-                                Debug.Log("[PooledBUllet].ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density);
+                                Debug.Log("[BDArmory.PooledBUllet]: ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density);
                             }
                             float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(rocketMass * 1000, impactVelocity);
                             float armorStrength = ProjectileUtils.CalculateArmorStrength(caliber, thickness, Ductility, Strength, Density, safeTemp, hitPart);
@@ -449,7 +449,7 @@ namespace BDArmory.Bullets
                         }
                         else
                         {
-                            Debug.Log("[PooledBUllet].ArmorVars not found; hitPart null");
+                            Debug.Log("[BDArmory.PooledRocket]: ArmorVars not found; hitPart null");
                         }
                         if (penetration > thickness)
                         {
@@ -501,7 +501,7 @@ namespace BDArmory.Bullets
 
                                 hitPart.rb.AddForceAtPosition(impactVector.normalized * accelerationMagnitude, hit.point, ForceMode.Acceleration);
 
-                                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                                if (BDArmorySettings.DEBUG_WEAPONS)
                                     Debug.Log("[BDArmory.PooledRocket]: Force Applied " + Math.Round(accelerationMagnitude, 2) + "| Vessel mass in kgs=" + hitPart.vessel.GetTotalMass() * 1000 + "| rocket effective mass =" + rocketMass * 1000);
                             }
 
@@ -522,7 +522,7 @@ namespace BDArmory.Bullets
 
                         if (rb.velocity.magnitude <= 100 && hasPenetrated && (Time.time - startTime > thrustTime))
                         {
-                            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                            if (BDArmorySettings.DEBUG_WEAPONS)
                             {
                                 Debug.Log("[BDArmory.PooledRocket]: Rocket ballistic velocity too low, stopping");
                             }
@@ -593,7 +593,7 @@ namespace BDArmory.Bullets
 
                             BDACompetitionMode.Instance.Scores.RegisterRocketHit(aName, tName, 1);
 
-                            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                            if (BDArmorySettings.DEBUG_WEAPONS)
                                 Debug.Log("[BDArmory.PooledRocket]: rocket proximity sphere hit | Distance overlap = " + detonationRange + "| Part name = " + partHit.name);
                             return detonate = true;
                         }
@@ -607,7 +607,7 @@ namespace BDArmory.Bullets
                 {
                     if (Vector3.Distance(transform.position, tgtShell != null ? tgtShell.transform.position : tgtRocket.transform.position) < detonationRange / 2)
                     {
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                        if (BDArmorySettings.DEBUG_WEAPONS)
                             Debug.Log("[BDArmory.PooledRocket]: rocket proximity to APS target | Distance overlap = " + detonationRange + "| tgt name = " + tgtShell != null ? tgtShell.name : tgtRocket.name);
                         return detonate = true;
                     }
@@ -694,11 +694,11 @@ namespace BDArmory.Bullets
                                 if (p != null)
                                 {
                                     BulletHitFX.AttachFire(hit.point, p, caliber, sourceVesselName, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)), 1, true); //else apply fire to occluding part
-                                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                                    if (BDArmorySettings.DEBUG_WEAPONS)
                                         Debug.Log("[BDArmory.Rocket]: Applying fire to " + p.name + " at distance " + distance + "m, for " + BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)) + " seconds"); ;
                                 }
                             }
-                            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                            if (BDArmorySettings.DEBUG_WEAPONS)
                                 Debug.Log("[Rocket] incendiary raytrace: " + hit.point.x + "; " + hit.point.y + "; " + hit.point.z);
                         }
                     }

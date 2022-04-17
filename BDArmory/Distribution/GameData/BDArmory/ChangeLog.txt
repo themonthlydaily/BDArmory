@@ -26,6 +26,7 @@ IMPROVEMENTS
 	- CM Flares optimized, now have much reduced performance hit.
 	- Add a toggle to the UI settings section to disable flare smoke.
 	- Add a toggle to the UI settings section to disable gapless particle emitters (mostly used for engine trails).
+	- Refactor the debug settings to be more specific and to have an on-screen only debug labels.
 - AI:
 	- Add a 5° deadzone around being on target for dynamic damping to avoid feed-back loop in PID.
 	- Add a check for requested extending already being satisfied.
@@ -2751,7 +2752,7 @@ v0.9.6
 - IVA gun audio low-pass filter frequency is now configurable in settings.cfg
 - Removed redundant filter effects on lower depth TGP camera
 - Tracer size updates in OnWillRenderObject instead of looping through all pooled bullets for each camera
-- Stopped guard debug log entries unless DRAW_DEBUG_LABELS is enabled
+- Stopped guard debug log entries unless DEBUG_LABELS is enabled
 - Updated laser damage (Yski)
 - Guard will use long-range turrets for distant targets if no missiles available (Yski)
 

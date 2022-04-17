@@ -835,9 +835,9 @@ namespace BDArmory.Bullets
                 float safeTemp = Armor.SafeUseTemp;
                 float Density = Armor.Density;
                 int armorType = (int)Armor.ArmorTypeNum;
-                if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                if (BDArmorySettings.DEBUG_ARMOR)
                 {
-                    Debug.Log("[PooledBullet].ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density + "; thickness: " + thickness);
+                    Debug.Log("[BDArmory.PooledBullet]: ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density + "; thickness: " + thickness);
                 }
                 float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(bulletMass, impactSpeed);
                 float armorStrength = ProjectileUtils.CalculateArmorStrength(caliber, thickness, Ductility, Strength, Density, safeTemp, hitPart);
@@ -860,7 +860,7 @@ namespace BDArmory.Bullets
                     if (penetrationFactor > 1)
                     {
                         float thicknessModifier = RA.armorModifier;
-                        if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[PooledBullet] Beginning Reactive Armor Hit; NXRA: " + RA.NXRA + "; thickness Mod: " + RA.armorModifier);
+                        if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.PooledBullet]: Beginning Reactive Armor Hit; NXRA: " + RA.NXRA + "; thickness Mod: " + RA.armorModifier);
                         if (RA.NXRA) //non-explosive RA, always active
                         {
                             thickness *= thicknessModifier;
@@ -874,7 +874,7 @@ namespace BDArmory.Bullets
                                     caliber = Mathf.Sqrt((caliber * (((bulletMass * 1000) / ((caliber * caliber * Mathf.PI / 400) * 19)) + 1) * 4) / Mathf.PI); //increase caliber to sim sabot hitting perpendicualr instead of point-first
                                     bulletMass /= 2; //sunder sabot
                                                      //RA isn't going to stop sabot, but underlying part's armor will (probably)
-                                    if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[PooledBullet] Sabot caliber and mass now: " + caliber + ", " + bulletMass);
+                                    if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("BDArmory.PooledBullet]: Sabot caliber and mass now: " + caliber + ", " + bulletMass);
                                     RA.UpdateSectionScales();
                                 }
                             }
@@ -940,7 +940,7 @@ namespace BDArmory.Bullets
 
                         hitPart.rb.AddForceAtPosition(impactVelocity.normalized * accelerationMagnitude, hit.point, ForceMode.Acceleration);
 
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                        if (BDArmorySettings.DEBUG_WEAPONS)
                             Debug.Log("[BDArmory.PooledBullet]: Force Applied " + Math.Round(accelerationMagnitude, 2) + "| Vessel mass in kgs=" + hitPart.vessel.GetTotalMass() * 1000 + "| bullet effective mass =" + (bulletMass - tntMass));
                     }
                     distanceTraveled += hit.distance;
@@ -1005,7 +1005,7 @@ namespace BDArmory.Bullets
                         //distanceTraveled += hit.distance;
                         if (!fuzeTriggered)
                         {
-                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.PooledBullet]: Delay Fuze Tripped");
+                            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.PooledBullet]: Delay Fuze Tripped");
                             fuzeTriggered = true;
                             StartCoroutine(DelayedDetonationRoutine());
                         }
@@ -1050,7 +1050,7 @@ namespace BDArmory.Bullets
             //smaller caliber rounds would be too deformed to do any further damage
             if (currentVelocity.magnitude <= 100 && hasPenetrated)
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DEBUG_WEAPONS)
                 {
                     Debug.Log("[BDArmory.PooledBullet]: Bullet Velocity too low, stopping");
                 }
@@ -1213,8 +1213,8 @@ namespace BDArmory.Bullets
             {
                 if (Vector3.Distance(transform.position, tgtShell != null ? tgtShell.transform.position : tgtRocket.transform.position) < detonationRange / 2)
                 {
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                        Debug.Log("[BDArmory.PooledRocket]: rocket proximity to APS target | Distance overlap = " + detonationRange + "| tgt name = " + tgtShell != null ? tgtShell.name : tgtRocket.name);
+                    if (BDArmorySettings.DEBUG_WEAPONS)
+                        Debug.Log("[BDArmory.PooledBullet]: bullet proximity to APS target | Distance overlap = " + detonationRange + "| tgt name = " + tgtShell != null ? tgtShell.name : tgtRocket.name);
                     return detonate = true;
                 }
             }
@@ -1240,7 +1240,7 @@ namespace BDArmory.Bullets
                             if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
 
 
-                            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                            if (BDArmorySettings.DEBUG_WEAPONS)
                                 Debug.Log("[BDArmory.PooledBullet]: Bullet proximity sphere hit | Distance overlap = " + detonationRange + "| Part name = " + partHit.name);
 
                             return detonate = true;
@@ -1321,7 +1321,7 @@ namespace BDArmory.Bullets
                 //if bullet hits and is HE, detonate and kill bullet
                 if ((explosive || nuclear) && tntMass > 0)
                 {
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    if (BDArmorySettings.DEBUG_WEAPONS)
                     {
                         Debug.Log("[BDArmory.PooledBullet]: Detonation Triggered | penetration: " + hasPenetrated + " penTick: " + penTicker + " airDet: " + (fuzeType == BulletFuzeTypes.Timed || fuzeType == BulletFuzeTypes.Flak));
                     }
@@ -1392,7 +1392,7 @@ namespace BDArmory.Bullets
             //15 degrees should virtually guarantee a ricochet, but 75 degrees should nearly always be fine
             float chance = (((angleFromNormal - 5) / 75) * (hitTolerance / 150)) * 100 / Mathf.Clamp01(impactVel / 600);
             float random = UnityEngine.Random.Range(0f, 100f);
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.PooledBullet]: Ricochet chance: " + chance);
+            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.PooledBullet]: Ricochet chance: " + chance);
             if (random < chance)
             {
                 DoRicochet(p, hit, angleFromNormal, fractionOfDistance, period);

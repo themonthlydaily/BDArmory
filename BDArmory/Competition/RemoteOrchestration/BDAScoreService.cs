@@ -682,7 +682,7 @@ namespace BDArmory.Competition.RemoteOrchestration
 
         public void TrackDamage(string attacker, string target, double damage)
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_OTHER)
             {
                 Debug.Log(string.Format("[BDArmory.BDAScoreService] TrackDamage by {0} on {1} for {2}hp", target, attacker, damage));
             }
@@ -708,7 +708,7 @@ namespace BDArmory.Competition.RemoteOrchestration
 
         public void TrackMissileStrike(string attacker, string target)
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_OTHER)
             {
                 Debug.Log(string.Format("[BDArmory.BDAScoreService] TrackMissileStrike by {0} on {1}", target, attacker));
             }
@@ -734,7 +734,7 @@ namespace BDArmory.Competition.RemoteOrchestration
 
         public void TrackMissileDamage(string attacker, string target, double damage)
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_OTHER)
             {
                 Debug.Log(string.Format("[BDArmory.BDAScoreService] TrackMissileDamage by {0} on {1} for {2}hp", target, attacker, damage));
             }
@@ -760,7 +760,7 @@ namespace BDArmory.Competition.RemoteOrchestration
 
         public void TrackMissileParts(string attacker, string target, int count)
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_OTHER)
                 Debug.Log(string.Format("[BDArmory.BDAScoreService] TrackMissileParts by {0} on {1} for {2}parts", target, attacker, count));
 
             double now = Planetarium.GetUniversalTime();
@@ -790,7 +790,7 @@ namespace BDArmory.Competition.RemoteOrchestration
 
         public void TrackRocketStrike(string attacker, string target)
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_OTHER)
             {
                 Debug.Log(string.Format("[BDArmory.BDAScoreService] TrackRocketStrike by {0} on {1}", target, attacker));
             }
@@ -816,7 +816,7 @@ namespace BDArmory.Competition.RemoteOrchestration
 
         public void TrackRocketDamage(string attacker, string target, double damage)
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_OTHER)
             {
                 Debug.Log(string.Format("[BDArmory.BDAScoreService] TrackRocketDamage by {0} on {1} for {2}hp", target, attacker, damage));
             }
@@ -842,7 +842,7 @@ namespace BDArmory.Competition.RemoteOrchestration
 
         public void TrackRocketParts(string attacker, string target, int count)
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_OTHER)
                 Debug.Log(string.Format("[BDArmory.BDAScoreService] TrackRocketParts by {0} on {1} for {2}parts", target, attacker, count));
 
             double now = Planetarium.GetUniversalTime();
@@ -872,7 +872,7 @@ namespace BDArmory.Competition.RemoteOrchestration
 
         public void TrackRammedParts(string attacker, string target, int count)
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_OTHER)
                 Debug.Log(string.Format("[BDArmory.BDAScoreService] TrackRammedParts by {0} on {1} for {2}parts", target, attacker, count));
 
             double now = Planetarium.GetUniversalTime();
@@ -902,7 +902,7 @@ namespace BDArmory.Competition.RemoteOrchestration
 
         public void TrackHit(string attacker, string target, string weaponName, double hitDistance)
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_OTHER)
             {
                 Debug.Log(string.Format("[BDArmory.BDAScoreService] TrackHit by {0} on {1} with {2} at {3}m", target, attacker, weaponName, hitDistance));
             }
@@ -1002,7 +1002,7 @@ namespace BDArmory.Competition.RemoteOrchestration
          */
         public void TrackDeath(string target)
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_OTHER)
             {
                 Debug.Log(string.Format("[BDArmory.BDAScoreService] TrackDeath for {0}", target));
             }
@@ -1014,7 +1014,7 @@ namespace BDArmory.Competition.RemoteOrchestration
         {
             if (deaths.ContainsKey(target))
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DEBUG_OTHER)
                 {
                     Debug.Log(string.Format("[BDArmory.BDAScoreService] IncrementDeaths for {0}", target));
                 }
@@ -1022,7 +1022,7 @@ namespace BDArmory.Competition.RemoteOrchestration
             }
             else
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DEBUG_OTHER)
                 {
                     Debug.Log(string.Format("[BDArmory.BDAScoreService] FirstDeath for {0}", target));
                 }
@@ -1035,7 +1035,7 @@ namespace BDArmory.Competition.RemoteOrchestration
          */
         public void TrackKill(string attacker, string target)
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_OTHER)
             {
                 Debug.Log(string.Format("[BDArmory.BDAScoreService] TrackKill {0} by {1}", target, attacker));
             }
@@ -1053,7 +1053,7 @@ namespace BDArmory.Competition.RemoteOrchestration
             {
                 if (killsOnTarget[attacker].ContainsKey(target))
                 {
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    if (BDArmorySettings.DEBUG_OTHER)
                     {
                         Debug.Log(string.Format("[BDArmory.BDAScoreService] IncrementKills for {0} on {1}", attacker, target));
                     }
@@ -1061,7 +1061,7 @@ namespace BDArmory.Competition.RemoteOrchestration
                 }
                 else
                 {
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    if (BDArmorySettings.DEBUG_OTHER)
                     {
                         Debug.Log(string.Format("[BDArmory.BDAScoreService] Kill for {0} on {1}", attacker, target));
                     }
@@ -1070,7 +1070,7 @@ namespace BDArmory.Competition.RemoteOrchestration
             }
             else
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DEBUG_OTHER)
                 {
                     Debug.Log(string.Format("[BDArmory.BDAScoreService] FirstKill for {0} on {1}", attacker, target));
                 }
