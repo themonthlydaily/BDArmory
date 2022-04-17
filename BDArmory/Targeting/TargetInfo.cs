@@ -531,7 +531,7 @@ namespace BDArmory.Targeting
             int engaging = 0;
             using (var teamEngaging = friendliesEngaging.GetEnumerator())
                 while (teamEngaging.MoveNext())
-                    engaging += teamEngaging.Current.Value.Count;
+                    engaging += teamEngaging.Current.Value.Count(wm => wm != null);
             return engaging;
         }
 

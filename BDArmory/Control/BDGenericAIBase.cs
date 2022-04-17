@@ -237,7 +237,7 @@ namespace BDArmory.Control
         protected virtual void OnGUI()
         {
             if (!pilotEnabled || !vessel.isActiveVessel) return;
-            if (BDArmorySettings.DEBUG_TELEMETRY)
+            if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
             {
                 GUI.Label(new Rect(200, Screen.height - 300, 600, 300), $"{vessel.name}\n{debugString.ToString()}");
             }

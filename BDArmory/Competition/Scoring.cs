@@ -34,7 +34,7 @@ namespace BDArmory.Competition
         /// <param name="vessels">List of vessels involved in the competition.</param>
         public void ConfigurePlayers(List<Vessel> vessels)
         {
-            if (BDArmorySettings.DEBUG_LABELS) { foreach (var vessel in vessels) { Debug.Log("[BDArmory.BDACompetitionMode.Scores]: Adding Score Tracker For " + vessel.vesselName); } }
+            if (BDArmorySettings.DEBUG_OTHER) { foreach (var vessel in vessels) { Debug.Log("[BDArmory.BDACompetitionMode.Scores]: Adding Score Tracker For " + vessel.vesselName); } }
             ScoreData = vessels.ToDictionary(v => v.vesselName, v => new ScoringData());
             foreach (var vessel in vessels)
             {
@@ -107,7 +107,7 @@ namespace BDArmory.Competition
             if (attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore hits after the victim is dead.
 
-            if (BDArmorySettings.DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_OTHER)
                 Debug.Log($"[BDArmory.BDACompetitionMode.Scores]: {attacker} scored a hit against {victim} with {weaponName} from a distance of {distanceTraveled}m.");
 
             var now = Planetarium.GetUniversalTime();
@@ -171,7 +171,7 @@ namespace BDArmory.Competition
                 return false;
             }
 
-            if (BDArmorySettings.DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_OTHER)
                 Debug.Log($"[BDArmory.BDACompetitionMode.Scores]: {attacker} did {damage} damage to {victim} with a gun.");
 
             if (ScoreData[victim].damageFromGuns.ContainsKey(attacker)) { ScoreData[victim].damageFromGuns[attacker] += damage; }
@@ -207,7 +207,7 @@ namespace BDArmory.Competition
             if (attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore hits after the victim is dead.
 
-            if (BDArmorySettings.DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_OTHER)
                 Debug.Log($"[BDArmory.BDACompetitionMode.Scores]: {attacker} scored a rocket strike against {victim}.");
 
             ++ScoreData[attacker].rocketStrikes;
@@ -231,7 +231,7 @@ namespace BDArmory.Competition
             if (partsHit <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore hits after the victim is dead.
 
-            if (BDArmorySettings.DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_OTHER)
                 Debug.Log($"[BDArmory.BDACompetitionMode.Scores]: {attacker} damaged {partsHit} parts on {victim} with a rocket.");
 
             var now = Planetarium.GetUniversalTime();
@@ -270,7 +270,7 @@ namespace BDArmory.Competition
             if (damage <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore damage after the victim is dead.
 
-            if (BDArmorySettings.DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_OTHER)
                 Debug.Log($"[BDArmory.BDACompetitionMode.Scores]: {attacker} did {damage} damage to {victim} with a rocket.");
 
             if (ScoreData[victim].damageFromRockets.ContainsKey(attacker)) { ScoreData[victim].damageFromRockets[attacker] += damage; }
@@ -315,7 +315,7 @@ namespace BDArmory.Competition
             if (partsLost <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore rams after the victim is dead.
 
-            if (BDArmorySettings.DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_OTHER)
                 Debug.Log($"[BDArmory.BDACompetitionMode.Scores]: {attacker} rammed {victim} at {timeOfCollision} and the victim lost {partsLost} parts.");
 
             // Attacker stats.
@@ -359,7 +359,7 @@ namespace BDArmory.Competition
             if (attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore hits after the victim is dead.
 
-            if (BDArmorySettings.DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_OTHER)
                 Debug.Log($"[BDArmory.BDACompetitionMode.Scores]: {attacker} scored a missile strike against {victim}.");
 
             if (ScoreData[victim].missileHitCounts.ContainsKey(attacker)) { ++ScoreData[victim].missileHitCounts[attacker]; }
@@ -382,7 +382,7 @@ namespace BDArmory.Competition
             if (partsHit <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore hits after the victim is dead.
 
-            if (BDArmorySettings.DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_OTHER)
                 Debug.Log($"[BDArmory.BDACompetitionMode.Scores]: {attacker} damaged {partsHit} parts on {victim} with a missile.");
 
             var now = Planetarium.GetUniversalTime();
@@ -421,7 +421,7 @@ namespace BDArmory.Competition
             if (damage <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore damage after the victim is dead.
 
-            if (BDArmorySettings.DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_OTHER)
                 Debug.Log($"[BDArmory.BDACompetitionMode.Scores]: {attacker} did {damage} damage to {victim} with a missile.");
 
             if (ScoreData[victim].damageFromMissiles.ContainsKey(attacker)) { ScoreData[victim].damageFromMissiles[attacker] += damage; }
@@ -456,7 +456,7 @@ namespace BDArmory.Competition
                     ScoreData[deathOrder[i]].deathOrder = i;
             }
 
-            if (BDArmorySettings.DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_OTHER)
                 Debug.Log($"[BDArmory.BDACompetitionMode.Scores]: {vesselName} died at {ScoreData[vesselName].deathTime} (position {ScoreData[vesselName].deathOrder}), GM reason: {gmKillReason}, last damage from: {ScoreData[vesselName].lastDamageWasFrom}");
 
             if (BDArmorySettings.REMOTE_LOGGING_ENABLED)

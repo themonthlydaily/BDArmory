@@ -427,7 +427,7 @@ namespace BDArmory.FX
                     GUIUtils.RefreshAssociatedWindows(parentPart);
                 }
                 //tntMassEquivilent *= BDArmorySettings.BD_AMMO_DMG_MULT; //handled by EXP_DMG_MOD_BATTLE_DAMAGE
-                if (BDArmorySettings.DEBUG_LABELS && tntMassEquivalent > 0)
+                if (BDArmorySettings.DEBUG_OTHER && tntMassEquivalent > 0)
                 {
                     Debug.Log("[BDArmory.FireFX]: Fuel Explosion in " + this.parentPart.name + ", TNT mass equivalent " + tntMassEquivalent + $" (Fuel: {tntFuel / 6f}, Ox: {tntOx / 6f}, MP: {tntMP / 6f}, EC: {tntEC})");
                 }
@@ -457,7 +457,7 @@ namespace BDArmory.FX
                                         if (p == partHit)
                                         {
                                             BulletHitFX.AttachFire(hit.point, p, 1, SourceVessel, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distToG0.magnitude / blastRadius)), 1, true);
-                                            if (BDArmorySettings.DEBUG_LABELS)
+                                            if (BDArmorySettings.DEBUG_OTHER)
                                             {
                                                 Debug.Log("[BDArmory.FireFX]: " + this.parentPart.name + " hit by burning fuel");
                                             }

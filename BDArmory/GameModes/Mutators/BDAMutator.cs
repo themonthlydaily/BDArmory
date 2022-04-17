@@ -63,7 +63,7 @@ namespace BDArmory.GameModes
                 var indices = Enumerable.Range(0, BDArmorySettings.MUTATOR_LIST.Count).ToList();
                 indices.Shuffle();
                 name = string.Join("; ", indices.Take(BDArmorySettings.MUTATOR_APPLY_NUM).Select(i => MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name));
-                if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.BDAMutator]: random mutator list built: " + name + " on " + part.vessel.GetName());
+                if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.BDAMutator]: random mutator list built: " + name + " on " + part.vessel.GetName());
             }
             mutatorName = name;
             mutators = BDAcTools.ParseNames(name);
@@ -71,7 +71,7 @@ namespace BDArmory.GameModes
             {
                 name = MutatorInfo.mutators[mutators[r]].name;
                 mutatorInfo = MutatorInfo.mutators[name];
-                if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.BDAMutator]: beginning mutator initialization of " + name + " on " + part.vessel.GetName());
+                if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.BDAMutator]: beginning mutator initialization of " + name + " on " + part.vessel.GetName());
 
                 if (mutatorInfo.weaponMod)
                 {
@@ -216,7 +216,7 @@ namespace BDArmory.GameModes
         {
             if (!mutatorEnabled) return;
             mutatorEnabled = false;
-            if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.BDAMutator]: Disabling " + mutatorInfo.name + "Mutator on " + part.vessel.vesselName);
+            if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.BDAMutator]: Disabling " + mutatorInfo.name + "Mutator on " + part.vessel.vesselName);
             using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                 while (weapon.MoveNext())
                 {
@@ -428,7 +428,7 @@ namespace BDArmory.GameModes
         {
             if (!Vengeance) return;
             if (!BDACompetitionMode.Instance.competitionIsActive) return;
-            if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.BDAMutator]: triggering vengeance nuke");
+            if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.BDAMutator]: triggering vengeance nuke");
             NukeFX.CreateExplosion(part.transform.position, ExplosionSourceType.BattleDamage, this.vessel.GetName(), "Vengeance Explosion", 2.5f, 300, 1.5f, 1.5f, true,
                 "BDArmory/Models/explosion/nuke/nukeBoom", "BDArmory/Models/explosion/nuke/nukeFlash", "BDArmory/Models/explosion/nuke/nukeShock", "BDArmory/Models/explosion/nuke/nukeBlast", "BDArmory/Models/explosion/nuke/nukePlume", "BDArmory/Models/explosion/nuke/nukeScatter",
                   "BDArmory/Models/Mutators/Vengence", "");

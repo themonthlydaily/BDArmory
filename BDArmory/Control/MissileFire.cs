@@ -1464,9 +1464,9 @@ namespace BDArmory.Control
                         GUIUtils.DrawTextureOnWorldPos(VectorUtils.GetWorldSurfacePostion(designatedGPSCoords, vessel.mainBody), BDArmorySetup.Instance.greenSpikedPointCircleTexture, new Vector2(22, 22), 0);
                     }
                 }
-                //if (BDArmorySettings.DEBUG_MISSILES || BDArmorySettings.DEBUG_WEAPONS) 
+                if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES || BDArmorySettings.DEBUG_WEAPONS)
                     debugString.Length = 0;
-                if (BDArmorySettings.DEBUG_TELEMETRY) //&& BDArmorySettings.DEBUG_MISSILES)
+                if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES)
                 {
                     debugString.AppendLine("Missiles away: " + firedMissiles + "; targeted vessels: " + engagedTargets);
 
@@ -1481,7 +1481,7 @@ namespace BDArmory.Control
                     if (isFlaring) debugString.AppendLine("Flaring");
                     if (isECMJamming) debugString.AppendLine("ECMJamming");
                 }
-                //if (BDArmorySettings.DEBUG_TELEMETRY && BDArmorySettings.DEBUG_WEAPONS)
+                if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_WEAPONS)
                 {
                     if (weaponArray != null) // Heat debugging
                     {
@@ -1501,7 +1501,7 @@ namespace BDArmory.Control
                             debugString.AppendLine("Aim debugging:\n" + string.Join("\n", weaponLaserDebugStrings));
                         }
                     }
-                    GUI.Label(new Rect(200, Screen.height - 500, 600, 200), debugString.ToString());
+                    GUI.Label(new Rect(200, Screen.height - 500, 26 * debugString.Length, 200), debugString.ToString());
                 }
             }
         }

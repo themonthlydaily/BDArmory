@@ -44,7 +44,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
 
         public IEnumerator Execute(BDAScoreClient client, BDAScoreService service)
         {
-            if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.WaypointFollowingStrategy]: Started");
+            if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.WaypointFollowingStrategy]: Started");
             pilots = LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Select(wm => wm.vessel).Where(v => v != null && v.loaded).Select(v => VesselModuleRegistry.GetModule<BDGenericAIBase>(v)).Where(p => p != null).ToList();
             if (pilots.Count > 1) //running multiple craft through the waypoints at the same time
                 LoadedVesselSwitcher.Instance.MassTeamSwitch(true);
@@ -58,7 +58,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
             // Configure the pilots' waypoints.
             var mappedWaypoints = waypoints.Select(e => new Vector3(e.latitude, e.longitude, e.altitude)).ToList();
             BDACompetitionMode.Instance.competitionStatus.Add($"Starting waypoints competition {BDACompetitionMode.Instance.CompetitionID}.");
-            if (BDArmorySettings.DEBUG_LABELS) Debug.Log(string.Format("[BDArmory.WaypointFollowingStrategy]: Setting {0} waypoints", mappedWaypoints.Count));
+            if (BDArmorySettings.DEBUG_OTHER) Debug.Log(string.Format("[BDArmory.WaypointFollowingStrategy]: Setting {0} waypoints", mappedWaypoints.Count));
 
             foreach (var pilot in pilots)
             { pilot.SetWaypoints(mappedWaypoints); }

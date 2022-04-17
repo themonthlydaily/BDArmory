@@ -747,7 +747,7 @@ namespace BDArmory.Radar
 
             for (int i = 0; i < lockedTargetIndexes.Count; i++)
             {
-                if (BDArmorySettings.DEBUG_RADAR)
+                if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_RADAR)
                 {
                     string label = string.Empty;
                     if (i == activeLockedTargetIndex)
@@ -762,7 +762,7 @@ namespace BDArmory.Radar
                     {
                         label += displayedTargets[lockedTargetIndexes[i]].vessel.vesselName;
                     }
-                    GUI.Label(new Rect(20, 60 + (i * 26), 800, 446), label);
+                    GUI.Label(new Rect(20, 120 + (i * 16), 800, 26), label);
                 }
 
                 TargetSignatureData lockedTarget = displayedTargets[lockedTargetIndexes[i]].targetData;
