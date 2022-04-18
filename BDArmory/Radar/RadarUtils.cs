@@ -1213,6 +1213,7 @@ namespace BDArmory.Radar
                 foundAGM = false,
                 firingAtMe = false,
                 missDistance = float.MaxValue,
+                missDeviation = float.MaxValue,
                 threatVessel = null,
                 threatWeaponManager = null,
                 incomingMissiles = new List<IncomingMissile>()
@@ -1311,6 +1312,7 @@ namespace BDArmory.Radar
                                                 results.threatVessel = weapon.Current.vessel;
                                                 results.threatWeaponManager = weapon.Current.weaponManager;
                                                 results.missDistance = missDistance;
+                                                results.missDeviation = (weapon.Current.fireTransforms[0].position - myWpnManager.vessel.transform.position).magnitude * weapon.Current.maxDeviation / 2f * Mathf.Deg2Rad; // y = x*tan(θ), expansion of tan(θ) is θ + O(θ^3).
                                             }
                                         }
                                     }
@@ -1386,7 +1388,7 @@ namespace BDArmory.Radar
             return false;
         }
 
-        private static float MissDistance(ModuleWeapon threatWeapon, Vessel self) // Returns how far away bullets from enemy are from craft in meters
+        public static float MissDistance(ModuleWeapon threatWeapon, Vessel self) // Returns how far away bullets from enemy are from craft in meters
         {
             Transform fireTransform = threatWeapon.fireTransforms[0];
             // If we're out of range, then it's not a threat.
