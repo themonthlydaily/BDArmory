@@ -1,12 +1,18 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using BDArmory.Control;
-using BDArmory.Core;
-using BDArmory.CounterMeasure;
-using BDArmory.Modules;
 using KSP.UI;
 using KSP.UI.Screens;
 using UnityEngine;
+
+using BDArmory.Control;
+using BDArmory.CounterMeasure;
+using BDArmory.Radar;
+using BDArmory.Settings;
+using BDArmory.Targeting;
+using BDArmory.Utils;
+using BDArmory.Weapons;
+using BDArmory.Weapons.Missiles;
+using BDArmory.WeaponMounts;
 
 namespace BDArmory.UI
 {
@@ -87,7 +93,7 @@ namespace BDArmory.UI
                 {
                     if (parts.Current == null || !parts.Current.partPrefab || parts.Current.partConfig == null)
                         continue;
-                    if (parts.Current.partConfig.HasValue(BDACategoryKey) || parts.Current.manufacturer == Misc.BDAEditorTools.Manufacturer)
+                    if (parts.Current.partConfig.HasValue(BDACategoryKey) || parts.Current.manufacturer == BDAEditorTools.Manufacturer)
                     {
                         partsDetected = true;
                         GameEvents.onGUIEditorToolbarReady.Add(LoadBDArmoryCategory);
@@ -254,8 +260,8 @@ namespace BDArmory.UI
                 PartCategorizer.Instance.editorPartList.Refresh();
             }
 
-            BDGUIUtils.RepositionWindow(ref SettingsWindow);
-            BDGUIUtils.UseMouseEventInRect(SettingsWindow);
+            GUIUtils.RepositionWindow(ref SettingsWindow);
+            GUIUtils.UseMouseEventInRect(SettingsWindow);
         }
 
         private void CreateBDAPartBar()
@@ -278,7 +284,7 @@ namespace BDArmory.UI
                             foundCategories.Add(cat);
                     }
                     // If part does not have a bdacategory but manufacturer is BDA.
-                    else if (parts.Current.manufacturer == Misc.BDAEditorTools.Manufacturer)
+                    else if (parts.Current.manufacturer == BDAEditorTools.Manufacturer)
                         foundLegacy = true;
                 }
             Categories.RemoveAll(s => !foundCategories.Contains(s) && s != "All");
@@ -349,7 +355,7 @@ namespace BDArmory.UI
                     return part.partConfig.HasValue(BDArmorySettings.AUTOCATEGORIZE_PARTS ? AutoBDACategoryKey : BDACategoryKey);
 
                 case "Legacy":
-                    return part.manufacturer == Misc.BDAEditorTools.Manufacturer;
+                    return part.manufacturer == BDAEditorTools.Manufacturer;
 
                 case "Misc":
                     {

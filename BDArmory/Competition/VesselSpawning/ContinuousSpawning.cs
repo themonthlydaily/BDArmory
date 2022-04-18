@@ -5,10 +5,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-using BDArmory.Core;
-using BDArmory.Core.Utils;
-using BDArmory.Misc;
-using BDArmory.Modules;
+using BDArmory.Control;
+using BDArmory.GameModes;
+using BDArmory.Settings;
+using BDArmory.Utils;
 using BDArmory.UI;
 
 namespace BDArmory.Competition.VesselSpawning
@@ -20,7 +20,7 @@ namespace BDArmory.Competition.VesselSpawning
     /// The central block of the SpawnVesselsContinuouslyCoroutine function should eventually switch to using SingleVesselSpawning.Instance.SpawnVessel (plus local coroutines for the extra stuff) to do the actual spawning of the vessels once that's ready.
     /// </summary>
     [KSPAddon(KSPAddon.Startup.Flight, false)]
-    public class ContinuousSpawning : VesselSpawner
+    public class ContinuousSpawning : VesselSpawnerBase
     {
         public static ContinuousSpawning Instance;
 
@@ -146,8 +146,8 @@ namespace BDArmory.Competition.VesselSpawning
             if (spawnConfig.killEverythingFirst)
             {
                 // Update the floating origin offset, so that the vessels spawn within range of the physics. The terrain takes several frames to load, so we need to wait for the terrain to settle.
-                FloatingOrigin.SetOffset(spawnPoint); // This adjusts local coordinates, such that spawnPoint is (0,0,0).
                 SpawnUtils.ShowSpawnPoint(spawnConfig.worldIndex, spawnConfig.latitude, spawnConfig.longitude, spawnConfig.altitude, 2 * spawnDistance, true);
+                FloatingOrigin.SetOffset(spawnPoint); // This adjusts local coordinates, such that spawnPoint is (0,0,0).
 
                 if (terrainAltitude > 0) // Not over the ocean or on a surfaceless body.
                 {
@@ -158,7 +158,7 @@ namespace BDArmory.Competition.VesselSpawning
                     var distanceToCoMainBody = (testPosition - FlightGlobals.currentMainBody.transform.position).magnitude;
                     ray = new Ray(testPosition, -radialUnitVector);
                     message = "Waiting up to 10s for terrain to settle.";
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselSpawner]: " + message);
+                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.VesselSpawner]: " + message);
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
                     var startTime = Planetarium.GetUniversalTime();
                     double lastStableTimeStart = startTime;
@@ -222,7 +222,7 @@ namespace BDArmory.Competition.VesselSpawning
                 }
                 while (craftToSpawn.Count + vesselsToActivate.Count + currentlyActive < spawnSlots.Count && spawnQueue.Count > 0)
                     craftToSpawn.Enqueue(spawnQueue.Dequeue());
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DEBUG_OTHER)
                 {
                     var missing = spawnConfig.craftFiles.Where(craftURL => craftURLToVesselName.ContainsKey(craftURL) && !craftToSpawn.Contains(craftURL) && !FlightGlobals.Vessels.Where(v => !VesselModuleRegistry.ignoredVesselTypes.Contains(v.vesselType) && VesselModuleRegistry.GetModuleCount<MissileFire>(v) > 0).Select(v => v.vesselName).Contains(craftURLToVesselName[craftURL])).ToList();
                     if (missing.Count > 0)
@@ -237,7 +237,7 @@ namespace BDArmory.Competition.VesselSpawning
                     string failedVessels = "";
                     foreach (var craftURL in craftToSpawn)
                     {
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.VesselSpawner]: Spawning vessel from {craftURL}");
+                        if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.VesselSpawner]: Spawning vessel from {craftURL}");
                         var heading = 360f * spawnSlots[continuousSpawnedVesselCount] / spawnSlots.Count;
                         var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(heading, radialUnitVector) * refDirection, radialUnitVector).normalized;
                         craftSpawnPosition = spawnPoint + spawnDistance * direction;
@@ -245,7 +245,7 @@ namespace BDArmory.Competition.VesselSpawning
                         Vessel vessel = null;
                         try
                         {
-                            vessel = VesselLoader.SpawnVesselFromCraftFile(craftURL, craftGeoCoords, 0f, 0f, 0f, out shipFacility); // SPAWN
+                            vessel = VesselSpawner.SpawnVesselFromCraftFile(craftURL, craftGeoCoords, 0f, 0f, 0f, out shipFacility); // SPAWN
                         }
                         catch { vessel = null; }
                         if (vessel == null)

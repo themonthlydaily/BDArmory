@@ -2,15 +2,17 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using BDArmory.Competition.RemoteOrchestration;
-using BDArmory.Modules;
-using BDArmory.Core;
-using BDArmory.UI;
 using UnityEngine;
-using BDArmory.Misc;
-using System.IO;
+
+using BDArmory.Competition.RemoteOrchestration;
+using BDArmory.Control;
+using BDArmory.Damage;
+using BDArmory.Extensions;
 using BDArmory.FX;
-using BDArmory.Core.Module;
+using BDArmory.Modules;
+using BDArmory.Settings;
+using BDArmory.UI;
+using BDArmory.Utils;
 
 namespace BDArmory.Competition.OrchestrationStrategies
 {
@@ -29,8 +31,8 @@ namespace BDArmory.Competition.OrchestrationStrategies
             }
         }
         private List<Waypoint> waypoints;
-        private List<BDModulePilotAI> pilots;
-        public static List<BDModulePilotAI> activePilots;
+        private List<BDGenericAIBase> pilots;
+        public static List<BDGenericAIBase> activePilots;
         public static List<WayPointTracing> Ghosts = new List<WayPointTracing>();
 
         public static string ModelPath = "BDArmory/Models/WayPoint/model";
@@ -42,8 +44,8 @@ namespace BDArmory.Competition.OrchestrationStrategies
 
         public IEnumerator Execute(BDAScoreClient client, BDAScoreService service)
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.WaypointFollowingStrategy]: Started");
-            pilots = LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Select(wm => wm.vessel).Where(v => v != null && v.loaded).Select(v => VesselModuleRegistry.GetBDModulePilotAI(v)).Where(p => p != null).ToList();
+            if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.WaypointFollowingStrategy]: Started");
+            pilots = LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Select(wm => wm.vessel).Where(v => v != null && v.loaded).Select(v => VesselModuleRegistry.GetModule<BDGenericAIBase>(v)).Where(p => p != null).ToList();
             if (pilots.Count > 1) //running multiple craft through the waypoints at the same time
                 LoadedVesselSwitcher.Instance.MassTeamSwitch(true);
             else //increment team each heat
@@ -56,15 +58,17 @@ namespace BDArmory.Competition.OrchestrationStrategies
             // Configure the pilots' waypoints.
             var mappedWaypoints = waypoints.Select(e => new Vector3(e.latitude, e.longitude, e.altitude)).ToList();
             BDACompetitionMode.Instance.competitionStatus.Add($"Starting waypoints competition {BDACompetitionMode.Instance.CompetitionID}.");
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log(string.Format("[BDArmory.WaypointFollowingStrategy]: Setting {0} waypoints", mappedWaypoints.Count));
+            if (BDArmorySettings.DEBUG_OTHER) Debug.Log(string.Format("[BDArmory.WaypointFollowingStrategy]: Setting {0} waypoints", mappedWaypoints.Count));
 
             foreach (var pilot in pilots)
-            {
-                pilot.SetWaypoints(mappedWaypoints);
-            }
+            { pilot.SetWaypoints(mappedWaypoints); }
+
+            if (BDArmorySettings.WAYPOINTS_INFINITE_FUEL_AT_START)
+            { foreach (var pilot in pilots) pilot.MaintainFuelLevelsUntilWaypoint(); }
+
             // Wait for the pilots to complete the course.
             var startedAt = Planetarium.GetUniversalTime();
-            yield return new WaitWhile(() => pilots.Any(pilot => pilot != null && pilot.weaponManager != null && pilot.IsFlyingWaypoints && !(pilot.vessel.Landed || pilot.vessel.Splashed)));
+            yield return new WaitWhile(() => pilots.Any(pilot => pilot != null && pilot.weaponManager != null && pilot.IsRunningWaypoints && !(pilot.vessel.Landed || pilot.vessel.Splashed)));
             var endedAt = Planetarium.GetUniversalTime();
 
             BDACompetitionMode.Instance.competitionStatus.Add("Waypoints competition finished. Scores:");
@@ -97,6 +101,8 @@ namespace BDArmory.Competition.OrchestrationStrategies
             BDACompetitionMode.Instance.Scores.ConfigurePlayers(pilots.Select(p => p.vessel).ToList());
             if (BDArmorySettings.AUTO_ENABLE_VESSEL_SWITCHING)
                 LoadedVesselSwitcher.Instance.EnableAutoVesselSwitching(true);
+            if (KerbalSafetyManager.Instance.safetyLevel != KerbalSafetyLevel.Off)
+                KerbalSafetyManager.Instance.CheckAllVesselsForKerbals();
             if (BDArmorySettings.TIME_OVERRIDE && BDArmorySettings.TIME_SCALE != 0)
             { Time.timeScale = BDArmorySettings.TIME_SCALE; }
             Debug.Log("[BDArmory.BDACompetitionMode:" + BDACompetitionMode.Instance.CompetitionID.ToString() + "]: Starting Competition");
@@ -128,12 +134,15 @@ namespace BDArmory.Competition.OrchestrationStrategies
                 {
                     if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 50) // S4R10 alt limiter
                     {
-                        if (pilot == null) continue;
-                        // Max Altitude must be 100.
-                        pilot.maxAltitudeToggle = true;
-                        pilot.maxAltitude = 100f;
-                        pilot.minAltitude = Mathf.Min(pilot.minAltitude, 50f); // Waypoints are at 50, so anything higher than this is going to trigger gain alt all the time.
-                        pilot.defaultAltitude = Mathf.Min(pilot.defaultAltitude, 100f);
+                        var pilotAI = pilot as BDModulePilotAI;
+                        if (pilotAI != null)
+                        {
+                            // Max Altitude must be 100.
+                            pilotAI.maxAltitudeToggle = true;
+                            pilotAI.maxAltitude = 100f;
+                            pilotAI.minAltitude = Mathf.Min(pilotAI.minAltitude, 50f); // Waypoints are at 50, so anything higher than this is going to trigger gain alt all the time.
+                            pilotAI.defaultAltitude = Mathf.Min(pilotAI.defaultAltitude, 100f);
+                        }
                     }
                     /*
                     if (pilots.Count > 1) //running multiple craft through the waypoints at the same time
@@ -278,7 +287,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
     {
         public static ObjectPool TracePool;
         public Vector3 Position { get; set; }
-        public BDModulePilotAI vessel { get; set; }
+        public BDGenericAIBase AI { get; set; }
 
         private List<Vector3> pathPoints = new List<Vector3>();
 
@@ -294,7 +303,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
             TracePool = ObjectPool.CreateObjectPool(ghost, 120, true, true);
         }
 
-        public static void CreateTracer(Vector3 position, BDModulePilotAI vessel)
+        public static void CreateTracer(Vector3 position, BDGenericAIBase AI)
         {
             if (TracePool == null)
             {
@@ -305,7 +314,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
 
             WayPointTracing NWP = newTrace.GetComponent<WayPointTracing>();
             NWP.Position = position;
-            NWP.vessel = vessel;
+            NWP.AI = AI;
             NWP.setupRenderer();
             newTrace.SetActive(true);
             WaypointFollowingStrategy.Ghosts.Add(NWP);
@@ -338,7 +347,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
             Debug.Log("[WayPointTracer] setting up Renderer");
             Transform tf = this.transform;
             tracerRenderer = tf.gameObject.AddOrGetComponent<LineRenderer>();
-            Color Color = BDTISetup.Instance.ColorAssignments[vessel.weaponManager.Team.Name]; //hence the incrementing teams in One-at-a-Time mode
+            Color Color = BDTISetup.Instance.ColorAssignments[AI.weaponManager.Team.Name]; //hence the incrementing teams in One-at-a-Time mode
             tracerRenderer.material = new Material(Shader.Find("KSP/Particles/Alpha Blended"));
             tracerRenderer.material.SetColor("_TintColor", Color);
             tracerRenderer.material.mainTexture = GameDatabase.Instance.GetTexture("BDArmory/Textures/laser", false);
@@ -378,10 +387,10 @@ namespace BDArmory.Competition.OrchestrationStrategies
             if (HighLogic.LoadedSceneIsFlight)
             {
                 if (BDArmorySetup.GameIsPaused) return;
-                if (vessel.vessel == null) return;
-                if (vessel.vessel.situation == Vessel.Situations.ORBITING || vessel.vessel.situation == Vessel.Situations.ESCAPING) return;
+                if (AI.vessel == null) return;
+                if (AI.vessel.situation == Vessel.Situations.ORBITING || AI.vessel.situation == Vessel.Situations.ESCAPING) return;
 
-                if ((!replayGhost && vessel.GetWaypointIndex() > 0) || (replayGhost && WaypointFollowingStrategy.activePilots[0].GetWaypointIndex() > 0))
+                if ((!replayGhost && AI.CurrentWaypointIndex > 0) || (replayGhost && WaypointFollowingStrategy.activePilots[0].CurrentWaypointIndex > 0))
                 {    //don't record before first WP
                     timer += Time.fixedDeltaTime;
                     if (timer > 1)
@@ -391,7 +400,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
                         //Vector3d WorldCoords = VectorUtils.GetWorldSurfacePostion(wm.Current.vessel.transform.position, FlightGlobals.currentMainBody);                       
                         if (!replayGhost)
                         {
-                            pathPoints.Add(vessel.vessel.transform.position);
+                            pathPoints.Add(AI.vessel.transform.position);
                         }
 
                         //if (BDArmorySettings.DRAW_VESSEL_TRAILS)
@@ -409,7 +418,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
                               //renderer was attached to a WayPointTrace class so positions would always remain consistant relative the tracer, not the ship
                         }
                     }
-                    if (!replayGhost && nodes > 1) tracerRenderer.SetPosition(tracerRenderer.positionCount - 1, vessel.vessel.CoM); //have last position update real-time with vessel position
+                    if (!replayGhost && nodes > 1) tracerRenderer.SetPosition(tracerRenderer.positionCount - 1, AI.vessel.CoM); //have last position update real-time with vessel position
                 }
                 else
                 {

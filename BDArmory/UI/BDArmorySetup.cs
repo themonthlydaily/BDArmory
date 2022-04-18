@@ -5,22 +5,26 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using UnityEngine;
+using KSP.Localization;
+using KSP.UI.Screens;
+
+using BDArmory.Armor;
 using BDArmory.Bullets;
 using BDArmory.Competition;
 using BDArmory.Competition.RemoteOrchestration;
 using BDArmory.Competition.VesselSpawning;
-using BDArmory.GameModes;
-using BDArmory.Core;
-using BDArmory.Core.Extension;
+using BDArmory.Control;
 using BDArmory.CounterMeasure;
+using BDArmory.Extensions;
 using BDArmory.FX;
-using BDArmory.Misc;
+using BDArmory.GameModes;
 using BDArmory.Modules;
-using BDArmory.Parts;
 using BDArmory.Radar;
-using UnityEngine;
-using KSP.Localization;
-using KSP.UI.Screens;
+using BDArmory.Settings;
+using BDArmory.Targeting;
+using BDArmory.Utils;
+using BDArmory.Weapons;
 
 namespace BDArmory.UI
 {
@@ -189,7 +193,7 @@ namespace BDArmory.UI
             }
         }
         string CheatCodeGUI = "";
-		string HoSString = "";
+        string HoSString = "";
         public string HoSTag = "";
         bool enteredHoS = false;
 
@@ -604,15 +608,15 @@ namespace BDArmory.UI
 
         private void CheckIfWindowsSettingsAreWithinScreen()
         {
-            BDGUIUtils.RepositionWindow(ref WindowRectEvolution);
-            BDGUIUtils.UseMouseEventInRect(WindowRectSettings);
-            BDGUIUtils.RepositionWindow(ref WindowRectToolbar);
-            BDGUIUtils.RepositionWindow(ref WindowRectSettings);
-            BDGUIUtils.RepositionWindow(ref WindowRectRwr);
-            BDGUIUtils.RepositionWindow(ref WindowRectVesselSwitcher);
-            BDGUIUtils.RepositionWindow(ref WindowRectWingCommander);
-            BDGUIUtils.RepositionWindow(ref WindowRectTargetingCam);
-            BDGUIUtils.RepositionWindow(ref WindowRectAI);
+            GUIUtils.RepositionWindow(ref WindowRectEvolution);
+            GUIUtils.UseMouseEventInRect(WindowRectSettings);
+            GUIUtils.RepositionWindow(ref WindowRectToolbar);
+            GUIUtils.RepositionWindow(ref WindowRectSettings);
+            GUIUtils.RepositionWindow(ref WindowRectRwr);
+            GUIUtils.RepositionWindow(ref WindowRectVesselSwitcher);
+            GUIUtils.RepositionWindow(ref WindowRectWingCommander);
+            GUIUtils.RepositionWindow(ref WindowRectTargetingCam);
+            GUIUtils.RepositionWindow(ref WindowRectAI);
         }
 
         void Update()
@@ -698,7 +702,7 @@ namespace BDArmory.UI
             if (HighLogic.LoadedSceneIsFlight)
             {
                 drawCursor = false;
-                if (!MapView.MapIsEnabled && !Utils.CheckMouseIsOnGui() && !PauseMenu.isOpen)
+                if (!MapView.MapIsEnabled && !GUIUtils.CheckMouseIsOnGui() && !PauseMenu.isOpen)
                 {
                     if (ActiveWeaponManager.selectedWeapon != null && ActiveWeaponManager.weaponIndex > 0 &&
                         !ActiveWeaponManager.guardMode)
@@ -750,6 +754,7 @@ namespace BDArmory.UI
                 { "guardRange", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveWeaponManager.guardRange, 100, BDArmorySettings.MAX_GUARD_VISUAL_RANGE) },
                 { "gunRange", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveWeaponManager.gunRange, 0, ActiveWeaponManager.maxGunRange) },
                 { "multiTargetNum", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveWeaponManager.multiTargetNum, 1, 10) },
+                { "multiMissileTgtNum", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveWeaponManager.multiMissileTgtNum, 1, 10) },
                 { "maxMissilesOnTarget", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveWeaponManager.maxMissilesOnTarget, 1, MissileFire.maxAllowableMissilesOnTarget) },
 
                 { "targetBias", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveWeaponManager.targetBias, -10, 10) },
@@ -829,15 +834,15 @@ namespace BDArmory.UI
 
             if (!windowBDAToolBarEnabled || !HighLogic.LoadedSceneIsFlight) return;
             WindowRectToolbar = GUI.Window(321, WindowRectToolbar, WindowBDAToolbar, "", BDGuiSkin.window);//"BDA Weapon Manager"
-            BDGUIUtils.UseMouseEventInRect(WindowRectToolbar);
+            GUIUtils.UseMouseEventInRect(WindowRectToolbar);
             if (showWindowGPS && ActiveWeaponManager)
             {
                 //gpsWindowRect = GUI.Window(424333, gpsWindowRect, GPSWindow, "", GUI.skin.box);
-                BDGUIUtils.UseMouseEventInRect(WindowRectGps);
+                GUIUtils.UseMouseEventInRect(WindowRectGps);
                 using (var coord = BDATargetManager.GPSTargetList(ActiveWeaponManager.Team).GetEnumerator())
                     while (coord.MoveNext())
                     {
-                        BDGUIUtils.DrawTextureOnWorldPos(coord.Current.worldPos, Instance.greenDotTexture, new Vector2(8, 8), 0);
+                        GUIUtils.DrawTextureOnWorldPos(coord.Current.worldPos, Instance.greenDotTexture, new Vector2(8, 8), 0);
                     }
             }
 
@@ -1187,7 +1192,7 @@ namespace BDArmory.UI
 
                         if (i < ActiveWeaponManager.weaponArray.Length - 1)
                         {
-                            BDGUIUtils.DrawRectangle(
+                            GUIUtils.DrawRectangle(
                                 new Rect(weaponButtonRect.x, weaponButtonRect.y + weaponButtonRect.height,
                                     weaponButtonRect.width, 1), Color.white);
                         }
@@ -1361,6 +1366,24 @@ namespace BDArmory.UI
                     }
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.multiTargetNum.ToString(), leftLabel);
+                    guardLines++;
+
+                    GUI.Label(new Rect(leftIndent, (guardLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_WMWindow_MultiMissileNum"), leftLabel);//"Max Turret targets "
+                    if (!NumFieldsEnabled)
+                    {
+                        ActiveWeaponManager.multiMissileTgtNum =
+                            GUI.HorizontalSlider(
+                                new Rect(leftIndent + 90, (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
+                                ActiveWeaponManager.multiMissileTgtNum, 1, 10);
+                        ActiveWeaponManager.multiMissileTgtNum = Mathf.Round(ActiveWeaponManager.multiMissileTgtNum);
+                    }
+                    else
+                    {
+                        textNumFields["multiMissileTgtNum"].tryParseValue(GUI.TextField(new Rect(leftIndent + (90), (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight), textNumFields["multiMissileTgtNum"].possibleValue, 2));
+                        ActiveWeaponManager.multiMissileTgtNum = (float)textNumFields["multiMissileTgtNum"].currentValue;
+                    }
+                    GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
+                        ActiveWeaponManager.multiMissileTgtNum.ToString(), leftLabel);
                     guardLines++;
 
                     GUI.Label(new Rect(leftIndent, (guardLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_WMWindow_MissilesTgt"), leftLabel);//"Missiles/Tgt"
@@ -1979,6 +2002,7 @@ namespace BDArmory.UI
                             GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_VisualRange_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //guard range desc
                             GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_GunsRange_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //weapon range desc
                             GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_MultiTargetNum_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //multiturrets desc
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_MultiMissileTgtNum_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //multiturrets desc
                             GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_MissilesTgt_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //multimissiles desc
                             GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_TargetType_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //subsection targeting desc
                             GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_EngageType_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //engagement toggles desc
@@ -2017,7 +2041,7 @@ namespace BDArmory.UI
             numberOfButtons = buttonNumber + 1;
             if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES && toolWindowHeight < previousWindowHeight && Mathf.Round(WindowRectToolbar.y + previousWindowHeight) == Screen.height) // Window shrunk while being at edge of screen.
                 WindowRectToolbar.y = Screen.height - WindowRectToolbar.height;
-            BDGUIUtils.RepositionWindow(ref WindowRectToolbar);
+            GUIUtils.RepositionWindow(ref WindowRectToolbar);
         }
 
         bool validGPSName = true;
@@ -2041,7 +2065,7 @@ namespace BDArmory.UI
             if (ActiveWeaponManager.designatedGPSCoords != Vector3d.zero)
             {
                 GUI.Label(new Rect(0, gpsEntryCount * gpsEntryHeight, listRect.width - gpsEntryHeight, gpsEntryHeight),
-                    Utils.FormattedGeoPos(ActiveWeaponManager.designatedGPSCoords, true), BDGuiSkin.box);
+                    BodyUtils.FormattedGeoPos(ActiveWeaponManager.designatedGPSCoords, true), BDGuiSkin.box);
                 if (
                     GUI.Button(
                         new Rect(listRect.width - gpsEntryHeight, gpsEntryCount * gpsEntryHeight, gpsEntryHeight,
@@ -2071,7 +2095,7 @@ namespace BDArmory.UI
                         GUI.color = XKCDColors.LightOrange;
                     }
 
-                    string label = Utils.FormattedGeoPosShort(coordinate.Current.gpsCoordinates, false);
+                    string label = BodyUtils.FormattedGeoPosShort(coordinate.Current.gpsCoordinates, false);
                     float nameWidth = 100;
                     if (editingGPSName && index == editingGPSNameIndex)
                     {
@@ -2201,9 +2225,9 @@ namespace BDArmory.UI
             return new Rect(settingsMargin + pos * (settingsWidth - 2f * settingsMargin) / 3f, line * settingsLineHeight, (settingsWidth - 2f * settingsMargin) / 3f, settingsLineHeight);
         }
 
-        Rect SQuarterRect(float line, int pos)
+        Rect SQuarterRect(float line, int pos, int span = 1)
         {
-            return new Rect(settingsMargin + (pos % 4) * (settingsWidth - 2f * settingsMargin) / 4f, (line + (int)(pos / 4)) * settingsLineHeight, (settingsWidth - 2.5f * settingsMargin) / 4f, settingsLineHeight);
+            return new Rect(settingsMargin + (pos % 4) * (settingsWidth - 2f * settingsMargin) / 4f, (line + (int)(pos / 4)) * settingsLineHeight, span * (settingsWidth - 2f * settingsMargin) / 4f, settingsLineHeight);
         }
 
         Rect SEighthRect(float line, int pos)
@@ -2312,6 +2336,17 @@ namespace BDArmory.UI
 
                 BDArmorySettings.SHOW_AMMO_GAUGES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.SHOW_AMMO_GAUGES, Localizer.Format("#LOC_BDArmory_Settings_AmmoGauges"));//"Ammo Gauges"
                 //BDArmorySettings.PERSISTENT_FX = GUI.Toggle(SRightRect(line), BDArmorySettings.PERSISTENT_FX, Localizer.Format("#LOC_BDArmory_Settings_PersistentFX"));//"Persistent FX"
+                BDArmorySettings.GAPLESS_PARTICLE_EMITTERS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.GAPLESS_PARTICLE_EMITTERS, Localizer.Format("#LOC_BDArmory_Settings_GaplessParticleEmitters"));//"Gapless Particle Emitters"
+                if (BDArmorySettings.FLARE_SMOKE != (BDArmorySettings.FLARE_SMOKE = GUI.Toggle(SRightRect(line), BDArmorySettings.FLARE_SMOKE, Localizer.Format("#LOC_BDArmory_Settings_FlareSmoke"))))//"Flare Smoke"
+                {
+                    foreach (var flareObj in CMDropper.flarePool.pool)
+                        if (flareObj.activeInHierarchy)
+                        {
+                            var flare = flareObj.GetComponent<CMFlare>();
+                            if (flare == null) continue;
+                            flare.EnableEmitters(BDArmorySettings.FLARE_SMOKE);
+                        }
+                }
                 BDArmorySettings.STRICT_WINDOW_BOUNDARIES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.STRICT_WINDOW_BOUNDARIES, Localizer.Format("#LOC_BDArmory_Settings_StrictWindowBoundaries"));//"Strict Window Boundaries"
                 if (BDArmorySettings.AI_TOOLBAR_BUTTON != (BDArmorySettings.AI_TOOLBAR_BUTTON = GUI.Toggle(SRightRect(line), BDArmorySettings.AI_TOOLBAR_BUTTON, Localizer.Format("#LOC_BDArmory_Settings_AIToolbarButton")))) // AI Toobar Button
                 {
@@ -2337,11 +2372,120 @@ namespace BDArmory.UI
                     }
                 }
 
-                BDArmorySettings.DRAW_DEBUG_LABELS = GUI.Toggle(SLineThirdRect(++line, 0), BDArmorySettings.DRAW_DEBUG_LABELS, Localizer.Format("#LOC_BDArmory_Settings_DebugLabels"));//"Debug Labels"
                 if (BDArmorySettings.ADVANDED_USER_SETTINGS)
                 {
-                    BDArmorySettings.DRAW_ARMOR_LABELS = GUI.Toggle(SLineThirdRect(line, 1), BDArmorySettings.DRAW_ARMOR_LABELS, Localizer.Format("#LOC_BDArmory_Settings_DebugArmor"));//"Armor debug Lines"
-                    BDArmorySettings.DRAW_DEBUG_LINES = GUI.Toggle(SLineThirdRect(line, 2), BDArmorySettings.DRAW_DEBUG_LINES, Localizer.Format("#LOC_BDArmory_Settings_DebugLines"));//"Debug Lines"
+                    if (GUI.Button(SLineRect(++line, 1, true), (BDArmorySettings.DEBUG_SETTINGS_TOGGLE ? "Disable " : "Enable ") + Localizer.Format("#LOC_BDArmory_Settings_DebugSettingsToggle")))//Enable/Disable Debugging.
+                    {
+                        BDArmorySettings.DEBUG_SETTINGS_TOGGLE = !BDArmorySettings.DEBUG_SETTINGS_TOGGLE;
+                        if (!BDArmorySettings.DEBUG_SETTINGS_TOGGLE) // Disable all debugging when closing the debugging section.
+                        {
+                            BDArmorySettings.DEBUG_AI = false;
+                            BDArmorySettings.DEBUG_ARMOR = false;
+                            BDArmorySettings.DEBUG_DAMAGE = false;
+                            BDArmorySettings.DEBUG_OTHER = false;
+                            BDArmorySettings.DEBUG_LINES = false;
+                            BDArmorySettings.DEBUG_MISSILES = false;
+                            BDArmorySettings.DEBUG_RADAR = false;
+                            BDArmorySettings.DEBUG_TELEMETRY = false;
+                            BDArmorySettings.DEBUG_WEAPONS = false;
+                        }
+                    }
+                    if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
+                    {
+                        BDArmorySettings.DEBUG_TELEMETRY = GUI.Toggle(SQuarterRect(++line, 0, 2), BDArmorySettings.DEBUG_TELEMETRY, Localizer.Format("#LOC_BDArmory_Settings_DebugTelemetry"));//"On-Screen Telemetry"
+                        BDArmorySettings.DEBUG_LINES = GUI.Toggle(SQuarterRect(line, 2), BDArmorySettings.DEBUG_LINES, Localizer.Format("#LOC_BDArmory_Settings_DebugLines"));//"Debug Lines"
+                        BDArmorySettings.DEBUG_WEAPONS = GUI.Toggle(SQuarterRect(++line, 0), BDArmorySettings.DEBUG_WEAPONS, Localizer.Format("#LOC_BDArmory_Settings_DebugWeapons"));//"Debug Weapons"
+                        BDArmorySettings.DEBUG_MISSILES = GUI.Toggle(SQuarterRect(line, 1), BDArmorySettings.DEBUG_MISSILES, Localizer.Format("#LOC_BDArmory_Settings_DebugMissiles"));//"Debug Missiles"
+                        BDArmorySettings.DEBUG_ARMOR = GUI.Toggle(SQuarterRect(line, 2), BDArmorySettings.DEBUG_ARMOR, Localizer.Format("#LOC_BDArmory_Settings_DebugArmor"));//"Debug Armor"
+                        BDArmorySettings.DEBUG_DAMAGE = GUI.Toggle(SQuarterRect(line, 3), BDArmorySettings.DEBUG_DAMAGE, Localizer.Format("#LOC_BDArmory_Settings_DebugDamage"));//"Debug Damage"
+                        BDArmorySettings.DEBUG_AI = GUI.Toggle(SQuarterRect(++line, 0), BDArmorySettings.DEBUG_AI, Localizer.Format("#LOC_BDArmory_Settings_DebugAI"));//"Debug AI"
+                        BDArmorySettings.DEBUG_RADAR = GUI.Toggle(SQuarterRect(line, 1), BDArmorySettings.DEBUG_RADAR, Localizer.Format("#LOC_BDArmory_Settings_DebugRadar"));//"Debug Detectors"
+                        BDArmorySettings.DEBUG_OTHER = GUI.Toggle(SQuarterRect(line, 2), BDArmorySettings.DEBUG_OTHER, Localizer.Format("#LOC_BDArmory_Settings_DebugOther"));//"Debug Other"
+                    }
+#if DEBUG  // Only visible when compiled in Debug configuration.
+                    if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
+                    {
+                        if (BDACompetitionMode.Instance != null)
+                        {
+                            if (GUI.Button(SLeftRect(++line), "Run DEBUG checks"))// Run DEBUG checks
+                            {
+                                switch (Event.current.button)
+                                {
+                                    case 1: // right click
+                                        StartCoroutine(BDACompetitionMode.Instance.CheckGCPerformance());
+                                        break;
+                                    default:
+                                        BDACompetitionMode.Instance.CleanUpKSPsDeadReferences();
+                                        BDACompetitionMode.Instance.RunDebugChecks();
+                                        break;
+                                }
+                            }
+                            if (GUI.Button(SLeftRect(++line), "Test Vessel Module Registry"))
+                            {
+                                StartCoroutine(VesselModuleRegistry.Instance.PerformanceTest());
+                            }
+                        }
+                        // if (GUI.Button(SLineRect(++line), "timing test")) // Timing tests.
+                        // {
+                        //     var test = FlightGlobals.ActiveVessel.transform.position;
+                        //     float FiringTolerance = 1f;
+                        //     float targetRadius = 20f;
+                        //     Vector3 finalAimTarget = new Vector3(10f, 20f, 30f);
+                        //     Vector3 pos = new Vector3(2f, 3f, 4f);
+                        //     float theta_const = Mathf.Deg2Rad * 1f;
+                        //     float test_out = 0f;
+                        //     int iters = 10000000;
+                        //     var now = Time.realtimeSinceStartup;
+                        //     for (int i = 0; i < iters; ++i)
+                        //     {
+                        //         test_out = i > iters ? 1f : 1f - 0.5f * FiringTolerance * FiringTolerance * targetRadius * targetRadius / (finalAimTarget - pos).sqrMagnitude;
+                        //     }
+                        //     Debug.Log("DEBUG sqrMagnitude " + (Time.realtimeSinceStartup - now) / iters + "s/iter, out: " + test_out);
+                        //     now = Time.realtimeSinceStartup;
+                        //     for (int i = 0; i < iters; ++i)
+                        //     {
+                        //         var theta = FiringTolerance * targetRadius / (finalAimTarget - pos).magnitude + theta_const;
+                        //         test_out = i > iters ? 1f : 1f - 0.5f * (theta * theta);
+                        //     }
+                        //     Debug.Log("DEBUG magnitude " + (Time.realtimeSinceStartup - now) / iters + "s/iter, out: " + test_out);
+                        // }
+                        if (GUI.Button(SLeftRect(++line), "Layer test"))
+                        {
+                            for (int i = 0; i < 32; ++i)
+                            {
+                                // Vector3 mouseAim = new Vector3(Input.mousePosition.x / Screen.width, Input.mousePosition.y / Screen.height, 0);
+                                Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+                                RaycastHit hit;
+
+                                if (Physics.Raycast(ray, out hit, 1000f, (1 << i)))
+                                {
+                                    var hitPart = hit.collider.gameObject.GetComponentInParent<Part>();
+                                    var hitEVA = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+                                    var hitBuilding = hit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
+                                    if (hitEVA != null) hitPart = hitEVA.part;
+                                    if (hitPart != null) Debug.Log($"DEBUG Bitmask at {i} hit {hitPart.name}.");
+                                    else if (hitBuilding != null) Debug.Log($"DEBUG Bitmask at {i} hit {hitBuilding.name}");
+                                    else Debug.Log($"DEBUG Bitmask at {i} hit {hit.collider.gameObject.name}");
+                                }
+                            }
+                        }
+                        if (GUI.Button(SLeftRect(++line), "Test vessel position timing."))
+                        { StartCoroutine(TestVesselPositionTiming()); }
+                        if (GUI.Button(SLeftRect(++line), "FS engine status"))
+                        {
+                            foreach (var vessel in FlightGlobals.VesselsLoaded)
+                                FireSpitter.CheckStatus(vessel);
+                        }
+                        if (GUI.Button(SLeftRect(++line), "Spawn spawn probe here."))
+                        {
+                            VesselSpawner.SpawnSpawnProbe();
+                        }
+                        if (GUI.Button(SLeftRect(++line), "Quit KSP."))
+                        {
+                            QuitKSP();
+                        }
+                    }
+#endif
                 }
 
                 line += 0.5f;
@@ -2428,6 +2572,7 @@ namespace BDArmory.UI
                     BDArmorySettings.AUTO_RESUME_TOURNAMENT = GUI.Toggle(SLeftRect(++line), BDArmorySettings.AUTO_RESUME_TOURNAMENT, Localizer.Format("#LOC_BDArmory_Settings_AutoResumeTournaments")); // Auto-Resume Tournaments
                     if (BDArmorySettings.AUTO_RESUME_TOURNAMENT)
                     {
+                        BDArmorySettings.AUTO_QUIT_AT_END_OF_TOURNAMENT = GUI.Toggle(SRightRect(line), BDArmorySettings.AUTO_QUIT_AT_END_OF_TOURNAMENT, Localizer.Format("#LOC_BDArmory_Settings_AutoQuitAtEndOfTournament")); // Auto Quit At End Of Tournament
                         GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AutoQuitMemoryUsage")}:  ({(BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD > SystemMaxMemory ? "Off" : $"{BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD}GB")})", leftLabel); // Auto-Quit Memory Threshold
                         BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD, 1f, SystemMaxMemory + 1));
                         if (BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD <= SystemMaxMemory)
@@ -2859,7 +3004,7 @@ namespace BDArmory.UI
                                 enteredHoS = GUI.Toggle(SRightRect(line), enteredHoS, Localizer.Format("Enter to Hall of Shame"));
                                 {
                                     if (enteredHoS)
-                                    {                                        
+                                    {
                                         if (HoSString == "Clear()")
                                         {
                                             BDArmorySettings.HALL_OF_SHAME_LIST.Clear();
@@ -2890,7 +3035,7 @@ namespace BDArmory.UI
                             GUI.Label(SLeftSliderRect(++line, 2f), $"{Localizer.Format("Thrust")}:  ({(float)Math.Round(BDArmorySettings.HOS_THRUST, 1)}%) Engine Thrust", leftLabel);
                             BDArmorySettings.HOS_THRUST = (GUI.HorizontalSlider(SRightSliderRect(line), (float)Math.Round(BDArmorySettings.HOS_THRUST, 1), 0, 200));
                             GUI.Label(SLeftRect(++line), Localizer.Format("--Shame badge--"));
-							HoSTag = GUI.TextField(SLeftRect(++line, 1, true), HoSTag);
+                            HoSTag = GUI.TextField(SLeftRect(++line, 1, true), HoSTag);
                             BDArmorySettings.HOS_BADGE = HoSTag;
                         }
                         else
@@ -2899,7 +3044,7 @@ namespace BDArmory.UI
                             BDArmorySettings.HOS_MASS = 0;
                             BDArmorySettings.HOS_DMG = 100;
                             BDArmorySettings.HOS_THRUST = 100;
-							//partloss = false; //- would need special module, but could also be a mutator mode
+                            //partloss = false; //- would need special module, but could also be a mutator mode
                             //timebomb = false //same
                             //might be more elegant to simply have this use Mutator framework and load the HoS craft with a select mutator(s) instead... Something to look into later, maybe, but ideally this shouldn't need to be used in the first place.
                         }
@@ -3012,8 +3157,8 @@ namespace BDArmory.UI
                 }
 
                 GUI.Label(SLeftRect(++line), Localizer.Format("#LOC_BDArmory_Settings_TargetWindowInvertMouse"), leftLabel);
-                BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_X = GUI.Toggle(SEighthRect(line,5), BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_X, "X");
-                BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_Y = GUI.Toggle(SEighthRect(line,6), BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_Y, "Y");
+                BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_X = GUI.Toggle(SEighthRect(line, 5), BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_X, "X");
+                BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_Y = GUI.Toggle(SEighthRect(line, 6), BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_Y, "Y");
 
                 line += 0.5f;
             }
@@ -3064,95 +3209,6 @@ namespace BDArmory.UI
 
                 line += 0.5f;
             }
-
-#if DEBUG  // Only visible when compiled in Debug configuration.
-            if (GUI.Button(SLineRect(++line), (BDArmorySettings.DEBUG_SETTINGS_TOGGLE ? "Hide " : " Show ") + Localizer.Format("#LOC_BDArmory_Settings_DebugSettingsToggle"))) // Show/Hide Debug Settings
-            {
-                BDArmorySettings.DEBUG_SETTINGS_TOGGLE = !BDArmorySettings.DEBUG_SETTINGS_TOGGLE;
-            }
-            if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
-            {
-                if (BDACompetitionMode.Instance != null)
-                {
-                    if (GUI.Button(SLeftRect(++line), "Run DEBUG checks"))// Run DEBUG checks
-                    {
-                        switch (Event.current.button)
-                        {
-                            case 1: // right click
-                                StartCoroutine(BDACompetitionMode.Instance.CheckGCPerformance());
-                                break;
-                            default:
-                                BDACompetitionMode.Instance.CleanUpKSPsDeadReferences();
-                                BDACompetitionMode.Instance.RunDebugChecks();
-                                break;
-                        }
-                    }
-                    if (GUI.Button(SLeftRect(++line), "Test Vessel Module Registry"))
-                    {
-                        StartCoroutine(VesselModuleRegistry.Instance.PerformanceTest());
-                    }
-                }
-                // if (GUI.Button(SLineRect(++line), "timing test")) // Timing tests.
-                // {
-                //     var test = FlightGlobals.ActiveVessel.transform.position;
-                //     float FiringTolerance = 1f;
-                //     float targetRadius = 20f;
-                //     Vector3 finalAimTarget = new Vector3(10f, 20f, 30f);
-                //     Vector3 pos = new Vector3(2f, 3f, 4f);
-                //     float theta_const = Mathf.Deg2Rad * 1f;
-                //     float test_out = 0f;
-                //     int iters = 10000000;
-                //     var now = Time.realtimeSinceStartup;
-                //     for (int i = 0; i < iters; ++i)
-                //     {
-                //         test_out = i > iters ? 1f : 1f - 0.5f * FiringTolerance * FiringTolerance * targetRadius * targetRadius / (finalAimTarget - pos).sqrMagnitude;
-                //     }
-                //     Debug.Log("DEBUG sqrMagnitude " + (Time.realtimeSinceStartup - now) / iters + "s/iter, out: " + test_out);
-                //     now = Time.realtimeSinceStartup;
-                //     for (int i = 0; i < iters; ++i)
-                //     {
-                //         var theta = FiringTolerance * targetRadius / (finalAimTarget - pos).magnitude + theta_const;
-                //         test_out = i > iters ? 1f : 1f - 0.5f * (theta * theta);
-                //     }
-                //     Debug.Log("DEBUG magnitude " + (Time.realtimeSinceStartup - now) / iters + "s/iter, out: " + test_out);
-                // }
-                if (GUI.Button(SLeftRect(++line), "Layer test"))
-                {
-                    for (int i = 0; i < 32; ++i)
-                    {
-                        // Vector3 mouseAim = new Vector3(Input.mousePosition.x / Screen.width, Input.mousePosition.y / Screen.height, 0);
-                        Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
-                        RaycastHit hit;
-
-                        if (Physics.Raycast(ray, out hit, 1000f, (1 << i)))
-                        {
-                            var hitPart = hit.collider.gameObject.GetComponentInParent<Part>();
-                            var hitEVA = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
-                            var hitBuilding = hit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
-                            if (hitEVA != null) hitPart = hitEVA.part;
-                            if (hitPart != null) Debug.Log($"DEBUG Bitmask at {i} hit {hitPart.name}.");
-                            else if (hitBuilding != null) Debug.Log($"DEBUG Bitmask at {i} hit {hitBuilding.name}");
-                            else Debug.Log($"DEBUG Bitmask at {i} hit {hit.collider.gameObject.name}");
-                        }
-                    }
-                }
-                if (GUI.Button(SLeftRect(++line), "Test vessel position timing."))
-                { StartCoroutine(TestVesselPositionTiming()); }
-                if (GUI.Button(SLeftRect(++line), "FS engine status"))
-                {
-                    foreach (var vessel in FlightGlobals.VesselsLoaded)
-                        FireSpitter.CheckStatus(vessel);
-                }
-                if (GUI.Button(SLeftRect(++line), "Spawn spawn probe here."))
-                {
-                    SpawnUtils.SpawnSpawnProbe();
-                }
-                if (GUI.Button(SLeftRect(++line), "Quit KSP."))
-                {
-                    QuitKSP();
-                }
-            }
-#endif
 
             if (GUI.Button(SLineRect(++line), (BDArmorySettings.COMPETITION_SETTINGS_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_CompSettingsToggle")))//Show/hide Competition settings.
             {
@@ -3379,8 +3435,8 @@ namespace BDArmory.UI
             line += 1.5f; // Bottom internal margin
             settingsHeight = (line * settingsLineHeight);
             WindowRectSettings.height = settingsHeight;
-            BDGUIUtils.RepositionWindow(ref WindowRectSettings);
-            BDGUIUtils.UseMouseEventInRect(WindowRectSettings);
+            GUIUtils.RepositionWindow(ref WindowRectSettings);
+            GUIUtils.UseMouseEventInRect(WindowRectSettings);
         }
 
         void CloseSettingsWindow()
@@ -3476,7 +3532,7 @@ namespace BDArmory.UI
 
             settingsHeight = origSettingsHeight;
             WindowRectSettings.height = origSettingsHeight;
-            BDGUIUtils.UseMouseEventInRect(WindowRectSettings);
+            GUIUtils.UseMouseEventInRect(WindowRectSettings);
         }
 
         void InputSettingsList(string prefix, ref int id, ref float line)
@@ -3585,7 +3641,7 @@ namespace BDArmory.UI
 
         void OnVesselGoOffRails(Vessel v)
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_OTHER)
             {
                 Debug.Log("[BDArmory.BDArmorySetup]: Loaded vessel: " + v.vesselName + ", Velocity: " + v.Velocity() + ", packed: " + v.packed);
                 //v.SetWorldVelocity(Vector3d.zero);

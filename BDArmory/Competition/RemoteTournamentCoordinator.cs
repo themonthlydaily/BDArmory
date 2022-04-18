@@ -2,12 +2,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
+
 using BDArmory.Competition.OrchestrationStrategies;
 using BDArmory.Competition.RemoteOrchestration;
-using BDArmory.Competition.SpawnStrategies;
 using BDArmory.Competition.VesselSpawning;
-using BDArmory.Core;
-using UnityEngine;
+using BDArmory.Competition.VesselSpawning.SpawnStrategies;
+using BDArmory.Settings;
 using static BDArmory.Competition.OrchestrationStrategies.WaypointFollowingStrategy;
 
 namespace BDArmory.Competition
@@ -16,9 +17,9 @@ namespace BDArmory.Competition
     {
         private SpawnStrategy spawnStrategy;
         private OrchestrationStrategy orchestrator;
-        private VesselSpawner vesselSpawner;
+        private VesselSpawnerBase vesselSpawner;
 
-        public RemoteTournamentCoordinator(SpawnStrategy spawner, OrchestrationStrategy orchestrator, VesselSpawner vesselSpawner)
+        public RemoteTournamentCoordinator(SpawnStrategy spawner, OrchestrationStrategy orchestrator, VesselSpawnerBase vesselSpawner)
         {
             this.spawnStrategy = spawner;
             this.orchestrator = orchestrator;

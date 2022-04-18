@@ -1,13 +1,12 @@
-using System.Collections;
-using BDArmory.Core;
-using BDArmory.Misc;
-using BDArmory.Modules;
-using UnityEngine;
 using KSP.Localization;
 using System.Collections.Generic;
-using static UnityEngine.GUILayout;
-using BDArmory.Bullets;
 using System;
+using UnityEngine;
+using static UnityEngine.GUILayout;
+
+using BDArmory.Bullets;
+using BDArmory.Utils;
+using BDArmory.Weapons;
 
 namespace BDArmory.UI
 {
@@ -69,7 +68,7 @@ namespace BDArmory.UI
             GUIstring = String.Empty;
             countString = String.Empty;
             lastGUIstring = String.Empty;
-            roundCounter = 1;
+            roundCounter = 0;
             if (weapon.ammoBelt != "def")
             {
                 beltString = weapon.ammoBelt;
@@ -80,8 +79,8 @@ namespace BDArmory.UI
                     if (BList[i] != lastGUIstring)
                     {
                         GUIstring += countString.ToString();
-                        GUIstring += binfo.DisplayName;
-                        lastGUIstring = binfo.DisplayName;
+                        GUIstring += (string.IsNullOrEmpty(binfo.DisplayName) ? binfo.name : binfo.DisplayName);
+                        lastGUIstring = (string.IsNullOrEmpty(binfo.DisplayName) ? binfo.name : binfo.DisplayName);
                         roundCounter = 1;
                         countString = "; ";
                     }
@@ -172,7 +171,7 @@ namespace BDArmory.UI
             }
             if (open)
             {
-                windowRect = GUI.Window(this.GetInstanceID(), windowRect, AmmoSelectorWindow, "", BDArmorySetup.BDGuiSkin.window);
+				windowRect = GUI.Window(this.GetInstanceID(), windowRect, AmmoSelectorWindow, "", BDArmorySetup.BDGuiSkin.window);
             }
             PreventClickThrough();
         }
@@ -251,7 +250,7 @@ namespace BDArmory.UI
             height = Mathf.Lerp(height, (line + labelLines + ammolines) * buttonHeight, 0.15f);
             windowRect.height = height;
             GUI.DragWindow();
-            BDGUIUtils.RepositionWindow(ref windowRect);
+            GUIUtils.RepositionWindow(ref windowRect);
         }
 
         private void Awake()

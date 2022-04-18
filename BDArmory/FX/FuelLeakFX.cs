@@ -1,13 +1,9 @@
-﻿using BDArmory.Core;
-using BDArmory.Misc;
-using BDArmory.UI;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Linq;
 using UnityEngine;
+
+using BDArmory.Settings;
+using BDArmory.UI;
+using BDArmory.Utils;
 
 namespace BDArmory.FX
 {
@@ -42,7 +38,7 @@ namespace BDArmory.FX
                 gameObject.SetActive(false);
                 return;
             }
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.LeakFX]: Leak added to {parentPart.name}" + (parentPart.vessel != null ? $" on {parentPart.vessel.vesselName}" : ""));
+            if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.LeakFX]: Leak added to {parentPart.name}" + (parentPart.vessel != null ? $" on {parentPart.vessel.vesselName}" : ""));
 
             engine = parentPart.FindModuleImplementing<ModuleEngines>();
             var solid = parentPart.Resources.Where(pr => pr.resourceName == "SolidFuel").FirstOrDefault();

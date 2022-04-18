@@ -1,15 +1,16 @@
 using System.Collections.Generic;
+using UnityEngine;
+
 using BDArmory.Control;
-using BDArmory.Core;
-using BDArmory.Core.Extension;
-using BDArmory.Core.Utils;
 using BDArmory.CounterMeasure;
-using BDArmory.Misc;
-using BDArmory.Modules;
+using BDArmory.Extensions;
+using BDArmory.Settings;
 using BDArmory.Shaders;
 using BDArmory.Targeting;
 using BDArmory.UI;
-using UnityEngine;
+using BDArmory.Utils;
+using BDArmory.Weapons;
+using BDArmory.Weapons.Missiles;
 
 namespace BDArmory.Radar
 {
@@ -313,7 +314,7 @@ namespace BDArmory.Radar
 
             Bounds vesselbounds = CalcVesselBounds(v, t);
 
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_RADAR)
             {
                 if (HighLogic.LoadedSceneIsFlight)
                     Debug.Log($"[BDArmory.RadarUtils]: Rendering radar snapshot of vessel {v.name}, type {v.vesselType}");
@@ -327,7 +328,7 @@ namespace BDArmory.Radar
             if (vesselbounds.size.sqrMagnitude == 0f)
             {
                 // SAVE US THE RENDERING, result will be zero anyway...
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DEBUG_RADAR)
                 {
                     Debug.Log("[BDArmory.RadarUtils]: - rcs is zero.");
                 }
@@ -406,7 +407,7 @@ namespace BDArmory.Radar
                     }
                 }
 
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DEBUG_RADAR)
                 {
                     // Debug.Log($"[BDArmory.RadarUtils]: RCS Aspect Vector for (az/el) {rcsAspects[i, 0]}/{rcsAspects[i, 1]}  is: " + aspect.ToString());
                     Debug.Log($"[BDArmory.RadarUtils]: - Vessel rcs for (az/el) is: {rcsAspects[i, 0]}/{rcsAspects[i, 1]} = rcsVariable: {rcsVariable}");
@@ -454,7 +455,7 @@ namespace BDArmory.Radar
                 }
             }
 
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_RADAR)
             {
                 Debug.Log($"[BDArmory.RadarUtils]: - Vessel all-aspect rcs is: rcsTotal: {rcsTotal}");
             }
@@ -540,7 +541,7 @@ namespace BDArmory.Radar
                 v.SetPosition(v.transform.position + presentationPosition);
 
             Bounds vesselbounds = CalcVesselBounds(v, t);
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_RADAR)
             {
                 if (HighLogic.LoadedSceneIsFlight)
                     Debug.Log($"[BDArmory.RadarUtils]: Rendering radar snapshot of vessel {v.name}, type {v.vesselType}");
@@ -553,7 +554,7 @@ namespace BDArmory.Radar
             if (vesselbounds.size.sqrMagnitude == 0f)
             {
                 // SAVE US THE RENDERING, result will be zero anyway...
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DEBUG_RADAR)
                 {
                     Debug.Log("[BDArmory.RadarUtils]: - rcs is zero.");
                 }
@@ -615,7 +616,7 @@ namespace BDArmory.Radar
                 rcsVentral45 /= RCS_NORMALIZATION_FACTOR;
 
                 rcsTotal = (Mathf.Max(rcsFrontal, rcsFrontal45) + Mathf.Max(rcsLateral, rcsLateral45) + Mathf.Max(rcsVentral, rcsVentral45)) / 3f;
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DEBUG_RADAR)
                 {
                     Debug.Log($"[BDArmory.RadarUtils]: - Vessel rcs is (frontal/lateral/ventral), (frontal45/lateral45/ventral45): {rcsFrontal}/{rcsLateral}/{rcsVentral}, {rcsFrontal45}/{rcsLateral45}/{rcsVentral45} = rcsTotal: {rcsTotal}");
                 }
@@ -1407,7 +1408,7 @@ namespace BDArmory.Radar
         /// <summary>
         /// Helper method: check if line intersects terrain
         /// </summary>
-		public static bool TerrainCheck(Vector3 start, Vector3 end)
+        public static bool TerrainCheck(Vector3 start, Vector3 end)
         {
             if (!BDArmorySettings.IGNORE_TERRAIN_CHECK)
             {

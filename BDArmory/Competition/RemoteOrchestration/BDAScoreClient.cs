@@ -7,7 +7,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.Networking;
-using BDArmory.Core;
+
+using BDArmory.Settings;
 
 namespace BDArmory.Competition.RemoteOrchestration
 {
