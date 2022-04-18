@@ -34,9 +34,9 @@ namespace BDArmory.Competition.VesselSpawning
     {
         public string name;
         public Vector3 location;
-        public double scale;
+        public float scale;
 
-        public Waypoint(string _name, Vector3 _location, double _scale) { name = _name; location = _location; scale = _scale; }
+        public Waypoint(string _name, Vector3 _location, float _scale) { name = _name; location = _location; scale = _scale; }
         public override string ToString() { return name + "| " + location.ToString("G6") + "| " + scale.ToString() + ": "; }
     }
     public class WaypointCourse
@@ -56,7 +56,7 @@ namespace BDArmory.Competition.VesselSpawning
             }
             return waypointList;
         }
-        //COURSE = TestCustom; 1; (23, 23); Start| 23.2, 23.2, 100| 500: Funnel| 23.2, 23.7, 50| 250: Ascent| 23.5, 23.6, 250| 100: Apex| 23.2, 23.4. 500| 500:
+        //COURSE = TestCustom; 1; (23, 23); Start| (23.2, 23.2, 100)| 500: Funnel| (23.2, 23.7, 50)| 250: Ascent| (23.5, 23.6, 250)| 100: Apex| (23.2, 23.4 500)| 500:
         public WaypointCourse(string _name, int _worldIndex, Vector2 _spawnPoint, List<Waypoint> _waypoints) { name = _name; worldIndex = _worldIndex; spawnPoint = _spawnPoint; waypoints = _waypoints; }
         public override string ToString() { return name + "; " + worldIndex + "; "  + spawnPoint.ToString("G6") + "; " + GetWaypointList(); }
 
@@ -71,7 +71,7 @@ namespace BDArmory.Competition.VesselSpawning
             new WaypointCourse("Canyon", 1, new Vector2(27.97f, -39.35f), new List<Waypoint> {
                         new Waypoint("Waypoint 1", new Vector3(28.33f, -39.11f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
                         new Waypoint("Waypoint 2", new Vector3(28.83f, -38.06f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
-                        new Waypoint("waypoint 3", new Vector3(29.54f, -38.68f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
+                        new Waypoint("Waypoint 3", new Vector3(29.54f, -38.68f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
                         new Waypoint("Waypoint 4", new Vector3(0.15f, -38.6f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
                         new Waypoint("Waypoint 5", new Vector3(30.83f, -38.87f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
                         new Waypoint("Waypoint 6", new Vector3(30.73f, -39.6f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
@@ -116,7 +116,7 @@ namespace BDArmory.Competition.VesselSpawning
             foreach (var field in typeof(WaypointCourses).GetFields(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.DeclaredOnly))
             {
                 if (field == null || !field.IsDefined(typeof(WaypointField), false)) continue;
-                if (field.Name == "WaypointCourses") continue; // We'll do the spawn locations separately.
+                if (field.Name == "CourseLocations") continue; // We'll do the spawn locations separately.
                 var fieldValue = field.GetValue(null);
                 settings.SetValue(field.Name, field.GetValue(null).ToString(), true);
             }
@@ -205,9 +205,9 @@ Waypoint 1; (27.97, -39.35, 50); 500
                 {
                     return int.Parse(value);
                 }
-                else if (type == typeof(double))
+                else if (type == typeof(float))
                 {
-                    return double.Parse(value);
+                    return float.Parse(value);
                 }
                 else if (type == typeof(Vector2))
                 {
@@ -217,55 +217,37 @@ Waypoint 1; (27.97, -39.35, 50); 500
                     {
                         float x = float.Parse(strings[0]);
                         float y = float.Parse(strings[1]);
-                        return new Vector2d(x, y);
+                        return new Vector2(x, y);
                     }
                 }
                 else if (type == typeof(Vector3))
                 {
-                    char[] charsToTrim = { '[', ']', ' ' };
+                    char[] charsToTrim = { '[', ']', '(', ')', ' ' };
                     string[] strings = value.Trim(charsToTrim).Split(',');
                     float x = float.Parse(strings[0]);
                     float y = float.Parse(strings[1]);
                     float z = float.Parse(strings[2]);
                     return new Vector3(x, y, z);
                 }
-                else if (type == typeof(Waypoint))
-                {
-                    string[] parts;
-                    parts = value.Split(new char[] { ':' });
-                    List<Waypoint> waypoints = new List<Waypoint>();
-                    for (int i = 0; i < parts.Length; i++)
-                    {
-                        string[] datavars;
-                        datavars = value.Split(new char[] { '|' });
-                        var name = (string)ParseValue(typeof(string), datavars[0]);
-                        var location = (Vector3)ParseValue(typeof(Vector3), datavars[1]);
-                        var scale = (double)ParseValue(typeof(double), datavars[2]);
-                        if (name != null && location != null)
-                            waypoints.Add(new Waypoint(name, location, scale));
-                    }
-                    return waypoints;
-                }
                 else if (type == typeof(WaypointCourse))
                 {
                     string[] parts;
+
                     parts = value.Split(new char[] { ';' });
                     if (parts.Length > 1)
                     {
                         var name = (string)ParseValue(typeof(string), parts[0]);
                         var worldIndex = (int)ParseValue(typeof(int), parts[1]);
                         var spawnPoint = (Vector2)ParseValue(typeof(Vector2), parts[2]);
-
-                        string[] waypoints;
-                        waypoints = parts[3].Split(new char[] { ':' });
+                        string[] waypoints = parts[3].Split(new char[] { ':' });
                         List<Waypoint> waypointList = new List<Waypoint>();
-                        for (int i = 0; i < parts.Length; i++)
+                        for (int i = 0; i < waypoints.Length-1; i++)
                         {
                             string[] datavars;
-                            datavars = value.Split(new char[] { '|' });
+                            datavars = waypoints[i].Split(new char[] { '|' });
                             var WPname = (string)ParseValue(typeof(string), datavars[0]);
                             var location = (Vector3)ParseValue(typeof(Vector3), datavars[1]);
-                            var scale = (double)ParseValue(typeof(double), datavars[2]);
+                            var scale = (float)ParseValue(typeof(float), datavars[2]);
                             if (name != null && location != null)
                                 waypointList.Add(new Waypoint(WPname, location, scale));
                         }
@@ -279,7 +261,7 @@ Waypoint 1; (27.97, -39.35, 50); 500
             {
                 Debug.LogException(e);
             }
-            Debug.LogError("[BDArmory.WaypointOCurses]: Failed to parse settings field of type " + type + " and value " + value);
+            Debug.LogError("[BDArmory.WaypointCourses]: Failed to parse settings field of type " + type + " and value " + value);
             return null;
         }
     }

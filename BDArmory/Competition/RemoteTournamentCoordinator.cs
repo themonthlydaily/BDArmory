@@ -262,14 +262,14 @@ namespace BDArmory.Competition
 
 
             var waypoints = new List<Waypoint> {
-                new Waypoint("Waypoint 1", new Vector3(28.33f, -39.11f, altitude), (double)BDArmorySettings.WAYPOINTS_SCALE),
-                new Waypoint("Waypoint 2", new Vector3(28.83f, -38.06f, altitude),(double)BDArmorySettings.WAYPOINTS_SCALE),
-                new Waypoint("Waypoint 3", new Vector3(29.54f, -38.68f, altitude),(double)BDArmorySettings.WAYPOINTS_SCALE),
-                new Waypoint("Waypoint 4", new Vector3(30.15f, -38.6f, altitude),(double)BDArmorySettings.WAYPOINTS_SCALE),
-                new Waypoint("Waypoint 5", new Vector3(30.83f, -38.87f, altitude),(double)BDArmorySettings.WAYPOINTS_SCALE),
-                new Waypoint("Waypoint 6", new Vector3(30.73f, -39.6f, altitude),(double)BDArmorySettings.WAYPOINTS_SCALE),
-                new Waypoint("Waypoint 7", new Vector3(30.9f, -40.23f, altitude),(double)BDArmorySettings.WAYPOINTS_SCALE),
-                new Waypoint("Waypoint 8", new Vector3(30.83f, -41.26f, altitude),(double)BDArmorySettings.WAYPOINTS_SCALE)
+                new Waypoint("Waypoint 1", new Vector3(28.33f, -39.11f, altitude), BDArmorySettings.WAYPOINTS_SCALE),
+                new Waypoint("Waypoint 2", new Vector3(28.83f, -38.06f, altitude),BDArmorySettings.WAYPOINTS_SCALE),
+                new Waypoint("Waypoint 3", new Vector3(29.54f, -38.68f, altitude),BDArmorySettings.WAYPOINTS_SCALE),
+                new Waypoint("Waypoint 4", new Vector3(30.15f, -38.6f, altitude),BDArmorySettings.WAYPOINTS_SCALE),
+                new Waypoint("Waypoint 5", new Vector3(30.83f, -38.87f, altitude),BDArmorySettings.WAYPOINTS_SCALE),
+                new Waypoint("Waypoint 6", new Vector3(30.73f, -39.6f, altitude),BDArmorySettings.WAYPOINTS_SCALE),
+                new Waypoint("Waypoint 7", new Vector3(30.9f, -40.23f, altitude),BDArmorySettings.WAYPOINTS_SCALE),
+                new Waypoint("Waypoint 8", new Vector3(30.83f, -41.26f, altitude),BDArmorySettings.WAYPOINTS_SCALE)
             };
             var orchestrationStrategy = new WaypointFollowingStrategy(waypoints);
             var listStrategy = new ListSpawnStrategy(strategies);
