@@ -89,7 +89,7 @@ namespace BDArmory.UI
             {
                 yieldStrength *= 0.7f;
             }
-            float newCaliber = ProjectileUtils.CalculateDeformation(yieldStrength, bulletEnergy, 30, 1109, 1176, 7850, 0.19f, 0.8f);
+            float newCaliber = ProjectileUtils.CalculateDeformation(yieldStrength, bulletEnergy, 30, 1109, 1176, 7850, 0.19f, 0.8f, false);
             steelValue = ProjectileUtils.CalculatePenetration(30, newCaliber, 0.388f, 1109, 0.15f, 7850, 940, 30, 0.8f, false);
             exploValue = 940 * 1.15f * 7.85f;
         }
@@ -714,7 +714,7 @@ namespace BDArmory.UI
                 {
                     yieldStrength *= 0.7f;
                 }
-                float newCaliber = ProjectileUtils.CalculateDeformation(yieldStrength, bulletEnergy, 30, 1109, ArmorHardness, ArmorDensity, 0.19f, 0.8f);
+                float newCaliber = ProjectileUtils.CalculateDeformation(yieldStrength, bulletEnergy, 30, 1109, ArmorHardness, ArmorDensity, 0.19f, 0.8f, false);
                 armorValue = ProjectileUtils.CalculatePenetration(30, newCaliber, 0.388f, 1109, ArmorDuctility, ArmorDensity, ArmorStrength, 30, 0.8f, false);
                 relValue = Mathf.Round(armorValue / steelValue * 10) / 10;
                 exploValue = ArmorStrength * (1 + ArmorDuctility) * (ArmorDensity / 1000);

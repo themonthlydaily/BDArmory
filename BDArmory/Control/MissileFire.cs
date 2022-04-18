@@ -376,6 +376,7 @@ namespace BDArmory.Control
 
         //current weapon ref
         public MissileBase CurrentMissile;
+        public MissileBase PreviousMissile;
 
         public ModuleWeapon currentGun
         {
@@ -465,7 +466,7 @@ namespace BDArmory.Control
             UI_FloatRange(minValue = 1, maxValue = 10, stepIncrement = 1, scene = UI_Scene.All)]
         public float multiTargetNum = 1;
 
-        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_WMWindow_MultiMissileNum"),//Max Turret Targets
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_WMWindow_MultiMissileNum"),//Max Missile Targets
             UI_FloatRange(minValue = 1, maxValue = 10, stepIncrement = 1, scene = UI_Scene.All)]
         public float multiMissileTgtNum = 1;
 
@@ -1265,12 +1266,16 @@ namespace BDArmory.Control
                         }
                     }
                 }
-            if (currentTarget != null && missilesAway.ContainsKey(currentTarget))
+            if (currentTarget != null && missilesAway.ContainsKey(currentTarget)) //change to previuos target?
             {
                 missilesAway.TryGetValue(currentTarget, out int missiles);
                 firedMissiles = missiles;
             }
-            else firedMissiles = 0;
+            else
+            {
+                firedMissiles = 0;
+                PreviousMissile = null;
+            }
             engagedTargets = missilesAway.Count;
             //this.missilesAway = tempMissilesAway;
         }
@@ -2445,6 +2450,7 @@ namespace BDArmory.Control
             }
 
             CalculateMissilesAway(); // Immediately update missiles away.
+            PreviousMissile = CurrentMissile;
             UpdateList();
             return true;
         }
@@ -3361,19 +3367,24 @@ namespace BDArmory.Control
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[MissileFire] max missiles on target; switching to new target!");
                 if (Vector3.Distance(transform.position + vessel.Velocity(), currentTarget.position + currentTarget.velocity) < gunRange * 0.75f) //don't swap away from current target if about to enter gunrange
                 {
-                    //Debug.Log("[MissileFire] max targets fired on, but about to enter Gun range; keeping current target");
+                    Debug.Log("[MissileFire] max targets fired on, but about to enter Gun range; keeping current target");
                     return;
                 }
-                MissileBase ml = CurrentMissile;
-                if (ml.TargetingMode == MissileBase.TargetingModes.Laser) //don't switch from current target if using LASMs to keep current target painted
+                if (PreviousMissile)
                 {
-                    //Debug.Log("[MissileFire] max targets fired on with LASMs, keeping target painted!");
-                    return;
-                }
-                if (ml && !(ml.TargetingMode == MissileBase.TargetingModes.Radar && !ml.radarLOAL))
-                {
-                    //if (vesselRadarData != null) vesselRadarData.UnlockCurrentTarget();//unlock current target only if missile isn't slaved to ship radar guidance to allow new F&F lock
-                    //enabling this has the radar blip off after firing missile, having it on requires waiting 2 sec for the radar do decide it needs to swap to another targer, but will continue to guide current missile (assuming sufficient radar FOV)
+                    MissileBase ml = PreviousMissile;
+                    if (ml.TargetingMode == MissileBase.TargetingModes.Laser) //don't switch from current target if using LASMs to keep current target painted
+                    {
+                        Debug.Log("[MissileFire] max targets fired on with LASMs, keeping target painted!");
+                        return;
+                    }
+                    if (ml && !(ml.TargetingMode == MissileBase.TargetingModes.Radar && !ml.radarLOAL))
+                    {
+                        //if (vesselRadarData != null) vesselRadarData.UnlockCurrentTarget();//unlock current target only if missile isn't slaved to ship radar guidance to allow new F&F lock
+                        //enabling this has the radar blip off after firing missile, having it on requires waiting 2 sec for the radar do decide it needs to swap to another target, but will continue to guide current missile (assuming sufficient radar FOV)
+                    }
+                    if (ml && (ml.TargetingMode == MissileBase.TargetingModes.Radar)) guardTarget = null; //trying this to see if that fixes atg radar missiles-4/17/22;2:19
+
                 }
                 heatTarget = TargetSignatureData.noTarget; //clear holdover targets when switching targets
                 antiRadTargetAcquired = false;
@@ -3387,15 +3398,16 @@ namespace BDArmory.Control
                             if (missilesAway[target.Current] >= maxMissilesOnTarget)
                             {
                                 targetsAssigned.Add(target.Current);
-                                //Debug.Log("[MissileFire] Adding " + target.Current.Vessel.GetName() + " to exclusion list; length: " + targetsAssigned.Count);
+                                Debug.Log("[MissileFire] Adding " + target.Current.Vessel.GetName() + " to exclusion list; length: " + targetsAssigned.Count);
                             }
                         }
                     }
                 }
                 if (targetsAssigned.Count == BDATargetManager.TargetList(Team).Count) //oops, already fired missiles at all available targets
                 {
-                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[MissileFire] max targets fired on, resetting target list!");
                     targetsAssigned.Clear(); //clear targets tried, so AI can track best current target until such time as it can fire again
+                    //if (BDArmorySettings.DEBUG_MISSILES) 
+                    Debug.Log("[MissileFire] max targets fired on, resetting target list!");
                 }
             }
 
@@ -4642,11 +4654,10 @@ namespace BDArmory.Control
                                       Missile.GuidanceMode == MissileBase.GuidanceModes.None))
                                 {
                                     if (targetWeapon != null && targetYield > candidateYield) continue; //prioritize biggest Boom
+                                    if (distance < Missile.engageRangeMin) continue; //select missiles we can use now
                                     targetYield = candidateYield;
                                     candidateAGM = true;
                                     targetWeapon = item.Current;
-                                    if (distance > Missile.engageRangeMin)
-                                        break;
                                 }
                             }
                             if (Missile.TargetingMode == MissileBase.TargetingModes.AntiRad && (rwr && rwr.rwrEnabled))
@@ -4672,7 +4683,7 @@ namespace BDArmory.Control
                             }
                             else if (Missile.TargetingMode == MissileBase.TargetingModes.Laser)
                             {
-                                if ((targetWeapon != null && targetYield > candidateYield) && !candidateAntiRad) continue;
+                                if ((targetWeapon != null && targetYield > candidateYield) || !candidateAntiRad) continue;
                                 candidateAGM = true;
                                 targetYield = candidateYield;
                                 targetWeapon = item.Current;
@@ -5268,6 +5279,12 @@ namespace BDArmory.Control
             if (ml.TargetingMode == MissileBase.TargetingModes.Laser && laserPointDetected)
             {
                 ml.lockedCamera = foundCam;
+                //if (BDArmorySettings.DEBUG_MISSILES) 
+                    Debug.Log("[MissileData] Sending targetInfo to laser Missile...");
+                if ((foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude < 10 * 10)
+                    ml.targetVessel = guardTarget.gameObject.GetComponent<TargetInfo>();
+                //if (BDArmorySettings.DEBUG_MISSILES)
+                    Debug.Log("[MissileData] targetInfo sent for " + ml.targetVessel.Vessel.GetName());
             }
             else if (ml.TargetingMode == MissileBase.TargetingModes.Gps)
             {
@@ -5275,26 +5292,58 @@ namespace BDArmory.Control
                 {
                     ml.targetGPSCoords = designatedGPSCoords;
                     ml.TargetAcquired = true;
+                    //if (BDArmorySettings.DEBUG_MISSILES) 
+                        Debug.Log("[MissileData] Sending targetInfo to GPS Missile...");
+                    if ((designatedGPSCoords - guardTarget.CoM).sqrMagnitude < 10 * 10)
+                        ml.targetVessel = guardTarget.gameObject.GetComponent<TargetInfo>();
+                    //if (BDArmorySettings.DEBUG_MISSILES)
+                        Debug.Log("[MissileData] targetInfo sent for " + ml.targetVessel.Vessel.GetName());
                 }
             }
             else if (ml.TargetingMode == MissileBase.TargetingModes.Heat && heatTarget.exists)
             {
                 ml.heatTarget = heatTarget;
                 heatTarget = TargetSignatureData.noTarget;
+                //if (BDArmorySettings.DEBUG_MISSILES) 
+                    Debug.Log("[MissileData] Sending targetInfo to heat Missile...");
+                ml.targetVessel = ml.heatTarget.vessel.gameObject.GetComponent<TargetInfo>();
+                //if (BDArmorySettings.DEBUG_MISSILES) 
+                    Debug.Log("[MissileData] targetInfo sent for " + ml.targetVessel.Vessel.GetName());
             }
             else if (ml.TargetingMode == MissileBase.TargetingModes.Radar && vesselRadarData && vesselRadarData.locked)//&& radar && radar.lockedTarget.exists)
             {
                 ml.radarTarget = vesselRadarData.lockedTargetData.targetData;
                 ml.vrd = vesselRadarData;
                 vesselRadarData.LastMissile = ml;
+                //if (BDArmorySettings.DEBUG_MISSILES) 
+                    Debug.Log("[MissileData] Sending targetInfo to radar Missile...");
+                ml.targetVessel = vesselRadarData.lockedTargetData.targetData.vessel.gameObject.GetComponent<TargetInfo>();
+                //if (BDArmorySettings.DEBUG_MISSILES) 
+                    Debug.Log("[MissileData] targetInfo sent for " + ml.targetVessel.Vessel.GetName());
             }
             else if (ml.TargetingMode == MissileBase.TargetingModes.AntiRad && antiRadTargetAcquired)
             {
                 ml.TargetAcquired = true;
                 ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(antiRadiationTarget,
                         vessel.mainBody);
+                //if (BDArmorySettings.DEBUG_MISSILES) 
+                    Debug.Log("[MissileData] Sending targetInfo to Antirad Missile...");
+                if ((antiRadiationTarget - guardTarget.CoM).sqrMagnitude < 20 * 20)
+                    ml.targetVessel = guardTarget.gameObject.GetComponent<TargetInfo>();
+                //if (BDArmorySettings.DEBUG_MISSILES) 
+                    Debug.Log("[MissileData] targetInfo sent for " + ml.targetVessel.Vessel.GetName());
             }
-            ml.targetVessel = currentTarget;
+            //ml.targetVessel = currentTarget;
+            if (currentTarget != null)
+            {
+                //if (BDArmorySettings.DEBUG_MISSILES) 
+                    Debug.Log("[MULTITARGETING] firing missile at " + currentTarget.Vessel.GetName());
+            }
+            else
+            {
+                //if (BDArmorySettings.DEBUG_MISSILES) 
+                    Debug.Log("[MULTITARGETING] firing missile null target");
+            }
         }
 
         #endregion Targeting
@@ -5419,7 +5468,8 @@ namespace BDArmory.Control
                             {
                                 if (!guardFiringMissile && launchAuthorized
                                     && (CurrentMissile != null && (CurrentMissile.TargetingMode != MissileBase.TargetingModes.Radar || (vesselRadarData != null && (!vesselRadarData.locked || vesselRadarData.lockedTargetData.vessel == guardTarget))))) // Allow firing multiple missiles at the same target. FIXME This is a stop-gap until proper multi-locking support is available.
-                                {
+                                { //add check to not fire if previous missile on same target?
+                                    //this works for air targets, but not for ground targets. what's the difference between the two. radar range for atg radar?
                                     StartCoroutine(GuardMissileRoutine());
                                 }
                             }
