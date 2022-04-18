@@ -874,17 +874,7 @@ namespace BDArmory.Competition
             spawnConfig.longitude = -39.35f;
 
             TournamentCoordinator.Instance.Configure(new SpawnConfigStrategy(spawnConfig),
-                new WaypointFollowingStrategy(
-                    new List<WaypointFollowingStrategy.Waypoint> {
-                        new WaypointFollowingStrategy.Waypoint(28.33f, -39.11f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                        new WaypointFollowingStrategy.Waypoint(28.83f, -38.06f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                        new WaypointFollowingStrategy.Waypoint(29.54f, -38.68f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                        new WaypointFollowingStrategy.Waypoint(30.15f, -38.6f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                        new WaypointFollowingStrategy.Waypoint(30.83f, -38.87f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                        new WaypointFollowingStrategy.Waypoint(30.73f, -39.6f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                        new WaypointFollowingStrategy.Waypoint(30.9f, -40.23f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                        new WaypointFollowingStrategy.Waypoint(30.83f, -41.26f, BDArmorySettings.WAYPOINTS_ALTITUDE)
-                    }
+                new WaypointFollowingStrategy(WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].waypoints
                 ),
                 CircularSpawning.Instance
             );

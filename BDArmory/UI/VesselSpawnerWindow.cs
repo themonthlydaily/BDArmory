@@ -507,15 +507,19 @@ namespace BDArmory.UI
                     BDArmorySettings.WAYPOINTS_ALTITUDE = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.WAYPOINTS_ALTITUDE, 50f, 1000f), 50f);
                     // Select waypoint course
                     string waypointCourseName;
+                    /*
                     switch (BDArmorySettings.WAYPOINT_COURSE_INDEX)
                     {
                         default:
-                        case 1: waypointCourseName = "Canyon"; break;
-                        case 2: waypointCourseName = "Slalom"; break;
-                        case 3: waypointCourseName = "Coastal"; break;
+                        case 0: waypointCourseName = "Canyon"; break;
+                        case 1: waypointCourseName = "Slalom"; break;
+                        case 2: waypointCourseName = "Coastal"; break;
                     }
+                    */
+                    waypointCourseName = WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].name;
+
                     GUI.Label(SLeftSliderRect(++line), $"Waypoint Course: ({waypointCourseName})", leftLabel);
-                    BDArmorySettings.WAYPOINT_COURSE_INDEX = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.WAYPOINT_COURSE_INDEX, 1, 3));
+                    BDArmorySettings.WAYPOINT_COURSE_INDEX = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.WAYPOINT_COURSE_INDEX, 0, WaypointCourses.CourseLocations.Count-1));
 
                     BDArmorySettings.WAYPOINTS_ONE_AT_A_TIME = GUI.Toggle(SLeftRect(++line), BDArmorySettings.WAYPOINTS_ONE_AT_A_TIME, Localizer.Format("#LOC_BDArmory_Settings_WaypointsOneAtATime"));
                     BDArmorySettings.WAYPOINTS_INFINITE_FUEL_AT_START = GUI.Toggle(SRightRect(line), BDArmorySettings.WAYPOINTS_INFINITE_FUEL_AT_START, Localizer.Format("#LOC_BDArmory_Settings_WaypointsInfFuelAtStart"));
@@ -648,26 +652,35 @@ namespace BDArmory.UI
                         TournamentCoordinator.Instance.StopForEach();
                     }
                     float spawnLatitude, spawnLongitude;
-                    List<WaypointFollowingStrategy.Waypoint> course;
+					List<Waypoint> course; //adapt to how the spawn locations are displayed/selected 
+                    //add new GUI window for waypoint course creation; new name entry field for course, waypoints, save button to save WP coords
+                    //Spawn button to spawn in WP (+ WP visualizer); movement buttons/widget for moving Wp around (+ fineness slider to set increment amount); have these display to a numeric field for numfield editing instead?
+                    /*
                     switch (BDArmorySettings.WAYPOINT_COURSE_INDEX)
                     {
                         default:
                         case 1:
-                            spawnLatitude = TournamentCoordinator.canyonSpawnLatitude;
-                            spawnLongitude = TournamentCoordinator.canyonSpawnLongitude;
-                            course = TournamentCoordinator.BuildCanyonCourse();
+                            //spawnLocation.location;
+                            spawnLatitude = WaypointCourses.CourseLocations[0].spawnPoint.x;
+                            spawnLongitude = WaypointCourses.CourseLocations[0].spawnPoint.y;
+                            course = WaypointCourses.CourseLocations[0].waypoints;
                             break;
                         case 2:
-                            spawnLatitude = TournamentCoordinator.slalomSpawnLatitude;
-                            spawnLongitude = TournamentCoordinator.slalomSpawnLongitude;
-                            course = TournamentCoordinator.BuildSlalomCourse();
+                            spawnLatitude = WaypointCourses.CourseLocations[1].spawnPoint.x;
+                            spawnLongitude = WaypointCourses.CourseLocations[1].spawnPoint.y;
+                            course = WaypointCourses.CourseLocations[1].waypoints;
                             break;
                         case 3:
-                            spawnLatitude = TournamentCoordinator.coastalCircuitSpawnLatitude;
-                            spawnLongitude = TournamentCoordinator.coastalCircuitSpawnLongitude;
-                            course = TournamentCoordinator.BuildCoastalCircuit();
+                            spawnLatitude = WaypointCourses.CourseLocations[2].spawnPoint.x;
+                            spawnLongitude = WaypointCourses.CourseLocations[2].spawnPoint.y;
+                            course = WaypointCourses.CourseLocations[2].waypoints;
                             break;
                     }
+                    */
+                    spawnLatitude = WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].spawnPoint.x;
+                    spawnLongitude = WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].spawnPoint.y;
+                    course = WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].waypoints;
+
                     if (!BDArmorySettings.WAYPOINTS_ONE_AT_A_TIME)
                     {
                         TournamentCoordinator.Instance.Configure(new SpawnConfigStrategy(
