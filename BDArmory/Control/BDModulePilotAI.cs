@@ -1273,7 +1273,7 @@ namespace BDArmory.Control
             {
                 if (weaponManager.incomingMissileTime <= weaponManager.cmThreshold)
                 {
-                    threatRating = 0f; // Allow entering evasion code if we're under missile fire
+                    threatRating = -1f; // Allow entering evasion code if we're under missile fire
                     minimumEvasionTime = 0f; //  Trying to evade missile threats when they don't exist will result in NREs
                 }
                 else if (weaponManager.underFire && !ramming) // If we're ramming, ignore gunfire.
