@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
+using BDArmory.Core.Utils;
 using BDArmory.CounterMeasure;
 using BDArmory.Misc;
 using BDArmory.Parts;
@@ -346,7 +347,7 @@ namespace BDArmory.Modules
             delayedEnabling = true;
 
             Vector3d savedGTP = bodyRelativeGTP;
-            Debug.Log("[BDArmory.ModuleTargetingCamera]: saved gtp: " + Misc.Misc.FormattedGeoPos(savedGTP, true));
+            Debug.Log("[BDArmory.ModuleTargetingCamera]: saved gtp: " + Utils.FormattedGeoPos(savedGTP, true));
             Debug.Log("[BDArmory.ModuleTargetingCamera]: groundStabilized: " + groundStabilized);
 
             while (TargetingCamera.Instance == null)
@@ -782,7 +783,7 @@ namespace BDArmory.Modules
             //horizon indicator
             float horizY = imageRect.y + imageRect.height - indicatorSize - indicatorBorder;
             Vector3 hForward = Vector3.ProjectOnPlane(vesForward, upDirection);
-            float hAngle = -Misc.Misc.SignedAngle(hForward, vesForward, upDirection);
+            float hAngle = -Utils.SignedAngle(hForward, vesForward, upDirection);
             horizY -= (hAngle / 90) * (indicatorSize / 2);
             Rect horizonRect = new Rect(indicatorBorder + imageRect.x, horizY, indicatorSize, indicatorSize);
             GUI.DrawTexture(horizonRect, BDArmorySetup.Instance.horizonIndicatorTexture, ScaleMode.StretchToFill, true);
@@ -792,13 +793,13 @@ namespace BDArmory.Modules
             GUI.DrawTexture(rollRect, rollReferenceTexture, ScaleMode.StretchToFill, true);
             Vector3 localUp = vessel.ReferenceTransform.InverseTransformDirection(upDirection);
             localUp = Vector3.ProjectOnPlane(localUp, Vector3.up).normalized;
-            float rollAngle = -Misc.Misc.SignedAngle(-Vector3.forward, localUp, Vector3.right);
+            float rollAngle = -Utils.SignedAngle(-Vector3.forward, localUp, Vector3.right);
             GUIUtility.RotateAroundPivot(rollAngle, rollRect.center);
             GUI.DrawTexture(rollRect, rollIndicatorTexture, ScaleMode.StretchToFill, true);
             GUI.matrix = Matrix4x4.identity;
 
             //target direction indicator
-            float angleToTarget = Misc.Misc.SignedAngle(hForward, Vector3.ProjectOnPlane(targetPointPosition - transform.position, upDirection), Vector3.Cross(upDirection, hForward));
+            float angleToTarget = Utils.SignedAngle(hForward, Vector3.ProjectOnPlane(targetPointPosition - transform.position, upDirection), Vector3.Cross(upDirection, hForward));
             GUIUtility.RotateAroundPivot(angleToTarget, rollRect.center);
             GUI.DrawTexture(rollRect, BDArmorySetup.Instance.targetDirectionTexture, ScaleMode.StretchToFill, true);
             GUI.matrix = Matrix4x4.identity;
@@ -806,7 +807,7 @@ namespace BDArmory.Modules
             //resizing
             Rect resizeRect =
                 new Rect(BDArmorySetup.WindowRectTargetingCam.width - 18, BDArmorySetup.WindowRectTargetingCam.height - 18, 16, 16);
-            GUI.DrawTexture(resizeRect, Misc.Misc.resizeTexture, ScaleMode.StretchToFill, true);
+            GUI.DrawTexture(resizeRect, Utils.resizeTexture, ScaleMode.StretchToFill, true);
             if (Event.current.type == EventType.MouseDown && resizeRect.Contains(Event.current.mousePosition))
             {
                 ResizingWindow = true;
@@ -946,7 +947,7 @@ namespace BDArmory.Modules
                 //geo data
                 dataStyle.fontSize = (int)Mathf.Clamp(12 * BDArmorySettings.TARGET_WINDOW_SCALE, 8, 12);
                 Rect geoRect = new Rect(imageRect.x, (adjCamImageSize * 0.94f), adjCamImageSize, 14);
-                string geoLabel = Misc.Misc.FormattedGeoPos(bodyRelativeGTP, false);
+                string geoLabel = Utils.FormattedGeoPos(bodyRelativeGTP, false);
                 GUI.Label(geoRect, geoLabel, dataStyle);
 
                 //target data
@@ -1175,9 +1176,8 @@ namespace BDArmory.Modules
         IEnumerator SlewMouseCamRoutine(Vector3 direction)
         {
             radarLock = false;
-            //invert the x axis.  makes the mouse action more intutitve
-            direction.x = -direction.x;
-            //direction.y = -direction.y;
+            if (!BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_X) direction.x = -direction.x; // Invert the x-axis by default (original defaults).
+            if (BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_Y) direction.y = -direction.y;
             float velocity = Mathf.Abs(direction.x) > Mathf.Abs(direction.y) ? Mathf.Abs(direction.x) : Mathf.Abs(direction.y);
             Vector3 rotationAxis = Matrix4x4.TRS(Vector3.zero, Quaternion.LookRotation(cameraParentTransform.forward, vessel.upAxis), Vector3.one)
                 .MultiplyVector(Quaternion.AngleAxis(90, Vector3.forward) * direction);
@@ -1293,14 +1293,14 @@ namespace BDArmory.Modules
             debugSphere.transform.position = groundTargetPosition;
         }
 
-        void GroundStabilize()
+        public void GroundStabilize()
         {
             if (vessel.packed) return;
             StopResetting();
 
             RaycastHit rayHit;
             Ray ray = new Ray(cameraParentTransform.position + (50 * cameraParentTransform.forward), cameraParentTransform.forward);
-            bool raycasted = Physics.Raycast(ray, out rayHit, maxRayDistance - 50, 9076737);
+            bool raycasted = Physics.Raycast(ray, out rayHit, maxRayDistance - 50, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23));
             if (raycasted)
             {
                 if (FlightGlobals.getAltitudeAtPos(rayHit.point) < 0)
@@ -1376,7 +1376,7 @@ namespace BDArmory.Modules
 
             RaycastHit rayHit;
             Ray ray = new Ray(cameraParentTransform.position + (50 * cameraParentTransform.forward), cameraParentTransform.forward);
-            if (Physics.Raycast(ray, out rayHit, maxRayDistance - 50, 9076737))
+            if (Physics.Raycast(ray, out rayHit, maxRayDistance - 50, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23)))
             {
                 targetPointPosition = rayHit.point;
 
@@ -1389,7 +1389,7 @@ namespace BDArmory.Modules
                     {
                         KerbalEVA hitEVA = rayHit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
                         Part p = hitEVA ? hitEVA.part : rayHit.collider.GetComponentInParent<Part>();
-                        if (p && p.vessel && p.vessel.Landed)
+                        if (p && p.vessel)
                         {
                             groundTargetPosition = p.vessel.CoM;
                         }
@@ -1475,6 +1475,7 @@ namespace BDArmory.Modules
             radarLock = false;
             StopResetting();
             ClearTarget();
+            if (cameraParentTransform == null) yield break;
             while (!stopPTPR && Vector3.Angle(cameraParentTransform.transform.forward, position - (cameraParentTransform.transform.position)) > 0.1f)
             {
                 Vector3 newForward = Vector3.RotateTowards(cameraParentTransform.transform.forward, position - cameraParentTransform.transform.position, 90 * Mathf.Deg2Rad * Time.fixedDeltaTime, 0);
@@ -1510,7 +1511,7 @@ namespace BDArmory.Modules
 
         void ParseFovs()
         {
-            zoomFovs = Misc.Misc.ParseToFloatArray(zoomFOVs);
+            zoomFovs = Utils.ParseToFloatArray(zoomFOVs);
         }
 
         void OnDestroy()

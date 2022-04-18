@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using BDArmory.Core.Extension;
+using BDArmory.Core.Utils;
 using BDArmory.FX;
 using BDArmory.Misc;
 using UniLinq;
@@ -10,7 +11,7 @@ namespace BDArmory.Modules
 {
     public class ClusterBomb : PartModule
     {
-        List<GameObject> submunitions;
+        public List<GameObject> submunitions;
         List<GameObject> fairings;
         MissileLauncher missileLauncher;
 
@@ -177,6 +178,7 @@ namespace BDArmory.Modules
         float startTime;
 
         Rigidbody rb;
+        private int explosionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23);
 
         void Start()
         {
@@ -190,7 +192,7 @@ namespace BDArmory.Modules
         {
             ContactPoint contact = col.contacts[0];
             Vector3 pos = contact.point;
-            ExplosionFx.CreateExplosion(pos, blastForce, subExplModelPath, subExplSoundPath, ExplosionSourceType.Missile, 0, null, sourceVesselName);
+            ExplosionFx.CreateExplosion(pos, blastForce, subExplModelPath, subExplSoundPath, ExplosionSourceType.Missile, 0, null, sourceVesselName, null, default, -1, false, rb.mass * 1000);
         }
 
         void FixedUpdate()
@@ -215,7 +217,7 @@ namespace BDArmory.Modules
                 Ray ray = new Ray(prevPosition, currPosition - prevPosition);
                 RaycastHit hit;
 
-                if (Physics.Raycast(ray, out hit, dist, 9076737))
+                if (Physics.Raycast(ray, out hit, dist, explosionLayerMask))
                 {
                     Part hitPart = null;
                     try
@@ -248,7 +250,7 @@ namespace BDArmory.Modules
 
         void Detonate(Vector3 pos)
         {
-            ExplosionFx.CreateExplosion(pos, blastForce, subExplModelPath, subExplSoundPath, ExplosionSourceType.Missile, 0, null, sourceVesselName);
+            ExplosionFx.CreateExplosion(pos, blastForce, subExplModelPath, subExplSoundPath, ExplosionSourceType.Missile, 0, null, sourceVesselName, null, default, -1, false, rb.mass * 1000);
             Destroy(gameObject);
         }
 
@@ -281,6 +283,7 @@ namespace BDArmory.Modules
         float startTime;
 
         Rigidbody rb;
+        private int explosionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23);
 
         void Start()
         {
@@ -305,7 +308,7 @@ namespace BDArmory.Modules
                 float dist = (currPosition - prevPosition).magnitude;
                 Ray ray = new Ray(prevPosition, currPosition - prevPosition);
                 RaycastHit hit;
-                if (Physics.Raycast(ray, out hit, dist, 9076737))
+                if (Physics.Raycast(ray, out hit, dist, explosionLayerMask))
                 {
                     Destroy(gameObject);
                 }

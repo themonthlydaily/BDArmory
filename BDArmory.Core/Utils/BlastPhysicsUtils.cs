@@ -42,7 +42,7 @@ namespace BDArmory.Core.Utils
 
             double force = (maxforce + minforce) / 2f;
 
-            float acceleration = (float)(force / vesselMass);
+            float acceleration = vesselMass > 0 ? (float)(force / vesselMass) : 0; // If the vesselMass is 0, don't give infinite acceleration!
 
             // Calculation of damage
 

@@ -1,12 +1,15 @@
 ﻿using KSP.Localization;
-using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System;
 using UnityEngine;
-using BDArmory.Core.Utils;
+
+using BDArmory.Core;
 using BDArmory.FX;
+using BDArmory.Misc;
+using BDArmory.UI;
 
 namespace BDArmory.Modules
 {
@@ -14,7 +17,7 @@ namespace BDArmory.Modules
     {
         public float GetModuleMass(float baseMass, ModifierStagingSituation situation)
         {
-            return partmass;
+            return FBmass + ArmorMass + FISmass;
         }
         public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.FIXED;
 
@@ -25,8 +28,7 @@ namespace BDArmory.Modules
         public void ToggleTankOption()
         {
             SSTank = !SSTank;
-
-            if (SSTank == false)
+            if (!SSTank)
             {
                 Events["ToggleTankOption"].guiName = Localizer.Format("#LOC_BDArmory_SSTank_On");//"Enable self-sealing tank"
 
@@ -35,7 +37,7 @@ namespace BDArmory.Modules
                     {
                         if (resource.Current == null) continue;
                         resource.Current.maxAmount = Math.Floor(resource.Current.maxAmount * 1.11112);
-                        resource.Current.amount = resource.Current.maxAmount;
+                        resource.Current.amount = Math.Min(resource.Current.amount, resource.Current.maxAmount);
                     }
             }
             else
@@ -47,41 +49,267 @@ namespace BDArmory.Modules
                     {
                         if (resource.Current == null) continue;
                         resource.Current.maxAmount *= 0.9;
-                        resource.Current.amount = resource.Current.maxAmount;
+                        resource.Current.amount = Math.Min(resource.Current.amount, resource.Current.maxAmount);
                     }
             }
-            Misc.Misc.RefreshAssociatedWindows(part);
+            Utils.RefreshAssociatedWindows(part);
+            using (List<Part>.Enumerator pSym = part.symmetryCounterparts.GetEnumerator())
+                while (pSym.MoveNext())
+                {
+                    if (pSym.Current == null) continue;
+
+                    var tank = pSym.Current.FindModuleImplementing<ModuleSelfSealingTank>();
+                    if (tank == null) continue;
+
+                    tank.SSTank = SSTank;
+
+                    if (!SSTank)
+                    {
+                        tank.Events["ToggleTankOption"].guiName = Localizer.Format("#LOC_BDArmory_SSTank_On");//"Enable self-sealing tank"
+
+                        using (IEnumerator<PartResource> resource = pSym.Current.Resources.GetEnumerator())
+                            while (resource.MoveNext())
+                            {
+                                if (resource.Current == null) continue;
+                                resource.Current.maxAmount = Math.Floor(resource.Current.maxAmount * 1.11112);
+                                resource.Current.amount = Math.Min(resource.Current.amount, resource.Current.maxAmount);
+                            }
+                    }
+                    else
+                    {
+                        tank.Events["ToggleTankOption"].guiName = Localizer.Format("#LOC_BDArmory_SSTank_Off");//"Disable self-sealing tank"
+
+                        using (IEnumerator<PartResource> resource = pSym.Current.Resources.GetEnumerator())
+                            while (resource.MoveNext())
+                            {
+                                if (resource.Current == null) continue;
+                                resource.Current.maxAmount *= 0.9;
+                                resource.Current.amount = Math.Min(resource.Current.amount, resource.Current.maxAmount);
+                            }
+                    }
+                    Utils.RefreshAssociatedWindows(pSym.Current);
+                }
         }
 
-        [KSPField(advancedTweakable = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_AddedMass")]//CASE mass
+        [KSPField(isPersistant = true)]
+        public bool InertTank = false;
+
+        [KSPEvent(advancedTweakable = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FIS", active = true)]//Self-Sealing Tank
+        public void ToggleInertOption()
+        {
+            InertTank = !InertTank;
+            if (!InertTank)
+            {
+                Events["ToggleInertOption"].guiName = Localizer.Format("#LOC_BDArmory_FIS_On");//"Enable self-sealing tank"
+                FISmass = 0;
+                Fields["FireBottles"].guiActiveEditor = true;
+                Fields["FBRemaining"].guiActive = true;
+            }
+            else
+            {
+                Events["ToggleInertOption"].guiName = Localizer.Format("#LOC_BDArmory_FIS_Off");//"Disable self-sealing tank"
+                FISmass = 0.15f;
+                FireBottles = 0;
+                FBSetup(null, null);
+                Fields["FireBottles"].guiActiveEditor = false;
+                Fields["FBRemaining"].guiActive = false;
+            }
+            partmass = (FISmass + ArmorMass + FBmass);
+            Utils.RefreshAssociatedWindows(part);
+            using (List<Part>.Enumerator pSym = part.symmetryCounterparts.GetEnumerator())
+                while (pSym.MoveNext())
+                {
+                    if (pSym.Current == null) continue;
+
+                    var tank = pSym.Current.FindModuleImplementing<ModuleSelfSealingTank>();
+                    if (tank == null) continue;
+
+                    tank.InertTank = InertTank;
+
+                    if (!InertTank)
+                    {
+                        tank.Events["ToggleInertOption"].guiName = Localizer.Format("#LOC_BDArmory_FIS_On");//"Add Fuel Inerting System"
+                        tank.FISmass = 0;
+                        tank.Fields["FireBottles"].guiActiveEditor = true;
+                        tank.Fields["FBRemaining"].guiActive = true;
+                    }
+                    else
+                    {
+                        tank.Events["ToggleInertOption"].guiName = Localizer.Format("#LOC_BDArmory_FIS_Off");//"Remove Fuel Inerting System"
+                        tank.FISmass = 0.15f;
+                        tank.Fields["FireBottles"].guiActiveEditor = false;
+                        tank.Fields["FBRemaining"].guiActive = false;
+                    }
+                    tank.partmass = (tank.FISmass + tank.ArmorMass + tank.FBmass);
+                    Utils.RefreshAssociatedWindows(pSym.Current);
+                }
+            if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch != null)
+                GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+        }
+
+        [KSPField(isPersistant = true)]
+        public bool armoredCockpit = false;
+
+        [KSPEvent(advancedTweakable = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_Armorcockpit_On", active = true)]//Self-Sealing Tank
+        public void TogglecockpitArmor()
+        {
+            armoredCockpit = !armoredCockpit;
+            if (!armoredCockpit)
+            {
+                Events["TogglecockpitArmor"].guiName = Localizer.Format("#LOC_BDArmory_Armorcockpit_On");//"Add Armored Cockpit"
+                ArmorMass = 0;
+            }
+            else
+            {
+                Events["TogglecockpitArmor"].guiName = Localizer.Format("#LOC_BDArmory_Armorcockpit_Off");//"Remove Armored Cockpit"
+                ArmorMass = 0.2f * part.CrewCapacity;
+            }
+            partmass = (FISmass + ArmorMass + FBmass);
+            Utils.RefreshAssociatedWindows(part);
+            using (List<Part>.Enumerator pSym = part.symmetryCounterparts.GetEnumerator())
+                while (pSym.MoveNext())
+                {
+                    if (pSym.Current == null) continue;
+
+                    var tank = pSym.Current.FindModuleImplementing<ModuleSelfSealingTank>();
+                    if (tank == null) continue;
+
+                    tank.armoredCockpit = armoredCockpit;
+
+                    if (!armoredCockpit)
+                    {
+                        tank.Events["TogglecockpitArmor"].guiName = Localizer.Format("#LOC_BDArmory_Armorcockpit_On");//"Enable self-sealing tank"
+                        tank.ArmorMass = 0;
+                    }
+                    else
+                    {
+                        tank.Events["TogglecockpitArmor"].guiName = Localizer.Format("#LOC_BDArmory_Armorcockpit_Off");//"Disable self-sealing tank"
+                        tank.ArmorMass = 0.2f * part.CrewCapacity;
+                    }
+                    tank.partmass = (tank.FISmass + tank.ArmorMass + tank.FBmass);
+                    Utils.RefreshAssociatedWindows(pSym.Current);
+                }
+            if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch != null)
+                GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+        }
+
+
+        [KSPField(advancedTweakable = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_AddedMass")]//safety systems mass
         public float partmass = 0f;
 
         private float FBmass = 0f;
-        private float origMass = 0f;
+        private float ArmorMass = 0f;
+        private float FISmass = 0f;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FireBottles"),//Fire Bottles
-
         UI_FloatRange(minValue = 0, maxValue = 5, stepIncrement = 1, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
         public float FireBottles = 0;
 
-        [KSPField(advancedTweakable = true, isPersistant = true, guiActive = true, guiName = "#LOC_BDArmory_FB_Remaining", guiActiveEditor = false), UI_Label(scene = UI_Scene.All)]
+        [KSPField(advancedTweakable = true, isPersistant = true, guiActive = true, guiName = "#LOC_BDArmory_FB_Remaining", guiActiveEditor = false), UI_Label(scene = UI_Scene.Flight)]
         public float FBRemaining;
 
+        Coroutine firebottleRoutine;
+
+        PartResource fuel;
+        PartResource solid;
+        public bool isOnFire = false;
+        bool procWing = false;
+
+        public bool externallyCalled = false;
+        ModuleEngines engine;
+        ModuleCommand cockpit;
+        private float enginerestartTime = -1;
         public void Start()
         {
+            if (part.name.Contains("B9.Aero.Wing.Procedural")) //could add other proc parts here for similar support
+            {
+                procWing = true;
+            }
             if (HighLogic.LoadedSceneIsEditor)
             {
                 UI_FloatRange FBEditor = (UI_FloatRange)Fields["FireBottles"].uiControlEditor;
                 FBEditor.onFieldChanged = FBSetup;
-                origMass = part.mass;
-                FBSetup(null, null);
             }
-            var engine = part.FindModuleImplementing<ModuleEngines>();
-            if (engine != null)
+            cockpit = part.FindModuleImplementing<ModuleCommand>();
+            if (cockpit != null)
             {
-                Events["ToggleTankOption"].guiActiveEditor = false;
+                if (cockpit.minimumCrew >= 1)
+                {
+                    Events["TogglecockpitArmor"].guiActiveEditor = true;
+                    Events["ToggleTankOption"].guiActiveEditor = false;
+                    Events["ToggleInertOption"].guiActiveEditor = false;
+                    Fields["FireBottles"].guiActiveEditor = false;
+                    Fields["FBRemaining"].guiActive = false;
+                    FireBottles = 0;
+                }
+                else part.RemoveModule(this); //don't assign to drone cores
             }
+            else
+            {
+                fuel = part.Resources.Where(pr => pr.resourceName == "LiquidFuel").FirstOrDefault();
+                solid = part.Resources.Where(pr => pr.resourceName == "SolidFuel").FirstOrDefault();
+
+                engine = part.FindModuleImplementing<ModuleEngines>();
+                if (engine != null)
+                {
+                    Events["ToggleTankOption"].guiActiveEditor = false;
+                    Events["ToggleInertOption"].guiActiveEditor = false;
+                    if (solid != null && engine.throttleLocked && !engine.allowShutdown) //SRB?
+                    {
+                        if (fuel == null || (fuel != null && solid.maxAmount > fuel.maxAmount))
+                        {
+                            part.RemoveModule(this); //don't add firebottles to SRBs, but allow for the S1.5.5 MH soyuz tank with integrated seperatrons
+                        }
+                        else
+                        {
+                            Events["ToggleTankOption"].guiActiveEditor = true; //tank with integrated seperatrons?
+                            Events["ToggleInertOption"].guiActiveEditor = true;
+                            InertTank = false;
+                        }
+                    }
+                }
+                else if (fuel == null && solid == null)
+                {
+                    Events["ToggleTankOption"].guiActiveEditor = false;
+                    Events["ToggleInertOption"].guiActiveEditor = false;
+                    Fields["FireBottles"].guiActiveEditor = false;
+                    Fields["FBRemaining"].guiActive = false;
+                    Fields["partmass"].guiActiveEditor = false;
+                    FireBottles = 0;
+                }
+            }
+            if (!SSTank)
+            {
+                Events["ToggleTankOption"].guiName = Localizer.Format("#LOC_BDArmory_SSTank_On");//"Enable self-sealing tank"
+            }
+            else
+            {
+                Events["ToggleTankOption"].guiName = Localizer.Format("#LOC_BDArmory_SSTank_Off");//"Disable self-sealing tank"
+            }
+            if (!InertTank)
+            {
+                Events["ToggleInertOption"].guiName = Localizer.Format("#LOC_BDArmory_FIS_On");//"Enable self-sealing tank"
+                FISmass = 0;
+            }
+            else
+            {
+                Events["ToggleInertOption"].guiName = Localizer.Format("#LOC_BDArmory_FIS_Off");//"Disable self-sealing tank"
+                FISmass = 0.15f;
+                Fields["FireBottles"].guiActiveEditor = false;
+                Fields["FBRemaining"].guiActive = false;
+            }
+            Utils.RefreshAssociatedWindows(part);
+            partmass = (FISmass + ArmorMass + FBmass);
+            if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch != null)
+                GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+            if (HighLogic.LoadedSceneIsFlight)
+            {
+                if (cockpit == null && engine == null && fuel == null) part.RemoveModule(this); //PWing with no tank
+            }
+            FBSetup(null, null);
+            //Debug.Log("[SelfSealingTank] SST: " + SSTank + "; Inerting: " + InertTank + "; armored cockpit: " + armoredCockpit);
         }
+        /*
         public override void OnLoad(ConfigNode node)
         {
             base.OnLoad(node);
@@ -98,13 +326,13 @@ namespace BDArmory.Modules
                 {
                     if (part.vessel != null)
                     {
+                        FBSetup(null, null);
                         var SSTString = ConfigNodeUtils.FindPartModuleConfigNodeValue(part.partInfo.partConfig, "ModuleSelfSealingTank", "SSTank");
                         if (!string.IsNullOrEmpty(SSTString))
                         {
                             try
                             {
                                 SSTank = bool.Parse(SSTString);
-                                FBSetup(null, null);
                             }
                             catch (Exception e)
                             {
@@ -115,6 +343,46 @@ namespace BDArmory.Modules
                         {
                             SSTank = false;
                         }
+                        var InertString = ConfigNodeUtils.FindPartModuleConfigNodeValue(part.partInfo.partConfig, "ModuleSelfSealingTank", "InertTank");
+                        if (!string.IsNullOrEmpty(InertString))
+                        {
+                            try
+                            {
+                                InertTank = bool.Parse(InertString);
+                                FISmass = InertTank ? 0.15f : 0;
+                                //partmass += FISmass;
+                            }
+                            catch (Exception e)
+                            {
+                                Debug.LogError("[BDArmory.ModuleSelfSealingTank]: Exception parsing InertTank: " + e.Message);
+                            }
+                        }
+                        else
+                        {
+                            InertTank = false;
+                            FISmass = 0;
+                        }
+                        var cockpitString = ConfigNodeUtils.FindPartModuleConfigNodeValue(part.partInfo.partConfig, "ModuleSelfSealingTank", "armoredCockpit");
+                        if (!string.IsNullOrEmpty(cockpitString))
+                        {
+                            try
+                            {
+                                armoredCockpit = bool.Parse(InertString);
+                                ArmorMass = armoredCockpit ? 0.2f : 0;
+                                //partmass += ArmorMass;
+                            }
+                            catch (Exception e)
+                            {
+                                Debug.LogError("[BDArmory.ModuleSelfSealingTank]: Exception parsing armoredCockpit: " + e.Message);
+                            }
+                        }
+                        else
+                        {
+                            armoredCockpit = false;
+                            ArmorMass = 0;
+                        }
+                        if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch != null)
+                            GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
                     }
                     else
                     {
@@ -123,14 +391,34 @@ namespace BDArmory.Modules
                 }
             }
         }
+        */
         void FBSetup(BaseField field, object obj)
         {
+            if (externallyCalled) return;
+
             FBmass = (0.01f * FireBottles);
             FBRemaining = FireBottles;
-            partmass = FBmass;
-            //part.mass = partmass;
-            Misc.Misc.RefreshAssociatedWindows(part);
+            partmass = FBmass + FISmass + ArmorMass;
+            //part.transform.localScale = (Vector3.one * (origScale + (CASELevel/10)));
+            //Debug.Log("[BDArmory.ModuleCASE] part.mass = " + part.mass + "; CASElevel = " + CASELevel + "; CASEMass = " + CASEmass + "; Scale = " + part.transform.localScale);
+
+            using (List<Part>.Enumerator pSym = part.symmetryCounterparts.GetEnumerator())
+                while (pSym.MoveNext())
+                {
+                    if (pSym.Current == null) continue;
+
+                    var tank = pSym.Current.FindModuleImplementing<ModuleSelfSealingTank>();
+                    if (tank == null) continue;
+                    tank.externallyCalled = true;
+                    tank.FBmass = FBmass;
+                    tank.FBRemaining = FBRemaining;
+                    tank.partmass = partmass + FISmass + ArmorMass;
+                    tank.externallyCalled = false;
+                    Utils.RefreshAssociatedWindows(pSym.Current);
+                }
+            Utils.RefreshAssociatedWindows(part);
         }
+
         public override string GetInfo()
         {
             StringBuilder output = new StringBuilder();
@@ -146,14 +434,125 @@ namespace BDArmory.Modules
 
             return output.ToString();
         }
+        public void Extinguishtank()
+        {
+            isOnFire = true;
+            if (FireBottles > 0 || InertTank) //shouldn't be catching fire in the first place if interted, but just in case
+            {
+                //if (engine != null && engine.EngineIgnited && engine.allowRestart)
+                //{
+                //    engine.Shutdown();
+                //    enginerestartTime = Time.time;
+                //}
+                if (firebottleRoutine == null)
+                {
+                    if (InertTank)
+                    {
+                        firebottleRoutine = StartCoroutine(ExtinguishRoutine(0, false));
+                    }
+                    else
+                    {
+                        firebottleRoutine = StartCoroutine(ExtinguishRoutine(4, true));
+                    }
+                    //Debug.Log("[SelfSealingTank] Fire detected; beginning ExtinguishRoutine. Firebottles remaining: " + FireBottles);
+                }
+            }
+            else
+            {
+                if (engine != null && engine.EngineIgnited && engine.allowRestart)
+                {
+                    if (part.vessel.verticalSpeed < 30) //not diving/trying to climb. With the vessel registry, could also grab AI state to add a !evading check
+                    {
+                        engine.Shutdown();
+                        enginerestartTime = Time.time + 10;
+                        if (firebottleRoutine == null)
+                        {
+                            firebottleRoutine = StartCoroutine(ExtinguishRoutine(10, false));
+                            //Debug.Log("[SelfSealingTank] Fire detected; beginning ExtinguishRoutine. Toggling Engine");
+                        }
+                    }
+                    //though if it is diving, then there isn't a second call to cycle engines. Add an Ienumerator to check once every couple sec?
+                }
+            }
+        }
+        IEnumerator ExtinguishRoutine(float time, bool useBottle)
+        {
+            //Debug.Log("[SelfSealingTank] ExtinguishRoutine started. Time left: " + time);
+            yield return new WaitForSeconds(time);
+            //Debug.Log("[SelfSealingTank] Timer finished. Extinguishing");
+            foreach (var existingFire in part.GetComponentsInChildren<FireFX>())
+            {
+                if (!existingFire.surfaceFire) existingFire.burnTime = 0.05f; //kill all fires
+            }
+            if (useBottle)
+            {
+                FireBottles--;
+                FBRemaining = FireBottles;
+                Utils.RefreshAssociatedWindows(part);
+                //Debug.Log("[SelfSealingTank] Consuming firebottle. FB remaining: " + FireBottles);
+                isOnFire = false;
+            }
+            ResetCoroutine();
+        }
+        private void ResetCoroutine()
+        {
+            if (firebottleRoutine != null)
+            {
+                StopCoroutine(firebottleRoutine);
+                firebottleRoutine = null;
+            }
+        }
+        private float updateTimer = 0;
         void Update()
         {
-            if(HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && !vessel.packed)
+            if (HighLogic.LoadedSceneIsEditor)
             {
-                if (this.part.temperature > 493) //autoignition temp of kerosene is 220 c
+                if (procWing)
                 {
-                    var isOnFire = part.GetComponentInChildren<FireFX>();
-                    if (isOnFire == null)
+                    updateTimer -= Time.fixedDeltaTime;
+                    if (updateTimer < 0)
+                    {
+                        fuel = part.Resources.Where(pr => pr.resourceName == "LiquidFuel").FirstOrDefault();
+                        if (fuel != null)
+                        {
+                            Events["ToggleTankOption"].guiActiveEditor = true;
+                            Events["ToggleInertOption"].guiActiveEditor = true;
+                            if (!InertTank)
+                            {
+                                Fields["FireBottles"].guiActiveEditor = true;
+                                Fields["FBRemaining"].guiActive = true;
+                            }
+                            else
+                            {
+                                Fields["FireBottles"].guiActiveEditor = false;
+                                Fields["FBRemaining"].guiActive = false;
+                            }
+                            Fields["partmass"].guiActiveEditor = true;
+                        }
+                        else
+                        {
+                            Events["ToggleTankOption"].guiActiveEditor = false;
+                            Events["ToggleInertOption"].guiActiveEditor = false;
+                            Fields["FireBottles"].guiActiveEditor = false;
+                            Fields["FBRemaining"].guiActive = false;
+                            Fields["partmass"].guiActiveEditor = false;
+                            InertTank = false;
+                            FireBottles = 0;
+                        }
+                        updateTimer = 0.5f; //doing it this way since PAw buttons don't seem to trigger onShipModified
+                    }
+                }
+            }
+            if (!HighLogic.LoadedSceneIsFlight || !FlightGlobals.ready || BDArmorySetup.GameIsPaused) return; // Not in flight scene, not ready or paused.
+            if (vessel == null || vessel.packed || part == null) return; // Vessel or part is dead or packed.
+            if (!BDArmorySettings.BD_FIRES_ENABLED || !BDArmorySettings.BD_FIRE_HEATDMG) return; // Disabled.
+
+            if (BDArmorySettings.BD_FIRES_ENABLED && BDArmorySettings.BD_FIRE_HEATDMG)
+            {
+                if (InertTank) return;
+                if (!isOnFire)
+                {
+                    if ((fuel != null && fuel.amount > 0) && part.temperature > 493) //autoignition temp of kerosene is 220 c
                     {
                         string fireStarter;
                         var vesselFire = part.vessel.GetComponentInChildren<FireFX>();
@@ -165,14 +564,18 @@ namespace BDArmory.Modules
                         {
                             fireStarter = part.vessel.GetName();
                         }
-                        Vector3 firePosition = part.transform.up * 10;
-                        Ray LoSRay = new Ray(transform.position, (transform.position + firePosition) - transform.position);
-                        RaycastHit hit;
-                        if (Physics.Raycast(LoSRay, out hit, 10, 9076737)) // only add fires to parts in LoS of blast
-                        {
-                            BulletHitFX.AttachFire(hit, part, 50, fireStarter);
-                        }
-                        Debug.Log("[SelfSealingTank] Fuel auto-ignition! " + part.name + " is on fire!");
+                        BulletHitFX.AttachFire(transform.position, part, 50, fireStarter);
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[SelfSealingTank] Fuel auto-ignition! " + part.name + " is on fire! Fuel quantity: " + fuel.amount + "; temperature: " + part.temperature);
+                        Extinguishtank();
+                        isOnFire = true;
+                    }
+                }
+                if (engine != null)
+                {
+                    if (enginerestartTime > 0 && (Time.time > enginerestartTime))
+                    {
+                        enginerestartTime = -1;
+                        engine.Activate();
                     }
                 }
             }

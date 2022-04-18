@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
+using BDArmory.Core.Utils;
 using BDArmory.CounterMeasure;
 using BDArmory.Control;
 using BDArmory.FX;
@@ -109,6 +110,49 @@ namespace BDArmory.Modules
             UI_Toggle(disabledText = "#LOC_BDArmory_false", enabledText = "#LOC_BDArmory_true", affectSymCounterparts = UI_Scene.All)]//False--True
         public bool inCargoBay = false;
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_InCustomCargoBay"), // In custom/modded "cargo bay"
+            UI_ChooseOption(
+            options = new String[] {
+                "0",
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9",
+                "10",
+                "11",
+                "12",
+                "13",
+                "14",
+                "15",
+                "16"
+            },
+            display = new String[] {
+                "Disabled",
+                "AG1",
+                "AG2",
+                "AG3",
+                "AG4",
+                "AG5",
+                "AG6",
+                "AG7",
+                "AG8",
+                "AG9",
+                "AG10",
+                "Lights",
+                "RCS",
+                "SAS",
+                "Brakes",
+                "Abort",
+                "Gear"
+            }
+        )]
+        public string customBayGroup = "0";
+
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_DetonationTime"),//Detonation Time
             UI_FloatRange(minValue = 2f, maxValue = 30f, stepIncrement = 0.5f, scene = UI_Scene.Editor)]
         public float detonationTime = 2;
@@ -132,7 +176,7 @@ namespace BDArmory.Modules
         public float BallisticAngle = 45.0f;
 
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CruiseAltitude"), UI_FloatRange(minValue = 1f, maxValue = 500f, stepIncrement = 10f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Cruise Altitude
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CruiseAltitude"), UI_FloatRange(minValue = 5f, maxValue = 500f, stepIncrement = 5f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Cruise Altitude
         public float CruiseAltitude = 500;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CruiseSpeed"), UI_FloatRange(minValue = 100f, maxValue = 6000f, stepIncrement = 50f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Cruise speed
@@ -185,6 +229,10 @@ namespace BDArmory.Modules
         public Vessel SourceVessel { get; set; } = null;
 
         public bool HasExploded { get; set; } = false;
+
+        public int clusterbomb { get; set; } = 1;
+
+        public bool EMP { get; set; } = false;
 
         protected IGuidance _guidance;
 
@@ -322,11 +370,12 @@ namespace BDArmory.Modules
             var explosive = p.FindModuleImplementing<BDExplosivePart>();
             if (explosive != null)
             {
-                p.FindModuleImplementing<BDExplosivePart>().Armed = true;
-                if (GuidanceMode == GuidanceModes.AGM || GuidanceMode == GuidanceModes.AGMBallistic)
-                {
-                    p.FindModuleImplementing<BDExplosivePart>().Shaped = true;
-                }
+                explosive.Armed = true;
+                explosive.detonateAtMinimumDistance = DetonateAtMinimumDistance;
+                //if (GuidanceMode == GuidanceModes.AGM || GuidanceMode == GuidanceModes.AGMBallistic)
+                //{
+                //    explosive.Shaped = true; //Now configed in the part's BDExplosivePart Module Node
+                //}
             }
         }
 
@@ -356,7 +405,7 @@ namespace BDArmory.Modules
         public Vector3 assignedGPSCoords;
 
         [KSPField(isPersistant = true, guiName = "#LOC_BDArmory_GPSTarget")]//GPS Target
-        public string gpsTargetName = "";
+        public string gpsTargetName = "Unknown"; // Can't have an empty name as it breaks KSP's flightstate autosave.
 
 
 
@@ -571,7 +620,12 @@ namespace BDArmory.Modules
                         {
                             TargetAcquired = true;
                             radarTarget = t;
-                            TargetPosition = radarTarget.predictedPositionWithChaffFactor;
+                            if (weaponClass == WeaponClasses.SLW)
+                            {
+                                TargetPosition = radarTarget.predictedPosition;
+                            }
+                            else
+                                TargetPosition = radarTarget.predictedPositionWithChaffFactor;
                             TargetVelocity = radarTarget.velocity;
                             TargetAcceleration = radarTarget.acceleration;
                             _radarFailTimer = 0;
@@ -595,7 +649,12 @@ namespace BDArmory.Modules
                                 _radarFailTimer += Time.fixedDeltaTime;
                                 radarTarget.timeAcquired = Time.time;
                                 radarTarget.position = radarTarget.predictedPosition;
-                                TargetPosition = radarTarget.predictedPositionWithChaffFactor;
+                                if (weaponClass == WeaponClasses.SLW)
+                                {
+                                    TargetPosition = radarTarget.predictedPosition;
+                                }
+                                else
+                                    TargetPosition = radarTarget.predictedPositionWithChaffFactor;
                                 TargetVelocity = radarTarget.velocity;
                                 TargetAcceleration = Vector3.zero;
                                 TargetAcquired = true;
@@ -660,7 +719,13 @@ namespace BDArmory.Modules
                                         radarTarget = scannedTargets[i];
                                         TargetAcquired = true;
                                         radarLOALSearching = false;
-                                        TargetPosition = radarTarget.predictedPositionWithChaffFactor + (radarTarget.velocity * Time.fixedDeltaTime);
+                                        if (weaponClass == WeaponClasses.SLW)
+                                        {
+                                            TargetPosition = radarTarget.predictedPosition + (radarTarget.velocity * Time.fixedDeltaTime);
+                                        }
+                                        else
+                                            TargetPosition = radarTarget.predictedPositionWithChaffFactor + (radarTarget.velocity * Time.fixedDeltaTime);
+
                                         TargetVelocity = radarTarget.velocity;
                                         TargetAcceleration = radarTarget.acceleration;
                                         _radarFailTimer = 0;
@@ -696,7 +761,13 @@ namespace BDArmory.Modules
                         {
                             radarLOALSearching = true;
                             TargetAcquired = true;
-                            TargetPosition = radarTarget.predictedPositionWithChaffFactor + (radarTarget.velocity * Time.fixedDeltaTime);
+                            if (weaponClass == WeaponClasses.SLW)
+                            {
+                                TargetPosition = radarTarget.predictedPosition + (radarTarget.velocity * Time.fixedDeltaTime);
+                            }
+                            else
+                                TargetPosition = radarTarget.predictedPositionWithChaffFactor + (radarTarget.velocity * Time.fixedDeltaTime);
+
                             TargetVelocity = radarTarget.velocity;
                             TargetAcceleration = Vector3.zero;
                             ActiveRadar = false;
@@ -766,7 +837,12 @@ namespace BDArmory.Modules
                     radarTarget = lockedTarget;
                     TargetAcquired = true;
                     radarLOALSearching = false;
-                    TargetPosition = radarTarget.predictedPositionWithChaffFactor + (radarTarget.velocity * Time.fixedDeltaTime);
+                    if (weaponClass == WeaponClasses.SLW)
+                    {
+                        TargetPosition = radarTarget.predictedPosition + (radarTarget.velocity * Time.fixedDeltaTime);
+                    }
+                    else
+                        TargetPosition = radarTarget.predictedPositionWithChaffFactor + (radarTarget.velocity * Time.fixedDeltaTime);
                     TargetVelocity = radarTarget.velocity;
                     TargetAcceleration = radarTarget.acceleration;
 
@@ -937,7 +1013,7 @@ namespace BDArmory.Modules
             {
                 case DetonationDistanceStates.NotSafe:
                     //Lets check if we are at a safe distance from the source vessel
-                    using (var hitsEnu = Physics.OverlapSphere(futureMissilePosition, GetBlastRadius() * 3f, 557057).AsEnumerable().GetEnumerator())
+                    using (var hitsEnu = Physics.OverlapSphere(futureMissilePosition, GetBlastRadius() * 3f, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19)).AsEnumerable().GetEnumerator())
                     {
                         while (hitsEnu.MoveNext())
                         {
@@ -995,7 +1071,7 @@ namespace BDArmory.Modules
 
                             Ray rayFuturePosition = new Ray(vessel.CoM, futureMissilePosition);
 
-                            var hitsFuture = Physics.RaycastAll(rayFuturePosition, (float)missileDistancePerFrame.magnitude, 557057).AsEnumerable();
+                            var hitsFuture = Physics.RaycastAll(rayFuturePosition, (float)missileDistancePerFrame.magnitude, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19)).AsEnumerable();
 
                             using (var hitsEnu = hitsFuture.GetEnumerator())
                             {
@@ -1032,7 +1108,7 @@ namespace BDArmory.Modules
                     else
                     {
                         float optimalDistance = (float)(Math.Max(DetonationDistance, relativeSpeed));
-                        using (var hitsEnu = Physics.OverlapSphere(vessel.CoM, optimalDistance, 557057).AsEnumerable().GetEnumerator())
+                        using (var hitsEnu = Physics.OverlapSphere(vessel.CoM, optimalDistance, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19)).AsEnumerable().GetEnumerator())
                         {
                             while (hitsEnu.MoveNext())
                             {
@@ -1122,10 +1198,10 @@ namespace BDArmory.Modules
             {
                 Events["CruiseAltitudeRange"].guiName = "Change to High Altitude Range";
 
-                UI_FloatRange cruiseAltitudField = (UI_FloatRange)Fields["CruiseAltitude"].uiControlEditor;
-                cruiseAltitudField.maxValue = 500f;
-                cruiseAltitudField.minValue = 1f;
-                cruiseAltitudField.stepIncrement = 5f;
+                UI_FloatRange cruiseAltitudeField = (UI_FloatRange)Fields["CruiseAltitude"].uiControlEditor;
+                cruiseAltitudeField.maxValue = 500f;
+                cruiseAltitudeField.minValue = 5f;
+                cruiseAltitudeField.stepIncrement = 5f;
             }
             else
             {

@@ -23,10 +23,25 @@
             return result;
         }
     }
+
+    // LayerMasks for raycasts. Use as (int)(Parts|EVA|Scenery).
+    public enum LayerMasks
+    {
+        Parts = 1 << 0,
+        Scenery = 1 << 15,
+        EVA = 1 << 17,
+        Unknown19 = 1 << 19, // Why are some raycasts using this layer?
+        RootPart = 1 << 21,
+        Unknown23 = 1 << 23 // Why are some raycasts using this layer?
+    }; // Scenery includes terrain and buildings.
+    // Commonly used values:
+    // 163840 = (1 << 15) | (1 << 17)
+    // 557057 = (1 << 0) | (1 << 15) | (1 << 19) = Parts|Scenery|???
+    // 9076737 = (1 << 0) | (1 << 15) | (1 << 17) | (1 << 19) | (1 << 23) = Parts|Scenery|EVA|???|???
 }
 
 /*
-Layer masks:
+Layer mask names (doesn't actually seem to be correct when testing raycasts):
    0: Default
    1: TransparentFX
    2: Ignore Raycast

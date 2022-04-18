@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using System.Linq;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
+using BDArmory.Core.Utils;
 using BDArmory.CounterMeasure;
 using BDArmory.Misc;
 using BDArmory.Modules;
@@ -125,12 +125,13 @@ namespace BDArmory.Radar
         /// Force radar signature update
         /// Optionally, pass in a list of the vessels to update, otherwise all vessels in BDATargetManager.LoadedVessels get updated.
         /// 
-        /// FIXME this appears to cause a rather large amount of memory to leak.
+        /// This appears to cause a rather large amount of memory to be consumed (not actually a leak though).
         /// </summary>
         public static void ForceUpdateRadarCrossSections(List<Vessel> vessels = null)
         {
             foreach (var vessel in (vessels == null ? BDATargetManager.LoadedVessels : vessels))
             {
+                if (vessel == null) continue;
                 GetVesselRadarCrossSection(vessel, true);
             }
         }
@@ -183,7 +184,7 @@ namespace BDArmory.Radar
             if (force || ti.radarBaseSignature == -1 || ti.radarBaseSignatureNeedsUpdate)
             {
                 // is it just some debris? then dont bother doing a real rcs rendering and just fake it with the parts mass
-                if (VesselModuleRegistry.ignoredVesselTypes.Contains(v.vesselType) && !v.IsControllable)
+                if (VesselModuleRegistry.ignoredVesselTypes.Contains(v.vesselType) || !v.IsControllable)
                 {
                     ti.radarBaseSignature = v.GetTotalMass();
                 }
@@ -1153,7 +1154,6 @@ namespace BDArmory.Radar
                 // blocked by terrain?
                 if (TerrainCheck(ray.origin, lockedVessel.transform.position))
                 {
-                    radar.UnlockTargetAt(lockIndex, true);
                     return false;
                 }
 
@@ -1179,7 +1179,6 @@ namespace BDArmory.Radar
                     else
                     {
                         // cannot track, so unlock it
-                        radar.UnlockTargetAt(lockIndex, true);
                         return false;
                     }
                 }
@@ -1193,10 +1192,8 @@ namespace BDArmory.Radar
             else
             {
                 // nothing tracked/locked at this index
-                radar.UnlockTargetAt(lockIndex, true);
+                return false;
             }
-
-            return false;
         }
 
         /// <summary>
@@ -1211,10 +1208,10 @@ namespace BDArmory.Radar
                 foundMissile = false,
                 foundHeatMissile = false,
                 foundRadarMissile = false,
+                foundAntiRadiationMissile = false,
                 foundAGM = false,
                 firingAtMe = false,
                 missDistance = float.MaxValue,
-                missileThreatDistance = float.MaxValue,
                 threatVessel = null,
                 threatWeaponManager = null,
                 incomingMissiles = new List<IncomingMissile>()
@@ -1229,6 +1226,8 @@ namespace BDArmory.Radar
             Vector3 forwardVector = referenceTransform.forward;
             Vector3 upVector = referenceTransform.up;
             Vector3 lookDirection = -forwardVector;
+            var pilotAI = VesselModuleRegistry.GetBDModulePilotAI(myWpnManager.vessel, true);
+            var ignoreMyTargetTargetingMe = pilotAI != null && pilotAI.evasionIgnoreMyTargetTargetingMe;
 
             using (var loadedvessels = BDATargetManager.LoadedVessels.GetEnumerator())
                 while (loadedvessels.MoveNext())
@@ -1265,6 +1264,7 @@ namespace BDArmory.Radar
                                         {
                                             guidanceType = missileBase.TargetingMode,
                                             distance = Vector3.Distance(missileBase.part.transform.position, myWpnManager.part.transform.position),
+                                            time = AIUtils.ClosestTimeToCPA(missileBase.vessel, myWpnManager.vessel, 16f),
                                             position = missileBase.transform.position,
                                             vessel = missileBase.vessel,
                                             weaponManager = missileBase.SourceVessel != null ? VesselModuleRegistry.GetModule<MissileFire>(missileBase.SourceVessel) : null,
@@ -1279,6 +1279,9 @@ namespace BDArmory.Radar
                                                 break;
                                             case MissileBase.TargetingModes.Laser:
                                                 results.foundAGM = true;
+                                                break;
+                                            case MissileBase.TargetingModes.AntiRad:
+                                                results.foundAntiRadiationMissile = true;
                                                 break;
                                         }
                                     }
@@ -1295,6 +1298,7 @@ namespace BDArmory.Radar
                                     while (weapon.MoveNext())
                                     {
                                         if (weapon.Current == null || weapon.Current.weaponManager == null) continue;
+                                        if (ignoreMyTargetTargetingMe && myWpnManager.currentTarget != null && weapon.Current.weaponManager.vessel == myWpnManager.currentTarget.Vessel) continue;
                                         // If we're being targeted, calculate a miss distance
                                         if (weapon.Current.weaponManager.currentTarget != null && weapon.Current.weaponManager.currentTarget.Vessel == myWpnManager.vessel)
                                         {
@@ -1313,12 +1317,18 @@ namespace BDArmory.Radar
                         }
                     }
                 }
-            // Sort incoming missiles.
+            // Sort incoming missiles by time
             if (results.incomingMissiles.Count > 0)
             {
                 results.foundMissile = true;
-                results.incomingMissiles.Sort(delegate (IncomingMissile m1, IncomingMissile m2) { return m1.distance.CompareTo(m2.distance); });
-                results.missileThreatDistance = results.incomingMissiles[0].distance;
+                results.incomingMissiles.Sort(delegate (IncomingMissile m1, IncomingMissile m2) { return m1.time.CompareTo(m2.time); });
+
+                // If the missile is further away than 16s (max time calculated), then sort by distance
+                if (results.incomingMissiles[0].time >= 16f)
+                {
+                    results.foundMissile = true;
+                    results.incomingMissiles.Sort(delegate (IncomingMissile m1, IncomingMissile m2) { return m1.distance.CompareTo(m2.distance); });
+                }
             }
 
             return results;
@@ -1326,20 +1336,22 @@ namespace BDArmory.Radar
 
         public static bool MissileIsThreat(MissileBase missile, MissileFire mf, bool threatToMeOnly = true)
         {
+            if (missile == null || missile.part == null) return false;
+            Vector3 vectorFromMissile = mf.vessel.CoM - missile.part.transform.position;
+            if ((vectorFromMissile.sqrMagnitude > (mf.guardRange * mf.guardRange)) && (missile.TargetingMode != MissileBase.TargetingModes.Radar)) return false;
             if (threatToMeOnly)
             {
-                Vector3 vectorFromMissile = mf.vessel.CoM - missile.part.transform.position;
                 Vector3 relV = missile.vessel.Velocity() - mf.vessel.Velocity();
                 bool approaching = Vector3.Dot(relV, vectorFromMissile) > 0;
-                bool withinRadarFOV = (missile.TargetingMode == MissileBase.TargetingModes.Radar || missile.TargetingModeTerminal == MissileBase.TargetingModes.Radar) ?
+                bool withinRadarFOV = (missile.TargetingMode == MissileBase.TargetingModes.Radar) ?
                     (Vector3.Angle(missile.GetForwardTransform(), vectorFromMissile) <= Mathf.Clamp(missile.lockedSensorFOV, 40f, 90f) / 2f) : false;
-                var missileBlastRadiusSqr = 1.5f * missile.GetBlastRadius();
+                var missileBlastRadiusSqr = 3f * missile.GetBlastRadius();
                 missileBlastRadiusSqr *= missileBlastRadiusSqr;
 
                 return (missile.HasFired && missile.TimeIndex > 1f && approaching &&
                             (
                                 (missile.TargetPosition - (mf.vessel.CoM + (mf.vessel.Velocity() * Time.fixedDeltaTime))).sqrMagnitude < missileBlastRadiusSqr || // Target position is within blast radius of missile.
-                                mf.vessel.PredictClosestApproachSqrSeparation(missile.vessel, 2f) < missileBlastRadiusSqr || // Closest approach is within blast radius of missile. 
+                                mf.vessel.PredictClosestApproachSqrSeparation(missile.vessel, mf.cmThreshold) < missileBlastRadiusSqr || // Closest approach is within blast radius of missile. 
                                 withinRadarFOV // We are within radar FOV of missile boresight.
                             ));
             }
@@ -1355,18 +1367,17 @@ namespace BDArmory.Radar
                         if (wms == null || wms.Team != mf.Team)
                             continue;
 
-                        Vector3 vectorFromMissile = wms.vessel.CoM - missile.part.transform.position;
                         Vector3 relV = missile.vessel.Velocity() - wms.vessel.Velocity();
                         bool approaching = Vector3.Dot(relV, vectorFromMissile) > 0;
-                        bool withinRadarFOV = (missile.TargetingMode == MissileBase.TargetingModes.Radar || missile.TargetingModeTerminal == MissileBase.TargetingModes.Radar) ?
+                        bool withinRadarFOV = (missile.TargetingMode == MissileBase.TargetingModes.Radar) ?
                             (Vector3.Angle(missile.GetForwardTransform(), vectorFromMissile) <= Mathf.Clamp(missile.lockedSensorFOV, 40f, 90f) / 2f) : false;
-                        var missileBlastRadiusSqr = 1.5f * missile.GetBlastRadius();
+                        var missileBlastRadiusSqr = 3f * missile.GetBlastRadius();
                         missileBlastRadiusSqr *= missileBlastRadiusSqr;
 
                         return (missile.HasFired && missile.TimeIndex > 1f && approaching &&
                                     (
                                         (missile.TargetPosition - (wms.vessel.CoM + (wms.vessel.Velocity() * Time.fixedDeltaTime))).sqrMagnitude < missileBlastRadiusSqr || // Target position is within blast radius of missile.
-                                        wms.vessel.PredictClosestApproachSqrSeparation(missile.vessel, 2f) < missileBlastRadiusSqr || // Closest approach is within blast radius of missile. 
+                                        wms.vessel.PredictClosestApproachSqrSeparation(missile.vessel, wms.cmThreshold) < missileBlastRadiusSqr || // Closest approach is within blast radius of missile. 
                                         withinRadarFOV // We are within radar FOV of missile boresight.
                                     ));
                     }
@@ -1400,7 +1411,7 @@ namespace BDArmory.Radar
         {
             if (!BDArmorySettings.IGNORE_TERRAIN_CHECK)
             {
-                return Physics.Linecast(start, end, 1 << 15);
+                return Physics.Linecast(start, end, (int)LayerMasks.Scenery);
             }
 
             return false;

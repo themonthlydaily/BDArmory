@@ -51,7 +51,20 @@ namespace BDArmory.Core.Services
                 Operation = DamageOperation.Add
             });
         }
+        public override void AddHealthToPart_svc(Part p, float PartDamage, bool overcharge)
+        {
+            var damageModule = p.Modules.GetModule<HitpointTracker>();
 
+            damageModule.AddHealth(PartDamage, overcharge);
+
+            PublishEvent(new DamageEventArgs()
+            {
+                VesselId = p.vessel.GetInstanceID(),
+                PartId = p.GetInstanceID(),
+                Damage = PartDamage,
+                Operation = DamageOperation.Add
+            });
+        }
         public override void AddDamageToKerbal_svc(KerbalEVA kerbal, float damage)
         {
             var damageModule = kerbal.part.Modules.GetModule<HitpointTracker>();
@@ -77,7 +90,11 @@ namespace BDArmory.Core.Services
             float armor_ = Mathf.Max(1, p.Modules.GetModule<HitpointTracker>().Armor);
             return armor_;
         }
-
+        public override float GetPartMaxArmor_svc(Part p)
+        {
+            float armor_ = Mathf.Max(1, p.Modules.GetModule<HitpointTracker>().StartingArmor);
+            return armor_;
+        }
         public override float GetMaxPartDamage_svc(Part p)
         {
             return p.Modules.GetModule<HitpointTracker>().GetMaxHitpoints();
@@ -86,6 +103,14 @@ namespace BDArmory.Core.Services
         public override float GetMaxArmor_svc(Part p)
         {
             return p.Modules.GetModule<HitpointTracker>().GetMaxArmor();
+        }
+        public override float GetArmorDensity_svc(Part p)
+        {
+            return p.Modules.GetModule<HitpointTracker>().Density;
+        }
+        public override float GetArmorStrength_svc(Part p)
+        {
+            return p.Modules.GetModule<HitpointTracker>().Strength;
         }
 
         public override void DestroyPart_svc(Part p)

@@ -72,6 +72,23 @@ namespace BDArmory.UI
 
         private void OnEditorShipModifiedEvent(ShipConstruct data)
         {
+            delayedTakeSnapShot = true;
+            if (!delayedTakeSnapShotInProgress)
+                StartCoroutine(DelayedTakeSnapShot());
+        }
+
+        private bool delayedTakeSnapShot = false;
+        private bool delayedTakeSnapShotInProgress = false;
+        IEnumerator DelayedTakeSnapShot()
+        {
+            delayedTakeSnapShotInProgress = true;
+            while (delayedTakeSnapShot) // Wait until ship modified events stop coming.
+            {
+                delayedTakeSnapShot = false;
+                yield return null;
+                yield return null; // Two yield nulls to wait for HP changes to delayed ship modified events in HitpointTracker
+            }
+            delayedTakeSnapShotInProgress = false;
             takeSnapshot = true;
             previous_index = -1;
         }
@@ -367,6 +384,7 @@ namespace BDArmory.UI
             // Encapsulate editor ShipConstruct into a vessel:
             Vessel v = new Vessel();
             v.parts = EditorLogic.fetch.ship.Parts;
+            v.vesselType = VesselType.Plane; // Tell KSP that it's not debris (which we ignore in the snapshot).
             // RadarUtils.RenderVesselRadarSnapshot(v, EditorLogic.RootPart.transform);  //first rendering for true RCS
             RadarUtils.RenderVesselRadarSnapshot(v, EditorLogic.RootPart.transform, true);  //create renders
             takeSnapshot = false;

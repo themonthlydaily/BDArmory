@@ -6,26 +6,23 @@ namespace BDArmory.Core.Extension
 {
     public static class VesselExtensions
     {
+        public static HashSet<Vessel.Situations> InOrbitSituations = new HashSet<Vessel.Situations> { Vessel.Situations.ORBITING, Vessel.Situations.SUB_ORBITAL, Vessel.Situations.ESCAPING };
+
         public static bool InOrbit(this Vessel v)
         {
-            try
-            {
-                if (v == null) return false;
-                return !v.LandedOrSplashed &&
-                           (v.situation == Vessel.Situations.ORBITING ||
-                            v.situation == Vessel.Situations.SUB_ORBITAL ||
-                            v.situation == Vessel.Situations.ESCAPING);
-            }
-            catch (Exception e)
-            {
-                Debug.LogWarning("[BDArmory.VesselExtensions]: Exception thrown in InOrbit: " + e.Message + "\n" + e.StackTrace);
-                return false;
-            }
+            if (v == null) return false;
+            return InOrbitSituations.Contains(v.situation);
         }
 
         public static bool InVacuum(this Vessel v)
         {
             return v.atmDensity <= 0.001f;
+        }
+
+        public static bool IsUnderwater(this Vessel v)
+        {
+            if (!v) return false;
+            return v.altitude < -20; //some boats sit slightly underwater, this is only for submersibles
         }
 
         public static Vector3d Velocity(this Vessel v)
@@ -76,32 +73,16 @@ namespace BDArmory.Core.Extension
         }
 
         // Get a vessel's "radius".
-        public static float GetRadius(this Vessel vessel)
+        public static float GetRadius(this Vessel vessel, bool average = false)
         {
-            //get vessel size
+            // Get vessel size.
             Vector3 size = vessel.vesselSize;
 
-            //get largest dimension
-            float radius;
+            if (average) // Get the average of the dimensions.
+                return (size.x + size.y + size.z) / 6f;
 
-            if (size.x > size.y && size.x > size.z)
-            {
-                radius = size.x / 2;
-            }
-            else if (size.y > size.x && size.y > size.z)
-            {
-                radius = size.y / 2;
-            }
-            else if (size.z > size.x && size.z > size.y)
-            {
-                radius = size.z / 2;
-            }
-            else
-            {
-                radius = size.x / 2;
-            }
-
-            return radius;
+            // Get largest dimension.
+            return Mathf.Max(Mathf.Max(size.x, size.y), size.z) / 2f;
         }
     }
 }

@@ -4,7 +4,7 @@ using BDArmory.Core;
 namespace BDArmory.UI
 {
     public class BDInputSettingsFields
-    {
+    { // Note: order here determines order in input settings GUI within each section (based on prefix).
         //MAIN
         public static BDInputInfo WEAP_FIRE_KEY = new BDInputInfo("mouse 0", "Fire");
 
@@ -45,6 +45,13 @@ namespace BDArmory.UI
         // TOURNAMENT
         public static BDInputInfo TOURNAMENT_SETUP = new BDInputInfo("Setup Tournament");
         public static BDInputInfo TOURNAMENT_RUN = new BDInputInfo("Run Tournament");
+
+        //GUI
+        public static BDInputInfo GUI_WM_TOGGLE = new BDInputInfo("[*]", "Toggle WM GUI");
+        public static BDInputInfo GUI_AI_TOGGLE = new BDInputInfo("[/]", "Toggle AI GUI");
+
+        // TIME SCALING
+        public static BDInputInfo TIME_SCALING = new BDInputInfo("Toggle Time Scaling");
 
         public static void SaveSettings()
         {

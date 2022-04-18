@@ -71,9 +71,9 @@ namespace BDArmory.Modules
                 StartCoroutine(StartupRoutine());
 
                 GameEvents.onGameStateSave.Add(SaveWingmen);
-                GameEvents.onVesselLoaded.Add(OnVesselLoad);
-                GameEvents.onVesselDestroy.Add(OnVesselLoad);
-                GameEvents.onVesselGoOnRails.Add(OnVesselLoad);
+                GameEvents.onVesselLoaded.Add(OnVesselLoaded);
+                GameEvents.onVesselDestroy.Add(OnVesselLoaded);
+                GameEvents.onVesselGoOnRails.Add(OnVesselLoaded);
                 MissileFire.OnChangeTeam += OnToggleTeam;
 
                 screenMessage = new ScreenMessage("", 2, ScreenMessageStyle.LOWER_CENTER);
@@ -105,14 +105,14 @@ namespace BDArmory.Modules
             if (HighLogic.LoadedSceneIsFlight)
             {
                 GameEvents.onGameStateSave.Remove(SaveWingmen);
-                GameEvents.onVesselLoaded.Remove(OnVesselLoad);
-                GameEvents.onVesselDestroy.Remove(OnVesselLoad);
-                GameEvents.onVesselGoOnRails.Remove(OnVesselLoad);
+                GameEvents.onVesselLoaded.Remove(OnVesselLoaded);
+                GameEvents.onVesselDestroy.Remove(OnVesselLoaded);
+                GameEvents.onVesselGoOnRails.Remove(OnVesselLoaded);
                 MissileFire.OnChangeTeam -= OnToggleTeam;
             }
         }
 
-        void OnVesselLoad(Vessel v)
+        void OnVesselLoaded(Vessel v)
         {
             if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && !vessel.packed)
             {

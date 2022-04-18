@@ -1,4 +1,5 @@
-﻿using BDArmory.Control;
+﻿using BDArmory.Competition;
+using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.UI;
 using System.Collections;
@@ -37,7 +38,13 @@ namespace BDArmory.Modules
                 var weapon = p.FindModuleImplementing<ModuleWeapon>();
                 if (weapon != null)
                 {
-                    weapon.weaponState = ModuleWeapon.WeaponStates.Disabled; //allow weapons to be used again
+                    //weapon.weaponState = ModuleWeapon.WeaponStates.Disabled; //allow weapons to be used again
+                    weapon.DisableWeapon();
+                    if (weapon.isAPS)
+                    {
+                        //weapon.weaponState = ModuleWeapon.WeaponStates.Enabled; //allow weapons to be used again
+                        weapon.EnableWeapon();
+                    }
                 }
                 if (command != null)
                 {

@@ -275,6 +275,7 @@ namespace BDArmory.Modules
 
         protected void UpdateWeaponManager()
         {
+            VesselModuleRegistry.OnVesselModified(vessel);
             weaponManager = VesselModuleRegistry.GetModule<MissileFire>(vessel);
             if (weaponManager != null)
                 weaponManager.AI = this;
@@ -405,6 +406,14 @@ namespace BDArmory.Modules
         public virtual void CommandTakeOff()
         {
             ActivatePilot();
+        }
+
+        public virtual void CommandFollowWaypoints()
+        {
+            if (!pilotEnabled) return; // Do nothing if we haven't taken off (or activated with airspawn) yet.
+
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDGenericAIBase]:" + vessel.vesselName + " was commanded to follow waypoints.");
+            command = PilotCommands.Waypoints;
         }
 
         #endregion WingCommander

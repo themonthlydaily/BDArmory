@@ -21,6 +21,7 @@ namespace BDArmory.Modules
 
         public enum RWRThreatTypes
         {
+            None = -1,
             SAM = 0,
             Fighter = 1,
             AWACS = 2,
@@ -210,6 +211,7 @@ namespace BDArmory.Modules
             if (weaponManager == null) return;
 
             float sqrDist = (part.transform.position - source).sqrMagnitude;
+            if ((weaponManager && weaponManager.guardMode) && (sqrDist > (weaponManager.guardRange * weaponManager.guardRange))) return;
             if (sqrDist < BDArmorySettings.MAX_ENGAGEMENT_RANGE * BDArmorySettings.MAX_ENGAGEMENT_RANGE && sqrDist > 10000f && Vector3.Angle(direction, part.transform.position - source) < 15f)
             {
                 StartCoroutine(
@@ -408,7 +410,7 @@ namespace BDArmory.Modules
             // Resizing code block.
             RWRresizeRect =
                 new Rect(BDArmorySetup.WindowRectRwr.width - 18, BDArmorySetup.WindowRectRwr.height - 18, 16, 16);
-            GUI.DrawTexture(RWRresizeRect, Misc.Misc.resizeTexture, ScaleMode.StretchToFill, true);
+            GUI.DrawTexture(RWRresizeRect, Utils.resizeTexture, ScaleMode.StretchToFill, true);
             if (Event.current.type == EventType.MouseDown && RWRresizeRect.Contains(Event.current.mousePosition))
             {
                 resizingWindow = true;

@@ -27,8 +27,13 @@ namespace BDArmory.Modules
         [KSPField]
         public string targetingType = "none";
 
+        [KSPField]
+        public string antiradTargetTypes = "0,5";
+        public float[] antiradTargets;
+
         public MissileTurret missileTurret = null;
         public BDRotaryRail rotaryRail = null;
+        public BDDeployableRail deployableRail = null;
 
         [KSPField]
         public string exhaustPrefabPath;
@@ -161,6 +166,11 @@ namespace BDArmory.Modules
 
         public string explSoundPath = "BDArmory/Sounds/explode1";
 
+        //weapon specifications
+        [KSPField(advancedTweakable = true, isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_FiringPriority"),
+            UI_FloatRange(minValue = 0, maxValue = 10, stepIncrement = 1, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
+        public float priority = 0; //per-weapon priority selection override
+
         [KSPField]
         public bool spoolEngine = false;
 
@@ -195,6 +205,12 @@ namespace BDArmory.Modules
         public float deployTime = 0.2f;
 
         [KSPField]
+        public string flightAnimationName = "";
+
+        [KSPField]
+        public bool OneShotAnim = true;
+
+        [KSPField]
         public bool useSimpleDrag = false;
 
         [KSPField]
@@ -215,6 +231,8 @@ namespace BDArmory.Modules
         //public float deployedTime;
 
         AnimationState[] deployStates;
+
+        AnimationState[] animStates;
 
         bool hasPlayedFlyby;
 
@@ -270,6 +288,10 @@ namespace BDArmory.Modules
             {
                 rotaryRail.FireMissile(this);
             }
+            else if (deployableRail)
+            {
+                deployableRail.FireMissile(this);
+            }
             else
             {
                 FireMissile();
@@ -288,6 +310,10 @@ namespace BDArmory.Modules
             else if (rotaryRail)
             {
                 rotaryRail.FireMissile(this);
+            }
+            else if (deployableRail)
+            {
+                deployableRail.FireMissile(this);
             }
             else
             {
@@ -362,6 +388,7 @@ namespace BDArmory.Modules
             }
 
             ParseModes();
+            ParseAntiRadTargetTypes();
             // extension for feature_engagementenvelope
             InitializeEngagementRange(minStaticLaunchRange, maxStaticLaunchRange);
 
@@ -551,11 +578,16 @@ namespace BDArmory.Modules
 
             if (deployAnimationName != "")
             {
-                deployStates = Misc.Misc.SetUpAnimation(deployAnimationName, part);
+                deployStates = Utils.SetUpAnimation(deployAnimationName, part);
             }
             else
             {
                 deployedDrag = simpleDrag;
+            }
+
+            if (flightAnimationName != "")
+            {
+                animStates = Utils.SetUpAnimation(flightAnimationName, part);
             }
 
             SetInitialDetonationDistance();
@@ -594,6 +626,22 @@ namespace BDArmory.Modules
                 activeRadarLockTrackCurve.Add(activeRadarRange, RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS);           // TODO: tune & balance constants!
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileLauncher]: OnStart missile " + shortName + ": setting default locktrackcurve with maxrange/minrcs: " + activeRadarLockTrackCurve.maxTime + "/" + RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS);
             }
+            List<ClusterBomb>.Enumerator cluster = part.FindModulesImplementing<ClusterBomb>().GetEnumerator();
+            while (cluster.MoveNext())
+            {
+                if (cluster.Current == null) continue;
+                clusterbomb = cluster.Current.submunitions.Count;
+                break;
+            }
+            cluster.Dispose();
+            List<ModuleEMP>.Enumerator emp = part.FindModulesImplementing<ModuleEMP>().GetEnumerator();
+            while (emp.MoveNext())
+            {
+                if (emp.Current == null) continue;
+                EMP = emp.Current;
+                break;
+            }
+            emp.Dispose();
         }
 
         /// <summary>
@@ -722,7 +770,7 @@ namespace BDArmory.Modules
                 SetupExplosive(this.part);
                 HasFired = true;
 
-                if(BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileLauncher]: Missile Fired! " + vessel.vesselName);
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileLauncher]: Missile Fired! " + vessel.vesselName);
 
                 GameEvents.onPartDie.Add(PartDie);
                 BDATargetManager.FiredMissiles.Add(this);
@@ -937,10 +985,10 @@ namespace BDArmory.Modules
                 bool targetBehindMissile = Vector3.Dot(TargetPosition - transform.position, transform.forward) < 0f;
                 if ((pastGracePeriod && targetBehindMissile) || noProgress) // Check that we're not moving away from the target after a grace period
                 {
-                    if(BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileLauncher]: Missile has missed!");
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileLauncher]: Missile has missed!");
 
                     if (vessel.altitude >= maxAltitude && maxAltitude != 0f)
-                        if(BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileLauncher]: CheckMiss trigged by MaxAltitude");
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileLauncher]: CheckMiss trigged by MaxAltitude");
 
                     HasMissed = true;
                     guidanceActive = false;
@@ -1211,7 +1259,12 @@ namespace BDArmory.Modules
                         {
                             radarTarget = lockedTarget;
                             TargetAcquired = true;
-                            TargetPosition = radarTarget.predictedPositionWithChaffFactor;
+                            if (weaponClass == WeaponClasses.SLW)
+                            {
+                                TargetPosition = radarTarget.predictedPosition;
+                            }
+                            else
+                                TargetPosition = radarTarget.predictedPositionWithChaffFactor;
                             TargetVelocity = radarTarget.velocity;
                             TargetAcceleration = radarTarget.acceleration;
                             targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(TargetPosition, vessel.mainBody);
@@ -1221,7 +1274,7 @@ namespace BDArmory.Modules
                             else
                                 RadarWarningReceiver.PingRWR(new Ray(transform.position, radarTarget.predictedPosition - transform.position), 45, RadarWarningReceiver.RWRThreatTypes.MissileLaunch, 2f);
 
-                            if(BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileLauncher][Terminal Guidance]: Pitbull! Radar missileBase has gone active.  Radar sig strength: " + radarTarget.signalStrength.ToString("0.0") + " - target: " + radarTarget.vessel.name);
+                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileLauncher][Terminal Guidance]: Pitbull! Radar missileBase has gone active.  Radar sig strength: " + radarTarget.signalStrength.ToString("0.0") + " - target: " + radarTarget.vessel.name);
                         }
                         else
                         {
@@ -1230,7 +1283,7 @@ namespace BDArmory.Modules
                             TargetVelocity = Vector3.zero;
                             TargetAcceleration = Vector3.zero;
                             targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(TargetPosition, vessel.mainBody);
-                            if(BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileLauncher][Terminal Guidance]: Missile radar could not acquire a target lock - Defaulting to GPS Target");
+                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileLauncher][Terminal Guidance]: Missile radar could not acquire a target lock - Defaulting to GPS Target");
                         }
                         break;
 
@@ -1268,19 +1321,20 @@ namespace BDArmory.Modules
         IEnumerator MissileRoutine()
         {
             MissileState = MissileStates.Drop;
-            StartCoroutine(AnimRoutine());
+            StartCoroutine(DeployAnimRoutine());
             yield return new WaitForSeconds(dropTime);
             yield return StartCoroutine(BoostRoutine());
+            StartCoroutine(FlightAnimRoutine());
             yield return new WaitForSeconds(cruiseDelay);
             yield return StartCoroutine(CruiseRoutine());
         }
 
-        IEnumerator AnimRoutine()
+        IEnumerator DeployAnimRoutine()
         {
             yield return new WaitForSeconds(deployTime);
             if (deployStates == null)
             {
-                Debug.LogWarning("[BDArmory.MissileLauncher]: deployStates was null, aborting AnimRoutine.");
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.LogWarning("[BDArmory.MissileLauncher]: deployStates was null, aborting AnimRoutine.");
                 yield break;
             }
 
@@ -1295,7 +1349,28 @@ namespace BDArmory.Modules
                     }
             }
         }
+        IEnumerator FlightAnimRoutine()
+        {
+            if (animStates == null)
+            {
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.LogWarning("[BDArmory.MissileLauncher]: animStates was null, aborting AnimRoutine.");
+                yield break;
+            }
 
+            if (!string.IsNullOrEmpty(flightAnimationName))
+            {
+                using (var anim = animStates.AsEnumerable().GetEnumerator())
+                    while (anim.MoveNext())
+                    {
+                        if (anim.Current == null) continue;
+                        if (!OneShotAnim)
+                        {
+                            anim.Current.wrapMode = WrapMode.Loop;
+                        }
+                        anim.Current.speed = 1;
+                    }
+            }
+        }
         IEnumerator BoostRoutine()
         {
             StartBoost();
@@ -1711,7 +1786,7 @@ namespace BDArmory.Modules
 
                     if (targetViewAngle > maxOffBoresight)
                     {
-                        if(BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileLauncher]: AGM Missile guidance failed - target out of view");
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileLauncher]: AGM Missile guidance failed - target out of view");
                         guidanceActive = false;
                     }
                     CheckMiss();
@@ -1780,7 +1855,7 @@ namespace BDArmory.Modules
         {
             if (HasExploded || !HasFired) return;
 
-            if(BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileLauncher]: Detonate Triggered");
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileLauncher]: Detonate Triggered");
 
             BDArmorySetup.numberOfParticleEmitters--;
             HasExploded = true;
@@ -1801,11 +1876,15 @@ namespace BDArmory.Modules
             {
                 part.FindModuleImplementing<BDExplosivePart>().DetonateIfPossible();
             }
+            else if (part.FindModuleImplementing<BDModuleNuke>() != null)
+            {
+                part.FindModuleImplementing<BDModuleNuke>().Detonate();
+            }
             else //TODO: Remove this backguard compatibility
             {
                 Vector3 position = transform.position;//+rigidbody.velocity*Time.fixedDeltaTime;
 
-                ExplosionFx.CreateExplosion(position, blastPower, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, SourceVessel.vesselName, part.FindModuleImplementing<EngageableWeapon>().GetShortName());
+                ExplosionFx.CreateExplosion(position, blastPower, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, SourceVessel.vesselName, part.FindModuleImplementing<EngageableWeapon>().GetShortName(), default(Vector3), -1, false, part.mass * 1000);
             }
 
             List<BDAGaplessParticleEmitter>.Enumerator e = gaplessEmitters.GetEnumerator();
@@ -1972,6 +2051,11 @@ namespace BDArmory.Modules
             float AoA = Vector3.Angle(part.transform.forward, vessel.Velocity());
             AoA /= 20;
             part.rb.AddTorque(AoA * simpleStableTorque * dragMagnitude * torqueAxis);
+        }
+
+        void ParseAntiRadTargetTypes()
+        {
+            antiradTargets = Utils.ParseToFloatArray(antiradTargetTypes);
         }
 
         void ParseModes()
@@ -2218,10 +2302,32 @@ namespace BDArmory.Modules
             while (partModules.MoveNext())
             {
                 if (partModules.Current == null) continue;
-                if (partModules.Current.moduleName != "BDExplosivePart") continue;
-                float tntMass = ((BDExplosivePart)partModules.Current).tntMass;
-                output.AppendLine($"- Blast radius: {Math.Round(BlastPhysicsUtils.CalculateBlastRange(tntMass), 2)} m");
-                output.AppendLine($"- tnt Mass: {tntMass} kg");
+                if (partModules.Current.moduleName == "BDExplosivePart")
+                {
+                    ((BDExplosivePart)partModules.Current).ParseWarheadType();
+                    if (clusterbomb > 1)
+                    {
+                        output.AppendLine($"Cluster Bomb:");
+                        output.AppendLine($"- Sub-Munition Count: {clusterbomb} ");
+                    }
+                    float tntMass = ((BDExplosivePart)partModules.Current).tntMass;
+                    output.AppendLine($"- Blast radius: {Math.Round(BlastPhysicsUtils.CalculateBlastRange(tntMass), 2)} m");
+                    output.AppendLine($"- tnt Mass: {tntMass} kg");
+                    output.AppendLine($"- {((BDExplosivePart)partModules.Current).warheadReportingName} warhead");
+                }
+                else if (partModules.Current.moduleName == "ModuleEMP")
+                {
+                    float proximity = ((ModuleEMP)partModules.Current).proximity;
+                    output.AppendLine($"- EMP Blast Radius: {proximity} m");
+                }
+                else if (partModules.Current.moduleName == "BDModuleNuke")
+                {
+                    float yield = ((BDModuleNuke)partModules.Current).yield;
+                    float radius = ((BDModuleNuke)partModules.Current).thermalRadius;
+                    output.AppendLine($"- Yield: {yield} kT");
+                    output.AppendLine($"- Max radius: {radius} m");
+                }
+                else continue;
                 break;
             }
             partModules.Dispose();

@@ -334,27 +334,29 @@ namespace BDArmory.Targeting
             float maxThrust = 0;
             float finalThrust = 0;
 
-            using (var engines = VesselModuleRegistry.GetModules<ModuleEngines>(v).GetEnumerator())
-                while (engines.MoveNext())
+            var engines = VesselModuleRegistry.GetModules<ModuleEngines>(v);
+            if (engines == null) return 0;
+            using (var engine = engines.GetEnumerator())
+                while (engine.MoveNext())
                 {
-                    if (engines.Current == null) continue;
-                    if (!engines.Current.EngineIgnited) continue;
+                    if (engine.Current == null) continue;
+                    if (!engine.Current.EngineIgnited) continue;
 
-                    MultiModeEngine mme = engines.Current.part.FindModuleImplementing<MultiModeEngine>();
+                    MultiModeEngine mme = engine.Current.part.FindModuleImplementing<MultiModeEngine>();
                     if (IsAfterBurnerEngine(mme))
                     {
                         mme.autoSwitch = false;
                     }
 
-                    if (mme && mme.mode != engines.Current.engineID) continue;
-                    float engineThrust = engines.Current.maxThrust;
-                    if (engines.Current.atmChangeFlow)
+                    if (mme && mme.mode != engine.Current.engineID) continue;
+                    float engineThrust = engine.Current.maxThrust;
+                    if (engine.Current.atmChangeFlow)
                     {
-                        engineThrust *= engines.Current.flowMultiplier;
+                        engineThrust *= engine.Current.flowMultiplier;
                     }
-                    maxThrust += Mathf.Max(0f, engineThrust * (engines.Current.thrustPercentage / 100f)); // Don't include negative thrust percentage drives (Danny2462 drives) as they don't contribute to the thrust.
+                    maxThrust += Mathf.Max(0f, engineThrust * (engine.Current.thrustPercentage / 100f)); // Don't include negative thrust percentage drives (Danny2462 drives) as they don't contribute to the thrust.
 
-                    finalThrust += engines.Current.finalThrust;
+                    finalThrust += engine.Current.finalThrust;
                 }
             return maxThrust;
         }
@@ -379,7 +381,9 @@ namespace BDArmory.Targeting
             if (myMf == null) return 0;
             float thisDist = (position - myMf.transform.position).magnitude;
             float maxWepRange = 0;
-            using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(myMf.vessel).GetEnumerator())
+            var weapons = VesselModuleRegistry.GetModules<ModuleWeapon>(myMf.vessel);
+            if (weapons == null) return 0;
+            using (var weapon = weapons.GetEnumerator())
                 while (weapon.MoveNext())
                 {
                     if (weapon.Current == null) continue;
@@ -480,12 +484,19 @@ namespace BDArmory.Targeting
             }
         }
 
-        public float TargetPriProtectVIP(MissileFire mf) // If target is attacking our VIP(s)
+        public float TargetPriProtectTeammate(MissileFire mf, MissileFire myMf) // If target is attacking one of our teammates. 1 if true, 0 if false.
         {
-            if (mf == null) return 0;
+            if (myMf == null) return 0;
+            if (mf == null || mf.currentTarget == null || mf.currentTarget.weaponManager == null) return 0;
+            return (mf.currentTarget.weaponManager != myMf && mf.currentTarget.weaponManager.Team == myMf.Team) ? 1 : 0; // Not us, but on the same team.
+        }
+
+        public float TargetPriProtectVIP(MissileFire mf, MissileFire myMf) // If target is attacking our VIP(s)
+        {
+            if (mf == null || myMf == null) return 0;
             if ((mf.vessel != null) && (mf.currentTarget != null) && (mf.currentTarget.weaponManager != null))
             {
-                bool attackingOurVIPs = mf.currentTarget.weaponManager.isVIP;
+                bool attackingOurVIPs = mf.currentTarget.weaponManager.isVIP && (myMf.Team == mf.currentTarget.weaponManager.Team);
                 return ((attackingOurVIPs == true) ? 1 : -1); // Ranges -1 to 1, 1 if target is attacking our VIP(s), -1 if it is not
             }
             else

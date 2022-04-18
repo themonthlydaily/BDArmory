@@ -1,4 +1,6 @@
 using KSP.Localization;
+using BDArmory.Misc;
+
 namespace BDArmory.Modules
 {
     public abstract class EngageableWeapon : PartModule, IEngageService
@@ -58,9 +60,27 @@ namespace BDArmory.Modules
             Fields["engageSLW"].guiActive = engageEnabled;
             Fields["engageSLW"].guiActiveEditor = engageEnabled;
 
-            Misc.Misc.RefreshAssociatedWindows(part);
+            Utils.RefreshAssociatedWindows(part);
         }
+        public void HideEngageOptions()
+        {
+            Events["ToggleEngageOptions"].guiActive = false;
+            Events["ToggleEngageOptions"].guiActiveEditor = false;
+            Fields["engageRangeMin"].guiActive = true;
+            Fields["engageRangeMin"].guiActiveEditor = true;
+            Fields["engageRangeMax"].guiActive = true;
+            Fields["engageRangeMax"].guiActiveEditor = true;
+            Fields["engageAir"].guiActive = false;
+            Fields["engageAir"].guiActiveEditor = false;
+            Fields["engageMissile"].guiActive = false;
+            Fields["engageMissile"].guiActiveEditor = false;
+            Fields["engageGround"].guiActive = false;
+            Fields["engageGround"].guiActiveEditor = false;
+            Fields["engageSLW"].guiActive = false;
+            Fields["engageSLW"].guiActiveEditor = false;
 
+            Utils.RefreshAssociatedWindows(part);
+        }
         public void OnRangeUpdated(BaseField field, object obj)
         {
             // ensure max >= min

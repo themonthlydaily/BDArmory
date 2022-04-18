@@ -1,6 +1,6 @@
-using System;
 using System.Collections.Generic;
 using BDArmory.Core;
+using BDArmory.Core.Module;
 using BDArmory.Core.Extension;
 using BDArmory.Misc;
 using BDArmory.UI;
@@ -231,6 +231,7 @@ namespace BDArmory.FX
 
         private static bool CanFlamesBeAttached(Part hitPart)
         {
+            if (hitPart == null || hitPart.vessel == null) return false;
             if (!BDArmorySettings.FIRE_FX_IN_FLIGHT && !hitPart.vessel.LandedOrSplashed || !hitPart.HasFuel())
                 return false;
 
@@ -264,12 +265,13 @@ namespace BDArmory.FX
 
         public static void CleanPartsOnFireInfo()
         {
-            foreach (var key in PartsOnFire.Keys)
+            HashSet<Vessel> keysToRemove = new HashSet<Vessel>();
+            foreach (var key in PartsOnFire.Keys.ToList())
             {
                 PartsOnFire[key] = PartsOnFire[key].Where(x => (Time.time - x) < FireLifeTimeInSeconds).ToList(); // Remove expired fires.
-                if (PartsOnFire[key].Count == 0) { PartsOnFire.Remove(key); } // Remove parts no longer on fire.
+                if (PartsOnFire[key].Count == 0) { keysToRemove.Add(key); } // Remove parts no longer on fire.
             }
-            PartsOnFire = PartsOnFire.Where(kvp => kvp.Key != null).ToDictionary(kvp => kvp.Key, kvp => kvp.Value); // Remove null keys.
+            PartsOnFire = PartsOnFire.Where(kvp => kvp.Key != null && !keysToRemove.Contains(kvp.Key)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value); // Remove null keys (vessels) and those with no parts on fire.
         }
 
         void Awake()
@@ -412,88 +414,78 @@ namespace BDArmory.FX
                 }
             }
         }
-        // FIXME Use an object pool for flames?          
 
-        public static void AttachLeak(RaycastHit hit, Part hitPart, float caliber, bool explosive, bool incendiary, string sourcevessel)
-
+        public static void AttachLeak(RaycastHit hit, Part hitPart, float caliber, bool explosive, bool incendiary, string sourcevessel, bool inertTank)
         {
-            if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_TANKS)
+            if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_TANKS && hitPart.Modules.GetModule<HitpointTracker>().Hitpoints > 0)
             {
                 if (leakFXPool == null)
                     leakFXPool = FuelLeakFX.CreateLeakFXPool("BDArmory/FX/FuelLeakFX/model");
                 var fuelLeak = leakFXPool.GetPooledObject();
                 var leakFX = fuelLeak.GetComponentInChildren<FuelLeakFX>();
-                leakFX.AttachAt(hitPart, hit, new Vector3(0.25f, 0f, 0f));
-                leakFX.transform.localScale = Vector3.one * (caliber / 10);
 
-                var leak = hitPart.FindModuleImplementing<ModuleDrainFuel>();
+                var leak = hitPart.GetComponentsInChildren<FuelLeakFX>();
                 if (leak != null) //only apply one leak to engines
                 {
-                    if (BDArmorySettings.BD_FIRES_ENABLED)
+                    if (!hitPart.isEngine())
                     {
-                        bool startFire = false;
-                        int ammoMod = 10; //10% chance of AP rounds starting fires from sparks/tracers/etc
-                        if (explosive)
+                        leakFX.AttachAt(hitPart, hit, new Vector3(0.25f, 0f, 0f));
+                        leakFX.transform.localScale = Vector3.one * (caliber / 10);
+                        leakFX.drainRate = ((caliber / 10) * BDArmorySettings.BD_TANK_LEAK_RATE);
+                        leakFX.lifeTime = (BDArmorySettings.BD_TANK_LEAK_TIME);
+                        if (BDArmorySettings.BD_FIRES_ENABLED && !inertTank)
                         {
-                            ammoMod = 33; //33% chance of starting fires from HE rounds
-                        }
-                        if (incendiary)
-                        {
-                            ammoMod = 90; //90% chance of starting fires from inc rounds
-                        }
-                        double Diceroll = UnityEngine.Random.Range(0, 100);
-                        if (Diceroll <= ammoMod)
-                        {
-                            startFire = true;
-                        }
-                        //Debug.Log("[FIRE DEBUG] diceroll: " + Diceroll);
-                        if (startFire)
-                        {
-                            int leakcount = 0;
-                            foreach (var existingLeakFX in hitPart.GetComponentsInChildren<FuelLeakFX>())
+                            float ammoMod = BDArmorySettings.BD_FIRE_CHANCE_TRACER; //10% chance of AP rounds starting fires from sparks/tracers/etc
+                            if (explosive)
                             {
-                                existingLeakFX.lifeTime = 0; //kill leakFX, start fire
-                                leakcount++;
+                                ammoMod = BDArmorySettings.BD_FIRE_CHANCE_HE; //20% chance of starting fires from HE rounds
                             }
-                            leak.drainDuration = 0;
-                            AttachFire(hit, hitPart, caliber, sourcevessel, -1, leakcount);
-                        }
-                    }
-                    else
-                    {
-                        if (!hitPart.isEngine())
-                        {
-                            leak.drainDuration += (20 * BDArmorySettings.BD_TANK_LEAK_TIME);
-                            leak.drainRate += ((caliber / 100) * BDArmorySettings.BD_TANK_LEAK_RATE);
+                            if (incendiary)
+                            {
+                                ammoMod = BDArmorySettings.BD_FIRE_CHANCE_INCENDIARY; //90% chance of starting fires from inc rounds
+                            }
+                            double Diceroll = UnityEngine.Random.Range(0, 100);
+                            if (Diceroll <= ammoMod)
+                            {
+                                leakFX.lifeTime = 0;
+                                int leakcount = 0;
+                                foreach (var existingLeakFX in hitPart.GetComponentsInChildren<FuelLeakFX>())
+                                {
+                                    existingLeakFX.lifeTime = 0; //kill leakFX, start fire
+                                    leakcount++;
+                                }
+                                //Debug.Log("[BullethitFX] Adding fire. HE? " + explosive + "; Inc? " + incendiary + "; inerttank? " + inertTank);
+                                AttachFire(hit.point, hitPart, caliber, sourcevessel, -1, leakcount);
+                            }
                         }
                     }
                 }
                 else
                 {
-                    leak = (ModuleDrainFuel)hitPart.AddModule("ModuleDrainFuel");
-                    leak.drainRate = ((caliber / 10) * BDArmorySettings.BD_TANK_LEAK_RATE);
-                    leak.drainDuration = (BDArmorySettings.BD_TANK_LEAK_TIME);
+                    leakFX.AttachAt(hitPart, hit, new Vector3(0.25f, 0f, 0f));
+                    leakFX.transform.localScale = Vector3.one * (caliber / 10);
+                    leakFX.drainRate = ((caliber / 10) * BDArmorySettings.BD_TANK_LEAK_RATE);
                     leakFX.lifeTime = (BDArmorySettings.BD_TANK_LEAK_TIME);
 
                     if (hitPart.isEngine())
                     {
-                        leak.drainDuration = (100 * BDArmorySettings.BD_TANK_LEAK_TIME);
-                        leakFX.lifeTime = (100 * BDArmorySettings.BD_TANK_LEAK_TIME);
+                        leakFX.lifeTime = (10 * BDArmorySettings.BD_TANK_LEAK_TIME);
                     }
                 }
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BulletHitFX]: BulletHit attaching fuel leak, drainrate: " + leak.drainRate);
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BulletHitFX]: BulletHit attaching fuel leak, drainrate: " + leakFX.drainRate);
 
                 fuelLeak.SetActive(true);
             }
         }
-        public static void AttachFire(RaycastHit hit, Part hitPart, float caliber, string sourcevessel, float burntime = -1, int ignitedLeaks = 1, bool enginefire = false, bool surfaceFire = false)
+        public static void AttachFire(Vector3 hit, Part hitPart, float caliber, string sourcevessel, float burntime = -1, int ignitedLeaks = 1, bool surfaceFire = false)
         {
-            if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_FIRES_ENABLED)
+            if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_FIRES_ENABLED && hitPart.Modules.GetModule<HitpointTracker>().Hitpoints > 0)
             {
                 if (FireFXPool == null)
                     FireFXPool = FireFX.CreateFireFXPool("BDArmory/FX/FireFX/model");
                 var fire = FireFXPool.GetPooledObject();
                 var fireFX = fire.GetComponentInChildren<FireFX>();
+                fireFX.burnTime = burntime; //this apparently never got implemented... !?
                 fireFX.AttachAt(hitPart, hit, new Vector3(0.25f, 0f, 0f), sourcevessel);
                 fireFX.burnRate = (((caliber / 50) * BDArmorySettings.BD_TANK_LEAK_RATE) * ignitedLeaks);
                 fireFX.surfaceFire = surfaceFire;
@@ -507,7 +499,13 @@ namespace BDArmory.FX
         {
             if (!CanFlamesBeAttached(hitPart)) return;
 
+            if (flameFXPool == null) SetupBulletHitFXPool();
             var flameObject = flameFXPool.GetPooledObject();
+            if (flameObject == null)
+            {
+                Debug.LogError("[BDArmory.BulletHitFX]: flameFXPool gave a null flameObject!");
+                return;
+            }
             flameObject.transform.SetParent(hitPart.transform);
             flameObject.SetActive(true);
         }

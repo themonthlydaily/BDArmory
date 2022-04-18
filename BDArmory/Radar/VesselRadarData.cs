@@ -618,7 +618,7 @@ namespace BDArmory.Radar
             }
 
             UpdateLockedTargets();
-            if (gameObject != null) // Don't trigger if the gameObject was just destroyed.
+            if (this != null) // Don't trigger if the gameObject was just destroyed.
                 StartCoroutine(UpdateLocksAfterFrame());
             return false;
         }
@@ -689,33 +689,45 @@ namespace BDArmory.Radar
             //rCount = 0;
             UnlinkAllExternalRadars();
 
-            using (var radar = VesselModuleRegistry.GetModules<ModuleRadar>(vessel).GetEnumerator())
-                while (radar.MoveNext())
-                {
-                    if (radar.Current == null) continue;
-                    radar.Current.DisableRadar();
-                }
+            var radars = VesselModuleRegistry.GetModules<ModuleRadar>(vessel);
+            if (radars != null)
+            {
+                using (var radar = radars.GetEnumerator())
+                    while (radar.MoveNext())
+                    {
+                        if (radar.Current == null) continue;
+                        radar.Current.DisableRadar();
+                    }
+            }
         }
 
         public void SlaveTurrets()
         {
-            using (var mtc = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel).GetEnumerator())
-                while (mtc.MoveNext())
-                {
-                    if (mtc.Current == null) continue;
-                    mtc.Current.slaveTurrets = false;
-                }
-            slaveTurrets = true;
+            var targetingCameras = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel);
+            if (targetingCameras != null)
+            {
+                using (var mtc = targetingCameras.GetEnumerator())
+                    while (mtc.MoveNext())
+                    {
+                        if (mtc.Current == null) continue;
+                        mtc.Current.slaveTurrets = false;
+                    }
+                slaveTurrets = true;
+            }
         }
 
         public void UnslaveTurrets()
         {
-            using (var mtc = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel).GetEnumerator())
-                while (mtc.MoveNext())
-                {
-                    if (mtc.Current == null) continue;
-                    mtc.Current.slaveTurrets = false;
-                }
+            var targetingCameras = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel);
+            if (targetingCameras != null)
+            {
+                using (var mtc = targetingCameras.GetEnumerator())
+                    while (mtc.MoveNext())
+                    {
+                        if (mtc.Current == null) continue;
+                        mtc.Current.slaveTurrets = false;
+                    }
+            }
 
             slaveTurrets = false;
 
@@ -969,7 +981,7 @@ namespace BDArmory.Radar
             {
                 Vector3 localUp = vessel.ReferenceTransform.InverseTransformDirection(referenceTransform.up);
                 localUp = Vector3.ProjectOnPlane(localUp, Vector3.up).normalized;
-                float rollAngle = -Misc.Misc.SignedAngle(-Vector3.forward, localUp, Vector3.right);
+                float rollAngle = -Utils.SignedAngle(-Vector3.forward, localUp, Vector3.right);
                 GUIUtility.RotateAroundPivot(rollAngle, scanRect.center);
                 GUI.DrawTexture(scanRect, rollIndicatorTexture, ScaleMode.StretchToFill, true);
                 GUI.matrix = Matrix4x4.identity;
@@ -992,7 +1004,7 @@ namespace BDArmory.Radar
             // Resizing code block.
             RADARresizeRect =
                 new Rect(BDArmorySetup.WindowRectRadar.width - 18, BDArmorySetup.WindowRectRadar.height - 19, 16, 16);
-            GUI.DrawTexture(RADARresizeRect, Misc.Misc.resizeTexture, ScaleMode.StretchToFill, true);
+            GUI.DrawTexture(RADARresizeRect, Utils.resizeTexture, ScaleMode.StretchToFill, true);
             if (Event.current.type == EventType.MouseDown && RADARresizeRect.Contains(Event.current.mousePosition))
             {
                 resizingWindow = true;
@@ -1177,7 +1189,7 @@ namespace BDArmory.Radar
 
         private void UnlinkVRD(VesselRadarData vrd)
         {
-            if(BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselRadarData]: Unlinking VRD: " + vrd.vessel.vesselName);
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselRadarData]: Unlinking VRD: " + vrd.vessel.vesselName);
             externalVRDs.Remove(vrd);
 
             List<ModuleRadar> radarsToUnlink = new List<ModuleRadar>();
@@ -1197,7 +1209,7 @@ namespace BDArmory.Radar
             while (mr.MoveNext())
             {
                 if (mr.Current == null) continue;
-                if(BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselRadarData]:  - Unlinking radar: " + mr.Current.radarName);
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselRadarData]:  - Unlinking radar: " + mr.Current.radarName);
                 UnlinkRadar(mr.Current);
             }
             mr.Dispose();
@@ -1309,8 +1321,8 @@ namespace BDArmory.Radar
                 yield return null;
             }
             LinkVRD(vrd);
-            if(BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselRadarData]: Radar data link recovered: Local - " + vessel.vesselName + ", External - " +
-                      vrd.vessel.vesselName);
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselRadarData]: Radar data link recovered: Local - " + vessel.vesselName + ", External - " +
+                       vrd.vessel.vesselName);
         }
 
         public void UnlinkAllExternalRadars()
