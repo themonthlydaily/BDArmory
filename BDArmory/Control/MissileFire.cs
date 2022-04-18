@@ -5597,31 +5597,6 @@ namespace BDArmory.Control
             }
         }
 
-        /// <summary>
-        /// Update the miss distance for the current incomingThreatVessel.
-        /// </summary>
-        /// <returns>The miss distance.</returns>
-        public float UpdateMissDistance()
-        {
-            incomingMissDistance = float.MaxValue;
-            if (incomingThreatVessel == null) return incomingMissDistance;
-            using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(incomingThreatVessel).GetEnumerator())
-                while (weapon.MoveNext())
-                {
-                    if (weapon.Current == null || weapon.Current.weaponManager == null) continue;
-                    if (weapon.Current.weaponManager.currentTarget != null && weapon.Current.weaponManager.currentTarget.Vessel == vessel)
-                    {
-                        var missDistance = RadarUtils.MissDistance(weapon.Current, vessel);
-                        if (missDistance < incomingMissDistance)
-                        {
-                            var missDeviation = (weapon.Current.fireTransforms[0].position - vessel.transform.position).magnitude * weapon.Current.maxDeviation / 2f * Mathf.Deg2Rad;
-                            incomingMissDistance = missDistance + missDeviation;
-                        }
-                    }
-                }
-            return incomingMissDistance;
-        }
-
         public void ForceScan()
         {
             targetScanTimer = -100;
