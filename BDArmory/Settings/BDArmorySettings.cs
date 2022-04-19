@@ -265,6 +265,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool WAYPOINTS_INFINITE_FUEL_AT_START = true; // Don't consume fuel prior to the first waypoint.
         [BDAPersistentSettingsField] public static float WAYPOINTS_SCALE = 500;                    // Have model(or maybe WP radius proper) scale?
         [BDAPersistentSettingsField] public static int WAYPOINT_COURSE_INDEX = 1;                // Select from a set of courses
+        [BDAPersistentSettingsField] public static int WAYPOINT_GUARD_INDEX = -1;                 // Activate guard after index; -1 for no guard
 
         // Heartbleed
         [BDAPersistentSettingsField] public static float HEART_BLEED_RATE = 0.01f;
