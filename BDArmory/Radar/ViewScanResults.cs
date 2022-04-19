@@ -20,6 +20,7 @@ namespace BDArmory.Radar
         #region Guns
         public bool firingAtMe;
         public float missDistance;
+        public float missDeviation;
         public Vector3 threatPosition;
         public Vessel threatVessel;
         public MissileFire threatWeaponManager;

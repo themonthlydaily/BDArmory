@@ -56,7 +56,7 @@ namespace BDArmory.Competition.VesselSpawning
                 var distanceToCoMainBody = (testPosition - FlightGlobals.currentMainBody.transform.position).magnitude;
                 ray = new Ray(testPosition, -radialUnitVector);
                 var message = "Waiting up to 10s for terrain to settle.";
-                if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.CircularSpawning]: " + message);
+                if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.CircularSpawning]: " + message);
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
                 var startTime = Planetarium.GetUniversalTime();
                 double lastStableTimeStart = startTime;

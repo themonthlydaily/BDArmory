@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
@@ -33,6 +34,7 @@ namespace BDArmory.UI
         public static BDATargetManager Instance;
 
         private StringBuilder debugString = new StringBuilder();
+        private int debugStringLineCount = 0;
         private float updateTimer = 0;
 
         static string gpsTargetsCfg;
@@ -137,7 +139,9 @@ namespace BDArmory.UI
 
         void Update()
         {
-            if (BDArmorySettings.DEBUG_AI && FlightGlobals.ready)
+            if (!FlightGlobals.ready) return;
+
+            if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
             {
                 updateTimer -= Time.fixedDeltaTime;
                 if (updateTimer < 0)
@@ -145,6 +149,10 @@ namespace BDArmory.UI
                     UpdateDebugLabels();
                     updateTimer = 0.5f;    //next update in half a sec only
                 }
+            }
+            else
+            {
+                if (debugString.Length > 0) debugString.Clear();
             }
         }
 
@@ -306,7 +314,7 @@ namespace BDArmory.UI
             return flareTarget;
         }
 
-        public static TargetSignatureData GetHeatTarget(Vessel sourceVessel, Vessel missileVessel, Ray ray, TargetSignatureData priorHeatTarget, float scanRadius, float highpassThreshold, bool allAspect, FloatCurve lockedSensorFOVBias, FloatCurve lockedSensorVelocityBias, MissileFire mf = null, bool favorGroundTargets = false)
+        public static TargetSignatureData GetHeatTarget(Vessel sourceVessel, Vessel missileVessel, Ray ray, TargetSignatureData priorHeatTarget, float scanRadius, float highpassThreshold, bool allAspect, FloatCurve lockedSensorFOVBias, FloatCurve lockedSensorVelocityBias, MissileFire mf = null)
         {
             float minMass = 0.05f;  //otherwise the RAMs have trouble shooting down incoming missiles
             TargetSignatureData finalData = TargetSignatureData.noTarget;
@@ -321,11 +329,8 @@ namespace BDArmory.UI
                     continue;
                 if (vessel == sourceVessel || vessel == missileVessel)
                     continue;
-                if (favorGroundTargets && !vessel.LandedOrSplashed)
-                {
-                    // for AGM heat guidance
+                if (vessel.vesselType == VesselType.Debris)
                     continue;
-                }
 
                 TargetInfo tInfo = vessel.gameObject.GetComponent<TargetInfo>();
 
@@ -375,13 +380,7 @@ namespace BDArmory.UI
 
                     // Add bias targets closer to center of seeker FOV, only once missile seeker can see target
                     if ((priorHeatScore > 0f) && (angle < scanRadius))
-
                         score *= GetSeekerBias(angle, Vector3.Angle(vessel.Velocity(), priorHeatTarget.velocity), lockedSensorFOVBias, lockedSensorVelocityBias);
-
-                    if (vessel.LandedOrSplashed && !favorGroundTargets)
-                    {
-                        score /= 4;
-                    }
 
                     score *= Mathf.Clamp(Vector3.Angle(vessel.transform.position - ray.origin, -VectorUtils.GetUpDirection(ray.origin)) / 90, 0.5f, 1.5f);
 
@@ -452,15 +451,19 @@ namespace BDArmory.UI
         void UpdateDebugLabels()
         {
             debugString.Length = 0;
+            debugStringLineCount = 0;
 
             using (var team = TargetDatabase.GetEnumerator())
                 while (team.MoveNext())
                 {
+                    if (!LoadedVesselSwitcher.Instance.WeaponManagers.Any(wm => wm.Key == team.Current.Key.Name)) continue;
                     debugString.AppendLine($"Team {team.Current.Key} targets:");
+                    ++debugStringLineCount;
                     foreach (TargetInfo targetInfo in team.Current.Value)
                     {
                         if (targetInfo)
                         {
+                            if (!targetInfo.isMissile && targetInfo.weaponManager == null) continue;
                             if (!targetInfo.Vessel)
                             {
                                 debugString.AppendLine($"- A target with no vessel reference.");
@@ -474,6 +477,7 @@ namespace BDArmory.UI
                         {
                             debugString.AppendLine($"- null target info.");
                         }
+                        ++debugStringLineCount;
                     }
                 }
 
@@ -486,6 +490,7 @@ namespace BDArmory.UI
             debugString.AppendLine($"ECM Jammer Strength: " + (ecmjInfo != null ? ecmjInfo.jammerStrength.ToString("0.00") : "N/A"));
             debugString.AppendLine($"ECM Lockbreak Strength: " + (ecmjInfo != null ? ecmjInfo.lockBreakStrength.ToString("0.00") : "N/A"));
             debugString.AppendLine($"Radar Lockbreak Factor: " + RadarUtils.GetVesselRadarSignature(FlightGlobals.ActiveVessel).radarLockbreakFactor);
+            debugStringLineCount += 7;
         }
 
         public void SaveGPSTargets(ConfigNode saveNode = null)
@@ -933,8 +938,8 @@ namespace BDArmory.UI
             using (var target = TargetList(mf.Team).GetEnumerator())
                 while (target.MoveNext())
                 {
-                    //Debug.Log("[BDATargetmanager] evaluating " + target.Current.Vessel.GetName());
-                    if ((mf.multiTargetNum > 1 || mf.multiMissileTgtNum > 1) && mf.targetsAssigned.Contains(target.Current)) continue;            
+                    //Debug.Log("[BDArmory.BDATargetmanager]: evaluating " + target.Current.Vessel.GetName());
+                    if ((mf.multiTargetNum > 1 || mf.multiMissileTgtNum > 1) && mf.targetsAssigned.Contains(target.Current)) continue;
                     if (target.Current != null && target.Current.Vessel && mf.CanSeeTarget(target.Current) && !target.Current.isMissile && target.Current.isThreat)
                     {
                         float targetScore = (target.Current == mf.currentTarget ? mf.targetBias : 1f) * (
@@ -1080,9 +1085,9 @@ namespace BDArmory.UI
 
         void OnGUI()
         {
-            if (BDArmorySettings.DEBUG_TELEMETRY)
+            if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
             {
-                GUI.Label(new Rect(600, 100, 600, 600), debugString.ToString());
+                GUI.Label(new Rect(600, 100, 600, 16 * debugStringLineCount), debugString.ToString());
             }
         }
     }

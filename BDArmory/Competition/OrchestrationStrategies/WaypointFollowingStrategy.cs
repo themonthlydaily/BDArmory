@@ -7,8 +7,8 @@ using UnityEngine;
 using BDArmory.Competition.RemoteOrchestration;
 using BDArmory.Control;
 using BDArmory.Damage;
-using BDArmory.Extensions;
 using BDArmory.FX;
+using BDArmory.GameModes.Waypoints;
 using BDArmory.Modules;
 using BDArmory.Settings;
 using BDArmory.UI;
@@ -18,18 +18,38 @@ namespace BDArmory.Competition.OrchestrationStrategies
 {
     public class WaypointFollowingStrategy : OrchestrationStrategy
     {
+        /*
         public class Waypoint
         {
+            //waypoint container class - holds coord data, scale, and WP name
             public float latitude;
             public float longitude;
             public float altitude;
-            public Waypoint(float latitude, float longitude, float altitude) //really, this should become the waypointmarker, and be a class that contains both a dataset (lat/long coords) and a togglable model
+            public string waypointName = "Waypoint";
+            public double waypointScale = 500;
+            public Waypoint(float latitude, float longitude, float altitude, string waypointName, double waypointScale) //really, this should become the waypointmarker, and be a class that contains both a dataset (lat/long coords) and a togglable model
             {
                 this.latitude = latitude;
                 this.longitude = longitude;
                 this.altitude = altitude;
+                this.waypointName = waypointName;
+                this.waypointScale = waypointScale;
             }
         }
+        */
+        /// <summary>
+        /// Building coursebuilder tools will need:
+        /// A GUI, to spawn in new gates, move them, name course/points, and save data to a config node
+        /// A save utility class. Save Node will need:
+        /// CourseName string
+        /// WorldIndex int
+        /// list of WPs
+        /// >>each WP needs to hold a tuple - WP name string, Lat/Long/Alt Vector3d, WPScale double
+        /// >> these could be stored separately as a string, vector3d, double
+        /// </summary>
+
+
+
         private List<Waypoint> waypoints;
         private List<BDGenericAIBase> pilots;
         public static List<BDGenericAIBase> activePilots;
@@ -44,7 +64,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
 
         public IEnumerator Execute(BDAScoreClient client, BDAScoreService service)
         {
-            if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.WaypointFollowingStrategy]: Started");
+            if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.WaypointFollowingStrategy]: Started");
             pilots = LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Select(wm => wm.vessel).Where(v => v != null && v.loaded).Select(v => VesselModuleRegistry.GetModule<BDGenericAIBase>(v)).Where(p => p != null).ToList();
             if (pilots.Count > 1) //running multiple craft through the waypoints at the same time
                 LoadedVesselSwitcher.Instance.MassTeamSwitch(true);
@@ -56,9 +76,9 @@ namespace BDArmory.Competition.OrchestrationStrategies
             PrepareCompetition();
 
             // Configure the pilots' waypoints.
-            var mappedWaypoints = waypoints.Select(e => new Vector3(e.latitude, e.longitude, e.altitude)).ToList();
+            var mappedWaypoints = waypoints.Select(e => e.location).ToList();
             BDACompetitionMode.Instance.competitionStatus.Add($"Starting waypoints competition {BDACompetitionMode.Instance.CompetitionID}.");
-            if (BDArmorySettings.DEBUG_LABELS) Debug.Log(string.Format("[BDArmory.WaypointFollowingStrategy]: Setting {0} waypoints", mappedWaypoints.Count));
+            if (BDArmorySettings.DEBUG_OTHER) Debug.Log(string.Format("[BDArmory.WaypointFollowingStrategy]: Setting {0} waypoints", mappedWaypoints.Count));
 
             foreach (var pilot in pilots)
             { pilot.SetWaypoints(mappedWaypoints); }
@@ -86,6 +106,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
                     displayName += " (" + BDArmorySettings.HOS_BADGE + ")";
                 }
                 BDACompetitionMode.Instance.competitionStatus.Add($"  - {displayName}: Time: {elapsedTime:F1}s, Waypoints reached: {waypointCount}, Deviation: {deviation}");
+
                 Debug.Log(string.Format("[BDArmory.WaypointFollowingStrategy]: Finished {0}, elapsed={1:0.00}, count={2}, deviation={3:0.00}", player, elapsedTime, waypointCount, deviation));
             }
 
@@ -115,21 +136,23 @@ namespace BDArmory.Competition.OrchestrationStrategies
                     ModelPath = "BDArmory/Models/WayPoint/" + VesselSpawnerWindow.Instance.SelectedModel;
                 for (int i = 0; i < waypoints.Count; i++)
                 {
-                    float terrainAltitude = (float)FlightGlobals.currentMainBody.TerrainAltitude(waypoints[i].latitude, waypoints[i].longitude);
-                    Vector3d WorldCoords = VectorUtils.GetWorldSurfacePostion(new Vector3(waypoints[i].latitude, waypoints[i].longitude, waypoints[i].altitude + terrainAltitude), FlightGlobals.currentMainBody);
+                    float terrainAltitude = (float)FlightGlobals.currentMainBody.TerrainAltitude(waypoints[i].location.x, waypoints[i].location.y);
+                    Vector3d WorldCoords = VectorUtils.GetWorldSurfacePostion(new Vector3(waypoints[i].location.x, waypoints[i].location.y, waypoints[i].location.z + terrainAltitude), FlightGlobals.currentMainBody);
                     //FlightGlobals.currentMainBody.GetLatLonAlt(new Vector3(waypoints[i].latitude, waypoints[i].longitude, waypoints[i].altitude), out WorldCoords.x, out WorldCoords.y, out WorldCoords.z);
                     var direction = (WorldCoords - previousLocation).normalized;
-                    WayPointMarker.CreateWaypoint(WorldCoords, direction, ModelPath, BDArmorySettings.WAYPOINTS_SCALE);
+                    //WayPointMarker.CreateWaypoint(WorldCoords, direction, ModelPath, BDArmorySettings.WAYPOINTS_SCALE);
+                    WayPointMarker.CreateWaypoint(WorldCoords, direction, ModelPath, BDArmorySettings.WAYPOINTS_SCALE > 0 ? BDArmorySettings.WAYPOINTS_SCALE  :  waypoints[i].scale);
+
                     previousLocation = WorldCoords;
-                    var location = string.Format("({0:##.###}, {1:##.###}, {2:####}", waypoints[i].latitude, waypoints[i].longitude, waypoints[i].altitude);
-                    Debug.Log("[BDArmory.Waypoints]: Creating waypoint marker at  " + " " + location);
+                    var location = string.Format("({0:##.###}, {1:##.###}, {2:####}", waypoints[i].location.x, waypoints[i].location.y, waypoints[i].location.z);
+                    Debug.Log("[BDArmory.Waypoints]: Creating waypoint marker at  " + " " + location + " scale: " + waypoints[i].scale);
                 }
             }
 
             if (BDArmorySettings.WAYPOINTS_MODE || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 50))
             {
-                float terrainAltitude = (float)FlightGlobals.currentMainBody.TerrainAltitude(waypoints[0].latitude, waypoints[0].longitude);
-                Vector3d WorldCoords = VectorUtils.GetWorldSurfacePostion(new Vector3(waypoints[0].latitude, waypoints[0].longitude, waypoints[0].altitude + terrainAltitude), FlightGlobals.currentMainBody);
+                float terrainAltitude = (float)FlightGlobals.currentMainBody.TerrainAltitude(waypoints[0].location.x, waypoints[0].location.y);
+                Vector3d WorldCoords = VectorUtils.GetWorldSurfacePostion(new Vector3(waypoints[0].location.x, waypoints[0].location.y, waypoints[0].location.z + terrainAltitude), FlightGlobals.currentMainBody);
                 foreach (var pilot in pilots)
                 {
                     if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 50) // S4R10 alt limiter
@@ -252,8 +275,6 @@ namespace BDArmory.Competition.OrchestrationStrategies
 
             newWayPoint.transform.SetPositionAndRotation(position, rotation);
 
-            //newWayPoint.transform.SetPositionAndRotation(position, rotation);
-            //rotation based on root(partTools) transform of the model, with Z+ forward, and Y+ up
             newWayPoint.transform.RotateAround(position, newWayPoint.transform.up, Vector3.Angle(newWayPoint.transform.forward, direction)); //rotate model on horizontal plane towards last gate
             newWayPoint.transform.RotateAround(position, newWayPoint.transform.right, Vector3.Angle(newWayPoint.transform.forward, direction)); //and on vertical plane if elevation change between the two
 
@@ -265,7 +286,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
         }
         void Awake()
         {
-            transform.parent = FlightGlobals.ActiveVessel.mainBody.transform; //FIXME need to update this to grab worldindex for non-kerbin spawns for custom track building
+            transform.parent = FlightGlobals.ActiveVessel.mainBody.transform; 
         }
         private void OnEnable()
         {

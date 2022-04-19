@@ -837,7 +837,7 @@ namespace BDArmory.Bullets
                 int armorType = (int)Armor.ArmorTypeNum;
                 if (BDArmorySettings.DEBUG_ARMOR)
                 {
-                    Debug.Log("[PooledBullet].ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density + "; thickness: " + thickness);
+                    Debug.Log("[BDArmory.PooledBullet]: ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density + "; thickness: " + thickness);
                 }
                 float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(bulletMass, impactSpeed);
                 float armorStrength = ProjectileUtils.CalculateArmorStrength(caliber, thickness, Ductility, Strength, Density, safeTemp, hitPart);
@@ -860,7 +860,7 @@ namespace BDArmory.Bullets
                     if (penetrationFactor > 1)
                     {
                         float thicknessModifier = RA.armorModifier;
-                        if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[PooledBullet] Beginning Reactive Armor Hit; NXRA: " + RA.NXRA + "; thickness Mod: " + RA.armorModifier);
+                        if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.PooledBullet]: Beginning Reactive Armor Hit; NXRA: " + RA.NXRA + "; thickness Mod: " + RA.armorModifier);
                         if (RA.NXRA) //non-explosive RA, always active
                         {
                             thickness *= thicknessModifier;
@@ -874,7 +874,7 @@ namespace BDArmory.Bullets
                                     caliber = Mathf.Sqrt((caliber * (((bulletMass * 1000) / ((caliber * caliber * Mathf.PI / 400) * 19)) + 1) * 4) / Mathf.PI); //increase caliber to sim sabot hitting perpendicualr instead of point-first
                                     bulletMass /= 2; //sunder sabot
                                                      //RA isn't going to stop sabot, but underlying part's armor will (probably)
-                                    if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[PooledBullet] Sabot caliber and mass now: " + caliber + ", " + bulletMass);
+                                    if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("BDArmory.PooledBullet]: Sabot caliber and mass now: " + caliber + ", " + bulletMass);
                                     RA.UpdateSectionScales();
                                 }
                             }

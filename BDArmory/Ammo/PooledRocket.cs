@@ -403,7 +403,7 @@ namespace BDArmory.Bullets
                             int armorType = (int)Armor.ArmorTypeNum;
                             if (BDArmorySettings.DEBUG_ARMOR)
                             {
-                                Debug.Log("[PooledBUllet].ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density);
+                                Debug.Log("[BDArmory.PooledBUllet]: ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density);
                             }
                             float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(rocketMass * 1000, impactVelocity);
                             float armorStrength = ProjectileUtils.CalculateArmorStrength(caliber, thickness, Ductility, Strength, Density, safeTemp, hitPart);
@@ -449,7 +449,7 @@ namespace BDArmory.Bullets
                         }
                         else
                         {
-                            Debug.Log("[PooledRocket].ArmorVars not found; hitPart null");
+                            Debug.Log("[BDArmory.PooledRocket]: ArmorVars not found; hitPart null");
                         }
                         if (penetration > thickness)
                         {

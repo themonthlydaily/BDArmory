@@ -158,7 +158,7 @@ namespace BDArmory.Competition.VesselSpawning
                     var distanceToCoMainBody = (testPosition - FlightGlobals.currentMainBody.transform.position).magnitude;
                     ray = new Ray(testPosition, -radialUnitVector);
                     message = "Waiting up to 10s for terrain to settle.";
-                    if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.VesselSpawner]: " + message);
+                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.VesselSpawner]: " + message);
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
                     var startTime = Planetarium.GetUniversalTime();
                     double lastStableTimeStart = startTime;
@@ -222,7 +222,7 @@ namespace BDArmory.Competition.VesselSpawning
                 }
                 while (craftToSpawn.Count + vesselsToActivate.Count + currentlyActive < spawnSlots.Count && spawnQueue.Count > 0)
                     craftToSpawn.Enqueue(spawnQueue.Dequeue());
-                if (BDArmorySettings.DEBUG_LABELS)
+                if (BDArmorySettings.DEBUG_OTHER)
                 {
                     var missing = spawnConfig.craftFiles.Where(craftURL => craftURLToVesselName.ContainsKey(craftURL) && !craftToSpawn.Contains(craftURL) && !FlightGlobals.Vessels.Where(v => !VesselModuleRegistry.ignoredVesselTypes.Contains(v.vesselType) && VesselModuleRegistry.GetModuleCount<MissileFire>(v) > 0).Select(v => v.vesselName).Contains(craftURLToVesselName[craftURL])).ToList();
                     if (missing.Count > 0)
@@ -237,7 +237,7 @@ namespace BDArmory.Competition.VesselSpawning
                     string failedVessels = "";
                     foreach (var craftURL in craftToSpawn)
                     {
-                        if (BDArmorySettings.DEBUG_LABELS) Debug.Log($"[BDArmory.VesselSpawner]: Spawning vessel from {craftURL}");
+                        if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.VesselSpawner]: Spawning vessel from {craftURL}");
                         var heading = 360f * spawnSlots[continuousSpawnedVesselCount] / spawnSlots.Count;
                         var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(heading, radialUnitVector) * refDirection, radialUnitVector).normalized;
                         craftSpawnPosition = spawnPoint + spawnDistance * direction;

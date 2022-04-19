@@ -393,8 +393,8 @@ namespace BDArmory.Damage
                 {
                     armorVolume *= 0.63f; //part bounds dimensions when calced in Flight are consistantly 1.6-1.7x larger than correct SPH dimensions. Won't be exact, but good enough for legacy craft support
                 }
-                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[ARMOR]: part size is (X: " + partSize.x + ";, Y: " + partSize.y + "; Z: " + partSize.z);
-                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[ARMOR]: size adjust mult: " + sizeAdjust + "; part srf area: " + ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust));
+                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.HitpointTracker]: ARMOR: part size is (X: " + partSize.x + ";, Y: " + partSize.y + "; Z: " + partSize.z);
+                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.HitpointTracker]: ARMOR: size adjust mult: " + sizeAdjust + "; part srf area: " + ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust));
             }
             SetupPrefab();
             if (HighLogic.LoadedSceneIsEditor && !isProcWing)
@@ -404,7 +404,7 @@ namespace BDArmory.Damage
                     for (int i = 0; i < r.Length; i++)
                     {
                         defaultShader.Add(r[i].material.shader);
-                        if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[ARMOR] part shader is " + r[i].material.shader.name);
+                        if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.HitpointTracker]: ARMOR: part shader is " + r[i].material.shader.name);
                         if (r[i].material.HasProperty("_Color"))
                         {
                             defaultColor.Add(r[i].material.color);
@@ -416,7 +416,7 @@ namespace BDArmory.Damage
             StartCoroutine(DelayedOnStart()); // Delay updating mass, armour, hull and HP so mods like proc wings and tweakscale get the right values.
             // if (HighLogic.LoadedSceneIsFlight)
             // {
-            //     if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[ARMOR] part mass is: " + (part.mass - armorMass) + "; Armor mass is: " + armorMass + "; hull mass adjust: " + HullmassAdjust + "; total: " + part.mass);
+            //     if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.HitpointTracker]: ARMOR: part mass is: " + (part.mass - armorMass) + "; Armor mass is: " + armorMass + "; hull mass adjust: " + HullmassAdjust + "; total: " + part.mass);
             // }
             CalculateDryCost();
         }
@@ -588,7 +588,7 @@ namespace BDArmory.Damage
             double dTime = Planetarium.GetUniversalTime();
             if (dTime < nextHeartBleedTime)
             {
-                //Debug.Log(string.Format("[HitpointTracker] TimeSkip ShouldHeartBleed for {0} on {1}", part.name, part.vessel.vesselName));
+                //Debug.Log(string.Format("[BDArmory.HitpointTracker]: TimeSkip ShouldHeartBleed for {0} on {1}", part.name, part.vessel.vesselName));
                 return false;
             }
 
@@ -609,7 +609,7 @@ namespace BDArmory.Damage
                 return;
             }
             // deduct hp base on the rate
-            //Debug.Log(string.Format("[HitpointTracker] Heart bleed {0} on {1} by {2:#.##} ({3:#.##}%)", part.name, part.vessel.vesselName, deduction, rate*100.0));
+            //Debug.Log(string.Format("[BDArmory.HitpointTracker]: Heart bleed {0} on {1} by {2:#.##} ({3:#.##}%)", part.name, part.vessel.vesselName, deduction, rate*100.0));
             AddDamage(deduction);
         }
         #endregion
