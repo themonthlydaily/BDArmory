@@ -256,16 +256,17 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static int VESSEL_SPAWN_NUMBER_OF_TEAMS = 0;           // Number of Teams: 0 - FFA, 1 - Folders, 2-10 specified directly
         [BDAPersistentSettingsField] public static string VESSEL_SPAWN_FILES_LOCATION = "";        // Spawn files location (under AutoSpawn).
         [BDAPersistentSettingsField] public static bool VESSEL_SPAWN_RANDOM_ORDER = true;          // Shuffle vessels before spawning them.
-        [BDAPersistentSettingsField] public static bool SHOW_WAYPOINTS_OPTIONS = true;               // Waypoint section of Vessel Spawner Window.
+        [BDAPersistentSettingsField] public static bool SHOW_WAYPOINTS_OPTIONS = true;             // Waypoint section of Vessel Spawner Window.
 
         // Waypoints
-        [BDAPersistentSettingsField] public static float WAYPOINTS_ALTITUDE = 50f;               // Altitude above ground of the waypoints.
-        [BDAPersistentSettingsField] public static bool WAYPOINTS_ONE_AT_A_TIME = true;          // Send the craft one-at-a-time through the course.
-        [BDAPersistentSettingsField] public static bool WAYPOINTS_VISUALIZE = true;              // Add Waypoint models to indicate the path
-        [BDAPersistentSettingsField] public static bool WAYPOINTS_INFINITE_FUEL_AT_START = true; // Don't consume fuel prior to the first waypoint.
-        [BDAPersistentSettingsField] public static float WAYPOINTS_SCALE = 500;                    // Have model(or maybe WP radius proper) scale?
-        [BDAPersistentSettingsField] public static int WAYPOINT_COURSE_INDEX = 1;                // Select from a set of courses
-        [BDAPersistentSettingsField] public static int WAYPOINT_LOOP_INDEX = 1;                  // Number of loops to generate
+        [BDAPersistentSettingsField] public static float WAYPOINTS_ALTITUDE = 50f;                // Altitude above ground of the waypoints.
+        [BDAPersistentSettingsField] public static bool WAYPOINTS_ONE_AT_A_TIME = true;           // Send the craft one-at-a-time through the course.
+        [BDAPersistentSettingsField] public static bool WAYPOINTS_VISUALIZE = true;               // Add Waypoint models to indicate the path
+        [BDAPersistentSettingsField] public static bool WAYPOINTS_INFINITE_FUEL_AT_START = true;  // Don't consume fuel prior to the first waypoint.
+        [BDAPersistentSettingsField] public static float WAYPOINTS_SCALE = 500;                   // Have model(or maybe WP radius proper) scale?
+        [BDAPersistentSettingsField] public static int WAYPOINT_COURSE_INDEX = 0;                 // Select from a set of courses
+        [BDAPersistentSettingsField] public static int WAYPOINT_LOOP_INDEX = 1;                   // Number of loops to generate
+        [BDAPersistentSettingsField] public static int WAYPOINT_GUARD_INDEX = -1;                 // Activate guard after index; -1 for no guard
 
         // Heartbleed
         [BDAPersistentSettingsField] public static float HEART_BLEED_RATE = 0.01f;
