@@ -573,7 +573,7 @@ namespace BDArmory.Competition
             if (vesselName == null || !ScoreData.ContainsKey(vesselName)) return false;
 
             ScoreData[vesselName].waypointsReached.Add(new ScoringData.WaypointReached(waypointIndex, distance, Planetarium.GetUniversalTime() - BDACompetitionMode.Instance.competitionStartTime));
-            BDACompetitionMode.Instance.competitionStatus.Add($"{vesselName}: Waypoint {waypointIndex} reached! Time: {ScoreData[vesselName].waypointsReached.Last().timestamp - ScoreData[vesselName].waypointsReached.First().timestamp:F2}s, Deviation: {distance:F1}m");
+            BDACompetitionMode.Instance.competitionStatus.Add($"{vesselName}: {WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].waypoints[waypointIndex].name} ({waypointIndex}) reached: Time: {ScoreData[vesselName].waypointsReached.Last().timestamp - ScoreData[vesselName].waypointsReached.First().timestamp:F2}s, Deviation: {distance:F1}m");
 
             return true;
         }
