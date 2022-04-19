@@ -3371,34 +3371,34 @@ namespace BDArmory.Control
             string targetDebugText = "";
             targetsAssigned.Clear(); //fixes fixed guns not firing if Multitargeting >1
             missilesAssigned.Clear();
-            //FIXME - add check for identically named vessels
-            if (firedMissiles >= maxMissilesOnTarget && (multiMissileTgtNum > 1 && BDATargetManager.TargetList(Team).Count > 1)) //if there are multiple potential targets, see how many can be fired at with missiles
+
+            if ((CurrentMissile || PreviousMissile) && multiMissileTgtNum > 1 && BDATargetManager.TargetList(Team).Count > 1) //if there are multiple potential targets, see how many can be fired at with missiles
             {
-                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: max missiles on target; switching to new target!");
-                if (Vector3.Distance(transform.position + vessel.Velocity(), currentTarget.position + currentTarget.velocity) < gunRange * 0.75f) //don't swap away from current target if about to enter gunrange
+                if (firedMissiles >= maxMissilesOnTarget)
                 {
-                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: max targets fired on, but about to enter Gun range; keeping current target");
-                    return;
-                }
-                if (PreviousMissile)
-                {
-                    MissileBase ml = PreviousMissile;
-                    if (ml.TargetingMode == MissileBase.TargetingModes.Laser) //don't switch from current target if using LASMs to keep current target painted
+                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: max missiles on target; switching to new target!");
+                    if (Vector3.Distance(transform.position + vessel.Velocity(), currentTarget.position + currentTarget.velocity) < gunRange * 0.75f) //don't swap away from current target if about to enter gunrange
                     {
-                        if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: max targets fired on with LASMs, keeping target painted!");
+                        if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: max targets fired on, but about to enter Gun range; keeping current target");
                         return;
                     }
-                    if (ml && !(ml.TargetingMode == MissileBase.TargetingModes.Radar && !ml.radarLOAL))
+                    if (PreviousMissile)
                     {
-                        //if (vesselRadarData != null) vesselRadarData.UnlockCurrentTarget();//unlock current target only if missile isn't slaved to ship radar guidance to allow new F&F lock
-                        //enabling this has the radar blip off after firing missile, having it on requires waiting 2 sec for the radar do decide it needs to swap to another target, but will continue to guide current missile (assuming sufficient radar FOV)
+                        MissileBase ml = PreviousMissile;
+                        if (ml.TargetingMode == MissileBase.TargetingModes.Laser) //don't switch from current target if using LASMs to keep current target painted
+                        {
+                            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: max targets fired on with LASMs, keeping target painted!");
+                            return;
+                        }
+                        if (ml && !(ml.TargetingMode == MissileBase.TargetingModes.Radar && !ml.radarLOAL))
+                        {
+                            //if (vesselRadarData != null) vesselRadarData.UnlockCurrentTarget();//unlock current target only if missile isn't slaved to ship radar guidance to allow new F&F lock
+                            //enabling this has the radar blip off after firing missile, having it on requires waiting 2 sec for the radar do decide it needs to swap to another target, but will continue to guide current missile (assuming sufficient radar FOV)
+                        }
                     }
+                    heatTarget = TargetSignatureData.noTarget; //clear holdover targets when switching targets
+                    antiRadTargetAcquired = false;
                 }
-                heatTarget = TargetSignatureData.noTarget; //clear holdover targets when switching targets
-                antiRadTargetAcquired = false;
-
-                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: max missiles on target; switching to new target!");
-
                 using (List<TargetInfo>.Enumerator target = BDATargetManager.TargetList(Team).GetEnumerator())
                 {
                     while (target.MoveNext())
