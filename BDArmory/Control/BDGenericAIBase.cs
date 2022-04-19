@@ -7,6 +7,7 @@ using KSP.Localization;
 
 using BDArmory.Competition;
 using BDArmory.Extensions;
+using BDArmory.GameModes.Waypoints;
 using BDArmory.Settings;
 using BDArmory.Targeting;
 using BDArmory.UI;
@@ -469,7 +470,7 @@ namespace BDArmory.Control
             waypointRange = (float)(vesselTransform.position - waypointPosition).magnitude;
             var timeToCPA = AIUtils.ClosestTimeToCPA(vessel.transform.position - waypointPosition, vessel.Velocity(), vessel.acceleration, Time.fixedDeltaTime);
             // if (waypointsRange < waypointRadius) Debug.Log($"DEBUG waypoint {activeWaypointIndex}, distance: {waypointsRange:F1} @ {Time.time}, TtCPA: {timeToCPA:F3}");
-            if (waypointRange < BDArmorySettings.WAYPOINTS_SCALE && timeToCPA < Time.fixedDeltaTime) // Within waypointRadius and reaching a minimum within the next frame. Looking forwards like this avoids a frame where the fly-to direction is backwards allowing smoother waypoint traversal.
+            if (waypointRange < WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].waypoints[activeWaypointIndex].scale && timeToCPA < Time.fixedDeltaTime) // Within waypointRadius and reaching a minimum within the next frame. Looking forwards like this avoids a frame where the fly-to direction is backwards allowing smoother waypoint traversal.
             {
                 // moving away, proceed to next point
                 var deviation = AIUtils.PredictPosition(vessel.transform.position - waypointPosition, vessel.Velocity(), vessel.acceleration, timeToCPA).magnitude;
