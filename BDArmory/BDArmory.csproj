@@ -245,6 +245,8 @@
     <Compile Include="Services\NotificableService.cs" />
     <Compile Include="Settings/BDAPersistentSettingsField.cs" />
     <Compile Include="Settings/BDArmorySettings.cs" />
+    <Compile Include="Settings\BDAPersistentSettingsField.cs" />
+    <Compile Include="Settings\BDArmorySettings.cs" />
     <Compile Include="Settings\BDAWindowSettingsField.cs" />
     <Compile Include="Settings\BDInputSettingsFields.cs" />
     <Compile Include="Settings\BDTISettings.cs" />

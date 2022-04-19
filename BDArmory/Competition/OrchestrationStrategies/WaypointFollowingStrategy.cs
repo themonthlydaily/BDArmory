@@ -143,11 +143,11 @@ namespace BDArmory.Competition.OrchestrationStrategies
                     //FlightGlobals.currentMainBody.GetLatLonAlt(new Vector3(waypoints[i].latitude, waypoints[i].longitude, waypoints[i].altitude), out WorldCoords.x, out WorldCoords.y, out WorldCoords.z);
                     var direction = (WorldCoords - previousLocation).normalized;
                     //WayPointMarker.CreateWaypoint(WorldCoords, direction, ModelPath, BDArmorySettings.WAYPOINTS_SCALE);
-                    WayPointMarker.CreateWaypoint(WorldCoords, direction, ModelPath, waypoints[i].scale);
+                    WayPointMarker.CreateWaypoint(WorldCoords, direction, ModelPath, BDArmorySettings.WAYPOINTS_SCALE > 0 ? BDArmorySettings.WAYPOINTS_SCALE  :  waypoints[i].scale);
 
                     previousLocation = WorldCoords;
                     var location = string.Format("({0:##.###}, {1:##.###}, {2:####}", waypoints[i].location.x, waypoints[i].location.y, waypoints[i].location.z);
-                    Debug.Log("[BDArmory.Waypoints]: Creating waypoint marker at  " + " " + location);
+                    Debug.Log("[BDArmory.Waypoints]: Creating waypoint marker at  " + " " + location + " scale: " + waypoints[i].scale);
                 }
             }
 
