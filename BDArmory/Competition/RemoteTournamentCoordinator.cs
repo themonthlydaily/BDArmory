@@ -51,7 +51,7 @@ namespace BDArmory.Competition
                 case "ffa":
                     return BuildFFA();
                 case "path":
-                    return BuildShortCanyonWaypoint();
+                    return BuildWaypoint();
                 case "chase":
                     return BuildChase();
             }
@@ -79,7 +79,7 @@ namespace BDArmory.Competition
             return new RemoteTournamentCoordinator(spawnStrategy, orchestrationStrategy, vesselSpawner);
         }
 
-        private static RemoteTournamentCoordinator BuildShortCanyonWaypoint()
+        private static RemoteTournamentCoordinator BuildWaypoint()
         {
             var scoreService = BDAScoreService.Instance;
             var scoreClient = scoreService.client;
@@ -90,12 +90,13 @@ namespace BDArmory.Competition
             // TODO: need coords from descriptor, or fallback to local settings
             //var latitude = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x;
             //var longitude = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y;
-            var worldIndex = 1;
-            var latitude = 27.97f;
-            var longitude = -39.35f;
+            var worldIndex = WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].worldIndex;
+            var latitude = WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].spawnPoint.x;
+            var longitude = WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].spawnPoint.y;
             var altitude = BDArmorySettings.VESSEL_SPAWN_ALTITUDE;
             var spawnRadius = BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR;
             // var spawnStrategy = new PointSpawnStrategy(craftUrl, latitude, longitude, 2*altitude, 315.0f);
+            Debug.Log("[RemoteTournamentCoordinator] Creating Spawn Strategy - WorldIndex: " + worldIndex + "; course name: " + WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].name);
             var spawnStrategy = new SpawnConfigStrategy(
                 new SpawnConfig(
                     worldIndex,
@@ -114,7 +115,7 @@ namespace BDArmory.Competition
                     activeVesselModels.Select(m => vesselSource.GetLocalPath(m.id)).ToList()
                 )
             );
-            var waypoints = WaypointCourses.CourseLocations[0].waypoints;
+            var waypoints = WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].waypoints;
             var orchestrationStrategy = new WaypointFollowingStrategy(waypoints);
             // var vesselSpawner = SingleVesselSpawning.Instance;
             var vesselSpawner = CircularSpawning.Instance; // The CircularSpawning spawner handles single-vessel spawning using the SpawnConfig strategy and the SingleVesselSpawning spawner is not ready yet.
