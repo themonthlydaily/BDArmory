@@ -5561,7 +5561,7 @@ namespace BDArmory.Control
                 }
                 if (results.threatWeaponManager != null)
                 {
-                    incomingMissDistance = results.missDistance;
+                    incomingMissDistance = results.missDistance + results.missDeviation;
                     TargetInfo nearbyFriendly = BDATargetManager.GetClosestFriendly(this);
                     TargetInfo nearbyThreat = BDATargetManager.GetTargetFromWeaponManager(results.threatWeaponManager);
 
