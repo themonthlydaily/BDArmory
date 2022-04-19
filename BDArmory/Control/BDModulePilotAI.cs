@@ -2158,7 +2158,14 @@ namespace BDArmory.Control
         void FlyWaypoints(FlightCtrlState s)
         {
             // Note: UpdateWaypoint is called separately before this in case FlyWaypoints doesn't get called.
-            SetStatus($"Waypoint {activeWaypointIndex} ({waypointRange:F0}m)");
+            if(BDArmorySettings.WAYPOINT_LOOP_INDEX>1)
+            {
+                SetStatus($"Lap {activeWaypointLap}, Waypoint {activeWaypointIndex} ({waypointRange:F0}m)");
+            }
+            else
+            {
+                SetStatus($"Waypoint {activeWaypointIndex} ({waypointRange:F0}m)");
+            }
             var waypointDirection = (waypointPosition - vessel.transform.position).normalized;
             // var waypointDirection = (WaypointSpline() - vessel.transform.position).normalized;
             waypointRay = new Ray(vessel.transform.position, waypointDirection);
