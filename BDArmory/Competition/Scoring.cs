@@ -7,6 +7,7 @@ using UnityEngine;
 using BDArmory.Competition.RemoteOrchestration;
 using BDArmory.Competition.VesselSpawning;
 using BDArmory.Control;
+using BDArmory.GameModes.Waypoints;
 using BDArmory.Settings;
 using BDArmory.Utils;
 
@@ -567,13 +568,13 @@ namespace BDArmory.Competition
         #endregion
 
         #region Waypoints
-        public bool RegisterWaypointReached(string vesselName, int waypointIndex, float distance)
+        public bool RegisterWaypointReached(string vesselName, int waypointIndex, int lapNumber, float distance)
         {
             if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (vesselName == null || !ScoreData.ContainsKey(vesselName)) return false;
 
             ScoreData[vesselName].waypointsReached.Add(new ScoringData.WaypointReached(waypointIndex, distance, Planetarium.GetUniversalTime() - BDACompetitionMode.Instance.competitionStartTime));
-            BDACompetitionMode.Instance.competitionStatus.Add($"{vesselName}: Waypoint {waypointIndex} reached! Time: {ScoreData[vesselName].waypointsReached.Last().timestamp - ScoreData[vesselName].waypointsReached.First().timestamp:F2}s, Deviation: {distance:F1}m");
+            BDACompetitionMode.Instance.competitionStatus.Add($"{vesselName}: {WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].waypoints[waypointIndex].name} ({waypointIndex}{(BDArmorySettings.WAYPOINT_LOOP_INDEX > 1 ? $", lap {lapNumber}" : "")}) reached: Time: {ScoreData[vesselName].waypointsReached.Last().timestamp - ScoreData[vesselName].waypointsReached.First().timestamp:F2}s, Deviation: {distance:F1}m");
 
             return true;
         }

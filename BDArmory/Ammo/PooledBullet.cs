@@ -845,7 +845,7 @@ namespace BDArmory.Bullets
                 float newCaliber = caliber;
                 if (!sabot)
                 {
-                    newCaliber = ProjectileUtils.CalculateDeformation(armorStrength, bulletEnergy, caliber, impactSpeed, hardness, Density, HERatio, apBulletMod);
+                    newCaliber = ProjectileUtils.CalculateDeformation(armorStrength, bulletEnergy, caliber, impactSpeed, hardness, Density, HERatio, apBulletMod, sabot);
                 }
                 penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, bulletMass, impactSpeed, Ductility, Density, Strength, thickness, apBulletMod, sabot);
                 caliber = newCaliber; //update bullet with new caliber post-deformation(if any)

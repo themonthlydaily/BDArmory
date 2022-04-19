@@ -347,7 +347,7 @@ namespace BDArmory.Control
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionTimeThreshold", advancedTweakable = true, // Time on Target Threshold
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
-            UI_FloatRange(minValue = 0f, maxValue = 1f, stepIncrement = 0.01f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 0f, maxValue = 5f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float evasionTimeThreshold = 0.1f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionIgnoreMyTargetTargetingMe", advancedTweakable = true,//Ignore my target targeting me
@@ -485,7 +485,7 @@ namespace BDArmory.Control
             { nameof(minEvasionTime), 10f },
             { nameof(evasionNonlinearity), 90f },
             { nameof(evasionThreshold), 300f },
-            { nameof(evasionTimeThreshold), 3f },
+            { nameof(evasionTimeThreshold), 30f },
             { nameof(vesselStandoffDistance), 5000f },
             { nameof(turnRadiusTwiddleFactorMin), 10f},
             { nameof(turnRadiusTwiddleFactorMax), 10f},
@@ -1221,19 +1221,14 @@ namespace BDArmory.Control
 
             if (!vessel.LandedOrSplashed && (FlyAvoidTerrain(s) || (!ramming && FlyAvoidOthers(s))))
             { turningTimer = 0; }
-            else if (belowMinAltitude && !(gainAltInhibited || BDArmorySettings.SF_REPULSOR)) // If we're below minimum altitude, gain altitude unless we're being inhibited or the space friction repulsor field is enabled.
+            else if (initialTakeOff)
             {
-                if (initialTakeOff || command != PilotCommands.Follow)
-                {
-                    TakeOff(s);
-                    turningTimer = 0;
-                }
-                else // Have taken off, but is in Follow mode.
-                { UpdateCommand(s); }
+                TakeOff(s);
+                turningTimer = 0;
             }
             else
             {
-                if (command != PilotCommands.Free && command != PilotCommands.Waypoints)
+                if (!(command == PilotCommands.Free || command == PilotCommands.Waypoints))
                 { UpdateCommand(s); }
                 else
                 { UpdateAI(s); }
@@ -1273,7 +1268,7 @@ namespace BDArmory.Control
             {
                 if (weaponManager.incomingMissileTime <= weaponManager.cmThreshold)
                 {
-                    threatRating = 0f; // Allow entering evasion code if we're under missile fire
+                    threatRating = -1f; // Allow entering evasion code if we're under missile fire
                     minimumEvasionTime = 0f; //  Trying to evade missile threats when they don't exist will result in NREs
                 }
                 else if (weaponManager.underFire && !ramming) // If we're ramming, ignore gunfire.
@@ -1283,7 +1278,7 @@ namespace BDArmory.Control
                 }
             }
 
-            debugString.AppendLine($"Threat Rating: {threatRating}");
+            debugString.AppendLine($"Threat Rating: {threatRating:G3}");
 
             // If we're currently evading or a threat is significant and we're not ramming.
             if ((evasiveTimer < minimumEvasionTime && evasiveTimer != 0) || threatRating < evasionThreshold)
@@ -1336,11 +1331,19 @@ namespace BDArmory.Control
                     evasiveTimer = 0;
                     collisionDetectionTicker = vesselCollisionAvoidanceTickerFreq + 1; //check for collision again after exiting evasion routine
                 }
+                if (evading) return;
+            }
+            else if (belowMinAltitude && !(gainAltInhibited || BDArmorySettings.SF_REPULSOR)) // If we're below minimum altitude, gain altitude unless we're being inhibited or the space friction repulsor field is enabled.
+            {
+                TakeOff(s); // Gain Altitude
+                turningTimer = 0;
+                return;
             }
             else if (!extending && IsRunningWaypoints)
             {
                 // FIXME To avoid getting stuck circling a waypoint, a check should be made (maybe use the turningTimer for this?), in which case the plane should RequestExtend away from the waypoint.
                 FlyWaypoints(s);
+                return;
             }
             else if (!extending && weaponManager && targetVessel != null && targetVessel.transform != null)
             {
@@ -1393,6 +1396,7 @@ namespace BDArmory.Control
                         SetStatus("Engaging");
                         debugString.AppendLine($"Flying to target " + targetVessel.vesselName);
                         FlyToTargetVessel(s, targetVessel);
+                        return;
                     }
                 }
             }
@@ -1403,6 +1407,7 @@ namespace BDArmory.Control
                 {
                     SetStatus("Orbiting");
                     FlyOrbit(s, assignedPositionGeo, 2000, idleSpeed, ClockwiseOrbit);
+                    return;
                 }
             }
 
@@ -1413,6 +1418,7 @@ namespace BDArmory.Control
                 SetStatus("Extending");
                 debugString.AppendLine($"Extending");
                 FlyExtend(s, lastTargetPosition);
+                return;
             }
         }
 
@@ -1855,13 +1861,10 @@ namespace BDArmory.Control
             }
 
             bool requiresLowAltitudeRollTargetCorrection = false;
-            if (belowMinAltitude)
-            {
-                if (avoidingTerrain)
-                    rollTarget = terrainAlertNormal * 100;
-                else
-                    rollTarget = vessel.upAxis * 100;
-            }
+            if (avoidingTerrain)
+                rollTarget = terrainAlertNormal * 100;
+            else if (belowMinAltitude && !gainAltInhibited)
+                rollTarget = vessel.upAxis * 100;
             else if (!avoidingTerrain && vessel.verticalSpeed < 0 && Vector3.Dot(rollTarget, upDirection) < 0 && Vector3.Dot(rollTarget, vessel.Velocity()) < 0) // If we're not avoiding terrain, heading downwards and the roll target is behind us and downwards, check that a circle arc of radius "turn radius" (scaled by twiddle factor minimum) tilted at angle of rollTarget has enough room to avoid hitting the ground.
             {
                 // The following calculates the altitude required to turn in the direction of the rollTarget based on the current velocity and turn radius.
@@ -2155,7 +2158,14 @@ namespace BDArmory.Control
         void FlyWaypoints(FlightCtrlState s)
         {
             // Note: UpdateWaypoint is called separately before this in case FlyWaypoints doesn't get called.
-            SetStatus($"Waypoint {activeWaypointIndex} ({waypointRange:F0}m)");
+            if(BDArmorySettings.WAYPOINT_LOOP_INDEX>1)
+            {
+                SetStatus($"Lap {activeWaypointLap}, Waypoint {activeWaypointIndex} ({waypointRange:F0}m)");
+            }
+            else
+            {
+                SetStatus($"Waypoint {activeWaypointIndex} ({waypointRange:F0}m)");
+            }
             var waypointDirection = (waypointPosition - vessel.transform.position).normalized;
             // var waypointDirection = (WaypointSpline() - vessel.transform.position).normalized;
             waypointRay = new Ray(vessel.transform.position, waypointDirection);
@@ -2277,9 +2287,10 @@ namespace BDArmory.Control
             if (weaponManager == null) return;
 
             SetStatus("Evading");
-            debugString.AppendLine($"Evasive");
+            debugString.AppendLine($"Evasive {evasiveTimer}s");
             debugString.AppendLine($"Threat Distance: {weaponManager.incomingMissileDistance}");
             evading = true;
+            steerMode = SteerModes.NormalFlight;
             if (!wasEvading) evasionNonlinearityDirection = Mathf.Sign(UnityEngine.Random.Range(-1f, 1f));
 
             bool hasABEngines = (speedController.multiModeEngines.Count > 0);
@@ -2356,71 +2367,87 @@ namespace BDArmory.Control
 
                     Vector3 breakTarget = threatRelativePosition * 2f;       //for the most part, we want to turn _towards_ the threat in order to increase the rel ang vel and get under its guns
 
-                    if (threatDirectionFactor > 0.9f)     //within 28 degrees in front
-                    { // This adds +-500/(threat distance) to the left or right relative to the breakTarget vector, regardless of the size of breakTarget
-                        breakTarget += 500f / threatRelativePosition.magnitude * Vector3.Cross(threatRelativePosition.normalized, Mathf.Sign(Mathf.Sin((float)vessel.missionTime / 2)) * vessel.upAxis);
-                        debugString.AppendLine($" from directly ahead!");
-                    }
-                    else if (threatDirectionFactor < -0.9) //within ~28 degrees behind
+                    if (weaponManager.incomingThreatVessel != null && weaponManager.incomingThreatVessel.LandedOrSplashed) // Surface threat.
                     {
-                        float threatDistanceSqr = threatRelativePosition.sqrMagnitude;
-                        if (threatDistanceSqr > 400 * 400)
-                        { // This sets breakTarget 1500m ahead and 500m down, then adds a 1000m offset at 90° to ahead based on missionTime. If the target is kinda close, brakes are also applied.
-                            breakTarget = vesselTransform.position + vesselTransform.up * 1500 - 500 * vessel.upAxis;
-                            breakTarget += Mathf.Sin((float)vessel.missionTime / 2) * vesselTransform.right * 1000 - Mathf.Cos((float)vessel.missionTime / 2) * vesselTransform.forward * 1000;
-                            if (threatDistanceSqr > 800 * 800)
-                                debugString.AppendLine($" from behind afar; engaging barrel roll");
+                        // Break horizontally away at maxAoA initially, then directly away once past 90°.
+                        breakTarget = Vector3.RotateTowards(vessel.srf_vel_direction, -threatRelativePosition, maxAllowedAoA * Mathf.Deg2Rad, 0);
+                        if (threatDirectionFactor > 0)
+                            breakTarget = Vector3.ProjectOnPlane(breakTarget, upDirection);
+                        breakTarget = breakTarget.normalized * 100f;
+                        var breakTargetAlt = BodyUtils.GetRadarAltitudeAtPos(vessel.transform.position + breakTarget);
+                        if (breakTargetAlt > defaultAltitude) breakTarget -= (breakTargetAlt - defaultAltitude) * upDirection;
+                        debugString.AppendLine($" from ground target.");
+                    }
+                    else // Airborne threat.
+                    {
+                        if (threatDirectionFactor > 0.9f)     //within 28 degrees in front
+                        { // This adds +-500/(threat distance) to the left or right relative to the breakTarget vector, regardless of the size of breakTarget
+                            breakTarget += 500f / threatRelativePosition.magnitude * Vector3.Cross(threatRelativePosition.normalized, Mathf.Sign(Mathf.Sin((float)vessel.missionTime / 2)) * vessel.upAxis);
+                            debugString.AppendLine($" from directly ahead!");
+                        }
+                        else if (threatDirectionFactor < -0.9) //within ~28 degrees behind
+                        {
+                            float threatDistanceSqr = threatRelativePosition.sqrMagnitude;
+                            if (threatDistanceSqr > 400 * 400)
+                            { // This sets breakTarget 1500m ahead and 500m down, then adds a 1000m offset at 90° to ahead based on missionTime. If the target is kinda close, brakes are also applied.
+                                breakTarget = vesselTransform.up * 1500 - 500 * vessel.upAxis;
+                                breakTarget += Mathf.Sin((float)vessel.missionTime / 2) * vesselTransform.right * 1000 - Mathf.Cos((float)vessel.missionTime / 2) * vesselTransform.forward * 1000;
+                                if (threatDistanceSqr > 800 * 800)
+                                    debugString.AppendLine($" from behind afar; engaging barrel roll");
+                                else
+                                {
+                                    debugString.AppendLine($" from behind moderate distance; engaging aggressvie barrel roll and braking");
+                                    steerMode = SteerModes.Aiming;
+                                    AdjustThrottle(minSpeed, true, false);
+                                }
+                            }
                             else
-                            {
-                                debugString.AppendLine($" from behind moderate distance; engaging aggressvie barrel roll and braking");
+                            { // This sets breakTarget to the attackers position, then applies an up to 500m offset to the right or left (relative to the vessel) for the first half of the default evading period, then sets the breakTarget to be 150m right or left of the attacker.
+                                breakTarget = threatRelativePosition;
+                                if (evasiveTimer < 1.5f)
+                                    breakTarget += Mathf.Sin((float)vessel.missionTime * 2) * vesselTransform.right * 500;
+                                else
+                                    breakTarget += -Math.Sign(Mathf.Sin((float)vessel.missionTime * 2)) * vesselTransform.right * 150;
+
+                                debugString.AppendLine($" from directly behind and close; breaking hard");
                                 steerMode = SteerModes.Aiming;
-                                AdjustThrottle(minSpeed, true, false);
+                                AdjustThrottle(minSpeed, true, false); // Brake to slow down and turn faster while breaking target
                             }
                         }
                         else
-                        { // This sets breakTarget to the attackers position, then applies an up to 500m offset to the right or left (relative to the vessel) for the first half of the default evading period, then sets the breakTarget to be 150m right or left of the attacker.
-                            breakTarget = threatRelativePosition;
-                            if (evasiveTimer < 1.5f)
-                                breakTarget += Mathf.Sin((float)vessel.missionTime * 2) * vesselTransform.right * 500;
-                            else
-                                breakTarget += -Math.Sign(Mathf.Sin((float)vessel.missionTime * 2)) * vesselTransform.right * 150;
+                        {
+                            float threatDistanceSqr = threatRelativePosition.sqrMagnitude;
+                            if (threatDistanceSqr < 400 * 400) // Within 400m to the side.
+                            { // This sets breakTarget to be behind the attacker (relative to the evader) with a small offset to the left or right.
+                                breakTarget += Mathf.Sin((float)vessel.missionTime * 2) * vesselTransform.right * 100;
 
-                            debugString.AppendLine($" from directly behind and close; breaking hard");
-                            steerMode = SteerModes.Aiming;
-                            AdjustThrottle(minSpeed, true, false); // Brake to slow down and turn faster while breaking target
+                                steerMode = SteerModes.Aiming;
+                                debugString.AppendLine($" from near side; turning towards attacker");
+                            }
+                            else // More than 400m to the side.
+                            { // This sets breakTarget to be 1500m ahead, then adds a 1000m offset at 90° to ahead.
+                                breakTarget = vesselTransform.up * 1500;
+                                breakTarget += Mathf.Sin((float)vessel.missionTime / 2) * vesselTransform.right * 1000 - Mathf.Cos((float)vessel.missionTime / 2) * vesselTransform.forward * 1000;
+                                debugString.AppendLine($" from far side; engaging barrel roll");
+                            }
+                        }
+
+                        float threatAltitudeDiff = Vector3.Dot(threatRelativePosition, vessel.upAxis);
+                        if (threatAltitudeDiff > 500)
+                            breakTarget += threatAltitudeDiff * vessel.upAxis;      //if it's trying to spike us from below, don't go crazy trying to dive below it
+                        else
+                            breakTarget += -150 * vessel.upAxis;   //dive a bit to escape
+
+                        float breakTargetVerticalComponent = Vector3.Dot(breakTarget, upDirection);
+                        if (belowMinAltitude && breakTargetVerticalComponent < 0) // If we're below minimum altitude, enforce the evade direction to gain altitude.
+                        {
+                            breakTarget += -2f * breakTargetVerticalComponent * upDirection;
                         }
                     }
-                    else
-                    {
-                        float threatDistanceSqr = threatRelativePosition.sqrMagnitude;
-                        if (threatDistanceSqr < 400 * 400) // Within 400m to the side.
-                        { // This sets breakTarget to be behind the attacker (relative to the evader) with a small offset to the left or right.
-                            breakTarget += Mathf.Sin((float)vessel.missionTime * 2) * vesselTransform.right * 100;
 
-                            steerMode = SteerModes.Aiming;
-                            debugString.AppendLine($" from near side; turning towards attacker");
-                        }
-                        else // More than 400m to the side.
-                        { // This sets breakTarget to be 1500m ahead, then adds a 1000m offset at 90° to ahead.
-                            breakTarget = vesselTransform.position + vesselTransform.up * 1500;
-                            breakTarget += Mathf.Sin((float)vessel.missionTime / 2) * vesselTransform.right * 1000 - Mathf.Cos((float)vessel.missionTime / 2) * vesselTransform.forward * 1000;
-                            debugString.AppendLine($" from far side; engaging barrel roll");
-                        }
-                    }
-
-                    float threatAltitudeDiff = Vector3.Dot(threatRelativePosition, vessel.upAxis);
-                    if (threatAltitudeDiff > 500)
-                        breakTarget += threatAltitudeDiff * vessel.upAxis;      //if it's trying to spike us from below, don't go crazy trying to dive below it
-                    else
-                        breakTarget += -150 * vessel.upAxis;   //dive a bit to escape
-
-                    float breakTargetVerticalComponent = Vector3.Dot(breakTarget - vessel.transform.position, upDirection);
-                    if (belowMinAltitude && breakTargetVerticalComponent < 0) // If we're below minimum altitude, enforce the evade direction to gain altitude.
-                    {
-                        breakTarget += -2f * breakTargetVerticalComponent * upDirection;
-                    }
-
-                    FlyToPosition(s, breakTarget);
+                    breakTarget = GetLimitedClimbDirectionForSpeed(breakTarget);
+                    breakTarget += vessel.transform.position;
+                    FlyToPosition(s, FlightPosition(breakTarget, minAltitude));
                     return;
                 }
             }
@@ -2465,7 +2492,7 @@ namespace BDArmory.Control
             }
             SetStatus("Gain Alt. (" + (int)minAltitude + "m)");
 
-            steerMode = SteerModes.Aiming;
+            steerMode = initialTakeOff ? SteerModes.Aiming : SteerModes.NormalFlight;
 
             float radarAlt = (float)vessel.radarAltitude;
 

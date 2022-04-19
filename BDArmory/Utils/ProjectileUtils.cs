@@ -610,7 +610,7 @@ namespace BDArmory.Utils
             return yieldStrength;
         }
 
-        public static float CalculateDeformation(float yieldStrength, float bulletEnergy, float caliber, float impactVel, float hardness, float Density, float HEratio, float apBulletMod)
+        public static float CalculateDeformation(float yieldStrength, float bulletEnergy, float caliber, float impactVel, float hardness, float Density, float HEratio, float apBulletMod, bool sabot)
         {
             if (bulletEnergy < yieldStrength) return caliber; //armor stops the round, but calc armor damage
             else //bullet penetrates. Calculate what happens to the bullet
@@ -624,12 +624,14 @@ namespace BDArmory.Utils
                     Debug.Log("[BDArmory.ProjectileUtils{Calc Deformation}]: hardness:" + hardness + "; BulletDurabilityMod: " + BulletDurabilityMod + "; density: " + Density);
                 }
                 float newCaliber = ((((yieldStrength / bulletEnergy) * (hardness * Mathf.Sqrt(Density / 1000))) / impactVel) / (BulletDurabilityMod * apBulletMod)); //faster penetrating rounds less deformed, thin armor will impart less deformation before failing
-                if (impactVel > 1250) //too fast and steel/lead begin to melt on impact - hence DU/Tungsten hypervelocity penetrators
+                if (!sabot && impactVel > 1250) //too fast and steel/lead begin to melt on impact - hence DU/Tungsten hypervelocity penetrators
                 {
                     newCaliber *= (impactVel / 1250);
                 }
                 newCaliber = Mathf.Clamp(newCaliber, 1f, 5f);
-                //replace this with tensile srength of bullet calcs?
+                //replace this with tensile srength of bullet calcs? - really should, else a 30m/s impact is capable of deforming a bullet...
+                //float bulletStrength = caliber * caliber * Mathf.PI / 400f * 840 * (11.34f) * caliber * 3; //how would this work - if bulletStrength is greater than yieldstrength, don't deform?
+
                 if (BDArmorySettings.DEBUG_ARMOR)
                 {
                     Debug.Log("[BDArmory.ProjectileUtils{Calc Deformation}]: Bullet Deformation modifier " + newCaliber);
@@ -646,7 +648,7 @@ namespace BDArmory.Utils
             float density = 11.34f;
             if (sabot)
             {
-                density = 19;
+                density = 19.1f;
             }
             float bulletLength = ((projMass * 1000) / ((newCaliber * newCaliber * Mathf.PI / 400) * density) + 1) * 10; //srf.Area in mmm2 x density of lead to get mass per 1 cm length of bullet / total mass to get total length,
                                                                                                                         //+ 10 to accound for ogive/mushroom head post-deformation instead of perfect cylinder
@@ -672,29 +674,30 @@ namespace BDArmory.Utils
             float penetration;
             //bullet's deformed, penetration using larger crosssection
 
+            //caliber in mm, converted to length in cm, converted to mm
+            float length = ((projMass * 1000) / ((newCaliber * newCaliber * Mathf.PI / 400) * (sabot ? 19.1f : 11.34f)) + 1) * 10;
+            //if (impactVel > 1500)
+            //penetration = length * Mathf.Sqrt((sabot ? 19100 : 11340) / Density); //at hypervelocity, impacts are akin to fluid displacement
+            //penetration in mm
+            //sabots should have a caliber check, or a mass check? - else a lighter, smaller caliber sabot of equal length will have similar penetration charateristics as a larger, heavier round..?
+            //or just have sabots that are too narrow simply snap due to structural stress...
+            var modifiedCaliber = (0.5f * caliber) + (0.5f * newCaliber) * (2f * Ductility * Ductility);
+            float yieldStrength = modifiedCaliber * modifiedCaliber * Mathf.PI / 100f * Strength * (Density / 7850f) * thickness;
+            if (Ductility > 0.25f) //up to a point, anyway. Stretch too much...
             {
-                //caliber in mm, converted to length in cm, converted to mm
-                float length = ((projMass * 1000) / ((newCaliber * newCaliber * Mathf.PI / 400) * (sabot ? 19 : 11.34f)) + 1) * 10;
-                //if (impactVel > 1500)
-                //penetration = length * Mathf.Sqrt((sabot ? 19000 : 11340) / Density); //at hypervelocity, impacts are akin to fluid displacement
-                //penetration in mm
-
-                var modifiedCaliber = (0.5f * caliber) + (0.5f * newCaliber) * (2f * Ductility * Ductility);
-                float yieldStrength = modifiedCaliber * modifiedCaliber * Mathf.PI / 100f * Strength * (Density / 7850f) * thickness;
-                if (Ductility > 0.25f) //up to a point, anyway. Stretch too much...
-                {
-                    yieldStrength *= 0.7f; //necking and point embrittlement reduce total tensile strength of material
-                }
-                penetration = Mathf.Min(((Energy / yieldStrength) * thickness * APmod), length * Mathf.Sqrt((sabot ? 19000 : 11340) / Density));
-                //cap penetration to max possible pen depth from hypervelocity impact
-            } //penetration in mm
+                yieldStrength *= 0.7f; //necking and point embrittlement reduce total tensile strength of material
+            }
+            penetration = Mathf.Min(((Energy / yieldStrength) * thickness * APmod), (length * Mathf.Sqrt((sabot ? 19100 : 11340) / Density) * 0.62f * APmod));
+            //cap penetration to max possible pen depth from hypervelocity impact
+            //need to re-add APBulletMod to sabots, also need to reduce sabot pen depth by about 0.6x; Abrams sabot ammos can apparently pen about their length through steel
+            //penetration in mm
             //apparently shattered projectiles add 30% to armor thickness; oblique impact beyond 55deg decreases effective thickness(splatted projectile digs in to plate instead of richochets)
 
             if (BDArmorySettings.DEBUG_ARMOR)
             {
                 Debug.Log("[BDArmory.ProjectileUtils{Calc Penetration}]: Energy: " + Energy + "; caliber: " + caliber + "; newCaliber: " + newCaliber);
                 Debug.Log("[BDArmory.ProjectileUtils{Calc Penetration}]: Ductility:" + Ductility + "; Density: " + Density + "; Strength: " + Strength + "; thickness: " + thickness);
-                Debug.Log("[BDArmory.ProjectileUtils{Calc Penetration}]: Penetration: " + Mathf.Round(penetration / 10) + " cm");
+                Debug.Log("[BDArmory.ProjectileUtils{Calc Penetration}]: Length: " + length + "; sabot: " + sabot + "Penetration: " + Mathf.Round(penetration / 10) + " cm");
             }
             return penetration;
         }

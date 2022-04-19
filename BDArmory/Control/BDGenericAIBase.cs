@@ -7,6 +7,7 @@ using KSP.Localization;
 
 using BDArmory.Competition;
 using BDArmory.Extensions;
+using BDArmory.GameModes.Waypoints;
 using BDArmory.Settings;
 using BDArmory.Targeting;
 using BDArmory.UI;
@@ -425,11 +426,17 @@ namespace BDArmory.Control
         #region Waypoints
         protected List<Vector3> waypoints = null;
         protected int activeWaypointIndex = -1;
+        protected int activeWaypointLap = 1;
+        protected int waypointLapLimit = 1;
         protected Vector3 waypointPosition = default;
         //protected float waypointRadius = 500f;
         protected float waypointRange = 999f;
 
-        public bool IsRunningWaypoints => command == PilotCommands.Waypoints && activeWaypointIndex >= 0 && waypoints != null && waypoints.Count > 0;
+        public bool IsRunningWaypoints => command == PilotCommands.Waypoints &&
+            activeWaypointLap <= waypointLapLimit &&
+            activeWaypointIndex >= 0 &&
+            waypoints != null &&
+            waypoints.Count > 0;
         public int CurrentWaypointIndex => this.activeWaypointIndex;
 
         public void ClearWaypoints()
@@ -450,6 +457,8 @@ namespace BDArmory.Control
             if (BDArmorySettings.DEBUG_AI) Debug.Log(string.Format("[BDArmory.BDGenericAIBase]: Set {0} waypoints", waypoints.Count));
             this.waypoints = waypoints;
             this.activeWaypointIndex = 0;
+            this.activeWaypointLap = 1;
+            this.waypointLapLimit = BDArmorySettings.WAYPOINT_LOOP_INDEX;
             var waypoint = waypoints[activeWaypointIndex];
             var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
             waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
@@ -469,26 +478,33 @@ namespace BDArmory.Control
             waypointRange = (float)(vesselTransform.position - waypointPosition).magnitude;
             var timeToCPA = AIUtils.ClosestTimeToCPA(vessel.transform.position - waypointPosition, vessel.Velocity(), vessel.acceleration, Time.fixedDeltaTime);
             // if (waypointsRange < waypointRadius) Debug.Log($"DEBUG waypoint {activeWaypointIndex}, distance: {waypointsRange:F1} @ {Time.time}, TtCPA: {timeToCPA:F3}");
-            if (waypointRange < BDArmorySettings.WAYPOINTS_SCALE && timeToCPA < Time.fixedDeltaTime) // Within waypointRadius and reaching a minimum within the next frame. Looking forwards like this avoids a frame where the fly-to direction is backwards allowing smoother waypoint traversal.
+            if (waypointRange < WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].waypoints[activeWaypointIndex].scale && timeToCPA < Time.fixedDeltaTime) // Within waypointRadius and reaching a minimum within the next frame. Looking forwards like this avoids a frame where the fly-to direction is backwards allowing smoother waypoint traversal.
             {
                 // moving away, proceed to next point
                 var deviation = AIUtils.PredictPosition(vessel.transform.position - waypointPosition, vessel.Velocity(), vessel.acceleration, timeToCPA).magnitude;
                 if (BDArmorySettings.DEBUG_AI) Debug.Log(string.Format("[BDArmory.BDGenericAIBase]: Reached waypoint {0} with range {1}", activeWaypointIndex, deviation));
-                BDACompetitionMode.Instance.Scores.RegisterWaypointReached(vessel.vesselName, activeWaypointIndex, deviation);
+                BDACompetitionMode.Instance.Scores.RegisterWaypointReached(vessel.vesselName, activeWaypointIndex, activeWaypointLap, deviation);
+
+                if( BDArmorySettings.WAYPOINT_GUARD_INDEX>=0 && activeWaypointIndex>=BDArmorySettings.WAYPOINT_GUARD_INDEX && !weaponManager.guardMode)
+                {
+                    // activate guard mode
+                    weaponManager.guardMode = true;
+                }
+
                 ++activeWaypointIndex;
-                if (activeWaypointIndex >= waypoints.Count)
+                if (activeWaypointIndex >= waypoints.Count && activeWaypointLap > waypointLapLimit)
                 {
                     if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDGenericAIBase]: Waypoints complete");
                     waypoints = null;
                     ReleaseCommand();
                     return;
                 }
-                else
+                else if(activeWaypointIndex >= waypoints.Count && activeWaypointLap <= waypointLapLimit)
                 {
-                    waypoint = waypoints[activeWaypointIndex];
-                    UpdateWaypoint(); // Call ourselves again for the new waypoint to follow.
-                    return;
+                    activeWaypointIndex = 0;
+                    activeWaypointLap++;
                 }
+                UpdateWaypoint(); // Call ourselves again for the new waypoint to follow.
             }
         }
 
