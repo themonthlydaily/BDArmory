@@ -5,7 +5,7 @@ using UniLinq;
 using UnityEngine;
 using BDArmory.Settings;
 
-namespace BDArmory.Competition.VesselSpawning
+namespace BDArmory.GameModes.Waypoints
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class WaypointCourses : MonoBehaviour
@@ -24,6 +24,11 @@ namespace BDArmory.Competition.VesselSpawning
             WaypointField.Load();
         }
 
+        void Start()
+        {
+            BDArmorySettings.WAYPOINT_COURSE_INDEX = Mathf.Clamp(BDArmorySettings.WAYPOINT_COURSE_INDEX, 0, CourseLocations.Count - 1); // Ensure the waypoint index is within limits.
+        }
+
         void OnDestroy()
         {
             WaypointField.Save();
@@ -39,6 +44,7 @@ namespace BDArmory.Competition.VesselSpawning
         public Waypoint(string _name, Vector3 _location, float _scale) { name = _name; location = _location; scale = _scale; }
         public override string ToString() { return name + "| " + location.ToString("G6") + "| " + scale.ToString() + ": "; }
     }
+
     public class WaypointCourse
     {
         public static string waypointLocationsCfg = Path.Combine(KSPUtil.ApplicationRootPath, "GameData/BDArmory/PluginData/Waypoint_locations.cfg");
@@ -47,7 +53,7 @@ namespace BDArmory.Competition.VesselSpawning
         public Vector2 spawnPoint;
         public List<Waypoint> waypoints;
         private string waypointList;
-		string GetWaypointList()
+        string GetWaypointList()
         {
             waypointList = string.Empty;
             for (int i = 0; i < waypoints.Count; i++)
@@ -58,21 +64,20 @@ namespace BDArmory.Competition.VesselSpawning
         }
         //COURSE = TestCustom; 1; (23, 23); Start| (23.2, 23.2, 100)| 500: Funnel| (23.2, 23.7, 50)| 250: Ascent| (23.5, 23.6, 250)| 100: Apex| (23.2, 23.4 500)| 500:
         public WaypointCourse(string _name, int _worldIndex, Vector2 _spawnPoint, List<Waypoint> _waypoints) { name = _name; worldIndex = _worldIndex; spawnPoint = _spawnPoint; waypoints = _waypoints; }
-        public override string ToString() { return name + "; " + worldIndex + "; "  + spawnPoint.ToString("G6") + "; " + GetWaypointList(); }
-
-
+        public override string ToString() { return name + "; " + worldIndex + "; " + spawnPoint.ToString("G6") + "; " + GetWaypointList(); }
     }
+
     [AttributeUsage(AttributeTargets.Field)]
     public class WaypointField : Attribute
     {
         public WaypointField() { }
-        //static Dictionary<String, SpawnLocation> defaultLocations = new Dictionary<string, SpawnLocation>{
+        //static Dictionary<String, SpawnLocation> defaultLocations = new Dictionary<string, SpawnLocation>{  // FIXME Is this line needed? Isn't the spawn location is part of the waypoint course?
         static List<WaypointCourse> defaultLocations = new List<WaypointCourse>{
             new WaypointCourse("Canyon", 1, new Vector2(27.97f, -39.35f), new List<Waypoint> {
                         new Waypoint("Waypoint 1", new Vector3(28.33f, -39.11f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
                         new Waypoint("Waypoint 2", new Vector3(28.83f, -38.06f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
                         new Waypoint("Waypoint 3", new Vector3(29.54f, -38.68f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
-                        new Waypoint("Waypoint 4", new Vector3(0.15f, -38.6f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
+                        new Waypoint("Waypoint 4", new Vector3(30.15f, -38.6f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
                         new Waypoint("Waypoint 5", new Vector3(30.83f, -38.87f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
                         new Waypoint("Waypoint 6", new Vector3(30.73f, -39.6f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
                         new Waypoint("Waypoint 7", new Vector3(30.9f, -40.23f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
@@ -81,7 +86,7 @@ namespace BDArmory.Competition.VesselSpawning
             new WaypointCourse("Slalom", 1, new Vector2(-21.0158f, 72.2085f), new List<Waypoint> {
                         new Waypoint("Waypoint 1", new Vector3(-21.0763f, 72.7194f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
                         new Waypoint("Waypoint 2", new Vector3(-21.3509f, 73.7466f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
-                        new Waypoint("waypoint 3", new Vector3(-20.8125f, 73.8125f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
+                        new Waypoint("Waypoint 3", new Vector3(-20.8125f, 73.8125f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
                         new Waypoint("Waypoint 4", new Vector3(-20.6478f, 74.8177f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
                         new Waypoint("Waypoint 5", new Vector3(-20.2468f, 74.5046f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
                         new Waypoint("Waypoint 6", new Vector3(-19.7469f, 75.1252f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
@@ -91,7 +96,7 @@ namespace BDArmory.Competition.VesselSpawning
             new WaypointCourse("Coast Circuit", 1, new Vector2(-7.7134f, -42.7633f), new List<Waypoint> {
                         new Waypoint("Waypoint 1", new Vector3(-8.1628f, -42.7478f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
                         new Waypoint("Waypoint 2", new Vector3(-8.6737f, -42.7423f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
-                        new Waypoint("waypoint 3", new Vector3(-9.2230f, -42.5208f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
+                        new Waypoint("Waypoint 3", new Vector3(-9.2230f, -42.5208f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
                         new Waypoint("Waypoint 4", new Vector3(-9.6624f, -43.3355f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
                         new Waypoint("Waypoint 5", new Vector3(-10.6732f, -43.3410f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
                         new Waypoint("Waypoint 6", new Vector3(-11.3379f, -42.9236f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE),
@@ -104,6 +109,7 @@ namespace BDArmory.Competition.VesselSpawning
                         new Waypoint("Waypoint 13", new Vector3(-9.1342f, -42.0757f, BDArmorySettings.WAYPOINTS_ALTITUDE), BDArmorySettings.WAYPOINTS_SCALE)
                     })
         };
+
         public static void Save()
         {
             ConfigNode fileNode = ConfigNode.Load(WaypointCourse.waypointLocationsCfg);
@@ -121,7 +127,7 @@ namespace BDArmory.Competition.VesselSpawning
                 settings.SetValue(field.Name, field.GetValue(null).ToString(), true);
             }
 
-            if(!fileNode.HasNode("BDACourseLocations"))
+            if (!fileNode.HasNode("BDACourseLocations"))
                 fileNode.AddNode("BDACourseLocations");
 
             ConfigNode CourseNode = fileNode.GetNode("BDACourseLocations");
@@ -235,12 +241,13 @@ namespace BDArmory.Competition.VesselSpawning
                         var spawnPoint = (Vector2)ParseValue(typeof(Vector2), parts[2]);
                         string[] waypoints = parts[3].Split(new char[] { ':' });
                         List<Waypoint> waypointList = new List<Waypoint>();
-                        for (int i = 0; i < waypoints.Length-1; i++)
+                        for (int i = 0; i < waypoints.Length - 1; i++)
                         {
                             string[] datavars;
                             datavars = waypoints[i].Split(new char[] { '|' });
                             string WPname = (string)ParseValue(typeof(string), datavars[0]);
                             WPname = WPname.Trim(' ');
+                            if (string.IsNullOrEmpty(WPname)) WPname = $"Waypoint {i + 1}";
                             var location = (Vector3)ParseValue(typeof(Vector3), datavars[1]);
                             var scale = (float)ParseValue(typeof(float), datavars[2]);
                             if (name != null && location != null)

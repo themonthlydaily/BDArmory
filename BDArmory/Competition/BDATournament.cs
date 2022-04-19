@@ -9,6 +9,7 @@ using BDArmory.Competition.OrchestrationStrategies;
 using BDArmory.Competition.VesselSpawning;
 using BDArmory.Competition.VesselSpawning.SpawnStrategies;
 using BDArmory.Evolution;
+using BDArmory.GameModes.Waypoints;
 using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
@@ -874,8 +875,7 @@ namespace BDArmory.Competition
             spawnConfig.longitude = -39.35f;
 
             TournamentCoordinator.Instance.Configure(new SpawnConfigStrategy(spawnConfig),
-                new WaypointFollowingStrategy(WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].waypoints
-                ),
+                new WaypointFollowingStrategy(WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].waypoints),
                 CircularSpawning.Instance
             );
 

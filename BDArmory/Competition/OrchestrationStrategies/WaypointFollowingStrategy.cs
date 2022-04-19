@@ -7,13 +7,12 @@ using UnityEngine;
 using BDArmory.Competition.RemoteOrchestration;
 using BDArmory.Control;
 using BDArmory.Damage;
-using BDArmory.Extensions;
 using BDArmory.FX;
+using BDArmory.GameModes.Waypoints;
 using BDArmory.Modules;
 using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
-using BDArmory.Competition.VesselSpawning;
 
 namespace BDArmory.Competition.OrchestrationStrategies
 {

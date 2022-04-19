@@ -154,7 +154,6 @@
     <Compile Include="Competition\VesselSpawning\SingleVesselSpawning.cs" />
     <Compile Include="Competition\VesselSpawning\SpawnConfig.cs" />
     <Compile Include="Competition\VesselSpawning\SpawnLocations.cs" />
-    <Compile Include="Competition\VesselSpawning\WaypointCourses.cs" />
     <Compile Include="Competition\VesselSpawning\SpawnStrategies\CircularSpawnStrategy.cs" />
     <Compile Include="Competition\VesselSpawning\SpawnStrategies\ListSpawnStrategy.cs" />
     <Compile Include="Competition\VesselSpawning\SpawnStrategies\PointSpawnStrategy.cs" />
@@ -221,6 +220,7 @@
     <Compile Include="GameModes\ModuleSpaceFriction.cs" />
     <Compile Include="GameModes\Mutators\BDAMutator.cs" />
     <Compile Include="GameModes\Mutators\MutatorInfo.cs" />
+    <Compile Include="GameModes\Waypoints\WaypointCourses.cs" />
     <Compile Include="Guidances\BallisticGuidance.cs" />
     <Compile Include="Guidances\CruiseGuidance.cs" />
     <Compile Include="Guidances\IGuidance.cs" />
@@ -245,8 +245,6 @@
     <Compile Include="Services\NotificableService.cs" />
     <Compile Include="Settings/BDAPersistentSettingsField.cs" />
     <Compile Include="Settings/BDArmorySettings.cs" />
-    <Compile Include="Settings\BDAPersistentSettingsField.cs" />
-    <Compile Include="Settings\BDArmorySettings.cs" />
     <Compile Include="Settings\BDAWindowSettingsField.cs" />
     <Compile Include="Settings\BDInputSettingsFields.cs" />
     <Compile Include="Settings\BDTISettings.cs" />

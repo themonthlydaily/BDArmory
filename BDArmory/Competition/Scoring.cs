@@ -7,6 +7,7 @@ using UnityEngine;
 using BDArmory.Competition.RemoteOrchestration;
 using BDArmory.Competition.VesselSpawning;
 using BDArmory.Control;
+using BDArmory.GameModes.Waypoints;
 using BDArmory.Settings;
 using BDArmory.Utils;
 

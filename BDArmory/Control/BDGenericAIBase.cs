@@ -7,12 +7,11 @@ using KSP.Localization;
 
 using BDArmory.Competition;
 using BDArmory.Extensions;
+using BDArmory.GameModes.Waypoints;
 using BDArmory.Settings;
 using BDArmory.Targeting;
 using BDArmory.UI;
 using BDArmory.Utils;
-using BDArmory.Competition.OrchestrationStrategies;
-using BDArmory.Competition.VesselSpawning;
 
 namespace BDArmory.Control
 {
