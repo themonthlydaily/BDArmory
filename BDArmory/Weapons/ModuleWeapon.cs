@@ -1478,7 +1478,7 @@ namespace BDArmory.Weapons
 
                 if (weaponState == WeaponStates.Enabled && (TimeWarp.WarpMode != TimeWarp.Modes.HIGH || TimeWarp.CurrentRate == 1))
                 {
-                    userFiring = (BDInputUtils.GetKey(BDInputSettingsFields.WEAP_FIRE_KEY) && (vessel.isActiveVessel || BDArmorySettings.REMOTE_SHOOTING) && !MapView.MapIsEnabled && !aiControlled);
+                    userFiring = (BDInputUtils.GetKey(BDInputSettingsFields.WEAP_FIRE_KEY) && (vessel.isActiveVessel || BDArmorySettings.REMOTE_SHOOTING) && !MapView.MapIsEnabled && !aiControlled && !GUIUtils.CheckMouseIsOnGui()); //don't fire if mouse on WM GUI; Issue #348
                     if (!(((userFiring || agHoldFiring) && !isAPS) || (autoFire && //if user pulling the trigger || AI controlled and on target if turreted || finish a burstfire weapon's burst
                         (!turret || turret.TargetInRange(finalAimTarget, 10, float.MaxValue))) || (BurstFire && RoundsRemaining > 0 && RoundsRemaining < RoundsPerMag)))
                     {

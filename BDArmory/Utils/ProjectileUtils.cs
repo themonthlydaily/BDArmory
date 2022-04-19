@@ -681,7 +681,7 @@ namespace BDArmory.Utils
             //penetration in mm
             //sabots should have a caliber check, or a mass check? - else a lighter, smaller caliber sabot of equal length will have similar penetration charateristics as a larger, heavier round..?
             //or just have sabots that are too narrow simply snap due to structural stress...
-            var modifiedCaliber = (0.5f * newCaliber) + (0.5f * newCaliber) * (2f * Ductility * Ductility);
+            var modifiedCaliber = (0.5f * caliber) + (0.5f * newCaliber) * (2f * Ductility * Ductility);
             float yieldStrength = modifiedCaliber * modifiedCaliber * Mathf.PI / 100f * Strength * (Density / 7850f) * thickness;
             if (Ductility > 0.25f) //up to a point, anyway. Stretch too much...
             {
