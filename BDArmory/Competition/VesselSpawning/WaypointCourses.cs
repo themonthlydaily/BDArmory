@@ -130,12 +130,6 @@ namespace BDArmory.Competition.VesselSpawning
             foreach (var course in WaypointCourses.CourseLocations)
             {
                 CourseNode.AddValue("COURSE", course.ToString());
-                /*
-        public string name;
-public Vector3 location;
-public double scale;
-Waypoint 1; (27.97, -39.35, 50); 500 
-*/
             }
 
             if (!Directory.GetParent(WaypointCourse.waypointLocationsCfg).Exists)
@@ -245,7 +239,8 @@ Waypoint 1; (27.97, -39.35, 50); 500
                         {
                             string[] datavars;
                             datavars = waypoints[i].Split(new char[] { '|' });
-                            var WPname = (string)ParseValue(typeof(string), datavars[0]);
+                            string WPname = (string)ParseValue(typeof(string), datavars[0]);
+                            WPname = WPname.Trim(' ');
                             var location = (Vector3)ParseValue(typeof(Vector3), datavars[1]);
                             var scale = (float)ParseValue(typeof(float), datavars[2]);
                             if (name != null && location != null)
