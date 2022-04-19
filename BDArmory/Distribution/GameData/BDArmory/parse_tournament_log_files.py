@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
-VERSION = "1.16.3"
+VERSION = "1.16.4"
 
 parser = argparse.ArgumentParser(description="Tournament log parser", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('tournament', type=str, nargs='*', help="Tournament folder to parse.")
@@ -27,6 +27,7 @@ parser.add_argument('-nc', '--no-cumulative', action='store_true', help="Don't d
 parser.add_argument('-N', type=int, help="Only the first N logs in the folder (in -c mode).")
 parser.add_argument('-z', '--zero-lowest-score', action='store_true', help="Shift the scores so that the lowest is 0.")
 parser.add_argument('-sw', '--show-weights', action='store_true', help="Display the score weights.")
+parser.add_argument('-wp', '--waypoint-scores', action='store_true', help="Use the default waypoint scores.")
 parser.add_argument("--version", action='store_true', help="Show the script version, then exit.")
 args = parser.parse_args()
 args.score = args.score or args.scores_only
@@ -52,6 +53,9 @@ else:
             args.current_dir = True
     else:
         tournamentDirs = [Path(tournamentDir) for tournamentDir in args.tournament]  # Specified tournament dir
+
+if args.waypoint_scores:
+    args.weights = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,-0.02,-0.003"
 
 if args.score:
     score_fields = ('wins', 'survivedCount', 'miaCount', 'deathCount', 'deathOrder', 'deathTime', 'cleanKills', 'assists', 'hits', 'hitsTaken', 'bulletDamage', 'bulletDamageTaken', 'rocketHits', 'rocketHitsTaken', 'rocketPartsHit', 'rocketPartsHitTaken', 'rocketDamage', 'rocketDamageTaken', 'missileHits', 'missileHitsTaken', 'missilePartsHit', 'missilePartsHitTaken', 'missileDamage', 'missileDamageTaken', 'ramScore', 'ramScoreTaken', 'battleDamage', 'HPremaining', 'accuracy', 'rocket_accuracy', 'waypointCount', 'waypointTime', 'waypointDeviation')
