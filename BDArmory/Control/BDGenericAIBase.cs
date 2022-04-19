@@ -483,7 +483,7 @@ namespace BDArmory.Control
                 // moving away, proceed to next point
                 var deviation = AIUtils.PredictPosition(vessel.transform.position - waypointPosition, vessel.Velocity(), vessel.acceleration, timeToCPA).magnitude;
                 if (BDArmorySettings.DEBUG_AI) Debug.Log(string.Format("[BDArmory.BDGenericAIBase]: Reached waypoint {0} with range {1}", activeWaypointIndex, deviation));
-                BDACompetitionMode.Instance.Scores.RegisterWaypointReached(vessel.vesselName, activeWaypointIndex, deviation);
+                BDACompetitionMode.Instance.Scores.RegisterWaypointReached(vessel.vesselName, activeWaypointIndex, activeWaypointLap, deviation);
 
                 if( BDArmorySettings.WAYPOINT_GUARD_INDEX>=0 && activeWaypointIndex>=BDArmorySettings.WAYPOINT_GUARD_INDEX && !weaponManager.guardMode)
                 {
