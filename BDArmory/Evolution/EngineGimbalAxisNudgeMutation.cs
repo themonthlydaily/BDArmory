@@ -28,7 +28,7 @@ namespace BDArmory.Evolution
 
         public void Apply(ConfigNode craft, VariantEngine engine)
         {
-            Debug.Log("Evolution EngineGimbalNudgeMutation applying");
+            Debug.Log("[BDArmory.EngineGimbalAxisNudgeMutation]: Evolution EngineGimbalNudgeMutation applying");
             List<ConfigNode> matchingModules = engine.FindModuleNodes(craft, moduleName);
             foreach (var node in matchingModules)
             {
@@ -76,7 +76,7 @@ namespace BDArmory.Evolution
                     ConfigNode partNode = engine.FindParentPart(craft, node);
                     if( partNode == null )
                     {
-                        Debug.Log("Evolution EngineGimbalNudgeMutation failed to find parent part for module");
+                        Debug.Log("[BDArmory.EngineGimbalAxisNudgeMutation]: Evolution EngineGimbalNudgeMutation failed to find parent part for module");
                         return;
                     }
                     string partName = partNode.GetValue("part");

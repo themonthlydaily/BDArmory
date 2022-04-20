@@ -38,7 +38,7 @@ namespace BDArmory.Evolution
             }
             else
             {
-                Debug.Log("Evolution WeaponManagerMutation wrong number of weapon managers");
+                Debug.Log("[BDArmory.WeaponManagerMutation]: Evolution WeaponManagerMutation wrong number of weapon managers");
             }
         }
 

@@ -325,7 +325,6 @@ namespace BDArmory.Competition.RemoteOrchestration
                 if (!client.playerVessels.ContainsKey(playerName))
                 {
                     Debug.Log(string.Format("[BDArmory.BDAScoreService] Unmatched player {0}", playerName));
-                    Debug.Log("DEBUG players were " + string.Join(", ", client.players.Values));
                     continue;
                 }
 
@@ -334,7 +333,6 @@ namespace BDArmory.Competition.RemoteOrchestration
                 if (player == null)
                 {
                     Debug.Log(string.Format("[BDArmory.BDAScoreService] Unmatched player {0}", playerNamePart));
-                    Debug.Log("DEBUG players were " + string.Join(", ", client.players.Values));
                     continue;
                 }
 
@@ -343,7 +341,6 @@ namespace BDArmory.Competition.RemoteOrchestration
                 if (vessel == null)
                 {
                     Debug.Log(string.Format("[BDArmory.BDAScoreService] Unmatched vessel for playerId {0}", player.id));
-                    Debug.Log("DEBUG vessels were " + string.Join(", ", client.vessels.Values.Select(p => p.id)));
                     continue;
                 }
 
