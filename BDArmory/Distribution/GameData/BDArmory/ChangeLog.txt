@@ -42,6 +42,7 @@ IMPROVEMENTS
 - Adjusted Sabot depth calculation, should no longer over penetrate quite so much.
 - Fix remaining issues with Missile Multi-targeting.
 - Possibly fixed the 'Radar Stuck' bug.
+- Add option to display distances on the RWR logarithmically.
 
 - General:
 	- Add missing HP rounding to some parts.
