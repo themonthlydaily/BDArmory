@@ -3388,7 +3388,7 @@ namespace BDArmory.Control
                         if (ml.TargetingMode == MissileBase.TargetingModes.Laser) //don't switch from current target if using LASMs to keep current target painted
                         {
                             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: max targets fired on with LASMs, keeping target painted!");
-                            return;
+                            if (currentTarget != null) return; //don't paint a destroyed target
                         }
                         if (ml && !(ml.TargetingMode == MissileBase.TargetingModes.Radar && !ml.radarLOAL))
                         {
@@ -4693,7 +4693,8 @@ namespace BDArmory.Control
                             }
                             else if (Missile.TargetingMode == MissileBase.TargetingModes.Laser)
                             {
-                                if ((targetWeapon != null && targetYield > candidateYield) || !candidateAntiRad) continue;
+                                if (candidateAntiRad) continue; //keep antirad missile;
+                                if (targetWeapon != null && targetYield > candidateYield) continue; //prioritize biggest Boom
                                 candidateAGM = true;
                                 targetYield = candidateYield;
                                 targetWeapon = item.Current;
@@ -5114,7 +5115,10 @@ namespace BDArmory.Control
                 {
                     SmartFindSecondaryTargets();
                 }
-                if (!vesselRadarData.locked || vesselRadarData.lockedTargetData.vessel != guardTarget)
+                MissileBase ml = CurrentMissile;
+                MissileBase pMl = PreviousMissile;
+                if (!ml && pMl) ml = PreviousMissile; //if fired missile, then switched to guns or something
+                if (ml && ml.TargetingMode == MissileBase.TargetingModes.Radar && vesselRadarData != null && (!vesselRadarData.locked || vesselRadarData.lockedTargetData.vessel != guardTarget))
                 {
                     if (!vesselRadarData.locked)
                     {
@@ -5124,12 +5128,9 @@ namespace BDArmory.Control
                     {
                         if (firedMissiles >= maxMissilesOnTarget && (multiMissileTgtNum > 1 && BDATargetManager.TargetList(Team).Count > 1)) //if there are multiple potential targets, see how many can be fired at with missiles
                         {
-                            MissileBase ml = CurrentMissile;
-                            MissileBase pMl = PreviousMissile;
-                            if (!ml && pMl) ml = PreviousMissile; //if fired missile, then switched to guns or something
-                            if (!(ml && ml.TargetingMode == MissileBase.TargetingModes.Radar && !ml.radarLOAL)) //switch active lock instead of clearing locks for SARH missiles
+                        if (!ml.radarLOAL) //switch active lock instead of clearing locks for SARH missiles
                             {
-                                vesselRadarData.UnlockCurrentTarget();
+                                //vesselRadarData.UnlockCurrentTarget();
                                 vesselRadarData.TryLockTarget(guardTarget);
                             }
                             else
@@ -5499,7 +5500,11 @@ namespace BDArmory.Control
 
                             if (firedMissiles < maxMissilesOnTarget)
                             {
-                                if (!CurrentMissile.radarLOAL && MaxradarLocks < maxMissilesOnTarget) launchAuthorized = false; //don't fire SARH if radar can't support the needed radar lock
+                                if (CurrentMissile.TargetingMode == MissileBase.TargetingModes.Radar && !CurrentMissile.radarLOAL && MaxradarLocks < multiMissileTgtNum)
+                                {
+                                    launchAuthorized = false; //don't fire SARH if radar can't support the needed radar lock
+                                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: radar lock number exceeded to launch!");
+                                }
                                 if (!guardFiringMissile && launchAuthorized
                                     && (CurrentMissile != null && (CurrentMissile.TargetingMode != MissileBase.TargetingModes.Radar || (vesselRadarData != null && (!vesselRadarData.locked || vesselRadarData.lockedTargetData.vessel == guardTarget))))) // Allow firing multiple missiles at the same target. FIXME This is a stop-gap until proper multi-locking support is available.
                                 {
