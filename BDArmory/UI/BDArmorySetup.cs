@@ -3159,7 +3159,7 @@ namespace BDArmory.UI
                 GUI.Label(SLeftRect(++line), Localizer.Format("#LOC_BDArmory_Settings_TargetWindowInvertMouse"), leftLabel);
                 BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_X = GUI.Toggle(SEighthRect(line, 5), BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_X, "X");
                 BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_Y = GUI.Toggle(SEighthRect(line, 6), BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_Y, "Y");
-                BDArmorySettings.LOGARITHMIC_RADAR_DISPLAY = GUI.Toggle(SLeftRect(++line), BDArmorySettings.LOGARITHMIC_RADAR_DISPLAY, Localizer.Format("#LOC_BDArmory_Settings_LogarithmicRadarDisplay")); //"Logarithmic Radar Display"
+                BDArmorySettings.LOGARITHMIC_RADAR_DISPLAY = GUI.Toggle(SLeftRect(++line), BDArmorySettings.LOGARITHMIC_RADAR_DISPLAY, Localizer.Format("#LOC_BDArmory_Settings_LogarithmicRWRDisplay")); //"Logarithmic RWR Display"
 
                 line += 0.5f;
             }

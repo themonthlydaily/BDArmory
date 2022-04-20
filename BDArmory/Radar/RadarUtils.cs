@@ -1453,7 +1453,16 @@ namespace BDArmory.Radar
             float angle = Vector3.Angle(localPosition, Vector3.forward);
             if (localPosition.x < 0) angle = -angle;
             float xPos = (radarRect.width / 2) + ((angle / maxAngle) * radarRect.width / 2);
-            float yPos = radarRect.height - (new Vector2(localPosition.x, localPosition.z)).magnitude / scale;
+            float yPos = radarRect.height;
+            if (BDArmorySettings.LOGARITHMIC_RADAR_DISPLAY)
+            {
+                scale = Mathf.Log(localPosition.magnitude + 1) / Mathf.Log(maxDistance + 1);
+                yPos -= radarRect.height * scale * scale;
+            }
+            else
+            {
+                yPos -= localPosition.magnitude / scale;
+            }
             Vector2 radarPos = new Vector2(xPos, yPos);
             return radarPos;
         }
