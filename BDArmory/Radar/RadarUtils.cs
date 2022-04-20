@@ -1428,8 +1428,16 @@ namespace BDArmory.Radar
             float scale = maxDistance / (radarRect.height / 2);
             Vector3 localPosition = referenceTransform.InverseTransformPoint(worldPosition);
             localPosition.y = 0;
-            Vector2 radarPos = new Vector2((radarRect.width / 2) + (localPosition.x / scale), ((radarRect.height / 2) - (localPosition.z / scale)));
-            return radarPos;
+            if (BDArmorySettings.LOGARITHMIC_RADAR_DISPLAY)
+            {
+                scale = Mathf.Log(localPosition.magnitude + 1) / Mathf.Log(maxDistance + 1);
+                localPosition = localPosition.normalized * scale * scale; // Log^2 gives a nicer curve than log.
+                return new Vector2(radarRect.width * (1 + localPosition.x) / 2, radarRect.height * (1 - localPosition.z) / 2);
+            }
+            else
+            {
+                return new Vector2((radarRect.width / 2) + (localPosition.x / scale), ((radarRect.height / 2) - (localPosition.z / scale)));
+            }
         }
 
         /// <summary>
