@@ -291,6 +291,7 @@
     <Compile Include="Utils\ConfigNodeUtils.cs" />
     <Compile Include="Utils\DebugUtils.cs" />
     <Compile Include="Utils\DecoupledBooster.cs" />
+    <Compile Include="Utils\FARUtils.cs" />
     <Compile Include="Utils\FireSpitterUtils.cs" />
     <Compile Include="Utils\GUIUtils.cs" />
     <Compile Include="Utils\KSPForceApplier.cs" />
