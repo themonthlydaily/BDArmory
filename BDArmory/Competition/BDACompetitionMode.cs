@@ -1871,7 +1871,7 @@ namespace BDArmory.Competition
             // Example usage of UpcomingCollisions(). Note that the timeToCPA values are only updated after an interval of half the current timeToCPA.
             // if (competitionIsActive)
             //     foreach (var upcomingCollision in UpcomingCollisions(100f).Take(3))
-            //         Debug.Log("DEBUG Upcoming potential collision between " + upcomingCollision.Key.Item1 + " and " + upcomingCollision.Key.Item2 + " at distance " + Mathf.Sqrt(upcomingCollision.Value.Item1) + "m in " + upcomingCollision.Value.Item2 + "s.");
+            //         Debug.Log("[BDArmory.BDACompetitionMode]: Upcoming potential collision between " + upcomingCollision.Key.Item1 + " and " + upcomingCollision.Key.Item2 + " at distance " + Mathf.Sqrt(upcomingCollision.Value.Item1) + "m in " + upcomingCollision.Value.Item2 + "s.");
             var now = Planetarium.GetUniversalTime();
             if (now < nextUpdateTick)
                 return;
@@ -2528,17 +2528,17 @@ namespace BDArmory.Competition
                 {
                     if (!rammingInformation.ContainsKey(otherVesselName))
                     {
-                        Debug.Log("DEBUG other vessel (" + otherVesselName + ") is missing from rammingInformation!");
+                        Debug.Log("[BDArmory.BDACompetitionMode]: other vessel (" + otherVesselName + ") is missing from rammingInformation!");
                         return;
                     }
                     if (!rammingInformation[vesselName].targetInformation.ContainsKey(otherVesselName))
                     {
-                        Debug.Log("DEBUG other vessel (" + otherVesselName + ") is missing from rammingInformation[vessel].targetInformation!");
+                        Debug.Log("[BDArmory.BDACompetitionMode]: other vessel (" + otherVesselName + ") is missing from rammingInformation[vessel].targetInformation!");
                         return;
                     }
                     if (!rammingInformation[otherVesselName].targetInformation.ContainsKey(vesselName))
                     {
-                        Debug.Log("DEBUG vessel (" + vesselName + ") is missing from rammingInformation[otherVessel].targetInformation!");
+                        Debug.Log("[BDArmory.BDACompetitionMode]: vessel (" + vesselName + ") is missing from rammingInformation[otherVessel].targetInformation!");
                         return;
                     }
                     var otherVessel = rammingInformation[vesselName].targetInformation[otherVesselName].vessel;
@@ -2923,7 +2923,7 @@ namespace BDArmory.Competition
             var pilots = GetAllPilots();
             foreach (var pilot in pilots)
             {
-                if (!Scores.Players.Contains(pilot.vessel.GetName())) { Debug.Log("DEBUG 2 Scores doesn't contain " + pilot.vessel.GetName()); continue; }
+                if (!Scores.Players.Contains(pilot.vessel.GetName())) { Debug.Log("[BDArmory.BDACompetitionMode]: Scores doesn't contain " + pilot.vessel.GetName()); continue; }
                 pilot.weaponManager.SetTeam(BDTeam.Get(T.ToString()));
                 Scores.ScoreData[pilot.vessel.GetName()].tagIsIt = false;
                 pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[9]); // Trigger AG9 on becoming "NOT IT"

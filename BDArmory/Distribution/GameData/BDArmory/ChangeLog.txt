@@ -19,6 +19,30 @@ IMPROVEMENTS
 - Sidam Turret retextured
 - Shift some missile targeting code from OnUpdate to OnFixedUpdate.
 - Stop continuous single spawn when running a tournament.
+- Fix broken multi-targeting following WM GUI commit.
+- Optimize flareFX.
+- Update Sidam with Conco's retexture.
+- Debug labels now organized by type for easier debug tracking.
+- Remove restrictions on heat-seeking missiles attacking ground targets.
+- Prevent heat-seeking missiles from targeting debris.
+- Prioritize anti-rad missiles first in using missiles against ground targets with active radars.
+- Fix NRE in SmartFindTarget when no missile was selected, reference fired missile for laser check rather than currently selected missile.
+- Adjust DLZ calculation to allow for better missile usage at close ranges, small angles to target.
+- Convert Waypoints from hardcoded courses to a config based implementation.
+- Add support for unique Waypoint names.
+- Add support for independently scaling (model and approach threshold) individual waypoints.
+- Add support for independantly setting individual waypoint altitudes.
+- Waypoint Scale and Waypoint Altitude are now global overrides that will set all WPs to the specified value if not set to default; else will use values from the course data.
+- Adds support for off-world waypoint courses both locally and API-run competitions (may need to make sure multiple showrunners have the same world setting, was unable to find API-based tournamentState equivalent; can use comp#315 to test).
+- Add a slider for activating guard mode when passing a waypoint.
+- Allow multiple laps for waypoints.
+- Updates Flare model.
+- Issue 348; weapons will no longer manually fire if mouse cursor is over Weapon Manager GUI.
+- APBulletMod now implemented for sabot rounds.
+- Adjusted Sabot depth calculation, should no longer over penetrate quite so much.
+- Fix remaining issues with Missile Multi-targeting.
+- Possibly fixed the 'Radar Stuck' bug.
+- Add option to display distances on the RWR logarithmically.
 
 - General:
 	- Add missing HP rounding to some parts.
