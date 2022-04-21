@@ -874,7 +874,7 @@ namespace BDArmory.Bullets
                                     caliber = Mathf.Sqrt((caliber * (((bulletMass * 1000) / ((caliber * caliber * Mathf.PI / 400) * 19)) + 1) * 4) / Mathf.PI); //increase caliber to sim sabot hitting perpendicualr instead of point-first
                                     bulletMass /= 2; //sunder sabot
                                                      //RA isn't going to stop sabot, but underlying part's armor will (probably)
-                                    if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("BDArmory.PooledBullet]: Sabot caliber and mass now: " + caliber + ", " + bulletMass);
+                                    if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.PooledBullet]: Sabot caliber and mass now: " + caliber + ", " + bulletMass);
                                     RA.UpdateSectionScales();
                                 }
                             }

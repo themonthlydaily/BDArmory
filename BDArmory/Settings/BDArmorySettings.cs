@@ -114,6 +114,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static float BDARMORY_WEAPONS_VOLUME = 0.45f;
         [BDAPersistentSettingsField] public static float MAX_GUARD_VISUAL_RANGE = 200000f;
         [BDAPersistentSettingsField] public static float MAX_ACTIVE_RADAR_RANGE = 200000f;        //NOTE: used ONLY for display range of radar windows! Actual radar range provided by part configs!
+        [BDAPersistentSettingsField] public static bool LOGARITHMIC_RADAR_DISPLAY = false;                //NOTE: used ONLY for display range of radar windows! Actual radar range provided by part configs!
         [BDAPersistentSettingsField] public static float MAX_ENGAGEMENT_RANGE = 200000f;          //NOTE: used ONLY for missile dlz parameters!
         [BDAPersistentSettingsField] public static float IVA_LOWPASS_FREQ = 2500f;
         [BDAPersistentSettingsField] public static float SMOKE_DEFLECTION_FACTOR = 10f;

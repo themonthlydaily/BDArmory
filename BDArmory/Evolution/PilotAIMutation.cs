@@ -34,7 +34,7 @@ namespace BDArmory.Evolution
             }
             else
             {
-                Debug.Log("Evolution PilotAIMutation wrong number of pilot modules");
+                Debug.Log("[BDArmory.PilotAIMutation]: Evolution PilotAIMutation wrong number of pilot modules");
             }
         }
 

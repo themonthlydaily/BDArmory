@@ -1878,7 +1878,6 @@ namespace BDArmory.Control
                 var h = r * (1 + Vector3.Dot(m, vessel.srf_vel_direction)) * b; // Required altitude: h = r * (1+cos(theta)) * cos(phi).
                 if (vessel.radarAltitude < h) // Too low for this manoeuvre.
                 {
-                    // Debug.Log($"DEBUG {vessel.vesselName} too low for rollTarget; v: {vessel.srf_vel_direction.ToString("G3")}, t: {rollTarget.ToString("G3")}, r: {r}, h: {h}, alt: {vessel.radarAltitude}, up: {upDirection.ToString("G3")}, phi: {Mathf.Rad2Deg * Mathf.Acos(b)}");
                     requiresLowAltitudeRollTargetCorrection = true; // For simplicity, we'll apply the correction after the projections have occurred.
                 }
             }

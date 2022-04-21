@@ -638,7 +638,6 @@ namespace BDArmory.UI
                                 BDATournament.Instance.RunTournament();
                                 if (BDArmorySettings.VESSEL_SPAWNER_WINDOW_WIDTH < 480 && BDATournament.Instance.numberOfRounds * BDATournament.Instance.numberOfHeats > 99) // Expand the window a bit to compensate for long tournaments.
                                 {
-                                    Debug.Log("DEBUG widening window");
                                     BDArmorySettings.VESSEL_SPAWNER_WINDOW_WIDTH = 480;
                                 }
                             }
