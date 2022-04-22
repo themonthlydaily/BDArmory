@@ -855,6 +855,11 @@ namespace BDArmory.Radar
 
         public void UnlockTargetAt(int index, bool tryRelock = false)
         {
+            if (index < 0 || index >= lockedTargets.Count)
+            {
+                if (BDArmorySettings.DEBUG_RADAR) Debug.Log($"[BDArmory.ModuleRadar]: invalid index {index} for lockedTargets of size {lockedTargets.Count}");
+                return;
+            }
             Vessel rVess = lockedTargets[index].vessel;
 
             if (tryRelock)
