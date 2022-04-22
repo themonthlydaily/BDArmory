@@ -1839,12 +1839,40 @@ namespace BDArmory.Control
                         //StartCoroutine(MissileAwayRoutine(mlauncher));
                     }
                 }
-                else if (ml.TargetingMode == MissileBase.TargetingModes.Gps)
+                else if (ml.TargetingMode == MissileBase.TargetingModes.Gps) 
                 {
                     designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(guardTarget.CoM, vessel.mainBody), guardTarget.vesselName.Substring(0, Mathf.Min(12, guardTarget.vesselName.Length)));
                     if (SetCargoBays())
                     {
                         yield return new WaitForSeconds(2f);
+                    }
+                    MissileLauncher mlauncher;
+                    mlauncher = ml as MissileLauncher;
+                    if (mlauncher != null)
+                    {
+                        if (ml && mlauncher.missileTurret)
+                        {
+                            float turretStartTime = Time.time;
+                            while (Time.time - turretStartTime < Mathf.Max(targetScanInterval / 2f, 2))
+                            {
+                                float angle = Vector3.Angle(mlauncher.missileTurret.finalTransform.forward, mlauncher.missileTurret.slavedTargetPosition - mlauncher.missileTurret.finalTransform.position);
+                                mlauncher.missileTurret.slaved = true;
+                                mlauncher.missileTurret.slavedTargetPosition = MissileGuidance.GetAirToAirFireSolution(mlauncher, designatedGPSInfo.worldPos, designatedGPSInfo.gpsVessel.Velocity());
+                                mlauncher.missileTurret.SlavedAim();
+
+                                if (angle < mlauncher.missileTurret.fireFOV)
+                                {
+                                    break;
+                                    // turretStartTime -= 3 * Time.fixedDeltaTime;
+                                }
+                                yield return new WaitForFixedUpdate();
+                            }
+                        }
+                    }
+                    yield return null;
+                    if (BDArmorySettings.DEBUG_MISSILES)
+                    {
+                        Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " firing GPS missile at " + designatedGPSInfo.worldPos);
                     }
                     FireCurrentMissile(true);
                     //if (FireCurrentMissile(true))
@@ -1865,12 +1893,46 @@ namespace BDArmory.Control
 
                     float attemptStartTime = Time.time;
                     float attemptDuration = targetScanInterval * 0.75f;
+                    MissileLauncher mlauncher;
                     while (Time.time - attemptStartTime < attemptDuration &&
                            (!antiRadTargetAcquired || (antiRadiationTarget - guardTarget.CoM).sqrMagnitude > 20 * 20))
                     {
+                        mlauncher = ml as MissileLauncher;
+                        if (mlauncher != null)
+                        {
+                            if (mlauncher.missileTurret)
+                            {
+                                mlauncher.missileTurret.slaved = true;
+                                mlauncher.missileTurret.slavedTargetPosition = guardTarget.CoM;
+                                mlauncher.missileTurret.SlavedAim();
+                            }
+                        }
                         yield return new WaitForFixedUpdate();
                     }
+                    mlauncher = ml as MissileLauncher;
+                    if (mlauncher != null)
+                    {
+                        if (ml && mlauncher.missileTurret && antiRadTargetAcquired)
+                        {
+                            float turretStartTime = attemptStartTime;
+                            while (antiRadTargetAcquired && Time.time - turretStartTime < Mathf.Max(targetScanInterval / 2f, 2))
+                            {
+                                float angle = Vector3.Angle(mlauncher.missileTurret.finalTransform.forward, mlauncher.missileTurret.slavedTargetPosition - mlauncher.missileTurret.finalTransform.position);
+                                mlauncher.missileTurret.slaved = true;
+                                mlauncher.missileTurret.slavedTargetPosition = MissileGuidance.GetAirToAirFireSolution(mlauncher, antiRadiationTarget, guardTarget.Velocity());
+                                mlauncher.missileTurret.SlavedAim();
 
+                                if (angle < mlauncher.missileTurret.fireFOV)
+                                {
+                                    break;
+                                    // turretStartTime -= 3 * Time.fixedDeltaTime;
+                                }
+                                yield return new WaitForFixedUpdate();
+                            }
+                        }
+                    }
+
+                    yield return null;
                     if (ml && antiRadTargetAcquired && (antiRadiationTarget - guardTarget.CoM).sqrMagnitude < 20 * 20)
                     {
                         FireCurrentMissile(true);
@@ -1909,6 +1971,30 @@ namespace BDArmory.Control
                     {
                         yield return new WaitForFixedUpdate();
                     }
+
+                    MissileLauncher mlauncher = ml as MissileLauncher;
+                    if (mlauncher != null)
+                    {
+                        if (guardTarget && ml && mlauncher.missileTurret && laserPointDetected)
+                        {
+                            //foundCam.SlaveTurrets();
+                            float turretStartTime = attemptStartTime;
+                            while (Time.time - turretStartTime < Mathf.Max(targetScanInterval / 2f, 2))
+                            {
+                                float angle = Vector3.Angle(mlauncher.missileTurret.finalTransform.forward, mlauncher.missileTurret.slavedTargetPosition - mlauncher.missileTurret.finalTransform.position);
+                                mlauncher.missileTurret.slaved = true;
+                                mlauncher.missileTurret.slavedTargetPosition = foundCam.groundTargetPosition;
+                                mlauncher.missileTurret.SlavedAim();
+                                if (angle < mlauncher.missileTurret.fireFOV)
+                                {
+                                    break;
+                                    // turretStartTime -= 2 * Time.fixedDeltaTime;
+                                }
+                                yield return new WaitForFixedUpdate();
+                            }
+                        }
+                    }
+                    yield return null;
 
                     if (ml && laserPointDetected && foundCam && (foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude < 10 * 10)
                     {
@@ -2417,6 +2503,7 @@ namespace BDArmory.Control
                         }
                     CurrentMissile = ml;
                     selectedWeapon = ml;
+                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: No Clearance! Cannot fire " + CurrentMissile.name);
                     return false;
                 }
 
@@ -4941,7 +5028,6 @@ namespace BDArmory.Control
                     //         Debug.Log("DEBUG landed target:" + target.Vessel + ", weapon:" + weapon + " can engage:" + CheckEngagementEnvelope(weapon, distance) + ", engageEnabled:" + engageableWeapon.engageEnabled + ", min/max:" + engageableWeapon.GetEngagementRangeMin() + "/" + engageableWeapon.GetEngagementRangeMax());
                     //     }
                 }
-
                 selectedWeapon = null;
                 weaponIndex = 0;
                 return false;

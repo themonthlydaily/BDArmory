@@ -635,6 +635,7 @@ namespace BDArmory.WeaponMounts
                 if (weaponManager)
                 {
                     wm.SendTargetDataToMissile(missileChildren[missileIndex]);
+                    wm.PreviousMissile = missileChildren[missileIndex];
                 }
 
                 string firedMissileName = missileChildren[missileIndex].part.name;

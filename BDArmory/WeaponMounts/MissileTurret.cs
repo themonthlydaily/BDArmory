@@ -528,6 +528,7 @@ namespace BDArmory.WeaponMounts
                 if (weaponManager)
                 {
                     wm.SendTargetDataToMissile(missileChildren[index]);
+                    wm.PreviousMissile = missileChildren[index];
                 }
                 missileChildren[index].FireMissile();
                 StartCoroutine(MissileRailRoutine(missileChildren[index]));
