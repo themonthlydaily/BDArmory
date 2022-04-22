@@ -5325,7 +5325,7 @@ namespace BDArmory.Control
                 ml.lockedCamera = foundCam;
                 if (BDArmorySettings.DEBUG_MISSILES)
                     Debug.Log("[BDArmory.MissileData]: Sending targetInfo to laser Missile...");
-                if ((foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude < 10 * 10)
+                if (guardMode && ((foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude < 10 * 10))
                     ml.targetVessel = guardTarget.gameObject.GetComponent<TargetInfo>();
                 if (BDArmorySettings.DEBUG_MISSILES)
                     Debug.Log("[BDArmory.MissileData]: targetInfo sent for " + ml.targetVessel.Vessel.GetName());
@@ -5338,7 +5338,7 @@ namespace BDArmory.Control
                     ml.TargetAcquired = true;
                     if (BDArmorySettings.DEBUG_MISSILES)
                         Debug.Log("[BDArmory.MissileData]: Sending targetInfo to GPS Missile...");
-                    if ((designatedGPSCoords - guardTarget.CoM).sqrMagnitude < 10 * 10)
+                    if (guardMode && ((designatedGPSCoords - guardTarget.CoM).sqrMagnitude < 10 * 10))
                         ml.targetVessel = guardTarget.gameObject.GetComponent<TargetInfo>();
                     if (BDArmorySettings.DEBUG_MISSILES)
                         Debug.Log("[BDArmory.MissileData]: targetInfo sent for " + ml.targetVessel.Vessel.GetName());
@@ -5372,7 +5372,7 @@ namespace BDArmory.Control
                         vessel.mainBody);
                 if (BDArmorySettings.DEBUG_MISSILES)
                     Debug.Log("[BDArmory.MissileData]: Sending targetInfo to Antirad Missile...");
-                if ((antiRadiationTarget - guardTarget.CoM).sqrMagnitude < 20 * 20)
+                if (guardMode && ((antiRadiationTarget - guardTarget.CoM).sqrMagnitude < 20 * 20))
                 {
                     ml.targetVessel = guardTarget.gameObject.GetComponent<TargetInfo>();
                     if (BDArmorySettings.DEBUG_MISSILES)
