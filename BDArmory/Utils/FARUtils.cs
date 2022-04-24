@@ -41,7 +41,7 @@ namespace BDArmory.Utils
                 {
                     FARAssembly = assy.assembly;
                     hasFAR = true;
-                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FAR]: Found FAR Assembly: {FARAssembly.FullName}");
+                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FARUtils]: Found FAR Assembly: {FARAssembly.FullName}");
                 }
             }
             return hasFAR;
@@ -58,7 +58,7 @@ namespace BDArmory.Utils
                 {
                     FARWingModule = type;
                     hasFARWing = true;
-                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FAR]: Found FAR wing module type.");
+                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FARUtils]: Found FAR wing module type.");
                 }
             }
             return hasFARWing;
@@ -73,7 +73,7 @@ namespace BDArmory.Utils
                 if (module.GetType() == FARWingModule) // || module.GetType().IsSubclassOf(FSEngineType))
                 {
                     var massMultiplier = (float)FARWingModule.GetField("massMultiplier", BindingFlags.Public | BindingFlags.Instance).GetValue(module);
-                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FAR]: Found wing Mass multiplier of {massMultiplier} for {part.name}.");
+                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FARUtils]: Found wing Mass multiplier of {massMultiplier} for {part.name}.");
                     return massMultiplier;
                 }
             }
