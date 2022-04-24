@@ -72,8 +72,9 @@ namespace BDArmory.Utils
             {
                 if (module.GetType() == FARWingModule) // || module.GetType().IsSubclassOf(FSEngineType))
                 {
-                     return (float)FARWingModule.GetField("massMultiplier", BindingFlags.Public | BindingFlags.Instance).GetValue(module);
-                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FAR]: Found getting wing Mass multiplier of {(float)FARWingModule.GetField("massMultiplier", BindingFlags.Public | BindingFlags.Instance).GetValue(module)}for {part.name}.");
+                    var massMultiplier = (float)FARWingModule.GetField("massMultiplier", BindingFlags.Public | BindingFlags.Instance).GetValue(module);
+                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FAR]: Found wing Mass multiplier of {massMultiplier} for {part.name}.");
+                    return massMultiplier;
                 }
             }
             return 1;
