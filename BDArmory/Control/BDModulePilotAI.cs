@@ -1077,30 +1077,22 @@ namespace BDArmory.Control
         {
             if (BDArmorySettings.DEBUG_LINES && pilotEnabled)
             {
-                if (lr)
-                {
-                    lr.enabled = true;
-                    lr.SetPosition(0, vessel.ReferenceTransform.position);
-                    lr.SetPosition(1, flyingToPosition);
-                }
-                else
+                lr = GetComponent<LineRenderer>();
+                if (lr == null)
                 {
                     lr = gameObject.AddComponent<LineRenderer>();
                     lr.positionCount = 2;
                     lr.startWidth = 0.5f;
                     lr.endWidth = 0.5f;
                 }
+                lr.enabled = true;
+                lr.SetPosition(0, vessel.ReferenceTransform.position);
+                lr.SetPosition(1, flyingToPosition);
 
                 minSpeed = Mathf.Clamp(minSpeed, 0, idleSpeed - 20);
                 minSpeed = Mathf.Clamp(minSpeed, 0, maxSpeed - 20);
             }
-            else
-            {
-                if (lr)
-                {
-                    lr.enabled = false;
-                }
-            }
+            else { if (lr != null) { lr.enabled = false; } }
 
             // switch up the alt values if up to eleven is toggled
             if (UpToEleven != toEleven)
@@ -2157,7 +2149,7 @@ namespace BDArmory.Control
         void FlyWaypoints(FlightCtrlState s)
         {
             // Note: UpdateWaypoint is called separately before this in case FlyWaypoints doesn't get called.
-            if(BDArmorySettings.WAYPOINT_LOOP_INDEX>1)
+            if (BDArmorySettings.WAYPOINT_LOOP_INDEX > 1)
             {
                 SetStatus($"Lap {activeWaypointLap}, Waypoint {activeWaypointIndex} ({waypointRange:F0}m)");
             }

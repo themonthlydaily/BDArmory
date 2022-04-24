@@ -913,8 +913,9 @@ namespace BDArmory.Weapons.Missiles
             //todo: find a way to fly by wire vessel decoupled
         }
 
-        void OnGUI()
+        protected override void OnGUI()
         {
+            base.OnGUI();
             if (HighLogic.LoadedSceneIsFlight)
             {
                 drawLabels();

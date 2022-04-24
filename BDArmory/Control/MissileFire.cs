@@ -949,6 +949,7 @@ namespace BDArmory.Control
         }
         #endregion KSPFields,events,actions
 
+        private LineRenderer lr = null;
         private StringBuilder debugString = new StringBuilder();
         #endregion Declarations
 
@@ -1349,6 +1350,7 @@ namespace BDArmory.Control
 
         void OnGUI()
         {
+            if (!BDArmorySettings.DEBUG_LINES && lr != null) { lr.enabled = false; }
             if (HighLogic.LoadedSceneIsFlight && vessel == FlightGlobals.ActiveVessel &&
                 BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled)
             {
@@ -3337,24 +3339,13 @@ namespace BDArmory.Control
                 if (ml.dropTime >= 0.1f)
                 {
                     //debug lines
-                    LineRenderer lr = null;
                     if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DRAW_AIMERS)
                     {
                         lr = GetComponent<LineRenderer>();
-                        if (!lr)
-                        {
-                            lr = gameObject.AddComponent<LineRenderer>();
-                        }
+                        if (!lr) { lr = gameObject.AddComponent<LineRenderer>(); }
                         lr.enabled = true;
                         lr.startWidth = .1f;
                         lr.endWidth = .1f;
-                    }
-                    else
-                    {
-                        if (gameObject.GetComponent<LineRenderer>())
-                        {
-                            gameObject.GetComponent<LineRenderer>().enabled = false;
-                        }
                     }
 
                     float radius = launcher.decoupleForward ? launcher.ClearanceRadius : launcher.ClearanceLength;
@@ -3384,7 +3375,7 @@ namespace BDArmory.Control
                         new Ray(ml.MissileReferenceTransform.position, direction)
                     };
 
-                    if (lr)
+                    if (lr != null && lr.enabled)
                     {
                         lr.useWorldSpace = false;
                         lr.positionCount = 4;
@@ -6365,11 +6356,8 @@ namespace BDArmory.Control
             if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DRAW_AIMERS)
             {
                 Vector3[] pointsArray = pointPositions.ToArray();
-                LineRenderer lr = GetComponent<LineRenderer>();
-                if (!lr)
-                {
-                    lr = gameObject.AddComponent<LineRenderer>();
-                }
+                lr = GetComponent<LineRenderer>();
+                if (!lr) { lr = gameObject.AddComponent<LineRenderer>(); }
                 lr.enabled = true;
                 lr.startWidth = .1f;
                 lr.endWidth = .1f;
@@ -6377,13 +6365,6 @@ namespace BDArmory.Control
                 for (int i = 0; i < pointsArray.Length; i++)
                 {
                     lr.SetPosition(i, pointsArray[i]);
-                }
-            }
-            else
-            {
-                if (gameObject.GetComponent<LineRenderer>())
-                {
-                    gameObject.GetComponent<LineRenderer>().enabled = false;
                 }
             }
         }
