@@ -43,6 +43,10 @@ IMPROVEMENTS
 - Fix remaining issues with Missile Multi-targeting.
 - Possibly fixed the 'Radar Stuck' bug.
 - Add option to display distances on the RWR logarithmically.
+- Fix HARMs ignoring...? (commit e5abb779)
+- Adjust the weapon line renderers for debug lines to account for frame velocity and that the flight integrator occurs between assigning the trajectories and rendering them.
+- Restore gain alt behaviour to non-Free/non-Waypoints PilotCommand modes.
+- Add Store/Restore functionality for control surfaces (via the pilotAI).
 
 - General:
 	- Add missing HP rounding to some parts.
