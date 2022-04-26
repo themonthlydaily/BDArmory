@@ -508,6 +508,7 @@ namespace BDArmory.Control
             UI_Toggle(enabledText = "#LOC_BDArmory_On", disabledText = "#LOC_BDArmory_Off")]//On--Off
         public bool standbyMode = false;
 
+        #region Store/Restore
         private static Dictionary<string, List<System.Tuple<string, object>>> storedSettings; // Stored settings for each vessel.
         [KSPEvent(advancedTweakable = false, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_StoreSettings", active = true)]//Store Settings
         public void StoreSettings()
@@ -557,6 +558,69 @@ namespace BDArmory.Control
                 }
             }
         }
+
+        // This uses the parts' persistentId to reference the parts. Possibly, it should use some other identifier (what's used as a tag at the end of the "part = ..." and "link = ..." lines?) in case of duplicate persistentIds?
+        private static Dictionary<string, Dictionary<uint, List<System.Tuple<string, object>>>> storedControlSurfaceSettings; // Stored control surface settings for each vessel.
+        [KSPEvent(advancedTweakable = false, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_StoreControlSurfaceSettings", active = true)]//Store Control Surfaces
+        public void StoreControlSurfaceSettings()
+        {
+            var vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName;
+            if (storedControlSurfaceSettings == null)
+            {
+                storedControlSurfaceSettings = new Dictionary<string, Dictionary<uint, List<Tuple<string, object>>>>();
+            }
+            if (storedControlSurfaceSettings.ContainsKey(vesselName))
+            {
+                if (storedControlSurfaceSettings[vesselName] == null)
+                {
+                    storedControlSurfaceSettings[vesselName] = new Dictionary<uint, List<Tuple<string, object>>>();
+                }
+                else
+                {
+                    storedControlSurfaceSettings[vesselName].Clear();
+                }
+            }
+            else
+            {
+                storedControlSurfaceSettings.Add(vesselName, new Dictionary<uint, List<Tuple<string, object>>>());
+            }
+            foreach (var part in vessel.Parts)
+            {
+                var controlSurface = part.GetComponent<ModuleControlSurface>();
+                if (controlSurface == null) continue;
+                storedControlSurfaceSettings[vesselName][part.persistentId] = new List<Tuple<string, object>>();
+                var fields = typeof(ModuleControlSurface).GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                foreach (var field in fields)
+                {
+                    storedControlSurfaceSettings[vesselName][part.persistentId].Add(new System.Tuple<string, object>(field.Name, field.GetValue(controlSurface)));
+                }
+            }
+            Events["RestoreControlSurfaceSettings"].active = true;
+        }
+        [KSPEvent(advancedTweakable = false, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_RestoreControlSurfaceSettings", active = false)]//Restore Control Surfaces
+        public void RestoreControlSurfaceSettings()
+        {
+            var vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName;
+            if (storedControlSurfaceSettings == null || !storedControlSurfaceSettings.ContainsKey(vesselName) || storedControlSurfaceSettings[vesselName] == null || storedControlSurfaceSettings[vesselName].Count == 0)
+            {
+                Debug.Log("[BDArmory.BDModulePilotAI]: No stored control surface settings found for vessel " + vesselName + ".");
+                return;
+            }
+            foreach (var part in HighLogic.LoadedSceneIsFlight ? vessel.Parts : EditorLogic.fetch.ship.Parts)
+            {
+                var controlSurface = part.GetComponent<ModuleControlSurface>();
+                if (controlSurface == null || !storedControlSurfaceSettings[vesselName].ContainsKey(part.persistentId)) continue;
+                foreach (var setting in storedControlSurfaceSettings[vesselName][part.persistentId])
+                {
+                    var field = typeof(ModuleControlSurface).GetField(setting.Item1, BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                    if (field != null)
+                    {
+                        field.SetValue(controlSurface, setting.Item2);
+                    }
+                }
+            }
+        }
+        #endregion
         #endregion
 
         #region AI Internal Parameters
@@ -1052,6 +1116,10 @@ namespace BDArmory.Control
             if ((HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor) && storedSettings != null && storedSettings.ContainsKey(HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName))
             {
                 Events["RestoreSettings"].active = true;
+            }
+            if ((HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor) && storedControlSurfaceSettings != null && storedControlSurfaceSettings.ContainsKey(HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName))
+            {
+                Events["RestoreControlSurfaceSettings"].active = true;
             }
         }
 
