@@ -1211,9 +1211,9 @@ namespace BDArmory.Control
             CheckLandingGear();
             if (IsRunningWaypoints) UpdateWaypoint(); // Update the waypoint state.
 
-            if (!vessel.LandedOrSplashed && (FlyAvoidTerrain(s) || (!ramming && FlyAvoidOthers(s))))
+            if (!vessel.LandedOrSplashed && (FlyAvoidTerrain(s) || (!ramming && FlyAvoidOthers(s)))) // Avoid terrain and other planes.
             { turningTimer = 0; }
-            else if (initialTakeOff)
+            else if (initialTakeOff) // Take off.
             {
                 TakeOff(s);
                 turningTimer = 0;
@@ -1221,8 +1221,16 @@ namespace BDArmory.Control
             else
             {
                 if (!(command == PilotCommands.Free || command == PilotCommands.Waypoints))
-                { UpdateCommand(s); }
-                else
+                {
+                    if (belowMinAltitude && !(gainAltInhibited || BDArmorySettings.SF_REPULSOR)) // If we're below minimum altitude, gain altitude unless we're being inhibited or the space friction repulsor field is enabled.
+                    {
+                        TakeOff(s);
+                        turningTimer = 0;
+                    }
+                    else // Follow the current command.
+                    { UpdateCommand(s); }
+                }
+                else // Do combat stuff or orbit. (minAlt is handled in UpdateAI for Free and Waypoints modes.)
                 { UpdateAI(s); }
             }
             UpdateGAndAoALimits(s);
