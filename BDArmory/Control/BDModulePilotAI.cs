@@ -386,6 +386,12 @@ namespace BDArmory.Control
             UI_FloatRange(minValue = 0f, maxValue = 2000f, stepIncrement = 10f, scene = UI_Scene.All)]
         public float extendDistanceAirToAir = 300f;
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ExtendAngleAirToAir", advancedTweakable = true, //Extend Angle Air-To-Air
+            groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
+            UI_FloatRange(minValue = -10f, maxValue = 45f, stepIncrement = 1f, scene = UI_Scene.All)]
+        public float extendAngleAirToAir = 0f;
+        float _extendAngleAirToAir = 0;
+
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ExtendDistanceAirToGroundGuns", advancedTweakable = true, //Extend Distance Air-To-Ground (Guns)
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 5000f, stepIncrement = 50f, scene = UI_Scene.All)]
@@ -480,6 +486,7 @@ namespace BDArmory.Control
             { nameof(maxAllowedAoA), 180f },
             // { nameof(extendMult), 200f },
             { nameof(extendDistanceAirToAir), 20000f },
+            { nameof(extendAngleAirToAir), 90f },
             { nameof(extendDistanceAirToGroundGuns), 20000f },
             { nameof(extendDistanceAirToGround), 20000f },
             { nameof(minEvasionTime), 10f },
@@ -503,6 +510,38 @@ namespace BDArmory.Control
             { nameof(DynamicDampingRollMax), 100f },
             { nameof(dynamicSteerDampingRollFactor), 100f }
         };
+        Dictionary<string, float> altMinValues = new Dictionary<string, float> {
+            { nameof(extendAngleAirToAir), -90f },
+        };
+
+        void TurnItUpToEleven(bool upToEleven)
+        {
+            using (var s = altMaxValues.Keys.ToList().GetEnumerator())
+                while (s.MoveNext())
+                {
+                    UI_FloatRange euic = (UI_FloatRange)
+                        (HighLogic.LoadedSceneIsFlight ? Fields[s.Current].uiControlFlight : Fields[s.Current].uiControlEditor);
+                    float tempValue = euic.maxValue;
+                    euic.maxValue = altMaxValues[s.Current];
+                    altMaxValues[s.Current] = tempValue;
+                    // change the value back to what it is now after fixed update, because changing the max value will clamp it down
+                    // using reflection here, don't look at me like that, this does not run often
+                    StartCoroutine(setVar(s.Current, (float)typeof(BDModulePilotAI).GetField(s.Current).GetValue(this)));
+                }
+            using (var s = altMinValues.Keys.ToList().GetEnumerator())
+                while (s.MoveNext())
+                {
+                    UI_FloatRange euic = (UI_FloatRange)
+                        (HighLogic.LoadedSceneIsFlight ? Fields[s.Current].uiControlFlight : Fields[s.Current].uiControlEditor);
+                    float tempValue = euic.minValue;
+                    euic.minValue = altMinValues[s.Current];
+                    altMinValues[s.Current] = tempValue;
+                    // change the value back to what it is now after fixed update, because changing the min value will clamp it down
+                    // using reflection here, don't look at me like that, this does not run often
+                    StartCoroutine(setVar(s.Current, (float)typeof(BDModulePilotAI).GetField(s.Current).GetValue(this)));
+                }
+            toEleven = upToEleven;
+        }
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_StandbyMode"),//Standby Mode
             UI_Toggle(enabledText = "#LOC_BDArmory_On", disabledText = "#LOC_BDArmory_Off")]//On--Off
@@ -990,6 +1029,19 @@ namespace BDArmory.Control
             minCollisionAvoidanceLookAheadPeriod.minValue = vesselCollisionAvoidanceTickerFreq * Time.fixedDeltaTime;
         }
 
+        public void SetOnExtendAngleA2AChanged()
+        {
+            UI_FloatRange field = (UI_FloatRange)Fields["extendAngleAirToAir"].uiControlEditor;
+            field.onFieldChanged = OnExtendAngleA2AChanged;
+            field = (UI_FloatRange)Fields["extendAngleAirToAir"].uiControlFlight;
+            field.onFieldChanged = OnExtendAngleA2AChanged;
+            OnExtendAngleA2AChanged(null, null);
+        }
+        void OnExtendAngleA2AChanged(BaseField field, object obj)
+        {
+            _extendAngleAirToAir = Mathf.Sin(extendAngleAirToAir * Mathf.Deg2Rad);
+        }
+
         IEnumerator FixAltitudesSectionLayout() // Fix the layout of the Altitudes section by briefly disabling the fields underneath the one that was removed.
         {
             var maxAltitudeToggleField = Fields["maxAltitudeToggle"];
@@ -1112,6 +1164,7 @@ namespace BDArmory.Control
             CustomDynamicAxisField = CustomDynamicAxisFields;
             ToggleDynamicDampingFields();
             ToggleMaxAltitude();
+            SetOnExtendAngleA2AChanged();
             // InitSteerDamping();
             if ((HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor) && storedSettings != null && storedSettings.ContainsKey(HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName))
             {
@@ -1165,19 +1218,7 @@ namespace BDArmory.Control
             // switch up the alt values if up to eleven is toggled
             if (UpToEleven != toEleven)
             {
-                using (var s = altMaxValues.Keys.ToList().GetEnumerator())
-                    while (s.MoveNext())
-                    {
-                        UI_FloatRange euic = (UI_FloatRange)
-                            (HighLogic.LoadedSceneIsFlight ? Fields[s.Current].uiControlFlight : Fields[s.Current].uiControlEditor);
-                        float tempValue = euic.maxValue;
-                        euic.maxValue = altMaxValues[s.Current];
-                        altMaxValues[s.Current] = tempValue;
-                        // change the value back to what it is now after fixed update, because changing the max value will clamp it down
-                        // using reflection here, don't look at me like that, this does not run often
-                        StartCoroutine(setVar(s.Current, (float)typeof(BDModulePilotAI).GetField(s.Current).GetValue(this)));
-                    }
-                toEleven = UpToEleven;
+                TurnItUpToEleven(UpToEleven);
             }
 
             //hide dynamic steer damping fields if dynamic damping isn't toggled
@@ -2120,7 +2161,7 @@ namespace BDArmory.Control
             {
                 extendDistance = Mathf.Max(extendDistanceAirToAir, extendRequestMinDistance);
                 extendHorizontally = false;
-                desiredMinAltitude = (float)vessel.radarAltitude * 0.95f; // Extend mostly horizontally
+                desiredMinAltitude = Mathf.Max((float)vessel.radarAltitude + _extendAngleAirToAir * extendDistance, minAltitude);
                 extendParametersSet = true;
                 if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: {vessel.vesselName} is extending due to an air target ({extendingReason}).");
                 return true;
