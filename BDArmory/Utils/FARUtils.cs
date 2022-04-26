@@ -13,10 +13,13 @@ namespace BDArmory.Utils
         public static bool hasFAR = false;
         private static bool hasCheckedForFAR = false;
         public static bool hasFARWing = false;
+        public static bool hasFARControllableSurface = false;
         private static bool hasCheckedForFARWing = false;
+        private static bool hasCheckedForFARControllableSurface = false;
 
         public static Assembly FARAssembly;
         public static Type FARWingModule;
+        public static Type FARControllableSurfaceModule;
 
 
         void Awake()
@@ -28,7 +31,11 @@ namespace BDArmory.Utils
         void Start()
         {
             CheckForFAR();
-            if (hasFAR) CheckForFARWing();
+            if (hasFAR)
+            {
+                CheckForFARWing();
+                CheckForFARControllableSurface();
+            }
         }
 
         public static bool CheckForFAR()
@@ -62,6 +69,23 @@ namespace BDArmory.Utils
                 }
             }
             return hasFARWing;
+        }
+
+        public static bool CheckForFARControllableSurface()
+        {
+            if (!hasFAR) return false;
+            if (hasCheckedForFARControllableSurface) return hasFARControllableSurface;
+            hasCheckedForFARControllableSurface = true;
+            foreach (var type in FARAssembly.GetTypes())
+            {
+                if (type.Name == "FARControllableSurface")
+                {
+                    FARControllableSurfaceModule = type;
+                    hasFARControllableSurface = true;
+                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FARUtils]: Found FAR controllable surface module type.");
+                }
+            }
+            return hasFARControllableSurface;
         }
 
         public static float GetFARMassMult(Part part)

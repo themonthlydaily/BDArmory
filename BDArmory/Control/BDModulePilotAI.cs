@@ -7,7 +7,6 @@ using System.Text;
 using UnityEngine;
 
 using BDArmory.Extensions;
-using BDArmory.Competition;
 using BDArmory.Guidances;
 using BDArmory.Radar;
 using BDArmory.Settings;
@@ -623,7 +622,7 @@ namespace BDArmory.Control
             {
                 storedControlSurfaceSettings.Add(vesselName, new Dictionary<uint, List<Tuple<string, object>>>());
             }
-            foreach (var part in vessel.Parts)
+            foreach (var part in HighLogic.LoadedSceneIsFlight ? vessel.Parts : EditorLogic.fetch.ship.Parts)
             {
                 var controlSurface = part.GetComponent<ModuleControlSurface>();
                 if (controlSurface == null) continue;
@@ -634,15 +633,58 @@ namespace BDArmory.Control
                     storedControlSurfaceSettings[vesselName][part.persistentId].Add(new System.Tuple<string, object>(field.Name, field.GetValue(controlSurface)));
                 }
             }
+            StoreFARControlSurfaceSettings();
             Events["RestoreControlSurfaceSettings"].active = true;
         }
+        private static Dictionary<string, Dictionary<uint, List<System.Tuple<string, object>>>> storedFARControlSurfaceSettings; // Stored control surface settings for each vessel.
+        void StoreFARControlSurfaceSettings()
+        {
+            if (!FerramAerospace.hasFARControllableSurface) return;
+            var vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName;
+            if (storedFARControlSurfaceSettings == null)
+            {
+                storedFARControlSurfaceSettings = new Dictionary<string, Dictionary<uint, List<Tuple<string, object>>>>();
+            }
+            if (storedFARControlSurfaceSettings.ContainsKey(vesselName))
+            {
+                if (storedFARControlSurfaceSettings[vesselName] == null)
+                {
+                    storedFARControlSurfaceSettings[vesselName] = new Dictionary<uint, List<Tuple<string, object>>>();
+                }
+                else
+                {
+                    storedFARControlSurfaceSettings[vesselName].Clear();
+                }
+            }
+            else
+            {
+                storedFARControlSurfaceSettings.Add(vesselName, new Dictionary<uint, List<Tuple<string, object>>>());
+            }
+            foreach (var part in HighLogic.LoadedSceneIsFlight ? vessel.Parts : EditorLogic.fetch.ship.Parts)
+            {
+                foreach (var module in part.Modules)
+                {
+                    if (module.GetType() == FerramAerospace.FARControllableSurfaceModule)
+                    {
+                        storedFARControlSurfaceSettings[vesselName][part.persistentId] = new List<Tuple<string, object>>();
+                        var fields = FerramAerospace.FARControllableSurfaceModule.GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                        foreach (var field in fields)
+                        {
+                            storedFARControlSurfaceSettings[vesselName][part.persistentId].Add(new System.Tuple<string, object>(field.Name, field.GetValue(module)));
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
         [KSPEvent(advancedTweakable = false, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_RestoreControlSurfaceSettings", active = false)]//Restore Control Surfaces
         public void RestoreControlSurfaceSettings()
         {
+            RestoreFARControlSurfaceSettings();
             var vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName;
             if (storedControlSurfaceSettings == null || !storedControlSurfaceSettings.ContainsKey(vesselName) || storedControlSurfaceSettings[vesselName] == null || storedControlSurfaceSettings[vesselName].Count == 0)
             {
-                Debug.Log("[BDArmory.BDModulePilotAI]: No stored control surface settings found for vessel " + vesselName + ".");
                 return;
             }
             foreach (var part in HighLogic.LoadedSceneIsFlight ? vessel.Parts : EditorLogic.fetch.ship.Parts)
@@ -655,6 +697,34 @@ namespace BDArmory.Control
                     if (field != null)
                     {
                         field.SetValue(controlSurface, setting.Item2);
+                    }
+                }
+            }
+        }
+        void RestoreFARControlSurfaceSettings()
+        {
+            if (!FerramAerospace.hasFARControllableSurface) return;
+            var vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName;
+            if (storedFARControlSurfaceSettings == null || !storedFARControlSurfaceSettings.ContainsKey(vesselName) || storedFARControlSurfaceSettings[vesselName] == null || storedFARControlSurfaceSettings[vesselName].Count == 0)
+            {
+                return;
+            }
+            foreach (var part in HighLogic.LoadedSceneIsFlight ? vessel.Parts : EditorLogic.fetch.ship.Parts)
+            {
+                if (!storedFARControlSurfaceSettings[vesselName].ContainsKey(part.persistentId)) continue;
+                foreach (var module in part.Modules)
+                {
+                    if (module.GetType() == FerramAerospace.FARControllableSurfaceModule)
+                    {
+                        foreach (var setting in storedFARControlSurfaceSettings[vesselName][part.persistentId])
+                        {
+                            var field = FerramAerospace.FARControllableSurfaceModule.GetField(setting.Item1, BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                            if (field != null)
+                            {
+                                field.SetValue(module, setting.Item2);
+                            }
+                        }
+                        break;
                     }
                 }
             }
@@ -1170,9 +1240,13 @@ namespace BDArmory.Control
             {
                 Events["RestoreSettings"].active = true;
             }
-            if ((HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor) && storedControlSurfaceSettings != null && storedControlSurfaceSettings.ContainsKey(HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName))
+            if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor)
             {
-                Events["RestoreControlSurfaceSettings"].active = true;
+                var vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName;
+                if ((storedControlSurfaceSettings != null && storedControlSurfaceSettings.ContainsKey(vesselName)) || (storedFARControlSurfaceSettings != null && storedFARControlSurfaceSettings.ContainsKey(vesselName)))
+                {
+                    Events["RestoreControlSurfaceSettings"].active = true;
+                }
             }
         }
 
