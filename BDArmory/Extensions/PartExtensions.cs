@@ -106,7 +106,7 @@ namespace BDArmory.Extensions
                 float armorMass_ = p.GetArmorThickness();
                 float armorDensity_ = p.GetArmorDensity();
                 float armorStrength_ = p.GetArmorSrength();
-                float damageReduction = DamageReduction(armorMass_, armorDensity_, armorStrength_, damage_, ExplosionSourceType.Bullet, caliber, penetrationfactor);
+                float damageReduction = DamageReduction(armorMass_, armorDensity_, armorStrength_, damage_, sourceType, caliber);
 
                 damage_ = damageReduction;
             }
