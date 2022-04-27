@@ -47,6 +47,8 @@ IMPROVEMENTS
 - Adjust the weapon line renderers for debug lines to account for frame velocity and that the flight integrator occurs between assigning the trajectories and rendering them.
 - Restore gain alt behaviour to non-Free/non-Waypoints PilotCommand modes.
 - Add Store/Restore functionality for control surfaces (via the pilotAI).
+- Also Store/Restore FAR control surfaces (requires matching part IDs).
+- Add an extend angle for air-to-air extending.
 
 - General:
 	- Add missing HP rounding to some parts.
