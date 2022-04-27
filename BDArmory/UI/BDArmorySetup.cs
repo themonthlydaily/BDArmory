@@ -900,7 +900,7 @@ namespace BDArmory.UI
             GUI.Label(new Rect(_windowMargin + _buttonSize, _windowMargin, columnWidth - 2 * _windowMargin - numberOfButtons * _buttonSize, _windowMargin + _buttonSize), Localizer.Format("#LOC_BDArmory_WMWindow_title") + "          ", kspTitleLabel);
 
             // Version.
-            GUI.Label(new Rect(columnWidth - _windowMargin - (numberOfButtons - 1) * _buttonSize - 100, 23, 57, 10), Version, waterMarkStyle);
+            GUI.Label(new Rect(columnWidth - _windowMargin - (numberOfButtons - 1) * _buttonSize - 100, 23, 57, 10), Version + "-pre", waterMarkStyle);
 
             //SETTINGS BUTTON
             if (!BDKeyBinder.current &&

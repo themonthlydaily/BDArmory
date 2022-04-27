@@ -213,7 +213,7 @@ namespace BDArmory.Modules
         PartResource fuel;
         PartResource solid;
         public bool isOnFire = false;
-        bool procWing = false;
+        bool procPart = false;
 
         public bool externallyCalled = false;
         ModuleEngines engine;
@@ -221,9 +221,9 @@ namespace BDArmory.Modules
         private float enginerestartTime = -1;
         public void Start()
         {
-            if (part.name.Contains("B9.Aero.Wing.Procedural")) //could add other proc parts here for similar support
+            if (part.name.Contains("B9.Aero.Wing.Procedural") || part.name.Contains("procedural")) //could add other proc parts here for similar support
             {
-                procWing = true;
+                procPart = true;
             }
             if (HighLogic.LoadedSceneIsEditor)
             {
@@ -507,7 +507,7 @@ namespace BDArmory.Modules
         {
             if (HighLogic.LoadedSceneIsEditor)
             {
-                if (procWing)
+                if (procPart)
                 {
                     updateTimer -= Time.fixedDeltaTime;
                     if (updateTimer < 0)

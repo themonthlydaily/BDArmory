@@ -96,21 +96,6 @@ namespace BDArmory.Extensions
                     break;
             }
 
-            var damage_before = damage_;
-            //////////////////////////////////////////////////////////
-            //   Armor Reduction factors
-            //////////////////////////////////////////////////////////
-
-            if (p.HasArmor())
-            {
-                float armorMass_ = p.GetArmorThickness();
-                float armorDensity_ = p.GetArmorDensity();
-                float armorStrength_ = p.GetArmorSrength();
-                float damageReduction = DamageReduction(armorMass_, armorDensity_, armorStrength_, damage_, sourceType, caliber);
-
-                damage_ = damageReduction;
-            }
-
             //////////////////////////////////////////////////////////
             //   Apply Hitpoints
             //////////////////////////////////////////////////////////
@@ -541,6 +526,7 @@ namespace BDArmory.Extensions
             return hasFuel;
         }
 
+        // DEPRECIATED, armor effects on explosive damage are incorporated into ExplosionFX.cs
         public static float DamageReduction(float armor, float density, float strength, float damage, ExplosionSourceType sourceType, float caliber = 0, float penetrationfactor = 0)
         {
             float _damageReduction;

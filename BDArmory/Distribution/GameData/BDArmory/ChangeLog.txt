@@ -1,61 +1,44 @@
-﻿v1.5.0.0
+﻿v1.5.0.1-pre
+FIXES
+ - Fix procparts not updating HP/Armor volume
+ - Adds SelfSealingTanks/Firebottle options to Proc Part Tanks
+ - Fix AI takeoff behavior 
+ - Weapon debug lines now account for frame velocity and flight integrator delay
+IMPROVEMETS
+ - Add Store/Restore option to save control surface configs in Pilot AI
+ - Add extend angle to Ai to clamp climb/dive angle when doing Air-to-air extending
+
+
+v1.5.0.0-pre
 FIXES
 - Fix 'resizeSquare' texture not being loaded sometimes (due to a race condition?).
 - Clean up log spam from ExplosionFX.
 - Fix Ammo Selection Tool GUI when selecting a weapon using legacy ammo definitions
-IMPROVEMENTS
-- Major internal refactor to better organise code.
-- Switch to a single DLL release.
-
-- Fixes AI GUI slider increments to match AI PAW.
-- Adds Dynamic Damping P/Y/R readouts to AI GUI.
 - Fix ATG missiles not respecting maxMissilesPerTarget.
-- Adds Missile multi-targeting.
-- Adds new Max Missile Tgts setting in WM to set max targets to engage with missiles.
-- Adds incoming missile alert.
 - Fixes ProcWing armor calculations.
+- Fixes Procwing HP and Armor calcs when using FAR
 - Adds missing FFAR rocket ammo to universal ammo boxes.
 - Fixes TOW missile FX.
-- Sidam Turret retextured
-- Shift some missile targeting code from OnUpdate to OnFixedUpdate.
-- Stop continuous single spawn when running a tournament.
-- Fix broken multi-targeting following WM GUI commit.
-- Optimize flareFX.
-- Update Sidam with Conco's retexture.
-- Debug labels now organized by type for easier debug tracking.
-- Remove restrictions on heat-seeking missiles attacking ground targets.
-- Prevent heat-seeking missiles from targeting debris.
-- Prioritize anti-rad missiles first in using missiles against ground targets with active radars.
-- Fix NRE in SmartFindTarget when no missile was selected, reference fired missile for laser check rather than currently selected missile.
-- Adjust DLZ calculation to allow for better missile usage at close ranges, small angles to target.
-- Convert Waypoints from hardcoded courses to a config based implementation.
-- Add support for unique Waypoint names.
-- Add support for independently scaling (model and approach threshold) individual waypoints.
-- Add support for independantly setting individual waypoint altitudes.
-- Waypoint Scale and Waypoint Altitude are now global overrides that will set all WPs to the specified value if not set to default; else will use values from the course data.
-- Adds support for off-world waypoint courses both locally and API-run competitions (may need to make sure multiple showrunners have the same world setting, was unable to find API-based tournamentState equivalent; can use comp#315 to test).
-- Add a slider for activating guard mode when passing a waypoint.
-- Allow multiple laps for waypoints.
-- Updates Flare model.
-- Issue 348; weapons will no longer manually fire if mouse cursor is over Weapon Manager GUI.
-- APBulletMod now implemented for sabot rounds.
-- Adjusted Sabot depth calculation, should no longer over penetrate quite so much.
-- Fix remaining issues with Missile Multi-targeting.
-- Possibly fixed the 'Radar Stuck' bug.
-- Add option to display distances on the RWR logarithmically.
 
+IMPROVEMENTS
 - General:
+	- Major internal refactor to better organise code.
+	- Switch to a single DLL release.
 	- Add missing HP rounding to some parts.
+	- Stop continuous single spawn when running a tournament.
 	- Optimise the PartExploderSystem to minimise creation of new vessels.
 	- CM Flares optimized, now have much reduced performance hit.
 	- Add a toggle to the UI settings section to disable flare smoke.
 	- Add a toggle to the UI settings section to disable gapless particle emitters (mostly used for engine trails).
+	- Debug labels now organized by type for easier debug tracking.
 	- Refactor the debug settings to be more specific and to have an on-screen only debug labels.
 - AI:
 	- Add a 5° deadzone around being on target for dynamic damping to avoid feed-back loop in PID.
 	- Add a check for requested extending already being satisfied.
 	- Add terrain awareness to the pilot AI's waypoint fly-to direction.
 	- Add a 'Waypoint Terrain Avoidance' slider to the pilot AI to control the range and strength of the waypoint terrain avoidance reaction.
+	- Fixes AI GUI slider increments to match AI PAW.
+	- Adds Dynamic Damping P/Y/R readouts to AI GUI.
 - GameModes:
 	- Waypoints:
 		- Add support for multiple waypoint gate models.
@@ -64,8 +47,31 @@ IMPROVEMENTS
 		- Remember the previously used HoSTag.
 		- Add right click to 'Run waypoints' to spawn with the vessel spawner coordinates instead of the hard-coded ones.
 		- Add multiple courses and a selection UI.
+		- Convert Waypoints from hardcoded courses to a config based implementation.
+		- Add support for unique Waypoint names.
+		- Add support for independently scaling (model and approach threshold) individual waypoints.
+		- Add support for independantly setting individual waypoint altitudes.
+		- Waypoint Scale and Waypoint Altitude are now global overrides that will set all WPs to the specified value if not set to default; else will use values from the course data.
+		- Adds support for off-world waypoint courses both locally and API-run competitions.
+		- Add a slider for activating guard mode when passing a waypoint.
+		- Allow multiple laps for waypoints.
 - Weapons:
 	- Use min of missile drop time or 2 sec instead of fixed two second period for check target will be within missile maxOffBoresight at future time.
+	- Sidam Turret retextured (thanks Concodroid!).
+	- Issue 348; weapons will no longer manually fire if mouse cursor is over Weapon Manager GUI.
+	- APBulletMod now implemented for sabot rounds.
+	- Adjusted Sabot depth calculation, should no longer overpenetrate quite so much.
+	- Missiles:
+		- Adds Missile multi-targeting.
+		- Adds new Max Missile Tgts setting in WM to set max targets to engage with missiles.
+		- Adds incoming missile alert.
+		- Shift some missile targeting code from OnUpdate to OnFixedUpdate.
+		- Prevent heat-seeking missiles from targeting debris.
+		- Remove restrictions on heat-seeking missiles attacking ground targets.
+		- Prioritize anti-rad missiles first in using missiles against ground targets with active radars.
+		- Adjust DLZ calculation to allow for better missile usage at close ranges, small angles to target.
+		- Possibly fixed the 'Radar Stuck' bug.
+		- Add option to display distances on the RWR logarithmically.
 - RWP:
 	- Hall of Shame now supports multiple craft.
 	- Add HoS support to Waypoint mode.

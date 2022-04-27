@@ -3447,6 +3447,14 @@ namespace BDArmory.Weapons
                         trajectoryRenderer.SetPosition(i++, point.Current);
                     }
             }
+            if (!BDArmorySettings.DEBUG_LINES)
+            {
+                    if (trajectoryRenderer != null)
+                    {
+                        trajectoryRenderer.enabled = false;
+                        trajectoryRenderer = null;
+                    }
+            }
             return elapsedTime;
         }
 
