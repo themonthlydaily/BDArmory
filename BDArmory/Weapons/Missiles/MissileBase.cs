@@ -484,8 +484,7 @@ namespace BDArmory.Weapons.Missiles
                 if (offBoresightAngle > maxOffBoresight)
                     lookRay = new Ray(lookRay.origin, Vector3.RotateTowards(lookRay.direction, GetForwardTransform(), (offBoresightAngle - maxOffBoresight) * Mathf.Deg2Rad, 0));
 
-                if (BDArmorySettings.DEBUG_LINES)
-                    DrawDebugLine(lookRay.origin, lookRay.origin + lookRay.direction * 10000, Color.magenta);
+                DrawDebugLine(lookRay.origin, lookRay.origin + lookRay.direction * 10000, Color.magenta);
 
                 // Update heat target
                 heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, lookRay, predictedHeatTarget, lockedSensorFOV / 2, heatThreshold, allAspect, lockedSensorFOVBias, lockedSensorVelocityBias, (SourceVessel == null ? null : SourceVessel.gameObject == null ? null : SourceVessel.gameObject.GetComponent<MissileFire>()));
@@ -953,10 +952,16 @@ namespace BDArmory.Weapons.Missiles
                 {
                     LR = gameObject.GetComponent<LineRenderer>();
                 }
+                LR.enabled = true;
                 LR.positionCount = 2;
                 LR.SetPosition(0, start);
                 LR.SetPosition(1, end);
             }
+        }
+
+        protected virtual void OnGUI()
+        {
+            if (!BDArmorySettings.DEBUG_LINES && LR != null) { LR.enabled = false; }
         }
 
         protected void CheckDetonationDistance()
