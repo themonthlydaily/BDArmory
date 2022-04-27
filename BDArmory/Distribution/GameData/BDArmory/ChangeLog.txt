@@ -4,10 +4,9 @@ FIXES
  - Adds SelfSealingTanks/Firebottle options to Proc Part Tanks
  - Fix AI takeoff behavior 
  - Weapon debug lines now account for frame velocity and flight integrator delay
-IMPROVEMETS
+IMPROVEMENTS
  - Add Store/Restore option to save control surface configs in Pilot AI
- - Add extend angle to Ai to clamp climb/dive angle when doing Air-to-air extending
-
+ - Add extend angle to AI to clamp climb/dive angle when doing Air-to-air extending
 
 v1.5.0.0-pre
 FIXES

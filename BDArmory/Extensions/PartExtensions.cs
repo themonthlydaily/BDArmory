@@ -96,6 +96,20 @@ namespace BDArmory.Extensions
                     break;
             }
 
+            var damage_before = damage_;
+            //////////////////////////////////////////////////////////
+            //   Armor Reduction factors
+            //////////////////////////////////////////////////////////
+
+            if (p.HasArmor())
+            {
+                float armorMass_ = p.GetArmorThickness();
+                float armorDensity_ = p.GetArmorDensity();
+                float armorStrength_ = p.GetArmorSrength();
+                float damageReduction = DamageReduction(armorMass_, armorDensity_, armorStrength_, damage_, ExplosionSourceType.Bullet, caliber, penetrationfactor);
+
+                damage_ = damageReduction;
+            }
             //////////////////////////////////////////////////////////
             //   Apply Hitpoints
             //////////////////////////////////////////////////////////
@@ -170,7 +184,6 @@ namespace BDArmory.Extensions
                             * 1e-4f * BDArmorySettings.BALLISTIC_DMG_FACTOR;
                     break;
             }
-
 
             var damage_before = damage_;
             //////////////////////////////////////////////////////////
@@ -526,7 +539,6 @@ namespace BDArmory.Extensions
             return hasFuel;
         }
 
-        // DEPRECIATED, armor effects on explosive damage are incorporated into ExplosionFX.cs
         public static float DamageReduction(float armor, float density, float strength, float damage, ExplosionSourceType sourceType, float caliber = 0, float penetrationfactor = 0)
         {
             float _damageReduction;
@@ -541,7 +553,7 @@ namespace BDArmory.Extensions
                             + damage + "; Damage Reduction (%) : " + 1 + (((strength * (density / 1000)) * armor) / 1000000)
                             + "; Damage After Armor : " + (damage / (1 + (((strength * (density / 1000)) * armor) / 1000000))));
                     }
-                    damage /= 1 + (((strength * (density / 1000)) * armor) / 1000000); //500mm of DU yields about 95% reduction, 500mm steel = 80% reduction, Aramid = 73% reduction
+                    damage /= 1 + (((strength * (density / 1000)) * armor) / 1000000); //500mm of DU yields about 95% reduction, 500mm steel = 80% reduction, Aramid = 73% reduction, if explosion makes it past armor
 
                     break;
 
