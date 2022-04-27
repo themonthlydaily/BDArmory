@@ -5224,7 +5224,7 @@ namespace BDArmory.Control
                     {
                         if (firedMissiles >= maxMissilesOnTarget && (multiMissileTgtNum > 1 && BDATargetManager.TargetList(Team).Count > 1)) //if there are multiple potential targets, see how many can be fired at with missiles
                         {
-                            if (!ml.radarLOAL) //switch active lock instead of clearing locks for SARH missiles
+                        if (!ml.radarLOAL) //switch active lock instead of clearing locks for SARH missiles
                             {
                                 //vesselRadarData.UnlockCurrentTarget();
                                 vesselRadarData.TryLockTarget(guardTarget);
@@ -5409,14 +5409,12 @@ namespace BDArmory.Control
             if (ml.TargetingMode == MissileBase.TargetingModes.Laser && laserPointDetected)
             {
                 ml.lockedCamera = foundCam;
-                if (BDArmorySettings.DEBUG_MISSILES)
+                if (BDArmorySettings.DEBUG_MISSILES) 
                     Debug.Log("[BDArmory.MissileData]: Sending targetInfo to laser Missile...");
-                if (guardMode && ((foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude < 10 * 10))
-                {
+                if ((foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude < 10 * 10)
                     ml.targetVessel = guardTarget.gameObject.GetComponent<TargetInfo>();
-                    if (BDArmorySettings.DEBUG_MISSILES)
-                        Debug.Log("[BDArmory.MissileData]: targetInfo sent for " + ml.targetVessel.Vessel.GetName());
-                }
+                if (BDArmorySettings.DEBUG_MISSILES)
+                    Debug.Log("[BDArmory.MissileData]: targetInfo sent for " + ml.targetVessel.Vessel.GetName());
             }
             else if (ml.TargetingMode == MissileBase.TargetingModes.Gps)
             {
@@ -5424,24 +5422,22 @@ namespace BDArmory.Control
                 {
                     ml.targetGPSCoords = designatedGPSCoords;
                     ml.TargetAcquired = true;
-                    if (BDArmorySettings.DEBUG_MISSILES)
+                    if (BDArmorySettings.DEBUG_MISSILES) 
                         Debug.Log("[BDArmory.MissileData]: Sending targetInfo to GPS Missile...");
-                    if (guardMode && ((designatedGPSCoords - guardTarget.CoM).sqrMagnitude < 10 * 10))
-                    {
+                    if ((designatedGPSCoords - guardTarget.CoM).sqrMagnitude < 10 * 10)
                         ml.targetVessel = guardTarget.gameObject.GetComponent<TargetInfo>();
-                        if (BDArmorySettings.DEBUG_MISSILES)
-                            Debug.Log("[BDArmory.MissileData]: targetInfo sent for " + ml.targetVessel.Vessel.GetName());
-                    }
+                    if (BDArmorySettings.DEBUG_MISSILES)
+                        Debug.Log("[BDArmory.MissileData]: targetInfo sent for " + ml.targetVessel.Vessel.GetName());
                 }
             }
             else if (ml.TargetingMode == MissileBase.TargetingModes.Heat && heatTarget.exists)
             {
                 ml.heatTarget = heatTarget;
                 heatTarget = TargetSignatureData.noTarget;
-                if (BDArmorySettings.DEBUG_MISSILES)
+                if (BDArmorySettings.DEBUG_MISSILES) 
                     Debug.Log("[BDArmory.MissileData]: Sending targetInfo to heat Missile...");
                 ml.targetVessel = ml.heatTarget.vessel.gameObject.GetComponent<TargetInfo>();
-                if (BDArmorySettings.DEBUG_MISSILES)
+                if (BDArmorySettings.DEBUG_MISSILES) 
                     Debug.Log("[BDArmory.MissileData]: targetInfo sent for " + ml.targetVessel.Vessel.GetName());
             }
             else if (ml.TargetingMode == MissileBase.TargetingModes.Radar && vesselRadarData && vesselRadarData.locked)//&& radar && radar.lockedTarget.exists)
@@ -5449,10 +5445,10 @@ namespace BDArmory.Control
                 ml.radarTarget = vesselRadarData.lockedTargetData.targetData;
                 ml.vrd = vesselRadarData;
                 vesselRadarData.LastMissile = ml;
-                if (BDArmorySettings.DEBUG_MISSILES)
+                if (BDArmorySettings.DEBUG_MISSILES) 
                     Debug.Log("[BDArmory.MissileData]: Sending targetInfo to radar Missile...");
                 ml.targetVessel = vesselRadarData.lockedTargetData.targetData.vessel.gameObject.GetComponent<TargetInfo>();
-                if (BDArmorySettings.DEBUG_MISSILES)
+                if (BDArmorySettings.DEBUG_MISSILES) 
                     Debug.Log("[BDArmory.MissileData]: targetInfo sent for " + ml.targetVessel.Vessel.GetName());
             }
             else if (ml.TargetingMode == MissileBase.TargetingModes.AntiRad && antiRadTargetAcquired && antiRadiationTarget != Vector3.zero)
@@ -5460,9 +5456,9 @@ namespace BDArmory.Control
                 ml.TargetAcquired = true;
                 ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(antiRadiationTarget,
                         vessel.mainBody);
-                if (BDArmorySettings.DEBUG_MISSILES)
+                if (BDArmorySettings.DEBUG_MISSILES) 
                     Debug.Log("[BDArmory.MissileData]: Sending targetInfo to Antirad Missile...");
-                if (guardMode && ((antiRadiationTarget - guardTarget.CoM).sqrMagnitude < 20 * 20))
+                if ((antiRadiationTarget - guardTarget.CoM).sqrMagnitude < 20 * 20)
                 {
                     ml.targetVessel = guardTarget.gameObject.GetComponent<TargetInfo>();
                     if (BDArmorySettings.DEBUG_MISSILES)
@@ -5472,12 +5468,12 @@ namespace BDArmory.Control
             //ml.targetVessel = currentTarget;
             if (currentTarget != null)
             {
-                if (BDArmorySettings.DEBUG_MISSILES)
+                if (BDArmorySettings.DEBUG_MISSILES) 
                     Debug.Log("[BDArmory.MULTITARGETING]: firing missile at " + currentTarget.Vessel.GetName());
             }
             else
             {
-                if (BDArmorySettings.DEBUG_MISSILES)
+                if (BDArmorySettings.DEBUG_MISSILES) 
                     Debug.Log("[BDArmory.MULTITARGETING]: firing missile null target");
             }
         }
@@ -5594,10 +5590,8 @@ namespace BDArmory.Control
                                 launchAuthorized = false;
                             }
 
-                            // Check that launch is possible before entering GuardMissileRoutine, or that missile is on a turret
-                            MissileLauncher ml = CurrentMissile as MissileLauncher;
-                            launchAuthorized = launchAuthorized && (GetLaunchAuthorization(guardTarget, this) || ml.missileTurret);
-                            
+                            // Check that launch is possible before entering GuardMissileRoutine
+                            launchAuthorized = launchAuthorized && GetLaunchAuthorization(guardTarget, this);
 
                             if (BDArmorySettings.DEBUG_MISSILES)
                                 Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " launchAuth=" + launchAuthorized + ", pilotAut=" + pilotAuthorized + ", missilesAway/Max=" + firedMissiles + "/" + maxMissilesOnTarget);
@@ -5609,7 +5603,6 @@ namespace BDArmory.Control
                                     launchAuthorized = false; //don't fire SARH if radar can't support the needed radar lock
                                     if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: radar lock number exceeded to launch!");
                                 }
-                                
                                 if (!guardFiringMissile && launchAuthorized
                                     && (CurrentMissile != null && (CurrentMissile.TargetingMode != MissileBase.TargetingModes.Radar || (vesselRadarData != null && (!vesselRadarData.locked || vesselRadarData.lockedTargetData.vessel == guardTarget))))) // Allow firing multiple missiles at the same target. FIXME This is a stop-gap until proper multi-locking support is available.
                                 {
