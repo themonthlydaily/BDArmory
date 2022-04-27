@@ -949,6 +949,7 @@ namespace BDArmory.Control
         }
         #endregion KSPFields,events,actions
 
+        private LineRenderer lr = null;
         private StringBuilder debugString = new StringBuilder();
         #endregion Declarations
 
@@ -1349,6 +1350,7 @@ namespace BDArmory.Control
 
         void OnGUI()
         {
+            if (!BDArmorySettings.DEBUG_LINES && lr != null) { lr.enabled = false; }
             if (HighLogic.LoadedSceneIsFlight && vessel == FlightGlobals.ActiveVessel &&
                 BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled)
             {
@@ -1839,7 +1841,7 @@ namespace BDArmory.Control
                         //StartCoroutine(MissileAwayRoutine(mlauncher));
                     }
                 }
-                else if (ml.TargetingMode == MissileBase.TargetingModes.Gps) 
+                else if (ml.TargetingMode == MissileBase.TargetingModes.Gps)
                 {
                     designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(guardTarget.CoM, vessel.mainBody), guardTarget.vesselName.Substring(0, Mathf.Min(12, guardTarget.vesselName.Length)));
                     if (SetCargoBays())
@@ -3337,24 +3339,13 @@ namespace BDArmory.Control
                 if (ml.dropTime >= 0.1f)
                 {
                     //debug lines
-                    LineRenderer lr = null;
                     if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DRAW_AIMERS)
                     {
                         lr = GetComponent<LineRenderer>();
-                        if (!lr)
-                        {
-                            lr = gameObject.AddComponent<LineRenderer>();
-                        }
+                        if (!lr) { lr = gameObject.AddComponent<LineRenderer>(); }
                         lr.enabled = true;
                         lr.startWidth = .1f;
                         lr.endWidth = .1f;
-                    }
-                    else
-                    {
-                        if (gameObject.GetComponent<LineRenderer>())
-                        {
-                            gameObject.GetComponent<LineRenderer>().enabled = false;
-                        }
                     }
 
                     float radius = launcher.decoupleForward ? launcher.ClearanceRadius : launcher.ClearanceLength;
@@ -3384,7 +3375,7 @@ namespace BDArmory.Control
                         new Ray(ml.MissileReferenceTransform.position, direction)
                     };
 
-                    if (lr)
+                    if (lr != null && lr.enabled)
                     {
                         lr.useWorldSpace = false;
                         lr.positionCount = 4;
@@ -3431,25 +3422,28 @@ namespace BDArmory.Control
         {
             VesselModuleRegistry.OnVesselModified(vessel); // Make sure the registry is up-to-date.
             radars = VesselModuleRegistry.GetModules<ModuleRadar>(vessel);
-            // DISABLE RADARS
-            /*
-            List<ModuleRadar>.Enumerator rad = radars.GetEnumerator();
-            while (rad.MoveNext())
+            if (radars != null)
             {
-                if (rad.Current == null) continue;
-                rad.Current.EnsureVesselRadarData();
-                if (rad.Current.radarEnabled) rad.Current.EnableRadar();
-            }
-            rad.Dispose();
-            */
-            using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
-                while (rd.MoveNext())
+                // DISABLE RADARS
+                /*
+                List<ModuleRadar>.Enumerator rad = radars.GetEnumerator();
+                while (rad.MoveNext())
                 {
-                    if (rd.Current != null || rd.Current.canLock)
-                    {
-                        if (rd.Current.maxLocks > MaxradarLocks) MaxradarLocks = rd.Current.maxLocks;
-                    }
+                    if (rad.Current == null) continue;
+                    rad.Current.EnsureVesselRadarData();
+                    if (rad.Current.radarEnabled) rad.Current.EnableRadar();
                 }
+                rad.Dispose();
+                */
+                using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
+                    while (rd.MoveNext())
+                    {
+                        if (rd.Current != null || rd.Current.canLock)
+                        {
+                            if (rd.Current.maxLocks > MaxradarLocks) MaxradarLocks = rd.Current.maxLocks;
+                        }
+                    }
+            }
             jammers = VesselModuleRegistry.GetModules<ModuleECMJammer>(vessel);
             targetingPods = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel);
             wmModules = VesselModuleRegistry.GetModules<IBDWMModule>(vessel);
@@ -5224,7 +5218,7 @@ namespace BDArmory.Control
                     {
                         if (firedMissiles >= maxMissilesOnTarget && (multiMissileTgtNum > 1 && BDATargetManager.TargetList(Team).Count > 1)) //if there are multiple potential targets, see how many can be fired at with missiles
                         {
-                        if (!ml.radarLOAL) //switch active lock instead of clearing locks for SARH missiles
+                            if (!ml.radarLOAL) //switch active lock instead of clearing locks for SARH missiles
                             {
                                 //vesselRadarData.UnlockCurrentTarget();
                                 vesselRadarData.TryLockTarget(guardTarget);
@@ -5409,12 +5403,14 @@ namespace BDArmory.Control
             if (ml.TargetingMode == MissileBase.TargetingModes.Laser && laserPointDetected)
             {
                 ml.lockedCamera = foundCam;
-                if (BDArmorySettings.DEBUG_MISSILES) 
-                    Debug.Log("[BDArmory.MissileData]: Sending targetInfo to laser Missile...");
-                if ((foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude < 10 * 10)
-                    ml.targetVessel = guardTarget.gameObject.GetComponent<TargetInfo>();
                 if (BDArmorySettings.DEBUG_MISSILES)
-                    Debug.Log("[BDArmory.MissileData]: targetInfo sent for " + ml.targetVessel.Vessel.GetName());
+                    Debug.Log("[BDArmory.MissileData]: Sending targetInfo to laser Missile...");
+                if (guardMode && ((foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude < 10 * 10))
+                {
+                    ml.targetVessel = guardTarget.gameObject.GetComponent<TargetInfo>();
+                    if (BDArmorySettings.DEBUG_MISSILES)
+                        Debug.Log("[BDArmory.MissileData]: targetInfo sent for " + ml.targetVessel.Vessel.GetName());
+                }
             }
             else if (ml.TargetingMode == MissileBase.TargetingModes.Gps)
             {
@@ -5422,22 +5418,24 @@ namespace BDArmory.Control
                 {
                     ml.targetGPSCoords = designatedGPSCoords;
                     ml.TargetAcquired = true;
-                    if (BDArmorySettings.DEBUG_MISSILES) 
-                        Debug.Log("[BDArmory.MissileData]: Sending targetInfo to GPS Missile...");
-                    if ((designatedGPSCoords - guardTarget.CoM).sqrMagnitude < 10 * 10)
-                        ml.targetVessel = guardTarget.gameObject.GetComponent<TargetInfo>();
                     if (BDArmorySettings.DEBUG_MISSILES)
-                        Debug.Log("[BDArmory.MissileData]: targetInfo sent for " + ml.targetVessel.Vessel.GetName());
+                        Debug.Log("[BDArmory.MissileData]: Sending targetInfo to GPS Missile...");
+                    if (guardMode && ((designatedGPSCoords - guardTarget.CoM).sqrMagnitude < 10 * 10))
+                    {
+                        ml.targetVessel = guardTarget.gameObject.GetComponent<TargetInfo>();
+                        if (BDArmorySettings.DEBUG_MISSILES)
+                            Debug.Log("[BDArmory.MissileData]: targetInfo sent for " + ml.targetVessel.Vessel.GetName());
+                    }
                 }
             }
             else if (ml.TargetingMode == MissileBase.TargetingModes.Heat && heatTarget.exists)
             {
                 ml.heatTarget = heatTarget;
                 heatTarget = TargetSignatureData.noTarget;
-                if (BDArmorySettings.DEBUG_MISSILES) 
+                if (BDArmorySettings.DEBUG_MISSILES)
                     Debug.Log("[BDArmory.MissileData]: Sending targetInfo to heat Missile...");
                 ml.targetVessel = ml.heatTarget.vessel.gameObject.GetComponent<TargetInfo>();
-                if (BDArmorySettings.DEBUG_MISSILES) 
+                if (BDArmorySettings.DEBUG_MISSILES)
                     Debug.Log("[BDArmory.MissileData]: targetInfo sent for " + ml.targetVessel.Vessel.GetName());
             }
             else if (ml.TargetingMode == MissileBase.TargetingModes.Radar && vesselRadarData && vesselRadarData.locked)//&& radar && radar.lockedTarget.exists)
@@ -5445,10 +5443,10 @@ namespace BDArmory.Control
                 ml.radarTarget = vesselRadarData.lockedTargetData.targetData;
                 ml.vrd = vesselRadarData;
                 vesselRadarData.LastMissile = ml;
-                if (BDArmorySettings.DEBUG_MISSILES) 
+                if (BDArmorySettings.DEBUG_MISSILES)
                     Debug.Log("[BDArmory.MissileData]: Sending targetInfo to radar Missile...");
                 ml.targetVessel = vesselRadarData.lockedTargetData.targetData.vessel.gameObject.GetComponent<TargetInfo>();
-                if (BDArmorySettings.DEBUG_MISSILES) 
+                if (BDArmorySettings.DEBUG_MISSILES)
                     Debug.Log("[BDArmory.MissileData]: targetInfo sent for " + ml.targetVessel.Vessel.GetName());
             }
             else if (ml.TargetingMode == MissileBase.TargetingModes.AntiRad && antiRadTargetAcquired && antiRadiationTarget != Vector3.zero)
@@ -5456,9 +5454,9 @@ namespace BDArmory.Control
                 ml.TargetAcquired = true;
                 ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(antiRadiationTarget,
                         vessel.mainBody);
-                if (BDArmorySettings.DEBUG_MISSILES) 
+                if (BDArmorySettings.DEBUG_MISSILES)
                     Debug.Log("[BDArmory.MissileData]: Sending targetInfo to Antirad Missile...");
-                if ((antiRadiationTarget - guardTarget.CoM).sqrMagnitude < 20 * 20)
+                if (guardMode && ((antiRadiationTarget - guardTarget.CoM).sqrMagnitude < 20 * 20))
                 {
                     ml.targetVessel = guardTarget.gameObject.GetComponent<TargetInfo>();
                     if (BDArmorySettings.DEBUG_MISSILES)
@@ -5468,12 +5466,12 @@ namespace BDArmory.Control
             //ml.targetVessel = currentTarget;
             if (currentTarget != null)
             {
-                if (BDArmorySettings.DEBUG_MISSILES) 
+                if (BDArmorySettings.DEBUG_MISSILES)
                     Debug.Log("[BDArmory.MULTITARGETING]: firing missile at " + currentTarget.Vessel.GetName());
             }
             else
             {
-                if (BDArmorySettings.DEBUG_MISSILES) 
+                if (BDArmorySettings.DEBUG_MISSILES)
                     Debug.Log("[BDArmory.MULTITARGETING]: firing missile null target");
             }
         }
@@ -5590,8 +5588,10 @@ namespace BDArmory.Control
                                 launchAuthorized = false;
                             }
 
-                            // Check that launch is possible before entering GuardMissileRoutine
-                            launchAuthorized = launchAuthorized && GetLaunchAuthorization(guardTarget, this);
+                            // Check that launch is possible before entering GuardMissileRoutine, or that missile is on a turret
+                            MissileLauncher ml = CurrentMissile as MissileLauncher;
+                            launchAuthorized = launchAuthorized && (GetLaunchAuthorization(guardTarget, this) || ml.missileTurret);
+
 
                             if (BDArmorySettings.DEBUG_MISSILES)
                                 Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " launchAuth=" + launchAuthorized + ", pilotAut=" + pilotAuthorized + ", missilesAway/Max=" + firedMissiles + "/" + maxMissilesOnTarget);
@@ -5603,6 +5603,7 @@ namespace BDArmory.Control
                                     launchAuthorized = false; //don't fire SARH if radar can't support the needed radar lock
                                     if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: radar lock number exceeded to launch!");
                                 }
+
                                 if (!guardFiringMissile && launchAuthorized
                                     && (CurrentMissile != null && (CurrentMissile.TargetingMode != MissileBase.TargetingModes.Radar || (vesselRadarData != null && (!vesselRadarData.locked || vesselRadarData.lockedTargetData.vessel == guardTarget))))) // Allow firing multiple missiles at the same target. FIXME This is a stop-gap until proper multi-locking support is available.
                                 {
@@ -6362,11 +6363,8 @@ namespace BDArmory.Control
             if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DRAW_AIMERS)
             {
                 Vector3[] pointsArray = pointPositions.ToArray();
-                LineRenderer lr = GetComponent<LineRenderer>();
-                if (!lr)
-                {
-                    lr = gameObject.AddComponent<LineRenderer>();
-                }
+                lr = GetComponent<LineRenderer>();
+                if (!lr) { lr = gameObject.AddComponent<LineRenderer>(); }
                 lr.enabled = true;
                 lr.startWidth = .1f;
                 lr.endWidth = .1f;
@@ -6374,13 +6372,6 @@ namespace BDArmory.Control
                 for (int i = 0; i < pointsArray.Length; i++)
                 {
                     lr.SetPosition(i, pointsArray[i]);
-                }
-            }
-            else
-            {
-                if (gameObject.GetComponent<LineRenderer>())
-                {
-                    gameObject.GetComponent<LineRenderer>().enabled = false;
                 }
             }
         }

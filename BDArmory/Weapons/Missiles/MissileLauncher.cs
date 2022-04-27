@@ -2003,8 +2003,9 @@ namespace BDArmory.Weapons.Missiles
             if (rightRCS) rightRCS.emit = false;
         }
 
-        void OnGUI()
+        protected override void OnGUI()
         {
+            base.OnGUI();
             if (HighLogic.LoadedSceneIsFlight)
             {
                 try

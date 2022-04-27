@@ -102,8 +102,8 @@ namespace BDArmory.Weapons
         public float heat;
         public bool isOverheated;
 
-		private bool isRippleFiring = false;//used to tell when weapon has started firing for initial ripple delay
-		
+        private bool isRippleFiring = false;//used to tell when weapon has started firing for initial ripple delay
+
         private bool wasFiring;
         //used for knowing when to stop looped audio clip (when you're not shooting, but you were)
 
@@ -837,7 +837,7 @@ namespace BDArmory.Weapons
 
         IEnumerator IncrementRippleIndex(float delay)
         {
-			if (isRippleFiring) delay = 0;
+            if (isRippleFiring) delay = 0;
             if (delay > 0)
             {
                 yield return new WaitForSeconds(delay);
@@ -1333,7 +1333,7 @@ namespace BDArmory.Weapons
                     if (rocketInfo == null)
                     {
                         //if (BDArmorySettings.DEBUG_WEAPONS)
-                            Debug.Log("[BDArmory.ModuleWeapon]: Failed To load rocket : " + currentType);
+                        Debug.Log("[BDArmory.ModuleWeapon]: Failed To load rocket : " + currentType);
                     }
                     else
                     {
@@ -1346,7 +1346,7 @@ namespace BDArmory.Weapons
                     if (bulletInfo == null)
                     {
                         //if (BDArmorySettings.DEBUG_WEAPONS)
-                            Debug.Log("[BDArmory.ModuleWeapon]: Failed To load bullet : " + currentType);
+                        Debug.Log("[BDArmory.ModuleWeapon]: Failed To load bullet : " + currentType);
                     }
                     else
                     {
@@ -1609,6 +1609,7 @@ namespace BDArmory.Weapons
 
         void OnGUI()
         {
+            if (trajectoryRenderer != null && (!BDArmorySettings.DEBUG_LINES || !(weaponState == WeaponStates.Enabled || weaponState == WeaponStates.Standby))) { trajectoryRenderer.enabled = false; }
             if (HighLogic.LoadedSceneIsFlight && weaponState == WeaponStates.Enabled && vessel && !vessel.packed && vessel.isActiveVessel &&
                 BDArmorySettings.DRAW_AIMERS && !aiControlled && !MapView.MapIsEnabled && !pointingAtSelf && !isAPS)
             {
@@ -1921,7 +1922,7 @@ namespace BDArmory.Weapons
                         if ((!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag))) && barrelIndex + 1 > fireTransforms.Length) //only advance ripple index if weapon isn't brustfire, has finished burst, or has fired with all barrels
                         {
                             StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
-							isRippleFiring = true;
+                            isRippleFiring = true;
                             if (barrelIndex + 1 > fireTransforms.Length)
                             {
                                 barrelIndex = 0;
@@ -1934,7 +1935,7 @@ namespace BDArmory.Weapons
                         if (!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag)))
                         {
                             StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate)); //this is why ripplefire is slower, delay to stagger guns should only be being called once
-							isRippleFiring = true;
+                            isRippleFiring = true;
                         }
                     }
                 }
@@ -2003,7 +2004,7 @@ namespace BDArmory.Weapons
                                 if ((!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag))) && barrelIndex + 1 > fireTransforms.Length) //only advance ripple index if weapon isn't brustfire, has finished burst, or has fired with all barrels
                                 {
                                     StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
-									isRippleFiring = true;
+                                    isRippleFiring = true;
                                     if (barrelIndex + 1 > fireTransforms.Length)
                                     {
                                         barrelIndex = 0;
@@ -2016,7 +2017,7 @@ namespace BDArmory.Weapons
                                 if (!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag)))
                                 {
                                     StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
-									isRippleFiring = true;
+                                    isRippleFiring = true;
                                 }
                             }
                         }
@@ -2537,7 +2538,7 @@ namespace BDArmory.Weapons
                         if ((!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag))) && barrelIndex + 1 > fireTransforms.Length) //only advance ripple index if weapon isn't brustfire, has finished burst, or has fired with all barrels
                         {
                             StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
-							isRippleFiring = true;
+                            isRippleFiring = true;
                             if (barrelIndex + 1 > fireTransforms.Length)
                             {
                                 barrelIndex = 0;
@@ -2550,7 +2551,7 @@ namespace BDArmory.Weapons
                         if (!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag)))
                         {
                             StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
-							isRippleFiring = true;
+                            isRippleFiring = true;
                         }
                     }
                 }
@@ -2644,7 +2645,7 @@ namespace BDArmory.Weapons
                 return true;
             }
             StartCoroutine(IncrementRippleIndex(useRippleFire ? initialFireDelay * TimeWarp.CurrentRate : 0)); //if out of ammo (howitzers, say, or other weapon with internal ammo, move on to next weapon; maybe it still has ammo
-			isRippleFiring = true;
+            isRippleFiring = true;
             return false;
         }
 
@@ -3329,19 +3330,13 @@ namespace BDArmory.Weapons
                         trajectoryRenderer.enabled = true;
                         trajectoryRenderer.positionCount = trajectoryPoints.Count;
                         int i = 0;
+                        var offset = Krakensbane.GetFrameVelocity().IsZero() ? AIUtils.PredictPosition(Vector3.zero, vessel.Velocity(), vessel.acceleration, Time.fixedDeltaTime) : Vector3.zero;
                         using (var point = trajectoryPoints.GetEnumerator())
                             while (point.MoveNext())
                             {
-                                trajectoryRenderer.SetPosition(i++, point.Current);
+                                trajectoryRenderer.SetPosition(i, point.Current + offset);
+                                ++i;
                             }
-                    }
-                    else
-                    {
-                        if (trajectoryRenderer != null)
-                        {
-                            trajectoryRenderer.enabled = false;
-                            trajectoryRenderer = null;
-                        }
                     }
 
                     Vector3 pointingPos = fireTransform.position + (fireTransform.forward * targetDistance);
@@ -3372,10 +3367,10 @@ namespace BDArmory.Weapons
             velocity += 0.5 * timeStep * gravity; // Boot-strap velocity calculation.
             Ray ray = new Ray();
             RaycastHit hit;
-            if (resetTrajectoryPoints && BDArmorySettings.DEBUG_LINES && BDArmorySettings.DRAW_AIMERS)
+            if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DRAW_AIMERS)
             {
                 if (trajectoryPoints == null) trajectoryPoints = new List<Vector3>();
-                trajectoryPoints.Clear();
+                if (resetTrajectoryPoints) trajectoryPoints.Clear();
             }
             while (elapsedTime < maxTime)
             {
@@ -3436,15 +3431,16 @@ namespace BDArmory.Weapons
                     trajectoryRenderer = gameObject.AddComponent<LineRenderer>();
                     trajectoryRenderer.startWidth = .1f;
                     trajectoryRenderer.endWidth = .1f;
-                    trajectoryPoints = new List<Vector3>();
                 }
                 trajectoryRenderer.enabled = true;
                 trajectoryRenderer.positionCount = trajectoryPoints.Count;
                 int i = 0;
+                var offset = Krakensbane.GetFrameVelocity().IsZero() ? AIUtils.PredictPosition(Vector3.zero, vessel.Velocity(), vessel.acceleration, Time.fixedDeltaTime) : Vector3.zero;
                 using (var point = trajectoryPoints.GetEnumerator())
                     while (point.MoveNext())
                     {
-                        trajectoryRenderer.SetPosition(i++, point.Current);
+                        trajectoryRenderer.SetPosition(i, point.Current + offset);
+                        ++i;
                     }
             }
             if (!BDArmorySettings.DEBUG_LINES)
@@ -3636,7 +3632,7 @@ namespace BDArmory.Weapons
                     {
                         //StartCoroutine(IncrementRippleIndex(0));
                         StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
-						isRippleFiring = true;
+                        isRippleFiring = true;
                     }
                 }
                 else
@@ -3686,7 +3682,7 @@ namespace BDArmory.Weapons
                 if (weaponManager != null && weaponManager.gunRippleIndex == rippleIndex)
                 {
                     StartCoroutine(IncrementRippleIndex(0));
-					isRippleFiring = false;
+                    isRippleFiring = false;
                 }
                 if (eWeaponType == WeaponTypes.Laser)
                 {

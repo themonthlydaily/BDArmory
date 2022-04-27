@@ -13,10 +13,13 @@ namespace BDArmory.Utils
         public static bool hasFAR = false;
         private static bool hasCheckedForFAR = false;
         public static bool hasFARWing = false;
+        public static bool hasFARControllableSurface = false;
         private static bool hasCheckedForFARWing = false;
+        private static bool hasCheckedForFARControllableSurface = false;
 
         public static Assembly FARAssembly;
         public static Type FARWingModule;
+        public static Type FARControllableSurfaceModule;
 
 
         void Awake()
@@ -28,7 +31,11 @@ namespace BDArmory.Utils
         void Start()
         {
             CheckForFAR();
-            if (hasFAR) CheckForFARWing();
+            if (hasFAR)
+            {
+                CheckForFARWing();
+                CheckForFARControllableSurface();
+            }
         }
 
         public static bool CheckForFAR()
@@ -41,7 +48,7 @@ namespace BDArmory.Utils
                 {
                     FARAssembly = assy.assembly;
                     hasFAR = true;
-                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FAR]: Found FAR Assembly: {FARAssembly.FullName}");
+                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FARUtils]: Found FAR Assembly: {FARAssembly.FullName}");
                 }
             }
             return hasFAR;
@@ -58,10 +65,27 @@ namespace BDArmory.Utils
                 {
                     FARWingModule = type;
                     hasFARWing = true;
-                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FAR]: Found FAR wing module type.");
+                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FARUtils]: Found FAR wing module type.");
                 }
             }
             return hasFARWing;
+        }
+
+        public static bool CheckForFARControllableSurface()
+        {
+            if (!hasFAR) return false;
+            if (hasCheckedForFARControllableSurface) return hasFARControllableSurface;
+            hasCheckedForFARControllableSurface = true;
+            foreach (var type in FARAssembly.GetTypes())
+            {
+                if (type.Name == "FARControllableSurface")
+                {
+                    FARControllableSurfaceModule = type;
+                    hasFARControllableSurface = true;
+                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FARUtils]: Found FAR controllable surface module type.");
+                }
+            }
+            return hasFARControllableSurface;
         }
 
         public static float GetFARMassMult(Part part)
@@ -72,8 +96,9 @@ namespace BDArmory.Utils
             {
                 if (module.GetType() == FARWingModule) // || module.GetType().IsSubclassOf(FSEngineType))
                 {
-                     return (float)FARWingModule.GetField("massMultiplier", BindingFlags.Public | BindingFlags.Instance).GetValue(module);
-                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FAR]: Found getting wing Mass multiplier of {(float)FARWingModule.GetField("massMultiplier", BindingFlags.Public | BindingFlags.Instance).GetValue(module)}for {part.name}.");
+                    var massMultiplier = (float)FARWingModule.GetField("massMultiplier", BindingFlags.Public | BindingFlags.Instance).GetValue(module);
+                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FARUtils]: Found wing Mass multiplier of {massMultiplier} for {part.name}.");
+                    return massMultiplier;
                 }
             }
             return 1;

@@ -7,7 +7,6 @@ using System.Text;
 using UnityEngine;
 
 using BDArmory.Extensions;
-using BDArmory.Competition;
 using BDArmory.Guidances;
 using BDArmory.Radar;
 using BDArmory.Settings;
@@ -386,6 +385,12 @@ namespace BDArmory.Control
             UI_FloatRange(minValue = 0f, maxValue = 2000f, stepIncrement = 10f, scene = UI_Scene.All)]
         public float extendDistanceAirToAir = 300f;
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ExtendAngleAirToAir", advancedTweakable = true, //Extend Angle Air-To-Air
+            groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
+            UI_FloatRange(minValue = -10f, maxValue = 45f, stepIncrement = 1f, scene = UI_Scene.All)]
+        public float extendAngleAirToAir = 0f;
+        float _extendAngleAirToAir = 0;
+
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ExtendDistanceAirToGroundGuns", advancedTweakable = true, //Extend Distance Air-To-Ground (Guns)
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 5000f, stepIncrement = 50f, scene = UI_Scene.All)]
@@ -480,6 +485,7 @@ namespace BDArmory.Control
             { nameof(maxAllowedAoA), 180f },
             // { nameof(extendMult), 200f },
             { nameof(extendDistanceAirToAir), 20000f },
+            { nameof(extendAngleAirToAir), 90f },
             { nameof(extendDistanceAirToGroundGuns), 20000f },
             { nameof(extendDistanceAirToGround), 20000f },
             { nameof(minEvasionTime), 10f },
@@ -503,11 +509,44 @@ namespace BDArmory.Control
             { nameof(DynamicDampingRollMax), 100f },
             { nameof(dynamicSteerDampingRollFactor), 100f }
         };
+        Dictionary<string, float> altMinValues = new Dictionary<string, float> {
+            { nameof(extendAngleAirToAir), -90f },
+        };
+
+        void TurnItUpToEleven(bool upToEleven)
+        {
+            using (var s = altMaxValues.Keys.ToList().GetEnumerator())
+                while (s.MoveNext())
+                {
+                    UI_FloatRange euic = (UI_FloatRange)
+                        (HighLogic.LoadedSceneIsFlight ? Fields[s.Current].uiControlFlight : Fields[s.Current].uiControlEditor);
+                    float tempValue = euic.maxValue;
+                    euic.maxValue = altMaxValues[s.Current];
+                    altMaxValues[s.Current] = tempValue;
+                    // change the value back to what it is now after fixed update, because changing the max value will clamp it down
+                    // using reflection here, don't look at me like that, this does not run often
+                    StartCoroutine(setVar(s.Current, (float)typeof(BDModulePilotAI).GetField(s.Current).GetValue(this)));
+                }
+            using (var s = altMinValues.Keys.ToList().GetEnumerator())
+                while (s.MoveNext())
+                {
+                    UI_FloatRange euic = (UI_FloatRange)
+                        (HighLogic.LoadedSceneIsFlight ? Fields[s.Current].uiControlFlight : Fields[s.Current].uiControlEditor);
+                    float tempValue = euic.minValue;
+                    euic.minValue = altMinValues[s.Current];
+                    altMinValues[s.Current] = tempValue;
+                    // change the value back to what it is now after fixed update, because changing the min value will clamp it down
+                    // using reflection here, don't look at me like that, this does not run often
+                    StartCoroutine(setVar(s.Current, (float)typeof(BDModulePilotAI).GetField(s.Current).GetValue(this)));
+                }
+            toEleven = upToEleven;
+        }
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_StandbyMode"),//Standby Mode
             UI_Toggle(enabledText = "#LOC_BDArmory_On", disabledText = "#LOC_BDArmory_Off")]//On--Off
         public bool standbyMode = false;
 
+        #region Store/Restore
         private static Dictionary<string, List<System.Tuple<string, object>>> storedSettings; // Stored settings for each vessel.
         [KSPEvent(advancedTweakable = false, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_StoreSettings", active = true)]//Store Settings
         public void StoreSettings()
@@ -557,6 +596,140 @@ namespace BDArmory.Control
                 }
             }
         }
+
+        // This uses the parts' persistentId to reference the parts. Possibly, it should use some other identifier (what's used as a tag at the end of the "part = ..." and "link = ..." lines?) in case of duplicate persistentIds?
+        private static Dictionary<string, Dictionary<uint, List<System.Tuple<string, object>>>> storedControlSurfaceSettings; // Stored control surface settings for each vessel.
+        [KSPEvent(advancedTweakable = false, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_StoreControlSurfaceSettings", active = true)]//Store Control Surfaces
+        public void StoreControlSurfaceSettings()
+        {
+            var vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName;
+            if (storedControlSurfaceSettings == null)
+            {
+                storedControlSurfaceSettings = new Dictionary<string, Dictionary<uint, List<Tuple<string, object>>>>();
+            }
+            if (storedControlSurfaceSettings.ContainsKey(vesselName))
+            {
+                if (storedControlSurfaceSettings[vesselName] == null)
+                {
+                    storedControlSurfaceSettings[vesselName] = new Dictionary<uint, List<Tuple<string, object>>>();
+                }
+                else
+                {
+                    storedControlSurfaceSettings[vesselName].Clear();
+                }
+            }
+            else
+            {
+                storedControlSurfaceSettings.Add(vesselName, new Dictionary<uint, List<Tuple<string, object>>>());
+            }
+            foreach (var part in HighLogic.LoadedSceneIsFlight ? vessel.Parts : EditorLogic.fetch.ship.Parts)
+            {
+                var controlSurface = part.GetComponent<ModuleControlSurface>();
+                if (controlSurface == null) continue;
+                storedControlSurfaceSettings[vesselName][part.persistentId] = new List<Tuple<string, object>>();
+                var fields = typeof(ModuleControlSurface).GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                foreach (var field in fields)
+                {
+                    storedControlSurfaceSettings[vesselName][part.persistentId].Add(new System.Tuple<string, object>(field.Name, field.GetValue(controlSurface)));
+                }
+            }
+            StoreFARControlSurfaceSettings();
+            Events["RestoreControlSurfaceSettings"].active = true;
+        }
+        private static Dictionary<string, Dictionary<uint, List<System.Tuple<string, object>>>> storedFARControlSurfaceSettings; // Stored control surface settings for each vessel.
+        void StoreFARControlSurfaceSettings()
+        {
+            if (!FerramAerospace.hasFARControllableSurface) return;
+            var vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName;
+            if (storedFARControlSurfaceSettings == null)
+            {
+                storedFARControlSurfaceSettings = new Dictionary<string, Dictionary<uint, List<Tuple<string, object>>>>();
+            }
+            if (storedFARControlSurfaceSettings.ContainsKey(vesselName))
+            {
+                if (storedFARControlSurfaceSettings[vesselName] == null)
+                {
+                    storedFARControlSurfaceSettings[vesselName] = new Dictionary<uint, List<Tuple<string, object>>>();
+                }
+                else
+                {
+                    storedFARControlSurfaceSettings[vesselName].Clear();
+                }
+            }
+            else
+            {
+                storedFARControlSurfaceSettings.Add(vesselName, new Dictionary<uint, List<Tuple<string, object>>>());
+            }
+            foreach (var part in HighLogic.LoadedSceneIsFlight ? vessel.Parts : EditorLogic.fetch.ship.Parts)
+            {
+                foreach (var module in part.Modules)
+                {
+                    if (module.GetType() == FerramAerospace.FARControllableSurfaceModule)
+                    {
+                        storedFARControlSurfaceSettings[vesselName][part.persistentId] = new List<Tuple<string, object>>();
+                        var fields = FerramAerospace.FARControllableSurfaceModule.GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                        foreach (var field in fields)
+                        {
+                            storedFARControlSurfaceSettings[vesselName][part.persistentId].Add(new System.Tuple<string, object>(field.Name, field.GetValue(module)));
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        [KSPEvent(advancedTweakable = false, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_RestoreControlSurfaceSettings", active = false)]//Restore Control Surfaces
+        public void RestoreControlSurfaceSettings()
+        {
+            RestoreFARControlSurfaceSettings();
+            var vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName;
+            if (storedControlSurfaceSettings == null || !storedControlSurfaceSettings.ContainsKey(vesselName) || storedControlSurfaceSettings[vesselName] == null || storedControlSurfaceSettings[vesselName].Count == 0)
+            {
+                return;
+            }
+            foreach (var part in HighLogic.LoadedSceneIsFlight ? vessel.Parts : EditorLogic.fetch.ship.Parts)
+            {
+                var controlSurface = part.GetComponent<ModuleControlSurface>();
+                if (controlSurface == null || !storedControlSurfaceSettings[vesselName].ContainsKey(part.persistentId)) continue;
+                foreach (var setting in storedControlSurfaceSettings[vesselName][part.persistentId])
+                {
+                    var field = typeof(ModuleControlSurface).GetField(setting.Item1, BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                    if (field != null)
+                    {
+                        field.SetValue(controlSurface, setting.Item2);
+                    }
+                }
+            }
+        }
+        void RestoreFARControlSurfaceSettings()
+        {
+            if (!FerramAerospace.hasFARControllableSurface) return;
+            var vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName;
+            if (storedFARControlSurfaceSettings == null || !storedFARControlSurfaceSettings.ContainsKey(vesselName) || storedFARControlSurfaceSettings[vesselName] == null || storedFARControlSurfaceSettings[vesselName].Count == 0)
+            {
+                return;
+            }
+            foreach (var part in HighLogic.LoadedSceneIsFlight ? vessel.Parts : EditorLogic.fetch.ship.Parts)
+            {
+                if (!storedFARControlSurfaceSettings[vesselName].ContainsKey(part.persistentId)) continue;
+                foreach (var module in part.Modules)
+                {
+                    if (module.GetType() == FerramAerospace.FARControllableSurfaceModule)
+                    {
+                        foreach (var setting in storedFARControlSurfaceSettings[vesselName][part.persistentId])
+                        {
+                            var field = FerramAerospace.FARControllableSurfaceModule.GetField(setting.Item1, BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                            if (field != null)
+                            {
+                                field.SetValue(module, setting.Item2);
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        #endregion
         #endregion
 
         #region AI Internal Parameters
@@ -926,6 +1099,19 @@ namespace BDArmory.Control
             minCollisionAvoidanceLookAheadPeriod.minValue = vesselCollisionAvoidanceTickerFreq * Time.fixedDeltaTime;
         }
 
+        public void SetOnExtendAngleA2AChanged()
+        {
+            UI_FloatRange field = (UI_FloatRange)Fields["extendAngleAirToAir"].uiControlEditor;
+            field.onFieldChanged = OnExtendAngleA2AChanged;
+            field = (UI_FloatRange)Fields["extendAngleAirToAir"].uiControlFlight;
+            field.onFieldChanged = OnExtendAngleA2AChanged;
+            OnExtendAngleA2AChanged(null, null);
+        }
+        void OnExtendAngleA2AChanged(BaseField field, object obj)
+        {
+            _extendAngleAirToAir = Mathf.Sin(extendAngleAirToAir * Mathf.Deg2Rad);
+        }
+
         IEnumerator FixAltitudesSectionLayout() // Fix the layout of the Altitudes section by briefly disabling the fields underneath the one that was removed.
         {
             var maxAltitudeToggleField = Fields["maxAltitudeToggle"];
@@ -1048,10 +1234,19 @@ namespace BDArmory.Control
             CustomDynamicAxisField = CustomDynamicAxisFields;
             ToggleDynamicDampingFields();
             ToggleMaxAltitude();
+            SetOnExtendAngleA2AChanged();
             // InitSteerDamping();
             if ((HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor) && storedSettings != null && storedSettings.ContainsKey(HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName))
             {
                 Events["RestoreSettings"].active = true;
+            }
+            if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor)
+            {
+                var vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName;
+                if ((storedControlSurfaceSettings != null && storedControlSurfaceSettings.ContainsKey(vesselName)) || (storedFARControlSurfaceSettings != null && storedFARControlSurfaceSettings.ContainsKey(vesselName)))
+                {
+                    Events["RestoreControlSurfaceSettings"].active = true;
+                }
             }
         }
 
@@ -1077,47 +1272,27 @@ namespace BDArmory.Control
         {
             if (BDArmorySettings.DEBUG_LINES && pilotEnabled)
             {
-                if (lr)
-                {
-                    lr.enabled = true;
-                    lr.SetPosition(0, vessel.ReferenceTransform.position);
-                    lr.SetPosition(1, flyingToPosition);
-                }
-                else
+                lr = GetComponent<LineRenderer>();
+                if (lr == null)
                 {
                     lr = gameObject.AddComponent<LineRenderer>();
                     lr.positionCount = 2;
                     lr.startWidth = 0.5f;
                     lr.endWidth = 0.5f;
                 }
+                lr.enabled = true;
+                lr.SetPosition(0, vessel.ReferenceTransform.position);
+                lr.SetPosition(1, flyingToPosition);
 
                 minSpeed = Mathf.Clamp(minSpeed, 0, idleSpeed - 20);
                 minSpeed = Mathf.Clamp(minSpeed, 0, maxSpeed - 20);
             }
-            else
-            {
-                if (lr)
-                {
-                    lr.enabled = false;
-                }
-            }
+            else { if (lr != null) { lr.enabled = false; } }
 
             // switch up the alt values if up to eleven is toggled
             if (UpToEleven != toEleven)
             {
-                using (var s = altMaxValues.Keys.ToList().GetEnumerator())
-                    while (s.MoveNext())
-                    {
-                        UI_FloatRange euic = (UI_FloatRange)
-                            (HighLogic.LoadedSceneIsFlight ? Fields[s.Current].uiControlFlight : Fields[s.Current].uiControlEditor);
-                        float tempValue = euic.maxValue;
-                        euic.maxValue = altMaxValues[s.Current];
-                        altMaxValues[s.Current] = tempValue;
-                        // change the value back to what it is now after fixed update, because changing the max value will clamp it down
-                        // using reflection here, don't look at me like that, this does not run often
-                        StartCoroutine(setVar(s.Current, (float)typeof(BDModulePilotAI).GetField(s.Current).GetValue(this)));
-                    }
-                toEleven = UpToEleven;
+                TurnItUpToEleven(UpToEleven);
             }
 
             //hide dynamic steer damping fields if dynamic damping isn't toggled
@@ -1219,9 +1394,9 @@ namespace BDArmory.Control
             CheckLandingGear();
             if (IsRunningWaypoints) UpdateWaypoint(); // Update the waypoint state.
 
-            if (!vessel.LandedOrSplashed && (FlyAvoidTerrain(s) || (!ramming && FlyAvoidOthers(s))))
+            if (!vessel.LandedOrSplashed && (FlyAvoidTerrain(s) || (!ramming && FlyAvoidOthers(s)))) // Avoid terrain and other planes.
             { turningTimer = 0; }
-            else if (initialTakeOff)
+            else if (initialTakeOff) // Take off.
             {
                 TakeOff(s);
                 turningTimer = 0;
@@ -1229,8 +1404,16 @@ namespace BDArmory.Control
             else
             {
                 if (!(command == PilotCommands.Free || command == PilotCommands.Waypoints))
-                { UpdateCommand(s); }
-                else
+                {
+                    if (belowMinAltitude && !(gainAltInhibited || BDArmorySettings.SF_REPULSOR)) // If we're below minimum altitude, gain altitude unless we're being inhibited or the space friction repulsor field is enabled.
+                    {
+                        TakeOff(s);
+                        turningTimer = 0;
+                    }
+                    else // Follow the current command.
+                    { UpdateCommand(s); }
+                }
+                else // Do combat stuff or orbit. (minAlt is handled in UpdateAI for Free and Waypoints modes.)
                 { UpdateAI(s); }
             }
             UpdateGAndAoALimits(s);
@@ -2052,7 +2235,7 @@ namespace BDArmory.Control
             {
                 extendDistance = Mathf.Max(extendDistanceAirToAir, extendRequestMinDistance);
                 extendHorizontally = false;
-                desiredMinAltitude = (float)vessel.radarAltitude * 0.95f; // Extend mostly horizontally
+                desiredMinAltitude = Mathf.Max((float)vessel.radarAltitude + _extendAngleAirToAir * extendDistance, minAltitude);
                 extendParametersSet = true;
                 if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: {vessel.vesselName} is extending due to an air target ({extendingReason}).");
                 return true;
@@ -2157,7 +2340,7 @@ namespace BDArmory.Control
         void FlyWaypoints(FlightCtrlState s)
         {
             // Note: UpdateWaypoint is called separately before this in case FlyWaypoints doesn't get called.
-            if(BDArmorySettings.WAYPOINT_LOOP_INDEX>1)
+            if (BDArmorySettings.WAYPOINT_LOOP_INDEX > 1)
             {
                 SetStatus($"Lap {activeWaypointLap}, Waypoint {activeWaypointIndex} ({waypointRange:F0}m)");
             }
