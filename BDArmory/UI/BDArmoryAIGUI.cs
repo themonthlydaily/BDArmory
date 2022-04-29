@@ -352,6 +352,7 @@ namespace BDArmory.UI
                         { "vesselStandoffDistance", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselStandoffDistance, 0, 1000) },
                         // { "extendMult", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendMult, 0, 2) },
                         { "extendDistanceAirToAir", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendDistanceAirToAir, 0, 2000) },
+                        { "extendAngleAirToAir", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendAngleAirToAir, -10, 45) },
                         { "extendDistanceAirToGroundGuns", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendDistanceAirToGroundGuns, 0, 5000) },
                         { "extendDistanceAirToGround", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendDistanceAirToGround, 0, 5000) },
                         { "extendTargetVel", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendTargetVel, 0, 2) },
@@ -425,6 +426,7 @@ namespace BDArmory.UI
                     inputFields["vesselStandoffDistance"].maxValue = ActivePilot.UpToEleven ? 5000 : 1000;
                     // inputFields["extendMult"].maxValue = ActivePilot.UpToEleven ? 200 : 2;
                     inputFields["extendDistanceAirToAir"].maxValue = ActivePilot.UpToEleven ? 20000 : 2000;
+                    inputFields["extendAngleAirToAir"].maxValue = ActivePilot.UpToEleven ? 90 : 45;
                     inputFields["extendDistanceAirToGroundGuns"].maxValue = ActivePilot.UpToEleven ? 20000 : 5000;
                     inputFields["extendDistanceAirToGround"].maxValue = ActivePilot.UpToEleven ? 20000 : 5000;
 
@@ -1791,6 +1793,25 @@ namespace BDArmory.UI
 
                             if (!NumFieldsEnabled)
                             {
+                                ActivePilot.extendAngleAirToAir =
+                                    GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth),
+                                        ActivePilot.extendAngleAirToAir, -10, ActivePilot.UpToEleven ? 90 : 45);
+                                ActivePilot.extendAngleAirToAir = BDAMath.RoundToUnit(ActivePilot.extendAngleAirToAir, 1f);
+                            }
+                            else
+                            {
+                                inputFields["extendAngleAirToAir"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["extendAngleAirToAir"].possibleValue, 6));
+                                ActivePilot.extendAngleAirToAir = (float)inputFields["extendAngleAirToAir"].currentValue;
+                            }
+                            GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendAngleAirToAir") + ": " + ActivePilot.extendAngleAirToAir.ToString("0"), Label); // Extend Distance Air-To-Air
+                            evadeLines++;
+                            if (contextTipsEnabled)
+                            {
+                                GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendAngleAirToAir_Context"), contextLabel);
+                                evadeLines++;
+                            }
+                            if (!NumFieldsEnabled)
+                            {
                                 ActivePilot.extendDistanceAirToGroundGuns =
                                     GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth),
                                         ActivePilot.extendDistanceAirToGroundGuns, 0, ActivePilot.UpToEleven ? 20000 : 5000);
@@ -2030,7 +2051,7 @@ namespace BDArmory.UI
                             GUIContent.none, BDArmorySetup.BDGuiSkin.box);
                         miscLines += 0.25f;
 
-                        GUI.Label(SettinglabelRect(leftIndent, miscLines), Localizer.Format("#LOC_BDArmory_Orbit"), BoldLabel);//"Speed"
+                        GUI.Label(SettinglabelRect(leftIndent, miscLines), Localizer.Format("#LOC_BDArmory_Orbit"), BoldLabel);//"orbit"
                         miscLines++;
 
                         ActivePilot.ClockwiseOrbit = GUI.Toggle(ToggleButtonRect(leftIndent, miscLines, contentWidth),
@@ -2038,11 +2059,11 @@ namespace BDArmory.UI
                         miscLines += 1.25f;
                         if (contextTipsEnabled)
                         {
-                            GUI.Label(ContextLabelRect(leftIndent, miscLines), Localizer.Format("#LOC_BDArmory_AIWindow_orbit"), Label);//"dynamic damp min"
+                            GUI.Label(ContextLabelRect(leftIndent, miscLines), Localizer.Format("#LOC_BDArmory_AIWindow_orbit"), Label);//"orbit direction"
                             miscLines++;
                         }
 
-                        GUI.Label(SettinglabelRect(leftIndent, miscLines), Localizer.Format("#LOC_BDArmory_StandbyMode"), BoldLabel);//"Speed"
+                        GUI.Label(SettinglabelRect(leftIndent, miscLines), Localizer.Format("#LOC_BDArmory_StandbyMode"), BoldLabel);//"Standby"
                         miscLines++;
 
                         ActivePilot.standbyMode = GUI.Toggle(ToggleButtonRect(leftIndent, miscLines, contentWidth),
@@ -2050,8 +2071,26 @@ namespace BDArmory.UI
                         miscLines += 1.25f;
                         if (contextTipsEnabled)
                         {
-                            GUI.Label(ContextLabelRect(leftIndent, miscLines), Localizer.Format("#LOC_BDArmory_AIWindow_standby"), Label);//"dynamic damp min"
+                            GUI.Label(ContextLabelRect(leftIndent, miscLines), Localizer.Format("#LOC_BDArmory_AIWindow_standby"), Label);//"Activace when target in guard range"
                             miscLines++;
+                        }
+
+                        GUI.Label(SettinglabelRect(leftIndent, miscLines), Localizer.Format("#LOC_BDArmory_ControlSurfaceSettings"), BoldLabel);//"Control Surface Settings"
+                        miscLines++;
+
+                        if (GUI.Button(ToggleButtonRect(leftIndent, miscLines, contentWidth), Localizer.Format("#LOC_BDArmory_StoreControlSurfaceSettings"), BDArmorySetup.BDGuiSkin.button))
+                        {
+                            ActivePilot.StoreControlSurfaceSettings(); //Hiding these in misc is probably not the best place to put them, but only so much space on the window header bar
+                        }
+                        miscLines += 1.25f;
+                        if (ActivePilot.Events["RestoreControlSurfaceSettings"].active == true)
+                        {
+                            GUIStyle restoreStyle = BDArmorySetup.BDGuiSkin.button;
+                            if (GUI.Button(ToggleButtonRect(leftIndent, miscLines, contentWidth), Localizer.Format("#LOC_BDArmory_RestoreControlSurfaceSettings"), restoreStyle))
+                            {
+                                ActivePilot.RestoreControlSurfaceSettings();
+                            }
+                            miscLines += 1.25f;
                         }
 
                         GUI.EndGroup();

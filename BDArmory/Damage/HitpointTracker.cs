@@ -469,15 +469,15 @@ namespace BDArmory.Damage
         public void ShipModified(ShipConstruct data)
         {
             // Note: this triggers if the ship is modified, but really we only want to run this when the part is modified.
-            if (!isProcWing || !isProcPart)
-            {
-                _updateHitpoints = true;
-                _updateMass = true;
-            }
-            else
+            if (isProcWing || isProcPart)
             {
                 if (!_delayedShipModifiedRunning)
                     StartCoroutine(DelayedShipModified());
+            }
+            else
+            {
+                _updateHitpoints = true;
+                _updateMass = true;
             }
         }
 
