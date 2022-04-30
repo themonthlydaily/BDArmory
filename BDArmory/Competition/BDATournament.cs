@@ -262,7 +262,7 @@ namespace BDArmory.Competition
             else // Make teams from the folders under the spawn folder.
             {
                 var teamDirs = Directory.GetDirectories(abs_folder);
-                if (teamDirs.Length == 0) // Make teams from each vessel in the spawn folder.
+                if (teamDirs.Length < 2) // Make teams from each vessel in the spawn folder. Allow for a single subfolder for putting bad craft or other tmp things in.
                 {
                     numberOfTeams = -1; // Flag for treating craft files as folder names.
                     craftFiles = Directory.GetFiles(abs_folder, "*.craft").ToList();

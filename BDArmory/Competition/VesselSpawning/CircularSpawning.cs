@@ -25,12 +25,14 @@ namespace BDArmory.Competition.VesselSpawning
     public class CircularSpawning : VesselSpawnerBase
     {
         public static CircularSpawning Instance;
+        public static string AutoSpawnPath;
 
         void Awake()
         {
             if (Instance)
                 Destroy(Instance);
             Instance = this;
+            AutoSpawnPath = Path.GetFullPath(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn"));
         }
 
         private int spawnedVesselCount = 0;
@@ -127,7 +129,7 @@ namespace BDArmory.Competition.VesselSpawning
             // Tally up the craft to spawn and figure out teams.
             if (spawnConfig.teamsSpecific == null)
             {
-                var spawnFolder = Path.GetFullPath(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", spawnConfig.folder));
+                var spawnFolder = Path.Combine(AutoSpawnPath, spawnConfig.folder);
                 if (!Directory.Exists(spawnFolder))
                 {
                     message = $"Spawn folder {spawnFolder} doesn't exist!";
@@ -141,7 +143,7 @@ namespace BDArmory.Competition.VesselSpawning
                 {
                     spawnConfig.teamsSpecific = new List<List<string>>();
                     var teamDirs = Directory.GetDirectories(spawnFolder);
-                    if (teamDirs.Length == 0) // Make teams from each vessel in the spawn folder.
+                    if (teamDirs.Length < 2) // Make teams from each vessel in the spawn folder. Allow for a single subfolder for putting bad craft or other tmp things in.
                     {
                         spawnConfig.numberOfTeams = -1; // Flag for treating craft files as folder names.
                         spawnConfig.craftFiles = Directory.GetFiles(spawnFolder).Where(f => f.EndsWith(".craft")).ToList();
@@ -149,7 +151,7 @@ namespace BDArmory.Competition.VesselSpawning
                     }
                     else
                     {
-                        var stripStartCount = Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn").Length;
+                        var stripStartCount = AutoSpawnPath.Length;
                         Debug.Log("[BDArmory.CircularSpawning]: Spawning teams from folders " + string.Join(", ", teamDirs.Select(d => d.Substring(stripStartCount))));
                         foreach (var teamDir in teamDirs)
                         {
@@ -170,7 +172,7 @@ namespace BDArmory.Competition.VesselSpawning
             }
             if (spawnConfig.craftFiles.Count == 0)
             {
-                message = "Vessel spawning: found no craft files in " + Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", spawnConfig.folder);
+                message = "Vessel spawning: found no craft files in " + Path.Combine(AutoSpawnPath, spawnConfig.folder);
                 Debug.Log("[BDArmory.CircularSpawning]: " + message);
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
                 vesselsSpawning = false;
