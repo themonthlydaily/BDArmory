@@ -858,7 +858,7 @@ namespace BDArmory.Competition
 
             if (BDArmorySettings.AUTO_RESUME_TOURNAMENT && BDArmorySettings.AUTO_QUIT_AT_END_OF_TOURNAMENT && TournamentAutoResume.Instance != null)
             {
-                TournamentAutoResume.Instance.AutoQuit(5);
+                TournamentAutoResume.AutoQuit(5);
                 message = "Quitting KSP in 5s due to reaching the end of a tournament.";
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
                 Debug.LogWarning("[BDArmory.BDATournament]: " + message);
@@ -1317,7 +1317,7 @@ namespace BDArmory.Competition
             return false;
         }
 
-        public void AutoQuit(float delay = 1) => StartCoroutine(AutoQuitCoroutine(delay));
+        public static void AutoQuit(float delay = 1) => Instance.StartCoroutine(Instance.AutoQuitCoroutine(delay));
 
         /// <summary>
         /// Automatically quit KSP after a delay.

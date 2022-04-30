@@ -2482,7 +2482,7 @@ namespace BDArmory.UI
                         }
                         if (GUI.Button(SLeftRect(++line), "Quit KSP."))
                         {
-                            QuitKSP();
+                            TournamentAutoResume.AutoQuit(0);
                         }
                     }
 #endif
