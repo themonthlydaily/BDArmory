@@ -3657,12 +3657,6 @@ namespace BDArmory.UI
         }
 
 #if DEBUG
-        public static void QuitKSP()
-        {
-            HighLogic.LoadScene(GameScenes.MAINMENU);
-            Application.Quit();
-        }
-
         IEnumerator TestVesselPositionTiming()
         {
             var wait = new WaitForFixedUpdate();
