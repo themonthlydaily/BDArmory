@@ -262,9 +262,10 @@ namespace BDArmory.Competition.VesselSpawning
                     {
                         // Figure out spawn point and orientation
                         var heading = 360f / team.Count * (teamSpawnCount - (team.Count - 1) / 2f) / team.Count + teamHeading;
-                        var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(heading, radialUnitVector) * refDirection, radialUnitVector).normalized;
+                        var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(heading, radialUnitVector) * refDirection, radialUnitVector).normalized; // Local position
                         Vector3 position = teamSpawnPosition + spawnDistance / 4f * direction; // Spawn in clusters around the team spawn points.
-                        spawningVessels.Add(StartCoroutine(SpawnSingleVessel(new VesselSpawnConfig(craftUrl, position, direction, (float)spawnConfig.altitude, -80f, spawnAirborne))));
+                        direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(heading / 8f, radialUnitVector) * refDirection, radialUnitVector).normalized; // Facing direction
+                        spawningVessels.Add(StartCoroutine(SpawnSingleVessel(new VesselSpawnConfig(craftUrl, position, teamDirection, (float)spawnConfig.altitude, -80f, spawnAirborne))));
 
                         ++spawnedVesselCount;
                         ++teamSpawnCount;

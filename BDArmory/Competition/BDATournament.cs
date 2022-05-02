@@ -1329,6 +1329,7 @@ namespace BDArmory.Competition
             yield return new WaitForSeconds(delay);
             HighLogic.LoadScene(GameScenes.MAINMENU);
             yield return new WaitForSeconds(0.5f); // Pause on the Main Menu a moment, then quit.
+            Debug.Log("[BDArmory.BDATournament]: Quitting KSP.");
             Application.Quit();
         }
     }
