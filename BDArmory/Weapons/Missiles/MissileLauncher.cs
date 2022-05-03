@@ -1816,6 +1816,10 @@ namespace BDArmory.Weapons.Missiles
             Vector3 aamTarget;
             if (TargetAcquired)
             {
+                if (warheadType == WarheadTypes.ContinuousRod) //Have CR missiles target slightly above target to ensure craft caught in planar blast AOE
+                {
+                    TargetPosition += VectorUtils.GetUpDirection(TargetPosition) * blastRadius * 0.25f; 
+                }
                 DrawDebugLine(transform.position + (part.rb.velocity * Time.fixedDeltaTime), TargetPosition);
                 float timeToImpact;
                 aamTarget = MissileGuidance.GetAirToAirTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, out timeToImpact, optimumAirspeed);
