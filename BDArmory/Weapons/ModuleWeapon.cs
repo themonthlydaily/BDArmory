@@ -37,6 +37,7 @@ namespace BDArmory.Weapons
         Coroutine shutdownRoutine;
         Coroutine standbyRoutine;
         Coroutine reloadRoutine;
+        Coroutine chargeRoutine;
 
         bool finalFire;
 
@@ -353,6 +354,13 @@ namespace BDArmory.Weapons
         AnimationState reloadState;
 
         [KSPField]
+        public bool hasChargeAnimation = false;
+
+        [KSPField]
+        public string chargeAnimName = "chargeAnim";
+        AnimationState chargeState;
+
+        [KSPField]
         public bool hasFireAnimation = false;
 
         [KSPField]
@@ -451,6 +459,11 @@ namespace BDArmory.Weapons
 
         [KSPField]
         public bool BurstFire = false; // set to true for weapons that fire multiple times per triggerpull
+
+        [KSPField]
+        public float ChargeTime = -1;
+        bool isCharging = false;
+
 
         [KSPField]
         public string bulletDragTypeName = "AnalyticEstimate";
@@ -1215,7 +1228,10 @@ namespace BDArmory.Weapons
 
                 //setup audio
                 SetupAudio();
-
+                if (eWeaponType == WeaponTypes.Laser || ChargeTime > 0)
+                {
+                    chargeSound = GameDatabase.Instance.GetAudioClip(chargeSoundPath);
+                }
                 // Setup gauges
                 gauge = (BDStagingAreaGauge)part.AddModule("BDStagingAreaGauge");
                 gauge.AmmoName = ammoName;
@@ -1296,6 +1312,13 @@ namespace BDArmory.Weapons
                 reloadState.normalizedTime = 0;
                 reloadState.speed = 0;
                 reloadState.enabled = true;
+            }
+            if (hasChargeAnimation)
+            {
+                chargeState = GUIUtils.SetUpSingleAnimation(chargeAnimName, part);
+                chargeState.normalizedTime = 0;
+                chargeState.speed = 0;
+                chargeState.enabled = true;
             }
             if (hasFireAnimation)
             {
@@ -2273,7 +2296,7 @@ namespace BDArmory.Weapons
         }
         public void SetupLaserSpecifics()
         {
-            chargeSound = GameDatabase.Instance.GetAudioClip(chargeSoundPath);
+            //chargeSound = GameDatabase.Instance.GetAudioClip(chargeSoundPath);
             if (HighLogic.LoadedSceneIsFlight)
             {
                 audioSource.clip = fireSound;
@@ -2688,6 +2711,10 @@ namespace BDArmory.Weapons
         void WeaponFX()
         {
             //sound
+            if (ChargeTime > 0)
+            {
+                audioSource.Stop();
+            }
             if (oneShotSound)
             {
                 audioSource.Stop();
@@ -3750,49 +3777,69 @@ namespace BDArmory.Weapons
 
                 if (finalFire)
                 {
-                    switch (eWeaponType)
+                    if (ChargeTime > 0)
                     {
-                        case WeaponTypes.Laser:
-                            if (FireLaser())
+                        if (!isCharging)
+                        {
+                            if (chargeRoutine != null)
                             {
-                                for (int i = 0; i < laserRenderers.Length; i++)
+                                StopCoroutine(chargeRoutine);
+                                chargeRoutine = null;
+                            }
+                            chargeRoutine = StartCoroutine(ChargeRoutine());
+                        }
+                        else
+                        {
+                            aimAndFireIfPossible = false;
+                            aimOnly = false;
+                        }
+                    }
+                    else
+                    {
+                        switch (eWeaponType)
+                        {
+                            case WeaponTypes.Laser:
+                                if (FireLaser())
                                 {
-                                    laserRenderers[i].enabled = true;
+                                    for (int i = 0; i < laserRenderers.Length; i++)
+                                    {
+                                        laserRenderers[i].enabled = true;
+                                    }
+                                    if (isAPS && (tgtShell != null || tgtRocket != null))
+                                    {
+                                        StartCoroutine(KillIncomingProjectile(tgtShell, tgtRocket));
+                                    }
                                 }
+                                else
+                                {
+                                    if ((!pulseLaser && !BurstFire) || (!pulseLaser && BurstFire && (RoundsRemaining >= RoundsPerMag)) || (pulseLaser && Time.time - timeFired > beamDuration))
+                                    {
+                                        for (int i = 0; i < laserRenderers.Length; i++)
+                                        {
+                                            laserRenderers[i].enabled = false;
+                                        }
+                                    }
+                                    //if (!pulseLaser || !oneShotSound)
+                                    //{
+                                    //    audioSource.Stop();
+                                    //}
+                                }
+                                break;
+                            case WeaponTypes.Ballistic:
+                                Fire();
                                 if (isAPS && (tgtShell != null || tgtRocket != null))
                                 {
                                     StartCoroutine(KillIncomingProjectile(tgtShell, tgtRocket));
                                 }
-                            }
-                            else
-                            {
-                                if ((!pulseLaser && !BurstFire) || (!pulseLaser && BurstFire && (RoundsRemaining >= RoundsPerMag)) || (pulseLaser && Time.time - timeFired > beamDuration))
+                                break;
+                            case WeaponTypes.Rocket:
+                                FireRocket();
+                                if (isAPS && (tgtShell != null || tgtRocket != null))
                                 {
-                                    for (int i = 0; i < laserRenderers.Length; i++)
-                                    {
-                                        laserRenderers[i].enabled = false;
-                                    }
+                                    StartCoroutine(KillIncomingProjectile(tgtShell, tgtRocket));
                                 }
-                                //if (!pulseLaser || !oneShotSound)
-                                //{
-                                //    audioSource.Stop();
-                                //}
-                            }
-                            break;
-                        case WeaponTypes.Ballistic:
-                            Fire();
-                            if (isAPS && (tgtShell != null || tgtRocket != null))
-                            {
-                                StartCoroutine(KillIncomingProjectile(tgtShell, tgtRocket));
-                            }
-                            break;
-                        case WeaponTypes.Rocket:
-                            FireRocket();
-                            if (isAPS && (tgtShell != null || tgtRocket != null))
-                            {
-                                StartCoroutine(KillIncomingProjectile(tgtShell, tgtRocket));
-                            }
-                            break;
+                                break;
+                        }
                     }
                 }
             }
@@ -4573,6 +4620,62 @@ namespace BDArmory.Weapons
             reloadState.enabled = false;
 
             UpdateGUIWeaponState();
+        }
+        IEnumerator ChargeRoutine()
+        {
+            isCharging = true;
+            guiStatusString = "Charging";
+            if (!String.IsNullOrEmpty(chargeSoundPath))
+            {
+                audioSource.PlayOneShot(chargeSound);
+            }
+            if (hasChargeAnimation)
+            {
+                chargeState.normalizedTime = 0;
+                chargeState.enabled = true;
+                chargeState.speed = (chargeState.length / ChargeTime);//ensure relaod anim is not longer than reload time
+                while (chargeState.normalizedTime < 1) //wait for animation here
+                {
+                    yield return null;
+                }
+                chargeState.normalizedTime = 1;
+                chargeState.speed = 0;
+                chargeState.enabled = false;
+            }
+            else
+            {
+                yield return new WaitForSeconds(ChargeTime);
+            }
+            UpdateGUIWeaponState();
+            isCharging = false;
+            switch (eWeaponType)
+            {
+                case WeaponTypes.Laser:
+                    if (FireLaser())
+                    {
+                        for (int i = 0; i < laserRenderers.Length; i++)
+                        {
+                            laserRenderers[i].enabled = true;
+                        }
+                    }
+                    else
+                    {
+                        if ((!pulseLaser && !BurstFire) || (!pulseLaser && BurstFire && (RoundsRemaining >= RoundsPerMag)) || (pulseLaser && Time.time - timeFired > beamDuration))
+                        {
+                            for (int i = 0; i < laserRenderers.Length; i++)
+                            {
+                                laserRenderers[i].enabled = false;
+                            }
+                        }
+                    }
+                    break;
+                case WeaponTypes.Ballistic:
+                    Fire();
+                    break;
+                case WeaponTypes.Rocket:
+                    FireRocket();
+                    break;
+            }
         }
         IEnumerator StandbyRoutine()
         {

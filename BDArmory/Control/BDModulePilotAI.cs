@@ -2186,7 +2186,7 @@ namespace BDArmory.Control
             // Dropping a bomb.
             if (extending && weaponManager.CurrentMissile && weaponManager.CurrentMissile.GetWeaponClass() == WeaponClasses.Bomb) // Run away from the bomb!
             {
-                extendDistance = 4500;
+                extendDistance = extendRequestMinDistance; //4500; //what, are we running from nukes? blast radius * 1.5 should be sufficient
                 desiredMinAltitude = defaultAltitude;
                 extendParametersSet = true;
                 if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: {vessel.vesselName} is extending due to dropping a bomb!");
