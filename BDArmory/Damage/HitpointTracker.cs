@@ -709,21 +709,22 @@ namespace BDArmory.Damage
                         // SuicidalInsanity B9 patch //should this come before the hp clamping?
                         if (isProcWing)
                         {
-                            if (part.Modules.Contains("FARWingAerodynamicModel") || part.Modules.Contains("FARControllableSurface"))
+                            //if (part.Modules.Contains("FARWingAerodynamicModel") || part.Modules.Contains("FARControllableSurface"))
+                            if (FerramAerospace.CheckForFAR())
                             {
                                 //procwing hp already modified by mass, because it is mass
                                 //so using base part mass is it can be properly modified by material HP mod below
-
-                                hitpoints = ((partMass / FerramAerospace.GetFARMassMult(part)) * 1000f) * 3.5f * hitpointMultiplier * 0.333f; //To account for FAR's Strength-mass Scalar.  
-                                armorVolume = (float)Math.Round(hitpoints / hitpointMultiplier / 0.333 / 175, 1); //half of HP due to wing's 0.5x area modifier to prevent double armor
-
+                                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.HitpointTracker]: Found {part.name} (FAR); HP: {Hitpoints}->{hitpoints} at time {Time.time}, partMass: {partMass}, FAR massMult: {FerramAerospace.GetFARMassMult(part)}");
+                                //hitpoints = ((partMass / FerramAerospace.GetFARMassMult(part)) * 1000f) * 3.5f * hitpointMultiplier * 0.333f; //To account for FAR's Strength-mass Scalar.  
+                                hitpoints = (partMass * 1000f) * 3.5f * hitpointMultiplier * 0.333f;
+                                armorVolume = (float)Math.Round(hitpoints / hitpointMultiplier / 0.333 / 175, 1) / FerramAerospace.GetFARMassMult(part); //half of HP due to wing's 0.5x area modifier to prevent double armor
                             }
                             else
                             {
                                 //hitpoints = (partMass * 1000f) * 7f * hitpointMultiplier * 0.333f; // since wings are basically a 2d object, lets have mass be our scalar - afterall, 2x the mass will ~= 2x the surfce area
                                 hitpoints = (float)Math.Round(part.Modules.GetModule<ModuleLiftingSurface>().deflectionLiftCoeff, 2) * 700 * hitpointMultiplier * 0.333f; //this yields the same result, but not beholden to mass changes
                                 armorVolume = (float)Math.Round(hitpoints / hitpointMultiplier / 0.333 / 350, 1); //stock is 0.25 lift/m2, so...
-                            } //breaks when pWings are made stupidly thick/large  //should really figure out a fix for that someday
+                            } //breaks when pWings are made stupidly large. Clamp HP to a maximum?
                             ArmorModified(null, null);
                         }
 

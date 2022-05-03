@@ -94,10 +94,16 @@ namespace BDArmory.Utils
 
             foreach (var module in part.Modules)
             {
-                if (module.GetType() == FARWingModule) // || module.GetType().IsSubclassOf(FSEngineType))
+                if (module.GetType() == FARWingModule)
                 {
                     var massMultiplier = (float)FARWingModule.GetField("massMultiplier", BindingFlags.Public | BindingFlags.Instance).GetValue(module);
                     if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FARUtils]: Found wing Mass multiplier of {massMultiplier} for {part.name}.");
+                    return massMultiplier;
+                }
+                if (module.GetType() == FARControllableSurfaceModule)
+                {
+                    var massMultiplier = (float)FARControllableSurfaceModule.GetField("massMultiplier", BindingFlags.Public | BindingFlags.Instance).GetValue(module);
+                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FARUtils]: Found ctrl. srf. Mass multiplier of {massMultiplier} for {part.name}.");
                     return massMultiplier;
                 }
             }
