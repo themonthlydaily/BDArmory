@@ -50,6 +50,8 @@ namespace BDArmory.Weapons.Missiles
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MinStaticLaunchRange"), UI_FloatRange(minValue = 10f, maxValue = 4000f, stepIncrement = 100f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Min Static Launch Range
         public float minStaticLaunchRange = 10;
 
+        public float StandOffDistance = -1;
+
         [KSPField]
         public float minLaunchSpeed = 0;
 
@@ -203,6 +205,9 @@ namespace BDArmory.Weapons.Missiles
 
         public GuidanceModes GuidanceMode;
 
+        public enum WarheadTypes { Standard, ContinuousRod, EMP, Nuke}
+
+        public WarheadTypes warheadType;
         public bool HasFired { get; set; } = false;
 
         public BDTeam Team { get; set; }
@@ -232,8 +237,6 @@ namespace BDArmory.Weapons.Missiles
         public bool HasExploded { get; set; } = false;
 
         public int clusterbomb { get; set; } = 1;
-
-        public bool EMP { get; set; } = false;
 
         protected IGuidance _guidance;
 

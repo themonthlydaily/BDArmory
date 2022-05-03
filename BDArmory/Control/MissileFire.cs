@@ -2128,7 +2128,7 @@ namespace BDArmory.Control
                             yield return new WaitForSeconds(1f);
                             if (pilotAI)
                             {
-                                pilotAI.RequestExtend("bombs away!", null, 0, guardTarget.CoM); // Extend from the place the bomb is expected to fall.
+                                pilotAI.RequestExtend("bombs away!", null, radius, guardTarget.CoM); // Extend from the place the bomb is expected to fall.
                             }   //maybe something similar should be adapted for any missiles with nuke warheards...?
                         }
                     }
@@ -2486,7 +2486,7 @@ namespace BDArmory.Control
         {
             MissileBase missile = CurrentMissile;
             if (missile == null) return false;
-
+            bool DisengageAfterFiring = false;
             if (missile is MissileBase)
             {
                 MissileBase ml = missile;
@@ -2508,7 +2508,13 @@ namespace BDArmory.Control
                     if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: No Clearance! Cannot fire " + CurrentMissile.name);
                     return false;
                 }
-
+                if (ml.warheadType == MissileBase.WarheadTypes.EMP || ml.warheadType == MissileBase.WarheadTypes.Nuke)
+                {
+                    if (ml.StandOffDistance > 0 && Vector3.Distance(transform.position + vessel.Velocity(), currentTarget.position + currentTarget.velocity) > ml.StandOffDistance)
+                    {
+                        DisengageAfterFiring = true;
+                    }
+                }
                 if (ml is MissileLauncher && ((MissileLauncher)ml).missileTurret)
                 {
                     ((MissileLauncher)ml).missileTurret.FireMissile(((MissileLauncher)ml));
@@ -2549,10 +2555,16 @@ namespace BDArmory.Control
                 missile.FireMissile();
                 PreviousMissile = missile;
             }
-
             CalculateMissilesAway(); // Immediately update missiles away.
             //PreviousMissile = CurrentMissile;
             UpdateList();
+            if (DisengageAfterFiring)
+            {
+                if (pilotAI)
+                {
+                    pilotAI.RequestExtend("Nuke away!", guardTarget, missile.StandOffDistance * 1.25f, guardTarget.CoM); // Extend from projected detonation site if within blast radius
+                } 
+            }
             return true;
         }
 
@@ -4113,7 +4125,7 @@ namespace BDArmory.Control
                             {
                                 candidateDetDist = mlauncher.DetonationDistance;
                                 candidateAccel = mlauncher.thrust / mlauncher.part.mass; //for anti-missile, prioritize proxidetonation and accel
-                                bool EMP = mlauncher.EMP;
+                                bool EMP = mlauncher.warheadType == MissileBase.WarheadTypes.EMP;
                                 candidatePriority = Mathf.RoundToInt(mlauncher.priority);
 
                                 if (EMP) continue;
@@ -4412,7 +4424,7 @@ namespace BDArmory.Control
                                 candidateDetDist = mlauncher.DetonationDistance;
                                 candidateTurning = mlauncher.maxTurnRateDPS; //for anti-aircraft, prioritize detonation dist and turn capability
                                 candidatePriority = Mathf.RoundToInt(mlauncher.priority);
-                                bool EMP = mlauncher.EMP;
+                                bool EMP = mlauncher.warheadType == MissileBase.WarheadTypes.EMP;
 
                                 if (EMP) continue;
                                 if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue;
@@ -4652,7 +4664,7 @@ namespace BDArmory.Control
                             // only useful if we are flying
                             float candidateYield = Bomb.GetBlastRadius();
                             int candidateCluster = Bomb.clusterbomb;
-                            bool EMP = Bomb.EMP;
+                            bool EMP = Bomb.warheadType == MissileBase.WarheadTypes.EMP;
                             int candidatePriority = Mathf.RoundToInt(Bomb.priority);
                             double srfSpeed = currentTarget.Vessel.horizontalSrfSpeed;
 
@@ -4740,7 +4752,7 @@ namespace BDArmory.Control
                             //if (firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                             float candidateYield = Missile.GetBlastRadius();
                             double srfSpeed = currentTarget.Vessel.horizontalSrfSpeed;
-                            bool EMP = Missile.EMP;
+                            bool EMP = Missile.warheadType == MissileBase.WarheadTypes.EMP;
                             int candidatePriority = Mathf.RoundToInt(Missile.priority);
 
                             if (EMP && target.isDebilitated) continue;
@@ -4813,7 +4825,7 @@ namespace BDArmory.Control
                             //if (firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                             MissileLauncher SLW = item.Current as MissileLauncher;
                             float candidateYield = SLW.GetBlastRadius();
-                            bool EMP = SLW.EMP;
+                            bool EMP = SLW.warheadType == MissileBase.WarheadTypes.EMP;
                             int candidatePriority = Mathf.RoundToInt(SLW.priority);
 
                             if (EMP && target.isDebilitated) continue;
@@ -4851,7 +4863,7 @@ namespace BDArmory.Control
                         {
                             MissileLauncher SLW = item.Current as MissileLauncher;
                             float candidateYield = SLW.GetBlastRadius();
-                            bool EMP = SLW.EMP;
+                            bool EMP = SLW.warheadType == MissileBase.WarheadTypes.EMP;
                             int candidatePriority = Mathf.RoundToInt(SLW.priority);
 
                             if (targetWeapon != null && targetWeaponPriority > candidatePriority)

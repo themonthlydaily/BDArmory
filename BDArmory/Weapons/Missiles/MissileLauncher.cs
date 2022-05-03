@@ -110,7 +110,7 @@ namespace BDArmory.Weapons.Missiles
         public float optimumAirspeed = 220;
 
         [KSPField]
-        public float blastRadius = 150;
+        public float blastRadius = -1;
 
         [KSPField]
         public float blastPower = 25;
@@ -500,6 +500,13 @@ namespace BDArmory.Weapons.Missiles
                         }
                     }
 
+                using (IEnumerator<Light> light = gameObject.GetComponentsInChildren<Light>().AsEnumerable().GetEnumerator())
+                    while (light.MoveNext())
+                    {
+                        if (light.Current == null) continue;
+                        light.Current.intensity = 0;
+                    }
+
                 cmTimer = Time.time;
 
                 part.force_activate();
@@ -627,6 +634,7 @@ namespace BDArmory.Weapons.Missiles
                 activeRadarLockTrackCurve.Add(activeRadarRange, RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS);           // TODO: tune & balance constants!
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: OnStart missile " + shortName + ": setting default locktrackcurve with maxrange/minrcs: " + activeRadarLockTrackCurve.maxTime + "/" + RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS);
             }
+            /*
             List<ClusterBomb>.Enumerator cluster = part.FindModulesImplementing<ClusterBomb>().GetEnumerator();
             while (cluster.MoveNext())
             {
@@ -643,6 +651,38 @@ namespace BDArmory.Weapons.Missiles
                 break;
             }
             emp.Dispose();
+            */
+            IEnumerator<PartModule> partModules = part.Modules.GetEnumerator();
+            while (partModules.MoveNext())
+            {
+                if (partModules.Current == null) continue;
+                if (partModules.Current.moduleName == "BDExplosivePart")
+                {
+                    ((BDExplosivePart)partModules.Current).ParseWarheadType();
+                    if (((BDExplosivePart)partModules.Current).warheadReportingName == "Continuous Rod")
+                    {
+                        warheadType = WarheadTypes.ContinuousRod;
+                    }
+                    else warheadType = WarheadTypes.Standard;
+                }
+                else if (partModules.Current.moduleName == "ClusterBomb")
+                {
+                    clusterbomb = ((ClusterBomb)partModules.Current).submunitions.Count;
+                }
+                else if (partModules.Current.moduleName == "ModuleEMP")
+                {
+                    warheadType = WarheadTypes.EMP;
+                    StandOffDistance = ((ModuleEMP)partModules.Current).proximity;
+                }
+                else if (partModules.Current.moduleName == "BDModuleNuke")
+                {
+                    warheadType = WarheadTypes.Nuke;
+                    StandOffDistance = Mathf.Sqrt(((BDModuleNuke)partModules.Current).yield) * 500;
+                }
+                else continue;
+                break;
+            }
+            partModules.Dispose();
         }
 
         /// <summary>
@@ -752,13 +792,42 @@ namespace BDArmory.Weapons.Missiles
 
         public override float GetBlastRadius()
         {
-            if (part.FindModuleImplementing<BDExplosivePart>() != null)
-            {
-                return part.FindModuleImplementing<BDExplosivePart>().GetBlastRadius();
-            }
+            if (blastRadius > 0) { return blastRadius; }
             else
             {
-                return blastRadius;
+                if (warheadType == WarheadTypes.EMP)
+                {
+                    if (part.FindModuleImplementing<ModuleEMP>() != null)
+                    {
+                        return part.FindModuleImplementing<ModuleEMP>().proximity;
+                    }
+                    else
+                    {
+                        return 150;
+                    }
+                }
+                else if (warheadType == WarheadTypes.Nuke)
+                {
+                    if (part.FindModuleImplementing<BDModuleNuke>() != null)
+                    {
+                        return Mathf.Sqrt(part.FindModuleImplementing<BDModuleNuke>().yield) * 500;
+                    }
+                    else
+                    {
+                        return 150;
+                    }
+                }
+                else
+                {
+                    if (part.FindModuleImplementing<BDExplosivePart>() != null)
+                    {
+                        return part.FindModuleImplementing<BDExplosivePart>().GetBlastRadius();
+                    }
+                    else
+                    {
+                        return 150;
+                    }
+                }
             }
         }
 
@@ -1614,13 +1683,12 @@ namespace BDArmory.Weapons.Missiles
         {
             MissileState = MissileStates.PostThrust;
 
-            IEnumerator<Light> light = gameObject.GetComponentsInChildren<Light>().AsEnumerable().GetEnumerator();
-            while (light.MoveNext())
-            {
-                if (light.Current == null) continue;
-                light.Current.intensity = 0;
-            }
-            light.Dispose();
+            using (IEnumerator<Light> light = gameObject.GetComponentsInChildren<Light>().AsEnumerable().GetEnumerator())
+                while (light.MoveNext())
+                {
+                    if (light.Current == null) continue;
+                    light.Current.intensity = 0;
+                }
 
             StartCoroutine(FadeOutAudio());
             StartCoroutine(FadeOutEmitters());
@@ -1894,12 +1962,14 @@ namespace BDArmory.Weapons.Missiles
                 if (e.Current == null) continue;
                 e.Current.gameObject.AddComponent<BDAParticleSelfDestruct>();
                 e.Current.transform.parent = null;
-                if (e.Current.GetComponent<Light>())
-                {
-                    e.Current.GetComponent<Light>().enabled = false;
-                }
             }
             e.Dispose();
+            using (IEnumerator<Light> light = gameObject.GetComponentsInChildren<Light>().AsEnumerable().GetEnumerator())
+                while (light.MoveNext())
+                {
+                    if (light.Current == null) continue;
+                    light.Current.intensity = 0;
+                }
 
             if (part != null)
             {

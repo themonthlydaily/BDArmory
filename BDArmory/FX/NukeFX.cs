@@ -103,7 +103,7 @@ namespace BDArmory.FX
                 //above 10km, emp radius can easily reach 100s of km. But that's no fun, so...
                 if (FlightGlobals.getAltitudeAtPos(transform.position) < 10000)
                 {
-                    EMPRadius = Mathf.Sqrt(yield) * 100;
+                    EMPRadius = Mathf.Sqrt(yield) * 500;
                 }
                 else
                 {
