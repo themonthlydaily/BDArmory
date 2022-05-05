@@ -178,7 +178,7 @@ namespace BDArmory.Utils
         public string possibleValue = string.Empty;
         private double _value;
         public double currentValue { get { return _value; } set { _value = value; possibleValue = _value.ToString("G6"); } }
-        private double minValue;
+        public double minValue;
         public double maxValue;
         private bool coroutineRunning = false;
         private Coroutine coroutine;

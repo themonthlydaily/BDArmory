@@ -427,6 +427,7 @@ namespace BDArmory.UI
                     // inputFields["extendMult"].maxValue = ActivePilot.UpToEleven ? 200 : 2;
                     inputFields["extendDistanceAirToAir"].maxValue = ActivePilot.UpToEleven ? 20000 : 2000;
                     inputFields["extendAngleAirToAir"].maxValue = ActivePilot.UpToEleven ? 90 : 45;
+                    inputFields["extendAngleAirToAir"].minValue = ActivePilot.UpToEleven ? -90 : -10;
                     inputFields["extendDistanceAirToGroundGuns"].maxValue = ActivePilot.UpToEleven ? 20000 : 5000;
                     inputFields["extendDistanceAirToGround"].maxValue = ActivePilot.UpToEleven ? 20000 : 5000;
 
@@ -1771,6 +1772,7 @@ namespace BDArmory.UI
                             //     evadeLines++;
                             // }
 
+                            #region Extend Distance Air-to-Air
                             if (!NumFieldsEnabled)
                             {
                                 ActivePilot.extendDistanceAirToAir =
@@ -1790,12 +1792,14 @@ namespace BDArmory.UI
                                 GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendDistanceAirToAir_Context"), contextLabel);
                                 evadeLines++;
                             }
+                            #endregion
 
+                            #region Extend Angle Air-to-Air
                             if (!NumFieldsEnabled)
                             {
                                 ActivePilot.extendAngleAirToAir =
                                     GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth),
-                                        ActivePilot.extendAngleAirToAir, -10, ActivePilot.UpToEleven ? 90 : 45);
+                                        ActivePilot.extendAngleAirToAir, ActivePilot.UpToEleven ? -90 : -10, ActivePilot.UpToEleven ? 90 : 45);
                                 ActivePilot.extendAngleAirToAir = BDAMath.RoundToUnit(ActivePilot.extendAngleAirToAir, 1f);
                             }
                             else
@@ -1810,6 +1814,9 @@ namespace BDArmory.UI
                                 GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendAngleAirToAir_Context"), contextLabel);
                                 evadeLines++;
                             }
+                            #endregion
+
+                            #region Extend Distance Air-to-Ground (Guns)
                             if (!NumFieldsEnabled)
                             {
                                 ActivePilot.extendDistanceAirToGroundGuns =
@@ -1829,7 +1836,9 @@ namespace BDArmory.UI
                                 GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendDistanceAirToGroundGuns_Context"), contextLabel);
                                 evadeLines++;
                             }
+                            #endregion
 
+                            #region Extend Distance Air-to-Ground
                             if (!NumFieldsEnabled)
                             {
                                 ActivePilot.extendDistanceAirToGround =
@@ -1849,7 +1858,9 @@ namespace BDArmory.UI
                                 GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendDistanceAirToGround_Context"), contextLabel);
                                 evadeLines++;
                             }
+                            #endregion
 
+                            #region Extend Target triggers
                             if (!NumFieldsEnabled)
                             {
                                 ActivePilot.extendTargetVel =
@@ -1909,6 +1920,7 @@ namespace BDArmory.UI
                                 GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendDist"), contextLabel);//"dynamic damp min"
                                 evadeLines++;
                             }
+                            #endregion
                         }
                         ActivePilot.canExtend = GUI.Toggle(ToggleButtonRect(leftIndent, evadeLines, contentWidth), ActivePilot.canExtend, Localizer.Format("#LOC_BDArmory_ExtendToggle"), ActivePilot.canExtend ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Dynamic pid"
                         evadeLines++;
@@ -2071,7 +2083,7 @@ namespace BDArmory.UI
                         miscLines += 1.25f;
                         if (contextTipsEnabled)
                         {
-                            GUI.Label(ContextLabelRect(leftIndent, miscLines), Localizer.Format("#LOC_BDArmory_AIWindow_standby"), Label);//"Activace when target in guard range"
+                            GUI.Label(ContextLabelRect(leftIndent, miscLines), Localizer.Format("#LOC_BDArmory_AIWindow_standby"), Label);//"Activate when target in guard range"
                             miscLines++;
                         }
 

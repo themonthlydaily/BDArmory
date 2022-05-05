@@ -1,4 +1,4 @@
-v1.5.0.0-pre
+﻿v1.5.0.0-pre
 FIXES
 - Fix 'resizeSquare' texture not being loaded sometimes (due to a race condition?).
 - Clean up log spam from ExplosionFX.
@@ -30,7 +30,7 @@ IMPROVEMENTS
 	- Add a 'Waypoint Terrain Avoidance' slider to the pilot AI to control the range and strength of the waypoint terrain avoidance reaction.
 	- Fixes AI GUI slider increments to match AI PAW.
 	- Adds Dynamic Damping P/Y/R readouts to AI GUI.
-  - Fix AI takeoff behavior 
+  - Fix AI takeoff behavior
   - Add Store/Restore option to save control surface configs in Pilot AI
   - Add extend angle to AI to clamp climb/dive angle when doing Air-to-air extending
 - GameModes:
