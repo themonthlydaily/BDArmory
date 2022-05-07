@@ -104,6 +104,7 @@ namespace BDArmory.Utils
             {
                 if (armorType == 1) return; //ArmorType "None"; no armor to block/reduce blast, take full damage
             }
+            if (BDArmorySettings.PAINTBALL_MODE) return; //don't damage armor if paintball mode
             float thickness = (float)hitPart.GetArmorThickness();
             if (thickness <= 0) return; //No armor present to spall/damage
 
@@ -206,6 +207,7 @@ namespace BDArmory.Utils
             /// Calculates # hits per m^2 based on distribution across sphere detonationDist in radius
             /// Shrapnel penetration dist determined by caliber, penetration. Penetration = -1 is part only hit by blast/airburst
             /// </summary>
+            if (BDArmorySettings.PAINTBALL_MODE) return; //don't damage armor if paintball mode
             float thickness = (float)hitPart.GetArmorThickness();
             if (thickness < 1)
             {
@@ -350,6 +352,7 @@ namespace BDArmory.Utils
             /// Returns boolean; True = armor stops explosion, False = armor blowthrough
             /// </summary>
             //use blastTotalPressure to get MPa of shock on plate, compare to armor mat tolerances
+            if (BDArmorySettings.PAINTBALL_MODE) return true; //don't damage armor if paintball mode
             float thickness = (float)hitPart.GetArmorThickness();
             if (thickness <= 0) return false; //no armor to stop explosion
             float spallArea;  //using this as a hack for affected srf. area, convert m2 to cm2
@@ -686,7 +689,7 @@ namespace BDArmory.Utils
             {
                 yieldStrength *= 0.7f; //necking and point embrittlement reduce total tensile strength of material
             }
-            penetration = Mathf.Min(((Energy / yieldStrength) * thickness * APmod), (length * Mathf.Sqrt((sabot ? 19100 : 11340) / Density) * 0.62f * APmod));
+            penetration = Mathf.Min(((Energy / yieldStrength) * thickness * APmod), (length * Mathf.Sqrt((sabot ? 19100 : 11340) / Density) * (sabot ? 0.385f : 1) * APmod));
             //cap penetration to max possible pen depth from hypervelocity impact
             //need to re-add APBulletMod to sabots, also need to reduce sabot pen depth by about 0.6x; Abrams sabot ammos can apparently pen about their length through steel
             //penetration in mm
@@ -696,7 +699,7 @@ namespace BDArmory.Utils
             {
                 Debug.Log("[BDArmory.ProjectileUtils{Calc Penetration}]: Energy: " + Energy + "; caliber: " + caliber + "; newCaliber: " + newCaliber);
                 Debug.Log("[BDArmory.ProjectileUtils{Calc Penetration}]: Ductility:" + Ductility + "; Density: " + Density + "; Strength: " + Strength + "; thickness: " + thickness);
-                Debug.Log("[BDArmory.ProjectileUtils{Calc Penetration}]: Length: " + length + "; sabot: " + sabot + "Penetration: " + Mathf.Round(penetration / 10) + " cm");
+                Debug.Log("[BDArmory.ProjectileUtils{Calc Penetration}]: Length: " + length + "; sabot: " + sabot + " ;Penetration: " + Mathf.Round(penetration / 10) + " cm");
             }
             return penetration;
         }

@@ -4872,7 +4872,7 @@ namespace BDArmory.Weapons
                         //maxDeviation *= Mathf.Clamp(bulletInfo.subProjectileCount/5, 2, 5); //modify deviation if shot vs slug
                         AccAdjust(null, null);
                     }
-                    if (bulletInfo.apBulletMod >= 1.1)
+                    if (bulletInfo.apBulletMod >= 1.1 || SabotRound)
                     {
                         guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_AP") + " ";
                     }

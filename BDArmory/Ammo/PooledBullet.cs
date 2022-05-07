@@ -1005,7 +1005,7 @@ namespace BDArmory.Bullets
                         //distanceTraveled += hit.distance;
                         if (!fuzeTriggered)
                         {
-                            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.PooledBullet]: Delay Fuze Tripped");
+                            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.PooledBullet]: Delay Fuze Tripped at t: " + Time.time);
                             fuzeTriggered = true;
                             StartCoroutine(DelayedDetonationRoutine());
                         }
@@ -1016,7 +1016,7 @@ namespace BDArmory.Bullets
                         {
                             if (!fuzeTriggered)
                             {
-                                //Debug.Log("[BDArmory.PooledBullet]: Delay Fuze Tripped");
+                                if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.PooledBullet]: Penetrating Fuze Tripped at t: " + Time.time);
                                 fuzeTriggered = true;
                                 StartCoroutine(DelayedDetonationRoutine());
                             }
@@ -1034,7 +1034,7 @@ namespace BDArmory.Bullets
                     }
                     if (!viableBullet)
                     {
-                        //Debug.Log("[BDArmory.PooledBullet]: !viable bullet, removing");
+                        Debug.Log("[BDArmory.PooledBullet]: !viable bullet, removing");
                         ExplosiveDetonation(hitPart, hit, bulletRay, true);
                         ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, ExplosionSourceType.Bullet, bulletMass, penetrationFactor); //calc daamge from bullet exploding
                         hasDetonated = true;
@@ -1083,6 +1083,7 @@ namespace BDArmory.Bullets
                         FXMonger.Splash(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, 0), tntMass * 20);
                     }
                 }
+                if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.PooledBullet]: Delayed Detonation at: " + Time.time);
                 KillBullet();
             }
         }
