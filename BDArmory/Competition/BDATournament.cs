@@ -262,7 +262,7 @@ namespace BDArmory.Competition
             else // Make teams from the folders under the spawn folder.
             {
                 var teamDirs = Directory.GetDirectories(abs_folder);
-                if (teamDirs.Length == 0) // Make teams from each vessel in the spawn folder.
+                if (teamDirs.Length < 2) // Make teams from each vessel in the spawn folder. Allow for a single subfolder for putting bad craft or other tmp things in.
                 {
                     numberOfTeams = -1; // Flag for treating craft files as folder names.
                     craftFiles = Directory.GetFiles(abs_folder, "*.craft").ToList();
@@ -858,7 +858,7 @@ namespace BDArmory.Competition
 
             if (BDArmorySettings.AUTO_RESUME_TOURNAMENT && BDArmorySettings.AUTO_QUIT_AT_END_OF_TOURNAMENT && TournamentAutoResume.Instance != null)
             {
-                TournamentAutoResume.Instance.AutoQuit(5);
+                TournamentAutoResume.AutoQuit(5);
                 message = "Quitting KSP in 5s due to reaching the end of a tournament.";
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
                 Debug.LogWarning("[BDArmory.BDATournament]: " + message);
@@ -1317,7 +1317,7 @@ namespace BDArmory.Competition
             return false;
         }
 
-        public void AutoQuit(float delay = 1) => StartCoroutine(AutoQuitCoroutine(delay));
+        public static void AutoQuit(float delay = 1) => Instance.StartCoroutine(Instance.AutoQuitCoroutine(delay));
 
         /// <summary>
         /// Automatically quit KSP after a delay.
@@ -1329,6 +1329,7 @@ namespace BDArmory.Competition
             yield return new WaitForSeconds(delay);
             HighLogic.LoadScene(GameScenes.MAINMENU);
             yield return new WaitForSeconds(0.5f); // Pause on the Main Menu a moment, then quit.
+            Debug.Log("[BDArmory.BDATournament]: Quitting KSP.");
             Application.Quit();
         }
     }

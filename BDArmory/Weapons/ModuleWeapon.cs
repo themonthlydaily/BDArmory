@@ -3470,14 +3470,6 @@ namespace BDArmory.Weapons
                         ++i;
                     }
             }
-            if (!BDArmorySettings.DEBUG_LINES)
-            {
-                    if (trajectoryRenderer != null)
-                    {
-                        trajectoryRenderer.enabled = false;
-                        trajectoryRenderer = null;
-                    }
-            }
             return elapsedTime;
         }
 

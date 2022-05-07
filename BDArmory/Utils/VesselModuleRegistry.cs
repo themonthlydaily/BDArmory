@@ -243,10 +243,10 @@ namespace BDArmory.Utils
         /// </summary>
         /// <typeparam name="T">The module type to get.</typeparam>
         /// <param name="vessel">The vessel to get the modules from.</param>
-        /// <returns>An enumerable for use in foreach loops or .ToList calls if the vessel exists, else null.</returns>
+        /// <returns>An enumerable for use in foreach loops or .ToList.</returns>
         public static List<T> GetModules<T>(Vessel vessel) where T : class
         {
-            if (vessel == null || !vessel.loaded) return null;
+            if (vessel == null || !vessel.loaded) return new List<T>(); // Return empty list.
 
             if (typeof(T) == typeof(MissileFire)) { return GetMissileFires(vessel) as List<T>; }
             if (typeof(T) == typeof(MissileBase)) { return GetMissileBases(vessel) as List<T>; }
@@ -342,7 +342,7 @@ namespace BDArmory.Utils
 
         public static List<MissileFire> GetMissileFires(Vessel vessel)
         {
-            if (vessel == null || !vessel.loaded) return null;
+            if (vessel == null || !vessel.loaded) return new List<MissileFire>();
             if (!registryMissileFire.ContainsKey(vessel))
             {
                 registryMissileFire.Add(vessel, vessel.FindPartModulesImplementing<MissileFire>());
@@ -366,7 +366,7 @@ namespace BDArmory.Utils
 
         public static List<MissileBase> GetMissileBases(Vessel vessel)
         {
-            if (vessel == null || !vessel.loaded) return null;
+            if (vessel == null || !vessel.loaded) return new List<MissileBase>();
             if (!registryMissileBase.ContainsKey(vessel))
             {
                 registryMissileBase.Add(vessel, vessel.FindPartModulesImplementing<MissileBase>());
@@ -390,7 +390,7 @@ namespace BDArmory.Utils
 
         public static List<BDModulePilotAI> GetBDModulePilotAIs(Vessel vessel)
         {
-            if (vessel == null || !vessel.loaded) return null;
+            if (vessel == null || !vessel.loaded) return new List<BDModulePilotAI>();
             if (!registryBDModulePilotAI.ContainsKey(vessel))
             {
                 registryBDModulePilotAI.Add(vessel, vessel.FindPartModulesImplementing<BDModulePilotAI>());
@@ -414,7 +414,7 @@ namespace BDArmory.Utils
 
         public static List<BDModuleSurfaceAI> GetBDModuleSurfaceAIs(Vessel vessel)
         {
-            if (vessel == null || !vessel.loaded) return null;
+            if (vessel == null || !vessel.loaded) return new List<BDModuleSurfaceAI>();
             if (!registryBDModuleSurfaceAI.ContainsKey(vessel))
             {
                 registryBDModuleSurfaceAI.Add(vessel, vessel.FindPartModulesImplementing<BDModuleSurfaceAI>());
@@ -438,7 +438,7 @@ namespace BDArmory.Utils
 
         public static List<IBDAIControl> GetIBDAIControls(Vessel vessel)
         {
-            if (vessel == null || !vessel.loaded) return null;
+            if (vessel == null || !vessel.loaded) return new List<IBDAIControl>();
             if (!registryIBDAIControl.ContainsKey(vessel))
             {
                 registryIBDAIControl.Add(vessel, vessel.FindPartModulesImplementing<IBDAIControl>());
@@ -462,7 +462,7 @@ namespace BDArmory.Utils
 
         public static List<ModuleWeapon> GetModuleWeapons(Vessel vessel)
         {
-            if (vessel == null || !vessel.loaded) return null;
+            if (vessel == null || !vessel.loaded) return new List<ModuleWeapon>();
             if (!registryModuleWeapon.ContainsKey(vessel))
             {
                 registryModuleWeapon.Add(vessel, vessel.FindPartModulesImplementing<ModuleWeapon>());
@@ -474,7 +474,7 @@ namespace BDArmory.Utils
 
         public static List<IBDWeapon> GetIBDWeapons(Vessel vessel)
         {
-            if (vessel == null || !vessel.loaded) return null;
+            if (vessel == null || !vessel.loaded) return new List<IBDWeapon>();
             if (!registryIBDWeapon.ContainsKey(vessel))
             {
                 registryIBDWeapon.Add(vessel, vessel.FindPartModulesImplementing<IBDWeapon>());
@@ -486,7 +486,7 @@ namespace BDArmory.Utils
 
         public static List<ModuleEngines> GetModuleEngines(Vessel vessel)
         {
-            if (vessel == null || !vessel.loaded) return null;
+            if (vessel == null || !vessel.loaded) return new List<ModuleEngines>();
             if (!registryModuleEngines.ContainsKey(vessel))
             {
                 registryModuleEngines.Add(vessel, vessel.FindPartModulesImplementing<ModuleEngines>());
@@ -495,10 +495,10 @@ namespace BDArmory.Utils
             }
             return registryModuleEngines[vessel];
         }
-        
+
         public static List<ModuleResourceIntake> GetModuleIntakes(Vessel vessel)
         {
-            if (vessel == null || !vessel.loaded) return null;
+            if (vessel == null || !vessel.loaded) return new List<ModuleResourceIntake>();
             if (!registryModuleIntakes.ContainsKey(vessel))
             {
                 registryModuleIntakes.Add(vessel, vessel.FindPartModulesImplementing<ModuleResourceIntake>());
@@ -509,7 +509,7 @@ namespace BDArmory.Utils
         }
         public static List<ModuleCommand> GetModuleCommands(Vessel vessel)
         {
-            if (vessel == null || !vessel.loaded) return null;
+            if (vessel == null || !vessel.loaded) return new List<ModuleCommand>();
             if (!registryModuleCommand.ContainsKey(vessel))
             {
                 registryModuleCommand.Add(vessel, vessel.FindPartModulesImplementing<ModuleCommand>());
@@ -533,7 +533,7 @@ namespace BDArmory.Utils
 
         public static List<KerbalSeat> GetKerbalSeats(Vessel vessel)
         {
-            if (vessel == null || !vessel.loaded) return null;
+            if (vessel == null || !vessel.loaded) return new List<KerbalSeat>();
             if (!registryKerbalSeat.ContainsKey(vessel))
             {
                 registryKerbalSeat.Add(vessel, vessel.FindPartModulesImplementing<KerbalSeat>());
@@ -557,7 +557,7 @@ namespace BDArmory.Utils
 
         public static List<KerbalEVA> GetKerbalEVAs(Vessel vessel)
         {
-            if (vessel == null || !vessel.loaded) return null;
+            if (vessel == null || !vessel.loaded) return new List<KerbalEVA>();
             if (!registryKerbalEVA.ContainsKey(vessel))
             {
                 registryKerbalEVA.Add(vessel, vessel.FindPartModulesImplementing<KerbalEVA>());
