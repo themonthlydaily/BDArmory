@@ -60,6 +60,7 @@ namespace BDArmory.UI
                 BDArmorySettings.REMOTE_ORCHESTRATION_WINDOW_WIDTH,
                 _windowHeight
             );
+            BDArmorySetup.SetGUIOpacity();
             BDArmorySetup.WindowRectRemoteOrchestration = GUI.Window(
                 80085,
                 BDArmorySetup.WindowRectRemoteOrchestration,
@@ -67,6 +68,7 @@ namespace BDArmory.UI
                 Localizer.Format("#LOC_BDArmory_BDARemoteOrchestration_Title"),//"BDA Remote Orchestration"
                 BDArmorySetup.BDGuiSkin.window
             );
+            BDArmorySetup.SetGUIOpacity(false);
             GUIUtils.UpdateGUIRect(BDArmorySetup.WindowRectRemoteOrchestration, _guiCheckIndex);
         }
 
