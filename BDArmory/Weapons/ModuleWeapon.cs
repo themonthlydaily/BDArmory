@@ -554,8 +554,8 @@ namespace BDArmory.Weapons
         public float tntMass = 0;
 
 
-        public bool ImpulseInConfig = false; //record if impulse weapon in config for resetting weapons post mutator
-        public bool GraviticInConfig = false; //record if gravitic weapon in config for resetting weapons post mutator
+        //public bool ImpulseInConfig = false; //record if impulse weapon in config for resetting weapons post mutator
+        //public bool GraviticInConfig = false; //record if gravitic weapon in config for resetting weapons post mutator
         //public List<string> attributeList;
 
         public bool explosive = false;
@@ -1338,7 +1338,7 @@ namespace BDArmory.Weapons
                     }
                 }
             }
-
+            /*
             if (graviticWeapon)
             {
                 GraviticInConfig = true;
@@ -1346,7 +1346,7 @@ namespace BDArmory.Weapons
             if (impulseWeapon)
             {
                 ImpulseInConfig = true;
-            }
+            }*/
             if (eWeaponType != WeaponTypes.Laser)
             {
                 SetupAmmo(null, null);
@@ -1362,6 +1362,22 @@ namespace BDArmory.Weapons
                     {
                         if (BDArmorySettings.DEBUG_WEAPONS)
                             Debug.Log("[BDArmory.ModuleWeapon]: AmmoType Loaded : " + currentType);
+                        if (beehive)
+                        {
+                            if (!BulletInfo.bulletNames.Contains(rocketInfo.subMunitionType) || !RocketInfo.rocketNames.Contains(rocketInfo.subMunitionType))
+                            {
+                                beehive = false;
+                                Debug.Log("[BDArmory.ModuleWeapon]: Invalid submunition on : " + currentType);
+                            }
+                            else
+                            {
+                                if (RocketInfo.rocketNames.Contains(rocketInfo.subMunitionType))
+                                {
+                                    RocketInfo sRocket = RocketInfo.rockets[rocketInfo.subMunitionType];
+                                    SetupRocketPool(sRocket.name, sRocket.rocketModelPath); //Will need to move this if rockets ever get ammobelt functionality
+                                }
+                            }
+                        }
                     }
                 }
                 else
@@ -1375,6 +1391,14 @@ namespace BDArmory.Weapons
                     {
                         if (BDArmorySettings.DEBUG_WEAPONS)
                             Debug.Log("[BDArmory.ModuleWeapon]: BulletType Loaded : " + currentType);
+                        if (beehive)
+                        {
+                            if (!BulletInfo.bulletNames.Contains(bulletInfo.subMunitionType))
+                            {
+                                beehive = false;
+                                Debug.Log("[BDArmory.ModuleWeapon]: Invalid submunition on : " + currentType);
+                            }
+                        }
                     }
                 }
             }
@@ -1869,11 +1893,14 @@ namespace BDArmory.Weapons
                                     }
                                     pBullet.EMP = bulletInfo.EMP;
                                     pBullet.nuclear = bulletInfo.nuclear;
-                                    pBullet.beehive = bulletInfo.beehive;
-                                    if (bulletInfo.beehive) pBullet.subMunitionType = BulletInfo.bullets[bulletInfo.subMunitionType];
+                                    pBullet.beehive = beehive;
+                                    if (bulletInfo.beehive)
+                                    {
+                                        pBullet.subMunitionType = BulletInfo.bullets[bulletInfo.subMunitionType];
+                                    }
                                     //pBullet.homing = BulletInfo.homing;
-                                    pBullet.impulse = bulletInfo.impulse;
-                                    pBullet.massMod = bulletInfo.massMod;
+                                    pBullet.impulse = Impulse;
+                                    pBullet.massMod = massAdjustment;
                                     switch (bulletDragType)
                                     {
                                         case BulletDragTypes.None:
@@ -2422,9 +2449,15 @@ namespace BDArmory.Weapons
                                 rocket.maxAirDetonationRange = maxAirDetonationRange;
                                 rocket.tntMass = rocketInfo.tntMass;
                                 rocket.shaped = rocketInfo.shaped;
-                                rocket.concussion = impulseWeapon;
-                                rocket.gravitic = graviticWeapon;
+                                rocket.concussion = rocketInfo.impulse;
+                                rocket.gravitic = rocketInfo.gravitic; ;
                                 rocket.EMP = electroLaser; //borrowing this as a EMP weapon bool, since a rocket isn't going to be a laser
+                                rocket.nuclear = rocketInfo.nuclear;
+                                rocket.beehive = beehive;
+                                if (beehive)
+                                {
+                                    rocket.subMunitionType = rocketInfo.subMunitionType;
+                                }
                                 rocket.choker = choker;
                                 rocket.impulse = Impulse;
                                 rocket.massMod = massAdjustment;
@@ -2432,6 +2465,7 @@ namespace BDArmory.Weapons
                                 rocket.randomThrustDeviation = thrustDeviation;
                                 rocket.bulletDmgMult = bulletDmgMult;
                                 rocket.sourceVessel = vessel;
+                                rocket.sourceWeapon = this.part;
                                 rocketObj.transform.SetParent(currentRocketTfm.parent);
                                 rocket.rocketName = GetShortName() + " rocket";
                                 rocket.team = weaponManager.Team.Name;
@@ -2503,6 +2537,12 @@ namespace BDArmory.Weapons
                                             rocket.concussion = impulseWeapon;
                                             rocket.gravitic = graviticWeapon;
                                             rocket.EMP = electroLaser;
+                                            rocket.nuclear = rocketInfo.nuclear;
+                                            rocket.beehive = beehive;
+                                            if (beehive)
+                                            {
+                                                rocket.subMunitionType = rocketInfo.subMunitionType;
+                                            }
                                             rocket.choker = choker;
                                             rocket.impulse = Impulse;
                                             rocket.massMod = massAdjustment;
@@ -2510,6 +2550,7 @@ namespace BDArmory.Weapons
                                             rocket.randomThrustDeviation = thrustDeviation;
                                             rocket.bulletDmgMult = bulletDmgMult;
                                             rocket.sourceVessel = vessel;
+                                            rocket.sourceWeapon = this.part;
                                             rocketObj.transform.SetParent(currentRocketTfm);
                                             rocket.parentRB = part.rb;
                                             rocket.rocket = RocketInfo.rockets[currentType];
@@ -4840,6 +4881,8 @@ namespace BDArmory.Weapons
                 ParseBulletFuzeType(bulletInfo.fuzeType);
                 tntMass = bulletInfo.tntMass;
                 beehive = bulletInfo.beehive;
+                Impulse = bulletInfo.impulse;
+                massAdjustment = bulletInfo.massMod;
                 if (!tracerOverrideWidth)
                 {
                     tracerStartWidth = caliber / 300;
@@ -4922,13 +4965,19 @@ namespace BDArmory.Weapons
                 ProjectileCount = rocketInfo.subProjectileCount;
                 rocketModelPath = rocketInfo.rocketModelPath;
                 SelectedAmmoType = rocketInfo.name; //store selected ammo name as string for retrieval by web orc filter/later GUI implementation
-
+                beehive = rocketInfo.beehive;
                 tntMass = rocketInfo.tntMass;
+                Impulse = rocketInfo.force;
+                massAdjustment = rocketInfo.massMod;
                 if (rocketInfo.subProjectileCount > 1)
                 {
                     guiAmmoTypeString = Localizer.Format("#LOC_BDArmory_Ammo_Shot") + " "; // maybe add an int value to these for future Missilefire SmartPick expansion? For now, choose loadouts carefuly!
                 }
-                if (rocketInfo.explosive)
+                if (rocketInfo.nuclear)
+                {
+                    guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Nuclear") + " ";
+                }
+                if (rocketInfo.explosive && !rocketInfo.nuclear)
                 {
                     if (rocketInfo.flak)
                     {
@@ -5184,16 +5233,25 @@ namespace BDArmory.Weapons
                             output.AppendLine("");
                             continue;
                         }
-                        output.AppendLine($"Rocket type: {ammoList[i]}");
+                        output.AppendLine($"Bullet type: {(string.IsNullOrEmpty(rinfo.DisplayName) ? rinfo.name : rinfo.DisplayName)}");
                         output.AppendLine($"Rocket mass: {Math.Round(rinfo.rocketMass * 1000, 2)} kg");
                         //output.AppendLine($"Thrust: {thrust}kn"); mass and thrust don't really tell us the important bit, so lets replace that with accel
                         output.AppendLine($"Acceleration: {rinfo.thrust / rinfo.rocketMass}m/s2");
-                        if (rinfo.explosive)
+                        if (rinfo.explosive && !rinfo.nuclear)
                         {
                             output.AppendLine($"Blast:");
                             output.AppendLine($"- tnt mass:  {Math.Round((rinfo.tntMass), 3)} kg");
                             output.AppendLine($"- radius:  {Math.Round(BlastPhysicsUtils.CalculateBlastRange(rinfo.tntMass), 2)} m");
                             output.AppendLine($"Proximity Fuzed: {rinfo.flak}");
+                        }
+                        if (rinfo.nuclear)
+                        {
+                            output.AppendLine($"Nuclear Rocket:");
+                            output.AppendLine($"- yield:  {Math.Round(rinfo.tntMass, 3)} kT");
+                            if (rinfo.EMP)
+                            {
+                                output.AppendLine($"- generates EMP");
+                            }
                         }
                         output.AppendLine("");
                         if (rinfo.subProjectileCount > 1)
@@ -5212,9 +5270,9 @@ namespace BDArmory.Weapons
                             if (graviticWeapon)
                             {
                                 output.AppendLine($"Gravitic warhead:");
-                                output.AppendLine($"- weight added per part hit:{massAdjustment * 1000} kg");
+                                output.AppendLine($"- Mass added per part hit:{massAdjustment * 1000} kg");
                             }
-                            if (electroLaser)
+                            if (electroLaser && !rinfo.nuclear)
                             {
                                 output.AppendLine($"EMP warhead:");
                                 output.AppendLine($"- can temporarily shut down targets");
@@ -5229,7 +5287,23 @@ namespace BDArmory.Weapons
                                 output.AppendLine($"Incendiary:");
                                 output.AppendLine($"- Covers targets in inferno gel");
                             }
+                            if (rinfo.beehive)
+                            {
+                                output.AppendLine($"Cluster Rocket:");
+                                if (BulletInfo.bulletNames.Contains(rinfo.subMunitionType))
+                                {
+                                    BulletInfo sinfo = BulletInfo.bullets[rinfo.subMunitionType.ToString()];
+                                    output.AppendLine($"- deploys {sinfo.subProjectileCount}x {(string.IsNullOrEmpty(sinfo.DisplayName) ? sinfo.name : sinfo.DisplayName)}");
+                                }
+                                else if (RocketInfo.rocketNames.Contains(rinfo.subMunitionType))
+                                {
+                                    RocketInfo sinfo = RocketInfo.rockets[rinfo.subMunitionType.ToString()];
+                                    output.AppendLine($"- deploys {sinfo.subProjectileCount}x {(string.IsNullOrEmpty(sinfo.DisplayName) ? sinfo.name : sinfo.DisplayName)}");
+                                }
+                            }
                         }
+
+
                     }
                     if (externalAmmo)
                     {

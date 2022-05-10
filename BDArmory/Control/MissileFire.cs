@@ -2510,7 +2510,9 @@ namespace BDArmory.Control
                 }
                 if (ml.warheadType == MissileBase.WarheadTypes.EMP || ml.warheadType == MissileBase.WarheadTypes.Nuke)
                 {
-                    if (ml.StandOffDistance > 0 && Vector3.Distance(transform.position + vessel.Velocity(), currentTarget.position + currentTarget.velocity) > ml.StandOffDistance)
+                    float timeToImpact;
+                    MissileGuidance.GetAirToAirTarget(currentTarget.position, currentTarget.velocity, currentTarget.Vessel.acceleration_immediate, vessel, out timeToImpact);
+                    if (ml.StandOffDistance > 0 && Vector3.Distance(transform.position + (vessel.Velocity() * timeToImpact), currentTarget.position + currentTarget.velocity) > ml.StandOffDistance) //if predicted craft position will be within blast radius when missile arrives, break off
                     {
                         DisengageAfterFiring = true;
                     }
@@ -3543,9 +3545,11 @@ namespace BDArmory.Control
                 }
             }
             overrideTarget = null; //null the override target if it cannot be used
-
+            
             //FIXME - change logic to instead use weightings, instead of rigid missile? > air? > ground if then else priority
-            //add air/ground weight to the target selection weighting
+            //2 ways to do this. W1 - have it go through the 4 engagement types and get max range from each, then look for targets for longest range weapon, then next, etc.
+            //W2 - add a prioritize Air/Ground toggle - though would this be a ignore air tgts until no more gnd, etc?
+            //or just have it be a pair of additional weighting s for the standard target priority system
 
             TargetInfo potentialTarget = null;
             //=========HIGH PRIORITY MISSILES=============

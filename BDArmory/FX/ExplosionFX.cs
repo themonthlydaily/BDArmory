@@ -407,7 +407,7 @@ namespace BDArmory.FX
             if (warheadType == WarheadTypes.ContinuousRod)
             {
                 if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ExplosionFX]: " + p.name + " at " + Vector3.Angle(direction, (hit.point - Position).normalized) + " angle from CR explosion direction");
-                if (Vector3.Angle(direction, (hit.point - Position).normalized) >= 75 && Vector3.Angle(direction, (hit.point - Position).normalized) <= 105)
+                if (Vector3.Angle(direction, (hit.point - Position).normalized) >= 60 && Vector3.Angle(direction, (hit.point - Position).normalized) <= 90)
                 {
                     return true;
                 }
@@ -579,7 +579,7 @@ namespace BDArmory.FX
                                     {
                                         GUIUtils.DrawLineBetweenWorldPositions(Position, hit.point, 2, Color.blue);
                                     }
-                                    if (distance < Range / 2)
+                                    else if (distance < Range / 2)
                                     {
                                         GUIUtils.DrawLineBetweenWorldPositions(Position, hit.point, 2, Color.red);
                                     }

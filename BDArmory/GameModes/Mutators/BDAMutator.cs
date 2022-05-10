@@ -135,8 +135,6 @@ namespace BDArmory.GameModes
                                 weapon.Current.externalAmmo = true;
                             }
                             weapon.Current.resourceSteal = mutatorInfo.resourceSteal;
-                            weapon.Current.impulseWeapon = false;
-                            weapon.Current.graviticWeapon = false;
                             //Debug.Log("[MUTATOR] current weapon status: " + weapon.Current.WeaponStatusdebug());
                         }
                 }
@@ -230,8 +228,6 @@ namespace BDArmory.GameModes
                     weapon.Current.maxDeviation = weapon.Current.baseDeviation;
                     weapon.Current.laserDamage = weapon.Current.baseLaserdamage;
                     weapon.Current.pulseLaser = weapon.Current.pulseInConfig;
-                    weapon.Current.impulseWeapon = weapon.Current.ImpulseInConfig;
-                    weapon.Current.graviticWeapon = weapon.Current.GraviticInConfig;
                     weapon.Current.instagib = false;
                     weapon.Current.strengthMutator = 1;
                     weapon.Current.SetupAmmo(null, null);

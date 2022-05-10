@@ -1818,7 +1818,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 if (warheadType == WarheadTypes.ContinuousRod) //Have CR missiles target slightly above target to ensure craft caught in planar blast AOE
                 {
-                    TargetPosition += VectorUtils.GetUpDirection(TargetPosition) * blastRadius * 0.25f; 
+                    TargetPosition += VectorUtils.GetUpDirection(TargetPosition) * blastRadius * 0.33f;
                 }
                 DrawDebugLine(transform.position + (part.rb.velocity * Time.fixedDeltaTime), TargetPosition);
                 float timeToImpact;
@@ -1830,9 +1830,9 @@ namespace BDArmory.Weapons.Missiles
                 }
 
                 //proxy detonation
-                if (proxyDetonate && ((TargetPosition + (TargetVelocity * Time.fixedDeltaTime)) - (transform.position)).sqrMagnitude < Mathf.Pow(GetBlastRadius() * 0.5f, 2))
+                if (proxyDetonate && !DetonateAtMinimumDistance && ((TargetPosition + (TargetVelocity * Time.fixedDeltaTime)) - (transform.position)).sqrMagnitude < Mathf.Pow(GetBlastRadius() * 0.5f, 2))
                 {
-                    part.Destroy();
+                    part.Destroy(); //^look into how this interacts with MissileBase.DetonationState
                 }
             }
             else
@@ -1893,7 +1893,7 @@ namespace BDArmory.Weapons.Missiles
                 }
 
                 //proxy detonation
-                if (proxyDetonate && ((TargetPosition + (TargetVelocity * Time.fixedDeltaTime)) - (transform.position)).sqrMagnitude < Mathf.Pow(GetBlastRadius() * 0.5f, 2))
+                if (proxyDetonate && !DetonateAtMinimumDistance && ((TargetPosition + (TargetVelocity * Time.fixedDeltaTime)) - (transform.position)).sqrMagnitude < Mathf.Pow(GetBlastRadius() * 0.5f, 2))
                 {
                     part.Destroy();
                 }
@@ -1944,14 +1944,15 @@ namespace BDArmory.Weapons.Missiles
             }
             */
             if (SourceVessel == null) SourceVessel = vessel;
-
-            if (part.FindModuleImplementing<BDExplosivePart>() != null)
+            if (warheadType == WarheadTypes.Standard)
             {
-                part.FindModuleImplementing<BDExplosivePart>().DetonateIfPossible();
+                var tnt = part.FindModuleImplementing<BDExplosivePart>();
+                tnt.DetonateIfPossible();
             }
-            else if (part.FindModuleImplementing<BDModuleNuke>() != null)
+            else if (warheadType == WarheadTypes.Nuke)
             {
-                part.FindModuleImplementing<BDModuleNuke>().Detonate();
+                var U235 = part.FindModuleImplementing<BDModuleNuke>();
+                U235.Detonate();
             }
             else //TODO: Remove this backguard compatibility
             {
