@@ -8,7 +8,7 @@ FIXES
 - Fix ProcParts not updating HP/Armor volume.
 - Adds missing FFAR rocket ammo to universal ammo boxes.
 - Fixes TOW missile FX.
-
+- Fixes Proc Armor bugs
 IMPROVEMENTS
 - General:
 	- Major internal refactor to better organise code.
@@ -22,6 +22,7 @@ IMPROVEMENTS
 	- Debug labels now organized by type for easier debug tracking.
 	- Refactor the debug settings to be more specific and to have an on-screen only debug labels.
     - Adds SelfSealingTanks/Firebottle options to Proc Part Tanks
+	- Adds Equilateral Triangle Proc Armor panel
 - AI:
 	- Add a 5° deadzone around being on target for dynamic damping to avoid feed-back loop in PID.
 	- Add a check for requested extending already being satisfied.
