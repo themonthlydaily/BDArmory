@@ -36,7 +36,7 @@ namespace BDArmory.Bullets
         public static RocketInfo defaultRocket;
 
         public RocketInfo(string name, string DisplayName, float rocketMass, float caliber, float thrust, float thrustTime,
-                         bool shaped, bool flak, bool EMP, bool choker, bool gravitic, bool impulse, float massMod, float foce, bool explosive, bool incendiary, float tntMass, bool nuclear, bool beehive, string subMunitionType, int subProjectileCount, float thrustDeviation, string rocketModelPath)
+                         bool shaped, bool flak, bool EMP, bool choker, bool gravitic, bool impulse, float massMod, float force, bool explosive, bool incendiary, float tntMass, bool nuclear, bool beehive, string subMunitionType, int subProjectileCount, float thrustDeviation, string rocketModelPath)
         {
             this.name = name;
             this.DisplayName = DisplayName;
@@ -93,7 +93,7 @@ namespace BDArmory.Bullets
                         (bool)ParseField(node, "gravitic", typeof(bool)),
                         (bool)ParseField(node, "impulse", typeof(bool)),
                         (float)ParseField(node, "massMod", typeof(float)),
-                        (float)ParseField(node, "impulse", typeof(float)),
+                        (float)ParseField(node, "force", typeof(float)),
                         (bool)ParseField(node, "explosive", typeof(bool)),
                         (bool)ParseField(node, "incendiary", typeof(bool)),
                         (float)ParseField(node, "tntMass", typeof(float)),
@@ -140,7 +140,7 @@ namespace BDArmory.Bullets
                             (bool)ParseField(node, "gravitic", typeof(bool)),
                             (bool)ParseField(node, "impulse", typeof(bool)),
                             (float)ParseField(node, "massMod", typeof(float)),
-                            (float)ParseField(node, "impulse", typeof(float)),
+                            (float)ParseField(node, "force", typeof(float)),
                             (bool)ParseField(node, "explosive", typeof(bool)),
                             (bool)ParseField(node, "incendiary", typeof(bool)),
                             (float)ParseField(node, "tntMass", typeof(float)),

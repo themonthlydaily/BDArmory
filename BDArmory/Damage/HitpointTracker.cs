@@ -118,6 +118,7 @@ namespace BDArmory.Damage
 
         private bool startsArmored = false;
         public bool ArmorPanel = false;
+
         //Part vars
         private float partMass = 0f;
         public Vector3 partSize;
@@ -126,6 +127,7 @@ namespace BDArmory.Damage
         [KSPField(isPersistant = true)]
         public float armorVolume = -1;
         private float sizeAdjust;
+
         AttachNode bottom;
         AttachNode top;
 
@@ -362,7 +364,7 @@ namespace BDArmory.Damage
             GameEvents.onPartDie.Add(OnPartDie);
             bottom = part.FindAttachNode("bottom");
             top = part.FindAttachNode("top");
-            calcPartSize();
+            if (armorVolume < 0) calcPartSize();
             SetupPrefab();
             if (HighLogic.LoadedSceneIsEditor && !isProcWing)
             {
@@ -391,7 +393,6 @@ namespace BDArmory.Damage
         void calcPartSize()
         {
             partSize = Vector3.zero;
-            armorVolume = -1;
             int topSize = 0;
             int bottomSize = 0;
             try

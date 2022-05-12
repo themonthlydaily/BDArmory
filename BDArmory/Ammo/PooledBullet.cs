@@ -726,6 +726,8 @@ namespace BDArmory.Bullets
             if (hitPart != null && ProjectileUtils.IsIgnoredPart(hitPart)) return false; // Ignore ignored parts.
             if (hitPart != null && hitPart == sourceWeapon) return false; // Ignore weapon that fired the bullet.
             if (hitPart != null && (hitPart == CurrentPart && CurrentPart.name.ToLower().Contains("armor"))) return false; //only have bullet hit armor panels once - no back armor to hit if penetration
+            if (hitPart != null && (hitPart.name.Contains("flagPart"))) return false; //ignore flags
+
             CurrentPart = hitPart;
             if (hitEVA != null)
             {

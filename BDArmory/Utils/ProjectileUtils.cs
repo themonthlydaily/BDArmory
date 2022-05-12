@@ -22,6 +22,7 @@ namespace BDArmory.Utils
             //No struts, they cause weird bugs :) -BahamutoD
             if (hitPart == null) return;
             if (hitPart.partInfo.name.Contains("Strut")) return;
+            if (hitPart.partInfo.name.Contains("flagPart")) return;
             if (IsIgnoredPart(hitPart)) return; // Ignore ignored parts.
 
             // Add decals
@@ -386,7 +387,7 @@ namespace BDArmory.Utils
                 float blowthroughFactor = (float)BlastPressure / ArmorTolerance;
                 if (BDArmorySettings.DEBUG_ARMOR)
                 {
-                    Debug.Log("[BDArmory.ProjectileUtils]: Beginning ExplosiveArmorDamage(); " + hitPart.name + ", ArmorType:" + Armor.ArmorTypeNum + "; Armor Thickness: " + thickness + "; BlastPressure: " + BlastPressure + "; BlowthroughFactor: " + blowthroughFactor); ;
+                    Debug.Log("[BDArmory.ProjectileUtils{CalculateExplosiveArmorDamage}]: Beginning ExplosiveArmorDamage(); " + hitPart.name + ", ArmorType:" + Armor.ArmorTypeNum + "; Armor Thickness: " + thickness + "; BlastPressure: " + BlastPressure + "; BlowthroughFactor: " + blowthroughFactor); ;
                 }
                 //is BlastUtils maxpressure in MPa? confirm blast pressure from ExplosionUtils on same scale/magnitude as armorTolerance
                 //something is going on, 25mm steed is enough to no-sell Hellfires (13kg tnt, 33m blastRadius
@@ -398,7 +399,7 @@ namespace BDArmory.Utils
                         hitPart.ReduceArmor(spallArea * thickness / 10); //cm3
                         if (BDArmorySettings.DEBUG_ARMOR)
                         {
-                            Debug.Log("[BDArmory.ProjectileUtils]: Armor rupture on " + hitPart.name + ", " + hitPart.vessel.GetName() + "! Size: " + spallArea + "; mass: " + spallMass + "kg");
+                            Debug.Log("[BDArmory.ProjectileUtils{CalculateExplosiveArmorDamage}]: Armor rupture on " + hitPart.name + ", " + hitPart.vessel.GetName() + "! Size: " + spallArea + "; mass: " + spallMass + "kg");
                         }
                         damage = hitPart.AddBallisticDamage(spallMass / 1000, spallArea, 1, blowthroughFactor, 1, 422.75f, explosionSource);
                         ApplyScore(hitPart, sourcevessel, 0, damage, "Spalling", explosionSource);
@@ -416,7 +417,7 @@ namespace BDArmory.Utils
                         spallMass = spallArea * (thickness / 30) * (Density / 1000000); //lose 1/3rd thickness from spalling
                         if (BDArmorySettings.DEBUG_ARMOR)
                         {
-                            Debug.Log("[BDArmory.ProjectileUtils]: Explosive Armor spalling" + hitPart.name + ", " + hitPart.vessel.GetName() + "! Size: " + spallArea + "; mass: " + spallMass + "kg");
+                            Debug.Log("[BDArmory.ProjectileUtils{CalculateExplosiveArmorDamage}]: Explosive Armor spalling" + hitPart.name + ", " + hitPart.vessel.GetName() + "! Size: " + spallArea + "; mass: " + spallMass + "kg");
                         }
                         if (hardness > 500)//armor holds, but spalling
                         {
@@ -451,7 +452,7 @@ namespace BDArmory.Utils
 
                             if (BDArmorySettings.DEBUG_ARMOR)
                             {
-                                Debug.Log("[BDArmory.ProjectileUtils]: Armor destruction on " + hitPart.name + ", " + hitPart.vessel.GetName() + "!");
+                                Debug.Log("[BDArmory.ProjectileUtils{CalculateExplosiveArmorDamage}]: Armor destruction on " + hitPart.name + ", " + hitPart.vessel.GetName() + "!");
                             }
                             if (BDArmorySettings.BATTLEDAMAGE)
                             {
@@ -468,7 +469,7 @@ namespace BDArmory.Utils
 
                             if (BDArmorySettings.DEBUG_ARMOR)
                             {
-                                Debug.Log("[BDArmory.ProjectileUtils]: Armor sundered, " + hitPart.name + ", " + hitPart.vessel.GetName() + "!");
+                                Debug.Log("[BDArmory.ProjectileUtils{CalculateExplosiveArmorDamage}]: Armor sundered, " + hitPart.name + ", " + hitPart.vessel.GetName() + "!");
                             }
                             if (BDArmorySettings.BATTLEDAMAGE)
                             {
@@ -504,7 +505,7 @@ namespace BDArmory.Utils
 
                                 if (BDArmorySettings.DEBUG_ARMOR)
                                 {
-                                    Debug.Log("[BDArmory.ProjectileUtils]: Armor destruction on " + hitPart.name + ", " + hitPart.vessel.GetName() + "!");
+                                    Debug.Log("[BDArmory.ProjectileUtils{CalculateExplosiveArmorDamage}]: Armor destruction on " + hitPart.name + ", " + hitPart.vessel.GetName() + "!");
                                 }
                                 if (BDArmorySettings.BATTLEDAMAGE)
                                 {
@@ -524,7 +525,7 @@ namespace BDArmory.Utils
 
                                 if (BDArmorySettings.DEBUG_ARMOR)
                                 {
-                                    Debug.Log("[BDArmory.ProjectileUtils]: Armor sundered, " + hitPart.name + ", " + hitPart.vessel.GetName() + "!");
+                                    Debug.Log("[BDArmory.ProjectileUtils{CalculateExplosiveArmorDamage}]: Armor sundered, " + hitPart.name + ", " + hitPart.vessel.GetName() + "!");
                                 }
                                 if (BDArmorySettings.BATTLEDAMAGE)
                                 {

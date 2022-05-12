@@ -8,7 +8,10 @@ FIXES
 - Fix ProcParts not updating HP/Armor volume.
 - Adds missing FFAR rocket ammo to universal ammo boxes.
 - Fixes TOW missile FX.
-- Fixes Proc Armor bugs
+- Fixes Proc Armor bugs.
+- Fixes broken hydraulics on Chaingun, Hydra Turret and Patriot Launcher models.
+- Fixes custom armor volumes in .cfgs being ignored.
+
 IMPROVEMENTS
 - General:
 	- Major internal refactor to better organise code.
@@ -21,8 +24,9 @@ IMPROVEMENTS
 	- Add a toggle to the UI settings section to disable gapless particle emitters (mostly used for engine trails).
 	- Debug labels now organized by type for easier debug tracking.
 	- Refactor the debug settings to be more specific and to have an on-screen only debug labels.
-    - Adds SelfSealingTanks/Firebottle options to Proc Part Tanks
-	- Adds Equilateral Triangle Proc Armor panel
+    - Adds SelfSealingTanks/Firebottle options to Proc Part Tanks.
+	- Adds Equilateral Triangle Proc Armor panel.
+	- Bullets now ignore flags.
 - AI:
 	- Add a 5° deadzone around being on target for dynamic damping to avoid feed-back loop in PID.
 	- Add a check for requested extending already being satisfied.
@@ -30,9 +34,9 @@ IMPROVEMENTS
 	- Add a 'Waypoint Terrain Avoidance' slider to the pilot AI to control the range and strength of the waypoint terrain avoidance reaction.
 	- Fixes AI GUI slider increments to match AI PAW.
 	- Adds Dynamic Damping P/Y/R readouts to AI GUI.
-  - Fix AI takeoff behavior
-  - Add Store/Restore option to save control surface configs in Pilot AI
-  - Add extend angle to AI to clamp climb/dive angle when doing Air-to-air extending
+	- Fix AI takeoff behavior.
+	- Add Store/Restore option to save control surface configs in Pilot AI.
+	- Add extend angle to AI to clamp climb/dive angle when doing Air-to-air extending.
 - GameModes:
 	- Waypoints:
 		- Add support for multiple waypoint gate models.
@@ -59,7 +63,7 @@ IMPROVEMENTS
 	- Weapons and explosions no longer cause armor damage/shrapnel/spalling damage in paintball mode.
 	- Add charge-up mechanic for weapons.
 	  - Adds new .cfg fields: ChargeTime = n; hasChargeAnimation = T/F; chargeAnimName = animName
-  - Weapon debug lines now account for frame velocity and flight integrator delay
+  - Weapon debug lines now account for frame velocity and flight integrator delay.
 	- Missiles:
 		- Adds Missile multi-targeting.
 		- Adds new Max Missile Tgts setting in WM to set max targets to engage with missiles.
@@ -73,7 +77,7 @@ IMPROVEMENTS
 		- Add option to display distances on the RWR logarithmically.
 		- AI will now break off and extend away from target when firing nukes if within projected blast radius.
 		- Continuous Rod warhead missiles now target a point a few meters above their target to better take advantage of planar AoE.
-		- Missiles no longer prematurely detonate if DetonateAtMinimumDistance is enabled 
+		- Missiles no longer prematurely detonate if DetonateAtMinimumDistance is enabled.
     - Fix HARMs ignoring...? (commit e5abb779)
 - RWP:
 	- Hall of Shame now supports multiple craft.

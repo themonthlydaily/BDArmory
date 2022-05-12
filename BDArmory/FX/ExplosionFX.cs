@@ -474,6 +474,11 @@ namespace BDArmory.FX
                         var partHP = partHit.Damage();
 						if (part.name.ToLower().Contains("armor")) partHP = 100;
                         var partArmour = partHit.GetArmorThickness();
+                        if (part.name.Contains("flagPart"))
+                        { 
+                            partHP = 1;
+                            partArmour = 0;
+                        }
                         var RA = partHit.FindModuleImplementing<ModuleReactiveArmor>();
                         if (RA != null)
                         {
@@ -788,6 +793,10 @@ namespace BDArmory.FX
                                 else
                                 {
                                     damage = part.AddExplosiveDamage(blastInfo.Damage, Caliber, ExplosionSource, dmgMult);
+                                    if (part == hitpart && part.name.ToLower().Contains("armor")) //deal armor damage to armor panel, since we didn't do that earlier
+                                    {
+                                        ProjectileUtils.CalculateExplosiveArmorDamage(part, blastInfo.TotalPressure, SourceVesselName, eventToExecute.Hit, ExplosionSource); 
+                                    }
                                     penetrationFactor = damage / 10; //closer to the explosion/greater magnitude of the explosion at point blank, the greater the blowthrough
                                     if (float.IsNaN(damage)) Debug.LogError("DEBUG NaN damage!");
                                 }

@@ -52,18 +52,15 @@ namespace BDArmory.Armor
             {
                 ParseStackNodePosition();
                 StartCoroutine(DelayedUpdateStackNode());
+                GameEvents.onEditorShipModified.Add(OnEditorShipModifiedEvent);
             }
             UpdateThickness(true);
             UI_FloatRange AWidth = (UI_FloatRange)Fields["Width"].uiControlEditor;
-            AWidth.onFieldChanged = AdjustWidth;
+            AWidth.onFieldChanged = AdjustWidth; 
             UI_FloatRange ALength = (UI_FloatRange)Fields["Length"].uiControlEditor;
             ALength.onFieldChanged = AdjustLength;
-            if (HighLogic.LoadedSceneIsEditor)
-            {
-                GameEvents.onEditorShipModified.Add(OnEditorShipModifiedEvent);
-            }
             armor = GetComponent<HitpointTracker>();
-            UpdateScale(Width, Length);
+            UpdateScale(Width, Length, false);
         }
         void ParseStackNodePosition()
         {
@@ -81,7 +78,7 @@ namespace BDArmory.Armor
         IEnumerator DelayedUpdateStackNode()
         {
             yield return null;
-            UpdateStackNode();
+            UpdateStackNode(false);
         }
 
         private void OnDestroy()
@@ -106,7 +103,7 @@ namespace BDArmory.Armor
                     sym.Current.FindModuleImplementing<BDAdjustableArmor>().UpdateScale(Width, Length); //needs to be changed to use updatewitth() - FIXME later, future SI
                 }
             updateArmorStats();
-            UpdateStackNode();
+            UpdateStackNode(true);
             OldWidth = Width;
         }
         public void AdjustLength(BaseField field, object obj)
@@ -123,11 +120,11 @@ namespace BDArmory.Armor
                     sym.Current.FindModuleImplementing<BDAdjustableArmor>().UpdateScale(Width, Length);
                 }
             updateArmorStats();
-            UpdateStackNode();
+            UpdateStackNode(true);
             OldLength = Length;
         }
 
-        public void UpdateScale(float width, float length)
+        public void UpdateScale(float width, float length, bool updateNodes = true)
         {
             Width = width;
             Length = length;
@@ -136,78 +133,67 @@ namespace BDArmory.Armor
                 armorTransforms[i].localScale = new Vector3(Width, Length, Mathf.Clamp((armor.Armor / 10), 0.1f, 1500));
             }
 			updateArmorStats();
-            UpdateStackNode();
+            if (updateNodes) UpdateStackNode(true);
         }
 
-        public void UpdateStackNode()
+        public void UpdateStackNode(bool translateChidren)
         {
             using (List<AttachNode>.Enumerator stackNode = part.attachNodes.GetEnumerator())
                 while (stackNode.MoveNext())
                 {
                     if (stackNode.Current?.nodeType != AttachNode.NodeType.Stack ||
                         !originalStackNodePosition.ContainsKey(stackNode.Current.id)) continue;
-                    Debug.Log("[ADJUSTABLEARMOR] Adjusting Node for " + stackNode.Current.id);
 
-                        Vector3 delta = Vector3.zero;
                     if (stackNode.Current.id == "top" || stackNode.Current.id == "bottom")
                     {
-                        if (Width == 1) continue;
                         stackNode.Current.size = Mathf.CeilToInt(Width / 2);
                         stackNode.Current.breakingForce = Width * 100;
                         stackNode.Current.breakingTorque = Width * 100;
-                        Debug.Log("[ADJUSTABLEARMOR] node size and strength updated");
                         Vector3 prevPos = stackNode.Current.position;
                         int offsetScale = 2;
-                        if (TriangleType == "Eqilateral")
+                        if (TriangleType == "Equilateral")
                         {
                             offsetScale = 4;
                         }
                         if (stackNode.Current.id == "top")
-                            stackNode.Current.position.x = originalStackNodePosition[stackNode.Current.id].x + ((Width - 1) / offsetScale); //if eqi tri this needs to be /4
-                        else
-                            stackNode.Current.position.x = originalStackNodePosition[stackNode.Current.id].x - ((Width - 1) / offsetScale);// and a right tri hypotenuse node shouldn't move at all
-                        delta = stackNode.Current.position - prevPos;
-                        Debug.Log("[ADJUSTABLEARMOR] Node moved");
-                        if (stackNode.Current.attachedPart is Part pushTarget)
                         {
-                            List<Part>.Enumerator p = part.children.GetEnumerator();
-                            while (p.MoveNext())
-                            {
-                                if (p.Current == null) continue;
-                                if (pushTarget != stackNode.Current.attachedPart) continue;
-                                Vector3 worldDelta = part.transform.TransformVector(delta);
-                                pushTarget.transform.position += worldDelta;
-                            }
-                            Debug.Log("[ADJUSTABLEARMOR] attached part moved");
+                            stackNode.Current.position.x = originalStackNodePosition[stackNode.Current.id].x + ((Width - 1) / offsetScale); //if eqi tri this needs to be /4
+                            if (translateChidren) MoveParts(stackNode.Current, stackNode.Current.position - prevPos);
+                        }
+                        else
+                        {
+                            stackNode.Current.position.x = originalStackNodePosition[stackNode.Current.id].x - ((Width - 1) / offsetScale);// and a right tri hypotenuse node shouldn't move at all
+                            if (translateChidren) MoveParts(stackNode.Current, stackNode.Current.position - prevPos); //look into making triangle side nodes rotate attachnode based on new angle?
                         }
                     }
                     if (stackNode.Current.id == "left" || stackNode.Current.id == "right")
                     {
-                        if (Length == 1) continue;
                         stackNode.Current.size = Mathf.CeilToInt(Length / 2);
                         stackNode.Current.breakingForce = Length * 100;
                         stackNode.Current.breakingTorque = Length * 100;
                         Vector3 prevPos = stackNode.Current.position;
                         if (stackNode.Current.id == "right")
-                            stackNode.Current.position.z = originalStackNodePosition[stackNode.Current.id].z + ((Length) / 2);
-                        else
-                            stackNode.Current.position.z = originalStackNodePosition[stackNode.Current.id].z - ((Length) / 2);
-                        delta = stackNode.Current.position - prevPos;
-                        if (stackNode.Current.attachedPart is Part pushTarget)
                         {
-                            List<Part>.Enumerator p = part.children.GetEnumerator();
-                            while (p.MoveNext())
-                            {
-                                if (p.Current == null) continue;
-                                if (pushTarget != stackNode.Current.attachedPart) continue;
-                                Vector3 worldDelta = part.transform.TransformVector(delta);
-                                pushTarget.transform.position += worldDelta;
-                            }
+                            stackNode.Current.position.z = originalStackNodePosition[stackNode.Current.id].z + ((Length - 1) / 2);
+                            if (translateChidren) MoveParts(stackNode.Current, stackNode.Current.position - prevPos);
+                        }
+                        else
+                        {
+                            stackNode.Current.position.z = originalStackNodePosition[stackNode.Current.id].z - ((Length - 1) / 2);
+                            if (translateChidren) MoveParts(stackNode.Current, stackNode.Current.position - prevPos);
                         }
                     }
                 }
         }
-
+        public void MoveParts(AttachNode node, Vector3 delta)
+        {
+            if (node.attachedPart is Part pushTarget)
+            {
+                if (pushTarget == null) return;
+                Vector3 worldDelta = part.transform.TransformVector(delta);
+                pushTarget.transform.position += worldDelta;
+            }
+        }
         public void updateArmorStats()
         {
             armor.armorVolume = (Width * Length);
