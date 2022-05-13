@@ -2482,19 +2482,38 @@ namespace BDArmory.UI
                             var armourParts = PartLoader.LoadedPartsList.Select(p => p.partPrefab.partInfo.name).Where(name => name.ToLower().Contains("armor")).ToHashSet();
                             Debug.Log($"DEBUG Armour parts in game: " + string.Join(", ", armourParts));
                             int N = 1 << 24;
-                            int count = 0;
                             var tic = Time.realtimeSinceStartup;
                             for (int i = 0; i < N; ++i)
-                                count += armourParts.Contains("BD.PanelArmor") ? 1 : 0;
+                                armourParts.Contains("BD.PanelArmor");
                             var dt = Time.realtimeSinceStartup - tic;
                             Debug.Log($"DEBUG HashSet lookup took {dt/N:G3}s");
-                            count = 0;
                             var armourPart = "BD.PanelArmor";
                             tic = Time.realtimeSinceStartup;
                             for (int i = 0; i < N; ++i)
-                                count += armourPart.ToLower().Contains("armor") ? 1 : 0;
+                                armourPart.ToLower().Contains("armor");
                             dt = Time.realtimeSinceStartup - tic;
                             Debug.Log($"DEBUG SubStr lookup took {dt/N:G3}s");
+
+                            // Using an actual part to include the part name access.
+                            var testPart = PartLoader.LoadedPartsList.Select(p => p.partPrefab).First();
+                            ProjectileUtils.IsArmorPart(testPart); // Bootstrap the HashSet
+                            tic = Time.realtimeSinceStartup;
+                            for (int i = 0; i< N; ++i)
+                                ProjectileUtils.IsArmorPart(testPart);
+                            dt = Time.realtimeSinceStartup - tic;
+                            Debug.Log($"DEBUG Real part HashSet lookup first part took {dt/N:G3}s");
+                            testPart = PartLoader.LoadedPartsList.Select(p => p.partPrefab).Last();
+                            tic = Time.realtimeSinceStartup;
+                            for (int i = 0; i< N; ++i)
+                                ProjectileUtils.IsArmorPart(testPart);
+                            dt = Time.realtimeSinceStartup - tic;
+                            Debug.Log($"DEBUG Real part HashSet lookup last part took {dt/N:G3}s");
+                            tic = Time.realtimeSinceStartup;
+                            for (int i = 0; i < N; ++i)
+                                testPart.partInfo.name.ToLower().Contains("armor");
+                            dt = Time.realtimeSinceStartup - tic;
+                            Debug.Log($"DEBUG Real part SubStr lookup took {dt/N:G3}s");
+
                         }
                         if (GUI.Button(SLeftRect(++line), "Layer test"))
                         {
