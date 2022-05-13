@@ -2477,6 +2477,25 @@ namespace BDArmory.UI
                         //     }
                         //     Debug.Log("DEBUG magnitude " + (Time.realtimeSinceStartup - now) / iters + "s/iter, out: " + test_out);
                         // }
+                        if (GUI.Button(SLeftRect(++line), "Hash vs SubStr test"))
+                        {
+                            var armourParts = PartLoader.LoadedPartsList.Select(p => p.partPrefab.partInfo.name).Where(name => name.ToLower().Contains("armor")).ToHashSet();
+                            Debug.Log($"DEBUG Armour parts in game: " + string.Join(", ", armourParts));
+                            int N = 1 << 24;
+                            int count = 0;
+                            var tic = Time.realtimeSinceStartup;
+                            for (int i = 0; i < N; ++i)
+                                count += armourParts.Contains("BD.PanelArmor") ? 1 : 0;
+                            var dt = Time.realtimeSinceStartup - tic;
+                            Debug.Log($"DEBUG HashSet lookup took {dt/N:G3}s");
+                            count = 0;
+                            var armourPart = "BD.PanelArmor";
+                            tic = Time.realtimeSinceStartup;
+                            for (int i = 0; i < N; ++i)
+                                count += armourPart.ToLower().Contains("armor") ? 1 : 0;
+                            dt = Time.realtimeSinceStartup - tic;
+                            Debug.Log($"DEBUG SubStr lookup took {dt/N:G3}s");
+                        }
                         if (GUI.Button(SLeftRect(++line), "Layer test"))
                         {
                             for (int i = 0; i < 32; ++i)
