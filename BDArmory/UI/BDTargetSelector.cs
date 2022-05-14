@@ -43,7 +43,7 @@ namespace BDArmory.UI
                 open = false;
             }
             height += buttonHeight;
-            
+
             height += buttonGap;
             Rect CoMRect = new Rect(margin, height, width - 2 * margin, buttonHeight);
             GUIStyle CoMStyle = targetWeaponManager.targetCoM ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button;
@@ -154,13 +154,15 @@ namespace BDArmory.UI
             {
                 if (!open) return;
 
-                    var clientRect = new Rect(
-                        Mathf.Min(windowLocation.x, Screen.width - width),
-                        Mathf.Min(windowLocation.y, Screen.height - height),
-                        width,
-                        height);
-                    window = GUI.Window(10591029, clientRect, TargetingSelectorWindow, "", BDArmorySetup.BDGuiSkin.window);
-                    GUIUtils.UpdateGUIRect(window, guiCheckIndex);
+                var clientRect = new Rect(
+                    Mathf.Min(windowLocation.x, Screen.width - width),
+                    Mathf.Min(windowLocation.y, Screen.height - height),
+                    width,
+                    height);
+                BDArmorySetup.SetGUIOpacity();
+                window = GUI.Window(10591029, clientRect, TargetingSelectorWindow, "", BDArmorySetup.BDGuiSkin.window);
+                BDArmorySetup.SetGUIOpacity(false);
+                GUIUtils.UpdateGUIRect(window, guiCheckIndex);
             }
         }
 

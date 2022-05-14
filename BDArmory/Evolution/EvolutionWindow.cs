@@ -80,6 +80,7 @@ namespace BDArmory.Evolution
                 _windowWidth,
                 _windowHeight
             );
+            BDArmorySetup.SetGUIOpacity();
             BDArmorySetup.WindowRectEvolution = GUI.Window(
                 8008135,
                 BDArmorySetup.WindowRectEvolution,
@@ -87,6 +88,7 @@ namespace BDArmory.Evolution
                 Localizer.Format("#LOC_BDArmory_Evolution_Title"),//"BDA Evolution"
                 BDArmorySetup.BDGuiSkin.window
             );
+            BDArmorySetup.SetGUIOpacity(false);
             GUIUtils.UpdateGUIRect(BDArmorySetup.WindowRectEvolution, _guiCheckIndex);
         }
 

@@ -578,6 +578,27 @@ namespace BDArmory.UI
             }
         }
 
+        /// <summary>
+        /// Modify the background opacity of a window.
+        /// 
+        /// GUI.Window stores the color values it was called with, so call this with enable=true before GUI.Window to enable
+        /// transparency for that window and again with enable=false afterwards to avoid affect later GUI.Window calls.
+        ///
+        /// Note: This can only lower the opacity of the window background, so windows with a background texture that
+        /// already includes some transparency can only be made more transparent, not less.
+        /// </summary>
+        /// <param name="enable">Enable or reset the modified background opacity.</param>
+        public static void SetGUIOpacity(bool enable = true)
+        {
+            if (!enable && BDArmorySettings.GUI_OPACITY == 1f) return; // Nothing to do.
+            var guiColor = GUI.backgroundColor;
+            if (guiColor.a != (enable ? BDArmorySettings.GUI_OPACITY : 1f))
+            {
+                guiColor.a = (enable ? BDArmorySettings.GUI_OPACITY : 1f);
+                GUI.backgroundColor = guiColor;
+            }
+        }
+
         IEnumerator ToolbarButtonRoutine()
         {
             if (toolbarButtonAdded) yield break;
@@ -833,7 +854,9 @@ namespace BDArmory.UI
             }
 
             if (!windowBDAToolBarEnabled || !HighLogic.LoadedSceneIsFlight) return;
+            SetGUIOpacity();
             WindowRectToolbar = GUI.Window(321, WindowRectToolbar, WindowBDAToolbar, "", BDGuiSkin.window);//"BDA Weapon Manager"
+            SetGUIOpacity(false);
             GUIUtils.UseMouseEventInRect(WindowRectToolbar);
             if (showWindowGPS && ActiveWeaponManager)
             {
@@ -2374,6 +2397,11 @@ namespace BDArmory.UI
 
                 if (BDArmorySettings.ADVANDED_USER_SETTINGS)
                 {
+                    { // GUI background opacity
+                        GUI.Label(SLeftSliderRect(++line), Localizer.Format("#LOC_BDArmory_Settings_GUIBackgroundOpacity") + $" ({BDArmorySettings.GUI_OPACITY.ToString("F2")})", leftLabel);
+                        BDArmorySettings.GUI_OPACITY = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.GUI_OPACITY, 0f, 1f), 0.05f);
+                    }
+
                     if (GUI.Button(SLineRect(++line, 1, true), (BDArmorySettings.DEBUG_SETTINGS_TOGGLE ? "Disable " : "Enable ") + Localizer.Format("#LOC_BDArmory_Settings_DebugSettingsToggle")))//Enable/Disable Debugging.
                     {
                         BDArmorySettings.DEBUG_SETTINGS_TOGGLE = !BDArmorySettings.DEBUG_SETTINGS_TOGGLE;
@@ -2449,6 +2477,44 @@ namespace BDArmory.UI
                         //     }
                         //     Debug.Log("DEBUG magnitude " + (Time.realtimeSinceStartup - now) / iters + "s/iter, out: " + test_out);
                         // }
+                        if (GUI.Button(SLeftRect(++line), "Hash vs SubStr test"))
+                        {
+                            var armourParts = PartLoader.LoadedPartsList.Select(p => p.partPrefab.partInfo.name).Where(name => name.ToLower().Contains("armor")).ToHashSet();
+                            Debug.Log($"DEBUG Armour parts in game: " + string.Join(", ", armourParts));
+                            int N = 1 << 24;
+                            var tic = Time.realtimeSinceStartup;
+                            for (int i = 0; i < N; ++i)
+                                armourParts.Contains("BD.PanelArmor");
+                            var dt = Time.realtimeSinceStartup - tic;
+                            Debug.Log($"DEBUG HashSet lookup took {dt/N:G3}s");
+                            var armourPart = "BD.PanelArmor";
+                            tic = Time.realtimeSinceStartup;
+                            for (int i = 0; i < N; ++i)
+                                armourPart.ToLower().Contains("armor");
+                            dt = Time.realtimeSinceStartup - tic;
+                            Debug.Log($"DEBUG SubStr lookup took {dt/N:G3}s");
+
+                            // Using an actual part to include the part name access.
+                            var testPart = PartLoader.LoadedPartsList.Select(p => p.partPrefab).First();
+                            ProjectileUtils.IsArmorPart(testPart); // Bootstrap the HashSet
+                            tic = Time.realtimeSinceStartup;
+                            for (int i = 0; i< N; ++i)
+                                ProjectileUtils.IsArmorPart(testPart);
+                            dt = Time.realtimeSinceStartup - tic;
+                            Debug.Log($"DEBUG Real part HashSet lookup first part took {dt/N:G3}s");
+                            testPart = PartLoader.LoadedPartsList.Select(p => p.partPrefab).Last();
+                            tic = Time.realtimeSinceStartup;
+                            for (int i = 0; i< N; ++i)
+                                ProjectileUtils.IsArmorPart(testPart);
+                            dt = Time.realtimeSinceStartup - tic;
+                            Debug.Log($"DEBUG Real part HashSet lookup last part took {dt/N:G3}s");
+                            tic = Time.realtimeSinceStartup;
+                            for (int i = 0; i < N; ++i)
+                                testPart.partInfo.name.ToLower().Contains("armor");
+                            dt = Time.realtimeSinceStartup - tic;
+                            Debug.Log($"DEBUG Real part SubStr lookup took {dt/N:G3}s");
+
+                        }
                         if (GUI.Button(SLeftRect(++line), "Layer test"))
                         {
                             for (int i = 0; i < 32; ++i)

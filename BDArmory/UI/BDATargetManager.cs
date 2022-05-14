@@ -1058,7 +1058,7 @@ namespace BDArmory.UI
             return finalTarget;
         }
 
-        //checks to see if a friendly is too close to the gun trajectory to fire them
+        //checks to see if a friendly is too close to the gun trajectory to fire them // Replaced by ModuleWeapon.CheckForFriendlies()
         public static bool CheckSafeToFireGuns(MissileFire weaponManager, Vector3 aimDirection, float safeDistance, float cosUnsafeAngle)
         {
             if (weaponManager == null) return false;

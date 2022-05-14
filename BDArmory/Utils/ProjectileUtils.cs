@@ -1,5 +1,6 @@
 ﻿﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 using BDArmory.Competition;
@@ -13,8 +14,27 @@ namespace BDArmory.Utils
 {
     class ProjectileUtils
     {
-        public static HashSet<string> IgnoredPartNames = new HashSet<string> { "bdPilotAI", "bdShipAI", "missileController", "bdammGuidanceModule" };
-        public static bool IsIgnoredPart(Part part) { return ProjectileUtils.IgnoredPartNames.Contains(part.partInfo.name); }
+        static HashSet<string> IgnoredPartNames;
+        public static bool IsIgnoredPart(Part part)
+        {
+            if (IgnoredPartNames == null)
+            {
+                IgnoredPartNames = new HashSet<string> { "bdPilotAI", "bdShipAI", "missileController", "bdammGuidanceModule" };
+                IgnoredPartNames.UnionWith(PartLoader.LoadedPartsList.Select(p => p.partPrefab.partInfo.name).Where(name => name.Contains("flagPart")));
+                if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.ProjectileUtils]: Ignored Parts: " + string.Join(", ", IgnoredPartNames));
+            }
+            return ProjectileUtils.IgnoredPartNames.Contains(part.partInfo.name);
+        }
+        static HashSet<string> armorParts;
+        public static bool IsArmorPart(Part part)
+        {
+            if (armorParts == null)
+            {
+                armorParts = PartLoader.LoadedPartsList.Select(p => p.partPrefab.partInfo.name).Where(name => name.ToLower().Contains("armor")).ToHashSet();
+                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.ProjectileUtils]: Armor Parts: " + string.Join(", ", armorParts));
+            }
+            return armorParts.Contains(part.partInfo.name);
+        }
 
         public static void ApplyDamage(Part hitPart, RaycastHit hit, float multiplier, float penetrationfactor, float caliber, float projmass, float impactVelocity, float DmgMult, double distanceTraveled, bool explosive, bool incendiary, bool hasRichocheted, Vessel sourceVessel, string name, string team, ExplosionSourceType explosionSource, bool firstHit, bool partAlreadyHit, bool cockpitPen)
         {

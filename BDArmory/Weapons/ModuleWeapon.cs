@@ -3568,6 +3568,7 @@ namespace BDArmory.Weapons
         }
 
         public float targetCosAngle;
+        public bool safeToFire;
         void CheckAIAutofire()
         {
             //autofiring with AI
@@ -3584,42 +3585,56 @@ namespace BDArmory.Weapons
                 targetCosAngle = Vector3.Dot(aimDirection, targetRelPos.normalized);
                 var maxAutoFireCosAngle2 = targetAdjustedMaxCosAngle;
 
-                if (eWeaponType != WeaponTypes.Rocket) //guns/lasers
+                safeToFire = CheckForFriendlies(fireTransform);
+                if (safeToFire)
                 {
-                    // Vector3 targetDiffVec = finalAimTarget - lastFinalAimTarget;
-                    // Vector3 projectedTargetPos = targetDiffVec;
-                    //projectedTargetPos /= TimeWarp.fixedDeltaTime;
-                    //projectedTargetPos *= TimeWarp.fixedDeltaTime;
-                    // projectedTargetPos *= 2; //project where the target will be in 2 timesteps
-                    // projectedTargetPos += finalAimTarget;
-
-                    // targetDiffVec.Normalize();
-                    // Vector3 lastTargetRelPos = (lastFinalAimTarget) - fireTransform.position;
-
-                    if (BDATargetManager.CheckSafeToFireGuns(weaponManager, aimDirection, 1000, 0.999962f) //~0.5 degree of unsafe angle, was 0.999848f (1deg)
-                        && targetCosAngle >= maxAutoFireCosAngle2) //check if directly on target
-                    {
-                        autoFire = true;
-                    }
-                    else
-                    {
-                        autoFire = false;
-                    }
+                    if (eWeaponType == WeaponTypes.Ballistic || eWeaponType == WeaponTypes.Laser)
+                    { autoFire = (targetCosAngle >= targetAdjustedMaxCosAngle); }
+                    else // Rockets
+                    { autoFire = (targetCosAngle >= targetAdjustedMaxCosAngle) && ((finalAimTarget - fireTransform.position).sqrMagnitude > blastRadius * blastRadius); }
                 }
-                else // rockets
+                else
                 {
-                    if (BDATargetManager.CheckSafeToFireGuns(weaponManager, aimDirection, 1000, 0.999848f))
-                    {
-                        if ((Vector3.Distance(finalAimTarget, fireTransform.position) > blastRadius) && (targetCosAngle >= maxAutoFireCosAngle2))
-                        {
-                            autoFire = true; //rockets already calculate where target will be
-                        }
-                        else
-                        {
-                            autoFire = false;
-                        }
-                    }
+                    autoFire = false;
                 }
+
+                // if (eWeaponType != WeaponTypes.Rocket) //guns/lasers
+                // {
+                //     // Vector3 targetDiffVec = finalAimTarget - lastFinalAimTarget;
+                //     // Vector3 projectedTargetPos = targetDiffVec;
+                //     //projectedTargetPos /= TimeWarp.fixedDeltaTime;
+                //     //projectedTargetPos *= TimeWarp.fixedDeltaTime;
+                //     // projectedTargetPos *= 2; //project where the target will be in 2 timesteps
+                //     // projectedTargetPos += finalAimTarget;
+
+                //     // targetDiffVec.Normalize();
+                //     // Vector3 lastTargetRelPos = (lastFinalAimTarget) - fireTransform.position;
+
+                //     safeToFire = BDATargetManager.CheckSafeToFireGuns(weaponManager, aimDirection, 1000, 0.999962f); //~0.5 degree of unsafe angle, was 0.999848f (1deg)
+                //     if (safeToFire && targetCosAngle >= maxAutoFireCosAngle2) //check if directly on target
+                //     {
+                //         autoFire = true;
+                //     }
+                //     else
+                //     {
+                //         autoFire = false;
+                //     }
+                // }
+                // else // rockets
+                // {
+                //     safeToFire = BDATargetManager.CheckSafeToFireGuns(weaponManager, aimDirection, 1000, 0.999848f);
+                //     if (safeToFire)
+                //     {
+                //         if ((Vector3.Distance(finalAimTarget, fireTransform.position) > blastRadius) && (targetCosAngle >= maxAutoFireCosAngle2))
+                //         {
+                //             autoFire = true; //rockets already calculate where target will be
+                //         }
+                //         else
+                //         {
+                //             autoFire = false;
+                //         }
+                //     }
+                // }
             }
             else
             {
@@ -3678,6 +3693,59 @@ namespace BDArmory.Weapons
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Check for friendlies being likely to be hit by firing.
+        /// </summary>
+        /// <returns>true if no friendlies are likely to be hit, false otherwise.</returns>
+        bool CheckForFriendlies(Transform fireTransform)
+        {
+            if (weaponManager == null || weaponManager.vessel == null) return false;
+            var firingDirection = fireTransform.forward;
+
+            if (eWeaponType == WeaponTypes.Laser)
+            {
+                using (var friendly = FlightGlobals.Vessels.GetEnumerator())
+                    while (friendly.MoveNext())
+                    {
+                        if (VesselModuleRegistry.ignoredVesselTypes.Contains(friendly.Current.vesselType)) continue;
+                        if (friendly.Current == null || friendly.Current == weaponManager.vessel) continue;
+                        var wms = VesselModuleRegistry.GetModule<MissileFire>(friendly.Current);
+                        if (wms == null || wms.Team != weaponManager.Team) continue;
+                        var friendlyRelativePosition = friendly.Current.CoM - fireTransform.position;
+                        var theta = friendly.Current.GetRadius() / friendlyRelativePosition.magnitude; // Approx to arctan(θ) =  θ - θ^3/3 + O(θ^5)
+                        var cosTheta = Mathf.Clamp(1f - 0.5f * theta * theta, -1f, 1f); // Approximation to cos(theta) for the friendly vessel's radius at that distance. (cos(x) = 1-x^2/2!+O(x^4))
+                        if (Vector3.Dot(firingDirection, friendlyRelativePosition.normalized) > cosTheta) return false; // A friendly is in the way.
+                    }
+                return true;
+            }
+
+            // Projectile. Use bullet velocity or estimate of the rocket velocity post-thrust.
+            var projectileEffectiveVelocity = part.rb.velocity + (eWeaponType == WeaponTypes.Rocket ? (Krakensbane.GetFrameVelocityV3f() + thrust * thrustTime / rocketMass * firingDirection) : (baseBulletVelocity * firingDirection));
+            var gravity = (Vector3)FlightGlobals.getGeeForceAtPosition(fireTransform.position); // Use the local gravity value as long distance doesn't really matter here.
+            var projectileAcceleration = bulletDrop || eWeaponType == WeaponTypes.Rocket ? gravity : Vector3.zero; // Drag is ignored.
+
+            using (var friendly = FlightGlobals.Vessels.GetEnumerator())
+                while (friendly.MoveNext())
+                {
+                    if (VesselModuleRegistry.ignoredVesselTypes.Contains(friendly.Current.vesselType)) continue;
+                    if (friendly.Current == null || friendly.Current == weaponManager.vessel) continue;
+                    var wms = VesselModuleRegistry.GetModule<MissileFire>(friendly.Current);
+                    if (wms == null || wms.Team != weaponManager.Team) continue;
+                    var friendlyPosition = friendly.Current.CoM;
+                    var friendlyVelocity = friendly.Current.Velocity();
+                    var friendlyAcceleration = friendly.Current.acceleration;
+                    var projectileRelativePosition = friendlyPosition - fireTransform.position;
+                    var projectileRelativeVelocity = friendlyVelocity - projectileEffectiveVelocity;
+                    var projectileRelativeAcceleration = friendlyAcceleration - projectileAcceleration;
+                    var timeToCPA = AIUtils.ClosestTimeToCPA(projectileRelativePosition, projectileRelativeVelocity, projectileRelativeAcceleration, maxTargetingRange / projectileEffectiveVelocity.magnitude);
+                    if (timeToCPA == 0) continue; // They're behind us.
+                    var missDistanceSqr = AIUtils.PredictPosition(projectileRelativePosition, projectileRelativeVelocity, projectileRelativeAcceleration, timeToCPA).sqrMagnitude;
+                    var tolerance = friendly.Current.GetRadius() + projectileRelativePosition.magnitude * Mathf.Deg2Rad * maxDeviation; // Use a firing tolerance of 1 and twice the projectile deviation for friendlies.
+                    if (missDistanceSqr < tolerance * tolerance) return false; // A friendly is in the way.
+                }
+            return true;
         }
 
         void CheckFinalFire()

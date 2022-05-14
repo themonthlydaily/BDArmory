@@ -248,8 +248,10 @@ namespace BDArmory.Control
                 }
                 // this Rect initialization ensures any save issues with height or width of the window are resolved
                 //BDArmorySetup.WindowRectWingCommander = new Rect(BDArmorySetup.WindowRectWingCommander.x, BDArmorySetup.WindowRectWingCommander.y, windowWidth, windowHeight);
+                BDArmorySetup.SetGUIOpacity();
                 BDArmorySetup.WindowRectWingCommander = GUI.Window(1293293, BDArmorySetup.WindowRectWingCommander, WingmenWindow, Localizer.Format("#LOC_BDArmory_WingCommander_Title"),//"WingCommander"
                     BDArmorySetup.BDGuiSkin.window);
+                BDArmorySetup.SetGUIOpacity(false);
 
                 if (showAGWindow) AGWindow();
             }

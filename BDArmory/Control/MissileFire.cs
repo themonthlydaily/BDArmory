@@ -1501,7 +1501,7 @@ namespace BDArmory.Control
                             if (weaponCandidate == null || !validClasses.Contains(weaponCandidate.GetWeaponClass())) continue;
                             var weapon = (ModuleWeapon)weaponCandidate;
                             weaponHeatDebugStrings.Add(String.Format(" - {0}: heat: {1,6:F1}, max: {2}, overheated: {3}", weapon.shortName, weapon.heat, weapon.maxHeat, weapon.isOverheated));
-                            weaponLaserDebugStrings.Add(String.Format(" -Lead Offset: {0}, FinalAimTgt: {1}, tgt Position: {2}, pointingAtSelf: {3}, tgt CosAngle {4}, wpn CosAngle {5}, Wpn Autofire {6}, RoF {7}, MaxRoF {8}", weapon.GetLeadOffset(), weapon.finalAimTarget, weapon.targetPosition, weapon.pointingAtSelf, weapon.targetCosAngle, weapon.targetAdjustedMaxCosAngle, weapon.autoFire, weapon.roundsPerMinute, weapon.baseRPM));
+                            weaponLaserDebugStrings.Add($" - Lead Offset: {weapon.GetLeadOffset()}, FinalAimTgt: {weapon.finalAimTarget}, tgt Position: {weapon.targetPosition}, pointingAtSelf: {weapon.pointingAtSelf}, safeToFire: {weapon.safeToFire}, tgt CosAngle {weapon.targetCosAngle}, wpn CosAngle {weapon.targetAdjustedMaxCosAngle}, Wpn Autofire {weapon.autoFire}, RoF {weapon.roundsPerMinute}, MaxRoF {weapon.baseRPM}");
                         }
                         if (weaponHeatDebugStrings.Count > 0)
                         {
@@ -1509,7 +1509,7 @@ namespace BDArmory.Control
                             debugString.AppendLine("Aim debugging:\n" + string.Join("\n", weaponLaserDebugStrings));
                         }
                     }
-                    GUI.Label(new Rect(200, Screen.height - 500, 26 * debugString.Length, 200), debugString.ToString());
+                    GUI.Label(new Rect(200, Screen.height - 500, Screen.width / 2 - 200, 16 * debugString.Length), debugString.ToString());
                 }
             }
         }
