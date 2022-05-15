@@ -792,7 +792,7 @@ namespace BDArmory.UI
                 }
             }
 #if DEBUG
-            if (GUI.Button(SLineRect(++line), "Test point spawn", BDArmorySetup.BDGuiSkin.button))
+            if (BDArmorySettings.DEBUG_SPAWNING && GUI.Button(SLineRect(++line), "Test point spawn", BDArmorySetup.BDGuiSkin.button))
             {
                 StartCoroutine(SingleVesselSpawning.Instance.Spawn(
                     new SpawnConfig(
