@@ -3,22 +3,55 @@ using System.Collections.Generic;
 using UnityEngine;
 
 using BDArmory.Damage;
+using KSP.Localization;
+using BDArmory.Utils;
 
 namespace BDArmory.Armor
 {
     public class BDAdjustableArmor : PartModule
     {
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorWidth"),//Engage Range Min
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorWidth"),//Armor Width
  UI_FloatRange(minValue = 0.5f, maxValue = 16, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
         public float Width = 1;
 
-        private float OldWidth = 1;
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_ArmorWidthR"),//Right Side Width
+UI_FloatRange(minValue = 0.1f, maxValue = 8, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
+        public float scaleneWidth = 1;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorLength"),//Engage Range Min
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorLength"),//Armor Length
  UI_FloatRange(minValue = 0.5f, maxValue = 16, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
         public float Length = 1;
 
-        private float OldLength = 1;
+        [KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_ArmorTriIso", active = true)]//Disable Engage Options
+        public void ToggleTriTypeOption()
+        {
+            scaleneTri = !scaleneTri;
+
+            Fields["scaleneWidth"].guiActive = scaleneTri;
+            Fields["scaleneWidth"].guiActiveEditor = scaleneTri;
+            UI_FloatRange AWidth = (UI_FloatRange)Fields["Width"].uiControlEditor;
+            AWidth.maxValue = scaleneTri ? 8 : 16;
+            AWidth.minValue = scaleneTri ? 0.1f : 0.5f;
+
+            if (scaleneTri)
+            {
+                Fields["Width"].guiName = Localizer.Format("#LOC_BDArmory_ArmorWidthL");
+                Events["ToggleTriTypeOption"].guiName = Localizer.Format("#LOC_BDArmory_ArmorTriSca");
+            }
+            else
+            {
+                Fields["Width"].guiName = Localizer.Format("#LOC_BDArmory_ArmorWidth");
+                Events["ToggleTriTypeOption"].guiName = Localizer.Format("#LOC_BDArmory_ArmorTriIso");
+            }
+            GUIUtils.RefreshAssociatedWindows(part);
+            using (List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator())
+                while (sym.MoveNext())
+                {
+                    if (sym.Current == null) continue;
+                    sym.Current.FindModuleImplementing<BDAdjustableArmor>().ToggleTriTypeOption();
+                }
+        }
+
 
         //public bool isCurvedPanel = false;
         private float armorthickness = 1;
@@ -26,6 +59,7 @@ namespace BDArmory.Armor
 
         [KSPField]
         public bool isTriangularPanel = false;
+        bool scaleneTri = false;
 
         [KSPField]
         public string TriangleType;
@@ -33,6 +67,10 @@ namespace BDArmory.Armor
         [KSPField]
         public string ArmorTransformName = "ArmorTransform"; //transform of armor panel mesh/box collider
         Transform[] armorTransforms;
+
+        [KSPField]
+        public string ScaleneTransformName = "ScaleneTransform"; //transform of armor panel mesh/box collider
+        Transform[] scaleneTransforms;
 
         [KSPField]
         public string ThicknessTransformName = "ThicknessTransform"; //name of armature to control thickness of curved panels
@@ -48,6 +86,16 @@ namespace BDArmory.Armor
         {
             armorTransforms = part.FindModelTransforms(ArmorTransformName);
             ThicknessTransform = part.FindModelTransform(ThicknessTransformName);
+            if (TriangleType != "Right")
+            {
+                Events["ToggleTriTypeOption"].guiActiveEditor = true;
+                scaleneTransforms = part.FindModelTransforms(ScaleneTransformName);
+                UI_FloatRange SWidth = (UI_FloatRange)Fields["scaleneWidth"].uiControlEditor;
+                SWidth.onFieldChanged = AdjustSWidth;
+            }
+            Fields["scaleneWidth"].guiActive = false;
+            Fields["scaleneWidth"].guiActiveEditor = false;
+
             if (HighLogic.LoadedSceneIsEditor)
             {
                 ParseStackNodePosition();
@@ -56,11 +104,12 @@ namespace BDArmory.Armor
             }
             UpdateThickness(true);
             UI_FloatRange AWidth = (UI_FloatRange)Fields["Width"].uiControlEditor;
-            AWidth.onFieldChanged = AdjustWidth; 
+            AWidth.onFieldChanged = AdjustWidth;
             UI_FloatRange ALength = (UI_FloatRange)Fields["Length"].uiControlEditor;
             ALength.onFieldChanged = AdjustLength;
             armor = GetComponent<HitpointTracker>();
-            UpdateScale(Width, Length, false);
+            UpdateScale(Width, Length, scaleneWidth, false);
+            GUIUtils.RefreshAssociatedWindows(part);
         }
         void ParseStackNodePosition()
         {
@@ -91,20 +140,42 @@ namespace BDArmory.Armor
 
         public void AdjustWidth(BaseField field, object obj)
         {
-            Width = Mathf.Clamp(Width, 0.5f, 16f);
+            Width = Mathf.Clamp(Width, scaleneTri ? 0.1f : 0.5f, scaleneTri ? 8 : 16f);
             for (int i = 0; i < armorTransforms.Length; i++)
             {
                 armorTransforms[i].localScale = new Vector3(Width, Length, armorthickness);
+            }
+            if (TriangleType != "Right" && !scaleneTri)
+            {
+                for (int i = 0; i < scaleneTransforms.Length; i++)
+                {
+                    scaleneTransforms[i].localScale = new Vector3(Width, Length, armorthickness);
+                }
             }
             using (List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator())
                 while (sym.MoveNext())
                 {
                     if (sym.Current == null) continue;
-                    sym.Current.FindModuleImplementing<BDAdjustableArmor>().UpdateScale(Width, Length); //needs to be changed to use updatewitth() - FIXME later, future SI
+                    sym.Current.FindModuleImplementing<BDAdjustableArmor>().UpdateScale(Width, Length, scaleneWidth); //needs to be changed to use updatewitth() - FIXME later, future SI
                 }
             updateArmorStats();
             UpdateStackNode(true);
-            OldWidth = Width;
+        }
+        public void AdjustSWidth(BaseField field, object obj)
+        {
+            scaleneWidth = Mathf.Clamp(scaleneWidth, 0.1f, 8);
+            for (int i = 0; i < scaleneTransforms.Length; i++)
+            {
+                scaleneTransforms[i].localScale = new Vector3(scaleneWidth * 2, Length, armorthickness);
+            }
+            using (List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator())
+                while (sym.MoveNext())
+                {
+                    if (sym.Current == null) continue;
+                    sym.Current.FindModuleImplementing<BDAdjustableArmor>().UpdateScale(Width, Length, scaleneWidth); //needs to be changed to use updatewitth() - FIXME later, future SI
+                }
+            updateArmorStats();
+            UpdateStackNode(true);
         }
         public void AdjustLength(BaseField field, object obj)
         {
@@ -113,24 +184,39 @@ namespace BDArmory.Armor
             {
                 armorTransforms[i].localScale = new Vector3(Width, Length, armorthickness);
             }
+            if (TriangleType != "Right")
+            {
+                for (int i = 0; i < scaleneTransforms.Length; i++)
+                {
+                    scaleneTransforms[i].localScale = new Vector3(scaleneWidth, Length, armorthickness);
+                }
+            }
             using (List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator())
                 while (sym.MoveNext())
                 {
                     if (sym.Current == null) continue;
-                    sym.Current.FindModuleImplementing<BDAdjustableArmor>().UpdateScale(Width, Length);
+                    sym.Current.FindModuleImplementing<BDAdjustableArmor>().UpdateScale(Width, Length, scaleneWidth);
                 }
             updateArmorStats();
             UpdateStackNode(true);
-            OldLength = Length;
         }
 
-        public void UpdateScale(float width, float length, bool updateNodes = true)
+        public void UpdateScale(float width, float length, float scalenewidth = 1, bool updateNodes = true)
         {
             Width = width;
+            scaleneWidth = scalenewidth;
             Length = length;
+
             for (int i = 0; i < armorTransforms.Length; i++)
             {
                 armorTransforms[i].localScale = new Vector3(Width, Length, Mathf.Clamp((armor.Armor / 10), 0.1f, 1500));
+            }
+            if (TriangleType != "Right")
+            {
+                for (int i = 0; i < scaleneTransforms.Length; i++)
+                {
+                    scaleneTransforms[i].localScale = new Vector3(scaleneTri ? scaleneWidth : Width, Length, Mathf.Clamp((armor.Armor / 10), 0.1f, 1500));
+                }
             }
 			updateArmorStats();
             if (updateNodes) UpdateStackNode(true);
@@ -146,24 +232,27 @@ namespace BDArmory.Armor
 
                     if (stackNode.Current.id == "top" || stackNode.Current.id == "bottom")
                     {
-                        stackNode.Current.size = Mathf.CeilToInt(Width / 2);
-                        stackNode.Current.breakingForce = Width * 100;
-                        stackNode.Current.breakingTorque = Width * 100;
                         Vector3 prevPos = stackNode.Current.position;
                         int offsetScale = 2;
-                        if (TriangleType == "Equilateral")
+                        if (TriangleType != "Right" && !scaleneTri)
                         {
                             offsetScale = 4;
                         }
                         if (stackNode.Current.id == "top")
                         {
-                            stackNode.Current.position.x = originalStackNodePosition[stackNode.Current.id].x + ((Width - 1) / offsetScale); //if eqi tri this needs to be /4
-                            if (translateChidren) MoveParts(stackNode.Current, stackNode.Current.position - prevPos);
+                            stackNode.Current.size = Mathf.CeilToInt(Width / 2);
+                            stackNode.Current.breakingForce = Width * 100;
+                            stackNode.Current.breakingTorque = Width * 100;
+                            stackNode.Current.position.x = originalStackNodePosition[stackNode.Current.id].x + (((Width - 1) / (scaleneTri ? 2 : 1)) / offsetScale); //if eqi tri this needs to be /4
+							if (translateChidren) MoveParts(stackNode.Current, stackNode.Current.position - prevPos);
                         }
                         else
                         {
-                            stackNode.Current.position.x = originalStackNodePosition[stackNode.Current.id].x - ((Width - 1) / offsetScale);// and a right tri hypotenuse node shouldn't move at all
-                            if (translateChidren) MoveParts(stackNode.Current, stackNode.Current.position - prevPos); //look into making triangle side nodes rotate attachnode based on new angle?
+                            stackNode.Current.size = Mathf.CeilToInt(scaleneTri ? scaleneWidth : Width / 2);
+                            stackNode.Current.breakingForce = scaleneTri ? scaleneWidth : Width * 100;
+                            stackNode.Current.breakingTorque = scaleneTri ? scaleneWidth : Width * 100;
+                            stackNode.Current.position.x = originalStackNodePosition[stackNode.Current.id].x - ((scaleneTri ? ((scaleneWidth - 1) / 2) : Width - 1) / offsetScale);// and a right tri hypotenuse node shouldn't move at all
+                            if (translateChidren) MoveParts(stackNode.Current, stackNode.Current.position - prevPos); //look into making triangle side nodes rotate attachnode based on new angle? AttachNode.Orientation?                            
                         }
                     }
                     if (stackNode.Current.id == "left" || stackNode.Current.id == "right")
@@ -196,7 +285,7 @@ namespace BDArmory.Armor
         }
         public void updateArmorStats()
         {
-            armor.armorVolume = (Width * Length);
+            armor.armorVolume = ((scaleneTri ? scaleneWidth + Width : Width) * Length);
             if (isTriangularPanel)
             {
                 armor.armorVolume /= 2;
@@ -209,13 +298,20 @@ namespace BDArmory.Armor
             {
                 armorthickness = Mathf.Clamp((armor.Armor / 10), 0.1f, 1500);
 
-                    if (armorthickness != Oldthickness)
+                if (armorthickness != Oldthickness)
+                {
+                    for (int i = 0; i < armorTransforms.Length; i++)
                     {
-                        for (int i = 0; i < armorTransforms.Length; i++)
+                        armorTransforms[i].localScale = new Vector3(Width, Length, armorthickness);
+                    }
+                    if (TriangleType != "Right")
+                    {
+                        for (int i = 0; i < scaleneTransforms.Length; i++)
                         {
-                            armorTransforms[i].localScale = new Vector3(Width, Length, armorthickness);
+                            scaleneTransforms[i].localScale = new Vector3(scaleneTri ? scaleneWidth : Width, Length, armorthickness);
                         }
                     }
+                }
             }
             else
             {

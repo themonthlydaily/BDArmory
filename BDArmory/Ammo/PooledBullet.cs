@@ -725,8 +725,7 @@ namespace BDArmory.Bullets
 
             if (hitPart != null && ProjectileUtils.IsIgnoredPart(hitPart)) return false; // Ignore ignored parts.
             if (hitPart != null && hitPart == sourceWeapon) return false; // Ignore weapon that fired the bullet.
-            if (hitPart != null && (hitPart == CurrentPart && CurrentPart.name.ToLower().Contains("armor"))) return false; //only have bullet hit armor panels once - no back armor to hit if penetration
-            if (hitPart != null && (hitPart.name.Contains("flagPart"))) return false; //ignore flags
+            if (hitPart != null && (hitPart == CurrentPart && ProjectileUtils.IsArmorPart(CurrentPart))) return false; //only have bullet hit armor panels once - no back armor to hit if penetration
 
             CurrentPart = hitPart;
             if (hitEVA != null)
@@ -1026,7 +1025,7 @@ namespace BDArmory.Bullets
                     }
                     else //impact by impact, Timed, Prox and Flak, if for whatever reason those last two have 0 proxi range
                     {
-                        //Debug.Log("[BDArmory.PooledBullet]: impact Fuze detonation");
+                        //if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.PooledBullet]: impact Fuze detonation");
                         ExplosiveDetonation(hitPart, hit, bulletRay, true);
                         ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, ExplosionSourceType.Bullet, bulletMass, penetrationFactor); //calc daamge from bullet exploding 
                         hasDetonated = true;
@@ -1036,7 +1035,7 @@ namespace BDArmory.Bullets
                     }
                     if (!viableBullet)
                     {
-                        Debug.Log("[BDArmory.PooledBullet]: !viable bullet, removing");
+                        if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.PooledBullet]: !viable bullet, removing");
                         ExplosiveDetonation(hitPart, hit, bulletRay, true);
                         ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, ExplosionSourceType.Bullet, bulletMass, penetrationFactor); //calc daamge from bullet exploding
                         hasDetonated = true;

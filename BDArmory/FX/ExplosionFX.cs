@@ -472,13 +472,8 @@ namespace BDArmory.FX
                         }
                         if (FlightGlobals.currentMainBody != null && hit.collider.gameObject == FlightGlobals.currentMainBody.gameObject) return false; // Terrain hit. Full absorption. Should avoid NREs in the following.
                         var partHP = partHit.Damage();
-						if (part.name.ToLower().Contains("armor")) partHP = 100;
+						if (ProjectileUtils.IsArmorPart(partHit)) partHP = 100;
                         var partArmour = partHit.GetArmorThickness();
-                        if (part.name.Contains("flagPart"))
-                        { 
-                            partHP = 1;
-                            partArmour = 0;
-                        }
                         var RA = partHit.FindModuleImplementing<ModuleReactiveArmor>();
                         if (RA != null)
                         {
@@ -781,7 +776,7 @@ namespace BDArmory.FX
                         }
                         else
                         {
-                            if ((part == hitpart && part.name.ToLower().Contains("armor")) || !ProjectileUtils.CalculateExplosiveArmorDamage(part, blastInfo.TotalPressure, SourceVesselName, eventToExecute.Hit, ExplosionSource)) //false = armor blowthrough or bullet detonating inside part
+                            if ((part == hitpart && ProjectileUtils.IsArmorPart(part)) || !ProjectileUtils.CalculateExplosiveArmorDamage(part, blastInfo.TotalPressure, SourceVesselName, eventToExecute.Hit, ExplosionSource)) //false = armor blowthrough or bullet detonating inside part
                             {
                                 if (RA != null && !RA.NXRA) //blast wave triggers RA; detonate all remaining RA sections
                                 {
@@ -793,7 +788,7 @@ namespace BDArmory.FX
                                 else
                                 {
                                     damage = part.AddExplosiveDamage(blastInfo.Damage, Caliber, ExplosionSource, dmgMult);
-                                    if (part == hitpart && part.name.ToLower().Contains("armor")) //deal armor damage to armor panel, since we didn't do that earlier
+                                    if (part == hitpart && ProjectileUtils.IsArmorPart(part)) //deal armor damage to armor panel, since we didn't do that earlier
                                     {
                                         ProjectileUtils.CalculateExplosiveArmorDamage(part, blastInfo.TotalPressure, SourceVesselName, eventToExecute.Hit, ExplosionSource); 
                                     }

@@ -350,7 +350,7 @@ namespace BDArmory.WeaponMounts
     {
         /// <summary>
         /// Sibling Module to FXModuleLookAtConstraint, causes indicated mesh object to scale based on distance to target transform
-        /// Module ported over to fix the spring on the M230Chaingun (no Stock equiivilent), though I guess it could be used for other things as well
+        /// Module ported over to fix the spring on the M230Chaingun (no Stock equivalent), though I guess it could be used for other things as well
         /// </summary>
         [KSPField(isPersistant = false)]
         public string transformToScaleName;

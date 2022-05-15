@@ -21,6 +21,7 @@ namespace BDArmory.Utils
             {
                 IgnoredPartNames = new HashSet<string> { "bdPilotAI", "bdShipAI", "missileController", "bdammGuidanceModule" };
                 IgnoredPartNames.UnionWith(PartLoader.LoadedPartsList.Select(p => p.partPrefab.partInfo.name).Where(name => name.Contains("flagPart")));
+                IgnoredPartNames.UnionWith(PartLoader.LoadedPartsList.Select(p => p.partPrefab.partInfo.name).Where(name => name.Contains("conformaldecals")));
                 if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.ProjectileUtils]: Ignored Parts: " + string.Join(", ", IgnoredPartNames));
             }
             return ProjectileUtils.IgnoredPartNames.Contains(part.partInfo.name);
@@ -42,7 +43,6 @@ namespace BDArmory.Utils
             //No struts, they cause weird bugs :) -BahamutoD
             if (hitPart == null) return;
             if (hitPart.partInfo.name.Contains("Strut")) return;
-            if (hitPart.partInfo.name.Contains("flagPart")) return;
             if (IsIgnoredPart(hitPart)) return; // Ignore ignored parts.
 
             // Add decals

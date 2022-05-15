@@ -263,7 +263,7 @@ namespace BDArmory.Damage
                 isProcPart = true;
             }
             StartingArmor = Armor;
-            if (part.name.ToLower().Contains("armor"))
+            if (ProjectileUtils.IsArmorPart(this.part))
             {
                 ArmorPanel = true;
             }
@@ -293,7 +293,7 @@ namespace BDArmory.Damage
                 {
                     typecount++;
                 }
-                if (part.name == "bdPilotAI" || part.name == "bdShipAI" || part.name == "missileController" || part.name == "bdammGuidanceModule")
+                if (ProjectileUtils.IsIgnoredPart(this.part))
                 {
                     isAI = true;
                     Fields["ArmorTypeNum"].guiActiveEditor = false;

@@ -25,7 +25,7 @@ IMPROVEMENTS
 	- Debug labels now organized by type for easier debug tracking.
 	- Refactor the debug settings to be more specific and to have an on-screen only debug labels.
     - Adds SelfSealingTanks/Firebottle options to Proc Part Tanks.
-	- Adds Equilateral Triangle Proc Armor panel.
+	- Adds Isoceles Triangle Proc Armor panel.
 	- Bullets now ignore flags.
 - AI:
 	- Add a 5° deadzone around being on target for dynamic damping to avoid feed-back loop in PID.
