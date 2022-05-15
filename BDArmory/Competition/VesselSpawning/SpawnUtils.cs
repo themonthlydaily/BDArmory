@@ -14,13 +14,15 @@ using BDArmory.Utils;
 
 namespace BDArmory.Competition.VesselSpawning
 {
-    public enum SpawnFailureReason { None, NoCraft, NoTerrain, InvalidVessel, VesselLostParts, VesselFailedToSpawn, TimedOut };
+    public enum SpawnFailureReason { None, NoCraft, NoTerrain, InvalidVessel, VesselLostParts, VesselFailedToSpawn, TimedOut, Cancelled };
 
     public static class SpawnUtils
     {
         // Cancel all spawning modes.
         public static void CancelSpawning()
         {
+            VesselSpawnerStatus.spawnFailureReason = SpawnFailureReason.Cancelled;
+
             // Single spawn
             if (CircularSpawning.Instance.vesselsSpawning || CircularSpawning.Instance.vesselsSpawningOnceContinuously)
             { CircularSpawning.Instance.CancelSpawning(); }
@@ -32,6 +34,37 @@ namespace BDArmory.Competition.VesselSpawning
             SpawnUtils.RevertSpawnLocationCamera(true);
         }
 
+        /// <summary>
+        /// If the VESSELNAMING tag exists in the craft file, then KSP renames the vessel at some point after spawning.
+        /// This function checks for renamed vessels and sets the name back to what it was.
+        /// This must be called once after a yield, before using vessel.vesselName as an index in spawnedVessels.Keys.
+        /// </summary>
+        /// <param name="vessels"></param>
+        public static void CheckForRenamedVessels(Dictionary<string, Vessel> vessels)
+        {
+            foreach (var vesselName in vessels.Keys.ToList())
+            {
+                if (vesselName != vessels[vesselName].vesselName)
+                {
+                    vessels[vesselName].vesselName = vesselName;
+                }
+            }
+        }
+
+        public static int PartCount(Vessel vessel, bool ignoreEVA = true)
+        {
+            if (!ignoreEVA) return vessel.parts.Count;
+            int count = 0;
+            using (var part = vessel.parts.GetEnumerator())
+                while (part.MoveNext())
+                {
+                    if (part.Current == null) continue;
+                    if (ignoreEVA && part.Current.isKerbalEVA()) continue; // Ignore EVA kerbals, which get added at some point after spawning.
+                    ++count;
+                }
+            return count;
+        }
+        
         #region Camera
         public static void ShowSpawnPoint(int worldIndex, double latitude, double longitude, double altitude = 0, float distance = 100, bool spawning = false) => SpawnUtilsInstance.Instance.ShowSpawnPoint(worldIndex, latitude, longitude, altitude, distance, spawning); // Note: this may launch a coroutine when not spawning and there's no active vessel!
         public static void RevertSpawnLocationCamera(bool keepTransformValues = true) => SpawnUtilsInstance.Instance.RevertSpawnLocationCamera(keepTransformValues);
@@ -214,7 +247,6 @@ namespace BDArmory.Competition.VesselSpawning
             }
         }
         #endregion
-
     }
 
     /// <summary>

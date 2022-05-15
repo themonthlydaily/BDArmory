@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-using BDArmory.Competition.VesselSpawning;
 using BDArmory.Settings;
 
 namespace BDArmory.Competition.VesselSpawning.SpawnStrategies

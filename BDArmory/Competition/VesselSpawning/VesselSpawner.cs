@@ -280,24 +280,9 @@ namespace BDArmory.Competition.VesselSpawning
             int rootPartIndex = 0;
             ConfigNode protoVesselNode = ProtoVessel.CreateVesselNode(vesselData.name, vesselData.vesselType, vesselData.orbit, rootPartIndex, partNodes, additionalNodes);
 
-
             // Additional settings for a landed vessel
             if (!vesselData.orbiting)
             {
-                // AUBRANIUM, this finding a flat spot is more appropriate to use externally to this function (e.g., in the spawn strategies) and only when spawning landed vessels. Additionally, there are potentially issues if such adjustments to the spawning location cause craft to be spawned on top of one another.
-                var shouldFindFlatSpot = true;
-                if (shouldFindFlatSpot)
-                {
-                    double newLatitude, newLongitude;
-                    if (vesselData.body.FindFlatSpotNear(vesselData.latitude, vesselData.longitude, out newLatitude, out newLongitude, 500))
-                    {
-                        Debug.Log(string.Format("VesselSpawner found flat spot near {0}, {1} at {2}, {3}", vesselData.latitude, vesselData.longitude, newLatitude, newLongitude));
-                        vesselData.latitude = newLatitude;
-                        vesselData.longitude = newLongitude;
-                    }
-                }
-                Vector3d norm = vesselData.body.GetRelSurfaceNVector(vesselData.latitude, vesselData.longitude);
-
                 bool splashed = false;// = landed && terrainHeight < 0.001;
 
                 // Create the config node representation of the ProtoVessel
@@ -342,13 +327,8 @@ namespace BDArmory.Competition.VesselSpawning
                     lowest = 0;
                 }
 
-                // AUBRANIUM, I see that you changed some of the rotations below here. I've undone your custom changes (which break the orientation for VAB vessels) and corrected how the rotations should be for SPH and VAB (VesselMover also had them wrong).
-                // However, this does not account for control point orientation, which only exists once the reference transform for the vessel is loaded (not the protovessel here).
-                // So, the correct way to handle this is to assign the vessel's reference transform from the vessel's root part (after two fixed updates (see SpawnAllVesselsOnceCoroutine lines 702-790 and 895-901)) and then rotate it into position (and then fix things again if KSP messes with them).
-                // Another thing, please use the format Debug.Log("[BDArmory.<filename without extension>]: <message>); when making debug log entries for ease of parsing the KSP.log file.
-
                 // Figure out the surface height and rotation
-                Quaternion normal = Quaternion.LookRotation((Vector3)norm);// new Vector3((float)norm.x, (float)norm.y, (float)norm.z));
+                Quaternion normal = Quaternion.LookRotation((Vector3)vesselData.body.GetRelSurfaceNVector(vesselData.latitude, vesselData.longitude));
                 Quaternion rotation = Quaternion.identity;
                 float heading = vesselData.heading;
                 if (shipConstruct == null)

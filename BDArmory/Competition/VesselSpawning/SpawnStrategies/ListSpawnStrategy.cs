@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
-using BDArmory.Competition.VesselSpawning;
 
 namespace BDArmory.Competition.VesselSpawning.SpawnStrategies
 {

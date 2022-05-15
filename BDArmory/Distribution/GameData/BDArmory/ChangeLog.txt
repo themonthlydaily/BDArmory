@@ -22,7 +22,11 @@ IMPROVEMENTS
 	- Add a toggle to the UI settings section to disable gapless particle emitters (mostly used for engine trails).
 	- Debug labels now organized by type for easier debug tracking.
 	- Refactor the debug settings to be more specific and to have an on-screen only debug labels.
-  - Adds SelfSealingTanks/Firebottle options to Proc Part Tanks
+	- Adds SelfSealingTanks/Firebottle options to Proc Part Tanks.
+	- Restore the precision of Vector2d persistent fields.
+	- Update the continuous spawning log parsing script.
+	- Add some extra layer masks (internal kerbals are 1<<16, wheels are 1<<26).
+	- Add a BodyUtils.GetTerrainAltitudeAtPos function.
 - AI:
 	- Add a 5° deadzone around being on target for dynamic damping to avoid feed-back loop in PID.
 	- Add a check for requested extending already being satisfied.
@@ -30,9 +34,9 @@ IMPROVEMENTS
 	- Add a 'Waypoint Terrain Avoidance' slider to the pilot AI to control the range and strength of the waypoint terrain avoidance reaction.
 	- Fixes AI GUI slider increments to match AI PAW.
 	- Adds Dynamic Damping P/Y/R readouts to AI GUI.
-  - Fix AI takeoff behavior
-  - Add Store/Restore option to save control surface configs in Pilot AI
-  - Add extend angle to AI to clamp climb/dive angle when doing Air-to-air extending
+	- Fix AI takeoff behavior
+	- Add Store/Restore option to save control surface configs in Pilot AI
+	- Add extend angle to AI to clamp climb/dive angle when doing Air-to-air extending
 - GameModes:
 	- Waypoints:
 		- Add support for multiple waypoint gate models.
@@ -55,7 +59,7 @@ IMPROVEMENTS
 	- Issue 348; weapons will no longer manually fire if mouse cursor is over Weapon Manager GUI.
 	- APBulletMod now implemented for sabot rounds.
 	- Adjusted Sabot depth calculation, should no longer overpenetrate quite so much.
-  - Weapon debug lines now account for frame velocity and flight integrator delay
+	- Weapon debug lines now account for frame velocity and flight integrator delay
 	- Missiles:
 		- Adds Missile multi-targeting.
 		- Adds new Max Missile Tgts setting in WM to set max targets to engage with missiles.
@@ -67,7 +71,12 @@ IMPROVEMENTS
 		- Adjust DLZ calculation to allow for better missile usage at close ranges, small angles to target.
 		- Possibly fixed the 'Radar Stuck' bug.
 		- Add option to display distances on the RWR logarithmically.
-    - Fix HARMs ignoring...? (commit e5abb779)
+		- Fix HARMs ignoring max missiles on target.
+- Spawning:
+	- Refactor spawning into more modular coroutines for use with the spawn and orchestration strategies.
+	- Add an 'instant' lowering mode for vessel easing after spawn (VESSEL_SPAWN_EASE_IN_SPEED = 0).
+	- Add a DEBUG_SPAWNING option.
+	- Add a test for spawning a vessel into an active competition using the SingleVesselSpawning class (debug build only).
 - RWP:
 	- Hall of Shame now supports multiple craft.
 	- Add HoS support to Waypoint mode.
