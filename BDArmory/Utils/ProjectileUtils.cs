@@ -121,7 +121,7 @@ namespace BDArmory.Utils
             /// Calculate damage to armor from kinetic impact based on armor mechanical properties
             /// Sufficient penetration by bullet will result in armor spalling or failure
             /// </summary>
-            if (!hitPart.name.ToLower().Contains("armor"))
+            if (!IsArmorPart(hitPart))
             {
                 if (armorType == 1) return; //ArmorType "None"; no armor to block/reduce blast, take full damage
             }
@@ -238,7 +238,7 @@ namespace BDArmory.Utils
             var Armor = hitPart.FindModuleImplementing<HitpointTracker>();
             if (Armor != null)
             {
-                if (!hitPart.name.ToLower().Contains("armor"))
+                if (!IsArmorPart(hitPart))
                 {
                     if (Armor.ArmorTypeNum == 1) return; //ArmorType "None"; no armor to block/reduce blast, take full damage
                 }
@@ -382,7 +382,7 @@ namespace BDArmory.Utils
             var Armor = hitPart.FindModuleImplementing<HitpointTracker>();
             if (Armor != null)
             {
-                if (hitPart.name.ToLower().Contains("armor"))
+                if (IsArmorPart(hitPart))
                 {
                     spallArea = hitPart.Modules.GetModule<HitpointTracker>().armorVolume * 10000;
                 }
