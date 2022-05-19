@@ -1052,7 +1052,7 @@ namespace BDArmory.UI
                                     float HP = 0;
                                     float WreckFactor = 0;
                                     var AI = VesselModuleRegistry.GetBDModulePilotAI(v.Current, true);
-                                    
+
                                     // If we're running a waypoints competition, only focus on vessels still running waypoints.
                                     if (BDACompetitionMode.Instance.competitionType == CompetitionType.WAYPOINTS && AI != null && AI.currentCommand != Control.PilotCommands.Waypoints) continue;
 
@@ -1216,6 +1216,13 @@ namespace BDArmory.UI
             lastCameraSwitch = Planetarium.GetUniversalTime();
             FlightGlobals.ForceSetActiveVessel(v);
             FlightInputHandler.ResumeVesselCtrlState(v);
+        }
+
+        public IEnumerator SwitchToVesselWhenPossible(Vessel vessel)
+        {
+            var wait = new WaitForFixedUpdate();
+            while (vessel != null && (!vessel.loaded || vessel.packed)) yield return wait;
+            while (vessel != null && vessel != FlightGlobals.ActiveVessel) { ForceSwitchVessel(vessel); yield return wait; }
         }
 
         public void TriggerSwitchVessel(float delay)

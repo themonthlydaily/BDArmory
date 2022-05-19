@@ -2488,33 +2488,33 @@ namespace BDArmory.UI
                             for (int i = 0; i < N; ++i)
                                 armourParts.Contains("BD.PanelArmor");
                             var dt = Time.realtimeSinceStartup - tic;
-                            Debug.Log($"DEBUG HashSet lookup took {dt/N:G3}s");
+                            Debug.Log($"DEBUG HashSet lookup took {dt / N:G3}s");
                             var armourPart = "BD.PanelArmor";
                             tic = Time.realtimeSinceStartup;
                             for (int i = 0; i < N; ++i)
                                 armourPart.ToLower().Contains("armor");
                             dt = Time.realtimeSinceStartup - tic;
-                            Debug.Log($"DEBUG SubStr lookup took {dt/N:G3}s");
+                            Debug.Log($"DEBUG SubStr lookup took {dt / N:G3}s");
 
                             // Using an actual part to include the part name access.
                             var testPart = PartLoader.LoadedPartsList.Select(p => p.partPrefab).First();
                             ProjectileUtils.IsArmorPart(testPart); // Bootstrap the HashSet
                             tic = Time.realtimeSinceStartup;
-                            for (int i = 0; i< N; ++i)
+                            for (int i = 0; i < N; ++i)
                                 ProjectileUtils.IsArmorPart(testPart);
                             dt = Time.realtimeSinceStartup - tic;
-                            Debug.Log($"DEBUG Real part HashSet lookup first part took {dt/N:G3}s");
+                            Debug.Log($"DEBUG Real part HashSet lookup first part took {dt / N:G3}s");
                             testPart = PartLoader.LoadedPartsList.Select(p => p.partPrefab).Last();
                             tic = Time.realtimeSinceStartup;
-                            for (int i = 0; i< N; ++i)
+                            for (int i = 0; i < N; ++i)
                                 ProjectileUtils.IsArmorPart(testPart);
                             dt = Time.realtimeSinceStartup - tic;
-                            Debug.Log($"DEBUG Real part HashSet lookup last part took {dt/N:G3}s");
+                            Debug.Log($"DEBUG Real part HashSet lookup last part took {dt / N:G3}s");
                             tic = Time.realtimeSinceStartup;
                             for (int i = 0; i < N; ++i)
                                 testPart.partInfo.name.ToLower().Contains("armor");
                             dt = Time.realtimeSinceStartup - tic;
-                            Debug.Log($"DEBUG Real part SubStr lookup took {dt/N:G3}s");
+                            Debug.Log($"DEBUG Real part SubStr lookup took {dt / N:G3}s");
 
                         }
                         if (GUI.Button(SLeftRect(++line), "Layer test"))
@@ -2543,10 +2543,6 @@ namespace BDArmory.UI
                         {
                             foreach (var vessel in FlightGlobals.VesselsLoaded)
                                 FireSpitter.CheckStatus(vessel);
-                        }
-                        if (GUI.Button(SLeftRect(++line), "Spawn spawn probe here."))
-                        {
-                            VesselSpawner.SpawnSpawnProbe();
                         }
                         if (GUI.Button(SLeftRect(++line), "Quit KSP."))
                         {

@@ -41,15 +41,15 @@ namespace BDArmory.Competition.VesselSpawning
         private static string _spawnProbeLocation = null;
 
         /// <summary>
-        /// Spawn a spawn-probe at the camera's coordinates.
+        /// Spawn a spawn-probe at the camera's coordinates (plus offset).
         /// </summary>
         /// <returns>The spawn probe on success, else null.</returns>
-        public static Vessel SpawnSpawnProbe()
+        public static Vessel SpawnSpawnProbe(Vector3 offset = default)
         {
-            // Spawn in the SpawnProbe at the camera position and switch to it so that we can clean up the other vessels properly.
+            // Spawn in the SpawnProbe at the camera position.
             var dummyVar = EditorFacility.None;
             Vector3d dummySpawnCoords;
-            FlightGlobals.currentMainBody.GetLatLonAlt(FlightCamera.fetch.transform.position, out dummySpawnCoords.x, out dummySpawnCoords.y, out dummySpawnCoords.z);
+            FlightGlobals.currentMainBody.GetLatLonAlt(FlightCamera.fetch.transform.position + offset, out dummySpawnCoords.x, out dummySpawnCoords.y, out dummySpawnCoords.z);
             if (spawnProbeLocation == null) return null;
             Vessel spawnProbe = VesselSpawner.SpawnVesselFromCraftFile(spawnProbeLocation, dummySpawnCoords, 0f, 0f, 0f, out dummyVar);
             return spawnProbe;
@@ -423,7 +423,7 @@ namespace BDArmory.Competition.VesselSpawning
                 addToRoster = cd.addToRoster;
             }
         }
-        
+
         internal class VesselData
         {
             public string name = null;
