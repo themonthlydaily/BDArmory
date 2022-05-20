@@ -174,6 +174,7 @@ namespace BDArmory.Competition.VesselSpawning
 
             #region Spawn layout configuration
             // Spawn the craft in an outward facing ring. If using teams, cluster the craft around each team spawn point.
+            var radialUnitVector = (spawnPoint - FlightGlobals.currentMainBody.transform.position).normalized;
             var refDirection = Math.Abs(Vector3.Dot(Vector3.up, radialUnitVector)) < 0.71f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.
             var vesselSpawnConfigs = new List<VesselSpawnConfig>();
             if (spawnConfig.teamsSpecific == null)
@@ -204,10 +205,10 @@ namespace BDArmory.Competition.VesselSpawning
                     foreach (var craftUrl in team)
                     {
                         // Figure out spawn point and orientation
-                        var heading = 360f / team.Count * (teamSpawnCount - (team.Count - 1) / 2f) / team.Count + teamHeading;
-                        var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(heading, radialUnitVector) * refDirection, radialUnitVector).normalized; // Local position
+                        var heading = 360f / team.Count * (teamSpawnCount - (team.Count - 1) / 2f) / team.Count;
+                        var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(teamHeading + heading, radialUnitVector) * refDirection, radialUnitVector).normalized; // Local position
                         Vector3 position = teamSpawnPosition + spawnDistance / 4f * direction; // Spawn in clusters around the team spawn points.
-                        direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(heading / 8f, radialUnitVector) * refDirection, radialUnitVector).normalized; // Facing direction
+                        direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(teamHeading + heading / 8f, radialUnitVector) * refDirection, radialUnitVector).normalized; // Facing direction
                         vesselSpawnConfigs.Add(new VesselSpawnConfig(craftUrl, position, direction, (float)spawnConfig.altitude, -80f, spawnAirborne));
                         ++spawnedVesselCount;
                         ++teamSpawnCount;

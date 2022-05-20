@@ -105,7 +105,6 @@ namespace BDArmory.Competition.VesselSpawning
         // Common group-spawning variables. For individual craft, use local versions instead to avoid conflicts.
         protected double terrainAltitude { get; set; }
         protected Vector3d spawnPoint { get; set; }
-        protected Vector3d radialUnitVector { get; set; }
 
         /// <summary>
         /// Acquire the spawn point, killing off other vessels or check for the default 100km PRE range.
@@ -126,7 +125,6 @@ namespace BDArmory.Competition.VesselSpawning
                 // Get the spawning point in world position coordinates.
                 terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(spawnConfig.latitude, spawnConfig.longitude);
                 spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(spawnConfig.latitude, spawnConfig.longitude, terrainAltitude + spawnConfig.altitude);
-                radialUnitVector = (spawnPoint - FlightGlobals.currentMainBody.transform.position).normalized;
                 if ((spawnPoint - FloatingOrigin.fetch.offset).magnitude > 100e3)
                 { LogMessage("WARNING The spawn point is " + ((spawnPoint - FloatingOrigin.fetch.offset).magnitude / 1000).ToString("G4") + "km away. Expect vessels to be killed immediately.", true, false); }
             }
@@ -139,7 +137,6 @@ namespace BDArmory.Competition.VesselSpawning
             // Re-acquire the spawning point after the floating origin shift.
             terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(spawnConfig.latitude, spawnConfig.longitude);
             spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(spawnConfig.latitude, spawnConfig.longitude, terrainAltitude + spawnConfig.altitude);
-            radialUnitVector = (spawnPoint - FlightGlobals.currentMainBody.transform.position).normalized;
             FloatingOrigin.SetOffset(spawnPoint); // This adjusts local coordinates, such that spawnPoint is (0,0,0), which should hopefully help with collider detection.
 
             if (terrainAltitude > 0) // Not over the ocean or on a surfaceless body.
@@ -147,7 +144,7 @@ namespace BDArmory.Competition.VesselSpawning
                 // Wait for the terrain to load in before continuing.
                 Ray ray;
                 RaycastHit hit;
-                radialUnitVector = (spawnPoint - FlightGlobals.currentMainBody.transform.position).normalized;
+                var radialUnitVector = (spawnPoint - FlightGlobals.currentMainBody.transform.position).normalized;
                 var testPosition = spawnPoint + 1000f * radialUnitVector;
                 var terrainDistance = 1000f + (float)spawnConfig.altitude;
                 var lastTerrainDistance = terrainDistance;
