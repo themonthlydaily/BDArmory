@@ -3404,7 +3404,7 @@ namespace BDArmory.Control
             else if (command == PilotCommands.FlyTo)
             {
                 SetStatus("Fly To");
-                FlyOrbit(s, assignedPositionGeo, 2500, idleSpeed, ClockwiseOrbit);
+                FlyOrbit(s, assignedPositionGeo, 500, idleSpeed, ClockwiseOrbit);
             }
             else if (command == PilotCommands.Attack)
             {
