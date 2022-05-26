@@ -58,72 +58,72 @@
   <ItemGroup>
     <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\_LocalDev\KSPRefs\Assembly-CSharp.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="KSPAssets, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\_LocalDev\KSPRefs\KSPAssets.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\KSPAssets.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.AnimationModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.AnimationModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.AnimationModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.AssetBundleModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.AssetBundleModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.AssetBundleModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.AudioModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.AudioModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.AudioModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.ImageConversionModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.ImageConversionModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.ImageConversionModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.IMGUIModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.IMGUIModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.IMGUIModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.InputLegacyModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.InputLegacyModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.InputLegacyModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.InputModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.InputModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.InputModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.JSONSerializeModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.JSONSerializeModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.JSONSerializeModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.ParticleSystemModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.ParticleSystemModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.ParticleSystemModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.PhysicsModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.PhysicsModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.PhysicsModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.TextCoreModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.TextCoreModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.TextCoreModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.TextRenderingModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.TextRenderingModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.TextRenderingModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UI, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.UI.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.UI.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UIElementsModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.UIElementsModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.UIElementsModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UIModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.UIModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.UIModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UnityWebRequestModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.UnityWebRequestModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.UnityWebRequestModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UnityWebRequestWWWModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.UnityWebRequestWWWModule.dll</HintPath>
+      <HintPath>_LocalDev\KSPRefs\UnityEngine.UnityWebRequestWWWModule.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -243,8 +243,8 @@
     <Compile Include="Services\IEngageService.cs" />
     <Compile Include="Services\INotificableService.cs" />
     <Compile Include="Services\NotificableService.cs" />
-    <Compile Include="Settings/BDAPersistentSettingsField.cs" />
-    <Compile Include="Settings/BDArmorySettings.cs" />
+    <Compile Include="Settings\BDAPersistentSettingsField.cs" />
+    <Compile Include="Settings\BDArmorySettings.cs" />
     <Compile Include="Settings\BDAWindowSettingsField.cs" />
     <Compile Include="Settings\BDInputSettingsFields.cs" />
     <Compile Include="Settings\BDTISettings.cs" />
@@ -425,36 +425,42 @@
     <None Include="Distribution\GameData\BDArmory\Parts\AmmoBox\UniversalAmmoBoxBDA.cfg" />
     <None Include="Distribution\GameData\BDArmory\Parts\AmmoBox\cannonShell.cfg" />
     <None Include="Distribution\GameData\BDArmory\Parts\AmmoBox\model.mu" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD0.5x0.5panelArmor.cfg" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD0.5x0.5slopeArmor.cfg" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD1.5x0.5panelArmor.cfg" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD12x4panelArmor.cfg" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD16x4panelArmor.cfg" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD1x0.5panelArmor.cfg" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD1x0.5slopeArmor.cfg" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD1x1panelArmor.cfg" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD1x1panelArmor.mu" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD1x1slopeArmor.cfg" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD1x1slopeArmor.mu" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD2x0.5panelArmor.cfg" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD2x1panelArmor.cfg" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD2x1panelArmor.mu" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD2x1slopeArmor.cfg" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD2x1slopeArmor.mu" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD2x2panelArmor.cfg" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD2x2slopeArmor.cfg" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD3x1panelArmor.cfg" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD3x1panelArmor.mu" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD4x1panelArmor.cfg" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD4x1panelArmor.mu" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD4x2panelArmor.cfg" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD4x2slopeArmor.cfg" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD4x4panelArmor.cfg" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD4x4slopeArmor.cfg" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD6x2panelArmor.cfg" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD8x2panelArmor.cfg" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD8x4panelArmor.cfg" />
-    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\BD8x4slopeArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\IsoTriPanel.mu" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\IsoTripanelArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD0.5x0.5panelArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD0.5x0.5slopeArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD1.5x0.5panelArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD12x4panelArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD16x4panelArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD1x0.5panelArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD1x0.5slopeArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD1x1panelArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD1x1panelArmor.mu" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD1x1slopeArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD1x1slopeArmor.mu" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD2x0.5panelArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD2x1panelArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD2x1panelArmor.mu" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD2x1slopeArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD2x1slopeArmor.mu" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD2x2panelArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD2x2slopeArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD3x1panelArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD3x1panelArmor.mu" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD4x1panelArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD4x1panelArmor.mu" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD4x2panelArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD4x2slopeArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD4x4panelArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD4x4slopeArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD6x2panelArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD8x2panelArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD8x4panelArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BD8x4slopeArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Panel.mu" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\panelArmor.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\TriPanel.mu" />
+    <None Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\TripanelArmor.cfg" />
     <None Include="Distribution\GameData\BDArmory\Parts\awacsRadar\awacsRadar.cfg" />
     <None Include="Distribution\GameData\BDArmory\Parts\awacsRadar\model.mu" />
     <None Include="Distribution\GameData\BDArmory\Parts\bammGuidance\model.mu" />
@@ -519,6 +525,8 @@
     <None Include="Distribution\GameData\BDArmory\Parts\m230ChainGun\Sounds\m230shot.ogg" />
     <None Include="Distribution\GameData\BDArmory\Parts\maverick\maverickMissile.cfg" />
     <None Include="Distribution\GameData\BDArmory\Parts\maverick\model.mu" />
+    <None Include="Distribution\GameData\BDArmory\Parts\MissileBay\BombBay.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\MissileBay\Model.mu" />
     <None Include="Distribution\GameData\BDArmory\Parts\missileTurret\missileTurret.cfg" />
     <None Include="Distribution\GameData\BDArmory\Parts\missileTurret\model.mu" />
     <None Include="Distribution\GameData\BDArmory\Parts\MK1OpenCockpit\mk1opencockpit_RP_Type2.cfg" />
@@ -683,6 +691,8 @@
     <Content Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\CarrierDeck.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\CarrierDeckNRM.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\EYEGrey.png" />
+    <Content Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\BDGrey_NRM.dds" />
+    <Content Include="Distribution\GameData\BDArmory\Parts\ArmorPlate\Legacy\EYEGrey.dds" />
     <Content Include="Distribution\GameData\BDArmory\Parts\awacsRadar\tex_awacs.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\bammGuidance\texture.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\browninganm2\muzzle.png" />
@@ -740,6 +750,7 @@
     <Content Include="Distribution\GameData\BDArmory\Parts\m230ChainGun\smoke.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\m230ChainGun\texture.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\maverick\texture.png" />
+    <Content Include="Distribution\GameData\BDArmory\Parts\MissileBay\ordinanceBay.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\missileTurret\tex_detectionRadar.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\missileTurret\tex_lockingTurret.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\missileTurret\tex_missileTurret.png" />

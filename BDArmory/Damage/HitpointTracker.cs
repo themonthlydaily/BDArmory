@@ -690,31 +690,33 @@ namespace BDArmory.Damage
                         {
                             structuralVolume = armorVolume * Mathf.PI / 6f * 0.1f; // Box area * sphere/cube ratio * 10cm. We use sphere/cube ratio to get similar results as part.GetAverageBoundSize().
                             density = (partMass * 1000f) / structuralVolume;
-                            if (density > 1e5f || density < 10)
+                            //if (density > 1e5f || density < 10)
+                            if (density > 1e5f || density < 145) //this should cause HP clamping for hollow parts when they reach stock Struct tube thickness or therabouts
                             {
-                                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} still has extreme density: {density}! Setting HP based only on mass instead.");
+                                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.HitpointTracker]: procPart {part.name} still has extreme density: {density}! Setting HP based only on mass instead.");
                                 clampHP = true;
                             }
-                            density = Mathf.Clamp(density, 500, 10000);
+                            //density = Mathf.Clamp(density, 500, 10000);
+                            density = Mathf.Clamp(density, 250, 10000);
                             structuralMass = density * structuralVolume;
                             //might instead need to grab Procpart mass/size vars via reflection
-                            hitpoints = (structuralMass * hitpointMultiplier * 0.333f) * 2.6f;
+                            hitpoints = (structuralMass * hitpointMultiplier * 0.333f) * 5.2f;
                         }
                         if (clampHP)
                         {
-                            if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.HitpointTracker]: Clamping hitpoints for part {part.name} from {hitpoints} to {hitpointMultiplier * (partMass + HullMassAdjust) * 333f}");
-                            hitpoints = hitpointMultiplier * partMass * 333f;
+                            if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.HitpointTracker]: Clamping hitpoints for Procpart {part.name} from {hitpoints} to {hitpointMultiplier * (partMass*100) * 333f}");
+                            //hitpoints = hitpointMultiplier * partMass * 333f; 
+                            hitpoints = hitpointMultiplier * (partMass * 10) * 250; //to not have Hp immediately get clamped to 25
                         }
                         //hitpoints = (structuralVolume * Mathf.Pow(density, .333f) * Mathf.Clamp(80 - (structuralVolume / 2), 80 / 4, 80)) * hitpointMultiplier * 0.333f; //volume * cuberoot of density * HP mult scaled by size
 
                         // SuicidalInsanity B9 patch //should this come before the hp clamping?
                         if (isProcWing)
                         {
-                            //if (part.Modules.Contains("FARWingAerodynamicModel") || part.Modules.Contains("FARControllableSurface"))
                             if (FerramAerospace.CheckForFAR())
                             {
                                 //procwing hp already modified by mass, because it is mass
-                                //so using base part mass is it can be properly modified by material HP mod below
+                                //so using base part mass as it can be properly modified by material HP mod below
                                 if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.HitpointTracker]: Found {part.name} (FAR); HP: {Hitpoints}->{hitpoints} at time {Time.time}, partMass: {partMass}, FAR massMult: {FerramAerospace.GetFARMassMult(part)}");
                                 //hitpoints = ((partMass / FerramAerospace.GetFARMassMult(part)) * 1000f) * 3.5f * hitpointMultiplier * 0.333f; //To account for FAR's Strength-mass Scalar.  
                                 hitpoints = (partMass * 1000f) * 3.5f * hitpointMultiplier * 0.333f;
@@ -739,7 +741,7 @@ namespace BDArmory.Damage
                                 break;
                         }
                         hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
-                        if (hitpoints <= 0) hitpoints = HpRounding;
+                        if (hitpoints < 100) hitpoints = 100;
                         if (BDArmorySettings.DEBUG_ARMOR && maxHitPoints <= 0 && Hitpoints != hitpoints) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} updated HP: {Hitpoints}->{hitpoints} at time {Time.time}, partMass: {partMass}, density: {density}, structuralVolume: {structuralVolume}, structuralMass {structuralMass}");
                     }
                     else // Override based on part configuration for custom parts
@@ -757,7 +759,7 @@ namespace BDArmory.Damage
                                 break;
                         }
                         hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
-                        if (hitpoints <= 0) hitpoints = HpRounding;
+                        if (hitpoints < 100) hitpoints = 100;
                         if (BDArmorySettings.DEBUG_ARMOR && maxHitPoints <= 0 && Hitpoints != hitpoints) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} updated HP: {Hitpoints}->{hitpoints} at time {Time.time}");
                     }
                 }
@@ -767,13 +769,13 @@ namespace BDArmory.Damage
                                                 //hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
                                                 //armorpanel HP is panel integrity, as 'HP' is the slab of armor; having a secondary unused HP pool will only make armor massively more effective against explosions than it should due to how isInLineOfSight calculates intermediate parts
                 }
+                if (hitpoints < 100) hitpoints = 100;
             }
             else
             {
                 hitpoints = 5;
                 Armor = 2;
             }
-            if (hitpoints <= 0) hitpoints = HpRounding;
             if (!_finished_setting_up && _armorConfigured && _hullConfigured) _hpConfigured = true;
             return hitpoints;
         }

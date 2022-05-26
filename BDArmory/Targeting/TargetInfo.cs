@@ -405,7 +405,18 @@ namespace BDArmory.Targeting
             ataDot = (ataDot + 1) / 2; // Adjust from 0-1 instead of -1 to 1
             return ataDot * ataDot;
         }
-
+        public float TargetPriEngagement(MissileFire mf) // Square cosine of antenna train angle
+        {
+            if (mf == null) return 0; // no WM, so no valid target, no impact on targeting score
+            if (mf.vessel.LandedOrSplashed)
+            {
+                return -1; //ground target
+            }
+            else
+            {
+                return 1; // Air target
+            }
+        }
         public float TargetPriAcceleration() // Normalized clamped acceleration for the target
         {
             float bodyGravity = (float)PhysicsGlobals.GravitationalAcceleration * (float)vessel.orbit.referenceBody.GeeASL; // Set gravity for calculations;
