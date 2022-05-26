@@ -1805,7 +1805,7 @@ namespace BDArmory.Competition
             yield return new WaitForSeconds(delay);
             if (vessel != null && debrisTypes.Contains(vesselType) && !debrisTypes.Contains(vessel.vesselType))
             {
-                Debug.Log("[BDArmory.BDACompetitionMode]: Debris " + vessel.vesselName + " is no longer labelled as debris, not removing.");
+                if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.BDACompetitionMode]: Debris " + vessel.vesselName + " is no longer labelled as debris, not removing.");
                 yield break;
             }
             if (vessel != null)
@@ -1821,14 +1821,13 @@ namespace BDArmory.Competition
                 }
                 else
                 {
-                    if (BDArmorySettings.DEBUG_OTHER)
-                        Debug.Log("[BDArmory.BDACompetitionMode]: Removing " + vessel.vesselName);
+                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.BDACompetitionMode]: Removing " + vessel.vesselName);
                     yield return SpawnUtilsInstance.Instance.RemoveVesselCoroutine(vessel);
                 }
             }
             if (nonCompetitorsToRemove.Contains(vessel))
             {
-                if (vessel.vesselName != null) { Debug.Log($"[BDArmory.BDACompetitionMode]: {vessel.vesselName} removed."); }
+                if (BDArmorySettings.DEBUG_OTHER && vessel.vesselName != null) { Debug.Log($"[BDArmory.BDACompetitionMode]: {vessel.vesselName} removed."); }
                 nonCompetitorsToRemove.Remove(vessel);
             }
         }
@@ -2301,6 +2300,9 @@ namespace BDArmory.Competition
 
             if (BDArmorySettings.COMPETITION_DURATION > 0 && now - competitionStartTime >= BDArmorySettings.COMPETITION_DURATION * 60d)
             {
+                var message = "Ending competition due to out-of-time.";
+                competitionStatus.Add(message);
+                Debug.Log($"[BDArmory.BDACompetitionMode:{CompetitionID.ToString()}]: " + message);
                 LogResults("due to out-of-time");
                 StopCompetition();
             }

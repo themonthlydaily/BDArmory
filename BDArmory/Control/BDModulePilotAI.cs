@@ -2545,7 +2545,7 @@ namespace BDArmory.Control
                     debugString.Append($"Dodging gunfire");
                     float threatDirectionFactor = Vector3.Dot(vesselTransform.up, threatRelativePosition.normalized);
                     //Vector3 axis = -Vector3.Cross(vesselTransform.up, threatRelativePosition);
-                    // FIXME AUBRANIUM When evading while in waypoint following mode, the breakTarget ought to be roughly in the direction of the waypoint.
+                    // FIXME When evading while in waypoint following mode, the breakTarget ought to be roughly in the direction of the waypoint.
 
                     Vector3 breakTarget = threatRelativePosition * 2f;       //for the most part, we want to turn _towards_ the threat in order to increase the rel ang vel and get under its guns
 

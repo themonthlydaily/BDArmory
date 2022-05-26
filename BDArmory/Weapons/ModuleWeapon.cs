@@ -1334,7 +1334,7 @@ namespace BDArmory.Weapons
                     }
                     catch
                     {
-                        Debug.Log("[BDArmory.ModuleWeapon] Missing fire anim " + i);
+                        Debug.LogWarning($"[BDArmory.ModuleWeapon]: {OriginalShortName} is missing fire anim " + i);
                     }
                 }
             }

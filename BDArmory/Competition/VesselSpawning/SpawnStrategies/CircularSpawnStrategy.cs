@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using BDArmory.Competition.VesselSpawning;
 using UnityEngine;
 using BDArmory.Competition.RemoteOrchestration;
-using static BDArmory.Competition.VesselSpawning.VesselSpawnerBase;
 
 namespace BDArmory.Competition.VesselSpawning.SpawnStrategies
 {

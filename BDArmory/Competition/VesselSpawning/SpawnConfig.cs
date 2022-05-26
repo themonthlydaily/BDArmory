@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace BDArmory.Competition.VesselSpawning
 {
@@ -9,7 +10,7 @@ namespace BDArmory.Competition.VesselSpawning
     /// 
     /// Note:
     /// This is currently partially specific to SpawnAllVesselsOnce and SpawnVesselsContinuosly.
-    /// Once the spawn strategies take over that functionality, those components may be dropped from here.
+    /// TODO: Make this generic and make CircularSpawnConfig a derived class of this.
     /// </summary>
     [Serializable]
     public class SpawnConfig
@@ -62,5 +63,32 @@ namespace BDArmory.Competition.VesselSpawning
         public List<List<string>> teamsSpecific; // Dictionary of vessels and teams. For splitting specific vessels into specific teams.
         public string folder = "";
         public List<string> craftFiles = null;
+    }
+
+    /// <summary>
+    /// Configuration for spawning individual vessels. 
+    /// </summary>
+    [Serializable]
+    public struct VesselSpawnConfig
+    {
+        public string craftURL; // The craft file.
+        public Vector3 position; // World-space coordinates (x,y,z) to place the vessel once spawned (before adjusting for terrain altitude).
+        public Vector3 direction; // Direction to point the plane horizontally (i.e., heading).
+        public float altitude; // Altitude above terrain / water to adjust spawning position to.
+        public float pitch; // Pitch if spawning airborne.
+        public bool airborne; // Whether the vessel should be spawned in an airborne configuration or not.
+        public int teamIndex;
+        public bool reuseURLVesselName; // Reuse the vesselName for the same craftURL (for continuous spawning).
+        public VesselSpawnConfig(string craftURL, Vector3 position, Vector3 direction, float altitude, float pitch, bool airborne, int teamIndex = 0, bool reuseURLVesselName = false)
+        {
+            this.craftURL = craftURL;
+            this.position = position;
+            this.direction = direction;
+            this.altitude = altitude;
+            this.pitch = pitch;
+            this.airborne = airborne;
+            this.teamIndex = teamIndex;
+            this.reuseURLVesselName = reuseURLVesselName;
+        }
     }
 }

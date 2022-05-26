@@ -30,6 +30,10 @@ IMPROVEMENTS
 	- Adds new CameraTools switching modes, right click the cameraTools button [A] on the VesselSwitcherGUI.
 	 - [S] - Camera will autoswitch to vessel with highest score
 	 - [D] - Camera will switch to furthest vessel from dogfight centroid
+	- Restore the precision of Vector2d persistent fields.
+	- Update the continuous spawning log parsing script.
+	- Add some extra layer masks (internal kerbals are 1<<16, wheels are 1<<26).
+	- Add a BodyUtils.GetTerrainAltitudeAtPos function.
 - AI:
 	- Add a 5° deadzone around being on target for dynamic damping to avoid feed-back loop in PID.
 	- Add a check for requested extending already being satisfied.
@@ -82,7 +86,12 @@ IMPROVEMENTS
 		- AI will now break off and extend away from target when firing nukes if within projected blast radius.
 		- Continuous Rod warhead missiles now target a point a few meters above their target to better take advantage of planar AoE.
 		- Missiles no longer prematurely detonate if DetonateAtMinimumDistance is enabled.
-    - Fix HARMs ignoring...? (commit e5abb779)
+		- Fix HARMs ignoring max missiles on target.
+- Spawning:
+	- Refactor spawning into more modular coroutines for use with the spawn and orchestration strategies.
+	- Add an 'instant' lowering mode for vessel easing after spawn (VESSEL_SPAWN_EASE_IN_SPEED = 0).
+	- Add a DEBUG_SPAWNING option.
+	- Add a test for spawning a vessel into an active competition using the SingleVesselSpawning class (debug build only).
 - RWP:
 	- Hall of Shame now supports multiple craft.
 	- Add HoS support to Waypoint mode.

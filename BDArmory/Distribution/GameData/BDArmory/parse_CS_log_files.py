@@ -4,10 +4,11 @@ import re
 import sys
 from pathlib import Path
 
-VERSION = "2.0"
+VERSION = "2.1"
 
-parser = argparse.ArgumentParser(description="Log-file parser for continuous spawning logs.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("logs", nargs='*', help="Log-files to parse. If none are given, all valid log-files are parsed.")
+parser = argparse.ArgumentParser(description="Log file parser for continuous spawning logs.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument("logs", nargs='*', help="Log files to parse. If none are given, the latest log file is parsed.")
+parser.add_argument("-a", "--all-files", action='store_true', help="Parse all valid continuous spawning log files. (Note: the same vessel name in a later file will override the earlier file.)")
 parser.add_argument("-n", "--no-file", action='store_true', help="Don't create a csv file.")
 parser.add_argument("-w", "--weights", type=str, default="2,1,-1,0.02,2e-5,0.05,2e-3,1e-4,0.5,0.01,2e-5,0,0", help="Score weights.")
 parser.add_argument("--show-weights", action='store_true', help="Show the score weights.")
@@ -35,8 +36,14 @@ if args.show_weights:
         print(f"{f}:{' '*(field_width - len(f))} {w}")
     sys.exit()
 
+if len(args.logs) > 0:
+    competition_files = [Path(filename) for filename in args.logs if filename.endswith(".log")]
+else:
+    competition_files = list(sorted(list(log_dir.glob("cts-*.log"))))
+    if not args.all_files and len(competition_files) > 0:
+        competition_files = competition_files[-1:]
+
 data = {}
-competition_files = [Path(filename) for filename in args.logs if filename.endswith(".log")] if len(args.logs) > 0 else [filename for filename in Path.iterdir(log_dir) if filename.suffix in (".log", ".txt")]  # Pre-scan the files in case something changes (iterators don't like that).
 for filename in competition_files:
     with open(log_dir / filename if len(args.logs) == 0 else filename, "r") as file_data:
         Craft_Name = None
