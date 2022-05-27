@@ -1294,6 +1294,13 @@ namespace BDArmory.UI
             FlightInputHandler.ResumeVesselCtrlState(v);
         }
 
+        public IEnumerator SwitchToVesselWhenPossible(Vessel vessel)
+        {
+            var wait = new WaitForFixedUpdate();
+            while (vessel != null && (!vessel.loaded || vessel.packed)) yield return wait;
+            while (vessel != null && vessel != FlightGlobals.ActiveVessel) { ForceSwitchVessel(vessel); yield return wait; }
+        }
+
         public void TriggerSwitchVessel(float delay)
         {
             lastCameraSwitch = delay > 0 ? Planetarium.GetUniversalTime() - (BDArmorySettings.CAMERA_SWITCH_FREQUENCY - delay) : 0f;

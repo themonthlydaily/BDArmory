@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
-VERSION = "1.16.4"
+VERSION = "1.16.5"
 
 parser = argparse.ArgumentParser(description="Tournament log parser", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('tournament', type=str, nargs='*', help="Tournament folder to parse.")
@@ -505,7 +505,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                         'BD taken': f"{tmp['battleDamageTaken']:.0f}",
                         'Acc%': f"{tmp['accuracy']:.3g}",
                         'RktAcc%': f"{tmp['rocket_accuracy']:.3g}",
-                        'HP%': f"{tmp['HPremaining']:.2f}",
+                        'HP%': f"{tmp['HPremaining']:.3g}",
                         'Dmg/Hit': f"{tmp['damage/hit']:.1f}",
                         'Hits/Sp': f"{tmp['hits/spawn']:.1f}",
                         'Dmg/Sp': f"{tmp['damage/spawn']:.1f}",
