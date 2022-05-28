@@ -3463,7 +3463,7 @@ namespace BDArmory.Control
                 else // Orbit around the assigned point at the default altitude.
                 {
                     SetStatus("Fly To");
-                    FlyOrbit(s, assignedPositionGeo, 500, idleSpeed, ClockwiseOrbit);
+                    FlyOrbit(s, assignedPositionGeo, 2500, idleSpeed, ClockwiseOrbit);
                 }
             }
             else if (command == PilotCommands.Attack)
