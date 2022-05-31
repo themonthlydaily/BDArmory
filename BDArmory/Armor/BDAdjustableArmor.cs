@@ -10,20 +10,20 @@ namespace BDArmory.Armor
 {
     public class BDAdjustableArmor : PartModule
     {
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorAdjustParts"),//Move Child PArts
- UI_Toggle(disabledText = "#LOC_BDArmory_false", enabledText = "#LOC_BDArmory_true")]//false--true
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorAdjustParts"),//Move Child Parts
+            UI_Toggle(disabledText = "#LOC_BDArmory_false", enabledText = "#LOC_BDArmory_true")]//false--true
         public bool moveChildParts = true;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorWidth"),//Armor Width
- UI_FloatRange(minValue = 0.5f, maxValue = 16, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
+            UI_FloatRange(minValue = 0.5f, maxValue = 16, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
         public float Width = 1;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_ArmorWidthR"),//Right Side Width
-UI_FloatRange(minValue = 0.1f, maxValue = 8, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
+            UI_FloatRange(minValue = 0.1f, maxValue = 8, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
         public float scaleneWidth = 1;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorLength"),//Armor Length
- UI_FloatRange(minValue = 0.5f, maxValue = 16, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
+            UI_FloatRange(minValue = 0.5f, maxValue = 16, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
         public float Length = 1;
 
         [KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_ArmorTriIso", active = true)]//Toggle Tri Type
@@ -222,7 +222,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 8, stepIncrement = 0.1f, scene = UI_Sc
                     scaleneTransforms[i].localScale = new Vector3(scaleneTri ? scaleneWidth : Width, Length, Mathf.Clamp((armor.Armor / 10), 0.1f, 1500));
                 }
             }
-			updateArmorStats();
+            updateArmorStats();
             if (updateNodes) UpdateStackNode(true);
         }
 
@@ -253,7 +253,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 8, stepIncrement = 0.1f, scene = UI_Sc
                         }
                         else
                         {
-                            stackNode.Current.size = Mathf.CeilToInt(scaleneTri ? scaleneWidth/2 : Width / 2);
+                            stackNode.Current.size = Mathf.CeilToInt(scaleneTri ? scaleneWidth / 2 : Width / 2);
                             stackNode.Current.breakingForce = scaleneTri ? scaleneWidth : Width * 100;
                             stackNode.Current.breakingTorque = scaleneTri ? scaleneWidth : Width * 100;
                             stackNode.Current.position.x = originalStackNodePosition[stackNode.Current.id].x - ((scaleneTri ? ((scaleneWidth - 1) / 2) : Width - 1) / offsetScale);// and a right tri hypotenuse node shouldn't move at all
@@ -284,7 +284,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 8, stepIncrement = 0.1f, scene = UI_Sc
                     if (stackNode.Current.id == "side")
                     {
                         stackNode.Current.size = Mathf.CeilToInt(((Width / 2) + (Length / 2)) / 2);
-                        stackNode.Current.orientation = new Vector3(1, 0, -(Width/ Length));
+                        stackNode.Current.orientation = new Vector3(1, 0, -(Width / Length));
                     }
                 }
         }

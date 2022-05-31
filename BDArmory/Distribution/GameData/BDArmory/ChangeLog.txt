@@ -24,12 +24,12 @@ IMPROVEMENTS
 	- Add a toggle to the UI settings section to disable gapless particle emitters (mostly used for engine trails).
 	- Debug labels now organized by type for easier debug tracking.
 	- Refactor the debug settings to be more specific and to have an on-screen only debug labels.
-    - Adds SelfSealingTanks/Firebottle options to Proc Part Tanks.
+	- Adds SelfSealingTanks/Firebottle options to Proc Part Tanks.
 	- Adds Oblique Triangle Proc Armor panel.
 	- Bullets now ignore flags.
 	- Adds new CameraTools switching modes, right click the cameraTools button [A] on the VesselSwitcherGUI.
-	 - [S] - Camera will autoswitch to vessel with highest score
-	 - [D] - Camera will switch to furthest vessel from dogfight centroid
+		- [S] - Camera will autoswitch to vessel with highest score.
+		- [D] - Camera will switch to furthest vessel from dogfight centroid.
 	- Restore the precision of Vector2d persistent fields.
 	- Update the continuous spawning log parsing script.
 	- Add some extra layer masks (internal kerbals are 1<<16, wheels are 1<<26).
@@ -44,7 +44,7 @@ IMPROVEMENTS
 	- Fix AI takeoff behavior.
 	- Add Store/Restore option to save control surface configs in Pilot AI.
 	- Add extend angle to AI to clamp climb/dive angle when doing Air-to-air extending.
-	- Add Air/Ground target preference weighting to Target Priorities
+	- Add Air/Ground target preference weighting to Target Priorities.
 - GameModes:
 	- Waypoints:
 		- Add support for multiple waypoint gate models.

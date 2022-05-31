@@ -1052,7 +1052,7 @@ namespace BDArmory.UI
                 lastActiveVessel = FlightGlobals.ActiveVessel;
                 double timeSinceChange = now - lastCameraSwitch;
 
-                float bestScore = currentMode > 1? 0 : 10000000;
+                float bestScore = currentMode > 1 ? 0 : 10000000;
                 Vessel bestVessel = null;
                 bool foundActiveVessel = false;
                 Vector3 centroid = Vector3.zero;
@@ -1070,7 +1070,7 @@ namespace BDArmory.UI
                     centroid /= (float)count;
                 }
                 // redo the math
-                using (var v = FlightGlobals.Vessels.GetEnumerator())
+                using (var v = FlightGlobals.Vessels.GetEnumerator()) // FIXME This iterates over all weapon managers on all active vessels. It would be better to only iterate over the weapon managers in WeaponManagers.
                     // check all the planes
                     while (v.MoveNext())
                     {
@@ -1091,7 +1091,7 @@ namespace BDArmory.UI
                                                 if (BDACompetitionMode.Instance.Scores.ScoreData.ContainsKey(wms.Current.vessel.vesselName))
                                                 {
                                                     scoreData = BDACompetitionMode.Instance.Scores.ScoreData[wms.Current.vessel.vesselName];
-                                                    score = scoreData.hits; //expand to someething closer to the score parser score?
+                                                    score = scoreData.hits; //expand to something closer to the score parser score?
                                                 }
                                                 if (ContinuousSpawning.Instance.vesselsSpawningContinuously)
                                                 {
@@ -1113,7 +1113,7 @@ namespace BDArmory.UI
                                                 cameraScores[wms.Current.vessel.GetName()] = vesselScore;
                                                 break;
                                             }
-                                        case 3: //distance based - look for most distant vessel from centroid; use with CameraTools centorid option
+                                        case 3: //distance based - look for most distant vessel from centroid; use with CameraTools centroid option
                                             {
                                                 vesselScore = (centroid - wms.Current.vessel.CoM).magnitude;
                                                 if (vesselScore > bestScore)
@@ -1294,7 +1294,6 @@ namespace BDArmory.UI
                                             }
                                     }
                                 }
-
                     }
                 if (!foundActiveVessel)
                 {
