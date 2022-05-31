@@ -1334,7 +1334,7 @@ namespace BDArmory.Weapons.Missiles
                                 TargetPosition = radarTarget.predictedPosition;
                             }
                             else
-                                TargetPosition = radarTarget.predictedPositionWithChaffFactor;
+                                TargetPosition = radarTarget.predictedPositionWithChaffFactor(chaffEffectivity);
                             TargetVelocity = radarTarget.velocity;
                             TargetAcceleration = radarTarget.acceleration;
                             targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(TargetPosition, vessel.mainBody);
