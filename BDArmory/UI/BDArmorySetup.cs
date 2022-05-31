@@ -2386,7 +2386,7 @@ namespace BDArmory.UI
                         {
                             var flare = flareObj.GetComponent<CMFlare>();
                             if (flare == null) continue;
-                            flare.EnableEmitters(BDArmorySettings.FLARE_SMOKE);
+                            flare.EnableEmitters();
                         }
                 }
                 BDArmorySettings.STRICT_WINDOW_BOUNDARIES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.STRICT_WINDOW_BOUNDARIES, Localizer.Format("#LOC_BDArmory_Settings_StrictWindowBoundaries"));//"Strict Window Boundaries"

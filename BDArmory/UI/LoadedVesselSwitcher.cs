@@ -55,6 +55,16 @@ namespace BDArmory.UI
             }
         }
 
+        private Dictionary<string, List<Vessel>> _vessels = new Dictionary<string, List<Vessel>>();
+        public Dictionary<string, List<Vessel>> Vessels
+        {
+            get
+            {
+                if (!upToDateWMs) UpdateList();
+                return _vessels;
+            }
+        }
+
         // booleans to track state of buttons affecting everyone
         private bool _teamsAssigned = false;
         private bool _autoPilotEnabled = false;
@@ -229,6 +239,18 @@ namespace BDArmory.UI
                         else
                             weaponManagers.Add(wms.Team.Name, new List<MissileFire> { wms });
                     }
+                }
+
+            _vessels.Clear();
+            using (var team = weaponManagers.Keys.GetEnumerator())
+                while (team.MoveNext())
+                {
+                    _vessels.Add(team.Current, new List<Vessel>());
+                    using (var wm = weaponManagers[team.Current].GetEnumerator())
+                        while (wm.MoveNext())
+                        {
+                            _vessels[team.Current].Add(wm.Current.vessel);
+                        }
                 }
             upToDateWMs = true;
         }

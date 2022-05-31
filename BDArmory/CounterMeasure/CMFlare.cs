@@ -81,7 +81,7 @@ namespace BDArmory.CounterMeasure
                     }
             }
 
-            EnableEmitters(BDArmorySettings.FLARE_SMOKE);
+            EnableEmitters();
 
             BDArmorySetup.numberOfParticleEmitters++;
 
@@ -90,13 +90,12 @@ namespace BDArmory.CounterMeasure
                 lights = gameObject.GetComponentsInChildren<Light>();
             }
 
-            IEnumerator<Light> lgt = lights.AsEnumerable().GetEnumerator();
-            while (lgt.MoveNext())
-            {
-                if (lgt.Current == null) continue;
-                lgt.Current.enabled = true;
-            }
-            lgt.Dispose();
+            using (IEnumerator<Light> lgt = lights.AsEnumerable().GetEnumerator())
+                while (lgt.MoveNext())
+                {
+                    if (lgt.Current == null) continue;
+                    lgt.Current.enabled = true;
+                }
             startTime = Time.time;
 
             //ksp force applier
@@ -211,14 +210,15 @@ namespace BDArmory.CounterMeasure
             transform.position += velocity * Time.fixedDeltaTime;
         }
 
-        public void EnableEmitters(bool enable)
+        public void EnableEmitters()
         {
             if (pEmitters == null) return;
             using (var emitter = pEmitters.GetEnumerator())
                 while (emitter.MoveNext())
                 {
                     if (emitter.Current == null) continue;
-                    emitter.Current.emit = enable;
+                    if (emitter.Current.name == "pEmitter") emitter.Current.emit = BDArmorySettings.FLARE_SMOKE;
+                    else emitter.Current.emit = true;
                 }
         }
     }
