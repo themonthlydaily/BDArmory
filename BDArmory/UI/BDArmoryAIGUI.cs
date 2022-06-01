@@ -782,12 +782,13 @@ namespace BDArmory.UI
                                 GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_Evade"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //evade dist/ time/ time threshold
                                 GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_Dodge"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //collision avoid
                                 GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_standoff"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //standoff distance
-                                GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_Extend"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //extend mult
+                                GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_Extend"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //extend distances
                                 GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_ExtendVars"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //extend target dist/angle/vel
                                 GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_ExtendAngle"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //extend target angle
                                 GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_ExtendDist"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //extend target dist
                                 GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_ExtendVel"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //extend target velocity
                                 GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_Nonlinearity"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //evade/extend nonlinearity
+                                GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_ExtendToggle"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //evade/extend toggle
                             }
                             if (showTerrain)
                             {
