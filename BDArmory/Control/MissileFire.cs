@@ -2515,8 +2515,9 @@ namespace BDArmory.Control
                 }
                 if (ml.warheadType == MissileBase.WarheadTypes.EMP || ml.warheadType == MissileBase.WarheadTypes.Nuke)
                 {
-                    float timeToImpact;
-                    MissileGuidance.GetAirToAirTarget(currentTarget.position, currentTarget.velocity, currentTarget.Vessel.acceleration_immediate, vessel, out timeToImpact);
+					MissileLauncher cm = missile as MissileLauncher;
+                    float thrust = cm == null ? 30 : cm.thrust;
+                    float timeToImpact = AIUtils.ClosestTimeToCPA(guardTarget, vessel.CoM, vessel.Velocity(), (thrust / missile.part.mass) * missile.GetForwardTransform(), 16);
                     if (ml.StandOffDistance > 0 && Vector3.Distance(transform.position + (vessel.Velocity() * timeToImpact), currentTarget.position + currentTarget.velocity) > ml.StandOffDistance) //if predicted craft position will be within blast radius when missile arrives, break off
                     {
                         DisengageAfterFiring = true;
@@ -4394,7 +4395,7 @@ namespace BDArmory.Control
                                 candidatePriority = Mathf.RoundToInt(mlauncher.priority);
                                 bool EMP = mlauncher.warheadType == MissileBase.WarheadTypes.EMP;
 
-                                if (EMP) continue;
+                                if (EMP && target.isDebilitated) continue;
                                 if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue;
                                 if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                     continue; //keep higher priority weapon
@@ -4636,7 +4637,7 @@ namespace BDArmory.Control
                             int candidatePriority = Mathf.RoundToInt(Bomb.priority);
                             double srfSpeed = currentTarget.Vessel.horizontalSrfSpeed;
 
-                            if (EMP) continue;
+                            if (EMP && target.isDebilitated) continue;
                             if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                 continue; //keep higher priority weapon
                             if (distance < candidateYield)
