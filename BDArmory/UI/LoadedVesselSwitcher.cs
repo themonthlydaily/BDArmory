@@ -1076,8 +1076,8 @@ namespace BDArmory.UI
                     while (wm.MoveNext())
                     {
                         //if ((v.Current.GetCrewCapacity()) > 0 && (v.Current.GetCrewCount() == 0)) continue; //They're dead, Jim //really should be a isControllable tage, else this will never look at ProbeCore ships
-                        if (!wm.Current.vessel.IsControllable) continue;
                         if (wm.Current == null || wm.Current.vessel == null) continue;
+                        if (!wm.Current.vessel.IsControllable) continue;
                         float vesselScore = 1000;
                         switch (currentMode)
                         {
@@ -1088,7 +1088,7 @@ namespace BDArmory.UI
                                     if (BDACompetitionMode.Instance.Scores.ScoreData.ContainsKey(wm.Current.vessel.vesselName))
                                     {
                                         scoreData = BDACompetitionMode.Instance.Scores.ScoreData[wm.Current.vessel.vesselName];
-                                        score = scoreData.hits; //expand to someething closer to the score parser score?
+                                        score = scoreData.hits; //expand to something closer to the score parser score?
                                     }
                                     if (ContinuousSpawning.Instance.vesselsSpawningContinuously)
                                     {
@@ -1110,7 +1110,7 @@ namespace BDArmory.UI
                                     cameraScores[wm.Current.vessel.GetName()] = vesselScore;
                                     break;
                                 }
-                            case 3: //distance based - look for most distant vessel from centroid; use with CameraTools centorid option
+                            case 3: //distance based - look for most distant vessel from centroid; use with CameraTools centroid option
                                 {
                                     vesselScore = (centroid - wm.Current.vessel.CoM).magnitude;
                                     if (vesselScore > bestScore)
