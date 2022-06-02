@@ -45,6 +45,8 @@ IMPROVEMENTS
 	- Add Store/Restore option to save control surface configs in Pilot AI.
 	- Add extend angle to AI to clamp climb/dive angle when doing Air-to-air extending.
 	- Add Air/Ground target preference weighting to Target Priorities.
+	- Make the extend toggle apply to air-to-air missiles as well as air-to-air guns.
+	- Update the AI GUI help text for the current extending settings.
 - GameModes:
 	- Waypoints:
 		- Add support for multiple waypoint gate models.
