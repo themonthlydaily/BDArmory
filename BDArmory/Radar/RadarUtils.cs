@@ -1034,6 +1034,7 @@ namespace BDArmory.Radar
                         // evaluate range
                         float distance = (loadedvessels.Current.CoM - position).magnitude / 1000f;                                      //TODO: Performance! better if we could switch to sqrMagnitude...
 
+                        BDATargetManager.ClearRadarReport(loadedvessels.Current, myWpnManager);
                         if (modeTryLock)    // LOCK/TRACK TARGET:
                         {
                             //evaluate if we can lock/track such a signature at that range
@@ -1049,7 +1050,7 @@ namespace BDArmory.Radar
                                     // detected by radar
                                     if (myWpnManager != null)
                                     {
-                                        BDATargetManager.ReportVessel(loadedvessels.Current, myWpnManager);
+                                        BDATargetManager.ReportVessel(loadedvessels.Current, myWpnManager, true);
                                     }
 
                                     // fill attempted locks array for locking later:
@@ -1090,7 +1091,7 @@ namespace BDArmory.Radar
                                     // detected by radar
                                     if (myWpnManager != null)
                                     {
-                                        BDATargetManager.ReportVessel(loadedvessels.Current, myWpnManager);
+                                        BDATargetManager.ReportVessel(loadedvessels.Current, myWpnManager, true);
                                     }
 
                                     // report scanned targets only
@@ -1241,6 +1242,8 @@ namespace BDArmory.Radar
                     Vector3 vesselDirection = loadedvessels.Current.transform.position - position;
 
                     float vesselDistance = (loadedvessels.Current.transform.position - position).sqrMagnitude;
+                    //BDATargetManager.ClearRadarReport(loadedvessels.Current, myWpnManager); //reset radar contact status
+
                     if (vesselDistance < maxDistance * maxDistance && Vector3.Angle(vesselProjectedDirection, lookDirection) < fov / 2f && Vector3.Angle(loadedvessels.Current.transform.position - position, -myWpnManager.transform.forward) < myWpnManager.guardAngle / 2f)
                     {
                         if (TerrainCheck(referenceTransform.position, loadedvessels.Current.transform.position))
