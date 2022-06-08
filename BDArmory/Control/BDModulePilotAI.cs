@@ -1883,7 +1883,7 @@ namespace BDArmory.Control
             if (missile != null)
             {
                 var minDynamicLaunchRange = MissileLaunchParams.GetDynamicLaunchParams(missile, v.Velocity(), v.transform.position).minLaunchRange;
-                if (targetDot > 0 && distanceToTarget < minDynamicLaunchRange && vessel.srfSpeed > idleSpeed)
+                if (canExtend && targetDot > 0 && distanceToTarget < minDynamicLaunchRange && vessel.srfSpeed > idleSpeed)
                 {
                     RequestExtend("too close for missile", v, minDynamicLaunchRange); // Get far enough away to use the missile.
                 }

@@ -25,13 +25,15 @@ IMPROVEMENTS
 	- Debug labels now organized by type for easier debug tracking.
 	- Refactor the debug settings to be more specific and to have an on-screen only debug labels.
 	- Adds SelfSealingTanks/Firebottle options to Proc Part Tanks.
-  - Adds Isoceles Triangle Proc Armor panel.
+	- Adds Oblique Triangle Proc Armor panel.
 	- Bullets now ignore flags.
+	- Adds new CameraTools switching modes, right click the cameraTools button [A] on the VesselSwitcherGUI.
+		- [S] - Camera will autoswitch to vessel with highest score.
+		- [D] - Camera will switch to furthest vessel from dogfight centroid.
 	- Restore the precision of Vector2d persistent fields.
 	- Update the continuous spawning log parsing script.
 	- Add some extra layer masks (internal kerbals are 1<<16, wheels are 1<<26).
 	- Add a BodyUtils.GetTerrainAltitudeAtPos function.
-
 - AI:
 	- Add a 5° deadzone around being on target for dynamic damping to avoid feed-back loop in PID.
 	- Add a check for requested extending already being satisfied.
@@ -42,7 +44,9 @@ IMPROVEMENTS
 	- Fix AI takeoff behavior.
 	- Add Store/Restore option to save control surface configs in Pilot AI.
 	- Add extend angle to AI to clamp climb/dive angle when doing Air-to-air extending.
-
+	- Add Air/Ground target preference weighting to Target Priorities.
+	- Make the extend toggle apply to air-to-air missiles as well as air-to-air guns.
+	- Update the AI GUI help text for the current extending settings.
 - GameModes:
 	- Waypoints:
 		- Add support for multiple waypoint gate models.
@@ -68,9 +72,8 @@ IMPROVEMENTS
 	- Sabots now recognized as AP ammo in ammo labels
 	- Weapons and explosions no longer cause armor damage/shrapnel/spalling damage in paintball mode.
 	- Add charge-up mechanic for weapons.
-	  - Adds new .cfg fields: ChargeTime = n; hasChargeAnimation = T/F; chargeAnimName = animName
-  - Weapon debug lines now account for frame velocity and flight integrator delay.
-
+		- Adds new .cfg fields: ChargeTime = n; hasChargeAnimation = T/F; chargeAnimName = animName
+	- Weapon debug lines now account for frame velocity and flight integrator delay.
 	- Missiles:
 		- Adds Missile multi-targeting.
 		- Adds new Max Missile Tgts setting in WM to set max targets to engage with missiles.
@@ -86,10 +89,10 @@ IMPROVEMENTS
 		- Continuous Rod warhead missiles now target a point a few meters above their target to better take advantage of planar AoE.
 		- Missiles no longer prematurely detonate if DetonateAtMinimumDistance is enabled.
 		- Fix HARMs ignoring max missiles on target.
+		- Add chaffEffectivity parameter to missile configs.
 - Spawning:
 	- Refactor spawning into more modular coroutines for use with the spawn and orchestration strategies.
 	- Add an 'instant' lowering mode for vessel easing after spawn (VESSEL_SPAWN_EASE_IN_SPEED = 0).
-	- Add a DEBUG_SPAWNING option.
 	- Add a test for spawning a vessel into an active competition using the SingleVesselSpawning class (debug build only).
 - RWP:
 	- Hall of Shame now supports multiple craft.

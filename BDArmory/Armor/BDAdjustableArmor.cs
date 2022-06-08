@@ -10,19 +10,23 @@ namespace BDArmory.Armor
 {
     public class BDAdjustableArmor : PartModule
     {
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorAdjustParts"),//Move Child Parts
+            UI_Toggle(disabledText = "#LOC_BDArmory_false", enabledText = "#LOC_BDArmory_true")]//false--true
+        public bool moveChildParts = true;
+
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorWidth"),//Armor Width
- UI_FloatRange(minValue = 0.5f, maxValue = 16, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
+            UI_FloatRange(minValue = 0.5f, maxValue = 16, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
         public float Width = 1;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_ArmorWidthR"),//Right Side Width
-UI_FloatRange(minValue = 0.1f, maxValue = 8, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
+            UI_FloatRange(minValue = 0.1f, maxValue = 8, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
         public float scaleneWidth = 1;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorLength"),//Armor Length
- UI_FloatRange(minValue = 0.5f, maxValue = 16, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
+            UI_FloatRange(minValue = 0.5f, maxValue = 16, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
         public float Length = 1;
 
-        [KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_ArmorTriIso", active = true)]//Disable Engage Options
+        [KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_ArmorTriIso", active = true)]//Toggle Tri Type
         public void ToggleTriTypeOption()
         {
             scaleneTri = !scaleneTri;
@@ -86,7 +90,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 8, stepIncrement = 0.1f, scene = UI_Sc
         {
             armorTransforms = part.FindModelTransforms(ArmorTransformName);
             ThicknessTransform = part.FindModelTransform(ThicknessTransformName);
-            if (TriangleType != "Right")
+            if (isTriangularPanel && TriangleType != "Right")
             {
                 Events["ToggleTriTypeOption"].guiActiveEditor = true;
                 scaleneTransforms = part.FindModelTransforms(ScaleneTransformName);
@@ -218,7 +222,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 8, stepIncrement = 0.1f, scene = UI_Sc
                     scaleneTransforms[i].localScale = new Vector3(scaleneTri ? scaleneWidth : Width, Length, Mathf.Clamp((armor.Armor / 10), 0.1f, 1500));
                 }
             }
-			updateArmorStats();
+            updateArmorStats();
             if (updateNodes) UpdateStackNode(true);
         }
 
@@ -233,6 +237,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 8, stepIncrement = 0.1f, scene = UI_Sc
                     if (stackNode.Current.id == "top" || stackNode.Current.id == "bottom")
                     {
                         Vector3 prevPos = stackNode.Current.position;
+                        Vector3 prevAngle = stackNode.Current.orientation;
                         int offsetScale = 2;
                         if (TriangleType != "Right" && !scaleneTri)
                         {
@@ -244,15 +249,20 @@ UI_FloatRange(minValue = 0.1f, maxValue = 8, stepIncrement = 0.1f, scene = UI_Sc
                             stackNode.Current.breakingForce = Width * 100;
                             stackNode.Current.breakingTorque = Width * 100;
                             stackNode.Current.position.x = originalStackNodePosition[stackNode.Current.id].x + (((Width - 1) / (scaleneTri ? 2 : 1)) / offsetScale); //if eqi tri this needs to be /4
-							if (translateChidren) MoveParts(stackNode.Current, stackNode.Current.position - prevPos);
+                            stackNode.Current.orientation = new Vector3(1, 0, -((Width / 2) / Length));
+                            if (translateChidren) MoveParts(stackNode.Current, stackNode.Current.position - prevPos, stackNode.Current.orientation - prevAngle);
                         }
                         else
                         {
-                            stackNode.Current.size = Mathf.CeilToInt(scaleneTri ? scaleneWidth : Width / 2);
+                            stackNode.Current.size = Mathf.CeilToInt(scaleneTri ? scaleneWidth / 2 : Width / 2);
                             stackNode.Current.breakingForce = scaleneTri ? scaleneWidth : Width * 100;
                             stackNode.Current.breakingTorque = scaleneTri ? scaleneWidth : Width * 100;
                             stackNode.Current.position.x = originalStackNodePosition[stackNode.Current.id].x - ((scaleneTri ? ((scaleneWidth - 1) / 2) : Width - 1) / offsetScale);// and a right tri hypotenuse node shouldn't move at all
-                            if (translateChidren) MoveParts(stackNode.Current, stackNode.Current.position - prevPos); //look into making triangle side nodes rotate attachnode based on new angle? AttachNode.Orientation?                            
+                            if (TriangleType != "Right")
+                            {
+                                stackNode.Current.orientation = new Vector3(-1, 0, -(((scaleneTri ? scaleneWidth : Width) / 2) / Length));
+                            }
+                            if (translateChidren) MoveParts(stackNode.Current, stackNode.Current.position - prevPos, stackNode.Current.orientation - prevAngle); //look into making triangle side nodes rotate attachnode based on new angle? AttachNode.Orientation?                            
                         }
                     }
                     if (stackNode.Current.id == "left" || stackNode.Current.id == "right")
@@ -264,23 +274,31 @@ UI_FloatRange(minValue = 0.1f, maxValue = 8, stepIncrement = 0.1f, scene = UI_Sc
                         if (stackNode.Current.id == "right")
                         {
                             stackNode.Current.position.z = originalStackNodePosition[stackNode.Current.id].z + ((Length - 1) / 2);
-                            if (translateChidren) MoveParts(stackNode.Current, stackNode.Current.position - prevPos);
+                            if (translateChidren) MoveParts(stackNode.Current, stackNode.Current.position - prevPos, Vector3.zero);
                         }
                         else
                         {
                             stackNode.Current.position.z = originalStackNodePosition[stackNode.Current.id].z - ((Length - 1) / 2);
-                            if (translateChidren) MoveParts(stackNode.Current, stackNode.Current.position - prevPos);
+                            if (translateChidren) MoveParts(stackNode.Current, stackNode.Current.position - prevPos, Vector3.zero);
                         }
+                    }
+                    if (stackNode.Current.id == "side")
+                    {
+                        stackNode.Current.size = Mathf.CeilToInt(((Width / 2) + (Length / 2)) / 2);
+                        stackNode.Current.orientation = new Vector3(1, 0, -(Width / Length));
                     }
                 }
         }
-        public void MoveParts(AttachNode node, Vector3 delta)
+        public void MoveParts(AttachNode node, Vector3 delta, Vector3 angleDelta)
         {
+            if (!moveChildParts) return;
             if (node.attachedPart is Part pushTarget)
             {
                 if (pushTarget == null) return;
                 Vector3 worldDelta = part.transform.TransformVector(delta);
                 pushTarget.transform.position += worldDelta;
+                //Vector3 worldAngle = part.transform.TransformVector(angleDelta);
+                //pushTarget.transform.rotation += worldAngle;
             }
         }
         public void updateArmorStats()

@@ -1634,6 +1634,24 @@ namespace BDArmory.UI
                         ActiveWeaponManager.targetWeightRange.ToString(), leftLabel);
                     priorityLines++;
 
+                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_WMWindow_targetPreference"), leftLabel); //target Air preference"
+                    if (!NumFieldsEnabled)
+                    {
+                        ActiveWeaponManager.targetWeightAirPreference =
+                            GUI.HorizontalSlider(
+                                new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight),
+                                ActiveWeaponManager.targetWeightAirPreference, -10, 10);
+                        ActiveWeaponManager.targetWeightAirPreference = Mathf.Round(ActiveWeaponManager.targetWeightAirPreference * 10) / 10;
+                    }
+                    else
+                    {
+                        textNumFields["targetWeightRange"].tryParseValue(GUI.TextField(new Rect(leftIndent + (90), (priorityLines * entryHeight), contentWidth - 90 - 38, entryHeight), textNumFields["targetWeightRange"].possibleValue, 4));
+                        ActiveWeaponManager.targetWeightAirPreference = (float)textNumFields["targetWeightRange"].currentValue;
+                    }
+                    GUI.Label(new Rect(leftIndent + (contentWidth - 35), (priorityLines * entryHeight), 35, entryHeight),
+                        ActiveWeaponManager.targetWeightRange.ToString(), leftLabel);
+                    priorityLines++;
+
                     GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_WMWindow_targetAngletoTarget"), leftLabel); //target proximity"
                     if (!NumFieldsEnabled)
                     {
@@ -2034,6 +2052,7 @@ namespace BDArmory.UI
                         {
                             GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_Prioritues_Desc"), leftLabelBold, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt Priorities
                             GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_targetBias_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt Bias
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_targetPreference_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt engagement Pref
                             GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_targetProximity_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt dist
                             GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_targetAngletoTarget_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt angle
                             GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_targetAngleDist_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt angle/dist
@@ -2367,7 +2386,7 @@ namespace BDArmory.UI
                         {
                             var flare = flareObj.GetComponent<CMFlare>();
                             if (flare == null) continue;
-                            flare.EnableEmitters(BDArmorySettings.FLARE_SMOKE);
+                            flare.EnableEmitters();
                         }
                 }
                 BDArmorySettings.STRICT_WINDOW_BOUNDARIES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.STRICT_WINDOW_BOUNDARIES, Localizer.Format("#LOC_BDArmory_Settings_StrictWindowBoundaries"));//"Strict Window Boundaries"

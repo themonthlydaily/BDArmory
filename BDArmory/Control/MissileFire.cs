@@ -519,6 +519,11 @@ namespace BDArmory.Control
             UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetBias = 1.1f;
 
+        private string targetPreferenceLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_AirVsGround");
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_AirVsGround", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Preference
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float targetWeightAirPreference = 3f;
+
         private string targetRangeLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetProximity");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetProximity", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Range
             UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
@@ -3546,11 +3551,6 @@ namespace BDArmory.Control
             }
             overrideTarget = null; //null the override target if it cannot be used
             
-            //FIXME - change logic to instead use weightings, instead of rigid missile? > air? > ground if then else priority
-            //2 ways to do this. W1 - have it go through the 4 engagement types and get max range from each, then look for targets for longest range weapon, then next, etc.
-            //W2 - add a prioritize Air/Ground toggle - though would this be a ignore air tgts until no more gnd, etc?
-            //or just have it be a pair of additional weighting s for the standard target priority system
-
             TargetInfo potentialTarget = null;
             //=========HIGH PRIORITY MISSILES=============
             //first engage any missiles targeting this vessel
@@ -3589,69 +3589,12 @@ namespace BDArmory.Control
             }
             //=========END HIGH PRIORITY MISSILES=============
 
-            //if AIRBORNE, try to engage airborne target
-            if (!vessel.LandedOrSplashed)
-            {
-                TargetInfo potentialAirTarget = null;
-
-                if (BDArmorySettings.DEFAULT_FFA_TARGETING)
-                {
-                    potentialAirTarget = BDATargetManager.GetClosestTargetWithBiasAndHysteresis(this);
-                    targetDebugText = " is engaging an airborne target in FFA with ";
-                }
-                else if (this.targetPriorityEnabled)
-                {
-                    potentialAirTarget = BDATargetManager.GetHighestPriorityTarget(this);
-                    targetDebugText = " is engaging highest priority airborne target with ";
-                }
-                else
-                {
-                    if (pilotAI && pilotAI.IsExtending)
-                    {
-                        potentialAirTarget = BDATargetManager.GetAirToAirTargetAbortExtend(this, 1500, 0.2f);
-                        targetDebugText = " is aborting extend and engaging an incoming airborne target with ";
-                    }
-                    else
-                    {
-                        potentialAirTarget = BDATargetManager.GetAirToAirTarget(this);
-                        targetDebugText = " is engaging an airborne target with ";
-                    }
-                }
-
-                if (potentialAirTarget)
-                {
-                    targetsTried.Add(potentialAirTarget);
-                    SetTarget(potentialAirTarget);
-                    // Pick target if we have a viable weapon or target priority/FFA targeting is in use
-                    //  || targetPriorityEnabled || BDArmorySettings.DEFAULT_FFA_TARGETING
-                    if (SmartPickWeapon_EngagementEnvelope(potentialAirTarget) && HasWeaponsAndAmmo())
-                    {
-                        if (BDArmorySettings.DEBUG_AI)
-                        {
-                            Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + targetDebugText + selectedWeapon);
-                        }
-                        return;
-                    }
-                    else if (!BDArmorySettings.DISABLE_RAMMING)
-                    {
-                        if (!HasWeaponsAndAmmo() && pilotAI != null && pilotAI.allowRamming)
-                        {
-                            if (BDArmorySettings.DEBUG_AI)
-                            {
-                                Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + targetDebugText + "ramming.");
-                            }
-                            return;
-                        }
-                    }
-                }
-            }
-
             //============VESSEL THREATS============
             // select target based on competition style
             if (BDArmorySettings.DEFAULT_FFA_TARGETING)
             {
                 potentialTarget = BDATargetManager.GetClosestTargetWithBiasAndHysteresis(this);
-                targetDebugText = " is engaging an FFA target with ";
+                targetDebugText = " is engaging a FFA target with ";
             }
             else if (this.targetPriorityEnabled)
             {
@@ -3660,6 +3603,19 @@ namespace BDArmory.Control
             }
             else
             {
+                if (!vessel.LandedOrSplashed)
+                {
+                    if (pilotAI && pilotAI.IsExtending)
+                    {
+                        potentialTarget = BDATargetManager.GetAirToAirTargetAbortExtend(this, 1500, 0.2f);
+                        targetDebugText = " is aborting extend and engaging an incoming airborne target with ";
+                    }
+                    else
+                    {
+                        potentialTarget = BDATargetManager.GetAirToAirTarget(this);
+                        targetDebugText = " is engaging an airborne target with ";
+                    }
+                }
                 potentialTarget = BDATargetManager.GetLeastEngagedTarget(this);
                 targetDebugText = " is engaging the least engaged target with ";
             }
@@ -3668,26 +3624,26 @@ namespace BDArmory.Control
             {
                 targetsTried.Add(potentialTarget);
                 SetTarget(potentialTarget);
-                /*
-                if (CrossCheckWithRWR(potentialTarget) && TryPickAntiRad(potentialTarget))
-                {
-                    if (BDArmorySettings.DEBUG_LABELS)
-                    {
-                        Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " is engaging the least engaged radar target with " +
-                                    selectedWeapon.GetShortName());
-                    }
-                    return;
-                }
-                */
 
                 // Pick target if we have a viable weapon or target priority/FFA targeting is in use
-                if (SmartPickWeapon_EngagementEnvelope(potentialTarget) || this.targetPriorityEnabled || BDArmorySettings.DEFAULT_FFA_TARGETING)
+                if ((SmartPickWeapon_EngagementEnvelope(potentialTarget) || this.targetPriorityEnabled || BDArmorySettings.DEFAULT_FFA_TARGETING) && HasWeaponsAndAmmo())
                 {
                     if (BDArmorySettings.DEBUG_AI)
                     {
                         Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + targetDebugText + (selectedWeapon != null ? selectedWeapon.GetShortName() : ""));
                     }
                     return;
+                }
+                else if (!BDArmorySettings.DISABLE_RAMMING)
+                {
+                    if (!HasWeaponsAndAmmo() && pilotAI != null && pilotAI.allowRamming)
+                    {
+                        if (BDArmorySettings.DEBUG_AI)
+                        {
+                            Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + targetDebugText + "ramming.");
+                        }
+                        return;
+                    }
                 }
             }
 
@@ -3896,6 +3852,7 @@ namespace BDArmory.Control
             // Get UI fields
             var TargetBiasFields = Fields["targetBias"];
             var TargetRangeFields = Fields["targetWeightRange"];
+            var TargetPreferenceFields = Fields["targetWeightAirPreference"];
             var TargetATAFields = Fields["targetWeightATA"];
             var TargetAoDFields = Fields["targetWeightAoD"];
             var TargetAccelFields = Fields["targetWeightAccel"];
@@ -3911,6 +3868,7 @@ namespace BDArmory.Control
             // Calculate score values
             float targetBiasValue = targetBias;
             float targetRangeValue = target.TargetPriRange(this);
+            float targetPreferencevalue = target.TargetPriEngagement(target.weaponManager);
             float targetATAValue = target.TargetPriATA(this);
             float targetAoDValue = target.TargetPriAoD(this);
             float targetAccelValue = target.TargetPriAcceleration();
@@ -3926,6 +3884,7 @@ namespace BDArmory.Control
             // Calculate total target score
             float targetScore = targetBiasValue * (
                 targetWeightRange * targetRangeValue +
+                targetWeightAirPreference * targetPreferencevalue +
                 targetWeightATA * targetATAValue +
                 targetWeightAccel * targetAccelValue +
                 targetWeightClosureTime * targetClosureTimeValue +
@@ -3941,6 +3900,7 @@ namespace BDArmory.Control
             // Update GUI
             TargetBiasFields.guiName = targetBiasLabel + ": " + targetBiasValue.ToString("0.00");
             TargetRangeFields.guiName = targetRangeLabel + ": " + targetRangeValue.ToString("0.00");
+            TargetPreferenceFields.guiName = targetPreferenceLabel + ": " + targetPreferencevalue.ToString("0.00");
             TargetATAFields.guiName = targetATALabel + ": " + targetATAValue.ToString("0.00");
             TargetAoDFields.guiName = targetAoDLabel + ": " + targetAoDValue.ToString("0.00");
             TargetAccelFields.guiName = targetAccelLabel + ": " + targetAccelValue.ToString("0.00");
@@ -4127,6 +4087,8 @@ namespace BDArmory.Control
 
                             if (mlauncher != null)
                             {
+                                if (mlauncher.TargetingMode == MissileBase.TargetingModes.Radar && radars.Count <= 0) continue; //dont select RH missiles when no radar aboard
+                                if (mlauncher.TargetingMode == MissileBase.TargetingModes.Laser && targetingPods.Count <=0) continue; //don't select LH missiles when no FLIR aboard
                                 candidateDetDist = mlauncher.DetonationDistance;
                                 candidateAccel = mlauncher.thrust / mlauncher.part.mass; //for anti-missile, prioritize proxidetonation and accel
                                 bool EMP = mlauncher.warheadType == MissileBase.WarheadTypes.EMP;
@@ -4425,6 +4387,8 @@ namespace BDArmory.Control
                             MissileLauncher mlauncher = item.Current as MissileLauncher;
                             if (mlauncher != null)
                             {
+                                if (mlauncher.TargetingMode == MissileBase.TargetingModes.Radar && radars.Count <= 0) continue; //dont select RH missiles when no radar aboard
+                                if (mlauncher.TargetingMode == MissileBase.TargetingModes.Laser && targetingPods.Count <= 0) continue; //don't select LH missiles when no FLIR aboard
                                 candidateDetDist = mlauncher.DetonationDistance;
                                 candidateTurning = mlauncher.maxTurnRateDPS; //for anti-aircraft, prioritize detonation dist and turn capability
                                 candidatePriority = Mathf.RoundToInt(mlauncher.priority);
@@ -4752,13 +4716,15 @@ namespace BDArmory.Control
                             // - by blast strength
                             // - add code to choose optimal missile based on target profile - i.e. use bigger bombs on large landcruisers, smaller bombs on small Vees that don't warrant that sort of overkill?
                             MissileLauncher Missile = item.Current as MissileLauncher;
+                            if (Missile.TargetingMode == MissileBase.TargetingModes.Radar && radars.Count <= 0) continue; //dont select RH missiles when no radar aboard
+                            if (Missile.TargetingMode == MissileBase.TargetingModes.Laser && targetingPods.Count <= 0) continue; //don't select LH missiles when no FLIR aboard
                             if (vessel.Splashed && FlightGlobals.getAltitudeAtPos(item.Current.GetPart().transform.position) < -2) continue;
                             //if (firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                             float candidateYield = Missile.GetBlastRadius();
                             double srfSpeed = currentTarget.Vessel.horizontalSrfSpeed;
                             bool EMP = Missile.warheadType == MissileBase.WarheadTypes.EMP;
                             int candidatePriority = Mathf.RoundToInt(Missile.priority);
-
+                                                         
                             if (EMP && target.isDebilitated) continue;
                             //if (targetWeapon != null && targetWeapon.GetWeaponClass() == WeaponClasses.Bomb) targetYield = -1; //reset targetyield so larger bomb yields don't supercede missiles
                             if (targetWeapon != null && targetWeaponPriority > candidatePriority)
@@ -4866,6 +4832,8 @@ namespace BDArmory.Control
                         if (candidateClass == WeaponClasses.SLW)
                         {
                             MissileLauncher SLW = item.Current as MissileLauncher;
+                            if (SLW.TargetingMode == MissileBase.TargetingModes.Radar && radars.Count <= 0) continue; //dont select RH missiles when no radar aboard
+                            if (SLW.TargetingMode == MissileBase.TargetingModes.Laser && targetingPods.Count <= 0) continue; //don't select LH missiles when no FLIR aboard
                             float candidateYield = SLW.GetBlastRadius();
                             bool EMP = SLW.warheadType == MissileBase.WarheadTypes.EMP;
                             int candidatePriority = Mathf.RoundToInt(SLW.priority);
