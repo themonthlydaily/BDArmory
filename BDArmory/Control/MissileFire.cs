@@ -1619,22 +1619,20 @@ namespace BDArmory.Control
                 }
                 else
                 {
-                    // DISABLE RADAR
-                    /*
-                    if (!vesselRadarData || !(vesselRadarData.radarCount > 0))
+                    // Turn on radars if off
+                    if (!results.foundAntiRadiationMissile)
                     {
-                        List<ModuleRadar>.Enumerator rd = radars.GetEnumerator();
-                        while (rd.MoveNext())
-                        {
-                            if (rd.Current == null) continue;
-                            if (!rd.Current.canLock) continue;
-                            rd.Current.EnableRadar();
-                            break;
-                        }
-                        rd.Dispose();
+                        using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
+                            while (rd.MoveNext())
+                            {
+                                if (rd.Current != null || rd.Current.canLock)
+                                {
+                                    rd.Current.EnableRadar();
+                                }
+                            }
                     }
-                    */
 
+                    // Try to lock target, or if already locked, fire on it
                     if (vesselRadarData &&
                         (!vesselRadarData.locked ||
                          (vesselRadarData.lockedTargetData.targetData.predictedPosition - guardTarget.transform.position)
@@ -1650,6 +1648,13 @@ namespace BDArmory.Control
                             StartGuardTurretFiring();
                             yield break;
                         }
+                    }
+                    else if (guardTarget && vesselRadarData && vesselRadarData.locked &&
+                            vesselRadarData.lockedTargetData.vessel == guardTarget)
+                    {
+                        vesselRadarData.SlaveTurrets();
+                        StartGuardTurretFiring();
+                        yield break;
                     }
 
                     if (!guardTarget || (guardTarget.transform.position - transform.position).sqrMagnitude > guardRange * guardRange)
