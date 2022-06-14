@@ -3658,7 +3658,6 @@ namespace BDArmory.Control
         // External flags.
         public bool measuring = false; // Whether a measurement is taking place or not.
         public float flyToSpeed = 0; // Speed to fly to the designated position.
-        public float loss = -1f;
 
         #region Internal parameters
         BDModulePilotAI AI;
@@ -3686,12 +3685,11 @@ namespace BDArmory.Control
         float headingChange = 0;
         float absHeadingChange = 0;
         // float pitchChange = 0;
-        Dictionary<float, Tuple<float, float, float, float, float, float>> autotuneDebug;
 
         #region Gradient Descent (approx)
         class LR // Learning rate
         {
-            public float current = 1f;
+            public float current = 0.1f;
             int persistence = 5;
             int count = 0;
             float factor = 0.8f;
@@ -3731,6 +3729,7 @@ namespace BDArmory.Control
         float gradAlpha = 0.5f;
         float lossSlopeAvg = 0;
         float slopeAlpha = 0.99f;
+        float loss = -1f;
         float prevLoss = -1f;
         bool firstPass = true;
         LR lr = new LR();
@@ -3794,7 +3793,6 @@ namespace BDArmory.Control
                         Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Time to first min (pointing) {pointingFirstMinAfterMaxTime}s, (roll) {rollFirstMinAfterMaxTime}s.");
                         Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Oscillation error (pointing) {pointingOscillationArea}, (roll) {rollOscillationArea}. (Normalised: {pointingOscillationArea / absHeadingChange}, {rollOscillationArea / absHeadingChange}).");
                     }
-                    // autotuneDebug.Add(headingChange, new Tuple<float, float, float, float, float, float>(maxPointingError, maxRollError, pointingFirstMinAfterMaxTime, rollFirstMinAfterMaxTime, pointingOscillationArea, rollOscillationArea));
                     UpdatePIDValues();
                     ResetInternals();
                 }
@@ -3816,7 +3814,7 @@ namespace BDArmory.Control
             }
             else
             {
-                if (WM != null && WM.guardMode) // If guard mode is enabled, watch for target changes or something else to trigger a new measurement.
+                if (WM != null && WM.guardMode) // If guard mode is enabled, watch for target changes or something else to trigger a new measurement. This is going to be less reliable due to not using controlled fly-to directions. Don't use yet.
                 {
                     // Significantly off-target, start measuring again.
                     if (pointingError > 10f)
@@ -3828,22 +3826,16 @@ namespace BDArmory.Control
                 else // Just cruising, assign a fly-to position and begin measuring again.
                 {
                     var upDirection = (AI.vessel.transform.position - AI.vessel.mainBody.transform.position).normalized;
-                    var maxAngle = Mathf.Clamp(60f * (float)AI.vessel.srfSpeed / AI.minSpeed, 0f, 90f); // Numerics are a bit weird outside of 30°—120°.
+                    // var maxAngle = Mathf.Clamp(60f * (float)AI.vessel.srfSpeed / AI.minSpeed, 0f, 90f); // Numerics are a bit weird outside of 30°—120° for the test plane, but within this range the normalised losses (time to the first minima of the error and oscillation area under the curve) were roughly constant.
                     if (firstPass) // Use the same direction change in both passes for more consistent gradient estimates.
                     {
-                        headingChange = UnityEngine.Random.Range(-maxAngle, maxAngle);
-                        headingChange += 30 * Mathf.Sign(headingChange); // 30°—120°
+                        // headingChange = UnityEngine.Random.Range(-maxAngle, maxAngle);
+                        // headingChange += 30 * Mathf.Sign(headingChange); // 30°—120°
+                        headingChange = 45f;
                         absHeadingChange = Mathf.Abs(headingChange);
-                        // headingChange += 1f;
-                        // if (headingChange > 135)
-                        // {
-                        //     AI.autoTune = false;
-                        //     foreach (var k in autotuneDebug.Keys) Debug.Log($"DEBUG {k}: (" + string.Join(", ", autotuneDebug[k].ToString()) + ")");
-                        //     System.IO.File.WriteAllText("/tmp/debug", "{" + string.Join(", ", autotuneDebug.Select(kvp => kvp.Key + ": " + "(" + string.Join(", ", kvp.Value.ToString()) + ")")) + "}");
-                        //     return;
-                        // }
                         // pitchChange = 30f * UnityEngine.Random.Range(-1f, 1f) * UnityEngine.Random.Range(-1f, 1f); // Adjust pitch by ±30°, biased towards 0°.
-                        flyToSpeed = UnityEngine.Random.Range(AI.minSpeed, (AI.maxSpeed + maxObservedSpeed) / 2f);
+                        // flyToSpeed = UnityEngine.Random.Range(AI.minSpeed, (AI.maxSpeed + maxObservedSpeed) / 2f);
+                        flyToSpeed = AI.maxSpeed;
                     }
                     var newDirection = Vector3.ProjectOnPlane(Quaternion.AngleAxis(headingChange, upDirection) * AI.vessel.srf_vel_direction, upDirection).normalized;
                     // newDirection = Quaternion.AngleAxis(pitchChange, Vector3.Cross(upDirection, newDirection)) * newDirection;
@@ -3895,7 +3887,6 @@ namespace BDArmory.Control
             dx = new Dictionary<string, float>();
             gradient = new Dictionary<string, float>();
             limits = new Dictionary<string, Tuple<float, float>>();
-            autotuneDebug = new Dictionary<float, Tuple<float, float, float, float, float, float>>();
 
             // Check which PID controls are in use and set up a dictionary of gradient values.
             foreach (var field in AI.Fields)
@@ -3920,12 +3911,20 @@ namespace BDArmory.Control
         /// This is very roughly gradient descent.
         /// Essentially, it's:
         ///   - Pick a random direction and approximate the slope of the loss function in that direction.
-        ///   - Move an amount in that direction based on the size of the slope.
-        ///   - Repeat, lowering the size of the step in the random direction used to approximate the slope.
+        ///   - Move an amount along that direction based on the size of the slope.
+        ///   - Repeat, lowering the size of the step in the random direction used to approximate the slope as needed.
+        ///
+        /// Running with 5x time scaling and infinite fuel once the plane is up to it's default altitude is recommended.
+        ///
+        /// Things to try:
+        /// - Take N samples for each direction change (ignoring the guard mode approach for now), drop outliers and average the rest to get a smoother estimate of the loss f.
+        /// - Sample at x-dx and x+dx to use a centred finite difference to approximate df/dx. This will require nearly twice as many samples, since we can't reuse those at x.
+        /// - Take dx along each axis individually instead of random directions in R^d. This would require iterating through the axes and shuffling the order each epoch or weighting them based on the size of df/dx.
         /// </summary>
         void UpdatePIDValues()
         {
             /*
+            Initially, the code does the following (which works for a smooth function), but it's been modified slightly already since it doesn't work too well for the non-smooth loss function.
             In [158]: import torch, matplotlib.pyplot as plt, math
                  ...: alpha=0.5
                  ...: d = 10
@@ -3934,7 +3933,7 @@ namespace BDArmory.Control
                  ...: df_avg = df
                  ...: x = 2*(2*torch.rand(d)-1)
                  ...: t = 2*torch.rand(d)-1
-                 ...: f = lambda x: sum((x-t)**2)
+                 ...: f = lambda x: sum((x-t)**2)  # Test function with minima at x=t.
                  ...: lr = 1; p=5; c=0; best = 10; last = 0
                  ...: for i in range(1000):
                  ...:     y = x + Df.norm().clamp(max(lr/10,lr*min(df_avg,1)),lr)*(2*torch.rand(d)-1)
@@ -3961,25 +3960,27 @@ namespace BDArmory.Control
                  ...:             last = 0
                  ...:     x = x - Df.clamp(-lr, lr)
             */
-            if (firstPass) // Measure loss at x
+            if (firstPass)
             {
-                var fastResponseLoss = (1f - AI.autoTuningLossRatio) * (pointingFirstMinAfterMaxTime + 0 * rollFirstMinAfterMaxTime);
+                // Measure loss at x
+                var fastResponseLoss = (1f - AI.autoTuningLossRatio) * (pointingFirstMinAfterMaxTime + rollFirstMinAfterMaxTime);
                 var oscillationLoss = AI.autoTuningLossRatio * (pointingOscillationArea / absHeadingChange + rollOscillationArea / absHeadingChange / timeout);
                 prevLoss = fastResponseLoss + oscillationLoss;
                 AI.autoTuningLossLabel = $"Fast: {fastResponseLoss:F4}, Osc: {oscillationLoss:F4}";
 
                 // Update PID values for random offset. dx = Df.norm().clamp(max(lr/10,lr*min(df_avg,1)),lr)*(2*torch.rand(d)-1);
-                var gradNorm = Mathf.Clamp(Mathf.Sqrt(gradient.Values.Select(x => x * x).Sum()), Mathf.Max(lr.current / 100f, lr.current * Mathf.Min(lossSlopeAvg, 1f)), lr.current);
+                var gradNorm = Mathf.Clamp(Mathf.Sqrt(gradient.Values.Select(x => x * x).Sum()), Mathf.Max(lr.current / 100f, lr.current * Mathf.Min(lossSlopeAvg, 1f)), lr.current); // A scale factor based on the size of the last measured gradient to avoid too large values for dx.
                 foreach (var fieldName in dx.Keys.ToList()) dx[fieldName] = gradNorm * UnityEngine.Random.Range(-1f, 1f) * (limits[fieldName].Item2 - limits[fieldName].Item1); // dx
-                foreach (var fieldName in fields.Keys.ToList()) fields[fieldName].SetValue(Mathf.Max((float)fields[fieldName].GetValue(AI) + dx[fieldName], limits[fieldName].Item1), AI);  // x -> x + dx, ignore max limit for dx
+                foreach (var fieldName in fields.Keys.ToList()) fields[fieldName].SetValue(Mathf.Max((float)fields[fieldName].GetValue(AI) + dx[fieldName], limits[fieldName].Item1), AI);  // x -> x + dx, ignore max limit for dx, but not min to avoid negative values.
             }
-            else // Measure loss at x + dx
+            else
             {
-                var fastResponseLoss = (1f - AI.autoTuningLossRatio) * (pointingFirstMinAfterMaxTime + 0 * rollFirstMinAfterMaxTime);
+                // Measure loss at x + dx
+                var fastResponseLoss = (1f - AI.autoTuningLossRatio) * (pointingFirstMinAfterMaxTime + rollFirstMinAfterMaxTime);
                 var oscillationLoss = AI.autoTuningLossRatio * (pointingOscillationArea / absHeadingChange + rollOscillationArea / absHeadingChange / timeout);
                 loss = fastResponseLoss + oscillationLoss;
 
-                // Calculate a slope in the dx direction and go downhill in that direction.
+                // Calculate a slope in the dx direction and move x downhill in that direction.
                 var lossSlope = (loss - prevLoss) / Mathf.Sqrt(dx.Values.Select(x => x * x).Sum());
                 if (float.IsNaN(lossSlope))
                 {
@@ -3987,8 +3988,8 @@ namespace BDArmory.Control
                     AI.autoTune = false;
                     return;
                 }
-                lossSlopeAvg = slopeAlpha * lossSlopeAvg + (1 - slopeAlpha) * Mathf.Abs(lossSlope);
-                foreach (var fieldName in gradient.Keys.ToList()) gradient[fieldName] = gradAlpha * gradient[fieldName] + (1 - gradAlpha) * lossSlope * dx[fieldName]; // Update gradient: Df = alpha * Df + (1-alpha) * df * dx
+                lossSlopeAvg = slopeAlpha * lossSlopeAvg + (1 - slopeAlpha) * Mathf.Abs(lossSlope); // Update the scale factor for the next dx.
+                foreach (var fieldName in gradient.Keys.ToList()) gradient[fieldName] = gradAlpha * gradient[fieldName] + (1 - gradAlpha) * lossSlope * dx[fieldName]; // Update the gradient (with some smoothing): Df = alpha * Df + (1-alpha) * df * dx
                 // lr.Update(lossSlope); // Update learning rate.
                 foreach (var fieldName in fields.Keys.ToList()) fields[fieldName].SetValue(Mathf.Clamp((float)fields[fieldName].GetValue(AI) - Mathf.Clamp(gradient[fieldName], -lr.current, lr.current), limits[fieldName].Item1, limits[fieldName].Item2), AI); // Update PID values for gradient: x -> x - Df.clamp(-lr, lr)
             }
