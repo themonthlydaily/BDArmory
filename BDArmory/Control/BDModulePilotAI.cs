@@ -1321,7 +1321,7 @@ namespace BDArmory.Control
             yield return new WaitForFixedUpdate();
             typeof(BDModulePilotAI).GetField(name).SetValue(this, value);
         }
-        float timer = 0;
+        float staleTargetTimer = 0;
         void FixedUpdate()
         {
             //floating origin and velocity offloading corrections
@@ -1331,19 +1331,19 @@ namespace BDArmory.Control
             }
             if (weaponManager.detectedTargetTimeout > weaponManager.targetScanInterval)
             {
-                timer += Time.fixedDeltaTime;
-                if (timer >= 50) //add some error to the predicted position every second
+                staleTargetTimer += Time.fixedDeltaTime;
+                if (staleTargetTimer >= 50) //add some error to the predicted position every second
                 {
                     Vector3 staleTarget = new Vector3();
-                    staleTarget.x = UnityEngine.Random.Range(0f, (float)lastKnownVector.magnitude / 10);
-                    staleTarget.y = UnityEngine.Random.Range(0f, (float)lastKnownVector.magnitude / 10);
-                    staleTarget.z = UnityEngine.Random.Range(0f, (float)lastKnownVector.magnitude / 20);
-                    timer = 0;
+                    staleTarget.x = UnityEngine.Random.Range(0f, (float)staleTargetVelocity.magnitude / 10);
+                    staleTarget.y = UnityEngine.Random.Range(0f, (float)staleTargetVelocity.magnitude / 10);
+                    staleTarget.z = UnityEngine.Random.Range(0f, (float)staleTargetVelocity.magnitude / 20);
+                    staleTargetTimer = 0;
                 }
             }
             else
             {
-                if (timer != 0) timer = 0;
+                if (staleTargetTimer != 0) staleTargetTimer = 0;
             }
         }
 
@@ -1689,8 +1689,8 @@ namespace BDArmory.Control
             return true;
         }
 
-        Vector3 staleTarget = Vector3.zero;
-        Vector3 lastKnownVector = Vector3.zero;
+        Vector3 staleTargetPosition = Vector3.zero; 
+        Vector3 staleTargetVelocity = Vector3.zero;
         void FlyToTargetVessel(FlightCtrlState s, Vessel v)
         {
             Vector3 target = AIUtils.PredictPosition(v, TimeWarp.fixedDeltaTime);//v.CoM;
@@ -1704,7 +1704,7 @@ namespace BDArmory.Control
            
             if (weaponManager)
             {
-                if (weaponManager.detectedTargetTimeout <= weaponManager.targetScanInterval) lastKnownVector = Vector3.zero; //if actively tracking target, reset last known velocity vector
+                if (weaponManager.detectedTargetTimeout <= weaponManager.targetScanInterval) staleTargetVelocity = Vector3.zero; //if actively tracking target, reset last known velocity vector
                 missile = weaponManager.CurrentMissile;
                 if (missile != null)
                 {
@@ -1820,8 +1820,8 @@ namespace BDArmory.Control
                 }
                 if (weaponManager.detectedTargetTimeout > weaponManager.targetScanInterval) //lost track of target, but know it's in general area, simulate location estimate precision decay over time
                 {
-                    if (lastKnownVector == Vector3.zero) lastKnownVector = v.Velocity(); //if lost target, follow last known velocity vector
-                    target += (lastKnownVector * weaponManager.detectedTargetTimeout) + (staleTarget * weaponManager.detectedTargetTimeout);
+                    if (staleTargetVelocity == Vector3.zero) staleTargetVelocity = v.Velocity(); //if lost target, follow last known velocity vector
+                    target += (staleTargetVelocity * weaponManager.detectedTargetTimeout) + (staleTargetPosition * weaponManager.detectedTargetTimeout);
                 }
             }
 
