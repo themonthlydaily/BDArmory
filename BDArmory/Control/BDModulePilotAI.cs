@@ -235,7 +235,7 @@ namespace BDArmory.Control
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_PIDAutoTuningLossRatio", advancedTweakable = true,
             groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 1f, stepIncrement = 0.01f, scene = UI_Scene.All)]
-        public float autoTuningLossRatio = 0.5f;
+        public float autoTuningLossRatio = 0.9f;
         #endregion
 
         #region Altitudes
@@ -1749,7 +1749,7 @@ namespace BDArmory.Control
             float angleToTarget = Vector3.Angle(target - vesselTransform.position, vesselTransform.up);
             float strafingDistance = -1f;
             float relativeVelocity = (float)(vessel.srf_velocity - v.srf_velocity).magnitude;
-           
+
             if (weaponManager)
             {
                 if (weaponManager.detectedTargetTimeout <= weaponManager.targetScanInterval) staleTargetVelocity = Vector3.zero; //if actively tracking target, reset last known velocity vector
@@ -3695,17 +3695,17 @@ namespace BDArmory.Control
         int partCount = 0;
         float measurementStartTime = -1;
         float measurementTime = 0;
-        float maxPointingError = 0;
-        float maxRollError = 0;
+        float maxPointingErrorSqr = 0;
+        float maxRollErrorSqr = 0;
         float pointingFirstMinAfterMaxStartTime = -1;
         float rollFirstMinAfterMaxStartTime = -1;
         float pointingFirstMinAfterMaxTime = -1;
         float rollFirstMinAfterMaxTime = -1;
-        float pointingOscillationArea = 0;
-        float rollOscillationArea = 0;
+        float pointingOscillationAreaSqr = 0;
+        float rollOscillationAreaSqr = 0;
         Vessel lastTargetVessel;
-        float lastPointingError = float.MaxValue;
-        float lastAbsRollError = float.MaxValue;
+        float lastPointingErrorSqr = float.MaxValue;
+        float lastAbsRollErrorSqr = float.MaxValue;
         float maxObservedSpeed = 0;
         float headingChange = 0;
         float absHeadingChange = 0;
@@ -3777,25 +3777,25 @@ namespace BDArmory.Control
                 return;
             }
 
-            var pointingError = Mathf.Sqrt(pitchError * pitchError + yawError * yawError); // Combine pitch and yaw errors as a single pointing error.
-            var absRollError = Mathf.Abs(rollError);
+            var pointingErrorSqr = pitchError * pitchError + yawError * yawError; // Combine pitch and yaw errors as a single pointing error.
+            var rollErrorSqr = rollError * rollError;
             if ((float)AI.vessel.srfSpeed > maxObservedSpeed) maxObservedSpeed = (float)AI.vessel.srfSpeed;
             if (measuring)
             {
-                if (pointingError > maxPointingError)
+                if (pointingErrorSqr > maxPointingErrorSqr)
                 {
-                    maxPointingError = pointingError;
+                    maxPointingErrorSqr = pointingErrorSqr;
                     pointingFirstMinAfterMaxStartTime = Time.time;
                     pointingFirstMinAfterMaxTime = -1f;
                 }
-                if (absRollError > maxRollError)
+                if (rollErrorSqr > maxRollErrorSqr)
                 {
-                    maxRollError = absRollError;
+                    maxRollErrorSqr = rollErrorSqr;
                     rollFirstMinAfterMaxStartTime = Time.time;
                     rollFirstMinAfterMaxTime = -1f;
                 }
 
-                if (pointingError < pointingTolerance && absRollError < rollTolerance) { onTargetTimer += Time.fixedDeltaTime; }
+                if (pointingErrorSqr < pointingTolerance && rollErrorSqr < rollTolerance) { onTargetTimer += Time.fixedDeltaTime; }
                 else { onTargetTimer = 0; }
 
                 // Measuring timed out or completed to within tolerance (on target for 0.2s if in combat, 1s outside of combat).
@@ -3808,15 +3808,15 @@ namespace BDArmory.Control
                     {
                         if (Time.time - measurementStartTime > timeout)
                         {
-                            Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Measuring timed out. PointingError: {pointingError}, RollError: {rollError}, onTargetTimer: {onTargetTimer:G2}s");
+                            Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Measuring timed out. PointingError: {pointingErrorSqr}, RollError: {rollError}, onTargetTimer: {onTargetTimer:G2}s");
                         }
                         else if (onTargetTimer > (WM != null && WM.guardMode ? 0.2f : 1f))
                         {
                             Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Completed to within tolerance in {measurementTime}s.");
                         }
-                        Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Max error (pointing) {maxPointingError} ({headingChange}), (roll) {maxRollError}.");
+                        Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Max error sqr (pointing) {maxPointingErrorSqr} ({headingChange}), (roll) {maxRollErrorSqr}.");
                         Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Time to first min (pointing) {pointingFirstMinAfterMaxTime}s, (roll) {rollFirstMinAfterMaxTime}s.");
-                        Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Oscillation error (pointing) {pointingOscillationArea}, (roll) {rollOscillationArea}. (Normalised: {pointingOscillationArea / absHeadingChange}, {rollOscillationArea / absHeadingChange}).");
+                        Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Oscillation error sqr (pointing) {pointingOscillationAreaSqr}, (roll) {rollOscillationAreaSqr}. (Normalised: {pointingOscillationAreaSqr / absHeadingChange}, {rollOscillationAreaSqr / absHeadingChange}).");
                     }
                     UpdatePIDValues();
                     ResetInternals();
@@ -3828,13 +3828,13 @@ namespace BDArmory.Control
                 }
                 else // Update internal parameters.
                 {
-                    if (pointingFirstMinAfterMaxStartTime > 0 && pointingFirstMinAfterMaxTime < 0 && pointingError >= lastPointingError) pointingFirstMinAfterMaxTime = Time.time - pointingFirstMinAfterMaxStartTime - Time.fixedDeltaTime;
-                    pointingOscillationArea += pointingError * Time.fixedDeltaTime;
-                    lastPointingError = pointingError;
+                    if (pointingFirstMinAfterMaxStartTime > 0 && pointingFirstMinAfterMaxTime < 0 && pointingErrorSqr >= lastPointingErrorSqr) pointingFirstMinAfterMaxTime = Time.time - pointingFirstMinAfterMaxStartTime - Time.fixedDeltaTime;
+                    pointingOscillationAreaSqr += pointingErrorSqr * Time.fixedDeltaTime;
+                    lastPointingErrorSqr = pointingErrorSqr;
 
-                    if (rollFirstMinAfterMaxStartTime > 0 && rollFirstMinAfterMaxTime < 0 && absRollError >= lastAbsRollError) rollFirstMinAfterMaxTime = Time.time - rollFirstMinAfterMaxStartTime - Time.fixedDeltaTime;
-                    rollOscillationArea += absRollError * Time.fixedDeltaTime;
-                    lastAbsRollError = absRollError;
+                    if (rollFirstMinAfterMaxStartTime > 0 && rollFirstMinAfterMaxTime < 0 && rollErrorSqr >= lastAbsRollErrorSqr) rollFirstMinAfterMaxTime = Time.time - rollFirstMinAfterMaxStartTime - Time.fixedDeltaTime;
+                    rollOscillationAreaSqr += rollErrorSqr * Time.fixedDeltaTime;
+                    lastAbsRollErrorSqr = rollErrorSqr;
                 }
             }
             else
@@ -3842,7 +3842,7 @@ namespace BDArmory.Control
                 if (WM != null && WM.guardMode) // If guard mode is enabled, watch for target changes or something else to trigger a new measurement. This is going to be less reliable due to not using controlled fly-to directions. Don't use yet.
                 {
                     // Significantly off-target, start measuring again.
-                    if (pointingError > 10f)
+                    if (pointingErrorSqr > 10f)
                     {
                         if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Starting measuring due to being significantly off-target.");
                         StartMeasuring();
@@ -3889,17 +3889,17 @@ namespace BDArmory.Control
         {
             measurementStartTime = -1;
             measurementTime = 0;
-            maxPointingError = 0;
-            maxRollError = 0;
+            maxPointingErrorSqr = 0;
+            maxRollErrorSqr = 0;
             pointingFirstMinAfterMaxStartTime = -1;
             rollFirstMinAfterMaxStartTime = -1;
             pointingFirstMinAfterMaxTime = -1;
             rollFirstMinAfterMaxTime = -1;
-            pointingOscillationArea = 0;
-            rollOscillationArea = 0;
+            pointingOscillationAreaSqr = 0;
+            rollOscillationAreaSqr = 0;
             if (!AI.autoTune && AI.currentCommand == PilotCommands.FlyTo) AI.ReleaseCommand(); // Release the AI if we've been commanding it.
-            lastPointingError = float.MaxValue;
-            lastAbsRollError = float.MaxValue;
+            lastPointingErrorSqr = float.MaxValue;
+            lastAbsRollErrorSqr = float.MaxValue;
             onTargetTimer = 0;
             if (!AI.autoTune) gradient = null;
             else if (gradient == null) ResetGradient();
@@ -3945,6 +3945,7 @@ namespace BDArmory.Control
         /// - Take N samples for each direction change (ignoring the guard mode approach for now), drop outliers and average the rest to get a smoother estimate of the loss f.
         /// - Sample at x-dx and x+dx to use a centred finite difference to approximate df/dx. This will require nearly twice as many samples, since we can't reuse those at x.
         /// - Take dx along each axis individually instead of random directions in R^d. This would require iterating through the axes and shuffling the order each epoch or weighting them based on the size of df/dx.
+        /// - Build up the full gradient at each step by sampling at x±dx for each axis, then step in the direction of the gradient.
         /// </summary>
         void UpdatePIDValues()
         {
@@ -3988,8 +3989,8 @@ namespace BDArmory.Control
             if (firstPass)
             {
                 // Measure loss at x
-                var fastResponseLoss = (1f - AI.autoTuningLossRatio) * (pointingFirstMinAfterMaxTime + rollFirstMinAfterMaxTime);
-                var oscillationLoss = AI.autoTuningLossRatio * (pointingOscillationArea / absHeadingChange + rollOscillationArea / absHeadingChange / timeout);
+                var fastResponseLoss = (1f - AI.autoTuningLossRatio) * (pointingFirstMinAfterMaxTime * pointingFirstMinAfterMaxTime + rollFirstMinAfterMaxTime * rollFirstMinAfterMaxTime);
+                var oscillationLoss = AI.autoTuningLossRatio * (pointingOscillationAreaSqr / absHeadingChange + rollOscillationAreaSqr / absHeadingChange / timeout);
                 prevLoss = fastResponseLoss + oscillationLoss;
                 AI.autoTuningLossLabel = $"Fast: {fastResponseLoss:F4}, Osc: {oscillationLoss:F4}";
 
@@ -4001,8 +4002,8 @@ namespace BDArmory.Control
             else
             {
                 // Measure loss at x + dx
-                var fastResponseLoss = (1f - AI.autoTuningLossRatio) * (pointingFirstMinAfterMaxTime + rollFirstMinAfterMaxTime);
-                var oscillationLoss = AI.autoTuningLossRatio * (pointingOscillationArea / absHeadingChange + rollOscillationArea / absHeadingChange / timeout);
+                var fastResponseLoss = (1f - AI.autoTuningLossRatio) * (pointingFirstMinAfterMaxTime * pointingFirstMinAfterMaxTime + rollFirstMinAfterMaxTime * rollFirstMinAfterMaxTime);
+                var oscillationLoss = AI.autoTuningLossRatio * (pointingOscillationAreaSqr / absHeadingChange + rollOscillationAreaSqr / absHeadingChange / timeout);
                 loss = fastResponseLoss + oscillationLoss;
 
                 // Calculate a slope in the dx direction and move x downhill in that direction.
