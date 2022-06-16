@@ -11,7 +11,9 @@ FIXES
 - Fixes Proc Armor bugs.
 - Fixes broken hydraulics on Chaingun, Hydra Turret and Patriot Launcher models.
 - Fixes custom armor volumes in .cfgs being ignored.
-
+- Fix target A2A/A2G preference GUI labels.
+- Fix some EMP weapon Selection logic.
+- Fix AI withdrawal after firing nukes/EMPs at close range.
 IMPROVEMENTS
 - General:
 	- Major internal refactor to better organise code.
@@ -34,6 +36,7 @@ IMPROVEMENTS
 	- Update the continuous spawning log parsing script.
 	- Add some extra layer masks (internal kerbals are 1<<16, wheels are 1<<26).
 	- Add a BodyUtils.GetTerrainAltitudeAtPos function.
+	- Adds Proc Wing/ProcPart HP cap setting to clamp proc HP to a configurable maximum.
 - AI:
 	- Add a 5° deadzone around being on target for dynamic damping to avoid feed-back loop in PID.
 	- Add a check for requested extending already being satisfied.
@@ -47,6 +50,8 @@ IMPROVEMENTS
 	- Add Air/Ground target preference weighting to Target Priorities.
 	- Make the extend toggle apply to air-to-air missiles as well as air-to-air guns.
 	- Update the AI GUI help text for the current extending settings.
+	- AI will now head to target's last known position if contact lost (out of sight range/angle/radar detection), with accuracy of predicted position decaying over time.
+	- AI will now enable radars when guard mode enabled.
 - GameModes:
 	- Waypoints:
 		- Add support for multiple waypoint gate models.
