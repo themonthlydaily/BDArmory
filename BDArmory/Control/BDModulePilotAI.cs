@@ -1369,13 +1369,29 @@ namespace BDArmory.Control
             yield return new WaitForFixedUpdate();
             typeof(BDModulePilotAI).GetField(name).SetValue(this, value);
         }
-
+        float targetStalenessTimer = 0;
         void FixedUpdate()
         {
             //floating origin and velocity offloading corrections
             if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
             {
                 if (lastTargetPosition != null) lastTargetPosition -= FloatingOrigin.OffsetNonKrakensbane;
+            }
+            if (weaponManager.detectedTargetTimeout > weaponManager.targetScanInterval)
+            {
+                targetStalenessTimer += Time.fixedDeltaTime;
+                if (targetStalenessTimer >= 50) //add some error to the predicted position every second
+                {
+                    Vector3 staleTargetPosition = new Vector3();
+                    staleTargetPosition.x = UnityEngine.Random.Range(0f, (float)staleTargetVelocity.magnitude / 2);
+                    staleTargetPosition.y = UnityEngine.Random.Range(0f, (float)staleTargetVelocity.magnitude / 2);
+                    staleTargetPosition.z = UnityEngine.Random.Range((float)staleTargetVelocity.magnitude * 0.75f, (float)staleTargetVelocity.magnitude * 1.25f);
+                    targetStalenessTimer = 0;
+                }
+            }
+            else
+            {
+                if (targetStalenessTimer != 0) targetStalenessTimer = 0;
             }
         }
 
@@ -1721,6 +1737,8 @@ namespace BDArmory.Control
             return true;
         }
 
+        Vector3 staleTargetPosition = Vector3.zero;
+        Vector3 staleTargetVelocity = Vector3.zero;
         void FlyToTargetVessel(FlightCtrlState s, Vessel v)
         {
             Vector3 target = AIUtils.PredictPosition(v, TimeWarp.fixedDeltaTime);//v.CoM;
@@ -1731,8 +1749,10 @@ namespace BDArmory.Control
             float angleToTarget = Vector3.Angle(target - vesselTransform.position, vesselTransform.up);
             float strafingDistance = -1f;
             float relativeVelocity = (float)(vessel.srf_velocity - v.srf_velocity).magnitude;
+           
             if (weaponManager)
             {
+                if (weaponManager.detectedTargetTimeout <= weaponManager.targetScanInterval) staleTargetVelocity = Vector3.zero; //if actively tracking target, reset last known velocity vector
                 missile = weaponManager.CurrentMissile;
                 if (missile != null)
                 {
@@ -1845,6 +1865,11 @@ namespace BDArmory.Control
                 else
                 {
                     finalMaxSteer = GetSteerLimiterForSpeedAndPower();
+                }
+                if (weaponManager.detectedTargetTimeout > weaponManager.targetScanInterval) //lost track of target, but know it's in general area, simulate location estimate precision decay over time
+                {
+                    if (staleTargetVelocity == Vector3.zero) staleTargetVelocity = v.Velocity(); //if lost target, follow last known velocity vector
+                    target += (staleTargetVelocity * weaponManager.detectedTargetTimeout) + (staleTargetPosition * weaponManager.detectedTargetTimeout);
                 }
             }
 

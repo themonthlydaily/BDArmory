@@ -656,6 +656,17 @@ namespace BDArmory.Control
                             weapon.Current.aiControlled = true;
                         }
                     }
+                if (radars.Count > 0)
+                {
+                    using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
+                        while (rd.MoveNext())
+                        {
+                            if (rd.Current != null || rd.Current.canLock)
+                            {
+                                rd.Current.EnableRadar();
+                            }
+                        }
+                }
             }
         }
 
@@ -1619,22 +1630,20 @@ namespace BDArmory.Control
                 }
                 else
                 {
-                    // DISABLE RADAR
-                    /*
-                    if (!vesselRadarData || !(vesselRadarData.radarCount > 0))
+                    // Turn on radars if off
+                    if (!results.foundAntiRadiationMissile)
                     {
-                        List<ModuleRadar>.Enumerator rd = radars.GetEnumerator();
-                        while (rd.MoveNext())
-                        {
-                            if (rd.Current == null) continue;
-                            if (!rd.Current.canLock) continue;
-                            rd.Current.EnableRadar();
-                            break;
-                        }
-                        rd.Dispose();
+                        using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
+                            while (rd.MoveNext())
+                            {
+                                if (rd.Current != null || rd.Current.canLock)
+                                {
+                                    rd.Current.EnableRadar();
+                                }
+                            }
                     }
-                    */
 
+                    // Try to lock target, or if already locked, fire on it
                     if (vesselRadarData &&
                         (!vesselRadarData.locked ||
                          (vesselRadarData.lockedTargetData.targetData.predictedPosition - guardTarget.transform.position)
@@ -1650,6 +1659,13 @@ namespace BDArmory.Control
                             StartGuardTurretFiring();
                             yield break;
                         }
+                    }
+                    else if (guardTarget && vesselRadarData && vesselRadarData.locked &&
+                            vesselRadarData.lockedTargetData.vessel == guardTarget)
+                    {
+                        vesselRadarData.SlaveTurrets();
+                        StartGuardTurretFiring();
+                        yield break;
                     }
 
                     if (!guardTarget || (guardTarget.transform.position - transform.position).sqrMagnitude > guardRange * guardRange)
@@ -2513,15 +2529,6 @@ namespace BDArmory.Control
                     if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: No Clearance! Cannot fire " + CurrentMissile.name);
                     return false;
                 }
-                if (ml.warheadType == MissileBase.WarheadTypes.EMP || ml.warheadType == MissileBase.WarheadTypes.Nuke)
-                {
-                    float timeToImpact;
-                    MissileGuidance.GetAirToAirTarget(currentTarget.position, currentTarget.velocity, currentTarget.Vessel.acceleration_immediate, vessel, out timeToImpact);
-                    if (ml.StandOffDistance > 0 && Vector3.Distance(transform.position + (vessel.Velocity() * timeToImpact), currentTarget.position + currentTarget.velocity) > ml.StandOffDistance) //if predicted craft position will be within blast radius when missile arrives, break off
-                    {
-                        DisengageAfterFiring = true;
-                    }
-                }
                 if (ml is MissileLauncher && ((MissileLauncher)ml).missileTurret)
                 {
                     ((MissileLauncher)ml).missileTurret.FireMissile(((MissileLauncher)ml));
@@ -2546,6 +2553,18 @@ namespace BDArmory.Control
                     if (ml.GetWeaponClass() == WeaponClasses.Bomb)
                     {
                         //StartCoroutine(BombsAwayRoutine(ml));
+                    }
+                    if (ml.warheadType == MissileBase.WarheadTypes.EMP || ml.warheadType == MissileBase.WarheadTypes.Nuke)
+                    {
+                        MissileLauncher cm = missile as MissileLauncher;
+                        float thrust = cm == null ? 30 : cm.thrust;
+                        float timeToImpact = AIUtils.ClosestTimeToCPA(guardTarget, vessel.CoM, vessel.Velocity(), (thrust / missile.part.mass) * missile.GetForwardTransform(), 16);
+                        if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: Blast standoff dist: " + ml.StandOffDistance + "; time2Impact: " + timeToImpact);
+                        if (ml.StandOffDistance > 0 && Vector3.Distance(transform.position + (vessel.Velocity() * timeToImpact), currentTarget.position + currentTarget.velocity) > ml.StandOffDistance) //if predicted craft position will be within blast radius when missile arrives, break off
+                        {
+                            DisengageAfterFiring = true;
+                            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: Need to withdraw from projected blast zone!");
+                        }
                     }
                 }
                 else
@@ -3632,6 +3651,11 @@ namespace BDArmory.Control
                     {
                         Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + targetDebugText + (selectedWeapon != null ? selectedWeapon.GetShortName() : ""));
                     }
+                    //need to check that target is actually being seen, and not just being recalled due to object permanence
+                    if (CanSeeTarget(potentialTarget, false))
+                    {
+                        BDATargetManager.ReportVessel(potentialTarget.Vessel, this); //have it so AI can see and register a target (no radar + FoV angle < 360, radar turns off due to incoming HARM, etc)
+                    }
                     return;
                 }
                 else if (!BDArmorySettings.DISABLE_RAMMING)
@@ -4394,7 +4418,7 @@ namespace BDArmory.Control
                                 candidatePriority = Mathf.RoundToInt(mlauncher.priority);
                                 bool EMP = mlauncher.warheadType == MissileBase.WarheadTypes.EMP;
 
-                                if (EMP) continue;
+                                if (EMP && target.isDebilitated) continue;
                                 if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue;
                                 if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                     continue; //keep higher priority weapon
@@ -4636,7 +4660,7 @@ namespace BDArmory.Control
                             int candidatePriority = Mathf.RoundToInt(Bomb.priority);
                             double srfSpeed = currentTarget.Vessel.horizontalSrfSpeed;
 
-                            if (EMP) continue;
+                            if (EMP && target.isDebilitated) continue;
                             if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                 continue; //keep higher priority weapon
                             if (distance < candidateYield)
@@ -5230,27 +5254,43 @@ namespace BDArmory.Control
         }
 
         #endregion Smart Targeting
-
-        public bool CanSeeTarget(TargetInfo target)
+        public float detectedTargetTimeout = 0;
+        public bool CanSeeTarget(TargetInfo target, bool checkForstaleTarget = true)
         {
             // fix cheating: we can see a target IF we either have a visual on it, OR it has been detected on radar/sonar
             // but to prevent AI from stopping an engagement just because a target dropped behind a small hill 5 seconds ago, clamp the timeout to 30 seconds
             // i.e. let's have at least some object permanence :)
-            // (Ideally, I'd love to have "stale targets", where AI would attack the last known position, but that's a feature for the future)
-            if (target.detectedTime.TryGetValue(Team, out float detectedTime) && Time.time - detectedTime < Mathf.Max(targetScanInterval, 30))
-                return true;
+            // If we can't directly see the target via sight or radar, AI will head to last known position of target, based on target's vector at time contact was lost,
+            //with precision of estimated position degrading over time.
 
             // can we get a visual sight of the target?
-            if ((target.Vessel.transform.position - transform.position).sqrMagnitude < guardRange * guardRange)
+            if ((target.Vessel.transform.position - transform.position).sqrMagnitude < guardRange * guardRange &&
+                Vector3.Angle(-vessel.ReferenceTransform.forward, target.Vessel.transform.position - vessel.CoM) < guardAngle / 2)
             {
                 if (RadarUtils.TerrainCheck(target.Vessel.transform.position, transform.position))
                 {
                     return false;
                 }
-
+                detectedTargetTimeout = 0;
+                return true;
+            }
+            target.detected.TryGetValue(Team, out bool detected);//see if the target is actually within radar sight right now
+            if (detected)
+            {
+                detectedTargetTimeout = 0;
                 return true;
             }
 
+            if (checkForstaleTarget) //merely look to see if a target was last detected within 30s
+            {
+                if (target.detectedTime.TryGetValue(Team, out float detectedTime) && Time.time - detectedTime < Mathf.Max(30, targetScanInterval))
+                {
+                    //Debug.Log($"[BDArmory.MissileFire]: {target.name} last seen {Time.time - detectedTime} seconds ago. Recalling last known position");
+                    detectedTargetTimeout = Time.time - detectedTime;
+                    return true;
+                }
+                return false;
+            }
             return false;
         }
 
