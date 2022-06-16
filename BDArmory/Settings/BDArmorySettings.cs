@@ -33,6 +33,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool VESSEL_SWITCHER_PERSIST_UI = false;
         [BDAPersistentSettingsField] public static float VESSEL_SPAWNER_WINDOW_WIDTH = 480f;
         [BDAPersistentSettingsField] public static float EVOLUTION_WINDOW_WIDTH = 350f;
+        [BDAPersistentSettingsField] public static float GUI_OPACITY = 1f;                   // Modify the GUI opacity.
 
         // General toggle settings
         //[BDAPersistentSettingsField] public static bool INSTAKILL = true; //Depreciated, only affects lasers; use an Instagib mutator isntead
@@ -44,15 +45,24 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool AIM_ASSIST = true;
         [BDAPersistentSettingsField] public static bool DRAW_AIMERS = true;
         // Debug Labels
-        [BDAPersistentSettingsField] public static bool DRAW_DEBUG_LINES = false;                   //AI/Weapon aim visualizers
-        [BDAPersistentSettingsField] public static bool DRAW_DEBUG_LABELS = false;
-        [BDAPersistentSettingsField] public static bool DRAW_ARMOR_LABELS = false;                 //armor only debug messages, for testing/debugging. remove/revert back to debug_labels later
+        [BDAPersistentSettingsField] public static bool DEBUG_LINES = false;                 //AI/Weapon aim visualizers
+        [BDAPersistentSettingsField] public static bool DEBUG_OTHER = false;                 //internal debugging
+        [BDAPersistentSettingsField] public static bool DEBUG_ARMOR = false;                 //armor and HP
+		[BDAPersistentSettingsField] public static bool DEBUG_WEAPONS = false;               //Debug messages for guns/rockets/lasers and their projectiles
+        [BDAPersistentSettingsField] public static bool DEBUG_MISSILES = false;              //Missile launch, tracking and targeting debug labels
+        [BDAPersistentSettingsField] public static bool DEBUG_DAMAGE = false;                //Explosions and battle damage logging
+        [BDAPersistentSettingsField] public static bool DEBUG_AI = false;                    //AI debugging
+        [BDAPersistentSettingsField] public static bool DEBUG_RADAR = false;                 //FLIR/Radar and RCS debugging
+        [BDAPersistentSettingsField] public static bool DEBUG_TELEMETRY = false;             //AI/WM UI debug telemetry display
+        [BDAPersistentSettingsField] public static bool DEBUG_SPAWNING = false;              //Spawning debugging
 
         [BDAPersistentSettingsField] public static bool REMOTE_SHOOTING = false;
         [BDAPersistentSettingsField] public static bool BOMB_CLEARANCE_CHECK = false;
         [BDAPersistentSettingsField] public static bool SHOW_AMMO_GAUGES = false;
         [BDAPersistentSettingsField] public static bool SHELL_COLLISIONS = true;
         [BDAPersistentSettingsField] public static bool BULLET_DECALS = true;
+        [BDAPersistentSettingsField] public static bool GAPLESS_PARTICLE_EMITTERS = true;         // Use gapless particle emitters.
+        [BDAPersistentSettingsField] public static bool FLARE_SMOKE = true;                       // Flares leave a trail of smoke.
         [BDAPersistentSettingsField] public static bool DISABLE_RAMMING = true;                   // Prevent craft from going into ramming mode when out of ammo.
         [BDAPersistentSettingsField] public static bool DEFAULT_FFA_TARGETING = false;            // Free-for-all combat style instead of teams (changes target selection behaviour)
         [BDAPersistentSettingsField] public static bool RUNWAY_PROJECT = false;                    // Enable/disable Runway Project specific enhancements.
@@ -65,6 +75,8 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool RESET_HULL = false;                     // Automatically reset hull material of parts of vessels when they're spawned in flight mode.
         [BDAPersistentSettingsField] public static int KERBAL_SAFETY = 1;                         // Try to save kerbals by ejecting/leaving seats and deploying parachutes.
         [BDAPersistentSettingsField] public static bool TRACE_VESSELS_DURING_COMPETITIONS = false; // Trace vessel positions and rotations during competitions.
+        [BDAPersistentSettingsField] public static bool DRAW_VESSEL_TRAILS = true;                // Draw a trail to visualize vessel path during the heat
+        [BDAPersistentSettingsField] public static int VESSEL_TRAIL_LENGTH = 300;                   //Max length of trails, in seconds. Defaults to competition length
         [BDAPersistentSettingsField] public static bool DUMB_IR_SEEKERS = false;                  // IR missiles will go after hottest thing they can see
         [BDAPersistentSettingsField] public static bool AUTOCATEGORIZE_PARTS = true;
         [BDAPersistentSettingsField] public static bool SHOW_CATEGORIES = true;
@@ -104,6 +116,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static float BDARMORY_WEAPONS_VOLUME = 0.45f;
         [BDAPersistentSettingsField] public static float MAX_GUARD_VISUAL_RANGE = 200000f;
         [BDAPersistentSettingsField] public static float MAX_ACTIVE_RADAR_RANGE = 200000f;        //NOTE: used ONLY for display range of radar windows! Actual radar range provided by part configs!
+        [BDAPersistentSettingsField] public static bool LOGARITHMIC_RADAR_DISPLAY = false;                //NOTE: used ONLY for display range of radar windows! Actual radar range provided by part configs!
         [BDAPersistentSettingsField] public static float MAX_ENGAGEMENT_RANGE = 200000f;          //NOTE: used ONLY for missile dlz parameters!
         [BDAPersistentSettingsField] public static float IVA_LOWPASS_FREQ = 2500f;
         [BDAPersistentSettingsField] public static float SMOKE_DEFLECTION_FACTOR = 10f;
@@ -209,7 +222,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static float BD_FIRE_CHANCE_INCENDIARY = 90;
 		[BDAPersistentSettingsField] public static bool ALLOW_ZOMBIE_BD = false;          // Allow battle damage to proc when using zombie mode?
         [BDAPersistentSettingsField] public static bool ENABLE_HOS = false;
-        [BDAPersistentSettingsField] public static string HALL_OF_SHAME = "";
+        [BDAPersistentSettingsField] public static List<string> HALL_OF_SHAME_LIST = new List<string>();
         [BDAPersistentSettingsField] public static float HOS_FIRE = 0;
         [BDAPersistentSettingsField] public static float HOS_MASS = 0;
         [BDAPersistentSettingsField] public static float HOS_DMG = 0;
@@ -235,7 +248,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static float VESSEL_SPAWN_DISTANCE = 10f;              // Radius of the size of the spawning circle.
         [BDAPersistentSettingsField] public static bool VESSEL_SPAWN_DISTANCE_TOGGLE = false;      // Toggle between scaling factor and absolute distance.
         [BDAPersistentSettingsField] public static bool VESSEL_SPAWN_REASSIGN_TEAMS = true;        // Reassign teams on spawn, overriding teams defined in the SPH.
-        [BDAPersistentSettingsField] public static float VESSEL_SPAWN_EASE_IN_SPEED = 1f;          // Rate to limit "falling" during spawning.
+        [BDAPersistentSettingsField] public static float VESSEL_SPAWN_EASE_IN_SPEED = 0f;          // Rate to limit "falling" during spawning.
         [BDAPersistentSettingsField] public static int VESSEL_SPAWN_CONCURRENT_VESSELS = 0;        // Maximum number of vessels to spawn in concurrently (continuous spawning mode).
         [BDAPersistentSettingsField] public static int VESSEL_SPAWN_LIVES_PER_VESSEL = 0;          // Maximum number of times to spawn a vessel (continuous spawning mode).
         [BDAPersistentSettingsField] public static float OUT_OF_AMMO_KILL_TIME = -1f;              // Out of ammo kill timer for continuous spawn mode.
@@ -246,13 +259,17 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static int VESSEL_SPAWN_NUMBER_OF_TEAMS = 0;           // Number of Teams: 0 - FFA, 1 - Folders, 2-10 specified directly
         [BDAPersistentSettingsField] public static string VESSEL_SPAWN_FILES_LOCATION = "";        // Spawn files location (under AutoSpawn).
         [BDAPersistentSettingsField] public static bool VESSEL_SPAWN_RANDOM_ORDER = true;          // Shuffle vessels before spawning them.
-        [BDAPersistentSettingsField] public static bool SHOW_WAYPOINTS_OPTIONS = true;               // Waypoint section of Vessel Spawner Window.
+        [BDAPersistentSettingsField] public static bool SHOW_WAYPOINTS_OPTIONS = true;             // Waypoint section of Vessel Spawner Window.
 
         // Waypoints
-        [BDAPersistentSettingsField] public static float WAYPOINTS_ALTITUDE = 50f;               // Altitude above ground of the waypoints.
-        [BDAPersistentSettingsField] public static bool WAYPOINTS_ONE_AT_A_TIME = true;          // Send the craft one-at-a-time through the course.
-        [BDAPersistentSettingsField] public static bool WAYPOINTS_VISUALIZE = true;              // Add Waypoint models to indicate the path
-        [BDAPersistentSettingsField] public static bool WAYPOINTS_INFINITE_FUEL_AT_START = true; // Don't consume fuel prior to the first waypoint.
+        [BDAPersistentSettingsField] public static float WAYPOINTS_ALTITUDE = 50f;                // Altitude above ground of the waypoints.
+        [BDAPersistentSettingsField] public static bool WAYPOINTS_ONE_AT_A_TIME = true;           // Send the craft one-at-a-time through the course.
+        [BDAPersistentSettingsField] public static bool WAYPOINTS_VISUALIZE = true;               // Add Waypoint models to indicate the path
+        [BDAPersistentSettingsField] public static bool WAYPOINTS_INFINITE_FUEL_AT_START = true;  // Don't consume fuel prior to the first waypoint.
+        [BDAPersistentSettingsField] public static float WAYPOINTS_SCALE = 500;                   // Have model(or maybe WP radius proper) scale?
+        [BDAPersistentSettingsField] public static int WAYPOINT_COURSE_INDEX = 0;                 // Select from a set of courses
+        [BDAPersistentSettingsField] public static int WAYPOINT_LOOP_INDEX = 1;                   // Number of loops to generate
+        [BDAPersistentSettingsField] public static int WAYPOINT_GUARD_INDEX = -1;                 // Activate guard after index; -1 for no guard
 
         // Heartbleed
         [BDAPersistentSettingsField] public static float HEART_BLEED_RATE = 0.01f;

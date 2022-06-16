@@ -314,7 +314,7 @@ namespace BDArmory.Radar
 
             Bounds vesselbounds = CalcVesselBounds(v, t);
 
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_RADAR)
             {
                 if (HighLogic.LoadedSceneIsFlight)
                     Debug.Log($"[BDArmory.RadarUtils]: Rendering radar snapshot of vessel {v.name}, type {v.vesselType}");
@@ -328,7 +328,7 @@ namespace BDArmory.Radar
             if (vesselbounds.size.sqrMagnitude == 0f)
             {
                 // SAVE US THE RENDERING, result will be zero anyway...
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DEBUG_RADAR)
                 {
                     Debug.Log("[BDArmory.RadarUtils]: - rcs is zero.");
                 }
@@ -407,7 +407,7 @@ namespace BDArmory.Radar
                     }
                 }
 
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DEBUG_RADAR)
                 {
                     // Debug.Log($"[BDArmory.RadarUtils]: RCS Aspect Vector for (az/el) {rcsAspects[i, 0]}/{rcsAspects[i, 1]}  is: " + aspect.ToString());
                     Debug.Log($"[BDArmory.RadarUtils]: - Vessel rcs for (az/el) is: {rcsAspects[i, 0]}/{rcsAspects[i, 1]} = rcsVariable: {rcsVariable}");
@@ -455,7 +455,7 @@ namespace BDArmory.Radar
                 }
             }
 
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_RADAR)
             {
                 Debug.Log($"[BDArmory.RadarUtils]: - Vessel all-aspect rcs is: rcsTotal: {rcsTotal}");
             }
@@ -541,7 +541,7 @@ namespace BDArmory.Radar
                 v.SetPosition(v.transform.position + presentationPosition);
 
             Bounds vesselbounds = CalcVesselBounds(v, t);
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_RADAR)
             {
                 if (HighLogic.LoadedSceneIsFlight)
                     Debug.Log($"[BDArmory.RadarUtils]: Rendering radar snapshot of vessel {v.name}, type {v.vesselType}");
@@ -554,7 +554,7 @@ namespace BDArmory.Radar
             if (vesselbounds.size.sqrMagnitude == 0f)
             {
                 // SAVE US THE RENDERING, result will be zero anyway...
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DEBUG_RADAR)
                 {
                     Debug.Log("[BDArmory.RadarUtils]: - rcs is zero.");
                 }
@@ -616,7 +616,7 @@ namespace BDArmory.Radar
                 rcsVentral45 /= RCS_NORMALIZATION_FACTOR;
 
                 rcsTotal = (Mathf.Max(rcsFrontal, rcsFrontal45) + Mathf.Max(rcsLateral, rcsLateral45) + Mathf.Max(rcsVentral, rcsVentral45)) / 3f;
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DEBUG_RADAR)
                 {
                     Debug.Log($"[BDArmory.RadarUtils]: - Vessel rcs is (frontal/lateral/ventral), (frontal45/lateral45/ventral45): {rcsFrontal}/{rcsLateral}/{rcsVentral}, {rcsFrontal45}/{rcsLateral45}/{rcsVentral45} = rcsTotal: {rcsTotal}");
                 }
@@ -1213,6 +1213,7 @@ namespace BDArmory.Radar
                 foundAGM = false,
                 firingAtMe = false,
                 missDistance = float.MaxValue,
+                missDeviation = float.MaxValue,
                 threatVessel = null,
                 threatWeaponManager = null,
                 incomingMissiles = new List<IncomingMissile>()
@@ -1311,6 +1312,7 @@ namespace BDArmory.Radar
                                                 results.threatVessel = weapon.Current.vessel;
                                                 results.threatWeaponManager = weapon.Current.weaponManager;
                                                 results.missDistance = missDistance;
+                                                results.missDeviation = (weapon.Current.fireTransforms[0].position - myWpnManager.vessel.transform.position).magnitude * weapon.Current.maxDeviation / 2f * Mathf.Deg2Rad; // y = x*tan(θ), expansion of tan(θ) is θ + O(θ^3).
                                             }
                                         }
                                     }
@@ -1386,7 +1388,7 @@ namespace BDArmory.Radar
             return false;
         }
 
-        private static float MissDistance(ModuleWeapon threatWeapon, Vessel self) // Returns how far away bullets from enemy are from craft in meters
+        public static float MissDistance(ModuleWeapon threatWeapon, Vessel self) // Returns how far away bullets from enemy are from craft in meters
         {
             Transform fireTransform = threatWeapon.fireTransforms[0];
             // If we're out of range, then it's not a threat.
@@ -1426,8 +1428,16 @@ namespace BDArmory.Radar
             float scale = maxDistance / (radarRect.height / 2);
             Vector3 localPosition = referenceTransform.InverseTransformPoint(worldPosition);
             localPosition.y = 0;
-            Vector2 radarPos = new Vector2((radarRect.width / 2) + (localPosition.x / scale), ((radarRect.height / 2) - (localPosition.z / scale)));
-            return radarPos;
+            if (BDArmorySettings.LOGARITHMIC_RADAR_DISPLAY)
+            {
+                scale = Mathf.Log(localPosition.magnitude + 1) / Mathf.Log(maxDistance + 1);
+                localPosition = localPosition.normalized * scale * scale; // Log^2 gives a nicer curve than log.
+                return new Vector2(radarRect.width * (1 + localPosition.x) / 2, radarRect.height * (1 - localPosition.z) / 2);
+            }
+            else
+            {
+                return new Vector2((radarRect.width / 2) + (localPosition.x / scale), ((radarRect.height / 2) - (localPosition.z / scale)));
+            }
         }
 
         /// <summary>
@@ -1443,7 +1453,16 @@ namespace BDArmory.Radar
             float angle = Vector3.Angle(localPosition, Vector3.forward);
             if (localPosition.x < 0) angle = -angle;
             float xPos = (radarRect.width / 2) + ((angle / maxAngle) * radarRect.width / 2);
-            float yPos = radarRect.height - (new Vector2(localPosition.x, localPosition.z)).magnitude / scale;
+            float yPos = radarRect.height;
+            if (BDArmorySettings.LOGARITHMIC_RADAR_DISPLAY)
+            {
+                scale = Mathf.Log(localPosition.magnitude + 1) / Mathf.Log(maxDistance + 1);
+                yPos -= radarRect.height * scale * scale;
+            }
+            else
+            {
+                yPos -= localPosition.magnitude / scale;
+            }
             Vector2 radarPos = new Vector2(xPos, yPos);
             return radarPos;
         }

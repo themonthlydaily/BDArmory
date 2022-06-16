@@ -1,111 +1,139 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 using BDArmory.Damage;
+using KSP.Localization;
+using BDArmory.Utils;
 
 namespace BDArmory.Armor
 {
     public class BDAdjustableArmor : PartModule
     {
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorWidth"),//Engage Range Min
- UI_FloatRange(minValue = 0.5f, maxValue = 16, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorAdjustParts"),//Move Child Parts
+            UI_Toggle(disabledText = "#LOC_BDArmory_false", enabledText = "#LOC_BDArmory_true")]//false--true
+        public bool moveChildParts = true;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorWidth"),//Armor Width
+            UI_FloatRange(minValue = 0.5f, maxValue = 16, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
         public float Width = 1;
 
-        private float OldWidth = 1;
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_ArmorWidthR"),//Right Side Width
+            UI_FloatRange(minValue = 0.1f, maxValue = 8, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
+        public float scaleneWidth = 1;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorLength"),//Engage Range Min
- UI_FloatRange(minValue = 0.5f, maxValue = 16, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorLength"),//Armor Length
+            UI_FloatRange(minValue = 0.5f, maxValue = 16, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
         public float Length = 1;
 
-        private float OldLength = 1;
+        [KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_ArmorTriIso", active = true)]//Toggle Tri Type
+        public void ToggleTriTypeOption()
+        {
+            scaleneTri = !scaleneTri;
 
-        [KSPField]
-        public bool isTriangularPanel = false;
+            Fields["scaleneWidth"].guiActive = scaleneTri;
+            Fields["scaleneWidth"].guiActiveEditor = scaleneTri;
+            UI_FloatRange AWidth = (UI_FloatRange)Fields["Width"].uiControlEditor;
+            AWidth.maxValue = scaleneTri ? 8 : 16;
+            AWidth.minValue = scaleneTri ? 0.1f : 0.5f;
+
+            if (scaleneTri)
+            {
+                Fields["Width"].guiName = Localizer.Format("#LOC_BDArmory_ArmorWidthL");
+                Events["ToggleTriTypeOption"].guiName = Localizer.Format("#LOC_BDArmory_ArmorTriSca");
+            }
+            else
+            {
+                Fields["Width"].guiName = Localizer.Format("#LOC_BDArmory_ArmorWidth");
+                Events["ToggleTriTypeOption"].guiName = Localizer.Format("#LOC_BDArmory_ArmorTriIso");
+            }
+            GUIUtils.RefreshAssociatedWindows(part);
+            using (List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator())
+                while (sym.MoveNext())
+                {
+                    if (sym.Current == null) continue;
+                    sym.Current.FindModuleImplementing<BDAdjustableArmor>().ToggleTriTypeOption();
+                }
+        }
+
 
         //public bool isCurvedPanel = false;
         private float armorthickness = 1;
         private float Oldthickness = 1;
 
         [KSPField]
+        public bool isTriangularPanel = false;
+        bool scaleneTri = false;
+
+        [KSPField]
+        public string TriangleType;
+
+        [KSPField]
         public string ArmorTransformName = "ArmorTransform"; //transform of armor panel mesh/box collider
         Transform[] armorTransforms;
+
+        [KSPField]
+        public string ScaleneTransformName = "ScaleneTransform"; //transform of armor panel mesh/box collider
+        Transform[] scaleneTransforms;
 
         [KSPField]
         public string ThicknessTransformName = "ThicknessTransform"; //name of armature to control thickness of curved panels
         Transform ThicknessTransform;
 
-        AttachNode N1;
-        AttachNode N2;
-        AttachNode N3;
-        AttachNode N4;
+        [KSPField] public string stackNodePosition;
 
-        [KSPField]
-        public string Node1Name = "Node1"; //name of attachnode node transform in model
-        Transform N1Transform;
-        [KSPField]
-        public string Node2Name = "Node2";
-        Transform N2Transform;
-        [KSPField]
-        public string Node3Name = "Node3";
-        Transform N3Transform;
-        [KSPField]
-        public string Node4Name = "Node4";
-        Transform N4Transform;
+        Dictionary<string, Vector3> originalStackNodePosition;
 
         HitpointTracker armor;
 
         public override void OnStart(StartState state)
         {
             armorTransforms = part.FindModelTransforms(ArmorTransformName);
-            for (int i = 0; i < armorTransforms.Length; i++)
-            {
-                armorTransforms[i].localScale = new Vector3(Width, Length, 1);
-            }
             ThicknessTransform = part.FindModelTransform(ThicknessTransformName);
-            //if (ThicknessTransform != null)
-            //{
-            //    isCurvedPanel = true;
-            //}
+            if (isTriangularPanel && TriangleType != "Right")
+            {
+                Events["ToggleTriTypeOption"].guiActiveEditor = true;
+                scaleneTransforms = part.FindModelTransforms(ScaleneTransformName);
+                UI_FloatRange SWidth = (UI_FloatRange)Fields["scaleneWidth"].uiControlEditor;
+                SWidth.onFieldChanged = AdjustSWidth;
+            }
+            Fields["scaleneWidth"].guiActive = false;
+            Fields["scaleneWidth"].guiActiveEditor = false;
+
+            if (HighLogic.LoadedSceneIsEditor)
+            {
+                ParseStackNodePosition();
+                StartCoroutine(DelayedUpdateStackNode());
+                GameEvents.onEditorShipModified.Add(OnEditorShipModifiedEvent);
+            }
+            UpdateThickness(true);
             UI_FloatRange AWidth = (UI_FloatRange)Fields["Width"].uiControlEditor;
-            //if (isCurvedPanel)
-            //{
-            //    AWidth.maxValue = 4f;
-            //    AWidth.minValue = 0f;
-            //    AWidth.stepIncrement = 1;
-            //    Fields["Width"].guiName = "#LOC_BDArmory_CylArmorScale";
-            //}
             AWidth.onFieldChanged = AdjustWidth;
             UI_FloatRange ALength = (UI_FloatRange)Fields["Length"].uiControlEditor;
             ALength.onFieldChanged = AdjustLength;
-            if (HighLogic.LoadedSceneIsEditor)
-            {
-                GameEvents.onEditorShipModified.Add(OnEditorShipModifiedEvent);
-            }
             armor = GetComponent<HitpointTracker>();
-            N1 = part.FindAttachNode("Node1");
-            N1.nodeType = AttachNode.NodeType.Stack;
-            N1Transform = part.FindModelTransform(Node1Name);
-            N2 = part.FindAttachNode("Node2");
-            N2.nodeType = AttachNode.NodeType.Stack;
-            N2Transform = part.FindModelTransform(Node2Name);
-            if (!isTriangularPanel)
-            {
-                N3 = part.FindAttachNode("Node3");
-                N3Transform = part.FindModelTransform(Node3Name);
-                N3.nodeType = AttachNode.NodeType.Stack;
-                N4 = part.FindAttachNode("Node4");
-                N4Transform = part.FindModelTransform(Node4Name);
-                N4.nodeType = AttachNode.NodeType.Stack;
-            }
-            UpdateThickness(true);
+            UpdateScale(Width, Length, scaleneWidth, false);
+            GUIUtils.RefreshAssociatedWindows(part);
         }
-        public override void OnLoad(ConfigNode node)
+        void ParseStackNodePosition()
         {
-            base.OnLoad(node);
-
-            if (!HighLogic.LoadedSceneIsEditor && !HighLogic.LoadedSceneIsFlight) return;
-            armor = GetComponent<HitpointTracker>();
+            originalStackNodePosition = new Dictionary<string, Vector3>();
+            string[] nodes = stackNodePosition.Split(new char[] { ';' });
+            for (int i = 0; i < nodes.Length; i++)
+            {
+                string[] split = nodes[i].Split(new char[] { ',' });
+                string id = split[0];
+                Vector3 position = new Vector3(float.Parse(split[1]), float.Parse(split[2]), float.Parse(split[3]));
+                originalStackNodePosition.Add(id, position);
+            }
         }
+
+        IEnumerator DelayedUpdateStackNode()
+        {
+            yield return null;
+            UpdateStackNode(false);
+        }
+
         private void OnDestroy()
         {
             if (HighLogic.LoadedSceneIsEditor)
@@ -116,38 +144,42 @@ namespace BDArmory.Armor
 
         public void AdjustWidth(BaseField field, object obj)
         {
-            Width = Mathf.Clamp(Width, 0.5f, 16f);
-            //if (!isCurvedPanel)
+            Width = Mathf.Clamp(Width, scaleneTri ? 0.1f : 0.5f, scaleneTri ? 8 : 16f);
+            for (int i = 0; i < armorTransforms.Length; i++)
             {
-                for (int i = 0; i < armorTransforms.Length; i++)
-                {
-                    armorTransforms[i].localScale = new Vector3(Width, Length, armorthickness);
-                }
-                using (List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator())
-                    while (sym.MoveNext())
-                    {
-                        if (sym.Current == null) continue;
-                        sym.Current.FindModuleImplementing<BDAdjustableArmor>().UpdateScale(Width, Length); //needs to be changed to use updatewitth() - FIXME later, future SI
-                    }
+                armorTransforms[i].localScale = new Vector3(Width, Length, armorthickness);
             }
-            /*
-            else
+            if (TriangleType != "Right" && !scaleneTri)
             {
-                for (int i = 0; i < armorTransforms.Length; i++)
+                for (int i = 0; i < scaleneTransforms.Length; i++)
                 {
-                    armorTransforms[i].localScale = new Vector3(Width, Length, Width);
+                    scaleneTransforms[i].localScale = new Vector3(Width, Length, armorthickness);
                 }
-                using (List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator())
-                    while (sym.MoveNext())
-                    {
-                        if (sym.Current == null) continue;
-                        sym.Current.FindModuleImplementing<BDAdjustableArmor>().UpdateScale(Width, Length);
-                    }
             }
-            */
+            using (List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator())
+                while (sym.MoveNext())
+                {
+                    if (sym.Current == null) continue;
+                    sym.Current.FindModuleImplementing<BDAdjustableArmor>().UpdateScale(Width, Length, scaleneWidth); //needs to be changed to use updatewitth() - FIXME later, future SI
+                }
             updateArmorStats();
-            HandleWidthChange(Width, OldWidth);
-            OldWidth = Width;
+            UpdateStackNode(true);
+        }
+        public void AdjustSWidth(BaseField field, object obj)
+        {
+            scaleneWidth = Mathf.Clamp(scaleneWidth, 0.1f, 8);
+            for (int i = 0; i < scaleneTransforms.Length; i++)
+            {
+                scaleneTransforms[i].localScale = new Vector3(scaleneWidth * 2, Length, armorthickness);
+            }
+            using (List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator())
+                while (sym.MoveNext())
+                {
+                    if (sym.Current == null) continue;
+                    sym.Current.FindModuleImplementing<BDAdjustableArmor>().UpdateScale(Width, Length, scaleneWidth); //needs to be changed to use updatewitth() - FIXME later, future SI
+                }
+            updateArmorStats();
+            UpdateStackNode(true);
         }
         public void AdjustLength(BaseField field, object obj)
         {
@@ -156,167 +188,125 @@ namespace BDArmory.Armor
             {
                 armorTransforms[i].localScale = new Vector3(Width, Length, armorthickness);
             }
+            if (TriangleType != "Right")
+            {
+                for (int i = 0; i < scaleneTransforms.Length; i++)
+                {
+                    scaleneTransforms[i].localScale = new Vector3(scaleneWidth, Length, armorthickness);
+                }
+            }
             using (List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator())
                 while (sym.MoveNext())
                 {
                     if (sym.Current == null) continue;
-                    sym.Current.FindModuleImplementing<BDAdjustableArmor>().UpdateScale(Width, Length);
+                    sym.Current.FindModuleImplementing<BDAdjustableArmor>().UpdateScale(Width, Length, scaleneWidth);
                 }
             updateArmorStats();
-            HandleLengthChange(Length, OldLength);
-            OldLength = Length;
+            UpdateStackNode(true);
         }
 
-        public void UpdateScale(float width, float length)
+        public void UpdateScale(float width, float length, float scalenewidth = 1, bool updateNodes = true)
         {
             Width = width;
+            scaleneWidth = scalenewidth;
             Length = length;
-            
-            //if (!isCurvedPanel)
+
+            for (int i = 0; i < armorTransforms.Length; i++)
             {
-                for (int i = 0; i < armorTransforms.Length; i++)
+                armorTransforms[i].localScale = new Vector3(Width, Length, Mathf.Clamp((armor.Armor / 10), 0.1f, 1500));
+            }
+            if (TriangleType != "Right")
+            {
+                for (int i = 0; i < scaleneTransforms.Length; i++)
                 {
-                    armorTransforms[i].localScale = new Vector3(Width, Length, Mathf.Clamp((armor.Armor / 10), 0.1f, 1500));
+                    scaleneTransforms[i].localScale = new Vector3(scaleneTri ? scaleneWidth : Width, Length, Mathf.Clamp((armor.Armor / 10), 0.1f, 1500));
                 }
             }
-            /*
-            else
-            {
-                for (int i = 0; i < armorTransforms.Length; i++)
-                {
-                    armorTransforms[i].localScale = new Vector3(Width, Length, Width);
-                }
-            }
-            */
             updateArmorStats();
-            HandleWidthChange(Width, OldWidth);
-            HandleLengthChange(Length, OldLength);
+            if (updateNodes) UpdateStackNode(true);
         }
 
-        /// //////////////////////////////////
-        //Borrowed/modified from ProceduralParts
-        public virtual void HandleLengthChange(float length, float oldLength)
+        public void UpdateStackNode(bool translateChidren)
         {
-            float trans = length - oldLength;
+            using (List<AttachNode>.Enumerator stackNode = part.attachNodes.GetEnumerator())
+                while (stackNode.MoveNext())
+                {
+                    if (stackNode.Current?.nodeType != AttachNode.NodeType.Stack ||
+                        !originalStackNodePosition.ContainsKey(stackNode.Current.id)) continue;
 
-            N1.position.z = N1.position.z + (trans / 2);
-            if (N1.attachedPart is Part N1pushTarget)
-            {
-                TranslatePart(N1pushTarget, N1Transform.forward * (trans / 2));
-            }
-            N1.size = Mathf.CeilToInt(length / 2);
-            N1.breakingForce = length * 100;
-            N1.breakingTorque = length * 100;
-            if (!isTriangularPanel)
-            {
-                N3.position.z = N3.position.z + (-trans / 2);
-                if (N3.attachedPart is Part N3pushTarget)
-                {
-                    TranslatePart(N3pushTarget, -N3Transform.forward * (trans / 2));
-                }
-                N3.size = Mathf.CeilToInt(length / 2);
-                N3.breakingForce = length * 100;
-                N3.breakingTorque = length * 100;
-            }
-            foreach (Part p in part.children)
-            {
-                if (p.FindAttachNodeByPart(part) is AttachNode node && node.nodeType == AttachNode.NodeType.Surface)
-                {
-                    Vector3 localSpace = part.transform.InverseTransformPoint(node.owner.transform.TransformPoint(node.position));
-                    if (localSpace.z > 0.9f * (oldLength / 2))
+                    if (stackNode.Current.id == "top" || stackNode.Current.id == "bottom")
                     {
-                        //Debug.Log("[BDAA DEBUG] srfAttack detected on N1 edge, moving");
-                        TranslatePart(p, N1Transform.up * (trans / 2)); 
-                    }
-                    if (!isTriangularPanel)
-                    {
-                        if (localSpace.z < 0.9f * -(oldLength / 2))
+                        Vector3 prevPos = stackNode.Current.position;
+                        Vector3 prevAngle = stackNode.Current.orientation;
+                        int offsetScale = 2;
+                        if (TriangleType != "Right" && !scaleneTri)
                         {
-                            //Debug.Log("[BDAA DEBUG] srfAttack detected on N3 edge, moving");
-                            TranslatePart(p, -N3Transform.up * (trans / 2));
+                            offsetScale = 4;
+                        }
+                        if (stackNode.Current.id == "top")
+                        {
+                            stackNode.Current.size = Mathf.CeilToInt(Width / 2);
+                            stackNode.Current.breakingForce = Width * 100;
+                            stackNode.Current.breakingTorque = Width * 100;
+                            stackNode.Current.position.x = originalStackNodePosition[stackNode.Current.id].x + (((Width - 1) / (scaleneTri ? 2 : 1)) / offsetScale); //if eqi tri this needs to be /4
+                            stackNode.Current.orientation = new Vector3(1, 0, -((Width / 2) / Length));
+                            if (translateChidren) MoveParts(stackNode.Current, stackNode.Current.position - prevPos, stackNode.Current.orientation - prevAngle);
+                        }
+                        else
+                        {
+                            stackNode.Current.size = Mathf.CeilToInt(scaleneTri ? scaleneWidth / 2 : Width / 2);
+                            stackNode.Current.breakingForce = scaleneTri ? scaleneWidth : Width * 100;
+                            stackNode.Current.breakingTorque = scaleneTri ? scaleneWidth : Width * 100;
+                            stackNode.Current.position.x = originalStackNodePosition[stackNode.Current.id].x - ((scaleneTri ? ((scaleneWidth - 1) / 2) : Width - 1) / offsetScale);// and a right tri hypotenuse node shouldn't move at all
+                            if (TriangleType != "Right")
+                            {
+                                stackNode.Current.orientation = new Vector3(-1, 0, -(((scaleneTri ? scaleneWidth : Width) / 2) / Length));
+                            }
+                            if (translateChidren) MoveParts(stackNode.Current, stackNode.Current.position - prevPos, stackNode.Current.orientation - prevAngle); //look into making triangle side nodes rotate attachnode based on new angle? AttachNode.Orientation?                            
                         }
                     }
-                }
-            }            
-        }
-   
-        public virtual void HandleWidthChange(float width, float oldWidth)
-        {
-            float trans = width - oldWidth;
-            N2.position.x = N2.position.x + (-trans / 2); 
-            if (N2.attachedPart is Part N2pushTarget)
-            {
-                TranslatePart(N2pushTarget, -N2Transform.right * (trans / 2));
-            }
-            N2.size = Mathf.CeilToInt(width / 2);
-            N2.breakingForce = width * 100;
-            N2.breakingTorque = width * 100;
-            if (!isTriangularPanel)
-            {
-                N4.position.x = N4.position.x + (trans / 2);
-                if (N4.attachedPart is Part N4pushTarget)
-                {
-                    TranslatePart(N4pushTarget, N4Transform.right * (trans / 2));
-                }
-                N4.size = Mathf.CeilToInt(width / 2);
-                N4.breakingForce = width * 100;
-                N4.breakingTorque = width * 100;
-            }
-
-            foreach (Part p in part.children)
-            {
-                if (p.FindAttachNodeByPart(part) is AttachNode node && node.nodeType == AttachNode.NodeType.Surface)
-                {
-                    Vector3 localSpace = part.transform.InverseTransformPoint(node.owner.transform.TransformPoint(node.position));
-                    if (localSpace.x < 0.9f * -(oldWidth / 2))
+                    if (stackNode.Current.id == "left" || stackNode.Current.id == "right")
                     {
-                        TranslatePart(p, N2Transform.right * (trans / 2));
-                    }
-                    if (!isTriangularPanel)
-                    {
-                        if (localSpace.x > 0.9f * (oldWidth / 2))
+                        stackNode.Current.size = Mathf.CeilToInt(Length / 2);
+                        stackNode.Current.breakingForce = Length * 100;
+                        stackNode.Current.breakingTorque = Length * 100;
+                        Vector3 prevPos = stackNode.Current.position;
+                        if (stackNode.Current.id == "right")
                         {
-                            TranslatePart(p, N4Transform.right * (trans / 2));
+                            stackNode.Current.position.z = originalStackNodePosition[stackNode.Current.id].z + ((Length - 1) / 2);
+                            if (translateChidren) MoveParts(stackNode.Current, stackNode.Current.position - prevPos, Vector3.zero);
+                        }
+                        else
+                        {
+                            stackNode.Current.position.z = originalStackNodePosition[stackNode.Current.id].z - ((Length - 1) / 2);
+                            if (translateChidren) MoveParts(stackNode.Current, stackNode.Current.position - prevPos, Vector3.zero);
                         }
                     }
+                    if (stackNode.Current.id == "side")
+                    {
+                        stackNode.Current.size = Mathf.CeilToInt(((Width / 2) + (Length / 2)) / 2);
+                        stackNode.Current.orientation = new Vector3(1, 0, -(Width / Length));
+                    }
                 }
-            }            
         }
-        
-        public Part GetEldestParent(Part p) => (p.parent is null) ? p : GetEldestParent(p.parent);
-        public void TranslatePart(Part pushTarget, Vector3 translation)
+        public void MoveParts(AttachNode node, Vector3 delta, Vector3 angleDelta)
         {
-            // If the attached part is a child of ours, push it directly.
-            // If it is our parent, then we need to find the eldest grandparent and push that, and also ourselves
-            if (pushTarget == this.part.parent)
+            if (!moveChildParts) return;
+            if (node.attachedPart is Part pushTarget)
             {
-                this.part.transform.Translate(-translation, Space.Self);    // Push ourselves normally
-                float sibMult = part.symmetryCounterparts == null ? 1f : 1f / (part.symmetryCounterparts.Count + 1);
-                pushTarget = GetEldestParent(this.part);
-                translation *= sibMult; // Push once for each symmetry sibling, so scale the parent push.
+                if (pushTarget == null) return;
+                Vector3 worldDelta = part.transform.TransformVector(delta);
+                pushTarget.transform.position += worldDelta;
+                //Vector3 worldAngle = part.transform.TransformVector(angleDelta);
+                //pushTarget.transform.rotation += worldAngle;
             }
-            // Convert to world space, to deal with bizarre orientation relationships.
-            // (ex: pushTarget is inverted, and our top node connects to its top node)
-            Vector3 worldSpaceTranslation = part.transform.TransformVector(translation); //FIXME - fix transforms to yield relative to part, not SPH
-            pushTarget.transform.Translate(worldSpaceTranslation, Space.World);
         }
-        /// ///////////////////////////
-
         public void updateArmorStats()
         {
-            /*
-            if (isCurvedPanel)
+            armor.armorVolume = ((scaleneTri ? scaleneWidth + Width : Width) * Length);
+            if (isTriangularPanel)
             {
-                armor.armorVolume = (Length * (Mathf.Clamp(Width, 0.5f, 4) * Mathf.Clamp(Width, 0.5f, 4))); //gives surface area for 1/4 cyl srf area
-            }
-            else
-            */
-            {
-                armor.armorVolume = (Width * Length);
-                if (isTriangularPanel)
-                {
-                    armor.armorVolume /= 2;
-                }
+                armor.armorVolume /= 2;
             }
             armor.ArmorSetup(null, null);
         }
@@ -325,22 +315,21 @@ namespace BDArmory.Armor
             if (armor != null && armorTransforms != null)
             {
                 armorthickness = Mathf.Clamp((armor.Armor / 10), 0.1f, 1500);
-                //if (!isCurvedPanel)
+
+                if (armorthickness != Oldthickness)
                 {
-                    if (armorthickness != Oldthickness)
+                    for (int i = 0; i < armorTransforms.Length; i++)
                     {
-                        for (int i = 0; i < armorTransforms.Length; i++)
+                        armorTransforms[i].localScale = new Vector3(Width, Length, armorthickness);
+                    }
+                    if (TriangleType != "Right")
+                    {
+                        for (int i = 0; i < scaleneTransforms.Length; i++)
                         {
-                            armorTransforms[i].localScale = new Vector3(Width, Length, armorthickness);
+                            scaleneTransforms[i].localScale = new Vector3(scaleneTri ? scaleneWidth : Width, Length, armorthickness);
                         }
                     }
                 }
-                /*
-                else
-                {
-                    ThicknessTransform.localScale = new Vector3(armorthickness, 1, armorthickness);
-                }
-                */
             }
             else
             {
@@ -349,26 +338,27 @@ namespace BDArmory.Armor
                 return;
             }
             if (onLoad) return; //don't adjust part placement on load
+            /*
             if (armorthickness != Oldthickness)
             {
                 float ratio = (armorthickness - Oldthickness) / 100;
-                foreach (Part p in part.children)
+
+                Vector3 prevPos = new Vector3(0f, Oldthickness / 100, 0f);
+                Vector3 delta = new Vector3(0f, armorthickness / 100, 0f);
+                Vector3 worldDelta = part.transform.TransformVector(delta);
+                List<Part>.Enumerator p = part.children.GetEnumerator();
+                while (p.MoveNext())
                 {
-                    if (p.FindAttachNodeByPart(part) is AttachNode node && node.nodeType == AttachNode.NodeType.Surface)
+                    if (p.Current == null) continue;
+                    if (p.Current.FindAttachNodeByPart(part) is AttachNode node && node.nodeType == AttachNode.NodeType.Surface)
                     {
-                        Vector3 localSpace = part.transform.InverseTransformPoint(node.owner.transform.TransformPoint(node.position));
-                        if (localSpace.y > (0.9f * ratio))
-                        {
-                            TranslatePart(p, -armorTransforms[0].right * ratio);
-                        }
-                        if (localSpace.y < -(0.9f * ratio))
-                        {
-                            TranslatePart(p, armorTransforms[0].right * ratio);
-                        }
+
+                        p.Current.transform.position += worldDelta;
                     }
                 }
                 Oldthickness = armorthickness;
-            }            
+            }
+            */
         }
         private void OnEditorShipModifiedEvent(ShipConstruct data)
         {

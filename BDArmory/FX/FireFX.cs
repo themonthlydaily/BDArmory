@@ -58,7 +58,7 @@ namespace BDArmory.FX
                 gameObject.SetActive(false);
                 return;
             }
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.FireFX]: Fire added to {parentPart.name}" + (parentPart.vessel != null ? $" on {parentPart.vessel.vesselName}" : ""));
+            if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.FireFX]: Fire added to {parentPart.name}" + (parentPart.vessel != null ? $" on {parentPart.vessel.vesselName}" : ""));
             hasFuel = true;
             tntMassEquivalent = 0;
             startTime = Time.time;
@@ -338,7 +338,7 @@ namespace BDArmory.FX
                     }
                     else
                     {
-                        if (BDArmorySettings.ENABLE_HOS && parentPart.vessel.GetName() == BDArmorySettings.HALL_OF_SHAME)
+                        if (BDArmorySettings.ENABLE_HOS && BDArmorySettings.HALL_OF_SHAME_LIST.Contains(parentPart.vessel.GetName()))
                         {
                             parentPart.AddDamage(BDArmorySettings.HOS_FIRE * Time.deltaTime);
                         }
@@ -349,7 +349,7 @@ namespace BDArmory.FX
                     BDACompetitionMode.Instance.Scores.RegisterBattleDamage(SourceVessel, parentPart.vessel, BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
                 }
             }
-            if (disableTime < 0 && (!hasFuel || (burnTime >= 0 && Time.time - startTime > burnTime)))
+            if (disableTime < 0 && ((!hasFuel && burnTime < 0)|| (burnTime >= 0 && Time.time - startTime > burnTime)))
             {
                 disableTime = Time.time; //grab time when emission stops
                 foreach (var pe in pEmitters)
@@ -427,7 +427,7 @@ namespace BDArmory.FX
                     GUIUtils.RefreshAssociatedWindows(parentPart);
                 }
                 //tntMassEquivilent *= BDArmorySettings.BD_AMMO_DMG_MULT; //handled by EXP_DMG_MOD_BATTLE_DAMAGE
-                if (BDArmorySettings.DRAW_DEBUG_LABELS && tntMassEquivalent > 0)
+                if (BDArmorySettings.DEBUG_OTHER && tntMassEquivalent > 0)
                 {
                     Debug.Log("[BDArmory.FireFX]: Fuel Explosion in " + this.parentPart.name + ", TNT mass equivalent " + tntMassEquivalent + $" (Fuel: {tntFuel / 6f}, Ox: {tntOx / 6f}, MP: {tntMP / 6f}, EC: {tntEC})");
                 }
@@ -457,7 +457,7 @@ namespace BDArmory.FX
                                         if (p == partHit)
                                         {
                                             BulletHitFX.AttachFire(hit.point, p, 1, SourceVessel, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distToG0.magnitude / blastRadius)), 1, true);
-                                            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                                            if (BDArmorySettings.DEBUG_OTHER)
                                             {
                                                 Debug.Log("[BDArmory.FireFX]: " + this.parentPart.name + " hit by burning fuel");
                                             }

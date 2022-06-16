@@ -34,6 +34,10 @@ namespace BDArmory.Settings
                 {
                     settings.SetValue(field.Current.Name, ((Vector3d)fieldValue).ToString("G"), true);
                 }
+                else if (fieldValue.GetType() == typeof(Vector2d))
+                {
+                    settings.SetValue(field.Current.Name, ((Vector2d)fieldValue).ToString("G"), true);
+                }
                 else if (fieldValue.GetType() == typeof(List<string>))
                 {
                     settings.SetValue(field.Current.Name, string.Join("; ", (List<string>)fieldValue), true);

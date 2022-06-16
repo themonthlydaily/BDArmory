@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace BDArmory.Utils
@@ -6,34 +7,34 @@ namespace BDArmory.Utils
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class PartExploderSystem : MonoBehaviour
     {
-        private static readonly Queue<Part> ExplodingPartsQueue = new Queue<Part>();
+        private static readonly HashSet<Part> ExplodingParts = new HashSet<Part>();
+        private static List<Part> nowExploding = new List<Part>();
 
         public static void AddPartToExplode(Part p)
         {
-            if (p != null && !ExplodingPartsQueue.Contains(p))
-            {
-                ExplodingPartsQueue.Enqueue(p);
-            }
+            if (p != null)
+            { ExplodingParts.Add(p); }
         }
 
         private void OnDestroy()
         {
-            ExplodingPartsQueue.Clear();
+            ExplodingParts.Clear();
         }
 
         public void Update()
         {
-            if (ExplodingPartsQueue.Count == 0) return;
+            if (ExplodingParts.Count == 0) return;
 
             do
             {
-                Part part = ExplodingPartsQueue.Dequeue();
-
-                if (part != null)
+                ExplodingParts.Remove(null); // Clear out any null parts.
+                nowExploding = ExplodingParts.Where(p => !ExplodingParts.Contains(p.parent)).ToList(); // Explode outer-most parts first to avoid creating new vessels needlessly.
+                foreach (var part in nowExploding)
                 {
-                    part.explode(); // This calls part.Die() internally.
+                    part.explode();
+                    ExplodingParts.Remove(part);
                 }
-            } while (ExplodingPartsQueue.Count > 0);
+            } while (ExplodingParts.Count > 0);
         }
     }
 }

@@ -34,7 +34,7 @@ namespace BDArmory.Extensions
             else
             {
                 Dependencies.Get<DamageService>().AddDamageToPart_svc(p, damage);
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DEBUG_ARMOR)
                     Debug.Log($"[BDArmory.PartExtensions]: Standard Hitpoints Applied to {p.name}" + (p.vessel != null ? $" on {p.vessel.vesselName}" : "") + $" : {damage}");
             }
         }
@@ -51,7 +51,7 @@ namespace BDArmory.Extensions
                 {
                     p.vessel.rootPart.Destroy();
                 }
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DEBUG_ARMOR)
                     Debug.Log("[BDArmory.PartExtensions]: Instagib!");
             }
         }
@@ -110,7 +110,6 @@ namespace BDArmory.Extensions
 
                 damage_ = damageReduction;
             }
-
             //////////////////////////////////////////////////////////
             //   Apply Hitpoints
             //////////////////////////////////////////////////////////
@@ -186,7 +185,6 @@ namespace BDArmory.Extensions
                     break;
             }
 
-
             var damage_before = damage_;
             //////////////////////////////////////////////////////////
             //   Armor Reduction factors
@@ -235,10 +233,9 @@ namespace BDArmory.Extensions
             // Apply HitPoints Ballistic
             //////////////////////////////////////////////////////////
             Dependencies.Get<DamageService>().AddDamageToPart_svc(p, damage_);
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_ARMOR)
             {
                 Debug.Log("[BDArmory.PartExtensions]: mass: " + mass + " caliber: " + caliber + " multiplier: " + multiplier + " velocity: " + impactVelocity + " penetrationfactor: " + penetrationfactor);
-                Debug.Log("[BDArmory.PartExtensions]: Ballistic Hitpoints Applied to " + p.name + ": " + damage_);
             }
         }
         public static void AddHealth(this Part p, float healing, bool overcharge = false)
@@ -250,7 +247,7 @@ namespace BDArmory.Extensions
             else
             {
                 Dependencies.Get<DamageService>().AddHealthToPart_svc(p, healing, overcharge);
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DEBUG_ARMOR)
                     Debug.Log($"[BDArmory.PartExtensions]: Standard Hitpoints Restored to {p.name}" + (p.vessel != null ? $" on {p.vessel.vesselName}" : "") + $" : {healing}");
             }
         }
@@ -264,7 +261,7 @@ namespace BDArmory.Extensions
             //////////////////////////////////////////////////////////
 
             Dependencies.Get<DamageService>().AddDamageToPart_svc(p, damage);
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_ARMOR)
                 Debug.Log("[BDArmory.PartExtensions]: Explosive Hitpoints Applied to " + p.name + ": " + damage);
         }
 
@@ -278,7 +275,7 @@ namespace BDArmory.Extensions
             //////////////////////////////////////////////////////////
 
             Dependencies.Get<DamageService>().AddDamageToKerbal_svc(kerbal, damage);
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_ARMOR)
                 Debug.Log("[BDArmory.PartExtensions]: Hitpoints Applied to " + kerbal.name + ": " + damage);
         }
 
@@ -329,7 +326,7 @@ namespace BDArmory.Extensions
             //massToReduce = Math.Max(0.10, Math.Round(massToReduce, 2));
             Dependencies.Get<DamageService>().ReduceArmor_svc(p, (float)massToReduce);
 
-            if (BDArmorySettings.DRAW_ARMOR_LABELS)
+            if (BDArmorySettings.DEBUG_ARMOR)
             {
                 //Debug.Log("[BDArmory.PartExtensions]: Armor volume Removed : " + massToReduce);
             }
@@ -341,12 +338,12 @@ namespace BDArmory.Extensions
             float armorthickness = Dependencies.Get<DamageService>().GetPartArmor_svc(p);
             if (float.IsNaN(armorthickness))
             {
-                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[PartExtensions] GetArmorThickness; thickness is NaN");
+                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.PartExtensions]: GetArmorThickness; thickness is NaN");
                 return 0f;
             }
             else
             {
-                //if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[PartExtensions] GetArmorThickness; thickness is: " + armorthickness);
+                //if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.PartExtensions]: GetArmorThickness; thickness is: " + armorthickness);
                 return armorthickness;
             }
             //return Dependencies.Get<DamageService>().GetPartArmor_svc(p);
@@ -550,19 +547,19 @@ namespace BDArmory.Extensions
             {
                 case ExplosionSourceType.Missile:
                     //damage *= Mathf.Clamp(-0.0005f * armor + 1.025f, 0f, 0.5f); // Cap damage reduction at 50% (armor = 1050)					
-                    if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                    if (BDArmorySettings.DEBUG_ARMOR)
                     {
                         Debug.Log("[BDArmory.PartExtensions]: Damage Before Reduction : "
                             + damage + "; Damage Reduction (%) : " + 1 + (((strength * (density / 1000)) * armor) / 1000000)
                             + "; Damage After Armor : " + (damage / (1 + (((strength * (density / 1000)) * armor) / 1000000))));
                     }
-                    damage /= 1 + (((strength * (density / 1000)) * armor) / 1000000); //500mm of DU yields about 95% reduction, 500mm steel = 80% reduction, Aramid = 73% reduction
+                    damage /= 1 + (((strength * (density / 1000)) * armor) / 1000000); //500mm of DU yields about 95% reduction, 500mm steel = 80% reduction, Aramid = 73% reduction, if explosion makes it past armor
 
                     break;
 
                 case ExplosionSourceType.BattleDamage:
                     //identical to missile for now, since fuel/ammo explosions can be mitigated by armor mass			
-                    if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                    if (BDArmorySettings.DEBUG_ARMOR)
                     {
                         Debug.Log("[BDArmory.PartExtensions]: Damage Before Reduction : "
                             + damage + "; Damage Reduction (%) : " + 1 + (((strength * (density / 1000)) * armor) / 1000000)
@@ -591,7 +588,7 @@ namespace BDArmory.Extensions
 
                         _damageReduction = (113 * armor) / (154 + armor); //should look at this later, review?
 
-                        if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                        if (BDArmorySettings.DEBUG_ARMOR)
                         {
                             Debug.Log("[BDArmory.PartExtensions]: Damage Before Reduction : " + damage
                                 + "; Damage Reduction (%) : " + 100 * (1 - Mathf.Clamp01((113f - _damageReduction) / 100f))

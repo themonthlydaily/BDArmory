@@ -460,7 +460,7 @@ namespace BDArmory.WeaponMounts
                     while (t.MoveNext())
                     {
                         if (t.Current == null) continue;
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                        if (BDArmorySettings.DEBUG_OTHER)
                             Debug.Log("[BDArmory.MissileTurret] : MissileTurret moving transform: " + t.Current.gameObject.name);
                         t.Current.parent = mTf;
                     }
@@ -528,6 +528,7 @@ namespace BDArmory.WeaponMounts
                 if (weaponManager)
                 {
                     wm.SendTargetDataToMissile(missileChildren[index]);
+                    wm.PreviousMissile = missileChildren[index];
                 }
                 missileChildren[index].FireMissile();
                 StartCoroutine(MissileRailRoutine(missileChildren[index]));

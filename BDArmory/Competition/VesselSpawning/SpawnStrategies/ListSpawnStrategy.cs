@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
-using BDArmory.Competition.VesselSpawning;
 
-namespace BDArmory.Competition.SpawnStrategies
+namespace BDArmory.Competition.VesselSpawning.SpawnStrategies
 {
     public class ListSpawnStrategy : SpawnStrategy
     {
@@ -20,7 +18,7 @@ namespace BDArmory.Competition.SpawnStrategies
             return success;
         }
 
-        public IEnumerator Spawn(VesselSpawner spawner)
+        public IEnumerator Spawn(VesselSpawnerBase spawner)
         {
             success = false;
             foreach (var item in strategies)

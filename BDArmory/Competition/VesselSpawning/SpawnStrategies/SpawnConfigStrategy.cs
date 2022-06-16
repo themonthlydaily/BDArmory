@@ -1,9 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-using BDArmory.Competition.VesselSpawning;
-
-namespace BDArmory.Competition.SpawnStrategies
+namespace BDArmory.Competition.VesselSpawning.SpawnStrategies
 {
     /// <summary>
     /// A simple pass-through strategy to be able to use the current spawning functions properly.
@@ -15,7 +13,7 @@ namespace BDArmory.Competition.SpawnStrategies
 
         public SpawnConfigStrategy(SpawnConfig spawnConfig) { this.spawnConfig = spawnConfig; }
 
-        public IEnumerator Spawn(VesselSpawner spawner)
+        public IEnumerator Spawn(VesselSpawnerBase spawner)
         {
             yield return spawner.Spawn(spawnConfig);
 

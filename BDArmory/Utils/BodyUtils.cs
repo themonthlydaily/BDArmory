@@ -69,5 +69,12 @@ namespace BDArmory.Utils
             else
                 return altitude - (float)FlightGlobals.currentMainBody.TerrainAltitude(latitudeAtPos, longitudeAtPos);
         }
+
+        public static float GetTerrainAltitudeAtPos(Vector3 position, bool allowNegative = false)
+        {
+            double latitudeAtPos = FlightGlobals.currentMainBody.GetLatitude(position);
+            double longitudeAtPos = FlightGlobals.currentMainBody.GetLongitude(position);
+            return (float)FlightGlobals.currentMainBody.TerrainAltitude(latitudeAtPos, longitudeAtPos, allowNegative);
+        }
     }
 }

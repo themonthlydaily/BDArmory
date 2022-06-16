@@ -8,6 +8,7 @@ namespace BDArmory.Bullets
     public class RocketInfo
     {
         public string name { get; private set; }
+        public string DisplayName { get; private set; }
         public float rocketMass { get; private set; }
         public float caliber { get; private set; }
         public float thrust { get; private set; }
@@ -18,9 +19,14 @@ namespace BDArmory.Bullets
         public bool choker { get; private set; }
         public bool gravitic { get; private set; }
         public bool impulse { get; private set; }
+        public float massMod { get; private set; }
+        public float force { get; private set; }
         public bool explosive { get; private set; }
         public bool incendiary { get; private set; }
         public float tntMass { get; private set; }
+        public bool nuclear { get; private set; }
+        public bool beehive { get; private set; }
+        public string subMunitionType { get; private set; }
         public int subProjectileCount { get; private set; }
         public float thrustDeviation { get; private set; }
         public string rocketModelPath { get; private set; }
@@ -29,10 +35,11 @@ namespace BDArmory.Bullets
         public static HashSet<string> rocketNames;
         public static RocketInfo defaultRocket;
 
-        public RocketInfo(string name, float rocketMass, float caliber, float thrust, float thrustTime,
-                         bool shaped, bool flak, bool EMP, bool choker, bool gravitic, bool impulse, bool explosive, bool incendiary, float tntMass, int subProjectileCount, float thrustDeviation, string rocketModelPath)
+        public RocketInfo(string name, string DisplayName, float rocketMass, float caliber, float thrust, float thrustTime,
+                         bool shaped, bool flak, bool EMP, bool choker, bool gravitic, bool impulse, float massMod, float force, bool explosive, bool incendiary, float tntMass, bool nuclear, bool beehive, string subMunitionType, int subProjectileCount, float thrustDeviation, string rocketModelPath)
         {
             this.name = name;
+            this.DisplayName = DisplayName;
             this.rocketMass = rocketMass;
             this.caliber = caliber;
             this.thrust = thrust;
@@ -43,9 +50,14 @@ namespace BDArmory.Bullets
             this.choker = choker;
             this.gravitic = gravitic;
             this.impulse = impulse;
+            this.massMod = massMod;
+            this.force = force;
             this.explosive = explosive;
             this.incendiary = incendiary;
             this.tntMass = tntMass;
+            this.nuclear = nuclear;
+            this.beehive = beehive;
+            this.subMunitionType = subMunitionType;
             this.subProjectileCount = subProjectileCount;
             this.thrustDeviation = thrustDeviation;
             this.rocketModelPath = rocketModelPath;
@@ -69,6 +81,7 @@ namespace BDArmory.Bullets
                     Debug.Log("[BDArmory.RocketInfo]: Parsing default rocket definition from " + nodes[i].parent.name);
                     defaultRocket = new RocketInfo(
                         "def",
+                        (string)ParseField(node, "DisplayName", typeof(string)),
                         (float)ParseField(node, "rocketMass", typeof(float)),
                         (float)ParseField(node, "caliber", typeof(float)),
                         (float)ParseField(node, "thrust", typeof(float)),
@@ -79,9 +92,14 @@ namespace BDArmory.Bullets
                         (bool)ParseField(node, "choker", typeof(bool)),
                         (bool)ParseField(node, "gravitic", typeof(bool)),
                         (bool)ParseField(node, "impulse", typeof(bool)),
+                        (float)ParseField(node, "massMod", typeof(float)),
+                        (float)ParseField(node, "force", typeof(float)),
                         (bool)ParseField(node, "explosive", typeof(bool)),
                         (bool)ParseField(node, "incendiary", typeof(bool)),
                         (float)ParseField(node, "tntMass", typeof(float)),
+                        (bool)ParseField(node, "nuclear", typeof(bool)),
+                        (bool)ParseField(node, "beehive", typeof(bool)),
+                        (string)ParseField(node, "subMunitionType", typeof(string)),
                         Math.Max((int)ParseField(node, "subProjectileCount", typeof(int)), 1),
                         (float)ParseField(node, "thrustDeviation", typeof(float)),
                         (string)ParseField(node, "rocketModelPath", typeof(string))
@@ -110,6 +128,7 @@ namespace BDArmory.Bullets
                     rockets.Add(
                         new RocketInfo(
                             name_,
+                            (string)ParseField(node, "DisplayName", typeof(string)),
                             (float)ParseField(node, "rocketMass", typeof(float)),
                             (float)ParseField(node, "caliber", typeof(float)),
                             (float)ParseField(node, "thrust", typeof(float)),
@@ -120,9 +139,14 @@ namespace BDArmory.Bullets
                             (bool)ParseField(node, "choker", typeof(bool)),
                             (bool)ParseField(node, "gravitic", typeof(bool)),
                             (bool)ParseField(node, "impulse", typeof(bool)),
+                            (float)ParseField(node, "massMod", typeof(float)),
+                            (float)ParseField(node, "force", typeof(float)),
                             (bool)ParseField(node, "explosive", typeof(bool)),
                             (bool)ParseField(node, "incendiary", typeof(bool)),
                             (float)ParseField(node, "tntMass", typeof(float)),
+                            (bool)ParseField(node, "nuclear", typeof(bool)),
+                            (bool)ParseField(node, "beehive", typeof(bool)),
+                            (string)ParseField(node, "subMunitionType", typeof(string)),
                             (int)ParseField(node, "subProjectileCount", typeof(int)),
                             (float)ParseField(node, "thrustDeviation", typeof(float)),
                             (string)ParseField(node, "rocketModelPath", typeof(string))
@@ -165,8 +189,17 @@ namespace BDArmory.Bullets
                 if (defaultRocket != null)
                 {
                     // Give a warning about the missing or invalid value, then use the default value using reflection to find the field.
-                    var defaultValue = typeof(RocketInfo).GetProperty(field, BindingFlags.Public | BindingFlags.Instance).GetValue(defaultRocket);
-                    Debug.LogError("[BDArmory.RocketInfo]: Using default value of " + defaultValue.ToString() + " for " + field + " | " + e.ToString());
+                    if (field == "DisplayName") return string.Empty;
+                    var defaultValue = typeof(RocketInfo).GetProperty(field == "DisplayName" ? "name" : field, BindingFlags.Public | BindingFlags.Instance).GetValue(defaultRocket);
+
+                    if (field == "EMP" || field == "nuclear" || field == "beehive" || field == "subMunitionType" || field == "choker" || field == "gravitic" || field == "impulse" || field == "massMod" || field == "force")
+                    {
+                        //not having these throw an error message since these are all optional and default to false, prevents bullet defs from bloating like rockets did
+                    }
+                    else
+                    {
+                        Debug.LogError("[BDArmory.BulletInfo]: Using default value of " + defaultValue.ToString() + " for " + field + " | " + e.ToString());
+                    }
                     return defaultValue;
                 }
                 else

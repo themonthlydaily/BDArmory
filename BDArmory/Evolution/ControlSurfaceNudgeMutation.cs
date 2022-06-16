@@ -27,7 +27,7 @@ namespace BDArmory.Evolution
 
         public void Apply(ConfigNode craft, VariantEngine engine)
         {
-            Debug.Log("Evolution ControlSurfaceNudgeMutation applying");
+            Debug.Log("[BDArmory.ControlSurfaceNudgeMutation]: Evolution ControlSurfaceNudgeMutation applying");
             Dictionary<string, ConfigNode> matchingNodeMap = new Dictionary<string, ConfigNode>();
             foreach (var partName in partNames)
             {

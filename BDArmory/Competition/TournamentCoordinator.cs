@@ -4,8 +4,8 @@ using System.Linq;
 using UnityEngine;
 
 using BDArmory.Competition.OrchestrationStrategies;
-using BDArmory.Competition.SpawnStrategies;
 using BDArmory.Competition.VesselSpawning;
+using BDArmory.Competition.VesselSpawning.SpawnStrategies;
 using BDArmory.Settings;
 
 namespace BDArmory.Competition
@@ -16,7 +16,7 @@ namespace BDArmory.Competition
         public static TournamentCoordinator Instance;
         private SpawnStrategy spawnStrategy;
         private OrchestrationStrategy orchestrator;
-        private VesselSpawner vesselSpawner;
+        private VesselSpawnerBase vesselSpawner;
         private Coroutine executing = null;
         private Coroutine executingForEach = null;
         public bool IsRunning { get; private set; }
@@ -27,7 +27,7 @@ namespace BDArmory.Competition
             Instance = this;
         }
 
-        public void Configure(SpawnStrategy spawner, OrchestrationStrategy orchestrator, VesselSpawner vesselSpawner)
+        public void Configure(SpawnStrategy spawner, OrchestrationStrategy orchestrator, VesselSpawnerBase vesselSpawner)
         {
             this.spawnStrategy = spawner;
             this.orchestrator = orchestrator;
@@ -72,7 +72,7 @@ namespace BDArmory.Competition
             IsRunning = false;
         }
 
-        public void RunForEach<T>(List<T> strategies, OrchestrationStrategy orchestrator, VesselSpawner spawner) where T : SpawnStrategy
+        public void RunForEach<T>(List<T> strategies, OrchestrationStrategy orchestrator, VesselSpawnerBase spawner) where T : SpawnStrategy
         {
             StopForEach();
             executingForEach = StartCoroutine(ExecuteForEach(strategies, orchestrator, spawner));
@@ -88,7 +88,7 @@ namespace BDArmory.Competition
             }
         }
 
-        IEnumerator ExecuteForEach<T>(List<T> strategies, OrchestrationStrategy orchestrator, VesselSpawner spawner) where T : SpawnStrategy
+        IEnumerator ExecuteForEach<T>(List<T> strategies, OrchestrationStrategy orchestrator, VesselSpawnerBase spawner) where T : SpawnStrategy
         {
             int i = 0;
             foreach (var strategy in strategies)

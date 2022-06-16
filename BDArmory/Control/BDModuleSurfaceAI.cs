@@ -284,7 +284,7 @@ namespace BDArmory.Control
 
             if (!pilotEnabled || !vessel.isActiveVessel) return;
 
-            if (!BDArmorySettings.DRAW_DEBUG_LINES) return;
+            if (!BDArmorySettings.DEBUG_LINES) return;
             if (command == PilotCommands.Follow)
             {
                 GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, assignedPositionWorld, 2, Color.red);

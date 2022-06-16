@@ -39,10 +39,10 @@ namespace BDArmory.Guidances
                 (distanceToTarget - ((float)missileVessel.srfSpeed * descentRatio)) * 0.22f, 0,
                 (float)missileVessel.altitude);
 
-            //Debug.Log("AGM altitudeClamp =" + altitudeClamp);
+            //Debug.Log("[BDArmory.MissileGuidance]: AGM altitudeClamp =" + altitudeClamp);
             Vector3 finalTarget = targetPosition + (altitudeClamp * upDirection.normalized);
 
-            //Debug.Log("Using agm trajectory. " + Time.time);
+            //Debug.Log("[BDArmory.MissileGuidance]: Using agm trajectory. " + Time.time);
 
             return finalTarget;
         }

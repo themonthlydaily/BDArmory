@@ -129,7 +129,7 @@ namespace BDArmory.Weapons
                         {
                             if (!hasDetonated && !goingCritical)
                             {
-                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.RWPS3R2NukeModule]: nerva on " + Sourcevessel + " is out of fuel.");
+                                if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.RWPS3R2NukeModule]: nerva on " + Sourcevessel + " is out of fuel.");
                                 StartCoroutine(DelayedDetonation(meltDownDuration)); //bingo fuel, detonate
                             }
                         }
@@ -140,7 +140,7 @@ namespace BDArmory.Weapons
                             {
                                 if (!hasDetonated)
                                 {
-                                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.RWPS3R2NukeModule]: nerva on " + Sourcevessel + " is Off, detonating");
+                                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.RWPS3R2NukeModule]: nerva on " + Sourcevessel + " is Off, detonating");
                                     Detonate(); //nuke engine off after comp start, detonate.
                                 }
                             }
@@ -150,7 +150,7 @@ namespace BDArmory.Weapons
                                 {
                                     if (!hasDetonated)
                                     {
-                                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.RWPS3R2NukeModule]: nerva on " + Sourcevessel + " is manually thrust limited, detonating");
+                                        if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.RWPS3R2NukeModule]: nerva on " + Sourcevessel + " is manually thrust limited, detonating");
                                         Detonate(); //nuke engine off after comp start, detonate.
                                     }
                                 }
@@ -167,7 +167,7 @@ namespace BDArmory.Weapons
             VesselModuleRegistry.OnVesselModified(v);
             if (VesselModuleRegistry.GetModuleCount<MissileFire>(v) == 0)
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.RWPS3R2NukeModule]: Nuclear engine on " + Sourcevessel + " has become detached.");
+                if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.RWPS3R2NukeModule]: Nuclear engine on " + Sourcevessel + " has become detached.");
                 goingCritical = true;
                 StartCoroutine(DelayedDetonation(0.5f));
             }
@@ -175,7 +175,7 @@ namespace BDArmory.Weapons
 
         IEnumerator DelayedDetonation(float delay)
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.RWPS3R2NukeModule]: Nuclear engine on " + Sourcevessel + " going critical in " + delay.ToString("0.0") + "s.");
+            if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.RWPS3R2NukeModule]: Nuclear engine on " + Sourcevessel + " going critical in " + delay.ToString("0.0") + "s.");
             goingCritical = true;
             yield return new WaitForSeconds(delay);
             if (!hasDetonated && part != null) Detonate();
@@ -198,7 +198,7 @@ namespace BDArmory.Weapons
             {
                 return;
             }
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDModuleNuke]: Running Detonate() on nukeModule in vessel " + Sourcevessel);
+            if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.BDModuleNuke]: Running Detonate() on nukeModule in vessel " + Sourcevessel);
             //affect any nearby parts/vessels that aren't the source vessel
             NukeFX.CreateExplosion(part.transform.position, ExplosionSourceType.BattleDamage, Sourcevessel, reportingName, 0, thermalRadius, yield, fluence, isEMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
             hasDetonated = true;

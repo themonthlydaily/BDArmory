@@ -68,7 +68,7 @@ namespace BDArmory.UI
             GUIstring = String.Empty;
             countString = String.Empty;
             lastGUIstring = String.Empty;
-            roundCounter = 1;
+            roundCounter = 0;
             if (weapon.ammoBelt != "def")
             {
                 beltString = weapon.ammoBelt;
@@ -79,8 +79,8 @@ namespace BDArmory.UI
                     if (BList[i] != lastGUIstring)
                     {
                         GUIstring += countString.ToString();
-                        GUIstring += binfo.DisplayName;
-                        lastGUIstring = binfo.DisplayName;
+                        GUIstring += (string.IsNullOrEmpty(binfo.DisplayName) ? binfo.name : binfo.DisplayName);
+                        lastGUIstring = (string.IsNullOrEmpty(binfo.DisplayName) ? binfo.name : binfo.DisplayName);
                         roundCounter = 1;
                         countString = "; ";
                     }
@@ -171,7 +171,7 @@ namespace BDArmory.UI
             }
             if (open)
             {
-                windowRect = GUI.Window(this.GetInstanceID(), windowRect, AmmoSelectorWindow, "", BDArmorySetup.BDGuiSkin.window);
+				windowRect = GUI.Window(this.GetInstanceID(), windowRect, AmmoSelectorWindow, "", BDArmorySetup.BDGuiSkin.window);
             }
             PreventClickThrough();
         }

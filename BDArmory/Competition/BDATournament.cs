@@ -6,9 +6,10 @@ using System.Linq;
 using UnityEngine;
 
 using BDArmory.Competition.OrchestrationStrategies;
-using BDArmory.Competition.SpawnStrategies;
 using BDArmory.Competition.VesselSpawning;
+using BDArmory.Competition.VesselSpawning.SpawnStrategies;
 using BDArmory.Evolution;
+using BDArmory.GameModes.Waypoints;
 using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
@@ -111,7 +112,7 @@ namespace BDArmory.Competition
                 Debug.Log("[BDArmory.BDATournament]: " + message);
                 return false;
             }
-            craftFiles = Directory.GetFiles(abs_folder).Where(f => f.EndsWith(".craft")).ToList();
+            craftFiles = Directory.GetFiles(abs_folder, "*.craft").ToList();
             vesselCount = craftFiles.Count;
             int fullHeatCount;
             switch (vesselsPerHeat)
@@ -238,7 +239,7 @@ namespace BDArmory.Competition
             }
             if (numberOfTeams > 1) // Make teams from the files in the spawn folder.
             {
-                craftFiles = Directory.GetFiles(abs_folder).Where(f => f.EndsWith(".craft")).ToList();
+                craftFiles = Directory.GetFiles(abs_folder, "*.craft").ToList();
                 if (craftFiles.Count < numberOfTeams)
                 {
                     message = "Insufficient vessels in AutoSpawn" + (!string.IsNullOrEmpty(folder) ? "/" + folder : "") + " to make " + numberOfTeams + " teams.";
@@ -261,10 +262,10 @@ namespace BDArmory.Competition
             else // Make teams from the folders under the spawn folder.
             {
                 var teamDirs = Directory.GetDirectories(abs_folder);
-                if (teamDirs.Length == 0) // Make teams from each vessel in the spawn folder.
+                if (teamDirs.Length < 2) // Make teams from each vessel in the spawn folder. Allow for a single subfolder for putting bad craft or other tmp things in.
                 {
                     numberOfTeams = -1; // Flag for treating craft files as folder names.
-                    craftFiles = Directory.GetFiles(abs_folder).Where(f => f.EndsWith(".craft")).ToList();
+                    craftFiles = Directory.GetFiles(abs_folder, "*.craft").ToList();
                     teamFiles = craftFiles.Select(f => new List<string> { f }).ToList();
                 }
                 else
@@ -272,7 +273,7 @@ namespace BDArmory.Competition
                     teamFiles = new List<List<string>>();
                     foreach (var teamDir in teamDirs)
                     {
-                        var currentTeamFiles = Directory.GetFiles(teamDir).Where(f => f.EndsWith(".craft")).ToList();
+                        var currentTeamFiles = Directory.GetFiles(teamDir, "*.craft").ToList();
                         if (currentTeamFiles.Count > 0)
                             teamFiles.Add(currentTeamFiles);
                     }
@@ -817,6 +818,16 @@ namespace BDArmory.Competition
                     message = "All heats in round " + roundIndex + " have been run.";
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
                     Debug.Log("[BDArmory.BDATournament]: " + message);
+                    if (BDArmorySettings.WAYPOINTS_MODE || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 50))
+                    {
+                        /* commented out until this is made functional
+                        foreach (var tracer in WaypointFollowingStrategy.Ghosts) //clear and reset vessel ghosts each new Round
+                        {
+                            tracer.gameObject.SetActive(false);
+                        }
+                        WaypointFollowingStrategy.Ghosts.Clear();
+                        */
+                    }
                     if (heatsRemaining > 0)
                     {
                         if (BDArmorySettings.TOURNAMENT_TIMEWARP_BETWEEN_ROUNDS > 0)
@@ -847,7 +858,7 @@ namespace BDArmory.Competition
 
             if (BDArmorySettings.AUTO_RESUME_TOURNAMENT && BDArmorySettings.AUTO_QUIT_AT_END_OF_TOURNAMENT && TournamentAutoResume.Instance != null)
             {
-                TournamentAutoResume.Instance.AutoQuit(5);
+                TournamentAutoResume.AutoQuit(5);
                 message = "Quitting KSP in 5s due to reaching the end of a tournament.";
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
                 Debug.LogWarning("[BDArmory.BDATournament]: " + message);
@@ -864,18 +875,7 @@ namespace BDArmory.Competition
             spawnConfig.longitude = -39.35f;
 
             TournamentCoordinator.Instance.Configure(new SpawnConfigStrategy(spawnConfig),
-                new WaypointFollowingStrategy(
-                    new List<WaypointFollowingStrategy.Waypoint> {
-                        new WaypointFollowingStrategy.Waypoint(28.33f, -39.11f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                        new WaypointFollowingStrategy.Waypoint(28.83f, -38.06f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                        new WaypointFollowingStrategy.Waypoint(29.54f, -38.68f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                        new WaypointFollowingStrategy.Waypoint(30.15f, -38.6f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                        new WaypointFollowingStrategy.Waypoint(30.83f, -38.87f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                        new WaypointFollowingStrategy.Waypoint(30.73f, -39.6f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                        new WaypointFollowingStrategy.Waypoint(30.9f, -40.23f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                        new WaypointFollowingStrategy.Waypoint(30.83f, -41.26f, BDArmorySettings.WAYPOINTS_ALTITUDE)
-                    }
-                ),
+                new WaypointFollowingStrategy(WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].waypoints),
                 CircularSpawning.Instance
             );
 
@@ -957,7 +957,7 @@ namespace BDArmory.Competition
             int tries = 0;
             do
             {
-                spawnProbe = SpawnUtils.SpawnSpawnProbe();
+                spawnProbe = VesselSpawner.SpawnSpawnProbe();
                 yield return new WaitWhile(() => spawnProbe != null && (!spawnProbe.loaded || spawnProbe.packed));
                 while (spawnProbe != null && FlightGlobals.ActiveVessel != spawnProbe)
                 {
@@ -1127,7 +1127,7 @@ namespace BDArmory.Competition
             if (!(resumingEvolution || resumingTournament)) yield break; // Just load to the KSC.
             // Switch to flight mode.
             sceneLoaded = false;
-            FlightDriver.StartWithNewLaunch(SpawnUtils.spawnProbeLocation, "GameData/Squad/Flags/default.png", FlightDriver.LaunchSiteName, new VesselCrewManifest()); // This triggers an error for SpaceCenterCamera2, but I don't see how to fix it and it doesn't appear to be harmful.
+            FlightDriver.StartWithNewLaunch(VesselSpawner.spawnProbeLocation, "GameData/Squad/Flags/default.png", FlightDriver.LaunchSiteName, new VesselCrewManifest()); // This triggers an error for SpaceCenterCamera2, but I don't see how to fix it and it doesn't appear to be harmful.
             tic = Time.time;
             yield return new WaitUntil(() => (sceneLoaded || Time.time - tic > 10));
             if (!sceneLoaded) { Debug.Log("[BDArmory.BDATournament]: Failed to load flight scene."); yield break; }
@@ -1317,7 +1317,7 @@ namespace BDArmory.Competition
             return false;
         }
 
-        public void AutoQuit(float delay = 1) => StartCoroutine(AutoQuitCoroutine(delay));
+        public static void AutoQuit(float delay = 1) => Instance.StartCoroutine(Instance.AutoQuitCoroutine(delay));
 
         /// <summary>
         /// Automatically quit KSP after a delay.
@@ -1329,6 +1329,7 @@ namespace BDArmory.Competition
             yield return new WaitForSeconds(delay);
             HighLogic.LoadScene(GameScenes.MAINMENU);
             yield return new WaitForSeconds(0.5f); // Pause on the Main Menu a moment, then quit.
+            Debug.Log("[BDArmory.BDATournament]: Quitting KSP.");
             Application.Quit();
         }
     }

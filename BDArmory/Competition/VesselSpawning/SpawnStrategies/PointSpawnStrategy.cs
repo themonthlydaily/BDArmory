@@ -2,10 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-using BDArmory.Competition.VesselSpawning;
 using BDArmory.Settings;
 
-namespace BDArmory.Competition.SpawnStrategies
+namespace BDArmory.Competition.VesselSpawning.SpawnStrategies
 {
     public class PointSpawnStrategy : SpawnStrategy
     {
@@ -24,7 +23,7 @@ namespace BDArmory.Competition.SpawnStrategies
             this.pitch = pitch;
         }
 
-        public IEnumerator Spawn(VesselSpawner spawner)
+        public IEnumerator Spawn(VesselSpawnerBase spawner)
         {
             Debug.Log("[BDArmory.BDAScoreService] PointSpawnStrategy spawning.");
 

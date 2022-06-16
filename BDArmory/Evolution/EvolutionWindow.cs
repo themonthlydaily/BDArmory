@@ -43,7 +43,6 @@ namespace BDArmory.Evolution
 
         private void Awake()
         {
-            // Debug.Log("EvolutionWindow awake");
             if (Instance)
                 Destroy(this);
             Instance = this;
@@ -51,7 +50,6 @@ namespace BDArmory.Evolution
 
         private void Start()
         {
-            // Debug.Log("EvolutionWindow start");
             leftLabel = new GUIStyle();
             leftLabel.alignment = TextAnchor.UpperLeft;
             leftLabel.normal.textColor = Color.white;
@@ -82,6 +80,7 @@ namespace BDArmory.Evolution
                 _windowWidth,
                 _windowHeight
             );
+            BDArmorySetup.SetGUIOpacity();
             BDArmorySetup.WindowRectEvolution = GUI.Window(
                 8008135,
                 BDArmorySetup.WindowRectEvolution,
@@ -89,6 +88,7 @@ namespace BDArmory.Evolution
                 Localizer.Format("#LOC_BDArmory_Evolution_Title"),//"BDA Evolution"
                 BDArmorySetup.BDGuiSkin.window
             );
+            BDArmorySetup.SetGUIOpacity(false);
             GUIUtils.UpdateGUIRect(BDArmorySetup.WindowRectEvolution, _guiCheckIndex);
         }
 
@@ -105,7 +105,6 @@ namespace BDArmory.Evolution
             }
             evolution = BDAModuleEvolution.Instance;
 
-            // Debug.Log("EvolutionWindow ready");
             BDArmorySetup.Instance.hasEvolution = true;
             ready = true;
             _guiCheckIndex = GUIUtils.RegisterGUIRect(new Rect());
@@ -178,7 +177,6 @@ namespace BDArmory.Evolution
             }
             if (GUI.Button(new Rect(_margin, offset, nextButton ? 2 * _windowWidth / 3 - _margin : _windowWidth - 2 * _margin, _lineHeight), buttonText, BDArmorySetup.BDGuiSkin.button))
             {
-                // Debug.Log("EvolutionWindow buttonClicked");
                 switch (status)
                 {
                     case EvolutionStatus.Idle:

@@ -352,6 +352,7 @@ namespace BDArmory.UI
                         { "vesselStandoffDistance", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselStandoffDistance, 0, 1000) },
                         // { "extendMult", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendMult, 0, 2) },
                         { "extendDistanceAirToAir", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendDistanceAirToAir, 0, 2000) },
+                        { "extendAngleAirToAir", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendAngleAirToAir, -10, 45) },
                         { "extendDistanceAirToGroundGuns", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendDistanceAirToGroundGuns, 0, 5000) },
                         { "extendDistanceAirToGround", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendDistanceAirToGround, 0, 5000) },
                         { "extendTargetVel", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendTargetVel, 0, 2) },
@@ -360,6 +361,7 @@ namespace BDArmory.UI
 
                         { "turnRadiusTwiddleFactorMin", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.turnRadiusTwiddleFactorMin, 0.1, 5) },
                         { "turnRadiusTwiddleFactorMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.turnRadiusTwiddleFactorMax, 0.1, 5) },
+                        { "waypointTerrainAvoidance", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.waypointTerrainAvoidance, 0, 1) },
 
                         { "controlSurfaceLag", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.controlSurfaceLag, 0, 0.2) },
                     };
@@ -424,6 +426,8 @@ namespace BDArmory.UI
                     inputFields["vesselStandoffDistance"].maxValue = ActivePilot.UpToEleven ? 5000 : 1000;
                     // inputFields["extendMult"].maxValue = ActivePilot.UpToEleven ? 200 : 2;
                     inputFields["extendDistanceAirToAir"].maxValue = ActivePilot.UpToEleven ? 20000 : 2000;
+                    inputFields["extendAngleAirToAir"].maxValue = ActivePilot.UpToEleven ? 90 : 45;
+                    inputFields["extendAngleAirToAir"].minValue = ActivePilot.UpToEleven ? -90 : -10;
                     inputFields["extendDistanceAirToGroundGuns"].maxValue = ActivePilot.UpToEleven ? 20000 : 5000;
                     inputFields["extendDistanceAirToGround"].maxValue = ActivePilot.UpToEleven ? 20000 : 5000;
 
@@ -556,7 +560,9 @@ namespace BDArmory.UI
 
             if (!windowBDAAIGUIEnabled || (!HighLogic.LoadedSceneIsFlight && !HighLogic.LoadedSceneIsEditor)) return;
             //BDArmorySetup.WindowRectAI = new Rect(BDArmorySetup.WindowRectAI.x, BDArmorySetup.WindowRectAI.y, WindowWidth, WindowHeight);
+            if (HighLogic.LoadedSceneIsFlight) BDArmorySetup.SetGUIOpacity();
             BDArmorySetup.WindowRectAI = GUI.Window(GetInstanceID(), BDArmorySetup.WindowRectAI, WindowRectAI, "", BDArmorySetup.BDGuiSkin.window);//"BDA Weapon Manager"
+            if (HighLogic.LoadedSceneIsFlight) BDArmorySetup.SetGUIOpacity(false);
             GUIUtils.UseMouseEventInRect(BDArmorySetup.WindowRectAI);
         }
 
@@ -776,12 +782,13 @@ namespace BDArmory.UI
                                 GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_Evade"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //evade dist/ time/ time threshold
                                 GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_Dodge"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //collision avoid
                                 GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_standoff"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //standoff distance
-                                GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_Extend"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //extend mult
+                                GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_Extend"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //extend distances
                                 GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_ExtendVars"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //extend target dist/angle/vel
                                 GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_ExtendAngle"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //extend target angle
                                 GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_ExtendDist"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //extend target dist
                                 GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_ExtendVel"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //extend target velocity
                                 GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_Nonlinearity"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //evade/extend nonlinearity
+                                GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_ExtendToggle"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //evade/extend toggle
                             }
                             if (showTerrain)
                             {
@@ -974,6 +981,8 @@ namespace BDArmory.UI
 
                                 if (ActivePilot.dynamicDampingPitch)
                                 {
+                                    GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingPitch") + ": " + ActivePilot.dynSteerDampingPitchValue.ToString(), Label);//"dynamic damp pitch"
+                                    dynPidLines++;
                                     if (!NumFieldsEnabled)
                                     {
                                         ActivePilot.DynamicDampingPitchMin =
@@ -1040,6 +1049,8 @@ namespace BDArmory.UI
                                 dynPidLines += 1.25f;
                                 if (ActivePilot.dynamicDampingYaw)
                                 {
+                                    GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingYaw") + ": " + ActivePilot.dynSteerDampingYawValue.ToString(), Label);//"dynamic damp yaw"
+                                    dynPidLines++;
                                     if (!NumFieldsEnabled)
                                     {
                                         ActivePilot.DynamicDampingYawMin =
@@ -1107,6 +1118,8 @@ namespace BDArmory.UI
                                 dynPidLines += 1.25f;
                                 if (ActivePilot.dynamicDampingRoll)
                                 {
+                                    GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingRoll") + ": " + ActivePilot.dynSteerDampingRollValue.ToString(), Label);//"dynamic damp roll"
+                                    dynPidLines++;
                                     if (!NumFieldsEnabled)
                                     {
                                         ActivePilot.DynamicDampingRollMin =
@@ -1193,7 +1206,7 @@ namespace BDArmory.UI
                             ActivePilot.defaultAltitude =
                                 GUI.HorizontalSlider(SettingSliderRect(leftIndent, altLines, contentWidth),
                                     ActivePilot.defaultAltitude, 100, ActivePilot.UpToEleven ? 100000 : 15000);
-                            ActivePilot.defaultAltitude = Mathf.Round(ActivePilot.defaultAltitude / 25) * 25;
+                            ActivePilot.defaultAltitude = Mathf.Round(ActivePilot.defaultAltitude / 50) * 50;
                         }
                         else
                         {
@@ -1219,7 +1232,7 @@ namespace BDArmory.UI
                             ActivePilot.minAltitude =
                                 GUI.HorizontalSlider(SettingSliderRect(leftIndent, altLines, contentWidth),
                                     ActivePilot.minAltitude, 25, ActivePilot.UpToEleven ? 60000 : 6000);
-                            ActivePilot.minAltitude = Mathf.Round(ActivePilot.minAltitude / 25) * 25;
+                            ActivePilot.minAltitude = Mathf.Round(ActivePilot.minAltitude / 10) * 10;
                         }
                         else
                         {
@@ -1252,7 +1265,7 @@ namespace BDArmory.UI
                                 ActivePilot.maxAltitude =
                                     GUI.HorizontalSlider(SettingSliderRect(leftIndent, altLines, contentWidth),
                                         ActivePilot.maxAltitude, 100, ActivePilot.UpToEleven ? 100000 : 15000);
-                                ActivePilot.maxAltitude = Mathf.Round(ActivePilot.maxAltitude / 25) * 25;
+                                ActivePilot.maxAltitude = Mathf.Round(ActivePilot.maxAltitude / 100) * 100;
                             }
                             else
                             {
@@ -1290,7 +1303,7 @@ namespace BDArmory.UI
                         if (!NumFieldsEnabled)
                         {
                             ActivePilot.maxSpeed = GUI.HorizontalSlider(SettingSliderRect(leftIndent, ++spdLines, contentWidth), ActivePilot.maxSpeed, 20, ActivePilot.UpToEleven ? 3000 : 800);
-                            ActivePilot.maxSpeed = Mathf.Round(ActivePilot.maxSpeed);
+                            ActivePilot.maxSpeed = Mathf.Round(ActivePilot.maxSpeed / 5) * 5;
                         }
                         else
                         {
@@ -1652,14 +1665,15 @@ namespace BDArmory.UI
                         GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_EvasionTimeThreshold") + ": " + ActivePilot.evasionTimeThreshold.ToString("0.00"), Label);//"dynamic damping min"
 
                         evadeLines++;
-                        ActivePilot.evasionIgnoreMyTargetTargetingMe = GUI.Toggle(ToggleButtonRect(leftIndent, evadeLines, contentWidth), ActivePilot.evasionIgnoreMyTargetTargetingMe, Localizer.Format("#LOC_BDArmory_EvasionIgnoreMyTargetTargetingMe"), ActivePilot.evasionIgnoreMyTargetTargetingMe ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
-
-                        evadeLines++;
                         if (contextTipsEnabled)
                         {
                             GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_evadetimeDist"), contextLabel);//"dynamic damp min"
                             evadeLines++;
                         }
+
+                        ActivePilot.evasionIgnoreMyTargetTargetingMe = GUI.Toggle(ToggleButtonRect(leftIndent, evadeLines, contentWidth), ActivePilot.evasionIgnoreMyTargetTargetingMe, Localizer.Format("#LOC_BDArmory_EvasionIgnoreMyTargetTargetingMe"), ActivePilot.evasionIgnoreMyTargetTargetingMe ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
+                        evadeLines++;
+
                         if (!NumFieldsEnabled)
                         {
                             ActivePilot.collisionAvoidanceThreshold =
@@ -1762,12 +1776,13 @@ namespace BDArmory.UI
                             //     evadeLines++;
                             // }
 
+                            #region Extend Distance Air-to-Air
                             if (!NumFieldsEnabled)
                             {
                                 ActivePilot.extendDistanceAirToAir =
                                     GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth),
                                         ActivePilot.extendDistanceAirToAir, 0, ActivePilot.UpToEleven ? 20000 : 2000);
-                                ActivePilot.extendDistanceAirToAir = BDAMath.RoundToUnit(ActivePilot.extendDistanceAirToAir, 50f);
+                                ActivePilot.extendDistanceAirToAir = BDAMath.RoundToUnit(ActivePilot.extendDistanceAirToAir, 10f);
                             }
                             else
                             {
@@ -1781,13 +1796,37 @@ namespace BDArmory.UI
                                 GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendDistanceAirToAir_Context"), contextLabel);
                                 evadeLines++;
                             }
+                            #endregion
 
+                            #region Extend Angle Air-to-Air
+                            if (!NumFieldsEnabled)
+                            {
+                                ActivePilot.extendAngleAirToAir =
+                                    GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth),
+                                        ActivePilot.extendAngleAirToAir, ActivePilot.UpToEleven ? -90 : -10, ActivePilot.UpToEleven ? 90 : 45);
+                                ActivePilot.extendAngleAirToAir = BDAMath.RoundToUnit(ActivePilot.extendAngleAirToAir, 1f);
+                            }
+                            else
+                            {
+                                inputFields["extendAngleAirToAir"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["extendAngleAirToAir"].possibleValue, 6));
+                                ActivePilot.extendAngleAirToAir = (float)inputFields["extendAngleAirToAir"].currentValue;
+                            }
+                            GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendAngleAirToAir") + ": " + ActivePilot.extendAngleAirToAir.ToString("0"), Label); // Extend Distance Air-To-Air
+                            evadeLines++;
+                            if (contextTipsEnabled)
+                            {
+                                GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendAngleAirToAir_Context"), contextLabel);
+                                evadeLines++;
+                            }
+                            #endregion
+
+                            #region Extend Distance Air-to-Ground (Guns)
                             if (!NumFieldsEnabled)
                             {
                                 ActivePilot.extendDistanceAirToGroundGuns =
                                     GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth),
                                         ActivePilot.extendDistanceAirToGroundGuns, 0, ActivePilot.UpToEleven ? 20000 : 5000);
-                                ActivePilot.extendDistanceAirToGroundGuns = BDAMath.RoundToUnit(ActivePilot.extendDistanceAirToGroundGuns, 100f);
+                                ActivePilot.extendDistanceAirToGroundGuns = BDAMath.RoundToUnit(ActivePilot.extendDistanceAirToGroundGuns, 50f);
                             }
                             else
                             {
@@ -1801,13 +1840,15 @@ namespace BDArmory.UI
                                 GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendDistanceAirToGroundGuns_Context"), contextLabel);
                                 evadeLines++;
                             }
+                            #endregion
 
+                            #region Extend Distance Air-to-Ground
                             if (!NumFieldsEnabled)
                             {
                                 ActivePilot.extendDistanceAirToGround =
                                     GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth),
                                         ActivePilot.extendDistanceAirToGround, 0, ActivePilot.UpToEleven ? 20000 : 5000);
-                                ActivePilot.extendDistanceAirToGround = BDAMath.RoundToUnit(ActivePilot.extendDistanceAirToGround, 100f);
+                                ActivePilot.extendDistanceAirToGround = BDAMath.RoundToUnit(ActivePilot.extendDistanceAirToGround, 50f);
                             }
                             else
                             {
@@ -1821,7 +1862,9 @@ namespace BDArmory.UI
                                 GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendDistanceAirToGround_Context"), contextLabel);
                                 evadeLines++;
                             }
+                            #endregion
 
+                            #region Extend Target triggers
                             if (!NumFieldsEnabled)
                             {
                                 ActivePilot.extendTargetVel =
@@ -1881,6 +1924,7 @@ namespace BDArmory.UI
                                 GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendDist"), contextLabel);//"dynamic damp min"
                                 evadeLines++;
                             }
+                            #endregion
                         }
                         ActivePilot.canExtend = GUI.Toggle(ToggleButtonRect(leftIndent, evadeLines, contentWidth), ActivePilot.canExtend, Localizer.Format("#LOC_BDArmory_ExtendToggle"), ActivePilot.canExtend ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Dynamic pid"
                         evadeLines++;
@@ -1899,13 +1943,13 @@ namespace BDArmory.UI
                         gndLines += 0.25f;
 
                         GUI.Label(SettinglabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_PilotAI_Terrain"), BoldLabel);//"Speed"
-                        gndLines++;
+
+                        #region Terrain Avoidance Min
+                        GUI.Label(SettinglabelRect(leftIndent, ++gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_TurnRadiusMin") + ": " + ActivePilot.turnRadiusTwiddleFactorMin.ToString("0.0"), Label); //"dynamic damping min"
                         var oldMinTwiddle = ActivePilot.turnRadiusTwiddleFactorMin;
                         if (!NumFieldsEnabled)
                         {
-                            ActivePilot.turnRadiusTwiddleFactorMin =
-                                GUI.HorizontalSlider(SettingSliderRect(leftIndent, gndLines, contentWidth),
-                                    ActivePilot.turnRadiusTwiddleFactorMin, 0.1f, ActivePilot.UpToEleven ? 10 : 5);
+                            ActivePilot.turnRadiusTwiddleFactorMin = GUI.HorizontalSlider(SettingSliderRect(leftIndent, gndLines, contentWidth), ActivePilot.turnRadiusTwiddleFactorMin, 0.1f, ActivePilot.UpToEleven ? 10 : 5);
                             ActivePilot.turnRadiusTwiddleFactorMin = Mathf.Round(ActivePilot.turnRadiusTwiddleFactorMin * 10f) / 10f;
                         }
                         else
@@ -1918,20 +1962,18 @@ namespace BDArmory.UI
                             ActivePilot.OnMinUpdated(null, null);
                             inputFields["turnRadiusTwiddleFactorMax"].currentValue = ActivePilot.turnRadiusTwiddleFactorMax;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_TurnRadiusMin") + ": " + ActivePilot.turnRadiusTwiddleFactorMin.ToString("0.0"), Label); //"dynamic damping min"
-
-                        gndLines++;
                         if (contextTipsEnabled)
                         {
-                            GUI.Label(ContextLabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_terrainMin"), contextLabel);//"dynamic damp min"
-                            gndLines++;
+                            GUI.Label(ContextLabelRect(leftIndent, ++gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_terrainMin"), contextLabel);//"dynamic damp min"
                         }
+                        #endregion
+
+                        #region Terrain Avoidance Max
+                        GUI.Label(SettinglabelRect(leftIndent, ++gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_TurnRadiusMax") + ": " + ActivePilot.turnRadiusTwiddleFactorMax.ToString("0.0"), Label);//"dynamic damping min"
                         var oldMaxTwiddle = ActivePilot.turnRadiusTwiddleFactorMax;
                         if (!NumFieldsEnabled)
                         {
-                            ActivePilot.turnRadiusTwiddleFactorMax =
-                                GUI.HorizontalSlider(SettingSliderRect(leftIndent, gndLines, contentWidth),
-                                    ActivePilot.turnRadiusTwiddleFactorMax, 0.1f, ActivePilot.UpToEleven ? 10 : 5);
+                            ActivePilot.turnRadiusTwiddleFactorMax = GUI.HorizontalSlider(SettingSliderRect(leftIndent, gndLines, contentWidth), ActivePilot.turnRadiusTwiddleFactorMax, 0.1f, ActivePilot.UpToEleven ? 10 : 5);
                             ActivePilot.turnRadiusTwiddleFactorMax = Mathf.Round(ActivePilot.turnRadiusTwiddleFactorMax * 10) / 10;
                         }
                         else
@@ -1944,14 +1986,31 @@ namespace BDArmory.UI
                             ActivePilot.OnMaxUpdated(null, null);
                             inputFields["turnRadiusTwiddleFactorMin"].currentValue = ActivePilot.turnRadiusTwiddleFactorMin;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_TurnRadiusMax") + ": " + ActivePilot.turnRadiusTwiddleFactorMax.ToString("0.0"), Label);//"dynamic damping min"
-
-                        gndLines++;
                         if (contextTipsEnabled)
                         {
-                            GUI.Label(ContextLabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_terrainMax"), contextLabel);//"dynamic damp min"
-                            gndLines++;
+                            GUI.Label(ContextLabelRect(leftIndent, ++gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_terrainMax"), contextLabel);//"dynamic damp max"
                         }
+                        #endregion
+
+                        #region Waypoint Terrain Avoidance
+                        GUI.Label(SettinglabelRect(leftIndent, ++gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_WaypointTerrainAvoidance") + ": " + ActivePilot.waypointTerrainAvoidance.ToString("0.00"), Label);
+                        if (!NumFieldsEnabled)
+                        {
+                            ActivePilot.waypointTerrainAvoidance = GUI.HorizontalSlider(SettingSliderRect(leftIndent, gndLines, contentWidth), ActivePilot.waypointTerrainAvoidance, 0f, 1f);
+                            ActivePilot.waypointTerrainAvoidance = BDAMath.RoundToUnit(ActivePilot.waypointTerrainAvoidance, 0.01f);
+                        }
+                        else
+                        {
+                            inputFields["waypointTerrainAvoidance"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, gndLines, contentWidth), inputFields["waypointTerrainAvoidance"].possibleValue, 6));
+                            ActivePilot.waypointTerrainAvoidance = (float)inputFields["waypointTerrainAvoidance"].currentValue;
+                        }
+                        if (contextTipsEnabled)
+                        {
+                            GUI.Label(ContextLabelRect(leftIndent, ++gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_WaypointTerrainAvoidanceContext"), contextLabel);
+                        }
+                        #endregion
+
+                        ++gndLines;
                         GUI.EndGroup();
                         terrainHeight = Mathf.Lerp(terrainHeight, gndLines, 0.15f);
                         gndLines += 0.1f;
@@ -2008,7 +2067,7 @@ namespace BDArmory.UI
                             GUIContent.none, BDArmorySetup.BDGuiSkin.box);
                         miscLines += 0.25f;
 
-                        GUI.Label(SettinglabelRect(leftIndent, miscLines), Localizer.Format("#LOC_BDArmory_Orbit"), BoldLabel);//"Speed"
+                        GUI.Label(SettinglabelRect(leftIndent, miscLines), Localizer.Format("#LOC_BDArmory_Orbit"), BoldLabel);//"orbit"
                         miscLines++;
 
                         ActivePilot.ClockwiseOrbit = GUI.Toggle(ToggleButtonRect(leftIndent, miscLines, contentWidth),
@@ -2016,11 +2075,11 @@ namespace BDArmory.UI
                         miscLines += 1.25f;
                         if (contextTipsEnabled)
                         {
-                            GUI.Label(ContextLabelRect(leftIndent, miscLines), Localizer.Format("#LOC_BDArmory_AIWindow_orbit"), Label);//"dynamic damp min"
+                            GUI.Label(ContextLabelRect(leftIndent, miscLines), Localizer.Format("#LOC_BDArmory_AIWindow_orbit"), Label);//"orbit direction"
                             miscLines++;
                         }
 
-                        GUI.Label(SettinglabelRect(leftIndent, miscLines), Localizer.Format("#LOC_BDArmory_StandbyMode"), BoldLabel);//"Speed"
+                        GUI.Label(SettinglabelRect(leftIndent, miscLines), Localizer.Format("#LOC_BDArmory_StandbyMode"), BoldLabel);//"Standby"
                         miscLines++;
 
                         ActivePilot.standbyMode = GUI.Toggle(ToggleButtonRect(leftIndent, miscLines, contentWidth),
@@ -2028,8 +2087,26 @@ namespace BDArmory.UI
                         miscLines += 1.25f;
                         if (contextTipsEnabled)
                         {
-                            GUI.Label(ContextLabelRect(leftIndent, miscLines), Localizer.Format("#LOC_BDArmory_AIWindow_standby"), Label);//"dynamic damp min"
+                            GUI.Label(ContextLabelRect(leftIndent, miscLines), Localizer.Format("#LOC_BDArmory_AIWindow_standby"), Label);//"Activate when target in guard range"
                             miscLines++;
+                        }
+
+                        GUI.Label(SettinglabelRect(leftIndent, miscLines), Localizer.Format("#LOC_BDArmory_ControlSurfaceSettings"), BoldLabel);//"Control Surface Settings"
+                        miscLines++;
+
+                        if (GUI.Button(ToggleButtonRect(leftIndent, miscLines, contentWidth), Localizer.Format("#LOC_BDArmory_StoreControlSurfaceSettings"), BDArmorySetup.BDGuiSkin.button))
+                        {
+                            ActivePilot.StoreControlSurfaceSettings(); //Hiding these in misc is probably not the best place to put them, but only so much space on the window header bar
+                        }
+                        miscLines += 1.25f;
+                        if (ActivePilot.Events["RestoreControlSurfaceSettings"].active == true)
+                        {
+                            GUIStyle restoreStyle = BDArmorySetup.BDGuiSkin.button;
+                            if (GUI.Button(ToggleButtonRect(leftIndent, miscLines, contentWidth), Localizer.Format("#LOC_BDArmory_RestoreControlSurfaceSettings"), restoreStyle))
+                            {
+                                ActivePilot.RestoreControlSurfaceSettings();
+                            }
+                            miscLines += 1.25f;
                         }
 
                         GUI.EndGroup();

@@ -1,5 +1,6 @@
 ﻿﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 using BDArmory.Competition;
@@ -13,8 +14,28 @@ namespace BDArmory.Utils
 {
     class ProjectileUtils
     {
-        public static HashSet<string> IgnoredPartNames = new HashSet<string> { "bdPilotAI", "bdShipAI", "missileController", "bdammGuidanceModule" };
-        public static bool IsIgnoredPart(Part part) { return ProjectileUtils.IgnoredPartNames.Contains(part.partInfo.name); }
+        static HashSet<string> IgnoredPartNames;
+        public static bool IsIgnoredPart(Part part)
+        {
+            if (IgnoredPartNames == null)
+            {
+                IgnoredPartNames = new HashSet<string> { "bdPilotAI", "bdShipAI", "missileController", "bdammGuidanceModule" };
+                IgnoredPartNames.UnionWith(PartLoader.LoadedPartsList.Select(p => p.partPrefab.partInfo.name).Where(name => name.Contains("flagPart")));
+                IgnoredPartNames.UnionWith(PartLoader.LoadedPartsList.Select(p => p.partPrefab.partInfo.name).Where(name => name.Contains("conformaldecals")));
+                if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.ProjectileUtils]: Ignored Parts: " + string.Join(", ", IgnoredPartNames));
+            }
+            return ProjectileUtils.IgnoredPartNames.Contains(part.partInfo.name);
+        }
+        static HashSet<string> armorParts;
+        public static bool IsArmorPart(Part part)
+        {
+            if (armorParts == null)
+            {
+                armorParts = PartLoader.LoadedPartsList.Select(p => p.partPrefab.partInfo.name).Where(name => name.ToLower().Contains("armor")).ToHashSet();
+                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.ProjectileUtils]: Armor Parts: " + string.Join(", ", armorParts));
+            }
+            return armorParts.Contains(part.partInfo.name);
+        }
 
         public static void ApplyDamage(Part hitPart, RaycastHit hit, float multiplier, float penetrationfactor, float caliber, float projmass, float impactVelocity, float DmgMult, double distanceTraveled, bool explosive, bool incendiary, bool hasRichocheted, Vessel sourceVessel, string name, string team, ExplosionSourceType explosionSource, bool firstHit, bool partAlreadyHit, bool cockpitPen)
         {
@@ -32,12 +53,12 @@ namespace BDArmory.Utils
             // Apply damage
             float damage;
             damage = hitPart.AddBallisticDamage(projmass, caliber, multiplier, penetrationfactor, DmgMult, impactVelocity, explosionSource);
+            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.PartExtensions]: Ballistic Hitpoints Applied to " + hitPart.name + ": " + damage);
 
             if (BDArmorySettings.BATTLEDAMAGE)
             {
                 BattleDamageHandler.CheckDamageFX(hitPart, caliber, penetrationfactor, explosive, incendiary, sourceVessel.GetName(), hit, partAlreadyHit, cockpitPen);
             }
-            // Debug.Log("DEBUG Ballistic damage to " + hitPart + ": " + damage + ", calibre: " + caliber + ", multiplier: " + multiplier + ", pen: " + penetrationfactor);
 
             // Update scoring structures
             if (firstHit)
@@ -81,13 +102,13 @@ namespace BDArmory.Utils
             }
             var penetrationFactor = penetration / thickness;
 
-            if (BDArmorySettings.DRAW_ARMOR_LABELS)
+            if (BDArmorySettings.DEBUG_ARMOR)
             {
                 Debug.Log("[BDArmory.ProjectileUtils{Armor Penetration}]:" + hitPart + ", " + hitPart.vessel.GetName() + ": Armor penetration = " + penetration + "mm | Thickness = " + thickness + "mm");
             }
             if (penetrationFactor < 1)
             {
-                if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                if (BDArmorySettings.DEBUG_ARMOR)
                 {
                     Debug.Log("[BDArmory.ProjectileUtils{Armor Penetration}]: Bullet Stopped by Armor");
                 }
@@ -100,10 +121,11 @@ namespace BDArmory.Utils
             /// Calculate damage to armor from kinetic impact based on armor mechanical properties
             /// Sufficient penetration by bullet will result in armor spalling or failure
             /// </summary>
-            if (!hitPart.name.ToLower().Contains("armor"))
+            if (!IsArmorPart(hitPart))
             {
                 if (armorType == 1) return; //ArmorType "None"; no armor to block/reduce blast, take full damage
             }
+            if (BDArmorySettings.PAINTBALL_MODE) return; //don't damage armor if paintball mode
             float thickness = (float)hitPart.GetArmorThickness();
             if (thickness <= 0) return; //No armor present to spall/damage
 
@@ -126,7 +148,7 @@ namespace BDArmory.Utils
                     }
                     spallCaliber = caliber * (caliberModifier / 2);
                     spallMass = (spallCaliber * spallCaliber * Mathf.PI / 400) * (thickness / 10) * (density / 1000000000);
-                    if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                    if (BDArmorySettings.DEBUG_ARMOR)
                     {
                         Debug.Log("[BDArmory.ProjectileUtils]: " + hitPart + ", " + hitPart.vessel.GetName() + ": Armor spalling! Diameter: " + spallCaliber + "; mass: " + (spallMass * 1000) + "kg");
                     }
@@ -146,7 +168,7 @@ namespace BDArmory.Utils
                         {
                             volumeToReduce = ((Mathf.CeilToInt(caliber / 500) * Mathf.CeilToInt(caliber / 500)) * (50 * 50) * ((float)hitPart.GetArmorMaxThickness() / 10)); //cm3 //replace thickness with starting thickness, to ensure armor failure removes proper amount of armor
                             //total failue of 50x50cm armor tile(s)
-                            if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                            if (BDArmorySettings.DEBUG_ARMOR)
                             {
                                 Debug.Log("[BDArmory.ProjectileUtils{CalcArmorDamage}]: Armor failure on " + hitPart + ", " + hitPart.vessel.GetName() + "!");
                             }
@@ -162,7 +184,7 @@ namespace BDArmory.Utils
 
                         volumeToReduce = spallCaliber; //cm3
                         spallMass = spallCaliber * (density / 1000000000);
-                        if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                        if (BDArmorySettings.DEBUG_ARMOR)
                         {
                             Debug.Log("[BDArmory.ProjectileUtils{CalcArmorDamage}]: Armor failure on " + hitPart + ", " + hitPart.vessel.GetName() + "!");
                             Debug.Log("[BDArmory.ProjectileUtils{CalcArmorDamage}]: Armor spalling! Diameter: " + spallCaliber + "; mass: " + (spallMass * 1000) + "kg");
@@ -177,14 +199,14 @@ namespace BDArmory.Utils
                 var modifiedCaliber = 0.5f * caliber * caliberModifier;
                 volumeToReduce = modifiedCaliber * modifiedCaliber * Mathf.PI / 100 * (thickness / 10); //cm3
             }
-            if (BDArmorySettings.DRAW_ARMOR_LABELS)
+            if (BDArmorySettings.DEBUG_ARMOR)
             {
                 Debug.Log("[BDArmory.ProjectileUtils{CalcArmorDamage}]: " + hitPart + " on " + hitPart.vessel.GetName() + " Armor volume lost: " + Math.Round(volumeToReduce) + " cm3");
             }
             hitPart.ReduceArmor((double)volumeToReduce);
             if (penetrationFactor < 1)
             {
-                if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                if (BDArmorySettings.DEBUG_ARMOR)
                 {
                     Debug.Log("[BDArmory.ProjectileUtils{CalcArmorDamage}]: Bullet Stopped by Armor");
                 }
@@ -192,7 +214,7 @@ namespace BDArmory.Utils
             if (spallMass > 0)
             {
                 float damage = hitPart.AddBallisticDamage(spallMass, spallCaliber, 1, 1.1f, 1, (impactVel / 2), explosionSource);
-                if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                if (BDArmorySettings.DEBUG_ARMOR)
                 {
                     Debug.Log("[BDArmory.ProjectileUtils]: " + hitPart + " on " + hitPart.vessel.GetName() + " takes Spall Damage: " + damage);
                 }
@@ -206,6 +228,7 @@ namespace BDArmory.Utils
             /// Calculates # hits per m^2 based on distribution across sphere detonationDist in radius
             /// Shrapnel penetration dist determined by caliber, penetration. Penetration = -1 is part only hit by blast/airburst
             /// </summary>
+            if (BDArmorySettings.PAINTBALL_MODE) return; //don't damage armor if paintball mode
             float thickness = (float)hitPart.GetArmorThickness();
             if (thickness < 1)
             {
@@ -215,7 +238,7 @@ namespace BDArmory.Utils
             var Armor = hitPart.FindModuleImplementing<HitpointTracker>();
             if (Armor != null)
             {
-                if (!hitPart.name.ToLower().Contains("armor"))
+                if (!IsArmorPart(hitPart))
                 {
                     if (Armor.ArmorTypeNum == 1) return; //ArmorType "None"; no armor to block/reduce blast, take full damage
                 }
@@ -265,7 +288,7 @@ namespace BDArmory.Utils
 
                             volumeToReduce = (((caliber * caliber) * 1.5f) / shrapnelCount * thickness) / 1000; //rough approximation of volume / # of fragments
                             hitPart.ReduceArmor(volumeToReduce);
-                            if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                            if (BDArmorySettings.DEBUG_ARMOR)
                             {
                                 Debug.Log("[BDArmory.ProjectileUtils]: " + hitPart.name + " on " + hitPart.vessel.GetName() + ", " + shrapnelCount + " shrapnel hits; Armor damage: " + volumeToReduce + "cm3; part damage: ");
                             }
@@ -286,7 +309,7 @@ namespace BDArmory.Utils
                                 volumeToReduce = ((caliber * thickness * (caliber * 4)) / 1000); //cm3
                                 hitPart.ReduceArmor(volumeToReduce);
 
-                                if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                                if (BDArmorySettings.DEBUG_ARMOR)
                                 {
                                     Debug.Log("[BDArmory.ProjectileUtils]: Shrapnel penetration on " + hitPart.name + ",  " + hitPart.vessel.GetName() + "; " + +shrapnelCount + " hits; Armor damage: " + volumeToReduce + "; part damage: ");
                                 }
@@ -301,7 +324,7 @@ namespace BDArmory.Utils
                                 {
                                     volumeToReduce = ((Mathf.CeilToInt(caliber / 500) * Mathf.CeilToInt(caliber / 500)) * (50 * 50) * ((float)hitPart.GetArmorMaxThickness() / 10)); //cm3
                                     hitPart.ReduceArmor(volumeToReduce);
-                                    if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                                    if (BDArmorySettings.DEBUG_ARMOR)
                                     {
                                         Debug.Log("[BDArmory.ProjectileUtils]: Explosive Armor failure; Armor damage: " + volumeToReduce + " on " + hitPart.name + ", " + hitPart.vessel.GetName());
                                     }
@@ -321,7 +344,7 @@ namespace BDArmory.Utils
                             volumeToReduce = ((caliber * thickness * (caliber * 4)) * 2) / 1000; //cm3
                             hitPart.ReduceArmor(volumeToReduce);
 
-                            if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                            if (BDArmorySettings.DEBUG_ARMOR)
                             {
                                 Debug.Log("[BDArmory.ProjectileUtils]: Shrapnel penetration from in-armor detonation, " + hitPart.name + ",  " + hitPart.vessel.GetName() + "; Armor damage: " + volumeToReduce + "; part damage: ");
                             }
@@ -333,7 +356,7 @@ namespace BDArmory.Utils
                     }
                     else //internal detonation
                     {
-                        if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                        if (BDArmorySettings.DEBUG_ARMOR)
                         {
                             Debug.Log("[BDArmory.ProjectileUtils]: Through-armor detonation in " + hitPart.name + ", " + hitPart.vessel.GetName());
                         }
@@ -350,6 +373,7 @@ namespace BDArmory.Utils
             /// Returns boolean; True = armor stops explosion, False = armor blowthrough
             /// </summary>
             //use blastTotalPressure to get MPa of shock on plate, compare to armor mat tolerances
+            if (BDArmorySettings.PAINTBALL_MODE) return true; //don't damage armor if paintball mode
             float thickness = (float)hitPart.GetArmorThickness();
             if (thickness <= 0) return false; //no armor to stop explosion
             float spallArea;  //using this as a hack for affected srf. area, convert m2 to cm2
@@ -358,7 +382,7 @@ namespace BDArmory.Utils
             var Armor = hitPart.FindModuleImplementing<HitpointTracker>();
             if (Armor != null)
             {
-                if (hitPart.name.ToLower().Contains("armor"))
+                if (IsArmorPart(hitPart))
                 {
                     spallArea = hitPart.Modules.GetModule<HitpointTracker>().armorVolume * 10000;
                 }
@@ -367,7 +391,7 @@ namespace BDArmory.Utils
                     if (Armor.ArmorTypeNum == 1) return false;//ArmorType "None"; no armor to block/reduce blast, take full damage
                     spallArea = (!double.IsNaN(hitPart.radiativeArea) ? (float)hitPart.radiativeArea : hitPart.GetArea() / 3) * 10000;
                 }
-                if (BDArmorySettings.DRAW_ARMOR_LABELS && double.IsNaN(hitPart.radiativeArea))
+                if (BDArmorySettings.DEBUG_ARMOR && double.IsNaN(hitPart.radiativeArea))
                 {
                     Debug.Log("[BDArmory.ProjectileUtils{CalculateExplosiveArmorDamage}]: radiative area of part " + hitPart + " was NaN, using approximate area " + spallArea + " instead.");
                 }
@@ -381,9 +405,9 @@ namespace BDArmory.Utils
                                                                                       //Trying thickness /10, so the 10x increase in thickness in mm isn't massively increasing value
 
                 float blowthroughFactor = (float)BlastPressure / ArmorTolerance;
-                if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                if (BDArmorySettings.DEBUG_ARMOR)
                 {
-                    Debug.Log("[BDArmory.ProjectileUtils]: Beginning ExplosiveArmorDamage(); " + hitPart.name + ", ArmorType:" + Armor.ArmorTypeNum + "; Armor Thickness: " + thickness + "; BlastPressure: " + BlastPressure + "; BlowthroughFactor: " + blowthroughFactor); ;
+                    Debug.Log("[BDArmory.ProjectileUtils{CalculateExplosiveArmorDamage}]: Beginning ExplosiveArmorDamage(); " + hitPart.name + ", ArmorType:" + Armor.ArmorTypeNum + "; Armor Thickness: " + thickness + "; BlastPressure: " + BlastPressure + "; BlowthroughFactor: " + blowthroughFactor); ;
                 }
                 //is BlastUtils maxpressure in MPa? confirm blast pressure from ExplosionUtils on same scale/magnitude as armorTolerance
                 //something is going on, 25mm steed is enough to no-sell Hellfires (13kg tnt, 33m blastRadius
@@ -393,9 +417,9 @@ namespace BDArmory.Utils
                     {
                         spallMass = spallArea * (thickness / 10) * (Density / 1000000); //entirety of armor lost
                         hitPart.ReduceArmor(spallArea * thickness / 10); //cm3
-                        if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                        if (BDArmorySettings.DEBUG_ARMOR)
                         {
-                            Debug.Log("[BDArmory.ProjectileUtils]: Armor rupture on " + hitPart.name + ", " + hitPart.vessel.GetName() + "! Size: " + spallArea + "; mass: " + spallMass + "kg");
+                            Debug.Log("[BDArmory.ProjectileUtils{CalculateExplosiveArmorDamage}]: Armor rupture on " + hitPart.name + ", " + hitPart.vessel.GetName() + "! Size: " + spallArea + "; mass: " + spallMass + "kg");
                         }
                         damage = hitPart.AddBallisticDamage(spallMass / 1000, spallArea, 1, blowthroughFactor, 1, 422.75f, explosionSource);
                         ApplyScore(hitPart, sourcevessel, 0, damage, "Spalling", explosionSource);
@@ -411,9 +435,9 @@ namespace BDArmory.Utils
                     {
                         spallArea *= ((1 - ductility) * blowthroughFactor);
                         spallMass = spallArea * (thickness / 30) * (Density / 1000000); //lose 1/3rd thickness from spalling
-                        if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                        if (BDArmorySettings.DEBUG_ARMOR)
                         {
-                            Debug.Log("[BDArmory.ProjectileUtils]: Explosive Armor spalling" + hitPart.name + ", " + hitPart.vessel.GetName() + "! Size: " + spallArea + "; mass: " + spallMass + "kg");
+                            Debug.Log("[BDArmory.ProjectileUtils{CalculateExplosiveArmorDamage}]: Explosive Armor spalling" + hitPart.name + ", " + hitPart.vessel.GetName() + "! Size: " + spallArea + "; mass: " + spallMass + "kg");
                         }
                         if (hardness > 500)//armor holds, but spalling
                         {
@@ -446,9 +470,9 @@ namespace BDArmory.Utils
                             //soft stuff like Aramid not likely to cause major damage
                             hitPart.ReduceArmor(volumeToReduce); //cm3
 
-                            if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                            if (BDArmorySettings.DEBUG_ARMOR)
                             {
-                                Debug.Log("[BDArmory.ProjectileUtils]: Armor destruction on " + hitPart.name + ", " + hitPart.vessel.GetName() + "!");
+                                Debug.Log("[BDArmory.ProjectileUtils{CalculateExplosiveArmorDamage}]: Armor destruction on " + hitPart.name + ", " + hitPart.vessel.GetName() + "!");
                             }
                             if (BDArmorySettings.BATTLEDAMAGE)
                             {
@@ -463,9 +487,9 @@ namespace BDArmory.Utils
                             damage = hitPart.AddBallisticDamage(spallMass / 1000, spallArea * 10, 1, blowthroughFactor, 1, 422.75f, explosionSource);
                             ApplyScore(hitPart, sourcevessel, 0, damage, "Spalling", explosionSource);
 
-                            if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                            if (BDArmorySettings.DEBUG_ARMOR)
                             {
-                                Debug.Log("[BDArmory.ProjectileUtils]: Armor sundered, " + hitPart.name + ", " + hitPart.vessel.GetName() + "!");
+                                Debug.Log("[BDArmory.ProjectileUtils{CalculateExplosiveArmorDamage}]: Armor sundered, " + hitPart.name + ", " + hitPart.vessel.GetName() + "!");
                             }
                             if (BDArmorySettings.BATTLEDAMAGE)
                             {
@@ -499,9 +523,9 @@ namespace BDArmory.Utils
                                 //soft stuff like Aramid not likely to cause major damage
                                 hitPart.ReduceArmor(volumeToReduce); //cm3
 
-                                if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                                if (BDArmorySettings.DEBUG_ARMOR)
                                 {
-                                    Debug.Log("[BDArmory.ProjectileUtils]: Armor destruction on " + hitPart.name + ", " + hitPart.vessel.GetName() + "!");
+                                    Debug.Log("[BDArmory.ProjectileUtils{CalculateExplosiveArmorDamage}]: Armor destruction on " + hitPart.name + ", " + hitPart.vessel.GetName() + "!");
                                 }
                                 if (BDArmorySettings.BATTLEDAMAGE)
                                 {
@@ -519,9 +543,9 @@ namespace BDArmory.Utils
                                 }
                                 hitPart.ReduceArmor(spallArea * (thickness / 30)); //cm3
 
-                                if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                                if (BDArmorySettings.DEBUG_ARMOR)
                                 {
-                                    Debug.Log("[BDArmory.ProjectileUtils]: Armor sundered, " + hitPart.name + ", " + hitPart.vessel.GetName() + "!");
+                                    Debug.Log("[BDArmory.ProjectileUtils{CalculateExplosiveArmorDamage}]: Armor sundered, " + hitPart.name + ", " + hitPart.vessel.GetName() + "!");
                                 }
                                 if (BDArmorySettings.BATTLEDAMAGE)
                                 {
@@ -555,7 +579,7 @@ namespace BDArmory.Utils
         public static float CalculateProjectileEnergy(float projMass, float impactVel)
         {
             float bulletEnergy = (projMass * 1000) * impactVel; //(should this be 1/2(mv^2) instead? prolly at somepoint, but the abstracted calcs I have use mass x vel, and work, changing it would require refactoring calcs
-            if (BDArmorySettings.DRAW_ARMOR_LABELS)
+            if (BDArmorySettings.DEBUG_ARMOR)
             {
                 Debug.Log("[BDArmory.ProjectileUtils]: Bullet Energy: " + bulletEnergy + "; mass: " + projMass + "; vel: " + impactVel);
             }
@@ -573,7 +597,7 @@ namespace BDArmory.Utils
             //initial impact calc
             //determine yieldstrength of material
             float yieldStrength;
-            if (BDArmorySettings.DRAW_ARMOR_LABELS)
+            if (BDArmorySettings.DEBUG_ARMOR)
             {
                 Debug.Log("[BDArmory.ProjectileUtils]: properties: Tensile:" + Strength + "; Ductility: " + Ductility + "; density: " + Density + "; thickness: " + thickness + "; caliber: " + caliber);
             }
@@ -601,7 +625,7 @@ namespace BDArmory.Utils
                     yieldStrength *= 0.5f;
                 }
             }
-            if (BDArmorySettings.DRAW_ARMOR_LABELS)
+            if (BDArmorySettings.DEBUG_ARMOR)
             {
                 Debug.Log("[BDArmory.ProjectileUtils]: Armor yield Strength: " + yieldStrength);
             }
@@ -609,7 +633,7 @@ namespace BDArmory.Utils
             return yieldStrength;
         }
 
-        public static float CalculateDeformation(float yieldStrength, float bulletEnergy, float caliber, float impactVel, float hardness, float Density, float HEratio, float apBulletMod)
+        public static float CalculateDeformation(float yieldStrength, float bulletEnergy, float caliber, float impactVel, float hardness, float Density, float HEratio, float apBulletMod, bool sabot)
         {
             if (bulletEnergy < yieldStrength) return caliber; //armor stops the round, but calc armor damage
             else //bullet penetrates. Calculate what happens to the bullet
@@ -617,24 +641,26 @@ namespace BDArmory.Utils
                 //deform bullet from impact
                 if (yieldStrength < 1) yieldStrength = 1000;
                 float BulletDurabilityMod = ((1 - HEratio) * (caliber / 25)); //rounds that are larger, or have less HE, are structurally stronger and betterresist deformation. Add in a hardness factor for sabots/DU rounds?
-                if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                if (BDArmorySettings.DEBUG_ARMOR)
                 {
                     Debug.Log("[BDArmory.ProjectileUtils{Calc Deformation}]: yield:" + yieldStrength + "; Energy: " + bulletEnergy + "; caliber: " + caliber + "; impactVel: " + impactVel);
                     Debug.Log("[BDArmory.ProjectileUtils{Calc Deformation}]: hardness:" + hardness + "; BulletDurabilityMod: " + BulletDurabilityMod + "; density: " + Density);
                 }
                 float newCaliber = ((((yieldStrength / bulletEnergy) * (hardness * Mathf.Sqrt(Density / 1000))) / impactVel) / (BulletDurabilityMod * apBulletMod)); //faster penetrating rounds less deformed, thin armor will impart less deformation before failing
-                if (impactVel > 1250) //too fast and steel/lead begin to melt on impact - hence DU/Tungsten hypervelocity penetrators
+                if (!sabot && impactVel > 1250) //too fast and steel/lead begin to melt on impact - hence DU/Tungsten hypervelocity penetrators
                 {
                     newCaliber *= (impactVel / 1250);
                 }
                 newCaliber = Mathf.Clamp(newCaliber, 1f, 5f);
-                //replace this with tensile srength of bullet calcs?
-                if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                //replace this with tensile srength of bullet calcs? - really should, else a 30m/s impact is capable of deforming a bullet...
+                //float bulletStrength = caliber * caliber * Mathf.PI / 400f * 840 * (11.34f) * caliber * 3; //how would this work - if bulletStrength is greater than yieldstrength, don't deform?
+
+                if (BDArmorySettings.DEBUG_ARMOR)
                 {
                     Debug.Log("[BDArmory.ProjectileUtils{Calc Deformation}]: Bullet Deformation modifier " + newCaliber);
                 }
                 newCaliber *= caliber;
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ProjectileUtils{Calc Deformation}]: bullet now " + (newCaliber) + " mm");
+                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.ProjectileUtils{Calc Deformation}]: bullet now " + (newCaliber) + " mm");
                 return newCaliber;
             }
         }
@@ -645,13 +671,13 @@ namespace BDArmory.Utils
             float density = 11.34f;
             if (sabot)
             {
-                density = 19;
+                density = 19.1f;
             }
             float bulletLength = ((projMass * 1000) / ((newCaliber * newCaliber * Mathf.PI / 400) * density) + 1) * 10; //srf.Area in mmm2 x density of lead to get mass per 1 cm length of bullet / total mass to get total length,
                                                                                                                         //+ 10 to accound for ogive/mushroom head post-deformation instead of perfect cylinder
             if (newCaliber > (bulletLength * 2)) //has the bullet flattened into a disc, and is no longer a viable penetrator?
             {
-                if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                if (BDArmorySettings.DEBUG_ARMOR)
                 {
                     Debug.Log("[BDArmory.ProjectileUtils]: Bullet deformed past usable limit");
                 }
@@ -671,29 +697,30 @@ namespace BDArmory.Utils
             float penetration;
             //bullet's deformed, penetration using larger crosssection
 
+            //caliber in mm, converted to length in cm, converted to mm
+            float length = ((projMass * 1000) / ((newCaliber * newCaliber * Mathf.PI / 400) * (sabot ? 19.1f : 11.34f)) + 1) * 10;
+            //if (impactVel > 1500)
+            //penetration = length * Mathf.Sqrt((sabot ? 19100 : 11340) / Density); //at hypervelocity, impacts are akin to fluid displacement
+            //penetration in mm
+            //sabots should have a caliber check, or a mass check? - else a lighter, smaller caliber sabot of equal length will have similar penetration charateristics as a larger, heavier round..?
+            //or just have sabots that are too narrow simply snap due to structural stress...
+            var modifiedCaliber = (0.5f * caliber) + (0.5f * newCaliber) * (2f * Ductility * Ductility);
+            float yieldStrength = modifiedCaliber * modifiedCaliber * Mathf.PI / 100f * Strength * (Density / 7850f) * thickness;
+            if (Ductility > 0.25f) //up to a point, anyway. Stretch too much...
             {
-                //caliber in mm, converted to length in cm, converted to mm
-                float length = ((projMass * 1000) / ((newCaliber * newCaliber * Mathf.PI / 400) * (sabot ? 19 : 11.34f)) + 1) * 10;
-                //if (impactVel > 1500)
-                //penetration = length * Mathf.Sqrt((sabot ? 19000 : 11340) / Density); //at hypervelocity, impacts are akin to fluid displacement
-                //penetration in mm
-
-                var modifiedCaliber = (0.5f * caliber) + (0.5f * newCaliber) * (2f * Ductility * Ductility);
-                float yieldStrength = modifiedCaliber * modifiedCaliber * Mathf.PI / 100f * Strength * (Density / 7850f) * thickness;
-                if (Ductility > 0.25f) //up to a point, anyway. Stretch too much...
-                {
-                    yieldStrength *= 0.7f; //necking and point embrittlement reduce total tensile strength of material
-                }
-                penetration = Mathf.Min(((Energy / yieldStrength) * thickness * APmod), length * Mathf.Sqrt((sabot ? 19000 : 11340) / Density));
-                //cap penetration to max possible pen depth from hypervelocity impact
-            } //penetration in mm
+                yieldStrength *= 0.7f; //necking and point embrittlement reduce total tensile strength of material
+            }
+            penetration = Mathf.Min(((Energy / yieldStrength) * thickness * APmod), (length * Mathf.Sqrt((sabot ? 19100 : 11340) / Density) * (sabot ? 0.385f : 1) * APmod));
+            //cap penetration to max possible pen depth from hypervelocity impact
+            //need to re-add APBulletMod to sabots, also need to reduce sabot pen depth by about 0.6x; Abrams sabot ammos can apparently pen about their length through steel
+            //penetration in mm
             //apparently shattered projectiles add 30% to armor thickness; oblique impact beyond 55deg decreases effective thickness(splatted projectile digs in to plate instead of richochets)
 
-            if (BDArmorySettings.DRAW_ARMOR_LABELS)
+            if (BDArmorySettings.DEBUG_ARMOR)
             {
                 Debug.Log("[BDArmory.ProjectileUtils{Calc Penetration}]: Energy: " + Energy + "; caliber: " + caliber + "; newCaliber: " + newCaliber);
                 Debug.Log("[BDArmory.ProjectileUtils{Calc Penetration}]: Ductility:" + Ductility + "; Density: " + Density + "; Strength: " + Strength + "; thickness: " + thickness);
-                Debug.Log("[BDArmory.ProjectileUtils{Calc Penetration}]: Penetration: " + Mathf.Round(penetration / 10) + " cm");
+                Debug.Log("[BDArmory.ProjectileUtils{Calc Penetration}]: Length: " + length + "; sabot: " + sabot + " ;Penetration: " + Mathf.Round(penetration / 10) + " cm");
             }
             return penetration;
         }
@@ -741,7 +768,7 @@ namespace BDArmory.Utils
                 {
                     building.Demolish();
                 }
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DEBUG_WEAPONS)
                     Debug.Log("[BDArmory.ProjectileUtils]: Ballistic hit destructible building! Hitpoints Applied: " + Mathf.Round(damageToBuilding) +
                              ", Building Damage : " + Mathf.Round(building.Damage) +
                              " Building Threshold : " + building.impactMomentumThreshold);
@@ -803,7 +830,7 @@ namespace BDArmory.Utils
             if (fuelPct == 1f || fuelPct == 0f)
                 probability = 0f;
 
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_WEAPONS)
             {
                 Debug.Log("[BDArmory.ProjectileUtils]: Explosive Probablitliy " + probability);
             }
@@ -830,7 +857,7 @@ namespace BDArmory.Utils
                 }
             }
 
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_WEAPONS)
             {
                 Debug.Log("[BDArmory.ProjectileUtils]: Penetration of bullet detonated fuel!");
             }

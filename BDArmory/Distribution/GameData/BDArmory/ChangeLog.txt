@@ -1,4 +1,104 @@
-﻿v1.4.18.4
+﻿v1.5.0.0-pre
+FIXES
+- Fix 'resizeSquare' texture not being loaded sometimes (due to a race condition?).
+- Clean up log spam from ExplosionFX.
+- Fix Ammo Selection Tool GUI when selecting a weapon using legacy ammo definitions.
+- Fix ATG missiles not respecting maxMissilesPerTarget.
+- Fixes Procwing HP and Armor calcs when using FAR.
+- Fix ProcParts not updating HP/Armor volume.
+- Adds missing FFAR rocket ammo to universal ammo boxes.
+- Fixes TOW missile FX.
+- Fixes Proc Armor bugs.
+- Fixes broken hydraulics on Chaingun, Hydra Turret and Patriot Launcher models.
+- Fixes custom armor volumes in .cfgs being ignored.
+
+IMPROVEMENTS
+- General:
+	- Major internal refactor to better organise code.
+	- Switch to a single DLL release.
+	- Add missing HP rounding to some parts.
+	- Stop continuous single spawn when running a tournament.
+	- Optimise the PartExploderSystem to minimise creation of new vessels.
+	- CM Flares optimized, now have much reduced performance hit.
+	- Add a toggle to the UI settings section to disable flare smoke.
+	- Add a toggle to the UI settings section to disable gapless particle emitters (mostly used for engine trails).
+	- Debug labels now organized by type for easier debug tracking.
+	- Refactor the debug settings to be more specific and to have an on-screen only debug labels.
+	- Adds SelfSealingTanks/Firebottle options to Proc Part Tanks.
+	- Adds Oblique Triangle Proc Armor panel.
+	- Bullets now ignore flags.
+	- Adds new CameraTools switching modes, right click the cameraTools button [A] on the VesselSwitcherGUI.
+		- [S] - Camera will autoswitch to vessel with highest score.
+		- [D] - Camera will switch to furthest vessel from dogfight centroid.
+	- Restore the precision of Vector2d persistent fields.
+	- Update the continuous spawning log parsing script.
+	- Add some extra layer masks (internal kerbals are 1<<16, wheels are 1<<26).
+	- Add a BodyUtils.GetTerrainAltitudeAtPos function.
+- AI:
+	- Add a 5° deadzone around being on target for dynamic damping to avoid feed-back loop in PID.
+	- Add a check for requested extending already being satisfied.
+	- Add terrain awareness to the pilot AI's waypoint fly-to direction.
+	- Add a 'Waypoint Terrain Avoidance' slider to the pilot AI to control the range and strength of the waypoint terrain avoidance reaction.
+	- Fixes AI GUI slider increments to match AI PAW.
+	- Adds Dynamic Damping P/Y/R readouts to AI GUI.
+	- Fix AI takeoff behavior.
+	- Add Store/Restore option to save control surface configs in Pilot AI.
+	- Add extend angle to AI to clamp climb/dive angle when doing Air-to-air extending.
+	- Add Air/Ground target preference weighting to Target Priorities.
+	- Make the extend toggle apply to air-to-air missiles as well as air-to-air guns.
+	- Update the AI GUI help text for the current extending settings.
+- GameModes:
+	- Waypoints:
+		- Add support for multiple waypoint gate models.
+		- Add waypoint scaling from 50-1000m.
+		- Altitude overrides for S4R10.
+		- Remember the previously used HoSTag.
+		- Add right click to 'Run waypoints' to spawn with the vessel spawner coordinates instead of the hard-coded ones.
+		- Add multiple courses and a selection UI.
+		- Convert Waypoints from hardcoded courses to a config based implementation.
+		- Add support for unique Waypoint names.
+		- Add support for independently scaling (model and approach threshold) individual waypoints.
+		- Add support for independantly setting individual waypoint altitudes.
+		- Waypoint Scale and Waypoint Altitude are now global overrides that will set all WPs to the specified value if not set to default; else will use values from the course data.
+		- Adds support for off-world waypoint courses both locally and API-run competitions.
+		- Add a slider for activating guard mode when passing a waypoint.
+		- Allow multiple laps for waypoints.
+- Weapons:
+	- Use min of missile drop time or 2 sec instead of fixed two second period for check target will be within missile maxOffBoresight at future time.
+	- Sidam Turret retextured (thanks Concodroid!).
+	- Issue 348; weapons will no longer manually fire if mouse cursor is over Weapon Manager GUI.
+	- APBulletMod now implemented for sabot rounds.
+	- Adjusted Sabot depth calculation, should no longer overpenetrate quite so much.
+	- Sabots now recognized as AP ammo in ammo labels
+	- Weapons and explosions no longer cause armor damage/shrapnel/spalling damage in paintball mode.
+	- Add charge-up mechanic for weapons.
+		- Adds new .cfg fields: ChargeTime = n; hasChargeAnimation = T/F; chargeAnimName = animName
+	- Weapon debug lines now account for frame velocity and flight integrator delay.
+	- Missiles:
+		- Adds Missile multi-targeting.
+		- Adds new Max Missile Tgts setting in WM to set max targets to engage with missiles.
+		- Adds incoming missile alert.
+		- Shift some missile targeting code from OnUpdate to OnFixedUpdate.
+		- Prevent heat-seeking missiles from targeting debris.
+		- Remove restrictions on heat-seeking missiles attacking ground targets.
+		- Prioritize anti-rad missiles first in using missiles against ground targets with active radars.
+		- Adjust DLZ calculation to allow for better missile usage at close ranges, small angles to target.
+		- Possibly fixed the 'Radar Stuck' bug.
+		- Add option to display distances on the RWR logarithmically.
+		- AI will now break off and extend away from target when firing nukes if within projected blast radius.
+		- Continuous Rod warhead missiles now target a point a few meters above their target to better take advantage of planar AoE.
+		- Missiles no longer prematurely detonate if DetonateAtMinimumDistance is enabled.
+		- Fix HARMs ignoring max missiles on target.
+		- Add chaffEffectivity parameter to missile configs.
+- Spawning:
+	- Refactor spawning into more modular coroutines for use with the spawn and orchestration strategies.
+	- Add an 'instant' lowering mode for vessel easing after spawn (VESSEL_SPAWN_EASE_IN_SPEED = 0).
+	- Add a test for spawning a vessel into an active competition using the SingleVesselSpawning class (debug build only).
+- RWP:
+	- Hall of Shame now supports multiple craft.
+	- Add HoS support to Waypoint mode.
+
+v1.4.18.4
 IMPROVEMENTS
 - Add slider in the pilot AI for controlling the waypoint pre-roll time.
 - Add slider in the pilot AI for waypoint yaw authority time to switch from normal steering mode control of yaw to aiming steering mode of yaw when approaching waypoints.
@@ -2704,7 +2804,7 @@ v0.9.6
 - IVA gun audio low-pass filter frequency is now configurable in settings.cfg
 - Removed redundant filter effects on lower depth TGP camera
 - Tracer size updates in OnWillRenderObject instead of looping through all pooled bullets for each camera
-- Stopped guard debug log entries unless DRAW_DEBUG_LABELS is enabled
+- Stopped guard debug log entries unless DEBUG_LABELS is enabled
 - Updated laser damage (Yski)
 - Guard will use long-range turrets for distant targets if no missiles available (Yski)
 

@@ -243,12 +243,12 @@ namespace BDArmory.Targeting
             if (radarMassAtUpdate > 0)
             {
                 float massPercentageDifference = (radarMassAtUpdate - vessel.GetTotalMass()) / radarMassAtUpdate;
-                if ((massPercentageDifference > 0.025f) && (weaponManager) && (weaponManager.missilesAway == 0) && !weaponManager.guardFiringMissile)
+                if ((massPercentageDifference > 0.025f) && (weaponManager) && (weaponManager.missilesAway.Count == 0) && !weaponManager.guardFiringMissile)
                 {
                     alreadyScheduledRCSUpdate = true;
                     yield return new WaitForSeconds(1.0f);    // Wait for any explosions to finish
                     radarBaseSignatureNeedsUpdate = true;     // Update RCS if vessel mass changed by more than 2.5% after a part was lost
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.TargetInfo]: RCS mass update triggered for " + vessel.vesselName + ", difference: " + (massPercentageDifference * 100f).ToString("0.0"));
+                    if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[BDArmory.TargetInfo]: RCS mass update triggered for " + vessel.vesselName + ", difference: " + (massPercentageDifference * 100f).ToString("0.0"));
                 }
             }
         }
@@ -405,7 +405,18 @@ namespace BDArmory.Targeting
             ataDot = (ataDot + 1) / 2; // Adjust from 0-1 instead of -1 to 1
             return ataDot * ataDot;
         }
-
+        public float TargetPriEngagement(MissileFire mf) // Square cosine of antenna train angle
+        {
+            if (mf == null) return 0; // no WM, so no valid target, no impact on targeting score
+            if (mf.vessel.LandedOrSplashed)
+            {
+                return -1; //ground target
+            }
+            else
+            {
+                return 1; // Air target
+            }
+        }
         public float TargetPriAcceleration() // Normalized clamped acceleration for the target
         {
             float bodyGravity = (float)PhysicsGlobals.GravitationalAcceleration * (float)vessel.orbit.referenceBody.GeeASL; // Set gravity for calculations;
@@ -531,7 +542,7 @@ namespace BDArmory.Targeting
             int engaging = 0;
             using (var teamEngaging = friendliesEngaging.GetEnumerator())
                 while (teamEngaging.MoveNext())
-                    engaging += teamEngaging.Current.Value.Count;
+                    engaging += teamEngaging.Current.Value.Count(wm => wm != null);
             return engaging;
         }
 

@@ -218,7 +218,7 @@ namespace BDArmory.WeaponMounts
             if (!setupComplete) return;
             if (deployed)
                 return;
-            Debug.Log("[MissileFire] deploying deployableRail");
+            //Debug.Log("[BDArmory.BDDeployableRail]: deploying deployableRail");
             StopRoutines();
 
             deployRoutine = StartCoroutine(Deploy());
@@ -228,7 +228,7 @@ namespace BDArmory.WeaponMounts
             if (!setupComplete) return;
             if (!deployed)
                 return;
-            Debug.Log("[MissileFire] retracting deployableRail"); //this is getting called when missile selected, sometihng is tripping the if statement. investigate.
+            //Debug.Log("[BDArmory.BDDeployableRail]: retracting deployableRail"); //this is getting called when missile selected, sometihng is tripping the if statement. investigate.
             StopRoutines();
 
             if (part.isActiveAndEnabled) retractRoutine = StartCoroutine(Retract());
@@ -383,6 +383,7 @@ namespace BDArmory.WeaponMounts
                 if (weaponManager)
                 {
                     wm.SendTargetDataToMissile(missileChildren[missileIndex]);
+                    wm.PreviousMissile = missileChildren[missileIndex];
                 }
 
                 missileChildren[missileIndex].FireMissile();

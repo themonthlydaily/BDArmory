@@ -747,7 +747,7 @@ namespace BDArmory.Radar
 
             for (int i = 0; i < lockedTargetIndexes.Count; i++)
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_RADAR)
                 {
                     string label = string.Empty;
                     if (i == activeLockedTargetIndex)
@@ -762,7 +762,7 @@ namespace BDArmory.Radar
                     {
                         label += displayedTargets[lockedTargetIndexes[i]].vessel.vesselName;
                     }
-                    GUI.Label(new Rect(20, 60 + (i * 26), 800, 446), label);
+                    GUI.Label(new Rect(20, 120 + (i * 16), 800, 26), label);
                 }
 
                 TargetSignatureData lockedTarget = displayedTargets[lockedTargetIndexes[i]].targetData;
@@ -1006,8 +1006,7 @@ namespace BDArmory.Radar
             DisplayRadarControls();
 
             // Resizing code block.
-            RADARresizeRect =
-                new Rect(BDArmorySetup.WindowRectRadar.width - 18, BDArmorySetup.WindowRectRadar.height - 19, 16, 16);
+            RADARresizeRect = new Rect(BDArmorySetup.WindowRectRadar.width - 18, BDArmorySetup.WindowRectRadar.height - 19, 16, 16);
             GUI.DrawTexture(RADARresizeRect, GUIUtils.resizeTexture, ScaleMode.StretchToFill, true);
             if (Event.current.type == EventType.MouseDown && RADARresizeRect.Contains(Event.current.mousePosition))
             {
@@ -1193,7 +1192,7 @@ namespace BDArmory.Radar
 
         private void UnlinkVRD(VesselRadarData vrd)
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselRadarData]: Unlinking VRD: " + vrd.vessel.vesselName);
+            if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[BDArmory.VesselRadarData]: Unlinking VRD: " + vrd.vessel.vesselName);
             externalVRDs.Remove(vrd);
 
             List<ModuleRadar> radarsToUnlink = new List<ModuleRadar>();
@@ -1213,7 +1212,7 @@ namespace BDArmory.Radar
             while (mr.MoveNext())
             {
                 if (mr.Current == null) continue;
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselRadarData]:  - Unlinking radar: " + mr.Current.radarName);
+                if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[BDArmory.VesselRadarData]:  - Unlinking radar: " + mr.Current.radarName);
                 UnlinkRadar(mr.Current);
             }
             mr.Dispose();
@@ -1325,7 +1324,7 @@ namespace BDArmory.Radar
                 yield return null;
             }
             LinkVRD(vrd);
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselRadarData]: Radar data link recovered: Local - " + vessel.vesselName + ", External - " +
+            if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[BDArmory.VesselRadarData]: Radar data link recovered: Local - " + vessel.vesselName + ", External - " +
                        vrd.vessel.vesselName);
         }
 
@@ -1721,7 +1720,7 @@ namespace BDArmory.Radar
                         }
                     }
 
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    if (BDArmorySettings.DEBUG_RADAR)
                     {
                         GUI.Label(new Rect(pingPosition.x + (pingSize.x / 2), pingPosition.y, 100, 24),
                             lockedTarget.signalStrength.ToString("0.0"));
@@ -1995,7 +1994,7 @@ namespace BDArmory.Radar
                         TryLockTarget(displayedTargets[i]);
                     }
 
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    if (BDArmorySettings.DEBUG_RADAR)
                     {
                         GUI.Label(new Rect(pingPosition.x + (pingSize.x / 2), pingPosition.y, 100, 24),
                             displayedTargets[i].targetData.signalStrength.ToString("0.0"));
