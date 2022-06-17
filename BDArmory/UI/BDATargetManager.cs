@@ -687,7 +687,7 @@ namespace BDArmory.UI
                     db.Current.Value.Remove(target);
         }
 
-        public static void ReportVessel(Vessel v, MissileFire reporter)
+        public static void ReportVessel(Vessel v, MissileFire reporter, bool radar = false)
         {
             if (!v) return;
             if (!reporter) return;
@@ -703,6 +703,10 @@ namespace BDArmory.UI
                         {
                             info = v.gameObject.AddComponent<TargetInfo>();
                             info.detectedTime[reporter.Team] = Time.time;
+                            if (radar)
+                            {
+                                info.detected[reporter.Team] = true;
+                            }
                             break;
                         }
                     }
@@ -717,6 +721,10 @@ namespace BDArmory.UI
                             {
                                 info = v.gameObject.AddComponent<TargetInfo>();
                                 info.detectedTime[reporter.Team] = Time.time;
+                                if (radar)
+                                {
+                                    info.detected[reporter.Team] = true;
+                                }
                                 break;
                             }
                         }
@@ -727,7 +735,24 @@ namespace BDArmory.UI
             if (info && reporter.Team.IsEnemy(info.Team))
             {
                 AddTarget(info, reporter.Team);
-                info.detectedTime[reporter.Team] = Time.time;
+                info.detectedTime[reporter.Team] = Time.time; //time since last detected
+                if (radar)
+                {
+                    info.detected[reporter.Team] = true; //target is under radar detection
+                }
+            }
+        }
+
+        public static void ClearRadarReport(Vessel v, MissileFire reporter)
+        {
+            if (!v) return;
+            if (!reporter) return;
+
+            TargetInfo info = v.gameObject.GetComponent<TargetInfo>();
+
+            if (info && reporter.Team.IsEnemy(info.Team))
+            {
+                info.detected[reporter.Team] = false;
             }
         }
 

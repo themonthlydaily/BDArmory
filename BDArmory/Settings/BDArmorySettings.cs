@@ -126,7 +126,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_SPREAD = 5f;
         [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_BIAS = 0.16f;
         [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_HIT_MULTIPLIER = 2f;
-
+        [BDAPersistentSettingsField] public static float MAX_PWING_HP = 2500f;
         // Physics constants
         [BDAPersistentSettingsField] public static float GLOBAL_LIFT_MULTIPLIER = 0.25f;
         [BDAPersistentSettingsField] public static float GLOBAL_DRAG_MULTIPLIER = 6f;
