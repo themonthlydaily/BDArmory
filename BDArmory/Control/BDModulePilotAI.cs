@@ -1321,7 +1321,7 @@ namespace BDArmory.Control
             yield return new WaitForFixedUpdate();
             typeof(BDModulePilotAI).GetField(name).SetValue(this, value);
         }
-        float staleTargetTimer = 0;
+        float targetStalenessTimer = 0;
         void FixedUpdate()
         {
             //floating origin and velocity offloading corrections
@@ -1332,19 +1332,19 @@ namespace BDArmory.Control
             }
             if (weaponManager && weaponManager.guardMode && weaponManager.detectedTargetTimeout > weaponManager.targetScanInterval)
             {
-                staleTargetTimer += Time.fixedDeltaTime;
-                if (staleTargetTimer >= 50) //add some error to the predicted position every second
+                targetStalenessTimer += Time.fixedDeltaTime;
+                if (targetStalenessTimer >= 50) //add some error to the predicted position every second
                 {
-                    Vector3 staleTarget = new Vector3();
-                    staleTarget.x = UnityEngine.Random.Range(0f, (float)staleTargetVelocity.magnitude / 10);
-                    staleTarget.y = UnityEngine.Random.Range(0f, (float)staleTargetVelocity.magnitude / 10);
-                    staleTarget.z = UnityEngine.Random.Range(0f, (float)staleTargetVelocity.magnitude / 20);
-                    staleTargetTimer = 0;
+                    Vector3 staleTargetPosition = new Vector3();
+                    staleTargetPosition.x = UnityEngine.Random.Range(0f, (float)staleTargetVelocity.magnitude / 2);
+                    staleTargetPosition.y = UnityEngine.Random.Range(0f, (float)staleTargetVelocity.magnitude / 2);
+                    staleTargetPosition.z = UnityEngine.Random.Range((float)staleTargetVelocity.magnitude * 0.75f, (float)staleTargetVelocity.magnitude * 1.25f);
+                    targetStalenessTimer = 0;
                 }
             }
             else
             {
-                if (staleTargetTimer != 0) staleTargetTimer = 0;
+                if (targetStalenessTimer != 0) targetStalenessTimer = 0;
             }
         }
 
@@ -1690,7 +1690,7 @@ namespace BDArmory.Control
             return true;
         }
 
-        Vector3 staleTargetPosition = Vector3.zero; 
+        Vector3 staleTargetPosition = Vector3.zero;
         Vector3 staleTargetVelocity = Vector3.zero;
         void FlyToTargetVessel(FlightCtrlState s, Vessel v)
         {
