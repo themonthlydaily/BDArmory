@@ -239,6 +239,12 @@ namespace BDArmory.Control
         //     UI_FloatRange(minValue = 0f, maxValue = 1f, stepIncrement = 0.01f, scene = UI_Scene.All)]
         // public float autoTuningLossRatio = 0.5f;
 
+        //AutoTuning Learning Rate
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "Learning Rate", advancedTweakable = true,
+            groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
+            UI_FloatRange(minValue = .01f, maxValue = 1f, stepIncrement = .01f, scene = UI_Scene.All)]
+        public float autoTuningLearningRate = 0.3f;
+
         //AutoTuning Number Of Samples
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_PIDAutoTuningNumSamples", advancedTweakable = true,
             groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
@@ -249,7 +255,7 @@ namespace BDArmory.Control
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_PIDAutoTuningRollRelevance", advancedTweakable = true,
             groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 1f, stepIncrement = 0.01f, scene = UI_Scene.All)]
-        public float autoTuningRollRelevance = 0.1f;
+        public float autoTuningRollRelevance = 0.5f;
         #endregion
 
         #region Altitudes
@@ -1270,6 +1276,7 @@ namespace BDArmory.Control
             pidAutoTuning.ResetMeasurements();
             Fields["autoTuningLossLabel"].guiActive = autoTune;
             Fields["autoTuningLossLabel2"].guiActive = autoTune;
+            Fields["autoTuningLearningRate"].guiActive = autoTune;
             Fields["autoTuningNumSamples"].guiActive = autoTune;
             Fields["autoTuningRollRelevance"].guiActive = autoTune;
             // Fields["autoTuningLossRatio"].guiActive = autoTune;
@@ -3746,7 +3753,7 @@ namespace BDArmory.Control
         #region Gradient Descent (approx)
         class LR // Learning rate
         {
-            public float current = 1f;
+            // public float current = 1f;
             // int persistence = 5;
             // int count = 0;
             // float factor = 0.8f;
@@ -3810,7 +3817,7 @@ namespace BDArmory.Control
                 Debug.LogWarning($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Vessel {AI.vessel.vesselName} has lost parts since spawning, auto-tuning disabled.");
                 return;
             }
-
+            measurementTime = Time.time - measurementStartTime;
             var pointingErrorSqr = pitchError * pitchError + yawError * yawError; // Combine pitch and yaw errors as a single pointing error.
             var rollErrorSqr = rollError * rollError;
             if ((float)AI.vessel.srfSpeed > maxObservedSpeed) maxObservedSpeed = (float)AI.vessel.srfSpeed;
@@ -3863,11 +3870,11 @@ namespace BDArmory.Control
                 else // Update internal parameters.
                 {
                     // if (pointingFirstMinAfterMaxStartTime > 0 && pointingFirstMinAfterMaxTime < 0 && pointingErrorSqr >= lastPointingErrorSqr) pointingFirstMinAfterMaxTime = Time.time - pointingFirstMinAfterMaxStartTime - Time.fixedDeltaTime;
-                    pointingOscillationAreaSqr += pointingErrorSqr * Time.fixedDeltaTime;
+                    pointingOscillationAreaSqr += pointingErrorSqr * measurementTime * measurementTime;
                     lastPointingErrorSqr = pointingErrorSqr;
 
                     // if (rollFirstMinAfterMaxStartTime > 0 && rollFirstMinAfterMaxTime < 0 && rollErrorSqr >= lastAbsRollErrorSqr) rollFirstMinAfterMaxTime = Time.time - rollFirstMinAfterMaxStartTime - Time.fixedDeltaTime;
-                    rollOscillationAreaSqr += rollErrorSqr * Time.fixedDeltaTime;
+                    rollOscillationAreaSqr += rollErrorSqr * measurementTime * measurementTime;
                     lastAbsRollErrorSqr = rollErrorSqr;
                 }
             }
@@ -3974,7 +3981,7 @@ namespace BDArmory.Control
                     fields.Add(field.guiName, field);
                     baseValues.Add(field.guiName, (float)field.GetValue(AI));
                     gradient.Add(field.guiName, 0);
-                    dx.Add(field.guiName, 0.1f * lr.current * (uiControl.maxValue - uiControl.minValue));
+                    dx.Add(field.guiName, 0.1f * AI.autoTuningLearningRate * (uiControl.maxValue - uiControl.minValue));
                     limits.Add(field.guiName, new Tuple<float, float>(uiControl.minValue, uiControl.maxValue));
                 }
             }
@@ -4029,7 +4036,7 @@ namespace BDArmory.Control
                 if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Current: " + string.Join(", ", baseValues.Select(kvp => kvp.Key + ":" + kvp.Value)) + $", Loss: {sampleAverages["base"]} @ {headingChange:F0}°");
                 if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Gradient: " + string.Join(", ", gradient.Select(kvp => kvp.Key + ":" + kvp.Value)));
                 lr.Update(gradient.Values.Select(x => x * x).Sum()); // Update learning rate based on the size of the gradient.
-                foreach (var fieldName in baseValues.Keys.ToList()) baseValues[fieldName] = Mathf.Clamp(baseValues[fieldName] - lr.current * gradient[fieldName], limits[fieldName].Item1, limits[fieldName].Item2); // Update PID values for gradient: x -> x - lr * df/dx (clamped to limits).
+                foreach (var fieldName in baseValues.Keys.ToList()) baseValues[fieldName] = Mathf.Clamp(baseValues[fieldName] - AI.autoTuningLearningRate * gradient[fieldName], limits[fieldName].Item1, limits[fieldName].Item2); // Update PID values for gradient: x -> x - lr * df/dx (clamped to limits).
                 foreach (var fieldName in fields.Keys.ToList()) fields[fieldName].SetValue(baseValues[fieldName], AI); // Set them in the AI.
                 ResetSamples(); // Reset everything for the next gradient.
             }
