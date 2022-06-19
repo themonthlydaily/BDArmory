@@ -731,7 +731,7 @@ namespace BDArmory.Damage
                             } //breaks when pWings are made stupidly large. Clamp HP to a maximum?
                             ArmorModified(null, null);
                         }
-                        if (isProcPart || isProcWing) hitpoints = Mathf.Clamp(hitpoints, 100, BDArmorySettings.MAX_PWING_HP);
+                        if ((isProcPart || isProcWing) && BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.MAX_PWING_HP >= 100) hitpoints = Mathf.Clamp(hitpoints, 100, BDArmorySettings.MAX_PWING_HP);
 
                         switch (HullTypeNum)
                         {

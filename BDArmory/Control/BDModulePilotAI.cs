@@ -3746,7 +3746,6 @@ namespace BDArmory.Control
         float lastPointingErrorSqr = float.MaxValue;
         float lastAbsRollErrorSqr = float.MaxValue;
         float maxObservedSpeed = 0;
-        float headingChange = 30f;
         float absHeadingChange = 0;
         // float pitchChange = 0;
 
@@ -3799,6 +3798,7 @@ namespace BDArmory.Control
         string currentField = "";
         int currentFieldIndex = 0;
         int passNumber = 0;
+        float headingChange = 30f;
         float momentum = 0.8f;
         LR lr = new LR();
         #endregion
@@ -3936,10 +3936,6 @@ namespace BDArmory.Control
             if (!AI.autoTune) gradient = null;
             else if (gradient == null) ResetGradient();
             measuring = false; // Set this false last so we can use it in checks above.
-
-            // Change heading for next sample
-            headingChange = (((Mathf.Abs(headingChange) == 120f) && passNumber == 0) ? -1f : 1f) * Mathf.Sign(headingChange) * (30f + passNumber * (90f / (AI.autoTuningNumSamples - 1f)));
-            absHeadingChange = Mathf.Abs(headingChange);
         }
 
         void ResetSamples()
@@ -3949,9 +3945,11 @@ namespace BDArmory.Control
             currentField = "base";
             currentFieldIndex = 0;
             passNumber = 0;
+            headingChange = -30f * Mathf.Sign(headingChange);
+            absHeadingChange = Mathf.Abs(headingChange);
 
             // Update UI.
-            if (string.IsNullOrEmpty(AI.autoTuningLossLabel)) AI.autoTuningLossLabel = "measuring";
+            if (string.IsNullOrEmpty(AI.autoTuningLossLabel)) AI.autoTuningLossLabel = $"measuring @ {headingChange:F0}°";
             AI.autoTuningLossLabel2 = $"{currentField}, sample nr: {passNumber + 1}";
 
             // pitchChange = 30f * UnityEngine.Random.Range(-1f, 1f) * UnityEngine.Random.Range(-1f, 1f); // Adjust pitch by ±30°, biased towards 0°.
@@ -4004,13 +4002,15 @@ namespace BDArmory.Control
             ++passNumber;
             if ((passNumber %= (int)AI.autoTuningNumSamples) == 0)
             {
-                if (currentField == "base") // Update the UI with the current loss values at the base point.
-                {
-                    AI.autoTuningLossLabel = $"{lossSamples[currentField].Average():F4} @ {headingChange:F0}°";//$"Fast: {fastResponseLoss:F4}, Osc: {oscillationLoss:F4}";
-                }
                 ++currentFieldIndex;
                 UpdatePIDValues((currentFieldIndex %= fieldNames.Count) == 0);
             }
+            
+            // Change heading for next sample
+            headingChange = Mathf.Sign(headingChange) * (30f + passNumber * (90f / (AI.autoTuningNumSamples - 1f)));
+            absHeadingChange = Mathf.Abs(headingChange);
+
+            AI.autoTuningLossLabel = $"{lossSamples[currentField].Average():F4} @ {headingChange:F0}°";
             AI.autoTuningLossLabel2 = $"{currentField}, sample nr: {passNumber + 1}";
         }
 
