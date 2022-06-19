@@ -3746,7 +3746,7 @@ namespace BDArmory.Control
         float lastPointingErrorSqr = float.MaxValue;
         float lastAbsRollErrorSqr = float.MaxValue;
         float maxObservedSpeed = 0;
-        float headingChange = 0;
+        float headingChange = 30f;
         float absHeadingChange = 0;
         // float pitchChange = 0;
 
@@ -3789,10 +3789,12 @@ namespace BDArmory.Control
         }
         Dictionary<string, BaseField> fields;
         Dictionary<string, float> baseValues;
+        Dictionary<string, float> bestValues;
         Dictionary<string, Tuple<float, float>> limits;
         Dictionary<string, List<float>> lossSamples;
         Dictionary<string, float> dx;
         Dictionary<string, float> gradient;
+        float lowestSumGradients = float.MaxValue;
         List<string> fieldNames;
         string currentField = "";
         int currentFieldIndex = 0;
@@ -3934,6 +3936,10 @@ namespace BDArmory.Control
             if (!AI.autoTune) gradient = null;
             else if (gradient == null) ResetGradient();
             measuring = false; // Set this false last so we can use it in checks above.
+
+            // Change heading for next sample
+            headingChange = (((Mathf.Abs(headingChange) == 120f) && passNumber == 0) ? -1f : 1f) * Mathf.Sign(headingChange) * (30f + passNumber * (90f / (AI.autoTuningNumSamples - 1f)));
+            absHeadingChange = Mathf.Abs(headingChange);
         }
 
         void ResetSamples()
@@ -3948,12 +3954,6 @@ namespace BDArmory.Control
             if (string.IsNullOrEmpty(AI.autoTuningLossLabel)) AI.autoTuningLossLabel = "measuring";
             AI.autoTuningLossLabel2 = $"{currentField}, sample nr: {passNumber + 1}";
 
-            // Determine a new direction change for the next gradient measurement.
-            var maxAngle = Mathf.Clamp(60f * (float)AI.vessel.srfSpeed / AI.minSpeed, 0f, 90f); // Numerics are a bit weird outside of 30°—120° for the test plane, but within this range the normalised losses (time to the first minima of the error and oscillation area under the curve) were roughly constant.
-            headingChange = UnityEngine.Random.Range(-maxAngle, maxAngle);
-            headingChange += 30 * Mathf.Sign(headingChange); // 30°—120°
-            // headingChange = 45f;
-            absHeadingChange = Mathf.Abs(headingChange);
             // pitchChange = 30f * UnityEngine.Random.Range(-1f, 1f) * UnityEngine.Random.Range(-1f, 1f); // Adjust pitch by ±30°, biased towards 0°.
             // flyToSpeed = UnityEngine.Random.Range(AI.minSpeed, (AI.maxSpeed + maxObservedSpeed) / 2f);
             flyToSpeed = AI.maxSpeed;
@@ -4035,6 +4035,13 @@ namespace BDArmory.Control
                 }
                 if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Current: " + string.Join(", ", baseValues.Select(kvp => kvp.Key + ":" + kvp.Value)) + $", Loss: {sampleAverages["base"]} @ {headingChange:F0}°");
                 if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Gradient: " + string.Join(", ", gradient.Select(kvp => kvp.Key + ":" + kvp.Value)));
+                Dictionary<string, float> absoluteGradient =  new Dictionary<string, float>();
+                foreach (var fieldName in absoluteGradient.Keys.ToList()) absoluteGradient[fieldName] = Mathf.Abs(gradient[fieldName]);
+                if (absoluteGradient.Values.Sum() < lowestSumGradients)
+                {
+                    lowestSumGradients = absoluteGradient.Values.Sum();
+                    bestValues = baseValues;
+                }
                 lr.Update(gradient.Values.Select(x => x * x).Sum()); // Update learning rate based on the size of the gradient.
                 foreach (var fieldName in baseValues.Keys.ToList()) baseValues[fieldName] = Mathf.Clamp(baseValues[fieldName] - AI.autoTuningLearningRate * gradient[fieldName], limits[fieldName].Item1, limits[fieldName].Item2); // Update PID values for gradient: x -> x - lr * df/dx (clamped to limits).
                 foreach (var fieldName in fields.Keys.ToList()) fields[fieldName].SetValue(baseValues[fieldName], AI); // Set them in the AI.
@@ -4049,7 +4056,12 @@ namespace BDArmory.Control
 
         public void RevertPIDValues()
         {
-            if (baseValues != null)
+            if ((!AI.autoTune) && (bestValues != null))
+            {
+                lowestSumGradients = float.MaxValue;
+                foreach (var fieldName in fields.Keys.ToList()) fields[fieldName].SetValue(bestValues[fieldName], AI);
+            }
+            else if (baseValues != null)
             { foreach (var fieldName in fields.Keys.ToList()) fields[fieldName].SetValue(baseValues[fieldName], AI); }
         }
     }
