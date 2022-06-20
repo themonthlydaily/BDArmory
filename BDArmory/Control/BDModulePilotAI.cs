@@ -1412,11 +1412,12 @@ namespace BDArmory.Control
         void FixedUpdate()
         {
             //floating origin and velocity offloading corrections
+            if (!HighLogic.LoadedSceneIsFlight) return;
             if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
             {
                 if (lastTargetPosition != null) lastTargetPosition -= FloatingOrigin.OffsetNonKrakensbane;
             }
-            if (weaponManager.detectedTargetTimeout > weaponManager.targetScanInterval)
+            if (weaponManager && weaponManager.guardMode && weaponManager.detectedTargetTimeout > weaponManager.targetScanInterval)
             {
                 targetStalenessTimer += Time.fixedDeltaTime;
                 if (targetStalenessTimer >= 50) //add some error to the predicted position every second
@@ -3546,7 +3547,7 @@ namespace BDArmory.Control
                 else
                 {
                     SetStatus("Attack");
-                    FlyOrbit(s, assignedPositionGeo, 4500, maxSpeed, ClockwiseOrbit);
+                    FlyOrbit(s, assignedPositionGeo, 2500, maxSpeed, ClockwiseOrbit);
                 }
             }
         }
