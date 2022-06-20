@@ -3962,7 +3962,7 @@ namespace BDArmory.Control
             currentField = "base";
             currentFieldIndex = 0;
             passNumber = 0;
-            headingChange = -30f * Mathf.Sign(headingChange);
+            headingChange = -(30f + 0.5f * (90f / AI.autoTuningNumSamples)) * Mathf.Sign(headingChange); // Initial θ for the midpoint rule approximation to ∫f(x, θ)dθ.
             absHeadingChange = Mathf.Abs(headingChange);
 
             // Update UI.
@@ -4032,9 +4032,9 @@ namespace BDArmory.Control
                 ++currentFieldIndex;
                 UpdatePIDValues((currentFieldIndex %= fieldNames.Count) == 0);
             }
-            
+
             // Change heading for next sample
-            headingChange = Mathf.Sign(headingChange) * (30f + passNumber * (90f / (AI.autoTuningNumSamples - 1f)));
+            headingChange = Mathf.Sign(headingChange) * (30f + (passNumber + 0.5f) * (90f / AI.autoTuningNumSamples)); // Midpoint rule for approximation to ∫f(x, θ)dθ.
             absHeadingChange = Mathf.Abs(headingChange);
 
             AI.autoTuningLossLabel = $"{lossSamples[currentField].Average():F4} @ {headingChange:F0}°";
@@ -4062,7 +4062,7 @@ namespace BDArmory.Control
                 }
                 if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Current: " + string.Join(", ", baseValues.Select(kvp => kvp.Key + ":" + kvp.Value)) + $", Loss: {sampleAverages["base"]} @ {headingChange:F0}°");
                 if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Gradient: " + string.Join(", ", gradient.Select(kvp => kvp.Key + ":" + kvp.Value)));
-                Dictionary<string, float> absoluteGradient =  new Dictionary<string, float>();
+                Dictionary<string, float> absoluteGradient = new Dictionary<string, float>();
                 foreach (var fieldName in absoluteGradient.Keys.ToList()) absoluteGradient[fieldName] = Mathf.Abs(gradient[fieldName]);
                 if (absoluteGradient.Values.Sum() < lowestSumGradients)
                 {
