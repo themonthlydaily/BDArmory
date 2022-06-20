@@ -3816,7 +3816,7 @@ namespace BDArmory.Control
         int currentFieldIndex = 0;
         int passNumber = 0;
         float headingChange = 30f;
-        float momentum = 0.8f;
+        float momentum = 0.3f;
         LR lr = new LR();
         #endregion
         #endregion
