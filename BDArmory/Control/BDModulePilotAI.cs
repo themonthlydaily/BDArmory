@@ -256,6 +256,12 @@ namespace BDArmory.Control
             groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 1f, stepIncrement = 0.01f, scene = UI_Scene.All)]
         public float autoTuningRollRelevance = 0.5f;
+
+        //Toggle Fixed P
+        [KSPField(isPersistant = false, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_PIDAutoTuningFixedP", advancedTweakable = true,
+            groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
+            UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All)]
+        public bool autoTuningFixedP = false;
         #endregion
 
         #region Altitudes
@@ -1261,6 +1267,7 @@ namespace BDArmory.Control
                 Fields["autoTuningLossLabel2"].guiActiveEditor = false;
                 Fields["autoTuningNumSamples"].guiActiveEditor = false;
                 Fields["autoTuningRollRelevance"].guiActiveEditor = false;
+                Fields["autoTuningFixedP"].guiActiveEditor = false;
                 // Fields["autoTuningLossRatio"].guiActiveEditor = false;
                 autoTune = false;
             }
@@ -1269,6 +1276,9 @@ namespace BDArmory.Control
             UI_Toggle field = (UI_Toggle)Fields["autoTune"].uiControlFlight;
             field.onFieldChanged = OnAutoTuneChanged;
             OnAutoTuneChanged(null, null);
+            field = (UI_Toggle)Fields["autoTuningFixedP"].uiControlFlight;
+            field.onFieldChanged = OnAutoTuneFixedPChanged;
+            OnAutoTuneFixedPChanged(null, null);
         }
         void OnAutoTuneChanged(BaseField field, object obj)
         {
@@ -1279,9 +1289,14 @@ namespace BDArmory.Control
             Fields["autoTuningLearningRate"].guiActive = autoTune;
             Fields["autoTuningNumSamples"].guiActive = autoTune;
             Fields["autoTuningRollRelevance"].guiActive = autoTune;
+            Fields["autoTuningFixedP"].guiActive = autoTune;
             // Fields["autoTuningLossRatio"].guiActive = autoTune;
 
             MaintainFuelLevels(autoTune); // Prevent fuel drain while auto-tuning.
+        }
+        void OnAutoTuneFixedPChanged(BaseField field, object obj)
+        {
+            pidAutoTuning.ToggleFixedP();
         }
         #endregion
 
@@ -1404,11 +1419,12 @@ namespace BDArmory.Control
         void FixedUpdate()
         {
             //floating origin and velocity offloading corrections
+            if (!HighLogic.LoadedSceneIsFlight) return;
             if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
             {
                 if (lastTargetPosition != null) lastTargetPosition -= FloatingOrigin.OffsetNonKrakensbane;
             }
-            if (weaponManager.detectedTargetTimeout > weaponManager.targetScanInterval)
+            if (weaponManager && weaponManager.guardMode && weaponManager.detectedTargetTimeout > weaponManager.targetScanInterval)
             {
                 targetStalenessTimer += Time.fixedDeltaTime;
                 if (targetStalenessTimer >= 50) //add some error to the predicted position every second
@@ -3538,7 +3554,7 @@ namespace BDArmory.Control
                 else
                 {
                     SetStatus("Attack");
-                    FlyOrbit(s, assignedPositionGeo, 4500, maxSpeed, ClockwiseOrbit);
+                    FlyOrbit(s, assignedPositionGeo, 2500, maxSpeed, ClockwiseOrbit);
                 }
             }
         }
@@ -3787,6 +3803,7 @@ namespace BDArmory.Control
             }
         }
         Dictionary<string, BaseField> fields;
+        Dictionary<string, string> fixedFields;
         Dictionary<string, float> baseValues;
         Dictionary<string, float> bestValues;
         Dictionary<string, Tuple<float, float>> limits;
@@ -3951,6 +3968,10 @@ namespace BDArmory.Control
             // Update UI.
             if (string.IsNullOrEmpty(AI.autoTuningLossLabel)) AI.autoTuningLossLabel = $"measuring @ {headingChange:F0}°";
             AI.autoTuningLossLabel2 = $"{currentField}, sample nr: {passNumber + 1}";
+            if ((AI.autoTuningFixedP && !fixedFields.ContainsKey("steerMult")) || (!AI.autoTuningFixedP && fixedFields.ContainsKey("steerMult")))
+            {
+                ToggleFixedP();
+            }
 
             // pitchChange = 30f * UnityEngine.Random.Range(-1f, 1f) * UnityEngine.Random.Range(-1f, 1f); // Adjust pitch by ±30°, biased towards 0°.
             // flyToSpeed = UnityEngine.Random.Range(AI.minSpeed, (AI.maxSpeed + maxObservedSpeed) / 2f);
@@ -3961,6 +3982,7 @@ namespace BDArmory.Control
         {
             fieldNames = new List<string> { "base" };
             fields = new Dictionary<string, BaseField>();
+            fixedFields = new Dictionary<string, string>();
             baseValues = new Dictionary<string, float>();
             dx = new Dictionary<string, float>();
             gradient = new Dictionary<string, float>();
@@ -3973,6 +3995,11 @@ namespace BDArmory.Control
                 if (field.group.name == "pilotAI_PID" && field.guiActive && field.uiControlFlight.GetType() == typeof(UI_FloatRange))
                 {
                     if (field.name.StartsWith("autoTuning")) continue;
+                    if (AI.autoTuningFixedP && field.name == "steerMult")
+                    {
+                        fixedFields.Add(field.name, field.guiName);
+                        continue;
+                    }
                     var uiControl = (UI_FloatRange)field.uiControlFlight;
                     if (BDArmorySettings.DEBUG_AI && BDArmorySettings.DEBUG_TELEMETRY) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Found PID field: {field.guiName} with value {field.GetValue(AI)} and limits {uiControl.minValue} — {uiControl.maxValue}");
                     fieldNames.Add(field.guiName);
@@ -4063,6 +4090,13 @@ namespace BDArmory.Control
             }
             else if (baseValues != null)
             { foreach (var fieldName in fields.Keys.ToList()) fields[fieldName].SetValue(baseValues[fieldName], AI); }
+        }
+
+        public void ToggleFixedP()
+        {
+            if (fixedFields != null && fields != null && fixedFields.ContainsKey("steerMult") && fields.ContainsKey(fixedFields["steerMult"]))
+                fields[fixedFields["steerMult"]].SetValue(baseValues[fixedFields["steerMult"]], AI);
+            ResetGradient();
         }
     }
 }
