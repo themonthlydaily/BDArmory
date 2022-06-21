@@ -221,6 +221,7 @@ namespace BDArmory.Control
         public bool CustomDynamicAxisFields = true;
         #endregion
 
+        #region AutoTuning
         //Toggle AutoTuning
         [KSPField(isPersistant = false, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_PIDAutoTune", advancedTweakable = true,
             groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
@@ -257,11 +258,18 @@ namespace BDArmory.Control
             UI_FloatRange(minValue = 0f, maxValue = 1f, stepIncrement = 0.01f, scene = UI_Scene.All)]
         public float autoTuningRollRelevance = 0.5f;
 
+        //AutoTuning Fast Response Relevance
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_PIDAutoTuningFastResponseRelevance", advancedTweakable = true,
+            groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
+            UI_FloatRange(minValue = 0f, maxValue = 1f, stepIncrement = 0.01f, scene = UI_Scene.All)]
+        public float autoTuningFastResponseRelevance = 0.2f;
+
         //Toggle Fixed P
         [KSPField(isPersistant = false, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_PIDAutoTuningFixedP", advancedTweakable = true,
             groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
             UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All)]
         public bool autoTuningFixedP = false;
+        #endregion
         #endregion
 
         #region Altitudes
@@ -1265,8 +1273,10 @@ namespace BDArmory.Control
                 Fields["autoTune"].guiActiveEditor = false;
                 Fields["autoTuningLossLabel"].guiActiveEditor = false;
                 Fields["autoTuningLossLabel2"].guiActiveEditor = false;
+                Fields["autoTuningLearningRate"].guiActiveEditor = false;
                 Fields["autoTuningNumSamples"].guiActiveEditor = false;
                 Fields["autoTuningRollRelevance"].guiActiveEditor = false;
+                Fields["autoTuningFastResponseRelevance"].guiActiveEditor = false;
                 Fields["autoTuningFixedP"].guiActiveEditor = false;
                 // Fields["autoTuningLossRatio"].guiActiveEditor = false;
                 autoTune = false;
@@ -1289,6 +1299,7 @@ namespace BDArmory.Control
             Fields["autoTuningLearningRate"].guiActive = autoTune;
             Fields["autoTuningNumSamples"].guiActive = autoTune;
             Fields["autoTuningRollRelevance"].guiActive = autoTune;
+            Fields["autoTuningFastResponseRelevance"].guiActive = autoTune;
             Fields["autoTuningFixedP"].guiActive = autoTune;
             // Fields["autoTuningLossRatio"].guiActive = autoTune;
 
@@ -3889,11 +3900,11 @@ namespace BDArmory.Control
                 else // Update internal parameters.
                 {
                     // if (pointingFirstMinAfterMaxStartTime > 0 && pointingFirstMinAfterMaxTime < 0 && pointingErrorSqr >= lastPointingErrorSqr) pointingFirstMinAfterMaxTime = Time.time - pointingFirstMinAfterMaxStartTime - Time.fixedDeltaTime;
-                    pointingOscillationAreaSqr += pointingErrorSqr * measurementTime * measurementTime;
+                    pointingOscillationAreaSqr += pointingErrorSqr * (AI.autoTuningFastResponseRelevance + measurementTime * measurementTime);
                     lastPointingErrorSqr = pointingErrorSqr;
 
                     // if (rollFirstMinAfterMaxStartTime > 0 && rollFirstMinAfterMaxTime < 0 && rollErrorSqr >= lastAbsRollErrorSqr) rollFirstMinAfterMaxTime = Time.time - rollFirstMinAfterMaxStartTime - Time.fixedDeltaTime;
-                    rollOscillationAreaSqr += rollErrorSqr * measurementTime * measurementTime;
+                    rollOscillationAreaSqr += rollErrorSqr * (AI.autoTuningFastResponseRelevance + measurementTime * measurementTime);
                     lastAbsRollErrorSqr = rollErrorSqr;
                 }
             }
@@ -3966,7 +3977,7 @@ namespace BDArmory.Control
             absHeadingChange = Mathf.Abs(headingChange);
 
             // Update UI.
-            if (string.IsNullOrEmpty(AI.autoTuningLossLabel)) AI.autoTuningLossLabel = $"measuring @ {headingChange:F0}°";
+            if (string.IsNullOrEmpty(AI.autoTuningLossLabel)) AI.autoTuningLossLabel = $"measuring";
             AI.autoTuningLossLabel2 = $"{currentField}, sample nr: {passNumber + 1}";
             if ((AI.autoTuningFixedP && !fixedFields.ContainsKey("steerMult")) || (!AI.autoTuningFixedP && fixedFields.ContainsKey("steerMult")))
             {
@@ -4029,6 +4040,10 @@ namespace BDArmory.Control
             ++passNumber;
             if ((passNumber %= (int)AI.autoTuningNumSamples) == 0)
             {
+                if (currentField == "base") // Update the UI with the current loss values at the base point.
+                {
+                    AI.autoTuningLossLabel = $"{lossSamples[currentField].Average():F4}";
+                }
                 ++currentFieldIndex;
                 UpdatePIDValues((currentFieldIndex %= fieldNames.Count) == 0);
             }
@@ -4037,7 +4052,6 @@ namespace BDArmory.Control
             headingChange = Mathf.Sign(headingChange) * (30f + (passNumber + 0.5f) * (90f / AI.autoTuningNumSamples)); // Midpoint rule for approximation to ∫f(x, θ)dθ.
             absHeadingChange = Mathf.Abs(headingChange);
 
-            AI.autoTuningLossLabel = $"{lossSamples[currentField].Average():F4} @ {headingChange:F0}°";
             AI.autoTuningLossLabel2 = $"{currentField}, sample nr: {passNumber + 1}";
         }
 
@@ -4049,7 +4063,7 @@ namespace BDArmory.Control
         {
             if (samplingComplete) // Perform a step in the downward direction of the gradient: x -> x - lr * df/dx
             {
-                var sampleAverages = lossSamples.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Average()); // Average the samples.
+                var sampleAverages = lossSamples.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Average()); // Average the samples (∫f(x, θ)dθ with the domain normalised to 1).
                 foreach (var fieldName in gradient.Keys.ToList()) gradient[fieldName] = gradient[fieldName] * momentum + (1f - momentum) * Mathf.Clamp((sampleAverages[fieldName] - sampleAverages["base"]) / dx[fieldName], -0.1f, 0.1f) * (limits[fieldName].Item2 - limits[fieldName].Item1); // Update the gradient using momentum, clamping to ±0.1 of the scale of the field.
                 if (gradient.Any(kvp => float.IsNaN(kvp.Value)))
                 {
@@ -4060,7 +4074,7 @@ namespace BDArmory.Control
                     AI.autoTune = false;
                     return;
                 }
-                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Current: " + string.Join(", ", baseValues.Select(kvp => kvp.Key + ":" + kvp.Value)) + $", Loss: {sampleAverages["base"]} @ {headingChange:F0}°");
+                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Current: " + string.Join(", ", baseValues.Select(kvp => kvp.Key + ":" + kvp.Value)) + $", Loss: {sampleAverages["base"]}");
                 if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Gradient: " + string.Join(", ", gradient.Select(kvp => kvp.Key + ":" + kvp.Value)));
                 Dictionary<string, float> absoluteGradient = new Dictionary<string, float>();
                 foreach (var fieldName in absoluteGradient.Keys.ToList()) absoluteGradient[fieldName] = Mathf.Abs(gradient[fieldName]);
