@@ -59,11 +59,11 @@ namespace BDArmory.Guidances
             float height = FlightGlobals.getAltitudeAtPos(targetPosition) -
                            FlightGlobals.getAltitudeAtPos(missileVessel.transform.position);
             float sqrRange = forward.sqrMagnitude;
-            float range = Mathf.Sqrt(sqrRange);
+            float range = BDAMath.Sqrt(sqrRange);
 
             float plusOrMinus = direct ? -1 : 1;
 
-            float top = sqrSpeed + (plusOrMinus * Mathf.Sqrt(sqrSpeedSqr - (g * ((g * sqrRange + (2 * height * sqrSpeed))))));
+            float top = sqrSpeed + (plusOrMinus * BDAMath.Sqrt(sqrSpeedSqr - (g * ((g * sqrRange + (2 * height * sqrSpeed))))));
             float bottom = g * range;
             float theta = Mathf.Atan(top / bottom);
 
@@ -92,11 +92,11 @@ namespace BDArmory.Guidances
             float height = FlightGlobals.getAltitudeAtPos(targetPosition) -
                            FlightGlobals.getAltitudeAtPos(missilePosition);
             float sqrRange = forward.sqrMagnitude;
-            float range = Mathf.Sqrt(sqrRange);
+            float range = BDAMath.Sqrt(sqrRange);
 
             float plusOrMinus = direct ? -1 : 1;
 
-            float top = sqrSpeed + (plusOrMinus * Mathf.Sqrt(sqrSpeedSqr - (g * ((g * sqrRange + (2 * height * sqrSpeed))))));
+            float top = sqrSpeed + (plusOrMinus * BDAMath.Sqrt(sqrSpeedSqr - (g * ((g * sqrRange + (2 * height * sqrSpeed))))));
             float bottom = g * range;
             float theta = Mathf.Atan(top / bottom);
 
