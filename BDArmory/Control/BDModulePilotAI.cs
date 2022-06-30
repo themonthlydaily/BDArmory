@@ -266,7 +266,7 @@ namespace BDArmory.Control
 
         //Clamp Maximums
         [KSPField(isPersistant = false, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_PIDAutoTuningClampMaximums", advancedTweakable = true,
-            groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PIDAutoTuning", groupStartCollapsed = true),
+            groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
             UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All)]
         public bool autoTuningClampMaximums = false;
         #endregion
@@ -1288,10 +1288,10 @@ namespace BDArmory.Control
             pidAutoTuning = new PIDAutoTuning(this);
             UI_Toggle field = (UI_Toggle)Fields["autoTune"].uiControlFlight;
             field.onFieldChanged = OnAutoTuneChanged;
-            OnAutoTuneChanged(null, null);
+            // OnAutoTuneChanged(null, null);
             field = (UI_Toggle)Fields["autoTuningFixedP"].uiControlFlight;
             field.onFieldChanged = OnAutoTuneFixedPChanged;
-            OnAutoTuneFixedPChanged(null, null);
+            // OnAutoTuneFixedPChanged(null, null);
         }
         void OnAutoTuneChanged(BaseField field, object obj)
         {
