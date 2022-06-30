@@ -234,14 +234,8 @@ namespace BDArmory.Control
         [KSPField(guiName = "\tField", groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true), UI_Label(scene = UI_Scene.All)]
         public string autoTuningLossLabel2 = "";
 
-        // //AutoTuning Loss Ratio
-        // [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_PIDAutoTuningLossRatio", advancedTweakable = true,
-        //     groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
-        //     UI_FloatRange(minValue = 0f, maxValue = 1f, stepIncrement = 0.01f, scene = UI_Scene.All)]
-        // public float autoTuningLossRatio = 0.5f;
-
         //AutoTuning Learning Rate
-        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "Learning Rate", advancedTweakable = true,
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_PilotAI_PIDAutoTuningLearningRate", advancedTweakable = true,
             groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
             UI_FloatRange(minValue = .01f, maxValue = 1f, stepIncrement = .01f, scene = UI_Scene.All)]
         public float autoTuningLearningRate = 0.3f;
@@ -269,6 +263,12 @@ namespace BDArmory.Control
             groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
             UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All)]
         public bool autoTuningFixedP = false;
+
+        //Clamp Maximums
+        [KSPField(isPersistant = false, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_PIDAutoTuningClampMaximums", advancedTweakable = true,
+            groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PIDAutoTuning", groupStartCollapsed = true),
+            UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All)]
+        public bool autoTuningClampMaximums = true;
         #endregion
         #endregion
 
@@ -1099,10 +1099,11 @@ namespace BDArmory.Control
 
             StartCoroutine(ToggleDynamicDampingButtons());
 
-            if (autoTune)
+            autoTune = false; // Disable auto-tuning if the damping configuration is changed.
+            if (HighLogic.LoadedSceneIsFlight)
             {
-                autoTune = false; // Disable auto-tuning if the damping configuration is changed.
-                OnAutoTuneChanged(null, null);
+                if (pidAutoTuning == null) SetAutoTuneToggle();
+                OnAutoTuneChanged(null, null); // Reset internals of auto-tuning for the new PID configuration.
             }
         }
 
@@ -1115,11 +1116,13 @@ namespace BDArmory.Control
             dynamicSteerDampingField.guiActiveEditor = false;
             customDynamicAxisField.guiActive = false;
             customDynamicAxisField.guiActiveEditor = false;
+            Fields["autoTune"].guiActive = false;
             yield return new WaitForFixedUpdate();
             dynamicSteerDampingField.guiActive = true;
             dynamicSteerDampingField.guiActiveEditor = true;
             customDynamicAxisField.guiActive = dynamicDamping;
             customDynamicAxisField.guiActiveEditor = dynamicDamping;
+            Fields["autoTune"].guiActive = true;
         }
 
         [KSPAction("Toggle Max Altitude (AGL)")]
@@ -1278,7 +1281,7 @@ namespace BDArmory.Control
                 Fields["autoTuningRollRelevance"].guiActiveEditor = false;
                 Fields["autoTuningFastResponseRelevance"].guiActiveEditor = false;
                 Fields["autoTuningFixedP"].guiActiveEditor = false;
-                // Fields["autoTuningLossRatio"].guiActiveEditor = false;
+                Fields["autoTuningClampMaximums"].guiActiveEditor = false;
                 autoTune = false;
             }
             if (!HighLogic.LoadedSceneIsFlight) return;
@@ -1301,9 +1304,11 @@ namespace BDArmory.Control
             Fields["autoTuningRollRelevance"].guiActive = autoTune;
             Fields["autoTuningFastResponseRelevance"].guiActive = autoTune;
             Fields["autoTuningFixedP"].guiActive = autoTune;
-            // Fields["autoTuningLossRatio"].guiActive = autoTune;
+            Fields["autoTuningClampMaximums"].guiActive = autoTune;
 
             MaintainFuelLevels(autoTune); // Prevent fuel drain while auto-tuning.
+            if (part != null && part.PartActionWindow != null && part.PartActionWindow.parameterGroups.ContainsKey("pilotAI_PID")) part.PartActionWindow.parameterGroups["pilotAI_PID"].UpdateContentSize(); // FIXME This isn't working yet. It should remove the blank space when disabling auto-tuning.
+            GUIUtils.RefreshAssociatedWindows(part);
         }
         void OnAutoTuneFixedPChanged(BaseField field, object obj)
         {
@@ -3756,17 +3761,12 @@ namespace BDArmory.Control
         float timeout = 15; // Measure for at most 10s.
         float pointingTolerance = 0.1f; // Pointing tolerance for stopping measurements.
         float rollTolerance = 5f; // Roll tolerance for stopping measurements.
-        // float onTargetTolerance = 1f; // Tolerance for beginning to consider being on target for "first min" checks.
         float onTargetTimer = 0;
         int partCount = 0;
         float measurementStartTime = -1;
         float measurementTime = 0;
         float maxPointingErrorSqr = 0;
         float maxRollErrorSqr = 0;
-        // float pointingFirstMinAfterMaxStartTime = -1;
-        // float rollFirstMinAfterMaxStartTime = -1;
-        // float pointingFirstMinAfterMaxTime = -1;
-        // float rollFirstMinAfterMaxTime = -1;
         float pointingOscillationAreaSqr = 0;
         float rollOscillationAreaSqr = 0;
         Vessel lastTargetVessel;
@@ -3856,14 +3856,10 @@ namespace BDArmory.Control
                 if (pointingErrorSqr > maxPointingErrorSqr)
                 {
                     maxPointingErrorSqr = pointingErrorSqr;
-                    // pointingFirstMinAfterMaxStartTime = Time.time;
-                    // pointingFirstMinAfterMaxTime = -1f;
                 }
                 if (rollErrorSqr > maxRollErrorSqr)
                 {
                     maxRollErrorSqr = rollErrorSqr;
-                    // rollFirstMinAfterMaxStartTime = Time.time;
-                    // rollFirstMinAfterMaxTime = -1f;
                 }
 
                 if (pointingErrorSqr < pointingTolerance && rollErrorSqr < rollTolerance) { onTargetTimer += Time.fixedDeltaTime; }
@@ -3873,37 +3869,33 @@ namespace BDArmory.Control
                 if (Time.time - measurementStartTime > timeout || onTargetTimer > (WM != null && WM.guardMode ? 0.2f : 1f))
                 {
                     measurementTime = Time.time - measurementStartTime;
-                    // if (pointingFirstMinAfterMaxTime < 0) pointingFirstMinAfterMaxTime = measurementTime;
-                    // if (rollFirstMinAfterMaxTime < 0) rollFirstMinAfterMaxTime = measurementTime;
-                    if (BDArmorySettings.DEBUG_AI && BDArmorySettings.DEBUG_TELEMETRY)
-                    {
-                        if (Time.time - measurementStartTime > timeout)
-                        {
-                            Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Measuring timed out. PointingError: {pointingErrorSqr}, RollError: {rollError}, onTargetTimer: {onTargetTimer:G2}s");
-                        }
-                        else if (onTargetTimer > (WM != null && WM.guardMode ? 0.2f : 1f))
-                        {
-                            Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Completed to within tolerance in {measurementTime}s.");
-                        }
-                        Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Max error sqr (pointing) {maxPointingErrorSqr} ({headingChange}), (roll) {maxRollErrorSqr}.");
-                        // Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Time to first min (pointing) {pointingFirstMinAfterMaxTime}s, (roll) {rollFirstMinAfterMaxTime}s.");
-                        Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Oscillation error sqr (pointing) {pointingOscillationAreaSqr}, (roll) {rollOscillationAreaSqr}. (Normalised: {pointingOscillationAreaSqr / absHeadingChange}, {rollOscillationAreaSqr / absHeadingChange}).");
-                    }
+                    // if (BDArmorySettings.DEBUG_AI)
+                    // {
+                    //     if (Time.time - measurementStartTime > timeout)
+                    //     {
+                    //         Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Measuring timed out. PointingError: {pointingErrorSqr}, RollError: {rollError}, onTargetTimer: {onTargetTimer:G2}s");
+                    //     }
+                    //     else if (onTargetTimer > (WM != null && WM.guardMode ? 0.2f : 1f))
+                    //     {
+                    //         Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Completed to within tolerance in {measurementTime}s.");
+                    //     }
+                    //     Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Max error sqr (pointing) {maxPointingErrorSqr} ({headingChange}), (roll) {maxRollErrorSqr}.");
+                    //     // Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Time to first min (pointing) {pointingFirstMinAfterMaxTime}s, (roll) {rollFirstMinAfterMaxTime}s.");
+                    //     Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Oscillation error sqr (pointing) {pointingOscillationAreaSqr}, (roll) {rollOscillationAreaSqr}. (Normalised: {pointingOscillationAreaSqr / absHeadingChange}, {rollOscillationAreaSqr / absHeadingChange}).");
+                    // }
                     TakeSample();
                     ResetMeasurements();
                 }
                 else if (WM != null && WM.guardMode && WM.currentTarget != null && WM.currentTarget.Vessel != lastTargetVessel) // Target changed while in combat. Reset, but don't update PID.
                 {
-                    if (BDArmorySettings.DEBUG_AI && BDArmorySettings.DEBUG_TELEMETRY) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Changed target.");
+                    if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Changed target.");
                     ResetMeasurements();
                 }
                 else // Update internal parameters.
                 {
-                    // if (pointingFirstMinAfterMaxStartTime > 0 && pointingFirstMinAfterMaxTime < 0 && pointingErrorSqr >= lastPointingErrorSqr) pointingFirstMinAfterMaxTime = Time.time - pointingFirstMinAfterMaxStartTime - Time.fixedDeltaTime;
                     pointingOscillationAreaSqr += pointingErrorSqr * (AI.autoTuningFastResponseRelevance + measurementTime * measurementTime);
                     lastPointingErrorSqr = pointingErrorSqr;
 
-                    // if (rollFirstMinAfterMaxStartTime > 0 && rollFirstMinAfterMaxTime < 0 && rollErrorSqr >= lastAbsRollErrorSqr) rollFirstMinAfterMaxTime = Time.time - rollFirstMinAfterMaxStartTime - Time.fixedDeltaTime;
                     rollOscillationAreaSqr += rollErrorSqr * (AI.autoTuningFastResponseRelevance + measurementTime * measurementTime);
                     lastAbsRollErrorSqr = rollErrorSqr;
                 }
@@ -3915,7 +3907,7 @@ namespace BDArmory.Control
                     // Significantly off-target, start measuring again.
                     if (pointingErrorSqr > 10f)
                     {
-                        if (BDArmorySettings.DEBUG_AI && BDArmorySettings.DEBUG_TELEMETRY) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Starting measuring due to being significantly off-target.");
+                        if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Starting measuring due to being significantly off-target.");
                         StartMeasuring();
                     }
                 }
@@ -3931,7 +3923,7 @@ namespace BDArmory.Control
                     Vector3d flyTo;
                     FlightGlobals.currentMainBody.GetLatLonAlt(newFlyToPoint, out flyTo.x, out flyTo.y, out flyTo.z);
                     AI.CommandFlyTo((Vector3)flyTo);
-                    if (BDArmorySettings.DEBUG_AI && BDArmorySettings.DEBUG_TELEMETRY) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Starting measuring with new fly-to position.");
+                    // if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Starting measuring with new fly-to position.");
                     StartMeasuring();
                 }
             }
@@ -3951,10 +3943,6 @@ namespace BDArmory.Control
             measurementTime = 0;
             maxPointingErrorSqr = 0;
             maxRollErrorSqr = 0;
-            // pointingFirstMinAfterMaxStartTime = -1;
-            // rollFirstMinAfterMaxStartTime = -1;
-            // pointingFirstMinAfterMaxTime = -1;
-            // rollFirstMinAfterMaxTime = -1;
             pointingOscillationAreaSqr = 0;
             rollOscillationAreaSqr = 0;
             if (!AI.autoTune && AI.currentCommand == PilotCommands.FlyTo) AI.ReleaseCommand(); // Release the AI if we've been commanding it.
@@ -4012,7 +4000,7 @@ namespace BDArmory.Control
                         continue;
                     }
                     var uiControl = (UI_FloatRange)field.uiControlFlight;
-                    if (BDArmorySettings.DEBUG_AI && BDArmorySettings.DEBUG_TELEMETRY) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Found PID field: {field.guiName} with value {field.GetValue(AI)} and limits {uiControl.minValue} — {uiControl.maxValue}");
+                    if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Found PID field: {field.guiName} with value {field.GetValue(AI)} and limits {uiControl.minValue} — {uiControl.maxValue}");
                     fieldNames.Add(field.guiName);
                     fields.Add(field.guiName, field);
                     baseValues.Add(field.guiName, (float)field.GetValue(AI));
@@ -4030,9 +4018,6 @@ namespace BDArmory.Control
         void TakeSample()
         {
             // Measure loss at the current sample point.
-            // var fastResponseLoss = (1f - AI.autoTuningLossRatio) * (pointingFirstMinAfterMaxTime * pointingFirstMinAfterMaxTime + rollFirstMinAfterMaxTime * rollFirstMinAfterMaxTime);
-            // var oscillationLoss = AI.autoTuningLossRatio * (pointingOscillationAreaSqr / absHeadingChange + rollOscillationAreaSqr / absHeadingChange / timeout);
-            // lossSamples[currentField].Add(fastResponseLoss + oscillationLoss);
             var oscillationLoss = (pointingOscillationAreaSqr + AI.autoTuningRollRelevance * rollOscillationAreaSqr) / (absHeadingChange * absHeadingChange); // This normalisation seems to give a roughly flat distribution over the 30°—120° range for the test craft.
             lossSamples[currentField].Add(oscillationLoss);
 
@@ -4084,7 +4069,12 @@ namespace BDArmory.Control
                     bestValues = baseValues;
                 }
                 lr.Update(gradient.Values.Select(x => x * x).Sum()); // Update learning rate based on the size of the gradient.
-                foreach (var fieldName in baseValues.Keys.ToList()) baseValues[fieldName] = Mathf.Clamp(baseValues[fieldName] - AI.autoTuningLearningRate * gradient[fieldName], limits[fieldName].Item1, limits[fieldName].Item2); // Update PID values for gradient: x -> x - lr * df/dx (clamped to limits).
+                foreach (var fieldName in baseValues.Keys.ToList())
+                {
+                    baseValues[fieldName] = baseValues[fieldName] - AI.autoTuningLearningRate * gradient[fieldName]; // Update PID values for gradient: x -> x - lr * df/dx.
+                    if (AI.autoTuningClampMaximums) baseValues[fieldName] = Mathf.Clamp(baseValues[fieldName] - AI.autoTuningLearningRate * gradient[fieldName], limits[fieldName].Item1, limits[fieldName].Item2); // Clamp to limits.
+                    else baseValues[fieldName] = Mathf.Max(baseValues[fieldName] - AI.autoTuningLearningRate * gradient[fieldName], limits[fieldName].Item1); // Only clamp to the minimum.
+                }
                 foreach (var fieldName in fields.Keys.ToList()) fields[fieldName].SetValue(baseValues[fieldName], AI); // Set them in the AI.
                 ResetSamples(); // Reset everything for the next gradient.
             }

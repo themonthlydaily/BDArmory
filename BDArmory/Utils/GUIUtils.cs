@@ -351,16 +351,19 @@ namespace BDArmory.Utils
         //refreshes part action window
         public static void RefreshAssociatedWindows(Part part)
         {
-            IEnumerator<UIPartActionWindow> window = Object.FindObjectsOfType(typeof(UIPartActionWindow)).Cast<UIPartActionWindow>().GetEnumerator();
-            while (window.MoveNext())
-            {
-                if (window.Current == null) continue;
-                if (window.Current.part == part)
-                {
-                    window.Current.displayDirty = true;
-                }
-            }
-            window.Dispose();
+            if (part == null || part.PartActionWindow == null) return;
+            part.PartActionWindow.UpdateWindow();
+            // part.PartActionWindow.displayDirty = true;
+            // IEnumerator<UIPartActionWindow> window = Object.FindObjectsOfType(typeof(UIPartActionWindow)).Cast<UIPartActionWindow>().GetEnumerator();
+            // while (window.MoveNext())
+            // {
+            //     if (window.Current == null) continue;
+            //     if (window.Current.part == part)
+            //     {
+            //         window.Current.displayDirty = true;
+            //     }
+            // }
+            // window.Dispose();
         }
 
     }
