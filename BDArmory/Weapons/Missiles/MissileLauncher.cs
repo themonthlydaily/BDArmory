@@ -677,7 +677,7 @@ namespace BDArmory.Weapons.Missiles
                 else if (partModules.Current.moduleName == "BDModuleNuke")
                 {
                     warheadType = WarheadTypes.Nuke;
-                    StandOffDistance = Mathf.Sqrt(((BDModuleNuke)partModules.Current).yield) * 500;
+                    StandOffDistance = BDAMath.Sqrt(((BDModuleNuke)partModules.Current).yield) * 500;
                 }
                 else continue;
                 break;
@@ -810,7 +810,7 @@ namespace BDArmory.Weapons.Missiles
                 {
                     if (part.FindModuleImplementing<BDModuleNuke>() != null)
                     {
-                        return Mathf.Sqrt(part.FindModuleImplementing<BDModuleNuke>().yield) * 500;
+                        return BDAMath.Sqrt(part.FindModuleImplementing<BDModuleNuke>().yield) * 500;
                     }
                     else
                     {
