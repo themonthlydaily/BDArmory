@@ -91,7 +91,7 @@ namespace BDArmory.FX
             if (HighLogic.LoadedSceneIsFlight)
             {
                 yieldCubeRoot = Mathf.Pow(yield, 1f / 3f);
-                startTime = Time.time;
+                startTime = Time.time;				
                 if (FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(transform.position),
                                    FlightGlobals.getExternalTemperature(transform.position)) > 0)
                     lastValidAtmDensity = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(transform.position),
@@ -293,6 +293,7 @@ namespace BDArmory.FX
                         {
                             //default model scaled for 20kt; yield = 20 = scale of 1
                             //scaling calc is roughly SqRt( 400 * (6x))
+							//fireball diameter is 59 * Mathf.Pow(yield, 0.4f), apparently?
                             if (!string.IsNullOrWhiteSpace(flashModelPath))
                             FXEmitter.CreateFX(transform.position, scale, flashModelPath, blastSoundPath, 0.3f, -1, default, true);
                             if (!string.IsNullOrWhiteSpace(shockModelPath))
