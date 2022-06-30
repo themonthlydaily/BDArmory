@@ -521,7 +521,7 @@ namespace BDArmory.Control
                 SetStatus($"Following");
                 return;
             }
-            
+
 
             // goto
             if (leftPath)
@@ -595,7 +595,7 @@ namespace BDArmory.Control
             float yawError = VectorUtils.SignedAngle(vesselTransform.up, yawTarget, vesselTransform.right) + (aimingMode ? 0 : weaveAdjustment);
             DebugLine($"yaw target: {yawTarget}, yaw error: {yawError}");
 
-            float forwardVel = Vector3.Dot(vessel.Velocity(), Vector3.ProjectOnPlane(vesselTransform.up,upDir).normalized);
+            float forwardVel = Vector3.Dot(vessel.Velocity(), Vector3.ProjectOnPlane(vesselTransform.up, upDir).normalized);
             float forwardAccel = Vector3.Dot(vessel.acceleration_immediate, Vector3.ProjectOnPlane(vesselTransform.up, upDir).normalized);
             float velError = targetVelocity - forwardVel;
             float pitchAngle = Mathf.Clamp(0.015f * -steerMult * velError - 0.33f * -steerDamping * forwardAccel, -MaxPitchAngle, MaxPitchAngle); //Adjust pitchAngle for desired speed
@@ -621,13 +621,16 @@ namespace BDArmory.Control
             if (belowMinAltitude || initialTakeOff)
             {
                 if (avoidingTerrain)
+                {
+                    terrainAlertNormal = upDir; // FIXME Terrain avoidance isn't implemented for this AI yet.
                     rollTarget = terrainAlertNormal * 100;
+                }
                 else
                     rollTarget = upDir * 100;
                 targetRoll = VectorUtils.SignedAngle(rollTarget, upDir, -vesselTransform.right);
             }
             else
-                rollTarget = Vector3.RotateTowards(upDir, -vesselTransform.right, targetRoll * Mathf.PI/180f, 0f);
+                rollTarget = Vector3.RotateTowards(upDir, -vesselTransform.right, targetRoll * Mathf.PI / 180f, 0f);
 
             float rollError = targetRoll - bank;
             DebugLine($"target lat vel: {targetLatVelocity}, lateral vel: {latVel}, lat vel error: {latError}, target roll: {targetRoll}, bank: {bank}, roll error: {rollError}");
