@@ -1306,7 +1306,7 @@ namespace BDArmory.Control
             if (!autoTune)
             {
                 pidAutoTuning.RevertPIDValues(true);
-                if (BDArmorySettings.TIME_OVERRIDE) BDArmorySettings.TIME_OVERRIDE = false;
+                if (BDArmorySettings.TIME_OVERRIDE) { BDArmorySettings.TIME_OVERRIDE = false; BDArmorySettings.TIME_SCALE = 1f; }
             }
             pidAutoTuning.ResetMeasurements();
             Fields["autoTuningLossLabel"].guiActive = autoTune;
@@ -4179,7 +4179,7 @@ namespace BDArmory.Control
                     return;
                 }
                 var loss = baseLossSamples.Average();
-                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Current: " + string.Join(", ", baseValues.Select(kvp => kvp.Key + ":" + kvp.Value)) + $", LR: {lr.current}, Loss: {loss}");
+                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Current: " + string.Join(", ", baseValues.Select(kvp => kvp.Key + ":" + kvp.Value)) + $", LR: {lr.current}, RR: {optimiser.rollRelevance}, Loss: {loss}");
                 if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Gradient: " + string.Join(", ", gradient.Select(kvp => kvp.Key + ":" + kvp.Value)));
                 if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Unclamped gradient: " + string.Join(", ", newGradient.Select(kvp => kvp.Key + ":" + kvp.Value)));
                 Dictionary<string, float> absoluteGradient = new Dictionary<string, float>();
