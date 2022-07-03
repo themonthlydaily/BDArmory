@@ -3845,8 +3845,8 @@ namespace BDArmory.Control
 
         class Optimiser
         {
-            public float rollRelevance = 0.05f;
-            float initialRollRelevance = 0.05f;
+            public float rollRelevance = 0.5f;
+            float initialRollRelevance = 0.5f;
             float rollRelevanceMomentum = 0.7f;
 
             public void Update()
