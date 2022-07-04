@@ -630,6 +630,7 @@ namespace BDArmory.Control
                 storedSettings[vesselName].Add(new System.Tuple<string, object>(field.Name, field.GetValue(this)));
             }
             Events["RestoreSettings"].active = true;
+            if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: Stored AI settings for {vesselName}: " + string.Join(", ", storedSettings[vesselName].Select(s => s.Item1 + "=" + s.Item2)));
         }
         [KSPEvent(advancedTweakable = false, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_RestoreSettings", active = false)]//Restore Settings
         public void RestoreSettings()
@@ -648,6 +649,7 @@ namespace BDArmory.Control
                     field.SetValue(this, setting.Item2);
                 }
             }
+            if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: Restored AI settings for {vesselName}: " + string.Join(", ", storedSettings[vesselName].Select(s => s.Item1 + "=" + s.Item2)));
         }
 
         // This uses the parts' persistentId to reference the parts. Possibly, it should use some other identifier (what's used as a tag at the end of the "part = ..." and "link = ..." lines?) in case of duplicate persistentIds?
