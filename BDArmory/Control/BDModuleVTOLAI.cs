@@ -242,12 +242,12 @@ namespace BDArmory.Control
         {
             UI_ChooseOption broadisdeEditor = (UI_ChooseOption)Fields["OrbitDirectionName"].uiControlEditor;
             UI_ChooseOption broadisdeFlight = (UI_ChooseOption)Fields["OrbitDirectionName"].uiControlFlight;
-            UI_ChooseOption SurfaceEditor = (UI_ChooseOption)Fields["SurfaceTypeName"].uiControlEditor;
-            UI_ChooseOption SurfaceFlight = (UI_ChooseOption)Fields["SurfaceTypeName"].uiControlFlight;
             broadisdeEditor.onFieldChanged = ChooseOptionsUpdated;
             broadisdeFlight.onFieldChanged = ChooseOptionsUpdated;
-            SurfaceEditor.onFieldChanged = ChooseOptionsUpdated;
-            SurfaceFlight.onFieldChanged = ChooseOptionsUpdated;
+            //UI_ChooseOption SurfaceEditor = (UI_ChooseOption)Fields["SurfaceTypeName"].uiControlEditor; // If SurfaceTypeName is ever switched from hard-coded to Amphibious, change this
+            //UI_ChooseOption SurfaceFlight = (UI_ChooseOption)Fields["SurfaceTypeName"].uiControlFlight;
+            //SurfaceEditor.onFieldChanged = ChooseOptionsUpdated;
+            //SurfaceFlight.onFieldChanged = ChooseOptionsUpdated;
         }
 
         public void ChooseOptionsUpdated(BaseField field, object obj)
