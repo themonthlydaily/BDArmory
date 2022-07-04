@@ -82,8 +82,8 @@ namespace BDArmory.FX
         private void OnEnable()
         {
             StartTime = Time.time;
-            MaxTime = Mathf.Sqrt((thermalRadius / ExplosionVelocity) * 3f) * 2f; // Scale MaxTime to get a reasonable visualisation of the explosion.
-            scale = Mathf.Sqrt(400 * (6 * yield)) / 219;
+            MaxTime = BDAMath.Sqrt((thermalRadius / ExplosionVelocity) * 3f) * 2f; // Scale MaxTime to get a reasonable visualisation of the explosion.
+            scale = BDAMath.Sqrt(400 * (6 * yield)) / 219;
             if (BDArmorySettings.DEBUG_DAMAGE)
             {
                 Debug.Log("[BDArmory.NukeFX]: Explosion started tntMass: {" + yield + "}  BlastRadius: {" + thermalRadius + "} StartTime: {" + StartTime + "}, Duration: {" + MaxTime + "}");
@@ -103,11 +103,11 @@ namespace BDArmory.FX
                 //above 10km, emp radius can easily reach 100s of km. But that's no fun, so...
                 if (FlightGlobals.getAltitudeAtPos(transform.position) < 10000)
                 {
-                    EMPRadius = Mathf.Sqrt(yield) * 500;
+                    EMPRadius = BDAMath.Sqrt(yield) * 500;
                 }
                 else
                 {
-                    EMPRadius = Mathf.Sqrt(yield) * 1000;
+                    EMPRadius = BDAMath.Sqrt(yield) * 1000;
                 }
 
                 pEmitters = gameObject.GetComponentsInChildren<KSPParticleEmitter>();
