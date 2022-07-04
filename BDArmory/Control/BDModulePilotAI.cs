@@ -1306,7 +1306,7 @@ namespace BDArmory.Control
             if (!autoTune)
             {
                 pidAutoTuning.RevertPIDValues(true);
-                if (BDArmorySettings.TIME_OVERRIDE) { BDArmorySettings.TIME_OVERRIDE = false; BDArmorySettings.TIME_SCALE = 1f; }
+                if (BDArmorySettings.TIME_OVERRIDE) { BDArmorySettings.TIME_OVERRIDE = false; Time.timeScale = 1f; }
             }
             pidAutoTuning.ResetMeasurements();
             Fields["autoTuningLossLabel"].guiActive = autoTune;
@@ -3845,8 +3845,8 @@ namespace BDArmory.Control
 
         class Optimiser
         {
-            public float rollRelevance = 0.05f;
-            float initialRollRelevance = 0.05f;
+            public float rollRelevance = 0.5f;
+            float initialRollRelevance = 0.5f;
             float rollRelevanceMomentum = 0.7f;
 
             public void Update()
@@ -4118,6 +4118,7 @@ namespace BDArmory.Control
                         AI.autoTune = false;
                         RevertPIDValues(true); // Revert to the best settings.
                         AI.StoreSettings(); // Store the current settings for recall in the SPH.
+                        GUIUtils.RefreshAssociatedWindows(AI.part);
                     }
                     optimiser.Update();
                     AI.autoTuningLossLabel = $"{loss:G6}";

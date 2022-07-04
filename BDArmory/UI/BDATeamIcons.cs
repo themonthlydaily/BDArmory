@@ -200,7 +200,21 @@ namespace BDArmory.UI
                     {
                         if (v.Current == null) continue;
                         if (!v.Current.loaded || v.Current.packed || v.Current.isActiveVessel) continue;
-                        if (VesselModuleRegistry.ignoredVesselTypes.Contains(v.Current.vesselType)) continue;
+                        if (BDTISettings.DEBRIS)
+                        {
+                            if (v.Current == null) continue;
+                            if (v.Current.vesselType != VesselType.Debris) continue;
+                            if (v.Current.LandedOrSplashed) continue;
+
+                            Vector3 sPos = FlightGlobals.ActiveVessel.vesselTransform.position;
+                            Vector3 tPos = v.Current.vesselTransform.position;
+                            Vector3 Dist = (tPos - sPos);
+                            if (Dist.magnitude > BDTISettings.DISTANCE_THRESHOLD)
+                            {
+                                GUIUtils.DrawTextureOnWorldPos(v.Current.CoM, BDTISetup.Instance.TextureIconDebris, new Vector2(20, 20), 0);
+                            }
+                        }
+                        if (VesselModuleRegistry.ignoredVesselTypes.Contains(v.Current.vesselType)) continue; //includes debris, so moving debris to above this
 
                         if (BDTISettings.MISSILES)
                         {
@@ -234,24 +248,19 @@ namespace BDArmory.UI
                                                 Rect distRect = new Rect((guiPos.x - 12), (guiPos.y + 10), 100, 32);
                                                 GUI.Label(distRect, UIdist + UoM, mIStyle);
                                             }
-
+                                            if (BDTISettings.VESSELNAMES)
+                                            {
+                                                if (GUIUtils.WorldToGUIPos(ml.Current.vessel.CoM, out guiPos))
+                                                {
+                                                    Rect nameRect = new Rect((guiPos.x + (24 * BDTISettings.ICONSCALE)), guiPos.y - 4, 100, 32);
+                                                    Rect shadowRect = new Rect((nameRect.x + 1), nameRect.y + 1, 100, 32);
+                                                    GUI.Label(shadowRect, ml.Current.vessel.vesselName, DropshadowStyle);
+                                                    GUI.Label(nameRect, ml.Current.vessel.vesselName, IconUIStyle);
+                                                }
+                                            }
                                         }
                                     }
                                 }
-                        }
-                        if (BDTISettings.DEBRIS)
-                        {
-                            if (v.Current.vesselType != VesselType.Debris && !v.Current.isActiveVessel) continue;
-                            if (v.Current.LandedOrSplashed) continue;
-                            {
-                                Vector3 sPos = FlightGlobals.ActiveVessel.vesselTransform.position;
-                                Vector3 tPos = v.Current.vesselTransform.position;
-                                Vector3 Dist = (tPos - sPos);
-                                if (Dist.magnitude > BDTISettings.DISTANCE_THRESHOLD)
-                                {
-                                    GUIUtils.DrawTextureOnWorldPos(v.Current.CoM, BDTISetup.Instance.TextureIconDebris, new Vector2(20, 20), 0);
-                                }
-                            }
                         }
                     }
                 using (var teamManagers = BDTISetup.Instance.weaponManagers.GetEnumerator())
