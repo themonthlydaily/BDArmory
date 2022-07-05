@@ -455,7 +455,7 @@ namespace BDArmory.Competition
                                         null // No list of craft files, we've specified them directly in selectedCraft.
                                     ));
                                 }}
-                            // heatList.Shuffle(); // Randomise the playing order within each round.
+                            heatList.Shuffle(); // Randomise the playing order within each round.
                             rounds.Add(roundIndex, heatList.Select((heat, index) => new KeyValuePair<int, SpawnConfig>(index, heat)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
                         }
                         #endregion
