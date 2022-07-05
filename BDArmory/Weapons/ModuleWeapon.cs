@@ -971,7 +971,7 @@ namespace BDArmory.Weapons
                 shortName = part.partInfo.title;
             }
             OriginalShortName = shortName;
-            WeaponName = shortName;
+            WeaponName = ConfigNodeUtils.FindPartModuleConfigNodeValue(part.partInfo.partConfig, "ModuleWeapon", "shortName"); //have weaponname be the .cfg shortname, not whatever it happens to be set to when the scene laods
             using (var emitter = part.FindModelComponents<KSPParticleEmitter>().AsEnumerable().GetEnumerator())
                 while (emitter.MoveNext())
                 {
@@ -1990,6 +1990,7 @@ namespace BDArmory.Weapons
                         {
                             StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate)); //this is why ripplefire is slower, delay to stagger guns should only be being called once
                             isRippleFiring = true;
+                            //need to know what next weapon in ripple sequence is, and have firedelay be set to whatever it's RPM is, not this weapon's or a generic average
                         }
                     }
                 }
@@ -3046,7 +3047,7 @@ namespace BDArmory.Weapons
             }
 
             Vector3 finalTarget = targetPosition;
-            if (aiControlled && !slaved && !targetAcquired && weaponManager)
+            if ((aiControlled && !slaved && !targetAcquired && weaponManager) || (!(aiControlled && !slaved && !targetAcquired && weaponManager) && weaponManager.staleTarget))
             {
                 if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
                 {
@@ -3057,6 +3058,8 @@ namespace BDArmory.Weapons
                 }
                 // Continue aiming towards where the target is expected to be while reloading based on the last measured pos, vel, acc.
                 finalAimTarget = AIUtils.PredictPosition(lastFinalAimTarget, targetVelocity, targetAcceleration, Time.time - lastGoodTargetTime); // FIXME Check this predicted position when in orbit.
+                fixedLeadOffset = targetPosition - finalAimTarget; //for aiming fixed guns to moving target
+
 #if DEBUG
                 debugTargetPosition = AIUtils.PredictPosition(debugLastTargetPosition, targetVelocity, targetAcceleration, Time.time - lastGoodTargetTime);
 #endif
@@ -3198,7 +3201,7 @@ namespace BDArmory.Weapons
                 {
                     turret.smoothRotation = false;
                 }
-                turret.AimToTarget(finalAimTarget);
+                turret.AimToTarget(finalAimTarget); //no aimbot turrets when target out of sight
                 turret.smoothRotation = origSmooth;
             }
         }
@@ -3763,7 +3766,7 @@ namespace BDArmory.Weapons
                     if (useRippleFire) //old method wouldn't catch non-ripple guns (i.e. Vulcan) trying to fire at targets beyond fire range
                     {
                         //StartCoroutine(IncrementRippleIndex(0));
-                        StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
+                        StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate)); //FIXME - possibly not getting called in all circumstances? Investigate later, future SI
                         isRippleFiring = true;
                     }
                 }
@@ -5446,7 +5449,7 @@ namespace BDArmory.Weapons
         {
             if (instance != null && instance.WPNmodule != null)
             {
-                instance.WPNmodule.WeaponName = instance.WPNmodule.shortName;
+                //instance.WPNmodule.WeaponName = instance.WPNmodule.shortName;
                 instance.WPNmodule = null;
                 instance.UpdateGUIState();
             }
@@ -5589,7 +5592,7 @@ namespace BDArmory.Weapons
             {
                 string newName = string.IsNullOrEmpty(txtName.Trim()) ? WPNmodule.OriginalShortName : txtName.Trim();
 
-                WPNmodule.WeaponName = newName;
+                //WPNmodule.WeaponName = newName;
                 WPNmodule.shortName = newName;
                 instance.WPNmodule.HideUI();
             }

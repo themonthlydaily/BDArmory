@@ -1197,6 +1197,93 @@ namespace BDArmory.Radar
                 return false;
             }
         }
+        /// <summary>
+        /// Main scanning and locking method called from ModuleIRST.
+        /// scanning both for omnidirectional and boresight scans.
+        /// </summary>
+        public static bool IRSTUpdateScan(MissileFire myWpnManager, float directionAngle, Transform referenceTransform, float fov, Vector3 position, ModuleIRST irst)
+        {
+            Vector3 forwardVector = referenceTransform.forward;
+            Vector3 upVector = referenceTransform.up;
+            Vector3 lookDirection = Quaternion.AngleAxis(directionAngle, upVector) * forwardVector;
+            TargetSignatureData finalData = TargetSignatureData.noTarget;
+
+            // guard clauses
+            if (!myWpnManager || !myWpnManager.vessel || !irst)
+                return false;
+
+            using (var loadedvessels = BDATargetManager.LoadedVessels.GetEnumerator())
+                while (loadedvessels.MoveNext())
+                {
+                    // ignore null, unloaded and self
+                    if (loadedvessels.Current == null || !loadedvessels.Current.loaded) continue;
+                    if (loadedvessels.Current == myWpnManager.vessel) continue;
+
+                    // ignore too close ones
+                    if ((loadedvessels.Current.transform.position - position).sqrMagnitude < RADAR_IGNORE_DISTANCE_SQR)
+                        continue;
+
+                    Vector3 vesselDirection = Vector3.ProjectOnPlane(loadedvessels.Current.CoM - position, upVector);
+                    float angle = Vector3.Angle(vesselDirection, lookDirection);
+                    if (angle < fov / 2f)
+                    {
+                        // ignore when blocked by terrain
+                        if (TerrainCheck(referenceTransform.position, loadedvessels.Current.transform.position))
+                            continue;
+
+                        // get vessel's heat signature
+                        TargetInfo tInfo = loadedvessels.Current.gameObject.GetComponent<TargetInfo>();
+                        float signature = BDATargetManager.GetVesselHeatSignature(loadedvessels.Current, irst.referenceTransform.position) * (irst.boresightScan ? Mathf.Clamp01(15 / angle) : 1);
+                        signature *= (1400 * 1400) / Mathf.Clamp((loadedvessels.Current.CoM - referenceTransform.position).sqrMagnitude, 90000, 36000000);
+
+                        signature *= Mathf.Clamp(Vector3.Angle(loadedvessels.Current.transform.position - referenceTransform.position, -VectorUtils.GetUpDirection(referenceTransform.position)) / 90, 0.5f, 1.5f);
+
+                        //ground clutter factor when looking down:
+                        Vector3 targetDirection = (loadedvessels.Current.CoM - position);
+                        float angleFromUp = Vector3.Angle(targetDirection, upVector);
+                        float lookDownAngle = angleFromUp - 90; // result range: -90 .. +90
+                        Mathf.Clamp(lookDownAngle, 0, 90);      // result range:   0 .. +90
+
+                        float groundClutterMutiplier = Mathf.Lerp(1, irst.GroundClutterFactor, (lookDownAngle / 90));
+
+                        //additional ground clutter factor when target is landed/splashed:
+                        if (tInfo.isLandedOrSurfaceSplashed)
+                        {
+                            if (!tInfo.isSplashed) //ground will partially mask thermal sig
+                                groundClutterMutiplier *= irst.GroundClutterFactor;
+                            else //cold ocean on the other hand...
+                                groundClutterMutiplier *= 12;
+                        }
+
+                        signature *= groundClutterMutiplier;
+
+                        // evaluate range
+                        float distance = (loadedvessels.Current.CoM - position).magnitude / 1000f;                                      //TODO: Performance! better if we could switch to sqrMagnitude...
+
+                        BDATargetManager.ClearRadarReport(loadedvessels.Current, myWpnManager);
+
+                        //evaluate if we can detect such a signature at that range
+                        float attenuationFactor = ((float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(irst.referenceTransform.position), FlightGlobals.getExternalTemperature(irst.referenceTransform.position))) +
+                            ((float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(loadedvessels.Current.CoM), FlightGlobals.getExternalTemperature(loadedvessels.Current.CoM) / 2));
+                        if (distance > irst.irstMinDistanceDetect && distance < (irst.irstMaxDistanceDetect * irst.atmAttenuationCurve.Evaluate(attenuationFactor)));
+                        {
+                            //evaluate if we can detect or lock such a signature at that range
+                            float minDetectSig = irst.DetectionCurve.Evaluate(distance / attenuationFactor);
+
+                            if (signature > minDetectSig)
+                            {
+                                // detected by irst
+                                if (myWpnManager != null)
+                                {
+                                    BDATargetManager.ReportVessel(loadedvessels.Current, myWpnManager, true);
+                                }
+                                irst.ReceiveContactData(new TargetSignatureData(loadedvessels.Current, signature), signature);
+                            }
+                        }
+                    }
+                }
+            return false;
+        }
 
         /// <summary>
         /// Scans for targets in direction with field of view.
