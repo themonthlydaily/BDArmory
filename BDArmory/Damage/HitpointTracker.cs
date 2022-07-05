@@ -725,8 +725,7 @@ namespace BDArmory.Damage
                             }
                             else
                             {
-                                //hitpoints = (partMass * 1000f) * 7f * hitpointMultiplier * 0.333f; // since wings are basically a 2d object, lets have mass be our scalar - afterall, 2x the mass will ~= 2x the surfce area
-                                hitpoints = (float)Math.Round(part.Modules.GetModule<ModuleLiftingSurface>().deflectionLiftCoeff, 2) * 700 * hitpointMultiplier * 0.333f; //this yields the same result, but not beholden to mass changes
+                                hitpoints = (float)Math.Round(part.Modules.GetModule<ModuleLiftingSurface>() ? part.Modules.GetModule<ModuleLiftingSurface>().deflectionLiftCoeff : partMass * 10, 2) * 700 * hitpointMultiplier * 0.333f; //use mass*10 for wings (since they may have lift toggled off), use lift area for control surfaces
                                 armorVolume = (float)Math.Round(hitpoints / hitpointMultiplier / 0.333 / 350, 1); //stock is 0.25 lift/m2, so...
                             } //breaks when pWings are made stupidly large. Clamp HP to a maximum?
                             ArmorModified(null, null);
