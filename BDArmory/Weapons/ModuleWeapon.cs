@@ -401,7 +401,7 @@ namespace BDArmory.Weapons
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "Rate of Fire"),
             UI_FloatRange(minValue = 100f, maxValue = 1500, stepIncrement = 25f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]
-        public float roundsPerMinute = 650; //rocket RoF slider
+        public float roundsPerMinute = 650; //RoF slider
 
         public float baseRPM;
 
@@ -463,7 +463,9 @@ namespace BDArmory.Weapons
         [KSPField]
         public float ChargeTime = -1;
         bool isCharging = false;
-
+        [KSPField]
+        public bool ChargeEachShot = true;
+        bool hasCharged = false;
 
         [KSPField]
         public string bulletDragTypeName = "AnalyticEstimate";
@@ -977,7 +979,8 @@ namespace BDArmory.Weapons
                     emitter.Current.emit = false;
                     EffectBehaviour.AddParticleEmitter(emitter.Current);
                 }
-            baseRPM = roundsPerMinute;
+
+            baseRPM = float.Parse(ConfigNodeUtils.FindPartModuleConfigNodeValue(part.partInfo.partConfig, "ModuleWeapon", "roundsPerMinute"));
 
             if (roundsPerMinute >= 1500 || (eWeaponType == WeaponTypes.Laser && !pulseLaser))
             {
@@ -3845,6 +3848,7 @@ namespace BDArmory.Weapons
                         roundsPerMinute = Mathf.Lerp(baseRPM, (baseRPM / 10), spooltime);
                     }
                 }
+                if (ChargeTime > 0) hasCharged = false;
             }
         }
 
@@ -3879,7 +3883,7 @@ namespace BDArmory.Weapons
 
                 if (finalFire)
                 {
-                    if (ChargeTime > 0)
+                    if (ChargeTime > 0 && !hasCharged)
                     {
                         if (!isCharging)
                         {
@@ -4039,6 +4043,7 @@ namespace BDArmory.Weapons
             {
                 isOverheated = true;
                 autoFire = false;
+                hasCharged = false;
                 if (!oneShotSound) audioSource.Stop();
                 wasFiring = false;
                 audioSource2.PlayOneShot(overheatSound);
@@ -4066,6 +4071,7 @@ namespace BDArmory.Weapons
             {
                 isReloading = true;
                 autoFire = false;
+                hasCharged = false;
                 if (eWeaponType == WeaponTypes.Laser)
                 {
                     for (int i = 0; i < laserRenderers.Length; i++)
@@ -4750,6 +4756,7 @@ namespace BDArmory.Weapons
             }
             UpdateGUIWeaponState();
             isCharging = false;
+            if (!ChargeEachShot) hasCharged = true;
             switch (eWeaponType)
             {
                 case WeaponTypes.Laser:
