@@ -251,7 +251,7 @@ namespace BDArmory.UI
         /// </summary>
         /// <param name="v">Vessel</param>
         /// <returns>Heat signature value</returns>
-        public static float GetVesselHeatSignature(Vessel v, Vector3 sensorPosition)
+        public static float GetVesselHeatSignature(Vessel v, Vector3 sensorPosition = default(Vector3))
         {
             float heatScore = 0f;
             List <Part> hottestPart = new List<Part>();
@@ -264,8 +264,7 @@ namespace BDArmory.UI
                     float thisScore = (float)(part.Current.thermalInternalFluxPrevious + part.Current.skinTemperature);
                     heatScore = Mathf.Max(heatScore, thisScore);
                 }
-            
-            if (sensorPosition != Vector3.zero) //Heat source found; now lets determine how much of the craft is occluding it
+            if (sensorPosition != default(Vector3)) //Heat source found; now lets determine how much of the craft is occluding it
             {
                 using (List<Part>.Enumerator part = v.Parts.GetEnumerator())
                     while (part.MoveNext())
@@ -277,52 +276,62 @@ namespace BDArmory.UI
                             hottestPart.Add(part.Current);
                         }
                     }
-                int partIndex = 0;
+                Debug.Log("IRSTdebugging] HottestParts found");
+                Part closestPart = null;
                 float distance = 9999999;
                 if (hottestPart.Count > 0)
                 {
-                    for (int i = 0; i < hottestPart.Count; i++) //might be multiple 'hottest' parts (multi-engine ship, etc), find the one closest to the sensor
+                    using (List<Part>.Enumerator part = hottestPart.GetEnumerator()) //might be multiple 'hottest' parts (multi-engine ship, etc), find the one closest to the sensor
                     {
-                        float thisdistance = Vector3.Distance(hottestPart[i].transform.position, sensorPosition);
-                        if (thisdistance < distance)
+                        while (part.MoveNext())
                         {
-                            distance = thisdistance;
-                            partIndex = i;
-                        }
-                    }
-
-                    Ray partRay = new Ray(hottestPart[partIndex].transform.position, sensorPosition - hottestPart[partIndex].transform.position); //trace from heatsource to IR sensor
-                    var layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA);
-
-                    var hitCount = Physics.RaycastNonAlloc(partRay, hits, distance, layerMask);
-                    if (hitCount == hits.Length)
-                    {
-                        hits = Physics.RaycastAll(partRay, distance, layerMask);
-                        hitCount = hits.Length;
-                    }
-                    float OcclusionFactor = 0;
-                    float lastHeatscore = 0;
-                    using (var hitsEnu = hits.OrderBy(x => x.distance).GetEnumerator())
-                        while (hitsEnu.MoveNext())
-                        {
-                            Part partHit = hitsEnu.Current.collider.GetComponentInParent<Part>();
-                            if (partHit == null) continue;
-                            if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
-                            if (partHit == hottestPart[partIndex]) continue; //ignore the heatsource
-                                                                             //The heavier/further the part, the more it's going to occlude the heatsource
-                            float spacing = Vector3.Distance(hottestPart[partIndex].transform.position, partHit.transform.position);
-                            if (spacing > 15)
-                            {                        //if far enough away, clamp temp to temp of last part in LoS
-                                heatScore = (float)(partHit.thermalInternalFluxPrevious + partHit.skinTemperature);
-                                OcclusionFactor = -1;
-                            }
-                            else
+                            if (!part.Current) continue;
+                            float thisdistance = Vector3.Distance(part.Current.transform.position, sensorPosition);
+                            if (distance > thisdistance)
                             {
-                                OcclusionFactor += partHit.mass * Mathf.Lerp(0.1f, 1, Mathf.Clamp01(spacing / 15));
-                                lastHeatscore = (float)(partHit.thermalInternalFluxPrevious + partHit.skinTemperature);
+                                distance = thisdistance;
+                                closestPart = part.Current;
                             }
                         }
-                    if (OcclusionFactor > 0) heatScore = Mathf.Max(lastHeatscore, heatScore / OcclusionFactor);
+                        Debug.Log("IRSTdebugging] closest heatsource found");
+                    }
+                    if (closestPart != null)
+                    {
+                        Ray partRay = new Ray(closestPart.transform.position, sensorPosition - closestPart.transform.position); //trace from heatsource to IR sensor
+                        var layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA);
+
+                        var hitCount = Physics.RaycastNonAlloc(partRay, hits, distance, layerMask);
+                        if (hitCount == hits.Length)
+                        {
+                            hits = Physics.RaycastAll(partRay, distance, layerMask);
+                            hitCount = hits.Length;
+                        }
+                        Debug.Log("IRSTdebugging] rayast successful");
+                        float OcclusionFactor = 0;
+                        float lastHeatscore = 0;
+                        using (var hitsEnu = hits.OrderBy(x => x.distance).GetEnumerator())
+                            while (hitsEnu.MoveNext())
+                            {
+                                Part partHit = hitsEnu.Current.collider.GetComponentInParent<Part>();
+                                if (partHit == null) continue;
+                                if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
+                                if (partHit == closestPart) continue; //ignore the heatsource
+                                                                      //The heavier/further the part, the more it's going to occlude the heatsource
+                                float spacing = Vector3.Distance(closestPart.transform.position, partHit.transform.position);
+                                if (spacing > 15)
+                                {                        //if far enough away, clamp temp to temp of last part in LoS
+                                    heatScore = (float)(partHit.thermalInternalFluxPrevious + partHit.skinTemperature);
+                                    OcclusionFactor = -1;
+                                }
+                                else
+                                {
+                                    OcclusionFactor += partHit.mass * Mathf.Lerp(0.1f, 1, Mathf.Clamp01(spacing / 15));
+                                    lastHeatscore = (float)(partHit.thermalInternalFluxPrevious + partHit.skinTemperature);
+                                }
+                            }
+                        Debug.Log("IRSTdebugging] occlusion found");
+                        if (OcclusionFactor > 0) heatScore = Mathf.Max(lastHeatscore, heatScore / OcclusionFactor);
+                    }
                 }
             }
             VesselCloakInfo vesselcamo = v.gameObject.GetComponent<VesselCloakInfo>();

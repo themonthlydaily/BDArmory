@@ -168,13 +168,12 @@ namespace BDArmory.Radar
         private bool startupComplete;
         public float leftLimit;
         public float rightLimit;
-        private int snapshotTicker;
 
         #endregion Part members
 
         void UpdateToggleGuiName()
         {
-            Events["Toggle"].guiName = irstEnabled ? Localizer.Format("#autoLOC_bda_1000000") : Localizer.Format("#autoLOC_bda_1000001");		// fixme - fix localizations
+            Events["Toggle"].guiName = irstEnabled ? Localizer.Format("#autoLOC_bda_1000036") : Localizer.Format("#autoLOC_bda_1000037");		// fixme - fix localizations
         }
 
         public void EnsureVesselRadarData() 
@@ -459,7 +458,7 @@ namespace BDArmory.Radar
                 output.AppendLine(Localizer.Format("#autoLOC_bda_1000030")); //Performance
 
                 if (canScan)
-                    output.AppendLine(Localizer.Format("#autoLOC_bda_1000031", DetectionCurve.Evaluate(irstMaxDistanceDetect), irstMaxDistanceDetect)); //Detection x.xxm^2 @ n km
+                    output.AppendLine(Localizer.Format("#autoLOC_bda_1000031", DetectionCurve.Evaluate(irstMaxDistanceDetect)-273, irstMaxDistanceDetect)); //Detection x.xx deg C @ n km
                 else
                     output.AppendLine(Localizer.Format("#autoLOC_bda_1000032"));
 

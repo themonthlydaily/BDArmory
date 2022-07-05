@@ -80,21 +80,26 @@ namespace BDArmory.Control
         }
 
         float triggerTimer;
-        int rippleGunCount;
-        int _gunRippleIndex;
+        Dictionary<string, int> rippleGunCount = new Dictionary<string, int>();
+        Dictionary<string, int> gunRippleIndex = new Dictionary<string, int>();
         public float gunRippleRpm;
 
-        public int gunRippleIndex
+        public void incrementRippleIndex(string weaponname)
         {
-            get { return _gunRippleIndex; }
-            set
+            gunRippleIndex[weaponname]++;
+            if (gunRippleIndex[weaponname] >= rippleGunCount[weaponname])
             {
-                _gunRippleIndex = value;
-                if (_gunRippleIndex >= rippleGunCount)
-                {
-                    _gunRippleIndex = 0;
-                }
+                gunRippleIndex[weaponname] = 0;
             }
+        }
+
+        public int GetRippleIndex(string weaponname)
+        {
+            if (gunRippleIndex.TryGetValue(weaponname, out int rippleIndex))
+            {
+                return rippleIndex;
+            }
+            else return 0;
         }
 
         //ripple stuff
@@ -1085,6 +1090,7 @@ namespace BDArmory.Control
                 StartCoroutine(StartupListUpdater());
                 firedMissiles = 0;
                 missilesAway = new Dictionary<TargetInfo, int>();
+                rippleGunCount = new Dictionary<string, int>();
 
                 GameEvents.onVesselCreate.Add(OnVesselCreate);
                 GameEvents.onPartJointBreak.Add(OnPartJointBreak);
@@ -2870,9 +2876,9 @@ namespace BDArmory.Control
                 currentGun.useRippleFire) //currentGun.roundsPerMinute < 1500)
             {
                 float counter = 0; // Used to get a count of the ripple weapons.  a float version of rippleGunCount.
-                gunRippleIndex = 0;
+                gunRippleIndex.Clear();
                 // This value will be incremented as we set the ripple weapons
-                rippleGunCount = 0;
+                rippleGunCount.Clear();
                 float weaponRpm = 0;  // used to set the rippleGunRPM
 
                 // JDK:  this looks like it can be greatly simplified...
@@ -2963,24 +2969,24 @@ namespace BDArmory.Control
                 gunRippleRpm = counter;
                 
                 //ripple for non-homogeneous groups needs to be setup per guntype, else a slow cannon will have the same firedelay as a fast MG
-                List<string> indexedWeapons = new List<string>();
                 using (List<ModuleWeapon>.Enumerator weapon = rippleWeapons.GetEnumerator())
                     while (weapon.MoveNext())
                     {
-                        rippleGunCount = 0;
+                        int GunCount = 0; 
                         if (weapon.Current == null) continue;
-                        if (indexedWeapons.Contains(weapon.Current.WeaponName)) continue; //don't setup copies of a guntype if we've already done that
+                        if (rippleGunCount.ContainsKey(weapon.Current.WeaponName)) continue; //don't setup copies of a guntype if we've already done that
                         for (int w = 0; w < rippleWeapons.Count; w++)
                         {
                             if (weapon.Current.WeaponName == rippleWeapons[w].WeaponName)
                             {
-                                weapon.Current.rippleIndex = rippleGunCount; //this will mean that a group of two+ different RPM guns will start firing at the same time, then each subgroup will independantly ripple
-                                rippleGunCount++;
+                                weapon.Current.rippleIndex = GunCount; //this will mean that a group of two+ different RPM guns will start firing at the same time, then each subgroup will independantly ripple
+                                GunCount++;
                             }
                         }
-                        weapon.Current.initialFireDelay = 60 / (weapon.Current.roundsPerMinute * rippleGunCount);
+                        weapon.Current.initialFireDelay = 60 / (weapon.Current.roundsPerMinute * GunCount);
                         weapon.Current.useRippleFire = ro.rippleFire;
-                        indexedWeapons.Add(weapon.Current.WeaponName);
+                        rippleGunCount.Add(weapon.Current.WeaponName, GunCount);
+                        gunRippleIndex.Add(weapon.Current.WeaponName, 0);
                     }
             }
 

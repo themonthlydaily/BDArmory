@@ -858,7 +858,7 @@ namespace BDArmory.Weapons
                 yield return new WaitForSeconds(delay);
             }
             if (weaponManager == null) yield break;
-            weaponManager.gunRippleIndex = weaponManager.gunRippleIndex + 1;
+            weaponManager.incrementRippleIndex(WeaponName);
 
             //Debug.Log("[BDArmory.ModuleWeapon]: incrementing ripple index to: " + weaponManager.gunRippleIndex);
         }
@@ -3781,7 +3781,7 @@ namespace BDArmory.Weapons
                             roundsPerMinute = Mathf.Lerp((baseRPM / 10), baseRPM, spooltime);
                         }
                     }
-                    if (!useRippleFire || weaponManager.gunRippleIndex == rippleIndex) // Don't fire rippling weapons when they're on the wrong part of the cycle. Spool up and grow lasers though.
+                    if (!useRippleFire || weaponManager.GetRippleIndex(WeaponName) == rippleIndex) // Don't fire rippling weapons when they're on the wrong part of the cycle. Spool up and grow lasers though.
                     {
                         finalFire = true;
                     }
@@ -3814,7 +3814,7 @@ namespace BDArmory.Weapons
             }
             else
             {
-                if (weaponManager != null && weaponManager.gunRippleIndex == rippleIndex)
+                if (weaponManager != null && weaponManager.GetRippleIndex(WeaponName) == rippleIndex)
                 {
                     StartCoroutine(IncrementRippleIndex(0));
                     isRippleFiring = false;

@@ -384,15 +384,30 @@ namespace BDArmory.Radar
         private void UpdateRangeCapability()
         {
             _maxRadarRange = 0;
-            List<ModuleRadar>.Enumerator rad = availableRadars.GetEnumerator();
-            while (rad.MoveNext())
+            if (availableRadars.Count > 0)
             {
-                if (rad.Current == null) continue;
-                float maxRange = rad.Current.radarDetectionCurve.maxTime * 1000;
-                if (rad.Current.vessel != vessel || !(maxRange > 0)) continue;
-                if (maxRange > _maxRadarRange) _maxRadarRange = maxRange;
+                List<ModuleRadar>.Enumerator rad = availableRadars.GetEnumerator();
+                while (rad.MoveNext())
+                {
+                    if (rad.Current == null) continue;
+                    float maxRange = rad.Current.radarDetectionCurve.maxTime * 1000;
+                    if (rad.Current.vessel != vessel || !(maxRange > 0)) continue;
+                    if (maxRange > _maxRadarRange) _maxRadarRange = maxRange;
+                }
+                rad.Dispose();
             }
-            rad.Dispose();
+            else if (availableIRSTs.Count > 0)
+            {
+                List<ModuleIRST>.Enumerator irst = availableIRSTs.GetEnumerator();
+                while (irst.MoveNext())
+                {
+                    if (irst.Current == null) continue;
+                    float maxRange = irst.Current.DetectionCurve.maxTime * 1000;
+                    if (irst.Current.vessel != vessel || !(maxRange > 0)) continue;
+                    if (maxRange > _maxRadarRange) _maxRadarRange = maxRange;
+                }
+                irst.Dispose();
+            }
             // Now rebuild range display array
             List<float> newArray = new List<float>();
             for (int x = 0; x < baseIncrements.Length; x++)
