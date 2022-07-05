@@ -323,6 +323,7 @@ namespace BDArmory.Settings
         // Time override settings
         [BDAPersistentSettingsField] public static bool TIME_OVERRIDE = false;                     // Enable the time control slider.
         [BDAPersistentSettingsField] public static float TIME_SCALE = 1f;                          // Time scale factor (higher speeds up the game rate without adjusting the physics time-step).
+        [BDAPersistentSettingsField] public static float TIME_SCALE_MAX = 10f;                     // Max time scale factor (to allow users to set custom max values).
 
         // Scoring categories
         [BDAPersistentSettingsField] public static float SCORING_HEADSHOT = 3;                     // Head-Shot Time Limit

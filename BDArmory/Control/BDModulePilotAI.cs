@@ -1308,7 +1308,16 @@ namespace BDArmory.Control
             if (!autoTune)
             {
                 pidAutoTuning.RevertPIDValues(true);
-                if (BDArmorySettings.TIME_OVERRIDE) { BDArmorySettings.TIME_OVERRIDE = false; Time.timeScale = 1f; }
+                if (BDArmorySettings.TIME_OVERRIDE)
+                {
+                    BDArmorySettings.TIME_OVERRIDE = false;
+                    Time.timeScale = 1f;
+                }
+            }
+            else
+            {
+                BDArmorySettings.TIME_OVERRIDE = true;
+                Time.timeScale = BDArmorySettings.TIME_SCALE;
             }
             pidAutoTuning.ResetMeasurements();
             Fields["autoTuningLossLabel"].guiActive = autoTune;
@@ -3849,7 +3858,7 @@ namespace BDArmory.Control
         {
             public float rollRelevance = 0.5f;
             float initialRollRelevance = 0.5f;
-            float rollRelevanceMomentum = 0.7f;
+            float rollRelevanceMomentum = 0.8f;
 
             public void Update()
             {
@@ -4117,10 +4126,11 @@ namespace BDArmory.Control
                     lr.Update(loss); // Update learning rate based on the current loss.
                     if (lr.current < 1e-3f) // Tuned about as far as it'll go, time to bail.
                     {
-                        AI.autoTune = false;
                         RevertPIDValues(true); // Revert to the best settings.
                         AI.StoreSettings(); // Store the current settings for recall in the SPH.
-                        GUIUtils.RefreshAssociatedWindows(AI.part);
+                        AI.autoTuningLossLabel += ", completed.";
+                        AI.autoTune = false;
+                        return;
                     }
                     optimiser.Update();
                     AI.autoTuningLossLabel = $"{loss:G6}";

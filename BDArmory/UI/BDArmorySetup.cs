@@ -2678,7 +2678,7 @@ namespace BDArmory.UI
                     if (BDArmorySettings.TIME_OVERRIDE)
                     {
                         GUI.Label(SLeftSliderRect(++line, 1), $"{Localizer.Format("#LOC_BDArmory_Settings_TimeScale")}; ({BDArmorySettings.TIME_SCALE:G2}x)", leftLabel);
-                        if (BDArmorySettings.TIME_SCALE != (BDArmorySettings.TIME_SCALE = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.TIME_SCALE, 0f, 5f) * 10f) / 10f))
+                        if (BDArmorySettings.TIME_SCALE != (BDArmorySettings.TIME_SCALE = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.TIME_SCALE, 0f, BDArmorySettings.TIME_SCALE_MAX) * 10f) / 10f))
                         {
                             Time.timeScale = BDArmorySettings.TIME_SCALE;
                         }
