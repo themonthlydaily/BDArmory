@@ -255,7 +255,6 @@ namespace BDArmory.UI
         {
             float heatScore = 0f;
             List <Part> hottestPart = new List<Part>();
-            RaycastHit[] hits = new RaycastHit[10];
             using (List<Part>.Enumerator part = v.Parts.GetEnumerator())
                 while (part.MoveNext())
                 {
@@ -276,11 +275,11 @@ namespace BDArmory.UI
                             hottestPart.Add(part.Current);
                         }
                     }
-                Debug.Log("IRSTdebugging] HottestParts found");
                 Part closestPart = null;
                 float distance = 9999999;
                 if (hottestPart.Count > 0)
                 {
+                    RaycastHit[] hits = new RaycastHit[10];
                     using (List<Part>.Enumerator part = hottestPart.GetEnumerator()) //might be multiple 'hottest' parts (multi-engine ship, etc), find the one closest to the sensor
                     {
                         while (part.MoveNext())
@@ -293,7 +292,7 @@ namespace BDArmory.UI
                                 closestPart = part.Current;
                             }
                         }
-                        Debug.Log("IRSTdebugging] closest heatsource found");
+                        if (BDArmorySettings.DEBUG_RADAR) Debug.Log("IRSTdebugging] closest heatsource found: " + closestPart.name);
                     }
                     if (closestPart != null)
                     {
@@ -306,30 +305,31 @@ namespace BDArmory.UI
                             hits = Physics.RaycastAll(partRay, distance, layerMask);
                             hitCount = hits.Length;
                         }
-                        Debug.Log("IRSTdebugging] rayast successful");
                         float OcclusionFactor = 0;
                         float lastHeatscore = 0;
-                        using (var hitsEnu = hits.OrderBy(x => x.distance).GetEnumerator())
+
+                        using (var hitsEnu = hits.Take(hitCount).OrderBy(x => x.distance).GetEnumerator())
                             while (hitsEnu.MoveNext())
                             {
                                 Part partHit = hitsEnu.Current.collider.GetComponentInParent<Part>();
                                 if (partHit == null) continue;
                                 if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
                                 if (partHit == closestPart) continue; //ignore the heatsource
+                                if (partHit.vessel != v) continue; //ignore irstCraft; does also mean that in edge case of one craft occluded behind a second craft from PoV of a third craft w/irst wouldn't actually occlude, but oh well
                                                                       //The heavier/further the part, the more it's going to occlude the heatsource
                                 float spacing = Vector3.Distance(closestPart.transform.position, partHit.transform.position);
-                                if (spacing > 15)
+                                if (spacing > 15) //FIXEM - confirm this is in meters?
                                 {                        //if far enough away, clamp temp to temp of last part in LoS
                                     heatScore = (float)(partHit.thermalInternalFluxPrevious + partHit.skinTemperature);
                                     OcclusionFactor = -1;
                                 }
                                 else
                                 {
-                                    OcclusionFactor += partHit.mass * Mathf.Lerp(0.1f, 1, Mathf.Clamp01(spacing / 15));
+                                    OcclusionFactor += partHit.mass * spacing / 15;
                                     lastHeatscore = (float)(partHit.thermalInternalFluxPrevious + partHit.skinTemperature);
                                 }
                             }
-                        Debug.Log("IRSTdebugging] occlusion found");
+                        if (BDArmorySettings.DEBUG_RADAR) Debug.Log("IRSTdebugging] occlusion found: " + OcclusionFactor);
                         if (OcclusionFactor > 0) heatScore = Mathf.Max(lastHeatscore, heatScore / OcclusionFactor);
                     }
                 }
@@ -340,6 +340,7 @@ namespace BDArmory.UI
                 heatScore *= vesselcamo.thermalReductionFactor;
             }
 
+            if (BDArmorySettings.DEBUG_RADAR) Debug.Log("IRSTdebugging] heatScore get: " + heatScore);
             return heatScore;
         }
 

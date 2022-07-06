@@ -796,7 +796,7 @@ namespace BDArmory.Radar
         /// <summary>
         /// Determine for a vesselposition relative to the radar position how much effect the ground clutter factor will have.
         /// </summary>
-        public static float GetRadarGroundClutterModifier(ModuleRadar radar, Transform referenceTransform, Vector3 position, Vector3 vesselposition, TargetInfo ti)
+        public static float GetRadarGroundClutterModifier(float clutterFactor, Transform referenceTransform, Vector3 position, Vector3 vesselposition, TargetInfo ti)
         {
             Vector3 upVector = referenceTransform.up;
 
@@ -806,11 +806,11 @@ namespace BDArmory.Radar
             float lookDownAngle = angleFromUp - 90; // result range: -90 .. +90
             Mathf.Clamp(lookDownAngle, 0, 90);      // result range:   0 .. +90
 
-            float groundClutterMutiplier = Mathf.Lerp(1, radar.radarGroundClutterFactor, (lookDownAngle / 90));
+            float groundClutterMutiplier = Mathf.Lerp(1, clutterFactor, (lookDownAngle / 90));
 
             //additional ground clutter factor when target is landed/splashed:
             if (ti.isLandedOrSurfaceSplashed || ti.isSplashed)
-                groundClutterMutiplier *= radar.radarGroundClutterFactor;
+                groundClutterMutiplier *= clutterFactor;
 
             return groundClutterMutiplier;
         }
@@ -851,7 +851,7 @@ namespace BDArmory.Radar
                         // get vessel's radar signature
                         TargetInfo ti = GetVesselRadarSignature(loadedvessels.Current);
                         float signature = ti.radarModifiedSignature;
-                        signature *= GetRadarGroundClutterModifier(radar, radar.referenceTransform, ray.origin, loadedvessels.Current.CoM, ti);
+                        signature *= GetRadarGroundClutterModifier(radar.radarGroundClutterFactor, radar.referenceTransform, ray.origin, loadedvessels.Current.CoM, ti);
                         // no ecm lockbreak factor here
                         // no chaff factor here
 
@@ -1029,7 +1029,7 @@ namespace BDArmory.Radar
                         TargetInfo ti = GetVesselRadarSignature(loadedvessels.Current);
                         float signature = ti.radarModifiedSignature;
                         //do not multiply chaff factor here
-                        signature *= GetRadarGroundClutterModifier(radar, referenceTransform, position, loadedvessels.Current.CoM, ti);
+                        signature *= GetRadarGroundClutterModifier(radar.radarGroundClutterFactor, referenceTransform, position, loadedvessels.Current.CoM, ti);
 
                         // evaluate range
                         float distance = (loadedvessels.Current.CoM - position).magnitude / 1000f;                                      //TODO: Performance! better if we could switch to sqrMagnitude...
@@ -1162,7 +1162,7 @@ namespace BDArmory.Radar
                 // get vessel's radar signature
                 TargetInfo ti = GetVesselRadarSignature(lockedVessel);
                 float signature = ti.radarModifiedSignature;
-                signature *= GetRadarGroundClutterModifier(radar, radar.referenceTransform, ray.origin, lockedVessel.CoM, ti);
+                signature *= GetRadarGroundClutterModifier(radar.radarGroundClutterFactor, radar.referenceTransform, ray.origin, lockedVessel.CoM, ti);
                 signature *= ti.radarLockbreakFactor;    //multiply lockbreak factor from active ecm
                 //do not multiply chaff factor here
 
@@ -1233,29 +1233,17 @@ namespace BDArmory.Radar
 
                         // get vessel's heat signature
                         TargetInfo tInfo = loadedvessels.Current.gameObject.GetComponent<TargetInfo>();
+                        if (tInfo == null)
+                        {
+                            tInfo = loadedvessels.Current.gameObject.AddComponent<TargetInfo>();
+                        }
                         float signature = BDATargetManager.GetVesselHeatSignature(loadedvessels.Current, irst.referenceTransform.position) * (irst.boresightScan ? Mathf.Clamp01(15 / angle) : 1);
                         signature *= (1400 * 1400) / Mathf.Clamp((loadedvessels.Current.CoM - referenceTransform.position).sqrMagnitude, 90000, 36000000);
 
                         signature *= Mathf.Clamp(Vector3.Angle(loadedvessels.Current.transform.position - referenceTransform.position, -VectorUtils.GetUpDirection(referenceTransform.position)) / 90, 0.5f, 1.5f);
-
-                        //ground clutter factor when looking down:
-                        Vector3 targetDirection = (loadedvessels.Current.CoM - position);
-                        float angleFromUp = Vector3.Angle(targetDirection, upVector);
-                        float lookDownAngle = angleFromUp - 90; // result range: -90 .. +90
-                        Mathf.Clamp(lookDownAngle, 0, 90);      // result range:   0 .. +90
-
-                        float groundClutterMutiplier = Mathf.Lerp(1, irst.GroundClutterFactor, (lookDownAngle / 90));
-
-                        //additional ground clutter factor when target is landed/splashed:
-                        if (tInfo.isLandedOrSurfaceSplashed)
-                        {
-                            if (!tInfo.isSplashed) //ground will partially mask thermal sig
-                                groundClutterMutiplier *= irst.GroundClutterFactor;
-                            else //cold ocean on the other hand...
-                                groundClutterMutiplier *= 12;
-                        }
-
-                        signature *= groundClutterMutiplier;
+                         //ground will mask thermal sig                        
+                        signature *= (GetRadarGroundClutterModifier(irst.GroundClutterFactor, irst.referenceTransform, position, loadedvessels.Current.CoM, tInfo) * (tInfo.isSplashed ? 12 : 1));
+                        //cold ocean on the other hand...
 
                         // evaluate range
                         float distance = (loadedvessels.Current.CoM - position).magnitude / 1000f;                                      //TODO: Performance! better if we could switch to sqrMagnitude...
@@ -1265,6 +1253,7 @@ namespace BDArmory.Radar
                         //evaluate if we can detect such a signature at that range
                         float attenuationFactor = ((float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(irst.referenceTransform.position), FlightGlobals.getExternalTemperature(irst.referenceTransform.position))) +
                             ((float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(loadedvessels.Current.CoM), FlightGlobals.getExternalTemperature(loadedvessels.Current.CoM) / 2));
+
                         if (distance > irst.irstMinDistanceDetect && distance < (irst.irstMaxDistanceDetect * irst.atmAttenuationCurve.Evaluate(attenuationFactor)));
                         {
                             //evaluate if we can detect or lock such a signature at that range
@@ -1278,6 +1267,7 @@ namespace BDArmory.Radar
                                     BDATargetManager.ReportVessel(loadedvessels.Current, myWpnManager, true);
                                 }
                                 irst.ReceiveContactData(new TargetSignatureData(loadedvessels.Current, signature), signature);
+                                if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[IRSTdebugging] sent data to IRST for " + loadedvessels.Current.GetName() + "'s thermalSig");
                             }
                         }
                     }

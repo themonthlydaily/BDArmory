@@ -555,7 +555,7 @@ namespace BDArmory.Radar
 
             UpdateReferenceTransform();
 
-            if (radarCount > 0)
+            if (radarCount + irstCount > 0)
             {
                 //vesselReferenceTransform.parent = linkedRadars[0].transform;
                 vesselReferenceTransform.localScale = Vector3.one;
@@ -2226,8 +2226,8 @@ namespace BDArmory.Radar
                 //draw as dots    
                 else 
                 {
-                    float mDotSize = 6;
-                    mDotSize = displayedIRTargets[i].magnitude/10;
+                    float mDotSize = (displayedIRTargets[i].magnitude / 50) / rangeIndex;
+                    if (mDotSize < 1) mDotSize = 1;
                     pingRect = new Rect(pingPosition.x - (mDotSize / 2), pingPosition.y - (mDotSize / 2), mDotSize, mDotSize);
                     GUI.DrawTexture(pingRect, BDArmorySetup.Instance.redDotTexture, ScaleMode.StretchToFill, true);                    
 
@@ -2297,7 +2297,7 @@ namespace BDArmory.Radar
 
             if (BDInputUtils.GetKeyDown(BDInputSettingsFields.RADAR_SCAN_MODE))
             {
-                if (!locked && radarCount > 0 && !omniDisplay)
+                if (!locked && radarCount + irstCount > 0 && !omniDisplay)
                 {
                     availableRadars[0].boresightScan = !availableRadars[0].boresightScan;
                     availableIRSTs[0].boresightScan = !availableIRSTs[0].boresightScan;
