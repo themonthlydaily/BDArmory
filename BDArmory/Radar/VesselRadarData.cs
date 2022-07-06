@@ -680,6 +680,7 @@ namespace BDArmory.Radar
             (
                 radar.canLock
                 && (!radar.locked || radar.currentLocks < radar.maxLocks)
+                && RadarUtils.RadarCanDetect(radar, radarTarget.targetData.signalStrength, (radarTarget.targetData.predictedPosition - radar.transform.position).magnitude / 1000f)
                 && radarTarget.targetData.signalStrength > radar.radarLockTrackCurve.Evaluate((radarTarget.targetData.predictedPosition - radar.transform.position).magnitude / 1000f)
                 &&
                 (radar.omnidirectional ||
