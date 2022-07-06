@@ -1191,7 +1191,6 @@ namespace BDArmory.Radar
         {
             bool detected = false;
             // float distance already in km
-            jammingDistance /= 1000f; // Convert to km
 
             //evaluate if we can detect such a signature at that range
             if ((distance > radar.radarMinDistanceDetect) && (distance < radar.radarMaxDistanceDetect))
@@ -1201,7 +1200,7 @@ namespace BDArmory.Radar
                 //do not consider lockbreak factor from active ecm here!
                 //do not consider chaff here
 
-                if ((signature > minDetectSig) && (distance > jammingDistance))
+                if (signature > minDetectSig)
                 {
                     detected = true;
                 }
