@@ -4128,7 +4128,7 @@ namespace BDArmory.Control
                     {
                         RevertPIDValues(true); // Revert to the best settings.
                         AI.StoreSettings(); // Store the current settings for recall in the SPH.
-                        AI.autoTuningLossLabel += ", completed.";
+                        AI.autoTuningLossLabel = $"{lr.best:G6}, completed.";
                         AI.autoTune = false;
                         return;
                     }
