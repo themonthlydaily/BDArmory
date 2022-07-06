@@ -61,8 +61,6 @@ namespace BDArmory.Radar
         [KSPField]
         public FloatCurve atmAttenuationCurve = new FloatCurve();        //FloatCurve range increase/decrease based on atm density/temp, thinner/cooler air yields longer range returns
 
-        [KSPField]
-        public FloatCurve sensorFOVBias = new FloatCurve();         //FoV bias when using broesight scan
 
         [KSPField]
         public float GroundClutterFactor = 0.16f; //Factor defining how effective the irst is at detecting heatsigs against ambient ground temperature (0=ineffective, 1=fully effective)
@@ -250,18 +248,6 @@ namespace BDArmory.Radar
                 }
                 turr.Dispose();
 
-                if (sensorFOVBias.minTime == float.MaxValue)
-                {
-                    float a = boresightFOV / 2f;
-                    float b = -1f * ((1f - 1f / 1.2f));
-                    float[] x = new float[6] { 0f * a, 0.2f * a, 0.4f * a, 0.6f * a, 0.8f * a, 1f * a };
-                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.ModuleIRST]: OnStart IRST " + IRSTName + ": setting default SensorFOVBias curve to:");
-                    for (int i = 0; i < 6; i++)
-                    {
-                        sensorFOVBias.Add(x[i], b / (a * a) * x[i] * x[i] + 1f, -1f / 3f * x[i] / (a * a), -1f / 3f * x[i] / (a * a));
-                        if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("key = " + x[i] + " " + (b / (a * a) * x[i] * x[i] + 1f) + " " + (-1f / 3f * x[i] / (a * a)) + " " + (-1f / 3f * x[i] / (a * a)));
-                    }
-                }
                 //GameEvents.onVesselGoOnRails.Add(OnGoOnRails);    //not needed
                 EnsureVesselRadarData();
                 StartCoroutine(StartUpRoutine());

@@ -2228,6 +2228,7 @@ namespace BDArmory.Radar
                 {
                     float mDotSize = (displayedIRTargets[i].magnitude / 50) / rangeIndex;
                     if (mDotSize < 1) mDotSize = 1;
+                    if (mDotSize > 20) mDotSize = 20;
                     pingRect = new Rect(pingPosition.x - (mDotSize / 2), pingPosition.y - (mDotSize / 2), mDotSize, mDotSize);
                     GUI.DrawTexture(pingRect, BDArmorySetup.Instance.redDotTexture, ScaleMode.StretchToFill, true);                    
 

@@ -276,6 +276,7 @@ namespace BDArmory.UI
                         }
                     }
                 Part closestPart = null;
+                Transform thrustTransform = null;
                 float distance = 9999999;
                 if (hottestPart.Count > 0)
                 {
@@ -296,7 +297,14 @@ namespace BDArmory.UI
                     }
                     if (closestPart != null)
                     {
-                        Ray partRay = new Ray(closestPart.transform.position, sensorPosition - closestPart.transform.position); //trace from heatsource to IR sensor
+                        TargetInfo tInfo;
+                        if (tInfo = v.gameObject.GetComponent<TargetInfo>())
+                        {
+                            if (tInfo.targetEngineList.Contains(closestPart))
+                                thrustTransform = closestPart.FindModelTransform("thrustTransform"); //method to differentiate jets from prop engines? Additional firespitter check?
+                        }
+
+                        Ray partRay = new Ray(thrustTransform ? thrustTransform.position : closestPart.transform.position, sensorPosition - closestPart.transform.position); //trace from heatsource to IR sensor
                         var layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA);
 
                         var hitCount = Physics.RaycastNonAlloc(partRay, hits, distance, layerMask);
@@ -318,7 +326,7 @@ namespace BDArmory.UI
                                 if (partHit.vessel != v) continue; //ignore irstCraft; does also mean that in edge case of one craft occluded behind a second craft from PoV of a third craft w/irst wouldn't actually occlude, but oh well
                                                                       //The heavier/further the part, the more it's going to occlude the heatsource
                                 float spacing = Vector3.Distance(closestPart.transform.position, partHit.transform.position);
-                                if (spacing > 15) //FIXEM - confirm this is in meters?
+                                if (spacing > 15) 
                                 {                        //if far enough away, clamp temp to temp of last part in LoS
                                     heatScore = (float)(partHit.thermalInternalFluxPrevious + partHit.skinTemperature);
                                     OcclusionFactor = -1;
