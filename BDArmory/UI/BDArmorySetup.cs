@@ -2666,14 +2666,7 @@ namespace BDArmory.UI
                     }
                     if (BDArmorySettings.TIME_OVERRIDE != (BDArmorySettings.TIME_OVERRIDE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.TIME_OVERRIDE, Localizer.Format("#LOC_BDArmory_Settings_TimeOverride")))) // Time override.
                     {
-                        if (!BDArmorySettings.TIME_OVERRIDE)
-                        {
-                            Time.timeScale = 1f; // Reset the time scale
-                        }
-                        else
-                        {
-                            Time.timeScale = BDArmorySettings.TIME_SCALE; // Set the time scale to our setting.
-                        }
+                        OtherUtils.SetTimeOverride(BDArmorySettings.TIME_OVERRIDE);
                     }
                     if (BDArmorySettings.TIME_OVERRIDE)
                     {

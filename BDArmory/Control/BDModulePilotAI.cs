@@ -226,7 +226,8 @@ namespace BDArmory.Control
         [KSPField(isPersistant = false, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_PIDAutoTune", advancedTweakable = true,
             groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
             UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All)]
-        public bool autoTune = false;
+        bool autoTune = false;
+        public bool AutoTune {get { return autoTune; } set { autoTune = value; OnAutoTuneChanged(null, null); } }
         PIDAutoTuning pidAutoTuning;
 
         [KSPField(guiName = "#LOC_BDArmory_AutoTuningLoss", groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true), UI_Label(scene = UI_Scene.All)]
@@ -1103,11 +1104,9 @@ namespace BDArmory.Control
 
             StartCoroutine(ToggleDynamicDampingButtons());
 
-            autoTune = false; // Disable auto-tuning if the damping configuration is changed.
-            if (HighLogic.LoadedSceneIsFlight)
+            if (HighLogic.LoadedSceneIsFlight && autoTune) // Disable auto-tuning if the damping configuration is changed.
             {
-                if (pidAutoTuning == null) SetAutoTuneSliders();
-                OnAutoTuneChanged(null, null); // Reset internals of auto-tuning for the new PID configuration.
+                AutoTune = false;
             }
         }
 
@@ -1273,22 +1272,9 @@ namespace BDArmory.Control
             }
         }
 
-        void SetAutoTuneSliders()
+        void SetupAutoTuneSliders()
         {
-            if (HighLogic.LoadedSceneIsEditor) // Make sure they're disabled in the editor. Use 'Store' in flight and 'Restore' in the editor to save the slider.
-            {
-                Fields["autoTune"].guiActiveEditor = false;
-                Fields["autoTuningLossLabel"].guiActiveEditor = false;
-                Fields["autoTuningLossLabel2"].guiActiveEditor = false;
-                Fields["autoTuningLossLabel3"].guiActiveEditor = false;
-                // Fields["autoTuningLearningRate"].guiActiveEditor = false;
-                Fields["autoTuningOptionNumSamples"].guiActiveEditor = false;
-                // Fields["autoTuningOptionRollRelevance"].guiActiveEditor = false;
-                Fields["autoTuningOptionFastResponseRelevance"].guiActiveEditor = false;
-                Fields["autoTuningOptionFixedP"].guiActiveEditor = false;
-                Fields["autoTuningOptionClampMaximums"].guiActiveEditor = false;
-                autoTune = false;
-            }
+            SetAutoTuneFields();
             if (!HighLogic.LoadedSceneIsFlight) return;
             pidAutoTuning = new PIDAutoTuning(this);
             UI_Toggle autoTuneToggle = (UI_Toggle)Fields["autoTune"].uiControlFlight;
@@ -1303,23 +1289,34 @@ namespace BDArmory.Control
                 }
             }
         }
-        void OnAutoTuneChanged(BaseField field, object obj)
+        public void OnAutoTuneChanged(BaseField field, object obj)
         {
-            if (!autoTune)
-            {
-                pidAutoTuning.RevertPIDValues(true);
-                if (BDArmorySettings.TIME_OVERRIDE)
-                {
-                    BDArmorySettings.TIME_OVERRIDE = false;
-                    Time.timeScale = 1f;
-                }
-            }
+            if (autoTune)
+                pidAutoTuning.ResetMeasurements();
             else
+                pidAutoTuning.RevertPIDValues(true);
+
+            SetAutoTuneFields();
+            MaintainFuelLevels(autoTune); // Prevent fuel drain while auto-tuning.
+            OtherUtils.SetTimeOverride(autoTune);
+        }
+        void SetAutoTuneFields()
+        {
+            if (HighLogic.LoadedSceneIsEditor) // Make sure they're disabled in the editor. Use 'Store' in flight and 'Restore' in the editor to save the slider. Note: the vessel name has to be the same between scenes.
             {
-                BDArmorySettings.TIME_OVERRIDE = true;
-                Time.timeScale = BDArmorySettings.TIME_SCALE;
+                Fields["autoTune"].guiActiveEditor = false;
+                Fields["autoTuningLossLabel"].guiActiveEditor = false;
+                Fields["autoTuningLossLabel2"].guiActiveEditor = false;
+                Fields["autoTuningLossLabel3"].guiActiveEditor = false;
+                // Fields["autoTuningLearningRate"].guiActiveEditor = false;
+                Fields["autoTuningOptionNumSamples"].guiActiveEditor = false;
+                // Fields["autoTuningOptionRollRelevance"].guiActiveEditor = false;
+                Fields["autoTuningOptionFastResponseRelevance"].guiActiveEditor = false;
+                Fields["autoTuningOptionFixedP"].guiActiveEditor = false;
+                Fields["autoTuningOptionClampMaximums"].guiActiveEditor = false;
+                autoTune = false;
+                return;
             }
-            pidAutoTuning.ResetMeasurements();
             Fields["autoTuningLossLabel"].guiActive = autoTune;
             Fields["autoTuningLossLabel2"].guiActive = autoTune;
             Fields["autoTuningLossLabel3"].guiActive = autoTune;
@@ -1330,12 +1327,12 @@ namespace BDArmory.Control
             Fields["autoTuningOptionFixedP"].guiActive = autoTune;
             Fields["autoTuningOptionClampMaximums"].guiActive = autoTune;
 
-            MaintainFuelLevels(autoTune); // Prevent fuel drain while auto-tuning.
             if (part != null && part.PartActionWindow != null && part.PartActionWindow.parameterGroups.ContainsKey("pilotAI_PID")) part.PartActionWindow.parameterGroups["pilotAI_PID"].UpdateContentSize(); // FIXME This isn't working yet. It should remove the blank space when disabling auto-tuning.
             GUIUtils.RefreshAssociatedWindows(part);
         }
         void OnAutoTuneOptionsChanged(BaseField field, object obj)
         {
+            if (pidAutoTuning is null) return;
             pidAutoTuning.RevertPIDValues(true);
             pidAutoTuning.ResetMeasurements();
             pidAutoTuning.ResetGradient();
@@ -1370,7 +1367,7 @@ namespace BDArmory.Control
             ToggleDynamicDampingFields();
             ToggleMaxAltitude();
             SetOnExtendAngleA2AChanged();
-            SetAutoTuneSliders();
+            SetupAutoTuneSliders();
             // InitSteerDamping();
             if ((HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor) && storedSettings != null && storedSettings.ContainsKey(HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName))
             {
@@ -3912,7 +3909,7 @@ namespace BDArmory.Control
             if (AI == null || AI.vessel == null) return; // Sanity check.
             if (AI.vessel.Parts.Count < partCount) // Don't tune a plane if it's lost parts.
             {
-                AI.autoTune = false;
+                AI.AutoTune = false;
                 var message = "Vessel {AI.vessel.vesselName} has lost parts since spawning, auto-tuning disabled.";
                 Debug.LogWarning($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: " + message);
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
@@ -4016,11 +4013,11 @@ namespace BDArmory.Control
             // maxRollErrorSqr = 0;
             pointingOscillationAreaSqr = 0;
             rollOscillationAreaSqr = 0;
-            if (!AI.autoTune && AI.currentCommand == PilotCommands.FlyTo) AI.ReleaseCommand(); // Release the AI if we've been commanding it.
+            if (!AI.AutoTune && AI.currentCommand == PilotCommands.FlyTo) AI.ReleaseCommand(); // Release the AI if we've been commanding it.
             lastPointingErrorSqr = float.MaxValue;
             lastAbsRollErrorSqr = float.MaxValue;
             onTargetTimer = 0;
-            if (!AI.autoTune) gradient = null;
+            if (!AI.AutoTune) gradient = null;
             else if (gradient == null) ResetGradient();
             measuring = false; // Set this false last so we can use it in checks above.
         }
@@ -4129,7 +4126,7 @@ namespace BDArmory.Control
                         RevertPIDValues(true); // Revert to the best settings.
                         AI.StoreSettings(); // Store the current settings for recall in the SPH.
                         AI.autoTuningLossLabel = $"{lr.best:G6}, completed.";
-                        AI.autoTune = false;
+                        AI.AutoTune = false;
                         return;
                     }
                     optimiser.Update();
@@ -4188,7 +4185,7 @@ namespace BDArmory.Control
                     Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: " + message);
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
                     RevertPIDValues(false);
-                    AI.autoTune = false;
+                    AI.AutoTune = false;
                     return;
                 }
                 var loss = baseLossSamples.Average();
@@ -4224,6 +4221,7 @@ namespace BDArmory.Control
             if (AI is null) return;
             if (useBest && bestValues is not null)
             {
+                // Debug.Log($"DEBUG Reverting PID values to best values");
                 // lowestSumGradients = float.MaxValue;
                 foreach (var fieldName in fields.Keys.ToList())
                     if (bestValues.ContainsKey(fieldName))
@@ -4231,6 +4229,7 @@ namespace BDArmory.Control
             }
             else if (baseValues is not null)
             {
+                // Debug.Log($"DEBUG Reverting PID values to base values");
                 foreach (var fieldName in fields.Keys.ToList())
                     if (baseValues.ContainsKey(fieldName))
                         fields[fieldName].SetValue(baseValues[fieldName], AI);
