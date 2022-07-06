@@ -234,8 +234,8 @@ namespace BDArmory.Competition
             tournamentID = (uint)DateTime.UtcNow.Subtract(new DateTime(2020, 1, 1)).TotalSeconds;
             savegame = HighLogic.SaveFolder;
             tournamentType = TournamentType.Teams;
-            var abs_folder = Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", folder);
-            if (!Directory.Exists(abs_folder))
+            var absFolder = Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", folder);
+            if (!Directory.Exists(absFolder))
             {
                 message = "Tournament folder (" + folder + ") containing craft files or team folders does not exist.";
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
@@ -244,7 +244,7 @@ namespace BDArmory.Competition
             }
             if (numberOfTeams > 1) // Make teams from the files in the spawn folder.
             {
-                craftFiles = Directory.GetFiles(abs_folder, "*.craft").ToList();
+                craftFiles = Directory.GetFiles(absFolder, "*.craft").ToList();
                 if (craftFiles.Count < numberOfTeams)
                 {
                     message = "Insufficient vessels in AutoSpawn" + (!string.IsNullOrEmpty(folder) ? "/" + folder : "") + " to make " + numberOfTeams + " teams.";
@@ -266,11 +266,19 @@ namespace BDArmory.Competition
             }
             else // Make teams from the folders under the spawn folder.
             {
-                var teamDirs = Directory.GetDirectories(abs_folder);
-                if (teamDirs.Length < 2) // Make teams from each vessel in the spawn folder. Allow for a single subfolder for putting bad craft or other tmp things in.
+                var teamDirs = Directory.GetDirectories(absFolder);
+                if (tournamentStyle == 2) // If it's a gauntlet tournament, ignore the opponents folder if it's in the main folder.
+                {
+                    var opponentFolder = Path.GetFileName(BDArmorySettings.VESSEL_SPAWN_GAUNTLET_OPPONENTS_FILES_LOCATION.TrimEnd(new char[] { Path.DirectorySeparatorChar }));
+                    if (teamDirs.Select(d => Path.GetFileName(d)).Contains(opponentFolder))
+                    {
+                        teamDirs = teamDirs.Where(d => Path.GetFileName(d) != opponentFolder).ToArray();
+                    }
+                }
+                if (teamDirs.Length < (tournamentStyle != 2 ? 2 : 1)) // Make teams from each vessel in the spawn folder. Allow for a single subfolder for putting bad craft or other tmp things in, unless it's a gauntlet competition.
                 {
                     numberOfTeams = -1; // Flag for treating craft files as folder names.
-                    craftFiles = Directory.GetFiles(abs_folder, "*.craft").ToList();
+                    craftFiles = Directory.GetFiles(absFolder, "*.craft").ToList();
                     teamFiles = craftFiles.Select(f => new List<string> { f }).ToList();
                 }
                 else
@@ -390,6 +398,13 @@ namespace BDArmory.Competition
                         #region Opponent config
                         var opponentFolder = Path.Combine("AutoSpawn", BDArmorySettings.VESSEL_SPAWN_GAUNTLET_OPPONENTS_FILES_LOCATION);
                         var opponentAbsFolder = Path.Combine(KSPUtil.ApplicationRootPath, opponentFolder);
+                        if (!Directory.Exists(opponentAbsFolder))
+                        {
+                            message = "Opponents folder (" + opponentFolder + ") containing craft files or team folders does not exist.";
+                            BDACompetitionMode.Instance.competitionStatus.Add(message);
+                            Debug.Log("[BDArmory.BDATournament]: " + message);
+                            return false;
+                        }
                         var opponentTeamDirs = Directory.GetDirectories(opponentAbsFolder);
                         List<string> opponentCraftFiles;
                         if (opponentTeamDirs.Length < 1) // Make teams from each vessel in the opponents folder.
@@ -433,7 +448,8 @@ namespace BDArmory.Competition
                         for (int roundIndex = 0; roundIndex < numberOfRounds; ++roundIndex)
                         {
                             var heatList = new List<SpawnConfig>();
-                            foreach (var combination in combinations){
+                            foreach (var combination in combinations)
+                            {
                                 var selectedCraft = SelectTeamCraft(combination.Select(i => teamsIndex[i]).ToList(), vesselsPerTeam); // Vessel selection for a team can vary between rounds if the number of vessels in a team doesn't match the vesselsPerTeam parameter.
                                 foreach (var opponentCombination in opponentCombinations)
                                 {
@@ -454,7 +470,8 @@ namespace BDArmory.Competition
                                         null, // No folder, we're going to specify the craft files.
                                         null // No list of craft files, we've specified them directly in selectedCraft.
                                     ));
-                                }}
+                                }
+                            }
                             heatList.Shuffle(); // Randomise the playing order within each round.
                             rounds.Add(roundIndex, heatList.Select((heat, index) => new KeyValuePair<int, SpawnConfig>(index, heat)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
                         }
