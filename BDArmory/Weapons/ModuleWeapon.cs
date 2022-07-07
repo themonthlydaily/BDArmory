@@ -405,7 +405,7 @@ namespace BDArmory.Weapons
             UI_FloatRange(minValue = 100f, maxValue = 1500, stepIncrement = 25f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]
         public float roundsPerMinute = 650; //RoF slider
 
-        public float baseRPM;
+        public float baseRPM = 650;
 
         [KSPField]
         public bool isChaingun = false; //does the gun have adjustable RoF
@@ -983,7 +983,11 @@ namespace BDArmory.Weapons
                     EffectBehaviour.AddParticleEmitter(emitter.Current);
                 }
 
-            baseRPM = float.Parse(ConfigNodeUtils.FindPartModuleConfigNodeValue(part.partInfo.partConfig, "ModuleWeapon", "roundsPerMinute"));
+            if (eWeaponType != WeaponTypes.Laser || (eWeaponType == WeaponTypes.Laser && pulseLaser))
+            {
+                baseRPM = float.Parse(ConfigNodeUtils.FindPartModuleConfigNodeValue(part.partInfo.partConfig, "ModuleWeapon", "roundsPerMinute"));
+            }
+            else baseRPM = 3000;
 
             if (roundsPerMinute >= 1500 || (eWeaponType == WeaponTypes.Laser && !pulseLaser))
             {
