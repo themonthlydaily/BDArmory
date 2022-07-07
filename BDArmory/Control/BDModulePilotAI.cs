@@ -237,23 +237,11 @@ namespace BDArmory.Control
         [KSPField(guiName = "\tField", groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true), UI_Label(scene = UI_Scene.All)]
         public string autoTuningLossLabel3 = "";
 
-        // //AutoTuning Learning Rate
-        // [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_PilotAI_PIDAutoTuningLearningRate", advancedTweakable = true,
-        //     groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
-        //     UI_FloatRange(minValue = .0001f, maxValue = 1f, stepIncrement = .0001f, scene = UI_Scene.All)]
-        // public float autoTuningLearningRate = 1f;
-
         //AutoTuning Number Of Samples
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_PIDAutoTuningNumSamples", advancedTweakable = true,
             groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
             UI_FloatRange(minValue = 1f, maxValue = 10f, stepIncrement = 1f, scene = UI_Scene.All)]
         public float autoTuningOptionNumSamples = 5f;
-
-        // //AutoTuning Roll Relevance
-        // [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_PIDAutoTuningRollRelevance", advancedTweakable = true,
-        //     groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
-        //     UI_FloatRange(minValue = 0f, maxValue = 0.2f, stepIncrement = 0.01f, scene = UI_Scene.All)]
-        // public float autoTuningOptionRollRelevance = 0.05f;
 
         //AutoTuning Fast Response Relevance
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_PIDAutoTuningFastResponseRelevance", advancedTweakable = true,
@@ -1308,9 +1296,7 @@ namespace BDArmory.Control
                 Fields["autoTuningLossLabel"].guiActiveEditor = false;
                 Fields["autoTuningLossLabel2"].guiActiveEditor = false;
                 Fields["autoTuningLossLabel3"].guiActiveEditor = false;
-                // Fields["autoTuningLearningRate"].guiActiveEditor = false;
                 Fields["autoTuningOptionNumSamples"].guiActiveEditor = false;
-                // Fields["autoTuningOptionRollRelevance"].guiActiveEditor = false;
                 Fields["autoTuningOptionFastResponseRelevance"].guiActiveEditor = false;
                 Fields["autoTuningOptionFixedP"].guiActiveEditor = false;
                 Fields["autoTuningOptionClampMaximums"].guiActiveEditor = false;
@@ -1320,15 +1306,12 @@ namespace BDArmory.Control
             Fields["autoTuningLossLabel"].guiActive = autoTune;
             Fields["autoTuningLossLabel2"].guiActive = autoTune;
             Fields["autoTuningLossLabel3"].guiActive = autoTune;
-            // Fields["autoTuningLearningRate"].guiActive = autoTune;
             Fields["autoTuningOptionNumSamples"].guiActive = autoTune;
-            // Fields["autoTuningOptionRollRelevance"].guiActive = autoTune;
             Fields["autoTuningOptionFastResponseRelevance"].guiActive = autoTune;
             Fields["autoTuningOptionFixedP"].guiActive = autoTune;
             Fields["autoTuningOptionClampMaximums"].guiActive = autoTune;
 
-            if (part != null && part.PartActionWindow != null && part.PartActionWindow.parameterGroups.ContainsKey("pilotAI_PID")) part.PartActionWindow.parameterGroups["pilotAI_PID"].UpdateContentSize(); // FIXME This isn't working yet. It should remove the blank space when disabling auto-tuning.
-            GUIUtils.RefreshAssociatedWindows(part);
+            if (!autoTune) StartCoroutine(ToggleDynamicDampingButtons()); // Toggle the button visibility to refresh the PAW properly.
         }
         void OnAutoTuneOptionsChanged(BaseField field, object obj)
         {
@@ -4193,7 +4176,7 @@ namespace BDArmory.Control
             else // Update which axis we're measuring and reset the other ones back to the base value.
             {
                 currentField = fieldNames[currentFieldIndex];
-                foreach (var fieldName in fields.Keys.ToList()) fields[fieldName].SetValue(baseValues[fieldName] + (fieldName == currentField ? (firstCFDSample ? -1f : 1f) * dx[fieldName] : 0), AI);
+                foreach (var fieldName in fields.Keys.ToList()) fields[fieldName].SetValue(baseValues[fieldName] + (fieldName == currentField ? (firstCFDSample ? -1f : 1f) * dx[fieldName] : 0), AI); // FIXME Sometimes these values are getting clamped by the sliders on the next Update/FixedUpdate. This doesn't seem specific to the auto-tuning though as toggling up-to-eleven was also triggering this.
             }
         }
 
