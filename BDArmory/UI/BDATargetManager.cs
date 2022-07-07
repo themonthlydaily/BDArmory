@@ -326,14 +326,14 @@ namespace BDArmory.UI
                                 if (partHit.vessel != v) continue; //ignore irstCraft; does also mean that in edge case of one craft occluded behind a second craft from PoV of a third craft w/irst wouldn't actually occlude, but oh well
                                                                       //The heavier/further the part, the more it's going to occlude the heatsource
                                 float spacing = Vector3.Distance(closestPart.transform.position, partHit.transform.position);
-                                if (spacing > 15) 
+                                if (spacing > 15)       //arbitirary 15m threshold, may neen to adjust
                                 {                        //if far enough away, clamp temp to temp of last part in LoS
                                     heatScore = (float)(partHit.thermalInternalFluxPrevious + partHit.skinTemperature);
                                     OcclusionFactor = -1;
                                 }
                                 else
                                 {
-                                    OcclusionFactor += partHit.mass * spacing / 15;
+                                    OcclusionFactor += partHit.mass * spacing / 15; //spacing / 15 is linear; replace with an targetAspect floatcurve (either default linear curve for irst, or custom, new floatcurve field for missileLauncher)) for setting what angle a IR missile can lock from?
                                     lastHeatscore = (float)(partHit.thermalInternalFluxPrevious + partHit.skinTemperature);
                                 }
                             }
@@ -348,7 +348,7 @@ namespace BDArmory.UI
                 heatScore *= vesselcamo.thermalReductionFactor;
             }
 
-            if (BDArmorySettings.DEBUG_RADAR) Debug.Log("IRSTdebugging] heatScore get: " + heatScore);
+            if (BDArmorySettings.DEBUG_RADAR) Debug.Log("IRSTdebugging] final heatScore: " + heatScore);
             return heatScore;
         }
 
@@ -460,7 +460,7 @@ namespace BDArmory.UI
                             continue;
                     }
 
-                    float score = GetVesselHeatSignature(vessel, Vector3.zero) * Mathf.Clamp01(15 / angle); //change to missile position to have missile IR detection dependant on target aspect
+                    float score = GetVesselHeatSignature(vessel, Vector3.zero) * Mathf.Clamp01(15 / angle); //change vector3.zero to missile.transform.position to have missile IR detection dependant on target aspect
                     score *= (1400 * 1400) / Mathf.Clamp((vessel.CoM - ray.origin).sqrMagnitude, 90000, 36000000);
 
                     // Add bias targets closer to center of seeker FOV, only once missile seeker can see target

@@ -1254,7 +1254,7 @@ namespace BDArmory.Radar
                         float attenuationFactor = ((float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(irst.referenceTransform.position), FlightGlobals.getExternalTemperature(irst.referenceTransform.position))) +
                             ((float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(loadedvessels.Current.CoM), FlightGlobals.getExternalTemperature(loadedvessels.Current.CoM) / 2));
 
-                        if (distance > irst.irstMinDistanceDetect && distance < (irst.irstMaxDistanceDetect * irst.atmAttenuationCurve.Evaluate(attenuationFactor)));
+                        if (distance > irst.irstMinDistanceDetect && distance < (irst.irstMaxDistanceDetect * irst.atmAttenuationCurve.Evaluate(attenuationFactor)))
                         {
                             //evaluate if we can detect or lock such a signature at that range
                             float minDetectSig = irst.DetectionCurve.Evaluate(distance / attenuationFactor);
