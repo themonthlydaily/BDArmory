@@ -326,6 +326,8 @@ namespace BDArmory.Weapons
         #region KSPFields
 
         [KSPField(isPersistant = true, guiActive = true, guiName = "#LOC_BDArmory_WeaponName", guiActiveEditor = true), UI_Label(affectSymCounterparts = UI_Scene.All, scene = UI_Scene.All)]//Weapon Name 
+        public string WeaponDisplayName;
+
         public string WeaponName;
 
         [KSPField]
@@ -971,6 +973,7 @@ namespace BDArmory.Weapons
                 shortName = part.partInfo.title;
             }
             OriginalShortName = shortName;
+            WeaponDisplayName = shortName;
             WeaponName = ConfigNodeUtils.FindPartModuleConfigNodeValue(part.partInfo.partConfig, "ModuleWeapon", "shortName"); //have weaponname be the .cfg shortname, not whatever it happens to be set to when the scene laods
             using (var emitter = part.FindModelComponents<KSPParticleEmitter>().AsEnumerable().GetEnumerator())
                 while (emitter.MoveNext())
@@ -5449,7 +5452,7 @@ namespace BDArmory.Weapons
         {
             if (instance != null && instance.WPNmodule != null)
             {
-                //instance.WPNmodule.WeaponName = instance.WPNmodule.shortName;
+                instance.WPNmodule.WeaponDisplayName = instance.WPNmodule.shortName;
                 instance.WPNmodule = null;
                 instance.UpdateGUIState();
             }
@@ -5592,7 +5595,7 @@ namespace BDArmory.Weapons
             {
                 string newName = string.IsNullOrEmpty(txtName.Trim()) ? WPNmodule.OriginalShortName : txtName.Trim();
 
-                //WPNmodule.WeaponName = newName;
+                WPNmodule.WeaponDisplayName = newName;
                 WPNmodule.shortName = newName;
                 instance.WPNmodule.HideUI();
             }
