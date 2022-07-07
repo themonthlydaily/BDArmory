@@ -52,12 +52,15 @@ namespace BDArmory.UI
         private bool Visualizer = false;
         private bool HPvisualizer = false;
         private bool HullVisualizer = false;
+        private bool LiftVisualizer = false;
         private bool oldVisualizer = false;
         private bool oldHPvisualizer = false;
         private bool oldHullVisualizer = false;
+        private bool oldLiftVisualizer = false;
         private bool refreshVisualizer = false;
         private bool refreshHPvisualizer = false;
         private bool refreshHullvisualizer = true;
+        private bool refreshLiftvisualizer = false;
         private bool isWood = false;
         private bool isSteel = false;
         private bool isAluminium = true;
@@ -133,11 +136,12 @@ namespace BDArmory.UI
                 {
                     CalcArmor = true;
                 }
-                if (Visualizer || HPvisualizer || HullVisualizer)
+                if (Visualizer || HPvisualizer || HullVisualizer || LiftVisualizer)
                 {
                     refreshVisualizer = true;
                     refreshHPvisualizer = true;
                     refreshHullvisualizer = true;
+                    refreshLiftvisualizer = true;
                 }
                 shipModifiedfromCalcArmor = false;
             }
@@ -190,6 +194,7 @@ namespace BDArmory.UI
             Visualizer = false;
             HPvisualizer = false;
             HullVisualizer = false;
+            LiftVisualizer = false;
             Visualize();
         }
 
@@ -233,6 +238,7 @@ namespace BDArmory.UI
                 {
                     Visualizer = false;
                     HullVisualizer = false;
+                    LiftVisualizer = false;
                 }
             }
             line += 1.25f;
@@ -247,6 +253,7 @@ namespace BDArmory.UI
                     {
                         HPvisualizer = false;
                         HullVisualizer = false;
+                        LiftVisualizer = false;
                     }
                 }
                 line += 1.25f;
@@ -261,12 +268,25 @@ namespace BDArmory.UI
                     {
                         HPvisualizer = false;
                         Visualizer = false;
+                        LiftVisualizer = false;
                     }
                 }
                 line += 1.5f;
             }
 
-            if ((refreshHPvisualizer || HPvisualizer != oldHPvisualizer) || (refreshVisualizer || Visualizer != oldVisualizer) || (refreshHullvisualizer || HullVisualizer != oldHullVisualizer))
+            if (GUI.Button(new Rect(10, line * lineHeight, 280, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorLiftVisualizer"), LiftVisualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+            {
+                LiftVisualizer = !LiftVisualizer;
+                if (LiftVisualizer)
+                {
+                    Visualizer = false;
+                    HullVisualizer = false;
+                    HPvisualizer = false;
+                }
+            }
+            line += 1.25f;
+
+            if ((refreshHPvisualizer || HPvisualizer != oldHPvisualizer) || (refreshVisualizer || Visualizer != oldVisualizer) || (refreshHullvisualizer || HullVisualizer != oldHullVisualizer) || (refreshLiftvisualizer || LiftVisualizer != oldLiftVisualizer))
             {
                 Visualize();
             }
@@ -530,7 +550,7 @@ namespace BDArmory.UI
         {
             if (EditorLogic.RootPart == null)
                 return;
-            if (Visualizer || HPvisualizer || HullVisualizer)
+            if (Visualizer || HPvisualizer || HullVisualizer || LiftVisualizer)
             {
                 using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator())
                     while (parts.MoveNext())
@@ -547,6 +567,14 @@ namespace BDArmory.UI
                             if (HullVisualizer)
                             {
                                 VisualizerColor = Color.HSVToRGB(a.HullTypeNum / 3, 1, 1f);
+                            }
+                            if (LiftVisualizer)
+                            {
+                                ModuleLiftingSurface wing = parts.Current.GetComponent<ModuleLiftingSurface>();
+                                if (wing != null)
+                                    VisualizerColor = Color.HSVToRGB(Mathf.Clamp01(Mathf.Log10(wing.deflectionLiftCoeff + 1f)) / 3, 1, 1);
+                                else
+                                    VisualizerColor = Color.HSVToRGB(0, 1, 1);
                             }
                             var r = parts.Current.GetComponentsInChildren<Renderer>();
                             {
@@ -581,7 +609,7 @@ namespace BDArmory.UI
                         }
                     }
             }
-            if (!Visualizer && !HPvisualizer && !HullVisualizer)
+            if (!Visualizer && !HPvisualizer && !HullVisualizer && !LiftVisualizer)
             {
                 using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator())
                     while (parts.MoveNext())
@@ -659,6 +687,7 @@ namespace BDArmory.UI
             oldVisualizer = Visualizer;
             oldHPvisualizer = HPvisualizer;
             oldHullVisualizer = HullVisualizer;
+            oldLiftVisualizer = LiftVisualizer;
             refreshVisualizer = false;
             refreshHPvisualizer = false;
             refreshHullvisualizer = false;

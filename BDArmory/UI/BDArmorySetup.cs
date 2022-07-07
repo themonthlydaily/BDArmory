@@ -2666,19 +2666,12 @@ namespace BDArmory.UI
                     }
                     if (BDArmorySettings.TIME_OVERRIDE != (BDArmorySettings.TIME_OVERRIDE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.TIME_OVERRIDE, Localizer.Format("#LOC_BDArmory_Settings_TimeOverride")))) // Time override.
                     {
-                        if (!BDArmorySettings.TIME_OVERRIDE)
-                        {
-                            Time.timeScale = 1f; // Reset the time scale
-                        }
-                        else
-                        {
-                            Time.timeScale = BDArmorySettings.TIME_SCALE; // Set the time scale to our setting.
-                        }
+                        OtherUtils.SetTimeOverride(BDArmorySettings.TIME_OVERRIDE);
                     }
                     if (BDArmorySettings.TIME_OVERRIDE)
                     {
-                        GUI.Label(SLeftSliderRect(++line, 1), $"{Localizer.Format("#LOC_BDArmory_Settings_TimeScale")}; ({BDArmorySettings.TIME_SCALE:G2}x)", leftLabel);
-                        if (BDArmorySettings.TIME_SCALE != (BDArmorySettings.TIME_SCALE = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.TIME_SCALE, 0f, 5f) * 10f) / 10f))
+                        GUI.Label(SLeftSliderRect(++line, 1), $"{Localizer.Format("#LOC_BDArmory_Settings_TimeScale")}; ({BDArmorySettings.TIME_SCALE:F1}x)", leftLabel);
+                        if (BDArmorySettings.TIME_SCALE != (BDArmorySettings.TIME_SCALE = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.TIME_SCALE, 0f, BDArmorySettings.TIME_SCALE_MAX) * 10f) / 10f))
                         {
                             Time.timeScale = BDArmorySettings.TIME_SCALE;
                         }
