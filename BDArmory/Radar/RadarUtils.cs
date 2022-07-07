@@ -857,7 +857,7 @@ namespace BDArmory.Radar
 
                         // evaluate range
                         float distance = (loadedvessels.Current.CoM - ray.origin).magnitude / 1000f;                                      //TODO: Performance! better if we could switch to sqrMagnitude...
-                        if (RadarCanDetect(radar, signature, distance)
+                        if (RadarCanDetect(radar, signature, distance))
                         {
                             // detected by radar
                             // fill attempted locks array for locking later:
@@ -1039,7 +1039,7 @@ namespace BDArmory.Radar
                                 signature *= ti.radarLockbreakFactor;    //multiply lockbreak factor from active ecm
                                                                          //do not multiply chaff factor here
 
-                                if ((signature > minLockSig) && (RadarCanDetect(radar, signature, distance)) // Must be able to detect and lock to lock targets
+                                if (signature > minLockSig && RadarCanDetect(radar, signature, distance)) // Must be able to detect and lock to lock targets
                                 {
                                     // detected by radar
                                     if (myWpnManager != null)
