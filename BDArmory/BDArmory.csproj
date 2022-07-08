@@ -174,8 +174,10 @@
     <Compile Include="CounterMeasure\CMDropper.cs" />
     <Compile Include="CounterMeasure\CMFlare.cs" />
     <Compile Include="CounterMeasure\CMSmoke.cs" />
+    <Compile Include="CounterMeasure\ModuleCloakingDevice.cs" />
     <Compile Include="CounterMeasure\ModuleECMJammer.cs" />
     <Compile Include="CounterMeasure\VesselChaffInfo.cs" />
+    <Compile Include="CounterMeasure\VesselCloakInfo.cs" />
     <Compile Include="CounterMeasure\VesselECMJInfo.cs" />
     <Compile Include="Damage\BuildingDamage.cs" />
     <Compile Include="Damage\DamageService.cs" />
@@ -233,6 +235,7 @@
     <Compile Include="Modules\ModuleMovingPart.cs" />
     <Compile Include="Modules\ModuleSelfSealingTank.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Radar\ModuleIRST.cs" />
     <Compile Include="Radar\ModuleRadar.cs" />
     <Compile Include="Radar\ModuleSpaceRadar.cs" />
     <Compile Include="Radar\RadarDisplayData.cs" />

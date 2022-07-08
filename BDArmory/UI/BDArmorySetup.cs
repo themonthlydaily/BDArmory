@@ -247,6 +247,12 @@ namespace BDArmory.UI
             get { return gdott ? gdott : gdott = GameDatabase.Instance.GetTexture(textureDir + "greenDot", false); }
         }
 
+        private Texture2D rdott;
+
+        public Texture2D redDotTexture
+        {
+            get { return rdott ? rdott : rdott = GameDatabase.Instance.GetTexture(textureDir + "redDot", false); }
+        }
         private Texture2D gdt;
 
         public Texture2D greenDiamondTexture
@@ -1891,71 +1897,98 @@ namespace BDArmory.UI
                     }
 
                     //TGP
-                    List<ModuleTargetingCamera>.Enumerator mtc = ActiveWeaponManager.targetingPods.GetEnumerator();
-                    while (mtc.MoveNext())
-                    {
-                        if (mtc.Current == null) continue;
-                        numberOfModules++;
-                        bool isEnabled = (mtc.Current.cameraEnabled);
-                        bool isActive = (mtc.Current == ModuleTargetingCamera.activeCam);
-                        GUIStyle moduleStyle = isEnabled ? centerLabelOrange : centerLabel; // = mtc
-                        string label = mtc.Current.part.partInfo.title;
-                        if (isActive)
+                    using (List<ModuleTargetingCamera>.Enumerator mtc = ActiveWeaponManager.targetingPods.GetEnumerator())
+                        while (mtc.MoveNext())
                         {
-                            moduleStyle = centerLabelRed;
-                            label = "[" + label + "]";
-                        }
-                        if (GUI.Button(new Rect(leftIndent, +(moduleLines * entryHeight), contentWidth, entryHeight),
-                            label, moduleStyle))
-                        {
+                            if (mtc.Current == null) continue;
+                            numberOfModules++;
+                            bool isEnabled = (mtc.Current.cameraEnabled);
+                            bool isActive = (mtc.Current == ModuleTargetingCamera.activeCam);
+                            GUIStyle moduleStyle = isEnabled ? centerLabelOrange : centerLabel; // = mtc
+                            string label = mtc.Current.part.partInfo.title;
                             if (isActive)
                             {
-                                mtc.Current.ToggleCamera();
+                                moduleStyle = centerLabelRed;
+                                label = "[" + label + "]";
                             }
-                            else
+                            if (GUI.Button(new Rect(leftIndent, +(moduleLines * entryHeight), contentWidth, entryHeight),
+                                label, moduleStyle))
                             {
-                                mtc.Current.EnableCamera();
+                                if (isActive)
+                                {
+                                    mtc.Current.ToggleCamera();
+                                }
+                                else
+                                {
+                                    mtc.Current.EnableCamera();
+                                }
                             }
+                            moduleLines++;
                         }
-                        moduleLines++;
-                    }
-                    mtc.Dispose();
 
                     //RADAR
-                    List<ModuleRadar>.Enumerator mr = ActiveWeaponManager.radars.GetEnumerator();
-                    while (mr.MoveNext())
-                    {
-                        if (mr.Current == null) continue;
-                        numberOfModules++;
-                        GUIStyle moduleStyle = mr.Current.radarEnabled ? centerLabelBlue : centerLabel;
-                        string label = mr.Current.radarName;
-                        if (GUI.Button(new Rect(leftIndent, +(moduleLines * entryHeight), contentWidth, entryHeight),
-                            label, moduleStyle))
+                    using (List<ModuleRadar>.Enumerator mr = ActiveWeaponManager.radars.GetEnumerator())
+                        while (mr.MoveNext())
                         {
-                            mr.Current.Toggle();
+                            if (mr.Current == null) continue;
+                            numberOfModules++;
+                            GUIStyle moduleStyle = mr.Current.radarEnabled ? centerLabelBlue : centerLabel;
+                            string label = mr.Current.radarName;
+                            if (GUI.Button(new Rect(leftIndent, +(moduleLines * entryHeight), contentWidth, entryHeight),
+                                label, moduleStyle))
+                            {
+                                mr.Current.Toggle();
+                            }
+                            moduleLines++;
                         }
-                        moduleLines++;
-                    }
-                    mr.Dispose();
-
+                    using (List<ModuleIRST>.Enumerator mr = ActiveWeaponManager.irsts.GetEnumerator())
+                        while (mr.MoveNext())
+                        {
+                            if (mr.Current == null) continue;
+                            numberOfModules++;
+                            GUIStyle moduleStyle = mr.Current.irstEnabled ? centerLabelBlue : centerLabel;
+                            string label = mr.Current.IRSTName;
+                            if (GUI.Button(new Rect(leftIndent, +(moduleLines * entryHeight), contentWidth, entryHeight),
+                                label, moduleStyle))
+                            {
+                                mr.Current.Toggle();
+                            }
+                            moduleLines++;
+                        }
                     //JAMMERS
-                    List<ModuleECMJammer>.Enumerator jammer = ActiveWeaponManager.jammers.GetEnumerator();
-                    while (jammer.MoveNext())
-                    {
-                        if (jammer.Current == null) continue;
-                        if (jammer.Current.alwaysOn) continue;
-
-                        numberOfModules++;
-                        GUIStyle moduleStyle = jammer.Current.jammerEnabled ? centerLabelBlue : centerLabel;
-                        string label = jammer.Current.part.partInfo.title;
-                        if (GUI.Button(new Rect(leftIndent, +(moduleLines * entryHeight), contentWidth, entryHeight),
-                            label, moduleStyle))
+                    using (List<ModuleECMJammer>.Enumerator jammer = ActiveWeaponManager.jammers.GetEnumerator())
+                        while (jammer.MoveNext())
                         {
-                            jammer.Current.Toggle();
+                            if (jammer.Current == null) continue;
+                            if (jammer.Current.alwaysOn) continue;
+
+                            numberOfModules++;
+                            GUIStyle moduleStyle = jammer.Current.jammerEnabled ? centerLabelBlue : centerLabel;
+                            string label = jammer.Current.part.partInfo.title;
+                            if (GUI.Button(new Rect(leftIndent, +(moduleLines * entryHeight), contentWidth, entryHeight),
+                                label, moduleStyle))
+                            {
+                                jammer.Current.Toggle();
+                            }
+                            moduleLines++;
                         }
-                        moduleLines++;
-                    }
-                    jammer.Dispose();
+                    //CLOAKS
+                    using (List<ModuleCloakingDevice>.Enumerator cloak = ActiveWeaponManager.cloaks.GetEnumerator())
+                        while (cloak.MoveNext())
+                        {
+                            if (cloak.Current == null) continue;
+                            if (cloak.Current.alwaysOn) continue;
+
+                            numberOfModules++;
+                            GUIStyle moduleStyle = cloak.Current.cloakEnabled ? centerLabelBlue : centerLabel;
+                            string label = cloak.Current.part.partInfo.title;
+                            if (GUI.Button(new Rect(leftIndent, +(moduleLines * entryHeight), contentWidth, entryHeight),
+                                label, moduleStyle))
+                            {
+                                cloak.Current.Toggle();
+                            }
+                            moduleLines++;
+                        }
 
                     //Other modules
                     using (var module = ActiveWeaponManager.wmModules.GetEnumerator())

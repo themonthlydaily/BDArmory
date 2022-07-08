@@ -251,10 +251,10 @@ namespace BDArmory.UI
         /// </summary>
         /// <param name="v">Vessel</param>
         /// <returns>Heat signature value</returns>
-        public static float GetVesselHeatSignature(Vessel v)
+        public static float GetVesselHeatSignature(Vessel v, Vector3 sensorPosition = default(Vector3))
         {
             float heatScore = 0f;
-
+            List <Part> hottestPart = new List<Part>();
             using (List<Part>.Enumerator part = v.Parts.GetEnumerator())
                 while (part.MoveNext())
                 {
@@ -263,7 +263,92 @@ namespace BDArmory.UI
                     float thisScore = (float)(part.Current.thermalInternalFluxPrevious + part.Current.skinTemperature);
                     heatScore = Mathf.Max(heatScore, thisScore);
                 }
+            if (sensorPosition != default(Vector3)) //Heat source found; now lets determine how much of the craft is occluding it
+            {
+                using (List<Part>.Enumerator part = v.Parts.GetEnumerator())
+                    while (part.MoveNext())
+                    {
+                        if (!part.Current) continue;
+                        float thisScore = (float)(part.Current.thermalInternalFluxPrevious + part.Current.skinTemperature);
+                        if (thisScore < heatScore * 1.05f && thisScore > heatScore * 0.95f)
+                        { 
+                            hottestPart.Add(part.Current);
+                        }
+                    }
+                Part closestPart = null;
+                Transform thrustTransform = null;
+                float distance = 9999999;
+                if (hottestPart.Count > 0)
+                {
+                    RaycastHit[] hits = new RaycastHit[10];
+                    using (List<Part>.Enumerator part = hottestPart.GetEnumerator()) //might be multiple 'hottest' parts (multi-engine ship, etc), find the one closest to the sensor
+                    {
+                        while (part.MoveNext())
+                        {
+                            if (!part.Current) continue;
+                            float thisdistance = Vector3.Distance(part.Current.transform.position, sensorPosition);
+                            if (distance > thisdistance)
+                            {
+                                distance = thisdistance;
+                                closestPart = part.Current;
+                            }
+                        }
+                        if (BDArmorySettings.DEBUG_RADAR) Debug.Log("IRSTdebugging] closest heatsource found: " + closestPart.name);
+                    }
+                    if (closestPart != null)
+                    {
+                        TargetInfo tInfo;
+                        if (tInfo = v.gameObject.GetComponent<TargetInfo>())
+                        {
+                            if (tInfo.targetEngineList.Contains(closestPart))
+                                thrustTransform = closestPart.FindModelTransform("thrustTransform"); //method to differentiate jets from prop engines? Additional firespitter check?
+                        }
 
+                        Ray partRay = new Ray(thrustTransform ? thrustTransform.position : closestPart.transform.position, sensorPosition - closestPart.transform.position); //trace from heatsource to IR sensor
+                        var layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA);
+
+                        var hitCount = Physics.RaycastNonAlloc(partRay, hits, distance, layerMask);
+                        if (hitCount == hits.Length)
+                        {
+                            hits = Physics.RaycastAll(partRay, distance, layerMask);
+                            hitCount = hits.Length;
+                        }
+                        float OcclusionFactor = 0;
+                        float lastHeatscore = 0;
+
+                        using (var hitsEnu = hits.Take(hitCount).OrderBy(x => x.distance).GetEnumerator())
+                            while (hitsEnu.MoveNext())
+                            {
+                                Part partHit = hitsEnu.Current.collider.GetComponentInParent<Part>();
+                                if (partHit == null) continue;
+                                if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
+                                if (partHit == closestPart) continue; //ignore the heatsource
+                                if (partHit.vessel != v) continue; //ignore irstCraft; does also mean that in edge case of one craft occluded behind a second craft from PoV of a third craft w/irst wouldn't actually occlude, but oh well
+                                                                      //The heavier/further the part, the more it's going to occlude the heatsource
+                                float spacing = Vector3.Distance(closestPart.transform.position, partHit.transform.position);
+                                if (spacing > 15)       //arbitirary 15m threshold, may neen to adjust
+                                {                        //if far enough away, clamp temp to temp of last part in LoS
+                                    heatScore = (float)(partHit.thermalInternalFluxPrevious + partHit.skinTemperature);
+                                    OcclusionFactor = -1;
+                                }
+                                else
+                                {
+                                    OcclusionFactor += partHit.mass * spacing / 15; //spacing / 15 is linear; replace with an targetAspect floatcurve (either default linear curve for irst, or custom, new floatcurve field for missileLauncher)) for setting what angle a IR missile can lock from?
+                                    lastHeatscore = (float)(partHit.thermalInternalFluxPrevious + partHit.skinTemperature);
+                                }
+                            }
+                        if (BDArmorySettings.DEBUG_RADAR) Debug.Log("IRSTdebugging] occlusion found: " + OcclusionFactor);
+                        if (OcclusionFactor > 0) heatScore = Mathf.Max(lastHeatscore, heatScore / OcclusionFactor);
+                    }
+                }
+            }
+            VesselCloakInfo vesselcamo = v.gameObject.GetComponent<VesselCloakInfo>();
+            if (vesselcamo && vesselcamo.cloakEnabled)
+            {
+                heatScore *= vesselcamo.thermalReductionFactor;
+            }
+
+            if (BDArmorySettings.DEBUG_RADAR) Debug.Log("IRSTdebugging] final heatScore: " + heatScore);
             return heatScore;
         }
 
@@ -375,7 +460,7 @@ namespace BDArmory.UI
                             continue;
                     }
 
-                    float score = GetVesselHeatSignature(vessel) * Mathf.Clamp01(15 / angle);
+                    float score = GetVesselHeatSignature(vessel, Vector3.zero) * Mathf.Clamp01(15 / angle); //change vector3.zero to missile.transform.position to have missile IR detection dependant on target aspect
                     score *= (1400 * 1400) / Mathf.Clamp((vessel.CoM - ray.origin).sqrMagnitude, 90000, 36000000);
 
                     // Add bias targets closer to center of seeker FOV, only once missile seeker can see target
@@ -482,15 +567,18 @@ namespace BDArmory.UI
                 }
 
             debugString.Append(Environment.NewLine);
-            debugString.AppendLine($"Heat Signature: {GetVesselHeatSignature(FlightGlobals.ActiveVessel):#####}");
+            debugString.AppendLine($"Heat Signature: {GetVesselHeatSignature(FlightGlobals.ActiveVessel, Vector3.zero):#####}");
             debugString.AppendLine($"Radar Signature: " + RadarUtils.GetVesselRadarSignature(FlightGlobals.ActiveVessel).radarModifiedSignature);
             debugString.AppendLine($"Chaff multiplier: " + RadarUtils.GetVesselChaffFactor(FlightGlobals.ActiveVessel));
 
             var ecmjInfo = FlightGlobals.ActiveVessel.gameObject.GetComponent<VesselECMJInfo>();
+            var cloakInfo = FlightGlobals.ActiveVessel.gameObject.GetComponent<VesselCloakInfo>();
             debugString.AppendLine($"ECM Jammer Strength: " + (ecmjInfo != null ? ecmjInfo.jammerStrength.ToString("0.00") : "N/A"));
             debugString.AppendLine($"ECM Lockbreak Strength: " + (ecmjInfo != null ? ecmjInfo.lockBreakStrength.ToString("0.00") : "N/A"));
             debugString.AppendLine($"Radar Lockbreak Factor: " + RadarUtils.GetVesselRadarSignature(FlightGlobals.ActiveVessel).radarLockbreakFactor);
-            debugStringLineCount += 7;
+            debugString.AppendLine("Visibility Modifiers: " + (cloakInfo != null ? $"Optical: {(cloakInfo.opticalReductionFactor * 100).ToString("0.00")}%, " +
+                $"Thermal: {(cloakInfo.thermalReductionFactor * 100).ToString("0.00")}%" : "N/A"));
+            debugStringLineCount += 8;
         }
 
         public void SaveGPSTargets(ConfigNode saveNode = null)

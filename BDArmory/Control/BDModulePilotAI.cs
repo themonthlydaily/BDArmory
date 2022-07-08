@@ -1446,7 +1446,7 @@ namespace BDArmory.Control
             {
                 if (lastTargetPosition != null) lastTargetPosition -= FloatingOrigin.OffsetNonKrakensbane;
             }
-            if (weaponManager && weaponManager.guardMode && weaponManager.detectedTargetTimeout > weaponManager.targetScanInterval)
+            if (weaponManager && weaponManager.guardMode && weaponManager.staleTarget)
             {
                 targetStalenessTimer += Time.fixedDeltaTime;
                 if (targetStalenessTimer >= 50) //add some error to the predicted position every second
@@ -1821,7 +1821,7 @@ namespace BDArmory.Control
 
             if (weaponManager)
             {
-                if (weaponManager.detectedTargetTimeout <= weaponManager.targetScanInterval) staleTargetVelocity = Vector3.zero; //if actively tracking target, reset last known velocity vector
+                if (!weaponManager.staleTarget) staleTargetVelocity = Vector3.zero; //if actively tracking target, reset last known velocity vector
                 missile = weaponManager.CurrentMissile;
                 if (missile != null)
                 {
@@ -1935,7 +1935,7 @@ namespace BDArmory.Control
                 {
                     finalMaxSteer = GetSteerLimiterForSpeedAndPower();
                 }
-                if (weaponManager.detectedTargetTimeout > weaponManager.targetScanInterval) //lost track of target, but know it's in general area, simulate location estimate precision decay over time
+                if (weaponManager.staleTarget) //lost track of target, but know it's in general area, simulate location estimate precision decay over time
                 {
                     if (staleTargetVelocity == Vector3.zero) staleTargetVelocity = v.Velocity(); //if lost target, follow last known velocity vector
                     target += (staleTargetVelocity * weaponManager.detectedTargetTimeout) + (staleTargetPosition * weaponManager.detectedTargetTimeout);
