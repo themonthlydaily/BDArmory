@@ -530,6 +530,7 @@ IMPROVEMENTS
 	- Only adjust the altitude for failed spawns for ground spawns.
 	- Allow specifying both '-c' and tournament dir to parse the specified tournament dir as a collection (i.e., without the tournament folder structure).
 	- Rebalance the score weights in the parsing script.
+	- Add a Gauntlet tournament style for teams tournaments (like N-choose-K, but between two groups of teams).
 - Kerbal Safety:
 	- Reconfigure inventories when the kerbal inventory slider is adjusted.
 - AI:
