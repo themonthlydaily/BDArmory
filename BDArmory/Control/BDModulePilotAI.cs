@@ -593,7 +593,12 @@ namespace BDArmory.Control
         [KSPEvent(advancedTweakable = false, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_StoreSettings", active = true)]//Store Settings
         public void StoreSettings()
         {
-            var vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName;
+            StoreSettings(null);
+        }
+        void StoreSettings(string vesselName)
+        {
+            if (vesselName is null)
+                vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName;
             if (storedSettings == null)
             {
                 storedSettings = new Dictionary<string, List<System.Tuple<string, object>>>();
@@ -1279,10 +1284,12 @@ namespace BDArmory.Control
         }
         public void OnAutoTuneChanged(BaseField field, object obj)
         {
-            if (autoTune)
-                pidAutoTuning.ResetMeasurements();
-            else
-                pidAutoTuning.RevertPIDValues(true);
+            if (!autoTune)
+            {
+                pidAutoTuning.RevertPIDValues();
+                StoreSettings(pidAutoTuning.vesselName); // Store the current settings for recall in the SPH.
+            }
+            pidAutoTuning.ResetMeasurements();
 
             SetAutoTuneFields();
             MaintainFuelLevels(autoTune); // Prevent fuel drain while auto-tuning.
@@ -1316,7 +1323,7 @@ namespace BDArmory.Control
         void OnAutoTuneOptionsChanged(BaseField field, object obj)
         {
             if (pidAutoTuning is null) return;
-            pidAutoTuning.RevertPIDValues(true);
+            pidAutoTuning.RevertPIDValues();
             pidAutoTuning.ResetMeasurements();
             pidAutoTuning.ResetGradient();
         }
@@ -1369,6 +1376,11 @@ namespace BDArmory.Control
         protected override void OnDestroy()
         {
             GameEvents.onVesselPartCountChanged.Remove(UpdateTerrainAlertDetectionRadius);
+            if (autoTune) // If we were auto-tuning, revert to the best values and store them.
+            {
+                pidAutoTuning.RevertPIDValues();
+                StoreSettings(pidAutoTuning.vesselName);
+            }
             base.OnDestroy();
         }
 
@@ -3758,13 +3770,14 @@ namespace BDArmory.Control
             if (AI.vessel == null) { Debug.LogError($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: PIDAutoTuning triggered on null vessel!"); return; }
             WM = VesselModuleRegistry.GetMissileFire(AI.vessel);
             partCount = AI.vessel.Parts.Count;
-            maxObservedSpeed = AI.minSpeed;
-            flyToSpeed = AI.minSpeed;
+            maxObservedSpeed = AI.idleSpeed;
+            flyToSpeed = AI.maxSpeed;
         }
 
         // External flags.
         public bool measuring = false; // Whether a measurement is taking place or not.
         public float flyToSpeed = 0; // Speed to fly to the designated position.
+        public string vesselName = null; // Name of the vessel when auto-tuning began (in case it changes due to crashes, etc.).
 
         #region Internal parameters
         BDModulePilotAI AI; // The AI being tuned.
@@ -3898,10 +3911,10 @@ namespace BDArmory.Control
             if (AI == null || AI.vessel == null) return; // Sanity check.
             if (AI.vessel.Parts.Count < partCount) // Don't tune a plane if it's lost parts.
             {
-                AI.AutoTune = false;
-                var message = "Vessel {AI.vessel.vesselName} has lost parts since spawning, auto-tuning disabled.";
+                var message = $"Vessel {vesselName} has lost parts since spawning, auto-tuning disabled.";
                 Debug.LogWarning($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: " + message);
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
+                AI.AutoTune = false;
                 return;
             }
             measurementTime = Time.time - measurementStartTime;
@@ -4017,7 +4030,7 @@ namespace BDArmory.Control
 
             // pitchChange = 30f * UnityEngine.Random.Range(-1f, 1f) * UnityEngine.Random.Range(-1f, 1f); // Adjust pitch by ±30°, biased towards 0°.
             // flyToSpeed = UnityEngine.Random.Range(AI.minSpeed, (AI.maxSpeed + maxObservedSpeed) / 2f);
-            flyToSpeed = AI.maxSpeed; // FIXME Instead of maxSpeed, maybe measuring the speed after ~2s and using that would be more suitable?
+            flyToSpeed = AI.maxSpeed; // FIXME Change this to use a custom auto-tuning speed.
         }
 
         /// <summary>
@@ -4025,6 +4038,7 @@ namespace BDArmory.Control
         /// </summary>
         public void ResetGradient()
         {
+            vesselName = AI.vessel.GetDisplayName();
             fieldNames = new List<string> { "base" };
             fields = new Dictionary<string, BaseField>();
             fixedFields = new Dictionary<string, string>();
@@ -4033,6 +4047,7 @@ namespace BDArmory.Control
             limits = new Dictionary<string, Tuple<float, float>>();
             lossSamples = new Dictionary<string, List<List<float>>>();
             baseLossSamples = new List<float>();
+            bestValues = null;
 
             // Check which PID controls are in use and set up the required dictionaries.
             foreach (var field in AI.Fields)
@@ -4078,7 +4093,7 @@ namespace BDArmory.Control
         void TakeSample()
         {
             // Measure loss at the current sample point.
-            var lossSample = (pointingOscillationAreaSqr + optimiser.rollRelevance * rollOscillationAreaSqr) / (absHeadingChange * absHeadingChange); // This normalisation seems to give a roughly flat distribution over the 30°—120° range for the test craft. FIXME This normalisation isn't particularly flat anymore due to the (α+T²) and (α+T) scaling factors, but rather favours smaller heading changes. - Check the graph of pointing and roll errors vs abs heading change.
+            var lossSample = (pointingOscillationAreaSqr / absHeadingChange + optimiser.rollRelevance * 0.01f * rollOscillationAreaSqr) / absHeadingChange; // This normalisation seems to give a roughly flat distribution over the 30°—120° range for the test craft.
             optimiser.Accumulate(pointingOscillationAreaSqr / rollOscillationAreaSqr);
             if (currentField == "base")
             {
@@ -4090,13 +4105,12 @@ namespace BDArmory.Control
                     {
                         bestValues = baseValues.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
                     }
+                    if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Current: " + string.Join(", ", baseValues.Select(kvp => kvp.Key + ":" + kvp.Value)) + $", LR: {lr.current}, RR: {optimiser.rollRelevance}, Loss: {loss}");
                     lr.Update(loss); // Update learning rate based on the current loss.
                     if (lr.current < 1e-3f) // Tuned about as far as it'll go, time to bail.
                     {
-                        RevertPIDValues(true); // Revert to the best settings.
-                        AI.StoreSettings(); // Store the current settings for recall in the SPH.
                         AI.autoTuningLossLabel = $"{lr.best:G6}, completed.";
-                        AI.AutoTune = false;
+                        AI.AutoTune = false; // This also reverts to the best settings and stores them.
                         return;
                     }
                     optimiser.Update();
@@ -4154,12 +4168,9 @@ namespace BDArmory.Control
                     var message = "Gradient is giving NaN values, aborting auto-tuning.";
                     Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: " + message);
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
-                    RevertPIDValues(false);
                     AI.AutoTune = false;
                     return;
                 }
-                var loss = baseLossSamples.Average();
-                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Current: " + string.Join(", ", baseValues.Select(kvp => kvp.Key + ":" + kvp.Value)) + $", LR: {lr.current}, RR: {optimiser.rollRelevance}, Loss: {loss}");
                 if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Gradient: " + string.Join(", ", gradient.Select(kvp => kvp.Key + ":" + kvp.Value)));
                 if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Unclamped gradient: " + string.Join(", ", newGradient.Select(kvp => kvp.Key + ":" + kvp.Value)));
                 Dictionary<string, float> absoluteGradient = new Dictionary<string, float>();
@@ -4180,10 +4191,10 @@ namespace BDArmory.Control
             }
         }
 
-        public void RevertPIDValues(bool useBest = false)
+        public void RevertPIDValues()
         {
             if (AI is null) return;
-            if (useBest && bestValues is not null)
+            if (bestValues is not null)
             {
                 if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Reverting PID values to best values.");
                 foreach (var fieldName in fields.Keys.ToList())
