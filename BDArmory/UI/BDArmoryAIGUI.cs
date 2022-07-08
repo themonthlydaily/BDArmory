@@ -1215,7 +1215,7 @@ namespace BDArmory.UI
                         }
                         if (ActivePilot.defaultAltitude != oldDefaultAlt)
                         {
-                            ActivePilot.ClampAltitudes("defaultAltitude");
+                            ActivePilot.ClampFields("defaultAltitude");
                             inputFields["minAltitude"].currentValue = ActivePilot.minAltitude;
                             inputFields["maxAltitude"].currentValue = ActivePilot.maxAltitude;
                         }
@@ -1241,7 +1241,7 @@ namespace BDArmory.UI
                         }
                         if (ActivePilot.minAltitude != oldMinAlt)
                         {
-                            ActivePilot.ClampAltitudes("minAltitude");
+                            ActivePilot.ClampFields("minAltitude");
                             inputFields["defaultAltitude"].currentValue = ActivePilot.defaultAltitude;
                             inputFields["maxAltitude"].currentValue = ActivePilot.maxAltitude;
                         }
@@ -1274,7 +1274,7 @@ namespace BDArmory.UI
                             }
                             if (ActivePilot.maxAltitude != oldMaxAlt)
                             {
-                                ActivePilot.ClampAltitudes("maxAltitude");
+                                ActivePilot.ClampFields("maxAltitude");
                                 inputFields["minAltitude"].currentValue = ActivePilot.minAltitude;
                                 inputFields["defaultAltitude"].currentValue = ActivePilot.defaultAltitude;
                             }
