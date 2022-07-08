@@ -199,30 +199,14 @@ namespace BDArmory.UI
                     while (v.MoveNext())
                     {
                         if (v.Current == null) continue;
-                        if (!v.Current.loaded || v.Current.packed || v.Current.isActiveVessel) continue;
-                        if (BDTISettings.DEBRIS)
-                        {
-                            if (v.Current == null) continue;
-                            if (v.Current.vesselType != VesselType.Debris) continue;
-                            if (v.Current.LandedOrSplashed) continue;
-
-                            Vector3 sPos = FlightGlobals.ActiveVessel.vesselTransform.position;
-                            Vector3 tPos = v.Current.vesselTransform.position;
-                            Vector3 Dist = (tPos - sPos);
-                            if (Dist.magnitude > BDTISettings.DISTANCE_THRESHOLD)
-                            {
-                                GUIUtils.DrawTextureOnWorldPos(v.Current.CoM, BDTISetup.Instance.TextureIconDebris, new Vector2(20, 20), 0);
-                            }
-                        }
-                        if (VesselModuleRegistry.ignoredVesselTypes.Contains(v.Current.vesselType)) continue; //includes debris, so moving debris to above this
-
                         if (BDTISettings.MISSILES)
                         {
                             using (var ml = VesselModuleRegistry.GetModules<MissileBase>(v.Current).GetEnumerator())
                                 while (ml.MoveNext())
                                 {
                                     if (ml.Current == null) continue;
-                                    if (ml.Current.MissileState != MissileBase.MissileStates.Idle && ml.Current.MissileState != MissileBase.MissileStates.Drop)
+                                    //if (ml.Current.MissileState != MissileBase.MissileStates.Idle && ml.Current.MissileState != MissileBase.MissileStates.Drop)
+                                    if (ml.Current.HasFired && !ml.Current.HasMissed && !ml.Current.HasExploded) //culling post-thrust missiles makes AGMs get cleared almost immediately after launch
                                     {
                                         Vector3 sPos = FlightGlobals.ActiveVessel.vesselTransform.position;
                                         Vector3 tPos = v.Current.vesselTransform.position;
@@ -261,6 +245,22 @@ namespace BDArmory.UI
                                         }
                                     }
                                 }
+                        }
+
+                        if (!v.Current.loaded || v.Current.packed || v.Current.isActiveVessel) continue;
+                        if (BDTISettings.DEBRIS)
+                        {
+                            if (v.Current == null) continue;
+                            if (v.Current.vesselType != VesselType.Debris) continue;
+                            if (v.Current.LandedOrSplashed) continue;
+
+                            Vector3 sPos = FlightGlobals.ActiveVessel.vesselTransform.position;
+                            Vector3 tPos = v.Current.vesselTransform.position;
+                            Vector3 Dist = (tPos - sPos);
+                            if (Dist.magnitude > BDTISettings.DISTANCE_THRESHOLD)
+                            {
+                                GUIUtils.DrawTextureOnWorldPos(v.Current.CoM, BDTISetup.Instance.TextureIconDebris, new Vector2(20, 20), 0);
+                            }
                         }
                     }
                 using (var teamManagers = BDTISetup.Instance.weaponManagers.GetEnumerator())
