@@ -974,7 +974,7 @@ namespace BDArmory.Weapons
             }
             OriginalShortName = shortName;
             WeaponDisplayName = shortName;
-            WeaponName = ConfigNodeUtils.FindPartModuleConfigNodeValue(part.partInfo.partConfig, "ModuleWeapon", "shortName"); //have weaponname be the .cfg shortname, not whatever it happens to be set to when the scene laods
+            WeaponName = part.partInfo.name; //have weaponname be the .cfg part name, since not all weapons have a shortName in the .cfg
             using (var emitter = part.FindModelComponents<KSPParticleEmitter>().AsEnumerable().GetEnumerator())
                 while (emitter.MoveNext())
                 {

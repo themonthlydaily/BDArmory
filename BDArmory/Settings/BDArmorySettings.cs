@@ -55,6 +55,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool DEBUG_RADAR = false;                 //FLIR/Radar and RCS debugging
         [BDAPersistentSettingsField] public static bool DEBUG_TELEMETRY = false;             //AI/WM UI debug telemetry display
         [BDAPersistentSettingsField] public static bool DEBUG_SPAWNING = false;              //Spawning debugging
+        [BDAPersistentSettingsField] public static bool DEBUG_COMPETITION = false;           //Competition debugging
 
         [BDAPersistentSettingsField] public static bool REMOTE_SHOOTING = false;
         [BDAPersistentSettingsField] public static bool BOMB_CLEARANCE_CHECK = false;
