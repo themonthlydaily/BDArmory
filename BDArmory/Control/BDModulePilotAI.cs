@@ -350,6 +350,16 @@ namespace BDArmory.Control
             UI_FloatRange(minValue = 10f, maxValue = 500f, stepIncrement = 1.0f, scene = UI_Scene.All)]
         public float cornerSpeed = 200f;
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AltitudeSteerLimiterFactor", advancedTweakable = true, // Altitude Steer Limiter Factor
+            groupName = "pilotAI_ControlLimits", groupDisplayName = "#LOC_BDArmory_PilotAI_ControlLimits", groupStartCollapsed = true),
+            UI_FloatRange(minValue = -1f, maxValue = 1f, stepIncrement = .05f, scene = UI_Scene.All)]
+        public float altitudeSteerLimiterFactor = 0f;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AltitudeSteerLimiterAltitude", advancedTweakable = true, // Altitude Steer Limiter Altitude 
+            groupName = "pilotAI_ControlLimits", groupDisplayName = "#LOC_BDArmory_PilotAI_ControlLimits", groupStartCollapsed = true),
+            UI_FloatRange(minValue = 100f, maxValue = 10000f, stepIncrement = 100f, scene = UI_Scene.All)]
+        public float altitudeSteerLimiterAltitude = 5000f;
+
         //[KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AttitudeLimiter", advancedTweakable = true, //Attitude Limiter, not currently functional
         //    groupName = "pilotAI_ControlLimits", groupDisplayName = "#LOC_BDArmory_PilotAI_ControlLimits", groupStartCollapsed = true),
         // UI_FloatRange(minValue = 10f, maxValue = 90f, stepIncrement = 5f, scene = UI_Scene.All)]
@@ -535,6 +545,8 @@ namespace BDArmory.Control
             { nameof(idleSpeed), 3000f },
             { nameof(lowSpeedSwitch), 3000f },
             { nameof(cornerSpeed), 3000f },
+            { nameof(altitudeSteerLimiterFactor), 10f },
+            { nameof(altitudeSteerLimiterAltitude), 100000f },
             { nameof(maxAllowedGForce), 1000f },
             { nameof(maxAllowedAoA), 180f },
             // { nameof(extendMult), 200f },
@@ -565,6 +577,7 @@ namespace BDArmory.Control
         };
         Dictionary<string, float> altMinValues = new Dictionary<string, float> {
             { nameof(extendAngleAirToAir), -90f },
+            { nameof(altitudeSteerLimiterFactor), -10f },
         };
 
         void TurnItUpToEleven(bool upToEleven)
@@ -2094,6 +2107,8 @@ namespace BDArmory.Control
                 limiter *= Mathf.Clamp((maxSteerAtMaxSpeed - maxSteer) / (cornerSpeed - lowSpeedSwitch + 0.001f) * ((float)vessel.srfSpeed - lowSpeedSwitch) + maxSteer, maxSteerAtMaxSpeed, maxSteer); // Linearly varies between two limits, clamped at limit values
             else
                 limiter *= Mathf.Clamp((maxSteerAtMaxSpeed - maxSteer) / (cornerSpeed - lowSpeedSwitch + 0.001f) * ((float)vessel.srfSpeed - lowSpeedSwitch) + maxSteer, maxSteer, maxSteerAtMaxSpeed); // Linearly varies between two limits, clamped at limit values
+            if (altitudeSteerLimiterFactor != 0 && vessel.altitude > altitudeSteerLimiterAltitude)
+                limiter *= Mathf.Pow((float)vessel.altitude / altitudeSteerLimiterAltitude, altitudeSteerLimiterFactor); // Scale based on altitude relative to the user-defined limit.
             limiter *= 1.225f / (float)vessel.atmDensity; // Scale based on atmospheric density relative to sea level Kerbin (since dynamic pressure depends on density)
 
             return Mathf.Clamp01(limiter);
