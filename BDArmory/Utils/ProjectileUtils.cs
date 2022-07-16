@@ -709,7 +709,7 @@ namespace BDArmory.Utils
 
         public static float CalculatePenetration(float caliber, float bulletVelocity,
             float bulletMass, float apBulletMod, float Strength, float vFactor,
-            float muParam1, float muParam2, float muParam3, bool sabot)
+            float muParam1, float muParam2, float muParam3, bool sabot = false)
         {
             // Calculate the length of the projectile
             float length = ((bulletMass * 1000.0f * 400.0f) / ((caliber * caliber *

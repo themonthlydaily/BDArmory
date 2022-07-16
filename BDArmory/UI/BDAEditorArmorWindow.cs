@@ -85,6 +85,7 @@ namespace BDArmory.UI
                 {"Thickness", gameObject.AddComponent<NumericInputField>().Initialise(0, 10, 0, 1500) }, // FIXME should use maxThickness instead of 1500 here.
             };
             GameEvents.onEditorShipModified.Add(OnEditorShipModifiedEvent);
+            /*
             var modifiedCaliber = (15) + (15) * (2f * 0.15f * 0.15f);
             float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(0.388f, 1109);
             float yieldStrength = modifiedCaliber * modifiedCaliber * Mathf.PI / 100f * 940 * 30;
@@ -93,7 +94,9 @@ namespace BDArmory.UI
                 yieldStrength *= 0.7f;
             }
             float newCaliber = ProjectileUtils.CalculateDeformation(yieldStrength, bulletEnergy, 30, 1109, 1176, 7850, 0.19f, 0.8f, false);
-            steelValue = ProjectileUtils.CalculatePenetration(30, newCaliber, 0.388f, 1109, 0.15f, 7850, 940, 30, 0.8f, false);
+            */
+            //steelValue = ProjectileUtils.CalculatePenetration(30, newCaliber, 0.388f, 1109, 0.15f, 7850, 940, 30, 0.8f, false);
+            steelValue = ProjectileUtils.CalculatePenetration(30, 1109, 0.388f, 0.8f, 940, 8.45001135e-07f, 0.656060636f, 1.20190930f, 1.77791929f);
             exploValue = 940 * 1.15f * 7.85f;
         }
 
@@ -737,15 +740,17 @@ namespace BDArmory.UI
             }
             else
             {
-                float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(0.388f, 1109);
+                /*float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(0.388f, 1109);
                 var modifiedCaliber = (15) + (15) * (2f * ArmorDuctility * ArmorDuctility);
                 float yieldStrength = modifiedCaliber * modifiedCaliber * Mathf.PI / 100f * ArmorStrength * (ArmorDensity / 7850f) * 30;
                 if (ArmorDuctility > 0.25f)
                 {
                     yieldStrength *= 0.7f;
                 }
-                float newCaliber = ProjectileUtils.CalculateDeformation(yieldStrength, bulletEnergy, 30, 1109, ArmorHardness, ArmorDensity, 0.19f, 0.8f, false);
-                armorValue = ProjectileUtils.CalculatePenetration(30, newCaliber, 0.388f, 1109, ArmorDuctility, ArmorDensity, ArmorStrength, 30, 0.8f, false);
+                float newCaliber = ProjectileUtils.CalculateDeformation(yieldStrength, bulletEnergy, 30, 1109, 1176, 7850, 0.19f, 0.8f, false);
+                */
+                //armorValue = ProjectileUtils.CalculatePenetration(30, newCaliber, 0.388f, 1109, ArmorDuctility, ArmorDensity, ArmorStrength, 30, 0.8f, false);
+                armorValue = ProjectileUtils.CalculatePenetration(30, 1109, 0.388f, 0.8f, 940, 8.45001135e-07f, 0.656060636f, 1.20190930f, 1.77791929f);
                 relValue = Mathf.Round(armorValue / steelValue * 10) / 10;
                 exploValue = ArmorStrength * (1 + ArmorDuctility) * (ArmorDensity / 1000);
             }

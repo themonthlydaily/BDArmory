@@ -743,9 +743,14 @@ namespace BDArmory.FX
                                 float Strength = Armor.Strength;
                                 float safeTemp = Armor.SafeUseTemp;
                                 float Density = Armor.Density;
+                                float vFactor = Armor.vFactor;
+                                float muParam1 = Armor.muParam1;
+                                float muParam2 = Armor.muParam2;
+                                float muParam3 = Armor.muParam3;
                                 int type = (int)Armor.ArmorTypeNum;
 
-                                penetration = ProjectileUtils.CalculatePenetration(Caliber, Caliber, warheadType == WarheadTypes.ShapedCharge ? Power / 2 : ProjMass, ExplosionVelocity, Ductility, Density, Strength, thickness, 1);
+                                //penetration = ProjectileUtils.CalculatePenetration(Caliber, Caliber, warheadType == WarheadTypes.ShapedCharge ? Power / 2 : ProjMass, ExplosionVelocity, Ductility, Density, Strength, thickness, 1);
+                                penetration = ProjectileUtils.CalculatePenetration(Caliber, ExplosionVelocity, warheadType == WarheadTypes.ShapedCharge ? Power / 2 : ProjMass, 1f, Strength, vFactor, muParam1, muParam2, muParam3);
                                 penetrationFactor = ProjectileUtils.CalculateArmorPenetration(part, penetration, thickness);
 
                                 if (RA != null)
