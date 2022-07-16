@@ -851,15 +851,22 @@ namespace BDArmory.Bullets
                 float newCaliber = caliber;
                 if (!sabot)
                 {
+                    // Moved the bulletEnergy and armorStrength calculations here because
+                    // they are no longer needed for CalculatePenetration. This should
+                    // improve performance somewhat for sabot rounds, which is a good
+                    // thing since that new model requires the use of Mathf.Log and
+                    // Mathf.Exp.
                     float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(bulletMass, impactSpeed);
                     float armorStrength = ProjectileUtils.CalculateArmorStrength(caliber, thickness, Ductility, Strength, Density, safeTemp, hitPart);
                     newCaliber = ProjectileUtils.CalculateDeformation(armorStrength, bulletEnergy, caliber, impactSpeed, hardness, Density, HERatio, apBulletMod, sabot);
 
+                    // Also set the params to the non-sabot ones
                     muParam1 = Armor.muParam1;
                     muParam2 = Armor.muParam2;
                     muParam3 = Armor.muParam3;
                 } else
                 {
+                    // If it's a sabot just set the params to the sabot ones
                     muParam1 = Armor.muParam1S;
                     muParam2 = Armor.muParam2S;
                     muParam3 = Armor.muParam3S;

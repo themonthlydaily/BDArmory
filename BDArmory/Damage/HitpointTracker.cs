@@ -1031,6 +1031,16 @@ namespace BDArmory.Damage
                 Ductility = 0.15f;
                 Hardness = 1176;
                 Strength = 940;
+
+                // Calculated using yield = 0.85*Strength and youngModulus = 206 GPA
+                vFactor = 8.45001135e-07f;
+                muParam1 = 0.656060636f;
+                muParam2 = 1.20190930f;
+                muParam3 = 1.77791929f;
+                muParam1S = 0.947031140f;
+                muParam2S = 1.55575776f;
+                muParam3S = 2.75371552f;
+
                 SafeUseTemp = 2500;
                 if (BDArmorySettings.DEBUG_ARMOR)
                 {
@@ -1046,6 +1056,15 @@ namespace BDArmory.Damage
                 Ductility = 0.6f;
                 Hardness = 300;
                 Strength = 200;
+
+                vFactor = 8.45001135e-07f;
+                muParam1 = 1.37732446f;
+                muParam2 = 2.04939008f;
+                muParam3 = 4.53333330f;
+                muParam1S = 1.92650831f;
+                muParam2S = 2.65274119f;
+                muParam3S = 7.37037039f;
+
                 SafeUseTemp = 993;
                 Armor = 10;
                 if (ArmorPanel) Armor = 25;

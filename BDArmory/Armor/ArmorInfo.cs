@@ -42,9 +42,14 @@ namespace BDArmory.Armor
             this.SafeUseTemp = SafeUseTemp;
             this.Cost = Cost;
             
+            // Since we don't actually need yield and youngModulus we'll just calculate
+            // vFactor and discard those two.
             this.vFactor = Density / (2.0f * (yield * (2.0f / 3.0f + Mathf.Log((2.0f *
                 youngModulus) / (3.0f * yield))) * 1000000.0f));
 
+            // mu is the sqrt of the ratio of armor density to projectile density
+            // We don't actually need mu itself or the following variants of it, just
+            // the muParams so we'll calculate those instead.
             float muSquared = Density / (11340.0f);
             float mu = Mathf.Sqrt(muSquared);
             float muInverse = 1.0f / mu;
@@ -54,6 +59,10 @@ namespace BDArmory.Armor
             this.muParam2 = muInverse;
             this.muParam3 = (muInverseSquared + 1.0f / 3.0f);
 
+            // Doing the same thing as above but with the sabot density instead. Note that
+            // if we ever think about having custom round density's then we're going to
+            // take a performance hit since these will have to be calculated as they're
+            // required
             muSquared = Density / (19000.0f);
             mu = Mathf.Sqrt(muSquared);
             muInverse = 1.0f / mu;

@@ -711,16 +711,35 @@ namespace BDArmory.Utils
             float bulletMass, float apBulletMod, float Strength, float vFactor,
             float muParam1, float muParam2, float muParam3, bool sabot)
         {
-            if (bulletVelocity < 1400)
+            // Calculate the length of the projectile
+            float length = ((bulletMass * 1000.0f * 400.0f) / ((caliber * caliber *
+                    Mathf.PI) * (sabot ? 19.0f : 11.34f)) + 1.0f) * 10.0f;
+            
+            // 1400 is an arbitrary velocity around where the linear function used to
+            // simplify diverges from the result predicted by the Frank and Zook S2 based
+            // equation used. It is also inaccurate under 1400 for long rod projectiles
+            // with AR > 4, however I'm using 6 because it's still more or less OK at that
+            // point and we may as well try to cover more projectiles with the super
+            // performant formula. Any projectiles with AR < 1 are also going to use the
+            // performant formula because the model used is for long rods primarily and
+            // at AR < 1 the penetration starts climbing again which doesn't make sense to
+            // me physically
+            if (((bulletVelocity < 1400) && (length > 6 * caliber)) ||
+                (length < caliber))
             {
+                // Formula based on IDA paper P5032, Appendix D, modified to match the
+                // Krupp equation this mod used before.
                 return (Mathf.Sqrt(bulletMass * 1000.0f / (0.7f * Strength * Mathf.PI
                     * caliber)) * 0.727457902089f * bulletVelocity) * apBulletMod;
             }
             else
             {
-                float length = ((bulletMass * 1000.0f * 400.0f) / ((caliber * caliber *
-                    Mathf.PI) * (sabot ? 19.0f : 11.34f)) + 1.0f) * 10.0f;
-
+                // Formula based on "Energy-efficient penetration and perforation of
+                // targets in the hypervelocity regime" by Frank and Zook (1987) Used the
+                // S2 model for homogenous targets where Y = H which is a bad assumption
+                // and is an overestimate but the S4 option is far more complex than even
+                // this and it also requires an empirical parameter that requires testing
+                // long rod penetrators against targets so lolno
                 return ((length - caliber) * (1.0f - Mathf.Exp((-vFactor *
                     bulletVelocity * bulletVelocity) * muParam1)) * muParam2 + caliber *
                     muParam3 * Mathf.Log(1.0f + vFactor * bulletVelocity *
