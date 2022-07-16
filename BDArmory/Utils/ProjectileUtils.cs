@@ -706,6 +706,30 @@ namespace BDArmory.Utils
             else return true;
         }
 
+
+        public static float CalculatePenetration(float caliber, float bulletVelocity,
+            float bulletMass, float apBulletMod, float Strength, float vFactor,
+            float muParam1, float muParam2, float muParam3, bool sabot)
+        {
+            if (bulletVelocity < 1400)
+            {
+                return (Mathf.Sqrt(bulletMass * 1000.0f / (0.7f * Strength * Mathf.PI
+                    * caliber)) * 0.727457902089f * bulletVelocity) * apBulletMod;
+            }
+            else
+            {
+                float length = ((bulletMass * 1000.0f * 400.0f) / ((caliber * caliber *
+                    Mathf.PI) * (sabot ? 19.0f : 11.34f)) + 1.0f) * 10.0f;
+
+                return ((length - caliber) * (1.0f - Mathf.Exp((-vFactor *
+                    bulletVelocity * bulletVelocity) * muParam1)) * muParam2 + caliber *
+                    muParam3 * Mathf.Log(1.0f + vFactor * bulletVelocity *
+                    bulletVelocity));
+            }
+        }
+
+
+        /*
         public static float CalculatePenetration(float caliber, float newCaliber, float projMass, float impactVel, float Ductility, float Density, float Strength, float thickness, float APmod, bool sabot = false)
         {
             float Energy = CalculateProjectileEnergy(projMass, impactVel);
@@ -744,6 +768,7 @@ namespace BDArmory.Utils
             }
             return penetration;
         }
+        */
 
         public static float CalculateThickness(Part hitPart, float anglemultiplier)
         {

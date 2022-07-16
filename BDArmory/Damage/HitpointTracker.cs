@@ -116,6 +116,22 @@ namespace BDArmory.Damage
         [KSPField(isPersistant = true)]
         public float Cost;
 
+        [KSPField(isPersistant = true)]
+        public float vFactor;
+
+        [KSPField(isPersistant = true)]
+        public float muParam1;
+        [KSPField(isPersistant = true)]
+        public float muParam2;
+        [KSPField(isPersistant = true)]
+        public float muParam3;
+        [KSPField(isPersistant = true)]
+        public float muParam1S;
+        [KSPField(isPersistant = true)]
+        public float muParam2S;
+        [KSPField(isPersistant = true)]
+        public float muParam3S;
+
         private bool startsArmored = false;
         public bool ArmorPanel = false;
 
@@ -995,6 +1011,15 @@ namespace BDArmory.Damage
                 Hardness = armorInfo.Hardness;
                 Strength = armorInfo.Strength;
                 SafeUseTemp = armorInfo.SafeUseTemp;
+
+                vFactor = armorInfo.vFactor;
+                muParam1 = armorInfo.muParam1;
+                muParam2 = armorInfo.muParam2;
+                muParam3 = armorInfo.muParam3;
+                muParam1S = armorInfo.muParam1S;
+                muParam2S = armorInfo.muParam2S;
+                muParam3S = armorInfo.muParam3S;
+
                 SetArmor();
             }
             if (BDArmorySettings.LEGACY_ARMOR)
