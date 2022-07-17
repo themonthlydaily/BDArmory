@@ -61,6 +61,7 @@ IMPROVEMENTS
 	- Update the AI GUI help text for the current extending settings.
 	- AI will now head to target's last known position if contact lost (out of sight range/angle/radar detection), with accuracy of predicted position decaying over time.
 	- AI will now enable radars when guard mode enabled.
+	- Add an altitude steer limiter to the pilot AI.
 
 - GameModes:
 	- Waypoints:
