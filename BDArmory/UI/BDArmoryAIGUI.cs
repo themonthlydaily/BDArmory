@@ -321,6 +321,11 @@ namespace BDArmory.UI
                         { "DynamicDampingRollMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingRollMax, 1, 8) },
                         { "dynamicSteerDampingRollFactor", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.dynamicSteerDampingRollFactor, 0.1, 10) },
 
+                        { "autoTuningOptionNumSamples", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.autoTuningOptionNumSamples, 1, 10) },
+                        { "autoTuningOptionFastResponseRelevance", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.autoTuningOptionFastResponseRelevance, 0, 0.5) },
+                        { "autoTuningAltitude", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.autoTuningAltitude, 50, 5000) },
+                        { "autoTuningSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.autoTuningSpeed, 50, 800) },
+
                         { "defaultAltitude", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.defaultAltitude, 100, 15000) },
                         { "minAltitude", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.minAltitude, 25, 6000) },
                         { "maxAltitude", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAltitude, 100, 15000) },
@@ -601,12 +606,22 @@ namespace BDArmory.UI
         }
         Rect ContextLabelRect(float indent, float lines)
         {
-            return new Rect(150 + indent, (lines * entryHeight), 85, entryHeight);
+            return new Rect(150 + indent, lines * entryHeight, 100, entryHeight);
+        }
+        Rect ContextLabelRectRight(float indent, float lines, float contentWidth)
+        {
+            return new Rect(contentWidth - 100 - 2 * indent, lines * entryHeight, 100, entryHeight);
         }
 
         Rect ToggleButtonRect(float indent, float lines, float contentWidth)
         {
             return new Rect(indent, (lines * entryHeight), contentWidth - (2 * indent), entryHeight);
+        }
+
+        Rect ToggleButtonRects(float indent, float lines, float pos, float of, float contentWidth)
+        {
+            var gap = indent / 2f;
+            return new Rect(indent + pos / of * (contentWidth - gap * (of - 1f) - 2f * indent) + pos * gap, lines * entryHeight, 1f / of * (contentWidth - gap * (of - 1f) - 2f * indent), entryHeight);
         }
 
         void WindowRectAI(int windowID)
@@ -750,6 +765,7 @@ namespace BDArmory.UI
                                 GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_PidHelp_SteerKi"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //steer ki desc.
                                 GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_PidHelp_Steerdamp"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //steer damp description
                                 GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_PidHelp_Dyndamp"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //dynamic damping desc
+                                GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_PidHelp_AutoTune") + (ActivePilot.AutoTune ? Localizer.Format("#LOC_BDArmory_AIWindow_PidHelp_AutoTune_details") : ""), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //auto-tuning desc
                             }
                             if (showAltitude)
                             {
@@ -913,7 +929,7 @@ namespace BDArmory.UI
                             {
                                 dynPidLines += 0.25f;
 
-                                GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDamping"), BoldLabel);//"Dynamic Damping"
+                                GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDamping") + ": " + ActivePilot.dynSteerDampingValue.ToString(), Label);//"Dynamic Damping"
                                 dynPidLines++;
                                 if (!NumFieldsEnabled)
                                 {
@@ -1184,8 +1200,82 @@ namespace BDArmory.UI
                                 }
                             }
                             pidLines += dynPidLines;
-                            pidLines += 1.25f;
                         }
+
+                        #region AutoTune
+                        if (ActivePilot.AutoTune != GUI.Toggle(ToggleButtonRect(leftIndent, pidLines, contentWidth), ActivePilot.AutoTune, Localizer.Format("#LOC_BDArmory_PIDAutoTune"), ActivePilot.AutoTune ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+                        {
+                            ActivePilot.AutoTune = !ActivePilot.AutoTune; // Only actually toggle it when needed as the setter does extra stuff.
+                        }
+                        pidLines += 1.25f;
+                        if (ActivePilot.AutoTune) // Auto-tuning
+                        {
+                            float autoTuneLines = 0.25f;
+                            GUI.Label(SettinglabelRect(leftIndent, pidLines + autoTuneLines++), Localizer.Format("#LOC_BDArmory_AutoTuningLoss") + $": {ActivePilot.autoTuningLossLabel}", Label);
+                            GUI.Label(SettinglabelRect(leftIndent, pidLines + autoTuneLines++), $"\tParams: {ActivePilot.autoTuningLossLabel2}", Label);
+                            GUI.Label(SettinglabelRect(leftIndent, pidLines + autoTuneLines++), $"\tField: {ActivePilot.autoTuningLossLabel3}", Label);
+
+                            if (!NumFieldsEnabled) ActivePilot.autoTuningOptionNumSamples = BDAMath.RoundToUnit(GUI.HorizontalSlider(SettingSliderRect(leftIndent, pidLines + autoTuneLines, contentWidth), ActivePilot.autoTuningOptionNumSamples, 1f, 10f), 1f);
+                            else
+                            {
+                                inputFields["autoTuningOptionNumSamples"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + autoTuneLines, contentWidth), inputFields["autoTuningOptionNumSamples"].possibleValue, 6));
+                                ActivePilot.autoTuningOptionNumSamples = (float)inputFields["autoTuningOptionNumSamples"].currentValue;
+                            }
+                            GUI.Label(SettinglabelRect(leftIndent, pidLines + autoTuneLines++), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningNumSamples") + $": {ActivePilot.autoTuningOptionNumSamples}", Label);
+                            if (contextTipsEnabled)
+                            {
+                                GUI.Label(ContextLabelRect(leftIndent, pidLines + autoTuneLines - 0.25f), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningNumSamplesMin"), Label);
+                                GUI.Label(ContextLabelRectRight(leftIndent, pidLines + autoTuneLines - 0.25f, contentWidth), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningNumSamplesMax"), rightLabel);
+                                ++autoTuneLines;
+                            }
+
+                            if (!NumFieldsEnabled) ActivePilot.autoTuningOptionFastResponseRelevance = BDAMath.RoundToUnit(GUI.HorizontalSlider(SettingSliderRect(leftIndent, pidLines + autoTuneLines, contentWidth), ActivePilot.autoTuningOptionFastResponseRelevance, 0f, 0.5f), 0.01f);
+                            else
+                            {
+                                inputFields["autoTuningOptionFastResponseRelevance"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + autoTuneLines, contentWidth), inputFields["autoTuningOptionFastResponseRelevance"].possibleValue, 6));
+                                ActivePilot.autoTuningOptionFastResponseRelevance = (float)inputFields["autoTuningOptionFastResponseRelevance"].currentValue;
+                            }
+                            GUI.Label(SettinglabelRect(leftIndent, pidLines + autoTuneLines++), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningFastResponseRelevance") + $": {ActivePilot.autoTuningOptionFastResponseRelevance}", Label);
+                            if (contextTipsEnabled)
+                            {
+                                GUI.Label(ContextLabelRect(leftIndent, pidLines + autoTuneLines - 0.25f), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningFastResponseRelevanceMin"), Label);
+                                GUI.Label(ContextLabelRectRight(leftIndent, pidLines + autoTuneLines - 0.25f, contentWidth), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningFastResponseRelevanceMax"), rightLabel);
+                                ++autoTuneLines;
+                            }
+
+                            if (!NumFieldsEnabled) ActivePilot.autoTuningAltitude = BDAMath.RoundToUnit(GUI.HorizontalSlider(SettingSliderRect(leftIndent, pidLines + autoTuneLines, contentWidth), ActivePilot.autoTuningAltitude, 50f, 5000f), 50f);
+                            else
+                            {
+                                inputFields["autoTuningAltitude"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + autoTuneLines, contentWidth), inputFields["autoTuningAltitude"].possibleValue, 6));
+                                ActivePilot.autoTuningAltitude = (float)inputFields["autoTuningAltitude"].currentValue;
+                            }
+                            GUI.Label(SettinglabelRect(leftIndent, pidLines + autoTuneLines++), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningAltitude") + $": {ActivePilot.autoTuningAltitude}", Label);
+                            if (contextTipsEnabled)
+                            {
+                                GUI.Label(ContextLabelRect(leftIndent, pidLines + autoTuneLines++ - 0.25f), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningAltitudeContext"), Label);
+                            }
+
+                            if (!NumFieldsEnabled) ActivePilot.autoTuningSpeed = BDAMath.RoundToUnit(GUI.HorizontalSlider(SettingSliderRect(leftIndent, pidLines + autoTuneLines, contentWidth), ActivePilot.autoTuningSpeed, 50f, 800f), 5f);
+                            else
+                            {
+                                inputFields["autoTuningSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + autoTuneLines, contentWidth), inputFields["autoTuningSpeed"].possibleValue, 6));
+                                ActivePilot.autoTuningSpeed = (float)inputFields["autoTuningSpeed"].currentValue;
+                            }
+                            GUI.Label(SettinglabelRect(leftIndent, pidLines + autoTuneLines++), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningSpeed") + $": {ActivePilot.autoTuningSpeed}", Label);
+                            if (contextTipsEnabled)
+                            {
+                                GUI.Label(ContextLabelRect(leftIndent, pidLines + autoTuneLines++ - 0.25f), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningSpeedContext"), Label);
+                            }
+
+                            ActivePilot.autoTuningOptionFixedP = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 0, 2, contentWidth), ActivePilot.autoTuningOptionFixedP, Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningFixedP"), ActivePilot.autoTuningOptionFixedP ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
+
+                            ActivePilot.autoTuningOptionClampMaximums = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 1, 2, contentWidth), ActivePilot.autoTuningOptionClampMaximums, Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningClampMaximums"), ActivePilot.autoTuningOptionClampMaximums ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
+                            autoTuneLines += 1.25f;
+
+                            pidLines += autoTuneLines;
+                        }
+                        #endregion
+
                         GUI.EndGroup();
                         pidHeight = Mathf.Lerp(pidHeight, pidLines, 0.15f);
                         pidLines += 0.1f;
@@ -1217,7 +1307,7 @@ namespace BDArmory.UI
                         }
                         if (ActivePilot.defaultAltitude != oldDefaultAlt)
                         {
-                            ActivePilot.ClampAltitudes("defaultAltitude");
+                            ActivePilot.ClampFields("defaultAltitude");
                             inputFields["minAltitude"].currentValue = ActivePilot.minAltitude;
                             inputFields["maxAltitude"].currentValue = ActivePilot.maxAltitude;
                         }
@@ -1243,7 +1333,7 @@ namespace BDArmory.UI
                         }
                         if (ActivePilot.minAltitude != oldMinAlt)
                         {
-                            ActivePilot.ClampAltitudes("minAltitude");
+                            ActivePilot.ClampFields("minAltitude");
                             inputFields["defaultAltitude"].currentValue = ActivePilot.defaultAltitude;
                             inputFields["maxAltitude"].currentValue = ActivePilot.maxAltitude;
                         }
@@ -1276,7 +1366,7 @@ namespace BDArmory.UI
                             }
                             if (ActivePilot.maxAltitude != oldMaxAlt)
                             {
-                                ActivePilot.ClampAltitudes("maxAltitude");
+                                ActivePilot.ClampFields("maxAltitude");
                                 inputFields["minAltitude"].currentValue = ActivePilot.minAltitude;
                                 inputFields["defaultAltitude"].currentValue = ActivePilot.defaultAltitude;
                             }

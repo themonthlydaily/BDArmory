@@ -380,7 +380,7 @@ namespace BDArmory.Radar
         void Scan()
         {
             float angleDelta = scanRotationSpeed * Time.fixedDeltaTime;
-            RadarUtils.IRSTUpdateScan(weaponManager, currentAngle, referenceTransform, angleDelta, referenceTransform.position, this);
+            RadarUtils.IRSTUpdateScan(weaponManager, currentAngle, referenceTransform, boresightFOV, referenceTransform.position, this);
 
             if (omnidirectional)
             {
