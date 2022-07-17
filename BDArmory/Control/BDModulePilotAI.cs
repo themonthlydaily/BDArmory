@@ -582,6 +582,12 @@ namespace BDArmory.Control
 
         void TurnItUpToEleven(bool upToEleven)
         {
+            if (pidAutoTuning is not null)
+            {
+                // Reset PID values and stop measurement before switching alt values so the correct PID values are used.
+                pidAutoTuning.RevertPIDValues();
+                pidAutoTuning.ResetMeasurements();
+            }
             using (var s = altMaxValues.Keys.ToList().GetEnumerator())
                 while (s.MoveNext())
                 {
@@ -607,6 +613,7 @@ namespace BDArmory.Control
                     StartCoroutine(setVar(s.Current, (float)typeof(BDModulePilotAI).GetField(s.Current).GetValue(this)));
                 }
             toEleven = upToEleven;
+            OnAutoTuneOptionsChanged(null, null); // Reset auto-tuning again (including the gradient) so that the correct PID limits are used.
         }
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_StandbyMode"),//Standby Mode
