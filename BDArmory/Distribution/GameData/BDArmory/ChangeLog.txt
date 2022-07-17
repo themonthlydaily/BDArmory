@@ -18,6 +18,7 @@ FIXES
 - VTOL AI no longer toggles off guard mode in competitions.
 - Fixes Debris icons not appearing when Team Icons enabled.
 - Fixes Chaingun/Rocketpod Rounds PEr Minute slider values when reverting to VAB/SPH.
+- Fixes ripplefire issue with weapons with different rates of fire in one weapongroup.
 
 IMPROVEMENTS
 - General:
@@ -34,7 +35,8 @@ IMPROVEMENTS
 	- Adds SelfSealingTanks/Firebottle options to Proc Part Tanks.
 	- Adds Oblique Triangle Proc Armor panel.
 	- Proc Armor nodes on triangular panels now orient themselves to current angle of panel edge.
-	- Bullets now ignore flags.
+	- Proc Armor max scale can now be set in .cfg, unclamped in SPH/VAB
+	- Bullets/explosions/etc now ignore flags.
 	- Adds new CameraTools switching modes, right click the cameraTools button [A] on the VesselSwitcherGUI.
 		- [S] - Camera will autoswitch to vessel with highest score.
 		- [D] - Camera will switch to furthest vessel from dogfight centroid.
@@ -42,9 +44,9 @@ IMPROVEMENTS
 	- Update the continuous spawning log parsing script.
 	- Add some extra layer masks (internal kerbals are 1<<16, wheels are 1<<26).
 	- Add a BodyUtils.GetTerrainAltitudeAtPos function.
-	- Adds setting to clamp proc part/proc wing max HP to a configurable maximum.
+	- Adds optional setting to clamp proc part/proc wing max HP to a configurable maximum when Runway Project enabled.
 	- Adds UI Icon team color reset button.
-	- Adds missile names to missile warning icons when vessel names enabled
+	- Adds missile names to missile warning icons when vessel names enabled.
 
 - AI:
 	- Add a 5° deadzone around being on target for dynamic damping to avoid feed-back loop in PID.
@@ -78,6 +80,7 @@ IMPROVEMENTS
 		- Adds support for off-world waypoint courses both locally and API-run competitions.
 		- Add a slider for activating guard mode when passing a waypoint.
 		- Allow multiple laps for waypoints.
+
 - Weapons:
 	- Use min of missile drop time or 2 sec instead of fixed two second period for check target will be within missile maxOffBoresight at future time.
 	- Sidam Turret retextured (thanks Concodroid!).
@@ -108,6 +111,13 @@ IMPROVEMENTS
 		- Fix HARMs ignoring max missiles on target.
 		- Add chaffEffectivity parameter to missile configs.
 		- Modular Missile ActiveRadarRange can now be set to 0.
+	
+- Detectors
+	-Adds IRST implementation for thermal detection alternative to radar.
+		-Adds thermal occlusion mechanic; heatsources hidden behind other parts will be harder to detect by IRST.
+	-Adds support for optic/thermal cloaking countermeasures.
+	-Adds new AN/AAQ-42 IRST Pod part
+
 - Spawning:
 	- Refactor spawning into more modular coroutines for use with the spawn and orchestration strategies.
 	- Add an 'instant' lowering mode for vessel easing after spawn (VESSEL_SPAWN_EASE_IN_SPEED = 0).
