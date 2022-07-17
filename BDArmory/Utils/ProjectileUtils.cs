@@ -263,7 +263,7 @@ namespace BDArmory.Utils
                 HERatio = Mathf.Clamp(HEmass / projmass, 0.01f, 0.95f);
                 float frangibility = 5000 * HERatio;
                 float shrapnelThickness = ((.0075f * Mathf.Pow((HERatio * 100), 1.05f)) + .06f) * caliber; //min thickness of material for HE to blow caliber size hole in steel
-                shrapnelThickness *= (950 / Strength) * (8000 / Density) * (Mathf.Sqrt(1100 / hardness)); //adjusted min thickness after material hardness/strength/density
+                shrapnelThickness *= (950 / Strength) * (8000 / Density) * (BDAMath.Sqrt(1100 / hardness)); //adjusted min thickness after material hardness/strength/density
                 float shrapnelCount;
                 float radiativeArea = !double.IsNaN(hitPart.radiativeArea) ? (float)hitPart.radiativeArea : hitPart.GetArea();
                 if (detonationDist > 0)
@@ -294,7 +294,7 @@ namespace BDArmory.Utils
                                 Debug.Log("[BDArmory.ProjectileUtils{CalcShrapnel}]: " + hitPart.name + " on " + hitPart.vessel.GetName() + ", detonationDist: " + detonationDist + "; " + shrapnelCount + " shrapnel hits; Armor damage: " + volumeToReduce + "cm3; part damage: " + damage);
                             }
                             ApplyScore(hitPart, sourceVesselName, 0, damage, "Shrapnel", explosionSource);
-                            CalculateArmorDamage(hitPart, (shrapnelThickness / thickness), Mathf.Sqrt((float)volumeToReduce / 3.14159f), hardness, Ductility, Density, 430, sourceVesselName, explosionSource, armorType);
+                            CalculateArmorDamage(hitPart, (shrapnelThickness / thickness), BDAMath.Sqrt((float)volumeToReduce / 3.14159f), hardness, Ductility, Density, 430, sourceVesselName, explosionSource, armorType);
                             BattleDamageHandler.CheckDamageFX(hitPart, caliber, (shrapnelThickness / thickness), false, false, sourceVesselName, hit); //bypass score mechanic so HE rounds don't have inflated scores
                         }
                     }
@@ -666,7 +666,7 @@ namespace BDArmory.Utils
                     Debug.Log("[BDArmory.ProjectileUtils{Calc Deformation}]: yield:" + yieldStrength + "; Energy: " + bulletEnergy + "; caliber: " + caliber + "; impactVel: " + impactVel);
                     Debug.Log("[BDArmory.ProjectileUtils{Calc Deformation}]: hardness:" + hardness + "; BulletDurabilityMod: " + BulletDurabilityMod + "; density: " + Density);
                 }
-                float newCaliber = ((((yieldStrength / bulletEnergy) * (hardness * Mathf.Sqrt(Density / 1000))) / impactVel) / (BulletDurabilityMod * apBulletMod)); //faster penetrating rounds less deformed, thin armor will impart less deformation before failing
+                float newCaliber = ((((yieldStrength / bulletEnergy) * (hardness * BDAMath.Sqrt(Density / 1000))) / impactVel) / (BulletDurabilityMod * apBulletMod)); //faster penetrating rounds less deformed, thin armor will impart less deformation before failing
                 if (!sabot && impactVel > 1250) //too fast and steel/lead begin to melt on impact - hence DU/Tungsten hypervelocity penetrators
                 {
                     newCaliber *= (impactVel / 1250);
@@ -720,7 +720,7 @@ namespace BDArmory.Utils
             //caliber in mm, converted to length in cm, converted to mm
             float length = ((projMass * 1000) / ((newCaliber * newCaliber * Mathf.PI / 400) * (sabot ? 19.1f : 11.34f)) + 1) * 10;
             //if (impactVel > 1500)
-            //penetration = length * Mathf.Sqrt((sabot ? 19100 : 11340) / Density); //at hypervelocity, impacts are akin to fluid displacement
+            //penetration = length * BDAMath.Sqrt((sabot ? 19100 : 11340) / Density); //at hypervelocity, impacts are akin to fluid displacement
             //penetration in mm
             //sabots should have a caliber check, or a mass check? - else a lighter, smaller caliber sabot of equal length will have similar penetration charateristics as a larger, heavier round..?
             //or just have sabots that are too narrow simply snap due to structural stress...
@@ -730,7 +730,7 @@ namespace BDArmory.Utils
             {
                 yieldStrength *= 0.7f; //necking and point embrittlement reduce total tensile strength of material
             }
-            penetration = Mathf.Min(((Energy / yieldStrength) * thickness * APmod), (length * Mathf.Sqrt((sabot ? 19100 : 11340) / Density) * (sabot ? 0.385f : 1) * APmod));
+            penetration = Mathf.Min(((Energy / yieldStrength) * thickness * APmod), (length * BDAMath.Sqrt((sabot ? 19100 : 11340) / Density) * (sabot ? 0.385f : 1) * APmod));
             //cap penetration to max possible pen depth from hypervelocity impact
             //need to re-add APBulletMod to sabots, also need to reduce sabot pen depth by about 0.6x; Abrams sabot ammos can apparently pen about their length through steel
             //penetration in mm
