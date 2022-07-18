@@ -293,7 +293,7 @@ namespace BDArmory.UI
                                 closestPart = part.Current;
                             }
                         }
-                        if (BDArmorySettings.DEBUG_RADAR) Debug.Log("IRSTdebugging] closest heatsource found: " + closestPart.name);
+                        if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[IRSTdebugging] closest heatsource found: " + closestPart.name);
                     }
                     if (closestPart != null)
                     {
@@ -315,7 +315,7 @@ namespace BDArmory.UI
                         }
                         float OcclusionFactor = 0;
                         float lastHeatscore = 0;
-
+                        int DebugCount = 0;
                         using (var hitsEnu = hits.Take(hitCount).OrderBy(x => x.distance).GetEnumerator())
                             while (hitsEnu.MoveNext())
                             {
@@ -324,21 +324,22 @@ namespace BDArmory.UI
                                 if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
                                 if (partHit == closestPart) continue; //ignore the heatsource
                                 if (partHit.vessel != v) continue; //ignore irstCraft; does also mean that in edge case of one craft occluded behind a second craft from PoV of a third craft w/irst wouldn't actually occlude, but oh well
-                                                                      //The heavier/further the part, the more it's going to occlude the heatsource
+                                                                   //The heavier/further the part, the more it's going to occlude the heatsource
+                                DebugCount++;
                                 float spacing = Vector3.Distance(closestPart.transform.position, partHit.transform.position);
-                                if (spacing > 15)       //arbitirary 15m threshold, may neen to adjust
+                                if (spacing < 15)       //arbitirary 15m threshold, may need to adjust
                                 {                        //if far enough away, clamp temp to temp of last part in LoS
-                                    heatScore = (float)(partHit.thermalInternalFluxPrevious + partHit.skinTemperature);
-                                    OcclusionFactor = -1;
+                                    OcclusionFactor += partHit.mass * (spacing / 15); //spacing / 15 is linear; replace with an targetAspect floatcurve (either default linear curve for irst, or custom, new floatcurve field for missileLauncher)) for setting what angle a IR missile can lock from?
+                                    lastHeatscore = (float)(partHit.thermalInternalFluxPrevious + partHit.skinTemperature);
                                 }
                                 else
                                 {
-                                    OcclusionFactor += partHit.mass * spacing / 15; //spacing / 15 is linear; replace with an targetAspect floatcurve (either default linear curve for irst, or custom, new floatcurve field for missileLauncher)) for setting what angle a IR missile can lock from?
-                                    lastHeatscore = (float)(partHit.thermalInternalFluxPrevious + partHit.skinTemperature);
+                                    heatScore = (float)(partHit.thermalInternalFluxPrevious + partHit.skinTemperature);
+                                    OcclusionFactor = -1;
                                 }
                             }
-                        if (BDArmorySettings.DEBUG_RADAR) Debug.Log("IRSTdebugging] occlusion found: " + OcclusionFactor);
-                        if (OcclusionFactor > 0) heatScore = Mathf.Max(lastHeatscore, heatScore / OcclusionFactor);
+                        if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[IRSTdebugging] occlusion found: " + (1 + OcclusionFactor) + "; " + DebugCount + " occluding parts");
+                        if (OcclusionFactor > 0) heatScore = Mathf.Max(lastHeatscore, heatScore / (1 + OcclusionFactor));
                     }
                 }
             }
@@ -348,14 +349,14 @@ namespace BDArmory.UI
                 heatScore *= vesselcamo.thermalReductionFactor;
             }
 
-            if (BDArmorySettings.DEBUG_RADAR) Debug.Log("IRSTdebugging] final heatScore: " + heatScore);
+            if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[IRSTdebugging] final heatScore: " + heatScore);
             return heatScore;
         }
 
         /// <summary>
         /// Find a flare closest in heat signature to passed heat signature
         /// </summary>
-        public static TargetSignatureData GetFlareTarget(Ray ray, float scanRadius, float highpassThreshold, bool allAspect, FloatCurve lockedSensorFOVBias, FloatCurve lockedSensorVelocityBias, TargetSignatureData heatTarget)
+        public static TargetSignatureData GetFlareTarget(Ray ray, float scanRadius, float highpassThreshold, FloatCurve lockedSensorFOVBias, FloatCurve lockedSensorVelocityBias, TargetSignatureData heatTarget)
         {
             TargetSignatureData flareTarget = TargetSignatureData.noTarget;
             float heatSignature = heatTarget.signalStrength;
@@ -399,7 +400,7 @@ namespace BDArmory.UI
             return flareTarget;
         }
 
-        public static TargetSignatureData GetHeatTarget(Vessel sourceVessel, Vessel missileVessel, Ray ray, TargetSignatureData priorHeatTarget, float scanRadius, float highpassThreshold, bool allAspect, FloatCurve lockedSensorFOVBias, FloatCurve lockedSensorVelocityBias, MissileFire mf = null)
+        public static TargetSignatureData GetHeatTarget(Vessel sourceVessel, Vessel missileVessel, Ray ray, TargetSignatureData priorHeatTarget, float scanRadius, float highpassThreshold, bool uncagedLock, FloatCurve lockedSensorFOVBias, FloatCurve lockedSensorVelocityBias, MissileFire mf = null)
         {
             float minMass = 0.05f;  //otherwise the RAMs have trouble shooting down incoming missiles
             TargetSignatureData finalData = TargetSignatureData.noTarget;
@@ -449,18 +450,18 @@ namespace BDArmory.UI
 
                 float angle = Vector3.Angle(vessel.CoM - ray.origin, ray.direction);
 
-                if ((angle < scanRadius) || (allAspect && !priorHeatTarget.exists)) // Allow allAspect=true missiles to find target outside of seeker FOV before launch
+                if ((angle < scanRadius) || (uncagedLock && !priorHeatTarget.exists)) // Allow allAspect=true missiles to find target outside of seeker FOV before launch
                 {
                     if (RadarUtils.TerrainCheck(ray.origin, vessel.transform.position))
                         continue;
 
-                    if (!allAspect)
+                    if (!uncagedLock)
                     {
                         if (!OtherUtils.CheckSightLineExactDistance(ray.origin, vessel.CoM + vessel.Velocity(), Vector3.Distance(vessel.CoM, ray.origin), 5, 5))
                             continue;
                     }
 
-                    float score = GetVesselHeatSignature(vessel, Vector3.zero) * Mathf.Clamp01(15 / angle); //change vector3.zero to missile.transform.position to have missile IR detection dependant on target aspect
+                    float score = GetVesselHeatSignature(vessel, BDArmorySettings.ASPECTED_IR_SEEKERS ? missileVessel.CoM : Vector3.zero) * Mathf.Clamp01(15 / angle); //change vector3.zero to missile.transform.position to have missile IR detection dependant on target aspect
                     score *= (1400 * 1400) / Mathf.Clamp((vessel.CoM - ray.origin).sqrMagnitude, 90000, 36000000);
 
                     // Add bias targets closer to center of seeker FOV, only once missile seeker can see target
@@ -494,7 +495,7 @@ namespace BDArmory.UI
             TargetSignatureData flareData = TargetSignatureData.noTarget;
             if (priorHeatScore > 0) // Flares can only decoy if we already had a target
             {
-                flareData = GetFlareTarget(ray, scanRadius, highpassThreshold, allAspect, lockedSensorFOVBias, lockedSensorVelocityBias, priorHeatTarget);
+                flareData = GetFlareTarget(ray, scanRadius, highpassThreshold, lockedSensorFOVBias, lockedSensorVelocityBias, priorHeatTarget);
                 flareSuccess = ((!flareData.Equals(TargetSignatureData.noTarget)) && (flareData.signalStrength > highpassThreshold));
             }
 
