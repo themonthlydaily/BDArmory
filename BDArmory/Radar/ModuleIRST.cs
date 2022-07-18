@@ -59,6 +59,9 @@ namespace BDArmory.Radar
         public FloatCurve DetectionCurve = new FloatCurve();		//FloatCurve setting default ranging capabilities of the IRST
 
         [KSPField]
+        public FloatCurve TempSensitivityCurve = new FloatCurve();		//FloatCurve setting default IR spectrum capabilities of the IRST
+
+        [KSPField]
         public FloatCurve atmAttenuationCurve = new FloatCurve();        //FloatCurve range increase/decrease based on atm density/temp, thinner/cooler air yields longer range returns
 
 

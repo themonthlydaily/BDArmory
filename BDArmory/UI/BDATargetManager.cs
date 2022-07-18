@@ -251,7 +251,7 @@ namespace BDArmory.UI
         /// </summary>
         /// <param name="v">Vessel</param>
         /// <returns>Heat signature value</returns>
-        public static float GetVesselHeatSignature(Vessel v, Vector3 sensorPosition = default(Vector3))
+        public static float GetVesselHeatSignature(Vessel v, Vector3 sensorPosition = default(Vector3), FloatCurve tempSensitivity = default(FloatCurve))
         {
             float heatScore = 0f;
             List <Part> hottestPart = new List<Part>();
@@ -261,6 +261,7 @@ namespace BDArmory.UI
                     if (!part.Current) continue;
 
                     float thisScore = (float)(part.Current.thermalInternalFluxPrevious + part.Current.skinTemperature);
+                    thisScore *= (tempSensitivity != default(FloatCurve)) ? tempSensitivity.Evaluate(thisScore) : 1f;
                     heatScore = Mathf.Max(heatScore, thisScore);
                 }
             if (sensorPosition != default(Vector3)) //Heat source found; now lets determine how much of the craft is occluding it
@@ -270,6 +271,7 @@ namespace BDArmory.UI
                     {
                         if (!part.Current) continue;
                         float thisScore = (float)(part.Current.thermalInternalFluxPrevious + part.Current.skinTemperature);
+                        thisScore *= (tempSensitivity != default(FloatCurve)) ? tempSensitivity.Evaluate(thisScore) : 1f;
                         if (thisScore < heatScore * 1.05f && thisScore > heatScore * 0.95f)
                         { 
                             hottestPart.Add(part.Current);
