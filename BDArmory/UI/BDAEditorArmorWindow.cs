@@ -31,6 +31,8 @@ namespace BDArmory.UI
 
         private float totalArmorMass;
         private float totalArmorCost;
+        private float totalLift;
+        private float wingLoading;
         private bool CalcArmor = false;
         private bool shipModifiedfromCalcArmor = false;
         private bool SetType = false;
@@ -271,7 +273,7 @@ namespace BDArmory.UI
                         LiftVisualizer = false;
                     }
                 }
-                line += 1.5f;
+                line += 1.25f;
             }
 
             if (GUI.Button(new Rect(10, line * lineHeight, 280, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorLiftVisualizer"), LiftVisualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
@@ -284,7 +286,7 @@ namespace BDArmory.UI
                     HPvisualizer = false;
                 }
             }
-            line += 1.25f;
+            line += 1.5f;
 
             if ((refreshHPvisualizer || HPvisualizer != oldHPvisualizer) || (refreshVisualizer || Visualizer != oldVisualizer) || (refreshHullvisualizer || HullVisualizer != oldHullVisualizer) || (refreshLiftvisualizer || LiftVisualizer != oldLiftVisualizer))
             {
@@ -313,6 +315,10 @@ namespace BDArmory.UI
                 GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorTotalMass") + ": " + totalArmorMass.ToString("0.00"), style);
                 line++;
                 GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorTotalCost") + ": " + Mathf.Round(totalArmorCost), style);
+                line++;
+                GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorTotalLift") + ": " + totalLift.ToString("0.00"), style);
+                line++;
+                GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorWingLoading") + ": " + wingLoading.ToString("0.00"), style);
                 line += 1.5f;
             }
             float StatLines = 0;
@@ -545,7 +551,30 @@ namespace BDArmory.UI
                 shipModifiedfromCalcArmor = true;
                 GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
             }
+
+            CalculateTotalLift(); // Re-calculate lift and wing loading on armor change
         }
+
+        void CalculateTotalLift()
+        {
+            if (EditorLogic.RootPart == null)
+                return;
+
+            totalLift = 0;
+            using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator())
+                while (parts.MoveNext())
+                {
+                    if (parts.Current.IsMissile()) continue;
+                    ModuleLiftingSurface wing = parts.Current.GetComponent<ModuleLiftingSurface>();
+                    if (wing != null)
+                    {
+                        totalLift += wing.deflectionLiftCoeff;
+                    }
+                }
+
+            wingLoading = totalLift / EditorLogic.fetch.ship.GetTotalMass();
+        }
+
         void Visualize()
         {
             if (EditorLogic.RootPart == null)
