@@ -241,6 +241,10 @@ namespace BDArmory.Radar
                 referenceTransform.parent = transform;
                 referenceTransform.localPosition = Vector3.zero;
 
+                // fill TempSensitivityCurve with default values if not set by part config:
+                if (TempSensitivityCurve.minTime == float.MaxValue)
+                    TempSensitivityCurve.Add(0f, 1f);
+
                 List<ModuleTurret>.Enumerator turr = part.FindModulesImplementing<ModuleTurret>().GetEnumerator();
                 while (turr.MoveNext())
                 {
