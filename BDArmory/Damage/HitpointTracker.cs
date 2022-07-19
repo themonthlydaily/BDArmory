@@ -132,13 +132,6 @@ namespace BDArmory.Damage
         public float muParam2S;
         [KSPField(isPersistant = true)]
         public float muParam3S;
-        
-        /*
-        [KSPField(isPersistant = true)]
-        public float[] muParam;
-        [KSPField(isPersistant = true)]
-        public float[] muParamS;
-        */
 
         private bool startsArmored = false;
         public bool ArmorPanel = false;
