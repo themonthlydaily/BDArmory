@@ -119,6 +119,7 @@ namespace BDArmory.Damage
         [KSPField(isPersistant = true)]
         public float vFactor;
 
+        
         [KSPField(isPersistant = true)]
         public float muParam1;
         [KSPField(isPersistant = true)]
@@ -131,6 +132,13 @@ namespace BDArmory.Damage
         public float muParam2S;
         [KSPField(isPersistant = true)]
         public float muParam3S;
+        
+        /*
+        [KSPField(isPersistant = true)]
+        public float[] muParam;
+        [KSPField(isPersistant = true)]
+        public float[] muParamS;
+        */
 
         private bool startsArmored = false;
         public bool ArmorPanel = false;
@@ -1032,8 +1040,8 @@ namespace BDArmory.Damage
                 Hardness = 1176;
                 Strength = 940;
 
-                // Calculated using yield = 0.85*Strength and youngModulus = 206 GPA
-                vFactor = 8.45001135e-07f;
+                // Calculated using yield = 700 MPa and youngModulus = 200 GPA
+                vFactor = 9.47761748e-07f;
                 muParam1 = 0.656060636f;
                 muParam2 = 1.20190930f;
                 muParam3 = 1.77791929f;
@@ -1057,7 +1065,8 @@ namespace BDArmory.Damage
                 Hardness = 300;
                 Strength = 200;
 
-                vFactor = 8.45001135e-07f;
+                // Calculated using yield = 110 MPa and youngModulus = 70 GPA
+                vFactor = 1.82712211e-06f;
                 muParam1 = 1.37732446f;
                 muParam2 = 2.04939008f;
                 muParam3 = 4.53333330f;

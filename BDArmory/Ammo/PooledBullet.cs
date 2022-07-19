@@ -871,7 +871,9 @@ namespace BDArmory.Bullets
                     muParam2 = Armor.muParam2S;
                     muParam3 = Armor.muParam3S;
                 }
+                //penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, bulletMass, impactSpeed, Ductility, Density, Strength, thickness, apBulletMod, sabot);
                 penetration = ProjectileUtils.CalculatePenetration(caliber, impactSpeed, bulletMass, apBulletMod, Strength, vFactor, muParam1, muParam2, muParam3, sabot);
+
                 caliber = newCaliber; //update bullet with new caliber post-deformation(if any)
                 penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration, thickness);
                 //Reactive Armor calcs

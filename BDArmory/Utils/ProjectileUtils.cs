@@ -714,7 +714,7 @@ namespace BDArmory.Utils
             // Calculate the length of the projectile
             float length = ((bulletMass * 1000.0f * 400.0f) / ((caliber * caliber *
                     Mathf.PI) * (sabot ? 19.0f : 11.34f)) + 1.0f) * 10.0f;
-            
+
             // 1400 is an arbitrary velocity around where the linear function used to
             // simplify diverges from the result predicted by the Frank and Zook S2 based
             // equation used. It is also inaccurate under 1400 for long rod projectiles
@@ -724,8 +724,22 @@ namespace BDArmory.Utils
             // performant formula because the model used is for long rods primarily and
             // at AR < 1 the penetration starts climbing again which doesn't make sense to
             // me physically
+
+            // Old restrictions on when to use IDA equation
+            /*
             if (((bulletVelocity < 1400) && (length > 6 * caliber)) ||
                 (length < caliber))
+            */
+            // New restriction is only to do so if the L/D ratio is < 1 where Tate starts
+            // overpredicting the penetration values significantly. This is bad if there's
+            // any hypervelocity rounds with L/D < 1 or hypervelocity rounds with L/D < 4
+            // that are not deformed enough after impact to still be valid for another
+            // impact and have L/D < 1 at that point since if they're at super high
+            // velocities the linear nature of this equation will overpredict penetration
+            // Perhaps capping this with the hydrodynamic limit makes sense, but even with
+            // these kind of penetrators they easily blow past the hydrodynamic limit in
+            // actual experiments so I'm a little hesitant about putting it in.
+            if (length < caliber)
             {
                 // Formula based on IDA paper P5032, Appendix D, modified to match the
                 // Krupp equation this mod used before.
@@ -743,11 +757,12 @@ namespace BDArmory.Utils
                 return ((length - caliber) * (1.0f - Mathf.Exp((-vFactor *
                     bulletVelocity * bulletVelocity) * muParam1)) * muParam2 + caliber *
                     muParam3 * Mathf.Log(1.0f + vFactor * bulletVelocity *
-                    bulletVelocity));
+                    bulletVelocity))*apBulletMod;
             }
         }
 
 
+        // Deprecated formula
         /*
         public static float CalculatePenetration(float caliber, float newCaliber, float projMass, float impactVel, float Ductility, float Density, float Strength, float thickness, float APmod, bool sabot = false)
         {
@@ -788,6 +803,7 @@ namespace BDArmory.Utils
             return penetration;
         }
         */
+        
 
         public static float CalculateThickness(Part hitPart, float anglemultiplier)
         {

@@ -18,12 +18,20 @@ namespace BDArmory.Armor
         public float Cost { get; private set; }
 
         public float vFactor { get; private set; }
+
+        
         public float muParam1 { get; private set; }
         public float muParam2 { get; private set; }
         public float muParam3 { get; private set; }
         public float muParam1S { get; private set; }
         public float muParam2S { get; private set; }
         public float muParam3S { get; private set; }
+        
+
+        /*
+        public float[] muParam { get; private set; }
+        public float[] muParamS { get; private set; }
+        */
 
         //public bool Reactive {get; private set; } have a reactive armor bool?
 
@@ -45,7 +53,7 @@ namespace BDArmory.Armor
             // Since we don't actually need yield and youngModulus we'll just calculate
             // vFactor and discard those two.
             this.vFactor = Density / (2.0f * (yield * (2.0f / 3.0f + Mathf.Log((2.0f *
-                youngModulus) / (3.0f * yield))) * 1000000.0f));
+                youngModulus * 1000f) / (3.0f * yield))) * 1000000.0f));
 
             // mu is the sqrt of the ratio of armor density to projectile density
             // We don't actually need mu itself or the following variants of it, just
@@ -55,9 +63,17 @@ namespace BDArmory.Armor
             float muInverse = 1.0f / mu;
             float muInverseSquared = 1.0f / muSquared;
 
+            /*
             this.muParam1 = muInverse / (1.0f + mu);
             this.muParam2 = muInverse;
             this.muParam3 = (muInverseSquared + 1.0f / 3.0f);
+            */
+            /*
+            this.muParam[0] = muInverse / (1.0f + mu);
+            this.muParam[1] = muInverse;
+            this.muParam[2] = (muInverseSquared + 1.0f / 3.0f);
+            */
+            
 
             // Doing the same thing as above but with the sabot density instead. Note that
             // if we ever think about having custom round density's then we're going to
@@ -71,6 +87,12 @@ namespace BDArmory.Armor
             this.muParam1S = muInverse / (1.0f + mu);
             this.muParam2S = muInverse;
             this.muParam3S = (muInverseSquared + 1.0f / 3.0f);
+
+            /*
+            this.muParamS[0] = muInverse / (1.0f + mu);
+            this.muParamS[1] = muInverse;
+            this.muParamS[2] = (muInverseSquared + 1.0f / 3.0f);
+            */
         }
 
         public static void Load()
@@ -94,8 +116,8 @@ namespace BDArmory.Armor
                         (float)ParseField(node, "Density", typeof(float)),
                         (float)ParseField(node, "Strength", typeof(float)),
                         (float)ParseField(node, "Hardness", typeof(float)),
-                        (float)ParseField(node, "yield", typeof(float)),
-                        (float)ParseField(node, "youngModulus", typeof(float)),
+                        (float)ParseField(node, "Yield", typeof(float)),
+                        (float)ParseField(node, "YoungModulus", typeof(float)),
                         (float)ParseField(node, "Ductility", typeof(float)),
                         (float)ParseField(node, "Diffusivity", typeof(float)),
                         (float)ParseField(node, "SafeUseTemp", typeof(float)),
@@ -128,8 +150,8 @@ namespace BDArmory.Armor
                         (float)ParseField(node, "Density", typeof(float)),
                         (float)ParseField(node, "Strength", typeof(float)),
                         (float)ParseField(node, "Hardness", typeof(float)),
-                        (float)ParseField(node, "yield", typeof(float)),
-                        (float)ParseField(node, "youngModulus", typeof(float)),
+                        (float)ParseField(node, "Yield", typeof(float)),
+                        (float)ParseField(node, "YoungModulus", typeof(float)),
                         (float)ParseField(node, "Ductility", typeof(float)),
                         (float)ParseField(node, "Diffusivity", typeof(float)),
                         (float)ParseField(node, "SafeUseTemp", typeof(float)),

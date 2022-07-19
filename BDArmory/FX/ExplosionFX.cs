@@ -750,7 +750,7 @@ namespace BDArmory.FX
                                 int type = (int)Armor.ArmorTypeNum;
 
                                 //penetration = ProjectileUtils.CalculatePenetration(Caliber, Caliber, warheadType == WarheadTypes.ShapedCharge ? Power / 2 : ProjMass, ExplosionVelocity, Ductility, Density, Strength, thickness, 1);
-                                penetration = ProjectileUtils.CalculatePenetration(Caliber, ExplosionVelocity, warheadType == WarheadTypes.ShapedCharge ? Power / 2 : ProjMass, 1f, Strength, vFactor, muParam1, muParam2, muParam3);
+                                penetration = ProjectileUtils.CalculatePenetration(Caliber, warheadType == WarheadTypes.ShapedCharge ? 4000f : ExplosionVelocity, warheadType == WarheadTypes.ShapedCharge ? Power * 0.0555f : ProjMass, 1f, Strength, vFactor, muParam1, muParam2, muParam3);
                                 penetrationFactor = ProjectileUtils.CalculateArmorPenetration(part, penetration, thickness);
 
                                 if (RA != null)
@@ -932,7 +932,7 @@ namespace BDArmory.FX
                 case "shapedcharge":
                     eFx.warheadType = WarheadTypes.ShapedCharge;
                     eFx.AngleOfEffect = 10f;
-                    eFx.Caliber = caliber > 0 ? caliber / 2 : 50;
+                    eFx.Caliber = caliber > 0 ? caliber *  0.05f : 6f;
                     break;
                 default:
                     eFx.warheadType = WarheadTypes.Standard;
