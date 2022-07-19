@@ -63,11 +63,11 @@ namespace BDArmory.Armor
             float muInverse = 1.0f / mu;
             float muInverseSquared = 1.0f / muSquared;
 
-            /*
+            
             this.muParam1 = muInverse / (1.0f + mu);
             this.muParam2 = muInverse;
             this.muParam3 = (muInverseSquared + 1.0f / 3.0f);
-            */
+            
             /*
             this.muParam[0] = muInverse / (1.0f + mu);
             this.muParam[1] = muInverse;
