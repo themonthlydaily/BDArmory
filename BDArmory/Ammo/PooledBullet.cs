@@ -835,20 +835,45 @@ namespace BDArmory.Bullets
                 float Strength = Armor.Strength;
                 float safeTemp = Armor.SafeUseTemp;
                 float Density = Armor.Density;
+
+                float vFactor = Armor.vFactor;
+                float muParam1;
+                float muParam2;
+                float muParam3;
+
                 int armorType = (int)Armor.ArmorTypeNum;
                 if (BDArmorySettings.DEBUG_ARMOR)
                 {
                     Debug.Log("[BDArmory.PooledBullet]: ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density + "; thickness: " + thickness);
                 }
-                float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(bulletMass, impactSpeed);
-                float armorStrength = ProjectileUtils.CalculateArmorStrength(caliber, thickness, Ductility, Strength, Density, safeTemp, hitPart);
+                
                 //calculate bullet deformation
                 float newCaliber = caliber;
                 if (!sabot)
                 {
+                    // Moved the bulletEnergy and armorStrength calculations here because
+                    // they are no longer needed for CalculatePenetration. This should
+                    // improve performance somewhat for sabot rounds, which is a good
+                    // thing since that new model requires the use of Mathf.Log and
+                    // Mathf.Exp.
+                    float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(bulletMass, impactSpeed);
+                    float armorStrength = ProjectileUtils.CalculateArmorStrength(caliber, thickness, Ductility, Strength, Density, safeTemp, hitPart);
                     newCaliber = ProjectileUtils.CalculateDeformation(armorStrength, bulletEnergy, caliber, impactSpeed, hardness, Density, HERatio, apBulletMod, sabot);
+
+                    // Also set the params to the non-sabot ones
+                    muParam1 = Armor.muParam1;
+                    muParam2 = Armor.muParam2;
+                    muParam3 = Armor.muParam3;
+                } else
+                {
+                    // If it's a sabot just set the params to the sabot ones
+                    muParam1 = Armor.muParam1S;
+                    muParam2 = Armor.muParam2S;
+                    muParam3 = Armor.muParam3S;
                 }
-                penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, bulletMass, impactSpeed, Ductility, Density, Strength, thickness, apBulletMod, sabot);
+                //penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, bulletMass, impactSpeed, Ductility, Density, Strength, thickness, apBulletMod, sabot);
+                penetration = ProjectileUtils.CalculatePenetration(caliber, impactSpeed, bulletMass, apBulletMod, Strength, vFactor, muParam1, muParam2, muParam3, sabot);
+
                 caliber = newCaliber; //update bullet with new caliber post-deformation(if any)
                 penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration, thickness);
                 //Reactive Armor calcs
@@ -872,7 +897,7 @@ namespace BDArmory.Bullets
                             {
                                 if (hitAngle < 80) //ERA isn't going to do much against near-perpendicular hits
                                 {
-                                    caliber = Mathf.Sqrt((caliber * (((bulletMass * 1000) / ((caliber * caliber * Mathf.PI / 400) * 19)) + 1) * 4) / Mathf.PI); //increase caliber to sim sabot hitting perpendicualr instead of point-first
+                                    caliber = BDAMath.Sqrt((caliber * (((bulletMass * 1000) / ((caliber * caliber * Mathf.PI / 400) * 19)) + 1) * 4) / Mathf.PI); //increase caliber to sim sabot hitting perpendicualr instead of point-first
                                     bulletMass /= 2; //sunder sabot
                                                      //RA isn't going to stop sabot, but underlying part's armor will (probably)
                                     if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.PooledBullet]: Sabot caliber and mass now: " + caliber + ", " + bulletMass);
@@ -991,7 +1016,7 @@ namespace BDArmory.Bullets
                 }
                 else
                 {
-                    float cockpitPen = (float)(16f * impactVelocity.magnitude * Mathf.Sqrt(bulletMass / 1000) / Mathf.Sqrt(caliber) * apBulletMod); //assuming a 20mm steel armor plate for cockpit armor
+                    float cockpitPen = (float)(16f * impactVelocity.magnitude * BDAMath.Sqrt(bulletMass / 1000) / BDAMath.Sqrt(caliber) * apBulletMod); //assuming a 20mm steel armor plate for cockpit armor
                     ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, bulletMass, currentVelocity.magnitude, viableBullet ? bulletDmgMult : bulletDmgMult / 2, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet, penTicker > 0 ? false : true, partsHit.Contains(hitPart) ? false : true, (cockpitPen > Mathf.Max(20 / anglemultiplier, 1)) ? true : false);
                     //need to add a check for if the bullet has already struck the part, since it doesn't make sense for some battledamage to apply on the second hit from the bullet exiting the part - wings/ctrl srfs, pilot kills, subsystem damage
                 }
@@ -1143,7 +1168,7 @@ namespace BDArmory.Bullets
                 pBullet.ballisticCoefficient = subMunitionType.bulletMass / (((Mathf.PI * 0.25f * subMunitionType.caliber * subMunitionType.caliber) / 1000000f) * 0.295f);
                 pBullet.timeElapsedSinceCurrentSpeedWasAdjusted = 0;
                 pBullet.timeToLiveUntil = 4000 / bulletVelocity * 1.1f + Time.time;
-                Vector3 firedVelocity = VectorUtils.GaussianDirectionDeviation(currentVelocity.normalized, (subMunitionType.subProjectileCount / Mathf.Sqrt((currentVelocity * dragVelocityFactor).magnitude / 10))) * (subMunitionType.bulletVelocity / 10); //more subprojectiles = wider spread, higher base velocity = tighter spread
+                Vector3 firedVelocity = VectorUtils.GaussianDirectionDeviation(currentVelocity.normalized, (subMunitionType.subProjectileCount / BDAMath.Sqrt((currentVelocity * dragVelocityFactor).magnitude / 10))) * (subMunitionType.bulletVelocity / 10); //more subprojectiles = wider spread, higher base velocity = tighter spread
                 pBullet.currentVelocity = (GetDragAdjustedVelocity() + Krakensbane.GetFrameVelocityV3f()) + firedVelocity; // use the real velocity, w/o offloading
                 pBullet.sourceWeapon = sourceWeapon;
                 pBullet.sourceVessel = sourceVessel;

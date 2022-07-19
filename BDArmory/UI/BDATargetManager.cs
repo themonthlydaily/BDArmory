@@ -865,6 +865,7 @@ namespace BDArmory.UI
 
         public static void ClearDatabase()
         {
+            if (TargetDatabase is null) return;
             TargetDatabase.Clear();
         }
 

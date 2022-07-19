@@ -296,6 +296,16 @@ namespace BDArmory.Control
             UI_FloatRange(minValue = 10f, maxValue = 500f, stepIncrement = 1.0f, scene = UI_Scene.All)]
         public float cornerSpeed = 200f;
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AltitudeSteerLimiterFactor", advancedTweakable = true, // Altitude Steer Limiter Factor
+            groupName = "pilotAI_ControlLimits", groupDisplayName = "#LOC_BDArmory_PilotAI_ControlLimits", groupStartCollapsed = true),
+            UI_FloatRange(minValue = -1f, maxValue = 1f, stepIncrement = .05f, scene = UI_Scene.All)]
+        public float altitudeSteerLimiterFactor = 0f;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AltitudeSteerLimiterAltitude", advancedTweakable = true, // Altitude Steer Limiter Altitude 
+            groupName = "pilotAI_ControlLimits", groupDisplayName = "#LOC_BDArmory_PilotAI_ControlLimits", groupStartCollapsed = true),
+            UI_FloatRange(minValue = 100f, maxValue = 10000f, stepIncrement = 100f, scene = UI_Scene.All)]
+        public float altitudeSteerLimiterAltitude = 5000f;
+
         //[KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AttitudeLimiter", advancedTweakable = true, //Attitude Limiter, not currently functional
         //    groupName = "pilotAI_ControlLimits", groupDisplayName = "#LOC_BDArmory_PilotAI_ControlLimits", groupStartCollapsed = true),
         // UI_FloatRange(minValue = 10f, maxValue = 90f, stepIncrement = 5f, scene = UI_Scene.All)]
@@ -481,6 +491,8 @@ namespace BDArmory.Control
             { nameof(idleSpeed), 3000f },
             { nameof(lowSpeedSwitch), 3000f },
             { nameof(cornerSpeed), 3000f },
+            { nameof(altitudeSteerLimiterFactor), 10f },
+            { nameof(altitudeSteerLimiterAltitude), 100000f },
             { nameof(maxAllowedGForce), 1000f },
             { nameof(maxAllowedAoA), 180f },
             // { nameof(extendMult), 200f },
@@ -511,6 +523,7 @@ namespace BDArmory.Control
         };
         Dictionary<string, float> altMinValues = new Dictionary<string, float> {
             { nameof(extendAngleAirToAir), -90f },
+            { nameof(altitudeSteerLimiterFactor), -10f },
         };
 
         void TurnItUpToEleven(bool upToEleven)
@@ -1702,7 +1715,7 @@ namespace BDArmory.Control
             float angleToTarget = Vector3.Angle(target - vesselTransform.position, vesselTransform.up);
             float strafingDistance = -1f;
             float relativeVelocity = (float)(vessel.srf_velocity - v.srf_velocity).magnitude;
-           
+
             if (weaponManager)
             {
                 if (!weaponManager.staleTarget) staleTargetVelocity = Vector3.zero; //if actively tracking target, reset last known velocity vector
@@ -1920,6 +1933,8 @@ namespace BDArmory.Control
                 limiter *= Mathf.Clamp((maxSteerAtMaxSpeed - maxSteer) / (cornerSpeed - lowSpeedSwitch + 0.001f) * ((float)vessel.srfSpeed - lowSpeedSwitch) + maxSteer, maxSteerAtMaxSpeed, maxSteer); // Linearly varies between two limits, clamped at limit values
             else
                 limiter *= Mathf.Clamp((maxSteerAtMaxSpeed - maxSteer) / (cornerSpeed - lowSpeedSwitch + 0.001f) * ((float)vessel.srfSpeed - lowSpeedSwitch) + maxSteer, maxSteer, maxSteerAtMaxSpeed); // Linearly varies between two limits, clamped at limit values
+            if (altitudeSteerLimiterFactor != 0 && vessel.altitude > altitudeSteerLimiterAltitude)
+                limiter *= Mathf.Pow((float)vessel.altitude / altitudeSteerLimiterAltitude, altitudeSteerLimiterFactor); // Scale based on altitude relative to the user-defined limit.
             limiter *= 1.225f / (float)vessel.atmDensity; // Scale based on atmospheric density relative to sea level Kerbin (since dynamic pressure depends on density)
 
             return Mathf.Clamp01(limiter);
@@ -2082,7 +2097,7 @@ namespace BDArmory.Control
                 var m = Vector3.Cross(n, upDirection).normalized; // cos(theta) = dot(m,v).
                 if (m.magnitude < 0.1f) m = upDirection; // In case n and upDirection are colinear.
                 var a = Vector3.Dot(n, upDirection); // sin(phi) = dot(n,up)
-                var b = Mathf.Sqrt(1f - a * a); // cos(phi) = sqrt(1-sin(phi)^2)
+                var b = BDAMath.Sqrt(1f - a * a); // cos(phi) = sqrt(1-sin(phi)^2)
                 var r = turnRadius * turnRadiusTwiddleFactorMin; // Radius of turning circle.
                 var h = r * (1 + Vector3.Dot(m, vessel.srf_vel_direction)) * b; // Required altitude: h = r * (1+cos(theta)) * cos(phi).
                 if (vessel.radarAltitude < h) // Too low for this manoeuvre.
@@ -2804,7 +2819,7 @@ namespace BDArmory.Control
                         else
                         { terrainAlertDirection = Vector3.ProjectOnPlane(vessel.srf_vel_direction, terrainAlertNormal).normalized; }
                         float sinTheta = Math.Min(0.0f, Vector3.Dot(vessel.srf_vel_direction, terrainAlertNormal)); // sin(theta) (measured relative to the plane of the surface).
-                        float oneMinusCosTheta = 1.0f - Mathf.Sqrt(Math.Max(0.0f, 1.0f - sinTheta * sinTheta));
+                        float oneMinusCosTheta = 1.0f - BDAMath.Sqrt(Math.Max(0.0f, 1.0f - sinTheta * sinTheta));
                         turnRadiusTwiddleFactor = (turnRadiusTwiddleFactorMin + turnRadiusTwiddleFactorMax) / 2.0f - (turnRadiusTwiddleFactorMax - turnRadiusTwiddleFactorMin) / 2.0f * Vector3.Dot(terrainAlertNormal, -vessel.transform.forward); // This would depend on roll rate (i.e., how quickly the vessel can reorient itself to perform the terrain avoidance maneuver) and probably other things.
                         float controlLagCompensation = Mathf.Max(0f, -Vector3.Dot(AIUtils.PredictPosition(vessel, controlLagTime * turnRadiusTwiddleFactor) - vessel.transform.position, terrainAlertNormal)); // Include twiddle factor as more re-orienting requires more control surface movement.
                         terrainAlertThreshold = turnRadiusTwiddleFactor * turnRadius * oneMinusCosTheta + controlLagCompensation;
@@ -2841,7 +2856,7 @@ namespace BDArmory.Control
                     float sinTheta = Vector3.Dot(vessel.srf_vel_direction, upDirection); // sin(theta) (measured relative to the ocean surface).
                     if (sinTheta < 0f) // Heading downwards
                     {
-                        float oneMinusCosTheta = 1.0f - Mathf.Sqrt(Math.Max(0.0f, 1.0f - sinTheta * sinTheta));
+                        float oneMinusCosTheta = 1.0f - BDAMath.Sqrt(Math.Max(0.0f, 1.0f - sinTheta * sinTheta));
                         turnRadiusTwiddleFactor = (turnRadiusTwiddleFactorMin + turnRadiusTwiddleFactorMax) / 2.0f - (turnRadiusTwiddleFactorMax - turnRadiusTwiddleFactorMin) / 2.0f * Vector3.Dot(upDirection, -vessel.transform.forward); // This would depend on roll rate (i.e., how quickly the vessel can reorient itself to perform the terrain avoidance maneuver) and probably other things.
                         float controlLagCompensation = Mathf.Max(0f, -Vector3.Dot(AIUtils.PredictPosition(vessel, controlLagTime * turnRadiusTwiddleFactor) - vessel.transform.position, upDirection)); // Include twiddle factor as more re-orienting requires more control surface movement.
                         terrainAlertThreshold = turnRadiusTwiddleFactor * turnRadius * oneMinusCosTheta + controlLagCompensation;

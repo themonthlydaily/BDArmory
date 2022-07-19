@@ -17,13 +17,23 @@ namespace BDArmory.Armor
         public float SafeUseTemp { get; private set; } //In Kelvin, determines max temp armor retains full mechanical properties
         public float Cost { get; private set; }
 
+        public float vFactor { get; private set; }
+
+        
+        public float muParam1 { get; private set; }
+        public float muParam2 { get; private set; }
+        public float muParam3 { get; private set; }
+        public float muParam1S { get; private set; }
+        public float muParam2S { get; private set; }
+        public float muParam3S { get; private set; }
+
         //public bool Reactive {get; private set; } have a reactive armor bool?
 
         public static ArmorInfos armors;
         public static List<string> armorNames;
         public static ArmorInfo defaultArmor;
 
-        public ArmorInfo(string name, float Density, float Strength, float Hardness, float Ductility, float Diffusivity, float SafeUseTemp, float Cost)
+        public ArmorInfo(string name, float Density, float Strength, float Hardness, float yield, float youngModulus, float Ductility, float Diffusivity, float SafeUseTemp, float Cost)
         {
             this.name = name;
             this.Density = Density;
@@ -33,6 +43,36 @@ namespace BDArmory.Armor
             this.Diffusivity = Diffusivity;
             this.SafeUseTemp = SafeUseTemp;
             this.Cost = Cost;
+            
+            // Since we don't actually need yield and youngModulus we'll just calculate
+            // vFactor and discard those two.
+            this.vFactor = Density / (2.0f * (yield * (2.0f / 3.0f + Mathf.Log((2.0f *
+                youngModulus * 1000f) / (3.0f * yield))) * 1000000.0f));
+
+            // mu is the sqrt of the ratio of armor density to projectile density
+            // We don't actually need mu itself or the following variants of it, just
+            // the muParams so we'll calculate those instead.
+            float muSquared = Density / (11340.0f);
+            float mu = Mathf.Sqrt(muSquared);
+            float muInverse = 1.0f / mu;
+            float muInverseSquared = 1.0f / muSquared;
+
+            this.muParam1 = muInverse / (1.0f + mu);
+            this.muParam2 = muInverse;
+            this.muParam3 = (muInverseSquared + 1.0f / 3.0f);    
+
+            // Doing the same thing as above but with the sabot density instead. Note that
+            // if we ever think about having custom round density's then we're going to
+            // take a performance hit since these will have to be calculated as they're
+            // required
+            muSquared = Density / (19000.0f);
+            mu = Mathf.Sqrt(muSquared);
+            muInverse = 1.0f / mu;
+            muInverseSquared = 1.0f / muSquared;
+
+            this.muParam1S = muInverse / (1.0f + mu);
+            this.muParam2S = muInverse;
+            this.muParam3S = (muInverseSquared + 1.0f / 3.0f);
         }
 
         public static void Load()
@@ -56,6 +96,8 @@ namespace BDArmory.Armor
                         (float)ParseField(node, "Density", typeof(float)),
                         (float)ParseField(node, "Strength", typeof(float)),
                         (float)ParseField(node, "Hardness", typeof(float)),
+                        (float)ParseField(node, "Yield", typeof(float)),
+                        (float)ParseField(node, "YoungModulus", typeof(float)),
                         (float)ParseField(node, "Ductility", typeof(float)),
                         (float)ParseField(node, "Diffusivity", typeof(float)),
                         (float)ParseField(node, "SafeUseTemp", typeof(float)),
@@ -88,6 +130,8 @@ namespace BDArmory.Armor
                         (float)ParseField(node, "Density", typeof(float)),
                         (float)ParseField(node, "Strength", typeof(float)),
                         (float)ParseField(node, "Hardness", typeof(float)),
+                        (float)ParseField(node, "Yield", typeof(float)),
+                        (float)ParseField(node, "YoungModulus", typeof(float)),
                         (float)ParseField(node, "Ductility", typeof(float)),
                         (float)ParseField(node, "Diffusivity", typeof(float)),
                         (float)ParseField(node, "SafeUseTemp", typeof(float)),
