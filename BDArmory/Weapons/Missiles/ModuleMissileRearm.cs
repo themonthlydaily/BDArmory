@@ -7,26 +7,41 @@ using KSP.UI.Screens;
 using UnityEngine;
 
 using BDArmory.WeaponMounts;
+using BDArmory.Settings;
 
 namespace BDArmory.Weapons.Missiles
 {
-    public class ModuleMissileRearm : PartModule
+    public class ModuleMissileRearm : PartModule, IPartMassModifier, IPartCostModifier
     {
-        private Transform MissileTransform = null;
+        public float GetModuleMass(float baseMass, ModifierStagingSituation situation) => ammoCount * missileMass;
 
-        [KSPField(guiName = "#LOC_BDArmory_OrdinanceAvailable", guiActive = true, isPersistant = true)]//Ordinance Available
-        public int ammoCount = 20;
+        public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.FIXED;
+        public float GetModuleCost(float baseCost, ModifierStagingSituation situation) => ammoCount * missileCost;
+        public ModifierChangeWhen GetModuleCostChangeWhen() => ModifierChangeWhen.FIXED;
+
+        Coroutine reloadRoutine;
+
+        private Transform MissileTransform = null;
+        private float missileMass = 0;
+        private float missileCost = 0;
+
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_OrdinanceAvailable"),//Ordinance Available
+UI_FloatRange(minValue = 0f, maxValue = 20, stepIncrement = 1f, scene = UI_Scene.Editor)]
+        public float ammoCount = 3; //FIXME - need to get this number added to the ordinance count in the WM display
+        //will need to rework how UpdateList(0 works in missileFire. Also will need to call it whenever missile reloaded
 
         [KSPField(guiName = "#LOC_BDArmory_MissileAssign", guiActive = true, isPersistant = true)]//Missile Assign
         private string MissileName = "bahaAim120";
 
         [KSPAction("Resupply", KSPActionGroup.None)]
-        private void ActionResupply(KSPActionParam param)
+        private void ActionResupply(KSPActionParam param) //FIXME - this should happen automatically after firing a missile; implement timer
         {
             Resupply();
         }
 
-        [KSPEvent(name = "Resupply", guiName = "#LOC_BDArmory_Resupply", active = true, guiActive = true)]//Resupply
+        [KSPField] public float reloadTime = 5f;
+
+        //[KSPEvent(name = "Resupply", guiName = "#LOC_BDArmory_Resupply", active = true, guiActive = true)]//Resupply
         public void Resupply()
         {
             if (this.part.children.Count != 0)
@@ -34,10 +49,13 @@ namespace BDArmory.Weapons.Missiles
                 Debug.Log("[BDArmory.ModuleMissileRearm]: Not Empty" + this.part.children.Count);
                 return;
             }
-            if (ammoCount >= 1)
+            if (ammoCount >= 1 || BDArmorySettings.INFINITE_AMMO)
             {
-                List<AvailablePart> availablePart = PartLoader.LoadedPartsList;
-                foreach (AvailablePart AP in availablePart)
+                //List<AvailablePart> availablePart = PartLoader.LoadedPartsList;   
+                List<AvailablePart> availablePart = (List<AvailablePart>)PartLoader.LoadedPartsList.Select(p => p.partPrefab.partInfo.name).Where(name => name.Contains(MissileName));
+                Debug.Log($"[BDArmory.ModuleMissileRearm]: found {availablePart.Count} missiles in loaded parts, names {availablePart.Select(p => p.partPrefab.partInfo.name).ToString()}");
+
+                foreach (AvailablePart AP in availablePart) 
                 {
                     if (AP.partPrefab.name == MissileName)
                     {
@@ -46,7 +64,7 @@ namespace BDArmory.Weapons.Missiles
                             if (m.moduleName == "MissileLauncher")
                             {
                                 var partNode = new ConfigNode();
-                                PartSnapshot(AP.partPrefab).CopyTo(partNode);
+                                PartSnapshot(AP.partPrefab).CopyTo(partNode); //check if this actually saves missile settings - range/engage Air/gnd/msl/slw, etc
                                 Debug.Log("[BDArmory.ModuleMissileRearm]: Node" + AP.partPrefab.srfAttachNode.originalPosition);
                                 CreatePart(partNode, MissileTransform.transform.position - MissileTransform.TransformDirection(AP.partPrefab.srfAttachNode.originalPosition),
                                     this.part.transform.rotation, this.part, this.part, "srfAttach");
@@ -56,7 +74,7 @@ namespace BDArmory.Weapons.Missiles
                             }
                         }
                     }
-                }
+                }    
             }
         }
 
@@ -65,11 +83,36 @@ namespace BDArmory.Weapons.Missiles
             yield return new WaitForEndOfFrame();
             yield return new WaitForEndOfFrame();
 
+            MissileLauncher ml = part.FindModuleImplementing<MissileLauncher>();
+            {
+                ml.reloadableRail = this;
+            }
             var turret = part.FindModuleImplementing<MissileTurret>();
             if (turret != null)
             {
                 turret.UpdateMissileChildren();
             }
+            var missileBay = part.FindModuleImplementing<BDDeployableRail>();
+            if (missileBay != null)
+            {
+                missileBay.UpdateMissileChildren();
+            }
+        }
+
+        public void BeginReload()
+        {
+            if (reloadRoutine == null)
+            {
+                reloadRoutine = StartCoroutine(ReloadRoutine());
+            }
+        }
+
+        IEnumerator ReloadRoutine()
+        {
+            Debug.Log("[BDArmory.ModuleMissileRearm]: Beginning resupply of " + MissileName);
+            yield return new WaitForSeconds(reloadTime);
+            Resupply();
+            reloadRoutine = null;
         }
 
         //[KSPEvent(name = "Reassign", guiName = "Reassign", active = true, guiActive = true)]
@@ -77,17 +120,25 @@ namespace BDArmory.Weapons.Missiles
         {
             if (this.part.children.Count == 1)
             {
-                foreach (Part p in this.part.children)
+                Part p = this.part.children[0]; //there's only one part, why the foreach...?
                 {
-                    foreach (PartModule m in p.Modules)
+                    MissileLauncher ml = p.FindModuleImplementing<MissileLauncher>();
                     {
-                        if (m.moduleName == "MissileLauncher")
-                        {
-                            MissileName = p.name;
-                            Debug.Log("[BDArmory.ModuleMissileRearm]: " + MissileName);
-                        }
+                        MissileName = p.name;
+                        ml.reloadableRail = this;
+                        Debug.Log("[BDArmory.ModuleMissileRearm]: " + MissileName);
                     }
                 }
+            }
+        }
+
+        public void ShipModified(ShipConstruct data)
+        {
+            if (this.part.children.Count == 1)
+            {
+                Part missilePart = part.children[0];
+                missileCost = missilePart.partInfo.cost;
+                missileMass = missilePart.mass;
             }
         }
 
@@ -97,13 +148,20 @@ namespace BDArmory.Weapons.Missiles
             this.part.force_activate();
             MissileTransform = base.part.FindModelTransform("MissileTransform");
             Reassign();
+            if (HighLogic.LoadedSceneIsEditor)
+            {
+                GameEvents.onEditorShipModified.Add(ShipModified);
+            }
         }
-
+        private void OnDestroy()
+        {
+            GameEvents.onEditorShipModified.Remove(ShipModified);
+        }
         public override void OnFixedUpdate()
         {
         }
 
-        [KSPEvent(name = "Resupply", guiName = "#LOC_BDArmory_Resupply", active = true, guiActive = false)]//Resupply
+        //[KSPEvent(name = "Resupply", guiName = "#LOC_BDArmory_Resupply", active = true, guiActive = false)]//Resupply
         public static AttachNode GetAttachNodeById(Part p, string id)
         {
             var node = id == "srfAttach" ? p.srfAttachNode : p.FindAttachNode(id);
@@ -357,7 +415,7 @@ namespace BDArmory.Weapons.Missiles
                                 Part fromPart)
         {
             var partNode = new ConfigNode();
-            PartSnapshot(avPart.partPrefab).CopyTo(partNode);
+            PartSnapshot(avPart.partPrefab).CopyTo(partNode); //get this to read from craft file instead to read settignslike engage tgt/range/proximity override?
             return CreatePart(partNode, position, rotation, fromPart);
         }
 
@@ -546,3 +604,21 @@ namespace BDArmory.Weapons.Missiles
         }
     }
 }
+/*
+ * Need three things
+ * -Missile: this holds the flight and guidance code
+ * -launcher: this holds the settings/setup and launch stuff, and is what is mounted to the vee
+ * -loader: this...?
+ * main issue with having reloadable rail as a separate thing:
+ * -IF going the 'lets make missiles work like guns' route and have a part that spawns in a projectile and transfers parameter values to it at time of firing, 
+ * then a loader module is unnecessary, all that is needed is adding a func() to spawn in the new missile part and transfer values, then a timer to countdown until the missile can be fired again
+ * The advantages: reloading functionality is native, and will work seamlessly with AI/WM
+ * IF Going the 'missile is fired, then a replacement is spawned and attached to the craft' route via a loader, then all missile parameter settings have to be duplcated so they can be saved, as the part spawner code grabs 
+ * and creates part with prefab cfg vars, not paramters saved after exiting SPH. There's also the issue of once a missile is detached, then the AI/WM doesn't really have a way of knowing it should still be looking for 
+ * ordinance, keeping the WM GUI count will require hacky worarounds
+ * 
+ * implementation obstacles- missiles reloading via replacement will have issues with rotary rails/turrets, missiles with native reloading will be fine
+ * question is, then, do I just have a secret missile variable that isn't included in the stock cfgs for reload count, so only mod missiles have it, or do i make a dummy reloadablerail class that if the missile is a child of, it tells
+ * the missile to enable the relaoding stuff?
+ * final advantage to native implementation, it shouldn't take mroe than a 2-3 hundred lines of code, vs substantially more for external loader
+ * */
