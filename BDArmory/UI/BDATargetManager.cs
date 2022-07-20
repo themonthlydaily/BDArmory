@@ -277,6 +277,7 @@ namespace BDArmory.UI
                     }
                 Part closestPart = null;
                 Transform thrustTransform = null;
+                bool afterburner = false;
                 float distance = 9999999;
                 if (hottestPart.Count > 0)
                 {
@@ -293,7 +294,7 @@ namespace BDArmory.UI
                                 closestPart = part.Current;
                             }
                         }
-                        if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[IRSTdebugging] closest heatsource found: " + closestPart.name);
+                        if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[IRSTdebugging] closest heatsource found: " + closestPart.name + ", heat: " + (float)(closestPart.thermalInternalFluxPrevious + closestPart.skinTemperature));
                     }
                     if (closestPart != null)
                     {
@@ -301,10 +302,14 @@ namespace BDArmory.UI
                         if (tInfo = v.gameObject.GetComponent<TargetInfo>())
                         {
                             if (tInfo.targetEngineList.Contains(closestPart))
+                            {
                                 thrustTransform = closestPart.FindModelTransform("thrustTransform"); //method to differentiate jets from prop engines? Additional firespitter check?
+                                afterburner = (closestPart.GetComponent<MultiModeEngine>()) ? !(closestPart.GetComponent<MultiModeEngine>().runningPrimary) : false;
+                            }
                         }
-
-                        Ray partRay = new Ray(thrustTransform ? thrustTransform.position : closestPart.transform.position, sensorPosition - closestPart.transform.position); //trace from heatsource to IR sensor
+                        // Set thrustTransform as heat source position for engines, unless they are afterburning, in which case set the heat source position as the plume itself (arbitrary estimate of 4m behind thrustTransform)
+                        Vector3 heatSourcePosition = thrustTransform ? (thrustTransform.position - thrustTransform.up*(afterburner ? 4f : 0f)) : closestPart.transform.position; 
+                        Ray partRay = new Ray(heatSourcePosition, sensorPosition - heatSourcePosition); //trace from heatsource to IR sensor
                         var layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA);
 
                         var hitCount = Physics.RaycastNonAlloc(partRay, hits, distance, layerMask);
@@ -326,10 +331,10 @@ namespace BDArmory.UI
                                 if (partHit.vessel != v) continue; //ignore irstCraft; does also mean that in edge case of one craft occluded behind a second craft from PoV of a third craft w/irst wouldn't actually occlude, but oh well
                                                                    //The heavier/further the part, the more it's going to occlude the heatsource
                                 DebugCount++;
-                                float spacing = Vector3.Distance(closestPart.transform.position, partHit.transform.position);
-                                if (spacing < 15)       //arbitirary 15m threshold, may need to adjust
+                                float sqrSpacing = (heatSourcePosition-partHit.transform.position).sqrMagnitude;
+                                if (sqrSpacing < 16f)       //arbitirary 4m threshold, may need to adjust
                                 {                        //if far enough away, clamp temp to temp of last part in LoS
-                                    OcclusionFactor += partHit.mass * (spacing / 15); //spacing / 15 is linear; replace with an targetAspect floatcurve (either default linear curve for irst, or custom, new floatcurve field for missileLauncher)) for setting what angle a IR missile can lock from?
+                                    OcclusionFactor += partHit.mass * (sqrSpacing / 16f); //sqr spacing / 16 is linear; replace with an targetAspect floatcurve (either default linear curve for irst, or custom, new floatcurve field for missileLauncher)) for setting what angle a IR missile can lock from?
                                     lastHeatscore = (float)(partHit.thermalInternalFluxPrevious + partHit.skinTemperature);
                                 }
                                 else

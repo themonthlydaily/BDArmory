@@ -568,10 +568,9 @@ namespace BDArmory.UI
                     ModuleLiftingSurface wing = parts.Current.GetComponent<ModuleLiftingSurface>();
                     if (wing != null)
                     {
-                        totalLift += wing.deflectionLiftCoeff;
+                        totalLift += wing.deflectionLiftCoeff * Vector3.Project(wing.transform.forward, Vector3.up).sqrMagnitude; // Only return vertically oriented lift components
                     }
                 }
-
             wingLoading = totalLift / EditorLogic.fetch.ship.GetTotalMass();
         }
 
