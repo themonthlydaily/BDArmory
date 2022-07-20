@@ -276,17 +276,22 @@ namespace BDArmory.UI
                 line += 1.25f;
             }
 
-            if (GUI.Button(new Rect(10, line * lineHeight, 280, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorLiftVisualizer"), LiftVisualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+            if (!FerramAerospace.hasFAR)
             {
-                LiftVisualizer = !LiftVisualizer;
-                if (LiftVisualizer)
+                if (GUI.Button(new Rect(10, line * lineHeight, 280, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorLiftVisualizer"), LiftVisualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
                 {
-                    Visualizer = false;
-                    HullVisualizer = false;
-                    HPvisualizer = false;
+                    LiftVisualizer = !LiftVisualizer;
+                    if (LiftVisualizer)
+                    {
+                        Visualizer = false;
+                        HullVisualizer = false;
+                        HPvisualizer = false;
+                    }
                 }
+                line += 1.25f;
             }
-            line += 1.5f;
+
+            line += 0.25f;
 
             if ((refreshHPvisualizer || HPvisualizer != oldHPvisualizer) || (refreshVisualizer || Visualizer != oldVisualizer) || (refreshHullvisualizer || HullVisualizer != oldHullVisualizer) || (refreshLiftvisualizer || LiftVisualizer != oldLiftVisualizer))
             {
@@ -315,10 +320,13 @@ namespace BDArmory.UI
                 GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorTotalMass") + ": " + totalArmorMass.ToString("0.00"), style);
                 line++;
                 GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorTotalCost") + ": " + Mathf.Round(totalArmorCost), style);
-                line++;
-                GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorTotalLift") + ": " + totalLift.ToString("0.00"), style);
-                line++;
-                GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorWingLoading") + ": " + wingLoading.ToString("0.00"), style);
+                if (!FerramAerospace.hasFAR)
+                {
+                    line++;
+                    GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorTotalLift") + ": " + totalLift.ToString("0.00"), style);
+                    line++;
+                    GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorWingLoading") + ": " + wingLoading.ToString("0.00"), style);
+                }
                 line += 1.5f;
             }
             float StatLines = 0;
@@ -552,7 +560,8 @@ namespace BDArmory.UI
                 GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
             }
 
-            CalculateTotalLift(); // Re-calculate lift and wing loading on armor change
+            if (!FerramAerospace.hasFAR)
+                CalculateTotalLift(); // Re-calculate lift and wing loading on armor change
         }
 
         void CalculateTotalLift()
