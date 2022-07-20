@@ -2528,7 +2528,6 @@ namespace BDArmory.UI
             WindowWidth = Mathf.Lerp(WindowWidth, windowColumns * ColumnWidth, 0.15f);
 
             #region Resizing
-            // WindowHeight += 16;
             var resizeRect = new Rect(WindowWidth - 16, WindowHeight - 16, 16, 16);
             GUI.DrawTexture(resizeRect, GUIUtils.resizeTexture, ScaleMode.StretchToFill, true);
             if (Event.current.type == EventType.MouseDown && resizeRect.Contains(Event.current.mousePosition))
