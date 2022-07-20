@@ -43,9 +43,16 @@ namespace BDArmory.Armor
             this.Diffusivity = Diffusivity;
             this.SafeUseTemp = SafeUseTemp;
             this.Cost = Cost;
-            
+
             // Since we don't actually need yield and youngModulus we'll just calculate
-            // vFactor and discard those two.
+            // vFactor and discard those two. vFactor is simply the density of the armor
+            // divided by two times the resistance of the armor H, calculated using Tate's
+            // formula, found either in his 1986 paper or in the publically available US
+            // Army technical memorandum "TERMINAL  BALLISTICS TEST AND ANALYSIS
+            // GUIDELINES FOR THE PENETRATION MECHANICS BRANCH" (ADA246922) on page 104
+            // of the PDF, listed as Advancing Cavity (Tate 1986a)", this is used
+            // throughout the equations proposed by Frank and Zook as special case
+            // solutions to the model proposed by Tate and Alekseevskii
             this.vFactor = Density / (2.0f * (yield * (2.0f / 3.0f + Mathf.Log((2.0f *
                 youngModulus * 1000f) / (3.0f * yield))) * 1000000.0f));
 
@@ -57,14 +64,18 @@ namespace BDArmory.Armor
             float muInverse = 1.0f / mu;
             float muInverseSquared = 1.0f / muSquared;
 
+            // These parameters are all used in the equations proposed by Frank and Zook
+            // in their 1987 paper "ENERGY-EFFICIENT PENETRATION AND PERFORATION OF
+            // TARGETS IN THE HYPERVELOCITY REGIME". We are pre-calculating these terms
+            // in the function in order to optimize the performance of the equation
             this.muParam1 = muInverse / (1.0f + mu);
             this.muParam2 = muInverse;
-            this.muParam3 = (muInverseSquared + 1.0f / 3.0f);    
+            this.muParam3 = (muInverseSquared + 1.0f / 3.0f);
 
             // Doing the same thing as above but with the sabot density instead. Note that
             // if we ever think about having custom round density's then we're going to
-            // take a performance hit since these will have to be calculated as they're
-            // required
+            // have to build a dictionary instead using all available armor types and
+            // projectiles so as to maintain performance as proposed by DocNappers
             muSquared = Density / (19000.0f);
             mu = Mathf.Sqrt(muSquared);
             muInverse = 1.0f / mu;
