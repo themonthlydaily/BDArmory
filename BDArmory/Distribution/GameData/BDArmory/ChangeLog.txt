@@ -19,6 +19,7 @@ FIXES
 - Fixes Debris icons not appearing when Team Icons enabled.
 - Fixes Chaingun/Rocketpod Rounds PEr Minute slider values when reverting to VAB/SPH.
 - Fixes ripplefire issue with weapons with different rates of fire in one weapongroup.
+- Fixes AI GUI tooltips in some places being in the wrong order
 
 IMPROVEMENTS
 - General:
@@ -95,6 +96,9 @@ IMPROVEMENTS
 	- Weapon debug lines now account for frame velocity and flight integrator delay.
 	- Rockets now support beehive/nuclear warhead options.
 	- EMP weapons fired at targets with AI/ WM off will not cause them to activate when target reboots.
+	- Bullets now support shaped charge HE fillers (for HEAT rounds and similar)
+		-Bullet.cfg 'explosive =' field no longer true/false, now select from 'Standard' or 'Shaped' in place of explosive = true, or 'None' in place of explosive = false
+	- Penetration math overhauled to now use a version of the Frank & Zook(1987) and Tate penetration equations. Penetration depths should be similar in most cases.
 	- Missiles:
 		- Adds Missile multi-targeting.
 		- Adds new Max Missile Tgts setting in WM to set max targets to engage with missiles.

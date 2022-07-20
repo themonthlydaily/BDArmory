@@ -857,7 +857,6 @@ namespace BDArmory.Bullets
                     pBullet.caliber = sBullet.caliber;
                     pBullet.bulletVelocity = sBullet.bulletVelocity;
                     pBullet.bulletMass = sBullet.bulletMass;
-                    pBullet.explosive = sBullet.explosive;
                     pBullet.incendiary = sBullet.incendiary;
                     pBullet.apBulletMod = sBullet.apBulletMod;
                     pBullet.bulletDmgMult = bulletDmgMult;
@@ -880,7 +879,7 @@ namespace BDArmory.Bullets
                     pBullet.tracerLuminance = 1.75f;
                     pBullet.bulletDrop = true;
 
-                    if (sBullet.explosive)
+                    if (sBullet.tntMass > 0)
                     {
                         pBullet.explModelPath = explModelPath;
                         pBullet.explSoundPath = explSoundPath;

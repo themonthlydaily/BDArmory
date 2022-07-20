@@ -714,7 +714,7 @@ namespace BDArmory.Utils
             // Calculate the length of the projectile
             float length = ((bulletMass * 1000.0f * 400.0f) / ((caliber * caliber *
                     Mathf.PI) * (sabot ? 19.0f : 11.34f)) + 1.0f) * 10.0f;
-
+            float penetration = 0;
             // 1400 is an arbitrary velocity around where the linear function used to
             // simplify diverges from the result predicted by the Frank and Zook S2 based
             // equation used. It is also inaccurate under 1400 for long rod projectiles
@@ -743,7 +743,7 @@ namespace BDArmory.Utils
             {
                 // Formula based on IDA paper P5032, Appendix D, modified to match the
                 // Krupp equation this mod used before.
-                return (Mathf.Sqrt(bulletMass * 1000.0f / (0.7f * Strength * Mathf.PI
+                penetration = (Mathf.Sqrt(bulletMass * 1000.0f / (0.7f * Strength * Mathf.PI
                     * caliber)) * 0.727457902089f * bulletVelocity) * apBulletMod;
             }
             else
@@ -754,11 +754,20 @@ namespace BDArmory.Utils
                 // and is an overestimate but the S4 option is far more complex than even
                 // this and it also requires an empirical parameter that requires testing
                 // long rod penetrators against targets so lolno
-                return ((length - caliber) * (1.0f - Mathf.Exp((-vFactor *
+                penetration =  ((length - caliber) * (1.0f - Mathf.Exp((-vFactor *
                     bulletVelocity * bulletVelocity) * muParam1)) * muParam2 + caliber *
                     muParam3 * Mathf.Log(1.0f + vFactor * bulletVelocity *
                     bulletVelocity))*apBulletMod;
             }
+            if (BDArmorySettings.DEBUG_ARMOR)
+            {
+                Debug.Log("[BDArmory.ProjectileUtils{Calc Penetration}]: Length: " + length + "; sabot: " + sabot + " ;Penetration: " + Mathf.Round(penetration / 10) + " cm");
+                Debug.Log("[BDArmory.ProjectileUtils{Calc Penetration}]: vFactor: " + vFactor + "; EXP: " + Mathf.Exp((-vFactor *
+                    bulletVelocity * bulletVelocity) * muParam1) + " ;MuParam1: " + muParam1);
+                Debug.Log("[BDArmory.ProjectileUtils{Calc Penetration}]: MuParam2: " + muParam2 + "; muParam3: " + muParam3 + " ;log: " + Mathf.Log(1.0f + vFactor * bulletVelocity *
+                    bulletVelocity));
+            }
+            return penetration;
         }
 
 

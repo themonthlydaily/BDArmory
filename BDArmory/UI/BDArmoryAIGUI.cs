@@ -1499,7 +1499,7 @@ namespace BDArmory.UI
                         }
                         if (contextTipsEnabled)
                         {
-                            GUI.Label(ContextLabelRect(leftIndent, ++ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_WPPreRoll"), contextLabel);// Waypoint Pre-Roll Time
+                            GUI.Label(ContextLabelRect(leftIndent, ++ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_bankLimit"), contextLabel);// Waypoint Pre-Roll Time
                         }
 
                         GUI.Label(SettinglabelRect(leftIndent, ++ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_WaypointPreRollTime") + ": " + ActivePilot.waypointPreRollTime.ToString("0.00"), Label);//
@@ -1514,7 +1514,7 @@ namespace BDArmory.UI
                         }
                         if (contextTipsEnabled)
                         {
-                            GUI.Label(ContextLabelRect(leftIndent, ++ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_WPYawAuth"), contextLabel);// Waypoint Yaw Authority Time
+                            GUI.Label(ContextLabelRect(leftIndent, ++ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_WPPreRoll"), contextLabel);// Waypoint Yaw Authority Time
                         }
 
                         GUI.Label(SettinglabelRect(leftIndent, ++ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_WaypointYawAuthorityTime") + ": " + ActivePilot.waypointYawAuthorityTime.ToString("0.00"), Label);//
@@ -1529,7 +1529,7 @@ namespace BDArmory.UI
                         }
                         if (contextTipsEnabled)
                         {
-                            GUI.Label(ContextLabelRect(leftIndent, ++ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_bankLimit"), contextLabel);//"dynamic damp min"
+                            GUI.Label(ContextLabelRect(leftIndent, ++ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_WPYawAuth"), contextLabel);//"dynamic damp min"
                         }
 
                         GUI.Label(SettinglabelRect(leftIndent, ++ctrlLines), Localizer.Format("#LOC_BDArmory_maxAllowedGForce") + ": " + ActivePilot.maxAllowedGForce.ToString("0.00"), Label);//"dynamic damping min"
