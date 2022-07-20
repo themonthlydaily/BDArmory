@@ -308,7 +308,7 @@ namespace BDArmory.UI
                             }
                         }
                         // Set thrustTransform as heat source position for engines, unless they are afterburning, in which case set the heat source position as the plume itself (arbitrary estimate of 4m behind thrustTransform)
-                        Vector3 heatSourcePosition = thrustTransform ? (thrustTransform.position - thrustTransform.up*(afterburner ? 4f : 0f)) : closestPart.transform.position; 
+                        Vector3 heatSourcePosition = thrustTransform ? (thrustTransform.position + thrustTransform.forward*(afterburner ? 4f : 0f)) : closestPart.transform.position; 
                         Ray partRay = new Ray(heatSourcePosition, sensorPosition - heatSourcePosition); //trace from heatsource to IR sensor
                         var layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA);
 
