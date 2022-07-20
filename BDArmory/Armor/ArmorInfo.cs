@@ -66,8 +66,9 @@ namespace BDArmory.Armor
 
             // These parameters are all used in the equations proposed by Frank and Zook
             // in their 1987 paper "ENERGY-EFFICIENT PENETRATION AND PERFORATION OF
-            // TARGETS IN THE HYPERVELOCITY REGIME". We are pre-calculating these terms
-            // in the function in order to optimize the performance of the equation
+            // TARGETS IN THE HYPERVELOCITY REGIME". These are all based on the constant
+            // mu, explained above. We are pre-calculating these terms in the function in
+            // order to optimize the performance of the equation
             this.muParam1 = muInverse / (1.0f + mu);
             this.muParam2 = muInverse;
             this.muParam3 = (muInverseSquared + 1.0f / 3.0f);
