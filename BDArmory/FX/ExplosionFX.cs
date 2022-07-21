@@ -84,7 +84,7 @@ namespace BDArmory.FX
         {
             StartTime = Time.time;
             disabled = false;
-            MaxTime = Mathf.Sqrt((Range / ExplosionVelocity) * 3f) * 2f; // Scale MaxTime to get a reasonable visualisation of the explosion.
+            MaxTime = BDAMath.Sqrt((Range / ExplosionVelocity) * 3f) * 2f; // Scale MaxTime to get a reasonable visualisation of the explosion.
             blastRange = warheadType == WarheadTypes.Standard ? Range * 2 : Range; //to properly account for shrapnel hits when compiling list of hit parts from the spherecast
             if (!isFX)
             {
@@ -649,7 +649,7 @@ namespace BDArmory.FX
                 }
                 else //majority of force concentrated in blast cone for shaped warheads, not going to apply much force to stuff outside 
                 {
-                    if (realDistance < Range / 2)
+                    if (realDistance > Range / 2) //further away than half the blast range, falloff blast effect outside primary AoE
                     {
                         blastInfo = BlastPhysicsUtils.CalculatePartBlastEffects(part, realDistance, vesselMass * 1000f, Power / 4, Range / 2);
                     }
@@ -743,9 +743,14 @@ namespace BDArmory.FX
                                 float Strength = Armor.Strength;
                                 float safeTemp = Armor.SafeUseTemp;
                                 float Density = Armor.Density;
+                                float vFactor = Armor.vFactor;
+                                float muParam1 = Armor.muParam1;
+                                float muParam2 = Armor.muParam2;
+                                float muParam3 = Armor.muParam3;
                                 int type = (int)Armor.ArmorTypeNum;
 
-                                penetration = ProjectileUtils.CalculatePenetration(Caliber, Caliber, warheadType == WarheadTypes.ShapedCharge ? Power / 2 : ProjMass, ExplosionVelocity, Ductility, Density, Strength, thickness, 1);
+                                //penetration = ProjectileUtils.CalculatePenetration(Caliber, Caliber, warheadType == WarheadTypes.ShapedCharge ? Power / 2 : ProjMass, ExplosionVelocity, Ductility, Density, Strength, thickness, 1);
+                                penetration = ProjectileUtils.CalculatePenetration(Caliber, warheadType == WarheadTypes.ShapedCharge ? 4000f : ExplosionVelocity, warheadType == WarheadTypes.ShapedCharge ? Power * 0.0555f : ProjMass, 1f, Strength, vFactor, muParam1, muParam2, muParam3);
                                 penetrationFactor = ProjectileUtils.CalculateArmorPenetration(part, penetration, thickness);
 
                                 if (RA != null)
@@ -776,7 +781,7 @@ namespace BDArmory.FX
                         }
                         else
                         {
-                            if ((part == hitpart && ProjectileUtils.IsArmorPart(part)) || !ProjectileUtils.CalculateExplosiveArmorDamage(part, blastInfo.TotalPressure, SourceVesselName, eventToExecute.Hit, ExplosionSource)) //false = armor blowthrough or bullet detonating inside part
+                            if ((part == hitpart && ProjectileUtils.IsArmorPart(part)) || !ProjectileUtils.CalculateExplosiveArmorDamage(part, blastInfo.TotalPressure, SourceVesselName, eventToExecute.Hit, ExplosionSource, Range-realDistance)) //false = armor blowthrough or bullet detonating inside part
                             {
                                 if (RA != null && !RA.NXRA) //blast wave triggers RA; detonate all remaining RA sections
                                 {
@@ -790,7 +795,7 @@ namespace BDArmory.FX
                                     damage = part.AddExplosiveDamage(blastInfo.Damage, Caliber, ExplosionSource, dmgMult);
                                     if (part == hitpart && ProjectileUtils.IsArmorPart(part)) //deal armor damage to armor panel, since we didn't do that earlier
                                     {
-                                        ProjectileUtils.CalculateExplosiveArmorDamage(part, blastInfo.TotalPressure, SourceVesselName, eventToExecute.Hit, ExplosionSource); 
+                                        ProjectileUtils.CalculateExplosiveArmorDamage(part, blastInfo.TotalPressure, SourceVesselName, eventToExecute.Hit, ExplosionSource, Range - realDistance); 
                                     }
                                     penetrationFactor = damage / 10; //closer to the explosion/greater magnitude of the explosion at point blank, the greater the blowthrough
                                     if (float.IsNaN(damage)) Debug.LogError("DEBUG NaN damage!");
@@ -927,7 +932,7 @@ namespace BDArmory.FX
                 case "shapedcharge":
                     eFx.warheadType = WarheadTypes.ShapedCharge;
                     eFx.AngleOfEffect = 10f;
-                    eFx.Caliber = caliber > 0 ? caliber / 2 : 50;
+                    eFx.Caliber = caliber > 0 ? caliber *  0.05f : 6f;
                     break;
                 default:
                     eFx.warheadType = WarheadTypes.Standard;

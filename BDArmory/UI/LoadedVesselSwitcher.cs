@@ -1209,7 +1209,7 @@ namespace BDArmory.UI
                                         {
                                             if (!BDArmorySettings.DISABLE_RAMMING && AI != null && AI.allowRamming) //ramming's fun to watch
                                             {
-                                                vesselScore *= (0.031623f * Mathf.Sqrt(targetDistance) / 2);
+                                                vesselScore *= (0.031623f * BDAMath.Sqrt(targetDistance) / 2);
                                             }
                                             else
                                             {
@@ -1218,7 +1218,7 @@ namespace BDArmory.UI
                                         }
                                         //else got weapons and engaging
                                     }
-                                    vesselScore *= 0.031623f * Mathf.Sqrt(targetDistance); // Equal to 1 at 1000m
+                                    vesselScore *= 0.031623f * BDAMath.Sqrt(targetDistance); // Equal to 1 at 1000m
                                     if (wm.Current.currentGun != null)
                                     {
                                         if (wm.Current.currentGun.recentlyFiring)
@@ -1237,7 +1237,7 @@ namespace BDArmory.UI
                                     {
                                         vesselScore *= 0.5f;
                                         var distance = Vector3.Distance(wm.Current.vessel.GetWorldPos3D(), wm.Current.incomingThreatPosition);
-                                        vesselScore *= 0.031623f * Mathf.Sqrt(distance); // Equal to 1 at 1000m, we don't want to overly disadvantage craft that are super far away, but could be firing missiles or doing other interesting things
+                                        vesselScore *= 0.031623f * BDAMath.Sqrt(distance); // Equal to 1 at 1000m, we don't want to overly disadvantage craft that are super far away, but could be firing missiles or doing other interesting things
                                                                                          //we're very interested when threat and target are the same
                                         if (wm.Current.incomingThreatVessel != null && wm.Current.currentTarget != null)
                                         {

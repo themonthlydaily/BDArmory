@@ -174,8 +174,10 @@
     <Compile Include="CounterMeasure\CMDropper.cs" />
     <Compile Include="CounterMeasure\CMFlare.cs" />
     <Compile Include="CounterMeasure\CMSmoke.cs" />
+    <Compile Include="CounterMeasure\ModuleCloakingDevice.cs" />
     <Compile Include="CounterMeasure\ModuleECMJammer.cs" />
     <Compile Include="CounterMeasure\VesselChaffInfo.cs" />
+    <Compile Include="CounterMeasure\VesselCloakInfo.cs" />
     <Compile Include="CounterMeasure\VesselECMJInfo.cs" />
     <Compile Include="Damage\BuildingDamage.cs" />
     <Compile Include="Damage\DamageService.cs" />
@@ -233,6 +235,7 @@
     <Compile Include="Modules\ModuleMovingPart.cs" />
     <Compile Include="Modules\ModuleSelfSealingTank.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Radar\ModuleIRST.cs" />
     <Compile Include="Radar\ModuleRadar.cs" />
     <Compile Include="Radar\ModuleSpaceRadar.cs" />
     <Compile Include="Radar\RadarDisplayData.cs" />
@@ -510,6 +513,8 @@
     <None Include="Distribution\GameData\BDArmory\Parts\hellfireMissile\model.mu" />
     <None Include="Distribution\GameData\BDArmory\Parts\hiddenVulcan\hiddenVulcan.cfg" />
     <None Include="Distribution\GameData\BDArmory\Parts\hiddenVulcan\model.mu" />
+    <None Include="Distribution\GameData\BDArmory\Parts\IRSTPod\model.mu" />
+    <None Include="Distribution\GameData\BDArmory\Parts\IRSTPod\part.cfg" />
     <None Include="Distribution\GameData\BDArmory\Parts\jdamMk83\jdam.cfg" />
     <None Include="Distribution\GameData\BDArmory\Parts\jdamMk83\model.mu" />
     <None Include="Distribution\GameData\BDArmory\Parts\m102Howitzer\m102.cfg" />
@@ -741,6 +746,7 @@
     <Content Include="Distribution\GameData\BDArmory\Parts\hiddenVulcan\muzzle.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\hiddenVulcan\smoke.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\hiddenVulcan\texture.png" />
+    <Content Include="Distribution\GameData\BDArmory\Parts\IRSTPod\irst.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\jdamMk83\tex_jdam.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\m102Howitzer\muzzle.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\m102Howitzer\tex_m102.png" />

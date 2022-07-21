@@ -80,21 +80,26 @@ namespace BDArmory.Control
         }
 
         float triggerTimer;
-        int rippleGunCount;
-        int _gunRippleIndex;
+        Dictionary<string, int> rippleGunCount = new Dictionary<string, int>();
+        Dictionary<string, int> gunRippleIndex = new Dictionary<string, int>();
         public float gunRippleRpm;
 
-        public int gunRippleIndex
+        public void incrementRippleIndex(string weaponname)
         {
-            get { return _gunRippleIndex; }
-            set
+            gunRippleIndex[weaponname]++;
+            if (gunRippleIndex[weaponname] >= rippleGunCount[weaponname])
             {
-                _gunRippleIndex = value;
-                if (_gunRippleIndex >= rippleGunCount)
-                {
-                    _gunRippleIndex = 0;
-                }
+                gunRippleIndex[weaponname] = 0;
             }
+        }
+
+        public int GetRippleIndex(string weaponname)
+        {
+            if (gunRippleIndex.TryGetValue(weaponname, out int rippleIndex))
+            {
+                return rippleIndex;
+            }
+            else return 0;
         }
 
         //ripple stuff
@@ -338,8 +343,13 @@ namespace BDArmory.Control
         public int MaxradarLocks = 0;
         public VesselRadarData vesselRadarData;
 
+        public List<ModuleIRST> irsts = new List<ModuleIRST>();
+
         //jammers
         public List<ModuleECMJammer> jammers = new List<ModuleECMJammer>();
+
+        //cloak generators
+        public List<ModuleCloakingDevice> cloaks = new List<ModuleCloakingDevice>();
 
         //other modules
         public List<IBDWMModule> wmModules = new List<IBDWMModule>();
@@ -656,6 +666,28 @@ namespace BDArmory.Control
                             weapon.Current.aiControlled = true;
                         }
                     }
+                if (radars.Count > 0)
+                {
+                    using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
+                        while (rd.MoveNext())
+                        {
+                            if (rd.Current != null || rd.Current.canLock)
+                            {
+                                rd.Current.EnableRadar();
+                            }
+                        }
+                }
+                if (irsts.Count > 0)
+                {
+                    using (List<ModuleIRST>.Enumerator rd = irsts.GetEnumerator())
+                        while (rd.MoveNext())
+                        {
+                            if (rd.Current != null)
+                            {
+                                rd.Current.EnableIRST();
+                            }
+                        }
+                }
             }
         }
 
@@ -1058,6 +1090,7 @@ namespace BDArmory.Control
                 StartCoroutine(StartupListUpdater());
                 firedMissiles = 0;
                 missilesAway = new Dictionary<TargetInfo, int>();
+                rippleGunCount = new Dictionary<string, int>();
 
                 GameEvents.onVesselCreate.Add(OnVesselCreate);
                 GameEvents.onPartJointBreak.Add(OnPartJointBreak);
@@ -1261,7 +1294,7 @@ namespace BDArmory.Control
                     if (missileBase.targetVessel == null) continue;
                     if (missileBase.SourceVessel != this.vessel) continue;
                     //if (missileBase.MissileState != MissileBase.MissileStates.PostThrust && !missileBase.HasMissed && !missileBase.HasExploded)
-                    if (missileBase.HasFired && !missileBase.HasMissed && !missileBase.HasExploded) //culling post-thrust missiles makes AGMs get cleared almost immediately after launch
+                    if (missileBase.HasFired && !missileBase.HasMissed && !missileBase.HasExploded || missileBase.GetWeaponClass() == WeaponClasses.Bomb) //culling post-thrust missiles makes AGMs get cleared almost immediately after launch
                     {
                         if (!missilesAway.ContainsKey(missileBase.targetVessel))
                         {
@@ -1493,6 +1526,7 @@ namespace BDArmory.Control
                     if (isChaffing) debugString.AppendLine("Chaffing");
                     if (isFlaring) debugString.AppendLine("Flaring");
                     if (isECMJamming) debugString.AppendLine("ECMJamming");
+                    if (isCloaking) debugString.AppendLine("Cloaking");
                 }
                 if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_WEAPONS)
                 {
@@ -1619,22 +1653,20 @@ namespace BDArmory.Control
                 }
                 else
                 {
-                    // DISABLE RADAR
-                    /*
-                    if (!vesselRadarData || !(vesselRadarData.radarCount > 0))
+                    // Turn on radars if off
+                    if (!results.foundAntiRadiationMissile)
                     {
-                        List<ModuleRadar>.Enumerator rd = radars.GetEnumerator();
-                        while (rd.MoveNext())
-                        {
-                            if (rd.Current == null) continue;
-                            if (!rd.Current.canLock) continue;
-                            rd.Current.EnableRadar();
-                            break;
-                        }
-                        rd.Dispose();
+                        using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
+                            while (rd.MoveNext())
+                            {
+                                if (rd.Current != null || rd.Current.canLock)
+                                {
+                                    rd.Current.EnableRadar();
+                                }
+                            }
                     }
-                    */
 
+                    // Try to lock target, or if already locked, fire on it
                     if (vesselRadarData &&
                         (!vesselRadarData.locked ||
                          (vesselRadarData.lockedTargetData.targetData.predictedPosition - guardTarget.transform.position)
@@ -1650,6 +1682,13 @@ namespace BDArmory.Control
                             StartGuardTurretFiring();
                             yield break;
                         }
+                    }
+                    else if (guardTarget && vesselRadarData && vesselRadarData.locked &&
+                            vesselRadarData.lockedTargetData.vessel == guardTarget)
+                    {
+                        vesselRadarData.SlaveTurrets();
+                        StartGuardTurretFiring();
+                        yield break;
                     }
 
                     if (!guardTarget || (guardTarget.transform.position - transform.position).sqrMagnitude > guardRange * guardRange)
@@ -2041,40 +2080,32 @@ namespace BDArmory.Control
                 //no target in gps database, acquire via targeting pod
                 if (!foundTargetInDatabase)
                 {
-                    ModuleTargetingCamera tgp = null;
-                    using (List<ModuleTargetingCamera>.Enumerator t = targetingPods.GetEnumerator())
-                        while (t.MoveNext())
-                        {
-                            if (t.Current) tgp = t.Current;
-                        }
-
-                    if (tgp != null)
+                    if (targetingPods.Count > 0)
                     {
-                        tgp.EnableCamera();
-                        yield return StartCoroutine(tgp.PointToPositionRoutine(guardTarget.CoM));
+                        using (List<ModuleTargetingCamera>.Enumerator tgp = targetingPods.GetEnumerator())
+                            while (tgp.MoveNext())
+                            {
+                                if (tgp.Current == null) continue;
+                                tgp.Current.EnableCamera();
+                                tgp.Current.CoMLock = true;
+                                yield return StartCoroutine(tgp.Current.PointToPositionRoutine(guardTarget.CoM));
 
-                        if (tgp)
-                        {
-                            if (guardTarget && tgp.groundStabilized && (tgp.targetPointPosition - guardTarget.transform.position).sqrMagnitude < CurrentMissile.GetBlastRadius() * CurrentMissile.GetBlastRadius()) //was tgp.groundtargetposition
-                            {
-                                radius = 500;
-                                designatedGPSInfo = new GPSTargetInfo(tgp.bodyRelativeGTP, "Guard Target");
-                                bombStartTime = Time.time;
+                                if (guardTarget && tgp.Current.groundStabilized && (tgp.Current.targetPointPosition - guardTarget.transform.position).sqrMagnitude < CurrentMissile.GetBlastRadius() * CurrentMissile.GetBlastRadius()) //was tgp.groundtargetposition
+                                {
+                                    radius = 500;
+                                    designatedGPSInfo = new GPSTargetInfo(tgp.Current.bodyRelativeGTP, "Guard Target");
+                                    bombStartTime = Time.time;
+                                }
+                                else//failed to acquire target via tgp, cancel.
+                                {
+                                    tgp.Current.DisableCamera();
+                                    designatedGPSInfo = new GPSTargetInfo();
+                                    guardFiringMissile = false;
+                                    yield break;
+                                }
+                                
                             }
-                            else//failed to acquire target via tgp, cancel.
-                            {
-                                tgp.DisableCamera();
-                                designatedGPSInfo = new GPSTargetInfo();
-                                guardFiringMissile = false;
-                                yield break;
-                            }
-                        }
-                        else//no gps target and lost tgp, cancel.
-                        {
-                            guardFiringMissile = false;
-                            yield break;
-                        }
-                    }
+                    }              
                     else //no gps target and no tgp, cancel.
                     {
                         guardFiringMissile = false;
@@ -2309,6 +2340,7 @@ namespace BDArmory.Control
         public bool isChaffing;
         public bool isFlaring;
         public bool isECMJamming;
+        public bool isCloaking;
 
         bool isLegacyCMing;
 
@@ -2328,6 +2360,14 @@ namespace BDArmory.Control
             if (!isECMJamming)
             {
                 StartCoroutine(ECMRoutine());
+            }
+        }
+
+        public void FireOCM(bool thermalthreat)
+        {
+            if (!isCloaking)
+            {
+                StartCoroutine(CloakRoutine(thermalthreat));
             }
         }
 
@@ -2367,6 +2407,31 @@ namespace BDArmory.Control
                 {
                     if (ecm1.Current == null) continue;
                     ecm1.Current.DisableJammer();
+                }
+        }
+
+        IEnumerator CloakRoutine(bool thermalthreat)
+        {
+            //Debug.Log("[Cloaking] under fire! cloaking!");
+
+            using (var ocm = VesselModuleRegistry.GetModules<ModuleCloakingDevice>(vessel).GetEnumerator())
+                while (ocm.MoveNext())
+                {
+                    if (ocm.Current == null) continue;
+                    if (ocm.Current.cloakEnabled) continue;
+                    if (thermalthreat && ocm.Current.thermalReductionFactor >= 1) continue; //don't bother activating non-thermoptic camo when incoming heatseekers
+                    if (!thermalthreat && ocm.Current.opticalReductionFactor >= 1) continue; //similarly, don't activate purely thermal cloaking systems if under gunfrire
+                    isCloaking = true;
+                    ocm.Current.EnableCloak();
+                }
+            yield return new WaitForSeconds(10.0f);
+            isCloaking = false;
+
+            using (var ocm1 = VesselModuleRegistry.GetModules<ModuleCloakingDevice>(vessel).GetEnumerator())
+                while (ocm1.MoveNext())
+                {
+                    if (ocm1.Current == null) continue;
+                    ocm1.Current.DisableCloak();
                 }
         }
 
@@ -2513,15 +2578,6 @@ namespace BDArmory.Control
                     if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: No Clearance! Cannot fire " + CurrentMissile.name);
                     return false;
                 }
-                if (ml.warheadType == MissileBase.WarheadTypes.EMP || ml.warheadType == MissileBase.WarheadTypes.Nuke)
-                {
-                    float timeToImpact;
-                    MissileGuidance.GetAirToAirTarget(currentTarget.position, currentTarget.velocity, currentTarget.Vessel.acceleration_immediate, vessel, out timeToImpact);
-                    if (ml.StandOffDistance > 0 && Vector3.Distance(transform.position + (vessel.Velocity() * timeToImpact), currentTarget.position + currentTarget.velocity) > ml.StandOffDistance) //if predicted craft position will be within blast radius when missile arrives, break off
-                    {
-                        DisengageAfterFiring = true;
-                    }
-                }
                 if (ml is MissileLauncher && ((MissileLauncher)ml).missileTurret)
                 {
                     ((MissileLauncher)ml).missileTurret.FireMissile(((MissileLauncher)ml));
@@ -2546,6 +2602,18 @@ namespace BDArmory.Control
                     if (ml.GetWeaponClass() == WeaponClasses.Bomb)
                     {
                         //StartCoroutine(BombsAwayRoutine(ml));
+                    }
+                    if (ml.warheadType == MissileBase.WarheadTypes.EMP || ml.warheadType == MissileBase.WarheadTypes.Nuke)
+                    {
+                        MissileLauncher cm = missile as MissileLauncher;
+                        float thrust = cm == null ? 30 : cm.thrust;
+                        float timeToImpact = AIUtils.ClosestTimeToCPA(guardTarget, vessel.CoM, vessel.Velocity(), (thrust / missile.part.mass) * missile.GetForwardTransform(), 16);
+                        if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: Blast standoff dist: " + ml.StandOffDistance + "; time2Impact: " + timeToImpact);
+                        if (ml.StandOffDistance > 0 && Vector3.Distance(transform.position + (vessel.Velocity() * timeToImpact), currentTarget.position + currentTarget.velocity) > ml.StandOffDistance) //if predicted craft position will be within blast radius when missile arrives, break off
+                        {
+                            DisengageAfterFiring = true;
+                            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: Need to withdraw from projected blast zone!");
+                        }
                     }
                 }
                 else
@@ -2804,13 +2872,13 @@ namespace BDArmory.Control
             }
 
             //gun ripple stuff
-            if (selectedWeapon != null && (selectedWeapon.GetWeaponClass() == WeaponClasses.Gun || selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket || selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser) &&
-                currentGun.useRippleFire) //currentGun.roundsPerMinute < 1500)
+            if (selectedWeapon != null && (selectedWeapon.GetWeaponClass() == WeaponClasses.Gun || selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket || selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser))
+                //&& currentGun.useRippleFire) //currentGun.roundsPerMinute < 1500)
             {
                 float counter = 0; // Used to get a count of the ripple weapons.  a float version of rippleGunCount.
-                gunRippleIndex = 0;
+                gunRippleIndex.Clear();
                 // This value will be incremented as we set the ripple weapons
-                rippleGunCount = 0;
+                rippleGunCount.Clear();
                 float weaponRpm = 0;  // used to set the rippleGunRPM
 
                 // JDK:  this looks like it can be greatly simplified...
@@ -2898,21 +2966,27 @@ namespace BDArmory.Control
                         rippleWeapons.Add(weapCnt.Current);
                         counter += weaponRpm; // grab sum of weapons rpm
                     }
-
                 gunRippleRpm = counter;
-                //number of seconds between each gun firing; will reduce with increasing RPM or number of guns
-                float timeDelayPerGun = 60f / gunRippleRpm; // rpm*counter will return the square of rpm now
-                                                            // Now lets act on the filtered list.
+                
+                //ripple for non-homogeneous groups needs to be setup per guntype, else a slow cannon will have the same firedelay as a fast MG
                 using (List<ModuleWeapon>.Enumerator weapon = rippleWeapons.GetEnumerator())
                     while (weapon.MoveNext())
                     {
+                        int GunCount = 0; 
                         if (weapon.Current == null) continue;
-                        // set the weapon ripple index just before we increment rippleGunCount.
-                        weapon.Current.rippleIndex = rippleGunCount;
-                        //set the time delay for moving to next index
-                        weapon.Current.initialFireDelay = timeDelayPerGun;
+                        if (rippleGunCount.ContainsKey(weapon.Current.WeaponName)) continue; //don't setup copies of a guntype if we've already done that
+                        for (int w = 0; w < rippleWeapons.Count; w++)
+                        {
+                            if (weapon.Current.WeaponName == rippleWeapons[w].WeaponName)
+                            {
+                                weapon.Current.rippleIndex = GunCount; //this will mean that a group of two+ different RPM guns will start firing at the same time, then each subgroup will independantly ripple
+                                GunCount++;
+                            }
+                        }
+                        weapon.Current.initialFireDelay = 60 / (weapon.Current.roundsPerMinute * GunCount);
                         weapon.Current.useRippleFire = ro.rippleFire;
-                        rippleGunCount++;
+                        rippleGunCount.Add(weapon.Current.WeaponName, GunCount);
+                        gunRippleIndex.Add(weapon.Current.WeaponName, 0);
                     }
             }
 
@@ -3463,7 +3537,9 @@ namespace BDArmory.Control
                         }
                     }
             }
+            irsts = VesselModuleRegistry.GetModules<ModuleIRST>(vessel);
             jammers = VesselModuleRegistry.GetModules<ModuleECMJammer>(vessel);
+            cloaks = VesselModuleRegistry.GetModules<ModuleCloakingDevice>(vessel);
             targetingPods = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel);
             wmModules = VesselModuleRegistry.GetModules<IBDWMModule>(vessel);
         }
@@ -3631,6 +3707,11 @@ namespace BDArmory.Control
                     if (BDArmorySettings.DEBUG_AI)
                     {
                         Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + targetDebugText + (selectedWeapon != null ? selectedWeapon.GetShortName() : ""));
+                    }
+                    //need to check that target is actually being seen, and not just being recalled due to object permanence
+                    if (CanSeeTarget(potentialTarget, false))
+                    {
+                        BDATargetManager.ReportVessel(potentialTarget.Vessel, this); //have it so AI can see and register a target (no radar + FoV angle < 360, radar turns off due to incoming HARM, etc)
                     }
                     return;
                 }
@@ -4394,7 +4475,7 @@ namespace BDArmory.Control
                                 candidatePriority = Mathf.RoundToInt(mlauncher.priority);
                                 bool EMP = mlauncher.warheadType == MissileBase.WarheadTypes.EMP;
 
-                                if (EMP) continue;
+                                if (EMP && target.isDebilitated) continue;
                                 if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue;
                                 if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                     continue; //keep higher priority weapon
@@ -4636,7 +4717,7 @@ namespace BDArmory.Control
                             int candidatePriority = Mathf.RoundToInt(Bomb.priority);
                             double srfSpeed = currentTarget.Vessel.horizontalSrfSpeed;
 
-                            if (EMP) continue;
+                            if (EMP && target.isDebilitated) continue;
                             if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                 continue; //keep higher priority weapon
                             if (distance < candidateYield)
@@ -5230,27 +5311,62 @@ namespace BDArmory.Control
         }
 
         #endregion Smart Targeting
-
-        public bool CanSeeTarget(TargetInfo target)
+        public float detectedTargetTimeout = 0;
+        public bool staleTarget = false;
+        public bool CanSeeTarget(TargetInfo target, bool checkForstaleTarget = true)
         {
             // fix cheating: we can see a target IF we either have a visual on it, OR it has been detected on radar/sonar
             // but to prevent AI from stopping an engagement just because a target dropped behind a small hill 5 seconds ago, clamp the timeout to 30 seconds
             // i.e. let's have at least some object permanence :)
-            // (Ideally, I'd love to have "stale targets", where AI would attack the last known position, but that's a feature for the future)
-            if (target.detectedTime.TryGetValue(Team, out float detectedTime) && Time.time - detectedTime < Mathf.Max(targetScanInterval, 30))
-                return true;
+            // If we can't directly see the target via sight or radar, AI will head to last known position of target, based on target's vector at time contact was lost,
+            // with precision of estimated position degrading over time.
 
             // can we get a visual sight of the target?
-            if ((target.Vessel.transform.position - transform.position).sqrMagnitude < guardRange * guardRange)
+            VesselCloakInfo vesselcamo = target.Vessel.gameObject.GetComponent<VesselCloakInfo>();
+            float viewModifier = 1;
+            if (vesselcamo && vesselcamo.cloakEnabled)
             {
-                if (RadarUtils.TerrainCheck(target.Vessel.transform.position, transform.position))
+                viewModifier = vesselcamo.opticalReductionFactor;
+            }
+                if ((target.Vessel.transform.position - transform.position).sqrMagnitude < (guardRange * viewModifier) *  (guardRange * viewModifier) &&
+                Vector3.Angle(-vessel.ReferenceTransform.forward, target.Vessel.transform.position - vessel.CoM) < guardAngle / 2)
+            {
+                if (RadarUtils.TerrainCheck(target.Vessel.transform.position, transform.position)) //vessel behind terrain
                 {
+                    if (target.detectedTime.TryGetValue(Team, out float detectedTime) && Time.time - detectedTime < Mathf.Max(30, targetScanInterval))
+                    {
+                        //Debug.Log($"[BDArmory.MissileFire]: {target.name} last seen {Time.time - detectedTime} seconds ago. Recalling last known position");
+                        detectedTargetTimeout = Time.time - detectedTime;
+                        staleTarget = true;
+                        return true;
+                    }
+                    staleTarget = true;
                     return false;
                 }
-
+                detectedTargetTimeout = 0;
+                staleTarget = false;
+                return true;
+            }
+            target.detected.TryGetValue(Team, out bool detected);//see if the target is actually within radar sight right now
+            if (detected)
+            {
+                detectedTargetTimeout = 0;
+                staleTarget = false;
                 return true;
             }
 
+            if (checkForstaleTarget) //merely look to see if a target was last detected within 30s
+            {
+                if (target.detectedTime.TryGetValue(Team, out float detectedTime) && Time.time - detectedTime < Mathf.Max(30, targetScanInterval))
+                {
+                    //Debug.Log($"[BDArmory.MissileFire]: {target.name} last seen {Time.time - detectedTime} seconds ago. Recalling last known position");
+                    detectedTargetTimeout = Time.time - detectedTime;
+                    staleTarget = true;
+                    return true;
+                }
+                return false;
+            }
+            staleTarget = true;
             return false;
         }
 
@@ -5360,7 +5476,7 @@ namespace BDArmory.Control
                     heatTarget.predictedPosition - CurrentMissile.MissileReferenceTransform.position
                     : CurrentMissile.GetForwardTransform();
 
-                heatTarget = BDATargetManager.GetHeatTarget(vessel, vessel, new Ray(CurrentMissile.MissileReferenceTransform.position + (50 * CurrentMissile.GetForwardTransform()), direction), TargetSignatureData.noTarget, scanRadius, CurrentMissile.heatThreshold, CurrentMissile.allAspect, CurrentMissile.lockedSensorFOVBias, CurrentMissile.lockedSensorVelocityBias, this);
+                heatTarget = BDATargetManager.GetHeatTarget(vessel, vessel, new Ray(CurrentMissile.MissileReferenceTransform.position + (50 * CurrentMissile.GetForwardTransform()), direction), TargetSignatureData.noTarget, scanRadius, CurrentMissile.heatThreshold, CurrentMissile.uncagedLock, CurrentMissile.lockedSensorFOVBias, CurrentMissile.lockedSensorVelocityBias, this);
             }
         }
 
@@ -5663,6 +5779,7 @@ namespace BDArmory.Control
                     StartCoroutine(UnderAttackRoutine());
 
                     FireFlares();
+                    FireOCM(true);
                 }
 
                 if (results.foundRadarMissile)
@@ -5750,8 +5867,8 @@ namespace BDArmory.Control
                             }
                         }
                 }
-
-                StartCoroutine(UnderAttackRoutine());
+                FireOCM(false);
+                StartCoroutine(UnderAttackRoutine()); //this seems to be firing all the time, not just when bullets are flying towards craft...?
                 StartCoroutine(UnderFireRoutine());
             }
             else
@@ -5961,7 +6078,7 @@ namespace BDArmory.Control
                     target = MissileGuidance.GetAirToAirFireSolution(missile, targetV);
                 }
 
-                float boresightFactor = (mf.vessel.LandedOrSplashed || targetV.LandedOrSplashed || missile.allAspect) ? 0.75f : 0.35f; // Allow launch at close to maxOffBoresight for ground targets or missiles with allAspect = true
+                float boresightFactor = (mf.vessel.LandedOrSplashed || targetV.LandedOrSplashed || missile.uncagedLock) ? 0.75f : 0.35f; // Allow launch at close to maxOffBoresight for ground targets or missiles with allAspect = true
 
                 //if(missile.TargetingMode == MissileBase.TargetingModes.Gps) maxOffBoresight = 45;
 
