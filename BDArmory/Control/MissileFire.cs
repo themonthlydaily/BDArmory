@@ -5563,6 +5563,17 @@ namespace BDArmory.Control
                         Debug.Log("[BDArmory.MissileData]: targetInfo sent for " + ml.targetVessel.Vessel.GetName());
                 }
             }
+            else if (ml.GetWeaponClass() == WeaponClasses.Bomb)
+            {
+                if (BDArmorySettings.DEBUG_MISSILES)
+                    Debug.Log("[BDArmory.MissileData]: Sending targetInfo to bomb...");
+                if (guardMode && ((bombAimerPosition - guardTarget.CoM).sqrMagnitude < ml.GetBlastRadius()))
+                {
+                    ml.targetVessel = guardTarget.gameObject.GetComponent<TargetInfo>();
+                    if (BDArmorySettings.DEBUG_MISSILES)
+                        Debug.Log("[BDArmory.MissileData]: targetInfo sent for " + ml.targetVessel.Vessel.GetName());
+                }
+            }
             //ml.targetVessel = currentTarget;
             if (currentTarget != null)
             {

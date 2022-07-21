@@ -766,6 +766,7 @@ namespace BDArmory.FX
                                         else
                                         {
                                             RA.UpdateSectionScales();
+                                            return;
                                         }
                                     }
                                     penetrationFactor = ProjectileUtils.CalculateArmorPenetration(part, penetration, thickness); //RA stop round?
