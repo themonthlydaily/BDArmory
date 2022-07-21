@@ -1,4 +1,4 @@
-﻿v1.5.0.0-pre
+﻿﻿v1.5.0.0 — FIXME: DO THE REBRANDING BEFORE RELEASING.
 FIXES
 - Fix 'resizeSquare' texture not being loaded sometimes (due to a race condition?).
 - Clean up log spam from ExplosionFX.
@@ -19,9 +19,11 @@ FIXES
 - Fixes Debris icons not appearing when Team Icons enabled.
 - Fixes Chaingun/Rocketpod Rounds PEr Minute slider values when reverting to VAB/SPH.
 - Fixes ripplefire issue with weapons with different rates of fire in one weapongroup.
+- Fix for issue where AI was not leading target when KSP was running on M1 Macs (Apple Silicon)
 
 IMPROVEMENTS
 - General:
+	- Rebranded as "BDArmory Plus" (BDA+) on SpaceDock/CKAN (from "BDArmory for Runway Project") and forum thread created. — FIXME: DO THIS BEFORE RELEASING!
 	- Major internal refactor to better organise code.
 	- Switch to a single DLL release.
 	- Add missing HP rounding to some parts.
@@ -33,9 +35,6 @@ IMPROVEMENTS
 	- Debug labels now organized by type for easier debug tracking.
 	- Refactor the debug settings to be more specific and to have an on-screen only debug labels.
 	- Adds SelfSealingTanks/Firebottle options to Proc Part Tanks.
-	- Adds Oblique Triangle Proc Armor panel.
-	- Proc Armor nodes on triangular panels now orient themselves to current angle of panel edge.
-	- Proc Armor max scale can now be set in .cfg, unclamped in SPH/VAB
 	- Bullets/explosions/etc now ignore flags.
 	- Adds new CameraTools switching modes, right click the cameraTools button [A] on the VesselSwitcherGUI.
 		- [S] - Camera will autoswitch to vessel with highest score.
@@ -48,7 +47,6 @@ IMPROVEMENTS
 	- Adds UI Icon team color reset button.
 	- Adds missile names to missile warning icons when vessel names enabled.
 	- Add a config option for the maximum time scaling.
-
 - AI:
 	- Add a 5° deadzone around being on target for dynamic damping to avoid feed-back loop in PID.
 	- Add a check for requested extending already being satisfied.
@@ -62,9 +60,12 @@ IMPROVEMENTS
 	- Add Air/Ground target preference weighting to Target Priorities.
 	- Make the extend toggle apply to air-to-air missiles as well as air-to-air guns.
 	- Update the AI GUI help text for the current extending settings.
+	- Make the AI GUI vertically resizeable.
 	- AI will now head to target's last known position if contact lost (out of sight range/angle/radar detection), with accuracy of predicted position decaying over time.
 	- AI will now enable radars when guard mode enabled.
 	- Add an altitude steer limiter to the pilot AI.
+	- Apply user-defined steer limiters to roll.
+	- Force VTOL AI to aim towards targets when trying to fire missiles (if it can't already fire the missile).
 	- Add a PID auto-tuning mode:
 		- The AI will use gradient descent to optimize the plane's ability to turn to a range of headings and stabilize in those directions.
 		- The loss being minimized is ∫f(x,θ)dθ over the range θ ∈ (30°,120°) (using the midpoint Riemann sum), where f(x,θ) is ∫(δp²·(α+t²)/θ² + γ·δr²·(α+t)/100/θ)dt for the current PID values (x) and heading change (θ), where δp is the pointing error, δr is the roll error, α is the fast response relevance and γ is the roll relevance (which is automatically adjusted over time to balance the contribution from the pointing and roll errors).
@@ -75,7 +76,6 @@ IMPROVEMENTS
 			3. Avoid mountainous terrain.
 			4. Tune without dynamic damping first and use the result as the starting point for dynamic damping with all the damping values set to the tuned static damping value and the dynamic damping factors set to 1.
 			5. Since the PID values are (currently) being optimized for flying to fixed points, the tuned I value may not be optimal for moving targets in combat and a slightly larger I may be desirable.
-
 - GameModes:
 	- Waypoints:
 		- Add support for multiple waypoint gate models.
@@ -92,10 +92,10 @@ IMPROVEMENTS
 		- Adds support for off-world waypoint courses both locally and API-run competitions.
 		- Add a slider for activating guard mode when passing a waypoint.
 		- Allow multiple laps for waypoints.
-
 - Weapons:
 	- Use min of missile drop time or 2 sec instead of fixed two second period for check target will be within missile maxOffBoresight at future time.
 	- Sidam Turret retextured (thanks Concodroid!).
+	- Allow turrets to fire outside of visual range if they have a radar lock.
 	- Issue 348; weapons will no longer manually fire if mouse cursor is over Weapon Manager GUI.
 	- APBulletMod now implemented for sabot rounds.
 	- Adjusted Sabot depth calculation, should no longer overpenetrate quite so much.
@@ -121,15 +121,24 @@ IMPROVEMENTS
 		- Continuous Rod warhead missiles now target a point a few meters above their target to better take advantage of planar AoE.
 		- Missiles no longer prematurely detonate if DetonateAtMinimumDistance is enabled.
 		- Fix HARMs ignoring max missiles on target.
-		- Add chaffEffectivity parameter to missile configs.
+		- Add chaffEffectivity parameter to missile configs. See AIM-120 config for more details.
 		- Modular Missile ActiveRadarRange can now be set to 0.
-	
+		- Depreciated allAspect parameter, missile modders should now use uncagedLock instead (old missiles will automatically have the uncagedLock parameter value set to the value of allAspect.
+		- Implemented Proportional Navigation and Augmented Proportional Navigation as missile guidance options for missile parts and modular missiles. For missile parts, set:
+			homingType = pronav [for Pro-Nav]
+			homingType = augpronav [for Augmented Pro-Nav]
+- Armor:
+	- Adds Oblique Triangle Proc Armor panel.
+	- Proc Armor nodes on triangular panels now orient themselves to current angle of panel edge.
+	- Proc Armor max scale can now be set in .cfg, unclamped in SPH/VAB
+	- Change the armor penetration formula to use the Tate/Alekseevskii formula.
+	- Add Lift Visualization, Total Lift, and Wing Loading readouts (stock only, disabled when using FAR) to the BDA Armor Tool.
 - Detectors
-	-Adds IRST implementation for thermal detection alternative to radar.
+	- Adds IRST implementation for thermal detection alternative to radar.
 		-Adds thermal occlusion mechanic; heatsources hidden behind other parts will be harder to detect by IRST.
-	-Adds support for optic/thermal cloaking countermeasures.
-	-Adds new AN/AAQ-42 IRST Pod part
-
+	- Adds support for optic/thermal cloaking countermeasures.
+	- Adds new AN/AAQ-42 IRST Pod part
+	- Radars must now be capable of detecting a target before it can be locked.
 - Spawning:
 	- Refactor spawning into more modular coroutines for use with the spawn and orchestration strategies.
 	- Add an 'instant' lowering mode for vessel easing after spawn (VESSEL_SPAWN_EASE_IN_SPEED = 0).
