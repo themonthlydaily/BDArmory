@@ -84,7 +84,7 @@ namespace BDArmory.FX
         {
             StartTime = Time.time;
             disabled = false;
-            MaxTime = Mathf.Sqrt((Range / ExplosionVelocity) * 3f) * 2f; // Scale MaxTime to get a reasonable visualisation of the explosion.
+            MaxTime = BDAMath.Sqrt((Range / ExplosionVelocity) * 3f) * 2f; // Scale MaxTime to get a reasonable visualisation of the explosion.
             blastRange = warheadType == WarheadTypes.Standard ? Range * 2 : Range; //to properly account for shrapnel hits when compiling list of hit parts from the spherecast
             if (!isFX)
             {
@@ -743,9 +743,14 @@ namespace BDArmory.FX
                                 float Strength = Armor.Strength;
                                 float safeTemp = Armor.SafeUseTemp;
                                 float Density = Armor.Density;
+                                float vFactor = Armor.vFactor;
+                                float muParam1 = Armor.muParam1;
+                                float muParam2 = Armor.muParam2;
+                                float muParam3 = Armor.muParam3;
                                 int type = (int)Armor.ArmorTypeNum;
 
-                                penetration = ProjectileUtils.CalculatePenetration(Caliber, Caliber, warheadType == WarheadTypes.ShapedCharge ? Power / 2 : ProjMass, ExplosionVelocity, Ductility, Density, Strength, thickness, 1);
+                                //penetration = ProjectileUtils.CalculatePenetration(Caliber, Caliber, warheadType == WarheadTypes.ShapedCharge ? Power / 2 : ProjMass, ExplosionVelocity, Ductility, Density, Strength, thickness, 1);
+                                penetration = ProjectileUtils.CalculatePenetration(Caliber, warheadType == WarheadTypes.ShapedCharge ? 4000f : ExplosionVelocity, warheadType == WarheadTypes.ShapedCharge ? Power * 0.0555f : ProjMass, 1f, Strength, vFactor, muParam1, muParam2, muParam3);
                                 penetrationFactor = ProjectileUtils.CalculateArmorPenetration(part, penetration, thickness);
 
                                 if (RA != null)
@@ -927,7 +932,7 @@ namespace BDArmory.FX
                 case "shapedcharge":
                     eFx.warheadType = WarheadTypes.ShapedCharge;
                     eFx.AngleOfEffect = 10f;
-                    eFx.Caliber = caliber > 0 ? caliber / 2 : 50;
+                    eFx.Caliber = caliber > 0 ? caliber *  0.05f : 6f;
                     break;
                 default:
                     eFx.warheadType = WarheadTypes.Standard;

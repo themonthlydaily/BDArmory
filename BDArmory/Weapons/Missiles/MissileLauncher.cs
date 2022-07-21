@@ -601,6 +601,9 @@ namespace BDArmory.Weapons.Missiles
 
             SetInitialDetonationDistance();
 
+            // set uncagedLock = true if depreciated allAspect = true
+            uncagedLock = (allAspect) ? allAspect : uncagedLock;
+
             // fill lockedSensorFOVBias with default values if not set by part config:
             if ((TargetingMode == TargetingModes.Heat || TargetingModeTerminal == TargetingModes.Heat) && heatThreshold > 0 && lockedSensorFOVBias.minTime == float.MaxValue)
             {
@@ -678,7 +681,7 @@ namespace BDArmory.Weapons.Missiles
                 else if (partModules.Current.moduleName == "BDModuleNuke")
                 {
                     warheadType = WarheadTypes.Nuke;
-                    StandOffDistance = Mathf.Sqrt(((BDModuleNuke)partModules.Current).yield) * 500;
+                    StandOffDistance = BDAMath.Sqrt(((BDModuleNuke)partModules.Current).yield) * 500;
                 }
                 else continue;
                 break;
@@ -811,7 +814,7 @@ namespace BDArmory.Weapons.Missiles
                 {
                     if (part.FindModuleImplementing<BDModuleNuke>() != null)
                     {
-                        return Mathf.Sqrt(part.FindModuleImplementing<BDModuleNuke>().yield) * 500;
+                        return BDAMath.Sqrt(part.FindModuleImplementing<BDModuleNuke>().yield) * 500;
                     }
                     else
                     {
@@ -2346,7 +2349,7 @@ namespace BDArmory.Weapons.Missiles
 
             if (TargetingMode == TargetingModes.Heat)
             {
-                output.AppendLine($"All Aspect: {allAspect}");
+                output.AppendLine($"Uncaged Lock: {uncagedLock}");
                 output.AppendLine($"Min Heat threshold: {heatThreshold}");
                 output.AppendLine($"Max Offborsight: {maxOffBoresight}");
                 output.AppendLine($"Locked FOV: {lockedSensorFOV}");
@@ -2373,7 +2376,7 @@ namespace BDArmory.Weapons.Missiles
 
                     if (TargetingModeTerminal == TargetingModes.Heat)
                     {
-                        output.AppendLine($"All Aspect: {allAspect}");
+                        output.AppendLine($"Uncaged Lock: {uncagedLock}");
                         output.AppendLine($"Min Heat threshold: {heatThreshold}");
                         output.AppendLine($"Max Offborsight: {maxOffBoresight}");
                         output.AppendLine($"Locked FOV: {lockedSensorFOV}");

@@ -857,30 +857,24 @@ namespace BDArmory.Radar
 
                         // evaluate range
                         float distance = (loadedvessels.Current.CoM - ray.origin).magnitude / 1000f;                                      //TODO: Performance! better if we could switch to sqrMagnitude...
-                        if (distance > radar.radarMinDistanceDetect && distance < radar.radarMaxDistanceDetect)
+                        if (RadarCanDetect(radar, signature, distance))
                         {
-                            //evaluate if we can detect such a signature at that range
-                            float minDetectSig = radar.radarDetectionCurve.Evaluate(distance);
-
-                            if (signature > minDetectSig)
+                            // detected by radar
+                            // fill attempted locks array for locking later:
+                            while (dataIndex < dataArray.Length - 1)
                             {
-                                // detected by radar
-                                // fill attempted locks array for locking later:
-                                while (dataIndex < dataArray.Length - 1)
+                                if (!dataArray[dataIndex].exists || (dataArray[dataIndex].exists && (Time.time - dataArray[dataIndex].timeAcquired) > dataPersistTime))
                                 {
-                                    if (!dataArray[dataIndex].exists || (dataArray[dataIndex].exists && (Time.time - dataArray[dataIndex].timeAcquired) > dataPersistTime))
-                                    {
-                                        break;
-                                    }
-                                    dataIndex++;
+                                    break;
                                 }
+                                dataIndex++;
+                            }
 
-                                if (dataIndex < dataArray.Length)
-                                {
-                                    dataArray[dataIndex] = new TargetSignatureData(loadedvessels.Current, signature);
-                                    dataIndex++;
-                                    hasLocked = true;
-                                }
+                            if (dataIndex < dataArray.Length)
+                            {
+                                dataArray[dataIndex] = new TargetSignatureData(loadedvessels.Current, signature);
+                                dataIndex++;
+                                hasLocked = true;
                             }
                         }
 
@@ -1045,7 +1039,7 @@ namespace BDArmory.Radar
                                 signature *= ti.radarLockbreakFactor;    //multiply lockbreak factor from active ecm
                                                                          //do not multiply chaff factor here
 
-                                if (signature > minLockSig)
+                                if (signature > minLockSig && RadarCanDetect(radar, signature, distance)) // Must be able to detect and lock to lock targets
                                 {
                                     // detected by radar
                                     if (myWpnManager != null)
@@ -1079,24 +1073,16 @@ namespace BDArmory.Radar
                         else   // SCAN/DETECT TARGETS:
                         {
                             //evaluate if we can detect such a signature at that range
-                            if (distance > radar.radarMinDistanceDetect && distance < radar.radarMaxDistanceDetect)
+                            if (RadarCanDetect(radar, signature, distance))
                             {
-                                //evaluate if we can detect or lock such a signature at that range
-                                float minDetectSig = radar.radarDetectionCurve.Evaluate(distance);
-                                //do not consider lockbreak factor from active ecm here!
-                                //do not consider chaff here
-
-                                if (signature > minDetectSig)
+                                // detected by radar
+                                if (myWpnManager != null)
                                 {
-                                    // detected by radar
-                                    if (myWpnManager != null)
-                                    {
-                                        BDATargetManager.ReportVessel(loadedvessels.Current, myWpnManager, true);
-                                    }
-
-                                    // report scanned targets only
-                                    radar.ReceiveContactData(new TargetSignatureData(loadedvessels.Current, signature), false);
+                                    BDATargetManager.ReportVessel(loadedvessels.Current, myWpnManager, true);
                                 }
+
+                                // report scanned targets only
+                                radar.ReceiveContactData(new TargetSignatureData(loadedvessels.Current, signature), false);
                             }
 
                             //  our radar ping can be received at a higher range than we can detect, according to RWR range ping factor:
@@ -1173,7 +1159,7 @@ namespace BDArmory.Radar
                     //evaluate if we can detect such a signature at that range
                     float minTrackSig = radar.radarLockTrackCurve.Evaluate(distance);
 
-                    if (signature > minTrackSig)
+                    if ((signature > minTrackSig) && (RadarCanDetect(radar, signature, distance)))
                     {
                         // can be tracked
                         radar.ReceiveContactData(new TargetSignatureData(lockedVessel, signature), locked);
@@ -1238,7 +1224,7 @@ namespace BDArmory.Radar
                         {
                             tInfo = loadedvessels.Current.gameObject.AddComponent<TargetInfo>();
                         }
-                        float signature = BDATargetManager.GetVesselHeatSignature(loadedvessels.Current, irst.referenceTransform.position) * (irst.boresightScan ? Mathf.Clamp01(15 / angle) : 1);
+                        float signature = BDATargetManager.GetVesselHeatSignature(loadedvessels.Current, irst.referenceTransform.position, irst.TempSensitivityCurve) * (irst.boresightScan ? Mathf.Clamp01(15 / angle) : 1);
                         //signature *= (1400 * 1400) / Mathf.Clamp((loadedvessels.Current.CoM - referenceTransform.position).sqrMagnitude, 90000, 36000000); //300 to 6000m - clamping sig past 6km; Commenting out as it makes tuning detection curves much easier
 
                         signature *= Mathf.Clamp(Vector3.Angle(loadedvessels.Current.transform.position - referenceTransform.position, -VectorUtils.GetUpDirection(referenceTransform.position)) / 90, 0.5f, 1.5f);
@@ -1274,6 +1260,31 @@ namespace BDArmory.Radar
                     }
                 }
             return false;
+        }
+
+        /// <summary>
+        /// Returns whether the radar can detect the target, including jamming effects
+        /// </summary>
+        public static bool RadarCanDetect(ModuleRadar radar, float signature, float distance)
+        {
+            bool detected = false;
+            // float distance already in km
+
+            //evaluate if we can detect such a signature at that range
+            if ((distance > radar.radarMinDistanceDetect) && (distance < radar.radarMaxDistanceDetect))
+            {
+                //evaluate if we can detect or lock such a signature at that range
+                float minDetectSig = radar.radarDetectionCurve.Evaluate(distance);
+                //do not consider lockbreak factor from active ecm here!
+                //do not consider chaff here
+
+                if (signature > minDetectSig)
+                {
+                    detected = true;
+                }
+            }
+
+            return detected;
         }
 
         /// <summary>
@@ -1479,7 +1490,7 @@ namespace BDArmory.Radar
             float targetCosAngle = threatWeapon.FiringSolutionVector != null ? Vector3.Dot(aimDirection, (Vector3)threatWeapon.FiringSolutionVector) : Vector3.Dot(aimDirection, (self.vesselTransform.position - fireTransform.position).normalized);
 
             // Find vertical component of aiming angle
-            float angleThreat = targetCosAngle < 0 ? float.MaxValue : Mathf.Sqrt(Mathf.Max(0f, 1f - targetCosAngle * targetCosAngle)); // Treat angles beyond 90 degrees as not a threat
+            float angleThreat = targetCosAngle < 0 ? float.MaxValue : BDAMath.Sqrt(Mathf.Max(0f, 1f - targetCosAngle * targetCosAngle)); // Treat angles beyond 90 degrees as not a threat
 
             // Calculate distance between incoming threat position and its aimpoint (or self position)
             float distanceThreat = !threatWeapon.finalAimTarget.IsZero() ? Vector3.Magnitude(threatWeapon.finalAimTarget - fireTransform.position) : Vector3.Magnitude(self.vesselTransform.position - fireTransform.position);

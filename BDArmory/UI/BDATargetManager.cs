@@ -251,7 +251,7 @@ namespace BDArmory.UI
         /// </summary>
         /// <param name="v">Vessel</param>
         /// <returns>Heat signature value</returns>
-        public static float GetVesselHeatSignature(Vessel v, Vector3 sensorPosition = default(Vector3))
+        public static float GetVesselHeatSignature(Vessel v, Vector3 sensorPosition = default(Vector3), FloatCurve tempSensitivity = default(FloatCurve))
         {
             float heatScore = 0f;
             List <Part> hottestPart = new List<Part>();
@@ -261,6 +261,7 @@ namespace BDArmory.UI
                     if (!part.Current) continue;
 
                     float thisScore = (float)(part.Current.thermalInternalFluxPrevious + part.Current.skinTemperature);
+                    thisScore *= (tempSensitivity != default(FloatCurve)) ? tempSensitivity.Evaluate(thisScore) : 1f;
                     heatScore = Mathf.Max(heatScore, thisScore);
                 }
             if (sensorPosition != default(Vector3)) //Heat source found; now lets determine how much of the craft is occluding it
@@ -270,6 +271,7 @@ namespace BDArmory.UI
                     {
                         if (!part.Current) continue;
                         float thisScore = (float)(part.Current.thermalInternalFluxPrevious + part.Current.skinTemperature);
+                        thisScore *= (tempSensitivity != default(FloatCurve)) ? tempSensitivity.Evaluate(thisScore) : 1f;
                         if (thisScore < heatScore * 1.05f && thisScore > heatScore * 0.95f)
                         { 
                             hottestPart.Add(part.Current);
@@ -277,6 +279,7 @@ namespace BDArmory.UI
                     }
                 Part closestPart = null;
                 Transform thrustTransform = null;
+                bool afterburner = false;
                 float distance = 9999999;
                 if (hottestPart.Count > 0)
                 {
@@ -293,7 +296,7 @@ namespace BDArmory.UI
                                 closestPart = part.Current;
                             }
                         }
-                        if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[IRSTdebugging] closest heatsource found: " + closestPart.name);
+                        if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[IRSTdebugging] closest heatsource found: " + closestPart.name + ", heat: " + (float)(closestPart.thermalInternalFluxPrevious + closestPart.skinTemperature));
                     }
                     if (closestPart != null)
                     {
@@ -301,10 +304,14 @@ namespace BDArmory.UI
                         if (tInfo = v.gameObject.GetComponent<TargetInfo>())
                         {
                             if (tInfo.targetEngineList.Contains(closestPart))
+                            {
                                 thrustTransform = closestPart.FindModelTransform("thrustTransform"); //method to differentiate jets from prop engines? Additional firespitter check?
+                                afterburner = (closestPart.GetComponent<MultiModeEngine>()) ? !(closestPart.GetComponent<MultiModeEngine>().runningPrimary) : false;
+                            }
                         }
-
-                        Ray partRay = new Ray(thrustTransform ? thrustTransform.position : closestPart.transform.position, sensorPosition - closestPart.transform.position); //trace from heatsource to IR sensor
+                        // Set thrustTransform as heat source position for engines, unless they are afterburning, in which case set the heat source position as the plume itself (arbitrary estimate of 1m behind thrustTransform)
+                        Vector3 heatSourcePosition = thrustTransform ? (thrustTransform.position + thrustTransform.forward*(afterburner ? 1f : 0f)) : closestPart.transform.position; 
+                        Ray partRay = new Ray(heatSourcePosition, sensorPosition - heatSourcePosition); //trace from heatsource to IR sensor
                         var layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA);
 
                         var hitCount = Physics.RaycastNonAlloc(partRay, hits, distance, layerMask);
@@ -326,10 +333,10 @@ namespace BDArmory.UI
                                 if (partHit.vessel != v) continue; //ignore irstCraft; does also mean that in edge case of one craft occluded behind a second craft from PoV of a third craft w/irst wouldn't actually occlude, but oh well
                                                                    //The heavier/further the part, the more it's going to occlude the heatsource
                                 DebugCount++;
-                                float spacing = Vector3.Distance(closestPart.transform.position, partHit.transform.position);
-                                if (spacing < 15)       //arbitirary 15m threshold, may need to adjust
+                                float sqrSpacing = (heatSourcePosition-partHit.transform.position).sqrMagnitude;
+                                if (sqrSpacing < 64f)       //arbitirary 8m threshold, may need to adjust
                                 {                        //if far enough away, clamp temp to temp of last part in LoS
-                                    OcclusionFactor += partHit.mass * (spacing / 15); //spacing / 15 is linear; replace with an targetAspect floatcurve (either default linear curve for irst, or custom, new floatcurve field for missileLauncher)) for setting what angle a IR missile can lock from?
+                                    OcclusionFactor += partHit.mass * (sqrSpacing / 64f); //sqr spacing / 6 is linear; replace with an targetAspect floatcurve (either default linear curve for irst, or custom, new floatcurve field for missileLauncher)) for setting what angle a IR missile can lock from?
                                     lastHeatscore = (float)(partHit.thermalInternalFluxPrevious + partHit.skinTemperature);
                                 }
                                 else
@@ -356,7 +363,7 @@ namespace BDArmory.UI
         /// <summary>
         /// Find a flare closest in heat signature to passed heat signature
         /// </summary>
-        public static TargetSignatureData GetFlareTarget(Ray ray, float scanRadius, float highpassThreshold, bool allAspect, FloatCurve lockedSensorFOVBias, FloatCurve lockedSensorVelocityBias, TargetSignatureData heatTarget)
+        public static TargetSignatureData GetFlareTarget(Ray ray, float scanRadius, float highpassThreshold, FloatCurve lockedSensorFOVBias, FloatCurve lockedSensorVelocityBias, TargetSignatureData heatTarget)
         {
             TargetSignatureData flareTarget = TargetSignatureData.noTarget;
             float heatSignature = heatTarget.signalStrength;
@@ -400,7 +407,7 @@ namespace BDArmory.UI
             return flareTarget;
         }
 
-        public static TargetSignatureData GetHeatTarget(Vessel sourceVessel, Vessel missileVessel, Ray ray, TargetSignatureData priorHeatTarget, float scanRadius, float highpassThreshold, bool allAspect, FloatCurve lockedSensorFOVBias, FloatCurve lockedSensorVelocityBias, MissileFire mf = null)
+        public static TargetSignatureData GetHeatTarget(Vessel sourceVessel, Vessel missileVessel, Ray ray, TargetSignatureData priorHeatTarget, float scanRadius, float highpassThreshold, bool uncagedLock, FloatCurve lockedSensorFOVBias, FloatCurve lockedSensorVelocityBias, MissileFire mf = null)
         {
             float minMass = 0.05f;  //otherwise the RAMs have trouble shooting down incoming missiles
             TargetSignatureData finalData = TargetSignatureData.noTarget;
@@ -450,12 +457,12 @@ namespace BDArmory.UI
 
                 float angle = Vector3.Angle(vessel.CoM - ray.origin, ray.direction);
 
-                if ((angle < scanRadius) || (allAspect && !priorHeatTarget.exists)) // Allow allAspect=true missiles to find target outside of seeker FOV before launch
+                if ((angle < scanRadius) || (uncagedLock && !priorHeatTarget.exists)) // Allow allAspect=true missiles to find target outside of seeker FOV before launch
                 {
                     if (RadarUtils.TerrainCheck(ray.origin, vessel.transform.position))
                         continue;
 
-                    if (!allAspect)
+                    if (!uncagedLock)
                     {
                         if (!OtherUtils.CheckSightLineExactDistance(ray.origin, vessel.CoM + vessel.Velocity(), Vector3.Distance(vessel.CoM, ray.origin), 5, 5))
                             continue;
@@ -495,7 +502,7 @@ namespace BDArmory.UI
             TargetSignatureData flareData = TargetSignatureData.noTarget;
             if (priorHeatScore > 0) // Flares can only decoy if we already had a target
             {
-                flareData = GetFlareTarget(ray, scanRadius, highpassThreshold, allAspect, lockedSensorFOVBias, lockedSensorVelocityBias, priorHeatTarget);
+                flareData = GetFlareTarget(ray, scanRadius, highpassThreshold, lockedSensorFOVBias, lockedSensorVelocityBias, priorHeatTarget);
                 flareSuccess = ((!flareData.Equals(TargetSignatureData.noTarget)) && (flareData.signalStrength > highpassThreshold));
             }
 
@@ -568,7 +575,12 @@ namespace BDArmory.UI
                 }
 
             debugString.Append(Environment.NewLine);
-            debugString.AppendLine($"Heat Signature: {GetVesselHeatSignature(FlightGlobals.ActiveVessel, Vector3.zero):#####}");
+            debugString.AppendLine($"Base Heat Signature: {GetVesselHeatSignature(FlightGlobals.ActiveVessel, Vector3.zero):#####}, For/Aft: " +
+                GetVesselHeatSignature(FlightGlobals.ActiveVessel, FlightGlobals.ActiveVessel.vesselTransform.position + 100f * FlightGlobals.ActiveVessel.vesselTransform.up).ToString("0") + "/" +
+                GetVesselHeatSignature(FlightGlobals.ActiveVessel, FlightGlobals.ActiveVessel.vesselTransform.position - 100f * FlightGlobals.ActiveVessel.vesselTransform.up).ToString("0") + ", Side: " +
+                GetVesselHeatSignature(FlightGlobals.ActiveVessel, FlightGlobals.ActiveVessel.vesselTransform.position + 100f * FlightGlobals.ActiveVessel.vesselTransform.right).ToString("0") + ", Top/Bot: " +
+                GetVesselHeatSignature(FlightGlobals.ActiveVessel, FlightGlobals.ActiveVessel.vesselTransform.position - 100f * FlightGlobals.ActiveVessel.vesselTransform.forward).ToString("0") + "/" +
+                GetVesselHeatSignature(FlightGlobals.ActiveVessel, FlightGlobals.ActiveVessel.vesselTransform.position + 100f * FlightGlobals.ActiveVessel.vesselTransform.forward).ToString("0"));
             debugString.AppendLine($"Radar Signature: " + RadarUtils.GetVesselRadarSignature(FlightGlobals.ActiveVessel).radarModifiedSignature);
             debugString.AppendLine($"Chaff multiplier: " + RadarUtils.GetVesselChaffFactor(FlightGlobals.ActiveVessel));
 
@@ -865,6 +877,7 @@ namespace BDArmory.UI
 
         public static void ClearDatabase()
         {
+            if (TargetDatabase is null) return;
             TargetDatabase.Clear();
         }
 
