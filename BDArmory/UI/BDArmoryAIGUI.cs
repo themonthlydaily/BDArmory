@@ -1,4 +1,4 @@
-﻿using KSP.Localization;
+using KSP.Localization;
 using KSP.UI.Screens;
 using System.Collections.Generic;
 using System.Collections;

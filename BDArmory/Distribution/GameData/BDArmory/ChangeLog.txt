@@ -49,6 +49,7 @@ IMPROVEMENTS
 	- Adds UI Icon team color reset button.
 	- Adds missile names to missile warning icons when vessel names enabled.
 	- Add a config option for the maximum time scaling.
+
 - AI:
 	- Add a 5° deadzone around being on target for dynamic damping to avoid feed-back loop in PID.
 	- Add a check for requested extending already being satisfied.
@@ -92,6 +93,7 @@ IMPROVEMENTS
 		- Adds support for off-world waypoint courses both locally and API-run competitions.
 		- Add a slider for activating guard mode when passing a waypoint.
 		- Allow multiple laps for waypoints.
+
 - Weapons:
 	- Use min of missile drop time or 2 sec instead of fixed two second period for check target will be within missile maxOffBoresight at future time.
 	- Sidam Turret retextured (thanks Concodroid!).
@@ -105,6 +107,9 @@ IMPROVEMENTS
 	- Weapon debug lines now account for frame velocity and flight integrator delay.
 	- Rockets now support beehive/nuclear warhead options.
 	- EMP weapons fired at targets with AI/ WM off will not cause them to activate when target reboots.
+	- Bullets now support shaped charge HE fillers (for HEAT rounds and similar)
+		-Bullet.cfg 'explosive =' field no longer true/false, now select from 'Standard' or 'Shaped' in place of explosive = true, or 'None' in place of explosive = false
+
 	- Missiles:
 		- Adds Missile multi-targeting.
 		- Adds new Max Missile Tgts setting in WM to set max targets to engage with missiles.
@@ -122,13 +127,16 @@ IMPROVEMENTS
 		- Fix HARMs ignoring max missiles on target.
 		- Add chaffEffectivity parameter to missile configs.
 		- Modular Missile ActiveRadarRange can now be set to 0.
+
 - Armor:
-	- Change the armor penetration formula to use the Tate/Alekseevskii formula.
+	- Armor penetration formula now uses the Tate/Alekseevskii formula. Penetration depths should be similar in most cases for modded ammos, but may need recalibration of their apBulletMod.
+
 - Detectors
 	-Adds IRST implementation for thermal detection alternative to radar.
 		-Adds thermal occlusion mechanic; heatsources hidden behind other parts will be harder to detect by IRST.
 	-Adds support for optic/thermal cloaking countermeasures.
 	-Adds new AN/AAQ-42 IRST Pod part
+
 - Spawning:
 	- Refactor spawning into more modular coroutines for use with the spawn and orchestration strategies.
 	- Add an 'instant' lowering mode for vessel easing after spawn (VESSEL_SPAWN_EASE_IN_SPEED = 0).
