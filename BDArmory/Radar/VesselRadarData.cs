@@ -874,7 +874,7 @@ namespace BDArmory.Radar
         private void WindowRadar(int windowID)
         {
             GUI.DragWindow(new Rect(0, 0, BDArmorySetup.WindowRectRadar.width - 18, 30));
-            if (GUI.Button(new Rect(BDArmorySetup.WindowRectRadar.width - 18, 2, 16, 16), "X", GUI.skin.button))
+            if (GUI.Button(new Rect(BDArmorySetup.WindowRectRadar.width - 18, 2, 16, 16), "X", GUI.skin.button)) //this won't actually close radar GUI, just turn all radars off. This intentional?
             {
                 DisableAllRadars();
                 BDArmorySetup.SaveConfig();
@@ -2227,7 +2227,7 @@ namespace BDArmory.Radar
                 //draw as dots    
                 else 
                 {
-                    float mDotSize = (displayedIRTargets[i].magnitude / 50) / rangeIndex;
+                    float mDotSize = (displayedIRTargets[i].magnitude / 25) / rangeIndex;
                     if (mDotSize < 1) mDotSize = 1;
                     if (mDotSize > 20) mDotSize = 20;
                     pingRect = new Rect(pingPosition.x - (mDotSize / 2), pingPosition.y - (mDotSize / 2), mDotSize, mDotSize);

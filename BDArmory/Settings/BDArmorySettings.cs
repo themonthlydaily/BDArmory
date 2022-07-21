@@ -79,6 +79,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool DRAW_VESSEL_TRAILS = true;                // Draw a trail to visualize vessel path during the heat
         [BDAPersistentSettingsField] public static int VESSEL_TRAIL_LENGTH = 300;                   //Max length of trails, in seconds. Defaults to competition length
         [BDAPersistentSettingsField] public static bool DUMB_IR_SEEKERS = false;                  // IR missiles will go after hottest thing they can see
+        [BDAPersistentSettingsField] public static bool ASPECTED_IR_SEEKERS = false;                //IR Missiles will be subject to thermal occlusion mechanic
         [BDAPersistentSettingsField] public static bool AUTOCATEGORIZE_PARTS = true;
         [BDAPersistentSettingsField] public static bool SHOW_CATEGORIES = true;
         [BDAPersistentSettingsField] public static bool IGNORE_TERRAIN_CHECK = false;
@@ -324,6 +325,7 @@ namespace BDArmory.Settings
         // Time override settings
         [BDAPersistentSettingsField] public static bool TIME_OVERRIDE = false;                     // Enable the time control slider.
         [BDAPersistentSettingsField] public static float TIME_SCALE = 1f;                          // Time scale factor (higher speeds up the game rate without adjusting the physics time-step).
+        [BDAPersistentSettingsField] public static float TIME_SCALE_MAX = 10f;                     // Max time scale factor (to allow users to set custom max values).
 
         // Scoring categories
         [BDAPersistentSettingsField] public static float SCORING_HEADSHOT = 3;                     // Head-Shot Time Limit

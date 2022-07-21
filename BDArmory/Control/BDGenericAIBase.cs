@@ -518,6 +518,7 @@ namespace BDArmory.Control
         }
         /// <summary>
         /// Prevent fuel resource drain until the next waypoint (coroutine).
+        /// Note: this should probably use the non-waypoint version below and just start/stop it based on the waypoint index.
         /// </summary>
         IEnumerator MaintainFuelLevelsUntilWaypointCoroutine()
         {
@@ -539,5 +540,37 @@ namespace BDArmory.Control
             }
         }
         #endregion
+
+        /// <summary>
+        /// Prevent fuel drain (control function).
+        /// </summary>
+        /// <param name="active">Activate or deactive fuel preservation.</param>
+        public void MaintainFuelLevels(bool active)
+        {
+            if (maintainingFuelLevelsCoroutine != null) StopCoroutine(maintainingFuelLevelsCoroutine);
+            if (active) maintainingFuelLevelsCoroutine = StartCoroutine(MaintainFuelLevelsCoroutine());
+        }
+
+        /// <summary>
+        /// Prevent fuel drain (coroutine).
+        /// </summary>
+        /// <returns></returns>
+        IEnumerator MaintainFuelLevelsCoroutine()
+        {
+            if (vessel == null) yield break;
+            var wait = new WaitForFixedUpdate();
+            var fuelResourceParts = new Dictionary<string, HashSet<PartResource>>();
+            ResourceUtils.DeepFind(vessel.rootPart, ResourceUtils.FuelResources, fuelResourceParts, true);
+            var fuelResources = fuelResourceParts.ToDictionary(t => t.Key, t => t.Value.ToDictionary(p => p, p => p.amount));
+            while (vessel != null)
+            {
+                foreach (var fuelResource in fuelResources.Values)
+                {
+                    foreach (var partResource in fuelResource.Keys)
+                    { partResource.amount = fuelResource[partResource]; }
+                }
+                yield return wait;
+            }
+        }
     }
 }

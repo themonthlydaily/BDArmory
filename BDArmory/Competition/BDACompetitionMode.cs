@@ -963,7 +963,7 @@ namespace BDArmory.Competition
                 List<string> commandSequence;
                 switch (BDArmorySettings.RUNWAY_PROJECT_ROUND)
                 {
-                    case 33:
+                    case 33: //S1R7/S3R3 Rapid deployment I/II
                         commandSequence = new List<string>{
                             "0:MassTrim", // t=0, mass trim
                             "0:ActionGroup:14:0", // t=0, Disable brakes
