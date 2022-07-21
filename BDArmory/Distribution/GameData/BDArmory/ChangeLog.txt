@@ -124,6 +124,9 @@ IMPROVEMENTS
 		- Fix HARMs ignoring max missiles on target.
 		- Add chaffEffectivity parameter to missile configs.
 		- Modular Missile ActiveRadarRange can now be set to 0.
+
+- Armor:
+	- Change the armor penetration formula to use the Tate/Alekseevskii formula.
 	
 - Detectors
 	-Adds IRST implementation for thermal detection alternative to radar.
@@ -135,6 +138,7 @@ IMPROVEMENTS
 	- Refactor spawning into more modular coroutines for use with the spawn and orchestration strategies.
 	- Add an 'instant' lowering mode for vessel easing after spawn (VESSEL_SPAWN_EASE_IN_SPEED = 0).
 	- Add a test for spawning a vessel into an active competition using the SingleVesselSpawning class (debug build only).
+	
 - RWP:
 	- Hall of Shame now supports multiple craft.
 	- Add HoS support to Waypoint mode.
