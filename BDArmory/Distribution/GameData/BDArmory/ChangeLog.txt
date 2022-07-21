@@ -1,4 +1,4 @@
-﻿v1.5.0.0
+﻿v1.5.0.0 — FIXME: DO THE REBRANDING BEFORE RELEASING.
 FIXES
 - Fix 'resizeSquare' texture not being loaded sometimes (due to a race condition?).
 - Clean up log spam from ExplosionFX.
@@ -22,6 +22,7 @@ FIXES
 
 IMPROVEMENTS
 - General:
+	- Rebranded as "BDArmory Plus" (BDA+) on SpaceDock/CKAN (from "BDArmory for Runway Project") and forum thread created. — FIXME: DO THIS BEFORE RELEASING!
 	- Major internal refactor to better organise code.
 	- Switch to a single DLL release.
 	- Add missing HP rounding to some parts.
@@ -48,7 +49,6 @@ IMPROVEMENTS
 	- Adds UI Icon team color reset button.
 	- Adds missile names to missile warning icons when vessel names enabled.
 	- Add a config option for the maximum time scaling.
-
 - AI:
 	- Add a 5° deadzone around being on target for dynamic damping to avoid feed-back loop in PID.
 	- Add a check for requested extending already being satisfied.
@@ -76,7 +76,6 @@ IMPROVEMENTS
 			3. Avoid mountainous terrain.
 			4. Tune without dynamic damping first and use the result as the starting point for dynamic damping with all the damping values set to the tuned static damping value and the dynamic damping factors set to 1.
 			5. Since the PID values are (currently) being optimized for flying to fixed points, the tuned I value may not be optimal for moving targets in combat and a slightly larger I may be desirable.
-
 - GameModes:
 	- Waypoints:
 		- Add support for multiple waypoint gate models.
@@ -93,7 +92,6 @@ IMPROVEMENTS
 		- Adds support for off-world waypoint courses both locally and API-run competitions.
 		- Add a slider for activating guard mode when passing a waypoint.
 		- Allow multiple laps for waypoints.
-
 - Weapons:
 	- Use min of missile drop time or 2 sec instead of fixed two second period for check target will be within missile maxOffBoresight at future time.
 	- Sidam Turret retextured (thanks Concodroid!).
@@ -124,21 +122,17 @@ IMPROVEMENTS
 		- Fix HARMs ignoring max missiles on target.
 		- Add chaffEffectivity parameter to missile configs.
 		- Modular Missile ActiveRadarRange can now be set to 0.
-
 - Armor:
 	- Change the armor penetration formula to use the Tate/Alekseevskii formula.
-	
 - Detectors
 	-Adds IRST implementation for thermal detection alternative to radar.
 		-Adds thermal occlusion mechanic; heatsources hidden behind other parts will be harder to detect by IRST.
 	-Adds support for optic/thermal cloaking countermeasures.
 	-Adds new AN/AAQ-42 IRST Pod part
-
 - Spawning:
 	- Refactor spawning into more modular coroutines for use with the spawn and orchestration strategies.
 	- Add an 'instant' lowering mode for vessel easing after spawn (VESSEL_SPAWN_EASE_IN_SPEED = 0).
 	- Add a test for spawning a vessel into an active competition using the SingleVesselSpawning class (debug build only).
-	
 - RWP:
 	- Hall of Shame now supports multiple craft.
 	- Add HoS support to Waypoint mode.
