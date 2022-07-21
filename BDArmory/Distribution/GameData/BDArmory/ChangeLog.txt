@@ -1,4 +1,4 @@
-﻿﻿v1.5.0.0 — FIXME: DO THE REBRANDING BEFORE RELEASING.
+v1.5.0.0 — FIXME: DO THE REBRANDING BEFORE RELEASING.
 FIXES
 - Fix 'resizeSquare' texture not being loaded sometimes (due to a race condition?).
 - Clean up log spam from ExplosionFX.

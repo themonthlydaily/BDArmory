@@ -435,6 +435,11 @@ namespace BDArmory.Bullets
                             float Strength = Armor.Strength;
                             float safeTemp = Armor.SafeUseTemp;
                             float Density = Armor.Density;
+                            float vFactor = Armor.vFactor;
+                            float muParam1 = Armor.muParam1;
+                            float muParam2 = Armor.muParam2;
+                            float muParam3 = Armor.muParam3;
+
                             int armorType = (int)Armor.ArmorTypeNum;
                             if (BDArmorySettings.DEBUG_ARMOR)
                             {
@@ -445,7 +450,8 @@ namespace BDArmory.Bullets
                             //calculate bullet deformation
                             float newCaliber = ProjectileUtils.CalculateDeformation(armorStrength, bulletEnergy, caliber, impactVelocity, hardness, Density, HERatio, 1, false);
                             //calculate penetration
-                            penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, rocketMass * 1000, impactVelocity, Ductility, Density, Strength, thickness, 1);
+                            //penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, rocketMass * 1000, impactVelocity, Ductility, Density, Strength, thickness, 1);
+                            penetration = ProjectileUtils.CalculatePenetration(caliber, impactVelocity, rocketMass * 1000f, 1f , Strength, vFactor, muParam1, muParam2, muParam3);
                             caliber = newCaliber; //update bullet with new caliber post-deformation(if any)
                             penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration, thickness);
 

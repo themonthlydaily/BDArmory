@@ -835,20 +835,45 @@ namespace BDArmory.Bullets
                 float Strength = Armor.Strength;
                 float safeTemp = Armor.SafeUseTemp;
                 float Density = Armor.Density;
+
+                float vFactor = Armor.vFactor;
+                float muParam1;
+                float muParam2;
+                float muParam3;
+
                 int armorType = (int)Armor.ArmorTypeNum;
                 if (BDArmorySettings.DEBUG_ARMOR)
                 {
                     Debug.Log("[BDArmory.PooledBullet]: ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density + "; thickness: " + thickness);
                 }
-                float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(bulletMass, impactSpeed);
-                float armorStrength = ProjectileUtils.CalculateArmorStrength(caliber, thickness, Ductility, Strength, Density, safeTemp, hitPart);
+                
                 //calculate bullet deformation
                 float newCaliber = caliber;
                 if (!sabot)
                 {
+                    // Moved the bulletEnergy and armorStrength calculations here because
+                    // they are no longer needed for CalculatePenetration. This should
+                    // improve performance somewhat for sabot rounds, which is a good
+                    // thing since that new model requires the use of Mathf.Log and
+                    // Mathf.Exp.
+                    float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(bulletMass, impactSpeed);
+                    float armorStrength = ProjectileUtils.CalculateArmorStrength(caliber, thickness, Ductility, Strength, Density, safeTemp, hitPart);
                     newCaliber = ProjectileUtils.CalculateDeformation(armorStrength, bulletEnergy, caliber, impactSpeed, hardness, Density, HERatio, apBulletMod, sabot);
+
+                    // Also set the params to the non-sabot ones
+                    muParam1 = Armor.muParam1;
+                    muParam2 = Armor.muParam2;
+                    muParam3 = Armor.muParam3;
+                } else
+                {
+                    // If it's a sabot just set the params to the sabot ones
+                    muParam1 = Armor.muParam1S;
+                    muParam2 = Armor.muParam2S;
+                    muParam3 = Armor.muParam3S;
                 }
-                penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, bulletMass, impactSpeed, Ductility, Density, Strength, thickness, apBulletMod, sabot);
+                //penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, bulletMass, impactSpeed, Ductility, Density, Strength, thickness, apBulletMod, sabot);
+                penetration = ProjectileUtils.CalculatePenetration(caliber, impactSpeed, bulletMass, apBulletMod, Strength, vFactor, muParam1, muParam2, muParam3, sabot);
+
                 caliber = newCaliber; //update bullet with new caliber post-deformation(if any)
                 penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration, thickness);
                 //Reactive Armor calcs
