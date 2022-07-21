@@ -307,8 +307,8 @@ namespace BDArmory.UI
                                 afterburner = (closestPart.GetComponent<MultiModeEngine>()) ? !(closestPart.GetComponent<MultiModeEngine>().runningPrimary) : false;
                             }
                         }
-                        // Set thrustTransform as heat source position for engines, unless they are afterburning, in which case set the heat source position as the plume itself (arbitrary estimate of 4m behind thrustTransform)
-                        Vector3 heatSourcePosition = thrustTransform ? (thrustTransform.position + thrustTransform.forward*(afterburner ? 4f : 0f)) : closestPart.transform.position; 
+                        // Set thrustTransform as heat source position for engines, unless they are afterburning, in which case set the heat source position as the plume itself (arbitrary estimate of 1m behind thrustTransform)
+                        Vector3 heatSourcePosition = thrustTransform ? (thrustTransform.position + thrustTransform.forward*(afterburner ? 1f : 0f)) : closestPart.transform.position; 
                         Ray partRay = new Ray(heatSourcePosition, sensorPosition - heatSourcePosition); //trace from heatsource to IR sensor
                         var layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA);
 
@@ -332,9 +332,9 @@ namespace BDArmory.UI
                                                                    //The heavier/further the part, the more it's going to occlude the heatsource
                                 DebugCount++;
                                 float sqrSpacing = (heatSourcePosition-partHit.transform.position).sqrMagnitude;
-                                if (sqrSpacing < 16f)       //arbitirary 4m threshold, may need to adjust
+                                if (sqrSpacing < 64f)       //arbitirary 8m threshold, may need to adjust
                                 {                        //if far enough away, clamp temp to temp of last part in LoS
-                                    OcclusionFactor += partHit.mass * (sqrSpacing / 16f); //sqr spacing / 16 is linear; replace with an targetAspect floatcurve (either default linear curve for irst, or custom, new floatcurve field for missileLauncher)) for setting what angle a IR missile can lock from?
+                                    OcclusionFactor += partHit.mass * (sqrSpacing / 64f); //sqr spacing / 6 is linear; replace with an targetAspect floatcurve (either default linear curve for irst, or custom, new floatcurve field for missileLauncher)) for setting what angle a IR missile can lock from?
                                     lastHeatscore = (float)(partHit.thermalInternalFluxPrevious + partHit.skinTemperature);
                                 }
                                 else
@@ -573,7 +573,12 @@ namespace BDArmory.UI
                 }
 
             debugString.Append(Environment.NewLine);
-            debugString.AppendLine($"Heat Signature: {GetVesselHeatSignature(FlightGlobals.ActiveVessel, Vector3.zero):#####}");
+            debugString.AppendLine($"Base Heat Signature: {GetVesselHeatSignature(FlightGlobals.ActiveVessel, Vector3.zero):#####}, For/Aft: " +
+                GetVesselHeatSignature(FlightGlobals.ActiveVessel, FlightGlobals.ActiveVessel.vesselTransform.position + 100f * FlightGlobals.ActiveVessel.vesselTransform.up).ToString("0") + "/" +
+                GetVesselHeatSignature(FlightGlobals.ActiveVessel, FlightGlobals.ActiveVessel.vesselTransform.position - 100f * FlightGlobals.ActiveVessel.vesselTransform.up).ToString("0") + ", Side: " +
+                GetVesselHeatSignature(FlightGlobals.ActiveVessel, FlightGlobals.ActiveVessel.vesselTransform.position + 100f * FlightGlobals.ActiveVessel.vesselTransform.right).ToString("0") + ", Top/Bot: " +
+                GetVesselHeatSignature(FlightGlobals.ActiveVessel, FlightGlobals.ActiveVessel.vesselTransform.position - 100f * FlightGlobals.ActiveVessel.vesselTransform.forward).ToString("0") + "/" +
+                GetVesselHeatSignature(FlightGlobals.ActiveVessel, FlightGlobals.ActiveVessel.vesselTransform.position + 100f * FlightGlobals.ActiveVessel.vesselTransform.forward).ToString("0"));
             debugString.AppendLine($"Radar Signature: " + RadarUtils.GetVesselRadarSignature(FlightGlobals.ActiveVessel).radarModifiedSignature);
             debugString.AppendLine($"Chaff multiplier: " + RadarUtils.GetVesselChaffFactor(FlightGlobals.ActiveVessel));
 
