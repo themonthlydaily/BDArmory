@@ -3940,7 +3940,7 @@ namespace BDArmory.Control
         }
 
         Dictionary<string, BaseField> fields;
-        Dictionary<string, string> fixedFields;
+        HashSet<string> fixedFields;
         Dictionary<string, float> baseValues;
         Dictionary<string, float> bestValues;
         Dictionary<string, Tuple<float, float>> limits;
@@ -4089,7 +4089,7 @@ namespace BDArmory.Control
             if (string.IsNullOrEmpty(AI.autoTuningLossLabel)) AI.autoTuningLossLabel = $"measuring";
             AI.autoTuningLossLabel2 = $"LR: {lr.current:G2}, Roll rel.: {optimiser.rollRelevance:G2}";
             AI.autoTuningLossLabel3 = $"{currentField}, sample nr: {sampleNumber + 1}";
-            if ((AI.autoTuningOptionFixedP && !fixedFields.ContainsKey("steerMult")) || (!AI.autoTuningOptionFixedP && fixedFields.ContainsKey("steerMult")))
+            if ((AI.autoTuningOptionFixedP && !fixedFields.Any(f => f.StartsWith("steerMult"))) || (!AI.autoTuningOptionFixedP && fixedFields.Any(f => f.StartsWith("steerMult"))))
             {
                 ToggleFixedP();
             }
@@ -4105,7 +4105,7 @@ namespace BDArmory.Control
             vesselName = AI.vessel.GetDisplayName();
             fieldNames = new List<string> { "base" };
             fields = new Dictionary<string, BaseField>();
-            fixedFields = new Dictionary<string, string>();
+            fixedFields = new HashSet<string>();
             baseValues = new Dictionary<string, float>();
             gradient = new Dictionary<string, float>();
             limits = new Dictionary<string, Tuple<float, float>>();
@@ -4119,9 +4119,9 @@ namespace BDArmory.Control
                 if (field.group.name == "pilotAI_PID" && field.guiActive && field.uiControlFlight.GetType() == typeof(UI_FloatRange))
                 {
                     if (field.name.StartsWith("autoTuning")) continue;
-                    if (AI.autoTuningOptionFixedP && field.name == "steerMult")
+                    if (AI.autoTuningOptionFixedP && field.name.StartsWith("steerMult"))
                     {
-                        fixedFields.Add(field.name, field.guiName);
+                        fixedFields.Add(field.name);
                         continue;
                     }
                     // Exclude relevant damping fields when disabled
@@ -4129,21 +4129,22 @@ namespace BDArmory.Control
                     {
                         if (((!AI.CustomDynamicAxisFields || (AI.CustomDynamicAxisFields && AI.dynamicDampingPitch && AI.dynamicDampingYaw && AI.dynamicDampingRoll)) && field.name == "steerDamping") ||
                             (AI.CustomDynamicAxisFields && (
-                                (!AI.dynamicDampingPitch && field.name.StartsWith("DynamicDampingPitch")) ||
-                                (!AI.dynamicDampingYaw && field.name.StartsWith("DynamicDampingYaw")) ||
-                                (!AI.dynamicDampingRoll && field.name.StartsWith("DynamicDampingRoll")))))
+                                (!AI.dynamicDampingPitch && (field.name.StartsWith("DynamicDampingPitch") || field.name.StartsWith("dynamicSteerDampingPitch"))) || // These fields should be named consistently!
+                                (!AI.dynamicDampingYaw && (field.name.StartsWith("DynamicDampingYaw") || field.name.StartsWith("dynamicSteerDampingYaw"))) || // But changing them now would break old tunings.
+                                (!AI.dynamicDampingRoll && (field.name.StartsWith("DynamicDampingRoll") || field.name.StartsWith("dynamicSteerDampingRoll")))
+                            )))
                         {
-                            fixedFields.Add(field.name, field.guiName);
+                            fixedFields.Add(field.name);
                             continue;
                         } // else all damping fields shown on UI are in use
                     }
                     var uiControl = (UI_FloatRange)field.uiControlFlight;
                     if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Found PID field: {field.guiName} with value {field.GetValue(AI)} and limits {uiControl.minValue} — {uiControl.maxValue}");
-                    fieldNames.Add(field.guiName);
-                    fields.Add(field.guiName, field);
-                    baseValues.Add(field.guiName, (float)field.GetValue(AI));
-                    gradient.Add(field.guiName, 0);
-                    limits.Add(field.guiName, new Tuple<float, float>(uiControl.minValue, uiControl.maxValue));
+                    fieldNames.Add(field.name);
+                    fields.Add(field.name, field);
+                    baseValues.Add(field.name, (float)field.GetValue(AI));
+                    gradient.Add(field.name, 0);
+                    limits.Add(field.name, new Tuple<float, float>(uiControl.minValue, uiControl.maxValue));
                 }
             }
             ResetSamples();
@@ -4169,7 +4170,7 @@ namespace BDArmory.Control
                     {
                         bestValues = baseValues.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
                     }
-                    if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Current: " + string.Join(", ", baseValues.Select(kvp => kvp.Key + ":" + kvp.Value)) + $", LR: {lr.current}, RR: {optimiser.rollRelevance}, Loss: {loss}");
+                    if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Current: " + string.Join(", ", baseValues.Select(kvp => fields[kvp.Key].guiName + ":" + kvp.Value)) + $", LR: {lr.current}, RR: {optimiser.rollRelevance}, Loss: {loss}");
                     lr.Update(loss); // Update learning rate based on the current loss.
                     if (lr.current < 1e-3f) // Tuned about as far as it'll go, time to bail.
                     {
@@ -4210,7 +4211,10 @@ namespace BDArmory.Control
             headingChange = Mathf.Sign(headingChange) * (30f + (sampleNumber + 0.5f) * (90f / AI.autoTuningOptionNumSamples)); // Midpoint rule for approximation to ∫f(x, θ)dθ.
             absHeadingChange = Mathf.Abs(headingChange);
 
-            AI.autoTuningLossLabel3 = $"{currentField}, sample nr: {sampleNumber + 1}{(currentField == "base" ? "" : $"{(firstCFDSample ? "-" : "+")}")}";
+            if (currentField == "base")
+            { AI.autoTuningLossLabel3 = $"{currentField}, sample nr: {sampleNumber + 1}"; }
+            else
+            { AI.autoTuningLossLabel3 = $"{fields[currentField].guiName}, sample nr: {sampleNumber + 1}{(firstCFDSample ? "-" : "+")}"; }
         }
 
         /// <summary>
@@ -4235,8 +4239,8 @@ namespace BDArmory.Control
                     AI.AutoTune = false;
                     return;
                 }
-                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Gradient: " + string.Join(", ", gradient.Select(kvp => kvp.Key + ":" + kvp.Value)));
-                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Unclamped gradient: " + string.Join(", ", newGradient.Select(kvp => kvp.Key + ":" + kvp.Value)));
+                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Gradient: " + string.Join(", ", gradient.Select(kvp => fields[kvp.Key].guiName + ":" + kvp.Value)));
+                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Unclamped gradient: " + string.Join(", ", newGradient.Select(kvp => fields[kvp.Key].guiName + ":" + kvp.Value)));
                 Dictionary<string, float> absoluteGradient = new Dictionary<string, float>();
                 foreach (var fieldName in absoluteGradient.Keys.ToList()) absoluteGradient[fieldName] = Mathf.Abs(gradient[fieldName]);
                 foreach (var fieldName in baseValues.Keys.ToList())
@@ -4276,8 +4280,13 @@ namespace BDArmory.Control
 
         public void ToggleFixedP()
         {
-            if (fixedFields != null && fields != null && fixedFields.ContainsKey("steerMult") && fields.ContainsKey(fixedFields["steerMult"]))
-                fields[fixedFields["steerMult"]].SetValue(baseValues[fixedFields["steerMult"]], AI);
+            if (fixedFields != null && fields != null && fixedFields.Any(f => f.StartsWith("steerMult"))) // When full 3-axis PID is implmented, the P fields should all start with "steerMult".
+            {
+                foreach (var fieldName in fixedFields.Where(f => f.StartsWith("steerMult") && fields.ContainsKey(f)))
+                {
+                    fields[fieldName].SetValue(baseValues[fieldName], AI);
+                }
+            }
             ResetGradient();
         }
     }
