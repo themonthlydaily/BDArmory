@@ -19,6 +19,7 @@ FIXES
 - Fixes Debris icons not appearing when Team Icons enabled.
 - Fixes Chaingun/Rocketpod Rounds PEr Minute slider values when reverting to VAB/SPH.
 - Fixes ripplefire issue with weapons with different rates of fire in one weapongroup.
+- Fixes JDAM insaccuracy issue.
 
 IMPROVEMENTS
 - General:
