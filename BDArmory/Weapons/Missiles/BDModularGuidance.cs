@@ -618,22 +618,14 @@ namespace BDArmory.Weapons.Missiles
             Vector3 aamTarget;
             if (TargetAcquired)
             {
+                float timeToImpact;
                 if (GuidanceIndex == 6) // Augmented Pro-Nav
-                {
-                    aamTarget = MissileGuidance.GetAPNTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, 4f);
-                    TimeToImpact = AIUtils.ClosestTimeToCPA(vessel, TargetPosition, TargetVelocity, TargetAcceleration, 120f);
-                }
+                    aamTarget = MissileGuidance.GetAPNTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, 4f, out timeToImpact);
                 else if (GuidanceIndex == 5) // Pro-Nav
-                {
-                    aamTarget = MissileGuidance.GetPNTarget(TargetPosition, TargetVelocity, vessel, 4f);
-                    TimeToImpact = AIUtils.ClosestTimeToCPA(vessel, TargetPosition, TargetVelocity, TargetAcceleration, 120f);
-                }
+                    aamTarget = MissileGuidance.GetPNTarget(TargetPosition, TargetVelocity, vessel, 4f, out timeToImpact);
                 else // AAM Lead
-                {
-                    float timeToImpact;
                     aamTarget = MissileGuidance.GetAirToAirTargetModular(TargetPosition, TargetVelocity, TargetAcceleration, vessel, out timeToImpact);
-                    TimeToImpact = timeToImpact;
-                }
+                TimeToImpact = timeToImpact;
 
                 if (Vector3.Angle(aamTarget - vessel.CoM, vessel.transform.forward) > maxOffBoresight * 0.75f)
                 {
