@@ -1825,23 +1825,15 @@ namespace BDArmory.Weapons.Missiles
                     //TargetPosition += VectorUtils.GetUpDirection(TargetPosition) * (blastRadius < 10? (blastRadius / 2) : 10);
                 }
                 DrawDebugLine(transform.position + (part.rb.velocity * Time.fixedDeltaTime), TargetPosition);
-                
+
+                float timeToImpact;
                 if (GuidanceMode == GuidanceModes.APN) // Augmented Pro-Nav
-                {
-                    aamTarget = MissileGuidance.GetAPNTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, 4f);
-                    TimeToImpact = AIUtils.ClosestTimeToCPA(vessel, TargetPosition, TargetVelocity, TargetAcceleration, 120f);
-                }
+                    aamTarget = MissileGuidance.GetAPNTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, 4f, out timeToImpact);
                 else if (GuidanceMode == GuidanceModes.PN) // Pro-Nav
-                {
-                    aamTarget = MissileGuidance.GetPNTarget(TargetPosition, TargetVelocity, vessel, 4f);
-                    TimeToImpact = AIUtils.ClosestTimeToCPA(vessel, TargetPosition, TargetVelocity, TargetAcceleration, 120f);
-                }
+                    aamTarget = MissileGuidance.GetPNTarget(TargetPosition, TargetVelocity, vessel, 4f, out timeToImpact);
                 else // AAM Lead
-                {
-                    float timeToImpact;
                     aamTarget = MissileGuidance.GetAirToAirTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, out timeToImpact, optimumAirspeed);
-                    TimeToImpact = timeToImpact;
-                }
+
                 
                 if (Vector3.Angle(aamTarget - transform.position, transform.forward) > maxOffBoresight * 0.75f)
                 {
