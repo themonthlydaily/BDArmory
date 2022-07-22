@@ -2974,19 +2974,22 @@ namespace BDArmory.Control
                     {
                         int GunCount = 0; 
                         if (weapon.Current == null) continue;
-                        if (rippleGunCount.ContainsKey(weapon.Current.WeaponName)) continue; //don't setup copies of a guntype if we've already done that
-                        for (int w = 0; w < rippleWeapons.Count; w++)
-                        {
-                            if (weapon.Current.WeaponName == rippleWeapons[w].WeaponName)
-                            {
-                                weapon.Current.rippleIndex = GunCount; //this will mean that a group of two+ different RPM guns will start firing at the same time, then each subgroup will independantly ripple
-                                GunCount++;
-                            }
-                        }
-                        weapon.Current.initialFireDelay = 60 / (weapon.Current.roundsPerMinute * GunCount);
                         weapon.Current.useRippleFire = ro.rippleFire;
-                        rippleGunCount.Add(weapon.Current.WeaponName, GunCount);
-                        gunRippleIndex.Add(weapon.Current.WeaponName, 0);
+                        if (!rippleGunCount.ContainsKey(weapon.Current.WeaponName)) //don't setup copies of a guntype if we've already done that
+                        {
+                            for (int w = 0; w < rippleWeapons.Count; w++)
+                            {
+                                if (weapon.Current.WeaponName == rippleWeapons[w].WeaponName)
+                                {
+                                    rippleWeapons[w].rippleIndex = GunCount; //this will mean that a group of two+ different RPM guns will start firing at the same time, then each subgroup will independantly ripple
+                                    GunCount++;
+                                }
+                            }
+                            rippleGunCount.Add(weapon.Current.WeaponName, GunCount);
+                            gunRippleIndex.Add(weapon.Current.WeaponName, 0);
+                        }
+                        weapon.Current.initialFireDelay = 60 / (weapon.Current.roundsPerMinute * (rippleGunCount[weapon.Current.WeaponName]));
+                        Debug.Log("[RIPPLEDEBUG]" + weapon.Current.WeaponName + " rippleIndex: " + weapon.Current.rippleIndex + "; initialfiredelay: " + weapon.Current.initialFireDelay);
                     }
             }
 
