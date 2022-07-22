@@ -48,6 +48,7 @@ IMPROVEMENTS
 	- Adds UI Icon team color reset button.
 	- Adds missile names to missile warning icons when vessel names enabled.
 	- Add a config option for the maximum time scaling.
+
 - AI:
 	- Add a 5° deadzone around being on target for dynamic damping to avoid feed-back loop in PID.
 	- Add a check for requested extending already being satisfied.
@@ -77,6 +78,7 @@ IMPROVEMENTS
 			3. Avoid mountainous terrain.
 			4. Tune without dynamic damping first and use the result as the starting point for dynamic damping with all the damping values set to the tuned static damping value and the dynamic damping factors set to 1.
 			5. Since the PID values are (currently) being optimized for flying to fixed points, the tuned I value may not be optimal for moving targets in combat and a slightly larger I may be desirable.
+
 - GameModes:
 	- Waypoints:
 		- Add support for multiple waypoint gate models.
@@ -93,6 +95,7 @@ IMPROVEMENTS
 		- Adds support for off-world waypoint courses both locally and API-run competitions.
 		- Add a slider for activating guard mode when passing a waypoint.
 		- Allow multiple laps for waypoints.
+
 - Weapons:
 	- Use min of missile drop time or 2 sec instead of fixed two second period for check target will be within missile maxOffBoresight at future time.
 	- Sidam Turret retextured (thanks Concodroid!).
@@ -107,8 +110,8 @@ IMPROVEMENTS
 	- Weapon debug lines now account for frame velocity and flight integrator delay.
 	- Rockets now support beehive/nuclear warhead options.
 	- EMP weapons fired at targets with AI/ WM off will not cause them to activate when target reboots.
-	- Bullets now support shaped charge HE fillers (for HEAT rounds and similar)
-		-Bullet.cfg 'explosive =' field no longer true/false, now select from 'Standard' or 'Shaped' in place of explosive = true, or 'None' in place of explosive = false
+	- Bullets now support shaped charge HE fillers (for HEAT rounds and similar):
+		- Bullet.cfg 'explosive =' field no longer true/false, now select from 'Standard' or 'Shaped' in place of explosive = true, or 'None' in place of explosive = false.
 	- Missiles:
 		- Adds Missile multi-targeting.
 		- Adds new Max Missile Tgts setting in WM to set max targets to engage with missiles.
@@ -130,25 +133,30 @@ IMPROVEMENTS
 		- Implemented Proportional Navigation and Augmented Proportional Navigation as missile guidance options for missile parts and modular missiles. For missile parts, set:
 			- homingType = pronav [for Pro-Nav].
 			- homingType = augpronav [for Augmented Pro-Nav].
+
 - Armor:
 	- Adds Oblique Triangle Proc Armor panel.
 	- Proc Armor nodes on triangular panels now orient themselves to current angle of panel edge.
 	- Proc Armor max scale can now be set in .cfg, unclamped in SPH/VAB.
 	- Armor penetration formula now uses the Tate/Alekseevskii formula. Penetration depths should be similar in most cases for modded ammos, but may need recalibration of their apBulletMod.
 	- Add Lift Visualization, Total Lift, and Wing Loading readouts (stock only, disabled when using FAR) to the BDA Armor Tool.
+
 - Detectors
 	- Adds IRST implementation for thermal detection alternative to radar.
 		-Adds thermal occlusion mechanic; heatsources hidden behind other parts will be harder to detect by IRST.
 	- Adds support for optic/thermal cloaking countermeasures.
 	- Adds new AN/AAQ-42 IRST Pod part.
 	- Radars must now be capable of detecting a target before it can be locked.
+
 - Spawning:
 	- Refactor spawning into more modular coroutines for use with the spawn and orchestration strategies.
 	- Add an 'instant' lowering mode for vessel easing after spawn (VESSEL_SPAWN_EASE_IN_SPEED = 0).
 	- Add a test for spawning a vessel into an active competition using the SingleVesselSpawning class (debug build only).
+
 - RWP:
 	- Hall of Shame now supports multiple craft.
 	- Add HoS support to Waypoint mode.
+
 
 v1.4.18.4
 IMPROVEMENTS
