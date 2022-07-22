@@ -1,4 +1,4 @@
-v1.5.0.0 — FIXME: DO THE REBRANDING BEFORE RELEASING.
+﻿v1.5.0.0 — FIXME: DO THE REBRANDING BEFORE RELEASING.
 FIXES
 - Fix 'resizeSquare' texture not being loaded sometimes (due to a race condition?).
 - Clean up log spam from ExplosionFX.
@@ -17,9 +17,9 @@ FIXES
 - Armor panels no longer indestructible.
 - VTOL AI no longer toggles off guard mode in competitions.
 - Fixes Debris icons not appearing when Team Icons enabled.
-- Fixes Chaingun/Rocketpod Rounds PEr Minute slider values when reverting to VAB/SPH.
+- Fixes Chaingun/Rocketpod Rounds Per Minute slider values when reverting to VAB/SPH.
 - Fixes ripplefire issue with weapons with different rates of fire in one weapongroup.
-- Fix for issue where AI was not leading target when KSP was running on M1 Macs (Apple Silicon)
+- Fix for issue where AI was not leading target when KSP was running on M1 Macs (Apple Silicon).
 
 IMPROVEMENTS
 - General:
@@ -99,10 +99,10 @@ IMPROVEMENTS
 	- Issue 348; weapons will no longer manually fire if mouse cursor is over Weapon Manager GUI.
 	- APBulletMod now implemented for sabot rounds.
 	- Adjusted Sabot depth calculation, should no longer overpenetrate quite so much.
-	- Sabots now recognized as AP ammo in ammo labels
+	- Sabots now recognized as AP ammo in ammo labels.
 	- Weapons and explosions no longer cause armor damage/shrapnel/spalling damage in paintball mode.
 	- Add charge-up mechanic for weapons.
-		- Adds new .cfg fields: ChargeTime = n; ChargeEachShot = T/F; hasChargeAnimation = T/F; chargeAnimName = animName
+		- Adds new .cfg fields: ChargeTime = n; ChargeEachShot = T/F; hasChargeAnimation = T/F; chargeAnimName = animName.
 	- Weapon debug lines now account for frame velocity and flight integrator delay.
 	- Rockets now support beehive/nuclear warhead options.
 	- EMP weapons fired at targets with AI/ WM off will not cause them to activate when target reboots.
@@ -123,21 +123,21 @@ IMPROVEMENTS
 		- Fix HARMs ignoring max missiles on target.
 		- Add chaffEffectivity parameter to missile configs. See AIM-120 config for more details.
 		- Modular Missile ActiveRadarRange can now be set to 0.
-		- Depreciated allAspect parameter, missile modders should now use uncagedLock instead (old missiles will automatically have the uncagedLock parameter value set to the value of allAspect.
+		- Deprecate allAspect parameter, missile modders should now use uncagedLock instead (old missiles will automatically have the uncagedLock parameter value set to the value of allAspect.
 		- Implemented Proportional Navigation and Augmented Proportional Navigation as missile guidance options for missile parts and modular missiles. For missile parts, set:
-			homingType = pronav [for Pro-Nav]
-			homingType = augpronav [for Augmented Pro-Nav]
+			- homingType = pronav [for Pro-Nav].
+			- homingType = augpronav [for Augmented Pro-Nav].
 - Armor:
 	- Adds Oblique Triangle Proc Armor panel.
 	- Proc Armor nodes on triangular panels now orient themselves to current angle of panel edge.
-	- Proc Armor max scale can now be set in .cfg, unclamped in SPH/VAB
+	- Proc Armor max scale can now be set in .cfg, unclamped in SPH/VAB.
 	- Change the armor penetration formula to use the Tate/Alekseevskii formula.
 	- Add Lift Visualization, Total Lift, and Wing Loading readouts (stock only, disabled when using FAR) to the BDA Armor Tool.
 - Detectors
 	- Adds IRST implementation for thermal detection alternative to radar.
 		-Adds thermal occlusion mechanic; heatsources hidden behind other parts will be harder to detect by IRST.
 	- Adds support for optic/thermal cloaking countermeasures.
-	- Adds new AN/AAQ-42 IRST Pod part
+	- Adds new AN/AAQ-42 IRST Pod part.
 	- Radars must now be capable of detecting a target before it can be locked.
 - Spawning:
 	- Refactor spawning into more modular coroutines for use with the spawn and orchestration strategies.
