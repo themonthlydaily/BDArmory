@@ -152,6 +152,8 @@ IMPROVEMENTS
 	- Refactor spawning into more modular coroutines for use with the spawn and orchestration strategies.
 	- Add an 'instant' lowering mode for vessel easing after spawn (VESSEL_SPAWN_EASE_IN_SPEED = 0).
 	- Add a test for spawning a vessel into an active competition using the SingleVesselSpawning class (debug build only).
+	- Randomise team spawn order (similar to random FFA ordering).
+	- Switch the camera to a random plane after spawning instead of the last plane spawned.
 
 - RWP:
 	- Hall of Shame now supports multiple craft.
