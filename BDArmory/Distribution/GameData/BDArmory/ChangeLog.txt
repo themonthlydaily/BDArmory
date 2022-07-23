@@ -1,4 +1,4 @@
-﻿v1.5.0.0 — FIXME: DO THE REBRANDING BEFORE RELEASING.
+﻿v1.5.0.0
 FIXES
 - Fix 'resizeSquare' texture not being loaded sometimes (due to a race condition?).
 - Clean up log spam from ExplosionFX.
@@ -24,7 +24,7 @@ FIXES
 
 IMPROVEMENTS
 - General:
-	- Rebranded as "BDArmory Plus" (BDA+) on SpaceDock/CKAN (from "BDArmory for Runway Project") and forum thread created. — FIXME: DO THIS BEFORE RELEASING!
+	- Rebranded as "BDArmory Plus" (BDA+) on SpaceDock/CKAN (from "BDArmory for Runway Project") and forum thread created.
 	- Major internal refactor to better organise code.
 	- Switch to a single DLL release.
 	- Add missing HP rounding to some parts.
