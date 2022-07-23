@@ -91,7 +91,7 @@ IMPROVEMENTS
 		- Convert Waypoints from hardcoded courses to a config based implementation.
 		- Add support for unique Waypoint names.
 		- Add support for independently scaling (model and approach threshold) individual waypoints.
-		- Add support for independantly setting individual waypoint altitudes.
+		- Add support for independently setting individual waypoint altitudes.
 		- Waypoint Scale and Waypoint Altitude are now global overrides that will set all WPs to the specified value if not set to default; else will use values from the course data.
 		- Adds support for off-world waypoint courses both locally and API-run competitions.
 		- Add a slider for activating guard mode when passing a waypoint.
