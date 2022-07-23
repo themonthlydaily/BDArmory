@@ -48,6 +48,7 @@ IMPROVEMENTS
 	- Adds UI Icon team color reset button.
 	- Adds missile names to missile warning icons when vessel names enabled.
 	- Add a config option for the maximum time scaling.
+	- Add a new logarithmic float range PAW slider type.
 
 - AI:
 	- Add a 5° deadzone around being on target for dynamic damping to avoid feed-back loop in PID.
