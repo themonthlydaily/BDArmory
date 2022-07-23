@@ -1,4 +1,3 @@
-using Object = UnityEngine.Object;
 using System.Collections.Generic;
 using System;
 using UniLinq;

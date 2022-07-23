@@ -249,6 +249,12 @@ namespace BDArmory.Control
             UI_FloatRange(minValue = 0f, maxValue = 0.5f, stepIncrement = 0.01f, scene = UI_Scene.All)]
         public float autoTuningOptionFastResponseRelevance = 0.2f;
 
+        //AutoTuning Initial Learning Rate
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_PIDAutoTuningInitialLearningRate", advancedTweakable = true,
+            groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
+            UI_FloatLogRange(minValue = 0.001f, maxValue = 1f, steps = 6, scene = UI_Scene.All)]
+        public float autoTuningOptionInitialLearningRate = 1f;
+
         //AutoTuning Altitude
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_PIDAutoTuningAltitude", //Auto-tuning Altitude
             groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
@@ -3901,8 +3907,9 @@ namespace BDArmory.Control
             /// <summary>
             /// Reset everything.
             /// </summary>
-            public void Reset()
+            public void Reset(float initial)
             {
+                this.initial = initial;
                 current = initial;
                 count = 0;
                 _best = float.MaxValue;
@@ -4148,7 +4155,7 @@ namespace BDArmory.Control
                 }
             }
             ResetSamples();
-            lr.Reset();
+            lr.Reset(AI.autoTuningOptionInitialLearningRate);
             optimiser.Reset();
         }
 
@@ -4172,7 +4179,7 @@ namespace BDArmory.Control
                     }
                     if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Current: " + string.Join(", ", baseValues.Select(kvp => fields[kvp.Key].guiName + ":" + kvp.Value)) + $", LR: {lr.current}, RR: {optimiser.rollRelevance}, Loss: {loss}");
                     lr.Update(loss); // Update learning rate based on the current loss.
-                    if (lr.current < 1e-3f) // Tuned about as far as it'll go, time to bail.
+                    if (lr.current < 9e-4f) // Tuned about as far as it'll go, time to bail. (9e-4 instead of 1e-3 for some tolerance in the floating point comparison.)
                     {
                         AI.autoTuningLossLabel = $"{lr.best:G6}, completed.";
                         AI.AutoTune = false; // This also reverts to the best settings and stores them.
