@@ -5,54 +5,26 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-using BDArmory.Core;
-using BDArmory.Core.Utils;
+using BDArmory.Control;
 using BDArmory.GameModes;
 using BDArmory.Modules;
+using BDArmory.Settings;
 using BDArmory.UI;
-using BDArmory.Misc;
+using BDArmory.Utils;
 
 namespace BDArmory.Competition.VesselSpawning
 {
-    public enum SpawnFailureReason { None, NoCraft, NoTerrain, InvalidVessel, VesselLostParts, VesselFailedToSpawn, TimedOut };
+    public enum SpawnFailureReason { None, NoCraft, NoTerrain, InvalidVessel, VesselLostParts, VesselFailedToSpawn, TimedOut, Cancelled };
 
     public static class SpawnUtils
     {
-        private static string _spawnProbeLocation = null;
-        public static string spawnProbeLocation
-        {
-            get
-            {
-                if (_spawnProbeLocation != null) return _spawnProbeLocation;
-                _spawnProbeLocation = Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "BDArmory", "craft", "SpawnProbe.craft"); // SpaceDock location
-                if (!File.Exists(_spawnProbeLocation)) _spawnProbeLocation = Path.Combine(KSPUtil.ApplicationRootPath, "Ships", "SPH", "SpawnProbe.craft"); // CKAN location
-                if (!File.Exists(_spawnProbeLocation))
-                {
-                    _spawnProbeLocation = null;
-                    var message = "SpawnProbe.craft is missing. Your installation is likely corrupt.";
-                    BDACompetitionMode.Instance.competitionStatus.Add(message);
-                    Debug.LogError("[BDArmory.SpawnUtils]: " + message);
-                }
-                return _spawnProbeLocation;
-            }
-        }
-
-        public static Vessel SpawnSpawnProbe()
-        {
-            // Spawn in the SpawnProbe at the camera position and switch to it so that we can clean up the other vessels properly.
-            var dummyVar = EditorFacility.None;
-            Vector3d dummySpawnCoords;
-            FlightGlobals.currentMainBody.GetLatLonAlt(FlightCamera.fetch.transform.position, out dummySpawnCoords.x, out dummySpawnCoords.y, out dummySpawnCoords.z);
-            if (spawnProbeLocation == null) return null;
-            Vessel spawnProbe = VesselLoader.SpawnVesselFromCraftFile(spawnProbeLocation, dummySpawnCoords, 0f, 0f, 0f, out dummyVar);
-            return spawnProbe;
-        }
-
         // Cancel all spawning modes.
         public static void CancelSpawning()
         {
+            VesselSpawnerStatus.spawnFailureReason = SpawnFailureReason.Cancelled;
+
             // Single spawn
-            if (CircularSpawning.Instance.vesselsSpawning)
+            if (CircularSpawning.Instance.vesselsSpawning || CircularSpawning.Instance.vesselsSpawningOnceContinuously)
             { CircularSpawning.Instance.CancelSpawning(); }
 
             // Continuous spawn
@@ -62,8 +34,39 @@ namespace BDArmory.Competition.VesselSpawning
             SpawnUtils.RevertSpawnLocationCamera(true);
         }
 
+        /// <summary>
+        /// If the VESSELNAMING tag exists in the craft file, then KSP renames the vessel at some point after spawning.
+        /// This function checks for renamed vessels and sets the name back to what it was.
+        /// This must be called once after a yield, before using vessel.vesselName as an index in spawnedVessels.Keys.
+        /// </summary>
+        /// <param name="vessels"></param>
+        public static void CheckForRenamedVessels(Dictionary<string, Vessel> vessels)
+        {
+            foreach (var vesselName in vessels.Keys.ToList())
+            {
+                if (vesselName != vessels[vesselName].vesselName)
+                {
+                    vessels[vesselName].vesselName = vesselName;
+                }
+            }
+        }
+
+        public static int PartCount(Vessel vessel, bool ignoreEVA = true)
+        {
+            if (!ignoreEVA) return vessel.parts.Count;
+            int count = 0;
+            using (var part = vessel.parts.GetEnumerator())
+                while (part.MoveNext())
+                {
+                    if (part.Current == null) continue;
+                    if (ignoreEVA && part.Current.isKerbalEVA()) continue; // Ignore EVA kerbals, which get added at some point after spawning.
+                    ++count;
+                }
+            return count;
+        }
+        
         #region Camera
-        public static void ShowSpawnPoint(int worldIndex, double latitude, double longitude, double altitude = 0, float distance = 100, bool spawning = false, bool recurse = true) => SpawnUtilsInstance.Instance.ShowSpawnPoint(worldIndex, latitude, longitude, altitude, distance, spawning, recurse);
+        public static void ShowSpawnPoint(int worldIndex, double latitude, double longitude, double altitude = 0, float distance = 100, bool spawning = false) => SpawnUtilsInstance.Instance.ShowSpawnPoint(worldIndex, latitude, longitude, altitude, distance, spawning); // Note: this may launch a coroutine when not spawning and there's no active vessel!
         public static void RevertSpawnLocationCamera(bool keepTransformValues = true) => SpawnUtilsInstance.Instance.RevertSpawnLocationCamera(keepTransformValues);
         #endregion
 
@@ -244,7 +247,6 @@ namespace BDArmory.Competition.VesselSpawning
             }
         }
         #endregion
-
     }
 
     /// <summary>
@@ -315,14 +317,35 @@ namespace BDArmory.Competition.VesselSpawning
             --removeVesselsPending;
         }
 
+        /// <summary>
+        /// Remove all the vessels.
+        /// This works by spawning in a spawnprobe at the current camera coordinates so that we can clean up the other vessels properly.
+        /// </summary>
+        /// <returns></returns>
         public IEnumerator RemoveAllVessels()
         {
             var vesselsToKill = FlightGlobals.Vessels.ToList();
+            // Spawn in the SpawnProbe at the camera position.
+            var spawnProbe = VesselSpawner.SpawnSpawnProbe();
+            if (spawnProbe != null) // If the spawnProbe is null, then just try to kill everything anyway.
+            {
+                spawnProbe.Landed = false; // Tell KSP that it's not landed so KSP doesn't mess with its position.
+                yield return new WaitWhile(() => spawnProbe != null && (!spawnProbe.loaded || spawnProbe.packed));
+                // Switch to the spawn probe.
+                while (spawnProbe != null && FlightGlobals.ActiveVessel != spawnProbe)
+                {
+                    LoadedVesselSwitcher.Instance.ForceSwitchVessel(spawnProbe);
+                    yield return waitForFixedUpdate;
+                }
+            }
             // Kill all other vessels (including debris).
             foreach (var vessel in vesselsToKill)
-            {
                 RemoveVessel(vessel);
-            }
+            // Finally, remove the SpawnProbe.
+            RemoveVessel(spawnProbe);
+
+            // Now, clear the teams and wait for everything to be removed.
+            SpawnUtils.originalTeams.Clear();
             yield return new WaitWhile(() => removeVesselsPending > 0);
         }
         #endregion
@@ -334,17 +357,17 @@ namespace BDArmory.Competition.VesselSpawning
         Coroutine delayedShowSpawnPointCoroutine;
         private readonly WaitForFixedUpdate waitForFixedUpdate = new WaitForFixedUpdate();
         /// <summary>
-        /// Show the given location.
-        /// 
-        /// Note: if spawning is true, then the spawnLocationCamera takes over the camera and RevertSpawnLocationCamera should be called at some point to allow KSP to do its own camera stuff.
+        /// Show the spawn point.
+        /// Note: When not spawning and there's no active vessel, this may launch a coroutine to perform the actual shift.
+        /// Note: If spawning is true, then the spawnLocationCamera takes over the camera and RevertSpawnLocationCamera should be called at some point to allow KSP to do its own camera stuff.
         /// </summary>
-        /// <param name="worldIndex"></param>
-        /// <param name="latitude"></param>
-        /// <param name="longitude"></param>
-        /// <param name="altitude"></param>
-        /// <param name="distance"></param>
-        /// <param name="spawning"></param>
-        /// <param name="recurse"></param>
+        /// <param name="worldIndex">The body the spawn point is on.</param>
+        /// <param name="latitude">Latitude</param>
+        /// <param name="longitude">Longitude</param>
+        /// <param name="altitude">Altitude</param>
+        /// <param name="distance">Distance to view the point from.</param>
+        /// <param name="spawning">Whether spawning is actually happening.</param>
+        /// <param name="recurse">State parameter for when we need to spawn a probe first.</param>
         public void ShowSpawnPoint(int worldIndex, double latitude, double longitude, double altitude = 0, float distance = 100, bool spawning = false, bool recurse = true)
         {
             if (BDArmorySettings.ASTEROID_RAIN) { AsteroidRain.Instance.Reset(); }
@@ -369,6 +392,7 @@ namespace BDArmory.Competition.VesselSpawning
                 flightCamera.SetDistance(distance);
                 var radialUnitVector = (flightCamera.transform.parent.position - FlightGlobals.currentMainBody.transform.position).normalized;
                 flightCamera.transform.parent.rotation = Quaternion.LookRotation(flightCamera.transform.parent.forward, radialUnitVector);
+                FloatingOrigin.SetOffset(FlightGlobals.ActiveVessel.transform.position); // This adjusts local coordinates, such that the vessel position is (0,0,0).
                 VehiclePhysics.Gravity.Refresh();
             }
             else
@@ -376,7 +400,8 @@ namespace BDArmory.Competition.VesselSpawning
                 FlightGlobals.fetch.SetVesselPosition(worldIndex != -1 ? worldIndex : FlightGlobals.currentMainBody.flightGlobalsIndex, latitude, longitude, altitude, 0, 0, true);
                 var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(latitude, longitude);
                 var spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitude, longitude, terrainAltitude + altitude);
-                var radialUnitVector = (spawnPoint - FlightGlobals.currentMainBody.transform.position).normalized;
+                FloatingOrigin.SetOffset(spawnPoint); // This adjusts local coordinates, such that spawnPoint is (0,0,0).
+                var radialUnitVector = - FlightGlobals.currentMainBody.transform.position.normalized;
                 var refDirection = Math.Abs(Vector3.Dot(Vector3.up, radialUnitVector)) < 0.71f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.
                 var flightCamera = FlightCamera.fetch;
                 var cameraPosition = Vector3.RotateTowards(distance * radialUnitVector, Vector3.Cross(radialUnitVector, refDirection), 70f * Mathf.Deg2Rad, 0);
@@ -384,9 +409,9 @@ namespace BDArmory.Competition.VesselSpawning
                 {
                     spawnLocationCamera.SetActive(true);
                     originalCameraParentTransform = flightCamera.transform.parent;
-                    originalCameraNearClipPlane = BDGUIUtils.GetMainCamera().nearClipPlane;
+                    originalCameraNearClipPlane = GUIUtils.GetMainCamera().nearClipPlane;
                 }
-                spawnLocationCamera.transform.position = spawnPoint;
+                spawnLocationCamera.transform.position = Vector3.zero;
                 spawnLocationCamera.transform.rotation = Quaternion.LookRotation(-cameraPosition, radialUnitVector);
                 flightCamera.transform.parent = spawnLocationCamera.transform;
                 flightCamera.SetTarget(spawnLocationCamera.transform);
@@ -398,27 +423,25 @@ namespace BDArmory.Competition.VesselSpawning
 
         IEnumerator DelayedShowSpawnPoint(int worldIndex, double latitude, double longitude, double altitude = 0, float distance = 100, bool spawning = false)
         {
-            var dummyVar = EditorFacility.None;
-            Vector3d dummySpawnCoords;
-            FlightGlobals.currentMainBody.GetLatLonAlt(FlightCamera.fetch.transform.position + 1000f * (FlightCamera.fetch.transform.position - FlightGlobals.currentMainBody.transform.position).normalized, out dummySpawnCoords.x, out dummySpawnCoords.y, out dummySpawnCoords.z);
-            Vessel spawnProbe = VesselLoader.SpawnVesselFromCraftFile(SpawnUtils.spawnProbeLocation, dummySpawnCoords, 0f, 0f, 0f, out dummyVar);
-            spawnProbe.Landed = false;
-            // spawnProbe.situation = Vessel.Situations.FLYING;
-            // spawnProbe.IgnoreGForces(240);
-            yield return new WaitWhile(() => spawnProbe != null && (!spawnProbe.loaded || spawnProbe.packed));
-            FlightGlobals.ForceSetActiveVessel(spawnProbe);
-            while (spawnProbe != null && FlightGlobals.ActiveVessel != spawnProbe)
+            Vessel spawnProbe = VesselSpawner.SpawnSpawnProbe();
+            if (spawnProbe != null)
             {
-                spawnProbe.SetWorldVelocity(Vector3d.zero);
-                LoadedVesselSwitcher.Instance.ForceSwitchVessel(spawnProbe);
-                yield return waitForFixedUpdate;
+                spawnProbe.Landed = false;
+                yield return new WaitWhile(() => spawnProbe != null && (!spawnProbe.loaded || spawnProbe.packed));
+                FlightGlobals.ForceSetActiveVessel(spawnProbe);
+                while (spawnProbe != null && FlightGlobals.ActiveVessel != spawnProbe)
+                {
+                    spawnProbe.SetWorldVelocity(Vector3d.zero);
+                    LoadedVesselSwitcher.Instance.ForceSwitchVessel(spawnProbe);
+                    yield return waitForFixedUpdate;
+                }
             }
             ShowSpawnPoint(worldIndex, latitude, longitude, altitude, distance, spawning, false);
         }
 
         public void RevertSpawnLocationCamera(bool keepTransformValues = true)
         {
-            if (!spawnLocationCamera.activeSelf) return;
+            if (spawnLocationCamera == null || !spawnLocationCamera.activeSelf) return;
             if (delayedShowSpawnPointCoroutine != null) { StopCoroutine(delayedShowSpawnPointCoroutine); delayedShowSpawnPointCoroutine = null; }
             var flightCamera = FlightCamera.fetch;
             if (originalCameraParentTransform != null)
@@ -427,10 +450,10 @@ namespace BDArmory.Competition.VesselSpawning
                 {
                     originalCameraParentTransform.position = flightCamera.transform.parent.position;
                     originalCameraParentTransform.rotation = flightCamera.transform.parent.rotation;
-                    originalCameraNearClipPlane = BDGUIUtils.GetMainCamera().nearClipPlane;
+                    originalCameraNearClipPlane = GUIUtils.GetMainCamera().nearClipPlane;
                 }
                 flightCamera.transform.parent = originalCameraParentTransform;
-                BDGUIUtils.GetMainCamera().nearClipPlane = originalCameraNearClipPlane;
+                GUIUtils.GetMainCamera().nearClipPlane = originalCameraNearClipPlane;
             }
             if (FlightGlobals.ActiveVessel != null && FlightGlobals.ActiveVessel.state != Vessel.State.DEAD)
                 LoadedVesselSwitcher.Instance.ForceSwitchVessel(FlightGlobals.ActiveVessel); // Update the camera.

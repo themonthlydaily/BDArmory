@@ -1,9 +1,10 @@
 ﻿using System.Collections;
 using UnityEngine;
-using BDArmory.Core;
-using BDArmory.Misc;
 using KSP.Localization;
+
 using BDArmory.Competition.RemoteOrchestration;
+using BDArmory.Settings;
+using BDArmory.Utils;
 
 namespace BDArmory.UI
 {
@@ -59,6 +60,7 @@ namespace BDArmory.UI
                 BDArmorySettings.REMOTE_ORCHESTRATION_WINDOW_WIDTH,
                 _windowHeight
             );
+            BDArmorySetup.SetGUIOpacity();
             BDArmorySetup.WindowRectRemoteOrchestration = GUI.Window(
                 80085,
                 BDArmorySetup.WindowRectRemoteOrchestration,
@@ -66,7 +68,8 @@ namespace BDArmory.UI
                 Localizer.Format("#LOC_BDArmory_BDARemoteOrchestration_Title"),//"BDA Remote Orchestration"
                 BDArmorySetup.BDGuiSkin.window
             );
-            Utils.UpdateGUIRect(BDArmorySetup.WindowRectRemoteOrchestration, _guiCheckIndex);
+            BDArmorySetup.SetGUIOpacity(false);
+            GUIUtils.UpdateGUIRect(BDArmorySetup.WindowRectRemoteOrchestration, _guiCheckIndex);
         }
 
         private void SetNewHeight(float windowHeight)
@@ -99,7 +102,7 @@ namespace BDArmory.UI
             service = BDAScoreService.Instance;
             UpdateClientStatus();
             ready = true;
-            _guiCheckIndex = Utils.RegisterGUIRect(new Rect());
+            _guiCheckIndex = GUIUtils.RegisterGUIRect(new Rect());
         }
 
         private void WindowRemoteOrchestration(int id)
@@ -172,7 +175,7 @@ namespace BDArmory.UI
 
             _windowHeight = offset;
 
-            BDGUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectRemoteOrchestration); // Prevent it from going off the screen edges.
+            GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectRemoteOrchestration); // Prevent it from going off the screen edges.
         }
     }
 }

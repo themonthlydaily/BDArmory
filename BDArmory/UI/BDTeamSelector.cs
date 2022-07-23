@@ -1,9 +1,10 @@
 ﻿using System.Collections;
-using BDArmory.Core;
-using BDArmory.Misc;
-using BDArmory.Modules;
 using UnityEngine;
 using KSP.Localization;
+
+using BDArmory.Competition;
+using BDArmory.Control;
+using BDArmory.Utils;
 
 namespace BDArmory.UI
 {
@@ -112,8 +113,8 @@ namespace BDArmory.UI
             }
 
             height += margin;
-            BDGUIUtils.RepositionWindow(ref window);
-            BDGUIUtils.UseMouseEventInRect(window);
+            GUIUtils.RepositionWindow(ref window);
+            GUIUtils.UseMouseEventInRect(window);
         }
 
         protected virtual void OnGUI()
@@ -135,11 +136,11 @@ namespace BDArmory.UI
                         width,
                         scrollable ? Screen.height / 2 + buttonHeight + buttonGap + 2 * margin : height);
                     window = GUI.Window(10591029, clientRect, TeamSelectorWindow, "", BDArmorySetup.BDGuiSkin.window);
-                    Utils.UpdateGUIRect(window, guiCheckIndex);
+                    GUIUtils.UpdateGUIRect(window, guiCheckIndex);
                 }
                 else
                 {
-                    Utils.UpdateGUIRect(new Rect(), guiCheckIndex);
+                    GUIUtils.UpdateGUIRect(new Rect(), guiCheckIndex);
                 }
             }
         }
@@ -167,7 +168,7 @@ namespace BDArmory.UI
                 yield return null;
 
             ready = true;
-            guiCheckIndex = Utils.RegisterGUIRect(new Rect());
+            guiCheckIndex = GUIUtils.RegisterGUIRect(new Rect());
         }
     }
 }

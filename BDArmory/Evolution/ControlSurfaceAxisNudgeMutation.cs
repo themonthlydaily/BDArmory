@@ -29,7 +29,7 @@ namespace BDArmory.Evolution
 
         public void Apply(ConfigNode craft, VariantEngine engine)
         {
-            Debug.Log("Evolution ControlSurfaceNudgeMutation applying");
+            Debug.Log("[BDArmory.ControlSurfaceAxisNudgeMutation]: Evolution ControlSurfaceNudgeMutation applying");
             List<ConfigNode> matchingNodes = engine.FindModuleNodes(craft, moduleName);
             foreach (var node in matchingNodes)
             {

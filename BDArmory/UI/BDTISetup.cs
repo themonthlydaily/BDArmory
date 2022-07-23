@@ -1,12 +1,15 @@
-﻿using System;
-using System.Collections;
-using UnityEngine;
+﻿using KSP.Localization;
 using KSP.UI.Screens;
 using System.Collections.Generic;
-using BDArmory.Modules;
-using BDArmory.Misc;
+using System.Collections;
 using System.Linq;
-using KSP.Localization;
+using System;
+using UnityEngine;
+
+using BDArmory.Competition;
+using BDArmory.Control;
+using BDArmory.Settings;
+using BDArmory.Utils;
 
 /*
 * *Milestone 6: Figure out how to have TI activation toggle the F4 SHOW_LABELS (or is it Flt_Show_labels?) method to sim a keypress?
@@ -254,7 +257,20 @@ namespace BDArmory.UI
                     }
                 }
         }
-
+        private void ResetColors()
+        {
+            ColorAssignments.Clear();
+            UpdateList();
+            int colorcount = 0;
+            foreach (var team in ColorAssignments)
+            {
+                colorcount++;
+                if (ColorAssignments.ContainsKey(team.Key))
+                {
+                    ColorAssignments[team.Key] = Color.HSVToRGB((colorcount / ColorAssignments.Keys.Count), 1f, 1f);
+                }
+            }
+        }
         private void OnDestroy()
         {
             if (toolbarButton)
@@ -420,6 +436,12 @@ namespace BDArmory.UI
                         }
                         GUI.Label(new Rect(5, -20 + (line * 25), 25, 25), "*", title);
                     }
+                line++;
+                Rect resetRect = new Rect(30, -20 + (line * 25), 190, 20);
+                if (GUI.Button(resetRect, "Reset TeamColors"))
+                {
+                    ResetColors();
+                }
                 GUI.EndGroup();
                 TeamColorsGroup.height = Mathf.Lerp(TeamColorsGroup.height, (line * 25) + 5, 0.35f);
             }

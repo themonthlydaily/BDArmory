@@ -1,9 +1,9 @@
 using System.Collections;
-using BDArmory.Core;
-using BDArmory.Misc;
-using BDArmory.Modules;
 using UnityEngine;
 using KSP.Localization;
+
+using BDArmory.Control;
+using BDArmory.Utils;
 
 namespace BDArmory.UI
 {
@@ -43,7 +43,7 @@ namespace BDArmory.UI
                 open = false;
             }
             height += buttonHeight;
-            
+
             height += buttonGap;
             Rect CoMRect = new Rect(margin, height, width - 2 * margin, buttonHeight);
             GUIStyle CoMStyle = targetWeaponManager.targetCoM ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button;
@@ -143,8 +143,8 @@ namespace BDArmory.UI
                 + (targetWeaponManager.targetCommand ? Localizer.Format("#LOC_BDArmory_Command") + "; " : "")
                 + (targetWeaponManager.targetEngine ? Localizer.Format("#LOC_BDArmory_Engines") + "; " : "")
                 + (targetWeaponManager.targetWeapon ? Localizer.Format("#LOC_BDArmory_Weapons") + "; " : "");
-            BDGUIUtils.RepositionWindow(ref window);
-            BDGUIUtils.UseMouseEventInRect(window);
+            GUIUtils.RepositionWindow(ref window);
+            GUIUtils.UseMouseEventInRect(window);
         }
 
         protected virtual void OnGUI()
@@ -154,13 +154,15 @@ namespace BDArmory.UI
             {
                 if (!open) return;
 
-                    var clientRect = new Rect(
-                        Mathf.Min(windowLocation.x, Screen.width - width),
-                        Mathf.Min(windowLocation.y, Screen.height - height),
-                        width,
-                        height);
-                    window = GUI.Window(10591029, clientRect, TargetingSelectorWindow, "", BDArmorySetup.BDGuiSkin.window);
-                    Utils.UpdateGUIRect(window, guiCheckIndex);
+                var clientRect = new Rect(
+                    Mathf.Min(windowLocation.x, Screen.width - width),
+                    Mathf.Min(windowLocation.y, Screen.height - height),
+                    width,
+                    height);
+                BDArmorySetup.SetGUIOpacity();
+                window = GUI.Window(10591029, clientRect, TargetingSelectorWindow, "", BDArmorySetup.BDGuiSkin.window);
+                BDArmorySetup.SetGUIOpacity(false);
+                GUIUtils.UpdateGUIRect(window, guiCheckIndex);
             }
         }
 
@@ -187,7 +189,7 @@ namespace BDArmory.UI
                 yield return null;
 
             ready = true;
-            guiCheckIndex = Utils.RegisterGUIRect(new Rect());
+            guiCheckIndex = GUIUtils.RegisterGUIRect(new Rect());
         }
     }
 }

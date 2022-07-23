@@ -22,11 +22,11 @@ namespace BDArmory.Evolution
 
         public void Apply(ConfigNode craft, VariantEngine engine)
         {
-            Debug.Log("Evolution PilotAINudgeMutation applying");
+            Debug.Log("[BDArmory.PilotAINudgeMutation]: Evolution PilotAINudgeMutation applying");
             List<ConfigNode> matchingNodes = engine.FindModuleNodes(craft, "BDModulePilotAI");
             if (matchingNodes.Count == 1)
             {
-                Debug.Log("Evolution PilotAINudgeMutation found module");
+                Debug.Log("[BDArmory.PilotAINudgeMutation]: Evolution PilotAINudgeMutation found module");
                 var node = matchingNodes[0];
                 float existingValue;
                 float.TryParse(node.GetValue(paramName), out existingValue);
@@ -36,7 +36,7 @@ namespace BDArmory.Evolution
                     ConfigNode partNode = engine.FindParentPart(craft, node);
                     if( partNode == null )
                     {
-                        Debug.Log("Evolution PilotAINudgeMutation failed to find parent part for module");
+                        Debug.Log("[BDArmory.PilotAINudgeMutation]: Evolution PilotAINudgeMutation failed to find parent part for module");
                         return;
                     }
                     string partName = partNode.GetValue("part");
@@ -51,7 +51,7 @@ namespace BDArmory.Evolution
             }
             else
             {
-                Debug.Log("Evolution PilotAINudgeMutation wrong number of pilot modules");
+                Debug.Log("[BDArmory.PilotAINudgeMutation]: Evolution PilotAINudgeMutation wrong number of pilot modules");
             }
         }
 

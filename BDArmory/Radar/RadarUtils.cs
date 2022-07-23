@@ -1,15 +1,16 @@
 using System.Collections.Generic;
+using UnityEngine;
+
 using BDArmory.Control;
-using BDArmory.Core;
-using BDArmory.Core.Extension;
-using BDArmory.Core.Utils;
 using BDArmory.CounterMeasure;
-using BDArmory.Misc;
-using BDArmory.Modules;
+using BDArmory.Extensions;
+using BDArmory.Settings;
 using BDArmory.Shaders;
 using BDArmory.Targeting;
 using BDArmory.UI;
-using UnityEngine;
+using BDArmory.Utils;
+using BDArmory.Weapons;
+using BDArmory.Weapons.Missiles;
 
 namespace BDArmory.Radar
 {
@@ -313,7 +314,7 @@ namespace BDArmory.Radar
 
             Bounds vesselbounds = CalcVesselBounds(v, t);
 
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_RADAR)
             {
                 if (HighLogic.LoadedSceneIsFlight)
                     Debug.Log($"[BDArmory.RadarUtils]: Rendering radar snapshot of vessel {v.name}, type {v.vesselType}");
@@ -327,7 +328,7 @@ namespace BDArmory.Radar
             if (vesselbounds.size.sqrMagnitude == 0f)
             {
                 // SAVE US THE RENDERING, result will be zero anyway...
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DEBUG_RADAR)
                 {
                     Debug.Log("[BDArmory.RadarUtils]: - rcs is zero.");
                 }
@@ -406,7 +407,7 @@ namespace BDArmory.Radar
                     }
                 }
 
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DEBUG_RADAR)
                 {
                     // Debug.Log($"[BDArmory.RadarUtils]: RCS Aspect Vector for (az/el) {rcsAspects[i, 0]}/{rcsAspects[i, 1]}  is: " + aspect.ToString());
                     Debug.Log($"[BDArmory.RadarUtils]: - Vessel rcs for (az/el) is: {rcsAspects[i, 0]}/{rcsAspects[i, 1]} = rcsVariable: {rcsVariable}");
@@ -454,7 +455,7 @@ namespace BDArmory.Radar
                 }
             }
 
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_RADAR)
             {
                 Debug.Log($"[BDArmory.RadarUtils]: - Vessel all-aspect rcs is: rcsTotal: {rcsTotal}");
             }
@@ -540,7 +541,7 @@ namespace BDArmory.Radar
                 v.SetPosition(v.transform.position + presentationPosition);
 
             Bounds vesselbounds = CalcVesselBounds(v, t);
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_RADAR)
             {
                 if (HighLogic.LoadedSceneIsFlight)
                     Debug.Log($"[BDArmory.RadarUtils]: Rendering radar snapshot of vessel {v.name}, type {v.vesselType}");
@@ -553,7 +554,7 @@ namespace BDArmory.Radar
             if (vesselbounds.size.sqrMagnitude == 0f)
             {
                 // SAVE US THE RENDERING, result will be zero anyway...
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DEBUG_RADAR)
                 {
                     Debug.Log("[BDArmory.RadarUtils]: - rcs is zero.");
                 }
@@ -615,7 +616,7 @@ namespace BDArmory.Radar
                 rcsVentral45 /= RCS_NORMALIZATION_FACTOR;
 
                 rcsTotal = (Mathf.Max(rcsFrontal, rcsFrontal45) + Mathf.Max(rcsLateral, rcsLateral45) + Mathf.Max(rcsVentral, rcsVentral45)) / 3f;
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DEBUG_RADAR)
                 {
                     Debug.Log($"[BDArmory.RadarUtils]: - Vessel rcs is (frontal/lateral/ventral), (frontal45/lateral45/ventral45): {rcsFrontal}/{rcsLateral}/{rcsVentral}, {rcsFrontal45}/{rcsLateral45}/{rcsVentral45} = rcsTotal: {rcsTotal}");
                 }
@@ -795,7 +796,7 @@ namespace BDArmory.Radar
         /// <summary>
         /// Determine for a vesselposition relative to the radar position how much effect the ground clutter factor will have.
         /// </summary>
-        public static float GetRadarGroundClutterModifier(ModuleRadar radar, Transform referenceTransform, Vector3 position, Vector3 vesselposition, TargetInfo ti)
+        public static float GetRadarGroundClutterModifier(float clutterFactor, Transform referenceTransform, Vector3 position, Vector3 vesselposition, TargetInfo ti)
         {
             Vector3 upVector = referenceTransform.up;
 
@@ -805,11 +806,11 @@ namespace BDArmory.Radar
             float lookDownAngle = angleFromUp - 90; // result range: -90 .. +90
             Mathf.Clamp(lookDownAngle, 0, 90);      // result range:   0 .. +90
 
-            float groundClutterMutiplier = Mathf.Lerp(1, radar.radarGroundClutterFactor, (lookDownAngle / 90));
+            float groundClutterMutiplier = Mathf.Lerp(1, clutterFactor, (lookDownAngle / 90));
 
             //additional ground clutter factor when target is landed/splashed:
             if (ti.isLandedOrSurfaceSplashed || ti.isSplashed)
-                groundClutterMutiplier *= radar.radarGroundClutterFactor;
+                groundClutterMutiplier *= clutterFactor;
 
             return groundClutterMutiplier;
         }
@@ -850,36 +851,30 @@ namespace BDArmory.Radar
                         // get vessel's radar signature
                         TargetInfo ti = GetVesselRadarSignature(loadedvessels.Current);
                         float signature = ti.radarModifiedSignature;
-                        signature *= GetRadarGroundClutterModifier(radar, radar.referenceTransform, ray.origin, loadedvessels.Current.CoM, ti);
+                        signature *= GetRadarGroundClutterModifier(radar.radarGroundClutterFactor, radar.referenceTransform, ray.origin, loadedvessels.Current.CoM, ti);
                         // no ecm lockbreak factor here
                         // no chaff factor here
 
                         // evaluate range
                         float distance = (loadedvessels.Current.CoM - ray.origin).magnitude / 1000f;                                      //TODO: Performance! better if we could switch to sqrMagnitude...
-                        if (distance > radar.radarMinDistanceDetect && distance < radar.radarMaxDistanceDetect)
+                        if (RadarCanDetect(radar, signature, distance))
                         {
-                            //evaluate if we can detect such a signature at that range
-                            float minDetectSig = radar.radarDetectionCurve.Evaluate(distance);
-
-                            if (signature > minDetectSig)
+                            // detected by radar
+                            // fill attempted locks array for locking later:
+                            while (dataIndex < dataArray.Length - 1)
                             {
-                                // detected by radar
-                                // fill attempted locks array for locking later:
-                                while (dataIndex < dataArray.Length - 1)
+                                if (!dataArray[dataIndex].exists || (dataArray[dataIndex].exists && (Time.time - dataArray[dataIndex].timeAcquired) > dataPersistTime))
                                 {
-                                    if (!dataArray[dataIndex].exists || (dataArray[dataIndex].exists && (Time.time - dataArray[dataIndex].timeAcquired) > dataPersistTime))
-                                    {
-                                        break;
-                                    }
-                                    dataIndex++;
+                                    break;
                                 }
+                                dataIndex++;
+                            }
 
-                                if (dataIndex < dataArray.Length)
-                                {
-                                    dataArray[dataIndex] = new TargetSignatureData(loadedvessels.Current, signature);
-                                    dataIndex++;
-                                    hasLocked = true;
-                                }
+                            if (dataIndex < dataArray.Length)
+                            {
+                                dataArray[dataIndex] = new TargetSignatureData(loadedvessels.Current, signature);
+                                dataIndex++;
+                                hasLocked = true;
                             }
                         }
 
@@ -1028,11 +1023,12 @@ namespace BDArmory.Radar
                         TargetInfo ti = GetVesselRadarSignature(loadedvessels.Current);
                         float signature = ti.radarModifiedSignature;
                         //do not multiply chaff factor here
-                        signature *= GetRadarGroundClutterModifier(radar, referenceTransform, position, loadedvessels.Current.CoM, ti);
+                        signature *= GetRadarGroundClutterModifier(radar.radarGroundClutterFactor, referenceTransform, position, loadedvessels.Current.CoM, ti);
 
                         // evaluate range
                         float distance = (loadedvessels.Current.CoM - position).magnitude / 1000f;                                      //TODO: Performance! better if we could switch to sqrMagnitude...
 
+                        BDATargetManager.ClearRadarReport(loadedvessels.Current, myWpnManager);
                         if (modeTryLock)    // LOCK/TRACK TARGET:
                         {
                             //evaluate if we can lock/track such a signature at that range
@@ -1043,12 +1039,12 @@ namespace BDArmory.Radar
                                 signature *= ti.radarLockbreakFactor;    //multiply lockbreak factor from active ecm
                                                                          //do not multiply chaff factor here
 
-                                if (signature > minLockSig)
+                                if (signature > minLockSig && RadarCanDetect(radar, signature, distance)) // Must be able to detect and lock to lock targets
                                 {
                                     // detected by radar
                                     if (myWpnManager != null)
                                     {
-                                        BDATargetManager.ReportVessel(loadedvessels.Current, myWpnManager);
+                                        BDATargetManager.ReportVessel(loadedvessels.Current, myWpnManager, true);
                                     }
 
                                     // fill attempted locks array for locking later:
@@ -1077,24 +1073,16 @@ namespace BDArmory.Radar
                         else   // SCAN/DETECT TARGETS:
                         {
                             //evaluate if we can detect such a signature at that range
-                            if (distance > radar.radarMinDistanceDetect && distance < radar.radarMaxDistanceDetect)
+                            if (RadarCanDetect(radar, signature, distance))
                             {
-                                //evaluate if we can detect or lock such a signature at that range
-                                float minDetectSig = radar.radarDetectionCurve.Evaluate(distance);
-                                //do not consider lockbreak factor from active ecm here!
-                                //do not consider chaff here
-
-                                if (signature > minDetectSig)
+                                // detected by radar
+                                if (myWpnManager != null)
                                 {
-                                    // detected by radar
-                                    if (myWpnManager != null)
-                                    {
-                                        BDATargetManager.ReportVessel(loadedvessels.Current, myWpnManager);
-                                    }
-
-                                    // report scanned targets only
-                                    radar.ReceiveContactData(new TargetSignatureData(loadedvessels.Current, signature), false);
+                                    BDATargetManager.ReportVessel(loadedvessels.Current, myWpnManager, true);
                                 }
+
+                                // report scanned targets only
+                                radar.ReceiveContactData(new TargetSignatureData(loadedvessels.Current, signature), false);
                             }
 
                             //  our radar ping can be received at a higher range than we can detect, according to RWR range ping factor:
@@ -1160,7 +1148,7 @@ namespace BDArmory.Radar
                 // get vessel's radar signature
                 TargetInfo ti = GetVesselRadarSignature(lockedVessel);
                 float signature = ti.radarModifiedSignature;
-                signature *= GetRadarGroundClutterModifier(radar, radar.referenceTransform, ray.origin, lockedVessel.CoM, ti);
+                signature *= GetRadarGroundClutterModifier(radar.radarGroundClutterFactor, radar.referenceTransform, ray.origin, lockedVessel.CoM, ti);
                 signature *= ti.radarLockbreakFactor;    //multiply lockbreak factor from active ecm
                 //do not multiply chaff factor here
 
@@ -1171,7 +1159,7 @@ namespace BDArmory.Radar
                     //evaluate if we can detect such a signature at that range
                     float minTrackSig = radar.radarLockTrackCurve.Evaluate(distance);
 
-                    if (signature > minTrackSig)
+                    if ((signature > minTrackSig) && (RadarCanDetect(radar, signature, distance)))
                     {
                         // can be tracked
                         radar.ReceiveContactData(new TargetSignatureData(lockedVessel, signature), locked);
@@ -1195,6 +1183,109 @@ namespace BDArmory.Radar
                 return false;
             }
         }
+        /// <summary>
+        /// Main scanning and locking method called from ModuleIRST.
+        /// scanning both for omnidirectional and boresight scans.
+        /// </summary>
+        public static bool IRSTUpdateScan(MissileFire myWpnManager, float directionAngle, Transform referenceTransform, float fov, Vector3 position, ModuleIRST irst)
+        {
+            Vector3 forwardVector = referenceTransform.forward;
+            Vector3 upVector = referenceTransform.up;
+            Vector3 lookDirection = Quaternion.AngleAxis(directionAngle, upVector) * forwardVector;
+            TargetSignatureData finalData = TargetSignatureData.noTarget;
+
+            // guard clauses
+            if (!myWpnManager || !myWpnManager.vessel || !irst)
+                return false;
+
+            using (var loadedvessels = BDATargetManager.LoadedVessels.GetEnumerator())
+                while (loadedvessels.MoveNext())
+                {
+                    // ignore null, unloaded and self
+                    if (loadedvessels.Current == null || !loadedvessels.Current.loaded) continue;
+                    if (loadedvessels.Current == myWpnManager.vessel) continue;
+                    if (loadedvessels.Current.vesselType == VesselType.Debris) continue;
+
+                    // ignore too close ones
+                    if ((loadedvessels.Current.transform.position - position).sqrMagnitude < RADAR_IGNORE_DISTANCE_SQR)
+                        continue;
+
+                    Vector3 vesselDirection = Vector3.ProjectOnPlane(loadedvessels.Current.CoM - position, upVector);
+                    float angle = Vector3.Angle(vesselDirection, lookDirection);
+                    if (angle < fov / 2f)
+                    {
+                        // ignore when blocked by terrain
+                        if (TerrainCheck(referenceTransform.position, loadedvessels.Current.transform.position))
+                            continue;
+
+                        // get vessel's heat signature
+                        TargetInfo tInfo = loadedvessels.Current.gameObject.GetComponent<TargetInfo>();
+                        if (tInfo == null)
+                        {
+                            tInfo = loadedvessels.Current.gameObject.AddComponent<TargetInfo>();
+                        }
+                        float signature = BDATargetManager.GetVesselHeatSignature(loadedvessels.Current, irst.referenceTransform.position, irst.TempSensitivityCurve) * (irst.boresightScan ? Mathf.Clamp01(15 / angle) : 1);
+                        //signature *= (1400 * 1400) / Mathf.Clamp((loadedvessels.Current.CoM - referenceTransform.position).sqrMagnitude, 90000, 36000000); //300 to 6000m - clamping sig past 6km; Commenting out as it makes tuning detection curves much easier
+
+                        signature *= Mathf.Clamp(Vector3.Angle(loadedvessels.Current.transform.position - referenceTransform.position, -VectorUtils.GetUpDirection(referenceTransform.position)) / 90, 0.5f, 1.5f);
+                         //ground will mask thermal sig                        
+                        signature *= (GetRadarGroundClutterModifier(irst.GroundClutterFactor, irst.referenceTransform, position, loadedvessels.Current.CoM, tInfo) * (tInfo.isSplashed ? 12 : 1));
+                        //cold ocean on the other hand...
+
+                        // evaluate range
+                        float distance = (loadedvessels.Current.CoM - position).magnitude / 1000f;                                      //TODO: Performance! better if we could switch to sqrMagnitude...
+
+                        BDATargetManager.ClearRadarReport(loadedvessels.Current, myWpnManager);
+
+                        //evaluate if we can detect such a signature at that range
+                        float attenuationFactor = ((float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(irst.referenceTransform.position), FlightGlobals.getExternalTemperature(irst.referenceTransform.position))) +
+                            ((float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(loadedvessels.Current.CoM), FlightGlobals.getExternalTemperature(loadedvessels.Current.CoM) / 2));
+
+                        if (distance > irst.irstMinDistanceDetect && distance < (irst.irstMaxDistanceDetect * irst.atmAttenuationCurve.Evaluate(attenuationFactor)))
+                        {
+                            //evaluate if we can detect or lock such a signature at that range
+                            float minDetectSig = irst.DetectionCurve.Evaluate(distance / attenuationFactor);
+
+                            if (signature > minDetectSig)
+                            {
+                                // detected by irst
+                                if (myWpnManager != null)
+                                {
+                                    BDATargetManager.ReportVessel(loadedvessels.Current, myWpnManager, true);
+                                }
+                                irst.ReceiveContactData(new TargetSignatureData(loadedvessels.Current, signature), signature);
+                                if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[IRSTdebugging] sent data to IRST for " + loadedvessels.Current.GetName() + "'s thermalSig");
+                            }
+                        }
+                    }
+                }
+            return false;
+        }
+
+        /// <summary>
+        /// Returns whether the radar can detect the target, including jamming effects
+        /// </summary>
+        public static bool RadarCanDetect(ModuleRadar radar, float signature, float distance)
+        {
+            bool detected = false;
+            // float distance already in km
+
+            //evaluate if we can detect such a signature at that range
+            if ((distance > radar.radarMinDistanceDetect) && (distance < radar.radarMaxDistanceDetect))
+            {
+                //evaluate if we can detect or lock such a signature at that range
+                float minDetectSig = radar.radarDetectionCurve.Evaluate(distance);
+                //do not consider lockbreak factor from active ecm here!
+                //do not consider chaff here
+
+                if (signature > minDetectSig)
+                {
+                    detected = true;
+                }
+            }
+
+            return detected;
+        }
 
         /// <summary>
         /// Scans for targets in direction with field of view.
@@ -1212,6 +1303,7 @@ namespace BDArmory.Radar
                 foundAGM = false,
                 firingAtMe = false,
                 missDistance = float.MaxValue,
+                missDeviation = float.MaxValue,
                 threatVessel = null,
                 threatWeaponManager = null,
                 incomingMissiles = new List<IncomingMissile>()
@@ -1239,6 +1331,8 @@ namespace BDArmory.Radar
                     Vector3 vesselDirection = loadedvessels.Current.transform.position - position;
 
                     float vesselDistance = (loadedvessels.Current.transform.position - position).sqrMagnitude;
+                    //BDATargetManager.ClearRadarReport(loadedvessels.Current, myWpnManager); //reset radar contact status
+
                     if (vesselDistance < maxDistance * maxDistance && Vector3.Angle(vesselProjectedDirection, lookDirection) < fov / 2f && Vector3.Angle(loadedvessels.Current.transform.position - position, -myWpnManager.transform.forward) < myWpnManager.guardAngle / 2f)
                     {
                         if (TerrainCheck(referenceTransform.position, loadedvessels.Current.transform.position))
@@ -1310,6 +1404,7 @@ namespace BDArmory.Radar
                                                 results.threatVessel = weapon.Current.vessel;
                                                 results.threatWeaponManager = weapon.Current.weaponManager;
                                                 results.missDistance = missDistance;
+                                                results.missDeviation = (weapon.Current.fireTransforms[0].position - myWpnManager.vessel.transform.position).magnitude * weapon.Current.maxDeviation / 2f * Mathf.Deg2Rad; // y = x*tan(θ), expansion of tan(θ) is θ + O(θ^3).
                                             }
                                         }
                                     }
@@ -1385,7 +1480,7 @@ namespace BDArmory.Radar
             return false;
         }
 
-        private static float MissDistance(ModuleWeapon threatWeapon, Vessel self) // Returns how far away bullets from enemy are from craft in meters
+        public static float MissDistance(ModuleWeapon threatWeapon, Vessel self) // Returns how far away bullets from enemy are from craft in meters
         {
             Transform fireTransform = threatWeapon.fireTransforms[0];
             // If we're out of range, then it's not a threat.
@@ -1395,7 +1490,7 @@ namespace BDArmory.Radar
             float targetCosAngle = threatWeapon.FiringSolutionVector != null ? Vector3.Dot(aimDirection, (Vector3)threatWeapon.FiringSolutionVector) : Vector3.Dot(aimDirection, (self.vesselTransform.position - fireTransform.position).normalized);
 
             // Find vertical component of aiming angle
-            float angleThreat = targetCosAngle < 0 ? float.MaxValue : Mathf.Sqrt(Mathf.Max(0f, 1f - targetCosAngle * targetCosAngle)); // Treat angles beyond 90 degrees as not a threat
+            float angleThreat = targetCosAngle < 0 ? float.MaxValue : BDAMath.Sqrt(Mathf.Max(0f, 1f - targetCosAngle * targetCosAngle)); // Treat angles beyond 90 degrees as not a threat
 
             // Calculate distance between incoming threat position and its aimpoint (or self position)
             float distanceThreat = !threatWeapon.finalAimTarget.IsZero() ? Vector3.Magnitude(threatWeapon.finalAimTarget - fireTransform.position) : Vector3.Magnitude(self.vesselTransform.position - fireTransform.position);
@@ -1407,7 +1502,7 @@ namespace BDArmory.Radar
         /// <summary>
         /// Helper method: check if line intersects terrain
         /// </summary>
-		public static bool TerrainCheck(Vector3 start, Vector3 end)
+        public static bool TerrainCheck(Vector3 start, Vector3 end)
         {
             if (!BDArmorySettings.IGNORE_TERRAIN_CHECK)
             {
@@ -1425,8 +1520,16 @@ namespace BDArmory.Radar
             float scale = maxDistance / (radarRect.height / 2);
             Vector3 localPosition = referenceTransform.InverseTransformPoint(worldPosition);
             localPosition.y = 0;
-            Vector2 radarPos = new Vector2((radarRect.width / 2) + (localPosition.x / scale), ((radarRect.height / 2) - (localPosition.z / scale)));
-            return radarPos;
+            if (BDArmorySettings.LOGARITHMIC_RADAR_DISPLAY)
+            {
+                scale = Mathf.Log(localPosition.magnitude + 1) / Mathf.Log(maxDistance + 1);
+                localPosition = localPosition.normalized * scale * scale; // Log^2 gives a nicer curve than log.
+                return new Vector2(radarRect.width * (1 + localPosition.x) / 2, radarRect.height * (1 - localPosition.z) / 2);
+            }
+            else
+            {
+                return new Vector2((radarRect.width / 2) + (localPosition.x / scale), ((radarRect.height / 2) - (localPosition.z / scale)));
+            }
         }
 
         /// <summary>
@@ -1442,7 +1545,16 @@ namespace BDArmory.Radar
             float angle = Vector3.Angle(localPosition, Vector3.forward);
             if (localPosition.x < 0) angle = -angle;
             float xPos = (radarRect.width / 2) + ((angle / maxAngle) * radarRect.width / 2);
-            float yPos = radarRect.height - (new Vector2(localPosition.x, localPosition.z)).magnitude / scale;
+            float yPos = radarRect.height;
+            if (BDArmorySettings.LOGARITHMIC_RADAR_DISPLAY)
+            {
+                scale = Mathf.Log(localPosition.magnitude + 1) / Mathf.Log(maxDistance + 1);
+                yPos -= radarRect.height * scale * scale;
+            }
+            else
+            {
+                yPos -= localPosition.magnitude / scale;
+            }
             Vector2 radarPos = new Vector2(xPos, yPos);
             return radarPos;
         }

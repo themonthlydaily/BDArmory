@@ -26,7 +26,7 @@ namespace BDArmory.Evolution
 
         public void Apply(ConfigNode craft, VariantEngine engine)
         {
-            Debug.Log("Evolution EngineGimbalNudgeMutation applying");
+            Debug.Log("[BDArmory.EngineGimbalNudgeMutation]: Evolution EngineGimbalNudgeMutation applying");
             Dictionary<string, ConfigNode> matchingNodeMap = new Dictionary<string, ConfigNode>();
             foreach (var partName in partNames)
             {

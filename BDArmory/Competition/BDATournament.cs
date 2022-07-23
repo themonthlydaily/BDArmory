@@ -6,12 +6,13 @@ using System.Linq;
 using UnityEngine;
 
 using BDArmory.Competition.OrchestrationStrategies;
-using BDArmory.Competition.SpawnStrategies;
 using BDArmory.Competition.VesselSpawning;
-using BDArmory.Core;
+using BDArmory.Competition.VesselSpawning.SpawnStrategies;
 using BDArmory.Evolution;
-using BDArmory.Misc;
+using BDArmory.GameModes.Waypoints;
+using BDArmory.Settings;
 using BDArmory.UI;
+using BDArmory.Utils;
 
 namespace BDArmory.Competition
 {
@@ -82,6 +83,7 @@ namespace BDArmory.Competition
         public string savegame;
         private List<string> craftFiles; // For FFA style tournaments.
         private List<List<string>> teamFiles; // For teams style tournaments.
+        private List<List<string>> opponentTeamFiles; // For gauntlet style tournaments.
         public int vesselCount;
         public int teamCount;
         public int teamsPerHeat;
@@ -91,6 +93,7 @@ namespace BDArmory.Competition
         [NonSerialized] public Dictionary<int, Dictionary<int, SpawnConfig>> rounds; // <Round, <Heat, SpawnConfig>>
         [NonSerialized] public Dictionary<int, HashSet<int>> completed = new Dictionary<int, HashSet<int>>();
         [NonSerialized] private List<Queue<string>> teamSpawnQueues = new List<Queue<string>>();
+        [NonSerialized] private List<Queue<string>> opponentTeamSpawnQueues = new List<Queue<string>>();
         private string message;
 
         /* Generate rounds and heats by shuffling the crafts list and breaking it into groups.
@@ -207,7 +210,10 @@ namespace BDArmory.Competition
                         break;
                     }
                 default:
-                    throw new ArgumentOutOfRangeException("tournamentStyle", "Invalid tournament style value - not implemented.");
+                    {
+                        BDACompetitionMode.Instance.competitionStatus.Add("Tournament style not implemented yet for FFA.");
+                        throw new ArgumentOutOfRangeException("tournamentStyle", "Invalid tournament style value - not implemented.");
+                    }
             }
             teamFiles = null; // Clear the teams lists.
             return true;
@@ -228,8 +234,8 @@ namespace BDArmory.Competition
             tournamentID = (uint)DateTime.UtcNow.Subtract(new DateTime(2020, 1, 1)).TotalSeconds;
             savegame = HighLogic.SaveFolder;
             tournamentType = TournamentType.Teams;
-            var abs_folder = Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", folder);
-            if (!Directory.Exists(abs_folder))
+            var absFolder = Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", folder);
+            if (!Directory.Exists(absFolder))
             {
                 message = "Tournament folder (" + folder + ") containing craft files or team folders does not exist.";
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
@@ -238,7 +244,7 @@ namespace BDArmory.Competition
             }
             if (numberOfTeams > 1) // Make teams from the files in the spawn folder.
             {
-                craftFiles = Directory.GetFiles(abs_folder, "*.craft").ToList();
+                craftFiles = Directory.GetFiles(absFolder, "*.craft").ToList();
                 if (craftFiles.Count < numberOfTeams)
                 {
                     message = "Insufficient vessels in AutoSpawn" + (!string.IsNullOrEmpty(folder) ? "/" + folder : "") + " to make " + numberOfTeams + " teams.";
@@ -260,11 +266,19 @@ namespace BDArmory.Competition
             }
             else // Make teams from the folders under the spawn folder.
             {
-                var teamDirs = Directory.GetDirectories(abs_folder);
-                if (teamDirs.Length == 0) // Make teams from each vessel in the spawn folder.
+                var teamDirs = Directory.GetDirectories(absFolder);
+                if (tournamentStyle == 2) // If it's a gauntlet tournament, ignore the opponents folder if it's in the main folder.
+                {
+                    var opponentFolder = Path.GetFileName(BDArmorySettings.VESSEL_SPAWN_GAUNTLET_OPPONENTS_FILES_LOCATION.TrimEnd(new char[] { Path.DirectorySeparatorChar }));
+                    if (teamDirs.Select(d => Path.GetFileName(d)).Contains(opponentFolder))
+                    {
+                        teamDirs = teamDirs.Where(d => Path.GetFileName(d) != opponentFolder).ToArray();
+                    }
+                }
+                if (teamDirs.Length < (tournamentStyle != 2 ? 2 : 1)) // Make teams from each vessel in the spawn folder. Allow for a single subfolder for putting bad craft or other tmp things in, unless it's a gauntlet competition.
                 {
                     numberOfTeams = -1; // Flag for treating craft files as folder names.
-                    craftFiles = Directory.GetFiles(abs_folder, "*.craft").ToList();
+                    craftFiles = Directory.GetFiles(absFolder, "*.craft").ToList();
                     teamFiles = craftFiles.Select(f => new List<string> { f }).ToList();
                 }
                 else
@@ -282,7 +296,7 @@ namespace BDArmory.Competition
                 }
             }
             vesselCount = craftFiles.Count;
-            if (teamFiles.Count < 2)
+            if (teamFiles.Count < (tournamentStyle != 2 ? 2 : 1))
             {
                 message = $"Insufficient {(numberOfTeams != 1 ? "craft files" : "folders")} in '{Path.Combine("AutoSpawn", folder)}' to generate a tournament.";
                 if (BDACompetitionMode.Instance) BDACompetitionMode.Instance.competitionStatus.Add(message);
@@ -290,7 +304,7 @@ namespace BDArmory.Competition
                 return false;
             }
             teamCount = teamFiles.Count;
-            teamsPerHeat = Mathf.Clamp(teamsPerHeat, 2, teamFiles.Count);
+            teamsPerHeat = Mathf.Clamp(teamsPerHeat, (tournamentStyle != 2 ? 2 : 1), teamFiles.Count);
             this.teamsPerHeat = teamsPerHeat;
             this.vesselsPerTeam = vesselsPerTeam;
             fullTeams = BDArmorySettings.TOURNAMENT_FULL_TEAMS;
@@ -378,51 +392,141 @@ namespace BDArmory.Competition
                         }
                         break;
                     }
+                case 2: // Gauntlet
+                    {
+                        // Gauntlet is like N-choose-2K except that it's selecting K teams from the main folder and K teams from the opponents (e.g., 2v2, 3v3, 2v3, (2v2)v(2v2), (2v3)v(3v2), etc.)
+                        #region Opponent config
+                        var opponentFolder = Path.Combine("AutoSpawn", BDArmorySettings.VESSEL_SPAWN_GAUNTLET_OPPONENTS_FILES_LOCATION);
+                        var opponentAbsFolder = Path.Combine(KSPUtil.ApplicationRootPath, opponentFolder);
+                        if (!Directory.Exists(opponentAbsFolder))
+                        {
+                            message = "Opponents folder (" + opponentFolder + ") containing craft files or team folders does not exist.";
+                            BDACompetitionMode.Instance.competitionStatus.Add(message);
+                            Debug.Log("[BDArmory.BDATournament]: " + message);
+                            return false;
+                        }
+                        var opponentTeamDirs = Directory.GetDirectories(opponentAbsFolder);
+                        List<string> opponentCraftFiles;
+                        if (opponentTeamDirs.Length < 1) // Make teams from each vessel in the opponents folder.
+                        {
+                            opponentCraftFiles = Directory.GetFiles(opponentAbsFolder, "*.craft").ToList();
+                            opponentTeamFiles = opponentCraftFiles.Select(f => new List<string> { f }).ToList();
+                        }
+                        else
+                        {
+                            opponentTeamFiles = new List<List<string>>();
+                            foreach (var teamDir in opponentTeamDirs)
+                            {
+                                var currentTeamFiles = Directory.GetFiles(teamDir, "*.craft").ToList();
+                                if (currentTeamFiles.Count > 0)
+                                    opponentTeamFiles.Add(currentTeamFiles);
+                            }
+                            foreach (var team in opponentTeamFiles)
+                                team.Shuffle();
+                            opponentCraftFiles = opponentTeamFiles.SelectMany(v => v).ToList();
+                        }
+                        if (opponentTeamFiles.Count < 1)
+                        {
+                            message = $"Insufficient {(opponentTeamDirs.Length < 1 ? "craft files" : "folders")} in '{opponentFolder}' to generate a gauntlet tournament.";
+                            if (BDACompetitionMode.Instance) BDACompetitionMode.Instance.competitionStatus.Add(message);
+                            Debug.Log("[BDArmory.BDATournament]: " + message);
+                            return false;
+                        }
+                        var opponentTeamCount = opponentTeamFiles.Count;
+                        var opponentTeamsIndex = Enumerable.Range(0, opponentTeamCount).ToList();
+                        #endregion
+
+                        #region Tournament generation
+                        var nCr = N_Choose_K(teamCount, teamsPerHeat) * N_Choose_K(opponentTeamCount, BDArmorySettings.TOURNAMENT_OPPONENT_TEAMS_PER_HEAT);
+                        message = $"Generating a gauntlet style tournament for {teamCount} teams in AutoSpawn{(folder == "" ? "" : "/" + folder)} and {opponentTeamCount} opponent teams in {opponentFolder} with {BDArmorySettings.TOURNAMENT_OPPONENT_TEAMS_PER_HEAT} teams per heat and {numberOfRounds} rounds. This requires {numberOfRounds * nCr} heats.";
+                        Debug.Log($"[BDArmory.BDATournament]: " + message);
+                        BDACompetitionMode.Instance.competitionStatus.Add(message);
+                        // Generate all combinations of teams for a round.
+                        var combinations = Combinations(teamCount, teamsPerHeat);
+                        var opponentCombinations = Combinations(opponentTeamCount, BDArmorySettings.TOURNAMENT_OPPONENT_TEAMS_PER_HEAT);
+                        // Populate the rounds.
+                        for (int roundIndex = 0; roundIndex < numberOfRounds; ++roundIndex)
+                        {
+                            var heatList = new List<SpawnConfig>();
+                            foreach (var combination in combinations)
+                            {
+                                var selectedCraft = SelectTeamCraft(combination.Select(i => teamsIndex[i]).ToList(), vesselsPerTeam); // Vessel selection for a team can vary between rounds if the number of vessels in a team doesn't match the vesselsPerTeam parameter.
+                                foreach (var opponentCombination in opponentCombinations)
+                                {
+                                    var selectedOpponentCraft = SelectTeamCraft(opponentCombination.Select(i => opponentTeamsIndex[i]).ToList(), BDArmorySettings.TOURNAMENT_OPPONENT_VESSELS_PER_TEAM, true); // Vessel selection for a team can vary between rounds if the number of vessels in a team doesn't match the vesselsPerTeam parameter.
+                                    heatList.Add(new SpawnConfig(
+                                        BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
+                                        BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
+                                        BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
+                                        BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+                                        BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
+                                        BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
+                                        BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
+                                        true, // Kill everything first.
+                                        BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS, // Assign teams.
+                                        numberOfTeams, // Number of teams indicator. (Should be -1 for gauntlets for now.)
+                                        null, //selectedCraft.Select(c => c.Count).ToList(), // Not used here.
+                                        selectedCraft.Concat(selectedOpponentCraft).ToList(), // List of lists of vessels. For splitting specific vessels into specific teams.
+                                        null, // No folder, we're going to specify the craft files.
+                                        null // No list of craft files, we've specified them directly in selectedCraft.
+                                    ));
+                                }
+                            }
+                            heatList.Shuffle(); // Randomise the playing order within each round.
+                            rounds.Add(roundIndex, heatList.Select((heat, index) => new KeyValuePair<int, SpawnConfig>(index, heat)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+                        }
+                        #endregion
+                        break;
+                    }
                 default:
                     throw new ArgumentOutOfRangeException("tournamentStyle", "Invalid tournament style value - not implemented.");
             }
             return true;
         }
 
-        List<List<string>> SelectTeamCraft(List<int> selectedTeams, int vesselsPerTeam)
+        List<List<string>> SelectTeamCraft(List<int> selectedTeams, int vesselsPerTeam, bool opponentQueue = false)
         {
-            if (teamSpawnQueues.Count == 0) // Set up the spawn queues.
+            // Get the right spawn queues and file lists.
+            var spawnQueues = opponentQueue ? opponentTeamSpawnQueues : teamSpawnQueues;
+            var teams = opponentQueue ? opponentTeamFiles : teamFiles;
+
+            if (spawnQueues.Count == 0) // Set up the spawn queues if needed.
             {
-                foreach (var teamIndex in teamFiles)
-                    teamSpawnQueues.Add(new Queue<string>());
+                foreach (var teamIndex in teams)
+                    spawnQueues.Add(new Queue<string>());
             }
 
             List<List<string>> selectedCraft = new List<List<string>>();
             List<string> currentTeam = new List<string>();
             foreach (var index in selectedTeams)
             {
-                if (teamSpawnQueues[index].Count < vesselsPerTeam)
+                if (spawnQueues[index].Count < vesselsPerTeam)
                 {
                     // First append craft files that aren't already in the queue.
-                    var craftToAdd = teamFiles[index].Where(c => !teamSpawnQueues[index].Contains(c)).ToList();
+                    var craftToAdd = teams[index].Where(c => !spawnQueues[index].Contains(c)).ToList();
                     craftToAdd.Shuffle();
                     foreach (var craft in craftToAdd)
                     {
-                        teamSpawnQueues[index].Enqueue(craft);
+                        spawnQueues[index].Enqueue(craft);
                     }
                     if (BDArmorySettings.TOURNAMENT_FULL_TEAMS)
                     {
                         // Then continue to fill the queue with craft files until we have enough.
-                        while (teamSpawnQueues[index].Count < vesselsPerTeam)
+                        while (spawnQueues[index].Count < vesselsPerTeam)
                         {
-                            craftToAdd = teamFiles[index].ToList();
+                            craftToAdd = teams[index].ToList();
                             craftToAdd.Shuffle();
                             foreach (var craft in craftToAdd)
                             {
-                                teamSpawnQueues[index].Enqueue(craft);
+                                spawnQueues[index].Enqueue(craft);
                             }
                         }
                     }
                 }
                 currentTeam.Clear();
-                while (currentTeam.Count < vesselsPerTeam && teamSpawnQueues[index].Count > 0)
+                while (currentTeam.Count < vesselsPerTeam && spawnQueues[index].Count > 0)
                 {
-                    currentTeam.Add(teamSpawnQueues[index].Dequeue());
+                    currentTeam.Add(spawnQueues[index].Dequeue());
                 }
                 selectedCraft.Add(currentTeam.ToList());
             }
@@ -857,7 +961,7 @@ namespace BDArmory.Competition
 
             if (BDArmorySettings.AUTO_RESUME_TOURNAMENT && BDArmorySettings.AUTO_QUIT_AT_END_OF_TOURNAMENT && TournamentAutoResume.Instance != null)
             {
-                TournamentAutoResume.Instance.AutoQuit(5);
+                TournamentAutoResume.AutoQuit(5);
                 message = "Quitting KSP in 5s due to reaching the end of a tournament.";
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
                 Debug.LogWarning("[BDArmory.BDATournament]: " + message);
@@ -874,18 +978,7 @@ namespace BDArmory.Competition
             spawnConfig.longitude = -39.35f;
 
             TournamentCoordinator.Instance.Configure(new SpawnConfigStrategy(spawnConfig),
-                new WaypointFollowingStrategy(
-                    new List<WaypointFollowingStrategy.Waypoint> {
-                        new WaypointFollowingStrategy.Waypoint(28.33f, -39.11f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                        new WaypointFollowingStrategy.Waypoint(28.83f, -38.06f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                        new WaypointFollowingStrategy.Waypoint(29.54f, -38.68f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                        new WaypointFollowingStrategy.Waypoint(30.15f, -38.6f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                        new WaypointFollowingStrategy.Waypoint(30.83f, -38.87f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                        new WaypointFollowingStrategy.Waypoint(30.73f, -39.6f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                        new WaypointFollowingStrategy.Waypoint(30.9f, -40.23f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                        new WaypointFollowingStrategy.Waypoint(30.83f, -41.26f, BDArmorySettings.WAYPOINTS_ALTITUDE)
-                    }
-                ),
+                new WaypointFollowingStrategy(WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].waypoints),
                 CircularSpawning.Instance
             );
 
@@ -931,7 +1024,7 @@ namespace BDArmory.Competition
             yield return new WaitForFixedUpdate(); // Give the competition start a frame to get going.
 
             // start timer coroutine for the duration specified in settings UI
-            var duration = Core.BDArmorySettings.COMPETITION_DURATION * 60f;
+            var duration = BDArmorySettings.COMPETITION_DURATION * 60f;
             message = "Starting " + (duration > 0 ? "a " + duration.ToString("F0") + "s" : "an unlimited") + " duration competition.";
             Debug.Log("[BDArmory.BDATournament]: " + message);
             BDACompetitionMode.Instance.competitionStatus.Add(message);
@@ -967,7 +1060,7 @@ namespace BDArmory.Competition
             int tries = 0;
             do
             {
-                spawnProbe = SpawnUtils.SpawnSpawnProbe();
+                spawnProbe = VesselSpawner.SpawnSpawnProbe();
                 yield return new WaitWhile(() => spawnProbe != null && (!spawnProbe.loaded || spawnProbe.packed));
                 while (spawnProbe != null && FlightGlobals.ActiveVessel != spawnProbe)
                 {
@@ -984,7 +1077,7 @@ namespace BDArmory.Competition
             }
             var up = VectorUtils.GetUpDirection(spawnProbe.transform.position);
             var refDirection = Math.Abs(Vector3.Dot(Vector3.up, up)) < 0.71f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.
-            spawnProbe.SetPosition(spawnProbe.transform.position - Utils.GetRadarAltitudeAtPos(spawnProbe.transform.position) * up);
+            spawnProbe.SetPosition(spawnProbe.transform.position - BodyUtils.GetRadarAltitudeAtPos(spawnProbe.transform.position) * up);
             if (spawnProbe.altitude > 0) spawnProbe.Landed = true;
             else spawnProbe.Splashed = true;
             spawnProbe.SetWorldVelocity(Vector3d.zero); // Set the velocity to zero so that warp goes in high mode.
@@ -1017,7 +1110,7 @@ namespace BDArmory.Competition
                     TimeWarp.fetch.CancelAutoWarp();
                     TimeWarp.SetRate(0, true, false);
                     while (TimeWarp.CurrentRate > 1) yield return null; // Wait for the warping to stop.
-                    spawnProbe.SetPosition(spawnProbe.transform.position - Utils.GetRadarAltitudeAtPos(spawnProbe.transform.position) * up);
+                    spawnProbe.SetPosition(spawnProbe.transform.position - BodyUtils.GetRadarAltitudeAtPos(spawnProbe.transform.position) * up);
                     if (spawnProbe.altitude > 0) spawnProbe.Landed = true;
                     else spawnProbe.Splashed = true;
                     spawnProbe.SetWorldVelocity(Vector3d.zero); // Set the velocity to zero so that warp goes in high mode.
@@ -1137,7 +1230,7 @@ namespace BDArmory.Competition
             if (!(resumingEvolution || resumingTournament)) yield break; // Just load to the KSC.
             // Switch to flight mode.
             sceneLoaded = false;
-            FlightDriver.StartWithNewLaunch(SpawnUtils.spawnProbeLocation, "GameData/Squad/Flags/default.png", FlightDriver.LaunchSiteName, new VesselCrewManifest()); // This triggers an error for SpaceCenterCamera2, but I don't see how to fix it and it doesn't appear to be harmful.
+            FlightDriver.StartWithNewLaunch(VesselSpawner.spawnProbeLocation, "GameData/Squad/Flags/default.png", FlightDriver.LaunchSiteName, new VesselCrewManifest()); // This triggers an error for SpaceCenterCamera2, but I don't see how to fix it and it doesn't appear to be harmful.
             tic = Time.time;
             yield return new WaitUntil(() => (sceneLoaded || Time.time - tic > 10));
             if (!sceneLoaded) { Debug.Log("[BDArmory.BDATournament]: Failed to load flight scene."); yield break; }
@@ -1327,7 +1420,7 @@ namespace BDArmory.Competition
             return false;
         }
 
-        public void AutoQuit(float delay = 1) => StartCoroutine(AutoQuitCoroutine(delay));
+        public static void AutoQuit(float delay = 1) => Instance.StartCoroutine(Instance.AutoQuitCoroutine(delay));
 
         /// <summary>
         /// Automatically quit KSP after a delay.
@@ -1339,6 +1432,7 @@ namespace BDArmory.Competition
             yield return new WaitForSeconds(delay);
             HighLogic.LoadScene(GameScenes.MAINMENU);
             yield return new WaitForSeconds(0.5f); // Pause on the Main Menu a moment, then quit.
+            Debug.Log("[BDArmory.BDATournament]: Quitting KSP.");
             Application.Quit();
         }
     }
