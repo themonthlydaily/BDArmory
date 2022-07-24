@@ -620,9 +620,9 @@ namespace BDArmory.Weapons.Missiles
             {
                 float timeToImpact;
                 if (GuidanceIndex == 6) // Augmented Pro-Nav
-                    aamTarget = MissileGuidance.GetAPNTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, 4f, out timeToImpact);
+                    aamTarget = MissileGuidance.GetAPNTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, 3f, out timeToImpact);
                 else if (GuidanceIndex == 5) // Pro-Nav
-                    aamTarget = MissileGuidance.GetPNTarget(TargetPosition, TargetVelocity, vessel, 4f, out timeToImpact);
+                    aamTarget = MissileGuidance.GetPNTarget(TargetPosition, TargetVelocity, vessel, 3f, out timeToImpact);
                 else // AAM Lead
                     aamTarget = MissileGuidance.GetAirToAirTargetModular(TargetPosition, TargetVelocity, TargetAcceleration, vessel, out timeToImpact);
                 TimeToImpact = timeToImpact;
