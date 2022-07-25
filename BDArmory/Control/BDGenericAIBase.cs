@@ -360,7 +360,7 @@ namespace BDArmory.Control
 
         #region WingCommander
 
-        public virtual void ReleaseCommand()
+        public virtual void ReleaseCommand(bool resetAssignedPosition = true)
         {
             if (!vessel || command == PilotCommands.Free) return;
             if (command == PilotCommands.Follow && commandLeader)
@@ -370,7 +370,10 @@ namespace BDArmory.Control
             if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDGenericAIBase]:" + vessel.vesselName + " was released from command.");
             command = PilotCommands.Free;
 
-            assignedPositionWorld = vesselTransform.position;
+            if (resetAssignedPosition)
+            {
+                assignedPositionWorld = vesselTransform.position;
+            }
         }
 
         public virtual void CommandFollow(ModuleWingCommander leader, int followerIndex)
@@ -394,7 +397,7 @@ namespace BDArmory.Control
         {
             if (!pilotEnabled) return;
 
-            if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDGenericAIBase]:" + vessel.vesselName + " was commanded to go to.");
+            if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDGenericAIBase]: {vessel.vesselName} was commanded to go to {gpsCoords}.");
             assignedPositionGeo = gpsCoords;
             command = PilotCommands.FlyTo;
         }
@@ -403,7 +406,7 @@ namespace BDArmory.Control
         {
             if (!pilotEnabled) return;
 
-            if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDGenericAIBase]:" + vessel.vesselName + " was commanded to attack.");
+            if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDGenericAIBase]: {vessel.vesselName} was commanded to attack {gpsCoords}.");
             assignedPositionGeo = gpsCoords;
             command = PilotCommands.Attack;
         }
@@ -484,7 +487,7 @@ namespace BDArmory.Control
                 if (BDArmorySettings.DEBUG_AI) Debug.Log(string.Format("[BDArmory.BDGenericAIBase]: Reached waypoint {0} with range {1}", activeWaypointIndex, deviation));
                 BDACompetitionMode.Instance.Scores.RegisterWaypointReached(vessel.vesselName, activeWaypointIndex, activeWaypointLap, deviation);
 
-                if( BDArmorySettings.WAYPOINT_GUARD_INDEX>=0 && activeWaypointIndex>=BDArmorySettings.WAYPOINT_GUARD_INDEX && !weaponManager.guardMode)
+                if (BDArmorySettings.WAYPOINT_GUARD_INDEX >= 0 && activeWaypointIndex >= BDArmorySettings.WAYPOINT_GUARD_INDEX && !weaponManager.guardMode)
                 {
                     // activate guard mode
                     weaponManager.guardMode = true;
@@ -498,7 +501,7 @@ namespace BDArmory.Control
                     ReleaseCommand();
                     return;
                 }
-                else if(activeWaypointIndex >= waypoints.Count && activeWaypointLap <= waypointLapLimit)
+                else if (activeWaypointIndex >= waypoints.Count && activeWaypointLap <= waypointLapLimit)
                 {
                     activeWaypointIndex = 0;
                     activeWaypointLap++;
