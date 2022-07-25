@@ -1,4 +1,11 @@
-﻿v1.5.0.0
+﻿FIXES
+- Remove the "-pre" from the version string, fix some typos.
+IMPROVEMENTS
+- Weapons:
+	- Add pro-nav gain parameter as tunable parameter for missile parts (pronavGain), set pro-nav gain to 3 by default.
+
+
+v1.5.0.0
 FIXES
 - Fix 'resizeSquare' texture not being loaded sometimes (due to a race condition?).
 - Clean up log spam from ExplosionFX.
