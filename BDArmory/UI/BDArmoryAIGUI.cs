@@ -2553,7 +2553,7 @@ namespace BDArmory.UI
             {
                 WindowHeight += Mouse.delta.y;
                 WindowHeight = Mathf.Max(WindowHeight, 305);
-                GUI.Label(new Rect(WindowWidth / 2, WindowHeight - 26, WindowWidth / 2 - 26, 26), $"Resizing: {Mouse.delta.y} ({WindowHeight})", Label);
+                GUI.Label(new Rect(WindowWidth / 2, WindowHeight - 26, WindowWidth / 2 - 26, 26), $"Resizing: {WindowHeight}", Label);
             }
             #endregion
 
