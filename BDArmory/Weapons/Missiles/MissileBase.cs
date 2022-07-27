@@ -210,7 +210,7 @@ namespace BDArmory.Weapons.Missiles
 
         public GuidanceModes GuidanceMode;
 
-        public enum WarheadTypes { Standard, ContinuousRod, EMP, Nuke}
+        public enum WarheadTypes { Standard, ContinuousRod, EMP, Nuke }
 
         public WarheadTypes warheadType;
         public bool HasFired { get; set; } = false;
@@ -920,30 +920,20 @@ namespace BDArmory.Weapons.Missiles
 
         protected void UpdateAntiRadiationTarget()
         {
-            if (!TargetAcquired)
-            {
-                guidanceActive = false;
-                return;
-            }
-
-            if (FlightGlobals.ready)
+            if (FlightGlobals.ready && TargetAcquired)
             {
                 if (lockFailTimer < 0)
                 {
                     lockFailTimer = 0;
                 }
                 lockFailTimer += Time.fixedDeltaTime;
+                if (lockFailTimer > 8)
+                {
+                    TargetAcquired = false;
+                }
             }
-
-            if (lockFailTimer > 8)
-            {
-                guidanceActive = false;
-                TargetAcquired = false;
-            }
-            else
-            {
+            if (targetGPSCoords != Vector3d.zero)
                 TargetPosition = VectorUtils.GetWorldSurfacePostion(targetGPSCoords, vessel.mainBody);
-            }
         }
 
         public void DrawDebugLine(Vector3 start, Vector3 end, Color color = default(Color))
