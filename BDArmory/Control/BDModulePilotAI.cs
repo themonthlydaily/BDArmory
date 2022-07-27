@@ -936,6 +936,7 @@ namespace BDArmory.Control
 
         double commandSpeed;
         Vector3d commandHeading;
+        Vector3d lastCommandCoords = Vector3d.zero;
 
         float finalMaxSteer = 1;
         string lastStatus = "Free";
@@ -1799,6 +1800,13 @@ namespace BDArmory.Control
                 evasiveTimer = 0;
                 if (!extending && !(terrainAlertCoolDown > 0))
                 {
+                    if (lastCommandCoords != Vector3d.zero)
+                    {
+                        SetStatus("Attack");
+                        FlyOrbit(s, lastCommandCoords, 2500, maxSpeed, ClockwiseOrbit);
+                        return;
+                    }
+
                     SetStatus("Orbiting");
                     FlyOrbit(s, assignedPositionGeo, 2000, idleSpeed, ClockwiseOrbit);
                     return;
@@ -3648,10 +3656,11 @@ namespace BDArmory.Control
             }
             else if (command == PilotCommands.Attack)
             {
-                if (targetVessel != null && (BDArmorySettings.RUNWAY_PROJECT || (targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= weaponManager.gunRange * weaponManager.gunRange)
+                if (targetVessel != null && targetVessel && (BDArmorySettings.RUNWAY_PROJECT || (targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= weaponManager.gunRange * weaponManager.gunRange)
                     && (targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= weaponManager.guardRange * weaponManager.guardRange) // If the vessel has a target within visual range, let it fight!
                 {
                     ReleaseCommand();
+                    lastCommandCoords = Vector3d.zero;
                     return;
                 }
                 else if (weaponManager.underAttack || weaponManager.underFire)
@@ -3661,7 +3670,8 @@ namespace BDArmory.Control
                 }
                 else
                 {
-                    SetStatus("Attack");
+                    SetStatus("Attack"); //if AttackPosition interrupted but no target(i.e. stealthed Op4 firing missiles from outside dtection range) return to attackPos when evasion done
+                    lastCommandCoords = assignedPositionGeo;
                     FlyOrbit(s, assignedPositionGeo, 2500, maxSpeed, ClockwiseOrbit);
                 }
             }

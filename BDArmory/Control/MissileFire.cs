@@ -1825,7 +1825,7 @@ namespace BDArmory.Control
                     }
 
                     //try uncaged IR lock with radar
-                    if (guardTarget && !heatTarget.exists && vesselRadarData && vesselRadarData.radarCount > 0)
+                    if (guardTarget && !heatTarget.exists && vesselRadarData && vesselRadarData.radarCount > 0)//Switch to IRST detection?
                     {
                         if (!vesselRadarData.locked ||
                             (vesselRadarData.lockedTargetData.targetData.predictedPosition -
@@ -1836,7 +1836,6 @@ namespace BDArmory.Control
                             yield return new WaitForSeconds(Mathf.Min(1, (targetScanInterval * 0.25f)));
                         }
                     }
-
                     // if (AIMightDirectFire() && ml && heatTarget.exists)
                     // {
                     //     float LAstartTime = Time.time;
@@ -1884,6 +1883,7 @@ namespace BDArmory.Control
                         FireCurrentMissile(true);
                         //StartCoroutine(MissileAwayRoutine(mlauncher));
                     }
+                    //else //event that heatTarget.exists && heatTarget != guardtarget?
                 }
                 else if (ml.TargetingMode == MissileBase.TargetingModes.Gps)
                 {
@@ -5469,11 +5469,18 @@ namespace BDArmory.Control
                 float scanRadius = CurrentMissile.lockedSensorFOV * 0.5f;
                 float maxOffBoresight = CurrentMissile.maxOffBoresight * 0.85f;
 
-                if (vesselRadarData && vesselRadarData.locked)
+                if (vesselRadarData) 
                 {
-                    heatTarget = vesselRadarData.lockedTargetData.targetData;
+                    if (vesselRadarData.irstCount > 0)
+                    {
+                        heatTarget = vesselRadarData.activeIRTarget(); //point seeker at active target's IR return
+                    }
+                    else
+                    {
+                        if (vesselRadarData.locked) //uncaged radar lock
+                            heatTarget = vesselRadarData.lockedTargetData.targetData;
+                    }
                 }
-
                 Vector3 direction =
                     heatTarget.exists && Vector3.Angle(heatTarget.position - CurrentMissile.MissileReferenceTransform.position, CurrentMissile.GetForwardTransform()) < maxOffBoresight ?
                     heatTarget.predictedPosition - CurrentMissile.MissileReferenceTransform.position
@@ -5853,6 +5860,10 @@ namespace BDArmory.Control
                     priorGunThreatVessel = results.threatVessel;
                     incomingMissTime = 0f;
                 }
+                if ((pilotAI != null && incomingMissTime >= pilotAI.evasionTimeThreshold && incomingMissDistance < pilotAI.evasionThreshold) || AI != null && pilotAI == null) // If we haven't been under fire long enough, ignore gunfire
+                {
+                    FireOCM(false); //enable visual coutnermeasures if under fire
+                }                
                 if (results.threatWeaponManager != null)
                 {
                     incomingMissDistance = results.missDistance + results.missDeviation;
@@ -5881,7 +5892,6 @@ namespace BDArmory.Control
                             }
                         }
                 }
-                FireOCM(false);
                 StartCoroutine(UnderAttackRoutine()); //this seems to be firing all the time, not just when bullets are flying towards craft...?
                 StartCoroutine(UnderFireRoutine());
             }

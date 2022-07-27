@@ -292,7 +292,7 @@ namespace BDArmory.Control
                 UpdateWeaponManager();
             if (weaponManager != null && weaponManager.vessel == vessel)
             {
-                if (weaponManager.guardMode && weaponManager.currentTarget != null)
+                if (weaponManager.guardMode && (weaponManager.currentTarget != null && !weaponManager.currentTarget.isMissile))
                 {
                     targetVessel = weaponManager.currentTarget.Vessel;
                 }
@@ -398,7 +398,6 @@ namespace BDArmory.Control
             assignedPositionGeo = gpsCoords;
             command = PilotCommands.FlyTo;
         }
-
         public virtual void CommandAttack(Vector3 gpsCoords)
         {
             if (!pilotEnabled) return;
