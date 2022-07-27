@@ -150,6 +150,16 @@ namespace BDArmory.Weapons.Missiles
                     GuidanceMode = GuidanceModes.AGMBallistic;
                     GuidanceLabel = "Ballistic";
                     break;
+
+                case 5:
+                    GuidanceMode = GuidanceModes.PN;
+                    GuidanceLabel = "Proportional Navigation";
+                    break;
+
+                case 6:
+                    GuidanceMode = GuidanceModes.APN;
+                    GuidanceLabel = "Augmented Pro-Nav";
+                    break;
             }
 
             if (Fields["CruiseAltitude"] != null)
@@ -609,8 +619,14 @@ namespace BDArmory.Weapons.Missiles
             if (TargetAcquired)
             {
                 float timeToImpact;
-                aamTarget = MissileGuidance.GetAirToAirTargetModular(TargetPosition, TargetVelocity, TargetAcceleration, vessel, out timeToImpact);
+                if (GuidanceIndex == 6) // Augmented Pro-Nav
+                    aamTarget = MissileGuidance.GetAPNTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, 3f, out timeToImpact);
+                else if (GuidanceIndex == 5) // Pro-Nav
+                    aamTarget = MissileGuidance.GetPNTarget(TargetPosition, TargetVelocity, vessel, 3f, out timeToImpact);
+                else // AAM Lead
+                    aamTarget = MissileGuidance.GetAirToAirTargetModular(TargetPosition, TargetVelocity, TargetAcceleration, vessel, out timeToImpact);
                 TimeToImpact = timeToImpact;
+
                 if (Vector3.Angle(aamTarget - vessel.CoM, vessel.transform.forward) > maxOffBoresight * 0.75f)
                 {
                     Debug.LogFormat("[BDArmory.BDModularGuidance]: Missile with Name={0} has exceeded the max off boresight, checking missed target ", vessel.vesselName);
@@ -791,6 +807,12 @@ namespace BDArmory.Weapons.Missiles
 
                     case 4:
                         newTargetPosition = BallisticGuidance();
+                        break;
+                    case 5:
+                        newTargetPosition = AAMGuidance();
+                        break;
+                    case 6:
+                        newTargetPosition = AAMGuidance();
                         break;
                 }
                 CheckMiss(newTargetPosition);
@@ -1036,7 +1058,7 @@ namespace BDArmory.Weapons.Missiles
         public void SwitchGuidanceMode()
         {
             GuidanceIndex++;
-            if (GuidanceIndex > 4)
+            if (GuidanceIndex > 6)
             {
                 GuidanceIndex = 1;
             }

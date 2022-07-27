@@ -326,6 +326,7 @@ namespace BDArmory.UI
 
                         { "autoTuningOptionNumSamples", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.autoTuningOptionNumSamples, 1, 10) },
                         { "autoTuningOptionFastResponseRelevance", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.autoTuningOptionFastResponseRelevance, 0, 0.5) },
+                        { "autoTuningOptionInitialLearningRate", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.autoTuningOptionInitialLearningRate, 1e-3, 1) },
                         { "autoTuningAltitude", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.autoTuningAltitude, 50, 5000) },
                         { "autoTuningSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.autoTuningSpeed, 50, 800) },
 
@@ -601,11 +602,11 @@ namespace BDArmory.UI
         }
         Rect SettingSliderRect(float indent, float lines, float contentWidth)
         {
-            return new Rect(indent + 150, (lines * entryHeight), contentWidth - (indent * 2) - (150 + 10), entryHeight);
+            return new Rect(indent + 150, (lines + 0.2f) * entryHeight, contentWidth - (indent * 2) - (150 + 10), entryHeight);
         }
         Rect SettingTextRect(float indent, float lines, float contentWidth)
         {
-            return new Rect(indent + 250, (lines * entryHeight), contentWidth - (indent * 2) - (250 + 10 + 100), entryHeight);
+            return new Rect(indent + 250, lines * entryHeight, contentWidth - (indent * 2) - (250 + 10 + 100), entryHeight);
         }
         Rect ContextLabelRect(float indent, float lines)
         {
@@ -868,7 +869,7 @@ namespace BDArmory.UI
                             if (contextTipsEnabled)
                             {
                                 GUI.Label(ContextLabelRect(leftIndent, pidLines), Localizer.Format("#LOC_BDArmory_AIWindow_SteerMultLow"), Label);//"sluggish"
-                                GUI.Label(new Rect(150 + leftIndent + (contentWidth - leftIndent - 150 - 85 - 20), (pidLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_SteerMultHi"), rightLabel);//"twitchy"
+                                GUI.Label(ContextLabelRectRight(leftIndent, pidLines, contentWidth), Localizer.Format("#LOC_BDArmory_AIWindow_SteerMultHi"), rightLabel);//"twitchy"
                                 pidLines++;
                             }
                             if (!NumFieldsEnabled)
@@ -889,7 +890,7 @@ namespace BDArmory.UI
                             if (contextTipsEnabled)
                             {
                                 GUI.Label(ContextLabelRect(leftIndent, pidLines), Localizer.Format("#LOC_BDArmory_AIWindow_SteerKiLow"), Label);//"undershoot"
-                                GUI.Label(new Rect(150 + leftIndent + (contentWidth - leftIndent - 150 - 85 - 20), (pidLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_SteerKiHi"), rightLabel);//"Overshoot"
+                                GUI.Label(ContextLabelRectRight(leftIndent, pidLines, contentWidth), Localizer.Format("#LOC_BDArmory_AIWindow_SteerKiHi"), rightLabel);//"Overshoot"
                                 pidLines++;
                             }
                             if (!NumFieldsEnabled)
@@ -910,7 +911,7 @@ namespace BDArmory.UI
                             if (contextTipsEnabled)
                             {
                                 GUI.Label(ContextLabelRect(leftIndent, pidLines), Localizer.Format("#LOC_BDArmory_AIWindow_SteerDampLow"), Label);//"Wobbly"
-                                GUI.Label(new Rect(150 + leftIndent + (contentWidth - leftIndent - 150 - 85 - 20), (pidLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_SteerDampHi"), rightLabel);//"Stiff"
+                                GUI.Label(ContextLabelRectRight(leftIndent, pidLines, contentWidth), Localizer.Format("#LOC_BDArmory_AIWindow_SteerDampHi"), rightLabel);//"Stiff"
                                 pidLines++;
                             }
 
@@ -1224,8 +1225,8 @@ namespace BDArmory.UI
                                 GUI.Label(SettinglabelRect(leftIndent, pidLines + autoTuneLines++), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningNumSamples") + $": {ActivePilot.autoTuningOptionNumSamples}", Label);
                                 if (contextTipsEnabled)
                                 {
-                                    GUI.Label(ContextLabelRect(leftIndent, pidLines + autoTuneLines - 0.25f), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningNumSamplesMin"), Label);
-                                    GUI.Label(ContextLabelRectRight(leftIndent, pidLines + autoTuneLines - 0.25f, contentWidth), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningNumSamplesMax"), rightLabel);
+                                    GUI.Label(ContextLabelRect(leftIndent, pidLines + autoTuneLines), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningNumSamplesMin"), Label);
+                                    GUI.Label(ContextLabelRectRight(leftIndent, pidLines + autoTuneLines, contentWidth), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningNumSamplesMax"), rightLabel);
                                     ++autoTuneLines;
                                 }
 
@@ -1238,8 +1239,21 @@ namespace BDArmory.UI
                                 GUI.Label(SettinglabelRect(leftIndent, pidLines + autoTuneLines++), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningFastResponseRelevance") + $": {ActivePilot.autoTuningOptionFastResponseRelevance}", Label);
                                 if (contextTipsEnabled)
                                 {
-                                    GUI.Label(ContextLabelRect(leftIndent, pidLines + autoTuneLines - 0.25f), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningFastResponseRelevanceMin"), Label);
-                                    GUI.Label(ContextLabelRectRight(leftIndent, pidLines + autoTuneLines - 0.25f, contentWidth), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningFastResponseRelevanceMax"), rightLabel);
+                                    GUI.Label(ContextLabelRect(leftIndent, pidLines + autoTuneLines), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningFastResponseRelevanceMin"), Label);
+                                    GUI.Label(ContextLabelRectRight(leftIndent, pidLines + autoTuneLines, contentWidth), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningFastResponseRelevanceMax"), rightLabel);
+                                    ++autoTuneLines;
+                                }
+
+                                if (!NumFieldsEnabled) ActivePilot.autoTuningOptionInitialLearningRate = Mathf.Pow(10f, BDAMath.RoundToUnit(GUI.HorizontalSlider(SettingSliderRect(leftIndent, pidLines + autoTuneLines, contentWidth), Mathf.Log10(ActivePilot.autoTuningOptionInitialLearningRate), -3f, 0f), 0.5f));
+                                else
+                                {
+                                    inputFields["autoTuningOptionInitialLearningRate"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + autoTuneLines, contentWidth), inputFields["autoTuningOptionInitialLearningRate"].possibleValue, 7));
+                                    ActivePilot.autoTuningOptionInitialLearningRate = (float)inputFields["autoTuningOptionInitialLearningRate"].currentValue;
+                                }
+                                GUI.Label(SettinglabelRect(leftIndent, pidLines + autoTuneLines++), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningInitialLearningRate") + $": {ActivePilot.autoTuningOptionInitialLearningRate:G3}", Label);
+                                if (contextTipsEnabled)
+                                {
+                                    GUI.Label(ContextLabelRect(leftIndent, pidLines + autoTuneLines), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningInitialLearningRateContext"), Label);
                                     ++autoTuneLines;
                                 }
 
@@ -1252,7 +1266,7 @@ namespace BDArmory.UI
                                 GUI.Label(SettinglabelRect(leftIndent, pidLines + autoTuneLines++), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningAltitude") + $": {ActivePilot.autoTuningAltitude}", Label);
                                 if (contextTipsEnabled)
                                 {
-                                    GUI.Label(ContextLabelRect(leftIndent, pidLines + autoTuneLines++ - 0.25f), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningAltitudeContext"), Label);
+                                    GUI.Label(ContextLabelRect(leftIndent, pidLines + autoTuneLines++), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningAltitudeContext"), Label);
                                 }
 
                                 if (!NumFieldsEnabled) ActivePilot.autoTuningSpeed = BDAMath.RoundToUnit(GUI.HorizontalSlider(SettingSliderRect(leftIndent, pidLines + autoTuneLines, contentWidth), ActivePilot.autoTuningSpeed, 50f, 800f), 5f);
@@ -1264,7 +1278,7 @@ namespace BDArmory.UI
                                 GUI.Label(SettinglabelRect(leftIndent, pidLines + autoTuneLines++), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningSpeed") + $": {ActivePilot.autoTuningSpeed}", Label);
                                 if (contextTipsEnabled)
                                 {
-                                    GUI.Label(ContextLabelRect(leftIndent, pidLines + autoTuneLines++ - 0.25f), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningSpeedContext"), Label);
+                                    GUI.Label(ContextLabelRect(leftIndent, pidLines + autoTuneLines++), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningSpeedContext"), Label);
                                 }
 
                                 ActivePilot.autoTuningOptionFixedP = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 0, 2, contentWidth), ActivePilot.autoTuningOptionFixedP, Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningFixedP"), ActivePilot.autoTuningOptionFixedP ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);

@@ -164,6 +164,43 @@ namespace BDArmory.Guidances
             return AIUtils.PredictPosition(targetPosition, targetVelocity * easeVel, targetAcceleration * easeAccel, timeToCPA + TimeWarp.fixedDeltaTime); // Compensate for the off-by-one frame issue.
         }
 
+        public static Vector3 GetPNTarget(Vector3 targetPosition, Vector3 targetVelocity, Vessel missileVessel, float N, out float timeToGo)
+        {
+            Vector3 missileVel = (float)missileVessel.srfSpeed * missileVessel.Velocity().normalized;
+            Vector3 relVelocity = targetVelocity - missileVel;
+            Vector3 relRange = targetPosition - missileVessel.CoM;
+            Vector3 RotVector = Vector3.Cross(relRange, relVelocity) / Vector3.Dot(relRange, relRange);
+            Vector3 RefVector = missileVel.normalized;
+            Vector3 normalAccel = -N * relVelocity.magnitude * Vector3.Cross(RefVector, RotVector);
+            timeToGo = missileVessel.ClosestTimeToCPA(targetPosition, targetVelocity, Vector3.zero, 120f);
+            return missileVessel.CoM + missileVel * timeToGo + normalAccel * timeToGo * timeToGo;
+        }
+
+        public static Vector3 GetAPNTarget(Vector3 targetPosition, Vector3 targetVelocity, Vector3 targetAcceleration, Vessel missileVessel, float N, out float timeToGo)
+        {
+            Vector3 missileVel = (float)missileVessel.srfSpeed * missileVessel.Velocity().normalized;
+            Vector3 relVelocity = targetVelocity - missileVel;
+            Vector3 relRange = targetPosition - missileVessel.CoM;
+            Vector3 RotVector = Vector3.Cross(relRange, relVelocity) / Vector3.Dot(relRange, relRange);
+            Vector3 RefVector = missileVel.normalized;
+            Vector3 normalAccel = -N * relVelocity.magnitude * Vector3.Cross(RefVector, RotVector);
+            // float tgo = relRange.magnitude / relVelocity.magnitude;
+            Vector3 accelBias = Vector3.Cross(relRange.normalized, targetAcceleration);
+            accelBias = Vector3.Cross(RefVector, accelBias);
+            normalAccel -= 0.5f * N * accelBias;
+            timeToGo = missileVessel.ClosestTimeToCPA(targetPosition, targetVelocity, targetAcceleration, 120f);
+            return missileVessel.CoM + missileVel * timeToGo + normalAccel * timeToGo * timeToGo;
+        }
+        public static float GetLOSRate(Vector3 targetPosition, Vector3 targetVelocity, Vessel missileVessel)
+        {
+            Vector3 missileVel = (float)missileVessel.srfSpeed * missileVessel.Velocity().normalized;
+            Vector3 relVelocity = targetVelocity - missileVel;
+            Vector3 relRange = targetPosition - missileVessel.CoM;
+            Vector3 RotVector = Vector3.Cross(relRange, relVelocity) / Vector3.Dot(relRange, relRange);
+            Vector3 LOSRate = Mathf.Rad2Deg * RotVector;
+            return LOSRate.magnitude;
+        }
+
         /// <summary>
         /// Calculate a very accurate time to impact, use the out timeToimpact property if the method returned true. DEPRECIATED, use TimeToCPA.
         /// </summary>

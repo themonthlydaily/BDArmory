@@ -305,6 +305,7 @@
     <Compile Include="Utils\ProjectileUtils.cs" />
     <Compile Include="Utils\ResourceUtils.cs" />
     <Compile Include="Utils\SplineUtils.cs" />
+    <Compile Include="Utils\UIControlUtils.cs" />
     <Compile Include="Utils\VectorUtils.cs" />
     <Compile Include="Utils\VesselModuleRegistry.cs" />
     <Compile Include="Utils\VesselUtils.cs" />

@@ -532,7 +532,7 @@ namespace BDArmory.Control
         private string targetPreferenceLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_AirVsGround");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_AirVsGround", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Preference
             UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
-        public float targetWeightAirPreference = 3f;
+        public float targetWeightAirPreference = 0f;
 
         private string targetRangeLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetProximity");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetProximity", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Range
@@ -2989,7 +2989,7 @@ namespace BDArmory.Control
                             gunRippleIndex.Add(weapon.Current.WeaponName, 0);
                         }
                         weapon.Current.initialFireDelay = 60 / (weapon.Current.roundsPerMinute * (rippleGunCount[weapon.Current.WeaponName]));
-                        Debug.Log("[RIPPLEDEBUG]" + weapon.Current.WeaponName + " rippleIndex: " + weapon.Current.rippleIndex + "; initialfiredelay: " + weapon.Current.initialFireDelay);
+                        // Debug.Log("[RIPPLEDEBUG]" + weapon.Current.WeaponName + " rippleIndex: " + weapon.Current.rippleIndex + "; initialfiredelay: " + weapon.Current.initialFireDelay);
                     }
             }
 

@@ -206,11 +206,11 @@ namespace BDArmory.Weapons.Missiles
 
         public DetonationDistanceStates DetonationDistanceState { get; set; } = DetonationDistanceStates.NotSafe;
 
-        public enum GuidanceModes { None, AAMLead, AAMPure, AGM, AGMBallistic, Cruise, STS, Bomb, RCS, BeamRiding, SLW }
+        public enum GuidanceModes { None, AAMLead, AAMPure, AGM, AGMBallistic, Cruise, STS, Bomb, RCS, BeamRiding, SLW, PN, APN }
 
         public GuidanceModes GuidanceMode;
 
-        public enum WarheadTypes { Standard, ContinuousRod, EMP, Nuke}
+        public enum WarheadTypes { Standard, ContinuousRod, EMP, Nuke }
 
         public WarheadTypes warheadType;
         public bool HasFired { get; set; } = false;
@@ -920,30 +920,20 @@ namespace BDArmory.Weapons.Missiles
 
         protected void UpdateAntiRadiationTarget()
         {
-            if (!TargetAcquired)
-            {
-                guidanceActive = false;
-                return;
-            }
-
-            if (FlightGlobals.ready)
+            if (FlightGlobals.ready && TargetAcquired)
             {
                 if (lockFailTimer < 0)
                 {
                     lockFailTimer = 0;
                 }
                 lockFailTimer += Time.fixedDeltaTime;
+                if (lockFailTimer > 8)
+                {
+                    TargetAcquired = false;
+                }
             }
-
-            if (lockFailTimer > 8)
-            {
-                guidanceActive = false;
-                TargetAcquired = false;
-            }
-            else
-            {
+            if (targetGPSCoords != Vector3d.zero)
                 TargetPosition = VectorUtils.GetWorldSurfacePostion(targetGPSCoords, vessel.mainBody);
-            }
         }
 
         public void DrawDebugLine(Vector3 start, Vector3 end, Color color = default(Color))
@@ -1172,7 +1162,7 @@ namespace BDArmory.Weapons.Missiles
         {
             if (this.DetonationDistance == -1)
             {
-                if (GuidanceMode == GuidanceModes.AAMLead || GuidanceMode == GuidanceModes.AAMPure)
+                if (GuidanceMode == GuidanceModes.AAMLead || GuidanceMode == GuidanceModes.AAMPure || GuidanceMode == GuidanceModes.PN || GuidanceMode == GuidanceModes.APN)
                 {
                     DetonationDistance = GetBlastRadius() * 0.25f;
                 }
