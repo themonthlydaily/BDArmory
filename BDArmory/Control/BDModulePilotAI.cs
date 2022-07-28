@@ -4071,7 +4071,6 @@ namespace BDArmory.Control
         {
             measuring = true;
             measurementStartTime = Time.time;
-            partCount = AI.vessel.Parts.Count;
             if (WM != null && WM.currentTarget != null) lastTargetVessel = WM.currentTarget.Vessel;
         }
 
@@ -4087,6 +4086,7 @@ namespace BDArmory.Control
             rollOscillationAreaSqr = 0;
             onTargetTimer = 0;
             measuring = false;
+            partCount = AI.vessel.Parts.Count;
 
             // Initial setup for auto-tuning or release the AI when finished.
             if (!AI.AutoTune && AI.currentCommand == PilotCommands.FlyTo) AI.ReleaseCommand(); // Release the AI if we've been commanding it.
