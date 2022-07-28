@@ -1805,6 +1805,11 @@ namespace BDArmory.Control
                 evasiveTimer = 0;
                 if (!extending && !(terrainAlertCoolDown > 0))
                 {
+                    if (ResumeCommand())
+                    {
+                        UpdateCommand(s);
+                        return;
+                    }
                     SetStatus("Orbiting");
                     FlyOrbit(s, assignedPositionGeo, 2000, idleSpeed, ClockwiseOrbit);
                     return;
@@ -2556,7 +2561,7 @@ namespace BDArmory.Control
             if (command != PilotCommands.Free && (vessel.transform.position - flightCenter).sqrMagnitude < radius * radius * 1.5f)
             {
                 if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDModulePilotAI]: AI Pilot reached command destination.");
-                ReleaseCommand(false);
+                ReleaseCommand(false, false);
             }
 
             useVelRollTarget = true;
@@ -3641,7 +3646,7 @@ namespace BDArmory.Control
 
         void UpdateCommand(FlightCtrlState s)
         {
-            if (command == PilotCommands.Follow && !commandLeader)
+            if (command == PilotCommands.Follow && commandLeader is null)
             {
                 ReleaseCommand();
                 return;
@@ -3668,15 +3673,15 @@ namespace BDArmory.Control
             }
             else if (command == PilotCommands.Attack)
             {
-                if (targetVessel != null // && (BDArmorySettings.RUNWAY_PROJECT || (targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= weaponManager.gunRange * weaponManager.gunRange)
-                    && (targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= weaponManager.guardRange * weaponManager.guardRange) // If the vessel has a target within visual range, let it fight!
+                if (targetVessel != null) // && (BDArmorySettings.RUNWAY_PROJECT || (targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= weaponManager.gunRange * weaponManager.gunRange)
+                    // && (targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= weaponManager.guardRange * weaponManager.guardRange) // If the vessel has a target within visual range, let it fight!
                 {
-                    ReleaseCommand();
+                    ReleaseCommand(false);
                     return;
                 }
                 else if (weaponManager.underAttack || weaponManager.underFire)
                 {
-                    ReleaseCommand();
+                    ReleaseCommand(false);
                     return;
                 }
                 else
