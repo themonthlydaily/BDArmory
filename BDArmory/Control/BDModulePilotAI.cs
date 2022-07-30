@@ -3674,7 +3674,7 @@ namespace BDArmory.Control
             else if (command == PilotCommands.Attack)
             {
                 if (targetVessel != null) // && (BDArmorySettings.RUNWAY_PROJECT || (targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= weaponManager.gunRange * weaponManager.gunRange)
-                                          // && (targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= weaponManager.guardRange * weaponManager.guardRange) // If the vessel has a target within visual range, let it fight!
+                    // && (targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= weaponManager.guardRange * weaponManager.guardRange) // If the vessel has a target within visual range, let it fight!
                 {
                     ReleaseCommand(false);
                     return;
@@ -4071,7 +4071,6 @@ namespace BDArmory.Control
         {
             measuring = true;
             measurementStartTime = Time.time;
-            partCount = AI.vessel.Parts.Count;
             if (WM != null && WM.currentTarget != null) lastTargetVessel = WM.currentTarget.Vessel;
         }
 
@@ -4087,6 +4086,7 @@ namespace BDArmory.Control
             rollOscillationAreaSqr = 0;
             onTargetTimer = 0;
             measuring = false;
+            partCount = AI.vessel.Parts.Count;
 
             // Initial setup for auto-tuning or release the AI when finished.
             if (!AI.AutoTune && AI.currentCommand == PilotCommands.FlyTo) AI.ReleaseCommand(); // Release the AI if we've been commanding it.
