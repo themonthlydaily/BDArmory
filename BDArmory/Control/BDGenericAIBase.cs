@@ -61,6 +61,7 @@ namespace BDArmory.Control
         public ModuleWingCommander commandLeader { get; protected set; }
 
         protected PilotCommands command;
+        PilotCommands previousCommand;
         public string currentStatus { get; protected set; } = "Free";
         protected int commandFollowIndex;
 
@@ -292,7 +293,7 @@ namespace BDArmory.Control
                 UpdateWeaponManager();
             if (weaponManager != null && weaponManager.vessel == vessel)
             {
-                if (weaponManager.guardMode && (weaponManager.currentTarget != null && !weaponManager.currentTarget.isMissile))
+                if (weaponManager.guardMode && weaponManager.currentTarget != null)
                 {
                     targetVessel = weaponManager.currentTarget.Vessel;
                 }
@@ -360,17 +361,19 @@ namespace BDArmory.Control
 
         #region WingCommander
 
-        public virtual void ReleaseCommand(bool resetAssignedPosition = true)
+        public virtual void ReleaseCommand(bool resetAssignedPosition = true, bool storeCommand = true)
         {
             if (!vessel || command == PilotCommands.Free) return;
-            if (command == PilotCommands.Follow && commandLeader)
-            {
-                commandLeader = null;
-            }
             if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDGenericAIBase]:" + vessel.vesselName + " was released from command.");
+            previousCommand = command;
             command = PilotCommands.Free;
 
-            if (resetAssignedPosition)
+            if (!storeCommand) // Clear the previous command.
+            {
+                if (previousCommand == PilotCommands.Follow) commandLeader = null;
+                previousCommand = PilotCommands.Free;
+            }
+            if (resetAssignedPosition) // Clear the assigned position.
             {
                 assignedPositionWorld = vesselTransform.position;
             }
@@ -379,9 +382,10 @@ namespace BDArmory.Control
         public virtual void CommandFollow(ModuleWingCommander leader, int followerIndex)
         {
             if (!pilotEnabled) return;
-            if (leader == vessel || followerIndex < 0) return;
+            if (leader is null || leader == vessel || followerIndex < 0) return;
 
             if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDGenericAIBase]:" + vessel.vesselName + " was commanded to follow.");
+            previousCommand = command;
             command = PilotCommands.Follow;
             commandLeader = leader;
             commandFollowIndex = followerIndex;
@@ -399,14 +403,17 @@ namespace BDArmory.Control
 
             if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDGenericAIBase]: {vessel.vesselName} was commanded to go to {gpsCoords}.");
             assignedPositionGeo = gpsCoords;
+            previousCommand = command;
             command = PilotCommands.FlyTo;
         }
+
         public virtual void CommandAttack(Vector3 gpsCoords)
         {
             if (!pilotEnabled) return;
 
             if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDGenericAIBase]: {vessel.vesselName} was commanded to attack {gpsCoords}.");
             assignedPositionGeo = gpsCoords;
+            previousCommand = command;
             command = PilotCommands.Attack;
         }
 
@@ -420,9 +427,36 @@ namespace BDArmory.Control
             if (!pilotEnabled) return; // Do nothing if we haven't taken off (or activated with airspawn) yet.
 
             if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDGenericAIBase]:" + vessel.vesselName + " was commanded to follow waypoints.");
+            previousCommand = command;
             command = PilotCommands.Waypoints;
         }
 
+        /// <summary>
+        /// Resume a previous command.
+        /// ReleaseCommand should be called with resetAssignedPosition=false if the previous command is to be preserved.
+        /// </summary>
+        /// <returns>true if the previous command is resumed, false otherwise.</returns>
+        public virtual bool ResumeCommand()
+        {
+            switch (previousCommand)
+            {
+                case PilotCommands.Free:
+                    return false;
+                case PilotCommands.Attack:
+                    CommandAttack(assignedPositionGeo);
+                    break;
+                case PilotCommands.FlyTo:
+                    CommandFlyTo(assignedPositionGeo);
+                    break;
+                case PilotCommands.Follow:
+                    CommandFollow(commandLeader, commandFollowIndex);
+                    break;
+                case PilotCommands.Waypoints:
+                    CommandFollowWaypoints();
+                    break;
+            }
+            return true;
+        }
         #endregion WingCommander
 
         #region Waypoints

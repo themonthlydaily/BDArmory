@@ -1,12 +1,17 @@
 
+v1.5.0.1
 ﻿FIXES
 - Remove the "-pre" from the version string, fix some typos.
 - Fix ProcArmor max scalar clamp not appearing
+- Fix ShapedCharge warheads doing no damage
+- further fix to bombs ignoring max missiles/tge
 IMPROVEMENTS
 - General
   - Missile names now linked to launching craft teamcolor
+  - Fix Ai not firing heatseekers
 - AI
   - AI will return to previous Attack Position command if interrupted by evasion and hasn't yet detected target at competition start
+  - AI can now fire antirad missiles at targets detected via RWR
 - Weapons:
 	- Add pro-nav gain parameter as tunable parameter for missile parts (pronavGain), set pro-nav gain to 3 by default.
 

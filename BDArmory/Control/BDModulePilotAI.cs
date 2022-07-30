@@ -942,7 +942,6 @@ namespace BDArmory.Control
 
         double commandSpeed;
         Vector3d commandHeading;
-        Vector3d lastCommandCoords = Vector3d.zero;
 
         float finalMaxSteer = 1;
         string lastStatus = "Free";
@@ -1806,13 +1805,11 @@ namespace BDArmory.Control
                 evasiveTimer = 0;
                 if (!extending && !(terrainAlertCoolDown > 0))
                 {
-                    if (lastCommandCoords != Vector3d.zero)
+                    if (ResumeCommand())
                     {
-                        SetStatus("Attack");
-                        FlyOrbit(s, lastCommandCoords, 2500, maxSpeed, ClockwiseOrbit);
+                        UpdateCommand(s);
                         return;
                     }
-
                     SetStatus("Orbiting");
                     FlyOrbit(s, assignedPositionGeo, 2000, idleSpeed, ClockwiseOrbit);
                     return;
@@ -2564,7 +2561,7 @@ namespace BDArmory.Control
             if (command != PilotCommands.Free && (vessel.transform.position - flightCenter).sqrMagnitude < radius * radius * 1.5f)
             {
                 if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDModulePilotAI]: AI Pilot reached command destination.");
-                ReleaseCommand(false);
+                ReleaseCommand(false, false);
             }
 
             useVelRollTarget = true;
@@ -3649,7 +3646,7 @@ namespace BDArmory.Control
 
         void UpdateCommand(FlightCtrlState s)
         {
-            if (command == PilotCommands.Follow && !commandLeader)
+            if (command == PilotCommands.Follow && commandLeader is null)
             {
                 ReleaseCommand();
                 return;
@@ -3677,21 +3674,19 @@ namespace BDArmory.Control
             else if (command == PilotCommands.Attack)
             {
                 if (targetVessel != null) // && (BDArmorySettings.RUNWAY_PROJECT || (targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= weaponManager.gunRange * weaponManager.gunRange)
-                    //&& (targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= weaponManager.guardRange * weaponManager.guardRange) // If the vessel has a target within visual range, let it fight!
+                                          // && (targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= weaponManager.guardRange * weaponManager.guardRange) // If the vessel has a target within visual range, let it fight!
                 {
-                    ReleaseCommand();
-                    lastCommandCoords = Vector3d.zero;
+                    ReleaseCommand(false);
                     return;
                 }
                 else if (weaponManager.underAttack || weaponManager.underFire)
                 {
-                    ReleaseCommand();
+                    ReleaseCommand(false);
                     return;
                 }
                 else
                 {
-                    SetStatus("Attack"); //if AttackPosition interrupted but no target(i.e. stealthed Op4 firing missiles from outside dtection range) return to attackPos when evasion done
-                    lastCommandCoords = assignedPositionGeo;
+                    SetStatus("Attack");
                     FlyOrbit(s, assignedPositionGeo, 2500, maxSpeed, ClockwiseOrbit);
                 }
             }

@@ -434,6 +434,7 @@ namespace BDArmory.Control
         public bool debilitated = false;
 
         public bool guardFiringMissile;
+        public bool hasAntiRadiationOrdinance;
         public bool antiRadTargetAcquired;
         Vector3 antiRadiationTarget;
         public bool laserPointDetected;
@@ -2707,6 +2708,7 @@ namespace BDArmory.Control
             targetMissiles = false;
             weaponTypesGround.Clear();
             weaponTypesSLW.Clear();
+            hasAntiRadiationOrdinance = false;
             if (vessel == null || !vessel.loaded) return;
 
             using (var weapon = VesselModuleRegistry.GetModules<IBDWeapon>(vessel).GetEnumerator())
@@ -2767,6 +2769,10 @@ namespace BDArmory.Control
                     weapon.Current.GetWeaponClass() == WeaponClasses.SLW)
                     {
                         weapon.Current.GetPart().FindModuleImplementing<MissileBase>().GetMissileCount(); // #191, Do it this way so the GetMissileCount only updates when missile fired
+                        if (weapon.Current.GetPart().FindModuleImplementing<MissileLauncher>().TargetingMode == MissileBase.TargetingModes.AntiRad)
+                        {
+                            hasAntiRadiationOrdinance = true;
+                        }
                     }
                 }
 
@@ -5357,7 +5363,25 @@ namespace BDArmory.Control
                 staleTarget = false;
                 return true;
             }
-
+            if (rwr && rwr.rwrEnabled && rwr.displayRWR && hasAntiRadiationOrdinance)//see if RWR is picking up a ping from unseen radar source and craft has HARMs
+            {
+                if (selectedWeapon.GetWeaponClass() == WeaponClasses.Missile && CurrentMissile != null && CurrentMissile.TargetingMode == MissileBase.TargetingModes.AntiRad)
+                {
+                    MissileLauncher ml = CurrentMissile as MissileLauncher;
+                    for (int i = 0; i < rwr.pingsData.Length; i++)
+                    {
+                        if (rwr.pingsData[i].exists && (ml.antiradTargets.Contains(rwr.pingsData[i].signalStrength)) && rwr.pingsData[i].vessel == target.Vessel)
+                        {
+                            detectedTargetTimeout = 20;
+                            staleTarget = false;  //targeted by HARM
+                            return true;
+                        }
+                    }
+                }
+                detectedTargetTimeout = 20; //know target is somewhere over in that area
+                staleTarget = true;
+                return true;
+            }
             if (checkForstaleTarget) //merely look to see if a target was last detected within 30s
             {
                 if (target.detectedTime.TryGetValue(Team, out float detectedTime) && Time.time - detectedTime < Mathf.Max(30, targetScanInterval))
@@ -5577,7 +5601,8 @@ namespace BDArmory.Control
             {
                 if (BDArmorySettings.DEBUG_MISSILES)
                     Debug.Log("[BDArmory.MissileData]: Sending targetInfo to bomb...");
-                if (guardMode && ((bombAimerPosition - guardTarget.CoM).sqrMagnitude < ml.GetBlastRadius()))
+                //if (guardMode && ((bombAimerPosition - guardTarget.CoM).sqrMagnitude < ml.GetBlastRadius()))
+                if (guardMode && guardTarget != null)
                 {
                     ml.targetVessel = guardTarget.gameObject.GetComponent<TargetInfo>();
                     if (BDArmorySettings.DEBUG_MISSILES)
