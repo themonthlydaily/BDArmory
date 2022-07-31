@@ -1,4 +1,4 @@
-﻿v1.5.0.1
+﻿v1.5.1.0
 IMPROVEMENTS / FIXES
 - General:
 	- Remove the "-pre" from the version string, fix some typos.

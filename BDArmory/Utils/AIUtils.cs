@@ -160,11 +160,15 @@ namespace BDArmory.Utils
             return new Vector3(right, back, 0);
         }
 
-        public static Vessel VesselAtPosition(Vector3 position)
+        public static Vessel VesselClosestTo(Vector3 position, bool useGeoCoords = false)
         {
             Vessel closestV = null;
             float closestSqrDist = float.MaxValue;
             if (FlightGlobals.Vessels == null) return null;
+            if (useGeoCoords && FlightGlobals.currentMainBody is not null)
+            {
+                position = (Vector3)FlightGlobals.currentMainBody.GetWorldSurfacePosition(position.x, position.y, position.z);
+            }
             using (var v = FlightGlobals.Vessels.GetEnumerator())
                 while (v.MoveNext())
                 {
