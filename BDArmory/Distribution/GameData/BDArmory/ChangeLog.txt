@@ -1,9 +1,22 @@
 ﻿FIXES
 - Remove the "-pre" from the version string, fix some typos.
-- Set the AI GUI window rect in Start, not Awake, to guarantee that BDArmorySettings values have been read - fixes the 0-height AI GUI window.
 IMPROVEMENTS
+- AI:
+	- Allow a vessel that's lost parts after launch to still be auto-tuned.
+	- Don't reset the assigned fly-to position when arriving at an orbiting point so that planes actually orbit the targeted point.
+	- Resume various pilot commands if interrupted once the cause of the interruption is removed.
+	- Adjust the fly-to point's altitude closer to the default altitude when at longer ranges so planes with higher default altitudes will attack from above and vice-versa.
+	- Reduce the half-life of the velocity smoothing for the turn radius calculation to allow faster updates for terrain avoidance.
+- Competition:
+	- Calculate the proper separation between teams for starting a competition - fixes the competitions not starting bug.
+	- Set the number of teams to 0 in one-at-a-time waypoint mode tournaments so spawning works correctly.
 - Weapons:
 	- Add pro-nav gain parameter as tunable parameter for missile parts (pronavGain), set pro-nav gain to 3 by default.
+	- Anti-rad missiles now continue to target the last known GPS point instead of disabling guidance.
+- Armor:
+	- Add Yield and YoungModulus fields to armour for reflection - fixes armour definitions without these properties not loading properly.
+- UI:
+	- Set the AI GUI window rect in Start, not Awake, to guarantee that BDArmorySettings values have been read - fixes the 0-height AI GUI window.
 
 
 v1.5.0.0
