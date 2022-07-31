@@ -2708,6 +2708,7 @@ namespace BDArmory.Control
             targetMissiles = false;
             weaponTypesGround.Clear();
             weaponTypesSLW.Clear();
+            gunRippleIndex.Clear();
             hasAntiRadiationOrdinance = false;
             if (vessel == null || !vessel.loaded) return;
 
@@ -2745,6 +2746,11 @@ namespace BDArmory.Control
                     if (!alreadyAdded)
                     {
                         weaponTypes.Add(weapon.Current);
+                        if (weapon.Current.GetWeaponClass() == WeaponClasses.Gun || weapon.Current.GetWeaponClass() == WeaponClasses.Rocket || weapon.Current.GetWeaponClass() == WeaponClasses.DefenseLaser)
+                        {
+                            if (!gunRippleIndex.ContainsKey(weapon.Current.GetPart().partInfo.name))
+                                gunRippleIndex.Add(weapon.Current.GetPart().partInfo.name, 0);
+                        }
                     }
 
                     EngageableWeapon engageableWeapon = weapon.Current as EngageableWeapon;
@@ -2995,10 +3001,6 @@ namespace BDArmory.Control
                                 }
                             }
                             rippleGunCount.Add(weapon.Current.WeaponName, GunCount);
-                            if (!gunRippleIndex.ContainsKey(weapon.Current.WeaponName))
-                            {
-                                gunRippleIndex.Add(weapon.Current.WeaponName, 0);
-                            }
                         }
                         weapon.Current.initialFireDelay = 60 / (weapon.Current.roundsPerMinute * (rippleGunCount[weapon.Current.WeaponName]));
                         // Debug.Log("[RIPPLEDEBUG]" + weapon.Current.WeaponName + " rippleIndex: " + weapon.Current.rippleIndex + "; initialfiredelay: " + weapon.Current.initialFireDelay);
