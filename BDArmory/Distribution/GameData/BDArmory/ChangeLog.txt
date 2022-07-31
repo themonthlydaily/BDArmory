@@ -1,4 +1,4 @@
-﻿v1.5.0.1
+﻿v1.5.1.0
 IMPROVEMENTS / FIXES
 - General:
 	- Remove the "-pre" from the version string, fix some typos.
@@ -25,7 +25,7 @@ IMPROVEMENTS / FIXES
 - Armor:
 	- Fix ProcArmor max scalar clamp not appearing.
 	- Add Yield and YoungModulus fields to armour for reflection - fixes armour definitions without these properties not loading properly.
-	- Tweak penetration calcs for ultra-low ductility armor materials
+	- Tweak penetration calcs for ultra-low ductility armor materials.
 - UI:
 	- Missile names now linked to launching craft teamcolor.
 	- Set the AI GUI window rect in Start, not Awake, to guarantee that BDArmorySettings values have been read - fixes the 0-height AI GUI window.
