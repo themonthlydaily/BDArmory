@@ -5,6 +5,7 @@ using UniLinq;
 using UnityEngine;
 
 using BDArmory.Control;
+using BDArmory.Competition.VesselSpawning;
 using BDArmory.Extensions;
 using BDArmory.Guidances;
 using BDArmory.Radar;
@@ -905,7 +906,7 @@ namespace BDArmory.Weapons.Missiles
         /// <param name="parent"></param>
         /// <param name="last"></param>
         /// <returns></returns>
-        private PartModule FindFirstDecoupler(Part parent, PartModule last)
+        public static PartModule FindFirstDecoupler(Part parent, PartModule last)
         {
             if (parent == null || !parent) return last;
 
@@ -1001,6 +1002,7 @@ namespace BDArmory.Weapons.Missiles
                 Jettison();
                 AddTargetInfoToVessel();
                 IncreaseTolerance();
+                SpawnUtils.ActivateAllEngines(vessel, true, false);
 
                 this.initialMissileRollPlane = -this.vessel.transform.up;
                 this.initialMissileForward = this.vessel.transform.forward;
