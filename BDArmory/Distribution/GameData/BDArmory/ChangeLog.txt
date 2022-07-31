@@ -1,5 +1,6 @@
 ﻿FIXES
 - Remove the "-pre" from the version string, fix some typos.
+- Fix launch authorisation check throwing an NRE for modular missiles.
 IMPROVEMENTS
 - AI:
 	- Allow a vessel that's lost parts after launch to still be auto-tuned.
