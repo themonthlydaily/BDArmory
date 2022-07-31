@@ -5704,7 +5704,7 @@ namespace BDArmory.Control
 
                             // Check that launch is possible before entering GuardMissileRoutine, or that missile is on a turret
                             MissileLauncher ml = CurrentMissile as MissileLauncher;
-                            launchAuthorized = launchAuthorized && (GetLaunchAuthorization(guardTarget, this) || ml.missileTurret);
+                            launchAuthorized = launchAuthorized && (GetLaunchAuthorization(guardTarget, this) || (ml is not null && ml.missileTurret));
 
 
                             if (BDArmorySettings.DEBUG_MISSILES)
