@@ -15,10 +15,13 @@ IMPROVEMENTS / FIXES
 - Competition:
 	- Calculate the proper separation between teams for starting a competition - fixes the competitions not starting bug.
 	- Set the number of teams to 0 in one-at-a-time waypoint mode tournaments so spawning works correctly.
+	- Ignore modular missile engines when activating all engines during spawning.
 - Weapons:
 	- Add pro-nav gain parameter as tunable parameter for missile parts (pronavGain), set pro-nav gain to 3 by default.
 	- Anti-rad missiles now continue to target the last known GPS point instead of disabling guidance.
 	- Fix ShapedCharge warheads doing no damage.
+	- Activate modular missile engines directly instead of using staging (which sometimes doesn't work).
+	- Apply Floating Origin/Krakensbane corrections to missile guidances - fixes missiles detonating partway to target due to miss checks.
 - Armor:
 	- Fix ProcArmor max scalar clamp not appearing.
 	- Add Yield and YoungModulus fields to armour for reflection - fixes armour definitions without these properties not loading properly.

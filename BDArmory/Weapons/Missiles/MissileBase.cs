@@ -324,10 +324,25 @@ namespace BDArmory.Weapons.Missiles
         public StringBuilder debugString = new StringBuilder();
 
         private float _throttle = 1f;
-        Vector3 previousPos;
 
         public string Sublabel;
         public int missilecount = 0; //#191
+
+        /// <summary>
+        /// Make corrections for floating origin and Krakensbane adjustments.
+        /// This can't simply be in OnFixedUpdate as it needs to be called differently for MissileLauncher (which uses OnFixedUpdate) and BDModularGuidance (which uses FlyByWire which triggers before OnFixedUpdate).
+        /// </summary>
+        public void FloatingOriginCorrection()
+        {
+            if (HasFired && !HasExploded)
+            {
+                if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
+                {
+                    // Debug.Log($"DEBUG {Time.time} Correcting for floating origin shift of {(Vector3)FloatingOrigin.Offset:G3} ({(Vector3)FloatingOrigin.OffsetNonKrakensbane:G3}) for {vessel.vesselName} ({SourceVessel})");
+                    TargetPosition -= FloatingOrigin.OffsetNonKrakensbane;
+                }
+            }
+        }
 
         public void GetMissileCount() // could stick this in GetSublabel, but that gets called every frame by BDArmorySetup?
         {
@@ -1106,8 +1121,6 @@ namespace BDArmory.Weapons.Missiles
                                 }
                             }
                         }
-
-                        previousPos = part.transform.position;
                     }
                     else
                     {
