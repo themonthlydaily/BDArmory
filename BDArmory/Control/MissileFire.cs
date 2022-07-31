@@ -2885,7 +2885,7 @@ namespace BDArmory.Control
             //&& currentGun.useRippleFire) //currentGun.roundsPerMinute < 1500)
             {
                 float counter = 0; // Used to get a count of the ripple weapons.  a float version of rippleGunCount.
-                gunRippleIndex.Clear();
+                //gunRippleIndex.Clear();
                 // This value will be incremented as we set the ripple weapons
                 rippleGunCount.Clear();
                 float weaponRpm = 0;  // used to set the rippleGunRPM
@@ -2995,7 +2995,10 @@ namespace BDArmory.Control
                                 }
                             }
                             rippleGunCount.Add(weapon.Current.WeaponName, GunCount);
-                            gunRippleIndex.Add(weapon.Current.WeaponName, 0);
+                            if (!gunRippleIndex.ContainsKey(weapon.Current.WeaponName))
+                            {
+                                gunRippleIndex.Add(weapon.Current.WeaponName, 0);
+                            }
                         }
                         weapon.Current.initialFireDelay = 60 / (weapon.Current.roundsPerMinute * (rippleGunCount[weapon.Current.WeaponName]));
                         // Debug.Log("[RIPPLEDEBUG]" + weapon.Current.WeaponName + " rippleIndex: " + weapon.Current.rippleIndex + "; initialfiredelay: " + weapon.Current.initialFireDelay);
@@ -5640,7 +5643,7 @@ namespace BDArmory.Control
             if (BDArmorySettings.PEACE_MODE) return;
 
             UpdateGuardViewScan();
-
+            
             //setting turrets to guard mode
             if (selectedWeapon != null && selectedWeapon != previousSelectedWeapon && (selectedWeapon.GetWeaponClass() == WeaponClasses.Gun || selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket || selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser))
             {
