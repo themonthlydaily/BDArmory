@@ -2104,9 +2104,9 @@ namespace BDArmory.Control
                                     guardFiringMissile = false;
                                     yield break;
                                 }
-                                
+
                             }
-                    }              
+                    }
                     else //no gps target and no tgp, cancel.
                     {
                         guardFiringMissile = false;
@@ -2639,7 +2639,7 @@ namespace BDArmory.Control
                 if (pilotAI)
                 {
                     pilotAI.RequestExtend("Nuke away!", guardTarget, missile.StandOffDistance * 1.25f, guardTarget.CoM); // Extend from projected detonation site if within blast radius
-                } 
+                }
             }
             return true;
         }
@@ -2769,7 +2769,8 @@ namespace BDArmory.Control
                     weapon.Current.GetWeaponClass() == WeaponClasses.SLW)
                     {
                         weapon.Current.GetPart().FindModuleImplementing<MissileBase>().GetMissileCount(); // #191, Do it this way so the GetMissileCount only updates when missile fired
-                        if (weapon.Current.GetPart().FindModuleImplementing<MissileLauncher>().TargetingMode == MissileBase.TargetingModes.AntiRad)
+                        var ml = weapon.Current.GetPart().FindModuleImplementing<MissileLauncher>();
+                        if (ml is not null && ml.TargetingMode == MissileBase.TargetingModes.AntiRad) // FIXME SI: What if it's a modular missile?
                         {
                             hasAntiRadiationOrdinance = true;
                         }
@@ -2879,7 +2880,7 @@ namespace BDArmory.Control
 
             //gun ripple stuff
             if (selectedWeapon != null && (selectedWeapon.GetWeaponClass() == WeaponClasses.Gun || selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket || selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser))
-                //&& currentGun.useRippleFire) //currentGun.roundsPerMinute < 1500)
+            //&& currentGun.useRippleFire) //currentGun.roundsPerMinute < 1500)
             {
                 float counter = 0; // Used to get a count of the ripple weapons.  a float version of rippleGunCount.
                 gunRippleIndex.Clear();
@@ -2973,12 +2974,12 @@ namespace BDArmory.Control
                         counter += weaponRpm; // grab sum of weapons rpm
                     }
                 gunRippleRpm = counter;
-                
+
                 //ripple for non-homogeneous groups needs to be setup per guntype, else a slow cannon will have the same firedelay as a fast MG
                 using (List<ModuleWeapon>.Enumerator weapon = rippleWeapons.GetEnumerator())
                     while (weapon.MoveNext())
                     {
-                        int GunCount = 0; 
+                        int GunCount = 0;
                         if (weapon.Current == null) continue;
                         weapon.Current.useRippleFire = ro.rippleFire;
                         if (!rippleGunCount.ContainsKey(weapon.Current.WeaponName)) //don't setup copies of a guntype if we've already done that
@@ -3635,7 +3636,7 @@ namespace BDArmory.Control
                 }
             }
             overrideTarget = null; //null the override target if it cannot be used
-            
+
             TargetInfo potentialTarget = null;
             //=========HIGH PRIORITY MISSILES=============
             //first engage any missiles targeting this vessel
@@ -4178,7 +4179,7 @@ namespace BDArmory.Control
                             if (mlauncher != null)
                             {
                                 if (mlauncher.TargetingMode == MissileBase.TargetingModes.Radar && radars.Count <= 0) continue; //dont select RH missiles when no radar aboard
-                                if (mlauncher.TargetingMode == MissileBase.TargetingModes.Laser && targetingPods.Count <=0) continue; //don't select LH missiles when no FLIR aboard
+                                if (mlauncher.TargetingMode == MissileBase.TargetingModes.Laser && targetingPods.Count <= 0) continue; //don't select LH missiles when no FLIR aboard
                                 candidateDetDist = mlauncher.DetonationDistance;
                                 candidateAccel = mlauncher.thrust / mlauncher.part.mass; //for anti-missile, prioritize proxidetonation and accel
                                 bool EMP = mlauncher.warheadType == MissileBase.WarheadTypes.EMP;
@@ -4814,7 +4815,7 @@ namespace BDArmory.Control
                             double srfSpeed = currentTarget.Vessel.horizontalSrfSpeed;
                             bool EMP = Missile.warheadType == MissileBase.WarheadTypes.EMP;
                             int candidatePriority = Mathf.RoundToInt(Missile.priority);
-                                                         
+
                             if (EMP && target.isDebilitated) continue;
                             //if (targetWeapon != null && targetWeapon.GetWeaponClass() == WeaponClasses.Bomb) targetYield = -1; //reset targetyield so larger bomb yields don't supercede missiles
                             if (targetWeapon != null && targetWeaponPriority > candidatePriority)
@@ -5337,8 +5338,8 @@ namespace BDArmory.Control
             {
                 viewModifier = vesselcamo.opticalReductionFactor;
             }
-                if ((target.Vessel.transform.position - transform.position).sqrMagnitude < (guardRange * viewModifier) *  (guardRange * viewModifier) &&
-                Vector3.Angle(-vessel.ReferenceTransform.forward, target.Vessel.transform.position - vessel.CoM) < guardAngle / 2)
+            if ((target.Vessel.transform.position - transform.position).sqrMagnitude < (guardRange * viewModifier) * (guardRange * viewModifier) &&
+            Vector3.Angle(-vessel.ReferenceTransform.forward, target.Vessel.transform.position - vessel.CoM) < guardAngle / 2)
             {
                 if (RadarUtils.TerrainCheck(target.Vessel.transform.position, transform.position)) //vessel behind terrain
                 {
@@ -5368,13 +5369,16 @@ namespace BDArmory.Control
                 if (selectedWeapon.GetWeaponClass() == WeaponClasses.Missile && CurrentMissile != null && CurrentMissile.TargetingMode == MissileBase.TargetingModes.AntiRad)
                 {
                     MissileLauncher ml = CurrentMissile as MissileLauncher;
-                    for (int i = 0; i < rwr.pingsData.Length; i++)
+                    if (ml is not null) // FIXME SI: What if it's a modular missile?
                     {
-                        if (rwr.pingsData[i].exists && (ml.antiradTargets.Contains(rwr.pingsData[i].signalStrength)) && rwr.pingsData[i].vessel == target.Vessel)
+                        for (int i = 0; i < rwr.pingsData.Length; i++)
                         {
-                            detectedTargetTimeout = 20;
-                            staleTarget = false;  //targeted by HARM
-                            return true;
+                            if (rwr.pingsData[i].exists && (ml.antiradTargets.Contains(rwr.pingsData[i].signalStrength)) && rwr.pingsData[i].vessel == target.Vessel)
+                            {
+                                detectedTargetTimeout = 20;
+                                staleTarget = false;  //targeted by HARM
+                                return true;
+                            }
                         }
                     }
                 }
@@ -5493,7 +5497,7 @@ namespace BDArmory.Control
                 float scanRadius = CurrentMissile.lockedSensorFOV * 0.5f;
                 float maxOffBoresight = CurrentMissile.maxOffBoresight * 0.85f;
 
-                if (vesselRadarData) 
+                if (vesselRadarData)
                 {
                     if (vesselRadarData.irstCount > 0)
                     {
@@ -5888,7 +5892,7 @@ namespace BDArmory.Control
                 if ((pilotAI != null && incomingMissTime >= pilotAI.evasionTimeThreshold && incomingMissDistance < pilotAI.evasionThreshold) || AI != null && pilotAI == null) // If we haven't been under fire long enough, ignore gunfire
                 {
                     FireOCM(false); //enable visual coutnermeasures if under fire
-                }                
+                }
                 if (results.threatWeaponManager != null)
                 {
                     incomingMissDistance = results.missDistance + results.missDeviation;
