@@ -278,7 +278,7 @@ namespace BDArmory.Radar
                         openIndex = i;
                     }
                 }
-
+                
                 if (openIndex >= 0)
                 {
                     referenceTransform.rotation = Quaternion.LookRotation(vessel.ReferenceTransform.up,
@@ -288,6 +288,8 @@ namespace BDArmory.Radar
                         RadarUtils.WorldToRadar(source, referenceTransform, RwrDisplayRect, rwrDisplayRange), Vector3.zero,
                         true, (float)type);    // HACK! Evil misuse of signalstrength for the threat type!
                     pingWorldPositions[openIndex] = source; //FIXME source is improperly defined
+                    if (weaponManager.hasAntiRadiationOrdinance)
+                        BDATargetManager.ReportVessel(AIUtils.VesselAtPosition(source), weaponManager); // Report RWR ping as target for anti-rads
                     StartCoroutine(PingLifeRoutine(openIndex, persistTime));
 
                     PlayWarningSound(type, (source - vessel.transform.position).sqrMagnitude);
