@@ -1002,7 +1002,8 @@ namespace BDArmory.Weapons.Missiles
                 Jettison();
                 AddTargetInfoToVessel();
                 IncreaseTolerance();
-                SpawnUtils.ActivateAllEngines(vessel, true, false);
+                if (SpawnUtils.CountActiveEngines(vessel) == 0) // Activate all engines if none are activated by action group "staging".
+                    SpawnUtils.ActivateAllEngines(vessel, true, false);
 
                 this.initialMissileRollPlane = -this.vessel.transform.up;
                 this.initialMissileForward = this.vessel.transform.forward;

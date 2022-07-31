@@ -2772,7 +2772,7 @@ namespace BDArmory.Control
                         BDModularGuidance mmg = CurrentMissile as BDModularGuidance;
                         weapon.Current.GetPart().FindModuleImplementing<MissileBase>().GetMissileCount(); // #191, Do it this way so the GetMissileCount only updates when missile fired
 
-                        if (ml is not null && ml.TargetingMode == MissileBase.TargetingModes.AntiRad || mmg is not null && mmg.TargetingMode == MissileBase.TargetingModes.AntiRad)
+                        if ((ml is not null && ml.TargetingMode == MissileBase.TargetingModes.AntiRad) || (mmg is not null && mmg.TargetingMode == MissileBase.TargetingModes.AntiRad))
                         {
                             hasAntiRadiationOrdinance = true;
                         }
@@ -5373,7 +5373,7 @@ namespace BDArmory.Control
                     MissileLauncher ml = CurrentMissile as MissileLauncher;
                     for (int i = 0; i < rwr.pingsData.Length; i++)
                     {
-                        if (rwr.pingsData[i].exists && (ml != null ? ml.antiradTargets.Contains(rwr.pingsData[i].signalStrength) : (rwr.pingsData[i].signalStrength == 0 || rwr.pingsData[i].signalStrength == 5)) && rwr.pingsData[i].vessel == target.Vessel) //MMGs ahve limited Antirad options compared to standard
+                        if (rwr.pingsData[i].exists && (ml != null ? ml.antiradTargets.Contains(rwr.pingsData[i].signalStrength) : (rwr.pingsData[i].signalStrength == 0 || rwr.pingsData[i].signalStrength == 5)) && rwr.pingsData[i].vessel == target.Vessel) //MMGs have limited Antirad options compared to standard
                         {
                             detectedTargetTimeout = 20;
                             staleTarget = false;  //targeted by HARM
