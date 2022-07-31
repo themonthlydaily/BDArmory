@@ -2768,9 +2768,11 @@ namespace BDArmory.Control
                     weapon.Current.GetWeaponClass() == WeaponClasses.Missile ||
                     weapon.Current.GetWeaponClass() == WeaponClasses.SLW)
                     {
+                        MissileLauncher ml = CurrentMissile as MissileLauncher;
+                        BDModularGuidance mmg = CurrentMissile as BDModularGuidance;
                         weapon.Current.GetPart().FindModuleImplementing<MissileBase>().GetMissileCount(); // #191, Do it this way so the GetMissileCount only updates when missile fired
-                        var ml = weapon.Current.GetPart().FindModuleImplementing<MissileLauncher>();
-                        if (ml is not null && ml.TargetingMode == MissileBase.TargetingModes.AntiRad) // FIXME SI: What if it's a modular missile?
+
+                        if (ml is not null && ml.TargetingMode == MissileBase.TargetingModes.AntiRad || mmg is not null && mmg.TargetingMode == MissileBase.TargetingModes.AntiRad)
                         {
                             hasAntiRadiationOrdinance = true;
                         }
@@ -5369,16 +5371,13 @@ namespace BDArmory.Control
                 if (selectedWeapon.GetWeaponClass() == WeaponClasses.Missile && CurrentMissile != null && CurrentMissile.TargetingMode == MissileBase.TargetingModes.AntiRad)
                 {
                     MissileLauncher ml = CurrentMissile as MissileLauncher;
-                    if (ml is not null) // FIXME SI: What if it's a modular missile?
+                    for (int i = 0; i < rwr.pingsData.Length; i++)
                     {
-                        for (int i = 0; i < rwr.pingsData.Length; i++)
+                        if (rwr.pingsData[i].exists && (ml != null ? ml.antiradTargets.Contains(rwr.pingsData[i].signalStrength) : (rwr.pingsData[i].signalStrength == 0 || rwr.pingsData[i].signalStrength == 5)) && rwr.pingsData[i].vessel == target.Vessel) //MMGs ahve limited Antirad options compared to standard
                         {
-                            if (rwr.pingsData[i].exists && (ml.antiradTargets.Contains(rwr.pingsData[i].signalStrength)) && rwr.pingsData[i].vessel == target.Vessel)
-                            {
-                                detectedTargetTimeout = 20;
-                                staleTarget = false;  //targeted by HARM
-                                return true;
-                            }
+                            detectedTargetTimeout = 20;
+                            staleTarget = false;  //targeted by HARM
+                            return true;
                         }
                     }
                 }

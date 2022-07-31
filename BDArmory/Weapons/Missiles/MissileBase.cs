@@ -997,10 +997,6 @@ namespace BDArmory.Weapons.Missiles
             return _guidance.GetDirection(this, targetPosition, Vector3.zero);
         }
 
-
-
-
-
         protected void drawLabels()
         {
             if (vessel == null || !HasFired || !vessel.isActiveVessel) return;
