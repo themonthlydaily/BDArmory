@@ -1,5 +1,6 @@
 ﻿FIXES
 - Remove the "-pre" from the version string, fix some typos.
+- Set the AI GUI window rect in Start, not Awake, to guarantee that BDArmorySettings values have been read - fixes the 0-height AI GUI window.
 IMPROVEMENTS
 - Weapons:
 	- Add pro-nav gain parameter as tunable parameter for missile parts (pronavGain), set pro-nav gain to 3 by default.
