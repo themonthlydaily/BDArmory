@@ -16,6 +16,7 @@ IMPROVEMENTS / FIXES
 	- Calculate the proper separation between teams for starting a competition - fixes the competitions not starting bug.
 	- Set the number of teams to 0 in one-at-a-time waypoint mode tournaments so spawning works correctly.
 	- Ignore modular missile engines when activating all engines during spawning.
+	- Fix the waypoint altitude slider to actually apply to waypoints when starting a waypoint run.
 - Weapons:
 	- Add pro-nav gain parameter as tunable parameter for missile parts (pronavGain), set pro-nav gain to 3 by default.
 	- Anti-rad missiles now continue to target the last known GPS point instead of disabling guidance.
