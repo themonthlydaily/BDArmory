@@ -1412,7 +1412,7 @@ namespace BDArmory.Control
                 GameEvents.onVesselPartCountChanged.Add(UpdateTerrainAlertDetectionRadius);
                 UpdateTerrainAlertDetectionRadius(vessel);
                 dynDecayRate = Mathf.Exp(Mathf.Log(0.5f) * Time.fixedDeltaTime / 60f); // Decay rate for a half-life of 60s.
-                dynVelSmoothingCoef = Mathf.Exp(Mathf.Log(0.5f) * Time.fixedDeltaTime / 5f); // Smoothing rate with a half-life of 5s.
+                dynVelSmoothingCoef = Mathf.Exp(Mathf.Log(0.5f) * Time.fixedDeltaTime); // Smoothing rate with a half-life of 1s.
             }
 
             SetupSliderResolution();
@@ -1805,6 +1805,11 @@ namespace BDArmory.Control
                 evasiveTimer = 0;
                 if (!extending && !(terrainAlertCoolDown > 0))
                 {
+                    if (ResumeCommand())
+                    {
+                        UpdateCommand(s);
+                        return;
+                    }
                     SetStatus("Orbiting");
                     FlyOrbit(s, assignedPositionGeo, 2000, idleSpeed, ClockwiseOrbit);
                     return;
@@ -2012,7 +2017,7 @@ namespace BDArmory.Control
                 else if (planarDistanceToTarget > weaponManager.gunRange * 1.25f && (vessel.altitude < v.altitude || (float)vessel.radarAltitude < defaultAltitude)) //climb to target vessel's altitude if lower and still too far for guns
                 {
                     finalMaxSteer = GetSteerLimiterForSpeedAndPower();
-                    if (v.LandedOrSplashed) vectorToTarget += upDirection * defaultAltitude; // If the target is landed or splashed, aim for the default altitude whiel we're outside our gun's range.
+                    if (v.LandedOrSplashed) vectorToTarget += upDirection * defaultAltitude; // If the target is landed or splashed, aim for the default altitude while we're outside our gun's range.
                     target = vesselTransform.position + GetLimitedClimbDirectionForSpeed(vectorToTarget);
                 }
                 else
@@ -2140,6 +2145,7 @@ namespace BDArmory.Control
                     targetPosition = vessel.transform.position + vessel.Velocity();
                 }
 
+                targetPosition = LongRangeAltitudeCorrection(targetPosition);
                 targetPosition = FlightPosition(targetPosition, minAltitude);
                 targetPosition = vesselTransform.position + ((targetPosition - vesselTransform.position).normalized * 100);
             }
@@ -2555,7 +2561,7 @@ namespace BDArmory.Control
             if (command != PilotCommands.Free && (vessel.transform.position - flightCenter).sqrMagnitude < radius * radius * 1.5f)
             {
                 if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDModulePilotAI]: AI Pilot reached command destination.");
-                ReleaseCommand();
+                ReleaseCommand(false, false);
             }
 
             useVelRollTarget = true;
@@ -3180,7 +3186,7 @@ namespace BDArmory.Control
                 return direction; //only use this if climbing
             }
 
-            Vector3 planarDirection = Vector3.ProjectOnPlane(direction, upDirection).normalized * 100;
+            Vector3 planarDirection = Vector3.ProjectOnPlane(direction, upDirection);
 
             float angle = Mathf.Clamp((float)vessel.srfSpeed * 0.13f, 5, 90);
 
@@ -3418,6 +3424,7 @@ namespace BDArmory.Control
             maxLiftAcceleration = Mathf.Clamp(maxLiftAcceleration, bodyGravity, maxAllowedGForce * bodyGravity); //limit it to whichever is smaller, what we can provide or what we can handle. Assume minimum of 1G to avoid extremely high turn radiuses.
 
             turnRadius = dynVelocityMagSqr / maxLiftAcceleration; //radius that we can turn in assuming constant velocity, assuming simple circular motion (this is a terrible assumption, the AI usually turns on afterboosters!)
+            debugString.AppendLine($"Turn Radius: {turnRadius}m");
         }
 
         Vector3 DefaultAltPosition()
@@ -3504,6 +3511,18 @@ namespace BDArmory.Control
             {
                 return targetPosition;
             }
+        }
+
+        Vector3 LongRangeAltitudeCorrection(Vector3 targetPosition)
+        {
+            var scale = weaponManager is not null ? Mathf.Max(2500f, weaponManager.gunRange) : 2500f;
+            var scaledDistance = (targetPosition - vessel.transform.position).magnitude / scale;
+            if (scaledDistance <= 1) return targetPosition; // No modification if the target is within the gun range.
+            scaledDistance = Mathf.Sqrt(scaledDistance);
+            var targetAlt = BodyUtils.GetRadarAltitudeAtPos(targetPosition);
+            var newAlt = targetAlt / scaledDistance + defaultAltitude * (scaledDistance - 1) / scaledDistance;
+            debugString.AppendLine($"Adjusting fly-to altitude from {targetAlt:0}m to {newAlt:0}m (scaled distance: {scaledDistance:0.0}m)");
+            return targetPosition + (newAlt - targetAlt) * upDirection;
         }
 
         private float SteerDamping(float angleToTarget, float defaultTargetPosition, int axis)
@@ -3627,7 +3646,7 @@ namespace BDArmory.Control
 
         void UpdateCommand(FlightCtrlState s)
         {
-            if (command == PilotCommands.Follow && !commandLeader)
+            if (command == PilotCommands.Follow && commandLeader is null)
             {
                 ReleaseCommand();
                 return;
@@ -3654,15 +3673,15 @@ namespace BDArmory.Control
             }
             else if (command == PilotCommands.Attack)
             {
-                if (targetVessel != null && (BDArmorySettings.RUNWAY_PROJECT || (targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= weaponManager.gunRange * weaponManager.gunRange)
-                    && (targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= weaponManager.guardRange * weaponManager.guardRange) // If the vessel has a target within visual range, let it fight!
+                if (targetVessel != null) // && (BDArmorySettings.RUNWAY_PROJECT || (targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= weaponManager.gunRange * weaponManager.gunRange)
+                    // && (targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= weaponManager.guardRange * weaponManager.guardRange) // If the vessel has a target within visual range, let it fight!
                 {
-                    ReleaseCommand();
+                    ReleaseCommand(false);
                     return;
                 }
                 else if (weaponManager.underAttack || weaponManager.underFire)
                 {
-                    ReleaseCommand();
+                    ReleaseCommand(false);
                     return;
                 }
                 else
@@ -4052,7 +4071,6 @@ namespace BDArmory.Control
         {
             measuring = true;
             measurementStartTime = Time.time;
-            partCount = AI.vessel.Parts.Count;
             if (WM != null && WM.currentTarget != null) lastTargetVessel = WM.currentTarget.Vessel;
         }
 
@@ -4068,6 +4086,7 @@ namespace BDArmory.Control
             rollOscillationAreaSqr = 0;
             onTargetTimer = 0;
             measuring = false;
+            partCount = AI.vessel.Parts.Count;
 
             // Initial setup for auto-tuning or release the AI when finished.
             if (!AI.AutoTune && AI.currentCommand == PilotCommands.FlyTo) AI.ReleaseCommand(); // Release the AI if we've been commanding it.

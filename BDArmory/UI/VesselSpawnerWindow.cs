@@ -755,7 +755,7 @@ namespace BDArmory.UI
                                 BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
                                 true,
                                 BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS,
-                                BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS,
+                                0, // This should always be 0 (FFA) to avoid the logic for spawning teams in one-at-a-time mode.
                                 null,
                                 null,
                                 null,

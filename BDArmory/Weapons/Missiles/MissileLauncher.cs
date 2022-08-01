@@ -26,6 +26,9 @@ namespace BDArmory.Weapons.Missiles
         public string homingType = "AAM";
 
         [KSPField]
+        public float pronavGain = 3f;
+
+        [KSPField]
         public string targetingType = "none";
 
         [KSPField]
@@ -951,6 +954,8 @@ namespace BDArmory.Weapons.Missiles
 
         public override void OnFixedUpdate()
         {
+            base.OnFixedUpdate();
+            FloatingOriginCorrection();
             try // FIXME Remove this once the fix is sufficiently tested.
             {
                 debugString.Length = 0;
@@ -1828,9 +1833,9 @@ namespace BDArmory.Weapons.Missiles
 
                 float timeToImpact;
                 if (GuidanceMode == GuidanceModes.APN) // Augmented Pro-Nav
-                    aamTarget = MissileGuidance.GetAPNTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, 4f, out timeToImpact);
+                    aamTarget = MissileGuidance.GetAPNTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, pronavGain, out timeToImpact);
                 else if (GuidanceMode == GuidanceModes.PN) // Pro-Nav
-                    aamTarget = MissileGuidance.GetPNTarget(TargetPosition, TargetVelocity, vessel, 4f, out timeToImpact);
+                    aamTarget = MissileGuidance.GetPNTarget(TargetPosition, TargetVelocity, vessel, pronavGain, out timeToImpact);
                 else // AAM Lead
                     aamTarget = MissileGuidance.GetAirToAirTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, out timeToImpact, optimumAirspeed);
 

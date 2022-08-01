@@ -23,6 +23,7 @@ IMPROVEMENTS / FIXES
 	- Fix ShapedCharge warheads doing no damage.
 	- Activate modular missile engines directly instead of using staging (which sometimes doesn't work).
 	- Apply Floating Origin/Krakensbane corrections to missile guidances - fixes missiles detonating partway to target due to miss checks.
+	- Fix for infrequent error related to ripple fire.
 - Armor:
 	- Fix ProcArmor max scalar clamp not appearing.
 	- Add Yield and YoungModulus fields to armour for reflection - fixes armour definitions without these properties not loading properly.
