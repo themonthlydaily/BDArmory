@@ -87,7 +87,7 @@ namespace BDArmory.Control
         public void incrementRippleIndex(string weaponname)
         {
             gunRippleIndex[weaponname]++;
-            if (gunRippleIndex[weaponname] >= rippleGunCount[weaponname])
+            if (gunRippleIndex[weaponname] >= GetRippleGunCount(weaponname))
             {
                 gunRippleIndex[weaponname] = 0;
             }
@@ -98,6 +98,15 @@ namespace BDArmory.Control
             if (gunRippleIndex.TryGetValue(weaponname, out int rippleIndex))
             {
                 return rippleIndex;
+            }
+            else return 0;
+        }
+
+        public int GetRippleGunCount(string weaponname)
+        {
+            if (rippleGunCount.TryGetValue(weaponname, out int rippleCount))
+            {
+                return rippleCount;
             }
             else return 0;
         }
