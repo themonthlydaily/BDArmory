@@ -87,7 +87,7 @@ namespace BDArmory.Control
         public void incrementRippleIndex(string weaponname)
         {
             gunRippleIndex[weaponname]++;
-            if (gunRippleIndex[weaponname] >= rippleGunCount[weaponname])
+            if (gunRippleIndex[weaponname] >= GetRippleGunCount(weaponname))
             {
                 gunRippleIndex[weaponname] = 0;
             }
@@ -98,6 +98,15 @@ namespace BDArmory.Control
             if (gunRippleIndex.TryGetValue(weaponname, out int rippleIndex))
             {
                 return rippleIndex;
+            }
+            else return 0;
+        }
+
+        public int GetRippleGunCount(string weaponname)
+        {
+            if (rippleGunCount.TryGetValue(weaponname, out int rippleCount))
+            {
+                return rippleCount;
             }
             else return 0;
         }
@@ -435,6 +444,7 @@ namespace BDArmory.Control
 
         public bool guardFiringMissile;
         public bool hasAntiRadiationOrdinance;
+        public float[] antiradTargets;
         public bool antiRadTargetAcquired;
         Vector3 antiRadiationTarget;
         public bool laserPointDetected;
@@ -688,6 +698,11 @@ namespace BDArmory.Control
                                 rd.Current.EnableIRST();
                             }
                         }
+                }
+                if (hasAntiRadiationOrdinance)
+                {
+                    if (rwr && !rwr.rwrEnabled) rwr.EnableRWR();
+                    if (rwr && rwr.rwrEnabled && !rwr.displayRWR) rwr.displayRWR = true;
                 }
             }
         }
@@ -2774,13 +2789,14 @@ namespace BDArmory.Control
                     weapon.Current.GetWeaponClass() == WeaponClasses.Missile ||
                     weapon.Current.GetWeaponClass() == WeaponClasses.SLW)
                     {
-                        MissileLauncher ml = CurrentMissile as MissileLauncher;
-                        BDModularGuidance mmg = CurrentMissile as BDModularGuidance;
+                        MissileLauncher ml = weapon.Current.GetPart().FindModuleImplementing<MissileLauncher>();
+                        BDModularGuidance mmg = weapon.Current.GetPart().FindModuleImplementing<BDModularGuidance>();
                         weapon.Current.GetPart().FindModuleImplementing<MissileBase>().GetMissileCount(); // #191, Do it this way so the GetMissileCount only updates when missile fired
 
                         if ((ml is not null && ml.TargetingMode == MissileBase.TargetingModes.AntiRad) || (mmg is not null && mmg.TargetingMode == MissileBase.TargetingModes.AntiRad))
                         {
                             hasAntiRadiationOrdinance = true;
+                            antiradTargets = OtherUtils.ParseToFloatArray(ml != null? ml.antiradTargetTypes : "0,5"); //limited Antirad options for MMG
                         }
                     }
                 }
@@ -3726,10 +3742,10 @@ namespace BDArmory.Control
                         Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + targetDebugText + (selectedWeapon != null ? selectedWeapon.GetShortName() : ""));
                     }
                     //need to check that target is actually being seen, and not just being recalled due to object permanence
-                    if (CanSeeTarget(potentialTarget, false))
-                    {
-                        BDATargetManager.ReportVessel(potentialTarget.Vessel, this); //have it so AI can see and register a target (no radar + FoV angle < 360, radar turns off due to incoming HARM, etc)
-                    }
+                    //if (CanSeeTarget(potentialTarget, false))
+                    //{
+                    //    BDATargetManager.ReportVessel(potentialTarget.Vessel, this); //have it so AI can see and register a target (no radar + FoV angle < 360, radar turns off due to incoming HARM, etc)
+                    //} //target would already be listed as seen/radar detected via GuardScan/Radar; all CanSee does is check if the detected time is < 30s
                     return;
                 }
                 else if (!BDArmorySettings.DISABLE_RAMMING)
@@ -5345,6 +5361,7 @@ namespace BDArmory.Control
             {
                 viewModifier = vesselcamo.opticalReductionFactor;
             }
+            //Can the target be seen?
             if ((target.Vessel.transform.position - transform.position).sqrMagnitude < (guardRange * viewModifier) * (guardRange * viewModifier) &&
             Vector3.Angle(-vessel.ReferenceTransform.forward, target.Vessel.transform.position - vessel.CoM) < guardAngle / 2)
             {
@@ -5364,6 +5381,7 @@ namespace BDArmory.Control
                 staleTarget = false;
                 return true;
             }
+            //target beyond visual range. Detected by radar/IRST?
             target.detected.TryGetValue(Team, out bool detected);//see if the target is actually within radar sight right now
             if (detected)
             {
@@ -5371,25 +5389,20 @@ namespace BDArmory.Control
                 staleTarget = false;
                 return true;
             }
+            //carrying antirads and picking up RWR pings?
             if (rwr && rwr.rwrEnabled && rwr.displayRWR && hasAntiRadiationOrdinance)//see if RWR is picking up a ping from unseen radar source and craft has HARMs
             {
-                if (selectedWeapon.GetWeaponClass() == WeaponClasses.Missile && CurrentMissile != null && CurrentMissile.TargetingMode == MissileBase.TargetingModes.AntiRad)
+                for (int i = 0; i < rwr.pingsData.Length; i++) //using copy of antirad targets due to CanSee running before weapon selection
                 {
-                    MissileLauncher ml = CurrentMissile as MissileLauncher;
-                    for (int i = 0; i < rwr.pingsData.Length; i++)
+                    if (rwr.pingsData[i].exists && antiradTargets.Contains(rwr.pingsData[i].signalStrength) && (rwr.pingWorldPositions[i] - target.position).sqrMagnitude < 20 * 20)
                     {
-                        if (rwr.pingsData[i].exists && (ml != null ? ml.antiradTargets.Contains(rwr.pingsData[i].signalStrength) : (rwr.pingsData[i].signalStrength == 0 || rwr.pingsData[i].signalStrength == 5)) && rwr.pingsData[i].vessel == target.Vessel) //MMGs have limited Antirad options compared to standard
-                        {
-                            detectedTargetTimeout = 20;
-                            staleTarget = false;  //targeted by HARM
-                            return true;
-                        }
+                        detectedTargetTimeout = 0;
+                        staleTarget = false;
+                        return true;
                     }
                 }
-                detectedTargetTimeout = 20; //know target is somewhere over in that area
-                staleTarget = true;
-                return true;
             }
+            //can't see target, but did we see it recently?
             if (checkForstaleTarget) //merely look to see if a target was last detected within 30s
             {
                 if (target.detectedTime.TryGetValue(Team, out float detectedTime) && Time.time - detectedTime < Mathf.Max(30, targetScanInterval))
@@ -5399,7 +5412,7 @@ namespace BDArmory.Control
                     staleTarget = true;
                     return true;
                 }
-                return false;
+                return false; //target long gone
             }
             staleTarget = true;
             return false;
