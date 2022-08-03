@@ -80,6 +80,12 @@ namespace BDArmory.Weapons
             Impact      //standard contact + graze fuze, detonates on hit
             //Laser     //laser-guided smart rounds?
         }
+        public enum FillerTypes
+        {
+            None,       //No HE filler, non-explosive slug.
+            Standard,   //standard HE filler for a standard exposive shell
+            Shaped      //shaped charge filler, for HEAT rounds and similar
+        }
         public enum APSTypes
         {
             Ballistic,
@@ -97,6 +103,8 @@ namespace BDArmory.Weapons
         public WeaponTypes eWeaponType;
 
         public FuzeTypes eFuzeType;
+
+        public FillerTypes eHEType;
 
         public APSTypes eAPSType;
 
@@ -1811,7 +1819,22 @@ namespace BDArmory.Weapons
                                     pBullet.caliber = bulletInfo.caliber;
                                     pBullet.bulletVelocity = bulletInfo.bulletVelocity;
                                     pBullet.bulletMass = bulletInfo.bulletMass;
-                                    pBullet.explosive = bulletInfo.explosive;
+                                    if (bulletInfo.tntMass > 0)
+                                    {
+                                        switch (eHEType)
+                                        {
+                                            case FillerTypes.Standard:
+                                                pBullet.HEType = PooledBullet.PooledBulletTypes.Explosive;
+                                                break;
+                                            case FillerTypes.Shaped:
+                                                pBullet.HEType = PooledBullet.PooledBulletTypes.Shaped;
+                                                break;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        pBullet.HEType = PooledBullet.PooledBulletTypes.Slug;
+                                    }
                                     pBullet.incendiary = bulletInfo.incendiary;
                                     pBullet.apBulletMod = bulletInfo.apBulletMod;
                                     pBullet.bulletDmgMult = bulletDmgMult;
@@ -4881,6 +4904,26 @@ namespace BDArmory.Weapons
                     break;
             }
         }
+        void ParseBulletHEType(string type)
+        {
+            type = type.ToLower();
+            switch (type)
+            {
+                case "standard":
+                    eHEType = FillerTypes.Standard;
+                    break;
+                    //legacy support for older configs that are still explosive = true
+                case "true":
+                    eHEType = FillerTypes.Standard;
+                    break;
+                case "shaped":
+                    eHEType = FillerTypes.Shaped;
+                    break;
+                default:
+                    eHEType = FillerTypes.None;
+                    break;
+            }
+        }
         void ParseAPSType(string type)
         {
             type = type.ToLower();
@@ -4965,6 +5008,7 @@ namespace BDArmory.Weapons
                 fadeColor = bulletInfo.fadeColor;
                 ParseBulletDragType();
                 ParseBulletFuzeType(bulletInfo.fuzeType);
+                ParseBulletHEType(bulletInfo.explosive);
                 tntMass = bulletInfo.tntMass;
                 beehive = bulletInfo.beehive;
                 Impulse = bulletInfo.impulse;
@@ -5005,11 +5049,15 @@ namespace BDArmory.Weapons
                     {
                         guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Nuclear") + " ";
                     }
-                    if (bulletInfo.explosive && !bulletInfo.nuclear)
+                    if (bulletInfo.tntMass > 0 && !bulletInfo.nuclear)
                     {
                         if (eFuzeType == FuzeTypes.Timed || eFuzeType == FuzeTypes.Proximity || eFuzeType == FuzeTypes.Flak)
                         {
                             guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Flak") + " ";
+                        }
+                        else if (eHEType == FillerTypes.Shaped)
+                        {
+                            guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Shaped") + " ";
                         }
                         guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Explosive") + " ";
                     }
@@ -5025,7 +5073,7 @@ namespace BDArmory.Weapons
                     {
                         guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Beehive") + " ";
                     }
-                    if (!bulletInfo.explosive && bulletInfo.apBulletMod <= 0.8)
+                    if (bulletInfo.tntMass <= 0 && bulletInfo.apBulletMod <= 0.8)
                     {
                         guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Slug");
                     }
@@ -5245,6 +5293,7 @@ namespace BDArmory.Weapons
                             continue;
                         }
                         ParseBulletFuzeType(binfo.fuzeType);
+                        ParseBulletHEType(binfo.explosive);
                         output.AppendLine($"Bullet type: {(string.IsNullOrEmpty(binfo.DisplayName) ? binfo.name : binfo.DisplayName)}");
                         output.AppendLine($"Bullet mass: {Math.Round(binfo.bulletMass, 2)} kg");
                         output.AppendLine($"Muzzle velocity: {Math.Round(binfo.bulletVelocity, 2)} m/s");
@@ -5254,7 +5303,7 @@ namespace BDArmory.Weapons
                             output.AppendLine($"Cannister Round");
                             output.AppendLine($" - Submunition count: {binfo.subProjectileCount}");
                         }
-                        if (binfo.explosive && !binfo.nuclear)
+                        if ((binfo.tntMass > 0) && !binfo.nuclear)
                         {
                             output.AppendLine($"Blast:");
                             output.AppendLine($"- tnt mass:  {Math.Round(binfo.tntMass, 3)} kg");
@@ -5319,7 +5368,7 @@ namespace BDArmory.Weapons
                             output.AppendLine("");
                             continue;
                         }
-                        output.AppendLine($"Bullet type: {(string.IsNullOrEmpty(rinfo.DisplayName) ? rinfo.name : rinfo.DisplayName)}");
+                        output.AppendLine($"Rocket type: {(string.IsNullOrEmpty(rinfo.DisplayName) ? rinfo.name : rinfo.DisplayName)}");
                         output.AppendLine($"Rocket mass: {Math.Round(rinfo.rocketMass * 1000, 2)} kg");
                         //output.AppendLine($"Thrust: {thrust}kn"); mass and thrust don't really tell us the important bit, so lets replace that with accel
                         output.AppendLine($"Acceleration: {rinfo.thrust / rinfo.rocketMass}m/s2");

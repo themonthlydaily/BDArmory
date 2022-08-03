@@ -435,6 +435,11 @@ namespace BDArmory.Bullets
                             float Strength = Armor.Strength;
                             float safeTemp = Armor.SafeUseTemp;
                             float Density = Armor.Density;
+                            float vFactor = Armor.vFactor;
+                            float muParam1 = Armor.muParam1;
+                            float muParam2 = Armor.muParam2;
+                            float muParam3 = Armor.muParam3;
+
                             int armorType = (int)Armor.ArmorTypeNum;
                             if (BDArmorySettings.DEBUG_ARMOR)
                             {
@@ -445,7 +450,15 @@ namespace BDArmory.Bullets
                             //calculate bullet deformation
                             float newCaliber = ProjectileUtils.CalculateDeformation(armorStrength, bulletEnergy, caliber, impactVelocity, hardness, Density, HERatio, 1, false);
                             //calculate penetration
-                            penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, rocketMass * 1000, impactVelocity, Ductility, Density, Strength, thickness, 1);
+                            if (Ductility > 0.05)
+                            {
+                                penetration = ProjectileUtils.CalculatePenetration(caliber, impactVelocity, rocketMass * 1000f, 1f, Strength, vFactor, muParam1, muParam2, muParam3);
+                            }
+                            else
+                            {
+                                penetration = ProjectileUtils.CalculateCeramicPenetration(caliber, newCaliber, rocketMass * 1000, impactVelocity, Ductility, Density, Strength, thickness, 1);
+                            }
+
                             caliber = newCaliber; //update bullet with new caliber post-deformation(if any)
                             penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration, thickness);
 
@@ -851,7 +864,6 @@ namespace BDArmory.Bullets
                     pBullet.caliber = sBullet.caliber;
                     pBullet.bulletVelocity = sBullet.bulletVelocity;
                     pBullet.bulletMass = sBullet.bulletMass;
-                    pBullet.explosive = sBullet.explosive;
                     pBullet.incendiary = sBullet.incendiary;
                     pBullet.apBulletMod = sBullet.apBulletMod;
                     pBullet.bulletDmgMult = bulletDmgMult;
@@ -874,7 +886,7 @@ namespace BDArmory.Bullets
                     pBullet.tracerLuminance = 1.75f;
                     pBullet.bulletDrop = true;
 
-                    if (sBullet.explosive)
+                    if (sBullet.tntMass > 0)
                     {
                         pBullet.explModelPath = explModelPath;
                         pBullet.explSoundPath = explSoundPath;

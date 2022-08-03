@@ -249,6 +249,12 @@ namespace BDArmory.Control
             UI_FloatRange(minValue = 0f, maxValue = 0.5f, stepIncrement = 0.01f, scene = UI_Scene.All)]
         public float autoTuningOptionFastResponseRelevance = 0.2f;
 
+        //AutoTuning Initial Learning Rate
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_PIDAutoTuningInitialLearningRate", advancedTweakable = true,
+            groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
+            UI_FloatLogRange(minValue = 0.001f, maxValue = 1f, steps = 6, scene = UI_Scene.All)]
+        public float autoTuningOptionInitialLearningRate = 1f;
+
         //AutoTuning Altitude
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_PIDAutoTuningAltitude", //Auto-tuning Altitude
             groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
@@ -1406,7 +1412,7 @@ namespace BDArmory.Control
                 GameEvents.onVesselPartCountChanged.Add(UpdateTerrainAlertDetectionRadius);
                 UpdateTerrainAlertDetectionRadius(vessel);
                 dynDecayRate = Mathf.Exp(Mathf.Log(0.5f) * Time.fixedDeltaTime / 60f); // Decay rate for a half-life of 60s.
-                dynVelSmoothingCoef = Mathf.Exp(Mathf.Log(0.5f) * Time.fixedDeltaTime / 5f); // Smoothing rate with a half-life of 5s.
+                dynVelSmoothingCoef = Mathf.Exp(Mathf.Log(0.5f) * Time.fixedDeltaTime); // Smoothing rate with a half-life of 1s.
             }
 
             SetupSliderResolution();
@@ -1799,6 +1805,11 @@ namespace BDArmory.Control
                 evasiveTimer = 0;
                 if (!extending && !(terrainAlertCoolDown > 0))
                 {
+                    if (ResumeCommand())
+                    {
+                        UpdateCommand(s);
+                        return;
+                    }
                     SetStatus("Orbiting");
                     FlyOrbit(s, assignedPositionGeo, 2000, idleSpeed, ClockwiseOrbit);
                     return;
@@ -2006,7 +2017,7 @@ namespace BDArmory.Control
                 else if (planarDistanceToTarget > weaponManager.gunRange * 1.25f && (vessel.altitude < v.altitude || (float)vessel.radarAltitude < defaultAltitude)) //climb to target vessel's altitude if lower and still too far for guns
                 {
                     finalMaxSteer = GetSteerLimiterForSpeedAndPower();
-                    if (v.LandedOrSplashed) vectorToTarget += upDirection * defaultAltitude; // If the target is landed or splashed, aim for the default altitude whiel we're outside our gun's range.
+                    if (v.LandedOrSplashed) vectorToTarget += upDirection * defaultAltitude; // If the target is landed or splashed, aim for the default altitude while we're outside our gun's range.
                     target = vesselTransform.position + GetLimitedClimbDirectionForSpeed(vectorToTarget);
                 }
                 else
@@ -2134,6 +2145,7 @@ namespace BDArmory.Control
                     targetPosition = vessel.transform.position + vessel.Velocity();
                 }
 
+                targetPosition = LongRangeAltitudeCorrection(targetPosition);
                 targetPosition = FlightPosition(targetPosition, minAltitude);
                 targetPosition = vesselTransform.position + ((targetPosition - vesselTransform.position).normalized * 100);
             }
@@ -2549,7 +2561,7 @@ namespace BDArmory.Control
             if (command != PilotCommands.Free && (vessel.transform.position - flightCenter).sqrMagnitude < radius * radius * 1.5f)
             {
                 if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDModulePilotAI]: AI Pilot reached command destination.");
-                ReleaseCommand();
+                ReleaseCommand(false, false);
             }
 
             useVelRollTarget = true;
@@ -3174,7 +3186,7 @@ namespace BDArmory.Control
                 return direction; //only use this if climbing
             }
 
-            Vector3 planarDirection = Vector3.ProjectOnPlane(direction, upDirection).normalized * 100;
+            Vector3 planarDirection = Vector3.ProjectOnPlane(direction, upDirection);
 
             float angle = Mathf.Clamp((float)vessel.srfSpeed * 0.13f, 5, 90);
 
@@ -3412,6 +3424,7 @@ namespace BDArmory.Control
             maxLiftAcceleration = Mathf.Clamp(maxLiftAcceleration, bodyGravity, maxAllowedGForce * bodyGravity); //limit it to whichever is smaller, what we can provide or what we can handle. Assume minimum of 1G to avoid extremely high turn radiuses.
 
             turnRadius = dynVelocityMagSqr / maxLiftAcceleration; //radius that we can turn in assuming constant velocity, assuming simple circular motion (this is a terrible assumption, the AI usually turns on afterboosters!)
+            debugString.AppendLine($"Turn Radius: {turnRadius}m");
         }
 
         Vector3 DefaultAltPosition()
@@ -3498,6 +3511,18 @@ namespace BDArmory.Control
             {
                 return targetPosition;
             }
+        }
+
+        Vector3 LongRangeAltitudeCorrection(Vector3 targetPosition)
+        {
+            var scale = weaponManager is not null ? Mathf.Max(2500f, weaponManager.gunRange) : 2500f;
+            var scaledDistance = (targetPosition - vessel.transform.position).magnitude / scale;
+            if (scaledDistance <= 1) return targetPosition; // No modification if the target is within the gun range.
+            scaledDistance = Mathf.Sqrt(scaledDistance);
+            var targetAlt = BodyUtils.GetRadarAltitudeAtPos(targetPosition);
+            var newAlt = targetAlt / scaledDistance + defaultAltitude * (scaledDistance - 1) / scaledDistance;
+            debugString.AppendLine($"Adjusting fly-to altitude from {targetAlt:0}m to {newAlt:0}m (scaled distance: {scaledDistance:0.0}m)");
+            return targetPosition + (newAlt - targetAlt) * upDirection;
         }
 
         private float SteerDamping(float angleToTarget, float defaultTargetPosition, int axis)
@@ -3621,7 +3646,7 @@ namespace BDArmory.Control
 
         void UpdateCommand(FlightCtrlState s)
         {
-            if (command == PilotCommands.Follow && !commandLeader)
+            if (command == PilotCommands.Follow && commandLeader is null)
             {
                 ReleaseCommand();
                 return;
@@ -3648,15 +3673,15 @@ namespace BDArmory.Control
             }
             else if (command == PilotCommands.Attack)
             {
-                if (targetVessel != null && (BDArmorySettings.RUNWAY_PROJECT || (targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= weaponManager.gunRange * weaponManager.gunRange)
-                    && (targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= weaponManager.guardRange * weaponManager.guardRange) // If the vessel has a target within visual range, let it fight!
+                if (targetVessel != null) // && (BDArmorySettings.RUNWAY_PROJECT || (targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= weaponManager.gunRange * weaponManager.gunRange)
+                    // && (targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= weaponManager.guardRange * weaponManager.guardRange) // If the vessel has a target within visual range, let it fight!
                 {
-                    ReleaseCommand();
+                    ReleaseCommand(false);
                     return;
                 }
                 else if (weaponManager.underAttack || weaponManager.underFire)
                 {
-                    ReleaseCommand();
+                    ReleaseCommand(false);
                     return;
                 }
                 else
@@ -3901,8 +3926,9 @@ namespace BDArmory.Control
             /// <summary>
             /// Reset everything.
             /// </summary>
-            public void Reset()
+            public void Reset(float initial)
             {
+                this.initial = initial;
                 current = initial;
                 count = 0;
                 _best = float.MaxValue;
@@ -3940,7 +3966,7 @@ namespace BDArmory.Control
         }
 
         Dictionary<string, BaseField> fields;
-        Dictionary<string, string> fixedFields;
+        HashSet<string> fixedFields;
         Dictionary<string, float> baseValues;
         Dictionary<string, float> bestValues;
         Dictionary<string, Tuple<float, float>> limits;
@@ -4045,7 +4071,6 @@ namespace BDArmory.Control
         {
             measuring = true;
             measurementStartTime = Time.time;
-            partCount = AI.vessel.Parts.Count;
             if (WM != null && WM.currentTarget != null) lastTargetVessel = WM.currentTarget.Vessel;
         }
 
@@ -4061,6 +4086,7 @@ namespace BDArmory.Control
             rollOscillationAreaSqr = 0;
             onTargetTimer = 0;
             measuring = false;
+            partCount = AI.vessel.Parts.Count;
 
             // Initial setup for auto-tuning or release the AI when finished.
             if (!AI.AutoTune && AI.currentCommand == PilotCommands.FlyTo) AI.ReleaseCommand(); // Release the AI if we've been commanding it.
@@ -4089,7 +4115,7 @@ namespace BDArmory.Control
             if (string.IsNullOrEmpty(AI.autoTuningLossLabel)) AI.autoTuningLossLabel = $"measuring";
             AI.autoTuningLossLabel2 = $"LR: {lr.current:G2}, Roll rel.: {optimiser.rollRelevance:G2}";
             AI.autoTuningLossLabel3 = $"{currentField}, sample nr: {sampleNumber + 1}";
-            if ((AI.autoTuningOptionFixedP && !fixedFields.ContainsKey("steerMult")) || (!AI.autoTuningOptionFixedP && fixedFields.ContainsKey("steerMult")))
+            if ((AI.autoTuningOptionFixedP && !fixedFields.Any(f => f.StartsWith("steerMult"))) || (!AI.autoTuningOptionFixedP && fixedFields.Any(f => f.StartsWith("steerMult"))))
             {
                 ToggleFixedP();
             }
@@ -4105,7 +4131,7 @@ namespace BDArmory.Control
             vesselName = AI.vessel.GetDisplayName();
             fieldNames = new List<string> { "base" };
             fields = new Dictionary<string, BaseField>();
-            fixedFields = new Dictionary<string, string>();
+            fixedFields = new HashSet<string>();
             baseValues = new Dictionary<string, float>();
             gradient = new Dictionary<string, float>();
             limits = new Dictionary<string, Tuple<float, float>>();
@@ -4119,9 +4145,9 @@ namespace BDArmory.Control
                 if (field.group.name == "pilotAI_PID" && field.guiActive && field.uiControlFlight.GetType() == typeof(UI_FloatRange))
                 {
                     if (field.name.StartsWith("autoTuning")) continue;
-                    if (AI.autoTuningOptionFixedP && field.name == "steerMult")
+                    if (AI.autoTuningOptionFixedP && field.name.StartsWith("steerMult"))
                     {
-                        fixedFields.Add(field.name, field.guiName);
+                        fixedFields.Add(field.name);
                         continue;
                     }
                     // Exclude relevant damping fields when disabled
@@ -4129,25 +4155,26 @@ namespace BDArmory.Control
                     {
                         if (((!AI.CustomDynamicAxisFields || (AI.CustomDynamicAxisFields && AI.dynamicDampingPitch && AI.dynamicDampingYaw && AI.dynamicDampingRoll)) && field.name == "steerDamping") ||
                             (AI.CustomDynamicAxisFields && (
-                                (!AI.dynamicDampingPitch && field.name.StartsWith("DynamicDampingPitch")) ||
-                                (!AI.dynamicDampingYaw && field.name.StartsWith("DynamicDampingYaw")) ||
-                                (!AI.dynamicDampingRoll && field.name.StartsWith("DynamicDampingRoll")))))
+                                (!AI.dynamicDampingPitch && (field.name.StartsWith("DynamicDampingPitch") || field.name.StartsWith("dynamicSteerDampingPitch"))) || // These fields should be named consistently!
+                                (!AI.dynamicDampingYaw && (field.name.StartsWith("DynamicDampingYaw") || field.name.StartsWith("dynamicSteerDampingYaw"))) || // But changing them now would break old tunings.
+                                (!AI.dynamicDampingRoll && (field.name.StartsWith("DynamicDampingRoll") || field.name.StartsWith("dynamicSteerDampingRoll")))
+                            )))
                         {
-                            fixedFields.Add(field.name, field.guiName);
+                            fixedFields.Add(field.name);
                             continue;
                         } // else all damping fields shown on UI are in use
                     }
                     var uiControl = (UI_FloatRange)field.uiControlFlight;
                     if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Found PID field: {field.guiName} with value {field.GetValue(AI)} and limits {uiControl.minValue} — {uiControl.maxValue}");
-                    fieldNames.Add(field.guiName);
-                    fields.Add(field.guiName, field);
-                    baseValues.Add(field.guiName, (float)field.GetValue(AI));
-                    gradient.Add(field.guiName, 0);
-                    limits.Add(field.guiName, new Tuple<float, float>(uiControl.minValue, uiControl.maxValue));
+                    fieldNames.Add(field.name);
+                    fields.Add(field.name, field);
+                    baseValues.Add(field.name, (float)field.GetValue(AI));
+                    gradient.Add(field.name, 0);
+                    limits.Add(field.name, new Tuple<float, float>(uiControl.minValue, uiControl.maxValue));
                 }
             }
             ResetSamples();
-            lr.Reset();
+            lr.Reset(AI.autoTuningOptionInitialLearningRate);
             optimiser.Reset();
         }
 
@@ -4169,9 +4196,9 @@ namespace BDArmory.Control
                     {
                         bestValues = baseValues.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
                     }
-                    if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Current: " + string.Join(", ", baseValues.Select(kvp => kvp.Key + ":" + kvp.Value)) + $", LR: {lr.current}, RR: {optimiser.rollRelevance}, Loss: {loss}");
+                    if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Current: " + string.Join(", ", baseValues.Select(kvp => fields[kvp.Key].guiName + ":" + kvp.Value)) + $", LR: {lr.current}, RR: {optimiser.rollRelevance}, Loss: {loss}");
                     lr.Update(loss); // Update learning rate based on the current loss.
-                    if (lr.current < 1e-3f) // Tuned about as far as it'll go, time to bail.
+                    if (lr.current < 9e-4f) // Tuned about as far as it'll go, time to bail. (9e-4 instead of 1e-3 for some tolerance in the floating point comparison.)
                     {
                         AI.autoTuningLossLabel = $"{lr.best:G6}, completed.";
                         AI.AutoTune = false; // This also reverts to the best settings and stores them.
@@ -4210,7 +4237,10 @@ namespace BDArmory.Control
             headingChange = Mathf.Sign(headingChange) * (30f + (sampleNumber + 0.5f) * (90f / AI.autoTuningOptionNumSamples)); // Midpoint rule for approximation to ∫f(x, θ)dθ.
             absHeadingChange = Mathf.Abs(headingChange);
 
-            AI.autoTuningLossLabel3 = $"{currentField}, sample nr: {sampleNumber + 1}{(currentField == "base" ? "" : $"{(firstCFDSample ? "-" : "+")}")}";
+            if (currentField == "base")
+            { AI.autoTuningLossLabel3 = $"{currentField}, sample nr: {sampleNumber + 1}"; }
+            else
+            { AI.autoTuningLossLabel3 = $"{fields[currentField].guiName}, sample nr: {sampleNumber + 1}{(firstCFDSample ? "-" : "+")}"; }
         }
 
         /// <summary>
@@ -4235,8 +4265,8 @@ namespace BDArmory.Control
                     AI.AutoTune = false;
                     return;
                 }
-                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Gradient: " + string.Join(", ", gradient.Select(kvp => kvp.Key + ":" + kvp.Value)));
-                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Unclamped gradient: " + string.Join(", ", newGradient.Select(kvp => kvp.Key + ":" + kvp.Value)));
+                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Gradient: " + string.Join(", ", gradient.Select(kvp => fields[kvp.Key].guiName + ":" + kvp.Value)));
+                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Unclamped gradient: " + string.Join(", ", newGradient.Select(kvp => fields[kvp.Key].guiName + ":" + kvp.Value)));
                 Dictionary<string, float> absoluteGradient = new Dictionary<string, float>();
                 foreach (var fieldName in absoluteGradient.Keys.ToList()) absoluteGradient[fieldName] = Mathf.Abs(gradient[fieldName]);
                 foreach (var fieldName in baseValues.Keys.ToList())
@@ -4276,8 +4306,13 @@ namespace BDArmory.Control
 
         public void ToggleFixedP()
         {
-            if (fixedFields != null && fields != null && fixedFields.ContainsKey("steerMult") && fields.ContainsKey(fixedFields["steerMult"]))
-                fields[fixedFields["steerMult"]].SetValue(baseValues[fixedFields["steerMult"]], AI);
+            if (fixedFields != null && fields != null && fixedFields.Any(f => f.StartsWith("steerMult"))) // When full 3-axis PID is implmented, the P fields should all start with "steerMult".
+            {
+                foreach (var fieldName in fixedFields.Where(f => f.StartsWith("steerMult") && fields.ContainsKey(f)))
+                {
+                    fields[fieldName].SetValue(baseValues[fieldName], AI);
+                }
+            }
             ResetGradient();
         }
     }

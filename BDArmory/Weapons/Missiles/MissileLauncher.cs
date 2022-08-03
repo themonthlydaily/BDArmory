@@ -26,6 +26,9 @@ namespace BDArmory.Weapons.Missiles
         public string homingType = "AAM";
 
         [KSPField]
+        public float pronavGain = 3f;
+
+        [KSPField]
         public string targetingType = "none";
 
         [KSPField]
@@ -951,6 +954,8 @@ namespace BDArmory.Weapons.Missiles
 
         public override void OnFixedUpdate()
         {
+            base.OnFixedUpdate();
+            FloatingOriginCorrection();
             try // FIXME Remove this once the fix is sufficiently tested.
             {
                 debugString.Length = 0;
@@ -1196,7 +1201,7 @@ namespace BDArmory.Weapons.Missiles
 
                     finalMaxTorque = Mathf.Clamp((TimeIndex - dropTime) * torqueRampUp, 0, maxTorque); //ramp up torque
 
-                    if (GuidanceMode == GuidanceModes.AAMLead)
+                    if ((GuidanceMode == GuidanceModes.AAMLead) || (GuidanceMode == GuidanceModes.APN) || (GuidanceMode == GuidanceModes.PN))
                     {
                         AAMGuidance();
                     }
@@ -1825,9 +1830,16 @@ namespace BDArmory.Weapons.Missiles
                     //TargetPosition += VectorUtils.GetUpDirection(TargetPosition) * (blastRadius < 10? (blastRadius / 2) : 10);
                 }
                 DrawDebugLine(transform.position + (part.rb.velocity * Time.fixedDeltaTime), TargetPosition);
+
                 float timeToImpact;
-                aamTarget = MissileGuidance.GetAirToAirTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, out timeToImpact, optimumAirspeed);
-                TimeToImpact = timeToImpact;
+                if (GuidanceMode == GuidanceModes.APN) // Augmented Pro-Nav
+                    aamTarget = MissileGuidance.GetAPNTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, pronavGain, out timeToImpact);
+                else if (GuidanceMode == GuidanceModes.PN) // Pro-Nav
+                    aamTarget = MissileGuidance.GetPNTarget(TargetPosition, TargetVelocity, vessel, pronavGain, out timeToImpact);
+                else // AAM Lead
+                    aamTarget = MissileGuidance.GetAirToAirTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, out timeToImpact, optimumAirspeed);
+
+                
                 if (Vector3.Angle(aamTarget - transform.position, transform.forward) > maxOffBoresight * 0.75f)
                 {
                     aamTarget = TargetPosition;
@@ -2182,6 +2194,14 @@ namespace BDArmory.Weapons.Missiles
 
                 case "slw":
                     GuidanceMode = GuidanceModes.SLW;
+                    break;
+
+                case "pronav":
+                    GuidanceMode = GuidanceModes.PN;
+                    break;
+
+                case "augpronav":
+                    GuidanceMode = GuidanceModes.APN;
                     break;
 
                 default:

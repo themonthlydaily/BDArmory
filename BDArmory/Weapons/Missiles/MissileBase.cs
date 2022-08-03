@@ -206,11 +206,11 @@ namespace BDArmory.Weapons.Missiles
 
         public DetonationDistanceStates DetonationDistanceState { get; set; } = DetonationDistanceStates.NotSafe;
 
-        public enum GuidanceModes { None, AAMLead, AAMPure, AGM, AGMBallistic, Cruise, STS, Bomb, RCS, BeamRiding, SLW }
+        public enum GuidanceModes { None, AAMLead, AAMPure, AGM, AGMBallistic, Cruise, STS, Bomb, RCS, BeamRiding, SLW, PN, APN }
 
         public GuidanceModes GuidanceMode;
 
-        public enum WarheadTypes { Standard, ContinuousRod, EMP, Nuke}
+        public enum WarheadTypes { Standard, ContinuousRod, EMP, Nuke }
 
         public WarheadTypes warheadType;
         public bool HasFired { get; set; } = false;
@@ -324,10 +324,25 @@ namespace BDArmory.Weapons.Missiles
         public StringBuilder debugString = new StringBuilder();
 
         private float _throttle = 1f;
-        Vector3 previousPos;
 
         public string Sublabel;
         public int missilecount = 0; //#191
+
+        /// <summary>
+        /// Make corrections for floating origin and Krakensbane adjustments.
+        /// This can't simply be in OnFixedUpdate as it needs to be called differently for MissileLauncher (which uses OnFixedUpdate) and BDModularGuidance (which uses FlyByWire which triggers before OnFixedUpdate).
+        /// </summary>
+        public void FloatingOriginCorrection()
+        {
+            if (HasFired && !HasExploded)
+            {
+                if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
+                {
+                    // Debug.Log($"DEBUG {Time.time} Correcting for floating origin shift of {(Vector3)FloatingOrigin.Offset:G3} ({(Vector3)FloatingOrigin.OffsetNonKrakensbane:G3}) for {vessel.vesselName} ({SourceVessel})");
+                    TargetPosition -= FloatingOrigin.OffsetNonKrakensbane;
+                }
+            }
+        }
 
         public void GetMissileCount() // could stick this in GetSublabel, but that gets called every frame by BDArmorySetup?
         {
@@ -920,30 +935,20 @@ namespace BDArmory.Weapons.Missiles
 
         protected void UpdateAntiRadiationTarget()
         {
-            if (!TargetAcquired)
-            {
-                guidanceActive = false;
-                return;
-            }
-
-            if (FlightGlobals.ready)
+            if (FlightGlobals.ready && TargetAcquired)
             {
                 if (lockFailTimer < 0)
                 {
                     lockFailTimer = 0;
                 }
                 lockFailTimer += Time.fixedDeltaTime;
+                if (lockFailTimer > 8)
+                {
+                    TargetAcquired = false;
+                }
             }
-
-            if (lockFailTimer > 8)
-            {
-                guidanceActive = false;
-                TargetAcquired = false;
-            }
-            else
-            {
+            if (targetGPSCoords != Vector3d.zero)
                 TargetPosition = VectorUtils.GetWorldSurfacePostion(targetGPSCoords, vessel.mainBody);
-            }
         }
 
         public void DrawDebugLine(Vector3 start, Vector3 end, Color color = default(Color))
@@ -991,10 +996,6 @@ namespace BDArmory.Weapons.Missiles
 
             return _guidance.GetDirection(this, targetPosition, Vector3.zero);
         }
-
-
-
-
 
         protected void drawLabels()
         {
@@ -1116,8 +1117,6 @@ namespace BDArmory.Weapons.Missiles
                                 }
                             }
                         }
-
-                        previousPos = part.transform.position;
                     }
                     else
                     {
@@ -1172,7 +1171,7 @@ namespace BDArmory.Weapons.Missiles
         {
             if (this.DetonationDistance == -1)
             {
-                if (GuidanceMode == GuidanceModes.AAMLead || GuidanceMode == GuidanceModes.AAMPure)
+                if (GuidanceMode == GuidanceModes.AAMLead || GuidanceMode == GuidanceModes.AAMPure || GuidanceMode == GuidanceModes.PN || GuidanceMode == GuidanceModes.APN)
                 {
                     DetonationDistance = GetBlastRadius() * 0.25f;
                 }

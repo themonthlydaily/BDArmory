@@ -116,6 +116,23 @@ namespace BDArmory.Damage
         [KSPField(isPersistant = true)]
         public float Cost;
 
+        [KSPField(isPersistant = true)]
+        public float vFactor;
+
+        
+        [KSPField(isPersistant = true)]
+        public float muParam1;
+        [KSPField(isPersistant = true)]
+        public float muParam2;
+        [KSPField(isPersistant = true)]
+        public float muParam3;
+        [KSPField(isPersistant = true)]
+        public float muParam1S;
+        [KSPField(isPersistant = true)]
+        public float muParam2S;
+        [KSPField(isPersistant = true)]
+        public float muParam3S;
+
         private bool startsArmored = false;
         public bool ArmorPanel = false;
 
@@ -995,6 +1012,15 @@ namespace BDArmory.Damage
                 Hardness = armorInfo.Hardness;
                 Strength = armorInfo.Strength;
                 SafeUseTemp = armorInfo.SafeUseTemp;
+
+                vFactor = armorInfo.vFactor;
+                muParam1 = armorInfo.muParam1;
+                muParam2 = armorInfo.muParam2;
+                muParam3 = armorInfo.muParam3;
+                muParam1S = armorInfo.muParam1S;
+                muParam2S = armorInfo.muParam2S;
+                muParam3S = armorInfo.muParam3S;
+
                 SetArmor();
             }
             if (BDArmorySettings.LEGACY_ARMOR)
@@ -1006,6 +1032,16 @@ namespace BDArmory.Damage
                 Ductility = 0.15f;
                 Hardness = 1176;
                 Strength = 940;
+
+                // Calculated using yield = 700 MPa and youngModulus = 200 GPA
+                vFactor = 9.47761748e-07f;
+                muParam1 = 0.656060636f;
+                muParam2 = 1.20190930f;
+                muParam3 = 1.77791929f;
+                muParam1S = 0.947031140f;
+                muParam2S = 1.55575776f;
+                muParam3S = 2.75371552f;
+
                 SafeUseTemp = 2500;
                 if (BDArmorySettings.DEBUG_ARMOR)
                 {
@@ -1021,6 +1057,16 @@ namespace BDArmory.Damage
                 Ductility = 0.6f;
                 Hardness = 300;
                 Strength = 200;
+
+                // Calculated using yield = 110 MPa and youngModulus = 70 GPA
+                vFactor = 1.82712211e-06f;
+                muParam1 = 1.37732446f;
+                muParam2 = 2.04939008f;
+                muParam3 = 4.53333330f;
+                muParam1S = 1.92650831f;
+                muParam2S = 2.65274119f;
+                muParam3S = 7.37037039f;
+
                 SafeUseTemp = 993;
                 Armor = 10;
                 if (ArmorPanel) Armor = 25;

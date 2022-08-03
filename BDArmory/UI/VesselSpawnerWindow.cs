@@ -245,7 +245,7 @@ namespace BDArmory.UI
             float line = 0.25f;
             var rects = new List<Rect>();
 
-            if (GUI.Button(SLineRect(++line), (BDArmorySettings.SHOW_SPAWN_OPTIONS ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_SpawnOptions"), BDArmorySettings.SHOW_SPAWN_OPTIONS ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))//Show/hide spawn options
+            if (GUI.Button(SLineRect(++line), (BDArmorySettings.SHOW_SPAWN_OPTIONS ? Localizer.Format("#LOC_BDArmory_Generic_Hide") : Localizer.Format("#LOC_BDArmory_Generic_Show")) + " " + Localizer.Format("#LOC_BDArmory_Settings_SpawnOptions"), BDArmorySettings.SHOW_SPAWN_OPTIONS ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))//Show/hide spawn options
             {
                 BDArmorySettings.SHOW_SPAWN_OPTIONS = !BDArmorySettings.SHOW_SPAWN_OPTIONS;
             }
@@ -440,7 +440,7 @@ namespace BDArmory.UI
                 line += 0.3f;
             }
 
-            if (GUI.Button(SLineRect(++line), (BDArmorySettings.SHOW_SPAWN_LOCATIONS ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_SpawnLocations"), BDArmorySettings.SHOW_SPAWN_LOCATIONS ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))//Show/hide spawn locations
+            if (GUI.Button(SLineRect(++line), (BDArmorySettings.SHOW_SPAWN_LOCATIONS ? Localizer.Format("#LOC_BDArmory_Generic_Hide") : Localizer.Format("#LOC_BDArmory_Generic_Show")) + " " + Localizer.Format("#LOC_BDArmory_Settings_SpawnLocations"), BDArmorySettings.SHOW_SPAWN_LOCATIONS ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))//Show/hide spawn locations
             {
                 BDArmorySettings.SHOW_SPAWN_LOCATIONS = !BDArmorySettings.SHOW_SPAWN_LOCATIONS;
             }
@@ -510,7 +510,7 @@ namespace BDArmory.UI
 
             if (BDArmorySettings.WAYPOINTS_MODE || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 50)) // S4R10
             {
-                if (GUI.Button(SLineRect(++line), (BDArmorySettings.SHOW_WAYPOINTS_OPTIONS ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_WaypointsOptions"), BDArmorySettings.SHOW_WAYPOINTS_OPTIONS ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))//Show/hide waypoints section
+                if (GUI.Button(SLineRect(++line), (BDArmorySettings.SHOW_WAYPOINTS_OPTIONS ? Localizer.Format("#LOC_BDArmory_Generic_Hide") : Localizer.Format("#LOC_BDArmory_Generic_Show")) + " " + Localizer.Format("#LOC_BDArmory_Settings_WaypointsOptions"), BDArmorySettings.SHOW_WAYPOINTS_OPTIONS ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))//Show/hide waypoints section
                 {
                     BDArmorySettings.SHOW_WAYPOINTS_OPTIONS = !BDArmorySettings.SHOW_WAYPOINTS_OPTIONS;
                 }
@@ -562,7 +562,7 @@ namespace BDArmory.UI
                 }
             }
 
-            if (GUI.Button(SLineRect(++line), (BDArmorySettings.SHOW_TOURNAMENT_OPTIONS ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_TournamentOptions"), BDArmorySettings.SHOW_TOURNAMENT_OPTIONS ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))//Show/hide tournament options
+            if (GUI.Button(SLineRect(++line), (BDArmorySettings.SHOW_TOURNAMENT_OPTIONS ? Localizer.Format("#LOC_BDArmory_Generic_Hide") : Localizer.Format("#LOC_BDArmory_Generic_Show")) + " " + Localizer.Format("#LOC_BDArmory_Settings_TournamentOptions"), BDArmorySettings.SHOW_TOURNAMENT_OPTIONS ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))//Show/hide tournament options
             {
                 BDArmorySettings.SHOW_TOURNAMENT_OPTIONS = !BDArmorySettings.SHOW_TOURNAMENT_OPTIONS;
             }
@@ -755,7 +755,7 @@ namespace BDArmory.UI
                                 BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
                                 true,
                                 BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS,
-                                BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS,
+                                0, // This should always be 0 (FFA) to avoid the logic for spawning teams in one-at-a-time mode.
                                 null,
                                 null,
                                 null,
