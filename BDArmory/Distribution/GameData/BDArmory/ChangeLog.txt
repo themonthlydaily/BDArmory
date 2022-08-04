@@ -1,4 +1,9 @@
-﻿v1.5.1.1
+﻿v1.5.1.2
+FIXES
+- Loosen distance checks for anti-radiation missiles fired at fast-moving targets (fixes instances when AI would not fire anti-radiation missiles at fast-moving targets).
+- Fixes for some issues occuring on KSP 1.9.
+
+v1.5.1.1
 FIXES
 - Fix AI not firing anti-radiation missiles at targets detected via RWR.
 - Fix KeyNotFoundException error in weapon selection code.

@@ -347,7 +347,7 @@ namespace BDArmory.Competition
             GameEvents.onVesselCreate.Remove(OnVesselModified);
             GameEvents.onCrewOnEva.Remove(OnCrewOnEVA);
             GameEvents.onVesselCreate.Remove(DebrisDelayedCleanUp);
-            GameEvents.onCometSpawned.Remove(RemoveCometVessel);
+            if (Versioning.version_minor > 9) GameEvents.onCometSpawned.Remove(RemoveCometVessel); //FIXME A MissingFieldException still triggers here when using the BDA Vessel Spawner
             rammingInformation = null; // Reset the ramming information.
             deadOrAlive = "";
             if (BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS)
@@ -363,8 +363,11 @@ namespace BDArmory.Competition
             sequencedCompetitionStarting = false;
             GameEvents.onCollision.Add(AnalyseCollision); // Start collision detection
             GameEvents.onVesselCreate.Add(DebrisDelayedCleanUp);
-            DisableCometSpawning();
-            GameEvents.onCometSpawned.Add(RemoveCometVessel);
+            if (Versioning.version_minor > 9) //FIXME A MissingFieldException still triggers here when using the BDA Vessel Spawner
+            {
+                DisableCometSpawning();
+                GameEvents.onCometSpawned.Add(RemoveCometVessel);
+            }
             competitionStartTime = Planetarium.GetUniversalTime();
             nextUpdateTick = competitionStartTime + 2; // 2 seconds before we start tracking
             decisionTick = BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY > 60 ? -1 : competitionStartTime + BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY; // every 60 seconds we do nasty things
