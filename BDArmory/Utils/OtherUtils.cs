@@ -1,7 +1,9 @@
-using UnityEngine;
-using System.Reflection;
-
 using BDArmory.Settings;
+using UnityEngine;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 namespace BDArmory.Utils
 {
@@ -26,6 +28,19 @@ namespace BDArmory.Utils
             FloatCurve curve = new FloatCurve(keys);
 
             return curve;
+        }
+
+        public static IEnumerable<Type> GetLoadableTypes(this Assembly assembly)
+        {
+            // TODO: Argument validation
+            try
+            {
+                return assembly.GetTypes();
+            }
+            catch (ReflectionTypeLoadException e)
+            {
+                return e.Types.Where(t => t != null);
+            }
         }
 
         private static int lineOfSightLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23);

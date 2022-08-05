@@ -1957,7 +1957,7 @@ namespace BDArmory.Control
                     float attemptDuration = targetScanInterval * 0.75f;
                     MissileLauncher mlauncher;
                     while (Time.time - attemptStartTime < attemptDuration &&
-                           (!antiRadTargetAcquired || (antiRadiationTarget - guardTarget.CoM).sqrMagnitude > 20 * 20))
+                           (!antiRadTargetAcquired || !AntiRadDistanceCheck()))
                     {
                         mlauncher = ml as MissileLauncher;
                         if (mlauncher != null)
@@ -1995,7 +1995,7 @@ namespace BDArmory.Control
                     }
 
                     yield return null;
-                    if (ml && antiRadTargetAcquired && (antiRadiationTarget - guardTarget.CoM).sqrMagnitude < 20 * 20)
+                    if (ml && antiRadTargetAcquired && AntiRadDistanceCheck())
                     {
                         FireCurrentMissile(true);
                         //StartCoroutine(MissileAwayRoutine(ml));
@@ -5611,7 +5611,7 @@ namespace BDArmory.Control
                         vessel.mainBody);
                 if (BDArmorySettings.DEBUG_MISSILES)
                     Debug.Log("[BDArmory.MissileData]: Sending targetInfo to Antirad Missile...");
-                if (guardMode && ((antiRadiationTarget - guardTarget.CoM).sqrMagnitude < 20 * 20))
+                if (guardMode && AntiRadDistanceCheck())
                 {
                     ml.targetVessel = guardTarget.gameObject.GetComponent<TargetInfo>();
                     if (BDArmorySettings.DEBUG_MISSILES)
@@ -6545,6 +6545,12 @@ namespace BDArmory.Control
                     lr.SetPosition(i, pointsArray[i]);
                 }
             }
+        }
+
+        // Check antiRad target is within 20m for stationary targets, and a scaling distance based on target speed for targets moving faster than ~60 m/s
+        bool AntiRadDistanceCheck()
+        {
+            return (antiRadiationTarget - guardTarget.CoM).sqrMagnitude < Mathf.Max(20f * 20f, (float)guardTarget.srfSpeed * 7f);
         }
 
         bool AltitudeTrigger()
