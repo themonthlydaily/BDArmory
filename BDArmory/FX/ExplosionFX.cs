@@ -44,7 +44,7 @@ namespace BDArmory.FX
         private bool disabled = true;
 
         float blastRange;
-        int explosionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23); // Why 19 and 23?
+        const int explosionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23| LayerMasks.Wheels); // Why 19 and 23?
 
         Queue<BlastHitEvent> explosionEvents = new Queue<BlastHitEvent>();
         List<BlastHitEvent> explosionEventsPreProcessing = new List<BlastHitEvent>();

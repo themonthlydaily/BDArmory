@@ -1028,7 +1028,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 case DetonationDistanceStates.NotSafe:
                     //Lets check if we are at a safe distance from the source vessel
-                    using (var hitsEnu = Physics.OverlapSphere(futureMissilePosition, GetBlastRadius() * 3f, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19)).AsEnumerable().GetEnumerator())
+                    using (var hitsEnu = Physics.OverlapSphere(futureMissilePosition, GetBlastRadius() * 3f, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19 | LayerMasks.Wheels)).AsEnumerable().GetEnumerator())
                     {
                         while (hitsEnu.MoveNext())
                         {
@@ -1086,7 +1086,7 @@ namespace BDArmory.Weapons.Missiles
 
                             Ray rayFuturePosition = new Ray(vessel.CoM, futureMissilePosition);
 
-                            var hitsFuture = Physics.RaycastAll(rayFuturePosition, (float)missileDistancePerFrame.magnitude, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19)).AsEnumerable();
+                            var hitsFuture = Physics.RaycastAll(rayFuturePosition, (float)missileDistancePerFrame.magnitude, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19 | LayerMasks.Wheels)).AsEnumerable();
 
                             using (var hitsEnu = hitsFuture.GetEnumerator())
                             {
@@ -1121,7 +1121,7 @@ namespace BDArmory.Weapons.Missiles
                     else
                     {
                         float optimalDistance = (float)(Math.Max(DetonationDistance, relativeSpeed));
-                        using (var hitsEnu = Physics.OverlapSphere(vessel.CoM, optimalDistance, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19)).AsEnumerable().GetEnumerator())
+                        using (var hitsEnu = Physics.OverlapSphere(vessel.CoM, optimalDistance, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19 | LayerMasks.Wheels)).AsEnumerable().GetEnumerator())
                         {
                             while (hitsEnu.MoveNext())
                             {

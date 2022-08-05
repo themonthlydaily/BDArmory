@@ -3461,7 +3461,7 @@ namespace BDArmory.Control
                     return false;
                 }
 
-                int layerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19);
+                const int layerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19 | LayerMasks.Wheels);
                 if (ml.dropTime >= 0.1f)
                 {
                     //debug lines
