@@ -180,8 +180,8 @@ namespace BDArmory.Weapons
         public bool targetWeapons = false;
         public bool targetMass = false;
 
-        int layerMask1 = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23); // Why 19 and 23?
-        int layerMask2 = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19); // Why 19 and why not the other layer mask?
+        const int layerMask1 = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23 | LayerMasks.Wheels); // Why 19 and 23?
+        const int layerMask2 = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19 | LayerMasks.Wheels); // Why 19 and why not the other layer mask?
 
         enum TargetAcquisitionType { None, Visual, Slaved, Radar, AutoProxy };
         TargetAcquisitionType targetAcquisitionType = TargetAcquisitionType.None;
