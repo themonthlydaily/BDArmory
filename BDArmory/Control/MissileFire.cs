@@ -86,6 +86,7 @@ namespace BDArmory.Control
 
         public void incrementRippleIndex(string weaponname)
         {
+            if (!gunRippleIndex.ContainsKey(weaponname)) { Debug.LogError($"[BDArmory.MissileFire]: Weapon {weaponname} on {vessel.vesselName} does not exist in the gunRippleIndex!"); return; }
             gunRippleIndex[weaponname]++;
             if (gunRippleIndex[weaponname] >= GetRippleGunCount(weaponname))
             {
@@ -2796,7 +2797,7 @@ namespace BDArmory.Control
                         if ((ml is not null && ml.TargetingMode == MissileBase.TargetingModes.AntiRad) || (mmg is not null && mmg.TargetingMode == MissileBase.TargetingModes.AntiRad))
                         {
                             hasAntiRadiationOrdinance = true;
-                            antiradTargets = OtherUtils.ParseToFloatArray(ml != null? ml.antiradTargetTypes : "0,5"); //limited Antirad options for MMG
+                            antiradTargets = OtherUtils.ParseToFloatArray(ml != null ? ml.antiradTargetTypes : "0,5"); //limited Antirad options for MMG
                         }
                     }
                 }
@@ -5658,7 +5659,7 @@ namespace BDArmory.Control
             if (BDArmorySettings.PEACE_MODE) return;
 
             UpdateGuardViewScan();
-            
+
             //setting turrets to guard mode
             if (selectedWeapon != null && selectedWeapon != previousSelectedWeapon && (selectedWeapon.GetWeaponClass() == WeaponClasses.Gun || selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket || selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser))
             {
