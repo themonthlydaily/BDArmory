@@ -2801,8 +2801,9 @@ namespace BDArmory.Weapons
                 wasFiring = true;
                 if (!audioSource.isPlaying)
                 {
+                    if (audioSource2.isPlaying) audioSource2.Stop(); // Stop any continuing cool-down sounds.
                     audioSource.clip = fireSound;
-                    audioSource.loop = false;
+                    audioSource.loop = (soundRepeatTime == 0);
                     audioSource.time = 0;
                     audioSource.Play();
                 }
