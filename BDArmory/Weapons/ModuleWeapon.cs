@@ -1575,7 +1575,6 @@ namespace BDArmory.Weapons
                         fireAnimSpeed = Mathf.Lerp(fireAnimSpeed, 0, 0.04f);
                     }
                 }
-
                 // Draw gauges
                 if (vessel.isActiveVessel)
                 {
@@ -3799,6 +3798,16 @@ namespace BDArmory.Weapons
                         //StartCoroutine(IncrementRippleIndex(0));
                         StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate)); //FIXME - possibly not getting called in all circumstances? Investigate later, future SI
                         isRippleFiring = true;
+                    }
+                    if (eWeaponType == WeaponTypes.Laser)
+                    {
+                        if ((!pulseLaser && !BurstFire) || (!pulseLaser && BurstFire && (RoundsRemaining >= RoundsPerMag)) || (pulseLaser && Time.time - timeFired > beamDuration))
+                        {
+                            for (int i = 0; i < laserRenderers.Length; i++)
+                            {
+                                laserRenderers[i].enabled = false;
+                            }
+                        }
                     }
                 }
                 else
