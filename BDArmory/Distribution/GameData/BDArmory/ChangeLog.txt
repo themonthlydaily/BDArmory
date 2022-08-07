@@ -2,7 +2,10 @@
 - Make wheels susceptible to bullets and explosions too.
 - Fix exception in auto-resuming tournaments when SpawnProbe.craft isn't found.
 - Fix FXLookAtConstraint modules on various turrets.
-- Fix packaging issue with incorrect capitalisation of certain files and folders.
+- Fix incorrect charge sound path for lasers.
+- Adjust capitalization of "sounds" folders for parts to be consistent.
+- Fix packaging issue in recent releases that contain incorrect capitalisation of certain files and folders.
+- Fix memory leaks caught by KSPCF.
 
 v1.5.1.2
 FIXES

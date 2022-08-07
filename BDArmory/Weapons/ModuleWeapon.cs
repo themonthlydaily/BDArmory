@@ -681,7 +681,7 @@ namespace BDArmory.Weapons
         public string overheatSoundPath = "BDArmory/Parts/50CalTurret/sounds/turretOverheat";
 
         [KSPField]
-        public string chargeSoundPath = "BDArmory/Parts/laserTest/sounds/charge";
+        public string chargeSoundPath = "BDArmory/Parts/ABL/sounds/charge";
 
         [KSPField]
         public string rocketSoundPath = "BDArmory/Sounds/rocketLoop";
