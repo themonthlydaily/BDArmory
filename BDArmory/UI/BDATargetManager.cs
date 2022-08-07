@@ -71,6 +71,7 @@ namespace BDArmory.UI
             GameEvents.onVesselGoOffRails.Remove(AddVessel);
             GameEvents.onVesselCreate.Remove(AddVessel);
             GameEvents.onVesselDestroy.Remove(CleanVesselList);
+            DestructibleBuilding.OnLoaded.Remove(AddBuilding);
         }
 
         void Start()
@@ -230,7 +231,7 @@ namespace BDArmory.UI
             Ray ray = new Ray(missilePosition, groundTargetPosition - missilePosition);
             ray.origin += 10 * ray.direction;
             RaycastHit rayHit;
-            if (Physics.Raycast(ray, out rayHit, dist, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19)))
+            if (Physics.Raycast(ray, out rayHit, dist, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19 | LayerMasks.Wheels)))
             {
                 if ((rayHit.point - groundTargetPosition).sqrMagnitude < 200)
                 {
@@ -312,7 +313,7 @@ namespace BDArmory.UI
                         // Set thrustTransform as heat source position for engines, unless they are afterburning, in which case set the heat source position as the plume itself (arbitrary estimate of 1m behind thrustTransform)
                         Vector3 heatSourcePosition = thrustTransform ? (thrustTransform.position + thrustTransform.forward*(afterburner ? 1f : 0f)) : closestPart.transform.position; 
                         Ray partRay = new Ray(heatSourcePosition, sensorPosition - heatSourcePosition); //trace from heatsource to IR sensor
-                        var layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA);
+                        var layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels);
 
                         var hitCount = Physics.RaycastNonAlloc(partRay, hits, distance, layerMask);
                         if (hitCount == hits.Length)

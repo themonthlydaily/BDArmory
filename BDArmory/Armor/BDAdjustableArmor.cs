@@ -58,7 +58,7 @@ namespace BDArmory.Armor
                 }
         }
 
-        [KSPEvent(guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_UnclampTuning_enabledText", active = true)]//Toggle scale limit
+        [KSPEvent(guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_UnclampTuning_disabledText", active = true)]//Toggle scale limit
         public void ToggleScaleClamp()
         {
             clamped = !clamped;
@@ -69,7 +69,7 @@ namespace BDArmory.Armor
             UI_FloatRange SWidth = (UI_FloatRange)Fields["scaleneWidth"].uiControlEditor;
             SWidth.maxValue = clamped ? maxScale / 2 : 50;
 
-            if (clamped)
+            if (!clamped)
             {
                 Events["ToggleScaleClamp"].guiName = Localizer.Format("#LOC_BDArmory_UnclampTuning_enabledText");
             }

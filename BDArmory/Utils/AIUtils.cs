@@ -165,8 +165,9 @@ namespace BDArmory.Utils
             Vessel closestV = null;
             float closestSqrDist = float.MaxValue;
             if (FlightGlobals.Vessels == null) return null;
-            if (useGeoCoords && FlightGlobals.currentMainBody is not null)
+            if (useGeoCoords)
             {
+                if (FlightGlobals.currentMainBody is null) return null;
                 position = (Vector3)FlightGlobals.currentMainBody.GetWorldSurfacePosition(position.x, position.y, position.z);
             }
             using (var v = FlightGlobals.Vessels.GetEnumerator())

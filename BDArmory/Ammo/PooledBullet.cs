@@ -553,7 +553,7 @@ namespace BDArmory.Bullets
             if (!BDArmorySettings.VESSEL_RELATIVE_BULLET_CHECKS) return;
             List<Vessel> nearbyVessels = new List<Vessel>();
 
-            var layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA);
+            const int layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels);
             var overlapSphereColliderCount = Physics.OverlapSphereNonAlloc(transform.position, currentVelocity.magnitude * period * 2f, overlapSphereColliders, layerMask); // Overlapsphere of 2*period assuming that vessels are moving at similar speeds to the bullet.
             if (overlapSphereColliderCount == overlapSphereColliders.Length)
             {
@@ -591,7 +591,7 @@ namespace BDArmory.Bullets
             var relativeVelocity = currentVelocity - (Vector3)vessel.Velocity();
             float dist = relativeVelocity.magnitude * period;
             bulletRay = new Ray(currPosition, relativeVelocity + 0.5f * period * FlightGlobals.getGeeForceAtPosition(transform.position));
-            var layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA);
+            const int layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels);
 
             var hitCount = Physics.RaycastNonAlloc(bulletRay, hits, dist, layerMask);
             if (hitCount == hits.Length) // If there's a whole bunch of stuff in the way (unlikely), then we need to increase the size of our hits buffer.
@@ -668,7 +668,7 @@ namespace BDArmory.Bullets
         {
             float dist = currentVelocity.magnitude * period;
             bulletRay = new Ray(currPosition, currentVelocity + 0.5f * period * FlightGlobals.getGeeForceAtPosition(transform.position));
-            var layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Scenery);
+            const int layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels | LayerMasks.Scenery);
             var hitCount = Physics.RaycastNonAlloc(bulletRay, hits, dist, layerMask);
             if (hitCount == hits.Length) // If there's a whole bunch of stuff in the way (unlikely), then we need to increase the size of our hits buffer.
             {
@@ -1264,7 +1264,7 @@ namespace BDArmory.Bullets
             }
             if (fuzeType == BulletFuzeTypes.Proximity || fuzeType == BulletFuzeTypes.Flak)
             {
-                using (var hitsEnu = Physics.OverlapSphere(transform.position, detonationRange, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19)).AsEnumerable().GetEnumerator())
+                using (var hitsEnu = Physics.OverlapSphere(transform.position, detonationRange, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19 | LayerMasks.Wheels)).AsEnumerable().GetEnumerator())
                 {
                     while (hitsEnu.MoveNext())
                     {

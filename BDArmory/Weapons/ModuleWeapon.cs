@@ -180,8 +180,8 @@ namespace BDArmory.Weapons
         public bool targetWeapons = false;
         public bool targetMass = false;
 
-        int layerMask1 = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23); // Why 19 and 23?
-        int layerMask2 = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19); // Why 19 and why not the other layer mask?
+        const int layerMask1 = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23 | LayerMasks.Wheels); // Why 19 and 23?
+        const int layerMask2 = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19 | LayerMasks.Wheels); // Why 19 and why not the other layer mask?
 
         enum TargetAcquisitionType { None, Visual, Slaved, Radar, AutoProxy };
         TargetAcquisitionType targetAcquisitionType = TargetAcquisitionType.None;
@@ -681,7 +681,7 @@ namespace BDArmory.Weapons
         public string overheatSoundPath = "BDArmory/Parts/50CalTurret/sounds/turretOverheat";
 
         [KSPField]
-        public string chargeSoundPath = "BDArmory/Parts/laserTest/sounds/charge";
+        public string chargeSoundPath = "BDArmory/Parts/ABL/sounds/charge";
 
         [KSPField]
         public string rocketSoundPath = "BDArmory/Sounds/rocketLoop";
@@ -2801,8 +2801,9 @@ namespace BDArmory.Weapons
                 wasFiring = true;
                 if (!audioSource.isPlaying)
                 {
+                    if (audioSource2.isPlaying) audioSource2.Stop(); // Stop any continuing cool-down sounds.
                     audioSource.clip = fireSound;
-                    audioSource.loop = false;
+                    audioSource.loop = (soundRepeatTime == 0);
                     audioSource.time = 0;
                     audioSource.Play();
                 }

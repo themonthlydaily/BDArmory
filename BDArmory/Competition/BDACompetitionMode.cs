@@ -347,7 +347,7 @@ namespace BDArmory.Competition
             GameEvents.onVesselCreate.Remove(OnVesselModified);
             GameEvents.onCrewOnEva.Remove(OnCrewOnEVA);
             GameEvents.onVesselCreate.Remove(DebrisDelayedCleanUp);
-            GameEvents.onCometSpawned.Remove(RemoveCometVessel);
+            CometCleanup();
             rammingInformation = null; // Reset the ramming information.
             deadOrAlive = "";
             if (BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS)
@@ -363,8 +363,7 @@ namespace BDArmory.Competition
             sequencedCompetitionStarting = false;
             GameEvents.onCollision.Add(AnalyseCollision); // Start collision detection
             GameEvents.onVesselCreate.Add(DebrisDelayedCleanUp);
-            DisableCometSpawning();
-            GameEvents.onCometSpawned.Add(RemoveCometVessel);
+            CometCleanup(true);
             competitionStartTime = Planetarium.GetUniversalTime();
             nextUpdateTick = competitionStartTime + 2; // 2 seconds before we start tracking
             decisionTick = BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY > 60 ? -1 : competitionStartTime + BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY; // every 60 seconds we do nasty things
@@ -1787,6 +1786,30 @@ namespace BDArmory.Competition
             catch (Exception e)
             {
                 Debug.LogError("[BDArmory.BDACompetitionMode]: Exception in DebrisDelayedCleanup: debris " + debris + " is a component? " + (debris is Component) + ", is a monobehaviour? " + (debris is MonoBehaviour) + ". Exception: " + e.GetType() + ": " + e.Message + "\n" + e.StackTrace);
+            }
+        }
+
+        void CometCleanup(bool disableSpawning = false)
+        {
+            if ((Versioning.version_major == 1 && Versioning.version_minor > 9) || Versioning.version_major > 1) // Introduced in 1.10
+            {
+                CometCleanup_1_10(disableSpawning);
+            }
+            else // Nothing, comets didn't exist before
+            {
+            }
+        }
+
+        void CometCleanup_1_10(bool disableSpawning = false) // KSP has issues on older versions if this call is in the parent function.
+        {
+            if (disableSpawning)
+            {
+                DisableCometSpawning();
+                GameEvents.onCometSpawned.Add(RemoveCometVessel);
+            }
+            else
+            {
+                GameEvents.onCometSpawned.Remove(RemoveCometVessel);
             }
         }
 
