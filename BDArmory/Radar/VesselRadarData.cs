@@ -526,7 +526,31 @@ namespace BDArmory.Radar
             rrad.Dispose();
             rCount = availableRadars.Count;
 
-            RemoveEmptyVRDs();
+            availableIRSTs.RemoveAll(r => r == null);
+            List<ModuleIRST> IRSTsToRemove = new List<ModuleIRST>();
+            List<ModuleIRST>.Enumerator irst = availableIRSTs.GetEnumerator();
+            while (irst.MoveNext())
+            {
+                if (irst.Current == null) continue;
+                if (!irst.Current.irstEnabled || irst.Current.vessel != vessel)
+                {
+                    IRSTsToRemove.Add(irst.Current);
+                }
+                else if (!irst.Current.weaponManager || (weaponManager && irst.Current.weaponManager.Team != weaponManager.Team))
+                {
+                    IRSTsToRemove.Add(irst.Current);
+                }
+            }
+            irst.Dispose();
+
+            List<ModuleIRST>.Enumerator rirs = IRSTsToRemove.GetEnumerator();
+            while (rirs.MoveNext())
+            {
+                if (rirs.Current == null) continue;
+                RemoveIRST(rirs.Current);
+            }
+            rirs.Dispose();
+            iCount = availableIRSTs.Count;
         }
 
         public void UpdateLockedTargets()
