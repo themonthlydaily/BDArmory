@@ -1476,13 +1476,22 @@ namespace BDArmory.Targeting
             radarLock = false;
             StopResetting();
             ClearTarget();
-            if (cameraParentTransform == null) yield break;
+            if (cameraParentTransform == null)
+            {
+                slewingToPosition = false;
+                yield break;
+            }
             while (!stopPTPR && Vector3.Angle(cameraParentTransform.transform.forward, position - (cameraParentTransform.transform.position)) > 0.1f)
             {
                 Vector3 newForward = Vector3.RotateTowards(cameraParentTransform.transform.forward, position - cameraParentTransform.transform.position, 90 * Mathf.Deg2Rad * Time.fixedDeltaTime, 0);
                 //cameraParentTransform.rotation = Quaternion.LookRotation(newForward, VectorUtils.GetUpDirection(transform.position));
                 PointCameraModel(newForward);
                 yield return new WaitForFixedUpdate();
+                if (cameraParentTransform == null)
+                {
+                    slewingToPosition = false;
+                    yield break;
+                }
                 if (gimbalLimitReached)
                 {
                     ClearTarget();
@@ -1498,7 +1507,6 @@ namespace BDArmory.Targeting
                 GroundStabilize();
             }
             slewingToPosition = false;
-            yield break;
         }
 
         void StopResetting()
