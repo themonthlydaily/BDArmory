@@ -15,12 +15,11 @@
 	- Make the ABL use proper looping audio and add a cool-down sound.
 	- Fix the ABL laser beam continuing to show while overheated when used manually.
 	- Fix for NRE when heatseeker is manually selected prior to activating guard mode.
-
 - Armor:
 	- Adjusted post-penetration behavior of high velocity rounds, rounds now erode instead of slowing down at high velocities.
 		- Multi-plate armor schemes now behave more realistically and will require more careful material selection and configuration.
-		- Whipple shields for hypervelocity rounds are now viable and desireable. This behavior is however still very crude and does not qualitative match realistic behavior.
-	- Adjusted stats for S-Glass and Kevlar materials to have realistic RHA equivalency
+		- Whipple shields for hypervelocity rounds are now viable and desirable. This behavior is however still very crude and does not qualitative match realistic behavior.
+	- Adjusted stats for S-Glass and Kevlar materials to have realistic RHA equivalency.
 		- Re-implemented Tate-Alekseevksy equation for low-ductility materials.
 	- Added debug console output for armor penetration behavior. Now when Debug -> Armor is on, console will output armor penetration parameters.
 
