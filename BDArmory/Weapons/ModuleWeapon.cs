@@ -681,7 +681,7 @@ namespace BDArmory.Weapons
         public string overheatSoundPath = "BDArmory/Parts/50CalTurret/sounds/turretOverheat";
 
         [KSPField]
-        public string chargeSoundPath = "BDArmory/Parts/laserTest/sounds/charge";
+        public string chargeSoundPath = "BDArmory/Parts/ABL/sounds/charge";
 
         [KSPField]
         public string rocketSoundPath = "BDArmory/Sounds/rocketLoop";
@@ -1575,7 +1575,6 @@ namespace BDArmory.Weapons
                         fireAnimSpeed = Mathf.Lerp(fireAnimSpeed, 0, 0.04f);
                     }
                 }
-
                 // Draw gauges
                 if (vessel.isActiveVessel)
                 {
@@ -2801,8 +2800,9 @@ namespace BDArmory.Weapons
                 wasFiring = true;
                 if (!audioSource.isPlaying)
                 {
+                    if (audioSource2.isPlaying) audioSource2.Stop(); // Stop any continuing cool-down sounds.
                     audioSource.clip = fireSound;
-                    audioSource.loop = false;
+                    audioSource.loop = (soundRepeatTime == 0);
                     audioSource.time = 0;
                     audioSource.Play();
                 }
@@ -3798,6 +3798,16 @@ namespace BDArmory.Weapons
                         //StartCoroutine(IncrementRippleIndex(0));
                         StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate)); //FIXME - possibly not getting called in all circumstances? Investigate later, future SI
                         isRippleFiring = true;
+                    }
+                    if (eWeaponType == WeaponTypes.Laser)
+                    {
+                        if ((!pulseLaser && !BurstFire) || (!pulseLaser && BurstFire && (RoundsRemaining >= RoundsPerMag)) || (pulseLaser && Time.time - timeFired > beamDuration))
+                        {
+                            for (int i = 0; i < laserRenderers.Length; i++)
+                            {
+                                laserRenderers[i].enabled = false;
+                            }
+                        }
                     }
                 }
                 else

@@ -1,5 +1,20 @@
 ﻿IMPROVEMENTS / FIXES
-- Make wheels susceptible to bullets and explosions too.
+- General:
+	- Fix packaging issue in recent releases that contain incorrect capitalisation of certain files and folders.
+	- Adjust capitalization of "sounds" folders for parts to be consistent.
+	- Fix memory leaks caught by KSPCF.
+	- Make wheels susceptible to bullets and explosions too.
+- Competition:
+	- Fix exception in auto-resuming tournaments when SpawnProbe.craft isn't found.
+- Detectors:
+	- Fix IRST preventing Radar GUI close.
+	- Fix NRE in targeting camera when the camera parent transform is null.
+- Weapons:
+	- Fix FXLookAtConstraint modules on various turrets.
+	- Fix incorrect charge sound path for lasers.
+	- Make the ABL use proper looping audio and add a cool-down sound.
+	- Fix the ABL laser beam continuing to show while overheated when used manually.
+	- Fix for NRE when heatseeker is manually selected prior to activating guard mode.
 
 - Armor:
 	- Adjusted post-penetration behavior of high velocity rounds, rounds now erode instead of slowing down at high velocities.
