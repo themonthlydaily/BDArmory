@@ -10,6 +10,7 @@
 	- Fix FXLookAtConstraint modules on various turrets.
 	- Fix incorrect charge sound path for lasers.
 	- Make the ABL use proper looping audio and add a cool-down sound.
+	- Fix the ABL laser beam continuing to show while overheated when used manually.
 
 v1.5.1.2
 FIXES

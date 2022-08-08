@@ -425,7 +425,7 @@ namespace BDArmory.UI
                     continue;
                 if (vessel.vesselType == VesselType.Debris)
                     continue;
-                if (mf != null && mf.guardMode && mf.currentTarget.Vessel != vessel) //clamp heaters to desired target
+                if (mf != null && mf.guardMode && (mf.currentTarget == null || mf.currentTarget.Vessel != vessel)) //clamp heaters to desired target
                     continue;
 
                 TargetInfo tInfo = vessel.gameObject.GetComponent<TargetInfo>();

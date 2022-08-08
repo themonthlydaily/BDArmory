@@ -1237,7 +1237,7 @@ namespace BDArmory.UI
                                     inputFields["autoTuningOptionFastResponseRelevance"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + autoTuneLines, contentWidth), inputFields["autoTuningOptionFastResponseRelevance"].possibleValue, 6));
                                     ActivePilot.autoTuningOptionFastResponseRelevance = (float)inputFields["autoTuningOptionFastResponseRelevance"].currentValue;
                                 }
-                                GUI.Label(SettinglabelRect(leftIndent, pidLines + autoTuneLines++), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningFastResponseRelevance") + $": {ActivePilot.autoTuningOptionFastResponseRelevance}", Label);
+                                GUI.Label(SettinglabelRect(leftIndent, pidLines + autoTuneLines++), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningFastResponseRelevance") + $": {ActivePilot.autoTuningOptionFastResponseRelevance:G3}", Label);
                                 if (contextTipsEnabled)
                                 {
                                     GUI.Label(ContextLabelRect(leftIndent, pidLines + autoTuneLines), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningFastResponseRelevanceMin"), Label);
