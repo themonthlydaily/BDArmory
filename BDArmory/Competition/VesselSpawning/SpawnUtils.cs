@@ -463,6 +463,7 @@ namespace BDArmory.Competition.VesselSpawning
         public void RevertSpawnLocationCamera(bool keepTransformValues = true)
         {
             if (spawnLocationCamera == null || !spawnLocationCamera.activeSelf) return;
+            if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.SpawnUtils]: Reverting spawn location camera.");
             if (delayedShowSpawnPointCoroutine != null) { StopCoroutine(delayedShowSpawnPointCoroutine); delayedShowSpawnPointCoroutine = null; }
             var flightCamera = FlightCamera.fetch;
             if (originalCameraParentTransform != null)
