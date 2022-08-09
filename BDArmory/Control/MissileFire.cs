@@ -231,6 +231,7 @@ namespace BDArmory.Control
         public bool engageMissile = true;
         public bool engageSrf = true;
         public bool engageSLW = true;
+        public bool weaponsListNeedsUpdating = false;
 
         public void ToggleEngageAir()
         {
@@ -1340,6 +1341,7 @@ namespace BDArmory.Control
         public override void OnFixedUpdate()
         {
             if (vessel == null) return;
+            if (weaponsListNeedsUpdating) UpdateList();
 
             if (!vessel.packed)
 
@@ -2717,6 +2719,7 @@ namespace BDArmory.Control
 
         public void UpdateList()
         {
+            weaponsListNeedsUpdating = false;
             weaponTypes.Clear();
             // extension for feature_engagementenvelope: also clear engagement specific weapon lists
             weaponTypesAir.Clear();
