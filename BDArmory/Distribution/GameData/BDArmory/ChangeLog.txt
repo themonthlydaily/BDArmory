@@ -11,6 +11,7 @@
 	- Fix incorrect Kill Steal attribution from 1v1 fights.
 - Spawning:
 	- Wait until after vessels are unpacked before reverting the spawn camera.
+	- Fix freezing when vessel removal throws an exception.
 - Detectors:
 	- Fix IRST preventing Radar GUI close.
 	- Fix NRE in targeting camera when the camera parent transform is null.
