@@ -12,6 +12,8 @@
 - Spawning:
 	- Wait until after vessels are unpacked before reverting the spawn camera.
 	- Fix freezing when vessel removal throws an exception.
+- AI:
+	- Fix incorrect inputField for off-target dynamic roll damping.
 - Detectors:
 	- Fix IRST preventing Radar GUI close.
 	- Fix NRE in targeting camera when the camera parent transform is null.
