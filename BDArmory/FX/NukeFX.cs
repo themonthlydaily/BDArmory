@@ -27,6 +27,7 @@ namespace BDArmory.FX
         public KSPParticleEmitter[] pEmitters { get; set; }
         public float StartTime { get; set; }
         public AudioClip ExSound { get; set; }
+        public string SoundPath { get; set; }
         public AudioSource audioSource { get; set; }
         public float thermalRadius { get; set; } //clamped blast range
         public float fluence { get; set; } //thermal magnitude
@@ -121,6 +122,19 @@ namespace BDArmory.FX
                     }
                 LightFx = gameObject.GetComponent<Light>();
                 LightFx.range = 0;
+                audioSource = gameObject.GetComponent<AudioSource>();
+                if (ExSound == null)
+                {
+                    ExSound = GameDatabase.Instance.GetAudioClip(SoundPath);
+                    Debug.Log("[BDArmory.ExplosionFX]: SoundFX path is: " + SoundPath);
+
+                    if (ExSound == null)
+                    {
+                        Debug.LogError("[BDArmory.ExplosionFX]: " + ExSound + " was not found, using the default sound instead. Please fix your model.");
+                        ExSound = GameDatabase.Instance.GetAudioClip(ModuleWeapon.defaultExplSoundPath);
+                    }
+                }
+                audioSource.PlayOneShot(ExSound);
             }
         }
 
@@ -527,19 +541,12 @@ namespace BDArmory.FX
                 var templateFX = GameDatabase.Instance.GetModel(ModelPath);
                 if (templateFX == null)
                 {
-                    Debug.LogError("[BDArmory.NukeFX]: " + ModelPath + " was not found, using the default explosion instead. Please fix your model.");
+                    //Debug.LogError("[BDArmory.NukeFX]: " + ModelPath + " was not found, using the default explosion instead. Please fix your model.");
                     templateFX = GameDatabase.Instance.GetModel(ModuleWeapon.defaultExplModelPath);
                 }
-                var soundClip = GameDatabase.Instance.GetAudioClip(soundPath);
-                if (soundClip == null)
-                {
-                    Debug.LogError("[BDArmory.NukeFX]: " + soundPath + " was not found, using the default sound instead. Please fix your model.");
-                    soundClip = GameDatabase.Instance.GetAudioClip("BDArmory/Models/explosion/nuke/nukeBoom");
-                }
                 var eFx = templateFX.AddComponent<NukeFX>();
-                eFx.ExSound = soundClip;
                 eFx.audioSource = templateFX.AddComponent<AudioSource>();
-                eFx.audioSource.minDistance = 0;
+                eFx.audioSource.minDistance = 200;
                 eFx.audioSource.maxDistance = radius * 3;
                 eFx.audioSource.spatialBlend = 1;
                 eFx.audioSource.volume = 5;
@@ -584,6 +591,7 @@ namespace BDArmory.FX
             eFx.detonationTimer = delay;
             newExplosion.SetActive(true);
             eFx.audioSource = newExplosion.GetComponent<AudioSource>();
+            eFx.SoundPath = soundPath;
             newExplosion.SetActive(true);
         }
     }

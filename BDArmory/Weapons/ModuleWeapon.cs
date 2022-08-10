@@ -867,7 +867,7 @@ namespace BDArmory.Weapons
             {
                 yield return new WaitForSeconds(delay);
             }
-            if (weaponManager == null) yield break;
+            if (weaponManager == null || weaponManager.vessel != this.vessel) yield break;
             weaponManager.incrementRippleIndex(WeaponName);
 
             //Debug.Log("[BDArmory.ModuleWeapon]: incrementing ripple index to: " + weaponManager.gunRippleIndex);
@@ -1863,6 +1863,7 @@ namespace BDArmory.Weapons
                                     pBullet.sourceVessel = vessel;
                                     pBullet.team = weaponManager.Team.Name;
                                     pBullet.bulletTexturePath = bulletTexturePath;
+
                                     pBullet.projectileColor = projectileColorC;
                                     pBullet.startColor = startColorC;
                                     pBullet.fadeColor = fadeColor;

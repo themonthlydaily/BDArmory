@@ -5182,10 +5182,10 @@ namespace BDArmory.Control
                                 return false;
 
                         // check overheat, reloading, ability to fire soon
-                        if (gun.isOverheated)
+                        if (!gun.hasGunner)
                             return false;
-                        if (gun.isReloading || !gun.hasGunner)
-                            return false;
+                        if (gun.isReloading || gun.isOverheated)
+                            return false; 
                         if (!gun.CanFireSoon())
                             return false;
                         // check ammo
@@ -6391,7 +6391,14 @@ namespace BDArmory.Control
                     if (weapon.Current == null) continue;
                     if (selectedWeapon == null)
                     {
-                        if (!weapon.Current.isAPS) weapon.Current.DisableWeapon();
+                        if (weapon.Current.turret && guardMode)
+                        {
+                            if (!weapon.Current.isAPS) weapon.Current.StandbyWeapon();
+                        }
+                        else
+                        {
+                            if (!weapon.Current.isAPS) weapon.Current.DisableWeapon();
+                        }
                     }
                     else if (weapon.Current.GetShortName() != selectedWeapon.GetShortName())
                     {

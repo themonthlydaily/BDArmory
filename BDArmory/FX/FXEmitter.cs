@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 using BDArmory.Utils;
+using BDArmory.Weapons;
 
 namespace BDArmory.FX
 {
@@ -13,6 +14,7 @@ namespace BDArmory.FX
         public float StartTime { get; set; }
         public AudioClip ExSound { get; set; }
         public AudioSource audioSource { get; set; }
+        public string SoundPath { get; set; }
         private float Power { get; set; }
         private float emitTime { get; set; }
         private float maxTime { get; set; }
@@ -51,6 +53,22 @@ namespace BDArmory.FX
                     emission.enabled = true;
                     EffectBehaviour.AddParticleEmitter(pe);
                 }
+            if (!String.IsNullOrEmpty(SoundPath))
+            {
+                audioSource = gameObject.GetComponent<AudioSource>();
+                if (ExSound == null)
+                {
+                    ExSound = GameDatabase.Instance.GetAudioClip(SoundPath);
+                    Debug.Log("[BDArmory.FXEmitter]: SoundFX path is: " + SoundPath);
+
+                    if (ExSound == null)
+                    {
+                        Debug.LogError("[BDArmory.FXEmitter]: " + ExSound + " was not found, using the default sound instead. Please fix your model.");
+                        ExSound = GameDatabase.Instance.GetAudioClip(ModuleWeapon.defaultExplSoundPath);
+                    }
+                }
+                audioSource.PlayOneShot(ExSound);
+            }
         }
 
         void OnDisable()
@@ -105,6 +123,14 @@ namespace BDArmory.FX
                 gameObject.SetActive(false);
                 return;
             }
+            if (UI.BDArmorySetup.GameIsPaused)
+            {
+                if (audioSource.isPlaying)
+                {
+                    audioSource.Stop();
+                }
+                return;
+            }
         }
 
         static void CreateObjectPool(string ModelPath, string soundPath)
@@ -121,19 +147,10 @@ namespace BDArmory.FX
                 var eFx = FXTemplate.AddComponent<FXEmitter>();
                 if (!String.IsNullOrEmpty(soundPath))
                 {
-                    var soundClip = GameDatabase.Instance.GetAudioClip(soundPath);
-                    if (soundClip == null)
-                    {
-                        Debug.LogError("[BDArmory.FXBase]: " + soundPath + " was not found, using the default sound instead. Please fix your model.");
-                        soundClip = GameDatabase.Instance.GetAudioClip(defaultSoundPath);
-                    }
-
-                    eFx.ExSound = soundClip;
                     eFx.audioSource = FXTemplate.AddComponent<AudioSource>();
                     eFx.audioSource.minDistance = 200;
                     eFx.audioSource.maxDistance = 5500;
                     eFx.audioSource.spatialBlend = 1;
-
                 }
                 FXTemplate.SetActive(false);
                 FXPools[key] = ObjectPool.CreateObjectPool(FXTemplate, 10, true, true, 0f, false);
@@ -179,6 +196,7 @@ namespace BDArmory.FX
                     eFx.audioSource.maxDistance = 3000;
                     eFx.audioSource.priority = 9999;
                 }
+                eFx.SoundPath = soundPath;
             }
             newFX.SetActive(true);
         }

@@ -2374,7 +2374,7 @@ namespace BDArmory.Control
             s.pitch = Mathf.Clamp(steerPitch, Mathf.Min(-finalMaxSteer, -0.2f), finalMaxSteer); // finalMaxSteer for pitch and yaw, user-defined steer limit for roll.
             s.yaw = Mathf.Clamp(steerYaw, -finalMaxSteer, finalMaxSteer);
             s.roll = Mathf.Clamp(steerRoll, -userLimit, userLimit);
-
+            
             if (autoTune)
             { pidAutoTuning.Update(pitchError, rollError, yawError); }
 
@@ -2809,6 +2809,7 @@ namespace BDArmory.Control
                         { // This adds +-500/(threat distance) to the left or right relative to the breakTarget vector, regardless of the size of breakTarget
                             breakTarget += 500f / threatRelativePosition.magnitude * Vector3.Cross(threatRelativePosition.normalized, Mathf.Sign(Mathf.Sin((float)vessel.missionTime / 2)) * vessel.upAxis);
                             debugString.AppendLine($" from directly ahead!");
+                            RCSEvade(s, new Vector3(1 * evasionNonlinearityDirection, 0,0));//add spacemode RCS dodging; forward incoming fire, flank L/R
                         }
                         else if (threatDirectionFactor < -0.9) //within ~28 degrees behind
                         {
@@ -2825,6 +2826,7 @@ namespace BDArmory.Control
                                     steerMode = SteerModes.Aiming;
                                     AdjustThrottle(minSpeed, true, false);
                                 }
+                                RCSEvade(s, new Vector3(Mathf.Sin((float)vessel.missionTime / 2), Mathf.Cos((float)vessel.missionTime / 2), 0));//add spacemode RCS dodging; aft incoming fire, orbit about prograde
                             }
                             else
                             { // This sets breakTarget to the attackers position, then applies an up to 500m offset to the right or left (relative to the vessel) for the first half of the default evading period, then sets the breakTarget to be 150m right or left of the attacker.
@@ -2837,6 +2839,7 @@ namespace BDArmory.Control
                                 debugString.AppendLine($" from directly behind and close; breaking hard");
                                 steerMode = SteerModes.Aiming;
                                 AdjustThrottle(minSpeed, true, false); // Brake to slow down and turn faster while breaking target
+                                RCSEvade(s, new Vector3(0, 0, -1));//add spacemode RCS dodging; fire afailable retrothrusters
                             }
                         }
                         else
@@ -2854,6 +2857,7 @@ namespace BDArmory.Control
                                 breakTarget = vesselTransform.up * 1500;
                                 breakTarget += Mathf.Sin((float)vessel.missionTime / 2) * vesselTransform.right * 1000 - Mathf.Cos((float)vessel.missionTime / 2) * vesselTransform.forward * 1000;
                                 debugString.AppendLine($" from far side; engaging barrel roll");
+                                RCSEvade(s, new Vector3(0, 1 * evasionNonlinearityDirection, 0));//add spacemode RCS dodging; flank incoming fire, flank U/D
                             }
                         }
 
@@ -2884,6 +2888,21 @@ namespace BDArmory.Control
             //+ (Mathf.Sin (Time.time/3) * upDirection * minAltitude/3);
             debugString.AppendLine($"Evading unknown attacker");
             FlyToPosition(s, target);
+        }
+
+        public void RCSEvade(FlightCtrlState s, Vector3 EvadeDir)
+        {
+            if (!BDArmorySettings.SPACE_HACKS || vessel.atmDensity > 0.05) return;
+            if (!vessel.ActionGroups[KSPActionGroup.RCS])
+            {
+                vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
+            }
+            //Vector3d RCS needs to be fed a vector based on the direction of dodging we need to do
+            // grab list of engines on ship, find all that are independant throttle, find all that are pointed in the right direction(Vector3.Dot(thrustTransform, evadeDir)?
+            //then activate them? Alternatively, method for letting non-ModuleRCS engines act like RCS?
+            s.X = Mathf.Clamp((float)EvadeDir.x, -1, 1); //left/right
+            s.Y = Mathf.Clamp((float)EvadeDir.z, -1, 1); //fore/aft
+            s.Z = Mathf.Clamp((float)EvadeDir.y, -1, 1); //up/down
         }
 
         void UpdateVelocityRelativeDirections() // Vectors that are used in TakeOff and FlyAvoidTerrain.
