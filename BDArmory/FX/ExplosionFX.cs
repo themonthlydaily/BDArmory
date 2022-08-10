@@ -109,7 +109,6 @@ namespace BDArmory.FX
             if (ExSound == null)
             {
                 ExSound = GameDatabase.Instance.GetAudioClip(SoundPath);
-                Debug.Log("[BDArmory.ExplosionFX]: SoundFX path is: " + SoundPath);
 
                 if (ExSound == null)
                 {
@@ -533,6 +532,15 @@ namespace BDArmory.FX
         public void FixedUpdate()
         {
             if (!gameObject.activeInHierarchy) return;
+
+            if (UI.BDArmorySetup.GameIsPaused)
+            {
+                if (audioSource.isPlaying)
+                {
+                    audioSource.Stop();
+                }
+                return;
+            }
 
             //floating origin and velocity offloading corrections
             if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())

@@ -126,7 +126,6 @@ namespace BDArmory.FX
                 if (ExSound == null)
                 {
                     ExSound = GameDatabase.Instance.GetAudioClip(SoundPath);
-                    Debug.Log("[BDArmory.ExplosionFX]: SoundFX path is: " + SoundPath);
 
                     if (ExSound == null)
                     {
@@ -309,9 +308,9 @@ namespace BDArmory.FX
                             //scaling calc is roughly SqRt( 400 * (6x))
                             //fireball diameter is 59 * Mathf.Pow(yield, 0.4f), apparently?
                             if (!string.IsNullOrWhiteSpace(flashModelPath))
-                                FXEmitter.CreateFX(transform.position, scale, flashModelPath, blastSoundPath, 0.3f, -1, default, true);
+                                FXEmitter.CreateFX(transform.position, scale, flashModelPath, "", 0.3f, -1, default, true);
                             if (!string.IsNullOrWhiteSpace(shockModelPath))
-                                FXEmitter.CreateFX(transform.position, scale * lastValidAtmDensity, shockModelPath, blastSoundPath, 0.3f, -1, default, true);
+                                FXEmitter.CreateFX(transform.position, scale * lastValidAtmDensity, shockModelPath, "", 0.3f, -1, default, true);
                             if (!string.IsNullOrWhiteSpace(blastModelPath))
                                 FXEmitter.CreateFX(transform.position, scale, blastModelPath, blastSoundPath, 1.5f, Mathf.Clamp(30 * scale, 30f, 90f), default, true);
                         }
@@ -321,9 +320,9 @@ namespace BDArmory.FX
                             double longitudeAtPos = FlightGlobals.currentMainBody.GetLongitude(transform.position);
                             double altitude = FlightGlobals.currentMainBody.TerrainAltitude(latitudeAtPos, longitudeAtPos);
                             if (!string.IsNullOrWhiteSpace(plumeModelPath))
-                                FXEmitter.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), Mathf.Clamp(scale, 0.01f, 3f), plumeModelPath, blastSoundPath, Mathf.Clamp(30 * scale, 30f, 90f), Mathf.Clamp(30 * scale, 30f, 90f), default, true, true);
+                                FXEmitter.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), Mathf.Clamp(scale, 0.01f, 3f), plumeModelPath, "", Mathf.Clamp(30 * scale, 30f, 90f), Mathf.Clamp(30 * scale, 30f, 90f), default, true, true);
                             if (!string.IsNullOrWhiteSpace(debrisModelPath))
-                                FXEmitter.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), scale, debrisModelPath, blastSoundPath, 1.5f, Mathf.Clamp(30 * scale, 30f, 90f), default, true);
+                                FXEmitter.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), scale, debrisModelPath, "", 1.5f, Mathf.Clamp(30 * scale, 30f, 90f), default, true);
                         }
                     }
                     if (LightFx != null) LightFx.intensity -= 12 * scale * Time.deltaTime;
@@ -538,12 +537,17 @@ namespace BDArmory.FX
             var key = ModelPath + soundPath;
             if (!nukePool.ContainsKey(key) || nukePool[key] == null)
             {
-                var templateFX = GameDatabase.Instance.GetModel(ModelPath);
-                if (templateFX == null)
-                {
-                    //Debug.LogError("[BDArmory.NukeFX]: " + ModelPath + " was not found, using the default explosion instead. Please fix your model.");
-                    templateFX = GameDatabase.Instance.GetModel(ModuleWeapon.defaultExplModelPath);
+                GameObject templateFX;
+                if(!String.IsNullOrEmpty(ModelPath))
+                    {
+                    templateFX = GameDatabase.Instance.GetModel(ModelPath);
+                    if (templateFX == null)
+                    {
+                        //Debug.LogError("[BDArmory.NukeFX]: " + ModelPath + " was not found, using the default explosion instead. Please fix your model.");
+                        templateFX = GameDatabase.Instance.GetModel(ModuleWeapon.defaultExplModelPath);
+                    }
                 }
+                else templateFX = GameDatabase.Instance.GetModel("BDArmory/Models/shell/model"); //near enough to invisible; model support pre-FXEmitter spawning of Nuke blast FX is only for chernobyl/mutator support for spawning a bomb model in the delay between initializing the nuke and it detonating
                 var eFx = templateFX.AddComponent<NukeFX>();
                 eFx.audioSource = templateFX.AddComponent<AudioSource>();
                 eFx.audioSource.minDistance = 200;
