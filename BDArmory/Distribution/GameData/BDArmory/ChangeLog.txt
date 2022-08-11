@@ -7,15 +7,37 @@
 	- Fix RippleIndex Errors from weapons overheating/reloading.
 	- Fix Weapon manager PAW engagement options not affecting AI weapon selection in flight.
 	- AI controlled turrets will no longer return to rest position when overheated/reloading.
+- UI:
+	- Fix exception when resetting colours in Team Icons.
 - Competition:
 	- Fix exception in auto-resuming tournaments when SpawnProbe.craft isn't found.
+	- Fix incorrect Kill Steal attribution from 1v1 fights.
+- Spawning:
+	- Wait until after vessels are unpacked before reverting the spawn camera.
+	- Fix freezing when vessel removal throws an exception.
+- AI:
+	- Fix incorrect inputField for off-target dynamic roll damping.
+- Detectors:
+	- Fix IRST preventing Radar GUI close.
+	- Fix NRE in targeting camera when the camera parent transform is null.
 - Weapons:
 	- Fix FXLookAtConstraint modules on various turrets.
 	- Fix incorrect charge sound path for lasers.
 	- Make the ABL use proper looping audio and add a cool-down sound.
-	- Missiles and nukes will not properly play their explosion sound effects.
+	- Fix the ABL laser beam continuing to show while overheated when used manually.
+	- Fix for NRE when heatseeker is manually selected prior to activating guard mode.
+	- Make the engage options in the weapon PAWs work properly in flight.
+  - Missiles and nukes will not properly play their explosion sound effects.
 - AI
 	-Spaceborne pilotAIs will now dodge via RCS translation.
+- Armor:
+	- Adjusted post-penetration behavior of high velocity rounds, rounds now erode instead of slowing down at high velocities.
+		- Multi-plate armor schemes now behave more realistically and will require more careful material selection and configuration.
+		- Whipple shields for hypervelocity rounds are now viable and desirable. This behavior is however still very crude and does not qualitative match realistic behavior.
+	- Adjusted stats for S-Glass and Kevlar materials to have realistic RHA equivalency.
+		- Re-implemented Tate-Alekseevksy equation for low-ductility materials.
+	- Added debug console output for armor penetration behavior. Now when Debug -> Armor is on, console will output armor penetration parameters.
+  
 v1.5.1.2
 FIXES
 - Fix adjustable armor unclamped scaling.

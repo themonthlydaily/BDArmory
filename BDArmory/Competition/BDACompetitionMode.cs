@@ -2271,6 +2271,7 @@ namespace BDArmory.Competition
                     }
                     if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]:No viable competitors, Automatically dumping scores");
                     StopCompetition();
+                    return;
                 }
             }
 
@@ -2328,6 +2329,7 @@ namespace BDArmory.Competition
                 Debug.Log($"[BDArmory.BDACompetitionMode:{CompetitionID.ToString()}]: " + message);
                 LogResults("due to out-of-time");
                 StopCompetition();
+                return;
             }
 
             if ((BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_TIMER) && BDArmorySettings.MUTATOR_DURATION > 0 && now - MutatorResetTime >= BDArmorySettings.MUTATOR_DURATION * 60d && BDArmorySettings.MUTATOR_LIST.Count > 0)
@@ -3314,7 +3316,14 @@ namespace BDArmory.Competition
             foreach (var protoVessel in protoVessels)
             {
                 if (protoVessel == null) continue;
-                ShipConstruction.RecoverVesselFromFlight(protoVessel, HighLogic.CurrentGame.flightState, true);
+                try
+                {
+                    ShipConstruction.RecoverVesselFromFlight(protoVessel, HighLogic.CurrentGame.flightState, true);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[BDArmory.BDACompetitionMode]: Exception thrown while removing vessel: {e.Message}");
+                }
                 if (protoVessel == null) continue;
                 if (protoVessel.protoPartSnapshots != null)
                 {

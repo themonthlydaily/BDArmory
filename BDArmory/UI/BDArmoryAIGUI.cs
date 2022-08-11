@@ -321,7 +321,7 @@ namespace BDArmory.UI
                         { "DynamicDampingYawMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingYawMax, 1, 8) },
                         { "dynamicSteerDampingYawFactor", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.dynamicSteerDampingYawFactor, 0.1, 10) },
 
-                        { "DynamicDampingRollMin", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingRollMax, 1, 8) },
+                        { "DynamicDampingRollMin", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingRollMin, 1, 8) },
                         { "DynamicDampingRollMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingRollMax, 1, 8) },
                         { "dynamicSteerDampingRollFactor", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.dynamicSteerDampingRollFactor, 0.1, 10) },
 
@@ -1237,7 +1237,7 @@ namespace BDArmory.UI
                                     inputFields["autoTuningOptionFastResponseRelevance"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + autoTuneLines, contentWidth), inputFields["autoTuningOptionFastResponseRelevance"].possibleValue, 6));
                                     ActivePilot.autoTuningOptionFastResponseRelevance = (float)inputFields["autoTuningOptionFastResponseRelevance"].currentValue;
                                 }
-                                GUI.Label(SettinglabelRect(leftIndent, pidLines + autoTuneLines++), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningFastResponseRelevance") + $": {ActivePilot.autoTuningOptionFastResponseRelevance}", Label);
+                                GUI.Label(SettinglabelRect(leftIndent, pidLines + autoTuneLines++), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningFastResponseRelevance") + $": {ActivePilot.autoTuningOptionFastResponseRelevance:G3}", Label);
                                 if (contextTipsEnabled)
                                 {
                                     GUI.Label(ContextLabelRect(leftIndent, pidLines + autoTuneLines), Localizer.Format("#LOC_BDArmory_AIWindow_PIDAutoTuningFastResponseRelevanceMin"), Label);

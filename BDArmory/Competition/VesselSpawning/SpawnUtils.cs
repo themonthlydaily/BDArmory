@@ -311,10 +311,17 @@ namespace BDArmory.Competition.VesselSpawning
             ++removeVesselsPending;
             if (vessel != FlightGlobals.ActiveVessel && vessel.vesselType != VesselType.SpaceObject)
             {
-                if (KerbalSafetyManager.Instance.safetyLevel != KerbalSafetyLevel.Off)
-                    KerbalSafetyManager.Instance.RecoverVesselNow(vessel);
-                else
-                    ShipConstruction.RecoverVesselFromFlight(vessel.protoVessel, HighLogic.CurrentGame.flightState, true);
+                try
+                {
+                    if (KerbalSafetyManager.Instance.safetyLevel != KerbalSafetyLevel.Off)
+                        KerbalSafetyManager.Instance.RecoverVesselNow(vessel);
+                    else
+                        ShipConstruction.RecoverVesselFromFlight(vessel.protoVessel, HighLogic.CurrentGame.flightState, true);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[BDArmory.SpawnUtils]: Exception thrown while removing vessel: {e.Message}");
+                }
             }
             else
             {
@@ -463,6 +470,7 @@ namespace BDArmory.Competition.VesselSpawning
         public void RevertSpawnLocationCamera(bool keepTransformValues = true)
         {
             if (spawnLocationCamera == null || !spawnLocationCamera.activeSelf) return;
+            if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.SpawnUtils]: Reverting spawn location camera.");
             if (delayedShowSpawnPointCoroutine != null) { StopCoroutine(delayedShowSpawnPointCoroutine); delayedShowSpawnPointCoroutine = null; }
             var flightCamera = FlightCamera.fetch;
             if (originalCameraParentTransform != null)
