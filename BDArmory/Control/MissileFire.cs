@@ -5579,7 +5579,7 @@ namespace BDArmory.Control
                     ml.TargetAcquired = true;
                     if (BDArmorySettings.DEBUG_MISSILES)
                         Debug.Log("[BDArmory.MissileData]: Sending targetInfo to GPS Missile...");
-                    if (guardMode && ((designatedGPSCoords - guardTarget.CoM).sqrMagnitude < 10 * 10))
+                    if (guardMode && ((guardTarget.CoM - VectorUtils.GetWorldSurfacePostion(designatedGPSCoords, vessel.mainBody)).sqrMagnitude < 10 * 10))
                     {
                         ml.targetVessel = guardTarget.gameObject.GetComponent<TargetInfo>();
                         if (BDArmorySettings.DEBUG_MISSILES)
@@ -6554,7 +6554,7 @@ namespace BDArmory.Control
         // Check antiRad target is within 20m for stationary targets, and a scaling distance based on target speed for targets moving faster than ~60 m/s
         bool AntiRadDistanceCheck()
         {
-            return (antiRadiationTarget - guardTarget.CoM).sqrMagnitude < Mathf.Max(20f * 20f, (float)guardTarget.srfSpeed * 7f);
+            return (VectorUtils.WorldPositionToGeoCoords(antiRadiationTarget, vessel.mainBody) - VectorUtils.WorldPositionToGeoCoords(guardTarget.CoM, vessel.mainBody)).sqrMagnitude < Mathf.Max(20f * 20f, (float)guardTarget.srfSpeed * 3.5f);
         }
 
         bool AltitudeTrigger()

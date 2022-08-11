@@ -3518,7 +3518,7 @@ namespace BDArmory.Control
             var scale = weaponManager is not null ? Mathf.Max(2500f, weaponManager.gunRange) : 2500f;
             var scaledDistance = (targetPosition - vessel.transform.position).magnitude / scale;
             if (scaledDistance <= 1) return targetPosition; // No modification if the target is within the gun range.
-            scaledDistance = Mathf.Sqrt(scaledDistance);
+            scaledDistance = BDAMath.Sqrt(scaledDistance);
             var targetAlt = BodyUtils.GetRadarAltitudeAtPos(targetPosition);
             var newAlt = targetAlt / scaledDistance + defaultAltitude * (scaledDistance - 1) / scaledDistance;
             debugString.AppendLine($"Adjusting fly-to altitude from {targetAlt:0}m to {newAlt:0}m (scaled distance: {scaledDistance:0.0}m)");
