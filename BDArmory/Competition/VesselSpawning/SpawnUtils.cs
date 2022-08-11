@@ -311,10 +311,17 @@ namespace BDArmory.Competition.VesselSpawning
             ++removeVesselsPending;
             if (vessel != FlightGlobals.ActiveVessel && vessel.vesselType != VesselType.SpaceObject)
             {
-                if (KerbalSafetyManager.Instance.safetyLevel != KerbalSafetyLevel.Off)
-                    KerbalSafetyManager.Instance.RecoverVesselNow(vessel);
-                else
-                    ShipConstruction.RecoverVesselFromFlight(vessel.protoVessel, HighLogic.CurrentGame.flightState, true);
+                try
+                {
+                    if (KerbalSafetyManager.Instance.safetyLevel != KerbalSafetyLevel.Off)
+                        KerbalSafetyManager.Instance.RecoverVesselNow(vessel);
+                    else
+                        ShipConstruction.RecoverVesselFromFlight(vessel.protoVessel, HighLogic.CurrentGame.flightState, true);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[BDArmory.SpawnUtils]: Exception thrown while removing vessel: {e.Message}");
+                }
             }
             else
             {

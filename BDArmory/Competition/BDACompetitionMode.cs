@@ -3316,7 +3316,14 @@ namespace BDArmory.Competition
             foreach (var protoVessel in protoVessels)
             {
                 if (protoVessel == null) continue;
-                ShipConstruction.RecoverVesselFromFlight(protoVessel, HighLogic.CurrentGame.flightState, true);
+                try
+                {
+                    ShipConstruction.RecoverVesselFromFlight(protoVessel, HighLogic.CurrentGame.flightState, true);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[BDArmory.BDACompetitionMode]: Exception thrown while removing vessel: {e.Message}");
+                }
                 if (protoVessel == null) continue;
                 if (protoVessel.protoPartSnapshots != null)
                 {
