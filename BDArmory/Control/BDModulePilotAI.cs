@@ -1595,7 +1595,7 @@ namespace BDArmory.Control
                 if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDModulePilotAI]: " + vessel.vesselName + " is no longer inhibiting gain alt");
             }
 
-            if (!gainAltInhibited && belowMinAltitude && (currentStatus == "Engaging" || currentStatus == "Evading"))
+            if (!gainAltInhibited && belowMinAltitude && (currentStatus == "Engaging" || currentStatus == "Evading") && vessel.atmDensity > 0.1f)
             { // Vessel went below minimum altitude while "Engaging" or "Evading", enable the gain altitude inhibitor.
                 gainAltInhibited = true;
                 if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDModulePilotAI]: " + vessel.vesselName + " was " + currentStatus + " and went below min altitude, inhibiting gain alt.");
@@ -2952,9 +2952,16 @@ namespace BDArmory.Control
             ray = new Ray(vessel.transform.position, relativeVelocityDownDirection); // Check here below.
             Vector3 terrainBelowNormal = (Physics.Raycast(ray, out rayHit, minAltitude + 1.0f, (int)LayerMasks.Scenery)) ? rayHit.normal : upDirection; // Terrain normal below here.
             Vector3 normalToUse = Vector3.Dot(vessel.srf_vel_direction, terrainBelowNormal) < Vector3.Dot(vessel.srf_vel_direction, terrainBelowAheadNormal) ? terrainBelowNormal : terrainBelowAheadNormal; // Use the normal that has the steepest slope relative to our velocity.
-            forwardPoint = vessel.transform.position + Vector3.ProjectOnPlane(forwardDirection, normalToUse).normalized * 100; // Forward point adjusted for terrain.
-            float rise = Mathf.Clamp((float)vessel.srfSpeed * 0.215f, 5, 100); // Up to 45° rise angle above terrain changes at 465m/s.
-            FlyToPosition(s, forwardPoint + upDirection * rise);
+            if (BDArmorySettings.SPACE_HACKS && vessel.atmDensity < 0.1f) //no need to worry about stalling in null atmo
+            {
+                FlyToPosition(s, vessel.transform.position + terrainBelowAheadNormal * 100); //point nose perpendicular to surface for maximum vertical thrust.
+            }
+            else
+            {
+                forwardPoint = vessel.transform.position + Vector3.ProjectOnPlane(forwardDirection, normalToUse).normalized * 100; // Forward point adjusted for terrain.
+                float rise = Mathf.Clamp((float)vessel.srfSpeed * 0.215f, 5, 100); // Up to 45° rise angle above terrain changes at 465m/s.
+                FlyToPosition(s, forwardPoint + upDirection * rise);
+            }
         }
 
         void UpdateTerrainAlertDetectionRadius(Vessel v)

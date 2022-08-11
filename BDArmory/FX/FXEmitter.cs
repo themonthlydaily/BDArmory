@@ -67,7 +67,8 @@ namespace BDArmory.FX
                         ExSound = GameDatabase.Instance.GetAudioClip(ModuleWeapon.defaultExplSoundPath);
                     }
                 }
-                StartCoroutine(DelayBlastSFX(Vector3.Distance(this.transform.position, FlightGlobals.ActiveVessel.CoM) / 343f));
+                audioSource.PlayOneShot(ExSound); //get distance to active vessel and add a delay?
+                //StartCoroutine(DelayBlastSFX(Vector3.Distance(this.transform.position, FlightGlobals.ActiveVessel.CoM) / 343f));
             }
         }
 
@@ -147,8 +148,7 @@ namespace BDArmory.FX
             {
                 yield return new WaitForSeconds(delay);
             }
-            audioSource.PlayOneShot(ExSound); //get distance to active vessel and add a delay?
-
+            audioSource.PlayOneShot(ExSound);
         }
         static void CreateObjectPool(string ModelPath, string soundPath)
         {
