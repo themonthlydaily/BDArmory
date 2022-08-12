@@ -110,7 +110,7 @@ namespace BDArmory.GameModes
                         {
                             maxVelocity = SAI.MaxSpeed;
                         }
-                        frictionCoeff = Mathf.Pow(((float)part.vessel.speed / maxVelocity), 3) * frictMult; //at maxSpeed, have friction be 100% of vessel's engines thrust
+                        frictionCoeff = (((float)part.vessel.speed / maxVelocity) * ((float)part.vessel.speed / maxVelocity) * ((float)part.vessel.speed / maxVelocity)) * frictMult; //at maxSpeed, have friction be 100% of vessel's engines thrust
 
                         frictionCoeff *= (1 + (Vector3.Angle(this.part.vessel.srf_vel_direction, this.part.vessel.GetTransform().up) / 180) * BDArmorySettings.SF_DRAGMULT); //greater AoA off prograde, greater drag
 

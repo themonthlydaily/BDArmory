@@ -271,7 +271,7 @@ namespace BDArmory.Utils
 
             double d;
 
-            d = -(Vector3.Dot(l, o - c) + Math.Sqrt(Mathf.Pow(Vector3.Dot(l, o - c), 2) - (o - c).sqrMagnitude + (r * r)));
+            d = -(Vector3.Dot(l, o - c) + Math.Sqrt((Vector3.Dot(l, o - c) * Vector3.Dot(l, o - c)) - (o - c).sqrMagnitude + (r * r)));
 
             if (double.IsNaN(d))
             {

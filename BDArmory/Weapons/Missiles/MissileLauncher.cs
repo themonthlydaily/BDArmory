@@ -1079,7 +1079,7 @@ namespace BDArmory.Weapons.Missiles
                         if (launcher.hasRCS) launcher.KillRCS();
                     }
 
-                    if (sqrDist < Mathf.Pow(GetBlastRadius() * 0.5f, 2)) part.Destroy();
+                    if (sqrDist < (GetBlastRadius() * 0.5f * GetBlastRadius() * 0.5f)) part.Destroy();
 
                     isTimed = true;
                     detonationTime = TimeIndex + 1.5f;
@@ -1320,7 +1320,7 @@ namespace BDArmory.Weapons.Missiles
 
                         //RadarUtils.UpdateRadarLock(ray, maxOffBoresight, activeRadarMinThresh, ref scannedTargets, 0.4f, true, RadarWarningReceiver.RWRThreatTypes.MissileLock, true);
                         RadarUtils.RadarUpdateMissileLock(ray, maxOffBoresight, ref scannedTargets, 0.4f, this);
-                        float sqrThresh = Mathf.Pow(terminalGuidanceDistance * 1.5f, 2);
+                        float sqrThresh = (terminalGuidanceDistance * 1.5f * terminalGuidanceDistance * 1.5f);
 
                         //float smallestAngle = maxOffBoresight;
                         TargetSignatureData lockedTarget = TargetSignatureData.noTarget;
@@ -1851,7 +1851,7 @@ namespace BDArmory.Weapons.Missiles
                 }
 
                 //proxy detonation
-                if (proxyDetonate && !DetonateAtMinimumDistance && ((TargetPosition + (TargetVelocity * Time.fixedDeltaTime)) - (transform.position)).sqrMagnitude < Mathf.Pow(GetBlastRadius() * 0.5f, 2))
+                if (proxyDetonate && !DetonateAtMinimumDistance && ((TargetPosition + (TargetVelocity * Time.fixedDeltaTime)) - (transform.position)).sqrMagnitude < (GetBlastRadius() * 0.5f * GetBlastRadius() * 0.5f))
                 {
                     part.Destroy(); //^look into how this interacts with MissileBase.DetonationState
                 }
@@ -1914,7 +1914,7 @@ namespace BDArmory.Weapons.Missiles
                 }
 
                 //proxy detonation
-                if (proxyDetonate && !DetonateAtMinimumDistance && ((TargetPosition + (TargetVelocity * Time.fixedDeltaTime)) - (transform.position)).sqrMagnitude < Mathf.Pow(GetBlastRadius() * 0.5f, 2))
+                if (proxyDetonate && !DetonateAtMinimumDistance && ((TargetPosition + (TargetVelocity * Time.fixedDeltaTime)) - (transform.position)).sqrMagnitude < (GetBlastRadius() * 0.5f * GetBlastRadius() * 0.5f))
                 {
                     part.Destroy();
                 }

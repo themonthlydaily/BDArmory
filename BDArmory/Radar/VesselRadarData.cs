@@ -2126,7 +2126,7 @@ namespace BDArmory.Radar
                                                           Random.Range(100, rIncrements[rangeIndex]));
                                 float bearingVariation =
                                     Mathf.Clamp(
-                                        Mathf.Pow(32000, 2) /
+                                        (32000 * 32000) /
                                         (displayedTargets[i].targetData.position - transform.position).sqrMagnitude, 0,
                                         80);
                                 jammedPosition = transform.position +
@@ -2385,7 +2385,7 @@ namespace BDArmory.Radar
                 float sqrMag = (displayedTargets[i].pingPosition - selectorPos).sqrMagnitude;
                 if (sqrMag < closestSqrMag)
                 {
-                    if (sqrMag < Mathf.Pow(20, 2))
+                    if (sqrMag < (20 * 20))
                     {
                         closestPos = displayedTargets[i].targetData.predictedPosition;
                         found = true;
@@ -2397,7 +2397,7 @@ namespace BDArmory.Radar
             {
                 TryLockTarget(closestPos);
             }
-            else if (closestSqrMag > Mathf.Pow(40, 2))
+            else if (closestSqrMag > (40 * 40))
             {
                 UnlockCurrentTarget();
             }

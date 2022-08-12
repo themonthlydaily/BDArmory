@@ -50,7 +50,7 @@ namespace BDArmory.Extensions
         public static double GetFutureAltitude(this Vessel vessel, float predictionTime = 10)
         {
             Vector3 futurePosition = vessel.CoM + vessel.Velocity() * predictionTime
-                                                + 0.5f * vessel.acceleration_immediate * Mathf.Pow(predictionTime, 2);
+                                                + 0.5f * vessel.acceleration_immediate * (predictionTime * predictionTime);
 
             return GetRadarAltitudeAtPos(futurePosition);
         }
