@@ -221,7 +221,7 @@ namespace BDArmory.Utils
                 ApplyScore(hitPart, sourceVesselName, 0, damage, "Spalling", explosionSource);
             }
         }
-        public static void CalculateShrapnelDamage(Part hitPart, RaycastHit hit, float caliber, float HEmass, float detonationDist, string sourceVesselName, ExplosionSourceType explosionSource, float projmass = -1, float penetrationFactor = -1)
+        public static void CalculateShrapnelDamage(Part hitPart, RaycastHit hit, float caliber, float HEmass, float detonationDist, string sourceVesselName, ExplosionSourceType explosionSource, float projmass = -1, float penetrationFactor = -1, float thickness = -1)
         {
             /// <summary>
             /// Calculates damage from flak/shrapnel, based on HEmass and projMass, of both contact and airburst detoantions.
@@ -229,7 +229,7 @@ namespace BDArmory.Utils
             /// Shrapnel penetration dist determined by caliber, penetration. Penetration = -1 is part only hit by blast/airburst
             /// </summary>
             if (BDArmorySettings.PAINTBALL_MODE) return; //don't damage armor if paintball mode
-            float thickness = (float)hitPart.GetArmorThickness();
+            if (thickness < 0) thickness = (float)hitPart.GetArmorThickness();
             if (thickness < 1)
             {
                 thickness = 1; //prevent divide by zero or other odd behavior
