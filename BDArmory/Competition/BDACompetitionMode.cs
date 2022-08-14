@@ -2084,11 +2084,13 @@ namespace BDArmory.Competition
                         vData.averageCount++;
                         if (vData.landedState && BDArmorySettings.COMPETITION_KILL_TIMER > 0)
                         {
-                            KillTimer[vesselName] = (int)(now - vData.landedKillTimer);
-                            if (now - vData.landedKillTimer > BDArmorySettings.COMPETITION_KILL_TIMER)
+                            if (VesselModuleRegistry.GetBDModuleSurfaceAI(vessel, true) is null) // Ignore surface AI vessels for the kill timer.
                             {
-                                var srfVee = VesselModuleRegistry.GetBDModuleSurfaceAI(vessel, true);
-                                if (srfVee == null) vesselsToKill.Add(mf.vessel); //don't kill timer remove surface Ai vessels
+                                KillTimer[vesselName] = (int)(now - vData.landedKillTimer);
+                                if (now - vData.landedKillTimer > BDArmorySettings.COMPETITION_KILL_TIMER)
+                                {
+                                    vesselsToKill.Add(mf.vessel);
+                                }
                             }
                         }
                         else if (KillTimer.ContainsKey(vesselName))
