@@ -222,7 +222,7 @@ namespace BDArmory.UI
 
         public static bool CanSeePosition(Vector3 groundTargetPosition, Vector3 vesselPosition, Vector3 missilePosition)
         {
-            if ((groundTargetPosition - vesselPosition).sqrMagnitude < (20 * 20))
+            if ((groundTargetPosition - vesselPosition).sqrMagnitude < 400) // 20 * 20
             {
                 return false;
             }
@@ -1077,7 +1077,8 @@ namespace BDArmory.UI
                     {
                         float theta = Vector3.Angle(mf.vessel.srf_vel_direction, target.Current.transform.position - mf.vessel.transform.position);
                         float distance = (mf.vessel.transform.position - target.Current.position).magnitude;
-                        float targetScore = (target.Current == mf.currentTarget ? hysteresis : 1f) * ((bias - 1f) * (Mathf.Cos(theta / 2f) * Mathf.Cos(theta / 2f)) + 1f) / distance;
+                        float cosTheta2 = Mathf.Cos(theta / 2f);
+                        float targetScore = (target.Current == mf.currentTarget ? hysteresis : 1f) * ((bias - 1f) * cosTheta2 * cosTheta2 + 1f) / distance;
                         if (finalTarget == null || targetScore > finalTargetScore)
                         {
                             finalTarget = target.Current;

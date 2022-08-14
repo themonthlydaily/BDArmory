@@ -1079,7 +1079,8 @@ namespace BDArmory.Weapons.Missiles
                         if (launcher.hasRCS) launcher.KillRCS();
                     }
 
-                    if (sqrDist < (GetBlastRadius() * 0.5f * GetBlastRadius() * 0.5f)) part.Destroy();
+                    var distThreshold = 0.5f * GetBlastRadius();
+                    if (sqrDist < distThreshold * distThreshold) part.Destroy();
 
                     isTimed = true;
                     detonationTime = TimeIndex + 1.5f;
@@ -1320,7 +1321,7 @@ namespace BDArmory.Weapons.Missiles
 
                         //RadarUtils.UpdateRadarLock(ray, maxOffBoresight, activeRadarMinThresh, ref scannedTargets, 0.4f, true, RadarWarningReceiver.RWRThreatTypes.MissileLock, true);
                         RadarUtils.RadarUpdateMissileLock(ray, maxOffBoresight, ref scannedTargets, 0.4f, this);
-                        float sqrThresh = (terminalGuidanceDistance * 1.5f * terminalGuidanceDistance * 1.5f);
+                        float sqrThresh = terminalGuidanceDistance * terminalGuidanceDistance * 2.25f; // (terminalGuidanceDistance * 1.5f)^2
 
                         //float smallestAngle = maxOffBoresight;
                         TargetSignatureData lockedTarget = TargetSignatureData.noTarget;
@@ -1844,14 +1845,15 @@ namespace BDArmory.Weapons.Missiles
                 else // AAM Lead
                     aamTarget = MissileGuidance.GetAirToAirTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, out timeToImpact, optimumAirspeed);
 
-                
+
                 if (Vector3.Angle(aamTarget - transform.position, transform.forward) > maxOffBoresight * 0.75f)
                 {
                     aamTarget = TargetPosition;
                 }
 
                 //proxy detonation
-                if (proxyDetonate && !DetonateAtMinimumDistance && ((TargetPosition + (TargetVelocity * Time.fixedDeltaTime)) - (transform.position)).sqrMagnitude < (GetBlastRadius() * 0.5f * GetBlastRadius() * 0.5f))
+                var distThreshold = 0.5f * GetBlastRadius();
+                if (proxyDetonate && !DetonateAtMinimumDistance && ((TargetPosition + (TargetVelocity * Time.fixedDeltaTime)) - (transform.position)).sqrMagnitude < distThreshold * distThreshold)
                 {
                     part.Destroy(); //^look into how this interacts with MissileBase.DetonationState
                 }
@@ -1914,7 +1916,8 @@ namespace BDArmory.Weapons.Missiles
                 }
 
                 //proxy detonation
-                if (proxyDetonate && !DetonateAtMinimumDistance && ((TargetPosition + (TargetVelocity * Time.fixedDeltaTime)) - (transform.position)).sqrMagnitude < (GetBlastRadius() * 0.5f * GetBlastRadius() * 0.5f))
+                var distThreshold = 0.5f * GetBlastRadius();
+                if (proxyDetonate && !DetonateAtMinimumDistance && ((TargetPosition + (TargetVelocity * Time.fixedDeltaTime)) - (transform.position)).sqrMagnitude < distThreshold * distThreshold)
                 {
                     part.Destroy();
                 }

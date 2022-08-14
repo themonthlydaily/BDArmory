@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+using BDArmory.Utils;
+
 namespace BDArmory.Extensions
 {
     public static class VesselExtensions
@@ -47,18 +49,9 @@ namespace BDArmory.Extensions
             }
         }
 
-        public static double GetFutureAltitude(this Vessel vessel, float predictionTime = 10)
-        {
-            Vector3 futurePosition = vessel.CoM + vessel.Velocity() * predictionTime
-                                                + 0.5f * vessel.acceleration_immediate * (predictionTime * predictionTime);
+        public static double GetFutureAltitude(this Vessel vessel, float predictionTime = 10) => GetRadarAltitudeAtPos(AIUtils.PredictPosition(vessel, predictionTime));
 
-            return GetRadarAltitudeAtPos(futurePosition);
-        }
-
-        public static Vector3 GetFuturePosition(this Vessel vessel, float predictionTime = 10)
-        {
-            return vessel.CoM + vessel.Velocity() * predictionTime + 0.5f * vessel.acceleration_immediate * Math.Pow(predictionTime, 2);
-        }
+        public static Vector3 GetFuturePosition(this Vessel vessel, float predictionTime = 10) => AIUtils.PredictPosition(vessel, predictionTime);
 
         public static float GetRadarAltitudeAtPos(Vector3 position)
         {

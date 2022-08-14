@@ -162,7 +162,7 @@ namespace BDArmory.Radar
             {
                 if (displayedIRTargets[i].vessel == weaponManager.currentTarget)
                 {
-                    data =  displayedIRTargets[i].targetData;
+                    data = displayedIRTargets[i].targetData;
                 }
             }
             data = TargetSignatureData.noTarget;
@@ -2126,7 +2126,7 @@ namespace BDArmory.Radar
                                                           Random.Range(100, rIncrements[rangeIndex]));
                                 float bearingVariation =
                                     Mathf.Clamp(
-                                        (32000 * 32000) /
+                                        1024e6f /    // 32000 * 32000
                                         (displayedTargets[i].targetData.position - transform.position).sqrMagnitude, 0,
                                         80);
                                 jammedPosition = transform.position +
@@ -2227,9 +2227,9 @@ namespace BDArmory.Radar
                     newData.vessel = displayedIRTargets[i].vessel;
                     displayedIRTargets[i] = newData;
                 }
-                    Vector2 pingPosition = displayedIRTargets[i].pingPosition;
+                Vector2 pingPosition = displayedIRTargets[i].pingPosition;
 
-                    Rect pingRect;
+                Rect pingRect;
                 //draw contacts with direction indicator
                 if (displayedIRTargets[i].detectedByIRST.showDirectionWhileScan &&
                          displayedIRTargets[i].targetData.velocity.sqrMagnitude > 100)
@@ -2263,22 +2263,22 @@ namespace BDArmory.Radar
                     GUI.color = origGUIColor;
                 }
                 //draw as dots    
-                else 
+                else
                 {
                     float mDotSize = (displayedIRTargets[i].magnitude / 25) / rangeIndex;
                     if (mDotSize < 1) mDotSize = 1;
                     if (mDotSize > 20) mDotSize = 20;
                     pingRect = new Rect(pingPosition.x - (mDotSize / 2), pingPosition.y - (mDotSize / 2), mDotSize, mDotSize);
-                    GUI.DrawTexture(pingRect, BDArmorySetup.Instance.redDotTexture, ScaleMode.StretchToFill, true);                    
+                    GUI.DrawTexture(pingRect, BDArmorySetup.Instance.redDotTexture, ScaleMode.StretchToFill, true);
 
                     GUI.matrix = Matrix4x4.identity;
-                }                
+                }
 
                 if (BDArmorySettings.DEBUG_RADAR)
                 {
                     GUI.Label(new Rect(pingPosition.x + (pingSize.x / 2), pingPosition.y, 100, 24),
                         displayedIRTargets[i].magnitude.ToString("0.0"));
-                }               
+                }
             }
 
             pingPositionsDirty = false;
@@ -2385,7 +2385,7 @@ namespace BDArmory.Radar
                 float sqrMag = (displayedTargets[i].pingPosition - selectorPos).sqrMagnitude;
                 if (sqrMag < closestSqrMag)
                 {
-                    if (sqrMag < (20 * 20))
+                    if (sqrMag < 400) // 20 * 20)
                     {
                         closestPos = displayedTargets[i].targetData.predictedPosition;
                         found = true;
