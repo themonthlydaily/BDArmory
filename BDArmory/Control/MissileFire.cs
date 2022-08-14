@@ -180,7 +180,7 @@ namespace BDArmory.Control
             //Debug.Log("[BDArmory.MissileFire]: Parsing ripple options");
             if (!string.IsNullOrEmpty(rippleData))
             {
-                //Debug.Log("[BDArmory.MissileFire]: Ripple data: " + rippleData);
+                // Debug.Log("[BDArmory.MissileFire]: Ripple data: " + rippleData);
                 try
                 {
                     using (IEnumerator<string> weapon = rippleData.Split(new char[] { ';' }).AsEnumerable().GetEnumerator())
@@ -218,7 +218,7 @@ namespace BDArmory.Control
                     while (wpnName.MoveNext())
                     {
                         if (wpnName.Current == null) continue;
-                        rippleData += $"{wpnName},{rippleDictionary[wpnName.Current].rippleFire},{rippleDictionary[wpnName.Current].rpm};";
+                        rippleData += $"{wpnName.Current},{rippleDictionary[wpnName.Current].rippleFire},{rippleDictionary[wpnName.Current].rpm};";
                     }
                 node.SetValue("RippleData", rippleData, true);
             }
