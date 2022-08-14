@@ -4,32 +4,34 @@
 	- Adjust capitalization of "sounds" folders for parts to be consistent.
 	- Fix memory leaks caught by KSPCF.
 	- Make wheels susceptible to bullets and explosions too.
-	- Fix RippleIndex Errors from weapons overheating/reloading.
-	- Fix Weapon manager PAW engagement options not affecting AI weapon selection in flight.
-	- AI controlled turrets will no longer return to rest position when overheated/reloading.
 - UI:
 	- Fix exception when resetting colours in Team Icons.
 - Competition:
 	- Fix exception in auto-resuming tournaments when SpawnProbe.craft isn't found.
 	- Fix incorrect Kill Steal attribution from 1v1 fights.
 - Spawning:
-	- Wait until after vessels are unpacked before reverting the spawn camera.
+	- Wait until after vessels are unpacked before reverting the spawn camera - fixes an exception with EVA kerbals and KSPCF.
 	- Fix freezing when vessel removal throws an exception.
 - AI:
 	- Fix incorrect inputField for off-target dynamic roll damping.
+	- Fix RippleIndex Errors from weapons overheating/reloading.
+	- Fix AI ignoring max missiles per target setting for GPS missiles
+	- Spaceborne pilotAIs will now dodge via RCS translation.
 - Detectors:
 	- Fix IRST preventing Radar GUI close.
 	- Fix NRE in targeting camera when the camera parent transform is null.
+	- Re-work IR occlusion to look at engine and engine plume heat for non-prop engines, weight parts by mass and proximity to heat source for occlusion, and incorporate occlusion from the engine outside of a 50 deg angle of the engine exhaust.
 - Weapons:
 	- Fix FXLookAtConstraint modules on various turrets.
 	- Fix incorrect charge sound path for lasers.
 	- Make the ABL use proper looping audio and add a cool-down sound.
 	- Fix the ABL laser beam continuing to show while overheated when used manually.
 	- Fix for NRE when heatseeker is manually selected prior to activating guard mode.
-	- Make the engage options in the weapon PAWs work properly in flight.
-  - Missiles and nukes will not properly play their explosion sound effects.
-- AI
-	-Spaceborne pilotAIs will now dodge via RCS translation.
+	- Fix Weapon manager PAW engagement options not affecting AI weapon selection in flight.
+	- Missiles and nukes will now properly play their explosion sound effects.
+	- AI controlled turrets will no longer return to rest position when overheated/reloading.
+	- Fix terminal heat guidance for missiles, including not being decoyed by flares.
+	- Improve consistency of anti-radiation distance target check.
 - Armor:
 	- Adjusted post-penetration behavior of high velocity rounds, rounds now erode instead of slowing down at high velocities.
 		- Multi-plate armor schemes now behave more realistically and will require more careful material selection and configuration.

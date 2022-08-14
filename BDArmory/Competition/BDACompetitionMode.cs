@@ -718,7 +718,7 @@ namespace BDArmory.Competition
                         pilot.weaponManager.ToggleGuardMode();
 
                     //foreach (var leader in leaders)
-                        //BDATargetManager.ReportVessel(pilot.vessel, leader.weaponManager);
+                    //BDATargetManager.ReportVessel(pilot.vessel, leader.weaponManager);
 
                     pilot.ReleaseCommand();
                     pilot.CommandAttack(centerGPS);
@@ -2677,7 +2677,13 @@ namespace BDArmory.Competition
                                     rammingInformation[otherVesselName].targetInformation[vesselName].collisionDetected = true; // The information is symmetric.
                                     rammingInformation[vesselName].targetInformation[otherVesselName].partCountJustPriorToCollision = rammingInformation[otherVesselName].partCount;
                                     rammingInformation[otherVesselName].targetInformation[vesselName].partCountJustPriorToCollision = rammingInformation[vesselName].partCount;
-                                    rammingInformation[vesselName].targetInformation[otherVesselName].sqrDistance = (otherVessel != null) ? Vector3.SqrMagnitude(vessel.CoM - otherVessel.CoM) : (Mathf.Pow(collisionMargin * (rammingInformation[vesselName].radius + rammingInformation[otherVesselName].radius), 2f) + 1f); // FIXME Should destroyed vessels have 0 sqrDistance instead?
+                                    if (otherVessel is not null)
+                                        rammingInformation[vesselName].targetInformation[otherVesselName].sqrDistance = (vessel.CoM - otherVessel.CoM).sqrMagnitude;
+                                    else
+                                    {
+                                        var distance = collisionMargin * (rammingInformation[vesselName].radius + rammingInformation[otherVesselName].radius);
+                                        rammingInformation[vesselName].targetInformation[otherVesselName].sqrDistance = distance * distance + 1f;
+                                    }
                                     rammingInformation[otherVesselName].targetInformation[vesselName].sqrDistance = rammingInformation[vesselName].targetInformation[otherVesselName].sqrDistance;
                                     rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetectedTime = currentTime;
                                     rammingInformation[otherVesselName].targetInformation[vesselName].collisionDetectedTime = currentTime;

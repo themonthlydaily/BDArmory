@@ -748,7 +748,7 @@ namespace BDArmory.Utils
             {
                 // Formula based on IDA paper P5032, Appendix D, modified to match the
                 // Krupp equation this mod used before.
-                penetration = (Mathf.Sqrt(bulletMass * 1000.0f / (0.7f * Strength * Mathf.PI
+                penetration = (BDAMath.Sqrt(bulletMass * 1000.0f / (0.7f * Strength * Mathf.PI
                     * caliber)) * 0.727457902089f * bulletVelocity) * apBulletMod;
             }
             else

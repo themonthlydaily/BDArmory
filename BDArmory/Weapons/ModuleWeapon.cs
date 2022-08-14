@@ -2248,7 +2248,8 @@ namespace BDArmory.Weapons
                                 else
                                 {
                                     HitpointTracker armor = p.GetComponent<HitpointTracker>();
-                                    initialDamage = (laserDamage / (1 + Mathf.PI * Mathf.Pow(tanAngle * distance, 2)) * 0.425f);
+                                    var angularSpread = tanAngle * distance;
+                                    initialDamage = (laserDamage / (1 + Mathf.PI * angularSpread * angularSpread) * 0.425f);
 
                                     if (armor != null)// technically, lasers shouldn't do damage until armor gone, but that would require localized armor tracking instead of the monolithic model currently used                                              
                                     {
@@ -4539,7 +4540,8 @@ namespace BDArmory.Weapons
             if (delayTime < 0)
             {
                 delayTime = rocket != null ? 0.5f : (shell.bulletMass * (1 - Mathf.Clamp(shell.tntMass / shell.bulletMass, 0f, 0.95f) / 2)); //for shells, laser delay time is based on shell mass/HEratio. The heavier the shell, the mroe mass to burn through. Don't expect to stop sabots via laser APS
-                delayTime /= ((laserDamage / (1 + Mathf.PI * Mathf.Pow(tanAngle * targetDistance, 2)) * 0.425f) / 100);
+                var angularSpread = tanAngle * targetDistance;
+                delayTime /= ((laserDamage / (1 + Mathf.PI * angularSpread * angularSpread) * 0.425f) / 100);
                 if (delayTime < TimeWarp.fixedDeltaTime) delayTime = 0;
             }
             yield return new WaitForSeconds(delayTime);
