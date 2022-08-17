@@ -2415,7 +2415,12 @@ namespace BDArmory.Control
                 while (ecm.MoveNext())
                 {
                     if (ecm.Current == null) continue;
-                    if (ecm.Current.jammerEnabled) continue;
+                    if (ecm.Current.manuallyEnabled) continue;
+                    if (ecm.Current.jammerEnabled)
+                    {
+                        ecm.Current.manuallyEnabled = true;
+                        continue;
+                    }
                     ecm.Current.EnableJammer();
                 }
             yield return new WaitForSeconds(10.0f);
@@ -2425,7 +2430,8 @@ namespace BDArmory.Control
                 while (ecm1.MoveNext())
                 {
                     if (ecm1.Current == null) continue;
-                    ecm1.Current.DisableJammer();
+                    if (!ecm1.Current.manuallyEnabled) 
+                        ecm1.Current.DisableJammer();
                 }
         }
 
