@@ -856,7 +856,7 @@ namespace BDArmory.Radar
                         // Modify lockbreak strength by relative sqr distance
                         sojLBS *= Mathf.Clamp(1-Mathf.Log10(relPositionJammer.sqrMagnitude / relPositionTarget.sqrMagnitude), 0f, 3f);
 
-                        // Incorporate diminishing returns from multiple stand-off jammers
+                        // Add up all stand up jammer lockbreaks
                         standOffJammingMod += sojLBS * standOffJammer.lockBreakStrength;
 
                         if (BDArmorySettings.DEBUG_RADAR) debugSOJ += sojLBS * standOffJammer.lockBreakStrength + ", " + loadedvessels.Current.GetDisplayName() + "\n";
