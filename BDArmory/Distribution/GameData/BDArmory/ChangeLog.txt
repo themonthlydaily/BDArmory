@@ -18,6 +18,7 @@
 	- Fix RippleIndex Errors from weapons overheating/reloading.
 	- Fix AI ignoring max missiles per target setting for GPS missiles
 	- Spaceborne pilotAIs will now dodge via RCS translation.
+	- Craft with guard mode enabled now automatically receive radar contacts via the datalink from friendlies if they have an onboard radar that can receive radar data (canRecieveRadarData = true in part).
 - Detectors:
 	- Fix IRST preventing Radar GUI close.
 	- Fix NRE in targeting camera when the camera parent transform is null.
@@ -38,6 +39,7 @@
 	- AI controlled turrets will no longer return to rest position when overheated/reloading.
 	- Fix terminal heat guidance for missiles, including not being decoyed by flares.
 	- Improve consistency of anti-radiation distance target check.
+	- Add paramater gpsUpdates for GPS guided missiles. gpsUpdates >= 0 in the missile config will allow the missile to get position updates of the target every gpsUpdates seconds.
 - Armor:
 	- Adjusted post-penetration behavior of high velocity rounds, rounds now erode instead of slowing down at high velocities.
 		- Multi-plate armor schemes now behave more realistically and will require more careful material selection and configuration.

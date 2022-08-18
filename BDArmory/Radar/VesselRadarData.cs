@@ -1353,6 +1353,20 @@ namespace BDArmory.Radar
             GUI.EndGroup();
         }
 
+        public void LinkAllRadars()
+        {
+            RefreshAvailableLinks();
+            List<VesselRadarData>.Enumerator v = availableExternalVRDs.GetEnumerator();
+            while (v.MoveNext())
+            {
+                if (v.Current == null) continue;
+                if (!v.Current.vessel || !v.Current.vessel.loaded) continue;
+                if (!externalVRDs.Contains(v.Current))
+                    LinkVRD(v.Current);
+            }
+            v.Dispose();
+        }
+
         public void RemoveDataFromRadar(ModuleRadar radar)
         {
             displayedTargets.RemoveAll(t => t.detectedByRadar == radar);

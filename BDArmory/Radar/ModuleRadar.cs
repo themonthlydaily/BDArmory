@@ -306,6 +306,7 @@ namespace BDArmory.Radar
             if (mf != null && vesselRadarData != null) vesselRadarData.weaponManager = mf;
             UpdateToggleGuiName();
             vesselRadarData.AddRadar(this);
+            if (mf.guardMode) vesselRadarData.LinkAllRadars();
         }
 
         public void DisableRadar()

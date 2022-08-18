@@ -84,6 +84,8 @@ namespace BDArmory.Weapons.Missiles
         [KSPField]
         public bool guidanceActive = true;
 
+        public float gpsUpdates = -1f;                              // GPS missiles get updates on target position from source vessel every gpsUpdates >= 0 seconds
+
         [KSPField]
         public float lockedSensorFOV = 2.5f;
 
@@ -247,6 +249,7 @@ namespace BDArmory.Weapons.Missiles
 
         private double _lastVerticalSpeed;
         private double _lastHorizontalSpeed;
+        private int gpsUpdateCounter = 0;
 
         public double HorizontalAcceleration
         {
@@ -452,6 +455,24 @@ namespace BDArmory.Weapons.Missiles
             else
             {
                 gpsTargetCoords_ = targetGPSCoords;
+                if (targetVessel && HasFired && (gpsUpdates >= 0f) && VesselModuleRegistry.GetMissileFire(SourceVessel).CanSeeTarget(targetVessel.Vessel))
+                {
+                    if (gpsUpdates == 0) // Constant updates
+                    {
+                        gpsTargetCoords_ = VectorUtils.WorldPositionToGeoCoords(targetVessel.Vessel.CoM, targetVessel.Vessel.mainBody);
+                        targetGPSCoords = gpsTargetCoords_;
+                    }
+                    else // Update every gpsUpdates seconds
+                    {
+                        float updateCount = TimeIndex / gpsUpdates;
+                        if (updateCount > gpsUpdateCounter)
+                        {
+                            gpsUpdateCounter++;
+                            gpsTargetCoords_ = VectorUtils.WorldPositionToGeoCoords(targetVessel.Vessel.CoM, targetVessel.Vessel.mainBody);
+                            targetGPSCoords = gpsTargetCoords_;
+                        }
+                    }
+                }
             }
 
             if (TargetAcquired)
@@ -464,7 +485,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 guidanceActive = false;
             }
-
+            
             return gpsTargetCoords_;
         }
 
