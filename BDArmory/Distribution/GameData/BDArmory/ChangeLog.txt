@@ -39,7 +39,7 @@
 	- AI controlled turrets will no longer return to rest position when overheated/reloading.
 	- Fix terminal heat guidance for missiles, including not being decoyed by flares.
 	- Improve consistency of anti-radiation distance target check.
-	- Add paramater gpsUpdates for GPS guided missiles. gpsUpdates >= 0 in the missile config will allow the missile to get position updates of the target every gpsUpdates seconds.
+	- Add paramater gpsUpdates for GPS guided missiles. gpsUpdates >= 0 in the missile config will allow the missile to get position updates of the target from the craft that launched the missile (if it can still see the target) every gpsUpdates seconds.
 - Armor:
 	- Adjusted post-penetration behavior of high velocity rounds, rounds now erode instead of slowing down at high velocities.
 		- Multi-plate armor schemes now behave more realistically and will require more careful material selection and configuration.
