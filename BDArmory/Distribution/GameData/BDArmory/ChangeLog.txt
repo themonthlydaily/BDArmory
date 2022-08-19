@@ -18,6 +18,11 @@
 	- Fix RippleIndex Errors from weapons overheating/reloading.
 	- Fix AI ignoring max missiles per target setting for GPS missiles
 	- Spaceborne pilotAIs will now dodge via RCS translation.
+	- Corrections to aiming at orbital speeds and long distances (for deep space combat).
+		- Caveats:
+			- There is a discontinuity in the way KSP handles floating origin/Krakensbane adjustments at 100km above each world that can adversely affect trans-100km orbit aiming slightly (high bullet speeds mostly negates this).
+			- KSP won't load surface vessels when the current vessel is over ~90km (on Kerbin) for some unknown reason despite a sufficient PRE range, so orbital bombardment only works from LKO.
+			- The targeting reticle currently isn't being correctly placed when manually aiming at closeby targets (will be fixed later).
 - Detectors:
 	- Fix IRST preventing Radar GUI close.
 	- Fix NRE in targeting camera when the camera parent transform is null.
@@ -33,6 +38,8 @@
 	- AI controlled turrets will no longer return to rest position when overheated/reloading.
 	- Fix terminal heat guidance for missiles, including not being decoyed by flares.
 	- Improve consistency of anti-radiation distance target check.
+	- Corrections to tracer placement and alignment at orbital speeds (for deep space combat).
+		- Note: Enable "Vessel-Relative Bullet Checks" when at these speeds for correct collision checks between bullets and vessels. Disable it at lower speeds as it can be a CPU hog.
 - Armor:
 	- Adjusted post-penetration behavior of high velocity rounds, rounds now erode instead of slowing down at high velocities.
 		- Multi-plate armor schemes now behave more realistically and will require more careful material selection and configuration.

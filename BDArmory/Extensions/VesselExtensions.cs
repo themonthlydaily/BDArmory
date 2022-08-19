@@ -27,19 +27,19 @@ namespace BDArmory.Extensions
             return v.altitude < -20; //some boats sit slightly underwater, this is only for submersibles
         }
 
-        public static Vector3d Velocity(this Vessel v)
+        /// <summary>
+        /// Get the vessel's velocity accounting for whether it's in orbit and optionally whether it's above 100km (which is another hard-coded KSP limit).
+        /// </summary>
+        /// <param name="v"></param>
+        /// <param name="altitudeCheck"></param>
+        /// <returns></returns>
+        public static Vector3d Velocity(this Vessel v, bool altitudeCheck = true)
         {
             try
             {
                 if (v == null) return Vector3d.zero;
-                if (!v.InOrbit())
-                {
-                    return v.srf_velocity;
-                }
-                else
-                {
-                    return v.obt_velocity;
-                }
+                if (v.InOrbit() && (!altitudeCheck || v.altitude > 1e5f)) return v.obt_velocity;
+                else return v.srf_velocity;
             }
             catch (Exception e)
             {
