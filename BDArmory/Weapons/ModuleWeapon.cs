@@ -48,7 +48,7 @@ namespace BDArmory.Weapons
         public enum WeaponTypes
         {
             Ballistic,
-            Rocket, //Cannon's depreciated, lets use this for rocketlaunchers
+            Rocket, //Cannon's deprecated, lets use this for rocketlaunchers
             Laser
         }
 

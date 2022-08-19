@@ -603,7 +603,8 @@ namespace BDArmory.Weapons.Missiles
 
             SetInitialDetonationDistance();
 
-            // set uncagedLock = true if depreciated allAspect = true
+            // set uncagedLock = true if deprecated allAspect = true
+            if (allAspect) Debug.LogWarning($"[BDArmory.MissileLauncher]: Missile {part.name} is using deprecated 'allAspect' attribute. Please update the config to use 'uncagedLock' instead.");
             uncagedLock = (allAspect) ? allAspect : uncagedLock;
 
             // fill lockedSensorFOVBias with default values if not set by part config:

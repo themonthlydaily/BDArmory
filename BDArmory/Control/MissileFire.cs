@@ -5720,7 +5720,7 @@ namespace BDArmory.Control
             {
                 if (!isLegacyCMing)
                 {
-                    // StartCoroutine(LegacyCMRoutine()); // Depreciated
+                    // StartCoroutine(LegacyCMRoutine()); // Deprecated
                 }
 
                 targetScanTimer -= Time.fixedDeltaTime; //advance scan timing (increased urgency)

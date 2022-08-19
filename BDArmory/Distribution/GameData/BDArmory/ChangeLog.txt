@@ -1728,14 +1728,14 @@ IMPROVEMENTS
 			- HeatRay = false // beam lasers now AoE, add heat instead of damage
 			- ElectroLaser = false // lasers now have EMP effect, use ECPerShot
 			- BulletType = a; b; c // for ammo swap, add each ammo type the weapon can use separated with a semicolon
-			- AirDetonation, proximityDetonation depreciated, moved to bulletDef.cfg
+			- AirDetonation, proximityDetonation deprecated, moved to bulletDef.cfg
 		- New Bullet_defs settings
 			- subprojectileCount = n // number of projectiles per round, default 1
 			- fuzeType = None // choose from None, Timed, Proximity, or Flak
 			- projectileColor = 255, 15, 0, 128//RGBA 0-255, final color of shot if fadeColor = True
 			- fadeColor = False //fade color from startColor to projectileColor?
 			- startColor = 255, 90, 0, 32 // initial shot color if fadeColor = True
-			- BlastPower, Heat, radius depreciated
+			- BlastPower, Heat, radius deprecated
 		- New Rocket_defs settings
 			- rocketMass = n //weight in tons (10kg rocket is 0.01, etc)
 			- caliber = n // rocket diameter
