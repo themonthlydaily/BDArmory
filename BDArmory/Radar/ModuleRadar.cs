@@ -81,7 +81,7 @@ namespace BDArmory.Radar
         public bool canTrackWhileScan = false;      //when tracking/locking, can we still detect/scan?
 
         [KSPField]
-        public bool canRecieveRadarData = false;    //can radar data be received from friendly sources?
+        public bool canReceiveRadarData = false;    //can radar data be received from friendly sources?
 
         [KSPField]
         public FloatCurve radarDetectionCurve = new FloatCurve();		//FloatCurve defining at what range which RCS size can be detected
@@ -1086,7 +1086,7 @@ namespace BDArmory.Radar
         // RMB info in editor
         public override string GetInfo()
         {
-            bool isLinkOnly = (canRecieveRadarData && !canScan && !canLock);
+            bool isLinkOnly = (canReceiveRadarData && !canScan && !canLock);
 
             StringBuilder output = new StringBuilder();
             output.Append(Environment.NewLine);
@@ -1107,7 +1107,7 @@ namespace BDArmory.Radar
                 {
                     output.AppendLine(Localizer.Format("#autoLOC_bda_1000028", maxLocks));
                 }
-                output.AppendLine(Localizer.Format("#autoLOC_bda_1000029", canRecieveRadarData));
+                output.AppendLine(Localizer.Format("#autoLOC_bda_1000029", canReceiveRadarData));
 
                 output.Append(Environment.NewLine);
                 output.AppendLine(Localizer.Format("#autoLOC_bda_1000030"));

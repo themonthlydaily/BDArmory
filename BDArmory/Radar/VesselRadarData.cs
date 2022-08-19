@@ -443,7 +443,7 @@ namespace BDArmory.Radar
             while (rad.MoveNext())
             {
                 if (rad.Current == null) continue;
-                if (rad.Current.vessel == vessel && rad.Current.canRecieveRadarData)
+                if (rad.Current.vessel == vessel && rad.Current.canReceiveRadarData)
                 {
                     canReceiveRadarData = true;
                 }
