@@ -126,7 +126,7 @@ namespace BDArmory.Weapons
 
         private BDStagingAreaGauge gauge;
         private int AmmoID;
-
+        private int ECID;
         //AI
         public bool aiControlled = false;
         public bool autoFire;
@@ -1258,7 +1258,7 @@ namespace BDArmory.Weapons
                 gauge.ReloadCompleteAudioClip = reloadCompleteAudioClip;
 
                 AmmoID = PartResourceLibrary.Instance.GetDefinition(ammoName).id;
-
+                ECID = PartResourceLibrary.Instance.GetDefinition("ElectricCharge").id;
                 //laser setup
                 if (eWeaponType == WeaponTypes.Laser)
                 {
@@ -2731,10 +2731,14 @@ namespace BDArmory.Weapons
             if (BDArmorySettings.INFINITE_AMMO) return true;
             if (ECPerShot != 0)
             {
-                double chargeAvailable = part.RequestResource("ElectricCharge", ECPerShot, ResourceFlowMode.ALL_VESSEL);
-                if (chargeAvailable < ECPerShot * 0.95f && !CheatOptions.InfiniteElectricity)
+                vessel.GetConnectedResourceTotals(ECID, out double EcCurrent, out double ecMax);
+                if (EcCurrent > ECPerShot * 0.95f && !CheatOptions.InfiniteElectricity)
                 {
-                    ScreenMessages.PostScreenMessage("Weapon Requires EC", 5.0f, ScreenMessageStyle.UPPER_CENTER);
+                    part.RequestResource(ECID, ECPerShot, ResourceFlowMode.ALL_VESSEL);
+                }
+                else
+                {
+                    if (this.part.vessel.isActiveVessel) ScreenMessages.PostScreenMessage("Weapon Requires EC", 5.0f, ScreenMessageStyle.UPPER_CENTER);
                     return false;
                 }
                 //else return true; //this is causing weapons thath have ECPerShot + standard ammo (railguns, etc) to not consume ammo, only EC

@@ -211,6 +211,35 @@ namespace BDArmory.Competition.VesselSpawning
             }
         }
         #endregion
+        public static void SpaceFrictionOnNewVessels(bool enable)
+        {
+            if (enable)
+            {
+                GameEvents.onVesselLoaded.Add(SpaceHacksEventHandler);
+                GameEvents.OnVesselRollout.Add(SpaceHacks);
+            }
+            else
+            {
+                GameEvents.onVesselLoaded.Remove(SpaceHacksEventHandler);
+                GameEvents.OnVesselRollout.Remove(SpaceHacks);
+            }
+        }
+        static void SpaceHacksEventHandler(Vessel vessel) => SpaceHacks(vessel);
+
+        public static void SpaceHacks(Vessel vessel)
+        {
+            if (vessel == null || !vessel.loaded) return;
+
+            if (VesselModuleRegistry.GetMissileFire(vessel, true) != null && vessel.rootPart.FindModuleImplementing<ModuleSpaceFriction>() == null)
+            {
+                vessel.rootPart.AddModule("ModuleSpaceFriction");
+            }
+        }
+        public static void SpaceHacks(ShipConstruct ship) // This version only needs to enable the hack.
+        {
+            if (ship == null) return;
+            ship.Parts[0].AddModule("ModuleSpaceFriction");
+        }
 
         #region Vessel Removal
         public static bool removingVessels => SpawnUtilsInstance.Instance.removeVesselsPending > 0;
@@ -286,6 +315,7 @@ namespace BDArmory.Competition.VesselSpawning
             spawnLocationCamera = (GameObject)Instantiate(spawnLocationCamera, Vector3.zero, Quaternion.identity);
             spawnLocationCamera.SetActive(false);
             if (BDArmorySettings.HACK_INTAKES) SpawnUtils.HackIntakesOnNewVessels(true);
+            if (BDArmorySettings.SPACE_HACKS) SpawnUtils.SpaceFrictionOnNewVessels(true);
         }
 
         void OnDestroy()

@@ -2020,6 +2020,7 @@ namespace BDArmory.Control
                     if (v.LandedOrSplashed) vectorToTarget += upDirection * defaultAltitude; // If the target is landed or splashed, aim for the default altitude while we're outside our gun's range.
                     target = vesselTransform.position + GetLimitedClimbDirectionForSpeed(vectorToTarget);
                 }
+                //change target offset if no selected weapon and at target alt? target += targetVelocity * closing time?
                 else
                 {
                     finalMaxSteer = GetSteerLimiterForSpeedAndPower();
@@ -2145,7 +2146,7 @@ namespace BDArmory.Control
                     targetPosition = vessel.transform.position + vessel.Velocity();
                 }
 
-                targetPosition = LongRangeAltitudeCorrection(targetPosition);
+                targetPosition = LongRangeAltitudeCorrection(targetPosition); //have this only trigger in atmo?
                 targetPosition = FlightPosition(targetPosition, minAltitude);
                 targetPosition = vesselTransform.position + ((targetPosition - vesselTransform.position).normalized * 100);
             }
@@ -2199,7 +2200,9 @@ namespace BDArmory.Control
             //slow down for tighter turns
             float velAngleToTarget = Mathf.Clamp(Vector3.Angle(targetPosition - vesselTransform.position, vessel.Velocity()), 0, 90);
             float speedReductionFactor = 1.25f;
-            float finalSpeed = Mathf.Min(speedController.targetSpeed, Mathf.Clamp(maxSpeed - (speedReductionFactor * velAngleToTarget), idleSpeed, maxSpeed));
+            float finalSpeed;
+            if (vessel.atmDensity > 0.05f) finalSpeed = Mathf.Min(speedController.targetSpeed, Mathf.Clamp(maxSpeed - (speedReductionFactor * velAngleToTarget), idleSpeed, maxSpeed));
+            else finalSpeed = Mathf.Min(speedController.targetSpeed, maxSpeed);
             debugString.AppendLine($"Final Target Speed: {finalSpeed}");
 
             if (!overrideThrottle)
@@ -3398,7 +3401,7 @@ namespace BDArmory.Control
 
             float currentG = -Vector3.Dot(vessel.acceleration, vessel.ReferenceTransform.forward);
             float negLim, posLim;
-            negLim = negPitchDynPresLimitIntegrator * invVesselDynPreskPa + negPitchDynPresLimit;
+            negLim = vessel.atmDensity > 0.05 ? negPitchDynPresLimitIntegrator * invVesselDynPreskPa + negPitchDynPresLimit : -1;
             if (negLim > s.pitch)
             {
                 if (currentG > -(maxAllowedGForce * 0.97f * bodyGravity))
@@ -3417,7 +3420,7 @@ namespace BDArmory.Control
                 s.pitch = negLim;
                 debugString.AppendLine($"Limiting Neg Gs");
             }
-            posLim = posPitchDynPresLimitIntegrator * invVesselDynPreskPa + posPitchDynPresLimit;
+            posLim = vessel.atmDensity > 0.05 ? posPitchDynPresLimitIntegrator * invVesselDynPreskPa + posPitchDynPresLimit : 1;
             if (posLim < s.pitch)
             {
                 if (currentG < (maxAllowedGForce * 0.97f * bodyGravity))

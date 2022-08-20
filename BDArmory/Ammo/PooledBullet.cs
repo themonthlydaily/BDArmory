@@ -1185,7 +1185,7 @@ namespace BDArmory.Bullets
                 {
                     Debug.Log("[BDArmory.PooledBullet]: Bullet Velocity too low, stopping");
                 }
-                KillBullet();
+                if (!fuzeTriggered) KillBullet();
                 distanceTraveled += hit.distance;
                 return true;
             }

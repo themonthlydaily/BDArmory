@@ -300,7 +300,7 @@ namespace BDArmory.FX
                         LightFx.range = thermalRadius;
                         if (lastValidAtmDensity < 0.05)
                         {
-                            FXEmitter.CreateFX(transform.position, scale, flashModelPath, "", 0.3f, 0.3f);
+                            FXEmitter.CreateFX(transform.position, scale, flashModelPath, "", 0.3f);
                         }
                         else
                         {
@@ -313,16 +313,17 @@ namespace BDArmory.FX
                                 FXEmitter.CreateFX(transform.position, scale * lastValidAtmDensity, shockModelPath, "", 0.3f, -1, default, true);
                             if (!string.IsNullOrWhiteSpace(blastModelPath))
                                 FXEmitter.CreateFX(transform.position, scale, blastModelPath, blastSoundPath, 1.5f, Mathf.Clamp(30 * scale, 30f, 90f), default, true);
-                        }
-                        if (BodyUtils.GetRadarAltitudeAtPos(transform.position) < 200 * scale)
-                        {
-                            double latitudeAtPos = FlightGlobals.currentMainBody.GetLatitude(transform.position);
-                            double longitudeAtPos = FlightGlobals.currentMainBody.GetLongitude(transform.position);
-                            double altitude = FlightGlobals.currentMainBody.TerrainAltitude(latitudeAtPos, longitudeAtPos);
-                            if (!string.IsNullOrWhiteSpace(plumeModelPath))
-                                FXEmitter.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), Mathf.Clamp(scale, 0.01f, 3f), plumeModelPath, "", Mathf.Clamp(30 * scale, 30f, 90f), Mathf.Clamp(30 * scale, 30f, 90f), default, true, true);
-                            if (!string.IsNullOrWhiteSpace(debrisModelPath))
-                                FXEmitter.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), scale, debrisModelPath, "", 1.5f, Mathf.Clamp(30 * scale, 30f, 90f), default, true);
+
+                            if (BodyUtils.GetRadarAltitudeAtPos(transform.position) < 200 * scale)
+                            {
+                                double latitudeAtPos = FlightGlobals.currentMainBody.GetLatitude(transform.position);
+                                double longitudeAtPos = FlightGlobals.currentMainBody.GetLongitude(transform.position);
+                                double altitude = FlightGlobals.currentMainBody.TerrainAltitude(latitudeAtPos, longitudeAtPos);
+                                if (!string.IsNullOrWhiteSpace(plumeModelPath))
+                                    FXEmitter.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), Mathf.Clamp(scale, 0.01f, 3f), plumeModelPath, "", Mathf.Clamp(30 * scale, 30f, 90f), Mathf.Clamp(30 * scale, 30f, 90f), default, true, true);
+                                if (!string.IsNullOrWhiteSpace(debrisModelPath))
+                                    FXEmitter.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), scale, debrisModelPath, "", 1.5f, Mathf.Clamp(30 * scale, 30f, 90f), default, true);
+                            }
                         }
                     }
                     if (LightFx != null) LightFx.intensity -= 12 * scale * Time.deltaTime;
