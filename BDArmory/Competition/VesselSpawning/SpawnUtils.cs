@@ -211,6 +211,8 @@ namespace BDArmory.Competition.VesselSpawning
             }
         }
         #endregion
+
+        #region Space hacks
         public static void SpaceFrictionOnNewVessels(bool enable)
         {
             if (enable)
@@ -240,6 +242,7 @@ namespace BDArmory.Competition.VesselSpawning
             if (ship == null) return;
             ship.Parts[0].AddModule("ModuleSpaceFriction");
         }
+        #endregion
 
         #region Vessel Removal
         public static bool removingVessels => SpawnUtilsInstance.Instance.removeVesselsPending > 0;
@@ -323,6 +326,7 @@ namespace BDArmory.Competition.VesselSpawning
             VesselSpawnerField.Save();
             Destroy(spawnLocationCamera);
             SpawnUtils.HackIntakesOnNewVessels(false);
+            SpawnUtils.SpaceFrictionOnNewVessels(false);
         }
 
         #region Vessel Removal
