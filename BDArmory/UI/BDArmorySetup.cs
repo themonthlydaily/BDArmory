@@ -98,6 +98,9 @@ namespace BDArmory.UI
         //editor alignment
         public static bool showWeaponAlignment;
 
+        //check for Apple Silicon
+        public static bool AppleSilicon = false;
+
         // Gui Skin
         public static GUISkin BDGuiSkin = HighLogic.Skin;
 
@@ -399,6 +402,9 @@ namespace BDArmory.UI
             // Load settings
             LoadConfig();
 
+            // Check for Apple Processor
+            AppleSilicon = CultureInfo.InvariantCulture.CompareInfo.IndexOf(SystemInfo.processorType, "Apple", CompareOptions.IgnoreCase) >= 0;
+            
             // Ensure AutoSpawn folder exists.
             if (!Directory.Exists(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn")))
             { Directory.CreateDirectory(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn")); }
