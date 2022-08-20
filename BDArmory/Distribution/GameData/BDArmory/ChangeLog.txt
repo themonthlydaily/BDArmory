@@ -18,11 +18,11 @@
 - GameModes:
 	- Space Combat Tools:
 		- Better implement SpaceFriction initialization at round start.
-		- Fix AI limiting to idle speed in space.
-		- Add dynpressure limits in AdjustPitchForGAndAOALimits() when in space to prevent infinity values.
+		- Fix AI sometimes limiting to idle speed instead of max speed in space.
+		- Add limits to prevent G/AoA limiter returning infinity values in space.
 	- Battle Damage:
 		- Add selfsealing options to Monoprop tanks.
-		- Tanks using B9PartSwitcher now get selfsealing options.
+		- Tanks using B9PartSwitcher for fuel switching now get selfsealing options.
 - AI:
 	- Fix incorrect inputField for off-target dynamic roll damping.
 	- Fix RippleIndex Errors from weapons overheating/reloading.
@@ -60,8 +60,8 @@
 		- Note: Enable "Vessel-Relative Bullet Checks" when at these speeds for correct collision checks between bullets and vessels. Disable it at lower speeds as it can be a CPU hog.
 	- Fix delay/penetrating fuze rounds sometimes not detonating.
 	- Penetrating rounds now register damage to all parts they hit, not just first.
-	- Fix 'no EC' message spam if active vessel is not vessel with EC weapon.
-	- EcPerShot now only drains EC if current EC >= ECPerShot.
+	- Fix 'Weapon requires EC' message spam if active vessel is not the one with the weapon in question.
+	- Weapons using ECPerShot now only drain ElectricCharge if the vessel has sufficient EC to fire the weapon.
 - Armor:
 	- Adjusted post-penetration behavior of high velocity rounds, rounds now erode instead of slowing down at high velocities.
 		- Multi-plate armor schemes now behave more realistically and will require more careful material selection and configuration.
