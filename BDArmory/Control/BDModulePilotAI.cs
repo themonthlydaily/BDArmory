@@ -2750,7 +2750,9 @@ namespace BDArmory.Control
                         {
                             cross = -cross;
                         }
-                        FlyToPosition(s, vesselTransform.position + (50 * vessel.Velocity() / vessel.srfSpeed) + (100 * cross));
+                        Vector3 targetDirection = vesselTransform.position + (50 * vessel.Velocity() / vessel.srfSpeed) + (100 * cross);
+                        RCSEvade(s, targetDirection);//add spacemode RCS dodging; missile evasion, fire in targetDirection
+                        FlyToPosition(s, targetDirection);
                         return;
                     }
                     else // Fly at 90 deg to missile to put max distance between ourselves and dispensed flares/chaff
@@ -2763,11 +2765,15 @@ namespace BDArmory.Control
                         float sign = Vector3.SignedAngle(threatDirection, Vector3.ProjectOnPlane(vessel.Velocity(), upDirection), upDirection);
                         Vector3 breakDirection = Vector3.ProjectOnPlane(Vector3.Cross(Mathf.Sign(sign) * upDirection, threatDirection), upDirection);
 
-                        // Dive to gain energy and hopefully lead missile into ground
-                        float angle = (Mathf.Clamp((float)vessel.radarAltitude - minAltitude, 0, 1500) / 1500) * 90;
-                        angle = Mathf.Clamp(angle, 0, 75) * Mathf.Deg2Rad;
-                        Vector3 targetDirection = Vector3.RotateTowards(breakDirection, -upDirection, angle, 0);
-                        targetDirection = Vector3.RotateTowards(vessel.Velocity(), targetDirection, 15f * Mathf.Deg2Rad, 0).normalized;
+                        // Dive to gain energy and hopefully lead missile into ground when not in space
+                        if (vessel.atmDensity > 0.05)
+                        {
+                            float angle = (Mathf.Clamp((float)vessel.radarAltitude - minAltitude, 0, 1500) / 1500) * 90;
+                            angle = Mathf.Clamp(angle, 0, 75) * Mathf.Deg2Rad;
+                            breakDirection = Vector3.RotateTowards(breakDirection, -upDirection, angle, 0);
+                        }
+
+                        Vector3 targetDirection = Vector3.RotateTowards(vessel.Velocity(), breakDirection, 15f * Mathf.Deg2Rad, 0).normalized;
 
                         steerMode = SteerModes.Aiming;
 
@@ -2781,7 +2787,7 @@ namespace BDArmory.Control
                             useAB = true;
                             AdjustThrottle(maxSpeed, false, useAB);
                         }
-
+                        RCSEvade(s, targetDirection);//add spacemode RCS dodging; missile evasion, fire in targetDirection
                         FlyToPosition(s, vesselTransform.position + (targetDirection * 100), true);
                         return;
                     }
@@ -2842,7 +2848,7 @@ namespace BDArmory.Control
                                 debugString.AppendLine($" from directly behind and close; breaking hard");
                                 steerMode = SteerModes.Aiming;
                                 AdjustThrottle(minSpeed, true, false); // Brake to slow down and turn faster while breaking target
-                                RCSEvade(s, new Vector3(0, 0, -1));//add spacemode RCS dodging; fire afailable retrothrusters
+                                RCSEvade(s, new Vector3(0, 0, -1));//add spacemode RCS dodging; fire available retrothrusters
                             }
                         }
                         else
