@@ -98,6 +98,8 @@ namespace BDArmory.Armor
 
         [KSPField]
         public bool isTriangularPanel = false;
+
+        [KSPField(isPersistant = true)]
         bool scaleneTri = false;
 
         [KSPField]
