@@ -15,6 +15,14 @@
 - Spawning:
 	- Wait until after vessels are unpacked before reverting the spawn camera - fixes an exception with EVA kerbals and KSPCF.
 	- Fix freezing when vessel removal throws an exception.
+- GameModes:
+	- Space Combat Tools:
+		- Better implement SpaceFriction initialization at round start.
+		- Fix AI limiting to idle speed in space.
+		- Add dynpressure limits in AdjustPitchForGAndAOALimits() when in space to prevent infinity values.
+	- Battle Damage:
+		- Add selfsealing options to Monoprop tanks.
+		- Tanks using B9PartSwitcher now get selfsealing options.
 - AI:
 	- Fix incorrect inputField for off-target dynamic roll damping.
 	- Fix RippleIndex Errors from weapons overheating/reloading.
@@ -50,6 +58,10 @@
 	- Add paramater gpsUpdates for GPS guided missiles. gpsUpdates >= 0 in the missile config will allow the missile to get position updates of the target from the craft that launched the missile (if it can still see the target) every gpsUpdates seconds.
 	- Corrections to tracer placement and alignment at orbital speeds (for deep space combat).
 		- Note: Enable "Vessel-Relative Bullet Checks" when at these speeds for correct collision checks between bullets and vessels. Disable it at lower speeds as it can be a CPU hog.
+	- Fix delay/penetrating fuze rounds sometimes not detonating.
+	- Penetrating rounds now register damage to all parts they hit, not just first.
+	- Fix 'no EC' message spam if active vessel is not vessel with EC weapon.
+	- EcPerShot now only drains EC if current EC >= ECPerShot.
 - Armor:
 	- Adjusted post-penetration behavior of high velocity rounds, rounds now erode instead of slowing down at high velocities.
 		- Multi-plate armor schemes now behave more realistically and will require more careful material selection and configuration.
