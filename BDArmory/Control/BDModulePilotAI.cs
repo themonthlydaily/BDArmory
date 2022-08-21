@@ -2377,11 +2377,11 @@ namespace BDArmory.Control
             s.pitch = Mathf.Clamp(steerPitch, Mathf.Min(-finalMaxSteer, -0.2f), finalMaxSteer); // finalMaxSteer for pitch and yaw, user-defined steer limit for roll.
             s.yaw = Mathf.Clamp(steerYaw, -finalMaxSteer, finalMaxSteer);
             s.roll = Mathf.Clamp(steerRoll, -userLimit, userLimit);
-            
+
             if (autoTune)
             { pidAutoTuning.Update(pitchError, rollError, yawError); }
 
-            if (BDArmorySettings.DEBUG_TELEMETRY)
+            if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
             {
                 debugString.AppendLine(String.Format("steerMode: {0}, rollError: {1,7:F4}, pitchError: {2,7:F4}, yawError: {3,7:F4}", steerMode, rollError, pitchError, yawError));
                 debugString.AppendLine($"finalMaxSteer: {finalMaxSteer:G3}, dynAdj: {dynamicAdjustment:G3}");
@@ -2818,7 +2818,7 @@ namespace BDArmory.Control
                         { // This adds +-500/(threat distance) to the left or right relative to the breakTarget vector, regardless of the size of breakTarget
                             breakTarget += 500f / threatRelativePosition.magnitude * Vector3.Cross(threatRelativePosition.normalized, Mathf.Sign(Mathf.Sin((float)vessel.missionTime / 2)) * vessel.upAxis);
                             debugString.AppendLine($" from directly ahead!");
-                            RCSEvade(s, new Vector3(1 * evasionNonlinearityDirection, 0,0));//add spacemode RCS dodging; forward incoming fire, flank L/R
+                            RCSEvade(s, new Vector3(1 * evasionNonlinearityDirection, 0, 0));//add spacemode RCS dodging; forward incoming fire, flank L/R
                         }
                         else if (threatDirectionFactor < -0.9) //within ~28 degrees behind
                         {
@@ -3710,7 +3710,7 @@ namespace BDArmory.Control
             else if (command == PilotCommands.Attack)
             {
                 if (targetVessel != null) // && (BDArmorySettings.RUNWAY_PROJECT || (targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= weaponManager.gunRange * weaponManager.gunRange)
-                    // && (targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= weaponManager.guardRange * weaponManager.guardRange) // If the vessel has a target within visual range, let it fight!
+                                          // && (targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= weaponManager.guardRange * weaponManager.guardRange) // If the vessel has a target within visual range, let it fight!
                 {
                     ReleaseCommand(false);
                     return;
