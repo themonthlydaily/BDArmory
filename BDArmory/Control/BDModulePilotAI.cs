@@ -2750,7 +2750,9 @@ namespace BDArmory.Control
                         {
                             cross = -cross;
                         }
-                        FlyToPosition(s, vesselTransform.position + (50 * vessel.Velocity() / vessel.srfSpeed) + (100 * cross));
+                        Vector3 targetDirection = vesselTransform.position + (50 * vessel.Velocity() / vessel.srfSpeed) + (100 * cross);
+                        RCSEvade(s, targetDirection);//add spacemode RCS dodging; missile evasion, fire in targetDirection
+                        FlyToPosition(s, targetDirection);
                         return;
                     }
                     else // Fly at 90 deg to missile to put max distance between ourselves and dispensed flares/chaff
@@ -2763,11 +2765,15 @@ namespace BDArmory.Control
                         float sign = Vector3.SignedAngle(threatDirection, Vector3.ProjectOnPlane(vessel.Velocity(), upDirection), upDirection);
                         Vector3 breakDirection = Vector3.ProjectOnPlane(Vector3.Cross(Mathf.Sign(sign) * upDirection, threatDirection), upDirection);
 
-                        // Dive to gain energy and hopefully lead missile into ground
-                        float angle = (Mathf.Clamp((float)vessel.radarAltitude - minAltitude, 0, 1500) / 1500) * 90;
-                        angle = Mathf.Clamp(angle, 0, 75) * Mathf.Deg2Rad;
-                        Vector3 targetDirection = Vector3.RotateTowards(breakDirection, -upDirection, angle, 0);
-                        targetDirection = Vector3.RotateTowards(vessel.Velocity(), targetDirection, 15f * Mathf.Deg2Rad, 0).normalized;
+                        // Dive to gain energy and hopefully lead missile into ground when not in space
+                        if (vessel.atmDensity > 0.05)
+                        {
+                            float angle = (Mathf.Clamp((float)vessel.radarAltitude - minAltitude, 0, 1500) / 1500) * 90;
+                            angle = Mathf.Clamp(angle, 0, 75) * Mathf.Deg2Rad;
+                            breakDirection = Vector3.RotateTowards(breakDirection, -upDirection, angle, 0);
+                        }
+
+                        Vector3 targetDirection = Vector3.RotateTowards(vessel.Velocity(), breakDirection, 15f * Mathf.Deg2Rad, 0).normalized;
 
                         steerMode = SteerModes.Aiming;
 
@@ -2781,7 +2787,7 @@ namespace BDArmory.Control
                             useAB = true;
                             AdjustThrottle(maxSpeed, false, useAB);
                         }
-
+                        RCSEvade(s, targetDirection);//add spacemode RCS dodging; missile evasion, fire in targetDirection
                         FlyToPosition(s, vesselTransform.position + (targetDirection * 100), true);
                         return;
                     }
@@ -2842,7 +2848,7 @@ namespace BDArmory.Control
                                 debugString.AppendLine($" from directly behind and close; breaking hard");
                                 steerMode = SteerModes.Aiming;
                                 AdjustThrottle(minSpeed, true, false); // Brake to slow down and turn faster while breaking target
-                                RCSEvade(s, new Vector3(0, 0, -1));//add spacemode RCS dodging; fire afailable retrothrusters
+                                RCSEvade(s, new Vector3(0, 0, -1));//add spacemode RCS dodging; fire available retrothrusters
                             }
                         }
                         else
@@ -2982,7 +2988,8 @@ namespace BDArmory.Control
             float controlLagTime = 1.5f; // Time to fully adjust control surfaces. (Typical values seem to be 0.286s -- 1s for neutral to deployed according to wing lift comparison.) FIXME maybe this could also be a slider.
 
             ++terrainAlertTicker;
-            int terrainAlertTickerThreshold = BDArmorySettings.TERRAIN_ALERT_FREQUENCY * (int)(1 + Mathf.Pow((float)vessel.radarAltitude / 500.0f, 2.0f) / Mathf.Max(1.0f, (float)vessel.srfSpeed / 150.0f)); // Scale with altitude^2 / speed.
+            // int terrainAlertTickerThreshold = BDArmorySettings.TERRAIN_ALERT_FREQUENCY * (int)(1 + (((float)vessel.radarAltitude / 500.0f) * ((float)vessel.radarAltitude / 500.0f)) / Mathf.Max(1.0f, (float)vessel.srfSpeed / 150.0f)); // Scale with altitude^2 / speed.
+            int terrainAlertTickerThreshold = BDArmorySettings.TERRAIN_ALERT_FREQUENCY * (int)(1 + ((float)(vessel.radarAltitude * vessel.radarAltitude) / 250000.0f) / Mathf.Max(1.0f, (float)vessel.srfSpeed / 150.0f)); // Scale with altitude^2 / speed.
             if (terrainAlertTicker >= terrainAlertTickerThreshold)
             {
                 terrainAlertTicker = 0;
@@ -3547,7 +3554,7 @@ namespace BDArmory.Control
             var scale = weaponManager is not null ? Mathf.Max(2500f, weaponManager.gunRange) : 2500f;
             var scaledDistance = (targetPosition - vessel.transform.position).magnitude / scale;
             if (scaledDistance <= 1) return targetPosition; // No modification if the target is within the gun range.
-            scaledDistance = Mathf.Sqrt(scaledDistance);
+            scaledDistance = BDAMath.Sqrt(scaledDistance);
             var targetAlt = BodyUtils.GetRadarAltitudeAtPos(targetPosition);
             var newAlt = targetAlt / scaledDistance + defaultAltitude * (scaledDistance - 1) / scaledDistance;
             debugString.AppendLine($"Adjusting fly-to altitude from {targetAlt:0}m to {newAlt:0}m (scaled distance: {scaledDistance:0.0}m)");

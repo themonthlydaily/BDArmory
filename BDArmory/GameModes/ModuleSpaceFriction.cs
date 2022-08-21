@@ -65,7 +65,7 @@ namespace BDArmory.GameModes
             get
             {
                 if (VAI) return VAI;
-                VAI = VesselModuleRegistry.GetModule<BDModuleVTOLAI>(vessel); 
+                VAI = VesselModuleRegistry.GetModule<BDModuleVTOLAI>(vessel);
 
                 return VAI;
             }
@@ -127,7 +127,8 @@ namespace BDArmory.GameModes
                         else if (VAI != null)
                             maxVelocity = VAI.MaxSpeed;
 
-                        frictionCoeff = Mathf.Pow(((float)part.vessel.speed / maxVelocity), 3) * frictMult; //at maxSpeed, have friction be 100% of vessel's engines thrust
+                        var speedFraction = (float)part.vessel.speed / maxVelocity;
+                        frictionCoeff = speedFraction * speedFraction * speedFraction * frictMult; //at maxSpeed, have friction be 100% of vessel's engines thrust
 
                         frictionCoeff *= (1 + (Vector3.Angle(this.part.vessel.srf_vel_direction, this.part.vessel.GetTransform().up) / 180) * BDArmorySettings.SF_DRAGMULT * 4); //greater AoA off prograde, greater drag
 

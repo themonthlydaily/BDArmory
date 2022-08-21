@@ -241,11 +241,7 @@ namespace BDArmory.Bullets
             {
                 bulletTrail.positionCount = linePositions.Length;
             }
-            linePositions[0] = transform.position + ((currentVelocity - FlightGlobals.ActiveVessel.Velocity()) * tracerDeltaFactor * 0.45f * Time.fixedDeltaTime);
-            // linePositions[0] = transform.position + currentVelocity * tracerDeltaFactor * 0.45f * Time.fixedDeltaTime;
-            // linePositions[0] = transform.position + (currentVelocity + 0.5f * Time.fixedDeltaTime * FlightGlobals.getGeeForceAtPosition(transform.position)) * Time.fixedDeltaTime; // DEBUG Show the bullet path over the next fixedDeltaTime.
-            linePositions[1] = transform.position;
-            bulletTrail.SetPositions(linePositions);
+            // Note: call SetTracerPosition() after enabling the bullet and making adjustments to it's position.
 
             if (!shaderInitialized)
             {
@@ -346,26 +342,12 @@ namespace BDArmory.Bullets
                 startPosition -= FloatingOrigin.OffsetNonKrakensbane;
             }
 
-            if (tracerLength == 0)
-            {
-                // visual tracer velocity is relative to the observer
-                linePositions[0] = transform.position + ((currentVelocity - FlightGlobals.ActiveVessel.Velocity()) * tracerDeltaFactor * 0.45f * Time.fixedDeltaTime);
-                // linePositions[0] = transform.position + currentVelocity * tracerDeltaFactor * 0.45f * Time.fixedDeltaTime;
-                // linePositions[0] = transform.position + (currentVelocity + 0.5f * Time.fixedDeltaTime * FlightGlobals.getGeeForceAtPosition(transform.position)) * Time.fixedDeltaTime; // DEBUG Show the bullet path over the next fixedDeltaTime.
-            }
-            else
-            {
-                linePositions[0] = transform.position + ((currentVelocity - FlightGlobals.ActiveVessel.Velocity()).normalized * tracerLength);
-            }
-
             if (fadeColor)
             {
                 FadeColor();
                 bulletTrail.material.SetColor("_TintColor", currentColor * tracerLuminance);
             }
-            linePositions[1] = transform.position;
-
-            bulletTrail.SetPositions(linePositions);
+            SetTracerPosition();
 
             if (Time.time > timeToLiveUntil) //kill bullet when TTL ends
             {
@@ -846,7 +828,7 @@ namespace BDArmory.Bullets
                 {
                     Debug.Log("[BDArmory.PooledBullet]: ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density + "; thickness: " + thickness);
                 }
-                
+
                 //calculate bullet deformation
                 float newCaliber = caliber;
                 length = ((bulletMass * 1000.0f * 400.0f) / ((caliber * caliber *
@@ -858,31 +840,31 @@ namespace BDArmory.Bullets
                 */
 
                 if (!sabot)
-                    {
-                        // Moved the bulletEnergy and armorStrength calculations here because
-                        // they are no longer needed for CalculatePenetration. This should
-                        // improve performance somewhat for sabot rounds, which is a good
-                        // thing since that new model requires the use of Mathf.Log and
-                        // Mathf.Exp.
-                        float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(bulletMass, impactSpeed);
-                        float armorStrength = ProjectileUtils.CalculateArmorStrength(caliber, thickness, Ductility, Strength, Density, safeTemp, hitPart);
-                        newCaliber = ProjectileUtils.CalculateDeformation(armorStrength, bulletEnergy, caliber, impactSpeed, hardness, Density, HERatio, apBulletMod, sabot);
+                {
+                    // Moved the bulletEnergy and armorStrength calculations here because
+                    // they are no longer needed for CalculatePenetration. This should
+                    // improve performance somewhat for sabot rounds, which is a good
+                    // thing since that new model requires the use of Mathf.Log and
+                    // Mathf.Exp.
+                    float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(bulletMass, impactSpeed);
+                    float armorStrength = ProjectileUtils.CalculateArmorStrength(caliber, thickness, Ductility, Strength, Density, safeTemp, hitPart);
+                    newCaliber = ProjectileUtils.CalculateDeformation(armorStrength, bulletEnergy, caliber, impactSpeed, hardness, Density, HERatio, apBulletMod, sabot);
 
-                        // Also set the params to the non-sabot ones
-                        muParam1 = Armor.muParam1;
-                        muParam2 = Armor.muParam2;
-                        muParam3 = Armor.muParam3;
-                    }
-                    else
-                    {
-                        // If it's a sabot just set the params to the sabot ones
-                        muParam1 = Armor.muParam1S;
-                        muParam2 = Armor.muParam2S;
-                        muParam3 = Armor.muParam3S;
-                    }
-                    //penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, bulletMass, impactSpeed, Ductility, Density, Strength, thickness, apBulletMod, sabot);
-                    penetration = ProjectileUtils.CalculatePenetration(caliber, impactSpeed, bulletMass, apBulletMod, Strength, vFactor, muParam1, muParam2, muParam3, sabot, length);
-                
+                    // Also set the params to the non-sabot ones
+                    muParam1 = Armor.muParam1;
+                    muParam2 = Armor.muParam2;
+                    muParam3 = Armor.muParam3;
+                }
+                else
+                {
+                    // If it's a sabot just set the params to the sabot ones
+                    muParam1 = Armor.muParam1S;
+                    muParam2 = Armor.muParam2S;
+                    muParam3 = Armor.muParam3S;
+                }
+                //penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, bulletMass, impactSpeed, Ductility, Density, Strength, thickness, apBulletMod, sabot);
+                penetration = ProjectileUtils.CalculatePenetration(caliber, impactSpeed, bulletMass, apBulletMod, Strength, vFactor, muParam1, muParam2, muParam3, sabot, length);
+
                 if (BDArmorySettings.DEBUG_ARMOR)
                 {
                     Debug.Log("[BDArmory.PooledBullet] Penetration: " + penetration + "mm. impactSpeed: " + impactSpeed + "m/s. bulletMass = " + bulletMass + "kg. Caliber: " + caliber + "mm. Length: " + length + "mm. Sabot: " + sabot);
@@ -1503,6 +1485,21 @@ namespace BDArmory.Bullets
         public void KillBullet()
         {
             gameObject.SetActive(false);
+        }
+
+        public void SetTracerPosition()
+        {
+            // visual tracer velocity is relative to the observer (which uses srf_vel when below 100km (f*&king KSP!), not orb_vel)
+            if (tracerLength == 0)
+            {
+                linePositions[0] = transform.position + ((currentVelocity - FlightGlobals.ActiveVessel.Velocity()) * tracerDeltaFactor * 0.45f * Time.fixedDeltaTime);
+            }
+            else
+            {
+                linePositions[0] = transform.position + ((currentVelocity - FlightGlobals.ActiveVessel.Velocity()).normalized * tracerLength);
+            }
+            linePositions[1] = transform.position;
+            bulletTrail.SetPositions(linePositions);
         }
 
         void FadeColor()
