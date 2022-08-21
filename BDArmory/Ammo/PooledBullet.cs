@@ -282,7 +282,7 @@ namespace BDArmory.Bullets
             {
                 sourceVesselName = null;
             }
-            if (caliber > 60)
+            if (caliber >= BDArmorySettings.APS_THRESHOLD) //if (caliber > 60)
             {
                 BDATargetManager.FiredBullets.Add(this);
             }
@@ -295,7 +295,7 @@ namespace BDArmory.Bullets
             CurrentPart = null;
             sabot = false;
             partsHit.Clear();
-            if (caliber > 60)
+            if (caliber >= BDArmorySettings.APS_THRESHOLD)  //if (caliber > 60)
             {
                 BDATargetManager.FiredBullets.Remove(this);
             }
