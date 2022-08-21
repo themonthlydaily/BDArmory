@@ -148,15 +148,19 @@ namespace BDArmory.Targeting
                     // With ecm on better chaff effectiveness due to jammer strength
                     VesselECMJInfo vesseljammer = vessel.gameObject.GetComponent<VesselECMJInfo>();
 
-                    // Jamming moves position distortion further to rear, depending on ratio of jamming strength and radarRCSReducedSignature
-                    float jammingFactor = UnityEngine.Random.Range(-1f, 1f) + decoyFactor * Mathf.Clamp01(vesseljammer.jammerStrength / 100f / Mathf.Max(targetInfo.radarRCSReducedSignature, 0.1f));
+                    // Jamming biases position distortion further to rear, depending on ratio of jamming strength and radarModifiedSignature
+                    float jammingFactor = decoyFactor * Mathf.Clamp01(vesseljammer.jammerStrength / 100f / Mathf.Max(targetInfo.radarModifiedSignature, 0.1f));
 
-                    // Higher signature (with or without jamming) increases radius of distortion
-                    float signatureFactor = UnityEngine.Random.Range(targetInfo.radarModifiedSignature, targetInfo.radarModifiedSignature * targetInfo.radarModifiedSignature) * decoyFactor;
+                    // Higher signature (with or without jamming) increases radius of distortion, effect capped for signatures below 16 m^2
+                    float signatureFactor = decoyFactor;
+                    if (targetInfo.radarModifiedSignature > 16f)
+                        signatureFactor *= UnityEngine.Random.Range(targetInfo.radarModifiedSignature, 22.659f * (targetInfo.radarModifiedSignature - 16f) + 256f); // Linear term approximates Log2(targetInfo.radarModifiedSignature)^4
+                    else
+                        signatureFactor *= UnityEngine.Random.Range(16f, 256f);
 
                     // Convert Float jammingFactor position bias and signatureFactor scaling to Vector3 position
-                    Vector3 signatureDistortion = signatureFactor * (vessel.GetSrfVelocity().normalized * -1f * jammingFactor + Vector3.ProjectOnPlane(UnityEngine.Random.insideUnitSphere, vessel.GetSrfVelocity().normalized));
-                    
+                    Vector3 signatureDistortion = signatureFactor * (vessel.GetSrfVelocity().normalized * -1f * jammingFactor + UnityEngine.Random.insideUnitSphere);
+
                     // Higher speed -> missile decoyed further "behind" where the chaff drops (also means that chaff is least effective for head-on engagements)
                     posDistortion = (vessel.GetSrfVelocity() * -1f * Mathf.Clamp(decoyFactor * decoyFactor, 0f, 0.5f)) + signatureDistortion;
 
