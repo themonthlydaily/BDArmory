@@ -1972,6 +1972,8 @@ namespace BDArmory.Weapons.Missiles
             if (warheadType == WarheadTypes.Standard)
             {
                 var tnt = part.FindModuleImplementing<BDExplosivePart>();
+                if (tnt.explModelPath == ModuleWeapon.defaultExplModelPath) tnt.explModelPath = explModelPath; // If the BDExplosivePart is using the default explosion part and sound,
+                if (tnt.explSoundPath == ModuleWeapon.defaultExplSoundPath) tnt.explSoundPath = explSoundPath; // override them with those of the MissileLauncher (if specified).
                 tnt.DetonateIfPossible();
             }
             else if (warheadType == WarheadTypes.Nuke)
