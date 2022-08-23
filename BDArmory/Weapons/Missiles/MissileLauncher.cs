@@ -789,6 +789,9 @@ namespace BDArmory.Weapons.Missiles
             if (pEmitters != null)
                 foreach (var pe in pEmitters)
                     if (pe) EffectBehaviour.RemoveParticleEmitter(pe);
+            if (gaplessEmitters is not null) // Make sure the gapless emitters get destroyed (they should anyway, but KSP holds onto part references, which may prevent this from happening automatically).
+                foreach(var gpe in gaplessEmitters)
+                    if (gpe is not null) Destroy(gpe);
             if (boostEmitters != null)
                 foreach (var pe in boostEmitters)
                     if (pe) EffectBehaviour.RemoveParticleEmitter(pe);
@@ -1989,14 +1992,13 @@ namespace BDArmory.Weapons.Missiles
                 ExplosionFx.CreateExplosion(position, blastPower, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, SourceVessel.vesselName, part.FindModuleImplementing<EngageableWeapon>().GetShortName(), default(Vector3), -1, false, part.mass * 1000);
             }
 
-            List<BDAGaplessParticleEmitter>.Enumerator e = gaplessEmitters.GetEnumerator();
-            while (e.MoveNext())
-            {
-                if (e.Current == null) continue;
-                e.Current.gameObject.AddComponent<BDAParticleSelfDestruct>();
-                e.Current.transform.parent = null;
-            }
-            e.Dispose();
+            using (var e = gaplessEmitters.GetEnumerator())
+                while (e.MoveNext())
+                {
+                    if (e.Current == null) continue;
+                    e.Current.gameObject.AddComponent<BDAParticleSelfDestruct>();
+                    e.Current.transform.parent = null;
+                }
             using (IEnumerator<Light> light = gameObject.GetComponentsInChildren<Light>().AsEnumerable().GetEnumerator())
                 while (light.MoveNext())
                 {
