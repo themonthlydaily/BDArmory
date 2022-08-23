@@ -13,6 +13,7 @@
 - Competition:
 	- Fix exception in auto-resuming tournaments when SpawnProbe.craft isn't found.
 	- Fix incorrect Kill Steal attribution from 1v1 fights.
+	- Abort competition if a team leader still isn't ready to engage (airborne for pilot AI) by the time the start-competition-now timer runs out.
 - Spawning:
 	- Wait until after vessels are unpacked before reverting the spawn camera - fixes an exception with EVA kerbals and KSPCF.
 	- Fix freezing when vessel removal throws an exception.
@@ -44,7 +45,7 @@
 	- Radar missile position distortion due to chaff now relies on the ratio of ECM jammer strength to craft signature with RCS reduction to bias the position distortion from chaff to further behind the craft. Net effect is craft with jammers, and especially low RCS craft with jammers, will have an easier time evading radar missiles.
 	- Lockbreak from jammers now affects RCS with RCS reduction instead of base RCS. Craft can now mix RCS reduction parts and jammers to break locks without worrying about them conflicting.
 	- Incorporate stand-off jamming effects. Friendly craft with jammers now result in your craft being harder to detect and lock. Strength of this effect is determined by the lockBreakerStrength of the friendly jammers, relative distance of friendly jammers (friendly jammers closer to enemy will have a stronger effect), and if the jammers are close in field of view for the enemy (friendly jammers in same field of view will have a stronger effect). Debug readout is available by enabling the Detectors debug option.
-	-  AI no longer will turn off jammers automatically if they were manually enabled prior to being turned on by the AI
+	- AI no longer will turn off jammers automatically if they were manually enabled prior to being turned on by the AI.
 - Weapons:
 	- Fix FXLookAtConstraint modules on various turrets.
 	- Fix incorrect charge sound path for lasers.

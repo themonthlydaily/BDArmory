@@ -512,7 +512,7 @@ namespace BDArmory.Competition
 
             if (pilots.Count < 2)
             {
-                Debug.Log("[BDArmory.BDACompetitionMode" + CompetitionID.ToString() + "]: Unable to start competition mode - one or more teams is empty");
+                Debug.LogWarning("[BDArmory.BDACompetitionMode" + CompetitionID.ToString() + "]: Unable to start competition mode - one or more teams is empty");
                 competitionStatus.Set("Competition: Failed!  One or more teams is empty.");
                 competitionStartFailureReason = CompetitionStartFailureReason.OnlyOneTeam;
                 StopCompetition();
@@ -527,7 +527,7 @@ namespace BDArmory.Competition
                     {
                         var message = "Teams got adjusted during competition start-up, aborting.";
                         competitionStatus.Set("Competition: " + message);
-                        Debug.Log("[BDArmory.BDACompetitionMode]: " + message);
+                        Debug.LogWarning("[BDArmory.BDACompetitionMode]: " + message);
                         competitionStartFailureReason = CompetitionStartFailureReason.OnlyOneTeam;
                         StopCompetition();
                         yield break;
@@ -544,7 +544,7 @@ namespace BDArmory.Competition
                     var missingLeaders = leaderNames.Where(l => !survivingLeaders.Contains(l)).ToList();
                     var message = "A team leader disappeared during competition start-up, aborting: " + string.Join(", ", missingLeaders);
                     competitionStatus.Set("Competition: " + message);
-                    Debug.Log("[BDArmory.BDACompetitionMode]: 1. " + message);
+                    Debug.LogWarning("[BDArmory.BDACompetitionMode]: " + message);
                     competitionStartFailureReason = CompetitionStartFailureReason.TeamLeaderDisappeared;
                     StopCompetition();
                     yield break;
@@ -562,7 +562,7 @@ namespace BDArmory.Competition
                     var missingLeaders = leaderNames.Where(l => !survivingLeaders.Contains(l)).ToList();
                     var message = "A team leader disappeared during competition start-up, aborting: " + string.Join(", ", missingLeaders);
                     competitionStatus.Set("Competition: " + message);
-                    Debug.Log("[BDArmory.BDACompetitionMode]: 2. " + message);
+                    Debug.LogWarning("[BDArmory.BDACompetitionMode]: " + message);
                     competitionStartFailureReason = CompetitionStartFailureReason.TeamLeaderDisappeared;
                     StopCompetition();
                     yield break;
@@ -570,6 +570,16 @@ namespace BDArmory.Competition
                 if (leaders.All(leader => leader.CanEngage()))
                 {
                     break;
+                }
+                if (startCompetitionNow)
+                {
+                    var readyLeaders = leaders.Where(leader => leader.CanEngage()).Select(leader => leader.vessel.vesselName).ToList();
+                    var message = "A team leader still isn't ready to engage and the start-now timer has run out: " + string.Join(", ", leaderNames.Select(leader => !readyLeaders.Contains(leader)));
+                    competitionStatus.Set("Competition: " + message);
+                    Debug.LogWarning("[BDArmory.BDACompetitionMode]: " + message);
+                    competitionStartFailureReason = CompetitionStartFailureReason.Other;
+                    StopCompetition();
+                    yield break;
                 }
                 yield return new WaitForSeconds(1);
             }
@@ -611,7 +621,7 @@ namespace BDArmory.Competition
                     var missingLeaders = leaderNames.Where(l => !survivingLeaders.Contains(l)).ToList();
                     var message = "A team leader disappeared during competition start-up, aborting: " + string.Join(", ", missingLeaders);
                     competitionStatus.Set("Competition: " + message);
-                    Debug.Log("[BDArmory.BDACompetitionMode]: 3. " + message);
+                    Debug.LogWarning("[BDArmory.BDACompetitionMode]: " + message);
                     competitionStartFailureReason = CompetitionStartFailureReason.TeamLeaderDisappeared;
                     StopCompetition();
                     yield break;
@@ -640,7 +650,7 @@ namespace BDArmory.Competition
                             }
                             catch (Exception e2) { Debug.LogWarning($"[BDArmory.BDACompetitionMode]: Exception gathering missing leader names:" + e2.Message); }
                             competitionStatus.Set(message);
-                            Debug.Log("[BDArmory.BDACompetitionMode]: 4. " + message);
+                            Debug.LogWarning("[BDArmory.BDACompetitionMode]: " + message);
                             competitionStartFailureReason = CompetitionStartFailureReason.TeamLeaderDisappeared;
                             StopCompetition();
                             yield break;
@@ -652,7 +662,7 @@ namespace BDArmory.Competition
                     {
                         var message = "The teams were changed during competition start-up, aborting.";
                         competitionStatus.Set("Competition: " + message);
-                        Debug.Log("[BDArmory.BDACompetitionMode]: " + message);
+                        Debug.LogWarning("[BDArmory.BDACompetitionMode]: " + message);
                         competitionStartFailureReason = CompetitionStartFailureReason.TeamsChanged;
                         StopCompetition();
                         yield break;
@@ -678,7 +688,7 @@ namespace BDArmory.Competition
                 {
                     var message = "Teams have been changed during competition start-up, aborting.";
                     competitionStatus.Set("Competition: " + message);
-                    Debug.Log("[BDArmory.BDACompetitionMode]: " + message);
+                    Debug.LogWarning("[BDArmory.BDACompetitionMode]: " + message);
                     competitionStartFailureReason = CompetitionStartFailureReason.TeamsChanged;
                     StopCompetition();
                     yield break;
@@ -688,7 +698,7 @@ namespace BDArmory.Competition
                     {
                         var message = "A pilot has disappeared from team during competition start-up, aborting.";
                         competitionStatus.Set("Competition: " + message);
-                        Debug.Log("[BDArmory.BDACompetitionMode]: " + message);
+                        Debug.LogWarning("[BDArmory.BDACompetitionMode]: " + message);
                         competitionStartFailureReason = CompetitionStartFailureReason.PilotDisappeared;
                         StopCompetition(); // Check that the team pilots haven't been changed during the competition startup.
                         yield break;
