@@ -574,7 +574,7 @@ namespace BDArmory.Competition
                 if (startCompetitionNow)
                 {
                     var readyLeaders = leaders.Where(leader => leader.CanEngage()).Select(leader => leader.vessel.vesselName).ToList();
-                    var message = "A team leader still isn't ready to engage and the start-now timer has run out: " + string.Join(", ", leaderNames.Select(leader => !readyLeaders.Contains(leader)));
+                    var message = "A team leader still isn't ready to engage and the start-now timer has run out: " + string.Join(", ", leaderNames.Where(leader => !readyLeaders.Contains(leader)));
                     competitionStatus.Set("Competition: " + message);
                     Debug.LogWarning("[BDArmory.BDACompetitionMode]: " + message);
                     competitionStartFailureReason = CompetitionStartFailureReason.Other;
