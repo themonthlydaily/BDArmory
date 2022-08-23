@@ -25,12 +25,14 @@ namespace BDArmory.FX
 
         public void AttachAt(Part hitPart, RaycastHit hit, Vector3 offset)
         {
+            if (hitPart is null) return;
             parentPart = hitPart;
             transform.SetParent(hitPart.transform);
             transform.position = hit.point + offset;
             transform.rotation = Quaternion.FromToRotation(Vector3.forward, hit.normal);
             parentPart.OnJustAboutToDie += OnParentDestroy;
             parentPart.OnJustAboutToBeDestroyed += OnParentDestroy;
+            GameEvents.onVesselUnloaded.Add(OnVesselUnloaded); // Catch unloading events too.
             gameObject.SetActive(true);
         }
         public void SetColor(Color color)
@@ -50,14 +52,23 @@ namespace BDArmory.FX
         }
         public void OnParentDestroy()
         {
-            if (parentPart)
+            if (parentPart is not null)
             {
                 parentPart.OnJustAboutToDie -= OnParentDestroy;
                 parentPart.OnJustAboutToBeDestroyed -= OnParentDestroy;
                 parentPart = null;
+            }
+            if (gameObject.activeSelf) // Deactivate even if a parent is already inactive.
+            {
+                GameEvents.onVesselUnloaded.Remove(OnVesselUnloaded);
                 transform.parent = null;
                 gameObject.SetActive(false);
             }
+        }
+
+        public void OnVesselUnloaded(Vessel vessel)
+        {
+            if (parentPart is not null && parentPart.vessel == vessel) OnParentDestroy();
         }
 
         public void OnDestroy()
