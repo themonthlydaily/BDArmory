@@ -19,6 +19,7 @@
 - Spawning:
 	- Wait until after vessels are unpacked before reverting the spawn camera - fixes an exception with EVA kerbals and KSPCF.
 	- Fix freezing when vessel removal throws an exception.
+	- Account for wheels protruding into the ground during instant lowering of vessels.
 - GameModes:
 	- Space Combat Tools:
 		- Better implement SpaceFriction initialization at round start.
