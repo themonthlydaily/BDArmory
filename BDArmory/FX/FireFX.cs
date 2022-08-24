@@ -522,7 +522,7 @@ namespace BDArmory.FX
 
         public void OnParentDestroy()
         {
-            if (parentPart != null)
+            if (parentPart is not null)
             {
                 parentBeingDestroyed = true;
                 parentPart.OnJustAboutToDie -= OnParentDestroy;
@@ -534,7 +534,14 @@ namespace BDArmory.FX
 
         public void OnVesselUnloaded(Vessel vessel)
         {
-            if (parentPart is not null && parentPart.vessel == vessel) OnParentDestroy();
+            if (parentPart is not null && (parentPart.vessel is null || parentPart.vessel == vessel))
+            {
+                OnParentDestroy();
+            }
+            else if (parentPart is null)
+            {
+                Deactivate(); // Sometimes (mostly when unloading a vessel) the parent becomes null without triggering OnParentDestroy.
+            }
         }
 
         void Deactivate()

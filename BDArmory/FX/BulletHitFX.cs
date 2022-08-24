@@ -50,30 +50,44 @@ namespace BDArmory.FX
             }
 
         }
-        public void OnParentDestroy()
+
+        void OnParentDestroy()
         {
             if (parentPart is not null)
             {
                 parentPart.OnJustAboutToDie -= OnParentDestroy;
                 parentPart.OnJustAboutToBeDestroyed -= OnParentDestroy;
-                parentPart = null;
+                Deactivate();
             }
+        }
+
+        void OnVesselUnloaded(Vessel vessel)
+        {
+            if (parentPart is not null && (parentPart.vessel is null || parentPart.vessel == vessel))
+            {
+                OnParentDestroy();
+            }
+            else if (parentPart is null)
+            {
+                Deactivate();
+            }
+        }
+
+        void Deactivate()
+        {
             if (gameObject.activeSelf) // Deactivate even if a parent is already inactive.
             {
-                GameEvents.onVesselUnloaded.Remove(OnVesselUnloaded);
+                parentPart = null;
                 transform.parent = null;
+                GameEvents.onVesselUnloaded.Remove(OnVesselUnloaded);
                 gameObject.SetActive(false);
             }
         }
 
-        public void OnVesselUnloaded(Vessel vessel)
-        {
-            if (parentPart is not null && parentPart.vessel == vessel) OnParentDestroy();
-        }
-
         public void OnDestroy()
         {
-            OnParentDestroy(); // Make sure it's disabled and book-keeping is done.
+            if (HighLogic.LoadedSceneIsFlight) Debug.LogError($"[BDArmory.BulletHitFX]: BulletHitFX on {parentPart} was destroyed!");
+            GameEvents.onVesselUnloaded.Remove(OnVesselUnloaded);
         }
     }
 
