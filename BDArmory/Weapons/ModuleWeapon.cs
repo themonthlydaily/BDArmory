@@ -4577,7 +4577,7 @@ namespace BDArmory.Weapons
                 }
                 else
                 {
-                    if (turret) turret.ReturnTurret(); //reset turret if no target
+                    //if (turret) turret.ReturnTurret(); //reset turret if no target
                 }
             }
         }
@@ -4604,6 +4604,7 @@ namespace BDArmory.Weapons
                     shell.hasDetonated = true;
                     ExplosionFx.CreateExplosion(shell.transform.position, shell.tntMass, shell.explModelPath, shell.explSoundPath, ExplosionSourceType.Bullet, shell.caliber, null, shell.sourceVesselName, null, default, -1, false, shell.bulletMass, -1, 1);
                     shell.KillBullet();
+                    tgtShell = null;
                     //Debug.Log("[BDArmory.ModuleWeapon] Detonated Incoming Projectile!");
                 }
                 else
@@ -4611,6 +4612,7 @@ namespace BDArmory.Weapons
                     if (eWeaponType == WeaponTypes.Laser)
                     {
                         shell.KillBullet();
+                        tgtShell = null;
                         //Debug.Log("[BDArmory.ModuleWeapon] Vaporized Incoming Projectile!");
                     }
                     else
@@ -4627,12 +4629,11 @@ namespace BDArmory.Weapons
                         else
                         {
                             shell.KillBullet();
+                            tgtShell = null;
                             //Debug.Log("[BDArmory.ModuleWeapon] Exploded Incoming Projectile!");
                         }
                     }
                 }
-                shell = null;
-                tgtShell = null;
             }
             else if (rocket != null)
             {
@@ -4642,7 +4643,6 @@ namespace BDArmory.Weapons
                     ExplosionFx.CreateExplosion(rocket.transform.position, rocket.tntMass, rocket.explModelPath, rocket.explSoundPath, ExplosionSourceType.Rocket, rocket.caliber, null, rocket.sourceVesselName, null, default, -1, false, rocket.rocketMass * 1000, -1, 1);
                 }
                 rocket.gameObject.SetActive(false);
-                rocket = null;
                 tgtRocket = null;
             }
             else
@@ -5342,7 +5342,7 @@ namespace BDArmory.Weapons
                 output.AppendLine($"Ammunition: {ammoName}");
                 if (ECPerShot > 0)
                 {
-                    output.AppendLine($"Electric Charge required per shot: {ammoName}");
+                    output.AppendLine($"Electric Charge required per shot: {ECPerShot}");
                 }
                 output.AppendLine($"Max Range: {maxEffectiveDistance} m");
                 if (weaponType == "ballistic")

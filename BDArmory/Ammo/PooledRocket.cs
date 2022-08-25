@@ -619,6 +619,16 @@ namespace BDArmory.Bullets
         {
             bool detonate = false;
 
+            if (isAPSprojectile && (tgtShell != null || tgtRocket != null))
+            {
+                if (Vector3.Distance(transform.position, tgtShell != null ? tgtShell.transform.position : tgtRocket.transform.position) < detonationRange / 2)
+                {
+                    if (BDArmorySettings.DEBUG_WEAPONS)
+                        Debug.Log("[BDArmory.PooledRocket]: rocket proximity to APS target | Distance overlap = " + detonationRange + "| tgt name = " + tgtShell != null ? tgtShell.name : tgtRocket.name);
+                    return detonate = true;
+                }
+            }
+
             if (distanceFromStart <= blastRadius * 2) return false;
 
             if (!(((explosive || nuclear) && tntMass > 0) || beehive)) return false;
@@ -649,15 +659,6 @@ namespace BDArmory.Bullets
                         {
                             Debug.LogWarning("[BDArmory.PooledRocket]: Exception thrown in ProximityAirDetonation: " + e.Message + "\n" + e.StackTrace);
                         }
-                    }
-                }
-                if (isAPSprojectile && (tgtShell != null || tgtRocket != null))
-                {
-                    if (Vector3.Distance(transform.position, tgtShell != null ? tgtShell.transform.position : tgtRocket.transform.position) < detonationRange / 2)
-                    {
-                        if (BDArmorySettings.DEBUG_WEAPONS)
-                            Debug.Log("[BDArmory.PooledRocket]: rocket proximity to APS target | Distance overlap = " + detonationRange + "| tgt name = " + tgtShell != null ? tgtShell.name : tgtRocket.name);
-                        return detonate = true;
                     }
                 }
             }
