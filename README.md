@@ -27,7 +27,6 @@ Contributors:
 - [Fluffy]()
 - [Cl0by](https://github.com/Cl0by)
 - [Concodroid]()
-- [BillNyeTheIE]()
 - [EzBro]()
 - And all the previous maintainers.
 
