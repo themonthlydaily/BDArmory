@@ -86,7 +86,7 @@ namespace BDArmory.FX
 
         void OnDestroy() // This shouldn't be happening except on exiting KSP, but sometimes they get destroyed instead of disabled!
         {
-            if (HighLogic.LoadedSceneIsFlight) Debug.LogError($"[BDArmory.FuelLeakFX]: FuelLeakFX on {parentPart} was destroyed!");
+            // if (HighLogic.LoadedSceneIsFlight) Debug.LogError($"[BDArmory.FuelLeakFX]: FuelLeakFX on {parentPart} was destroyed!");
             // Clean up emitters.
             if (pEmitters is not null && pEmitters.Any(pe => pe is not null))
             {

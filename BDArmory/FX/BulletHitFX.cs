@@ -86,7 +86,7 @@ namespace BDArmory.FX
 
         public void OnDestroy()
         {
-            if (HighLogic.LoadedSceneIsFlight) Debug.LogError($"[BDArmory.BulletHitFX]: BulletHitFX on {parentPart} was destroyed!");
+            // if (HighLogic.LoadedSceneIsFlight) Debug.LogError($"[BDArmory.BulletHitFX]: BulletHitFX on {parentPart} was destroyed!");
             GameEvents.onVesselUnloaded.Remove(OnVesselUnloaded);
         }
     }
