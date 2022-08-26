@@ -72,10 +72,10 @@ IMPROVEMENTS / FIXES
 	- Penetrating rounds now register damage to all parts they hit, not just first.
 	- Fix 'Weapon requires EC' message spam if active vessel is not the one with the weapon in question.
 	- Weapons using ECPerShot now only drain ElectricCharge if the vessel has sufficient EC to fire the weapon.
-  - Use the explosion models and sounds given in MissileLauncher if none are specified in BDAExplosivePart.
-	-Adds Active Protection System implementation
-		-Adds new fields: 'isAPS = T/F', 'APSType = [ballistic, missile,omni]'
-		-Adds new Settings.cfg field 'APS_THRESHOLD = n' to set threshold bullet/rocket size for interception
+	- Use the explosion models and sounds given in MissileLauncher if none are specified in BDAExplosivePart.
+	- Adds Active Protection System implementation.
+		- Adds new fields: 'isAPS = T/F', 'APSType = [ballistic, missile,omni]'.
+		- Adds new Settings.cfg field 'APS_THRESHOLD = n' to set threshold bullet/rocket size for interception.
 
 - Armor:
 	- Adjusted post-penetration behavior of high velocity rounds, rounds now erode instead of slowing down at high velocities.
