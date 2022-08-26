@@ -546,6 +546,7 @@ namespace BDArmory.FX
             if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
             {
                 transform.position -= FloatingOrigin.OffsetNonKrakensbane;
+                Position -= FloatingOrigin.OffsetNonKrakensbane;
             }
             if (!isFX)
             {
