@@ -189,13 +189,18 @@ namespace BDArmory.Utils
                         float length = (float)PWType.GetField("sharedBaseLength", BindingFlags.Public | BindingFlags.Instance).GetValue(module);
                         float width = ((float)PWType.GetField("sharedBaseWidthRoot", BindingFlags.Public | BindingFlags.Instance).GetValue(module) + (float)PWType.GetField("sharedBaseWidthTip", BindingFlags.Public | BindingFlags.Instance).GetValue(module));
                         float thickness = ((float)PWType.GetField("sharedBaseThicknessRoot", BindingFlags.Public | BindingFlags.Instance).GetValue(module) + (float)PWType.GetField("sharedBaseThicknessTip", BindingFlags.Public | BindingFlags.Instance).GetValue(module));
-                        if (thickness > 0.36f) //0.18 * 2
-                            thickness = (Mathf.Max(0.36f, ((Mathf.Log(thickness * 0.5f) + 1) * 0.75f))); 
+                        //if (BDArmorySettings.RUNWAY_PROJECT)
+                        //{
+                            if (thickness > 0.36f) //0.18 * 2
+                                thickness = (Mathf.Max(0.36f, (Mathf.Log(1 + (thickness * 0.5f)) * 0.75f)));
                             //thickness = 0.36f; //thickness doesn't add to pwing mass, so why should it add to HP? 
-                            //- because edge lift don't contribute to HP anymore
+                            //- because edge lift doesn't contribute to HP anymore
+                            //will also incentivise using a single thick wing instead of wing sandwiching 
                             //look into making thickness add mass?
                             //-that seems like a change that really should be part of pwings proper, not bolted on here, even if it really would help balance out pwings...
-                        float aeroVolume = (0.7f * length * width * thickness) / 4;
+                        //}
+                        //else thickness = 0.36f;
+                        float aeroVolume = (0.786f * length * width * thickness) / 4; //original .7 was based on errorneous 2x4 wingboard dimensions; stock reference wing area is 1.875x3.75m
                         if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FARUtils]: Found volume of {aeroVolume} for {part.name}.");
 						if (BDArmorySettings.RUNWAY_PROJECT && !ctrlSrf) //if RunwayProject and part !controlsurface, remove lift/mass from edges to bring inline with stock boards
 						{
