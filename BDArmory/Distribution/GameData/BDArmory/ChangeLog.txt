@@ -11,8 +11,7 @@ IMPROVEMENTS / FIXES
 		- IF (and only if) 'RunwayProject' is enabled, colliderless Pwing edges will no longer be included for Pwing mass/lift calcs, to bring them in line with stock wings for balance reasons.
 	- Apply the gapless particle emitter option to 'DecalGaplessParticleEmitter's too.
 	- Reduce frequency of null FX object pool entries by catching unloading events too.
-  - Add Attachnode to the Ordinance bay to fix issues with Breaking Ground Robotics.
-
+	- Add Attachnode to the Ordinance bay to fix issues with Breaking Ground Robotics.
 - UI:
 	- Fix exception when resetting colours in Team Icons.
 	- Prevent the kill timer from showing in the Loaded Vessel Switcher window for surface vessels.
@@ -21,6 +20,7 @@ IMPROVEMENTS / FIXES
 	- Fix exception in auto-resuming tournaments when SpawnProbe.craft isn't found.
 	- Fix incorrect Kill Steal attribution from 1v1 fights.
 	- Abort competition if a team leader still isn't ready to engage (airborne for pilot AI) by the time the start-competition-now timer runs out.
+	- Add option to start competitions despite failures occuring. For tournaments, this only applies after the third attempt fails.
 - Spawning:
 	- Wait until after vessels are unpacked before reverting the spawn camera - fixes an exception with EVA kerbals and KSPCF.
 	- Fix freezing when vessel removal throws an exception.
@@ -76,7 +76,6 @@ IMPROVEMENTS / FIXES
 	- Adds Active Protection System implementation.
 		- Adds new fields: 'isAPS = T/F', 'APSType = [ballistic, missile,omni]'.
 		- Adds new Settings.cfg field 'APS_THRESHOLD = n' to set threshold bullet/rocket size for interception.
-
 - Armor:
 	- Adjusted post-penetration behavior of high velocity rounds, rounds now erode instead of slowing down at high velocities.
 		- Multi-plate armor schemes now behave more realistically and will require more careful material selection and configuration.
