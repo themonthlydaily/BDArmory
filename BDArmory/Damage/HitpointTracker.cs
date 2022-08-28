@@ -119,7 +119,7 @@ namespace BDArmory.Damage
         [KSPField(isPersistant = true)]
         public float vFactor;
 
-        
+
         [KSPField(isPersistant = true)]
         public float muParam1;
         [KSPField(isPersistant = true)]
@@ -656,18 +656,18 @@ namespace BDArmory.Damage
         #endregion
 
         #region Hitpoints Functions
-        
-        //[KSPField(isPersistant = true)]
-        //public bool HPMode = false;
+
+        [KSPField(isPersistant = true)]
+        public bool HPMode = false;
         float oldmaxHitpoints;
-        /*
+
         [KSPEvent(advancedTweakable = true, guiActive = false, guiActiveEditor = true, guiName = "Toggle HP Calc", active = true)]//Self-Sealing Tank
         public void ToggleHPOption()
         {
             HPMode = !HPMode;
             if (!HPMode)
             {
-                Events["ToggleHPOption"].guiName = Localizer.Format("Revert to Legacy HP calc");  
+                Events["ToggleHPOption"].guiName = Localizer.Format("Revert to Legacy HP calc");
                 maxHitPoints = oldmaxHitpoints;
             }
             else
@@ -677,12 +677,12 @@ namespace BDArmory.Damage
                 maxHitPoints = -1;
             }
             SetupPrefab();
-            GUIUtils.RefreshAssociatedWindows(part);           
+            GUIUtils.RefreshAssociatedWindows(part);
         }
-        */
+
         public float CalculateTotalHitpoints()
         {
-            float hitpoints;// = -1;
+            float hitpoints = -1;
 
             if (!part.IsMissile())
             {
@@ -694,8 +694,8 @@ namespace BDArmory.Damage
                         float structuralMass = 100;
                         float structuralVolume = 1;
                         float density = 1;
-                        //if (!HPMode)
-                        //{
+                        if (!HPMode)
+                        {
                             var averageSize = part.GetAverageBoundSize();
                             var sphereRadius = averageSize * 0.5f;
                             var sphereSurface = 4 * Mathf.PI * sphereRadius * sphereRadius;
@@ -733,7 +733,7 @@ namespace BDArmory.Damage
                             // if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.HitpointTracker]: " + part.name + " structural Volume: " + structuralVolume + "; density: " + density);
                             //3. final calculations
                             hitpoints = structuralMass * hitpointMultiplier * 0.333f;
-                        /*
+
                         }
                         else //revised HP calc, commented out for now until we get feedback on new method and decide to switch over
                         {
@@ -745,7 +745,7 @@ namespace BDArmory.Damage
                                                                          //parts that aren't cylinders or close enough and need exceptions: Wings, control surfaces, radiators/solar panels
                                                                          //var dryPartmass = part.mass - part.resourceMass;
                             var dryPartmass = part.mass;
-                            density = (dryPartmass * 1000) / structuralVolume; 
+                            density = (dryPartmass * 1000) / structuralVolume;
                             //var structuralMass = density * structuralVolume; // this means HP is solely determined my part mass, after assuming all parts have min density of 1000kg/m3
                             //Debug.Log("[BDArmory]: Hitpoint Calc" + part.name + " | structuralVolume : " + structuralVolume);
 
@@ -806,10 +806,10 @@ namespace BDArmory.Damage
                             if (part.IsAero() && !isProcWing)
                             {
                                 //hitpoints = dryPartmass * 7000 * hitpointMultiplier * 0.333f; //stock wing parts are 700 HP per unit of Lift, 10 lift/1000kg
-                                hitpoints = (float)part.Modules.GetModule<ModuleLiftingSurface>().deflectionLiftCoeff * 700  * hitpointMultiplier * 0.333f; //stock wings are 700 HP per lifting surface area; using lift instead of mass (110 Lift/ton) due to control surfaces weighing more
+                                hitpoints = (float)part.Modules.GetModule<ModuleLiftingSurface>().deflectionLiftCoeff * 700 * hitpointMultiplier * 0.333f; //stock wings are 700 HP per lifting surface area; using lift instead of mass (110 Lift/ton) due to control surfaces weighing more
                             }
                         }
-                        */
+
                         if (isProcPart)
                         {
                             structuralVolume = armorVolume * Mathf.PI / 6f * 0.1f; // Box area * sphere/cube ratio * 10cm. We use sphere/cube ratio to get similar results as part.GetAverageBoundSize().
@@ -858,7 +858,7 @@ namespace BDArmory.Damage
                             {
                                 float aeroVolume = ProceduralWing.GetPWingVolume(part); //PWing  0.7 * length * (widthRoot + WidthTip) + (thicknessRoot + ThicknessTip) / 4; yields 1.008 for a stock dimension 2*4*.18 board, so need mult of 1400 for parity with stock wing boards
                                 if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.HitpointTracker]: Found {part.name}; HP: {Hitpoints}->{hitpoints} at time {Time.time}, partMass: {partMass}, Pwing Aerovolume: {aeroVolume}");
-                                hitpoints = (float)Math.Round(part.Modules.GetModule<ModuleControlSurface>() ? part.Modules.GetModule<ModuleLiftingSurface>().deflectionLiftCoeff * 700 : (aeroVolume * 1400), 2)  * hitpointMultiplier * 0.333f; //use volume for wings (since they may have lift toggled off), use lift area for control surfaces
+                                hitpoints = (float)Math.Round(part.Modules.GetModule<ModuleControlSurface>() ? part.Modules.GetModule<ModuleLiftingSurface>().deflectionLiftCoeff * 700 : (aeroVolume * 1400), 2) * hitpointMultiplier * 0.333f; //use volume for wings (since they may have lift toggled off), use lift area for control surfaces
                                 //hitpoints should scale with stock wings correctly (and if used as thicker structural elements, should scale with tanks of similar size)
                                 if (FerramAerospace.CheckForFAR())
                                 {
@@ -884,8 +884,9 @@ namespace BDArmory.Damage
                         //if (hitpoints > 2000) //Hardcoded? slider setting? .cfg setting?
                         //{
                         //--HP log scaling goes here--
-                            //Mathf.Min(hitpoints, 2000 * Mathf.Log(hitpoints / 1164 + 1)); //?
+                        //Mathf.Min(hitpoints, 2000 * Mathf.Log(hitpoints / 1164 + 1)); //? uncomment once part index finished for before and after comparisons
                         //}
+
                         switch (HullTypeNum)
                         {
                             case 1:
