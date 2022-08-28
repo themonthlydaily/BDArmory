@@ -2433,7 +2433,7 @@ namespace BDArmory.Control
                 while (ecm1.MoveNext())
                 {
                     if (ecm1.Current == null) continue;
-                    if (!ecm1.Current.manuallyEnabled) 
+                    if (!ecm1.Current.manuallyEnabled)
                         ecm1.Current.DisableJammer();
                 }
         }
@@ -5197,7 +5197,7 @@ namespace BDArmory.Control
                         if (!gun.hasGunner)
                             return false;
                         if (gun.isReloading || gun.isOverheated)
-                            return false; 
+                            return false;
                         if (!gun.CanFireSoon())
                             return false;
                         // check ammo
