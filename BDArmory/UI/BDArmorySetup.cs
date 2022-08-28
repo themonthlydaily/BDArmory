@@ -2467,14 +2467,15 @@ namespace BDArmory.UI
                         {
                             BDArmorySettings.DEBUG_AI = false;
                             BDArmorySettings.DEBUG_ARMOR = false;
+                            BDArmorySettings.DEBUG_COMPETITION = false;
                             BDArmorySettings.DEBUG_DAMAGE = false;
-                            BDArmorySettings.DEBUG_OTHER = false;
                             BDArmorySettings.DEBUG_LINES = false;
                             BDArmorySettings.DEBUG_MISSILES = false;
+                            BDArmorySettings.DEBUG_OTHER = false;
                             BDArmorySettings.DEBUG_RADAR = false;
+                            BDArmorySettings.DEBUG_SPAWNING = false;
                             BDArmorySettings.DEBUG_TELEMETRY = false;
                             BDArmorySettings.DEBUG_WEAPONS = false;
-                            BDArmorySettings.DEBUG_SPAWNING = false;
                         }
                     }
                     if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
