@@ -6142,11 +6142,6 @@ namespace BDArmory.Control
             if (threat) // If we weren't passed a null
             {
                 closureTime = vessel.ClosestTimeToCPA(threat, closureTime);
-                
-                float targetDistance = Vector3.Distance(threat.transform.position, vessel.transform.position);
-                Vector3 currVel = (float)vessel.srfSpeed * vessel.Velocity().normalized;
-                closureTime = Mathf.Clamp((float)(1 / ((threat.Velocity() - currVel).magnitude / targetDistance)), 0f, closureTime);
-                // Debug.Log("[BDArmory.MissileFire]: Threat from " + threat.GetDisplayName() + " is " + closureTime.ToString("0.0") + " seconds away!");
             }
             return closureTime;
         }
