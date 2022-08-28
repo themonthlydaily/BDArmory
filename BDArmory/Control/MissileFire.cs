@@ -4371,7 +4371,7 @@ namespace BDArmory.Control
                             float Cannistershot = Gun.ProjectileCount;
                             float candidateMinrange = Gun.engageRangeMin;
                             int candidatePriority = Mathf.RoundToInt(Gun.priority);
-                            float candidateRadius = currentTarget.Vessel.GetRadius();
+                            float candidateRadius = currentTarget.Vessel.GetRadius(Gun.fireTransforms[0].forward, target.bounds);
                             float candidateCaliber = Gun.caliber;
                             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                             {
@@ -4669,7 +4669,7 @@ namespace BDArmory.Control
                             bool candidateGimbal = Gun.turret;
                             float candidateMinrange = Gun.engageRangeMin;
                             float candidateTraverse = Gun.yawRange * Gun.maxPitch;
-                            float candidateRadius = currentTarget.Vessel.GetRadius();
+                            float candidateRadius = currentTarget.Vessel.GetRadius(Gun.fireTransforms[0].forward, target.bounds);
                             float candidateCaliber = Gun.caliber;
                             Transform fireTransform = Gun.fireTransforms[0];
 
@@ -6141,6 +6141,8 @@ namespace BDArmory.Control
             float closureTime = 3600f; // Default closure time of one hour
             if (threat) // If we weren't passed a null
             {
+                closureTime = vessel.ClosestTimeToCPA(threat, closureTime);
+                
                 float targetDistance = Vector3.Distance(threat.transform.position, vessel.transform.position);
                 Vector3 currVel = (float)vessel.srfSpeed * vessel.Velocity().normalized;
                 closureTime = Mathf.Clamp((float)(1 / ((threat.Velocity() - currVel).magnitude / targetDistance)), 0f, closureTime);
