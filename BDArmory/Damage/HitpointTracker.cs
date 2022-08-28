@@ -1208,7 +1208,33 @@ namespace BDArmory.Damage
 
                 SafeUseTemp = 993;
                 Armor = 10;
-                if (ArmorPanel) Armor = 25;
+                if (ArmorPanel)
+                {
+                    ArmorTypeNum = 2;
+                    Armor = 25;
+                    Density = 7850;
+                    Diffusivity = 48.5f;
+                    Ductility = 0.15f;
+                    Hardness = 1176;
+                    Strength = 940;
+
+                    // Calculated using yield = 700 MPa and youngModulus = 200 GPA
+                    vFactor = 9.47761748e-07f;
+                    muParam1 = 0.656060636f;
+                    muParam2 = 1.20190930f;
+                    muParam3 = 1.77791929f;
+                    muParam1S = 0.947031140f;
+                    muParam2S = 1.55575776f;
+                    muParam3S = 2.75371552f;
+                }
+                else
+                {
+                    Fields["Armor"].guiActiveEditor = false;
+                    Fields["guiArmorTypeString"].guiActiveEditor = false;
+                    Fields["guiArmorTypeString"].guiActive = false;
+                    Fields["armorCost"].guiActiveEditor = false;
+                    Fields["armorMass"].guiActiveEditor = false;
+                }
                 if (BDArmorySettings.DEBUG_ARMOR)
                 {
                     Debug.Log("[ARMOR] Armor of " + part.name + " reset to defaults by RESET_ARMOUR");
@@ -1258,6 +1284,11 @@ namespace BDArmory.Damage
                     armorFieldFlight.maxValue = maxSupportedArmor;
                 }
                 */
+                Fields["Armor"].guiActiveEditor = true;
+                Fields["guiArmorTypeString"].guiActiveEditor = true;
+                Fields["guiArmorTypeString"].guiActive = true;
+                Fields["armorCost"].guiActiveEditor = true;
+                Fields["armorMass"].guiActiveEditor = true;
                 UI_FloatRange armorFieldEditor = (UI_FloatRange)Fields["Armor"].uiControlEditor;
                 if (armorFieldEditor.maxValue != maxSupportedArmor)
                 {
@@ -1275,12 +1306,15 @@ namespace BDArmory.Damage
             else
             {
                 Armor = 10;
-                UI_FloatRange armorFieldEditor = (UI_FloatRange)Fields["Armor"].uiControlEditor;
-                armorFieldEditor.maxValue = 10; //max none armor to 10 (simulate part skin of alimunium)
-                armorFieldEditor.minValue = 10;
-                //UI_FloatRange armorFieldFlight = (UI_FloatRange)Fields["Armor"].uiControlFlight;
-                //armorFieldFlight.minValue = 0f;
-                //armorFieldFlight.maxValue = 10;
+                Fields["Armor"].guiActiveEditor = false;
+                Fields["guiArmorTypeString"].guiActiveEditor = false;
+                Fields["guiArmorTypeString"].guiActive = false;
+                Fields["armorCost"].guiActiveEditor = false;
+                Fields["armorMass"].guiActiveEditor = false;
+                //UI_FloatRange armorFieldEditor = (UI_FloatRange)Fields["Armor"].uiControlEditor;
+                //armorFieldEditor.maxValue = 10; //max none armor to 10 (simulate part skin of alimunium)
+                //armorFieldEditor.minValue = 10;
+
                 part.RefreshAssociatedWindows();
                 //GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
             }
