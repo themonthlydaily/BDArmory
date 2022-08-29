@@ -177,12 +177,12 @@ namespace BDArmory.Competition.VesselSpawning
             if (AI != null || WM != null)
             {
                 int count = 0;
-                if (AI != null && (AI.part.parent == null || AI.part.vessel.rootPart != AI.part.parent))
+                if (AI != null && !(AI.part == AI.part.vessel.rootPart || AI.part.parent == AI.part.vessel.rootPart))
                 {
                     message += (WM == null ? " and its AI" : "'s AI");
                     ++count;
                 }
-                if (WM != null && (WM.part.parent == null || WM.part.vessel.rootPart != WM.part.parent))
+                if (WM != null && !(WM.part == WM.part.vessel.rootPart || WM.part.parent == WM.part.vessel.rootPart))
                 {
                     message += (AI == null ? " and its WM" : (count > 0 ? " and WM" : "'s WM"));
                     ++count;
