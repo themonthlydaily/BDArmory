@@ -904,6 +904,7 @@ namespace BDArmory.Weapons.Missiles
                 DetonationDistanceState = DetonationDistanceStates.NotSafe;
                 MissileState = MissileStates.Drop;
                 part.crashTolerance = 9999; //to combat stresses of launch, missle generate a lot of G Force
+                part.explosionPotential = 0; // Minimise the default part explosion FX that sometimes gets offset from the main explosion.
 
                 StartCoroutine(MissileRoutine());
             }
