@@ -84,23 +84,6 @@ namespace BDArmory.FX
             drainRate = 1;
         }
 
-        void OnDestroy() // This shouldn't be happening except on exiting KSP, but sometimes they get destroyed instead of disabled!
-        {
-            // if (HighLogic.LoadedSceneIsFlight) Debug.LogError($"[BDArmory.FuelLeakFX]: FuelLeakFX on {parentPart} was destroyed!");
-            // Clean up emitters.
-            if (pEmitters is not null && pEmitters.Any(pe => pe is not null))
-            {
-                BDArmorySetup.numberOfParticleEmitters--;
-                foreach (var pe in pEmitters)
-                    if (pe != null)
-                    {
-                        pe.emit = false;
-                        EffectBehaviour.RemoveParticleEmitter(pe);
-                    }
-            }
-            GameEvents.onVesselUnloaded.Remove(OnVesselUnloaded);
-        }
-
         void Update()
         {
             if (!gameObject.activeInHierarchy || !HighLogic.LoadedSceneIsFlight || BDArmorySetup.GameIsPaused)
@@ -216,14 +199,31 @@ namespace BDArmory.FX
 
         void Deactivate()
         {
-            if (gameObject.activeSelf) // Deactivate even if a parent is already inactive.
+            if (gameObject is not null && gameObject.activeSelf) // Deactivate even if a parent is already inactive.
             {
                 disableTime = -1;
                 parentPart = null;
                 transform.parent = null; // Detach ourselves from the parent transform so we don't get destroyed if it does.
-                GameEvents.onVesselUnloaded.Remove(OnVesselUnloaded);
                 gameObject.SetActive(false);
             }
+            GameEvents.onVesselUnloaded.Remove(OnVesselUnloaded);
+        }
+
+        void OnDestroy() // This shouldn't be happening except on exiting KSP, but sometimes they get destroyed instead of disabled when colliding with terrain!
+        {
+            // if (HighLogic.LoadedSceneIsFlight) Debug.LogError($"[BDArmory.FuelLeakFX]: FuelLeakFX on {parentPart} was destroyed!");
+            // Clean up emitters.
+            if (pEmitters is not null && pEmitters.Any(pe => pe is not null))
+            {
+                BDArmorySetup.numberOfParticleEmitters--;
+                foreach (var pe in pEmitters)
+                    if (pe != null)
+                    {
+                        pe.emit = false;
+                        EffectBehaviour.RemoveParticleEmitter(pe);
+                    }
+            }
+            GameEvents.onVesselUnloaded.Remove(OnVesselUnloaded);
         }
     }
 }
