@@ -3957,7 +3957,7 @@ namespace BDArmory.Weapons
         {
             // This runs in the FashionablyLate timing phase of FixedUpdate before Krakensbane corrections have been applied.
             if (!(aimAndFireIfPossible || aimOnly)) return;
-            if (this == null || weaponManager == null || FlightGlobals.currentMainBody == null) return;
+            if (this == null || weaponManager == null || !gameObject.activeInHierarchy || FlightGlobals.currentMainBody == null) return;
 
             if (isAPS)
             {
