@@ -4265,12 +4265,12 @@ namespace BDArmory.Weapons
                     if (visualTargetPart == null || visualTargetPart.vessel != visualTargetVessel)
                     {
                         TargetInfo currentTarget = visualTargetVessel.gameObject.GetComponent<TargetInfo>();
-                        targetRadius = visualTargetVessel.GetRadius(fireTransforms[0].forward, currentTarget.bounds);
                         if (currentTarget == null)
                         {
                             if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + (visualTargetVessel != null ? visualTargetVessel.vesselName : "'unknown'") + " has no TargetInfo.");
                             return;
                         }
+                        targetRadius = visualTargetVessel.GetRadius(fireTransforms[0].forward, currentTarget.bounds);
                         List<Part> targetparts = new List<Part>();
                         if (targetCOM)
                         {
