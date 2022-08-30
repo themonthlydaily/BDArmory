@@ -1072,7 +1072,6 @@ namespace BDArmory.Weapons
             Fields["FiringTolerance"].guiActiveEditor = FireAngleOverride;
             Fields["fireBurstLength"].guiActive = BurstOverride;
             Fields["fireBurstLength"].guiActiveEditor = BurstOverride;
-            vessel.Velocity();
             if (BurstFire)
             {
                 BeltFed = false;
@@ -1148,6 +1147,11 @@ namespace BDArmory.Weapons
                     {
                         if (mtf.Current == null) continue;
                         KSPParticleEmitter kpe = mtf.Current.GetComponent<KSPParticleEmitter>();
+                        if (kpe == null)
+                        {
+                            Debug.Log("[BDArmory.ModuleWeapon] MuzzleFX transform missing KSPParticleEmitter component. Please fix your model");
+                            continue;
+                        }
                         EffectBehaviour.AddParticleEmitter(kpe);
                         muzzleFlashEmitters.Add(kpe);
                         kpe.emit = false;
@@ -1211,6 +1215,7 @@ namespace BDArmory.Weapons
 
                 //setup transforms
                 fireTransforms = part.FindModelTransforms(fireTransformName);
+                if (fireTransforms.Length == 0) Debug.Log("[BDArmory.ModuleWeapon] Weapon missing fireTransform [" + fireTransformName + "]! Please fix your model");
                 shellEjectTransforms = part.FindModelTransforms(shellEjectTransformName);
 
                 //setup emitters
@@ -1292,6 +1297,7 @@ namespace BDArmory.Weapons
             else if (HighLogic.LoadedSceneIsEditor)
             {
                 fireTransforms = part.FindModelTransforms(fireTransformName);
+                if (fireTransforms.Length == 0) Debug.Log("[BDArmory.ModuleWeapon] Weapon missing fireTransform [" + fireTransformName + "]! Please fix your model");
                 WeaponNameWindow.OnActionGroupEditorOpened.Add(OnActionGroupEditorOpened);
                 WeaponNameWindow.OnActionGroupEditorClosed.Add(OnActionGroupEditorClosed);
             }
@@ -1323,24 +1329,48 @@ namespace BDArmory.Weapons
             if (hasDeployAnim)
             {
                 deployState = GUIUtils.SetUpSingleAnimation(deployAnimName, part);
-                deployState.normalizedTime = 0;
-                deployState.speed = 0;
-                deployState.enabled = true;
-                ReloadAnimTime = (ReloadTime - deployState.length);
+                if (deployState != null)
+                {
+                    deployState.normalizedTime = 0;
+                    deployState.speed = 0;
+                    deployState.enabled = true;
+                    ReloadAnimTime = (ReloadTime - deployState.length);
+                }
+                else
+                {
+                    Debug.LogWarning($"[BDArmory.ModuleWeapon]: {OriginalShortName} is missing deploy anim");
+                    hasDeployAnim = false;
+                }
             }
             if (hasReloadAnim)
             {
                 reloadState = GUIUtils.SetUpSingleAnimation(reloadAnimName, part);
-                reloadState.normalizedTime = 0;
-                reloadState.speed = 0;
-                reloadState.enabled = true;
+                if (reloadState != null)
+                {
+                    reloadState.normalizedTime = 0;
+                    reloadState.speed = 0;
+                    reloadState.enabled = true;
+                }
+                else
+                {
+                    Debug.LogWarning($"[BDArmory.ModuleWeapon]: {OriginalShortName} is missing reload anim");
+                    hasReloadAnim = false;
+                }
             }
             if (hasChargeAnimation)
             {
                 chargeState = GUIUtils.SetUpSingleAnimation(chargeAnimName, part);
-                chargeState.normalizedTime = 0;
-                chargeState.speed = 0;
-                chargeState.enabled = true;
+                if (chargeState != null)
+                {
+                    chargeState.normalizedTime = 0;
+                    chargeState.speed = 0;
+                    chargeState.enabled = true;
+                }
+                else
+                {
+                    Debug.LogWarning($"[BDArmory.ModuleWeapon]: {OriginalShortName} is missing charge anim");
+                    hasChargeAnimation = false;
+                }
             }
             if (hasFireAnimation)
             {
