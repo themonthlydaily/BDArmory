@@ -656,11 +656,11 @@ namespace BDArmory.Damage
         #endregion
 
         #region Hitpoints Functions
-
-        [KSPField(isPersistant = true)]
-        public bool HPMode = false;
+        
+        //[KSPField(isPersistant = true)]
+        //public bool HPMode = false;
         float oldmaxHitpoints;
-
+        /*
         [KSPEvent(advancedTweakable = true, guiActive = false, guiActiveEditor = true, guiName = "Toggle HP Calc", active = true)]//Self-Sealing Tank
         public void ToggleHPOption()
         {
@@ -679,10 +679,10 @@ namespace BDArmory.Damage
             SetupPrefab();
             GUIUtils.RefreshAssociatedWindows(part);
         }
-
+        */
         public float CalculateTotalHitpoints()
         {
-            float hitpoints = -1;
+            float hitpoints;// = -1;
 
             if (!part.IsMissile())
             {
@@ -694,7 +694,7 @@ namespace BDArmory.Damage
                         float structuralMass = 100;
                         float structuralVolume = 1;
                         float density = 1;
-                        if (!HPMode)
+                        //if (!HPMode)
                         {
                             var averageSize = part.GetAverageBoundSize();
                             var sphereRadius = averageSize * 0.5f;
@@ -735,6 +735,7 @@ namespace BDArmory.Damage
                             hitpoints = structuralMass * hitpointMultiplier * 0.333f;
 
                         }
+                        /*
                         else //revised HP calc, commented out for now until we get feedback on new method and decide to switch over
                         {
                             //var averageSize = part.GetVolume(); // this grabs x/y/z dimensions from PartExtensions.cs 
@@ -809,7 +810,7 @@ namespace BDArmory.Damage
                                 hitpoints = (float)part.Modules.GetModule<ModuleLiftingSurface>().deflectionLiftCoeff * 700 * hitpointMultiplier * 0.333f; //stock wings are 700 HP per lifting surface area; using lift instead of mass (110 Lift/ton) due to control surfaces weighing more
                             }
                         }
-
+                        */
                         if (isProcPart)
                         {
                             structuralVolume = armorVolume * Mathf.PI / 6f * 0.1f; // Box area * sphere/cube ratio * 10cm. We use sphere/cube ratio to get similar results as part.GetAverageBoundSize().
