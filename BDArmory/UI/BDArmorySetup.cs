@@ -360,7 +360,7 @@ namespace BDArmory.UI
 
         public static bool GameIsPaused
         {
-            get { return PauseMenu.isOpen || Time.timeScale == 0; }
+            get { return HighLogic.LoadedSceneIsFlight && (PauseMenu.isOpen || Time.timeScale == 0); }
         }
 
         void Awake()
@@ -404,7 +404,7 @@ namespace BDArmory.UI
 
             // Check for Apple Processor
             AppleSilicon = CultureInfo.InvariantCulture.CompareInfo.IndexOf(SystemInfo.processorType, "Apple", CompareOptions.IgnoreCase) >= 0;
-            
+
             // Ensure AutoSpawn folder exists.
             if (!Directory.Exists(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn")))
             { Directory.CreateDirectory(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn")); }
@@ -2467,14 +2467,15 @@ namespace BDArmory.UI
                         {
                             BDArmorySettings.DEBUG_AI = false;
                             BDArmorySettings.DEBUG_ARMOR = false;
+                            BDArmorySettings.DEBUG_COMPETITION = false;
                             BDArmorySettings.DEBUG_DAMAGE = false;
-                            BDArmorySettings.DEBUG_OTHER = false;
                             BDArmorySettings.DEBUG_LINES = false;
                             BDArmorySettings.DEBUG_MISSILES = false;
+                            BDArmorySettings.DEBUG_OTHER = false;
                             BDArmorySettings.DEBUG_RADAR = false;
+                            BDArmorySettings.DEBUG_SPAWNING = false;
                             BDArmorySettings.DEBUG_TELEMETRY = false;
                             BDArmorySettings.DEBUG_WEAPONS = false;
-                            BDArmorySettings.DEBUG_SPAWNING = false;
                         }
                     }
                     if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
@@ -2995,8 +2996,8 @@ namespace BDArmory.UI
                     BDArmorySettings.SF_FRICTION = false;
                     BDArmorySettings.SF_GRAVITY = false;
                     BDArmorySettings.SF_REPULSOR = false;
-                }            
-                
+                }
+
                 // Asteroids
                 if (BDArmorySettings.ASTEROID_FIELD != (BDArmorySettings.ASTEROID_FIELD = GUI.Toggle(SLeftRect(++line), BDArmorySettings.ASTEROID_FIELD, Localizer.Format("#LOC_BDArmory_Settings_AsteroidField")))) // Asteroid Field
                 {
@@ -3355,6 +3356,8 @@ namespace BDArmory.UI
 
                 BDArmorySettings.COMPETITION_CLOSE_SETTINGS_ON_COMPETITION_START = GUI.Toggle(SLineRect(++line), BDArmorySettings.COMPETITION_CLOSE_SETTINGS_ON_COMPETITION_START, Localizer.Format("#LOC_BDArmory_Settings_CompetitionCloseSettingsOnCompetitionStart"));
 
+                BDArmorySettings.COMPETITION_START_DESPITE_FAILURES = GUI.Toggle(SLineRect(++line), BDArmorySettings.COMPETITION_START_DESPITE_FAILURES, Localizer.Format("#LOC_BDArmory_Settings_CompetitionStartDespiteFailures"));
+
                 if (BDArmorySettings.ADVANDED_USER_SETTINGS)
                 {
                     GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_DebrisCleanUpDelay")}:  ({BDArmorySettings.DEBRIS_CLEANUP_DELAY}s)", leftLabel); // Debris Clean-up delay
@@ -3543,12 +3546,12 @@ namespace BDArmory.UI
                                         BDACompetitionMode.Instance.StartRapidDeployment(0);
                                         break;
                                     default:
-                                        BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE);
+                                        BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE, BDArmorySettings.COMPETITION_START_DESPITE_FAILURES);
                                         break;
                                 }
                             }
                             else
-                                BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE);
+                                BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE, BDArmorySettings.COMPETITION_START_DESPITE_FAILURES);
                             if (BDArmorySettings.COMPETITION_CLOSE_SETTINGS_ON_COMPETITION_START) CloseSettingsWindow();
                         }
                     }
