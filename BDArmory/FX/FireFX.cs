@@ -15,6 +15,9 @@ namespace BDArmory.FX
     class FireFX : MonoBehaviour
     {
         Part parentPart;
+        // string parentPartName = "";
+        // string parentVesselName = "";
+
         public static ObjectPool CreateFireFXPool(string modelPath)
         {
             var template = GameDatabase.Instance.GetModel(modelPath);
@@ -493,6 +496,8 @@ namespace BDArmory.FX
         {
             if (hitPart is null) return;
             parentPart = hitPart;
+            // parentPartName = parentPart.name;
+            // parentVesselName = parentPart.vessel.vesselName;
             transform.SetParent(hitPart.transform);
             transform.position = hit + offset;
             transform.rotation = Quaternion.FromToRotation(Vector3.up, -FlightGlobals.getGeeForceAtPosition(transform.position));
@@ -539,9 +544,9 @@ namespace BDArmory.FX
             GameEvents.onVesselUnloaded.Remove(OnVesselUnloaded);
         }
 
-        void OnDestroy() // This shouldn't be happening except on exiting KSP, but sometimes they get destroyed instead of disabled when colliding with terrain!
+        void OnDestroy() // This shouldn't be happening except on exiting KSP, but sometimes they get destroyed instead of disabled!
         {
-            // if (HighLogic.LoadedSceneIsFlight) Debug.LogError($"[BDArmory.FireFX]: FireFX on {parentPart} was destroyed!");
+            // if (HighLogic.LoadedSceneIsFlight) Debug.LogError($"[BDArmory.FireFX]: FireFX on {parentPartName} ({parentVesselName}) was destroyed!");
             // Clean up emitters.
             if (pEmitters is not null && pEmitters.Any(pe => pe is not null))
             {

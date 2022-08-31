@@ -14,6 +14,8 @@ namespace BDArmory.FX
     class Decal : MonoBehaviour
     {
         Part parentPart;
+        // string parentPartName = "";
+        // string parentVesselName = "";
         public static ObjectPool CreateDecalPool(string modelPath)
         {
             var template = GameDatabase.Instance.GetModel(modelPath);
@@ -27,6 +29,8 @@ namespace BDArmory.FX
         {
             if (hitPart is null) return;
             parentPart = hitPart;
+            // parentPartName = parentPart.name;
+            // parentVesselName = parentPart.vessel.vesselName;
             transform.SetParent(hitPart.transform);
             transform.position = hit.point + offset;
             transform.rotation = Quaternion.FromToRotation(Vector3.forward, hit.normal);
@@ -84,9 +88,9 @@ namespace BDArmory.FX
             GameEvents.onVesselUnloaded.Remove(OnVesselUnloaded);
         }
 
-        public void OnDestroy() // This shouldn't be happening except on exiting KSP, but sometimes they get destroyed instead of disabled when colliding with terrain!
+        public void OnDestroy() // This shouldn't be happening except on exiting KSP, but sometimes they get destroyed instead of disabled!
         {
-            // if (HighLogic.LoadedSceneIsFlight) Debug.LogError($"[BDArmory.BulletHitFX]: BulletHitFX on {parentPart} was destroyed!");
+            // if (HighLogic.LoadedSceneIsFlight) Debug.LogError($"[BDArmory.BulletHitFX]: BulletHitFX on {parentPartName} ({parentVesselName}) was destroyed!");
             GameEvents.onVesselUnloaded.Remove(OnVesselUnloaded);
         }
     }

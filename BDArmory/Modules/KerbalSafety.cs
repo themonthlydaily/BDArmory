@@ -245,6 +245,7 @@ namespace BDArmory.Modules
             {
                 try
                 {
+                    foreach (var part in vessel.Parts) part.OnJustAboutToBeDestroyed?.Invoke(); // Invoke any OnJustAboutToBeDestroyed events since RecoverVesselFromFlight calls DestroyImmediate, skipping the FX detachment triggers.
                     ShipConstruction.RecoverVesselFromFlight(vessel.protoVessel, HighLogic.CurrentGame.flightState, true);
                 }
                 catch (Exception e)
@@ -741,6 +742,7 @@ namespace BDArmory.Modules
             recovered = true;
             try
             {
+                foreach (var part in kerbalEVA.vessel.Parts) part.OnJustAboutToBeDestroyed?.Invoke(); // Invoke any OnJustAboutToBeDestroyed events since RecoverVesselFromFlight calls DestroyImmediate, skipping the FX detachment triggers.
                 ShipConstruction.RecoverVesselFromFlight(kerbalEVA.vessel.protoVessel, HighLogic.CurrentGame.flightState, true);
             }
             catch (Exception e)

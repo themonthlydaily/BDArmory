@@ -10,8 +10,9 @@ IMPROVEMENTS / FIXES
 	- Adjust Pwing HP calculations to be a bit more inline with stock.
 		- IF (and only if) 'RunwayProject' is enabled, colliderless Pwing edges will no longer be included for Pwing mass/lift calcs, to bring them in line with stock wings for balance reasons.
 	- Apply the gapless particle emitter option to 'DecalGaplessParticleEmitter's too.
-	- Reduce frequency of null FX object pool entries by catching unloading events too.
+	- Reduce frequency (hopefully to none) of null FX object pool entries by catching unloading events too and triggering OnJustAboutToBeDestroyed before recovering vessels.
 	- Add Attachnode to the Ordinance bay to fix issues with Breaking Ground Robotics.
+	- Allow use of the combat seat as the root part.
 - UI:
 	- Fix exception when resetting colours in Team Icons.
 	- Prevent the kill timer from showing in the Loaded Vessel Switcher window for surface vessels.
