@@ -270,7 +270,10 @@ namespace BDArmory.Competition.VesselSpawning
                     if (KerbalSafetyManager.Instance.safetyLevel != KerbalSafetyLevel.Off)
                         KerbalSafetyManager.Instance.RecoverVesselNow(vessel);
                     else
+                    {
+                        foreach (var part in vessel.Parts) part.OnJustAboutToBeDestroyed?.Invoke(); // Invoke any OnJustAboutToBeDestroyed events since RecoverVesselFromFlight calls DestroyImmediate, skipping the FX detachment triggers.
                         ShipConstruction.RecoverVesselFromFlight(vessel.protoVessel, HighLogic.CurrentGame.flightState, true);
+                    }
                 }
                 catch (Exception e)
                 {

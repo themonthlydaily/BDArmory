@@ -10,11 +10,11 @@ IMPROVEMENTS / FIXES
 	- Adds optional adjustable Logarithmic HP clamp, replacing the Proc PArt Max HP slider.
 	- Adds optional toggle to disable lift from colliderless PWing edges for better balance with stock wings/prevent pwing abuse
 	- Apply the gapless particle emitter option to 'DecalGaplessParticleEmitter's too.
-	- Reduce frequency of null FX object pool entries by catching unloading events too.
-    	- Add Attachnode to the Ordinance bay to fix issues with Breaking Ground Robotics.
+  - Add Attachnode to the Ordinance bay to fix issues with Breaking Ground Robotics.
 	- Adds debugging messages to assist with making custom weapons.
 	- Adds MM patch to add liftless Proc Structural Panel if B9 Pwings installed.
-
+	- Reduce frequency (hopefully to none) of null FX object pool entries by catching unloading events too and triggering OnJustAboutToBeDestroyed before recovering vessels.
+	- Allow use of the combat seat as the root part.
 - UI:
 	- Fix exception when resetting colours in Team Icons.
 	- Prevent the kill timer from showing in the Loaded Vessel Switcher window for surface vessels.
