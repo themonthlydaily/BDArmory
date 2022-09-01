@@ -206,8 +206,9 @@ namespace BDArmory.Utils
                         if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FARUtils]: Found volume of {aeroVolume} for {part.name}.");
 						if (BDArmorySettings.RUNWAY_PROJECT && !ctrlSrf) //if RunwayProject and part !controlsurface, remove lift/mass from edges to bring inline with stock boards
 						{
+                            bool isLiftingSurface = (float)PWType.GetField("stockLiftCoefficient", BindingFlags.Public | BindingFlags.Instance).GetValue(module) > 0f;
                             float liftCoeff = (length * (width / 2)) / 3.52f;
-                            PWType.GetField("stockLiftCoefficient", BindingFlags.Public | BindingFlags.Instance).SetValue(module, liftCoeff); //adjust PWing GUI lift readout
+                            PWType.GetField("stockLiftCoefficient", BindingFlags.Public | BindingFlags.Instance).SetValue(module, isLiftingSurface ? liftCoeff : 0f); //adjust PWing GUI lift readout
                             part.Modules.GetModule<ModuleLiftingSurface>().deflectionLiftCoeff = (length * (width / 2) / 3.52f); //adjust lift to be inline with stock wings
                             if (!WingctrlSrf)
                                 PWType.GetField("aeroUIMass", BindingFlags.Public | BindingFlags.Instance).SetValue(module, liftCoeff / 10); //Adjust PWing GUI mass readout

@@ -75,16 +75,16 @@ namespace BDArmory.FX
 
         void Deactivate()
         {
-            if (gameObject.activeSelf) // Deactivate even if a parent is already inactive.
+            if (gameObject is not null && gameObject.activeSelf) // Deactivate even if a parent is already inactive.
             {
                 parentPart = null;
                 transform.parent = null;
-                GameEvents.onVesselUnloaded.Remove(OnVesselUnloaded);
                 gameObject.SetActive(false);
             }
+            GameEvents.onVesselUnloaded.Remove(OnVesselUnloaded);
         }
 
-        public void OnDestroy()
+        public void OnDestroy() // This shouldn't be happening except on exiting KSP, but sometimes they get destroyed instead of disabled when colliding with terrain!
         {
             // if (HighLogic.LoadedSceneIsFlight) Debug.LogError($"[BDArmory.BulletHitFX]: BulletHitFX on {parentPart} was destroyed!");
             GameEvents.onVesselUnloaded.Remove(OnVesselUnloaded);
