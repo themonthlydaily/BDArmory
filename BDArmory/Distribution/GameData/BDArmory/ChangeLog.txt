@@ -7,20 +7,24 @@ IMPROVEMENTS / FIXES
 	- Make wheels susceptible to bullets and explosions too.
 	- Fix off-centered arrow on inline radome texture  Git Issue #409
 	- Re-fix lead issue on Apple Silicon.
-	- Adjust Pwing HP calculations to be a bit more inline with stock.
-		- IF (and only if) 'RunwayProject' is enabled, colliderless Pwing edges will no longer be included for Pwing mass/lift calcs, to bring them in line with stock wings for balance reasons.
+	- Adds optional adjustable Logarithmic HP clamp, replacing the Proc PArt Max HP slider.
+	- Adds optional toggle to disable lift from colliderless PWing edges for better balance with stock wings/prevent pwing abuse
 	- Apply the gapless particle emitter option to 'DecalGaplessParticleEmitter's too.
 	- Reduce frequency of null FX object pool entries by catching unloading events too.
-  - Add Attachnode to the Ordinance bay to fix issues with Breaking Ground Robotics.
-
+    - Add Attachnode to the Ordinance bay to fix issues with Breaking Ground Robotics.
+	- Adds debugging messages to assist with making custom weapons.
+	- Adds MM patch to add liftless Proc Structural Panel if B9 Pwings installed.
 - UI:
 	- Fix exception when resetting colours in Team Icons.
 	- Prevent the kill timer from showing in the Loaded Vessel Switcher window for surface vessels.
 	- Updated German localization by EzBro.
+	- Adds Accuracy readout to the Weapon Debuggling telemetry.
+	- Setting the Armor Type to 'None' now disables the armor thickness slider; fixes PAW issue in KSP 1.9.1 installs.
 - Competition:
 	- Fix exception in auto-resuming tournaments when SpawnProbe.craft isn't found.
 	- Fix incorrect Kill Steal attribution from 1v1 fights.
 	- Abort competition if a team leader still isn't ready to engage (airborne for pilot AI) by the time the start-competition-now timer runs out.
+	- Fixes AI/WM not attached to Root Part error messages on competition start when using combat seats as the root part.
 - Spawning:
 	- Wait until after vessels are unpacked before reverting the spawn camera - fixes an exception with EVA kerbals and KSPCF.
 	- Fix freezing when vessel removal throws an exception.

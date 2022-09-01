@@ -1149,7 +1149,7 @@ namespace BDArmory.Weapons
                         KSPParticleEmitter kpe = mtf.Current.GetComponent<KSPParticleEmitter>();
                         if (kpe == null)
                         {
-                            Debug.Log("[BDArmory.ModuleWeapon] MuzzleFX transform missing KSPParticleEmitter component. Please fix your model");
+                            Debug.LogError("[BDArmory.ModuleWeapon] MuzzleFX transform missing KSPParticleEmitter component. Please fix your model");
                             continue;
                         }
                         EffectBehaviour.AddParticleEmitter(kpe);
@@ -1215,7 +1215,7 @@ namespace BDArmory.Weapons
 
                 //setup transforms
                 fireTransforms = part.FindModelTransforms(fireTransformName);
-                if (fireTransforms.Length == 0) Debug.Log("[BDArmory.ModuleWeapon] Weapon missing fireTransform [" + fireTransformName + "]! Please fix your model");
+                if (fireTransforms.Length == 0) Debug.LogError("[BDArmory.ModuleWeapon] Weapon missing fireTransform [" + fireTransformName + "]! Please fix your model");
                 shellEjectTransforms = part.FindModelTransforms(shellEjectTransformName);
 
                 //setup emitters
@@ -1297,7 +1297,7 @@ namespace BDArmory.Weapons
             else if (HighLogic.LoadedSceneIsEditor)
             {
                 fireTransforms = part.FindModelTransforms(fireTransformName);
-                if (fireTransforms.Length == 0) Debug.Log("[BDArmory.ModuleWeapon] Weapon missing fireTransform [" + fireTransformName + "]! Please fix your model");
+                if (fireTransforms.Length == 0) Debug.LogError("[BDArmory.ModuleWeapon] Weapon missing fireTransform [" + fireTransformName + "]! Please fix your model");
                 WeaponNameWindow.OnActionGroupEditorOpened.Add(OnActionGroupEditorOpened);
                 WeaponNameWindow.OnActionGroupEditorClosed.Add(OnActionGroupEditorClosed);
             }
@@ -1409,7 +1409,7 @@ namespace BDArmory.Weapons
                     if (rocketInfo == null)
                     {
                         //if (BDArmorySettings.DEBUG_WEAPONS)
-                        Debug.Log("[BDArmory.ModuleWeapon]: Failed To load rocket : " + currentType);
+                        Debug.LogWarning("[BDArmory.ModuleWeapon]: Failed To load rocket : " + currentType);
                     }
                     else
                     {
@@ -1420,7 +1420,7 @@ namespace BDArmory.Weapons
                             if (!BulletInfo.bulletNames.Contains(rocketInfo.subMunitionType) || !RocketInfo.rocketNames.Contains(rocketInfo.subMunitionType))
                             {
                                 beehive = false;
-                                Debug.Log("[BDArmory.ModuleWeapon]: Invalid submunition on : " + currentType);
+                                Debug.LogWarning("[BDArmory.ModuleWeapon]: Invalid submunition on : " + currentType);
                             }
                             else
                             {
@@ -1438,7 +1438,7 @@ namespace BDArmory.Weapons
                     if (bulletInfo == null)
                     {
                         //if (BDArmorySettings.DEBUG_WEAPONS)
-                        Debug.Log("[BDArmory.ModuleWeapon]: Failed To load bullet : " + currentType);
+                        Debug.LogWarning("[BDArmory.ModuleWeapon]: Failed To load bullet : " + currentType);
                     }
                     else
                     {
@@ -1449,7 +1449,7 @@ namespace BDArmory.Weapons
                             if (!BulletInfo.bulletNames.Contains(bulletInfo.subMunitionType))
                             {
                                 beehive = false;
-                                Debug.Log("[BDArmory.ModuleWeapon]: Invalid submunition on : " + currentType);
+                                Debug.LogWarning("[BDArmory.ModuleWeapon]: Invalid submunition on : " + currentType);
                             }
                         }
                     }

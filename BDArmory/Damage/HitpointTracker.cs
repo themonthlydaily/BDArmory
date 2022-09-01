@@ -837,7 +837,7 @@ namespace BDArmory.Damage
 
                         if (isProcWing)
                         {
-                            if (!BDArmorySettings.RUNWAY_PROJECT) //how granular do we want to get with this...? Keep this inside the RP toggle, or spin it off into a new one?
+                            if (!BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.PWING_EDGE_LIFT) 
                             {
                                 if (FerramAerospace.CheckForFAR()) //half-baked legacy method that we're stuck with lest FJRT whine
                                 {
@@ -855,7 +855,7 @@ namespace BDArmory.Damage
                                                                                                                       //edges contribute to HP when they shouldn't; suggestion was to use tank volume instead (which would also allow thickness to play a role in HP), try ProceduralWing.aeroStatVolume * 700 
                                 }
                             }
-                            if (BDArmorySettings.RUNWAY_PROJECT || part.name.Contains("B9_Aero_Wing_Procedural_Panel")) //method to make pwings balanced with stock. 
+                            if ((!BDArmorySettings.PWING_EDGE_LIFT || BDArmorySettings.RUNWAY_PROJECT) || part.name.Contains("B9_Aero_Wing_Procedural_Panel")) //method to make pwings balanced with stock. 
                             {
                                 hitpoints = -1;
                                 armorVolume = -1;
@@ -868,7 +868,7 @@ namespace BDArmory.Damage
                                     if (FerramAerospace.CheckForFAR())
                                     {
                                         if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.HitpointTracker]: Found {part.name} (FAR); HP: {Hitpoints}->{hitpoints} at time {Time.time}, partMass: {partMass}, FAR massMult: {FerramAerospace.GetFARMassMult(part)}");
-                                        hitpoints *= FerramAerospace.GetFARMassMult(part); //PWing HP no longer mass dependant, so lets have FAR's structural strengthening/weakening have an effect on HP. you want light wings? they're goingto be fragile, and vice versa
+                                        hitpoints *= FerramAerospace.GetFARMassMult(part); //PWing HP no longer mass dependant, so lets have FAR's structural strengthening/weakening have an effect on HP. you want light wings? they're going to be fragile, and vice versa
                                     }
                                     armorVolume = ProceduralWing.GetPWingArea(part);
                                 }
@@ -885,13 +885,10 @@ namespace BDArmory.Damage
                             }
                             ArmorModified(null, null);
                         }
-                        if ((isProcPart || isProcWing) && BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.MAX_PWING_HP >= 100) hitpoints = Mathf.Clamp(hitpoints, 100, BDArmorySettings.MAX_PWING_HP);
-
-                        //if (hitpoints > 2000) //Hardcoded? slider setting? .cfg setting?
-                        //{
-                        //--HP log scaling goes here--
-                        //Mathf.Min(hitpoints, 2000 * Mathf.Log(hitpoints / 1164 + 1)); //? uncomment once part index finished for before and after comparisons
-                        //}
+                        if (BDArmorySettings.HP_THRESHOLD >= 100 && hitpoints > BDArmorySettings.HP_THRESHOLD)
+                        {
+                            Mathf.Min(hitpoints, 2000 * Mathf.Log(hitpoints / 1164 + 1));
+                        }
 
                         switch (HullTypeNum)
                         {

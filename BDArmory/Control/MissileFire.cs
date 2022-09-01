@@ -86,7 +86,15 @@ namespace BDArmory.Control
 
         public void incrementRippleIndex(string weaponname)
         {
-            if (!gunRippleIndex.ContainsKey(weaponname)) { Debug.LogError($"[BDArmory.MissileFire]: Weapon {weaponname} on {vessel.vesselName} does not exist in the gunRippleIndex!"); return; }
+            if (!gunRippleIndex.ContainsKey(weaponname)) 
+            {
+                UpdateList();
+                if (!gunRippleIndex.ContainsKey(weaponname))
+                {
+                    Debug.LogError($"[BDArmory.MissileFire]: Weapon {weaponname} on {vessel.vesselName} does not exist in the gunRippleIndex!");
+                    return;
+                }
+            }
             gunRippleIndex[weaponname]++;
             if (gunRippleIndex[weaponname] >= GetRippleGunCount(weaponname))
             {
@@ -1571,7 +1579,7 @@ namespace BDArmory.Control
                             hits = BDACompetitionMode.Instance.Scores.ScoreData[vessel.vesselName].hits;
                             shots = BDACompetitionMode.Instance.Scores.ScoreData[vessel.vesselName].shotsFired;
                         }
-                        weaponHeatDebugStrings.Add(" - Shots Fired: " + shots + ", Shots Hit: " + hits + ", Accuracy: " + (hits / shots));
+                        weaponHeatDebugStrings.Add(" - Shots Fired: " + shots + ", Shots Hit: " + hits + ", Accuracy: " + (shots > 0 ? hits / shots : 0f));
 
                         if (weaponHeatDebugStrings.Count > 0)
                         {

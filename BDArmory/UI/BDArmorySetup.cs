@@ -2678,6 +2678,7 @@ namespace BDArmory.UI
 
                 if (BDArmorySettings.ADVANDED_USER_SETTINGS)
                 {
+                    BDArmorySettings.PWING_EDGE_LIFT = GUI.Toggle(SRightRect(line), BDArmorySettings.PWING_EDGE_LIFT, Localizer.Format("#LOC_BDArmory_Settings_PWingsHack"));//Toggle Pwing Edge Lift
                     BDArmorySettings.DEFAULT_FFA_TARGETING = GUI.Toggle(SLeftRect(++line), BDArmorySettings.DEFAULT_FFA_TARGETING, Localizer.Format("#LOC_BDArmory_Settings_DefaultFFATargeting"));// Free-for-all combat style
                     BDArmorySettings.DISABLE_RAMMING = GUI.Toggle(SRightRect(line), BDArmorySettings.DISABLE_RAMMING, Localizer.Format("#LOC_BDArmory_Settings_DisableRamming"));// Disable Ramming
                     BDArmorySettings.AUTONOMOUS_COMBAT_SEATS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.AUTONOMOUS_COMBAT_SEATS, Localizer.Format("#LOC_BDArmory_Settings_AutonomousCombatSeats"));
@@ -2784,9 +2785,9 @@ namespace BDArmory.UI
                     GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_DeathCameraInhibitPeriod")}:  ({(BDArmorySettings.DEATH_CAMERA_SWITCH_INHIBIT_PERIOD == 0 ? BDArmorySettings.CAMERA_SWITCH_FREQUENCY / 2f : BDArmorySettings.DEATH_CAMERA_SWITCH_INHIBIT_PERIOD)}s)", leftLabel); // Camera switch inhibit period after the active vessel dies.
                     BDArmorySettings.DEATH_CAMERA_SWITCH_INHIBIT_PERIOD = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.DEATH_CAMERA_SWITCH_INHIBIT_PERIOD, 0f, 10f));
                 }
-                GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_Max_PWing_HP")}:  {(BDArmorySettings.MAX_PWING_HP >= 100 ? (BDArmorySettings.MAX_PWING_HP.ToString()) : "Unclamped")}", leftLabel); // Max PWing HP
-                BDArmorySettings.MAX_PWING_HP = GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.MAX_PWING_HP, 0, 10000);
-                BDArmorySettings.MAX_PWING_HP = Mathf.Round(BDArmorySettings.MAX_PWING_HP / 100) * 100;
+                GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_Max_PWing_HP")}:  {(BDArmorySettings.HP_THRESHOLD >= 100 ? (BDArmorySettings.HP_THRESHOLD.ToString()) : "Unclamped")}", leftLabel); // Max PWing HP
+                BDArmorySettings.HP_THRESHOLD = GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.HP_THRESHOLD, 0, 10000);
+                BDArmorySettings.HP_THRESHOLD = Mathf.Round(BDArmorySettings.HP_THRESHOLD / 100) * 100;
 
                 line += 0.5f;
             }
