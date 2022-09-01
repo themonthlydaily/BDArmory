@@ -1,4 +1,4 @@
-﻿
+﻿v1.5.2.0
 IMPROVEMENTS / FIXES
 - General:
 	- Fix packaging issue in recent releases that contain incorrect capitalisation of certain files and folders.
