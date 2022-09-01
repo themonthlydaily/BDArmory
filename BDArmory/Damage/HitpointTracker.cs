@@ -887,7 +887,8 @@ namespace BDArmory.Damage
                         }
                         if (BDArmorySettings.HP_THRESHOLD >= 100 && hitpoints > BDArmorySettings.HP_THRESHOLD)
                         {
-                            Mathf.Min(hitpoints, 2000 * Mathf.Log(hitpoints / 1164 + 1));
+                            var scale = BDArmorySettings.HP_THRESHOLD / (Mathf.Exp(1) - 1);
+                            hitpoints = Mathf.Min(hitpoints, BDArmorySettings.HP_THRESHOLD * Mathf.Log(hitpoints / scale + 1));
                         }
 
                         switch (HullTypeNum)
