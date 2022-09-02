@@ -19,6 +19,8 @@ namespace BDArmory.Utils
         /// Constructor for Brown's double exponential smoothing.
         /// </summary>
         /// <param name="beta">Smoothing factor.</param>
+        /// <param name="initialValue">The initial value.</param>
+        /// <param name="rate">The update frequency (for scaling delta in At).</param>
         public SmoothingF(float beta, float initialValue = 0, float rate = 0)
         {
             this.alpha = 1f - beta;
