@@ -204,7 +204,7 @@ namespace BDArmory.Utils
                         float thickness = 0.36f;
                         float aeroVolume = (0.786f * length * width * thickness) / 4; //original .7 was based on errorneous 2x4 wingboard dimensions; stock reference wing area is 1.875x3.75m
                         if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FARUtils]: Found volume of {aeroVolume} for {part.name}.");
-						if (BDArmorySettings.RUNWAY_PROJECT && !ctrlSrf) //if RunwayProject and part !controlsurface, remove lift/mass from edges to bring inline with stock boards
+						if (BDArmorySettings.RUNWAY_PROJECT || BDArmorySettings.PWING_EDGE_LIFT && !ctrlSrf) //if RunwayProject and part !controlsurface, remove lift/mass from edges to bring inline with stock boards
 						{
                             bool isLiftingSurface = (float)PWType.GetField("stockLiftCoefficient", BindingFlags.Public | BindingFlags.Instance).GetValue(module) > 0f;
                             float liftCoeff = (length * (width / 2)) / 3.52f;
