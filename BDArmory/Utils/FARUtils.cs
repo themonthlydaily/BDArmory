@@ -204,7 +204,7 @@ namespace BDArmory.Utils
                         float thickness = 0.36f;
                         float aeroVolume = (0.786f * length * width * thickness) / 4; //original .7 was based on errorneous 2x4 wingboard dimensions; stock reference wing area is 1.875x3.75m
                         if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FARUtils]: Found volume of {aeroVolume} for {part.name}.");
-						if (BDArmorySettings.RUNWAY_PROJECT || BDArmorySettings.PWING_EDGE_LIFT && !ctrlSrf) //if RunwayProject and part !controlsurface, remove lift/mass from edges to bring inline with stock boards
+						if ((BDArmorySettings.RUNWAY_PROJECT || !BDArmorySettings.PWING_EDGE_LIFT) && !ctrlSrf) //if RunwayProject and part !controlsurface, remove lift/mass from edges to bring inline with stock boards
 						{
                             bool isLiftingSurface = (float)PWType.GetField("stockLiftCoefficient", BindingFlags.Public | BindingFlags.Instance).GetValue(module) > 0f;
                             float liftCoeff = (length * (width / 2)) / 3.52f;
@@ -215,7 +215,7 @@ namespace BDArmory.Utils
                             else
                                 PWType.GetField("aeroUIMass", BindingFlags.Public | BindingFlags.Instance).SetValue(module, liftCoeff / 5); //this modifies the IPartMassModifier, so the mass will also change along with the GUI                          
                         }
-                        if (part.name.Contains("Panel")) //if Josue's noLift PWings PR never gets folded in, here's an alternative using an MM'ed PWing structural panel part
+                        if (part.name.Contains("B9.Aero.Wing.Procedural.Panel")) //if Josue's noLift PWings PR never gets folded in, here's an alternative using an MM'ed PWing structural panel part
                         {
                             PWType.GetField("stockLiftCoefficient", BindingFlags.Public | BindingFlags.Instance).SetValue(module, 0); //adjust PWing GUI lift readout
                             PWType.GetField("aeroUIMass", BindingFlags.Public | BindingFlags.Instance).SetValue(module, ((length * (width / 2)) / 3.52f) / 12.5); //Struct panels lighter than wings      
