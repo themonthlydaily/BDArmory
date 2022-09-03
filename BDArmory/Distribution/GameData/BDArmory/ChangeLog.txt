@@ -1,4 +1,9 @@
-﻿v1.5.2.0
+﻿v1.5.2.1
+IMPROVEMENTS / FIXES
+- Fix a variety of exceptions in pre-1.11.1 KSP due to missing API functions.
+- Allow deploying to multiple KSP instances when compiling in Linux (add the extra KSP locations as lines in the ksp_dir.txt file).
+
+v1.5.2.0
 IMPROVEMENTS / FIXES
 - General:
 	- Fix packaging issue in recent releases that contain incorrect capitalisation of certain files and folders.

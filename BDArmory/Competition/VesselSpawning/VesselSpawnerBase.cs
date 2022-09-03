@@ -468,9 +468,9 @@ namespace BDArmory.Competition.VesselSpawning
                 SpawnUtils.CheckForRenamedVessels(vessels);
 
                 // Check that none of the vessels have lost parts.
-                if (vessels.Any(kvp => kvp.Value == null || SpawnUtils.PartCount(kvp.Value) != vesselPartCounts[kvp.Key]))
+                if (vessels.Any(kvp => kvp.Value == null || SpawnUtils.PartCount(kvp.Value) < vesselPartCounts[kvp.Key]))
                 {
-                    var offendingVessels = vessels.Where(kvp => kvp.Value == null || SpawnUtils.PartCount(kvp.Value) != vesselPartCounts[kvp.Key]);
+                    var offendingVessels = vessels.Where(kvp => kvp.Value == null || SpawnUtils.PartCount(kvp.Value) < vesselPartCounts[kvp.Key]);
                     LogMessage("Part-count of some vessels changed after spawning: " + string.Join(", ", offendingVessels.Select(kvp => kvp.Value == null ? "null" : kvp.Value.vesselName + $" ({vesselPartCounts[kvp.Key] - SpawnUtils.PartCount(kvp.Value)})")));
                     spawnFailureReason = SpawnFailureReason.VesselLostParts;
                     yield break;
