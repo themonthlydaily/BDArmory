@@ -855,7 +855,7 @@ namespace BDArmory.Damage
                                                                                                                       //edges contribute to HP when they shouldn't; suggestion was to use tank volume instead (which would also allow thickness to play a role in HP), try ProceduralWing.aeroStatVolume * 700 
                                 }
                             }
-                            if ((!BDArmorySettings.PWING_EDGE_LIFT || BDArmorySettings.RUNWAY_PROJECT) || part.name.Contains("B9_Aero_Wing_Procedural_Panel")) //method to make pwings balanced with stock. 
+                            if (!BDArmorySettings.PWING_EDGE_LIFT || BDArmorySettings.RUNWAY_PROJECT || part.name.Contains("Panel")) //method to make pwings balanced with stock. 
                             {
                                 hitpoints = -1;
                                 armorVolume = -1;
