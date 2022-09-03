@@ -1,4 +1,9 @@
-﻿
+﻿v1.5.2.1
+IMPROVEMENTS / FIXES
+- Fix a variety of exceptions in pre-1.11.1 KSP due to missing API functions.
+- Allow deploying to multiple KSP instances when compiling in Linux (add the extra KSP locations as lines in the ksp_dir.txt file).
+
+v1.5.2.0
 IMPROVEMENTS / FIXES
 - General:
 	- Fix packaging issue in recent releases that contain incorrect capitalisation of certain files and folders.
@@ -7,10 +12,10 @@ IMPROVEMENTS / FIXES
 	- Make wheels susceptible to bullets and explosions too.
 	- Fix off-centered arrow on inline radome texture  Git Issue #409
 	- Re-fix lead issue on Apple Silicon.
-	- Adds optional adjustable Logarithmic HP clamp, replacing the Proc PArt Max HP slider.
-	- Adds optional toggle to disable lift from colliderless PWing edges for better balance with stock wings/prevent pwing abuse
+	- Adds optional adjustable Logarithmic HP clamp, replacing the Proc Part Max HP slider.
+	- Adds optional toggle to disable lift from colliderless PWing edges for better balance with stock wings/prevent pwing abuse.
 	- Apply the gapless particle emitter option to 'DecalGaplessParticleEmitter's too.
-  - Add Attachnode to the Ordinance bay to fix issues with Breaking Ground Robotics.
+	- Add Attachnode to the Ordinance bay to fix issues with Breaking Ground Robotics.
 	- Adds debugging messages to assist with making custom weapons.
 	- Adds MM patch to add liftless Proc Structural Panel if B9 Pwings installed.
 	- Reduce frequency (hopefully to none) of null FX object pool entries by catching unloading events too and triggering OnJustAboutToBeDestroyed before recovering vessels.
@@ -19,13 +24,13 @@ IMPROVEMENTS / FIXES
 	- Fix exception when resetting colours in Team Icons.
 	- Prevent the kill timer from showing in the Loaded Vessel Switcher window for surface vessels.
 	- Updated German localization by EzBro.
-	- Adds Accuracy readout to the Weapon Debuggling telemetry.
+	- Adds Accuracy readout to the Weapon Debugging telemetry.
 	- Setting the Armor Type to 'None' now disables the armor thickness slider; fixes PAW issue in KSP 1.9.1 installs.
 - Competition:
 	- Fix exception in auto-resuming tournaments when SpawnProbe.craft isn't found.
 	- Fix incorrect Kill Steal attribution from 1v1 fights.
 	- Abort competition if a team leader still isn't ready to engage (airborne for pilot AI) by the time the start-competition-now timer runs out.
-	- Fixes AI/WM not attached to Root Part error messages on competition start when using combat seats as the root part.
+	- Fixes AI/WM not attached to Root Part warning messages on competition start when using combat seats as the root part in RWP.
 	- Add option to start competitions despite failures occuring. For tournaments, this only applies after the third attempt fails.
 - Spawning:
 	- Wait until after vessels are unpacked before reverting the spawn camera - fixes an exception with EVA kerbals and KSPCF.
