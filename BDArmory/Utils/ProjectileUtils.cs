@@ -853,17 +853,26 @@ namespace BDArmory.Utils
             if (building != null && building.IsIntact)
             {
                 float damageToBuilding = ((0.5f * (projMass * (currentVelocity.magnitude * currentVelocity.magnitude)))
-                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * DmgMult
+                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * DmgMult * BDArmorySettings.BALLISTIC_DMG_FACTOR
                             * 1e-4f);
                 damageToBuilding /= 8f;
-                building.AddDamage(damageToBuilding);
-                if (building.Damage > building.impactMomentumThreshold * 150)
+                /*bool damageHelper = false;
+                if (damageToBuilding < 100)
                 {
-                    building.Demolish();
+                    damageToBuilding += 100;
+                    damageHelper = true;
                 }
-                if (BDArmorySettings.DEBUG_WEAPONS)
+                */
+                building.AddDamage(damageToBuilding); //the AddDamage() function will only add damage if the value is >= 100
+                //if (damageHelper) building.AddDamage(-100);
+                if (building.Damage > building.impactMomentumThreshold * 150) //I suspect the building demolishes itself when damage exceeds a certain amount before this can get called...
+                {
+                    if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ProjectileUtils]: Building demolished due to ballistic damage! Dmg to building: " + building.Damage);
+                    building.Demolish(); //no. this is not getting called; building destructs from some function inside DestructableBuilding before this condition is reached
+                }
+                if (BDArmorySettings.DEBUG_DAMAGE)
                     Debug.Log("[BDArmory.ProjectileUtils]: Ballistic hit destructible building! Hitpoints Applied: " + Mathf.Round(damageToBuilding) +
-                             ", Building Damage : " + Mathf.Round(building.Damage) +
+                             ", Building Damage : " + building.Damage +
                              " Building Threshold : " + building.impactMomentumThreshold);
 
                 return true;

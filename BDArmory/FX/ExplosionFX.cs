@@ -248,13 +248,7 @@ namespace BDArmory.FX
                             {
                                 DestructibleBuilding building = SChit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
 
-                                if (building != null)
-                                {
-                                    if (!explosionEventsBuildingAdded.Contains(building))
-                                    {
-                                        ProcessBuildingEvent(building, explosionEventsPreProcessing, explosionEventsBuildingAdded);
-                                    }
-                                }
+                                ProjectileUtils.CheckBuildingHit(SChit, Power * 0.0555f, Direction.normalized * 4000f, 1);
                             }
                         }
                     }
@@ -273,8 +267,7 @@ namespace BDArmory.FX
                     if (hitCollidersEnu.Current == null) continue;
 
                     Part partHit = hitCollidersEnu.Current.GetComponentInParent<Part>();
-                    if (partHit == null) continue;
-
+                    
                     if (partHit != null)
                     {
                         if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
@@ -310,12 +303,30 @@ namespace BDArmory.FX
                     else
                     {
                         DestructibleBuilding building = hitCollidersEnu.Current.GetComponentInParent<DestructibleBuilding>();
+                        Debug.Log("[BDArmory.ExplosionFX]: Blast hit building " + building.name + ", processing...");
 
                         if (building != null)
                         {
                             if (!explosionEventsBuildingAdded.Contains(building))
                             {
-                                ProcessBuildingEvent(building, explosionEventsPreProcessing, explosionEventsBuildingAdded);
+                                //ProcessBuildingEvent(building, explosionEventsPreProcessing, explosionEventsBuildingAdded);
+                                Debug.Log("[BDArmory.ExplosionFX]: haven't processed this structure, adding");
+                                Ray ray = new Ray(Position, building.transform.position - Position);
+                                var distance = Vector3.Distance(building.transform.position, Position);
+                                RaycastHit rayHit;
+                                if (Physics.Raycast(ray, out rayHit, Range * 2, explosionLayerMask))
+                                {
+                                    DestructibleBuilding destructibleBuilding = rayHit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
+                                    Debug.Log("[BDArmory.ExplosionFX]: ray distance to building from detonation point is " + distance);
+                                    distance = Vector3.Distance(Position, rayHit.point);
+                                    if (destructibleBuilding != null && destructibleBuilding.Equals(building) && building.IsIntact)
+                                    //if (building.IsIntact)
+                                    {
+                                        Debug.Log("[BDArmory.ExplosionFX]: building is intact, adding to queue");
+                                        explosionEventsPreProcessing.Add(new BuildingBlastHitEvent() { Distance = distance, Building = building, TimeToImpact = distance / ExplosionVelocity });
+                                        explosionEventsBuildingAdded.Add(building);
+                                    }
+                                }
                             }
                         }
                     }
@@ -372,6 +383,7 @@ namespace BDArmory.FX
                     var distance = Vector3.Distance(Position, rayHit.point);
                     eventList.Add(new BuildingBlastHitEvent() { Distance = Vector3.Distance(Position, rayHit.point), Building = building, TimeToImpact = distance / ExplosionVelocity });
                     buildingAdded.Add(building);
+                    explosionEventsBuildingAdded.Add(building);
                 }
             }
         }
@@ -631,10 +643,26 @@ namespace BDArmory.FX
             DestructibleBuilding building = eventToExecute.Building;
             building.damageDecay = 600f;
 
-            if (building)
+            if(building && building.IsIntact)
             {
                 var distanceFactor = Mathf.Clamp01((Range - eventToExecute.Distance) / Range);
-                float damageToBuilding = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_BALLISTIC_NEW * Power * distanceFactor;
+                float blastMod = 1;
+                switch (ExplosionSource)
+                {
+                    case ExplosionSourceType.Bullet:
+                        blastMod = BDArmorySettings.EXP_DMG_MOD_BALLISTIC_NEW;
+                        break;
+                    case ExplosionSourceType.Rocket:
+                        blastMod = BDArmorySettings.EXP_DMG_MOD_ROCKET;
+                        break;
+                    case ExplosionSourceType.Missile:
+                        blastMod = BDArmorySettings.EXP_DMG_MOD_MISSILE;
+                        break;
+                    case ExplosionSourceType.BattleDamage:
+                        blastMod = BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE;
+                        break;
+                }
+                float damageToBuilding = (BDArmorySettings.DMG_MULTIPLIER / 100) * blastMod * Power * distanceFactor;
 
                 damageToBuilding *= 2f;
 
@@ -642,12 +670,13 @@ namespace BDArmory.FX
 
                 if (building.Damage > building.impactMomentumThreshold)
                 {
+                    if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ExplosionFX]: Building demolished due to Explosive damage! Dmg to building: " + building.Damage);
                     building.Demolish();
                 }
                 if (BDArmorySettings.DEBUG_DAMAGE)
                 {
                     Debug.Log("[BDArmory.ExplosionFX]: Explosion hit destructible building! Hitpoints Applied: " + Mathf.Round(damageToBuilding) +
-                             ", Building Damage : " + Mathf.Round(building.Damage) +
+                             ", Building Damage : " + building.Damage +
                              " Building Threshold : " + building.impactMomentumThreshold);
                 }
             }
