@@ -93,7 +93,7 @@ namespace BDArmory.Extensions
         /// <returns></returns>
         public static Vector3 GetBounds(this Vessel vessel, bool useBounds = true)
         {
-            if (vessel is null || vessel.transform is null) return Vector3.zero;
+            if (vessel is null || vessel.packed || !vessel.loaded) return Vector3.zero;
             var vesselRot = vessel.transform.rotation;
             vessel.SetRotation(Quaternion.identity);
             // Vector3 size = ShipConstruction.CalculateCraftSize(vessel.Parts, vessel.rootPart); //x: Width, y: Length, z: Height
