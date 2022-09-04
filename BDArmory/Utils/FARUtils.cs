@@ -231,6 +231,43 @@ namespace BDArmory.Utils
             return -1;
         }
 
+        public static float ResetPWing(Part part)
+        {
+            if (!hasPwingModule)
+            {
+                if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FARUtils]: hasPwing check failed!");
+                return 0;
+            }
+
+            foreach (var module in part.Modules)
+            {
+                if (module.GetType() == PWType || module.GetType().IsSubclassOf(PWType))
+                {
+                    if (module.GetType() == PWType)
+                    {
+                        bool ctrlSrf = (bool)PWType.GetField("isCtrlSrf", BindingFlags.Public | BindingFlags.Instance).GetValue(module);
+                        bool WingctrlSrf = (bool)PWType.GetField("isWingAsCtrlSrf", BindingFlags.Public | BindingFlags.Instance).GetValue(module);
+
+                        if (ctrlSrf) return 0; //control surfaces don't have any lift modification to begin with
+                        double originalLift = (double)PWType.GetField("aeroStatSurfaceArea", BindingFlags.Public | BindingFlags.Instance).GetValue(module);
+                        originalLift /= 3.52f; 
+
+                        bool isLiftingSurface = (float)PWType.GetField("stockLiftCoefficient", BindingFlags.Public | BindingFlags.Instance).GetValue(module) > 0f;
+
+                        PWType.GetField("stockLiftCoefficient", BindingFlags.Public | BindingFlags.Instance).SetValue(module, isLiftingSurface ? (float)originalLift : 0f); //restore lift value/ correct GUI readout
+                        part.Modules.GetModule<ModuleLiftingSurface>().deflectionLiftCoeff = (float)Math.Round((float)originalLift, 2);
+                        if (!WingctrlSrf)
+                            PWType.GetField("aeroUIMass", BindingFlags.Public | BindingFlags.Instance).SetValue(module, (float)originalLift / 10);
+                        else
+                            PWType.GetField("aeroUIMass", BindingFlags.Public | BindingFlags.Instance).SetValue(module, (float)originalLift / 5);
+                    }
+                }
+            }
+            
+            if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FARUtils]: Pwing module not found!");
+            return 0;
+        }
+
         public static float GetPWingArea(Part part)
         {
             if (!hasPwingModule) return -1;
