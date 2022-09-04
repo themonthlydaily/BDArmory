@@ -893,11 +893,11 @@ namespace BDArmory.Damage
                         }
                         if ((BDArmorySettings.RUNWAY_PROJECT || BDArmorySettings.HP_THRESHOLD >= 100) && hitpoints > BDArmorySettings.HP_THRESHOLD) //If RunwayProject or Clamped HP setting, clamp HP
                         {
-                            var scale = BDArmorySettings.HP_THRESHOLD / (Mathf.Exp(1) - 1);
-                            hitpoints = Mathf.Min(hitpoints, BDArmorySettings.HP_THRESHOLD >= 100 ? BDArmorySettings.HP_THRESHOLD : 2000 * Mathf.Log(hitpoints / scale + 1)); //use default of 2K for RP if slider set to unclamped
+                            var scale = (BDArmorySettings.HP_THRESHOLD >= 100 ? BDArmorySettings.HP_THRESHOLD : 2000f) / (Mathf.Exp(1) - 1);
+                            hitpoints = Mathf.Min(hitpoints, (BDArmorySettings.HP_THRESHOLD >= 100 ? BDArmorySettings.HP_THRESHOLD : 2000f) * Mathf.Log(hitpoints / scale + 1)); //use default of 2K for RP if slider set to unclamped
                         }
 
-                        switch (HullTypeNum)
+                            switch (HullTypeNum)
                         {
                             case 1:
                                 hitpoints /= 4;
