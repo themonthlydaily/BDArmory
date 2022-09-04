@@ -369,7 +369,7 @@ namespace BDArmory.Modules
                     crew.ResetInventory(false); // Reset the inventory to just a chute.
                     break;
             }
-            if (p.isKerbalSeat()) // We were given the seat instead of the EVA kerbal.
+            if (p.IsKerbalSeat()) // We were given the seat instead of the EVA kerbal.
             { p = p.GetComponent<KerbalSeat>().Occupant; }
             part = p;
             if (p.IsKerbalEVA())
@@ -416,11 +416,14 @@ namespace BDArmory.Modules
             if (chute != null)
                 chute.deploymentState = ModuleEvaChute.deploymentStates.STOWED; // Make sure the chute is stowed.
             if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // Introduced in 1.11
-            {
+                ConfigureKerbalEVA_1_11(kerbalEVA);
+        }
+
+        void ConfigureKerbalEVA_1_11(KerbalEVA kerbalEVA)
+        {
                 DisableConstructionMode(kerbalEVA);
                 if (BDArmorySettings.KERBAL_SAFETY_INVENTORY > 0) kerbalEVA.ModuleInventoryPartReference.SetInventoryDefaults();
                 if (BDArmorySettings.KERBAL_SAFETY_INVENTORY == 2) RemoveJetpack(kerbalEVA);
-            }
         }
 
         public void ReconfigureInventory()

@@ -503,7 +503,8 @@ namespace BDArmory.FX
             transform.rotation = Quaternion.FromToRotation(Vector3.up, -FlightGlobals.getGeeForceAtPosition(transform.position));
             parentPart.OnJustAboutToDie += OnParentDestroy;
             parentPart.OnJustAboutToBeDestroyed += OnParentDestroy;
-            GameEvents.onVesselUnloaded.Add(OnVesselUnloaded); // Catch unloading events too.
+            if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // onVesselUnloaded event introduced in 1.11
+                OnVesselUnloaded_1_11(true); // Catch unloading events too.
             SourceVessel = sourcevessel;
             gameObject.SetActive(true);
         }
@@ -531,6 +532,14 @@ namespace BDArmory.FX
                 Deactivate(); // Sometimes (mostly when unloading a vessel) the parent becomes null without triggering OnParentDestroy.
             }
         }
+    
+        void OnVesselUnloaded_1_11(bool addRemove) // onVesselUnloaded event introduced in 1.11
+        {
+            if (addRemove)
+                GameEvents.onVesselUnloaded.Add(OnVesselUnloaded);
+            else
+                GameEvents.onVesselUnloaded.Remove(OnVesselUnloaded);
+        }
 
         void Deactivate()
         {
@@ -541,7 +550,8 @@ namespace BDArmory.FX
                 transform.parent = null; // Detach ourselves from the parent transform so we don't get destroyed when it does.
                 gameObject.SetActive(false);
             }
-            GameEvents.onVesselUnloaded.Remove(OnVesselUnloaded);
+            if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // onVesselUnloaded event introduced in 1.11
+                OnVesselUnloaded_1_11(false);
         }
 
         void OnDestroy() // This shouldn't be happening except on exiting KSP, but sometimes they get destroyed instead of disabled!
@@ -558,7 +568,8 @@ namespace BDArmory.FX
                         EffectBehaviour.RemoveParticleEmitter(pe);
                     }
             }
-            GameEvents.onVesselUnloaded.Remove(OnVesselUnloaded);
+            if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // onVesselUnloaded event introduced in 1.11
+                OnVesselUnloaded_1_11(false);
         }
     }
 }

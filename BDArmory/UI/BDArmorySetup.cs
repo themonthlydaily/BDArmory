@@ -2761,6 +2761,9 @@ namespace BDArmory.UI
                         GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_ExplosiveBattleDamageMultiplier")}:  ({BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE})", leftLabel);
                         BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE = Mathf.Round((GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE * 10f, 0f, 20f))) / 10f;
 
+                        GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_BuildingDamageMultiplier")}:  ({BDArmorySettings.BUILDING_DMG_MULTIPLIER})", leftLabel);
+                        BDArmorySettings.BUILDING_DMG_MULTIPLIER = BDAMath.RoundToUnit((GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.BUILDING_DMG_MULTIPLIER, 0f, 10f)), 0.1f);
+
                         GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_SecondaryEffectDuration")}:  ({BDArmorySettings.WEAPON_FX_DURATION})", leftLabel);
                         BDArmorySettings.WEAPON_FX_DURATION = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.WEAPON_FX_DURATION, 5f, 20f));
 
@@ -2792,7 +2795,7 @@ namespace BDArmory.UI
                 GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_Max_PWing_HP")}:  {(BDArmorySettings.HP_THRESHOLD >= 100 ? (BDArmorySettings.HP_THRESHOLD.ToString()) : "Unclamped")}", leftLabel); // HP Scaling Threshold
                 if (BDArmorySettings.HP_THRESHOLD != (BDArmorySettings.HP_THRESHOLD = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.HP_THRESHOLD, 0, 10000), 100)))
                 {
-                    if (EditorLogic.fetch is not null && EditorLogic.fetch.ship is not null) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+                    if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch.ship is not null) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
                 }
 
                 line += 0.5f;
@@ -3079,7 +3082,10 @@ namespace BDArmory.UI
                 BDArmorySettings.WAYPOINTS_MODE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.WAYPOINTS_MODE, Localizer.Format("#LOC_BDArmory_Settings_WaypointsMode"));
                 if (BDArmorySettings.ADVANDED_USER_SETTINGS)
                 {
-                    BDArmorySettings.RUNWAY_PROJECT = GUI.Toggle(SLeftRect(++line), BDArmorySettings.RUNWAY_PROJECT, Localizer.Format("#LOC_BDArmory_Settings_RunwayProject"));//Runway Project
+                    if (BDArmorySettings.RUNWAY_PROJECT != (BDArmorySettings.RUNWAY_PROJECT = GUI.Toggle(SLeftRect(++line), BDArmorySettings.RUNWAY_PROJECT, Localizer.Format("#LOC_BDArmory_Settings_RunwayProject"))))//Runway Project
+                    {
+                        if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch.ship is not null) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+                    }
 
                     if (BDArmorySettings.RUNWAY_PROJECT)
                     {

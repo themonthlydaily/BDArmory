@@ -36,7 +36,8 @@ namespace BDArmory.FX
             transform.rotation = Quaternion.FromToRotation(Vector3.forward, hit.normal);
             parentPart.OnJustAboutToDie += OnParentDestroy;
             parentPart.OnJustAboutToBeDestroyed += OnParentDestroy;
-            GameEvents.onVesselUnloaded.Add(OnVesselUnloaded); // Catch unloading events too.
+            if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // onVesselUnloaded event introduced in 1.11
+                OnVesselUnloaded_1_11(true); // Catch unloading events too.
             gameObject.SetActive(true);
         }
         public void SetColor(Color color)
@@ -77,6 +78,14 @@ namespace BDArmory.FX
             }
         }
 
+        void OnVesselUnloaded_1_11(bool addRemove) // onVesselUnloaded event introduced in 1.11
+        {
+            if (addRemove)
+                GameEvents.onVesselUnloaded.Add(OnVesselUnloaded);
+            else
+                GameEvents.onVesselUnloaded.Remove(OnVesselUnloaded);
+        }
+
         void Deactivate()
         {
             if (gameObject is not null && gameObject.activeSelf) // Deactivate even if a parent is already inactive.
@@ -85,13 +94,15 @@ namespace BDArmory.FX
                 transform.parent = null;
                 gameObject.SetActive(false);
             }
-            GameEvents.onVesselUnloaded.Remove(OnVesselUnloaded);
+            if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // onVesselUnloaded event introduced in 1.11
+                OnVesselUnloaded_1_11(false);
         }
 
         public void OnDestroy() // This shouldn't be happening except on exiting KSP, but sometimes they get destroyed instead of disabled!
         {
             // if (HighLogic.LoadedSceneIsFlight) Debug.LogError($"[BDArmory.BulletHitFX]: BulletHitFX on {parentPartName} ({parentVesselName}) was destroyed!");
-            GameEvents.onVesselUnloaded.Remove(OnVesselUnloaded);
+            if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // onVesselUnloaded event introduced in 1.11
+                OnVesselUnloaded_1_11(false);
         }
     }
 
