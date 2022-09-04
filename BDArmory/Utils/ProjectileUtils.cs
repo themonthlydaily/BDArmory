@@ -863,7 +863,10 @@ namespace BDArmory.Utils
                     damageHelper = true;
                 }
                 */
-                building.AddDamage(damageToBuilding); //the AddDamage() function will only add damage if the value is >= 100
+                damageToBuilding *= BDArmorySettings.BUILDING_DMG_MULTIPLIER; //this isn't going to do anything, unless shooting at buildings with really big shells
+                building.AddDamage(damageToBuilding);
+                if (building.Damage > building.impactMomentumThreshold * 150)
+                    building.AddDamage(damageToBuilding); //the AddDamage() function will only add damage if the value is >= 100
                 //if (damageHelper) building.AddDamage(-100);
                 if (building.Damage > building.impactMomentumThreshold * 150) //I suspect the building demolishes itself when damage exceeds a certain amount before this can get called...
                 {
