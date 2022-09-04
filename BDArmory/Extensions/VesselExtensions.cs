@@ -80,7 +80,9 @@ namespace BDArmory.Extensions
             else
             {
                 var radius = Vector3.ProjectOnPlane(vessel.vesselTransform.up * bounds.y + vessel.vesselTransform.right * bounds.x + vessel.vesselTransform.forward * bounds.z, fireTransform).magnitude / 2f;
+#if DEBUG
                 if (radius < bounds.x / 2f && radius < bounds.y / 2f && radius < bounds.z / 2f) Debug.LogWarning($"DEBUG Radius {radius} of {vessel.vesselName} is less than half its minimum bounds {bounds}");
+#endif
                 return radius;
             }
         }
@@ -96,7 +98,6 @@ namespace BDArmory.Extensions
             if (vessel is null || vessel.packed || !vessel.loaded) return Vector3.zero;
             var vesselRot = vessel.transform.rotation;
             vessel.SetRotation(Quaternion.identity);
-            // Vector3 size = ShipConstruction.CalculateCraftSize(vessel.Parts, vessel.rootPart); //x: Width, y: Length, z: Height
 
             Vector3 size = Vector3.zero;
             if (!useBounds)
@@ -111,8 +112,6 @@ namespace BDArmory.Extensions
                     while (part.MoveNext())
                     {
                         var partBound = part.Current.gameObject.GetRendererBoundsWithoutParticles();
-                        // var partBoundMin = partBound.min + partBound.center - rootBound.center;
-                        // var partBoundMax = partBound.max + partBound.center - rootBound.center;
                         min.x = Mathf.Min(min.x, partBound.min.x);
                         min.y = Mathf.Min(min.y, partBound.min.y);
                         min.z = Mathf.Min(min.z, partBound.min.z);
