@@ -484,6 +484,18 @@ namespace BDArmory.FX
                         var partHP = partHit.Damage();
                         if (ProjectileUtils.IsArmorPart(partHit)) partHP = 100;
                         var partArmour = partHit.GetArmorThickness();
+                        var Armor = part.FindModuleImplementing<HitpointTracker>();
+                        if (Armor != null)
+                        {
+                            if (warheadType == WarheadTypes.ShapedCharge)
+                            {
+                                partArmour *= Armor.HEATEquiv;
+                            }
+                            else
+                            {
+                                partArmour *= Armor.HEEquiv;
+                            }
+                        }
                         var RA = partHit.FindModuleImplementing<ModuleReactiveArmor>();
                         if (RA != null)
                         {
@@ -754,8 +766,8 @@ namespace BDArmory.FX
                             float anglemultiplier = (float)Math.Cos(Math.PI * HitAngle / 180.0);
                             float thickness = ProjectileUtils.CalculateThickness(part, anglemultiplier);
                             if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.ExplosiveFX]: Part " + part.name + " hit by " + warheadType + "; " + HitAngle + " deg hit, armor thickness: " + thickness);
-                            thickness += eventToExecute.IntermediateParts.Select(p => p.Item3).Sum(); //add armor thickness of intervening parts, if any
-                            if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.ExplosiveFX]: Effective Armor thickness from intermediate parts: " + thickness);
+                            float thicknessBetween = eventToExecute.IntermediateParts.Select(p => p.Item3).Sum(); //add armor thickness of intervening parts, if any
+                            if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.ExplosiveFX]: Effective Armor thickness from intermediate parts: " + thicknessBetween);
                             float penetration = 0;
                             var Armor = part.FindModuleImplementing<HitpointTracker>();
                             if (Armor != null)
@@ -765,15 +777,16 @@ namespace BDArmory.FX
                                 float Strength = Armor.Strength;
                                 float safeTemp = Armor.SafeUseTemp;
                                 float Density = Armor.Density;
-                                float vFactor = Armor.vFactor;
-                                float muParam1 = Armor.muParam1;
-                                float muParam2 = Armor.muParam2;
-                                float muParam3 = Armor.muParam3;
+                                float HEATEquiv = Armor.HEATEquiv;
+                                //float vFactor = Armor.vFactor;
+                                //float muParam1 = Armor.muParam1;
+                                //float muParam2 = Armor.muParam2;
+                                //float muParam3 = Armor.muParam3;
                                 int type = (int)Armor.ArmorTypeNum;
 
                                 //penetration = ProjectileUtils.CalculatePenetration(Caliber, Caliber, warheadType == WarheadTypes.ShapedCharge ? Power / 2 : ProjMass, ExplosionVelocity, Ductility, Density, Strength, thickness, 1);
-                                penetration = ProjectileUtils.CalculatePenetration(Caliber, warheadType == WarheadTypes.ShapedCharge ? 4000f : ExplosionVelocity, warheadType == WarheadTypes.ShapedCharge ? Power * 0.0555f : ProjMass, 1f, Strength, vFactor, muParam1, muParam2, muParam3);
-                                penetrationFactor = ProjectileUtils.CalculateArmorPenetration(part, penetration, thickness);
+                                penetration = ProjectileUtils.CalculatePenetration(Caliber, warheadType == WarheadTypes.ShapedCharge ? 5000f : ExplosionVelocity, warheadType == WarheadTypes.ShapedCharge ? Power * 0.0555f : ProjMass, 1f, 940, 0.00000094776185184f, 0.6560606203f, 1.201909309f, 1.777919321f);
+                                penetrationFactor = ProjectileUtils.CalculateArmorPenetration(part, penetration, thickness*HEATEquiv+thicknessBetween);
 
                                 if (RA != null)
                                 {
@@ -791,7 +804,7 @@ namespace BDArmory.FX
                                             return;
                                         }
                                     }
-                                    penetrationFactor = ProjectileUtils.CalculateArmorPenetration(part, penetration, thickness); //RA stop round?
+                                    penetrationFactor = ProjectileUtils.CalculateArmorPenetration(part, penetration, thickness * HEATEquiv + thicknessBetween); //RA stop round?
                                 }
                                 else ProjectileUtils.CalculateArmorDamage(part, penetrationFactor, Caliber, hardness, Ductility, Density, ExplosionVelocity, SourceVesselName, ExplosionSourceType.Missile, type);
                             }
@@ -880,6 +893,11 @@ namespace BDArmory.FX
                 float HitAngle = Vector3.Angle((eventToExecute.HitPoint + rb.velocity * TimeIndex - Position).normalized, -eventToExecute.Hit.normal);
                 float anglemultiplier = (float)Math.Cos(Math.PI * HitAngle / 180.0);
                 float thickness = ProjectileUtils.CalculateThickness(part, anglemultiplier);
+                var Armor = part.FindModuleImplementing<HitpointTracker>();
+                if (Armor != null)
+                {
+                    thickness *= Armor.HEEquiv;
+                }
                 thickness += eventToExecute.IntermediateParts.Select(p => p.Item3).Sum(); //add armor thickness of intervening parts, if any
                 if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.ExplosiveFX]: Part " + part.name + " hit by shrapnel; " + HitAngle + " deg hit, cumulative armor thickness: " + thickness);
 
