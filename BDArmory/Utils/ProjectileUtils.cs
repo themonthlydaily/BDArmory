@@ -842,8 +842,8 @@ namespace BDArmory.Utils
             try
             {
                 building = hit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
-                if (building != null)
-                    building.damageDecay = 600f;
+                //if (building != null)
+                //   building.damageDecay = 600f; //check if new method is still subject to building regen
             }
             catch (Exception e)
             {
@@ -856,27 +856,22 @@ namespace BDArmory.Utils
                             * (BDArmorySettings.DMG_MULTIPLIER / 100) * DmgMult * BDArmorySettings.BALLISTIC_DMG_FACTOR
                             * 1e-4f);
                 damageToBuilding /= 8f;
-                /*bool damageHelper = false;
-                if (damageToBuilding < 100)
-                {
-                    damageToBuilding += 100;
-                    damageHelper = true;
-                }
-                */
-                damageToBuilding *= BDArmorySettings.BUILDING_DMG_MULTIPLIER; //this isn't going to do anything, unless shooting at buildings with really big shells
-                building.AddDamage(damageToBuilding);
-                if (building.Damage > building.impactMomentumThreshold * 150)
-                    building.AddDamage(damageToBuilding); //the AddDamage() function will only add damage if the value is >= 100
+                damageToBuilding *= BDArmorySettings.BUILDING_DMG_MULTIPLIER; 
+                building.FacilityDamageFraction += damageToBuilding;
+                //building.AddDamage(damageToBuilding);
+                //if (building.Damage > building.impactMomentumThreshold * 150)
+                    //building.AddDamage(damageToBuilding); //the AddDamage() function will only add damage if the value is >= 100
                 //if (damageHelper) building.AddDamage(-100);
-                if (building.Damage > building.impactMomentumThreshold * 150) //I suspect the building demolishes itself when damage exceeds a certain amount before this can get called...
+                //if (building.Damage > building.impactMomentumThreshold * 150) //I suspect the building demolishes itself when damage exceeds a certain amount before this can get called...
+                if (building.FacilityDamageFraction > (building.impactMomentumThreshold * 2))
                 {
                     if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ProjectileUtils]: Building demolished due to ballistic damage! Dmg to building: " + building.Damage);
-                    building.Demolish(); //no. this is not getting called; building destructs from some function inside DestructableBuilding before this condition is reached
+                    building.Demolish();
                 }
                 if (BDArmorySettings.DEBUG_DAMAGE)
-                    Debug.Log("[BDArmory.ProjectileUtils]: Ballistic hit destructible building! Hitpoints Applied: " + Mathf.Round(damageToBuilding) +
-                             ", Building Damage : " + building.Damage +
-                             " Building Threshold : " + building.impactMomentumThreshold);
+                    Debug.Log("[BDArmory.ProjectileUtils]: Ballistic hit destructible building " + building.name +"! Hitpoints Applied: " + Mathf.Round(damageToBuilding) +
+                             ", Building Damage : " + building.FacilityDamageFraction +
+                             " Building Threshold : " + building.impactMomentumThreshold * 2);
 
                 return true;
             }
