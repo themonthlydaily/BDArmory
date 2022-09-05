@@ -133,6 +133,11 @@ namespace BDArmory.Damage
         [KSPField(isPersistant = true)]
         public float muParam3S;
 
+        [KSPField(isPersistant = true)]
+        public float HEEquiv;
+        [KSPField(isPersistant = true)]
+        public float HEATEquiv;
+
         private bool startsArmored = false;
         public bool ArmorPanel = false;
 
@@ -1163,6 +1168,8 @@ namespace BDArmory.Damage
                 muParam1S = armorInfo.muParam1S;
                 muParam2S = armorInfo.muParam2S;
                 muParam3S = armorInfo.muParam3S;
+                HEEquiv = armorInfo.HEEquiv;
+                HEATEquiv = armorInfo.HEATEquiv;
 
                 SetArmor();
             }
