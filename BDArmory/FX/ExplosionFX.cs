@@ -246,10 +246,13 @@ namespace BDArmory.FX
                             }
                             else
                             {
-                                DestructibleBuilding building = SChit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
-                                if (building != null)
+                                if (!BDArmorySettings.PAINTBALL_MODE)
                                 {
-                                    ProjectileUtils.CheckBuildingHit(SChit, Power * 0.0555f, Direction.normalized * 4000f, 1);
+                                    DestructibleBuilding building = SChit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
+                                    if (building != null)
+                                    {
+                                        ProjectileUtils.CheckBuildingHit(SChit, Power * 0.0555f, Direction.normalized * 4000f, 1);
+                                    }
                                 }
                             }
                         }
@@ -646,7 +649,7 @@ namespace BDArmory.FX
             DestructibleBuilding building = eventToExecute.Building;
             //building.damageDecay = 600f;
 
-            if(building && building.IsIntact)
+            if(building && building.IsIntact && !BDArmorySettings.PAINTBALL_MODE)
             {
                 var distanceFactor = Mathf.Clamp01((Range - eventToExecute.Distance) / Range);
                 float blastMod = 1;
@@ -670,7 +673,7 @@ namespace BDArmory.FX
                 damageToBuilding *= BDArmorySettings.BUILDING_DMG_MULTIPLIER;
                 //building.AddDamage(damageToBuilding); 
                 building.FacilityDamageFraction += damageToBuilding;
-
+                //based on testing, I think facilityDamageFraction starts at 100, and demolisheds the building if it hits 0 - which means it will work great as a HP value in the other direction
                 if (building.FacilityDamageFraction > building.impactMomentumThreshold * 2)
                 {
                     if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ExplosionFX]: Building " + building.name + " demolished due to Explosive damage! Dmg to building: " + building.Damage);

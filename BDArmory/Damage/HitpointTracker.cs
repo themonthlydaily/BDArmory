@@ -713,7 +713,8 @@ namespace BDArmory.Damage
                             if (density > 1e5f || density < 10)
                             {
                                 if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} extreme density detected: {density}! Trying alternate approach based on partSize.");
-                                structuralVolume = (partSize.x * partSize.y + partSize.x * partSize.z + partSize.y * partSize.z) * 2f * sizeAdjust * Mathf.PI / 6f * 0.1f; // Box area * sphere/cube ratio * 10cm. We use sphere/cube ratio to get similar results as part.GetAverageBoundSize().
+                                //structuralVolume = (partSize.x * partSize.y + partSize.x * partSize.z + partSize.y * partSize.z) * 2f * sizeAdjust * Mathf.PI / 6f * 0.1f; // Box area * sphere/cube ratio * 10cm. We use sphere/cube ratio to get similar results as part.GetAverageBoundSize().
+                                structuralVolume = armorVolume * Mathf.PI / 6f * 0.1f; //part bounds change between editor and flight, so use existing persistant size value
                                 density = (partMass * 1000f) / structuralVolume;
                                 if (density > 1e5f || density < 10)
                                 {

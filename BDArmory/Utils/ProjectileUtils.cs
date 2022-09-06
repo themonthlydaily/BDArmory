@@ -860,7 +860,7 @@ namespace BDArmory.Utils
                 building.FacilityDamageFraction += damageToBuilding;
                 //building.AddDamage(damageToBuilding);
                 //if (building.Damage > building.impactMomentumThreshold * 150)
-                    //building.AddDamage(damageToBuilding); //the AddDamage() function will only add damage if the value is >= 100
+                //building.AddDamage(damageToBuilding); //the AddDamage() function will only add damage if the value is >= 100
                 //if (damageHelper) building.AddDamage(-100);
                 //if (building.Damage > building.impactMomentumThreshold * 150) //I suspect the building demolishes itself when damage exceeds a certain amount before this can get called...
                 if (building.FacilityDamageFraction > (building.impactMomentumThreshold * 2))
