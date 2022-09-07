@@ -3,8 +3,8 @@
 // This will only be live in debug builds
 using System;
 using UnityEngine;
-using BDArmory.Core;
-using BDArmory.Misc;
+
+using BDArmory.Settings;
 
 namespace BDArmory.UI
 {
@@ -21,13 +21,15 @@ namespace BDArmory.UI
 
         void OnGUI()
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DEBUG_TELEMETRY)
             {
                 var frameVelocity = Krakensbane.GetFrameVelocityV3f();
                 //var rFrameVelocity = FlightGlobals.currentMainBody.getRFrmVel(Vector3d.zero);
                 //var rFrameRotation = rFrameVelocity - FlightGlobals.currentMainBody.getRFrmVel(VectorUtils.GetUpDirection(Vector3.zero));
-                GUI.Label(new Rect(10, 60, 400, 400),
+                GUI.Label(new Rect(10, 150, 400, 400),
                     $"Frame velocity: {frameVelocity.magnitude} ({frameVelocity}){Environment.NewLine}"
+                    + $"FO offset: {(Vector3)FloatingOrigin.Offset:G3}{Environment.NewLine}"
+                    + $"N-Kb offset: {(Vector3)FloatingOrigin.OffsetNonKrakensbane:G3}{Environment.NewLine}"
                     + $"Last offset {Time.time - lastShift}s ago{Environment.NewLine}"
                     + $"Local vessel speed: {FlightGlobals.ActiveVessel.rb_velocity.magnitude}, ({FlightGlobals.ActiveVessel.rb_velocity}){Environment.NewLine}"
                     //+ $"Reference frame speed: {rFrameVelocity}{Environment.NewLine}"

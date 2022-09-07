@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
-using BDArmory.Modules;
+
+using BDArmory.Utils;
 
 namespace BDArmory.Control
 {
@@ -196,6 +197,8 @@ namespace BDArmory.Control
                 return false;
             }
             return engine.primaryEngineID == "Dry" && engine.secondaryEngineID == "Wet";
+            //presumably there's a reason this is looking specifically for MMEs with "Wet" and "Dry" as the IDs instead of !String.IsNullOrEmpty(engine.primaryEngineID). To permit only properly configured Jets?
+
         }
 
         float GravAccel()
@@ -254,6 +257,55 @@ namespace BDArmory.Control
                 zeroPoint = (zeroPoint + lastThrottle * zeroMult) * (1 - zeroMult);
                 if (preventNegativeZeroPoint && zeroPoint < 0) zeroPoint = 0;
                 s.wheelThrottle = lastThrottle;
+                vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, throttle < -5f);
+            }
+        }
+    }
+
+    public class BDVTOLSpeedControl : MonoBehaviour
+    {
+        public float targetAltitude;
+        public Vessel vessel;
+        public bool preventNegativeZeroPoint = false;
+
+        private float altIntegral;
+        public float zeroPoint { get; private set; }
+
+        private const float Kp = 0.5f;
+        private const float Kd = 0.55f;
+        private const float Ki = 0.03f;
+
+
+        public void Activate()
+        {
+            vessel.OnFlyByWire -= AltitudeControl;
+            vessel.OnFlyByWire += AltitudeControl;
+            altIntegral = 0;
+        }
+
+        public void Deactivate()
+        {
+            vessel.OnFlyByWire -= AltitudeControl;
+        }
+
+        void AltitudeControl(FlightCtrlState s)
+        {
+
+            if (targetAltitude == 0)
+            {
+                vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
+                s.mainThrottle = 0;
+            }
+            else
+            {
+                float altError = (targetAltitude - (float)vessel.radarAltitude);
+                float altP = Kp * (targetAltitude - (float)vessel.radarAltitude);
+                float altD = Kd * (float)vessel.verticalSpeed;
+                altIntegral = Ki * Mathf.Clamp(altIntegral + altError * Time.deltaTime, -1f, 1f);
+                
+                float throttle = altP + altIntegral - altD;
+                s.mainThrottle = Mathf.Clamp01(throttle);
+
                 vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, throttle < -5f);
             }
         }

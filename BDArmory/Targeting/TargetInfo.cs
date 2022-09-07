@@ -1,12 +1,17 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using BDArmory.Core;
-using BDArmory.Core.Extension;
-using BDArmory.Misc;
-using BDArmory.Modules;
-using BDArmory.UI;
 using UnityEngine;
+
+using BDArmory.Competition;
+using BDArmory.Control;
+using BDArmory.Extensions;
+using BDArmory.Settings;
+using BDArmory.UI;
+using BDArmory.Utils;
+using BDArmory.Weapons;
+using BDArmory.Weapons.Missiles;
+using BDArmory.WeaponMounts;
 
 namespace BDArmory.Targeting
 {
@@ -17,15 +22,18 @@ namespace BDArmory.Targeting
         public MissileBase MissileBaseModule;
         public MissileFire weaponManager;
         Dictionary<BDTeam, List<MissileFire>> friendliesEngaging = new Dictionary<BDTeam, List<MissileFire>>();
+        public Dictionary<BDTeam, bool> detected = new Dictionary<BDTeam, bool>();
         public Dictionary<BDTeam, float> detectedTime = new Dictionary<BDTeam, float>();
 
         public float radarBaseSignature = -1;
         public bool radarBaseSignatureNeedsUpdate = true;
+        public float radarRCSReducedSignature;
         public float radarModifiedSignature;
         public float radarLockbreakFactor;
         public float radarJammingDistance;
         public bool alreadyScheduledRCSUpdate = false;
         public float radarMassAtUpdate = 0f;
+        public Vector3 bounds = Vector3.zero;
 
         public List<Part> targetWeaponList = new List<Part>();
         public List<Part> targetEngineList = new List<Part>();
@@ -227,7 +235,7 @@ namespace BDArmory.Targeting
         {
             //remove delegate from peace enable event
             BDArmorySetup.OnPeaceEnabled -= OnPeaceEnabled;
-            vessel.OnJustAboutToBeDestroyed -= AboutToBeDestroyed;
+            if (vessel is not null) vessel.OnJustAboutToBeDestroyed -= AboutToBeDestroyed;
             GameEvents.onVesselPartCountChanged.Remove(VesselModified);
             GameEvents.onVesselDestroy.Remove(CleanFriendliesEngaging);
             BDATargetManager.RemoveTarget(this);
@@ -238,12 +246,12 @@ namespace BDArmory.Targeting
             if (radarMassAtUpdate > 0)
             {
                 float massPercentageDifference = (radarMassAtUpdate - vessel.GetTotalMass()) / radarMassAtUpdate;
-                if ((massPercentageDifference > 0.025f) && (weaponManager) && (weaponManager.missilesAway == 0) && !weaponManager.guardFiringMissile)
+                if ((massPercentageDifference > 0.025f) && (weaponManager) && (weaponManager.missilesAway.Count == 0) && !weaponManager.guardFiringMissile)
                 {
                     alreadyScheduledRCSUpdate = true;
                     yield return new WaitForSeconds(1.0f);    // Wait for any explosions to finish
                     radarBaseSignatureNeedsUpdate = true;     // Update RCS if vessel mass changed by more than 2.5% after a part was lost
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.TargetInfo]: RCS mass update triggered for " + vessel.vesselName + ", difference: " + (massPercentageDifference * 100f).ToString("0.0"));
+                    if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[BDArmory.TargetInfo]: RCS mass update triggered for " + vessel.vesselName + ", difference: " + (massPercentageDifference * 100f).ToString("0.0"));
                 }
             }
         }
@@ -274,6 +282,9 @@ namespace BDArmory.Targeting
             //power generation? - radiators/generators - if doing CoaDE style fights/need reactors to power weapons
 
             if (vessel == null) return;
+
+            bounds = vessel.GetBounds(); // Update vessel bounds on part changes
+
             using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
                 while (part.MoveNext())
                 {
@@ -400,7 +411,18 @@ namespace BDArmory.Targeting
             ataDot = (ataDot + 1) / 2; // Adjust from 0-1 instead of -1 to 1
             return ataDot * ataDot;
         }
-
+        public float TargetPriEngagement(MissileFire mf) // Square cosine of antenna train angle
+        {
+            if (mf == null) return 0; // no WM, so no valid target, no impact on targeting score
+            if (mf.vessel.LandedOrSplashed)
+            {
+                return -1; //ground target
+            }
+            else
+            {
+                return 1; // Air target
+            }
+        }
         public float TargetPriAcceleration() // Normalized clamped acceleration for the target
         {
             float bodyGravity = (float)PhysicsGlobals.GravitationalAcceleration * (float)vessel.orbit.referenceBody.GeeASL; // Set gravity for calculations;
@@ -466,7 +488,8 @@ namespace BDArmory.Targeting
             if (myMF == null) return 0;
             var relativePosition = vessel.transform.position - myMF.vessel.transform.position;
             float theta = Vector3.Angle(myMF.vessel.srf_vel_direction, relativePosition);
-            return Mathf.Clamp(((Mathf.Pow(Mathf.Cos(theta / 2f), 2f) + 1f) * 100f / Mathf.Max(10f, relativePosition.magnitude)) / 2, 0, 1); // Ranges from 0 to 1, clamped at 1 for distances closer than 100m
+            float cosTheta2 = Mathf.Cos(theta / 2f);
+            return Mathf.Clamp(((cosTheta2 * cosTheta2 + 1f) * 100f / Mathf.Max(10f, relativePosition.magnitude)) / 2, 0, 1); // Ranges from 0 to 1, clamped at 1 for distances closer than 100m
         }
 
         public float TargetPriMass(MissileFire mf, MissileFire myMf) // Relative mass compared to our own mass
@@ -526,7 +549,7 @@ namespace BDArmory.Targeting
             int engaging = 0;
             using (var teamEngaging = friendliesEngaging.GetEnumerator())
                 while (teamEngaging.MoveNext())
-                    engaging += teamEngaging.Current.Value.Count;
+                    engaging += teamEngaging.Current.Value.Count(wm => wm != null);
             return engaging;
         }
 
@@ -568,7 +591,7 @@ namespace BDArmory.Targeting
 
         public void VesselModified(Vessel v)
         {
-            if (v && v == this.vessel)
+            if (v && v == this.vessel && isActiveAndEnabled)
             {
                 if (!alreadyScheduledRCSUpdate)
                     StartCoroutine(UpdateRCSDelayed());

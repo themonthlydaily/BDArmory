@@ -4,12 +4,12 @@ import re
 import sys
 from pathlib import Path
 
-VERSION = "2.0"
+VERSION = "2.3"
 
-parser = argparse.ArgumentParser(description="Log-file parser for continuous spawning logs.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("logs", nargs='*', help="Log-files to parse. If none are given, all valid log-files are parsed.")
+parser = argparse.ArgumentParser(description="Log file parser for continuous spawning logs.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument("logs", nargs='*', help="Log files to parse. If none are given, the latest log file is parsed.")
 parser.add_argument("-n", "--no-file", action='store_true', help="Don't create a csv file.")
-parser.add_argument("-w", "--weights", type=str, default="2,1,-1,0.02,2e-5,0.05,2e-3,1e-4,0.5,0.01,2e-5,0,0", help="Score weights.")
+parser.add_argument("-w", "--weights", type=str, default="3,1.5,-1,4e-3,1e-4,4e-5,0.035,6e-4,1.5e-4, 5e-5,0.15,2e-3,3e-5,1.5e-5,0.075,0,0", help="Score weights.")
 parser.add_argument("--show-weights", action='store_true', help="Show the score weights.")
 parser.add_argument("--version", action='store_true', help="Show the script version, then exit.")
 args = parser.parse_args()
@@ -21,7 +21,8 @@ if args.version:
 log_dir = Path(__file__).parent / "Logs" if len(args.logs) == 0 else Path('.')
 output_log_file = log_dir / "results.csv"
 
-fields = ["kills", "assists", "deaths", "hits", "bullet damage", "rocket strikes", "rocket parts hit", "rocket damage", "missile strikes", "missile parts hit", "missile damage", "accuracy", "rocket accuracy"]
+fields = ["kills", "assists", "deaths", "hits", "bullet damage", "bullet damage taken", "rocket strikes", "rocket parts hit", "rocket damage", "rocket damage taken", "missile strikes", "missile parts hit", "missile damage", "missile damage taken", "rammed parts", "accuracy", "rocket accuracy"]
+fields_short = {field: field_short for field, field_short in zip(fields, ["Kills", "Assists", "Deaths", "Hits", "Damage", "DmgTkn", "RktHits", "RktParts", "RktDmg", "RktDmgTkn", "MisHits", "MisParts", "MisDmg", "MisDmgTkn", "Ram", "Acc%", "RktAcc%"])}
 try:
     weights = {field: float(w) for field, w in zip(fields, args.weights.split(','))}
     if len(weights) != len(fields):
@@ -35,8 +36,14 @@ if args.show_weights:
         print(f"{f}:{' '*(field_width - len(f))} {w}")
     sys.exit()
 
+if len(args.logs) > 0:
+    competition_files = [Path(filename) for filename in args.logs if filename.endswith(".log")]
+else:
+    competition_files = list(sorted(list(log_dir.glob("cts-*.log"))))
+    if len(competition_files) > 0:
+        competition_files = competition_files[-1:]
+
 data = {}
-competition_files = [Path(filename) for filename in args.logs if filename.endswith(".log")] if len(args.logs) > 0 else [filename for filename in Path.iterdir(log_dir) if filename.suffix in (".log", ".txt")]  # Pre-scan the files in case something changes (iterators don't like that).
 for filename in competition_files:
     with open(log_dir / filename if len(args.logs) == 0 else filename, "r") as file_data:
         Craft_Name = None
@@ -48,7 +55,7 @@ for filename in competition_files:
                 data[Craft_Name] = {"kills": 0, "assists": 0, "deaths": 0, "hits": 0, "bullet damage": 0, "acc hits": 0, "shots": 0, "accuracy": 0, "rocket strikes": 0, "rocket parts hit": 0, "rocket damage": 0, "acc rocket strikes": 0, "rockets fired": 0, "rocket accuracy": 0, "missile strikes": 0, "missile parts hit": 0, "missile damage": 0, "score": 0, "damage/spawn": 0}
             elif " DEATHCOUNT:" in line:  # Counts up deaths
                 data[Craft_Name]["deaths"] = int(line.split("DEATHCOUNT:")[-1].replace("\n", ""))
-            elif (m:= re.match(".*CLEAN[^:]*:", line)) is not None:  # Counts up clean kills, frags, explodes and rams
+            elif (m := re.match(".*CLEAN[^:]*:", line)) is not None:  # Counts up clean kills, frags, explodes and rams
                 killedby = {int(nr): killer for nr, killer in (cleanKill.split(":") for cleanKill in m.string[m.end():].replace("\n", "").split(", "))}
                 if "killed by" in data[Craft_Name]:
                     data[Craft_Name]["killed by"].update(killedby)
@@ -95,6 +102,10 @@ for filename in competition_files:
             data[Craft_Name]["bullet damage"] = sum(damageby[life][Craft_Name] for damageby in (data[other]["bullet damage by"] for other in data if other != Craft_Name and "bullet damage by" in data[other]) for life in damageby if Craft_Name in damageby[life])
             data[Craft_Name]["rocket damage"] = sum(damageby[life][Craft_Name] for damageby in (data[other]["rocket damage by"] for other in data if other != Craft_Name and "rocket damage by" in data[other]) for life in damageby if Craft_Name in damageby[life])
             data[Craft_Name]["missile damage"] = sum(damageby[life][Craft_Name] for damageby in (data[other]["missile damage by"] for other in data if other != Craft_Name and "missile damage by" in data[other]) for life in damageby if Craft_Name in damageby[life])
+
+            data[Craft_Name]["bullet damage taken"] = sum(damage for damageby in data[Craft_Name]['bullet damage by'].values() for damage in damageby.values()) if 'bullet damage by' in data[Craft_Name] else 0
+            data[Craft_Name]["rocket damage taken"] = sum(damage for damageby in data[Craft_Name]['rocket damage by'].values() for damage in damageby.values()) if 'rocket damage by' in data[Craft_Name] else 0
+            data[Craft_Name]["missile damage taken"] = sum(damage for damageby in data[Craft_Name]['missile damage by'].values() for damage in damageby.values()) if 'missile damage by' in data[Craft_Name] else 0
 
             data[Craft_Name]["rammed parts"] = sum(partshitby[life][Craft_Name] for partshitby in (data[other]["rammed by"] for other in data if other != Craft_Name and "rammed by" in data[other]) for life in partshitby if Craft_Name in partshitby[life])
 
@@ -143,8 +154,8 @@ for filename in competition_files:
 if len(data) > 0:
     # Write results to console
     name_length = max([len(craft) for craft in data])
-    field_lengths = {field: max(len(field) + 2, 8) for field in fields}
-    print(f"Name{' '*(name_length-4)}     score" + "".join(f"{field:>{field_lengths[field]}}" for field in fields))
+    field_lengths = {field: max(len(fields_short[field]) + 2, 8) for field in fields}
+    print(f"Name{' '*(name_length-4)}     score" + "".join(f"{fields_short[field]:>{field_lengths[field]}}" for field in fields))
     for craft in sorted(data, key=lambda c: data[c]["score"], reverse=True):
         print(f"{craft}{' '*(name_length-len(craft))}  {data[craft]['score']:8.2f}" + "".join(f"{data[craft][field]:>{field_lengths[field]}.0f}" if 'accuracy' not in field else f"{data[craft][field]:>{field_lengths[field]-1}.1f}%" for field in fields))
 

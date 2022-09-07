@@ -1,18 +1,18 @@
 ﻿{
     "NAME":"BDArmory",
-    "URL":"https://github.com/PapaJoesSoup/BDArmory/raw/master/BDArmory/Distribution/GameData/BDArmory/BDArmory.version",
-    "DOWNLOAD":"https://github.com/PapaJoesSoup/BDArmory/releases/latest",
+    "URL":"https://github.com/BrettRyland/BDArmory/raw/master/BDArmory/Distribution/GameData/BDArmory/BDArmory.version",
+    "DOWNLOAD":"https://github.com/BrettRyland/BDArmory/releases/latest",
     "GITHUB":
     {
-        "USERNAME":"PapaJoesSoup",
+        "USERNAME":"BrettRyland",
         "REPOSITORY":"BDArmory",
         "ALLOW_PRE_RELEASE":false
     },
     "VERSION":
     {
         "MAJOR":1,
-        "MINOR":4,
-        "PATCH":16,
+        "MINOR":5,
+        "PATCH":2,
         "BUILD":1
     },
     "KSP_VERSION":
