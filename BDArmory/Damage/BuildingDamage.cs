@@ -7,13 +7,13 @@ namespace BDArmory.Damage
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class BuildingDamage : MonoBehaviour
     {
-        static List<DestructibleBuilding> buildingsDamaged = new List<DestructibleBuilding>();
+        static Dictionary<DestructibleBuilding, float> buildingsDamaged = new Dictionary<DestructibleBuilding, float>();
 
         public static void RegisterDamage(DestructibleBuilding building)
         {
-            if (!buildingsDamaged.Contains(building))
+            if (!buildingsDamaged.ContainsKey(building))
             {
-                buildingsDamaged.Add(building);
+                buildingsDamaged.Add(building, building.FacilityDamageFraction);
                 //Debug.Log("[BDArmory.BuildingDamage] registered " + building.name + " tracking " + buildingsDamaged.Count + " buildings");
             }
         }
@@ -32,22 +32,22 @@ namespace BDArmory.Damage
                 buildingRegenTimer -= Time.fixedDeltaTime;
                 if (buildingRegenTimer < 0)
                 {
-                    for (int b = 0; b < buildingsDamaged.Count; b++)
+                    foreach (KeyValuePair<DestructibleBuilding, float> building in buildingsDamaged)
                     {
-                        if (!buildingsDamaged[b].IsIntact || buildingsDamaged[b] == null)
+                        if (!building.Key.IsIntact)
                         {
-                            buildingsDamaged.Remove(buildingsDamaged[b]);
-                            //Debug.Log("[BDArmory.BuildingDamage] building destroyed or null! Removing");
+                            buildingsDamaged.Remove(building.Key);
+                            Debug.Log("[BDArmory.BuildingDamage] building destroyed or null! Removing");
                         }
-                        if (buildingsDamaged[b].FacilityDamageFraction > 100)
+                        if (building.Key.FacilityDamageFraction > building.Value)
                         {
-                            buildingsDamaged[b].FacilityDamageFraction -= RegenFactor;
-                            //Debug.Log("[BDArmory.BuildingDamage] " + buildingsDamaged[b].name + " current HP: " + buildingsDamaged[b].FacilityDamageFraction);
+                            building.Key.FacilityDamageFraction -= RegenFactor;
+                            Debug.Log("[BDArmory.BuildingDamage] " + building.Key.name + " current HP: " + building.Key.FacilityDamageFraction);
                         }
                         else
                         {
-                            //Debug.Log("[BDArmory.BuildingDamage] " + buildingsDamaged[b].name + " regenned to full HP, removing from list");
-                            buildingsDamaged.RemoveAt(b);
+                            Debug.Log("[BDArmory.BuildingDamage] " + building.Key.name + " regenned to full HP, removing from list");
+                            buildingsDamaged.Remove(building.Key);
                         }
                     }
                     buildingRegenTimer = 1;

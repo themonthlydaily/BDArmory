@@ -857,15 +857,8 @@ namespace BDArmory.Utils
                             * 1e-4f);
                 damageToBuilding /= 8f;
                 damageToBuilding *= BDArmorySettings.BUILDING_DMG_MULTIPLIER; 
+                BuildingDamage.RegisterDamage(building);
                 building.FacilityDamageFraction += damageToBuilding;
-                try
-                {
-                    BuildingDamage.RegisterDamage(building);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogWarning("[BDArmory.ProjectileUtils]: Exception thrown in register building Damage: " + e.Message + "\n" + e.StackTrace);
-                }
                 if (building.FacilityDamageFraction > (building.impactMomentumThreshold * 2))
                 {
                     if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ProjectileUtils]: Building demolished due to ballistic damage! Dmg to building: " + building.Damage);

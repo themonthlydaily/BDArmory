@@ -673,6 +673,7 @@ namespace BDArmory.FX
                 damageToBuilding /= 2;
                 damageToBuilding *= BDArmorySettings.BUILDING_DMG_MULTIPLIER;
                 //building.AddDamage(damageToBuilding); 
+                BuildingDamage.RegisterDamage(building);
                 building.FacilityDamageFraction += damageToBuilding;
                 //based on testing, I think facilityDamageFraction starts at 100, and demolished the building if it hits 0 - which means it will work great as a HP value in the other direction
                 if (building.FacilityDamageFraction > building.impactMomentumThreshold * 2)
