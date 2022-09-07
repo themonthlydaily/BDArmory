@@ -37,16 +37,16 @@ namespace BDArmory.Damage
                         if (!building.Key.IsIntact)
                         {
                             buildingsDamaged.Remove(building.Key);
-                            Debug.Log("[BDArmory.BuildingDamage] building destroyed or null! Removing");
+                            //Debug.Log("[BDArmory.BuildingDamage] building destroyed or null! Removing");
                         }
                         if (building.Key.FacilityDamageFraction > building.Value)
                         {
                             building.Key.FacilityDamageFraction -= RegenFactor;
-                            Debug.Log("[BDArmory.BuildingDamage] " + building.Key.name + " current HP: " + building.Key.FacilityDamageFraction);
+                            //Debug.Log("[BDArmory.BuildingDamage] " + building.Key.name + " current HP: " + building.Key.FacilityDamageFraction);
                         }
                         else
                         {
-                            Debug.Log("[BDArmory.BuildingDamage] " + building.Key.name + " regenned to full HP, removing from list");
+                            //Debug.Log("[BDArmory.BuildingDamage] " + building.Key.name + " regenned to full HP, removing from list");
                             buildingsDamaged.Remove(building.Key);
                         }
                     }
