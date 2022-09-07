@@ -361,6 +361,7 @@ namespace BDArmory.Radar
 
         private void OnDestroy()
         {
+            StopAllCoroutines();
             GameEvents.onVesselDestroy.Remove(OnVesselDestroyed);
             GameEvents.onVesselCreate.Remove(OnVesselDestroyed);
             MissileFire.OnChangeTeam -= OnChangeTeam;
@@ -602,7 +603,6 @@ namespace BDArmory.Radar
                 return;
             }
 
-            // FIXME Use a timer to lower the frequency if that's desired, not putting this in Update.
             UpdateReferenceTransform();
 
             if (radarCount + irstCount > 0)
@@ -724,8 +724,7 @@ namespace BDArmory.Radar
             }
 
             UpdateLockedTargets();
-            if (isActiveAndEnabled) // Don't trigger if the gameObject was just destroyed.
-                StartCoroutine(UpdateLocksAfterFrame());
+            StartCoroutine(UpdateLocksAfterFrame());
             return false;
         }
 

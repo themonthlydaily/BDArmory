@@ -345,6 +345,7 @@ namespace BDArmory.Radar
         {
             if (HighLogic.LoadedSceneIsFlight)
             {
+                StopAllCoroutines();
                 if (vesselRadarData)
                 {
                     vesselRadarData.RemoveRadar(this);

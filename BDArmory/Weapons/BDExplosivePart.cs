@@ -242,41 +242,35 @@ namespace BDArmory.Weapons
         public override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
-            if (HighLogic.LoadedSceneIsFlight)
+            if (!HighLogic.LoadedSceneIsFlight) return;
+            if (!isMissile)
             {
-                if (!isMissile)
+                if (IFF_On)
                 {
-                    if (IFF_On)
+                    updateTimer -= Time.fixedDeltaTime;
+                    if (updateTimer < 0)
                     {
-                        updateTimer -= Time.fixedDeltaTime;
-                        if (updateTimer < 0)
-                        {
-                            GetTeamID(); //have this only called once a sec
-                            updateTimer = 1.0f;    //next update in half a sec only
-                        }
+                        GetTeamID(); //have this only called once a sec
+                        updateTimer = 1.0f;    //next update in half a sec only
                     }
-                    if (manualOverride) // don't call proximity code if a missile/MMG, use theirs
+                }
+                if (manualOverride) // don't call proximity code if a missile/MMG, use theirs
+                {
+                    if (Armed)
                     {
-                        if (Armed)
+                        if (VesselModuleRegistry.GetModule<MissileFire>(vessel) == null)
                         {
-                            if (VesselModuleRegistry.GetModule<MissileFire>(vessel) == null)
+                            if (sourcevessel != null && sourcevessel != part.vessel)
                             {
-                                if (sourcevessel != null && sourcevessel != part.vessel)
-                                {
-                                    distanceFromStart = Vector3.Distance(part.vessel.transform.position, sourcevessel.transform.position);
-                                }
+                                distanceFromStart = Vector3.Distance(part.vessel.transform.position, sourcevessel.transform.position);
                             }
-                            if (Checkproximity(distanceFromStart))
-                            {
-                                Detonate();
-                            }
+                        }
+                        if (Checkproximity(distanceFromStart))
+                        {
+                            Detonate();
                         }
                     }
                 }
-            }
-            if (hasDetonated)
-            {
-                this.part.explode();
             }
         }
 
@@ -337,6 +331,7 @@ namespace BDArmory.Weapons
                 hasDetonated = true;
                 if (BDArmorySettings.DEBUG_MISSILES)
                     Debug.Log("[BDArmory.BDExplosivePart]: " + part + " (" + (uint)(part.GetInstanceID()) + ") from " + (sourcevessel != null ? sourcevessel.vesselName : null) + " detonating with a " + warheadType + " warhead");
+                part.explode();
             }
         }
 
@@ -356,6 +351,7 @@ namespace BDArmory.Weapons
                 ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 120, part, sourcevessel != null ? sourcevessel.vesselName : null, sourceWeapon != null ? sourceWeapon.GetShortName() : null, direction, -1, false, warheadType == "standard" ? part.mass : 0, -1, 1, warheadType);
                 hasDetonated = true;
                 part.Destroy();
+                part.explode();
             }
         }
 
