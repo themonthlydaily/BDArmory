@@ -217,8 +217,9 @@ namespace BDArmory.FX
                             }
                         }
                     }
-                    catch
+                    catch (Exception e)
                     {
+                        Debug.LogError($"[BDArmory.ExplosionFX]: Exception in overlapSphereColliders processing: {e.Message}\n{e.StackTrace}");
                     }
                 }
             }

@@ -333,8 +333,9 @@ namespace BDArmory.FX
                             }
                         }
                     }
-                    catch
+                    catch (Exception e)
                     {
+                        Debug.LogError($"[BDArmory.ExplosionFX]: Exception in overlapSphereColliders processing: {e.Message}\n{e.StackTrace}");
                     }
                 }
             }
@@ -673,7 +674,7 @@ namespace BDArmory.FX
                 damageToBuilding *= BDArmorySettings.BUILDING_DMG_MULTIPLIER;
                 //building.AddDamage(damageToBuilding); 
                 building.FacilityDamageFraction += damageToBuilding;
-                //based on testing, I think facilityDamageFraction starts at 100, and demolisheds the building if it hits 0 - which means it will work great as a HP value in the other direction
+                //based on testing, I think facilityDamageFraction starts at 100, and demolished the building if it hits 0 - which means it will work great as a HP value in the other direction
                 if (building.FacilityDamageFraction > building.impactMomentumThreshold * 2)
                 {
                     if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ExplosionFX]: Building " + building.name + " demolished due to Explosive damage! Dmg to building: " + building.Damage);
@@ -681,7 +682,7 @@ namespace BDArmory.FX
                 }
                 if (BDArmorySettings.DEBUG_DAMAGE)
                 {
-                    Debug.Log("[BDArmory.ExplosionFX]: Explosion hit destructible building " + building.name + "! Hitpoints Applied: " + Mathf.Round(damageToBuilding) +
+                    Debug.Log("[BDArmory.ExplosionFX]: Explosion hit destructible building " + building.name + "! Hitpoints Applied: " + damageToBuilding.ToString("F3") +
                              ", Building Damage : " + building.FacilityDamageFraction +
                              " Building Threshold : " + building.impactMomentumThreshold * 2 +
                              $", (Range: {Range}, Distance: {eventToExecute.Distance}, Factor: {distanceFactor}, Power: {Power})");

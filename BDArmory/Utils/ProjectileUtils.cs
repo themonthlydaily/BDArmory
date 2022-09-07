@@ -858,18 +858,21 @@ namespace BDArmory.Utils
                 damageToBuilding /= 8f;
                 damageToBuilding *= BDArmorySettings.BUILDING_DMG_MULTIPLIER; 
                 building.FacilityDamageFraction += damageToBuilding;
-                //building.AddDamage(damageToBuilding);
-                //if (building.Damage > building.impactMomentumThreshold * 150)
-                //building.AddDamage(damageToBuilding); //the AddDamage() function will only add damage if the value is >= 100
-                //if (damageHelper) building.AddDamage(-100);
-                //if (building.Damage > building.impactMomentumThreshold * 150) //I suspect the building demolishes itself when damage exceeds a certain amount before this can get called...
+                try
+                {
+                    BuildingDamage.RegisterDamage(building);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning("[BDArmory.ProjectileUtils]: Exception thrown in register building Damage: " + e.Message + "\n" + e.StackTrace);
+                }
                 if (building.FacilityDamageFraction > (building.impactMomentumThreshold * 2))
                 {
                     if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ProjectileUtils]: Building demolished due to ballistic damage! Dmg to building: " + building.Damage);
                     building.Demolish();
                 }
                 if (BDArmorySettings.DEBUG_DAMAGE)
-                    Debug.Log("[BDArmory.ProjectileUtils]: Ballistic hit destructible building " + building.name +"! Hitpoints Applied: " + Mathf.Round(damageToBuilding) +
+                    Debug.Log("[BDArmory.ProjectileUtils]: Ballistic hit destructible building " + building.name +"! Hitpoints Applied: " + damageToBuilding.ToString("F3") +
                              ", Building Damage : " + building.FacilityDamageFraction +
                              " Building Threshold : " + building.impactMomentumThreshold * 2);
 
