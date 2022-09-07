@@ -290,7 +290,6 @@ namespace BDArmory.FX
                     if (hitCollidersEnu.Current == null) continue;
 
                     Part partHit = hitCollidersEnu.Current.GetComponentInParent<Part>();
-                    if (partHit == null) continue;
 
                     if (partHit != null)
                     {
@@ -662,6 +661,7 @@ namespace BDArmory.FX
                 float damageToBuilding = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_BALLISTIC_NEW * Power * distanceFactor;
 
                 damageToBuilding *= 2f;
+                damageToBuilding *= BDArmorySettings.BUILDING_DMG_MULTIPLIER;
 
                 building.AddDamage(damageToBuilding);
 
@@ -673,7 +673,8 @@ namespace BDArmory.FX
                 {
                     Debug.Log("[BDArmory.ExplosionFX]: Explosion hit destructible building! Hitpoints Applied: " + Mathf.Round(damageToBuilding) +
                              ", Building Damage : " + Mathf.Round(building.Damage) +
-                             " Building Threshold : " + building.impactMomentumThreshold);
+                             " Building Threshold : " + building.impactMomentumThreshold +
+                             $", (Range: {Range}, Distance: {eventToExecute.Distance}, Factor: {distanceFactor}, Power: {Power})");
                 }
             }
         }
