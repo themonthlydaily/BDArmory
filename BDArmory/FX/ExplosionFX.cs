@@ -25,6 +25,7 @@ namespace BDArmory.FX
         public AudioSource audioSource { get; set; }
         private float MaxTime { get; set; }
         public float Range { get; set; }
+        public float SCRange { get; set; }
         public float Caliber { get; set; }
         public float ProjMass { get; set; }
         public ExplosionSourceType ExplosionSource { get; set; }
@@ -38,6 +39,7 @@ namespace BDArmory.FX
         public bool isFX { get; set; }
         public float CASEClamp { get; set; }
         public float dmgMult { get; set; }
+        public float apMod { get; set; }
 
         public Part hitpart { get; set; }
         public float TimeIndex => Time.time - StartTime;
@@ -195,7 +197,22 @@ namespace BDArmory.FX
             }
             if (warheadType == WarheadTypes.ShapedCharge)
             {
-                Ray SCRay = new Ray(Position, (Direction.normalized * Range));
+                // Based on shaped charge standoff penetration falloff, set equal to 10% and solved for the range
+                // Equation is from https://www.diva-portal.org/smash/get/diva2:643824/FULLTEXT01.pdf and gives an
+                // answer in the same units as caliber, thus we divide by 1000 to get the range in meters. The long
+                // number is actually 2*sqrt(19), however for speed this has been pre-calculated and rounded to 8 sig
+                // figs behind the decimal point and turned into a floating point number (which in theory should drop it
+                // to 8 sig figs and should be indistinguishable from if we had actually calculated it at runtime). We then
+                // use this range to raycast those hits if it is greater than Range. This will currently overpredict for
+                // small missiles and underpredict for large ones since they don't have a caliber associated with them
+                // and as such will use 120 mm by default (since caliber == 0, thus it'll take 6f as the jet size which
+                // corresponds to a 120 mm charge. Perhaps think about including a caliber field?
+                //SCRange = (7f * (8.71779789f * 20f * Caliber + 20f * Caliber))* 0.001f; // 5%
+                // Decided to swap it to 10% since 5% gave pretty big ranges on the order of several meters and 10% actually
+                // simplifies down to a linear equation
+                SCRange = (49f*Caliber) * 0.001f;
+
+                Ray SCRay = new Ray(Position, SCRange > Range ? (Direction.normalized * SCRange) : (Direction.normalized * Range));
                 var hits = Physics.RaycastAll(SCRay, Range, explosionLayerMask);
                 if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.ExplosionFX]: SC plasmaJet raycast hits: " + hits.Length);
                 if (hits.Length > 0)
@@ -482,7 +499,7 @@ namespace BDArmory.FX
                         }
                         if (FlightGlobals.currentMainBody != null && hit.collider.gameObject == FlightGlobals.currentMainBody.gameObject) return false; // Terrain hit. Full absorption. Should avoid NREs in the following.
                         var partHP = partHit.Damage();
-                        if (ProjectileUtils.IsArmorPart(partHit)) partHP = 100;
+                        if (ProjectileUtils.IsArmorPart(partHit)) partHP = BDArmorySettings.EXP_PEN_RESIST_MULT * 100;
                         var partArmour = partHit.GetArmorThickness();
                         var Armor = part.FindModuleImplementing<HitpointTracker>();
                         if (Armor != null)
@@ -672,7 +689,7 @@ namespace BDArmory.FX
             if (vesselMass == 0) vesselMass = part.mass; // Sometimes if the root part is the only part of the vessel, then part.vessel.totalMass is 0, despite the part.mass not being 0.
 	    var cumulativeHPOfIntermediateParts = eventToExecute.IntermediateParts.Select(p => p.Item2).Sum();
             var cumulativeArmorOfIntermediateParts = eventToExecute.IntermediateParts.Select(p => p.Item3).Sum();
-            if (realDistance <= Range) //within radius of Blast
+            if ((realDistance <= Range) || ((warheadType == WarheadTypes.ShapedCharge) && (realDistance <= SCRange))) //within radius of Blast
             {
             if (!eventToExecute.IsNegativePressure)
             {
@@ -785,7 +802,7 @@ namespace BDArmory.FX
                                 int type = (int)Armor.ArmorTypeNum;
 
                                 //penetration = ProjectileUtils.CalculatePenetration(Caliber, Caliber, warheadType == WarheadTypes.ShapedCharge ? Power / 2 : ProjMass, ExplosionVelocity, Ductility, Density, Strength, thickness, 1);
-                                penetration = ProjectileUtils.CalculatePenetration(Caliber, warheadType == WarheadTypes.ShapedCharge ? 5000f : ExplosionVelocity, warheadType == WarheadTypes.ShapedCharge ? Power * 0.0555f : ProjMass, 1f, 940, 0.00000094776185184f, 0.6560606203f, 1.201909309f, 1.777919321f);
+                                penetration = ProjectileUtils.CalculatePenetration(Caliber, warheadType == WarheadTypes.ShapedCharge ? 5000f : ExplosionVelocity, warheadType == WarheadTypes.ShapedCharge ? Power * 0.0555f : ProjMass, apMod, 940, 0.00000094776185184f, 0.6560606203f, 1.201909309f, 1.777919321f);
                                 penetrationFactor = ProjectileUtils.CalculateArmorPenetration(part, penetration, thickness*HEATEquiv+thicknessBetween);
 
                                 if (RA != null)
@@ -935,7 +952,8 @@ namespace BDArmory.FX
 
         public static void CreateExplosion(Vector3 position, float tntMassEquivalent, string explModelPath, string soundPath, ExplosionSourceType explosionSourceType,
             float caliber = 120, Part explosivePart = null, string sourceVesselName = null, string sourceWeaponName = null, Vector3 direction = default(Vector3),
-            float angle = 100f, bool isfx = false, float projectilemass = 0, float caseLimiter = -1, float dmgMutator = 1, string type = "standard", Part Hitpart = null)
+            float angle = 100f, bool isfx = false, float projectilemass = 0, float caseLimiter = -1, float dmgMutator = 1, string type = "standard", Part Hitpart = null,
+            float apMod = 1f)
         {
             CreateObjectPool(explModelPath, soundPath);
 
@@ -982,6 +1000,7 @@ namespace BDArmory.FX
                     eFx.warheadType = WarheadTypes.ShapedCharge;
                     eFx.AngleOfEffect = 10f;
                     eFx.Caliber = caliber > 0 ? caliber * 0.05f : 6f;
+                    eFx.apMod = apMod;
                     break;
                 default:
                     eFx.warheadType = WarheadTypes.Standard;
