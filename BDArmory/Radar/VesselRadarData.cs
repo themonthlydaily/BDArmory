@@ -361,7 +361,6 @@ namespace BDArmory.Radar
 
         private void OnDestroy()
         {
-            StopAllCoroutines();
             GameEvents.onVesselDestroy.Remove(OnVesselDestroyed);
             GameEvents.onVesselCreate.Remove(OnVesselDestroyed);
             MissileFire.OnChangeTeam -= OnChangeTeam;
@@ -750,7 +749,7 @@ namespace BDArmory.Radar
 
         public bool TryLockTarget(Vessel v)
         {
-            if (v == null) return false;
+            if (v == null || v.packed) return false;
 
             using (List<RadarDisplayData>.Enumerator displayData = displayedTargets.GetEnumerator())
                 while (displayData.MoveNext())

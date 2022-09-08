@@ -345,7 +345,6 @@ namespace BDArmory.Radar
         {
             if (HighLogic.LoadedSceneIsFlight)
             {
-                StopAllCoroutines();
                 if (vesselRadarData)
                 {
                     vesselRadarData.RemoveRadar(this);
@@ -908,7 +907,8 @@ namespace BDArmory.Radar
         IEnumerator RetryLockRoutine(Vessel v)
         {
             yield return null;
-            vesselRadarData.TryLockTarget(v);
+            if (vesselRadarData != null && vesselRadarData.isActiveAndEnabled)
+                vesselRadarData.TryLockTarget(v);
         }
 
         public void UnlockTargetVessel(Vessel v)

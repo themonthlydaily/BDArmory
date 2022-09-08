@@ -775,7 +775,7 @@ namespace BDArmory.Weapons.Missiles
                 foreach (var pe in pEmitters)
                     if (pe) EffectBehaviour.RemoveParticleEmitter(pe);
             if (gaplessEmitters is not null) // Make sure the gapless emitters get destroyed (they should anyway, but KSP holds onto part references, which may prevent this from happening automatically).
-                foreach(var gpe in gaplessEmitters)
+                foreach (var gpe in gaplessEmitters)
                     if (gpe is not null) Destroy(gpe);
             if (boostEmitters != null)
                 foreach (var pe in boostEmitters)
@@ -948,7 +948,7 @@ namespace BDArmory.Weapons.Missiles
         public override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
-            
+
             if (!HighLogic.LoadedSceneIsFlight) return;
 
             FloatingOriginCorrection();
@@ -1034,33 +1034,20 @@ namespace BDArmory.Weapons.Missiles
             }
             catch (Exception e)
             {
-                Debug.LogError("[BDArmory.MissileLauncher]: DEBUG " + e.Message);
-                try { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG null part?: " + (part == null)); } catch (Exception e2) { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG part: " + e2.Message); }
-                try { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG null part.rb?: " + (part.rb == null)); } catch (Exception e2) { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG part.rb: " + e2.Message); }
-                try { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG null vessel?: " + (vessel == null)); } catch (Exception e2) { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG vessel: " + e2.Message); }
-                try { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG null audioSource?: " + (audioSource == null)); } catch (Exception e2) { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG audioSource: " + e2.Message); }
-                try { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG null sfAudioSource?: " + (sfAudioSource == null)); } catch (Exception e2) { Debug.LogWarning("[BDArmory.MissileLauncher]: sfAudioSource: " + e2.Message); }
-                try { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG null FlightGlobals.ActiveVessel?: " + (FlightGlobals.ActiveVessel == null)); } catch (Exception e2) { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG FlightGlobals.ActiveVessel: " + e2.Message); }
-                try { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG null FlightCamera.fetch?: " + (FlightCamera.fetch == null)); } catch (Exception e2) { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG FlightCamera.fetch: " + e2.Message); }
-                try { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG null FlightCamera.fetch.mainCamera?: " + (FlightCamera.fetch.mainCamera == null)); } catch (Exception e2) { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG FlightCamera.fetch.mainCamera: " + e2.Message); }
-                throw; // Re-throw the exception so behaviour is unchanged so we see it.
-                /* FIXME
-                    [ERR 12:27:07.687] [BDArmory.MissileLauncher]: DEBUG Object reference not set to an instance of an object 
-                    [ERR 12:27:07.687] [BDArmory.MissileLauncher]: DEBUG null part?: False
-                    [ERR 12:27:07.687] [BDArmory.MissileLauncher]: DEBUG null part.rb?: False
-                    [ERR 12:27:07.687] [BDArmory.MissileLauncher]: DEBUG null vessel?: False
-                    [ERR 12:27:07.687] [BDArmory.MissileLauncher]: DEBUG null audioSource?: False
-                    [ERR 12:27:07.687] [BDArmory.MissileLauncher]: DEBUG null sfAudioSource?: False
-                    [ERR 12:27:07.687] [BDArmory.MissileLauncher]: DEBUG null FlightGlobals.ActiveVessel?: False
-                    [ERR 12:27:07.687] [BDArmory.MissileLauncher]: DEBUG null FlightCamera.fetch?: False
-                    [ERR 12:27:07.687] [BDArmory.MissileLauncher]: DEBUG null FlightCamera.fetch.mainCamera?: False
-
-                    [ERR 12:27:07.696] Module MissileLauncher threw during OnFixedUpdate: System.NullReferenceException: Object reference not set to an instance of an object
-                        at BDArmory.Radar.RadarUtils.RadarUpdateMissileLock (UnityEngine.Ray ray, System.Single fov, BDArmory.Targeting.TargetSignatureData[]& dataArray, System.Single dataPersistTime, BDArmory.Modules.MissileBase missile) [0x00066] in <f09276216814494e99bc0ae1d023f3e6>:0 
-                        at BDArmory.Modules.MissileBase.UpdateRadarTarget () [0x00328] in <f09276216814494e99bc0ae1d023f3e6>:0 
-                        at BDArmory.Modules.MissileLauncher.UpdateGuidance () [0x000a0] in <f09276216814494e99bc0ae1d023f3e6>:0 
-                        at BDArmory.Modules.MissileLauncher.OnFixedUpdate () [0x00457] in <f09276216814494e99bc0ae1d023f3e6>:0 
+                Debug.LogError("[BDArmory.MissileLauncher]: DEBUG " + e.Message + "\n" + e.StackTrace);
+                // throw; // Re-throw the exception so behaviour is unchanged so we see it.
+                /* FIXME this is being caused by attempting to get the wm.Team in RadarUpdateMissileLock. A similar exception occurred in BDATeamIcons, line 239
+                    [ERR 12:05:24.391] Module MissileLauncher threw during OnFixedUpdate: System.NullReferenceException: Object reference not set to an instance of an object
+                        at BDArmory.Radar.RadarUtils.RadarUpdateMissileLock (UnityEngine.Ray ray, System.Single fov, BDArmory.Targeting.TargetSignatureData[]& dataArray, System.Single dataPersistTime, BDArmory.Weapons.Missiles.MissileBase missile) [0x00076] in /storage/github/BDArmory/BDArmory/Radar/RadarUtils.cs:972 
+                        at BDArmory.Weapons.Missiles.MissileBase.UpdateRadarTarget () [0x003d9] in /storage/github/BDArmory/BDArmory/Weapons/Missiles/MissileBase.cs:747 
+                        at BDArmory.Weapons.Missiles.MissileLauncher.UpdateGuidance () [0x000ba] in /storage/github/BDArmory/BDArmory/Weapons/Missiles/MissileLauncher.cs:1134 
+                        at BDArmory.Weapons.Missiles.MissileLauncher.OnFixedUpdate () [0x00593] in /storage/github/BDArmory/BDArmory/Weapons/Missiles/MissileLauncher.cs:1046 
                         at Part.ModulesOnFixedUpdate () [0x000bd] in <4deecb19beb547f19b1ff89b4c59bd84>:0 
+                        UnityEngine.DebugLogHandler:LogFormat(LogType, Object, String, Object[])
+                        ModuleManager.UnityLogHandle.InterceptLogHandler:LogFormat(LogType, Object, String, Object[])
+                        UnityEngine.Debug:LogError(Object)
+                        Part:ModulesOnFixedUpdate()
+                        Part:FixedUpdate()
                 */
             }
         }

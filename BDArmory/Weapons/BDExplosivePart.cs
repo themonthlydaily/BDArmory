@@ -317,7 +317,7 @@ namespace BDArmory.Weapons
         }
         public void DetonateIfPossible()
         {
-            if (part == null) return;
+            if (!HighLogic.LoadedSceneIsFlight || part == null) return;
             if (!hasDetonated && Armed)
             {
                 Vector3 direction = default(Vector3);
