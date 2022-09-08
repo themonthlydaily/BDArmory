@@ -3342,6 +3342,23 @@ namespace BDArmory.UI
 
                 if (BDArmorySettings.ADVANDED_USER_SETTINGS)
                 {
+                    BDArmorySettings.MISSILE_CM_SETTING_TOGGLE = GUI.Toggle(SLineRect(++line), BDArmorySettings.MISSILE_CM_SETTING_TOGGLE, Localizer.Format("#LOC_BDArmory_Settings_MissileCMToggle"));
+                    if (BDArmorySettings.MISSILE_CM_SETTING_TOGGLE)
+                    {
+                        BDArmorySettings.ASPECTED_IR_SEEKERS = GUI.Toggle(SLineRect(++line), BDArmorySettings.ASPECTED_IR_SEEKERS, Localizer.Format("#LOC_BDArmory_Settings_AspectedIRSeekers"));
+                        GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_FlareFactor")}:  ({BDArmorySettings.FLARE_FACTOR})", leftLabel);
+                        BDArmorySettings.FLARE_FACTOR = Mathf.Round((GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FLARE_FACTOR * 20f, 0f, 60f))) / 20f;
+
+                        GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_ChaffFactor")}:  ({BDArmorySettings.CHAFF_FACTOR})", leftLabel);
+                        BDArmorySettings.CHAFF_FACTOR = Mathf.Round((GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.CHAFF_FACTOR * 20f, 0f, 60f))) / 20f;
+
+                        GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_SmokeDeflectionFactor")}:  ({BDArmorySettings.SMOKE_DEFLECTION_FACTOR})", leftLabel);
+                        BDArmorySettings.SMOKE_DEFLECTION_FACTOR = Mathf.Round((GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.SMOKE_DEFLECTION_FACTOR * 2f, 0f, 80f))) / 2f;
+
+                        GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_APSThreshold")}:  ({BDArmorySettings.APS_THRESHOLD})", leftLabel);
+                        BDArmorySettings.APS_THRESHOLD = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.APS_THRESHOLD, 1f, 356f));
+                    }
+
                     BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS = GUI.Toggle(new Rect(settingsMargin, ++line * settingsLineHeight, 2f * (settingsWidth - 2f * settingsMargin) / 3f, settingsLineHeight), BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS, Localizer.Format("#LOC_BDArmory_Settings_TraceVessels"));// Trace Vessels (custom 2/3 width)
                     if (LoadedVesselSwitcher.Instance != null)
                     {
