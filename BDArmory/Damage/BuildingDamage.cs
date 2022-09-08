@@ -1,6 +1,7 @@
-﻿using System;
+﻿using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
+using BDArmory.Settings;
 
 namespace BDArmory.Damage
 {
@@ -17,14 +18,16 @@ namespace BDArmory.Damage
                 //Debug.Log("[BDArmory.BuildingDamage] registered " + building.name + " tracking " + buildingsDamaged.Count + " buildings");
             }
         }
+
+        void OnDestroy()
+        {
+            buildingsDamaged.Clear(); // Clear the damaged building tracker when leaving the flight scene to clear references to building objects.
+        }
+
         float buildingRegenTimer = 1; //regen 1 HP per second
         float RegenFactor = 1; //could always turn these into customizable settings if you want faster/slower healing buildings.
-        void Update()
+        void FixedUpdate()
         {
-            if (buildingsDamaged.Count > 0 && !HighLogic.LoadedSceneIsFlight)
-            {
-                buildingsDamaged.Clear();
-            }
             if (UI.BDArmorySetup.GameIsPaused) return;
 
             if (buildingsDamaged.Count > 0)
@@ -32,22 +35,27 @@ namespace BDArmory.Damage
                 buildingRegenTimer -= Time.fixedDeltaTime;
                 if (buildingRegenTimer < 0)
                 {
-                    foreach (KeyValuePair<DestructibleBuilding, float> building in buildingsDamaged)
+                    foreach (var building in buildingsDamaged.Keys.ToList()) // Take a copy of the keys so we can modify the dictionary in the loop.
                     {
-                        if (!building.Key.IsIntact)
+                        if (building == null) // Clear out any null references.
                         {
-                            buildingsDamaged.Remove(building.Key);
-                            //Debug.Log("[BDArmory.BuildingDamage] building destroyed or null! Removing");
+                            buildingsDamaged.Remove(building);
+                            continue;
                         }
-                        if (building.Key.FacilityDamageFraction > building.Value)
+                        if (!building.IsIntact)
                         {
-                            building.Key.FacilityDamageFraction -= RegenFactor;
-                            //Debug.Log("[BDArmory.BuildingDamage] " + building.Key.name + " current HP: " + building.Key.FacilityDamageFraction);
+                            buildingsDamaged.Remove(building);
+                            if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.BuildingDamage] building {building.name} destroyed! Removing");
+                        }
+                        if (building.FacilityDamageFraction > buildingsDamaged[building])
+                        {
+                            building.FacilityDamageFraction -= RegenFactor;
+                            if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.BuildingDamage] {building.name} current HP: {building.FacilityDamageFraction}");
                         }
                         else
                         {
-                            //Debug.Log("[BDArmory.BuildingDamage] " + building.Key.name + " regenned to full HP, removing from list");
-                            buildingsDamaged.Remove(building.Key);
+                            if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.BuildingDamage] {building.name} regenned to full HP, removing from list");
+                            buildingsDamaged.Remove(building);
                         }
                     }
                     buildingRegenTimer = 1;
