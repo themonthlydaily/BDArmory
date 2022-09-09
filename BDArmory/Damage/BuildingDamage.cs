@@ -25,7 +25,7 @@ namespace BDArmory.Damage
         }
 
         float buildingRegenTimer = 1; //regen 1 HP per second
-        float RegenFactor = 1; //could always turn these into customizable settings if you want faster/slower healing buildings.
+        float RegenFactor = 0.1f; //could always turn these into customizable settings if you want faster/slower healing buildings. 0.08f is enough for the browning to destroy some buildings but not others.
         void FixedUpdate()
         {
             if (UI.BDArmorySetup.GameIsPaused) return;
@@ -46,10 +46,11 @@ namespace BDArmory.Damage
                         {
                             buildingsDamaged.Remove(building);
                             if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.BuildingDamage] building {building.name} destroyed! Removing");
+                            continue;
                         }
                         if (building.FacilityDamageFraction > buildingsDamaged[building])
                         {
-                            building.FacilityDamageFraction -= RegenFactor;
+                            building.FacilityDamageFraction = Mathf.Max(building.FacilityDamageFraction - buildingsDamaged[building] * RegenFactor, buildingsDamaged[building]); // Heal up to the initial damage value.
                             if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.BuildingDamage] {building.name} current HP: {building.FacilityDamageFraction}");
                         }
                         else
