@@ -406,7 +406,7 @@ namespace BDArmory.Weapons.Missiles
 
             if (HighLogic.LoadedSceneIsFlight)
             {
-                //TODO: Backward compatibility wordaround
+                //TODO: Backward compatibility workaround
                 var tnt = part.FindModuleImplementing<BDExplosivePart>();
                 if (tnt is null)
                 {

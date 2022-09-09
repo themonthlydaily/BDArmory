@@ -1203,7 +1203,7 @@ namespace BDArmory.Control
                 return;
             }
 
-            if ((j.Parent && j.Parent.vessel == vessel) || (j.Child && j.Child.vessel == vessel))
+            if (HighLogic.LoadedSceneIsFlight && ((j.Parent && j.Parent.vessel == vessel) || (j.Child && j.Child.vessel == vessel)))
             {
                 RefreshModules();
                 UpdateList();
