@@ -2762,7 +2762,7 @@ namespace BDArmory.Control
             targetMissiles = false;
             weaponTypesGround.Clear();
             weaponTypesSLW.Clear();
-            gunRippleIndex.Clear();
+            //gunRippleIndex.Clear(); //since there keeps being issues with the more limited ripple dict, lets just make it perisitant for all weapons on the craft
             hasAntiRadiationOrdinance = false;
             if (vessel == null || !vessel.loaded) return;
 
@@ -2783,6 +2783,11 @@ namespace BDArmory.Control
                             }
                         }
 
+                    if (weapon.Current.GetWeaponClass() == WeaponClasses.Gun || weapon.Current.GetWeaponClass() == WeaponClasses.Rocket || weapon.Current.GetWeaponClass() == WeaponClasses.DefenseLaser)
+                    {
+                        if (!gunRippleIndex.ContainsKey(weapon.Current.GetPart().partInfo.name)) //I think the empty rocketpod? contine might have been tripping up the ripple dict and not adding the hydra
+                            gunRippleIndex.Add(weapon.Current.GetPart().partInfo.name, 0);
+                    }
                     //dont add empty rocket pods
                     if (weapon.Current.GetWeaponClass() == WeaponClasses.Rocket &&
                     (weapon.Current.GetPart().FindModuleImplementing<ModuleWeapon>().rocketPod && !weapon.Current.GetPart().FindModuleImplementing<ModuleWeapon>().externalAmmo) &&
@@ -2790,11 +2795,6 @@ namespace BDArmory.Control
                     && !BDArmorySettings.INFINITE_AMMO)
                     {
                         continue;
-                    }
-                    if (weapon.Current.GetWeaponClass() == WeaponClasses.Gun || weapon.Current.GetWeaponClass() == WeaponClasses.Rocket || weapon.Current.GetWeaponClass() == WeaponClasses.DefenseLaser)
-                    {
-                        if (!gunRippleIndex.ContainsKey(weapon.Current.GetPart().partInfo.name))
-                            gunRippleIndex.Add(weapon.Current.GetPart().partInfo.name, 0);
                     }
                     //dont add APS
                     if ((weapon.Current.GetWeaponClass() == WeaponClasses.Gun || weapon.Current.GetWeaponClass() == WeaponClasses.Rocket || weapon.Current.GetWeaponClass() == WeaponClasses.DefenseLaser) &&

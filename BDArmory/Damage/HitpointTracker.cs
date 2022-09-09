@@ -69,6 +69,8 @@ namespace BDArmory.Damage
         [KSPField(advancedTweakable = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorMass")]//armor mass
         public float armorMass = 0f;
 
+        private float totalArmorQty = 0f;
+
         [KSPField(advancedTweakable = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorCost")]//armor cost
         public float armorCost = 0f;
 
@@ -713,7 +715,8 @@ namespace BDArmory.Damage
                             if (density > 1e5f || density < 10)
                             {
                                 if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} extreme density detected: {density}! Trying alternate approach based on partSize.");
-                                structuralVolume = (partSize.x * partSize.y + partSize.x * partSize.z + partSize.y * partSize.z) * 2f * sizeAdjust * Mathf.PI / 6f * 0.1f; // Box area * sphere/cube ratio * 10cm. We use sphere/cube ratio to get similar results as part.GetAverageBoundSize().
+                                //structuralVolume = (partSize.x * partSize.y + partSize.x * partSize.z + partSize.y * partSize.z) * 2f * sizeAdjust * Mathf.PI / 6f * 0.1f; // Box area * sphere/cube ratio * 10cm. We use sphere/cube ratio to get similar results as part.GetAverageBoundSize().
+                                structuralVolume = armorVolume * Mathf.PI / 6f * 0.1f; //part bounds change between editor and flight, so use existing persistant size value
                                 density = (partMass * 1000f) / structuralVolume;
                                 if (density > 1e5f || density < 10)
                                 {
@@ -897,7 +900,7 @@ namespace BDArmory.Damage
                             hitpoints = Mathf.Min(hitpoints, (BDArmorySettings.HP_THRESHOLD >= 100 ? BDArmorySettings.HP_THRESHOLD : 2000f) * Mathf.Log(hitpoints / scale + 1)); //use default of 2K for RP if slider set to unclamped
                         }
 
-                        switch (HullTypeNum)
+                            switch (HullTypeNum)
                         {
                             case 1:
                                 hitpoints /= 4;
@@ -1032,10 +1035,10 @@ namespace BDArmory.Damage
                 Debug.Log("[HPTracker] armor mass: " + armorMass + "; mass to reduce: " + (massToReduce * Math.Round((Density / 1000000), 3)) + "kg"); //g/m3
             }
             float reduceMass = (massToReduce * (Density / 1000000000)); //g/cm3 conversion to yield tons
-            if (armorMass > 0)
+            if (totalArmorQty > 0)
             {
                 //Armor -= ((reduceMass * 2) / armorMass) * Armor; //armor that's 50% air isn't going to stop anything and could be considered 'destroyed' so lets reflect that by doubling armor loss (this will also nerf armor panels from 'god-tier' to merely 'very very good'
-                Armor -= ((reduceMass * 1.5f) / armorMass) * Armor;
+                Armor -= ((reduceMass * 1.5f) / totalArmorQty) * Armor;
                 if (Armor < 0)
                 {
                     Armor = 0;
@@ -1061,7 +1064,8 @@ namespace BDArmory.Damage
                     DestroyPart();
                 }
             }
-            armorMass -= reduceMass; //tons
+            totalArmorQty -= reduceMass;
+            armorMass = totalArmorQty * BDArmorySettings.ARMOR_MASS_MOD; //tons
             if (armorMass <= 0)
             {
                 armorMass = 0;
@@ -1253,6 +1257,7 @@ namespace BDArmory.Damage
             var oldArmorMass = armorMass;
             armorMass = 0;
             armorCost = 0;
+            totalArmorQty = 0;
             if (ArmorTypeNum > 1 && (!BDArmorySettings.LEGACY_ARMOR || (!BDArmorySettings.RESET_ARMOUR || (BDArmorySettings.RESET_ARMOUR && ArmorThickness > 10)))) //don't apply cost/mass to None armor type
             {
                 armorMass = (Armor / 1000) * armorVolume * Density / 1000; //armor mass in tons
@@ -1265,6 +1270,8 @@ namespace BDArmory.Damage
                 SelectedArmorType = "None";
                 armorCost = (Armor / 1000) * armorVolume * armorInfo.Cost;
             }
+            totalArmorQty = armorMass; //grabbing a copy of unmodified armorMAss so it can be used in armorMass' place for armor reduction without having to un/re-modify the mass before and after armor hits
+            armorMass *= BDArmorySettings.ARMOR_MASS_MOD;
             //part.RefreshAssociatedWindows(); //having this fire every time a change happens prevents sliders from being used. Add delay timer?
             if (OldArmorType != ArmorTypeNum || oldArmorMass != armorMass)
             {

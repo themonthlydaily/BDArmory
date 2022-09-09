@@ -147,7 +147,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool EXTRA_DAMAGE_SLIDERS = false;
         [BDAPersistentSettingsField] public static float WEAPON_FX_DURATION = 15;               //how long do weapon secondary effects(EMP/choker/gravitic/etc) last
         [BDAPersistentSettingsField] public static float ZOMBIE_DMG_MULT = 0.1f;
-
+        [BDAPersistentSettingsField] public static float ARMOR_MASS_MOD = 1f;                   //Armor mass multiplier
         // FX
         [BDAPersistentSettingsField] public static bool FIRE_FX_IN_FLIGHT = false;
         [BDAPersistentSettingsField] public static int MAX_FIRES_PER_VESSEL = 10;                 //controls fx for penetration only for landed or splashed //this is only for physical missile collisons into fueltanks - SI

@@ -204,7 +204,7 @@ namespace BDArmory.FX
                                     RaycastHit rayHit;
                                     if (Physics.Raycast(ray, out rayHit, thermalRadius, explosionLayerMask))
                                     {
-                                        DestructibleBuilding destructibleBuilding = rayHit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
+                                        //DestructibleBuilding destructibleBuilding = rayHit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
 
                                         distance = Vector3.Distance(Position, rayHit.point);
                                         if (building.IsIntact)
@@ -217,8 +217,9 @@ namespace BDArmory.FX
                             }
                         }
                     }
-                    catch
+                    catch (Exception e)
                     {
+                        Debug.LogError($"[BDArmory.ExplosionFX]: Exception in overlapSphereColliders processing: {e.Message}\n{e.StackTrace}");
                     }
                 }
             }
