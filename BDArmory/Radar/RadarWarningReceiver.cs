@@ -232,7 +232,7 @@ namespace BDArmory.Radar
 
         void ReceivePing(Vessel v, Vector3 source, RWRThreatTypes type, float persistTime)
         {
-            if (v == null || v.packed || !v.loaded) return;
+            if (v == null || v.packed || !v.loaded || !v.isActiveAndEnabled) return;
             if (referenceTransform == null) return;
             if (weaponManager == null) return;
 

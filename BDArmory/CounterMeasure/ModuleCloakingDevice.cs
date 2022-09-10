@@ -208,7 +208,7 @@ namespace BDArmory.CounterMeasure
             disabling = false;
         }
 
-        void Update()
+        void FixedUpdate()
         {
             if (!HighLogic.LoadedSceneIsFlight) return;
             if (enabling || disabling)

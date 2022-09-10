@@ -36,8 +36,10 @@ namespace BDArmory.FX
 
         void FixedUpdate()
         {
-            if (!gameObject.activeInHierarchy)
+            if (!gameObject.activeInHierarchy) return;
+            if (Time.time - startTime > 2)
             {
+                gameObject.SetActive(false);
                 return;
             }
 
@@ -61,19 +63,6 @@ namespace BDArmory.FX
                     velocity = Quaternion.AngleAxis(Random.Range(0f, 90f), Random.onUnitSphere) *
                                velocity;
                 }
-            }
-        }
-
-        void Update()
-        {
-            if (!gameObject.activeInHierarchy)
-            {
-                return;
-            }
-
-            if (Time.time - startTime > 2)
-            {
-                gameObject.SetActive(false);
             }
         }
     }
