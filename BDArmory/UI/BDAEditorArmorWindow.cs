@@ -530,8 +530,9 @@ namespace BDArmory.UI
                                 armor.ArmorModified(null, null);
                                 modified = true;
                             }
-                            totalArmorMass += armor.armorMass;
-                            totalArmorCost += armor.armorCost;
+                            StartCoroutine(calcArmorMassAndCost());
+                            //totalArmorMass += armor.armorMass; //these aren't updating due to ArmorModified getting called next Update tick, so armorMass/Cost hasn't updated yet for grabbing the new value
+                            //totalArmorCost += armor.armorCost;
                         }
                         else
                         {
@@ -584,6 +585,23 @@ namespace BDArmory.UI
                     }
                 }
             wingLoading = totalLift / EditorLogic.fetch.ship.GetTotalMass();
+        }
+
+        IEnumerator calcArmorMassAndCost()
+        {
+            yield return new WaitForEndOfFrame();
+            yield return new WaitForEndOfFrame();
+            using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator())
+                while (parts.MoveNext())
+                {
+                    if (parts.Current.IsMissile()) continue;
+                    HitpointTracker armor = parts.Current.GetComponent<HitpointTracker>();
+                    if (armor != null)
+                    {
+                        totalArmorMass += armor.armorMass;
+                        totalArmorCost += armor.armorCost;
+                    }
+                }
         }
 
         void Visualize()

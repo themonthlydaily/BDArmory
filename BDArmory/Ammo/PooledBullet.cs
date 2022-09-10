@@ -747,7 +747,7 @@ namespace BDArmory.Bullets
 
             if (ProjectileUtils.CheckGroundHit(hitPart, hit, caliber))
             {
-                ProjectileUtils.CheckBuildingHit(hit, bulletMass, currentVelocity, bulletDmgMult);
+                if (!BDArmorySettings.PAINTBALL_MODE) ProjectileUtils.CheckBuildingHit(hit, bulletMass, impactVelocity, bulletDmgMult);
                 if (!RicochetScenery(hitAngle))
                 {
                     ExplosiveDetonation(hitPart, hit, bulletRay);

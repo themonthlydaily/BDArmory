@@ -1186,14 +1186,18 @@ namespace BDArmory.Weapons
                                         validAmmo = true;
                                         break;
                                     }
-                                    if (!validAmmo) customAmmoBelt[i] = testAmmo[0];
+                                    if (!validAmmo)
+                                    {
+                                        customAmmoBelt[i] = testAmmo[0];
+                                        Debug.LogWarning("[BDArmory.ModuleWeapon] Invalid ammo type " + customAmmoBelt[i] + " in ammo belt! reverting to valid ammo type " + testAmmo[0]);
+                                    }
                                 }
                             }
                             baseBulletVelocity = BulletInfo.bullets[customAmmoBelt[0].ToString()].bulletVelocity;
                         }
-                        else
+                        else //belt is empty/"def" reset useAmmoBelt
                         {
-                            customAmmoBelt = BDAcTools.ParseNames(bulletType);
+                            useCustomBelt = false;
                         }
                     }
                 }
@@ -1300,6 +1304,18 @@ namespace BDArmory.Weapons
                 if (fireTransforms.Length == 0) Debug.LogError("[BDArmory.ModuleWeapon] Weapon missing fireTransform [" + fireTransformName + "]! Please fix your model");
                 WeaponNameWindow.OnActionGroupEditorOpened.Add(OnActionGroupEditorOpened);
                 WeaponNameWindow.OnActionGroupEditorClosed.Add(OnActionGroupEditorClosed);
+                if (useCustomBelt)
+                {
+                    if (!string.IsNullOrEmpty(ammoBelt) && ammoBelt != "def")
+                    {
+                        customAmmoBelt = BDAcTools.ParseNames(ammoBelt);                        
+                        baseBulletVelocity = BulletInfo.bullets[customAmmoBelt[0].ToString()].bulletVelocity;
+                    }
+                    else
+                    {
+                        useCustomBelt = false;
+                    }
+                }
             }
             //turret setup
             List<ModuleTurret>.Enumerator turr = part.FindModulesImplementing<ModuleTurret>().GetEnumerator();
@@ -5181,7 +5197,6 @@ namespace BDArmory.Weapons
                     {
                         baseBulletVelocity = BulletInfo.bullets[customAmmoBelt[0].ToString()].bulletVelocity;
                     }
-
                 }
             }
             if (eWeaponType == WeaponTypes.Rocket)
