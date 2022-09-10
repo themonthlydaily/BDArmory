@@ -329,7 +329,6 @@ namespace BDArmory.Radar
                     referenceTransform.rotation = Quaternion.LookRotation(part.transform.up,
                         VectorUtils.GetUpDirection(referenceTransform.position));
                 }
-                //UpdateInputs();
             }
 
             drawGUI = (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && !vessel.packed && irstEnabled &&

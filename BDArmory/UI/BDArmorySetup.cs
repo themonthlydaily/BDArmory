@@ -707,14 +707,6 @@ namespace BDArmory.UI
             }
         }
 
-        void LateUpdate()
-        {
-            if (HighLogic.LoadedSceneIsFlight)
-            {
-                //UpdateCursorState();
-            }
-        }
-
         public void UpdateCursorState()
         {
             if (ActiveWeaponManager == null)
@@ -3767,12 +3759,14 @@ namespace BDArmory.UI
         {
             GAME_UI_ENABLED = false;
             BDACompetitionMode.Instance.UpdateGUIElements();
+            UpdateCursorState();
         }
 
         void ShowGameUI()
         {
             GAME_UI_ENABLED = true;
             BDACompetitionMode.Instance.UpdateGUIElements();
+            UpdateCursorState();
         }
 
         internal void OnDestroy()

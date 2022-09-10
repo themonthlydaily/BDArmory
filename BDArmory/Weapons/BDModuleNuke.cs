@@ -115,7 +115,7 @@ namespace BDArmory.Weapons
             base.OnStart(state);
         }
 
-        public void Update()
+        public void FixedUpdate()
         {
             if (HighLogic.LoadedSceneIsFlight)
             {
