@@ -906,7 +906,8 @@ namespace BDArmory.Radar
         IEnumerator RetryLockRoutine(Vessel v)
         {
             yield return null;
-            vesselRadarData.TryLockTarget(v);
+            if (vesselRadarData != null && vesselRadarData.isActiveAndEnabled)
+                vesselRadarData.TryLockTarget(v);
         }
 
         public void UnlockTargetVessel(Vessel v)

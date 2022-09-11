@@ -585,6 +585,17 @@ namespace BDArmory.Radar
 
         private void Update()
         {
+            if (radarCount > 0)
+            {
+                UpdateInputs();
+            }
+
+            drawGUI = (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && !vessel.packed && rCount > 0 &&
+                       vessel.isActiveVessel && BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled);
+        }
+
+        void FixedUpdate()
+        {
             if (!vessel)
             {
                 Destroy(this);
@@ -604,8 +615,6 @@ namespace BDArmory.Radar
                   Vector3.ProjectOnPlane(vessel.transform.up, vessel.upAxis), vessel.upAxis);
 
                 CleanDisplayedContacts();
-
-                UpdateInputs();
 
                 UpdateSlaveData();
             }
@@ -714,8 +723,7 @@ namespace BDArmory.Radar
             }
 
             UpdateLockedTargets();
-            if (isActiveAndEnabled) // Don't trigger if the gameObject was just destroyed.
-                StartCoroutine(UpdateLocksAfterFrame());
+            StartCoroutine(UpdateLocksAfterFrame());
             return false;
         }
 
@@ -741,7 +749,7 @@ namespace BDArmory.Radar
 
         public bool TryLockTarget(Vessel v)
         {
-            if (v == null) return false;
+            if (v == null || v.packed) return false;
 
             using (List<RadarDisplayData>.Enumerator displayData = displayedTargets.GetEnumerator())
                 while (displayData.MoveNext())

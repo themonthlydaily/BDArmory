@@ -198,7 +198,7 @@ namespace BDArmory.UI
                 using (List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator())
                     while (v.MoveNext())
                     {
-                        if (v.Current == null) continue;
+                        if (v.Current == null || v.Current.packed || !v.Current.loaded) continue;
                         if (BDTISettings.MISSILES)
                         {
                             using (var ml = VesselModuleRegistry.GetModules<MissileBase>(v.Current).GetEnumerator())

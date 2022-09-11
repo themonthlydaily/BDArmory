@@ -80,7 +80,7 @@ namespace BDArmory.Damage
             disabled = false;
         }
 
-        void Update()
+        void FixedUpdate()
         {
             if (!HighLogic.LoadedSceneIsFlight) return;
             if (BDArmorySetup.GameIsPaused) return;

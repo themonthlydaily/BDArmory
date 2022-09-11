@@ -1203,7 +1203,7 @@ namespace BDArmory.Control
                 return;
             }
 
-            if ((j.Parent && j.Parent.vessel == vessel) || (j.Child && j.Child.vessel == vessel))
+            if (HighLogic.LoadedSceneIsFlight && ((j.Parent && j.Parent.vessel == vessel) || (j.Child && j.Child.vessel == vessel)))
             {
                 RefreshModules();
                 UpdateList();
@@ -1251,7 +1251,7 @@ namespace BDArmory.Control
 
             UpdateTargetingAudio();
 
-            if (vessel.isActiveVessel)
+            if (vessel.isActiveVessel) // Manual firing.
             {
                 if (!CheckMouseIsOnGui() && isArmed && BDInputUtils.GetKey(BDInputSettingsFields.WEAP_FIRE_KEY))
                 {
@@ -1304,6 +1304,39 @@ namespace BDArmory.Control
             }
         }
 
+        void UpdateWeaponIndex()
+        {
+            if (weaponIndex >= weaponArray.Length)
+            {
+                hasSingleFired = true;
+                triggerTimer = 0;
+
+                weaponIndex = Mathf.Clamp(weaponIndex, 0, weaponArray.Length - 1);
+
+                SetDeployableWeapons();
+                DisplaySelectedWeaponMessage();
+            }
+            if (weaponArray.Length > 0 && selectedWeapon != weaponArray[weaponIndex])
+                selectedWeapon = weaponArray[weaponIndex];
+
+            //finding next rocket to shoot (for aimer)
+            //FindNextRocket();
+        }
+
+        void UpdateGuidanceTargets()
+        {
+            if (weaponIndex > 0 &&
+                   (selectedWeapon.GetWeaponClass() == WeaponClasses.Missile ||
+                   selectedWeapon.GetWeaponClass() == WeaponClasses.SLW ||
+                    selectedWeapon.GetWeaponClass() == WeaponClasses.Bomb))
+            {
+                SearchForLaserPoint();
+                SearchForHeatTarget();
+                SearchForRadarSource();
+            }
+            CalculateMissilesAway();
+        }
+
         private void CalculateMissilesAway() //FIXME - add check for identically named vessels
         {
             missilesAway.Clear();
@@ -1352,36 +1385,9 @@ namespace BDArmory.Control
             if (weaponsListNeedsUpdating) UpdateList();
 
             if (!vessel.packed)
-
             {
-                if (weaponIndex >= weaponArray.Length)
-                {
-                    hasSingleFired = true;
-                    triggerTimer = 0;
-
-                    weaponIndex = Mathf.Clamp(weaponIndex, 0, weaponArray.Length - 1);
-
-                    SetDeployableWeapons();
-                    DisplaySelectedWeaponMessage();
-                }
-                if (weaponArray.Length > 0 && selectedWeapon != weaponArray[weaponIndex])
-                    selectedWeapon = weaponArray[weaponIndex];
-
-                //finding next rocket to shoot (for aimer)
-                //FindNextRocket();
-
-                //targeting
-                if (weaponIndex > 0 &&
-                    (selectedWeapon.GetWeaponClass() == WeaponClasses.Missile ||
-                    selectedWeapon.GetWeaponClass() == WeaponClasses.SLW ||
-                     selectedWeapon.GetWeaponClass() == WeaponClasses.Bomb))
-                {
-                    SearchForLaserPoint();
-                    SearchForHeatTarget();
-                    SearchForRadarSource();
-                }
-
-                CalculateMissilesAway();
+                UpdateWeaponIndex();
+                UpdateGuidanceTargets();
             }
 
             if (guardMode && vessel.IsControllable)

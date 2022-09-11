@@ -35,7 +35,6 @@ namespace BDArmory.UI
         private Vessel lastActiveVessel = null;
         private bool currentVesselDied = false;
         private double currentVesselDiedAt = 0;
-        private float updateTimer = 0;
 
         //gui params
         private float _windowHeight; //auto adjusting
@@ -157,47 +156,41 @@ namespace BDArmory.UI
 
         private void MissileFireOnToggleTeam(MissileFire wm, BDTeam team)
         {
-            if (_showGui)
-                UpdateList();
+            UpdateList();
         }
 
         private void VesselEventUpdate(Vessel v)
         {
-            if (_showGui)
-                UpdateList();
+            UpdateList();
         }
 
         private void Update()
         {
-            if (_ready)
+            if (!_ready) return;
+            if (BDArmorySetup.Instance.showVesselSwitcherGUI != _showGui)
             {
-                upToDateWMs = false;
-                if (BDArmorySetup.Instance.showVesselSwitcherGUI != _showGui)
-                {
-                    updateTimer -= Time.fixedDeltaTime;
-                    _showGui = BDArmorySetup.Instance.showVesselSwitcherGUI;
-                    if (_showGui && updateTimer < 0)
-                    {
-                        UpdateList();
-                        updateTimer = 0.5f;    //next update in half a sec only
-                    }
-                }
+                _showGui = BDArmorySetup.Instance.showVesselSwitcherGUI;
+                UpdateList();
+            }
 
-                if (_showGui)
-                {
-                    Hotkeys();
-                }
+            if (_showGui)
+            {
+                Hotkeys();
+            }
 
-                // check for camera changes
-                if (_autoCameraSwitch)
-                {
-                    UpdateCamera();
-                }
+            // check for camera changes
+            if (_autoCameraSwitch)
+            {
+                UpdateCamera();
             }
         }
 
         void FixedUpdate()
         {
+            if (!_ready) return;
+
+            if (WeaponManagers.SelectMany(tm => tm.Value).Any(wm => wm == null)) upToDateWMs = false;
+
             if (vesselTraceEnabled)
             {
                 if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
