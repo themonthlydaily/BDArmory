@@ -645,12 +645,13 @@ namespace BDArmory.FX
 
         private void ExecuteBuildingBlastEvent(BuildingBlastHitEvent eventToExecute)
         {
+            if (BDArmorySettings.BUILDING_DMG_MULTIPLIER == 0) return;
             //TODO: Review if the damage is sensible after so many changes
             //buildings
             DestructibleBuilding building = eventToExecute.Building;
             //building.damageDecay = 600f;
 
-            if(building && building.IsIntact && !BDArmorySettings.PAINTBALL_MODE)
+            if (building && building.IsIntact && !BDArmorySettings.PAINTBALL_MODE)
             {
                 var distanceFactor = Mathf.Clamp01((Range - eventToExecute.Distance) / Range);
                 float blastMod = 1;
@@ -675,7 +676,7 @@ namespace BDArmory.FX
                 //building.AddDamage(damageToBuilding); 
                 BuildingDamage.RegisterDamage(building);
                 building.FacilityDamageFraction += damageToBuilding;
-                //based on testing, I think facilityDamageFraction starts at 100, and demolished the building if it hits 0 - which means it will work great as a HP value in the other direction
+                //based on testing, I think facilityDamageFraction starts at values between 5 and 100, and demolished the building if it hits 0 - which means it will work great as a HP value in the other direction
                 if (building.FacilityDamageFraction > building.impactMomentumThreshold * 2)
                 {
                     if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ExplosionFX]: Building " + building.name + " demolished due to Explosive damage! Dmg to building: " + building.Damage);
