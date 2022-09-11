@@ -170,7 +170,7 @@ namespace BDArmory.FX
             fireIntensity = 1;
         }
 
-        void Update()
+        void FixedUpdate()
         {
             if (!gameObject.activeInHierarchy || !HighLogic.LoadedSceneIsFlight || BDArmorySetup.GameIsPaused)
             {
@@ -191,7 +191,7 @@ namespace BDArmory.FX
                     {
                         if (isSRB)
                         {
-                            if (parentPart.RequestResource("SolidFuel", (double)(burnRate * TimeWarp.deltaTime)) <= 0)
+                            if (parentPart.RequestResource("SolidFuel", (double)(burnRate * TimeWarp.fixedDeltaTime)) <= 0)
                             {
                                 hasFuel = false;
                             }
@@ -214,7 +214,7 @@ namespace BDArmory.FX
                         {
                             if (engine.EngineIgnited)
                             {
-                                if (parentPart.RequestResource("LiquidFuel", (double)(burnRate * TimeWarp.deltaTime)) <= 0)
+                                if (parentPart.RequestResource("LiquidFuel", (double)(burnRate * TimeWarp.fixedDeltaTime)) <= 0)
                                 {
                                     hasFuel = false;
                                 }
@@ -239,7 +239,7 @@ namespace BDArmory.FX
                                 {
                                     if (fuel.amount > (fuel.maxAmount * 0.15f) || (fuel.amount > 0 && fuel.amount < (fuel.maxAmount * 0.10f)))
                                     {
-                                        fireIntensity = (burnRate * Mathf.Clamp((float)((1 - (fuel.amount / fuel.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 4 * BDArmorySettings.BD_TANK_LEAK_RATE) * TimeWarp.deltaTime);
+                                        fireIntensity = (burnRate * Mathf.Clamp((float)((1 - (fuel.amount / fuel.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 4 * BDArmorySettings.BD_TANK_LEAK_RATE) * TimeWarp.fixedDeltaTime);
                                         fuel.amount -= fireIntensity;
                                         burnScale = Mathf.Clamp((float)((1 - (fuel.amount / fuel.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 2 * BDArmorySettings.BD_TANK_LEAK_RATE);
                                     }
@@ -261,7 +261,7 @@ namespace BDArmory.FX
                             if (ox.amount > 0)
                             {
                                 fireIntensity *= 1.2f;
-                                ox.amount -= (burnRate * Mathf.Clamp((float)((1 - (ox.amount / ox.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 4 * BDArmorySettings.BD_TANK_LEAK_RATE) * TimeWarp.deltaTime);
+                                ox.amount -= (burnRate * Mathf.Clamp((float)((1 - (ox.amount / ox.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 4 * BDArmorySettings.BD_TANK_LEAK_RATE) * TimeWarp.fixedDeltaTime);
                             }
                             else
                             {
@@ -273,7 +273,7 @@ namespace BDArmory.FX
                         {
                             if (mp.amount > (mp.maxAmount * 0.15f) || (mp.amount > 0 && mp.amount < (mp.maxAmount * 0.10f)))
                             {
-                                mp.amount -= (burnRate * Mathf.Clamp((float)((1 - (mp.amount / mp.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 4 * BDArmorySettings.BD_TANK_LEAK_RATE) * TimeWarp.deltaTime);
+                                mp.amount -= (burnRate * Mathf.Clamp((float)((1 - (mp.amount / mp.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 4 * BDArmorySettings.BD_TANK_LEAK_RATE) * TimeWarp.fixedDeltaTime);
                                 if (burnScale < 0)
                                 {
                                     burnScale = Mathf.Clamp((float)((1 - (mp.amount / mp.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 2 * BDArmorySettings.BD_TANK_LEAK_RATE);
@@ -330,7 +330,7 @@ namespace BDArmory.FX
                         }
                         else if (ec != null || ox != null)
                         {
-                            parentPart.temperature += burnRate * BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime;
+                            parentPart.temperature += burnRate * BDArmorySettings.BD_FIRE_DAMAGE * Time.fixedDeltaTime;
                         }
                     }
                 }
@@ -338,19 +338,19 @@ namespace BDArmory.FX
                 {
                     if (BDArmorySettings.BD_INTENSE_FIRES)
                     {
-                        parentPart.AddDamage(fireIntensity * BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
+                        parentPart.AddDamage(fireIntensity * BDArmorySettings.BD_FIRE_DAMAGE * Time.fixedDeltaTime);
                     }
                     else
                     {
                         if (BDArmorySettings.ENABLE_HOS && BDArmorySettings.HALL_OF_SHAME_LIST.Contains(parentPart.vessel.GetName()))
                         {
-                            parentPart.AddDamage(BDArmorySettings.HOS_FIRE * Time.deltaTime);
+                            parentPart.AddDamage(BDArmorySettings.HOS_FIRE * Time.fixedDeltaTime);
                         }
                         else
-                            parentPart.AddDamage(BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
+                            parentPart.AddDamage(BDArmorySettings.BD_FIRE_DAMAGE * Time.fixedDeltaTime);
                     }
 
-                    BDACompetitionMode.Instance.Scores.RegisterBattleDamage(SourceVessel, parentPart.vessel, BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
+                    BDACompetitionMode.Instance.Scores.RegisterBattleDamage(SourceVessel, parentPart.vessel, BDArmorySettings.BD_FIRE_DAMAGE * Time.fixedDeltaTime);
                 }
             }
             if (disableTime < 0 && ((!hasFuel && burnTime < 0) || (burnTime >= 0 && Time.time - startTime > burnTime)))
@@ -370,7 +370,7 @@ namespace BDArmory.FX
             }
             if (surfaceFire && parentPart.vessel.horizontalSrfSpeed > 120) //blow out surface fires if moving fast enough
             {
-                burnTime = 5; //only fuel+oxy or monoprop fires in vac/non-oxy atmo
+                burnTime = 5; 
             }
             // Note: the following can set the parentPart to null.
             if (disableTime > 0 && Time.time - disableTime > _highestEnergy) //wait until last emitted particle has finished
@@ -380,6 +380,10 @@ namespace BDArmory.FX
             if (!FlightGlobals.currentMainBody.atmosphereContainsOxygen && (ox == null && mp == null))
             {
                 Deactivate(); //only fuel+oxy or monoprop fires in vac/non-oxy atmo
+            }
+            if (FlightGlobals.getAltitudeAtPos(transform.position) <= 0)
+            {
+                Deactivate(); //don't burn underwater
             }
         }
 

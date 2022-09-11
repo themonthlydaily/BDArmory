@@ -557,6 +557,9 @@ namespace BDArmory.Modules
                     }
                 }
             }
+        }
+        void FixedUpdate()
+        {
             if (!HighLogic.LoadedSceneIsFlight || !FlightGlobals.ready || BDArmorySetup.GameIsPaused) return; // Not in flight scene, not ready or paused.
             if (vessel == null || vessel.packed || part == null) return; // Vessel or part is dead or packed.
             if (!BDArmorySettings.BD_FIRES_ENABLED || !BDArmorySettings.BD_FIRE_HEATDMG) return; // Disabled.
@@ -566,7 +569,7 @@ namespace BDArmory.Modules
                 if (InertTank) return;
                 if (!isOnFire)
                 {
-                    if (((fuel != null && fuel.amount > 0) || (monoprop != null && monoprop.amount > 0) )&& part.temperature > 493) //autoignition temp of kerosene is 220 c. hydrazine is 24-270, so this works for monoprop as well
+                    if (((fuel != null && fuel.amount > 0) || (monoprop != null && monoprop.amount > 0)) && part.temperature > 493) //autoignition temp of kerosene is 220 c. hydrazine is 24-270, so this works for monoprop as well
                     {
                         string fireStarter;
                         var vesselFire = part.vessel.GetComponentInChildren<FireFX>();

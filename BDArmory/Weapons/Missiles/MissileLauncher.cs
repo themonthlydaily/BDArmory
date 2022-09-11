@@ -2431,17 +2431,19 @@ namespace BDArmory.Weapons.Missiles
                     output.AppendLine($"- tnt Mass: {tntMass} kg");
                     output.AppendLine($"- {((BDExplosivePart)partModules.Current).warheadReportingName} warhead");
                 }
-                else if (partModules.Current.moduleName == "ModuleEMP")
+                if (partModules.Current.moduleName == "ModuleEMP")
                 {
                     float proximity = ((ModuleEMP)partModules.Current).proximity;
                     output.AppendLine($"- EMP Blast Radius: {proximity} m");
                 }
-                else if (partModules.Current.moduleName == "BDModuleNuke")
+                if (partModules.Current.moduleName == "BDModuleNuke")
                 {
                     float yield = ((BDModuleNuke)partModules.Current).yield;
                     float radius = ((BDModuleNuke)partModules.Current).thermalRadius;
+                    float EMPRadius = ((BDModuleNuke)partModules.Current).isEMP ? BDAMath.Sqrt(yield) * 500 : -1;
                     output.AppendLine($"- Yield: {yield} kT");
                     output.AppendLine($"- Max radius: {radius} m");
+                    if (EMPRadius > 0) output.AppendLine($"- EMP Blast Radius: {EMPRadius} m");
                 }
                 else continue;
                 break;

@@ -104,6 +104,8 @@ namespace BDArmory.Weapons
                 {
                     Fields["status"].guiActive = false;
                     Fields["fuelleft"].guiActive = false;
+                    Fields["status"].guiActiveEditor = false;
+                    Fields["fuelleft"].guiActiveEditor = false;
                     var missile = part.FindModuleImplementing<MissileLauncher>();
                 }
                 Sourcevessel = part.vessel.GetName();

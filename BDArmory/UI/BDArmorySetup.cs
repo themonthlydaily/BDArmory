@@ -2771,7 +2771,7 @@ namespace BDArmory.UI
                         BDArmorySettings.BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER, 1f, 256f));
 
                         GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_ArmorMassMultiplier")}:  ({BDArmorySettings.ARMOR_MASS_MOD})", leftLabel);
-                        BDArmorySettings.ARMOR_MASS_MOD = Mathf.Round((GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.ARMOR_MASS_MOD * 20f, 1f, 40f))) / 20f; //armor mult cannot be zero, else things break
+                        BDArmorySettings.ARMOR_MASS_MOD = Mathf.Round((GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.ARMOR_MASS_MOD * 20f, 1f, 40f))) / 20f; //armor mult shouldn't be zero, else armor will never take damage, might also break some other things
                     }
                 }
 

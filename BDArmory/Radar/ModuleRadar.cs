@@ -499,24 +499,6 @@ namespace BDArmory.Radar
 
         void Update()
         {
-            if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && !vessel.packed && radarEnabled)
-            {
-                if (omnidirectional)
-                {
-                    referenceTransform.position = part.transform.position;
-                    referenceTransform.rotation =
-                        Quaternion.LookRotation(VectorUtils.GetNorthVector(transform.position, vessel.mainBody),
-                            VectorUtils.GetUpDirection(transform.position));
-                }
-                else
-                {
-                    referenceTransform.position = part.transform.position;
-                    referenceTransform.rotation = Quaternion.LookRotation(part.transform.up,
-                        VectorUtils.GetUpDirection(referenceTransform.position));
-                }
-                //UpdateInputs();
-            }
-
             drawGUI = (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && !vessel.packed && radarEnabled &&
                        vessel.isActiveVessel && BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled);
         }
@@ -554,6 +536,23 @@ namespace BDArmory.Radar
                     {
                         Scan();
                     }
+                }
+                if (!vessel.packed && radarEnabled)
+                {
+                    if (omnidirectional)
+                    {
+                        referenceTransform.position = part.transform.position;
+                        referenceTransform.rotation =
+                            Quaternion.LookRotation(VectorUtils.GetNorthVector(transform.position, vessel.mainBody),
+                                VectorUtils.GetUpDirection(transform.position));
+                    }
+                    else
+                    {
+                        referenceTransform.position = part.transform.position;
+                        referenceTransform.rotation = Quaternion.LookRotation(part.transform.up,
+                            VectorUtils.GetUpDirection(referenceTransform.position));
+                    }
+                    //UpdateInputs();
                 }
             }
         }
