@@ -195,14 +195,14 @@ namespace BDArmory.Radar
 
         IEnumerator PingLifeRoutine(int index, float lifeTime)
         {
-            yield return new WaitForSeconds(Mathf.Clamp(lifeTime - 0.04f, minPingInterval, lifeTime));
+            yield return new WaitForSecondsFixed(Mathf.Clamp(lifeTime - 0.04f, minPingInterval, lifeTime));
             pingsData[index] = TargetSignatureData.noTarget;
         }
 
         IEnumerator LaunchWarningRoutine(TargetSignatureData data)
         {
             launchWarnings.Add(data);
-            yield return new WaitForSeconds(2);
+            yield return new WaitForSecondsFixed(2);
             launchWarnings.Remove(data);
         }
 
@@ -232,7 +232,7 @@ namespace BDArmory.Radar
 
         void ReceivePing(Vessel v, Vector3 source, RWRThreatTypes type, float persistTime)
         {
-            if (v == null) return;
+            if (v == null || v.packed || !v.loaded || !v.isActiveAndEnabled) return;
             if (referenceTransform == null) return;
             if (weaponManager == null) return;
 

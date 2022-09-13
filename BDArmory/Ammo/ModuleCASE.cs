@@ -367,12 +367,13 @@ namespace BDArmory.Ammo
 
             return output.ToString();
         }
-        void Update()
+        void FixedUpdate()
         {
             if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && !vessel.packed)
             {
                 if (BDArmorySettings.BD_FIRES_ENABLED && BDArmorySettings.BD_FIRE_HEATDMG)
                 {
+                    if (hasDetonated) return;
                     if (this.part.temperature > 900) //ammo cooks off, part is too hot
                     {
                         if (!hasDetonated) DetonateIfPossible();

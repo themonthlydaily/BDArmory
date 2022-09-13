@@ -869,7 +869,7 @@ namespace BDArmory.Weapons
             if (isRippleFiring) delay = 0;
             if (delay > 0)
             {
-                yield return new WaitForSeconds(delay);
+                yield return new WaitForSecondsFixed(delay);
             }
             if (weaponManager == null || weaponManager.vessel != this.vessel) yield break;
             weaponManager.incrementRippleIndex(WeaponName);
@@ -4643,7 +4643,7 @@ namespace BDArmory.Weapons
                 delayTime /= ((laserDamage / (1 + Mathf.PI * angularSpread * angularSpread) * 0.425f) / 100);
                 if (delayTime < TimeWarp.fixedDeltaTime) delayTime = 0;
             }
-            yield return new WaitForSeconds(delayTime);
+            yield return new WaitForSecondsFixed(delayTime);
             if (shell != null)
             {
                 if (shell.tntMass > 0)
@@ -4832,7 +4832,7 @@ namespace BDArmory.Weapons
             BDArmorySetup.Instance.UpdateCursorState();
             if (turret)
             {
-                yield return new WaitForSeconds(0.2f);
+                yield return new WaitForSecondsFixed(0.2f);
 
                 while (!turret.ReturnTurret()) //wait till turret has returned
                 {
@@ -4897,7 +4897,7 @@ namespace BDArmory.Weapons
             }
             else
             {
-                yield return new WaitForSeconds(ChargeTime);
+                yield return new WaitForSecondsFixed(ChargeTime);
             }
             UpdateGUIWeaponState();
             isCharging = false;

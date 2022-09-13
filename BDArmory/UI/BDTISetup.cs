@@ -223,11 +223,11 @@ namespace BDArmory.UI
         {
             if (BDTISettings.TEAMICONS)
             {
-                updateList -= Time.fixedDeltaTime;
+                updateList -= Time.deltaTime;
                 if (updateList < 0)
                 {
                     UpdateList();
-                    updateList = 0.5f; // check team lists less often than every frame
+                    updateList = 1f; // check team lists less often than every frame
                 }
             }
         }

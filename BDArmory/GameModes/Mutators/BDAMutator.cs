@@ -262,7 +262,7 @@ namespace BDArmory.GameModes
             hasTaxes = false;
         }
 
-        void Update()
+        void FixedUpdate()
         {
             if (HighLogic.LoadedSceneIsFlight && !BDArmorySetup.GameIsPaused && !vessel.packed)
             {
