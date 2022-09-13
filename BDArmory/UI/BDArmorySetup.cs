@@ -2487,6 +2487,10 @@ namespace BDArmory.UI
 #if DEBUG  // Only visible when compiled in Debug configuration.
                     if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
                     {
+                        if (GUI.Button(SLeftRect(++line), "Test yield wait lengths")) // Test yield wait lengths
+                        {
+                            StartCoroutine(TestYieldWaitLengths());
+                        }
                         if (BDACompetitionMode.Instance != null)
                         {
                             if (GUI.Button(SLeftRect(++line), "Run DEBUG checks"))// Run DEBUG checks
@@ -3852,6 +3856,26 @@ namespace BDArmory.UI
         void FlightIntegrator() { Debug.Log($"DEBUG {Time.time} FlightIntegrator, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
         void Late() { Debug.Log($"DEBUG {Time.time} Late, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
         void BetterLateThanNever() { Debug.Log($"DEBUG {Time.time} BetterLateThanNever, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
+
+        IEnumerator TestYieldWaitLengths()
+        {
+            Debug.Log($"DEBUG Starting yield wait tests at {Time.time} with timeScale {Time.timeScale}");
+            var tic = Time.time;
+            yield return new WaitForFixedUpdate();
+            Debug.Log($"DEBUG WaitForFixedUpdate took {Time.time - tic}s at {Time.time}");
+            tic = Time.time;
+            yield return new WaitForSeconds(1);
+            Debug.Log($"DEBUG WaitForSeconds(1) took {Time.time - tic}s at {Time.time}");
+            tic = Time.time;
+            yield return new WaitForSecondsFixed(1);
+            Debug.Log($"DEBUG WaitForSecondsFixed(1) took {Time.time - tic}s at {Time.time}");
+            tic = Time.time;
+            yield return new WaitUntil(() => Time.time - tic > 1);
+            Debug.Log($"DEBUG WaitUntil took {Time.time - tic}s at {Time.time}");
+            tic = Time.time;
+            yield return new WaitUntilFixed(() => Time.time - tic > 1);
+            Debug.Log($"DEBUG WaitUntilFixed took {Time.time - tic}s at {Time.time}");
+        }
 #endif
     }
 }

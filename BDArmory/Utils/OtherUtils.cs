@@ -1,6 +1,7 @@
 using BDArmory.Settings;
 using UnityEngine;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -134,5 +135,46 @@ namespace BDArmory.Utils
             BDArmorySettings.TIME_OVERRIDE = enabled;
             Time.timeScale = enabled ? BDArmorySettings.TIME_SCALE : 1f;
         }
+    }
+
+    /// <summary>
+    /// Custom yield instruction that allows waiting for a number of seconds based on the FixedUpdate cycle instead of the Update cycle.
+    /// Based on http://answers.unity.com/comments/1910230/view.html
+    /// </summary>
+    public class WaitForSecondsFixed : IEnumerator
+    {
+        private WaitForFixedUpdate wait = new WaitForFixedUpdate();
+        public virtual object Current => this.wait;
+        float endTime, seconds;
+
+        public WaitForSecondsFixed(float seconds)
+        {
+            this.seconds = seconds;
+            this.Reset();
+        }
+
+        public bool MoveNext() => this.keepWaiting;
+        public virtual bool keepWaiting => (Time.fixedTime < endTime);
+        public virtual void Reset() => this.endTime = Time.fixedTime + this.seconds;
+    }
+
+    /// <summary>
+    /// Custom yield instruction that allows yielding until a predicate is satisfied based on the FixedUpdate cycle instead of the Update cycle.
+    /// Based on http://answers.unity.com/comments/1910230/view.html
+    /// </summary>
+    public class WaitUntilFixed : IEnumerator
+    {
+        private WaitForFixedUpdate wait = new WaitForFixedUpdate();
+        public virtual object Current => this.wait;
+        Func<bool> predicate;
+
+        public WaitUntilFixed(Func<bool> predicate)
+        {
+            this.predicate = predicate;
+        }
+
+        public bool MoveNext() => this.keepWaiting;
+        public virtual bool keepWaiting => !predicate();
+        public virtual void Reset() { }
     }
 }

@@ -545,20 +545,6 @@ namespace BDArmory.Damage
         {
             if (!_finished_setting_up) return;
             RefreshHitPoints();
-            if (HighLogic.LoadedSceneIsFlight && !GameIsPaused)
-            {
-                if (BDArmorySettings.HEART_BLEED_ENABLED && ShouldHeartBleed())
-                {
-                    HeartBleed();
-                }
-                if (ArmorTypeNum > 1 || ArmorPanel)
-                {
-                    if (part.skinTemperature > SafeUseTemp * 1.5f)
-                    {
-                        ReduceArmor((armorVolume * ((float)part.skinTemperature / SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
-                    }
-                }
-            }
         }
 
         void Update() // This stops running once things are set up.
@@ -585,9 +571,9 @@ namespace BDArmory.Damage
             }
         }
 
-        void FixedUpdate() // This stops running once things are set up.
+        void FixedUpdate()
         {
-            if (_updateMass)
+            if (_updateMass) // This stops running once things are set up.
             {
                 _updateMass = false;
                 var oldPartMass = partMass;
@@ -616,6 +602,21 @@ namespace BDArmory.Damage
                     }
                     _hullModified = true; // Modifying the mass modifies the hull.
                     _updateHitpoints = true;
+                }
+            }
+
+            if (HighLogic.LoadedSceneIsFlight && !GameIsPaused)
+            {
+                if (BDArmorySettings.HEART_BLEED_ENABLED && ShouldHeartBleed())
+                {
+                    HeartBleed();
+                }
+                if (ArmorTypeNum > 1 || ArmorPanel)
+                {
+                    if (part.skinTemperature > SafeUseTemp * 1.5f)
+                    {
+                        ReduceArmor((armorVolume * ((float)part.skinTemperature / SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
+                    }
                 }
             }
         }

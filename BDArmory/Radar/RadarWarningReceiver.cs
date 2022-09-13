@@ -195,14 +195,14 @@ namespace BDArmory.Radar
 
         IEnumerator PingLifeRoutine(int index, float lifeTime)
         {
-            yield return new WaitForSeconds(Mathf.Clamp(lifeTime - 0.04f, minPingInterval, lifeTime));
+            yield return new WaitForSecondsFixed(Mathf.Clamp(lifeTime - 0.04f, minPingInterval, lifeTime));
             pingsData[index] = TargetSignatureData.noTarget;
         }
 
         IEnumerator LaunchWarningRoutine(TargetSignatureData data)
         {
             launchWarnings.Add(data);
-            yield return new WaitForSeconds(2);
+            yield return new WaitForSecondsFixed(2);
             launchWarnings.Remove(data);
         }
 

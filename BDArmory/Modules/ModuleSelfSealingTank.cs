@@ -491,7 +491,7 @@ namespace BDArmory.Modules
         IEnumerator ExtinguishRoutine(float time, bool useBottle)
         {
             //Debug.Log("[BDArmory.SelfSealingTank]: ExtinguishRoutine started. Time left: " + time);
-            yield return new WaitForSeconds(time);
+            yield return new WaitForSecondsFixed(time);
             //Debug.Log("[BDArmory.SelfSealingTank]: Timer finished. Extinguishing");
             foreach (var existingFire in part.GetComponentsInChildren<FireFX>())
             {

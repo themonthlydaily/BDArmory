@@ -120,7 +120,7 @@ def encode_names(log_lines: List[str]) -> Tuple[Dict[str, str], List[str]]:
     craft_names.update({json.dumps(name)[1:-1] for name in craft_names})
     craft_names = {cn: b64encode(cn.encode()) for cn in craft_names}
     sorted_craft_names = list(sorted(craft_names, key=lambda k: len(k), reverse=True))  # Sort the craft names from longest to shortest to avoid accidentally replacing substrings.
-    for i in range(len(log_lines)):
+    for i in range(1, len(log_lines)):  # The first line doesn't contain craft names
         for name in sorted_craft_names:
             log_lines[i] = log_lines[i].replace(name, craft_names[name].decode())
     encoded_craft_names = {v.decode(): k for k, v in craft_names.items()}

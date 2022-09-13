@@ -1415,16 +1415,16 @@ namespace BDArmory.Weapons.Missiles
         {
             MissileState = MissileStates.Drop;
             StartCoroutine(DeployAnimRoutine());
-            yield return new WaitForSeconds(dropTime);
+            yield return new WaitForSecondsFixed(dropTime);
             yield return StartCoroutine(BoostRoutine());
             StartCoroutine(FlightAnimRoutine());
-            yield return new WaitForSeconds(cruiseDelay);
+            yield return new WaitForSecondsFixed(cruiseDelay);
             yield return StartCoroutine(CruiseRoutine());
         }
 
         IEnumerator DeployAnimRoutine()
         {
-            yield return new WaitForSeconds(deployTime);
+            yield return new WaitForSecondsFixed(deployTime);
             if (deployStates == null)
             {
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.LogWarning("[BDArmory.MissileLauncher]: deployStates was null, aborting AnimRoutine.");

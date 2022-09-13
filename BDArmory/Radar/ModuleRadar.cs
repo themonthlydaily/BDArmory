@@ -1049,7 +1049,7 @@ namespace BDArmory.Radar
                         yield break;
                     }
 
-                yield return new WaitForSeconds(0.5f);
+                yield return new WaitForSecondsFixed(0.5f);
             }
         }
 

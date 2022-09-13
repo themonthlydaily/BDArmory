@@ -1231,7 +1231,7 @@ namespace BDArmory.UI
                                         vesselScore *= 0.5f;
                                         var distance = Vector3.Distance(wm.Current.vessel.GetWorldPos3D(), wm.Current.incomingThreatPosition);
                                         vesselScore *= 0.031623f * BDAMath.Sqrt(distance); // Equal to 1 at 1000m, we don't want to overly disadvantage craft that are super far away, but could be firing missiles or doing other interesting things
-                                                                                         //we're very interested when threat and target are the same
+                                                                                           //we're very interested when threat and target are the same
                                         if (wm.Current.incomingThreatVessel != null && wm.Current.currentTarget != null)
                                         {
                                             if (wm.Current.incomingThreatVessel.GetName() == wm.Current.currentTarget.Vessel.GetName())
@@ -1291,7 +1291,7 @@ namespace BDArmory.UI
                         bestVessel = null; // stop switching
                     }
                 }
-                if (timeSinceChange > BDArmorySettings.CAMERA_SWITCH_FREQUENCY)
+                if (timeSinceChange > BDArmorySettings.CAMERA_SWITCH_FREQUENCY * timeScaleSqrt)
                 {
                     if (bestVessel != null && bestVessel.loaded && !bestVessel.packed && !(bestVessel.isActiveVessel)) // if a vessel dies it'll use a default score for a few seconds
                     {
@@ -1299,6 +1299,17 @@ namespace BDArmory.UI
                         ForceSwitchVessel(bestVessel);
                     }
                 }
+            }
+        }
+        float _timeScaleSqrt = 1f;
+        float timeScaleSqrt // For scaling the camera switch frequency with the sqrt of the time scale.
+        {
+            get
+            {
+                if (!BDArmorySettings.TIME_OVERRIDE || Time.timeScale <= 1) return 1f;
+                if (Mathf.Abs(Time.timeScale - _timeScaleSqrt * _timeScaleSqrt) > 1e-3f)
+                    _timeScaleSqrt = BDAMath.Sqrt(Time.timeScale);
+                return _timeScaleSqrt;
             }
         }
 
@@ -1326,7 +1337,7 @@ namespace BDArmory.UI
 
         public void TriggerSwitchVessel(float delay)
         {
-            lastCameraSwitch = delay > 0 ? Planetarium.GetUniversalTime() - (BDArmorySettings.CAMERA_SWITCH_FREQUENCY - delay) : 0f;
+            lastCameraSwitch = delay > 0 ? Planetarium.GetUniversalTime() - (BDArmorySettings.CAMERA_SWITCH_FREQUENCY * timeScaleSqrt - delay) : 0f;
             lastCameraCheck = 0f;
             UpdateCamera();
         }
