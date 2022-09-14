@@ -69,7 +69,7 @@ namespace BDArmory.Bullets
         public string rocketSoundPath;
 
         float startTime;
-        float lifeTime = 10;
+        public float lifeTime = 10;
 
         Vector3 prevPosition;
         public Vector3 currPosition;

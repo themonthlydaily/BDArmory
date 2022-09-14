@@ -352,6 +352,11 @@ namespace BDArmory.Bullets
             if (Time.time > timeToLiveUntil) //kill bullet when TTL ends
             {
                 KillBullet();
+                if (isAPSprojectile)
+                {
+                    if (HEType != PooledBulletTypes.Explosive && tntMass > 0)
+                        ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, currentVelocity, -1, true);
+                }
                 return;
             }
             /*
