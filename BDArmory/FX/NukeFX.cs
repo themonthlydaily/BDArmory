@@ -289,13 +289,20 @@ namespace BDArmory.FX
             if (!gameObject.activeInHierarchy) return;
 
             if (HighLogic.LoadedSceneIsFlight)
-            {                
-                if (hasDetonated && TimeIndex > 0.3f && pEmitters != null) // 0.3s seems to be enough to always show the explosion, but 0.2s isn't for some reason.
+            {
+                if (hasDetonated)
                 {
-                    foreach (var pe in pEmitters)
+                    if (LightFx != null) LightFx.intensity -= 12 * scale * Time.deltaTime;
+                    if (TimeIndex > 0.3f && pEmitters != null) // 0.3s seems to be enough to always show the explosion, but 0.2s isn't for some reason.
                     {
-                        if (pe == null) continue;
-                        pe.emit = false;
+                        if (TimeIndex > 0.3f && pEmitters != null) // 0.3s seems to be enough to always show the explosion, but 0.2s isn't for some reason.
+                        {
+                            foreach (var pe in pEmitters)
+                            {
+                                if (pe == null) continue;
+                                pe.emit = false;
+                            }
+                        }
                     }
                 }
             }
@@ -319,6 +326,7 @@ namespace BDArmory.FX
 
                     LightFx = gameObject.GetComponent<Light>();
                     LightFx.range = thermalRadius;
+                    LightFx.intensity =  thermalRadius / 3f;
                     if (lastValidAtmDensity < 0.05)
                     {
                         FXEmitter.CreateFX(transform.position, scale, flashModelPath, "", 0.3f);
@@ -347,7 +355,6 @@ namespace BDArmory.FX
                         }
                     }
                 }
-                if (LightFx != null) LightFx.intensity -= 12 * scale * Time.deltaTime;
             }
             if (hasDetonated)
             {
@@ -539,8 +546,8 @@ namespace BDArmory.FX
             if (!nukePool.ContainsKey(key) || nukePool[key] == null)
             {
                 GameObject templateFX;
-                if(!String.IsNullOrEmpty(ModelPath))
-                    {
+                if (!String.IsNullOrEmpty(ModelPath))
+                {
                     templateFX = GameDatabase.Instance.GetModel(ModelPath);
                     if (templateFX == null)
                     {

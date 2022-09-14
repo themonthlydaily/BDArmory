@@ -150,13 +150,16 @@ namespace BDArmory.FX
         void OnDisable()
         {
             // Clean up emitters.
-            BDArmorySetup.numberOfParticleEmitters--;
-            foreach (var pe in pEmitters)
-                if (pe != null)
-                {
-                    pe.emit = false;
-                    EffectBehaviour.RemoveParticleEmitter(pe);
-                }
+            if (pEmitters is not null)
+            {
+                --BDArmorySetup.numberOfParticleEmitters;
+                foreach (var pe in pEmitters)
+                    if (pe != null)
+                    {
+                        pe.emit = false;
+                        EffectBehaviour.RemoveParticleEmitter(pe);
+                    }
+            }
             // Clean up part and resource references.
             parentPart = null;
             Seat = null;
@@ -536,7 +539,7 @@ namespace BDArmory.FX
                 Deactivate(); // Sometimes (mostly when unloading a vessel) the parent becomes null without triggering OnParentDestroy.
             }
         }
-    
+
         void OnVesselUnloaded_1_11(bool addRemove) // onVesselUnloaded event introduced in 1.11
         {
             if (addRemove)

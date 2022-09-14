@@ -1203,7 +1203,7 @@ namespace BDArmory.Control
                 return;
             }
 
-            if ((j.Parent && j.Parent.vessel == vessel) || (j.Child && j.Child.vessel == vessel))
+            if (HighLogic.LoadedSceneIsFlight && ((j.Parent && j.Parent.vessel == vessel) || (j.Child && j.Child.vessel == vessel)))
             {
                 RefreshModules();
                 UpdateList();
@@ -1240,7 +1240,7 @@ namespace BDArmory.Control
             { currentHP = GetTotalHP(); }
         }
 
-        public override void OnUpdate() //shouldn't most of this stuff be in onFixedUpdate instead?
+        public override void OnUpdate()
         {
             if (!HighLogic.LoadedSceneIsFlight)
             {
@@ -1251,7 +1251,7 @@ namespace BDArmory.Control
 
             UpdateTargetingAudio();
 
-            if (vessel.isActiveVessel)
+            if (vessel.isActiveVessel) // Manual firing.
             {
                 if (!CheckMouseIsOnGui() && isArmed && BDInputUtils.GetKey(BDInputSettingsFields.WEAP_FIRE_KEY))
                 {
@@ -1304,6 +1304,39 @@ namespace BDArmory.Control
             }
         }
 
+        void UpdateWeaponIndex()
+        {
+            if (weaponIndex >= weaponArray.Length)
+            {
+                hasSingleFired = true;
+                triggerTimer = 0;
+
+                weaponIndex = Mathf.Clamp(weaponIndex, 0, weaponArray.Length - 1);
+
+                SetDeployableWeapons();
+                DisplaySelectedWeaponMessage();
+            }
+            if (weaponArray.Length > 0 && selectedWeapon != weaponArray[weaponIndex])
+                selectedWeapon = weaponArray[weaponIndex];
+
+            //finding next rocket to shoot (for aimer)
+            //FindNextRocket();
+        }
+
+        void UpdateGuidanceTargets()
+        {
+            if (weaponIndex > 0 &&
+                   (selectedWeapon.GetWeaponClass() == WeaponClasses.Missile ||
+                   selectedWeapon.GetWeaponClass() == WeaponClasses.SLW ||
+                    selectedWeapon.GetWeaponClass() == WeaponClasses.Bomb))
+            {
+                SearchForLaserPoint();
+                SearchForHeatTarget();
+                SearchForRadarSource();
+            }
+            CalculateMissilesAway();
+        }
+
         private void CalculateMissilesAway() //FIXME - add check for identically named vessels
         {
             missilesAway.Clear();
@@ -1352,36 +1385,9 @@ namespace BDArmory.Control
             if (weaponsListNeedsUpdating) UpdateList();
 
             if (!vessel.packed)
-
             {
-                if (weaponIndex >= weaponArray.Length)
-                {
-                    hasSingleFired = true;
-                    triggerTimer = 0;
-
-                    weaponIndex = Mathf.Clamp(weaponIndex, 0, weaponArray.Length - 1);
-
-                    SetDeployableWeapons();
-                    DisplaySelectedWeaponMessage();
-                }
-                if (weaponArray.Length > 0 && selectedWeapon != weaponArray[weaponIndex])
-                    selectedWeapon = weaponArray[weaponIndex];
-
-                //finding next rocket to shoot (for aimer)
-                //FindNextRocket();
-
-                //targeting
-                if (weaponIndex > 0 &&
-                    (selectedWeapon.GetWeaponClass() == WeaponClasses.Missile ||
-                    selectedWeapon.GetWeaponClass() == WeaponClasses.SLW ||
-                     selectedWeapon.GetWeaponClass() == WeaponClasses.Bomb))
-                {
-                    SearchForLaserPoint();
-                    SearchForHeatTarget();
-                    SearchForRadarSource();
-                }
-
-                CalculateMissilesAway();
+                UpdateWeaponIndex();
+                UpdateGuidanceTargets();
             }
 
             if (guardMode && vessel.IsControllable)
@@ -1606,7 +1612,7 @@ namespace BDArmory.Control
 
         IEnumerator StartupListUpdater()
         {
-            while (vessel.packed || !FlightGlobals.ready)
+            while (!FlightGlobals.ready || (vessel is not null && (vessel.packed || !vessel.loaded)))
             {
                 yield return null;
                 if (vessel.isActiveVessel)
@@ -1621,9 +1627,9 @@ namespace BDArmory.Control
         {
             while (enabled)
             {
-                yield return new WaitUntil(() => missileIsIncoming); // Wait until missile is incoming.
+                yield return new WaitUntilFixed(() => missileIsIncoming); // Wait until missile is incoming.
                 if (BDArmorySettings.DEBUG_AI) { Debug.Log("[BDArmory.MissileFire]: Triggering missile warning on " + vessel.vesselName); }
-                yield return new WaitUntil(() => Time.time - incomingMissileLastDetected > 1f); // Wait until 1s after no missiles are detected.
+                yield return new WaitUntilFixed(() => Time.time - incomingMissileLastDetected > 1f); // Wait until 1s after no missiles are detected.
                 if (BDArmorySettings.DEBUG_AI) { Debug.Log("[BDArmory.MissileFire]: Silencing missile warning on " + vessel.vesselName); }
                 missileIsIncoming = false;
             }
@@ -1635,7 +1641,7 @@ namespace BDArmory.Control
             if (underFire) yield break; // Already under fire, we only want 1 timer.
             underFire = true;
             if (BDArmorySettings.DEBUG_AI) { Debug.Log("[BDArmory.MissileFire]: Triggering under fire warning on " + vessel.vesselName + " by " + priorGunThreatVessel.vesselName); }
-            yield return new WaitUntil(() => Time.time - underFireLastNotified > 1f); // Wait until 1s after being under fire.
+            yield return new WaitUntilFixed(() => Time.time - underFireLastNotified > 1f); // Wait until 1s after being under fire.
             if (BDArmorySettings.DEBUG_AI) { Debug.Log("[BDArmory.MissileFire]: Silencing under fire warning on " + vessel.vesselName); }
             underFire = false;
             priorGunThreatVessel = null;
@@ -1647,7 +1653,7 @@ namespace BDArmory.Control
             if (underAttack) yield break; // Already under attack, we only want 1 timer.
             underAttack = true;
             if (BDArmorySettings.DEBUG_AI) { Debug.Log("[BDArmory.MissileFire]: Triggering under attack warning on " + vessel.vesselName + " by " + incomingThreatVessel.vesselName); }
-            yield return new WaitUntil(() => Time.time - underAttackLastNotified > 1f); // Wait until 3s after being under attack.
+            yield return new WaitUntilFixed(() => Time.time - underAttackLastNotified > 1f); // Wait until 3s after being under attack.
             if (BDArmorySettings.DEBUG_AI) { Debug.Log("[BDArmory.MissileFire]: Silencing under attack warning on " + vessel.vesselName); }
             underAttack = false;
         }
@@ -1656,7 +1662,7 @@ namespace BDArmory.Control
         {
             if (SetDeployableWeapons())
             {
-                yield return new WaitForSeconds(2f);
+                yield return new WaitForSecondsFixed(2f);
             }
 
             if (gameObject.activeInHierarchy)
@@ -1716,7 +1722,7 @@ namespace BDArmory.Control
                     {
                         //vesselRadarData.TryLockTarget(guardTarget.transform.position);
                         vesselRadarData.TryLockTarget(guardTarget);
-                        yield return new WaitForSeconds(0.5f);
+                        yield return new WaitForSecondsFixed(0.5f);
                         if (guardTarget && vesselRadarData && vesselRadarData.locked &&
                             vesselRadarData.lockedTargetData.vessel == guardTarget)
                         {
@@ -1747,7 +1753,7 @@ namespace BDArmory.Control
 
         IEnumerator ResetMissileThreatDistanceRoutine()
         {
-            yield return new WaitForSeconds(8);
+            yield return new WaitForSecondsFixed(8);
             incomingMissileDistance = float.MaxValue;
             incomingMissileTime = float.MaxValue;
         }
@@ -1759,6 +1765,7 @@ namespace BDArmory.Control
             if (ml && !guardFiringMissile)
             {
                 guardFiringMissile = true;
+                var wait = new WaitForFixedUpdate();
 
                 if (ml.TargetingMode == MissileBase.TargetingModes.Radar && vesselRadarData)
                 {
@@ -1766,7 +1773,7 @@ namespace BDArmory.Control
                     if (SetCargoBays())
                     {
                         BayTriggerTime = Time.time;
-                        //yield return new WaitForSeconds(2f); //so this doesn't delay radar targeting stuff below
+                        //yield return new WaitForSecondsFixed(2f); //so this doesn't delay radar targeting stuff below
                     }
 
                     float attemptLockTime = Time.time;
@@ -1775,11 +1782,11 @@ namespace BDArmory.Control
                         if (vesselRadarData.locked)
                         {
                             vesselRadarData.SwitchActiveLockedTarget(guardTarget);
-                            yield return null;
+                            yield return wait;
                         }
                         //vesselRadarData.TryLockTarget(guardTarget.transform.position+(guardTarget.rb_velocity*Time.fixedDeltaTime));
                         vesselRadarData.TryLockTarget(guardTarget);
-                        yield return new WaitForSeconds(0.25f);
+                        yield return new WaitForSecondsFixed(0.25f);
                     }
 
                     // if (ml && AIMightDirectFire() && vesselRadarData.locked)
@@ -1790,7 +1797,7 @@ namespace BDArmory.Control
                     //     {
                     //         yield return new WaitForFixedUpdate();
                     //     }
-                    //     // yield return new WaitForSeconds(0.5f);
+                    //     // yield return new WaitForSecondsFixed(0.5f);
                     // }
 
                     //wait for missile turret to point at target
@@ -1815,7 +1822,7 @@ namespace BDArmory.Control
                         }
                     }
 
-                    yield return null;
+                    yield return wait;
 
                     // if (ml && guardTarget && vesselRadarData.locked && (!AIMightDirectFire() || GetLaunchAuthorization(guardTarget, this)))
                     if (ml && guardTarget && vesselRadarData.locked && vesselRadarData.lockedTargetData.vessel == guardTarget && GetLaunchAuthorization(guardTarget, this))
@@ -1826,7 +1833,7 @@ namespace BDArmory.Control
                         }
                         if (BayTriggerTime > 0 && (Time.time - BayTriggerTime < 2)) //if bays opening, see if 2 sec for the bays to open have elapsed, if not, wait remaining time needed
                         {
-                            yield return new WaitForSeconds(2 - (Time.time - BayTriggerTime));
+                            yield return new WaitForSecondsFixed(2 - (Time.time - BayTriggerTime));
                         }
                         FireCurrentMissile(true);
                         //StartCoroutine(MissileAwayRoutine(mlauncher));
@@ -1842,7 +1849,7 @@ namespace BDArmory.Control
 
                     if (SetCargoBays())
                     {
-                        yield return new WaitForSeconds(2f);
+                        yield return new WaitForSecondsFixed(2f);
                     }
 
                     float attemptStartTime = Time.time;
@@ -1875,7 +1882,7 @@ namespace BDArmory.Control
                         {
                             //vesselRadarData.TryLockTarget(guardTarget.transform.position);
                             vesselRadarData.TryLockTarget(guardTarget);
-                            yield return new WaitForSeconds(Mathf.Min(1, (targetScanInterval * 0.25f)));
+                            yield return new WaitForSecondsFixed(Mathf.Min(1, (targetScanInterval * 0.25f)));
                         }
                     }
                     // if (AIMightDirectFire() && ml && heatTarget.exists)
@@ -1885,7 +1892,7 @@ namespace BDArmory.Control
                     //     {
                     //         yield return new WaitForFixedUpdate();
                     //     }
-                    //     yield return new WaitForSeconds(0.5f);
+                    //     yield return new WaitForSecondsFixed(0.5f);
                     // }
 
                     //wait for missile turret to point at target
@@ -1912,7 +1919,7 @@ namespace BDArmory.Control
                         }
                     }
 
-                    yield return null;
+                    yield return wait;
 
                     // if (guardTarget && ml && heatTarget.exists && (!AIMightDirectFire() || GetLaunchAuthorization(guardTarget, this)))
                     if (guardTarget && ml && heatTarget.exists && heatTarget.vessel == guardTarget && GetLaunchAuthorization(guardTarget, this))
@@ -1932,7 +1939,7 @@ namespace BDArmory.Control
                     designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(guardTarget.CoM, vessel.mainBody), guardTarget.vesselName.Substring(0, Mathf.Min(12, guardTarget.vesselName.Length)));
                     if (SetCargoBays())
                     {
-                        yield return new WaitForSeconds(2f);
+                        yield return new WaitForSecondsFixed(2f);
                     }
                     MissileLauncher mlauncher;
                     mlauncher = ml as MissileLauncher;
@@ -1957,7 +1964,7 @@ namespace BDArmory.Control
                             }
                         }
                     }
-                    yield return null;
+                    yield return wait;
                     if (BDArmorySettings.DEBUG_MISSILES)
                     {
                         Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " firing GPS missile at " + designatedGPSInfo.worldPos);
@@ -1976,7 +1983,7 @@ namespace BDArmory.Control
 
                     if (SetCargoBays())
                     {
-                        yield return new WaitForSeconds(2f);
+                        yield return new WaitForSecondsFixed(2f);
                     }
 
                     float attemptStartTime = Time.time;
@@ -2020,7 +2027,7 @@ namespace BDArmory.Control
                         }
                     }
 
-                    yield return null;
+                    yield return wait;
                     if (ml && antiRadTargetAcquired && AntiRadDistanceCheck())
                     {
                         FireCurrentMissile(true);
@@ -2031,7 +2038,7 @@ namespace BDArmory.Control
                 {
                     if (SetCargoBays())
                     {
-                        yield return new WaitForSeconds(2f);
+                        yield return new WaitForSecondsFixed(2f);
                     }
 
                     if (targetingPods.Count > 0) //if targeting pods are available, slew them onto target and lock.
@@ -2082,7 +2089,7 @@ namespace BDArmory.Control
                             }
                         }
                     }
-                    yield return null;
+                    yield return wait;
 
                     if (ml && laserPointDetected && foundCam && (foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude < 10 * 10)
                     {
@@ -2160,6 +2167,7 @@ namespace BDArmory.Control
 
             float prevDist = 2 * radius;
             radius = Mathf.Max(radius, 50f);
+            var wait = new WaitForFixedUpdate();
             while (guardTarget && Time.time - bombStartTime < bombAttemptDuration && weaponIndex > 0 &&
                    weaponArray[weaponIndex].GetWeaponClass() == WeaponClasses.Bomb && firedMissiles < maxMissilesOnTarget)
             {
@@ -2180,7 +2188,7 @@ namespace BDArmory.Control
                         pilotAI.RequestExtend("too close to bomb", guardTarget); // Extend from target vessel.
                         break;
                     }
-                    yield return null;
+                    yield return wait;
                 }
                 else
                 {
@@ -2200,10 +2208,10 @@ namespace BDArmory.Control
                     {
                         FireCurrentMissile(true);
                         timeBombReleased = Time.time;
-                        yield return new WaitForSeconds(rippleFire ? 60f / rippleRPM : 0.06f);
+                        yield return new WaitForSecondsFixed(rippleFire ? 60f / rippleRPM : 0.06f);
                         if (firedMissiles >= maxMissilesOnTarget)
                         {
-                            yield return new WaitForSeconds(1f);
+                            yield return new WaitForSecondsFixed(1f);
                             if (pilotAI)
                             {
                                 pilotAI.RequestExtend("bombs away!", null, radius, guardTarget.CoM); // Extend from the place the bomb is expected to fall.
@@ -2212,7 +2220,7 @@ namespace BDArmory.Control
                     }
                     else
                     {
-                        yield return null;
+                        yield return wait;
                     }
                 }
             }
@@ -2365,7 +2373,7 @@ namespace BDArmory.Control
 
                 float waitTime = distance < 800 ? .25f : 1.5f;
 
-                yield return new WaitForSeconds(waitTime);
+                yield return new WaitForSecondsFixed(waitTime);
 
                 if (ml.vessel && CanSeeTarget(ml.vessel))
                 {
@@ -2433,7 +2441,7 @@ namespace BDArmory.Control
         IEnumerator ECMRoutine()
         {
             isECMJamming = true;
-            //yield return new WaitForSeconds(UnityEngine.Random.Range(0.2f, 1f));
+            //yield return new WaitForSecondsFixed(UnityEngine.Random.Range(0.2f, 1f));
             using (var ecm = VesselModuleRegistry.GetModules<ModuleECMJammer>(vessel).GetEnumerator())
                 while (ecm.MoveNext())
                 {
@@ -2446,7 +2454,7 @@ namespace BDArmory.Control
                     }
                     ecm.Current.EnableJammer();
                 }
-            yield return new WaitForSeconds(10.0f);
+            yield return new WaitForSecondsFixed(10.0f);
             isECMJamming = false;
 
             using (var ecm1 = VesselModuleRegistry.GetModules<ModuleECMJammer>(vessel).GetEnumerator())
@@ -2472,7 +2480,7 @@ namespace BDArmory.Control
                     isCloaking = true;
                     ocm.Current.EnableCloak();
                 }
-            yield return new WaitForSeconds(10.0f);
+            yield return new WaitForSecondsFixed(10.0f);
             isCloaking = false;
 
             using (var ocm1 = VesselModuleRegistry.GetModules<ModuleCloakingDevice>(vessel).GetEnumerator())
@@ -2487,7 +2495,7 @@ namespace BDArmory.Control
         {
             isChaffing = true;
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " starting chaff routine");
-            // yield return new WaitForSeconds(0.2f); // Reaction time delay
+            // yield return new WaitForSecondsFixed(0.2f); // Reaction time delay
             for (int i = 0; i < repetition; i++)
             {
                 using (var cm = VesselModuleRegistry.GetModules<CMDropper>(vessel).GetEnumerator())
@@ -2499,10 +2507,9 @@ namespace BDArmory.Control
                             cm.Current.DropCM();
                         }
                     }
-
-                yield return new WaitForSeconds(interval);
+                yield return new WaitForSecondsFixed(interval);
             }
-            yield return new WaitForSeconds(chaffWaitTime);
+            yield return new WaitForSecondsFixed(chaffWaitTime);
             isChaffing = false;
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " ending chaff routine");
         }
@@ -2511,7 +2518,7 @@ namespace BDArmory.Control
         {
             isFlaring = true;
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " starting flare routine");
-            // yield return new WaitForSeconds(0.2f); // Reaction time delay
+            // yield return new WaitForSecondsFixed(0.2f); // Reaction time delay
             for (int i = 0; i < repetition; i++)
             {
                 using (var cm = VesselModuleRegistry.GetModules<CMDropper>(vessel).GetEnumerator())
@@ -2523,9 +2530,9 @@ namespace BDArmory.Control
                             cm.Current.DropCM();
                         }
                     }
-                yield return new WaitForSeconds(interval);
+                yield return new WaitForSecondsFixed(interval);
             }
-            yield return new WaitForSeconds(cmWaitTime);
+            yield return new WaitForSecondsFixed(cmWaitTime);
             isFlaring = false;
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " ending flare routine");
         }
@@ -2549,7 +2556,7 @@ namespace BDArmory.Control
                             cm.Current.DropCM();
                         }
                     }
-                yield return new WaitForSeconds(1f);
+                yield return new WaitForSecondsFixed(1f);
             }
             isFlaring = false;
             isChaffing = false;
@@ -2559,7 +2566,7 @@ namespace BDArmory.Control
         IEnumerator LegacyCMRoutine()
         {
             isLegacyCMing = true;
-            yield return new WaitForSeconds(UnityEngine.Random.Range(.2f, 1f));
+            yield return new WaitForSecondsFixed(UnityEngine.Random.Range(.2f, 1f));
             if (incomingMissileDistance < 2500)
             {
                 cmAmount = Mathf.RoundToInt((2500 - incomingMissileDistance) / 400);
@@ -2572,12 +2579,12 @@ namespace BDArmory.Control
                 cmCounter++;
                 if (cmCounter < cmAmount)
                 {
-                    yield return new WaitForSeconds(0.15f);
+                    yield return new WaitForSecondsFixed(0.15f);
                 }
                 else
                 {
                     cmCounter = 0;
-                    yield return new WaitForSeconds(UnityEngine.Random.Range(.5f, 1f));
+                    yield return new WaitForSecondsFixed(UnityEngine.Random.Range(.5f, 1f));
                 }
             }
             isLegacyCMing = false;
@@ -5608,7 +5615,7 @@ namespace BDArmory.Control
                     ml.TargetAcquired = true;
                     if (BDArmorySettings.DEBUG_MISSILES)
                         Debug.Log("[BDArmory.MissileData]: Sending targetInfo to GPS Missile...");
-                    if (guardMode && ((guardTarget.CoM - VectorUtils.GetWorldSurfacePostion(designatedGPSCoords, vessel.mainBody)).sqrMagnitude < 10 * 10))
+                    if (guardMode && GPSDistanceCheck())
                     {
                         ml.targetVessel = guardTarget.gameObject.GetComponent<TargetInfo>();
                         if (BDArmorySettings.DEBUG_MISSILES)
@@ -6585,10 +6592,16 @@ namespace BDArmory.Control
             }
         }
 
+        // Check GPS target is within 10m for stationary targets, and a scaling distance based on target speed for targets moving faster than ~175 m/s
+        bool GPSDistanceCheck()
+        {
+            return (((guardTarget.CoM - VectorUtils.GetWorldSurfacePostion(designatedGPSCoords, vessel.mainBody)).sqrMagnitude < Mathf.Max(100f, 0.004f * (float)guardTarget.srfSpeed * (float)guardTarget.srfSpeed)));
+        }
+
         // Check antiRad target is within 20m for stationary targets, and a scaling distance based on target speed for targets moving faster than ~60 m/s
         bool AntiRadDistanceCheck()
         {
-            return (VectorUtils.WorldPositionToGeoCoords(antiRadiationTarget, vessel.mainBody) - VectorUtils.WorldPositionToGeoCoords(guardTarget.CoM, vessel.mainBody)).sqrMagnitude < Mathf.Max(20f * 20f, (float)guardTarget.srfSpeed * 3.5f);
+            return (VectorUtils.WorldPositionToGeoCoords(antiRadiationTarget, vessel.mainBody) - VectorUtils.WorldPositionToGeoCoords(guardTarget.CoM, vessel.mainBody)).sqrMagnitude < Mathf.Max(400f, (float)guardTarget.srfSpeed * 3.5f);
         }
 
         bool AltitudeTrigger()

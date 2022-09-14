@@ -491,7 +491,7 @@ namespace BDArmory.Modules
         IEnumerator ExtinguishRoutine(float time, bool useBottle)
         {
             //Debug.Log("[BDArmory.SelfSealingTank]: ExtinguishRoutine started. Time left: " + time);
-            yield return new WaitForSeconds(time);
+            yield return new WaitForSecondsFixed(time);
             //Debug.Log("[BDArmory.SelfSealingTank]: Timer finished. Extinguishing");
             foreach (var existingFire in part.GetComponentsInChildren<FireFX>())
             {
@@ -522,7 +522,7 @@ namespace BDArmory.Modules
             {
                 if (procPart)
                 {
-                    updateTimer -= Time.fixedDeltaTime;
+                    updateTimer -= Time.deltaTime;
                     if (updateTimer < 0)
                     {
                         fuel = part.Resources.Where(pr => pr.resourceName == "LiquidFuel").FirstOrDefault();
@@ -553,7 +553,7 @@ namespace BDArmory.Modules
                             InertTank = false;
                             FireBottles = 0;
                         }
-                        updateTimer = 0.5f; //doing it this way since PAw buttons don't seem to trigger onShipModified
+                        updateTimer = 0.5f; //doing it this way since PAW buttons don't seem to trigger onShipModified
                     }
                 }
             }

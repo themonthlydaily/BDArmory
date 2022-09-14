@@ -274,7 +274,7 @@ namespace BDArmory.CounterMeasure
 
         IEnumerator SmokeRoutine()
         {
-            yield return new WaitForSeconds(0.2f);
+            yield return new WaitForSecondsFixed(0.2f);
             GameObject smokeCMObject = smokePool.GetPooledObject();
             CMSmoke smoke = smokeCMObject.GetComponent<CMSmoke>();
             smoke.velocity = part.rb.velocity + (ejectVelocity * transform.up) +
@@ -293,7 +293,7 @@ namespace BDArmory.CounterMeasure
                 }
 
             audioSource.PlayOneShot(smokePoofSound);
-            yield return new WaitForSeconds(longestLife);
+            yield return new WaitForSecondsFixed(longestLife);
             smokeCMObject.SetActive(false);
         }
 

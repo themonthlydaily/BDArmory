@@ -95,10 +95,7 @@ namespace BDArmory.UI
 
         private IEnumerator WaitForSetup()
         {
-            while (BDArmorySetup.Instance == null || BDAScoreService.Instance == null || BDAScoreService.Instance.client == null)
-            {
-                yield return null;
-            }
+            yield return new WaitWhile(() => BDArmorySetup.Instance == null || BDAScoreService.Instance == null || BDAScoreService.Instance.client == null);
             service = BDAScoreService.Instance;
             UpdateClientStatus();
             ready = true;

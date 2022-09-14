@@ -218,7 +218,7 @@ namespace BDArmory.Weapons.Missiles
         public WarheadTypes warheadType;
         public bool HasFired { get; set; } = false;
 
-        public BDTeam Team { get; set; }
+        public BDTeam Team { get; set; } = BDTeam.Get("Neutral");
 
         public bool HasMissed { get; set; } = false;
 

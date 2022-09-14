@@ -176,6 +176,7 @@ namespace BDArmory.Damage
         private bool _hullConfigured = false;
         private bool _hpConfigured = false;
         private bool _finished_setting_up = false;
+        public bool Ready => _finished_setting_up && _hpConfigured && _hullConfigured && _armorConfigured;
 
         public bool isOnFire = false;
 
@@ -462,7 +463,7 @@ namespace BDArmory.Damage
 
         IEnumerator DelayedOnStart()
         {
-            yield return null;
+            yield return new WaitForFixedUpdate();
             if (part == null) yield break;
             partMass = part.partInfo.partPrefab.mass;
             _updateMass = true;
@@ -513,7 +514,7 @@ namespace BDArmory.Damage
         IEnumerator DelayedShipModified() // Wait a frame before triggering to allow proc wings to update it's mass properly.
         {
             _delayedShipModifiedRunning = true;
-            yield return null;
+            yield return new WaitForFixedUpdate();
             _delayedShipModifiedRunning = false;
             if (part == null) yield break;
             _updateHitpoints = true;
@@ -545,20 +546,6 @@ namespace BDArmory.Damage
         {
             if (!_finished_setting_up) return;
             RefreshHitPoints();
-            if (HighLogic.LoadedSceneIsFlight && !GameIsPaused)
-            {
-                if (BDArmorySettings.HEART_BLEED_ENABLED && ShouldHeartBleed())
-                {
-                    HeartBleed();
-                }
-                if (ArmorTypeNum > 1 || ArmorPanel)
-                {
-                    if (part.skinTemperature > SafeUseTemp * 1.5f)
-                    {
-                        ReduceArmor((armorVolume * ((float)part.skinTemperature / SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
-                    }
-                }
-            }
         }
 
         void Update() // This stops running once things are set up.
@@ -585,9 +572,9 @@ namespace BDArmory.Damage
             }
         }
 
-        void FixedUpdate() // This stops running once things are set up.
+        void FixedUpdate()
         {
-            if (_updateMass)
+            if (_updateMass) // This stops running once things are set up.
             {
                 _updateMass = false;
                 var oldPartMass = partMass;
@@ -616,6 +603,21 @@ namespace BDArmory.Damage
                     }
                     _hullModified = true; // Modifying the mass modifies the hull.
                     _updateHitpoints = true;
+                }
+            }
+
+            if (HighLogic.LoadedSceneIsFlight && !GameIsPaused)
+            {
+                if (BDArmorySettings.HEART_BLEED_ENABLED && ShouldHeartBleed())
+                {
+                    HeartBleed();
+                }
+                if (ArmorTypeNum > 1 || ArmorPanel)
+                {
+                    if (part.skinTemperature > SafeUseTemp * 1.5f)
+                    {
+                        ReduceArmor((armorVolume * ((float)part.skinTemperature / SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
+                    }
                 }
             }
         }
@@ -1369,7 +1371,7 @@ namespace BDArmory.Damage
         {
             if (waitingForHullSetup) yield break;  // Already waiting.
             waitingForHullSetup = true;
-            yield return null;
+            yield return new WaitForFixedUpdate();
             waitingForHullSetup = false;
             if (part == null) yield break; // The part disappeared!
 

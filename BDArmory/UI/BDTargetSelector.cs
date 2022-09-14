@@ -185,8 +185,7 @@ namespace BDArmory.UI
 
         private IEnumerator WaitForBdaSettings()
         {
-            while (BDArmorySetup.Instance == null)
-                yield return null;
+            yield return new WaitUntil(() => BDArmorySetup.Instance is not null);
 
             ready = true;
             guiCheckIndex = GUIUtils.RegisterGUIRect(new Rect());
