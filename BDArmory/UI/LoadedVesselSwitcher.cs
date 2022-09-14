@@ -146,8 +146,7 @@ namespace BDArmory.UI
 
         private IEnumerator WaitForBdaSettings()
         {
-            while (BDArmorySetup.Instance == null)
-                yield return null;
+            yield return new WaitUntil(() => BDArmorySetup.Instance is not null);
 
             _ready = true;
             BDArmorySetup.Instance.hasVesselSwitcher = true;

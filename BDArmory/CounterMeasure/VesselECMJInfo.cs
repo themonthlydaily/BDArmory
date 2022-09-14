@@ -165,8 +165,9 @@ namespace BDArmory.CounterMeasure
 
         IEnumerator DelayedCleanJammerListRoutine()
         {
-            yield return null;
-            yield return null;
+            var wait = new WaitForFixedUpdate();
+            yield return wait;
+            yield return wait;
             CleanJammerList();
         }
 

@@ -614,8 +614,7 @@ namespace BDArmory.UI
         IEnumerator ToolbarButtonRoutine()
         {
             if (toolbarButtonAdded) yield break;
-            while (!ApplicationLauncher.Ready)
-            { yield return null; }
+            yield return new WaitUntil(() => ApplicationLauncher.Ready);
             if (toolbarButtonAdded) yield break;
             toolbarButtonAdded = true;
             Texture buttonTexture = GameDatabase.Instance.GetTexture(BDArmorySetup.textureDir + "icon", false);
@@ -3861,9 +3860,18 @@ namespace BDArmory.UI
         {
             Debug.Log($"DEBUG Starting yield wait tests at {Time.time} with timeScale {Time.timeScale}");
             var tic = Time.time;
-            yield return new WaitForFixedUpdate();
-            Debug.Log($"DEBUG WaitForFixedUpdate took {Time.time - tic}s at {Time.time}");
-            tic = Time.time;
+            for (int i = 0; i < 3; ++i)
+            {
+                yield return new WaitForFixedUpdate();
+                Debug.Log($"DEBUG WaitForFixedUpdate took {Time.time - tic}s at {Time.time}");
+                tic = Time.time;
+            }
+            for (int i = 0; i < 3; ++i)
+            {
+                yield return null;
+                Debug.Log($"DEBUG yield null took {Time.time - tic}s at {Time.time}");
+                tic = Time.time;
+            }
             yield return new WaitForSeconds(1);
             Debug.Log($"DEBUG WaitForSeconds(1) took {Time.time - tic}s at {Time.time}");
             tic = Time.time;

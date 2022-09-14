@@ -261,7 +261,7 @@ namespace BDArmory.WeaponMounts
 
         IEnumerator DelayedMoveStackNode(float offset)
         {
-            yield return null;
+            yield return new WaitForFixedUpdate();
             MoveEndStackNode(offset);
         }
 

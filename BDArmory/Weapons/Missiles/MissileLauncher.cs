@@ -1467,6 +1467,7 @@ namespace BDArmory.Weapons.Missiles
         IEnumerator BoostRoutine()
         {
             StartBoost();
+            var wait = new WaitForFixedUpdate();
             float boostStartTime = Time.time;
             while (Time.time - boostStartTime < boostTime)
             {
@@ -1516,7 +1517,7 @@ namespace BDArmory.Weapons.Missiles
                     currentThrust = Mathf.MoveTowards(currentThrust, thrust, thrust / 10);
                 }
 
-                yield return null;
+                yield return wait;
             }
             EndBoost();
         }
@@ -1606,6 +1607,7 @@ namespace BDArmory.Weapons.Missiles
         IEnumerator CruiseRoutine()
         {
             StartCruise();
+            var wait = new WaitForFixedUpdate();
             float cruiseStartTime = Time.time;
             while (Time.time - cruiseStartTime < cruiseTime)
             {
@@ -1664,7 +1666,7 @@ namespace BDArmory.Weapons.Missiles
                 {
                     currentThrust = Mathf.MoveTowards(currentThrust, cruiseThrust, cruiseThrust / 10);
                 }
-                yield return null;
+                yield return wait;
             }
             EndCruise();
         }

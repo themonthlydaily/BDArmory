@@ -1612,7 +1612,7 @@ namespace BDArmory.Control
 
         IEnumerator StartupListUpdater()
         {
-            while (vessel.packed || !FlightGlobals.ready)
+            while (!FlightGlobals.ready || (vessel is not null && (vessel.packed || !vessel.loaded)))
             {
                 yield return null;
                 if (vessel.isActiveVessel)
@@ -1765,6 +1765,7 @@ namespace BDArmory.Control
             if (ml && !guardFiringMissile)
             {
                 guardFiringMissile = true;
+                var wait = new WaitForFixedUpdate();
 
                 if (ml.TargetingMode == MissileBase.TargetingModes.Radar && vesselRadarData)
                 {
@@ -1781,7 +1782,7 @@ namespace BDArmory.Control
                         if (vesselRadarData.locked)
                         {
                             vesselRadarData.SwitchActiveLockedTarget(guardTarget);
-                            yield return null;
+                            yield return wait;
                         }
                         //vesselRadarData.TryLockTarget(guardTarget.transform.position+(guardTarget.rb_velocity*Time.fixedDeltaTime));
                         vesselRadarData.TryLockTarget(guardTarget);
@@ -1821,7 +1822,7 @@ namespace BDArmory.Control
                         }
                     }
 
-                    yield return null;
+                    yield return wait;
 
                     // if (ml && guardTarget && vesselRadarData.locked && (!AIMightDirectFire() || GetLaunchAuthorization(guardTarget, this)))
                     if (ml && guardTarget && vesselRadarData.locked && vesselRadarData.lockedTargetData.vessel == guardTarget && GetLaunchAuthorization(guardTarget, this))
@@ -1918,7 +1919,7 @@ namespace BDArmory.Control
                         }
                     }
 
-                    yield return null;
+                    yield return wait;
 
                     // if (guardTarget && ml && heatTarget.exists && (!AIMightDirectFire() || GetLaunchAuthorization(guardTarget, this)))
                     if (guardTarget && ml && heatTarget.exists && heatTarget.vessel == guardTarget && GetLaunchAuthorization(guardTarget, this))
@@ -1963,7 +1964,7 @@ namespace BDArmory.Control
                             }
                         }
                     }
-                    yield return null;
+                    yield return wait;
                     if (BDArmorySettings.DEBUG_MISSILES)
                     {
                         Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " firing GPS missile at " + designatedGPSInfo.worldPos);
@@ -2026,7 +2027,7 @@ namespace BDArmory.Control
                         }
                     }
 
-                    yield return null;
+                    yield return wait;
                     if (ml && antiRadTargetAcquired && AntiRadDistanceCheck())
                     {
                         FireCurrentMissile(true);
@@ -2088,7 +2089,7 @@ namespace BDArmory.Control
                             }
                         }
                     }
-                    yield return null;
+                    yield return wait;
 
                     if (ml && laserPointDetected && foundCam && (foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude < 10 * 10)
                     {
@@ -2166,6 +2167,7 @@ namespace BDArmory.Control
 
             float prevDist = 2 * radius;
             radius = Mathf.Max(radius, 50f);
+            var wait = new WaitForFixedUpdate();
             while (guardTarget && Time.time - bombStartTime < bombAttemptDuration && weaponIndex > 0 &&
                    weaponArray[weaponIndex].GetWeaponClass() == WeaponClasses.Bomb && firedMissiles < maxMissilesOnTarget)
             {
@@ -2186,7 +2188,7 @@ namespace BDArmory.Control
                         pilotAI.RequestExtend("too close to bomb", guardTarget); // Extend from target vessel.
                         break;
                     }
-                    yield return null;
+                    yield return wait;
                 }
                 else
                 {
@@ -2218,7 +2220,7 @@ namespace BDArmory.Control
                     }
                     else
                     {
-                        yield return null;
+                        yield return wait;
                     }
                 }
             }

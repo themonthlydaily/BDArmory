@@ -176,6 +176,7 @@ namespace BDArmory.Damage
         private bool _hullConfigured = false;
         private bool _hpConfigured = false;
         private bool _finished_setting_up = false;
+        public bool Ready => _finished_setting_up && _hpConfigured && _hullConfigured && _armorConfigured;
 
         public bool isOnFire = false;
 
@@ -462,7 +463,7 @@ namespace BDArmory.Damage
 
         IEnumerator DelayedOnStart()
         {
-            yield return null;
+            yield return new WaitForFixedUpdate();
             if (part == null) yield break;
             partMass = part.partInfo.partPrefab.mass;
             _updateMass = true;
@@ -513,7 +514,7 @@ namespace BDArmory.Damage
         IEnumerator DelayedShipModified() // Wait a frame before triggering to allow proc wings to update it's mass properly.
         {
             _delayedShipModifiedRunning = true;
-            yield return null;
+            yield return new WaitForFixedUpdate();
             _delayedShipModifiedRunning = false;
             if (part == null) yield break;
             _updateHitpoints = true;
@@ -1370,7 +1371,7 @@ namespace BDArmory.Damage
         {
             if (waitingForHullSetup) yield break;  // Already waiting.
             waitingForHullSetup = true;
-            yield return null;
+            yield return new WaitForFixedUpdate();
             waitingForHullSetup = false;
             if (part == null) yield break; // The part disappeared!
 

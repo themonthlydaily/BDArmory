@@ -84,14 +84,15 @@ namespace BDArmory.WeaponMounts
 
         IEnumerator DeployAnimation(bool forward)
         {
-            yield return null;
+            var wait = new WaitForFixedUpdate();
+            yield return wait;
 
             if (forward)
             {
                 while (deployAnimState.normalizedTime < 1)
                 {
                     deployAnimState.speed = deployAnimationSpeed;
-                    yield return null;
+                    yield return wait;
                 }
 
                 deployAnimState.normalizedTime = 1;
@@ -100,15 +101,12 @@ namespace BDArmory.WeaponMounts
             {
                 deployAnimState.speed = 0;
 
-                while (pausingAfterShot)
-                {
-                    yield return new WaitForFixedUpdate();
-                }
+                yield return new WaitWhileFixed(() => pausingAfterShot);
 
                 while (deployAnimState.normalizedTime > 0)
                 {
                     deployAnimState.speed = -deployAnimationSpeed;
-                    yield return null;
+                    yield return wait;
                 }
 
                 deployAnimState.normalizedTime = 0;
@@ -559,7 +557,8 @@ namespace BDArmory.WeaponMounts
 
         IEnumerator MissileRailRoutine(MissileLauncher ml)
         {
-            yield return null;
+            var wait = new WaitForFixedUpdate();
+            yield return wait;
             Ray ray = new Ray(ml.transform.position, ml.MissileReferenceTransform.forward);
             Vector3 localOrigin = turret.pitchTransform.InverseTransformPoint(ray.origin);
             Vector3 localDirection = turret.pitchTransform.InverseTransformDirection(ray.direction);
@@ -581,7 +580,7 @@ namespace BDArmory.WeaponMounts
                 ml.vessel.SetPosition(projPos);
                 ml.vessel.SetWorldVelocity(railVel + (forwardSpeed * ray.direction));
 
-                yield return new WaitForFixedUpdate();
+                yield return wait;
 
                 ray.origin = turret.pitchTransform.TransformPoint(localOrigin);
                 ray.direction = turret.pitchTransform.TransformDirection(localDirection);

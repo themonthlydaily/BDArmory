@@ -177,4 +177,24 @@ namespace BDArmory.Utils
         public virtual bool keepWaiting => !predicate();
         public virtual void Reset() { }
     }
+
+    /// <summary>
+    /// Custom yield instruction that allows yielding while a predicate is satisfied based on the FixedUpdate cycle instead of the Update cycle.
+    /// Based on http://answers.unity.com/comments/1910230/view.html
+    /// </summary>
+    public class WaitWhileFixed : IEnumerator
+    {
+        private WaitForFixedUpdate wait = new WaitForFixedUpdate();
+        public virtual object Current => this.wait;
+        Func<bool> predicate;
+
+        public WaitWhileFixed(Func<bool> predicate)
+        {
+            this.predicate = predicate;
+        }
+
+        public bool MoveNext() => this.keepWaiting;
+        public virtual bool keepWaiting => predicate();
+        public virtual void Reset() { }
+    }
 }

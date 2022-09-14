@@ -470,11 +470,7 @@ namespace BDArmory.Radar
         {
             if (BDArmorySettings.DEBUG_RADAR)
                 Debug.Log("[BDArmory.ModuleRadar]: StartupRoutine: " + radarName + " enabled: " + radarEnabled);
-            while (!FlightGlobals.ready || vessel.packed)
-            {
-                yield return null;
-            }
-
+            yield return new WaitWhile(() => !FlightGlobals.ready || vessel.packed || !vessel.loaded);
             yield return new WaitForFixedUpdate();
 
             // DISABLE RADAR
@@ -484,8 +480,6 @@ namespace BDArmory.Radar
                 EnableRadar();
             }
             */
-
-            yield return null;
 
             if (!vesselRadarData.hasLoadedExternalVRDs)
             {
@@ -905,7 +899,7 @@ namespace BDArmory.Radar
 
         IEnumerator RetryLockRoutine(Vessel v)
         {
-            yield return null;
+            yield return new WaitForFixedUpdate();
             if (vesselRadarData != null && vesselRadarData.isActiveAndEnabled)
                 vesselRadarData.TryLockTarget(v);
         }
@@ -1055,14 +1049,11 @@ namespace BDArmory.Radar
 
         IEnumerator RelinkVRDWhenReadyRoutine(VesselRadarData vrd)
         {
-            while (!vrd.radarsReady || vrd.vessel.packed)
-            {
-                yield return null;
-            }
-            yield return null;
+            yield return new WaitWhile(() => !vrd.radarsReady || (vrd.vessel is not null && (vrd.vessel.packed || !vrd.vessel.loaded)));
+            yield return new WaitForFixedUpdate();
+            if (vrd.vessel is null) yield break;
             vesselRadarData.LinkVRD(vrd);
-            Debug.Log("[BDArmory.ModuleRadar]: Radar data link recovered: Local - " + vessel.vesselName + ", External - " +
-                      vrd.vessel.vesselName);
+            if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[BDArmory.ModuleRadar]: Radar data link recovered: Local - " + vessel.vesselName + ", External - " + vrd.vessel.vesselName);
         }
 
         public string getRWRType(int i)

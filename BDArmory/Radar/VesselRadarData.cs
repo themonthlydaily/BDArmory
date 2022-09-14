@@ -313,12 +313,7 @@ namespace BDArmory.Radar
 
         private IEnumerator StartupRoutine()
         {
-            while (!FlightGlobals.ready || vessel.packed)
-            {
-                yield return null;
-            }
-
-            yield return new WaitForFixedUpdate();
+            yield return new WaitWhile(() => !FlightGlobals.ready || (vessel is not null && (vessel.packed || !vessel.loaded)));
             yield return new WaitForFixedUpdate();
             radarsReady = true;
         }
@@ -729,7 +724,7 @@ namespace BDArmory.Radar
 
         private IEnumerator UpdateLocksAfterFrame()
         {
-            yield return null;
+            yield return new WaitForFixedUpdate();
             UpdateLockedTargets();
         }
 
@@ -1513,10 +1508,7 @@ namespace BDArmory.Radar
 
         private IEnumerator LinkVRDWhenReady(VesselRadarData vrd)
         {
-            while (!vrd.radarsReady || vrd.vessel.packed || vrd.radarCount < 1)
-            {
-                yield return null;
-            }
+            yield return new WaitWhileFixed(() => !vrd.radarsReady || (vrd.vessel is not null && (vrd.vessel.packed || !vrd.vessel.loaded)) || vrd.radarCount < 1);
             LinkVRD(vrd);
             if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[BDArmory.VesselRadarData]: Radar data link recovered: Local - " + vessel.vesselName + ", External - " +
                        vrd.vessel.vesselName);

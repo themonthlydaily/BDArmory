@@ -285,10 +285,7 @@ namespace BDArmory.UI
         IEnumerator ToolbarButtonRoutine()
         {
             if (toolbarButton || (!HighLogic.LoadedSceneIsEditor)) yield break;
-            while (!ApplicationLauncher.Ready)
-            {
-                yield return null;
-            }
+            yield return new WaitUntil(() => ApplicationLauncher.Ready);
             AddToolbarButton();
         }
 

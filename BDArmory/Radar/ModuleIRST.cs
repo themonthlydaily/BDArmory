@@ -299,15 +299,8 @@ namespace BDArmory.Radar
         {
             if (BDArmorySettings.DEBUG_RADAR)
                 Debug.Log("[BDArmory.ModuleIRST]: StartupRoutine: " + IRSTName + " enabled: " + irstEnabled);
-            while (!FlightGlobals.ready || vessel.packed)
-            {
-                yield return null;
-            }
-
+            yield return new WaitWhile(() => !FlightGlobals.ready || (vessel is not null && (vessel.packed || !vessel.loaded)));
             yield return new WaitForFixedUpdate();
-
-            yield return null;
-
             UpdateToggleGuiName();
             startupComplete = true;
         }

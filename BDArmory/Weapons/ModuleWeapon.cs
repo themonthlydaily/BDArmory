@@ -4783,10 +4783,7 @@ namespace BDArmory.Weapons
         {
             if (hasReloadAnim && isReloading) //wait for reload to finish before shutting down
             {
-                while (reloadState.normalizedTime < 1)
-                {
-                    yield return null;
-                }
+                yield return new WaitWhileFixed(() => reloadState.normalizedTime < 1);
             }
             if (!calledByReload)
             {
@@ -4796,10 +4793,7 @@ namespace BDArmory.Weapons
             {
                 deployState.enabled = true;
                 deployState.speed = 1;
-                while (deployState.normalizedTime < 1) //wait for animation here
-                {
-                    yield return null;
-                }
+                yield return new WaitWhileFixed(() => deployState.normalizedTime < 1); //wait for animation here
                 deployState.normalizedTime = 1;
                 deployState.speed = 0;
                 deployState.enabled = false;
@@ -4815,10 +4809,7 @@ namespace BDArmory.Weapons
         {
             if (hasReloadAnim && isReloading) //wait for relaod to finish before shutting down
             {
-                while (reloadState.normalizedTime < 1)
-                {
-                    yield return null;
-                }
+                yield return new WaitWhileFixed(() => reloadState.normalizedTime < 1);
             }
             if (!calledByReload) //allow isreloading to co-opt the startup/shutdown anim without disabling weapon in the process
             {
@@ -4833,20 +4824,13 @@ namespace BDArmory.Weapons
             if (turret)
             {
                 yield return new WaitForSecondsFixed(0.2f);
-
-                while (!turret.ReturnTurret()) //wait till turret has returned
-                {
-                    yield return new WaitForFixedUpdate();
-                }
+                yield return new WaitWhileFixed(()=>!turret.ReturnTurret()); //wait till turret has returned
             }
             if (hasDeployAnim)
             {
                 deployState.enabled = true;
                 deployState.speed = -1;
-                while (deployState.normalizedTime > 0)
-                {
-                    yield return null;
-                }
+                yield return new WaitWhileFixed(() => deployState.normalizedTime > 0);
                 deployState.normalizedTime = 0;
                 deployState.speed = 0;
                 deployState.enabled = false;
@@ -4864,10 +4848,7 @@ namespace BDArmory.Weapons
             reloadState.normalizedTime = 0;
             reloadState.enabled = true;
             reloadState.speed = (reloadState.length / ReloadTime);//ensure relaod anim is not longer than reload time
-            while (reloadState.normalizedTime < 1) //wait for animation here
-            {
-                yield return null;
-            }
+            yield return new WaitWhileFixed(() => reloadState.normalizedTime < 1); //wait for animation here
             reloadState.normalizedTime = 1;
             reloadState.speed = 0;
             reloadState.enabled = false;
@@ -4887,10 +4868,7 @@ namespace BDArmory.Weapons
                 chargeState.normalizedTime = 0;
                 chargeState.enabled = true;
                 chargeState.speed = (chargeState.length / ChargeTime);//ensure relaod anim is not longer than reload time
-                while (chargeState.normalizedTime < 1) //wait for animation here
-                {
-                    yield return null;
-                }
+                yield return new WaitWhileFixed(() => chargeState.normalizedTime < 1); //wait for animation here
                 chargeState.normalizedTime = 1;
                 chargeState.speed = 0;
                 chargeState.enabled = false;

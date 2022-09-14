@@ -197,20 +197,22 @@ namespace BDArmory.CounterMeasure
 
         IEnumerator CloakRoutine()
         {
+            var wait = new WaitForFixedUpdate();
             enabling = true;
             while (cloakTimer < CloakTime)
             {
-                yield return null;
+                yield return wait;
             }
             enabling = false;
         }
 
         IEnumerator DecloakRoutine()
         {
+            var wait = new WaitForFixedUpdate();
             disabling = true;
             while (cloakTimer > 0)
             {
-                yield return null;
+                yield return wait;
             }
             disabling = false;
         }

@@ -75,20 +75,21 @@ namespace BDArmory.UI
         {
             delayedTakeSnapShot = true;
             if (!delayedTakeSnapShotInProgress)
-                StartCoroutine(DelayedTakeSnapShot());
+                StartCoroutine(DelayedTakeSnapShot(data));
         }
 
         private bool delayedTakeSnapShot = false;
         private bool delayedTakeSnapShotInProgress = false;
-        IEnumerator DelayedTakeSnapShot()
+        IEnumerator DelayedTakeSnapShot(ShipConstruct ship)
         {
             delayedTakeSnapShotInProgress = true;
+            var wait = new WaitForFixedUpdate();
             while (delayedTakeSnapShot) // Wait until ship modified events stop coming.
             {
                 delayedTakeSnapShot = false;
-                yield return null;
-                yield return null; // Two yield nulls to wait for HP changes to delayed ship modified events in HitpointTracker
+                yield return wait;
             }
+            yield return new WaitUntilFixed(() => ship.Parts.TrueForAll(p => p.GetComponent<Damage.HitpointTracker>() is null || p.GetComponent<Damage.HitpointTracker>().Ready)); // Wait for HP changes to delayed ship modified events in HitpointTracker
             delayedTakeSnapShotInProgress = false;
             takeSnapshot = true;
             previous_index = -1;
@@ -109,11 +110,7 @@ namespace BDArmory.UI
         IEnumerator ToolbarButtonRoutine()
         {
             if (toolbarButton || (!HighLogic.LoadedSceneIsEditor)) yield break;
-            while (!ApplicationLauncher.Ready)
-            {
-                yield return null;
-            }
-
+            yield return new WaitUntil(() => ApplicationLauncher.Ready);
             AddToolbarButton();
         }
 
