@@ -140,6 +140,9 @@ namespace BDArmory.Utils
     /// <summary>
     /// Custom yield instruction that allows waiting for a number of seconds based on the FixedUpdate cycle instead of the Update cycle.
     /// Based on http://answers.unity.com/comments/1910230/view.html
+    /// 
+    /// Note: All Unity yield instructions other than WaitForFixedUpdate wait until the next Update cycle to check their conditions, including "yield return null".
+    ///       For any yielding that is physics related, use WaitForFixedUpdate (use a single instance and yield it multiple times) or one of the classes below.
     /// </summary>
     public class WaitForSecondsFixed : IEnumerator
     {
@@ -160,7 +163,6 @@ namespace BDArmory.Utils
 
     /// <summary>
     /// Custom yield instruction that allows yielding until a predicate is satisfied based on the FixedUpdate cycle instead of the Update cycle.
-    /// Based on http://answers.unity.com/comments/1910230/view.html
     /// </summary>
     public class WaitUntilFixed : IEnumerator
     {
@@ -180,7 +182,6 @@ namespace BDArmory.Utils
 
     /// <summary>
     /// Custom yield instruction that allows yielding while a predicate is satisfied based on the FixedUpdate cycle instead of the Update cycle.
-    /// Based on http://answers.unity.com/comments/1910230/view.html
     /// </summary>
     public class WaitWhileFixed : IEnumerator
     {
