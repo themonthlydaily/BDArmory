@@ -147,10 +147,7 @@ namespace BDArmory.UI
         {
             if (buttonSetup) yield break;
             if (!HighLogic.LoadedSceneIsFlight && !HighLogic.LoadedSceneIsEditor) yield break;
-            while (!ApplicationLauncher.Ready)
-            {
-                yield return null;
-            }
+            yield return new WaitUntil(() => ApplicationLauncher.Ready);
 
             if (!buttonSetup)
             {

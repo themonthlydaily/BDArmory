@@ -52,6 +52,7 @@ namespace BDArmory.CounterMeasure
             pe.EmitParticle();
 
             float startTime = Time.time;
+            var wait = new WaitForFixedUpdate();
             while (Time.time - startTime < pe.maxEnergy)
             {
                 transform.position = body.GetWorldSurfacePosition(geoPos.x, geoPos.y, geoPos.z);
@@ -63,7 +64,7 @@ namespace BDArmory.CounterMeasure
                 velocity -= (dragForce) * Time.fixedDeltaTime;
                 transform.position += velocity * Time.fixedDeltaTime;
                 geoPos = VectorUtils.WorldPositionToGeoCoords(transform.position, body);
-                yield return new WaitForFixedUpdate();
+                yield return wait;
             }
 
             gameObject.SetActive(false);

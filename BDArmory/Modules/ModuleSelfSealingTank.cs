@@ -491,7 +491,7 @@ namespace BDArmory.Modules
         IEnumerator ExtinguishRoutine(float time, bool useBottle)
         {
             //Debug.Log("[BDArmory.SelfSealingTank]: ExtinguishRoutine started. Time left: " + time);
-            yield return new WaitForSeconds(time);
+            yield return new WaitForSecondsFixed(time);
             //Debug.Log("[BDArmory.SelfSealingTank]: Timer finished. Extinguishing");
             foreach (var existingFire in part.GetComponentsInChildren<FireFX>())
             {
@@ -522,7 +522,7 @@ namespace BDArmory.Modules
             {
                 if (procPart)
                 {
-                    updateTimer -= Time.fixedDeltaTime;
+                    updateTimer -= Time.deltaTime;
                     if (updateTimer < 0)
                     {
                         fuel = part.Resources.Where(pr => pr.resourceName == "LiquidFuel").FirstOrDefault();
@@ -553,10 +553,13 @@ namespace BDArmory.Modules
                             InertTank = false;
                             FireBottles = 0;
                         }
-                        updateTimer = 0.5f; //doing it this way since PAw buttons don't seem to trigger onShipModified
+                        updateTimer = 0.5f; //doing it this way since PAW buttons don't seem to trigger onShipModified
                     }
                 }
             }
+        }
+        void FixedUpdate()
+        {
             if (!HighLogic.LoadedSceneIsFlight || !FlightGlobals.ready || BDArmorySetup.GameIsPaused) return; // Not in flight scene, not ready or paused.
             if (vessel == null || vessel.packed || part == null) return; // Vessel or part is dead or packed.
             if (!BDArmorySettings.BD_FIRES_ENABLED || !BDArmorySettings.BD_FIRE_HEATDMG) return; // Disabled.
@@ -566,7 +569,7 @@ namespace BDArmory.Modules
                 if (InertTank) return;
                 if (!isOnFire)
                 {
-                    if (((fuel != null && fuel.amount > 0) || (monoprop != null && monoprop.amount > 0) )&& part.temperature > 493) //autoignition temp of kerosene is 220 c. hydrazine is 24-270, so this works for monoprop as well
+                    if (((fuel != null && fuel.amount > 0) || (monoprop != null && monoprop.amount > 0)) && part.temperature > 493) //autoignition temp of kerosene is 220 c. hydrazine is 24-270, so this works for monoprop as well
                     {
                         string fireStarter;
                         var vesselFire = part.vessel.GetComponentInChildren<FireFX>();

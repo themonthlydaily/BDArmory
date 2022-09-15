@@ -78,8 +78,6 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool TRACE_VESSELS_DURING_COMPETITIONS = false; // Trace vessel positions and rotations during competitions.
         [BDAPersistentSettingsField] public static bool DRAW_VESSEL_TRAILS = true;                // Draw a trail to visualize vessel path during the heat
         [BDAPersistentSettingsField] public static int VESSEL_TRAIL_LENGTH = 300;                   //Max length of trails, in seconds. Defaults to competition length
-        [BDAPersistentSettingsField] public static bool DUMB_IR_SEEKERS = false;                  // IR missiles will go after hottest thing they can see
-        [BDAPersistentSettingsField] public static bool ASPECTED_IR_SEEKERS = false;                //IR Missiles will be subject to thermal occlusion mechanic
         [BDAPersistentSettingsField] public static bool AUTOCATEGORIZE_PARTS = true;
         [BDAPersistentSettingsField] public static bool SHOW_CATEGORIES = true;
         [BDAPersistentSettingsField] public static bool IGNORE_TERRAIN_CHECK = false;
@@ -122,7 +120,6 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool LOGARITHMIC_RADAR_DISPLAY = false;                //NOTE: used ONLY for display range of radar windows! Actual radar range provided by part configs!
         [BDAPersistentSettingsField] public static float MAX_ENGAGEMENT_RANGE = 200000f;          //NOTE: used ONLY for missile dlz parameters!
         [BDAPersistentSettingsField] public static float IVA_LOWPASS_FREQ = 2500f;
-        [BDAPersistentSettingsField] public static float SMOKE_DEFLECTION_FACTOR = 10f;
         [BDAPersistentSettingsField] public static float BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER = 256f;      // Multiplier of fixedDeltaTime for the large scale steps of ballistic trajectory simulations.
         [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE = 10f;
         [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_CENTER = 20f;
@@ -148,7 +145,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool EXTRA_DAMAGE_SLIDERS = false;
         [BDAPersistentSettingsField] public static float WEAPON_FX_DURATION = 15;               //how long do weapon secondary effects(EMP/choker/gravitic/etc) last
         [BDAPersistentSettingsField] public static float ZOMBIE_DMG_MULT = 0.1f;
-
+        [BDAPersistentSettingsField] public static float ARMOR_MASS_MOD = 1f;                   //Armor mass multiplier
         // FX
         [BDAPersistentSettingsField] public static bool FIRE_FX_IN_FLIGHT = false;
         [BDAPersistentSettingsField] public static int MAX_FIRES_PER_VESSEL = 10;                 //controls fx for penetration only for landed or splashed //this is only for physical missile collisons into fueltanks - SI
@@ -343,9 +340,13 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static int EVOLUTION_HEATS_PER_GROUP = 1;
         [BDAPersistentSettingsField] public static bool AUTO_RESUME_EVOLUTION = false;             // Automatically load the game and start evolution with the last used settings/seeds. Note: this overrides the AUTO_RESUME_TOURNAMENT setting.
 
-        // Countermeasure constants
+        // Missile & Countermeasure Settings
+        [BDAPersistentSettingsField] public static bool MISSILE_CM_SETTING_TOGGLE = false;
+        [BDAPersistentSettingsField] public static bool ASPECTED_IR_SEEKERS = false;                //IR Missiles will be subject to thermal occlusion mechanic
+        [BDAPersistentSettingsField] public static bool DUMB_IR_SEEKERS = false;                  // IR missiles will go after hottest thing they can see
         [BDAPersistentSettingsField] public static float FLARE_FACTOR = 1.6f;                       // Change this to make flares more or less effective, values close to or below 1.0 will cause flares to fail to decoy often
         [BDAPersistentSettingsField] public static float CHAFF_FACTOR = 0.65f;                       // Change this to make chaff more or less effective. Higher values will make chaff batter, lower values will make chaff worse.
+        [BDAPersistentSettingsField] public static float SMOKE_DEFLECTION_FACTOR = 10f;
         [BDAPersistentSettingsField] public static int APS_THRESHOLD = 60;                           // Threshold caliber that APS will register for intercepting hostile shells/rockets
     }
 }

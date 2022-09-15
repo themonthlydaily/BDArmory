@@ -614,8 +614,7 @@ namespace BDArmory.UI
         IEnumerator ToolbarButtonRoutine()
         {
             if (toolbarButtonAdded) yield break;
-            while (!ApplicationLauncher.Ready)
-            { yield return null; }
+            yield return new WaitUntil(() => ApplicationLauncher.Ready);
             if (toolbarButtonAdded) yield break;
             toolbarButtonAdded = true;
             Texture buttonTexture = GameDatabase.Instance.GetTexture(BDArmorySetup.textureDir + "icon", false);
@@ -704,14 +703,6 @@ namespace BDArmory.UI
             else
             {
                 SaveConfig();
-            }
-        }
-
-        void LateUpdate()
-        {
-            if (HighLogic.LoadedSceneIsFlight)
-            {
-                //UpdateCursorState();
             }
         }
 
@@ -2495,6 +2486,10 @@ namespace BDArmory.UI
 #if DEBUG  // Only visible when compiled in Debug configuration.
                     if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
                     {
+                        if (GUI.Button(SLeftRect(++line), "Test yield wait lengths")) // Test yield wait lengths
+                        {
+                            StartCoroutine(TestYieldWaitLengths());
+                        }
                         if (BDACompetitionMode.Instance != null)
                         {
                             if (GUI.Button(SLeftRect(++line), "Run DEBUG checks"))// Run DEBUG checks
@@ -2695,6 +2690,22 @@ namespace BDArmory.UI
                     BDArmorySettings.RESET_ARMOUR = GUI.Toggle(SRightRect(line), BDArmorySettings.RESET_ARMOUR, Localizer.Format("#LOC_BDArmory_Settings_ResetArmor"));
                     BDArmorySettings.VESSEL_RELATIVE_BULLET_CHECKS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.VESSEL_RELATIVE_BULLET_CHECKS, Localizer.Format("#LOC_BDArmory_Settings_VesselRelativeBulletChecks"));//"Vessel-Relative Bullet Checks"
                     BDArmorySettings.RESET_HULL = GUI.Toggle(SRightRect(line), BDArmorySettings.RESET_HULL, Localizer.Format("#LOC_BDArmory_Settings_ResetHull")); //Reset Hull
+                    BDArmorySettings.MISSILE_CM_SETTING_TOGGLE = GUI.Toggle(SLineRect(++line), BDArmorySettings.MISSILE_CM_SETTING_TOGGLE, Localizer.Format("#LOC_BDArmory_Settings_MissileCMToggle"));
+                    if (BDArmorySettings.MISSILE_CM_SETTING_TOGGLE)
+                    {
+                        BDArmorySettings.ASPECTED_IR_SEEKERS = GUI.Toggle(SLineRect(++line), BDArmorySettings.ASPECTED_IR_SEEKERS, Localizer.Format("#LOC_BDArmory_Settings_AspectedIRSeekers"));
+                        GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_FlareFactor")}:  ({BDArmorySettings.FLARE_FACTOR})", leftLabel);
+                        BDArmorySettings.FLARE_FACTOR = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FLARE_FACTOR, 0f, 3f), 0.05f);
+
+                        GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_ChaffFactor")}:  ({BDArmorySettings.CHAFF_FACTOR})", leftLabel);
+                        BDArmorySettings.CHAFF_FACTOR = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.CHAFF_FACTOR, 0f, 3f), 0.05f);
+
+                        GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_SmokeDeflectionFactor")}:  ({BDArmorySettings.SMOKE_DEFLECTION_FACTOR})", leftLabel);
+                        BDArmorySettings.SMOKE_DEFLECTION_FACTOR = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.SMOKE_DEFLECTION_FACTOR, 0f, 40f), 0.5f);
+
+                        GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_APSThreshold")}:  ({BDArmorySettings.APS_THRESHOLD})", leftLabel);
+                        BDArmorySettings.APS_THRESHOLD = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.APS_THRESHOLD, 1f, 356f));
+                    }
                     BDArmorySettings.AUTO_LOAD_TO_KSC = GUI.Toggle(SLeftRect(++line), BDArmorySettings.AUTO_LOAD_TO_KSC, Localizer.Format("#LOC_BDArmory_Settings_AutoLoadToKSC")); // Auto-Load To KSC
                     BDArmorySettings.GENERATE_CLEAN_SAVE = GUI.Toggle(SRightRect(line), BDArmorySettings.GENERATE_CLEAN_SAVE, Localizer.Format("#LOC_BDArmory_Settings_GenerateCleanSave")); // Generate Clean Save
                     BDArmorySettings.AUTO_RESUME_TOURNAMENT = GUI.Toggle(SLeftRect(++line), BDArmorySettings.AUTO_RESUME_TOURNAMENT, Localizer.Format("#LOC_BDArmory_Settings_AutoResumeTournaments")); // Auto-Resume Tournaments
@@ -2744,25 +2755,25 @@ namespace BDArmory.UI
                     if (BDArmorySettings.EXTRA_DAMAGE_SLIDERS)
                     {
                         GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_BallisticDamageMultiplier")}:  ({BDArmorySettings.BALLISTIC_DMG_FACTOR})", leftLabel);
-                        BDArmorySettings.BALLISTIC_DMG_FACTOR = Mathf.Round((GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.BALLISTIC_DMG_FACTOR * 20f, 0f, 60f))) / 20f;
+                        BDArmorySettings.BALLISTIC_DMG_FACTOR = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.BALLISTIC_DMG_FACTOR, 0f, 3f), 0.05f);
 
                         GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_ExplosiveDamageMultiplier")}:  ({BDArmorySettings.EXP_DMG_MOD_BALLISTIC_NEW})", leftLabel);
-                        BDArmorySettings.EXP_DMG_MOD_BALLISTIC_NEW = Mathf.Round((GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_DMG_MOD_BALLISTIC_NEW * 20f, 0f, 30f))) / 20f;
+                        BDArmorySettings.EXP_DMG_MOD_BALLISTIC_NEW = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_DMG_MOD_BALLISTIC_NEW, 0f, 1.5f), 0.05f);
 
                         GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_RocketExplosiveDamageMultiplier")}:  ({BDArmorySettings.EXP_DMG_MOD_ROCKET})", leftLabel);
-                        BDArmorySettings.EXP_DMG_MOD_ROCKET = Mathf.Round((GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_DMG_MOD_ROCKET * 20f, 0f, 40f))) / 20f;
+                        BDArmorySettings.EXP_DMG_MOD_ROCKET = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_DMG_MOD_ROCKET, 0f, 2f), 0.05f);
 
                         GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_MissileExplosiveDamageMultiplier")}:  ({BDArmorySettings.EXP_DMG_MOD_MISSILE})", leftLabel);
-                        BDArmorySettings.EXP_DMG_MOD_MISSILE = Mathf.Round((GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_DMG_MOD_MISSILE * 4f, 0f, 40f))) / 4f;
+                        BDArmorySettings.EXP_DMG_MOD_MISSILE = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_DMG_MOD_MISSILE, 0f, 10f), 0.25f);
 
                         GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_ImplosiveDamageMultiplier")}:  ({BDArmorySettings.EXP_IMP_MOD})", leftLabel);
-                        BDArmorySettings.EXP_IMP_MOD = Mathf.Round((GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_IMP_MOD * 20, 0f, 20f))) / 20f;
+                        BDArmorySettings.EXP_IMP_MOD = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_IMP_MOD, 0f, 1f), 0.05f);
 
                         GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_ArmorExplosivePenetrationResistanceMultiplier")}:  ({BDArmorySettings.EXP_PEN_RESIST_MULT})", leftLabel);
                         BDArmorySettings.EXP_PEN_RESIST_MULT = Mathf.Round((GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_PEN_RESIST_MULT * 4f, 0f, 40f))) / 4f;
 
                         GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_ExplosiveBattleDamageMultiplier")}:  ({BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE})", leftLabel);
-                        BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE = Mathf.Round((GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE * 10f, 0f, 20f))) / 10f;
+                        BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE, 0f, 2f), 0.1f);
 
                         GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_BuildingDamageMultiplier")}:  ({BDArmorySettings.BUILDING_DMG_MULTIPLIER})", leftLabel);
                         BDArmorySettings.BUILDING_DMG_MULTIPLIER = BDAMath.RoundToUnit((GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.BUILDING_DMG_MULTIPLIER, 0f, 10f)), 0.1f);
@@ -2772,6 +2783,9 @@ namespace BDArmory.UI
 
                         GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_BallisticTrajectorSimulationMultiplier")}:  ({BDArmorySettings.BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER})", leftLabel);
                         BDArmorySettings.BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER, 1f, 256f));
+
+                        GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_ArmorMassMultiplier")}:  ({BDArmorySettings.ARMOR_MASS_MOD})", leftLabel);
+                        BDArmorySettings.ARMOR_MASS_MOD = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.ARMOR_MASS_MOD, 0.05f, 2f), 0.05f); //armor mult shouldn't be zero, else armor will never take damage, might also break some other things
                     }
                 }
 
@@ -3089,7 +3103,6 @@ namespace BDArmory.UI
                     {
                         if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch.ship is not null) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
                     }
-
                     if (BDArmorySettings.RUNWAY_PROJECT)
                     {
                         GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_RunwayProjectRound")}: ({(BDArmorySettings.RUNWAY_PROJECT_ROUND > 10 ? $"S{(BDArmorySettings.RUNWAY_PROJECT_ROUND - 1) / 10}R{(BDArmorySettings.RUNWAY_PROJECT_ROUND - 1) % 10 + 1}" : "—")})", leftLabel); // RWP round
@@ -3768,12 +3781,14 @@ namespace BDArmory.UI
         {
             GAME_UI_ENABLED = false;
             BDACompetitionMode.Instance.UpdateGUIElements();
+            UpdateCursorState();
         }
 
         void ShowGameUI()
         {
             GAME_UI_ENABLED = true;
             BDACompetitionMode.Instance.UpdateGUIElements();
+            UpdateCursorState();
         }
 
         internal void OnDestroy()
@@ -3843,6 +3858,35 @@ namespace BDArmory.UI
         void FlightIntegrator() { Debug.Log($"DEBUG {Time.time} FlightIntegrator, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
         void Late() { Debug.Log($"DEBUG {Time.time} Late, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
         void BetterLateThanNever() { Debug.Log($"DEBUG {Time.time} BetterLateThanNever, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
+
+        IEnumerator TestYieldWaitLengths()
+        {
+            Debug.Log($"DEBUG Starting yield wait tests at {Time.time} with timeScale {Time.timeScale}");
+            var tic = Time.time;
+            for (int i = 0; i < 3; ++i)
+            {
+                yield return new WaitForFixedUpdate();
+                Debug.Log($"DEBUG WaitForFixedUpdate took {Time.time - tic}s at {Time.time}");
+                tic = Time.time;
+            }
+            for (int i = 0; i < 3; ++i)
+            {
+                yield return null;
+                Debug.Log($"DEBUG yield null took {Time.time - tic}s at {Time.time}");
+                tic = Time.time;
+            }
+            yield return new WaitForSeconds(1);
+            Debug.Log($"DEBUG WaitForSeconds(1) took {Time.time - tic}s at {Time.time}");
+            tic = Time.time;
+            yield return new WaitForSecondsFixed(1);
+            Debug.Log($"DEBUG WaitForSecondsFixed(1) took {Time.time - tic}s at {Time.time}");
+            tic = Time.time;
+            yield return new WaitUntil(() => Time.time - tic > 1);
+            Debug.Log($"DEBUG WaitUntil took {Time.time - tic}s at {Time.time}");
+            tic = Time.time;
+            yield return new WaitUntilFixed(() => Time.time - tic > 1);
+            Debug.Log($"DEBUG WaitUntilFixed took {Time.time - tic}s at {Time.time}");
+        }
 #endif
     }
 }

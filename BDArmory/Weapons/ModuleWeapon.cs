@@ -869,7 +869,7 @@ namespace BDArmory.Weapons
             if (isRippleFiring) delay = 0;
             if (delay > 0)
             {
-                yield return new WaitForSeconds(delay);
+                yield return new WaitForSecondsFixed(delay);
             }
             if (weaponManager == null || weaponManager.vessel != this.vessel) yield break;
             weaponManager.incrementRippleIndex(WeaponName);
@@ -1186,14 +1186,18 @@ namespace BDArmory.Weapons
                                         validAmmo = true;
                                         break;
                                     }
-                                    if (!validAmmo) customAmmoBelt[i] = testAmmo[0];
+                                    if (!validAmmo)
+                                    {
+                                        customAmmoBelt[i] = testAmmo[0];
+                                        Debug.LogWarning("[BDArmory.ModuleWeapon] Invalid ammo type " + customAmmoBelt[i] + " in ammo belt! reverting to valid ammo type " + testAmmo[0]);
+                                    }
                                 }
                             }
                             baseBulletVelocity = BulletInfo.bullets[customAmmoBelt[0].ToString()].bulletVelocity;
                         }
-                        else
+                        else //belt is empty/"def" reset useAmmoBelt
                         {
-                            customAmmoBelt = BDAcTools.ParseNames(bulletType);
+                            useCustomBelt = false;
                         }
                     }
                 }
@@ -1300,6 +1304,18 @@ namespace BDArmory.Weapons
                 if (fireTransforms.Length == 0) Debug.LogError("[BDArmory.ModuleWeapon] Weapon missing fireTransform [" + fireTransformName + "]! Please fix your model");
                 WeaponNameWindow.OnActionGroupEditorOpened.Add(OnActionGroupEditorOpened);
                 WeaponNameWindow.OnActionGroupEditorClosed.Add(OnActionGroupEditorClosed);
+                if (useCustomBelt)
+                {
+                    if (!string.IsNullOrEmpty(ammoBelt) && ammoBelt != "def")
+                    {
+                        customAmmoBelt = BDAcTools.ParseNames(ammoBelt);                        
+                        baseBulletVelocity = BulletInfo.bullets[customAmmoBelt[0].ToString()].bulletVelocity;
+                    }
+                    else
+                    {
+                        useCustomBelt = false;
+                    }
+                }
             }
             //turret setup
             List<ModuleTurret>.Enumerator turr = part.FindModulesImplementing<ModuleTurret>().GetEnumerator();
@@ -4627,7 +4643,7 @@ namespace BDArmory.Weapons
                 delayTime /= ((laserDamage / (1 + Mathf.PI * angularSpread * angularSpread) * 0.425f) / 100);
                 if (delayTime < TimeWarp.fixedDeltaTime) delayTime = 0;
             }
-            yield return new WaitForSeconds(delayTime);
+            yield return new WaitForSecondsFixed(delayTime);
             if (shell != null)
             {
                 if (shell.tntMass > 0)
@@ -4767,10 +4783,7 @@ namespace BDArmory.Weapons
         {
             if (hasReloadAnim && isReloading) //wait for reload to finish before shutting down
             {
-                while (reloadState.normalizedTime < 1)
-                {
-                    yield return null;
-                }
+                yield return new WaitWhileFixed(() => reloadState.normalizedTime < 1);
             }
             if (!calledByReload)
             {
@@ -4780,10 +4793,7 @@ namespace BDArmory.Weapons
             {
                 deployState.enabled = true;
                 deployState.speed = 1;
-                while (deployState.normalizedTime < 1) //wait for animation here
-                {
-                    yield return null;
-                }
+                yield return new WaitWhileFixed(() => deployState.normalizedTime < 1); //wait for animation here
                 deployState.normalizedTime = 1;
                 deployState.speed = 0;
                 deployState.enabled = false;
@@ -4799,10 +4809,7 @@ namespace BDArmory.Weapons
         {
             if (hasReloadAnim && isReloading) //wait for relaod to finish before shutting down
             {
-                while (reloadState.normalizedTime < 1)
-                {
-                    yield return null;
-                }
+                yield return new WaitWhileFixed(() => reloadState.normalizedTime < 1);
             }
             if (!calledByReload) //allow isreloading to co-opt the startup/shutdown anim without disabling weapon in the process
             {
@@ -4816,21 +4823,14 @@ namespace BDArmory.Weapons
             BDArmorySetup.Instance.UpdateCursorState();
             if (turret)
             {
-                yield return new WaitForSeconds(0.2f);
-
-                while (!turret.ReturnTurret()) //wait till turret has returned
-                {
-                    yield return new WaitForFixedUpdate();
-                }
+                yield return new WaitForSecondsFixed(0.2f);
+                yield return new WaitWhileFixed(()=>!turret.ReturnTurret()); //wait till turret has returned
             }
             if (hasDeployAnim)
             {
                 deployState.enabled = true;
                 deployState.speed = -1;
-                while (deployState.normalizedTime > 0)
-                {
-                    yield return null;
-                }
+                yield return new WaitWhileFixed(() => deployState.normalizedTime > 0);
                 deployState.normalizedTime = 0;
                 deployState.speed = 0;
                 deployState.enabled = false;
@@ -4848,10 +4848,7 @@ namespace BDArmory.Weapons
             reloadState.normalizedTime = 0;
             reloadState.enabled = true;
             reloadState.speed = (reloadState.length / ReloadTime);//ensure relaod anim is not longer than reload time
-            while (reloadState.normalizedTime < 1) //wait for animation here
-            {
-                yield return null;
-            }
+            yield return new WaitWhileFixed(() => reloadState.normalizedTime < 1); //wait for animation here
             reloadState.normalizedTime = 1;
             reloadState.speed = 0;
             reloadState.enabled = false;
@@ -4871,17 +4868,14 @@ namespace BDArmory.Weapons
                 chargeState.normalizedTime = 0;
                 chargeState.enabled = true;
                 chargeState.speed = (chargeState.length / ChargeTime);//ensure relaod anim is not longer than reload time
-                while (chargeState.normalizedTime < 1) //wait for animation here
-                {
-                    yield return null;
-                }
+                yield return new WaitWhileFixed(() => chargeState.normalizedTime < 1); //wait for animation here
                 chargeState.normalizedTime = 1;
                 chargeState.speed = 0;
                 chargeState.enabled = false;
             }
             else
             {
-                yield return new WaitForSeconds(ChargeTime);
+                yield return new WaitForSecondsFixed(ChargeTime);
             }
             UpdateGUIWeaponState();
             isCharging = false;
@@ -5181,7 +5175,6 @@ namespace BDArmory.Weapons
                     {
                         baseBulletVelocity = BulletInfo.bullets[customAmmoBelt[0].ToString()].bulletVelocity;
                     }
-
                 }
             }
             if (eWeaponType == WeaponTypes.Rocket)
@@ -5263,7 +5256,6 @@ namespace BDArmory.Weapons
                 electroLaser = rocketInfo.EMP; //borrowing electrolaser bool, should really rename it empWeapon
                 choker = rocketInfo.choker;
                 incendiary = rocketInfo.incendiary;
-                SelectedAmmoType = rocketInfo.name; //store selected ammo name as string for retrieval by web orc filter/later GUI implementation                
                 SetupRocketPool(currentType, rocketModelPath);
             }
             PAWRefresh();

@@ -263,13 +263,12 @@ namespace BDArmory.FX
                             }
                             else
                             {
-                                DestructibleBuilding building = SChit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
-
-                                if (building != null)
+                                if (!BDArmorySettings.PAINTBALL_MODE)
                                 {
-                                    if (!explosionEventsBuildingAdded.Contains(building))
+                                    DestructibleBuilding building = SChit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
+                                    if (building != null)
                                     {
-                                        ProcessBuildingEvent(building, explosionEventsPreProcessing, explosionEventsBuildingAdded);
+                                        ProjectileUtils.CheckBuildingHit(SChit, Power * 0.0555f, Direction.normalized * 4000f, 1);
                                     }
                                 }
                             }
@@ -288,52 +287,72 @@ namespace BDArmory.FX
                 while (hitCollidersEnu.MoveNext())
                 {
                     if (hitCollidersEnu.Current == null) continue;
-
-                    Part partHit = hitCollidersEnu.Current.GetComponentInParent<Part>();
-
-                    if (partHit != null)
+                    try
                     {
-                        if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
-                        if (partHit.mass > 0 && !explosionEventsPartsAdded.Contains(partHit))
+                        Part partHit = hitCollidersEnu.Current.GetComponentInParent<Part>();
+
+                        if (partHit != null)
                         {
-                            var damaged = ProcessPartEvent(partHit, sourceVesselName, explosionEventsPreProcessing, explosionEventsPartsAdded);
-                            // If the explosion derives from a missile explosion, count the parts damaged for missile hit scores.
-                            if (damaged && BDACompetitionMode.Instance)
+                            if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
+                            if (partHit.mass > 0 && !explosionEventsPartsAdded.Contains(partHit))
                             {
-                                bool registered = false;
-                                var damagedVesselName = partHit.vessel != null ? partHit.vessel.GetName() : null;
-                                switch (ExplosionSource)
+                                var damaged = ProcessPartEvent(partHit, sourceVesselName, explosionEventsPreProcessing, explosionEventsPartsAdded);
+                                // If the explosion derives from a missile explosion, count the parts damaged for missile hit scores.
+                                if (damaged && BDACompetitionMode.Instance)
                                 {
-                                    case ExplosionSourceType.Rocket:
-                                        if (BDACompetitionMode.Instance.Scores.RegisterRocketHit(sourceVesselName, damagedVesselName, 1))
-                                            registered = true;
-                                        break;
-                                    case ExplosionSourceType.Missile:
-                                        if (BDACompetitionMode.Instance.Scores.RegisterMissileHit(sourceVesselName, damagedVesselName, 1))
-                                            registered = true;
-                                        break;
+                                    bool registered = false;
+                                    var damagedVesselName = partHit.vessel != null ? partHit.vessel.GetName() : null;
+                                    switch (ExplosionSource)
+                                    {
+                                        case ExplosionSourceType.Rocket:
+                                            if (BDACompetitionMode.Instance.Scores.RegisterRocketHit(sourceVesselName, damagedVesselName, 1))
+                                                registered = true;
+                                            break;
+                                        case ExplosionSourceType.Missile:
+                                            if (BDACompetitionMode.Instance.Scores.RegisterMissileHit(sourceVesselName, damagedVesselName, 1))
+                                                registered = true;
+                                            break;
+                                    }
+                                    if (registered)
+                                    {
+                                        if (explosionEventsVesselsHit.ContainsKey(damagedVesselName))
+                                            ++explosionEventsVesselsHit[damagedVesselName];
+                                        else
+                                            explosionEventsVesselsHit[damagedVesselName] = 1;
+                                    }
                                 }
-                                if (registered)
+                            }
+                        }
+                        else
+                        {
+                            DestructibleBuilding building = hitCollidersEnu.Current.GetComponentInParent<DestructibleBuilding>();
+
+                            if (building != null)
+                            {
+                                if (!explosionEventsBuildingAdded.Contains(building))
                                 {
-                                    if (explosionEventsVesselsHit.ContainsKey(damagedVesselName))
-                                        ++explosionEventsVesselsHit[damagedVesselName];
-                                    else
-                                        explosionEventsVesselsHit[damagedVesselName] = 1;
+                                    //ProcessBuildingEvent(building, explosionEventsPreProcessing, explosionEventsBuildingAdded);
+                                    Ray ray = new Ray(Position, building.transform.position - Position);
+                                    var distance = Vector3.Distance(building.transform.position, Position);
+                                    RaycastHit rayHit;
+                                    if (Physics.Raycast(ray, out rayHit, Range * 2, explosionLayerMask))
+                                    {
+                                        //DestructibleBuilding destructibleBuilding = rayHit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
+                                        distance = Vector3.Distance(Position, rayHit.point);
+                                        //if (destructibleBuilding != null && destructibleBuilding.Equals(building) && building.IsIntact)
+                                        if (building.IsIntact)
+                                        {
+                                            explosionEventsPreProcessing.Add(new BuildingBlastHitEvent() { Distance = distance, Building = building, TimeToImpact = distance / ExplosionVelocity });
+                                            explosionEventsBuildingAdded.Add(building);
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
-                    else
+                    catch (Exception e)
                     {
-                        DestructibleBuilding building = hitCollidersEnu.Current.GetComponentInParent<DestructibleBuilding>();
-
-                        if (building != null)
-                        {
-                            if (!explosionEventsBuildingAdded.Contains(building))
-                            {
-                                ProcessBuildingEvent(building, explosionEventsPreProcessing, explosionEventsBuildingAdded);
-                            }
-                        }
+                        Debug.LogError($"[BDArmory.ExplosionFX]: Exception in overlapSphereColliders processing: {e.Message}\n{e.StackTrace}");
                     }
                 }
             }
@@ -388,6 +407,7 @@ namespace BDArmory.FX
                     var distance = Vector3.Distance(Position, rayHit.point);
                     eventList.Add(new BuildingBlastHitEvent() { Distance = Vector3.Distance(Position, rayHit.point), Building = building, TimeToImpact = distance / ExplosionVelocity });
                     buildingAdded.Add(building);
+                    explosionEventsBuildingAdded.Add(building);
                 }
             }
         }
@@ -650,31 +670,50 @@ namespace BDArmory.FX
 
         private void ExecuteBuildingBlastEvent(BuildingBlastHitEvent eventToExecute)
         {
+            if (BDArmorySettings.BUILDING_DMG_MULTIPLIER == 0) return;
             //TODO: Review if the damage is sensible after so many changes
             //buildings
             DestructibleBuilding building = eventToExecute.Building;
-            building.damageDecay = 600f;
+            //building.damageDecay = 600f;
 
-            if (building)
+            if (building && building.IsIntact && !BDArmorySettings.PAINTBALL_MODE)
             {
                 var distanceFactor = Mathf.Clamp01((Range - eventToExecute.Distance) / Range);
-                float damageToBuilding = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_BALLISTIC_NEW * Power * distanceFactor;
-
-                damageToBuilding *= 2f;
-                damageToBuilding *= BDArmorySettings.BUILDING_DMG_MULTIPLIER;
-
-                building.AddDamage(damageToBuilding);
-
-                if (building.Damage > building.impactMomentumThreshold)
+                float blastMod = 1;
+                switch (ExplosionSource)
                 {
+                    case ExplosionSourceType.Bullet:
+                        blastMod = BDArmorySettings.EXP_DMG_MOD_BALLISTIC_NEW;
+                        break;
+                    case ExplosionSourceType.Rocket:
+                        blastMod = BDArmorySettings.EXP_DMG_MOD_ROCKET;
+                        break;
+                    case ExplosionSourceType.Missile:
+                        blastMod = BDArmorySettings.EXP_DMG_MOD_MISSILE;
+                        break;
+                    case ExplosionSourceType.BattleDamage:
+                        blastMod = BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE;
+                        break;
+                }
+                float damageToBuilding = (BDArmorySettings.DMG_MULTIPLIER / 100) * blastMod * (Power * distanceFactor);
+                damageToBuilding /= 2;
+                damageToBuilding *= BDArmorySettings.BUILDING_DMG_MULTIPLIER;
+                //building.AddDamage(damageToBuilding); 
+                BuildingDamage.RegisterDamage(building);
+                building.FacilityDamageFraction += damageToBuilding;
+                //based on testing, I think facilityDamageFraction starts at values between 5 and 100, and demolished the building if it hits 0 - which means it will work great as a HP value in the other direction
+                if (building.FacilityDamageFraction > building.impactMomentumThreshold * 2)
+                {
+                    if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ExplosionFX]: Building " + building.name + " demolished due to Explosive damage! Dmg to building: " + building.Damage);
                     building.Demolish();
                 }
                 if (BDArmorySettings.DEBUG_DAMAGE)
                 {
-                    Debug.Log("[BDArmory.ExplosionFX]: Explosion hit destructible building! Hitpoints Applied: " + Mathf.Round(damageToBuilding) +
-                             ", Building Damage : " + Mathf.Round(building.Damage) +
-                             " Building Threshold : " + building.impactMomentumThreshold +
+                    Debug.Log("[BDArmory.ExplosionFX]: Explosion hit destructible building " + building.name + "! Hitpoints Applied: " + damageToBuilding.ToString("F3") +
+                             ", Building Damage : " + building.FacilityDamageFraction +
+                             " Building Threshold : " + building.impactMomentumThreshold * 2 +
                              $", (Range: {Range}, Distance: {eventToExecute.Distance}, Factor: {distanceFactor}, Power: {Power})");
+
                 }
             }
         }

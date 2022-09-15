@@ -395,7 +395,7 @@ namespace BDArmory.Bullets
 
                         if (ProjectileUtils.CheckGroundHit(hitPart, hit, caliber))
                         {
-                            ProjectileUtils.CheckBuildingHit(hit, rocketMass * 1000, rb.velocity, bulletDmgMult);
+                            if (!BDArmorySettings.PAINTBALL_MODE) ProjectileUtils.CheckBuildingHit(hit, rocketMass * 1000, rb.velocity, bulletDmgMult);
                             Detonate(hit.point, false);
                             return;
                         }

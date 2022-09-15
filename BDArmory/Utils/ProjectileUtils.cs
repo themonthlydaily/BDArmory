@@ -63,7 +63,7 @@ namespace BDArmory.Utils
             // Update scoring structures
             //if (firstHit)
             //{
-                ApplyScore(hitPart, sourceVessel.GetName(), distanceTraveled, damage, name, explosionSource, firstHit);
+            ApplyScore(hitPart, sourceVessel.GetName(), distanceTraveled, damage, name, explosionSource, firstHit);
             //}
             ResourceUtils.StealResources(hitPart, sourceVessel);
         }
@@ -414,7 +414,7 @@ namespace BDArmory.Utils
                 float Density = Armor.Density;
                 if (Armor.ArmorPanel) spallArea = Armor.armorVolume * 10000;
 
-                float ArmorTolerance = (((Strength * (1 + ductility)) + Density) / 1000) * thickness; 
+                float ArmorTolerance = (((Strength * (1 + ductility)) + Density) / 1000) * thickness;
 
                 float blowthroughFactor = (float)BlastPressure / ArmorTolerance;
                 if (BDArmorySettings.DEBUG_ARMOR)
@@ -569,7 +569,7 @@ namespace BDArmory.Utils
                                 }
                                 if (BDArmorySettings.BATTLEDAMAGE)
                                 {
-                                    BattleDamageHandler.CheckDamageFX(hitPart, spallArea/100000, blowthroughFactor, true, false, sourcevessel, hit);
+                                    BattleDamageHandler.CheckDamageFX(hitPart, spallArea / 100000, blowthroughFactor, true, false, sourcevessel, hit);
                                 }
                             }
                             return true;
@@ -718,7 +718,7 @@ namespace BDArmory.Utils
                 length = ((bulletMass * 1000.0f * 400.0f) / ((caliber * caliber *
                     Mathf.PI) * (sabot ? 19.0f : 11.34f)) + 1.0f) * 10.0f;
             }
-            
+
             float penetration = 0;
             // 1400 is an arbitrary velocity around where the linear function used to
             // simplify diverges from the result predicted by the Frank and Zook S2 based
@@ -759,10 +759,10 @@ namespace BDArmory.Utils
                 // and is an overestimate but the S4 option is far more complex than even
                 // this and it also requires an empirical parameter that requires testing
                 // long rod penetrators against targets so lolno
-                penetration =  ((length - caliber) * (1.0f - Mathf.Exp((-vFactor *
+                penetration = ((length - caliber) * (1.0f - Mathf.Exp((-vFactor *
                     bulletVelocity * bulletVelocity) * muParam1)) * muParam2 + caliber *
                     muParam3 * Mathf.Log(1.0f + vFactor * bulletVelocity *
-                    bulletVelocity))*apBulletMod;
+                    bulletVelocity)) * apBulletMod;
             }
             if (BDArmorySettings.DEBUG_ARMOR)
             {
@@ -842,8 +842,8 @@ namespace BDArmory.Utils
             try
             {
                 building = hit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
-                if (building != null)
-                    building.damageDecay = 600f;
+                //if (building != null)
+                //   building.damageDecay = 600f; //check if new method is still subject to building regen
             }
             catch (Exception e)
             {
@@ -852,20 +852,23 @@ namespace BDArmory.Utils
 
             if (building != null && building.IsIntact)
             {
+                if (BDArmorySettings.BUILDING_DMG_MULTIPLIER == 0) return true;
                 float damageToBuilding = ((0.5f * (projMass * (currentVelocity.magnitude * currentVelocity.magnitude)))
-                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * DmgMult
+                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * DmgMult * BDArmorySettings.BALLISTIC_DMG_FACTOR
                             * 1e-4f);
                 damageToBuilding /= 8f;
                 damageToBuilding *= BDArmorySettings.BUILDING_DMG_MULTIPLIER;
-                building.AddDamage(damageToBuilding);
-                if (building.Damage > building.impactMomentumThreshold * 150)
+                BuildingDamage.RegisterDamage(building);
+                building.FacilityDamageFraction += damageToBuilding;
+                if (building.FacilityDamageFraction > (building.impactMomentumThreshold * 2))
                 {
+                    if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ProjectileUtils]: Building demolished due to ballistic damage! Dmg to building: " + building.Damage);
                     building.Demolish();
                 }
-                if (BDArmorySettings.DEBUG_WEAPONS)
-                    Debug.Log("[BDArmory.ProjectileUtils]: Ballistic hit destructible building! Hitpoints Applied: " + Mathf.Round(damageToBuilding) +
-                             ", Building Damage : " + Mathf.Round(building.Damage) +
-                             " Building Threshold : " + building.impactMomentumThreshold);
+                if (BDArmorySettings.DEBUG_DAMAGE)
+                    Debug.Log("[BDArmory.ProjectileUtils]: Ballistic hit destructible building " + building.name + "! Hitpoints Applied: " + damageToBuilding.ToString("F3") +
+                             ", Building Damage : " + building.FacilityDamageFraction +
+                             " Building Threshold : " + building.impactMomentumThreshold * 2);
 
                 return true;
             }

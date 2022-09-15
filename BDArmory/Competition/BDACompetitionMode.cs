@@ -964,7 +964,7 @@ namespace BDArmory.Competition
         {
             if (explodingWM.Contains(vessel)) yield break; // Already scheduled for exploding.
             explodingWM.Add(vessel);
-            yield return new WaitForSeconds(delay);
+            yield return new WaitForSecondsFixed(delay);
             if (vessel == null) // It's already dead.
             {
                 explodingWM = explodingWM.Where(v => v != null).ToHashSet(); // Clean the hashset.
