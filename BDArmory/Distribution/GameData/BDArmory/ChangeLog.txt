@@ -3,6 +3,9 @@ IMPROVEMENTS / FIXES
 - Use an alternative method of calculating vessel bounds to get the vessel radius. — Fixes some weird results with parasite fighters from KSP's internal function for this.
 - Add a building damage multiplier.
 - Fix the bug preventing explosive damage applying to buildings.
+- Missile and countermeasure settings are now accessible in the Gameplay Settings section of the BDA Settings menu.
+- Random position noise due to chaff no longer scales with RCS, is instead fixed to a random number between 16 and 256.
+- Fix GPS missiles not obeying max missile per target setting when the target is traveling at high speeds.
 
 v1.5.2.1
 IMPROVEMENTS / FIXES

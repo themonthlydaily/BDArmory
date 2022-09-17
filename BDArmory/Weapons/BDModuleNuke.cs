@@ -117,7 +117,7 @@ namespace BDArmory.Weapons
             base.OnStart(state);
         }
 
-        public void Update()
+        public void FixedUpdate()
         {
             if (HighLogic.LoadedSceneIsFlight)
             {
@@ -179,7 +179,7 @@ namespace BDArmory.Weapons
         {
             if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.RWPS3R2NukeModule]: Nuclear engine on " + Sourcevessel + " going critical in " + delay.ToString("0.0") + "s.");
             goingCritical = true;
-            yield return new WaitForSeconds(delay);
+            yield return new WaitForSecondsFixed(delay);
             if (!hasDetonated && part != null) Detonate();
         }
 

@@ -153,8 +153,7 @@ namespace BDArmory.UI
 
         private IEnumerator WaitForBdaSettings()
         {
-            while (BDArmorySetup.Instance == null)
-                yield return null;
+            yield return new WaitUntil(() => BDArmorySetup.Instance is not null);
 
             BDArmorySetup.Instance.hasVesselSpawner = true;
             _guiCheckIndex = GUIUtils.RegisterGUIRect(new Rect());

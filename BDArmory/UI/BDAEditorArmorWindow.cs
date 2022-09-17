@@ -119,20 +119,21 @@ namespace BDArmory.UI
         {
             delayedRefreshVisuals = true;
             if (!delayedRefreshVisualsInProgress)
-                StartCoroutine(DelayedRefreshVisuals());
+                StartCoroutine(DelayedRefreshVisuals(data));
         }
 
         private bool delayedRefreshVisuals = false;
         private bool delayedRefreshVisualsInProgress = false;
-        IEnumerator DelayedRefreshVisuals()
+        IEnumerator DelayedRefreshVisuals(ShipConstruct ship)
         {
             delayedRefreshVisualsInProgress = true;
+            var wait = new WaitForFixedUpdate();
             while (delayedRefreshVisuals) // Wait until ship modified events stop coming.
             {
                 delayedRefreshVisuals = false;
-                yield return null;
-                yield return null; // Two yield nulls to wait for HP changes to delayed ship modified events in HitpointTracker
+                yield return wait;
             }
+            yield return new WaitUntilFixed(() => ship.Parts.TrueForAll(p => p.GetComponent<Damage.HitpointTracker>() is null || p.GetComponent<Damage.HitpointTracker>().Ready)); // Wait for HP changes to delayed ship modified events in HitpointTracker
             delayedRefreshVisualsInProgress = false;
 
             if (showArmorWindow)
@@ -166,10 +167,7 @@ namespace BDArmory.UI
         IEnumerator ToolbarButtonRoutine()
         {
             if (toolbarButton || (!HighLogic.LoadedSceneIsEditor)) yield break;
-            while (!ApplicationLauncher.Ready)
-            {
-                yield return null;
-            }
+            yield return new WaitUntil(() => ApplicationLauncher.Ready);
 
             AddToolbarButton();
         }

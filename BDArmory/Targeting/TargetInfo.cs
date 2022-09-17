@@ -256,7 +256,7 @@ namespace BDArmory.Targeting
             }
         }
 
-        void Update()
+        void FixedUpdate()
         {
             if (vessel == null)
             {

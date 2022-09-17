@@ -144,11 +144,11 @@ namespace BDArmory.UI
 
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
             {
-                updateTimer -= Time.fixedDeltaTime;
+                updateTimer -= Time.deltaTime;
                 if (updateTimer < 0)
                 {
                     UpdateDebugLabels();
-                    updateTimer = 0.5f;    //next update in half a sec only
+                    updateTimer = 1f;    //next update in one sec only
                 }
             }
             else
