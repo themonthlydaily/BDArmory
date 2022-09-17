@@ -422,46 +422,9 @@ namespace BDArmory.FX
                     {
                         Debug.Log("[BDArmory.NukeFX]: radiative area of part " + part + " was NaN, using approximate area " + radiativeArea + " instead.");
                     }
-                    //part.skinTemperature += fluence * 3370000000 / (4 * Math.PI * (realDistance * realDistance)) * radiativeArea / 2; // Fluence scales linearly w/ yield, 1 Kt will produce between 33 TJ and 337 kJ at 0-1000m,
-                    part.skinTemperature += fluence * (337000000 * BDArmorySettings.EXP_DMG_MOD_MISSILE) / (4 * Math.PI * (realDistance * realDistance)); // everything gets heated via atmosphere                                                                                                                                  
-                    if (isEMP)
-                    {
-                        if (part == part.vessel.rootPart) //don't apply EMP buildup per part
-                        {
-                            var EMP = part.vessel.rootPart.FindModuleImplementing<ModuleDrainEC>();
-                            if (EMP == null)
-                            {
-                                EMP = (ModuleDrainEC)part.vessel.rootPart.AddModule("ModuleDrainEC");
-                            }
-                            EMP.incomingDamage = ((EMPRadius / realDistance) * 100); //this way craft at edge of blast might only get disabled instead of bricked
-                                                                                     //work on a better EMP damage value, in case of configs with very large thermalRadius
-                            EMP.softEMP = false;
-                        }
-                    }
                     double blastImpulse = Mathf.Pow(3.01f * 1100f / realDistance, 1.25f) * 6.894f * lastValidAtmDensity * yieldCubeRoot; // * (radiativeArea / 3f); pascals/m isn't going to increase if a larger surface area, it's still going go be same force
                     if (blastImpulse > 0)
                     {
-                        if (rb != null && rb.mass > 0)
-                        {
-                            if (double.IsNaN(blastImpulse))
-                            {
-                                Debug.LogWarning("[BDArmory.NukeFX]: blast impulse is NaN. distToG0: " + realDistance + ", vessel: " + part.vessel + ", atmDensity: " + lastValidAtmDensity + ", yield^(1/3): " + yieldCubeRoot + ", partHit: " + part + ", radiativeArea: " + radiativeArea);
-                            }
-                            else
-                            {
-                                if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.NukeFX]: Applying " + blastImpulse.ToString("0.0") + " impulse to " + part + " of mass " + part.mass + " at distance " + realDistance + "m");
-                                part.rb.AddForceAtPosition((part.transform.position - transform.position).normalized * ((float)blastImpulse * (radiativeArea / 3f)), part.transform.position, ForceMode.Impulse);
-                            }
-                        }
-                        // Add Reverse Negative Event
-                        explosionEvents.Enqueue(new PartNukeHitEvent()
-                        {
-                            Distance = thermalRadius - realDistance,
-                            Part = part,
-                            TimeToImpact = 2 * (thermalRadius / ExplosionVelocity) + (thermalRadius - realDistance) / ExplosionVelocity,
-                            IsNegativePressure = true,
-                            NegativeForce = (float)blastImpulse * 0.25f
-                        });
                         float damage = 0;
                         //float blastDamage = ((float)((yield * (45000000 * BDArmorySettings.EXP_DMG_MOD_MISSILE)) / (4f * Mathf.PI * realDistance * realDistance) * (radiativeArea / 2f)));
                         //this shouldn't scale linearly
@@ -515,10 +478,48 @@ namespace BDArmory.FX
                                 }
                             }
                         }
+
+                        if (rb != null && rb.mass > 0)
+                        {
+                            if (double.IsNaN(blastImpulse))
+                            {
+                                Debug.LogWarning("[BDArmory.NukeFX]: blast impulse is NaN. distToG0: " + realDistance + ", vessel: " + part.vessel + ", atmDensity: " + lastValidAtmDensity + ", yield^(1/3): " + yieldCubeRoot + ", partHit: " + part + ", radiativeArea: " + radiativeArea);
+                            }
+                            else
+                            {
+                                if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.NukeFX]: Applying " + blastImpulse.ToString("0.0") + " impulse to " + part + " of mass " + part.mass + " at distance " + realDistance + "m");
+                                part.rb.AddForceAtPosition((part.transform.position - transform.position).normalized * ((float)blastImpulse * (radiativeArea / 3f)), part.transform.position, ForceMode.Impulse);
+                            }
+                        }
+                        // Add Reverse Negative Event
+                        explosionEvents.Enqueue(new PartNukeHitEvent()
+                        {
+                            Distance = thermalRadius - realDistance,
+                            Part = part,
+                            TimeToImpact = 2 * (thermalRadius / ExplosionVelocity) + (thermalRadius - realDistance) / ExplosionVelocity,
+                            IsNegativePressure = true,
+                            NegativeForce = (float)blastImpulse * 0.25f
+                        });                        
                     }
                     else if (BDArmorySettings.DEBUG_DAMAGE)
                     {
                         Debug.Log("[BDArmory.NukeFX]: Part " + part.name + " at distance " + realDistance + "m took no damage");
+                    }
+                    //part.skinTemperature += fluence * 3370000000 / (4 * Math.PI * (realDistance * realDistance)) * radiativeArea / 2; // Fluence scales linearly w/ yield, 1 Kt will produce between 33 TJ and 337 kJ at 0-1000m,
+                    part.skinTemperature += (fluence * (337000000 * BDArmorySettings.EXP_DMG_MOD_MISSILE) / (4 * Math.PI * (realDistance * realDistance))) * lastValidAtmDensity; // everything gets heated via atmosphere                                                                                                                                  
+                    if (isEMP)
+                    {
+                        if (part == part.vessel.rootPart) //don't apply EMP buildup per part
+                        {
+                            var EMP = part.vessel.rootPart.FindModuleImplementing<ModuleDrainEC>();
+                            if (EMP == null)
+                            {
+                                EMP = (ModuleDrainEC)part.vessel.rootPart.AddModule("ModuleDrainEC");
+                            }
+                            EMP.incomingDamage = ((EMPRadius / realDistance) * 100); //this way craft at edge of blast might only get disabled instead of bricked
+                                                                                     //work on a better EMP damage value, in case of configs with very large thermalRadius
+                            EMP.softEMP = false;                                     //IRL EMP intensity/magnitude enerated by nuke explosion is more or less constant within AoE rather than tapering off, but that's no fun 
+                        }
                     }
                 }
                 else

@@ -106,7 +106,6 @@ namespace BDArmory.Weapons
                     Fields["fuelleft"].guiActive = false;
                     Fields["status"].guiActiveEditor = false;
                     Fields["fuelleft"].guiActiveEditor = false;
-                    var missile = part.FindModuleImplementing<MissileLauncher>();
                 }
                 Sourcevessel = part.vessel.GetName();
 
@@ -195,14 +194,14 @@ namespace BDArmory.Weapons
             {
                 return;
             }
-            if (missile != null &&
-                (missile.MissileState == MissileBase.MissileStates.Idle || missile.MissileState == MissileBase.MissileStates.Drop))
+            if (Launcher != null &&
+                (Launcher.MissileState == MissileBase.MissileStates.Idle || Launcher.MissileState == MissileBase.MissileStates.Drop))
             {
                 return;
             }
             if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.BDModuleNuke]: Running Detonate() on nukeModule in vessel " + Sourcevessel);
             //affect any nearby parts/vessels that aren't the source vessel
-            NukeFX.CreateExplosion(part.transform.position, missile != null ? ExplosionSourceType.Missile : ExplosionSourceType.BattleDamage, Sourcevessel, reportingName, 0, thermalRadius, yield, fluence, isEMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
+            NukeFX.CreateExplosion(part.transform.position, Launcher != null ? ExplosionSourceType.Missile : ExplosionSourceType.BattleDamage, Sourcevessel, reportingName, 0, thermalRadius, yield, fluence, isEMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
             hasDetonated = true;
             if (part.vessel != null) // Already in the process of being destroyed.
                 part.Destroy();
@@ -218,7 +217,7 @@ namespace BDArmory.Weapons
                 output.AppendLine($"Yield: {yield}");
                 output.AppendLine($"Generates EMP: {isEMP}");
             }
-            if (missile != null)
+            if (Launcher != null)
             {
                 output.AppendLine($"Nuclear Warhead");
                 output.AppendLine($"Yield: {yield}");
