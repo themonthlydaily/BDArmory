@@ -87,7 +87,7 @@ namespace BDArmory.FX
             scale = BDAMath.Sqrt(400 * (6 * yield)) / 219;
             if (BDArmorySettings.DEBUG_DAMAGE)
             {
-                Debug.Log("[BDArmory.NukeFX]: Explosion started tntMass: {" + yield + "}  BlastRadius: {" + thermalRadius + "} StartTime: {" + StartTime + "}, Duration: {" + MaxTime + "}");
+                Debug.Log($"[BDArmory.NukeFX]: Explosion started tntMass: {yield}  BlastRadius: {thermalRadius} StartTime: {StartTime}, Duration: {MaxTime}");
             }
             if (HighLogic.LoadedSceneIsFlight)
             {
@@ -99,7 +99,7 @@ namespace BDArmory.FX
                                        FlightGlobals.getExternalTemperature(transform.position));
                 hasDetonated = false;
 
-                //EMP output increases as the sqrt of yield (determined power) and prompt gamma output (~0.5% of yield) 
+                //EMP output increases as the sqrt of yield (determined power) and prompt gamma output (~0.5% of yield)
                 //srf detonation is capped to about 16km, < 10km alt electrons qucikly absorbed by atmo.
                 //above 10km, emp radius can easily reach 100s of km. But that's no fun, so...
                 if (FlightGlobals.getAltitudeAtPos(transform.position) < 10000)
@@ -431,7 +431,7 @@ namespace BDArmory.FX
                 {
                     if (BDArmorySettings.DEBUG_DAMAGE && double.IsNaN(part.radiativeArea))
                     {
-                        Debug.Log("[BDArmory.NukeFX]: radiative area of part " + part + " was NaN, using approximate area " + radiativeArea + " instead.");
+                        Debug.Log($"[BDArmory.NukeFX]: radiative area of part {part} was NaN, using approximate area {radiativeArea} instead.");
                     }
                     double blastImpulse = Mathf.Pow(3.01f * 1100f / realDistance, 1.25f) * 6.894f * lastValidAtmDensity * yieldCubeRoot; // * (radiativeArea / 3f); pascals/m isn't going to increase if a larger surface area, it's still going go be same force
                     if (blastImpulse > 0)
@@ -442,7 +442,7 @@ namespace BDArmory.FX
                         float blastDamage = (float)blastImpulse; //* BDArmorySettings.EXP_DMG_MOD_MISSILE; //DMG_Mod is substantially increasing blast radius above what it should be
                         if (float.IsNaN(blastDamage))
                         {
-                            Debug.LogWarning("[BDArmory.NukeFX]: blast damage is NaN. distToG0: " + realDistance + ", yield: " + yield + ", part: " + part + ", radiativeArea: " + radiativeArea);
+                            Debug.LogWarning($"[BDArmory.NukeFX]: blast damage is NaN. distToG0: {realDistance}, yield: {yield}, part: {part}, radiativeArea: {radiativeArea}");
                         }
                         else
                         {
@@ -494,7 +494,7 @@ namespace BDArmory.FX
                         {
                             if (double.IsNaN(blastImpulse))
                             {
-                                Debug.LogWarning("[BDArmory.NukeFX]: blast impulse is NaN. distToG0: " + realDistance + ", vessel: " + part.vessel + ", atmDensity: " + lastValidAtmDensity + ", yield^(1/3): " + yieldCubeRoot + ", partHit: " + part + ", radiativeArea: " + radiativeArea);
+                                Debug.LogWarning($"[BDArmory.NukeFX]: blast impulse is NaN. distToG0: {realDistance}, vessel: {part.vessel}, atmDensity: {lastValidAtmDensity}, yield^(1/3): {yieldCubeRoot}, partHit: {part}, radiativeArea: {radiativeArea}");
                             }
                             else
                             {
@@ -510,14 +510,14 @@ namespace BDArmory.FX
                             TimeToImpact = 2 * (thermalRadius / ExplosionVelocity) + (thermalRadius - realDistance) / ExplosionVelocity,
                             IsNegativePressure = true,
                             NegativeForce = (float)blastImpulse * 0.25f
-                        });                        
+                        });
                     }
                     else if (BDArmorySettings.DEBUG_DAMAGE)
                     {
                         Debug.Log("[BDArmory.NukeFX]: Part " + part.name + " at distance " + realDistance + "m took no damage");
                     }
                     //part.skinTemperature += fluence * 3370000000 / (4 * Math.PI * (realDistance * realDistance)) * radiativeArea / 2; // Fluence scales linearly w/ yield, 1 Kt will produce between 33 TJ and 337 kJ at 0-1000m,
-                    part.skinTemperature += (fluence * (337000000 * BDArmorySettings.EXP_DMG_MOD_MISSILE) / (4 * Math.PI * (realDistance * realDistance))) * lastValidAtmDensity; // everything gets heated via atmosphere                                                                                                                                  
+                    part.skinTemperature += (fluence * (337000000 * BDArmorySettings.EXP_DMG_MOD_MISSILE) / (4 * Math.PI * (realDistance * realDistance))) * lastValidAtmDensity; // everything gets heated via atmosphere
                     if (isEMP)
                     {
                         if (part == part.vessel.rootPart) //don't apply EMP buildup per part
@@ -529,7 +529,7 @@ namespace BDArmory.FX
                             }
                             EMP.incomingDamage = ((EMPRadius / realDistance) * 100); //this way craft at edge of blast might only get disabled instead of bricked
                                                                                      //work on a better EMP damage value, in case of configs with very large thermalRadius
-                            EMP.softEMP = false;                                     //IRL EMP intensity/magnitude enerated by nuke explosion is more or less constant within AoE rather than tapering off, but that's no fun 
+                            EMP.softEMP = false;                                     //IRL EMP intensity/magnitude enerated by nuke explosion is more or less constant within AoE rather than tapering off, but that's no fun
                         }
                     }
                 }

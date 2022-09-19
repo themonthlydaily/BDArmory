@@ -2307,11 +2307,18 @@ namespace BDArmory.Weapons
                                                 emp.incomingDamage += (ECPerShot / 20);
                                             }
                                             emp.softEMP = true;
-                                            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.ModuleWeapon]: EMP Buildup Applied to " + p.vessel.GetName() + ": " + (pulseLaser ? (ECPerShot / 20) : (ECPerShot / 1000)));
+                                            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: EMP Buildup Applied to {p.vessel.GetName()}: {(pulseLaser ? (ECPerShot / 20) : (ECPerShot / 1000))}");
                                         }
                                         else
                                         {
-                                            using (var hitsEnu2 = Physics.OverlapSphere(hit.point, (Mathf.Sin(maxDeviation) * (tf.position - laserPoint).magnitude), layerMask2).AsEnumerable().GetEnumerator())
+                                            var dist = Mathf.Sin(maxDeviation) * (tf.position - laserPoint).magnitude;
+                                            var hitCount2 = Physics.OverlapSphereNonAlloc(hit.point, dist, heatRayColliders, layerMask2);
+                                            if (hitCount2 == heatRayColliders.Length)
+                                            {
+                                                heatRayColliders = Physics.OverlapSphere(hit.point, dist, layerMask2);
+                                                hitCount2 = heatRayColliders.Length;
+                                            }
+                                            using (var hitsEnu2 = heatRayColliders.Take(hitCount2).GetEnumerator())
                                             {
                                                 while (hitsEnu2.MoveNext())
                                                 {
@@ -2325,12 +2332,12 @@ namespace BDArmory.Weapons
                                                         p.AddSkinThermalFlux(damage);
                                                     }
                                                 }
-                                                if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.ModuleWeapon]: Heatray Applying " + damage + " heat to target");
+                                                if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Heatray Applying {damage} heat to target");
                                             }
                                         }
                                     }
                                     else
-                                    {    
+                                    {
                                         HitpointTracker armor = p.GetComponent<HitpointTracker>();
                                         var angularSpread = tanAngle * distance; //Scales down the damage based on the increased surface area of the area being hit by the laser. Think flashlight on a wall.
                                         initialDamage = (laserDamage / (1 + Mathf.PI * angularSpread * angularSpread) * 0.425f);
@@ -2349,7 +2356,7 @@ namespace BDArmory.Weapons
                                         }
                                         p.ReduceArmor(damage / 10000); //really should be tied into diffuisvity, density, and SafeUseTemp - lasers would need to melt/ablate material away; needs to be in cm^3. Review later
                                         p.AddDamage(damage);
-                                        if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.ModuleWeapon]: Damage Applied to " + p.name + " on " + p.vessel.GetName() + ": " + damage);
+                                        if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Damage Applied to {p.name} on {p.vessel.GetName()}: {damage}");
                                         if (pulseLaser) BattleDamageHandler.CheckDamageFX(p, caliber, 1 + (damage / initialDamage), HEpulses, false, part.vessel.GetName(), hit, false, false); //beams will proc BD once every scoreAccumulatorTick
 
                                         if (HEpulses)
@@ -2374,7 +2381,7 @@ namespace BDArmory.Weapons
                                                 {
                                                     p.rb.AddForceAtPosition((tf.position - p.transform.position).normalized * (float)Impulse, p.transform.position, ForceMode.Acceleration);
                                                 }
-                                                if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.ModuleWeapon]: Impulse of " + Impulse + " Applied to " + p.vessel.GetName());
+                                                if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Impulse of {Impulse} Applied to {p.vessel.GetName()}");
                                             }
                                         }
                                         if (graviticWeapon)
@@ -2393,7 +2400,7 @@ namespace BDArmory.Weapons
                                                 }
                                                 ME.massMod += (massAdjustment * TimeWarp.fixedDeltaTime);
                                                 ME.duration += duration;
-                                                if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.ModuleWeapon]: Gravitic Buildup Applied to " + p.vessel.GetName() + ": " + massAdjustment + "t added");
+                                                if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Gravitic Buildup Applied to {p.vessel.GetName()}: {massAdjustment}t added");
                                             }
                                         }
                                     }
@@ -4665,7 +4672,7 @@ namespace BDArmory.Weapons
                 if (baseDeviation > 0.05 && eWeaponType == WeaponTypes.Ballistic || (eWeaponType == WeaponTypes.Laser && pulseLaser)) //if using rotary cannon/CIWS for APS
                 {
                     if (UnityEngine.Random.Range(0, (targetDistance - (Mathf.Cos(baseDeviation) * targetDistance))) > 1)
-                    {                        
+                    {
                         yield break; //simulate inaccuracy, decreasing as incoming projectile gets closer
                     }
                 }

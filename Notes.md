@@ -21,6 +21,7 @@ Outdated, probably to be deleted:
     - Localizer.Format strings should be cached as they don't change during the game — StringUtils.cs
     - AddVesselSwitcherWindowEntry and WindowVesselSwitcher in LoadedVesselSwitcher.cs and WindowVesselSpawner in VesselSpawnerWindow.cs are doing a lot of string manipulation.
     - KerbalEngineer does a lot of string manipulation.
+    - vessel.vesselName and vessel.GetName() are fine. vessel.GetDisplayName() is bad!
 - Tuples are classes (allocated on the heap), ValueTuples are structs (allocated on the stack). Use ValueTuples to avoid GC allocations.
 - Use non-allocating versions of RaycastAll, OverlapSphere and similar (Raycast uses the stack so it's fine).
 - Cache "Wait..." yield instructions instead of using "new Wait...".

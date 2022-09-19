@@ -2492,6 +2492,10 @@ namespace BDArmory.UI
 #if DEBUG  // Only visible when compiled in Debug configuration.
                     if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
                     {
+                        if (GUI.Button(SLineRect(++line), "Test vesselName vs GetName()"))
+                        {
+                            StartCoroutine(TestVesselName());
+                        }
                         if (GUI.Button(SLineRect(++line), "Test RaycastHit merge and sort"))
                         {
                             StartCoroutine(TestRaycastHitMergeAndSort());
@@ -3980,6 +3984,37 @@ namespace BDArmory.UI
             }
             dt = Time.realtimeSinceStartup - tic;
             Debug.Log($"DEBUG OrderBy->AddRange took {dt / N:G3}s");
+        }
+
+        IEnumerator TestVesselName()
+        {
+            int N = 1 << 24;
+            var tic = Time.realtimeSinceStartup;
+            string result = "";
+            var vessel = FlightGlobals.ActiveVessel;
+            if (vessel is null) yield break;
+            yield return null;
+            yield return null;
+            for (int i = 0; i < N; ++i)
+                result = vessel.vesselName;
+            var dt = Time.realtimeSinceStartup - tic;
+            Debug.Log($"DEBUG Name: {result} with vessel.vesselName took {dt / N:G3}s");
+            yield return null;
+            yield return null;
+            tic = Time.realtimeSinceStartup;
+            result = "";
+            for (int i = 0; i < N; ++i)
+                result = vessel.GetName();
+            dt = Time.realtimeSinceStartup - tic;
+            Debug.Log($"DEBUG Name {result} with vessel.GetName() took {dt / N:G3}s");
+            yield return null;
+            yield return null;
+            tic = Time.realtimeSinceStartup;
+            result = "";
+            for (int i = 0; i < N; ++i)
+                result = vessel.GetDisplayName();
+            dt = Time.realtimeSinceStartup - tic;
+            Debug.Log($"DEBUG Name {result} with vessel.GetDisplayName() took {dt / N:G3}s");
         }
 #endif
     }
