@@ -234,13 +234,14 @@ namespace BDArmory.Utils
             return outputColor;
         }
 
-        public static AnimationState[] SetUpAnimation(string animationName, Part part) //Thanks Majiir!
+        public static AnimationState[] SetUpAnimation(string animationName, Part part, bool animatePhysics = true) //Thanks Majiir!
         {
             List<AnimationState> states = new List<AnimationState>();
             using (IEnumerator<UnityEngine.Animation> animation = part.FindModelAnimators(animationName).AsEnumerable().GetEnumerator())
                 while (animation.MoveNext())
                 {
                     if (animation.Current == null) continue;
+                    animation.Current.animatePhysics = animatePhysics;
                     AnimationState animationState = animation.Current[animationName];
                     animationState.speed = 0; // FIXME Shouldn't this be 1?
                     animationState.enabled = true;
@@ -251,12 +252,13 @@ namespace BDArmory.Utils
             return states.ToArray();
         }
 
-        public static AnimationState SetUpSingleAnimation(string animationName, Part part)
+        public static AnimationState SetUpSingleAnimation(string animationName, Part part, bool animatePhysics = true)
         {
             using (IEnumerator<UnityEngine.Animation> animation = part.FindModelAnimators(animationName).AsEnumerable().GetEnumerator())
                 while (animation.MoveNext())
                 {
                     if (animation.Current == null) continue;
+                    animation.Current.animatePhysics = animatePhysics;
                     AnimationState animationState = animation.Current[animationName];
                     animationState.speed = 0; // FIXME Shouldn't this be 1?
                     animationState.enabled = true;

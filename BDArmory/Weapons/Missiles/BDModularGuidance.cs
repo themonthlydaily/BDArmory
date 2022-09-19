@@ -853,13 +853,10 @@ namespace BDArmory.Weapons.Missiles
 
             var currentAngle = Vector3.SignedAngle(rollVessel, gravityVector, Vector3.Cross(rollVessel, gravityVector)) - 90f;
 
-            debugString.AppendLine($"Roll angle: {currentAngle}");
             this.angularVelocity = currentAngle - this.lastRollAngle;
             //this.angularAcceleration = angularVelocity - this.lasAngularVelocity;
 
             var futureAngle = currentAngle + angularVelocity / Time.fixedDeltaTime * 1f;
-
-            debugString.AppendLine($"future Roll angle: {futureAngle}");
 
             if (futureAngle > 0.5f || currentAngle > 0.5f)
             {
@@ -869,8 +866,13 @@ namespace BDArmory.Weapons.Missiles
             {
                 this.Roll = Mathf.Clamp(Roll + 0.001f, 0, 1f);
             }
-            debugString.AppendLine($"Roll value: {this.Roll}");
 
+            if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES)
+            {
+                debugString.AppendLine($"Roll angle: {currentAngle}");
+                debugString.AppendLine($"future Roll angle: {futureAngle}");
+                debugString.AppendLine($"Roll value: {this.Roll}");
+            }
             lastRollAngle = currentAngle;
             //lasAngularVelocity = angularVelocity;
         }

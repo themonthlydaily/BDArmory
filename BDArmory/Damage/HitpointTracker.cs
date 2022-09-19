@@ -51,7 +51,7 @@ namespace BDArmory.Damage
         private float OldHullType = -1;
 
         [KSPField(guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Armor_HullMat")]//Status
-        public string guiHullTypeString = Localizer.Format("#LOC_BDArmory_Aluminium");
+        public string guiHullTypeString = StringUtils.Localize("#LOC_BDArmory_Aluminium");
 
         public float HullMassAdjust = 0f;
         public float HullCostAdjust = 0f;
@@ -677,12 +677,12 @@ namespace BDArmory.Damage
             HPMode = !HPMode;
             if (!HPMode)
             {
-                Events["ToggleHPOption"].guiName = Localizer.Format("Revert to Legacy HP calc");
+                Events["ToggleHPOption"].guiName = StringUtils.Localize("Revert to Legacy HP calc");
                 maxHitPoints = oldmaxHitpoints;
             }
             else
             {
-                Events["ToggleHPOption"].guiName = Localizer.Format("Test Refactored Calc");
+                Events["ToggleHPOption"].guiName = StringUtils.Localize("Test Refactored Calc");
                 oldmaxHitpoints = maxHitPoints;
                 maxHitPoints = -1;
             }
@@ -1389,7 +1389,7 @@ namespace BDArmory.Damage
             if (HullTypeNum == 1)
             {
                 HullMassAdjust = partMass / 3 - partMass;
-                guiHullTypeString = Localizer.Format("#LOC_BDArmory_Wood");
+                guiHullTypeString = StringUtils.Localize("#LOC_BDArmory_Wood");
                 part.maxTemp = 770;
                 HullCostAdjust = Mathf.Max(((part.partInfo.cost + part.partInfo.variant.Cost) - (float)resourceCost) / 2, (part.partInfo.cost + part.partInfo.variant.Cost) - 500) - ((part.partInfo.cost + part.partInfo.variant.Cost) - (float)resourceCost);//make wooden parts up to 500 funds cheaper
                 //this returns cost of base variant, yielding part vairaints that are discounted by 50% or 500 of base varaint cost, not current variant. method to get currently selected variant?
@@ -1397,14 +1397,14 @@ namespace BDArmory.Damage
             else if (HullTypeNum == 2)
             {
                 HullMassAdjust = 0;
-                guiHullTypeString = Localizer.Format("#LOC_BDArmory_Aluminium");
+                guiHullTypeString = StringUtils.Localize("#LOC_BDArmory_Aluminium");
                 //removing maxtemp from aluminium and steel to prevent hull type from causing issues with, say, spacecraft re-entry on installs with BDA not used exclusively for BDA
                 HullCostAdjust = 0;
             }
             else //hulltype 3
             {
                 HullMassAdjust = partMass;
-                guiHullTypeString = Localizer.Format("#LOC_BDArmory_Steel");
+                guiHullTypeString = StringUtils.Localize("#LOC_BDArmory_Steel");
                 HullCostAdjust = Mathf.Min(((part.partInfo.cost + part.partInfo.variant.Cost) - (float)resourceCost) * 2, ((part.partInfo.cost + part.partInfo.variant.Cost) - (float)resourceCost) + 1500); //make steel parts rather more expensive
             }
             if (OldHullType != HullTypeNum || OldHullMassAdjust != HullMassAdjust)
