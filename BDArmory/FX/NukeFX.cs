@@ -16,6 +16,7 @@ namespace BDArmory.FX
     public class NukeFX : MonoBehaviour
     {
         public static Dictionary<string, ObjectPool> nukePool = new Dictionary<string, ObjectPool>();
+        public static Dictionary<string, AudioClip> audioClips = new Dictionary<string, AudioClip>(); // Pool the audio clips separately.
 
         private bool hasDetonated = false;
         private float startTime;
@@ -64,7 +65,7 @@ namespace BDArmory.FX
 
         static RaycastHit[] lineOfSightHits;
         static RaycastHit[] reverseHits;
-        static Collider[] overlapSphereColliders;
+        Collider[] blastHitColliders = new Collider[100];
         public static List<Part> IgnoreParts;
         public static List<DestructibleBuilding> IgnoreBuildings;
         internal static readonly float ExplosionVelocity = 422.75f;
@@ -75,7 +76,6 @@ namespace BDArmory.FX
         {
             if (lineOfSightHits == null) { lineOfSightHits = new RaycastHit[100]; }
             if (reverseHits == null) { reverseHits = new RaycastHit[100]; }
-            if (overlapSphereColliders == null) { overlapSphereColliders = new Collider[100]; }
             if (IgnoreParts == null) { IgnoreParts = new List<Part>(); }
             if (IgnoreBuildings == null) { IgnoreBuildings = new List<DestructibleBuilding>(); }
         }
@@ -123,17 +123,22 @@ namespace BDArmory.FX
                 LightFx = gameObject.GetComponent<Light>();
                 LightFx.range = 0;
                 audioSource = gameObject.GetComponent<AudioSource>();
-                if (ExSound == null)
-                {
-                    ExSound = GameDatabase.Instance.GetAudioClip(SoundPath);
+                // if (ExSound == null)
+                // {
+                //     ExSound = GameDatabase.Instance.GetAudioClip(SoundPath);
 
-                    if (ExSound == null)
-                    {
-                        Debug.LogError("[BDArmory.ExplosionFX]: " + ExSound + " was not found, using the default sound instead. Please fix your model.");
-                        ExSound = GameDatabase.Instance.GetAudioClip(ModuleWeapon.defaultExplSoundPath);
-                    }
+                //     if (ExSound == null)
+                //     {
+                //         Debug.LogError("[BDArmory.ExplosionFX]: " + ExSound + " was not found, using the default sound instead. Please fix your model.");
+                //         ExSound = GameDatabase.Instance.GetAudioClip(ModuleWeapon.defaultExplSoundPath);
+                //     }
+                // }
+                // audioSource.PlayOneShot(ExSound);
+                if (!string.IsNullOrEmpty(SoundPath))
+                {
+                    var audioClip = audioClips[SoundPath];
+                    audioSource.PlayOneShot(audioClip);
                 }
-                audioSource.PlayOneShot(ExSound);
             }
         }
 
@@ -175,7 +180,13 @@ namespace BDArmory.FX
             explosionEventsBuildingAdded.Clear();
             explosionEventsVesselsHit.Clear();
 
-            using (var hitCollidersEnu = Physics.OverlapSphere(Position, thermalRadius * 2, explosionLayerMask).AsEnumerable().GetEnumerator())
+            var hitCount = Physics.OverlapSphereNonAlloc(Position, thermalRadius * 2f, blastHitColliders, explosionLayerMask);
+            if (hitCount == blastHitColliders.Length)
+            {
+                blastHitColliders = Physics.OverlapSphere(Position, thermalRadius * 2f, explosionLayerMask);
+                hitCount = blastHitColliders.Length;
+            }
+            using (var hitCollidersEnu = blastHitColliders.Take(hitCount).GetEnumerator())
             {
                 while (hitCollidersEnu.MoveNext())
                 {
@@ -219,7 +230,7 @@ namespace BDArmory.FX
                     }
                     catch (Exception e)
                     {
-                        Debug.LogError($"[BDArmory.ExplosionFX]: Exception in overlapSphereColliders processing: {e.Message}\n{e.StackTrace}");
+                        Debug.LogError($"[BDArmory.ExplosionFX]: Exception in overlapSphere collider processing: {e.Message}\n{e.StackTrace}");
                     }
                 }
             }
@@ -326,7 +337,7 @@ namespace BDArmory.FX
 
                     LightFx = gameObject.GetComponent<Light>();
                     LightFx.range = thermalRadius;
-                    LightFx.intensity =  thermalRadius / 3f;
+                    LightFx.intensity = thermalRadius / 3f;
                     if (lastValidAtmDensity < 0.05)
                     {
                         FXEmitter.CreateFX(transform.position, scale, flashModelPath, "", 0.3f);
@@ -543,8 +554,18 @@ namespace BDArmory.FX
         // We use an ObjectPool for the ExplosionFx instances as they leak KSPParticleEmitters otherwise.
         static void SetupPool(string ModelPath, string soundPath, float radius)
         {
-            var key = ModelPath + soundPath;
-            if (!nukePool.ContainsKey(key) || nukePool[key] == null)
+            if (!string.IsNullOrEmpty(soundPath) && (!audioClips.ContainsKey(soundPath) || audioClips[soundPath] is null))
+            {
+                var audioClip = GameDatabase.Instance.GetAudioClip(soundPath);
+                if (audioClip is null)
+                {
+                    Debug.LogError("[BDArmory.ExplosionFX]: " + soundPath + " was not found, using the default sound instead. Please fix your model.");
+                    audioClip = GameDatabase.Instance.GetAudioClip(ModuleWeapon.defaultExplSoundPath);
+                }
+                audioClips.Add(soundPath, audioClip);
+            }
+
+            if (!nukePool.ContainsKey(ModelPath) || nukePool[ModelPath] == null)
             {
                 GameObject templateFX;
                 if (!String.IsNullOrEmpty(ModelPath))
@@ -568,7 +589,7 @@ namespace BDArmory.FX
                 eFx.LightFx.intensity = radius / 3;
                 eFx.LightFx.shadows = LightShadows.None;
                 templateFX.SetActive(false);
-                nukePool[key] = ObjectPool.CreateObjectPool(templateFX, 10, true, true, 0f, false);
+                nukePool[ModelPath] = ObjectPool.CreateObjectPool(templateFX, 10, true, true, 0f, false);
             }
         }
         public static void CreateExplosion(Vector3 position, ExplosionSourceType explosionSourceType, string sourceVesselName, string sourceWeaponName = "Nuke",

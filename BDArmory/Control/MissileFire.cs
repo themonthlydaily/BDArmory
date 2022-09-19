@@ -355,23 +355,31 @@ namespace BDArmory.Control
 
         //targeting pods
         public ModuleTargetingCamera mainTGP = null;
-        public List<ModuleTargetingCamera> targetingPods = new List<ModuleTargetingCamera>();
+        public List<ModuleTargetingCamera> targetingPods {get { if (modulesNeedRefreshing) RefreshModules(); return _targetingPods; } }
+        List<ModuleTargetingCamera> _targetingPods = new List<ModuleTargetingCamera>();
 
         //radar
-        public List<ModuleRadar> radars = new List<ModuleRadar>();
+        public List<ModuleRadar> radars {get { if (modulesNeedRefreshing) RefreshModules(); return _radars; } }
+        public List<ModuleRadar> _radars = new List<ModuleRadar>();
         public int MaxradarLocks = 0;
         public VesselRadarData vesselRadarData;
 
-        public List<ModuleIRST> irsts = new List<ModuleIRST>();
+        public List<ModuleIRST> irsts {get { if (modulesNeedRefreshing) RefreshModules(); return _irsts; } }
+        public List<ModuleIRST> _irsts = new List<ModuleIRST>();
 
         //jammers
-        public List<ModuleECMJammer> jammers = new List<ModuleECMJammer>();
+        public List<ModuleECMJammer> jammers {get { if (modulesNeedRefreshing) RefreshModules(); return _jammers; } }
+        public List<ModuleECMJammer> _jammers = new List<ModuleECMJammer>();
 
         //cloak generators
-        public List<ModuleCloakingDevice> cloaks = new List<ModuleCloakingDevice>();
+        public List<ModuleCloakingDevice> cloaks { get { if (modulesNeedRefreshing) RefreshModules(); return _cloaks; } }
+        public List<ModuleCloakingDevice> _cloaks = new List<ModuleCloakingDevice>();
 
         //other modules
-        public List<IBDWMModule> wmModules = new List<IBDWMModule>();
+        public List<IBDWMModule> wmModules {get { if (modulesNeedRefreshing) RefreshModules(); return _wmModules; } }
+        List<IBDWMModule> _wmModules = new List<IBDWMModule>();
+
+        bool modulesNeedRefreshing = true; // Refresh modules as needed — avoids excessive calling due to events.
 
         //wingcommander
         public ModuleWingCommander wingCommander;
@@ -525,7 +533,7 @@ namespace BDArmory.Control
         public bool targetMass = false;
 
         [KSPField(guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_targetSetting")]//Target Setting
-        public string targetingString = Localizer.Format("#LOC_BDArmory_TargetCOM");
+        public string targetingString = StringUtils.Localize("#LOC_BDArmory_TargetCOM");
         [KSPEvent(guiActive = true, guiActiveEditor = true, active = true, guiName = "#LOC_BDArmory_Selecttargeting")]//Select Targeting Option
         public void SelectTargeting()
         {
@@ -545,72 +553,72 @@ namespace BDArmory.Control
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetScore", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true), UI_Label(scene = UI_Scene.All)]
         public string TargetScoreLabel = "";
 
-        private string targetBiasLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_CurrentTargetBias");
+        private string targetBiasLabel = StringUtils.Localize("#LOC_BDArmory_TargetPriority_CurrentTargetBias");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_CurrentTargetBias", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Current target bias
             UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetBias = 1.1f;
 
-        private string targetPreferenceLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_AirVsGround");
+        private string targetPreferenceLabel = StringUtils.Localize("#LOC_BDArmory_TargetPriority_AirVsGround");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_AirVsGround", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Preference
             UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightAirPreference = 0f;
 
-        private string targetRangeLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetProximity");
+        private string targetRangeLabel = StringUtils.Localize("#LOC_BDArmory_TargetPriority_TargetProximity");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetProximity", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Range
             UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightRange = 1f;
 
-        private string targetATALabel = Localizer.Format("#LOC_BDArmory_TargetPriority_CloserAngleToTarget");
+        private string targetATALabel = StringUtils.Localize("#LOC_BDArmory_TargetPriority_CloserAngleToTarget");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_CloserAngleToTarget", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Antenna Train Angle
             UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightATA = 1f;
 
-        private string targetAoDLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_AngleOverDistance");
+        private string targetAoDLabel = StringUtils.Localize("#LOC_BDArmory_TargetPriority_AngleOverDistance");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_AngleOverDistance", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Angle/Distance
             UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightAoD = 0f;
 
-        private string targetAccelLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetAcceleration");
+        private string targetAccelLabel = StringUtils.Localize("#LOC_BDArmory_TargetPriority_TargetAcceleration");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetAcceleration", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Acceleration
             UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightAccel = 0;
 
-        private string targetClosureTimeLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_ShorterClosingTime");
+        private string targetClosureTimeLabel = StringUtils.Localize("#LOC_BDArmory_TargetPriority_ShorterClosingTime");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_ShorterClosingTime", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Closure Time
             UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightClosureTime = 0f;
 
-        private string targetWeaponNumberLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetWeaponNumber");
+        private string targetWeaponNumberLabel = StringUtils.Localize("#LOC_BDArmory_TargetPriority_TargetWeaponNumber");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetWeaponNumber", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Weapon Number
             UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightWeaponNumber = 0;
 
-        private string targetMassLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetMass");
+        private string targetMassLabel = StringUtils.Localize("#LOC_BDArmory_TargetPriority_TargetMass");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetMass", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Mass
             UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightMass = 0;
 
-        private string targetFriendliesEngagingLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_FewerTeammatesEngaging");
+        private string targetFriendliesEngagingLabel = StringUtils.Localize("#LOC_BDArmory_TargetPriority_FewerTeammatesEngaging");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_FewerTeammatesEngaging", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Number Friendlies Engaging
             UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightFriendliesEngaging = 1f;
 
-        private string targetThreatLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetThreat");
+        private string targetThreatLabel = StringUtils.Localize("#LOC_BDArmory_TargetPriority_TargetThreat");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetThreat", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target threat
             UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightThreat = 1f;
 
-        private string targetProtectTeammateLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetProtectTeammate");
+        private string targetProtectTeammateLabel = StringUtils.Localize("#LOC_BDArmory_TargetPriority_TargetProtectTeammate");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetProtectTeammate", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Protect Teammates
             UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightProtectTeammate = 0f;
 
-        private string targetProtectVIPLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetProtectVIP");
+        private string targetProtectVIPLabel = StringUtils.Localize("#LOC_BDArmory_TargetPriority_TargetProtectVIP");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetProtectVIP", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Protect VIPs
             UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightProtectVIP = 0f;
 
-        private string targetAttackVIPLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetAttackVIP");
+        private string targetAttackVIPLabel = StringUtils.Localize("#LOC_BDArmory_TargetPriority_TargetAttackVIP");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetAttackVIP", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Attack Enemy VIPs
             UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightAttackVIP = 0f;
@@ -1012,6 +1020,8 @@ namespace BDArmory.Control
         }
         #endregion KSPFields,events,actions
 
+        RaycastHit[] clearanceHits = new RaycastHit[10];
+
         private LineRenderer lr = null;
         private StringBuilder debugString = new StringBuilder();
         #endregion Declarations
@@ -1130,7 +1140,7 @@ namespace BDArmory.Control
 
                 AI = VesselModuleRegistry.GetIBDAIControl(vessel, true);
 
-                RefreshModules();
+                modulesNeedRefreshing = true;
                 var SF = vessel.rootPart.FindModuleImplementing<ModuleSpaceFriction>();
                 if (SF == null)
                 {
@@ -1144,11 +1154,11 @@ namespace BDArmory.Control
                 GameEvents.onEditorPartDeleted.Add(UpdateMaxGunRange);
                 UpdateMaxGunRange(part);
             }
-            targetingString = (targetCoM ? Localizer.Format("#LOC_BDArmory_TargetCOM") + "; " : "")
-                + (targetMass ? Localizer.Format("#LOC_BDArmory_Mass") + "; " : "")
-                + (targetCommand ? Localizer.Format("#LOC_BDArmory_Command") + "; " : "")
-                + (targetEngine ? Localizer.Format("#LOC_BDArmory_Engines") + "; " : "")
-                + (targetWeapon ? Localizer.Format("#LOC_BDArmory_Weapons") + "; " : "");
+            targetingString = (targetCoM ? StringUtils.Localize("#LOC_BDArmory_TargetCOM") + "; " : "")
+                + (targetMass ? StringUtils.Localize("#LOC_BDArmory_Mass") + "; " : "")
+                + (targetCommand ? StringUtils.Localize("#LOC_BDArmory_Command") + "; " : "")
+                + (targetEngine ? StringUtils.Localize("#LOC_BDArmory_Engines") + "; " : "")
+                + (targetWeapon ? StringUtils.Localize("#LOC_BDArmory_Weapons") + "; " : "");
         }
 
         void OnPartDie()
@@ -1173,14 +1183,15 @@ namespace BDArmory.Control
                     Debug.Log("[BDArmory.MissileFire]: Error OnPartDie: " + e.Message);
                 }
             }
-            RefreshModules();
-            UpdateList();
+            modulesNeedRefreshing = true;
+            weaponsListNeedsUpdating = true;
+            // UpdateList();
             if (vessel != null)
             {
                 var TI = vessel.gameObject.GetComponent<TargetInfo>();
                 if (TI != null)
                 {
-                    TI.UpdateTargetPartList();
+                    TI.targetPartListNeedsUpdating = true;
                 }
             }
         }
@@ -1188,7 +1199,7 @@ namespace BDArmory.Control
         void OnVesselCreate(Vessel v)
         {
             if (v == null) return;
-            RefreshModules();
+            modulesNeedRefreshing = true;
         }
 
         void OnPartJointBreak(PartJoint j, float breakForce)
@@ -1205,8 +1216,9 @@ namespace BDArmory.Control
 
             if (HighLogic.LoadedSceneIsFlight && ((j.Parent && j.Parent.vessel == vessel) || (j.Child && j.Child.vessel == vessel)))
             {
-                RefreshModules();
-                UpdateList();
+                modulesNeedRefreshing = true;
+                weaponsListNeedsUpdating = true;
+                // UpdateList();
             }
         }
 
@@ -3554,11 +3566,16 @@ namespace BDArmory.Control
                     using (IEnumerator<Ray> rt = rays.AsEnumerable().GetEnumerator())
                         while (rt.MoveNext())
                         {
-                            RaycastHit[] hits = Physics.RaycastAll(rt.Current, rayDistance, layerMask);
-                            using (IEnumerator<RaycastHit> t1 = hits.AsEnumerable().GetEnumerator())
-                                while (t1.MoveNext())
+                            var hitCount = Physics.RaycastNonAlloc(rt.Current, clearanceHits, rayDistance, layerMask);
+                            if (hitCount == clearanceHits.Length) // If there's a whole bunch of stuff in the way (unlikely), then we need to increase the size of our hits buffer.
+                            {
+                                clearanceHits = Physics.RaycastAll(rt.Current, rayDistance, layerMask);
+                                hitCount = clearanceHits.Length;
+                            }
+                            using (var t = clearanceHits.Take(hitCount).GetEnumerator())
+                                while (t.MoveNext())
                                 {
-                                    Part p = t1.Current.collider.GetComponentInParent<Part>();
+                                    Part p = t.Current.collider.GetComponentInParent<Part>();
 
                                     if ((p == null || p == ml.part) && p != null) continue;
                                     if (BDArmorySettings.DEBUG_MISSILES)
@@ -3569,30 +3586,38 @@ namespace BDArmory.Control
                     return true;
                 }
 
-                //forward check for no-drop missiles
-                RaycastHit[] hitparts = Physics.RaycastAll(new Ray(ml.MissileReferenceTransform.position, ml.GetForwardTransform()), 50, layerMask);
-                using (IEnumerator<RaycastHit> t = hitparts.AsEnumerable().GetEnumerator())
-                    while (t.MoveNext())
+                { //forward check for no-drop missiles
+                    var ray = new Ray(ml.MissileReferenceTransform.position, ml.GetForwardTransform());
+                    var hitCount = Physics.RaycastNonAlloc(ray, clearanceHits, 50, layerMask);
+                    if (hitCount == clearanceHits.Length) // If there's a whole bunch of stuff in the way (unlikely), then we need to increase the size of our hits buffer.
                     {
-                        Part p = t.Current.collider.GetComponentInParent<Part>();
-                        if ((p == null || p == ml.part) && p != null) continue;
-                        if (BDArmorySettings.DEBUG_MISSILES)
-                            Debug.Log("[BDArmory.MissileFire]: RAYCAST HIT, clearance is FALSE! part=" + (p != null ? p.name : null) + ", collider=" + (p != null ? p.collider : null));
-                        return false;
+                        clearanceHits = Physics.RaycastAll(ray, 50, layerMask);
+                        hitCount = clearanceHits.Length;
                     }
+                    using (var t = clearanceHits.Take(hitCount).GetEnumerator())
+                        while (t.MoveNext())
+                        {
+                            Part p = t.Current.collider.GetComponentInParent<Part>();
+                            if ((p == null || p == ml.part) && p != null) continue;
+                            if (BDArmorySettings.DEBUG_MISSILES)
+                                Debug.Log("[BDArmory.MissileFire]: RAYCAST HIT, clearance is FALSE! part=" + (p != null ? p.name : null) + ", collider=" + (p != null ? p.collider : null));
+                            return false;
+                        }
+                }
             }
             return true;
         }
 
         void RefreshModules()
         {
+            modulesNeedRefreshing = false;
             VesselModuleRegistry.OnVesselModified(vessel); // Make sure the registry is up-to-date.
-            radars = VesselModuleRegistry.GetModules<ModuleRadar>(vessel);
-            if (radars != null)
+            _radars = VesselModuleRegistry.GetModules<ModuleRadar>(vessel);
+            if (_radars != null)
             {
                 // DISABLE RADARS
                 /*
-                List<ModuleRadar>.Enumerator rad = radars.GetEnumerator();
+                List<ModuleRadar>.Enumerator rad = _radars.GetEnumerator();
                 while (rad.MoveNext())
                 {
                     if (rad.Current == null) continue;
@@ -3601,7 +3626,7 @@ namespace BDArmory.Control
                 }
                 rad.Dispose();
                 */
-                using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
+                using (List<ModuleRadar>.Enumerator rd = _radars.GetEnumerator())
                     while (rd.MoveNext())
                     {
                         if (rd.Current != null || rd.Current.canLock)
@@ -3610,11 +3635,11 @@ namespace BDArmory.Control
                         }
                     }
             }
-            irsts = VesselModuleRegistry.GetModules<ModuleIRST>(vessel);
-            jammers = VesselModuleRegistry.GetModules<ModuleECMJammer>(vessel);
-            cloaks = VesselModuleRegistry.GetModules<ModuleCloakingDevice>(vessel);
-            targetingPods = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel);
-            wmModules = VesselModuleRegistry.GetModules<IBDWMModule>(vessel);
+            _irsts = VesselModuleRegistry.GetModules<ModuleIRST>(vessel);
+            _jammers = VesselModuleRegistry.GetModules<ModuleECMJammer>(vessel);
+            _cloaks = VesselModuleRegistry.GetModules<ModuleCloakingDevice>(vessel);
+            _targetingPods = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel);
+            _wmModules = VesselModuleRegistry.GetModules<IBDWMModule>(vessel);
         }
 
         #endregion Weapon Info
@@ -3995,6 +4020,8 @@ namespace BDArmory.Control
         // Update target priority UI
         public void UpdateTargetPriorityUI(TargetInfo target)
         {
+            // Return if the UI isn't visible
+            if (part.PartActionWindow == null || !part.PartActionWindow.isActiveAndEnabled) return;
             // Return if no target
             if (target == null)
             {
@@ -6368,7 +6395,8 @@ namespace BDArmory.Control
                     while (p.MoveNext())
                     {
                         if (p.Current == null) continue;
-                        using (IEnumerator<PartResource> resource = p.Current.Resources.GetEnumerator())
+                        // using (IEnumerator<PartResource> resource = p.Current.Resources.GetEnumerator())
+                        using (var resource = p.Current.Resources.dict.Values.GetEnumerator())
                             while (resource.MoveNext())
                             {
                                 if (resource.Current == null) continue;

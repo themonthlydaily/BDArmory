@@ -32,6 +32,7 @@ namespace BDArmory.UI
         public static List<DestructibleBuilding> LoadedBuildings;
         public static List<Vessel> LoadedVessels;
         public static BDATargetManager Instance;
+        static List<Part> hottestPart = new List<Part>();
 
         private StringBuilder debugString = new StringBuilder();
         private int debugStringLineCount = 0;
@@ -256,7 +257,7 @@ namespace BDArmory.UI
         {
             float heatScore = 0f;
             float minHeat = float.MaxValue;
-            List <Part> hottestPart = new List<Part>();
+            hottestPart.Clear();
             using (List<Part>.Enumerator part = v.Parts.GetEnumerator())
                 while (part.MoveNext())
                 {

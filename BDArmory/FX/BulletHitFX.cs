@@ -16,8 +16,11 @@ namespace BDArmory.FX
         Part parentPart;
         // string parentPartName = "";
         // string parentVesselName = "";
+        static bool hasOnVesselUnloaded = false;
         public static ObjectPool CreateDecalPool(string modelPath)
         {
+            if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // onVesselUnloaded event introduced in 1.11
+                hasOnVesselUnloaded = true;
             var template = GameDatabase.Instance.GetModel(modelPath);
             var decal = template.AddComponent<Decal>();
             template.AddOrGetComponent<Renderer>();
@@ -36,7 +39,7 @@ namespace BDArmory.FX
             transform.rotation = Quaternion.FromToRotation(Vector3.forward, hit.normal);
             parentPart.OnJustAboutToDie += OnParentDestroy;
             parentPart.OnJustAboutToBeDestroyed += OnParentDestroy;
-            if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // onVesselUnloaded event introduced in 1.11
+            if (hasOnVesselUnloaded)
                 OnVesselUnloaded_1_11(true); // Catch unloading events too.
             gameObject.SetActive(true);
         }
@@ -94,14 +97,14 @@ namespace BDArmory.FX
                 transform.parent = null;
                 gameObject.SetActive(false);
             }
-            if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // onVesselUnloaded event introduced in 1.11
+            if (hasOnVesselUnloaded) // onVesselUnloaded event introduced in 1.11
                 OnVesselUnloaded_1_11(false);
         }
 
         public void OnDestroy() // This shouldn't be happening except on exiting KSP, but sometimes they get destroyed instead of disabled!
         {
             // if (HighLogic.LoadedSceneIsFlight) Debug.LogError($"[BDArmory.BulletHitFX]: BulletHitFX on {parentPartName} ({parentVesselName}) was destroyed!");
-            if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // onVesselUnloaded event introduced in 1.11
+            if (hasOnVesselUnloaded) // onVesselUnloaded event introduced in 1.11
                 OnVesselUnloaded_1_11(false);
         }
     }
