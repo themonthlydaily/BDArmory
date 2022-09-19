@@ -150,6 +150,7 @@ namespace BDArmory.Bullets
         static RaycastHit[] hits;
         static RaycastHit[] reverseHits;
         static Collider[] overlapSphereColliders;
+        static Collider[] proximityOverlapSphereColliders;
         static List<RaycastHit> allHits;
         static Dictionary<Vessel, float> rayLength;
         private Vector3[] linePositions = new Vector3[2];
@@ -164,6 +165,7 @@ namespace BDArmory.Bullets
             if (hits == null) { hits = new RaycastHit[100]; }
             if (reverseHits == null) { reverseHits = new RaycastHit[100]; }
             if (overlapSphereColliders == null) { overlapSphereColliders = new Collider[1000]; }
+            if (proximityOverlapSphereColliders == null) { proximityOverlapSphereColliders = new Collider[100]; }
             if (allHits == null) { allHits = new List<RaycastHit>(); }
             if (rayLength == null) { rayLength = new Dictionary<Vessel, float>(); }
         }
@@ -1342,7 +1344,14 @@ namespace BDArmory.Bullets
             }
             if (fuzeType == BulletFuzeTypes.Proximity || fuzeType == BulletFuzeTypes.Flak)
             {
-                using (var hitsEnu = Physics.OverlapSphere(transform.position, detonationRange, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19 | LayerMasks.Wheels)).AsEnumerable().GetEnumerator())
+                var layerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19 | LayerMasks.Wheels);
+                var overlapSphereColliderCount = Physics.OverlapSphereNonAlloc(transform.position, detonationRange, proximityOverlapSphereColliders, layerMask);
+                if (overlapSphereColliderCount == proximityOverlapSphereColliders.Length)
+                {
+                    proximityOverlapSphereColliders = Physics.OverlapSphere(transform.position, detonationRange, layerMask);
+                    overlapSphereColliderCount = proximityOverlapSphereColliders.Length;
+                }
+                using (var hitsEnu = proximityOverlapSphereColliders.Take(overlapSphereColliderCount).GetEnumerator())
                 {
                     while (hitsEnu.MoveNext())
                     {
