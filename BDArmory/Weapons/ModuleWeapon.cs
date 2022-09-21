@@ -3176,7 +3176,7 @@ namespace BDArmory.Weapons
             }
 
             Vector3 finalTarget = targetPosition;
-            if ((aiControlled && !slaved && !targetAcquired && weaponManager) || (!(aiControlled && !slaved && !targetAcquired && weaponManager) && weaponManager.staleTarget))
+            if (aiControlled && !slaved && weaponManager is not null && (!targetAcquired || weaponManager.staleTarget))
             {
                 if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
                 {
