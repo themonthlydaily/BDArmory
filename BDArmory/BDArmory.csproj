@@ -300,12 +300,14 @@
     <Compile Include="Utils\KSPForceApplier.cs" />
     <Compile Include="Utils\LayerMask.cs" />
     <Compile Include="Utils\ObjectPool.cs" />
+    <Compile Include="Utils\ObjectPoolNonUnity.cs" />
     <Compile Include="Utils\OtherUtils.cs" />
     <Compile Include="Utils\PartExploderSystem.cs" />
     <Compile Include="Utils\ProjectileUtils.cs" />
     <Compile Include="Utils\ResourceUtils.cs" />
     <Compile Include="Utils\SmoothingUtils.cs" />
     <Compile Include="Utils\SplineUtils.cs" />
+    <Compile Include="Utils\StringUtils.cs" />
     <Compile Include="Utils\UIControlUtils.cs" />
     <Compile Include="Utils\VectorUtils.cs" />
     <Compile Include="Utils\VesselModuleRegistry.cs" />

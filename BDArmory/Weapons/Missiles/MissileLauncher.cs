@@ -1098,41 +1098,60 @@ namespace BDArmory.Weapons.Missiles
             }
         }
 
+        string debugGuidanceTarget;
         void UpdateGuidance()
         {
-            string debugTarget = "none";
             if (guidanceActive)
             {
-                if (TargetingMode == TargetingModes.Heat)
+                switch (TargetingMode)
                 {
-                    UpdateHeatTarget();
-                    if (heatTarget.vessel)
-                        debugTarget = heatTarget.vessel.GetDisplayName() + " " + heatTarget.signalStrength.ToString();
-                    else if (heatTarget.signalStrength > 0)
-                        debugTarget = "Flare " + heatTarget.signalStrength.ToString();
-                }
-                else if (TargetingMode == TargetingModes.Radar)
-                {
-                    UpdateRadarTarget();
-                    if (radarTarget.vessel)
-                        debugTarget = radarTarget.vessel.GetDisplayName() + " " + radarTarget.signalStrength.ToString();
-                    else if (radarTarget.signalStrength > 0)
-                        debugTarget = "Chaff " + radarTarget.signalStrength.ToString();
-                }
-                else if (TargetingMode == TargetingModes.Laser)
-                {
-                    UpdateLaserTarget();
-                    debugTarget = TargetPosition.ToString();
-                }
-                else if (TargetingMode == TargetingModes.Gps)
-                {
-                    UpdateGPSTarget();
-                    debugTarget = UpdateGPSTarget().ToString();
-                }
-                else if (TargetingMode == TargetingModes.AntiRad)
-                {
-                    UpdateAntiRadiationTarget();
-                    debugTarget = TargetPosition.ToString();
+                    case TargetingModes.Heat:
+                        UpdateHeatTarget();
+                        if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES)
+                        {
+                            if (heatTarget.vessel)
+                                debugGuidanceTarget = $"{heatTarget.vessel.GetDisplayName()} {heatTarget.signalStrength}";
+                            else if (heatTarget.signalStrength > 0)
+                                debugGuidanceTarget = $"Flare {heatTarget.signalStrength}";
+                        }
+                        break;
+                    case TargetingModes.Radar:
+                        UpdateRadarTarget();
+                        if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES)
+                        {
+                            if (radarTarget.vessel)
+                                debugGuidanceTarget = $"{radarTarget.vessel.GetDisplayName()} {radarTarget.signalStrength}";
+                            else if (radarTarget.signalStrength > 0)
+                                debugGuidanceTarget = $"Chaff {radarTarget.signalStrength}";
+                        }
+                        break;
+                    case TargetingModes.Laser:
+                        UpdateLaserTarget();
+                        if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES)
+                        {
+                            debugGuidanceTarget = TargetPosition.ToString();
+                        }
+                        break;
+                    case TargetingModes.Gps:
+                        UpdateGPSTarget();
+                        if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES)
+                        {
+                            debugGuidanceTarget = UpdateGPSTarget().ToString();
+                        }
+                        break;
+                    case TargetingModes.AntiRad:
+                        UpdateAntiRadiationTarget();
+                        if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES)
+                        {
+                            debugGuidanceTarget = TargetPosition.ToString();
+                        }
+                        break;
+                    default:
+                        if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES)
+                        {
+                            debugGuidanceTarget = "none";
+                        }
+                        break;
                 }
 
                 UpdateTerminalGuidance();
@@ -1158,8 +1177,7 @@ namespace BDArmory.Weapons.Missiles
                     controlAuthority = 1;
                 }
 
-                debugString.Append($"controlAuthority: {controlAuthority}");
-                debugString.Append(Environment.NewLine);
+                if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES) debugString.AppendLine($"controlAuthority: {controlAuthority}");
 
                 if (guidanceActive)// && timeIndex - dropTime > 0.5f)
                 {
@@ -1262,8 +1280,7 @@ namespace BDArmory.Weapons.Missiles
                 }
             }
 
-            debugString.Append("Missile target=" + debugTarget);
-            debugString.Append(Environment.NewLine);
+            if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES) debugString.AppendLine("Missile target=" + debugGuidanceTarget);
         }
 
         // feature_engagementenvelope: terminal guidance mode for cruise missiles
@@ -1404,9 +1421,7 @@ namespace BDArmory.Weapons.Missiles
             if (weaponClass == WeaponClasses.SLW && FlightGlobals.getAltitudeAtPos(part.transform.position) > 0) return; //#710, no torp thrust out of water
             if (currentThrust * Throttle > 0)
             {
-                debugString.Append("Missile thrust=" + currentThrust * Throttle);
-                debugString.Append(Environment.NewLine);
-
+                if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES) debugString.AppendLine("Missile thrust=" + currentThrust * Throttle);
                 part.rb.AddRelativeForce(currentThrust * Throttle * Vector3.forward);
             }
         }
