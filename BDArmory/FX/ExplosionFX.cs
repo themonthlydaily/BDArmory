@@ -209,11 +209,27 @@ namespace BDArmory.FX
             }
             if (warheadType == WarheadTypes.ShapedCharge)
             {
-                Ray SCRay = new Ray(Position, (Direction.normalized * Range));
+                // Based on shaped charge standoff penetration falloff, set equal to 10% and solved for the range
+                // Equation is from https://www.diva-portal.org/smash/get/diva2:643824/FULLTEXT01.pdf and gives an
+                // answer in the same units as caliber, thus we divide by 1000 to get the range in meters. The long
+                // number is actually 2*sqrt(19), however for speed this has been pre-calculated and rounded to 8 sig
+                // figs behind the decimal point and turned into a floating point number (which in theory should drop it
+                // to 8 sig figs and should be indistinguishable from if we had actually calculated it at runtime). We then
+                // use this range to raycast those hits if it is greater than Range. This will currently overpredict for
+                // small missiles and underpredict for large ones since they don't have a caliber associated with them
+                // and as such will use 120 mm by default (since caliber == 0, thus it'll take 6f as the jet size which
+                // corresponds to a 120 mm charge. Perhaps think about including a caliber field?
+                //SCRange = (7f * (8.71779789f * 20f * Caliber + 20f * Caliber))* 0.001f; // 5%
+                // Decided to swap it to 10% since 5% gave pretty big ranges on the order of several meters and 10% actually
+                // simplifies down to a linear equation
+                SCRange = (49f * Caliber) * 0.001f;
+
+                Ray SCRay = new Ray(Position, SCRange > Range ? (Direction.normalized * SCRange) : (Direction.normalized * Range));
+                //Ray SCRay = new Ray(Position, (Direction.normalized * Range));
                 var hitCount = Physics.RaycastNonAlloc(SCRay, shapedChargeHits, Range, explosionLayerMask);
                 if (hitCount == shapedChargeHits.Length) // If there's a whole bunch of stuff in the way (unlikely), then we need to increase the size of our hits buffer.
                 {
-                    shapedChargeHits = Physics.RaycastAll(SCRay, Range, explosionLayerMask);
+                    shapedChargeHits = Physics.RaycastAll(SCRay, SCRange > Range ? SCRange : Range, explosionLayerMask);
                     hitCount = shapedChargeHits.Length;
                 }
                 if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.ExplosionFX]: SC plasmaJet raycast hits: " + hitCount);
@@ -960,7 +976,6 @@ namespace BDArmory.FX
                     AddForceAtPosition(rb, (Position - part.transform.position).normalized * eventToExecute.NegativeForce * BDArmorySettings.EXP_IMP_MOD * 0.25f, part.transform.position);
             }
             eventToExecute.Finished();
-        }
 	    }
             if (warheadType == WarheadTypes.Standard && ProjMass > 0 && realDistance <= blastRange)
             {
