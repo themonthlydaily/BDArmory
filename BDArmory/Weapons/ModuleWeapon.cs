@@ -3240,6 +3240,7 @@ namespace BDArmory.Weapons
                             targetPosition = ray.origin + ray.direction * maxTargetingRange;
                         }
                     }
+                    finalTarget = targetPosition; // In case aim assist and AI control is off.
                 }
                 if (BDArmorySettings.BULLET_WATER_DRAG)
                 {
