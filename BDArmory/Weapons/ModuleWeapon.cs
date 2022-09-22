@@ -4524,6 +4524,13 @@ namespace BDArmory.Weapons
                     targetAcquisitionType = TargetAcquisitionType.AutoProxy;
                 }
             }
+
+            if (!targetAcquired)
+            {
+                targetVelocity = Vector3.zero;
+                targetAcceleration = Vector3.zero;
+                targetAccelerationWasReset = true;
+            }
         }
 
         void TrackIncomingprojectile() //this is holding onto initial target for some reason, not properly nulling target somewher it should be nulled
