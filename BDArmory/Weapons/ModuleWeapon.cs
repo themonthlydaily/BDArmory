@@ -3176,6 +3176,7 @@ namespace BDArmory.Weapons
             }
 
             Vector3 finalTarget = targetPosition;
+            bool manualAiming = false;
             if (aiControlled && !slaved && weaponManager is not null && (!targetAcquired || weaponManager.staleTarget))
             {
                 if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
@@ -3203,6 +3204,7 @@ namespace BDArmory.Weapons
                 if (!slaved && !aiControlled && (yawRange > 0 || maxPitch - minPitch > 0) && !isAPS)
                 {
                     //MouseControl
+                    manualAiming = true;
                     Vector3 mouseAim = new Vector3(Input.mousePosition.x / Screen.width, Input.mousePosition.y / Screen.height, 0);
                     Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(mouseAim);
                     RaycastHit hit;
@@ -3253,7 +3255,7 @@ namespace BDArmory.Weapons
                 }
                 //aim assist
                 Vector3 originalTarget = targetPosition;
-                targetPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, Time.fixedDeltaTime); // Correct for the FI, which hasn't run yet, but does before visuals are next shown.
+                if (!manualAiming) targetPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, Time.fixedDeltaTime); // Correct for the FI, which hasn't run yet, but does before visuals are next shown.
                 targetDistance = Vector3.Distance(targetPosition, fireTransform.parent.position);
                 origTargetDistance = targetDistance;
 
