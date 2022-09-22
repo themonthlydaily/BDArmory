@@ -158,7 +158,6 @@ namespace BDArmory.Weapons
         private Vector3 targetVelocityS2;
         private Vector3 targetAccelerationS1;
         private Vector3 targetAccelerationS2;
-        private bool targetAccelerationWasReset = true;
         // private Vector3 relativeVelocity;
         public Vector3 finalAimTarget;
         Vector3 lastFinalAimTarget;
@@ -3176,6 +3175,7 @@ namespace BDArmory.Weapons
             }
 
             Vector3 finalTarget = targetPosition;
+            bool manualAiming = false;
             if (aiControlled && !slaved && weaponManager is not null && (!targetAcquired || weaponManager.staleTarget))
             {
                 if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
@@ -3203,6 +3203,7 @@ namespace BDArmory.Weapons
                 if (!slaved && !aiControlled && (yawRange > 0 || maxPitch - minPitch > 0) && !isAPS)
                 {
                     //MouseControl
+                    manualAiming = true;
                     Vector3 mouseAim = new Vector3(Input.mousePosition.x / Screen.width, Input.mousePosition.y / Screen.height, 0);
                     Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(mouseAim);
                     RaycastHit hit;
@@ -3220,7 +3221,6 @@ namespace BDArmory.Weapons
                         {
                             targetPosition = hit.point;
                         }
-                        targetAccelerationWasReset = true;
                     }
                     else
                     {
@@ -3240,6 +3240,7 @@ namespace BDArmory.Weapons
                             targetPosition = ray.origin + ray.direction * maxTargetingRange;
                         }
                     }
+                    finalTarget = targetPosition; // In case aim assist and AI control is off.
                 }
                 if (BDArmorySettings.BULLET_WATER_DRAG)
                 {
@@ -3253,7 +3254,7 @@ namespace BDArmory.Weapons
                 }
                 //aim assist
                 Vector3 originalTarget = targetPosition;
-                targetPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, Time.fixedDeltaTime); // Correct for the FI, which hasn't run yet, but does before visuals are next shown.
+                if (!manualAiming) targetPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, Time.fixedDeltaTime); // Correct for the FI, which hasn't run yet, but does before visuals are next shown.
                 targetDistance = Vector3.Distance(targetPosition, fireTransform.parent.position);
                 origTargetDistance = targetDistance;
 
@@ -4043,7 +4044,6 @@ namespace BDArmory.Weapons
             }
             if (targetAcquired)
             {
-                // updateAcceleration(targetVelocity, targetPosition, lastTargetAcquisitionType != targetAcquisitionType || (targetAcquisitionType == TargetAcquisitionType.Visual && lastVisualTargetVessel != visualTargetVessel));
                 smoothTargetKinematics(targetPosition, targetVelocity, targetAcceleration, lastTargetAcquisitionType != targetAcquisitionType || (targetAcquisitionType == TargetAcquisitionType.Visual && lastVisualTargetVessel != visualTargetVessel));
             }
 
@@ -4522,6 +4522,7 @@ namespace BDArmory.Weapons
                         targetAcceleration = tgt.acceleration;
                     }
                     targetAcquisitionType = TargetAcquisitionType.AutoProxy;
+                    return;
                 }
             }
 
@@ -4529,7 +4530,6 @@ namespace BDArmory.Weapons
             {
                 targetVelocity = Vector3.zero;
                 targetAcceleration = Vector3.zero;
-                targetAccelerationWasReset = true;
             }
         }
 
@@ -4745,44 +4745,6 @@ namespace BDArmory.Weapons
             {
                 //Debug.Log("[BDArmory.ModuleWeapon] KillIncomingProjectile called on null object!");
             }
-        }
-
-        /// <summary>
-        /// Update target acceleration based on previous velocity.
-        /// Position is used to clamp acceleration for splashed targets, as ksp produces excessive bobbing.
-        /// </summary>
-        void updateAcceleration(Vector3 target_rb_velocity, Vector3 position, bool reset = false)
-        {
-            var distance = Vector3.Distance(targetPosition, part.transform.position);
-            var accelerationSmoothingFactor = 512f / (Mathf.Max(distance, 512f)); // Dynamically adjust the smoothing from none at 512m to 127/128 at 65.536km
-            var velocitySmoothingFactor = 2048f / (Mathf.Max(distance, 2048f)); // Dynamically adjust the smoothing from none at 2048m to 31/32 at 65.536km
-            if (!reset)
-            {
-                if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
-                {
-                    targetVelocityPrevious += (Vector3)Krakensbane.GetLastCorrection();
-                }
-                if (!targetAccelerationWasReset)
-                {
-                    targetVelocity = (1f - velocitySmoothingFactor) * targetVelocityPrevious + velocitySmoothingFactor * target_rb_velocity; // Smooth out the velocity to account for imprecise velocity from KSP.
-                    targetAcceleration = (1f - accelerationSmoothingFactor) * targetAcceleration + accelerationSmoothingFactor * (target_rb_velocity - targetVelocityPrevious) / (Time.time - lastGoodTargetTime); // Smooth out the acceleration calculation to account for oscillating control surfaces in the target.
-                }
-                else
-                {
-                    targetAcceleration = (target_rb_velocity - targetVelocityPrevious) / (Time.time - lastGoodTargetTime);
-                    targetAccelerationWasReset = false;
-                }
-            }
-            else
-            {
-                targetAcceleration = Vector3.zero;
-                targetAccelerationWasReset = true;
-            }
-            float altitude = (float)FlightGlobals.currentMainBody.GetAltitude(position);
-            if (altitude < 12 && altitude > -10)
-                targetAcceleration = Vector3.ProjectOnPlane(targetAcceleration, VectorUtils.GetUpDirection(position));
-            // Debug.Log("DEBUG " + Time.time.ToString("0.00") + " targetAcceleration: " + targetAcceleration.ToString("G3") + ", V_diff: " + (targetVelocity - targetVelocityPrevious).ToString("G3") + ", smoothing: (" + velocitySmoothingFactor.ToString("G3") + ", " + accelerationSmoothingFactor.ToString("G3") + "), Δt: " + (Time.time - lastGoodTargetTime));
-            targetVelocityPrevious = target_rb_velocity;
         }
 
         /// <summary>

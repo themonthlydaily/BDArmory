@@ -117,6 +117,7 @@ namespace BDArmory.UI
 
         private void OnEditorShipModifiedEvent(ShipConstruct data)
         {
+            if (data is null) return;
             delayedRefreshVisuals = true;
             if (!delayedRefreshVisualsInProgress)
                 StartCoroutine(DelayedRefreshVisuals(data));
@@ -133,7 +134,13 @@ namespace BDArmory.UI
                 delayedRefreshVisuals = false;
                 yield return wait;
             }
-            yield return new WaitUntilFixed(() => ship.Parts.TrueForAll(p => p.GetComponent<Damage.HitpointTracker>() is null || p.GetComponent<Damage.HitpointTracker>().Ready)); // Wait for HP changes to delayed ship modified events in HitpointTracker
+            yield return new WaitUntilFixed(() =>
+                ship == null || ship.Parts == null || ship.Parts.TrueForAll(p =>
+                {
+                    if (p == null) return true;
+                    var hp = p.GetComponent<Damage.HitpointTracker>();
+                    return hp == null || hp.Ready;
+                })); // Wait for HP changes to delayed ship modified events in HitpointTracker
             delayedRefreshVisualsInProgress = false;
 
             if (showArmorWindow)
