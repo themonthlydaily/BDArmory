@@ -4524,6 +4524,7 @@ namespace BDArmory.Weapons
                         targetAcceleration = tgt.acceleration;
                     }
                     targetAcquisitionType = TargetAcquisitionType.AutoProxy;
+                    return;
                 }
             }
 
