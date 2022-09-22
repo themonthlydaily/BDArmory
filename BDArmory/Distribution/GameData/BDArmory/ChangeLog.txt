@@ -18,6 +18,8 @@ IMPROVEMENTS / FIXES
 	- Fix GPS missiles not obeying max missile per target setting when the target is traveling at high speeds.
 - Detectors:
 	- Random position noise due to chaff no longer scales with RCS, is instead fixed to a random number between 16 and 256.
+- Weapons:
+	- Fixed bug where the target velocity and acceleration was not being reset once a target was no longer tracked which resulted in lead being erroneously compensated for while mouse aiming.
 
 v1.5.2.1
 IMPROVEMENTS / FIXES
