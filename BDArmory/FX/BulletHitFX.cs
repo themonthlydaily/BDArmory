@@ -40,7 +40,10 @@ namespace BDArmory.FX
             parentPart.OnJustAboutToDie += OnParentDestroy;
             parentPart.OnJustAboutToBeDestroyed += OnParentDestroy;
             if (hasOnVesselUnloaded)
+            {
+                OnVesselUnloaded_1_11(false); // Remove any previous onVesselUnloaded event handler (due to forced reuse in the pool).
                 OnVesselUnloaded_1_11(true); // Catch unloading events too.
+            }
             gameObject.SetActive(true);
         }
         public void SetColor(Color color)
@@ -91,14 +94,14 @@ namespace BDArmory.FX
 
         void Deactivate()
         {
+            if (hasOnVesselUnloaded) // onVesselUnloaded event introduced in 1.11
+                OnVesselUnloaded_1_11(false);
             if (gameObject is not null && gameObject.activeSelf) // Deactivate even if a parent is already inactive.
             {
                 parentPart = null;
                 transform.parent = null;
                 gameObject.SetActive(false);
             }
-            if (hasOnVesselUnloaded) // onVesselUnloaded event introduced in 1.11
-                OnVesselUnloaded_1_11(false);
         }
 
         public void OnDestroy() // This shouldn't be happening except on exiting KSP, but sometimes they get destroyed instead of disabled!

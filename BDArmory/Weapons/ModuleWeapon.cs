@@ -152,13 +152,10 @@ namespace BDArmory.Weapons
         public Vector3 targetPosition;
         public Vector3 targetVelocity;  // local frame velocity
         public Vector3 targetAcceleration; // local frame
-        private Vector3 targetVelocityPrevious; // for acceleration calculation
-        // private Vector3 targetAccelerationPrevious;
         private Vector3 targetVelocityS1;
         private Vector3 targetVelocityS2;
         private Vector3 targetAccelerationS1;
         private Vector3 targetAccelerationS2;
-        // private Vector3 relativeVelocity;
         public Vector3 finalAimTarget;
         Vector3 lastFinalAimTarget;
         public Vessel visualTargetVessel;

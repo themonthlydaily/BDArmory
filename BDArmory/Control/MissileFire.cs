@@ -355,20 +355,20 @@ namespace BDArmory.Control
 
         //targeting pods
         public ModuleTargetingCamera mainTGP = null;
-        public List<ModuleTargetingCamera> targetingPods {get { if (modulesNeedRefreshing) RefreshModules(); return _targetingPods; } }
+        public List<ModuleTargetingCamera> targetingPods { get { if (modulesNeedRefreshing) RefreshModules(); return _targetingPods; } }
         List<ModuleTargetingCamera> _targetingPods = new List<ModuleTargetingCamera>();
 
         //radar
-        public List<ModuleRadar> radars {get { if (modulesNeedRefreshing) RefreshModules(); return _radars; } }
+        public List<ModuleRadar> radars { get { if (modulesNeedRefreshing) RefreshModules(); return _radars; } }
         public List<ModuleRadar> _radars = new List<ModuleRadar>();
         public int MaxradarLocks = 0;
         public VesselRadarData vesselRadarData;
 
-        public List<ModuleIRST> irsts {get { if (modulesNeedRefreshing) RefreshModules(); return _irsts; } }
+        public List<ModuleIRST> irsts { get { if (modulesNeedRefreshing) RefreshModules(); return _irsts; } }
         public List<ModuleIRST> _irsts = new List<ModuleIRST>();
 
         //jammers
-        public List<ModuleECMJammer> jammers {get { if (modulesNeedRefreshing) RefreshModules(); return _jammers; } }
+        public List<ModuleECMJammer> jammers { get { if (modulesNeedRefreshing) RefreshModules(); return _jammers; } }
         public List<ModuleECMJammer> _jammers = new List<ModuleECMJammer>();
 
         //cloak generators
@@ -376,7 +376,7 @@ namespace BDArmory.Control
         public List<ModuleCloakingDevice> _cloaks = new List<ModuleCloakingDevice>();
 
         //other modules
-        public List<IBDWMModule> wmModules {get { if (modulesNeedRefreshing) RefreshModules(); return _wmModules; } }
+        public List<IBDWMModule> wmModules { get { if (modulesNeedRefreshing) RefreshModules(); return _wmModules; } }
         List<IBDWMModule> _wmModules = new List<IBDWMModule>();
 
         bool modulesNeedRefreshing = true; // Refresh modules as needed — avoids excessive calling due to events.
@@ -2197,7 +2197,7 @@ namespace BDArmory.Control
                     if (targetDist < Mathf.Max(radius * 2, 800f) &&
                         Vector3.Dot(guardTarget.CoM - bombAimerPosition, guardTarget.CoM - transform.position) < 0)
                     {
-                        pilotAI.RequestExtend("too close to bomb", guardTarget); // Extend from target vessel.
+                        pilotAI.RequestExtend("too close to bomb", guardTarget, ignoreCooldown: true); // Extend from target vessel.
                         break;
                     }
                     yield return wait;
@@ -2226,7 +2226,7 @@ namespace BDArmory.Control
                             yield return new WaitForSecondsFixed(1f);
                             if (pilotAI)
                             {
-                                pilotAI.RequestExtend("bombs away!", null, radius, guardTarget.CoM); // Extend from the place the bomb is expected to fall.
+                                pilotAI.RequestExtend("bombs away!", null, radius, guardTarget.CoM, ignoreCooldown: true); // Extend from the place the bomb is expected to fall.
                             }   //maybe something similar should be adapted for any missiles with nuke warheards...?
                         }
                     }
@@ -2704,7 +2704,7 @@ namespace BDArmory.Control
             {
                 if (pilotAI)
                 {
-                    pilotAI.RequestExtend("Nuke away!", guardTarget, missile.StandOffDistance * 1.25f, guardTarget.CoM); // Extend from projected detonation site if within blast radius
+                    pilotAI.RequestExtend("Nuke away!", guardTarget, missile.StandOffDistance * 1.25f, guardTarget.CoM, ignoreCooldown: true); // Extend from projected detonation site if within blast radius
                 }
             }
             return true;
