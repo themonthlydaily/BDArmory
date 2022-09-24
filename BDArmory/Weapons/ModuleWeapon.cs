@@ -184,7 +184,7 @@ namespace BDArmory.Weapons
         const int layerMask1 = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23 | LayerMasks.Wheels); // Why 19 and 23?
         const int layerMask2 = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19 | LayerMasks.Wheels); // Why 19 and why not the other layer mask?
 
-        enum TargetAcquisitionType { None, Visual, Slaved, Radar, AutoProxy };
+        enum TargetAcquisitionType { None, Visual, Slaved, Radar, AutoProxy, GPS };
         TargetAcquisitionType targetAcquisitionType = TargetAcquisitionType.None;
         TargetAcquisitionType lastTargetAcquisitionType = TargetAcquisitionType.None;
         float lastGoodTargetTime = 0;
@@ -235,6 +235,7 @@ namespace BDArmory.Weapons
         bool userFiring;
         Vector3 laserPoint;
         public bool slaved;
+        public bool GPSTarget;
 
         public Transform turretBaseTransform
         {
@@ -1736,11 +1737,11 @@ namespace BDArmory.Weapons
                 Vector3 reticlePosition;
                 if (BDArmorySettings.AIM_ASSIST)
                 {
-                    if (targetAcquired && (slaved || yawRange < 1 || maxPitch - minPitch < 1))
+                    if (targetAcquired && (GPSTarget || slaved || yawRange < 1 || maxPitch - minPitch < 1))
                     {
                         reticlePosition = pointingAtPosition + fixedLeadOffset;
 
-                        if (!slaved)
+                        if (!slaved || GPSTarget)
                         {
                             GUIUtils.DrawLineBetweenWorldPositions(pointingAtPosition, reticlePosition, 2,
                                 new Color(0, 1, 0, 0.6f));
@@ -3154,7 +3155,7 @@ namespace BDArmory.Weapons
         void Aim()
         {
             //AI control
-            if (aiControlled && !slaved)
+            if (aiControlled && !slaved && !GPSTarget)
             {
                 if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                 {
@@ -3200,7 +3201,7 @@ namespace BDArmory.Weapons
                 {
                     fireTransform = rockets[0].parent; // support for legacy RLs
                 }
-                if (!slaved && !aiControlled && (yawRange > 0 || maxPitch - minPitch > 0) && !isAPS)
+                if (!slaved && !GPSTarget && !aiControlled && (yawRange > 0 || maxPitch - minPitch > 0) && !isAPS)
                 {
                     //MouseControl
                     manualAiming = true;
@@ -4308,6 +4309,7 @@ namespace BDArmory.Weapons
         {
             targetAcquired = false;
             slaved = false;
+            GPSTarget = false;
             bool atprWasAcquired = atprAcquired;
             atprAcquired = false;
             lastTargetAcquisitionType = targetAcquisitionType;
@@ -4477,6 +4479,19 @@ namespace BDArmory.Weapons
                     }
                     targetAcquired = true;
                     targetAcquisitionType = TargetAcquisitionType.Radar;
+                    return;
+                }
+
+                // GPS TARGETING HERE
+                if (BDArmorySetup.Instance.showingWindowGPS && weaponManager.designatedGPSCoords != Vector3d.zero && !aiControlled)
+                {
+                    GPSTarget = true;
+                    targetVelocity = Vector3d.zero;
+                    targetPosition = weaponManager.designatedGPSInfo.worldPos;
+                    targetRadius = 35f;
+                    targetAcceleration = Vector3d.zero;
+                    targetAcquired = true;
+                    targetAcquisitionType = TargetAcquisitionType.GPS;
                     return;
                 }
 
