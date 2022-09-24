@@ -824,9 +824,9 @@ namespace BDArmory.FX
                             float HitAngle = Vector3.Angle((eventToExecute.HitPoint + rb.velocity * TimeIndex - Position).normalized, -eventToExecute.Hit.normal);
                             float anglemultiplier = (float)Math.Cos(Math.PI * HitAngle / 180.0);
                             float thickness = ProjectileUtils.CalculateThickness(part, anglemultiplier);
-                            if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.ExplosiveFX]: Part " + part.name + " hit by " + warheadType + "; " + HitAngle + " deg hit, armor thickness: " + thickness);
+                            if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.ExplosionFX]: Part " + part.name + " hit by " + warheadType + "; " + HitAngle + " deg hit, armor thickness: " + thickness);
                             thickness += eventToExecute.IntermediateParts.Select(p => p.Item3).Sum(); //add armor thickness of intervening parts, if any
-                            if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.ExplosiveFX]: Effective Armor thickness from intermediate parts: " + thickness);
+                            if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.ExplosionFX]: Effective Armor thickness from intermediate parts: " + thickness);
                             float penetration = 0;
                             var Armor = part.FindModuleImplementing<HitpointTracker>();
                             if (Armor != null)
@@ -927,7 +927,7 @@ namespace BDArmory.FX
                 }
                 else if (BDArmorySettings.DEBUG_DAMAGE)
                 {
-                    Debug.Log("[BDArmory.ExplosiveFX]: Part " + part.name + " at distance " + realDistance + "m took no damage due to parts with " + cumulativeHPOfIntermediateParts + "HP and " + cumulativeArmorOfIntermediateParts + " Armor in the way.");
+                    Debug.Log("[BDArmory.ExplosionFX]: Part " + part.name + " at distance " + realDistance + "m took no damage due to parts with " + cumulativeHPOfIntermediateParts + "HP and " + cumulativeArmorOfIntermediateParts + " Armor in the way.");
                 }
             }
             else
