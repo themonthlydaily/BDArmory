@@ -155,6 +155,20 @@ namespace BDArmory.Radar
             get { return displayedTargets[lockedTargetIndexes[activeLockedTargetIndex]]; }
         }
 
+        public TargetSignatureData activeIRTarget()
+        {
+            TargetSignatureData data;
+            for (int i = 0; i < displayedIRTargets.Count; i++)
+            {
+                if (displayedIRTargets[i].vessel == weaponManager.currentTarget)
+                {
+                    data = displayedIRTargets[i].targetData;
+                }
+            }
+            data = TargetSignatureData.noTarget;
+            return data;
+        }
+
         //turret slaving
         public bool slaveTurrets;
 
@@ -299,12 +313,7 @@ namespace BDArmory.Radar
 
         private IEnumerator StartupRoutine()
         {
-            while (!FlightGlobals.ready || vessel.packed)
-            {
-                yield return null;
-            }
-
-            yield return new WaitForFixedUpdate();
+            yield return new WaitWhile(() => !FlightGlobals.ready || (vessel is not null && (vessel.packed || !vessel.loaded)));
             yield return new WaitForFixedUpdate();
             radarsReady = true;
         }
@@ -429,7 +438,7 @@ namespace BDArmory.Radar
             while (rad.MoveNext())
             {
                 if (rad.Current == null) continue;
-                if (rad.Current.vessel == vessel && rad.Current.canRecieveRadarData)
+                if (rad.Current.vessel == vessel && rad.Current.canReceiveRadarData)
                 {
                     canReceiveRadarData = true;
                 }
@@ -512,7 +521,31 @@ namespace BDArmory.Radar
             rrad.Dispose();
             rCount = availableRadars.Count;
 
-            RemoveEmptyVRDs();
+            availableIRSTs.RemoveAll(r => r == null);
+            List<ModuleIRST> IRSTsToRemove = new List<ModuleIRST>();
+            List<ModuleIRST>.Enumerator irst = availableIRSTs.GetEnumerator();
+            while (irst.MoveNext())
+            {
+                if (irst.Current == null) continue;
+                if (!irst.Current.irstEnabled || irst.Current.vessel != vessel)
+                {
+                    IRSTsToRemove.Add(irst.Current);
+                }
+                else if (!irst.Current.weaponManager || (weaponManager && irst.Current.weaponManager.Team != weaponManager.Team))
+                {
+                    IRSTsToRemove.Add(irst.Current);
+                }
+            }
+            irst.Dispose();
+
+            List<ModuleIRST>.Enumerator rirs = IRSTsToRemove.GetEnumerator();
+            while (rirs.MoveNext())
+            {
+                if (rirs.Current == null) continue;
+                RemoveIRST(rirs.Current);
+            }
+            rirs.Dispose();
+            iCount = availableIRSTs.Count;
         }
 
         public void UpdateLockedTargets()
@@ -547,6 +580,17 @@ namespace BDArmory.Radar
 
         private void Update()
         {
+            if (radarCount > 0)
+            {
+                UpdateInputs();
+            }
+
+            drawGUI = (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && !vessel.packed && rCount > 0 &&
+                       vessel.isActiveVessel && BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled);
+        }
+
+        void FixedUpdate()
+        {
             if (!vessel)
             {
                 Destroy(this);
@@ -566,8 +610,6 @@ namespace BDArmory.Radar
                   Vector3.ProjectOnPlane(vessel.transform.up, vessel.upAxis), vessel.upAxis);
 
                 CleanDisplayedContacts();
-
-                UpdateInputs();
 
                 UpdateSlaveData();
             }
@@ -676,14 +718,13 @@ namespace BDArmory.Radar
             }
 
             UpdateLockedTargets();
-            if (this != null) // Don't trigger if the gameObject was just destroyed.
-                StartCoroutine(UpdateLocksAfterFrame());
+            StartCoroutine(UpdateLocksAfterFrame());
             return false;
         }
 
         private IEnumerator UpdateLocksAfterFrame()
         {
-            yield return null;
+            yield return new WaitForFixedUpdate();
             UpdateLockedTargets();
         }
 
@@ -703,7 +744,7 @@ namespace BDArmory.Radar
 
         public bool TryLockTarget(Vessel v)
         {
-            if (v == null) return false;
+            if (v == null || v.packed) return false;
 
             using (List<RadarDisplayData>.Enumerator displayData = displayedTargets.GetEnumerator())
                 while (displayData.MoveNext())
@@ -1315,6 +1356,20 @@ namespace BDArmory.Radar
             GUI.EndGroup();
         }
 
+        public void LinkAllRadars()
+        {
+            RefreshAvailableLinks();
+            List<VesselRadarData>.Enumerator v = availableExternalVRDs.GetEnumerator();
+            while (v.MoveNext())
+            {
+                if (v.Current == null) continue;
+                if (!v.Current.vessel || !v.Current.vessel.loaded) continue;
+                if (!externalVRDs.Contains(v.Current))
+                    LinkVRD(v.Current);
+            }
+            v.Dispose();
+        }
+
         public void RemoveDataFromRadar(ModuleRadar radar)
         {
             displayedTargets.RemoveAll(t => t.detectedByRadar == radar);
@@ -1447,16 +1502,13 @@ namespace BDArmory.Radar
                         yield break;
                     }
 
-                yield return new WaitForSeconds(0.5f);
+                yield return new WaitForSecondsFixed(0.5f);
             }
         }
 
         private IEnumerator LinkVRDWhenReady(VesselRadarData vrd)
         {
-            while (!vrd.radarsReady || vrd.vessel.packed || vrd.radarCount < 1)
-            {
-                yield return null;
-            }
+            yield return new WaitWhileFixed(() => !vrd.radarsReady || (vrd.vessel is not null && (vrd.vessel.packed || !vrd.vessel.loaded)) || vrd.radarCount < 1);
             LinkVRD(vrd);
             if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[BDArmory.VesselRadarData]: Radar data link recovered: Local - " + vessel.vesselName + ", External - " +
                        vrd.vessel.vesselName);
@@ -2088,7 +2140,7 @@ namespace BDArmory.Radar
                                                           Random.Range(100, rIncrements[rangeIndex]));
                                 float bearingVariation =
                                     Mathf.Clamp(
-                                        Mathf.Pow(32000, 2) /
+                                        1024e6f /    // 32000 * 32000
                                         (displayedTargets[i].targetData.position - transform.position).sqrMagnitude, 0,
                                         80);
                                 jammedPosition = transform.position +
@@ -2189,9 +2241,9 @@ namespace BDArmory.Radar
                     newData.vessel = displayedIRTargets[i].vessel;
                     displayedIRTargets[i] = newData;
                 }
-                    Vector2 pingPosition = displayedIRTargets[i].pingPosition;
+                Vector2 pingPosition = displayedIRTargets[i].pingPosition;
 
-                    Rect pingRect;
+                Rect pingRect;
                 //draw contacts with direction indicator
                 if (displayedIRTargets[i].detectedByIRST.showDirectionWhileScan &&
                          displayedIRTargets[i].targetData.velocity.sqrMagnitude > 100)
@@ -2225,22 +2277,22 @@ namespace BDArmory.Radar
                     GUI.color = origGUIColor;
                 }
                 //draw as dots    
-                else 
+                else
                 {
                     float mDotSize = (displayedIRTargets[i].magnitude / 25) / rangeIndex;
                     if (mDotSize < 1) mDotSize = 1;
                     if (mDotSize > 20) mDotSize = 20;
                     pingRect = new Rect(pingPosition.x - (mDotSize / 2), pingPosition.y - (mDotSize / 2), mDotSize, mDotSize);
-                    GUI.DrawTexture(pingRect, BDArmorySetup.Instance.redDotTexture, ScaleMode.StretchToFill, true);                    
+                    GUI.DrawTexture(pingRect, BDArmorySetup.Instance.redDotTexture, ScaleMode.StretchToFill, true);
 
                     GUI.matrix = Matrix4x4.identity;
-                }                
+                }
 
                 if (BDArmorySettings.DEBUG_RADAR)
                 {
                     GUI.Label(new Rect(pingPosition.x + (pingSize.x / 2), pingPosition.y, 100, 24),
                         displayedIRTargets[i].magnitude.ToString("0.0"));
-                }               
+                }
             }
 
             pingPositionsDirty = false;
@@ -2347,7 +2399,7 @@ namespace BDArmory.Radar
                 float sqrMag = (displayedTargets[i].pingPosition - selectorPos).sqrMagnitude;
                 if (sqrMag < closestSqrMag)
                 {
-                    if (sqrMag < Mathf.Pow(20, 2))
+                    if (sqrMag < 400) // 20 * 20)
                     {
                         closestPos = displayedTargets[i].targetData.predictedPosition;
                         found = true;
@@ -2359,7 +2411,7 @@ namespace BDArmory.Radar
             {
                 TryLockTarget(closestPos);
             }
-            else if (closestSqrMag > Mathf.Pow(40, 2))
+            else if (closestSqrMag > (40 * 40))
             {
                 UnlockCurrentTarget();
             }

@@ -198,7 +198,7 @@ namespace BDArmory.UI
                 using (List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator())
                     while (v.MoveNext())
                     {
-                        if (v.Current == null) continue;
+                        if (v.Current == null || v.Current.packed || !v.Current.loaded) continue;
                         if (BDTISettings.MISSILES)
                         {
                             using (var ml = VesselModuleRegistry.GetModules<MissileBase>(v.Current).GetEnumerator())
@@ -236,6 +236,7 @@ namespace BDArmory.UI
                                             {
                                                 if (GUIUtils.WorldToGUIPos(ml.Current.vessel.CoM, out guiPos))
                                                 {
+                                                    IconUIStyle.normal.textColor = BDTISetup.Instance.ColorAssignments[ml.Current.Team.Name];
                                                     Rect nameRect = new Rect((guiPos.x + (24 * BDTISettings.ICONSCALE)), guiPos.y - 4, 100, 32);
                                                     Rect shadowRect = new Rect((nameRect.x + 1), nameRect.y + 1, 100, 32);
                                                     GUI.Label(shadowRect, ml.Current.vessel.vesselName, DropshadowStyle);

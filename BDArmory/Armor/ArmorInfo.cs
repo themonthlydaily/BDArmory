@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 
+using BDArmory.Utils;
+
 namespace BDArmory.Armor
 {
     public class ArmorInfo
@@ -11,6 +13,8 @@ namespace BDArmory.Armor
         public float Density { get; private set; } //mass kg/m3 lighter is better. Or is it?
         public float Strength { get; private set; } //in MPa, yieldstrength for material, controls fail point for material when projectile can penetrate. Higher is better
         public float Hardness { get; private set; } //hardness, in MPa, of material. Controls how much deformation impacting projectiles experience
+        public float Yield { get; private set; } // Yield strength of material. Only needed while loading, but needs to be here for reflection if an armor definition is missing it.
+        public float YoungModulus { get; private set; } // Young's Modulus of material. Only needed while loading, but needs to be here for reflection if an armor definition is missing it.
         public float Ductility { get; private set; } //measure of ductility, 0 is hardened ceramic, 100 is rubber. Mild steel is about 15. ideally should be around 15-25. 
                                                      //Too low, and armor is brittle. Too High, and armor cannot effectively stop projectiles in reasonable distance
         public float Diffusivity { get; private set; } //ability to disperse electrical/thermal energy when material is subject to laser/EMP attack. Higher is better
@@ -39,6 +43,8 @@ namespace BDArmory.Armor
             this.Density = Density;
             this.Strength = Strength;
             this.Hardness = Hardness;
+            this.Yield = yield;
+            this.YoungModulus = youngModulus;
             this.Ductility = Ductility;
             this.Diffusivity = Diffusivity;
             this.SafeUseTemp = SafeUseTemp;
@@ -60,7 +66,7 @@ namespace BDArmory.Armor
             // We don't actually need mu itself or the following variants of it, just
             // the muParams so we'll calculate those instead.
             float muSquared = Density / (11340.0f);
-            float mu = Mathf.Sqrt(muSquared);
+            float mu = BDAMath.Sqrt(muSquared);
             float muInverse = 1.0f / mu;
             float muInverseSquared = 1.0f / muSquared;
 
@@ -78,7 +84,7 @@ namespace BDArmory.Armor
             // have to build a dictionary instead using all available armor types and
             // projectiles so as to maintain performance as proposed by DocNappers
             muSquared = Density / (19000.0f);
-            mu = Mathf.Sqrt(muSquared);
+            mu = BDAMath.Sqrt(muSquared);
             muInverse = 1.0f / mu;
             muInverseSquared = 1.0f / muSquared;
 

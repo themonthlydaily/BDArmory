@@ -120,7 +120,7 @@ namespace BDArmory.WeaponMounts
         }
         public IEnumerator OnStartDeploy()
         {
-            yield return new WaitForSeconds(1); //figure out what the wait interval needs to be. Too soon, and the offsets get messed up. maybe have the RCS snapshot delay instead?
+            yield return new WaitForSecondsFixed(1); //figure out what the wait interval needs to be. Too soon, and the offsets get messed up. maybe have the RCS snapshot delay instead?
             UpdateMissileChildren();
             DeployRail(true);
         }
@@ -146,7 +146,7 @@ namespace BDArmory.WeaponMounts
             deployed = true;
             if (HighLogic.LoadedSceneIsFlight)
             {
-                yield return new WaitForSeconds(rotationDelay);
+                yield return new WaitForSecondsFixed(rotationDelay);
                 rdyToFire = true;
             }
             if (HighLogic.LoadedSceneIsEditor)

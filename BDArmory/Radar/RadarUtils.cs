@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -121,6 +122,8 @@ namespace BDArmory.Radar
         };
         private static int numAspects = rcsAspects.GetLength(0); // Number of aspects
         public static float[,] worstRCSAspects = new float[3, 3]; // Worst three aspects
+        static double[] rcsValues;
+        static Color32[] pixels;
 
         /// <summary>
         /// Force radar signature update
@@ -208,6 +211,7 @@ namespace BDArmory.Radar
         /// </summary>
         private static float GetVesselModifiedSignature(Vessel v, TargetInfo ti)
         {
+            ti.radarRCSReducedSignature = ti.radarBaseSignature;
             ti.radarModifiedSignature = ti.radarBaseSignature;
             ti.radarLockbreakFactor = 1;
 
@@ -217,11 +221,12 @@ namespace BDArmory.Radar
             if (vesseljammer)
             {
                 //1) read vessel ecminfo for jammers with RCS reduction effect and multiply factor
+                ti.radarRCSReducedSignature *= vesseljammer.rcsReductionFactor;
                 ti.radarModifiedSignature *= vesseljammer.rcsReductionFactor;
 
                 //2) increase in detectability relative to jammerstrength and vessel rcs signature:
                 // rcs_factor = jammerStrength / modifiedSig / 100 + 1.0f
-                ti.radarModifiedSignature *= (((vesseljammer.jammerStrength / ti.radarModifiedSignature) / 100) + 1.0f);
+                ti.radarModifiedSignature *= (((vesseljammer.jammerStrength / ti.radarRCSReducedSignature) / 100) + 1.0f);
 
                 //3) garbling due to overly strong jamming signals relative to jammer's strength in relation to vessel rcs signature:
                 // jammingDistance =  (jammerstrength / baseSig / 100 + 1.0) x js
@@ -230,7 +235,9 @@ namespace BDArmory.Radar
                 //4) lockbreaking strength relative to jammer's lockbreak strength in relation to vessel rcs signature:
                 // lockbreak_factor = baseSig/modifiedSig x (1 � lopckBreakStrength/baseSig/100)
                 // Use clamp to prevent RCS reduction resulting in increased lockbreak factor, which negates value of RCS reduction)
-                ti.radarLockbreakFactor = Mathf.Max(Mathf.Clamp01(ti.radarBaseSignature / ti.radarModifiedSignature) * (1 - (vesseljammer.lockBreakStrength / ti.radarBaseSignature / 100)), 0); // 0 is minimum lockbreak factor
+                ti.radarLockbreakFactor = (ti.radarRCSReducedSignature == 0) ? 0f :
+                    Mathf.Max(Mathf.Clamp01(ti.radarRCSReducedSignature / ti.radarModifiedSignature) * (1 - (vesseljammer.lockBreakStrength / ti.radarRCSReducedSignature / 100)), 0); // 0 is minimum lockbreak factor
+
             }
 
             return ti.radarModifiedSignature;
@@ -320,8 +327,8 @@ namespace BDArmory.Radar
                     Debug.Log($"[BDArmory.RadarUtils]: Rendering radar snapshot of vessel {v.name}, type {v.vesselType}");
                 else
                     Debug.Log("[BDArmory.RadarUtils]: Rendering radar snapshot of vessel");
-                Debug.Log("[BDArmory.RadarUtils]: - bounds: " + vesselbounds.ToString());
-                Debug.Log("[BDArmory.RadarUtils]: - rotation: " + t.rotation.ToString());
+                Debug.Log($"[BDArmory.RadarUtils]: - bounds: {vesselbounds}");
+                Debug.Log($"[BDArmory.RadarUtils]: - rotation: {t.rotation}");
                 //Debug.Log("[BDArmory.RadarUtils]: - size: " + vesselbounds.size + ", magnitude: " + vesselbounds.size.magnitude);
             }
 
@@ -341,11 +348,12 @@ namespace BDArmory.Radar
             }
 
             float rcsVariable = 0f;
-            worstRCSAspects = new float[3, 3];
-            double[] rcsValues = new double[numAspects];
+            if (worstRCSAspects is null) worstRCSAspects = new float[3, 3];
+            Array.Clear(worstRCSAspects, 0, 9);
+            if (rcsValues is null) rcsValues = new double[numAspects];
+            Array.Clear(rcsValues, 0, numAspects);
             rcsTotal = 0;
             Vector3 aspect;
-            Color32[] pixels;
 
             // Loop through all aspects
             for (int i = 0; i < numAspects; i++)
@@ -816,6 +824,58 @@ namespace BDArmory.Radar
         }
 
         /// <summary>
+        /// Determine how much of an effect enemies that are jamming have on the target
+        /// </summary>
+        public static float GetStandoffJammingModifier(Vessel v, Competition.BDTeam team, Vector3 position, Vessel targetV, float signature)
+        {
+            if (!VesselModuleRegistry.GetModule<MissileFire>(targetV)) return 1f; // Don't evaluate SOJ effects for targets without weapons managers
+
+            float standOffJammingMod = 0f;
+            string debugSOJ = "Standoff Jammer Lockbreak Strengths: \n";
+
+            using (var loadedvessels = BDATargetManager.LoadedVessels.GetEnumerator())
+                while (loadedvessels.MoveNext())
+                {
+
+                    // ignore null, unloaded, self, teammates, the target and vessels without ECM
+                    if (loadedvessels.Current == null || !loadedvessels.Current.loaded) continue;
+                    if ((loadedvessels.Current == v) || (loadedvessels.Current == targetV)) continue;
+                    if (loadedvessels.Current.vesselType == VesselType.Debris) continue;
+
+                    MissileFire wm = VesselModuleRegistry.GetModule<MissileFire>(loadedvessels.Current);
+
+                    if (!wm) continue;
+                    if (team.IsFriendly(wm.Team)) continue;
+
+                    VesselECMJInfo standOffJammer = loadedvessels.Current.gameObject.GetComponent<VesselECMJInfo>();
+
+                    if (standOffJammer && (standOffJammer.lockBreakStrength > 0))
+                    {
+                        Vector3 relPositionJammer = loadedvessels.Current.CoM - position;
+                        Vector3 relPositionTarget = targetV.CoM - position;
+
+                        // Modify  total lockbreak strength of standoff jammer by angle off the vector to target
+                        float angleModifier = Vector3.Dot(relPositionTarget.normalized, relPositionJammer.normalized);
+                        float sojLBS = Mathf.Clamp01(angleModifier * angleModifier * angleModifier);
+
+                        // Modify lockbreak strength by relative sqr distance
+                        sojLBS *= Mathf.Clamp(1 - Mathf.Log10(relPositionJammer.sqrMagnitude / relPositionTarget.sqrMagnitude), 0f, 3f);
+
+                        // Add up all stand up jammer lockbreaks
+                        standOffJammingMod += sojLBS * standOffJammer.lockBreakStrength;
+
+                        if (BDArmorySettings.DEBUG_RADAR) debugSOJ += sojLBS * standOffJammer.lockBreakStrength + ", " + loadedvessels.Current.GetDisplayName() + "\n";
+                    }
+                }
+
+            float modifiedSignature = Mathf.Max(signature - standOffJammingMod / 100f, 0f);
+
+            if ((BDArmorySettings.DEBUG_RADAR) && (modifiedSignature != signature)) Debug.Log("[BDArmory.RadarUtils]: Standoff Jamming: " + targetV.GetDisplayName() + " signature relative to " + v.GetDisplayName() + " modified from " + signature + " to " + modifiedSignature + "\n" + debugSOJ);
+
+            return modifiedSignature / signature;
+        }
+
+        /// <summary>
         /// Special scanning method that needs to be set manually on the radar: perform fixed boresight scan with locked fov.
         /// Called from ModuleRadar, which will then attempt to immediately lock onto the detected targets.
         /// Uses detectionCurve for rcs evaluation.
@@ -852,6 +912,7 @@ namespace BDArmory.Radar
                         TargetInfo ti = GetVesselRadarSignature(loadedvessels.Current);
                         float signature = ti.radarModifiedSignature;
                         signature *= GetRadarGroundClutterModifier(radar.radarGroundClutterFactor, radar.referenceTransform, ray.origin, loadedvessels.Current.CoM, ti);
+                        signature *= GetStandoffJammingModifier(radar.vessel, radar.weaponManager.Team, ray.origin, loadedvessels.Current, signature);
                         // no ecm lockbreak factor here
                         // no chaff factor here
 
@@ -906,7 +967,7 @@ namespace BDArmory.Radar
                 while (loadedvessels.MoveNext())
                 {
                     // ignore null, unloaded and ignored types
-                    if (loadedvessels.Current == null || !loadedvessels.Current.loaded) continue;
+                    if (loadedvessels.Current == null || loadedvessels.Current.packed || !loadedvessels.Current.loaded) continue;
 
                     // IFF code check to prevent friendly lock-on (neutral vessel without a weaponmanager WILL be lockable!)
                     MissileFire wm = VesselModuleRegistry.GetModule<MissileFire>(loadedvessels.Current);
@@ -934,6 +995,7 @@ namespace BDArmory.Radar
                         // no ground clutter modifier for missiles
                         signature *= ti.radarLockbreakFactor;    //multiply lockbreak factor from active ecm
                                                                  //do not multiply chaff factor here
+                        signature *= GetStandoffJammingModifier(missile.vessel, missile.Team, ray.origin, loadedvessels.Current, signature);
 
                         // evaluate range
                         float distance = (loadedvessels.Current.CoM - ray.origin).magnitude;
@@ -1005,7 +1067,7 @@ namespace BDArmory.Radar
                 while (loadedvessels.MoveNext())
                 {
                     // ignore null, unloaded and self
-                    if (loadedvessels.Current == null || !loadedvessels.Current.loaded) continue;
+                    if (loadedvessels.Current == null || loadedvessels.Current.packed || !loadedvessels.Current.loaded) continue;
                     if (loadedvessels.Current == myWpnManager.vessel) continue;
 
                     // ignore too close ones
@@ -1038,6 +1100,7 @@ namespace BDArmory.Radar
                                 float minLockSig = radar.radarLockTrackCurve.Evaluate(distance);
                                 signature *= ti.radarLockbreakFactor;    //multiply lockbreak factor from active ecm
                                                                          //do not multiply chaff factor here
+                                signature *= GetStandoffJammingModifier(radar.vessel, radar.weaponManager.Team, position, loadedvessels.Current, signature);
 
                                 if (signature > minLockSig && RadarCanDetect(radar, signature, distance)) // Must be able to detect and lock to lock targets
                                 {
@@ -1150,6 +1213,7 @@ namespace BDArmory.Radar
                 float signature = ti.radarModifiedSignature;
                 signature *= GetRadarGroundClutterModifier(radar.radarGroundClutterFactor, radar.referenceTransform, ray.origin, lockedVessel.CoM, ti);
                 signature *= ti.radarLockbreakFactor;    //multiply lockbreak factor from active ecm
+                if (radar.weaponManager is not null) signature *= GetStandoffJammingModifier(radar.vessel, radar.weaponManager.Team, ray.origin, lockedVessel, signature);
                 //do not multiply chaff factor here
 
                 // evaluate range
@@ -1228,7 +1292,7 @@ namespace BDArmory.Radar
                         //signature *= (1400 * 1400) / Mathf.Clamp((loadedvessels.Current.CoM - referenceTransform.position).sqrMagnitude, 90000, 36000000); //300 to 6000m - clamping sig past 6km; Commenting out as it makes tuning detection curves much easier
 
                         signature *= Mathf.Clamp(Vector3.Angle(loadedvessels.Current.transform.position - referenceTransform.position, -VectorUtils.GetUpDirection(referenceTransform.position)) / 90, 0.5f, 1.5f);
-                         //ground will mask thermal sig                        
+                        //ground will mask thermal sig                        
                         signature *= (GetRadarGroundClutterModifier(irst.GroundClutterFactor, irst.referenceTransform, position, loadedvessels.Current.CoM, tInfo) * (tInfo.isSplashed ? 12 : 1));
                         //cold ocean on the other hand...
 

@@ -20,7 +20,7 @@ namespace BDArmory.UI
 
         private bool showArmorWindow = false;
         private bool showHullMenu = false;
-        private string windowTitle = Localizer.Format("#LOC_BDArmory_ArmorTool");
+        private string windowTitle = StringUtils.Localize("#LOC_BDArmory_ArmorTool");
         private Rect windowRect = new Rect(300, 150, 300, 350);
         private float lineHeight = 20;
         private float height = 20;
@@ -112,27 +112,35 @@ namespace BDArmory.UI
             }
 
             armorBoxText = new GUIContent();
-            armorBoxText.text = Localizer.Format("#LOC_BDArmory_ArmorSelect");
+            armorBoxText.text = StringUtils.Localize("#LOC_BDArmory_ArmorSelect");
         }
 
         private void OnEditorShipModifiedEvent(ShipConstruct data)
         {
+            if (data is null) return;
             delayedRefreshVisuals = true;
             if (!delayedRefreshVisualsInProgress)
-                StartCoroutine(DelayedRefreshVisuals());
+                StartCoroutine(DelayedRefreshVisuals(data));
         }
 
         private bool delayedRefreshVisuals = false;
         private bool delayedRefreshVisualsInProgress = false;
-        IEnumerator DelayedRefreshVisuals()
+        IEnumerator DelayedRefreshVisuals(ShipConstruct ship)
         {
             delayedRefreshVisualsInProgress = true;
+            var wait = new WaitForFixedUpdate();
             while (delayedRefreshVisuals) // Wait until ship modified events stop coming.
             {
                 delayedRefreshVisuals = false;
-                yield return null;
-                yield return null; // Two yield nulls to wait for HP changes to delayed ship modified events in HitpointTracker
+                yield return wait;
             }
+            yield return new WaitUntilFixed(() =>
+                ship == null || ship.Parts == null || ship.Parts.TrueForAll(p =>
+                {
+                    if (p == null) return true;
+                    var hp = p.GetComponent<Damage.HitpointTracker>();
+                    return hp == null || hp.Ready;
+                })); // Wait for HP changes to delayed ship modified events in HitpointTracker
             delayedRefreshVisualsInProgress = false;
 
             if (showArmorWindow)
@@ -166,10 +174,7 @@ namespace BDArmory.UI
         IEnumerator ToolbarButtonRoutine()
         {
             if (toolbarButton || (!HighLogic.LoadedSceneIsEditor)) yield break;
-            while (!ApplicationLauncher.Ready)
-            {
-                yield return null;
-            }
+            yield return new WaitUntil(() => ApplicationLauncher.Ready);
 
             AddToolbarButton();
         }
@@ -236,7 +241,7 @@ namespace BDArmory.UI
 
             style.fontStyle = FontStyle.Normal;
 
-            if (GUI.Button(new Rect(10, line * lineHeight, 280, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorHPVisualizer"), HPvisualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+            if (GUI.Button(new Rect(10, line * lineHeight, 280, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorHPVisualizer"), HPvisualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
             {
                 HPvisualizer = !HPvisualizer;
                 if (HPvisualizer)
@@ -251,7 +256,7 @@ namespace BDArmory.UI
 
             if (!BDArmorySettings.RESET_ARMOUR)
             {
-                if (GUI.Button(new Rect(10, line * lineHeight, 280, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorVisualizer"), Visualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+                if (GUI.Button(new Rect(10, line * lineHeight, 280, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorVisualizer"), Visualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
                 {
                     Visualizer = !Visualizer;
                     if (Visualizer)
@@ -266,7 +271,7 @@ namespace BDArmory.UI
 
             if (!BDArmorySettings.RESET_HULL)
             {
-                if (GUI.Button(new Rect(10, line * lineHeight, 280, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorHullVisualizer"), HullVisualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+                if (GUI.Button(new Rect(10, line * lineHeight, 280, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorHullVisualizer"), HullVisualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
                 {
                     HullVisualizer = !HullVisualizer;
                     if (HullVisualizer)
@@ -281,7 +286,7 @@ namespace BDArmory.UI
 
             if (!FerramAerospace.hasFAR)
             {
-                if (GUI.Button(new Rect(10, line * lineHeight, 280, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorLiftVisualizer"), LiftVisualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+                if (GUI.Button(new Rect(10, line * lineHeight, 280, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorLiftVisualizer"), LiftVisualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
                 {
                     LiftVisualizer = !LiftVisualizer;
                     if (LiftVisualizer)
@@ -303,7 +308,7 @@ namespace BDArmory.UI
 
             if (!BDArmorySettings.RESET_ARMOUR)
             {
-                GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorThickness") + ": " + Thickness + "mm", style);
+                GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorThickness") + ": " + Thickness + "mm", style);
                 line++;
                 if (!useNumField)
                 {
@@ -320,15 +325,15 @@ namespace BDArmory.UI
                     line++;
                 }
                 line += 0.75f;
-                GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorTotalMass") + ": " + totalArmorMass.ToString("0.00"), style);
+                GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorTotalMass") + ": " + totalArmorMass.ToString("0.00"), style);
                 line++;
-                GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorTotalCost") + ": " + Mathf.Round(totalArmorCost), style);
+                GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorTotalCost") + ": " + Mathf.Round(totalArmorCost), style);
                 if (!FerramAerospace.hasFAR)
                 {
                     line++;
-                    GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorTotalLift") + ": " + totalLift.ToString("0.00"), style);
+                    GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorTotalLift") + ": " + totalLift.ToString("0.00"), style);
                     line++;
-                    GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorWingLoading") + ": " + wingLoading.ToString("0.00"), style);
+                    GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorWingLoading") + ": " + wingLoading.ToString("0.00"), style);
                 }
                 line += 1.5f;
             }
@@ -344,7 +349,7 @@ namespace BDArmory.UI
                     thicknessField["Thickness"].maxValue = maxThickness;
                     CalculateArmorMass();
                 }
-                GUI.Label(new Rect(40, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorSelect"), style);
+                GUI.Label(new Rect(40, line * lineHeight, 300, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorSelect"), style);
                 line++;
                 if (!armorslist)
                 {
@@ -376,44 +381,44 @@ namespace BDArmory.UI
                 line += 0.5f;
                 if (GameSettings.ADVANCED_TWEAKABLES)
                 {
-                    ArmorStats = GUI.Toggle(new Rect(10, (line + armorLines) * lineHeight, 280, lineHeight), ArmorStats, Localizer.Format("#LOC_BDArmory_ArmorStats"), ArmorStats ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
+                    ArmorStats = GUI.Toggle(new Rect(10, (line + armorLines) * lineHeight, 280, lineHeight), ArmorStats, StringUtils.Localize("#LOC_BDArmory_ArmorStats"), ArmorStats ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
                     StatLines++;
                     if (ArmorStats)
                     {
                         if (selectedArmor != "None")
                         {
-                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 120, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorStrength") + " " + ArmorStrength, style);
+                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 120, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorStrength") + " " + ArmorStrength, style);
                             //StatLines++;
-                            GUI.Label(new Rect(135, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorHardness") + " " + ArmorHardness, style);
+                            GUI.Label(new Rect(135, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorHardness") + " " + ArmorHardness, style);
                             StatLines++;
-                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 120, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorDuctility") + " " + ArmorDuctility, style);
+                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 120, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorDuctility") + " " + ArmorDuctility, style);
                             //StatLines++;
-                            GUI.Label(new Rect(135, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorDiffusivity") + " " + ArmorDiffusivity, style);
+                            GUI.Label(new Rect(135, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorDiffusivity") + " " + ArmorDiffusivity, style);
                             StatLines++;
-                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 120, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorMaxTemp") + " " + ArmorMaxTemp + " K", style);
+                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 120, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorMaxTemp") + " " + ArmorMaxTemp + " K", style);
                             //StatLines++;
-                            GUI.Label(new Rect(135, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorDensity") + " " + ArmorDensity + " kg/m3", style);
+                            GUI.Label(new Rect(135, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorDensity") + " " + ArmorDensity + " kg/m3", style);
                             StatLines++;
-                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 120, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorCost") + " " + ArmorCost + "/m3", style);
+                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 120, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorCost") + " " + ArmorCost + "/m3", style);
                             StatLines++;
-                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), Localizer.Format("#LOC_BDArmory_BulletResist") + ": " + (relValue < 1.2 ? (relValue < 0.5 ? "* * * * *" : "* * * *") : (relValue > 2.8 ? (relValue > 4 ? "*" : "* *") : "* * *")), style);
+                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), StringUtils.Localize("#LOC_BDArmory_BulletResist") + ": " + (relValue < 1.2 ? (relValue < 0.5 ? "* * * * *" : "* * * *") : (relValue > 2.8 ? (relValue > 4 ? "*" : "* *") : "* * *")), style);
                             StatLines++;
 
-                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), Localizer.Format("#LOC_BDArmory_ExplosionResist") + ": " + ((ArmorDuctility < 0.05f && ArmorHardness < 500) ? "* *" : (exploValue > 8000 ? (exploValue > 20000 ? "* * * * *" : "* * * *") : (exploValue < 4000 ? (exploValue < 2000 ? "*" : "* *") : "* * *"))), style);
+                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), StringUtils.Localize("#LOC_BDArmory_ExplosionResist") + ": " + ((ArmorDuctility < 0.05f && ArmorHardness < 500) ? "* *" : (exploValue > 8000 ? (exploValue > 20000 ? "* * * * *" : "* * * *") : (exploValue < 4000 ? (exploValue < 2000 ? "*" : "* *") : "* * *"))), style);
                             StatLines++;
 
-                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), Localizer.Format("#LOC_BDArmory_LaserResist") + ": " + (ArmorDiffusivity > 150 ? (ArmorDiffusivity > 199 ? "* * * * *" : "* * * *") : (ArmorDiffusivity < 50 ? (ArmorDiffusivity < 10 ? "*" : "* *") : "* * *")), style);
+                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), StringUtils.Localize("#LOC_BDArmory_LaserResist") + ": " + (ArmorDiffusivity > 150 ? (ArmorDiffusivity > 199 ? "* * * * *" : "* * * *") : (ArmorDiffusivity < 50 ? (ArmorDiffusivity < 10 ? "*" : "* *") : "* * *")), style);
                             StatLines++;
 
                             if (ArmorDuctility < 0.05)
                             {
-                                if (ArmorHardness > 500) GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorShatterWarning"), style);
+                                if (ArmorHardness > 500) GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorShatterWarning"), style);
                                 StatLines++;
                             }
                         }
                         if (selectedArmor != "Mild Steel" && selectedArmor != "None")
                         {
-                            GUI.Label(new Rect(10, (line + armorLines + StatLines) * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_EquivalentThickness") + ": " + relValue * Thickness + "mm", style);
+                            GUI.Label(new Rect(10, (line + armorLines + StatLines) * lineHeight, 300, lineHeight), StringUtils.Localize("#LOC_BDArmory_EquivalentThickness") + ": " + relValue * Thickness + "mm", style);
                             line++;
                         }
                     }
@@ -424,12 +429,12 @@ namespace BDArmory.UI
             {
                 line += 0.5f;
                 showHullMenu = GUI.Toggle(new Rect(10, (line + armorLines + StatLines) * lineHeight, 280, lineHeight),
-                    showHullMenu, Localizer.Format("#LOC_BDArmory_Armor_HullMat"), showHullMenu ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
+                    showHullMenu, StringUtils.Localize("#LOC_BDArmory_Armor_HullMat"), showHullMenu ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
                 HullLines += 1.15f;
 
                 if (showHullMenu)
                 {
-                    if (isSteel != (isSteel = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight), isSteel, Localizer.Format("#LOC_BDArmory_Steel"), isSteel ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)))
+                    if (isSteel != (isSteel = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight), isSteel, StringUtils.Localize("#LOC_BDArmory_Steel"), isSteel ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)))
                     {
                         if (isSteel)
                         {
@@ -440,7 +445,7 @@ namespace BDArmory.UI
                         }
                     }
                     HullLines += 1.15f;
-                    if (isWood != (isWood = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight), isWood, Localizer.Format("#LOC_BDArmory_Wood"), isWood ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)))
+                    if (isWood != (isWood = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight), isWood, StringUtils.Localize("#LOC_BDArmory_Wood"), isWood ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)))
                     {
                         if (isWood)
                         {
@@ -451,7 +456,7 @@ namespace BDArmory.UI
                         }
                     }
                     HullLines += 1.15f;
-                    if (isAluminium != (isAluminium = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight), isAluminium, Localizer.Format("#LOC_BDArmory_Aluminium"), isAluminium ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)))
+                    if (isAluminium != (isAluminium = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight), isAluminium, StringUtils.Localize("#LOC_BDArmory_Aluminium"), isAluminium ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)))
                     {
                         if (isAluminium)
                         {
@@ -530,8 +535,9 @@ namespace BDArmory.UI
                                 armor.ArmorModified(null, null);
                                 modified = true;
                             }
-                            totalArmorMass += armor.armorMass;
-                            totalArmorCost += armor.armorCost;
+                            StartCoroutine(calcArmorMassAndCost());
+                            //totalArmorMass += armor.armorMass; //these aren't updating due to ArmorModified getting called next Update tick, so armorMass/Cost hasn't updated yet for grabbing the new value
+                            //totalArmorCost += armor.armorCost;
                         }
                         else
                         {
@@ -584,6 +590,23 @@ namespace BDArmory.UI
                     }
                 }
             wingLoading = totalLift / EditorLogic.fetch.ship.GetTotalMass();
+        }
+
+        IEnumerator calcArmorMassAndCost()
+        {
+            yield return new WaitForEndOfFrame();
+            yield return new WaitForEndOfFrame();
+            using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator())
+                while (parts.MoveNext())
+                {
+                    if (parts.Current.IsMissile()) continue;
+                    HitpointTracker armor = parts.Current.GetComponent<HitpointTracker>();
+                    if (armor != null)
+                    {
+                        totalArmorMass += armor.armorMass;
+                        totalArmorCost += armor.armorCost;
+                    }
+                }
         }
 
         void Visualize()

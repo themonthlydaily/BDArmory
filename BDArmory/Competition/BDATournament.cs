@@ -826,6 +826,7 @@ namespace BDArmory.Competition
             if (runTournamentCoroutine != null)
                 StopCoroutine(runTournamentCoroutine);
             runTournamentCoroutine = StartCoroutine(RunTournamentCoroutine());
+            if (BDArmorySettings.AUTO_DISABLE_UI) SetGameUI(false);
         }
 
         public void StopTournament()
@@ -836,6 +837,7 @@ namespace BDArmory.Competition
                 runTournamentCoroutine = null;
             }
             tournamentStatus = heatsRemaining > 0 ? TournamentStatus.Stopped : TournamentStatus.Completed;
+            if (BDArmorySettings.AUTO_DISABLE_UI) SetGameUI(true);
         }
 
         IEnumerator RunTournamentCoroutine()
@@ -862,7 +864,7 @@ namespace BDArmory.Competition
                         if (BDArmorySettings.WAYPOINTS_MODE || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 50))
                             yield return ExecuteWaypointHeat(roundIndex, heatIndex);
                         else
-                            yield return ExecuteHeat(roundIndex, heatIndex);
+                            yield return ExecuteHeat(roundIndex, heatIndex, attempts == 3 && BDArmorySettings.COMPETITION_START_DESPITE_FAILURES); // On the third attempt, start despite failures if the option is set.
                         if (!competitionStarted)
                             switch (CircularSpawning.Instance.spawnFailureReason)
                             {
@@ -956,6 +958,7 @@ namespace BDArmory.Competition
             BDACompetitionMode.Instance.competitionStatus.Add(message);
             Debug.Log("[BDArmory.BDATournament]: " + message);
             tournamentStatus = TournamentStatus.Completed;
+            if (BDArmorySettings.AUTO_DISABLE_UI) SetGameUI(true);
             var partialStatePath = Path.ChangeExtension(Path.Combine(Path.GetDirectoryName(TournamentState.defaultStateFile), "Unfinished Tournaments", Path.GetFileName(stateFile)), $".state-{tournamentID}");
             if (File.Exists(partialStatePath)) File.Delete(partialStatePath); // Remove the now completed tournament state file.
 
@@ -988,7 +991,7 @@ namespace BDArmory.Competition
             yield return new WaitWhile(() => TournamentCoordinator.Instance.IsRunning);
         }
 
-        IEnumerator ExecuteHeat(int roundIndex, int heatIndex)
+        IEnumerator ExecuteHeat(int roundIndex, int heatIndex, bool startDespiteFailures = false)
         {
             CircularSpawning.Instance.SpawnAllVesselsOnce(tournamentState.rounds[roundIndex][heatIndex]);
             while (CircularSpawning.Instance.vesselsSpawning)
@@ -1015,12 +1018,12 @@ namespace BDArmory.Competition
                         BDACompetitionMode.Instance.StartRapidDeployment(0);
                         break;
                     default:
-                        BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE);
+                        BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE, startDespiteFailures);
                         break;
                 }
             }
             else
-                BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE);
+                BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE, startDespiteFailures);
             yield return new WaitForFixedUpdate(); // Give the competition start a frame to get going.
 
             // start timer coroutine for the duration specified in settings UI
@@ -1134,6 +1137,17 @@ namespace BDArmory.Competition
 
             warpingInProgress = false;
         }
+
+        void SetGameUI(bool enable)
+        { if (isActiveAndEnabled) StartCoroutine(SetGameUIWorker(enable)); }
+        IEnumerator SetGameUIWorker(bool enable)
+        {
+            // On first entering flight mode, KSP issues a couple of ShowUI after a few seconds. WTF KSP devs?!
+            yield return new WaitUntil(() => BDACompetitionMode.Instance is not null && (BDACompetitionMode.Instance.competitionStarting || BDACompetitionMode.Instance.competitionIsActive));
+            // Also, triggering ShowUI/HideUI doesn't trigger the onShowUI/onHideUI events, so we need to fire them off ourselves.
+            if (enable) { KSP.UI.UIMasterController.Instance.ShowUI(); GameEvents.onShowUI.Fire(); }
+            else { KSP.UI.UIMasterController.Instance.HideUI(); GameEvents.onHideUI.Fire(); }
+        }
     }
 
     /// <summary>
@@ -1196,7 +1210,7 @@ namespace BDArmory.Competition
         {
             yield return new WaitForSeconds(0.5f);
             var tic = Time.realtimeSinceStartup;
-            yield return new WaitUntil(() => (BDArmorySettings.ready || Time.realtimeSinceStartup - tic > 10)); // Wait until the settings are ready or timed out.
+            yield return new WaitUntil(() => (BDArmorySettings.ready || Time.realtimeSinceStartup - tic > 30)); // Wait until the settings are ready or timed out.
             Debug.Log($"[BDArmory.BDATournament]: BDArmory settings loaded, auto-load to KSC: {BDArmorySettings.AUTO_LOAD_TO_KSC}, auto-resume tournaments: {BDArmorySettings.AUTO_RESUME_TOURNAMENT}, auto-resume evolution: {BDArmorySettings.AUTO_RESUME_EVOLUTION}.");
             if (BDArmorySettings.AUTO_RESUME_TOURNAMENT || BDArmorySettings.AUTO_RESUME_EVOLUTION || BDArmorySettings.AUTO_LOAD_TO_KSC)
             { yield return StartCoroutine(AutoResumeTournament()); }

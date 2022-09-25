@@ -9,11 +9,16 @@ Localization files are easy to make. Create a copy of the BDarmory/Localization/
 * "es-mx.cfg" for Mexican Spanish
 * "pt.cfg" for Portugese
 * "fr.cfg" for French
-* "de.cfg" for German
+* "de-de.cfg" for German
 * "it.cfg" for Italian
 * "ja.cfg" for Japanese
 * "ru.cfg" for Russian
 * "zh-cn.cfg" for Simplified Chinese
 
-
-
+Note: filename is not too important, the important part is the language identifier inside the `Localization` block, e.g.,
+```
+Localization
+{
+    de-de
+    {
+```

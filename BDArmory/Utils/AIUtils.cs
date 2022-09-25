@@ -21,7 +21,7 @@ namespace BDArmory.Utils
         {
             Vector3 pos = v.CoM;
             pos += v.Velocity() * time;
-            pos += 0.5f * v.acceleration * time * time;
+            pos += 0.5f * v.acceleration_immediate * time * time;
             return pos;
         }
 
@@ -158,6 +158,34 @@ namespace BDArmory.Utils
             float back = positionFactor * lag * -1;
 
             return new Vector3(right, back, 0);
+        }
+
+        public static Vessel VesselClosestTo(Vector3 position, bool useGeoCoords = false)
+        {
+            Vessel closestV = null;
+            float closestSqrDist = float.MaxValue;
+            if (FlightGlobals.Vessels == null) return null;
+            if (useGeoCoords)
+            {
+                if (FlightGlobals.currentMainBody is null) return null;
+                position = (Vector3)FlightGlobals.currentMainBody.GetWorldSurfacePosition(position.x, position.y, position.z);
+            }
+            using (var v = FlightGlobals.Vessels.GetEnumerator())
+                while (v.MoveNext())
+                {
+                    if (v.Current == null || !v.Current.loaded || v.Current.packed) continue;
+                    if (VesselModuleRegistry.ignoredVesselTypes.Contains(v.Current.vesselType)) continue;
+                    var wms = VesselModuleRegistry.GetMissileFire(v.Current);
+                    if (wms != null)
+                    {
+                        if (Vector3.SqrMagnitude(v.Current.vesselTransform.position - position) < closestSqrDist)
+                        {
+                            closestSqrDist = Vector3.SqrMagnitude(v.Current.vesselTransform.position - position);
+                            closestV = v.Current;
+                        }
+                    }
+                }
+            return closestV;
         }
 
         [Flags]

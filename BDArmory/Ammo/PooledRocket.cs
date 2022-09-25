@@ -69,7 +69,7 @@ namespace BDArmory.Bullets
         public string rocketSoundPath;
 
         float startTime;
-        float lifeTime = 10;
+        public float lifeTime = 10;
 
         Vector3 prevPosition;
         public Vector3 currPosition;
@@ -83,8 +83,8 @@ namespace BDArmory.Bullets
         public bool hasDetonated = false;
         public int penTicker = 0;
         private Part CurrentPart = null;
-        private int collisionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23); // Why 19 and 23?
-        private int explosionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19); // Why 19 and not EVA?
+        private const int collisionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23 | LayerMasks.Wheels); // Why 19 and 23?
+        private const int explosionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19 | LayerMasks.Wheels); // Why 19 and not EVA?
 
         private float distanceFromStart = 0;
 
@@ -103,7 +103,9 @@ namespace BDArmory.Bullets
 
         public AudioSource audioSource;
 
-        HashSet<Vessel> craftHit = new HashSet<Vessel>();
+        static RaycastHit[] hits = new RaycastHit[10];
+        static Collider[] proximityOverlapSphereColliders = new Collider[10];
+        static Collider[] detonateOverlapSphereColliders = new Collider[10];
         void OnEnable()
         {
             BDArmorySetup.numberOfParticleEmitters++;
@@ -184,7 +186,7 @@ namespace BDArmory.Bullets
             {
                 HERatio = 0;
             }
-            if (caliber > 60)
+            if (caliber >= BDArmorySettings.APS_THRESHOLD) //if (caliber > 60)
             {
                 BDATargetManager.FiredRockets.Add(this);
             }
@@ -231,7 +233,7 @@ namespace BDArmory.Bullets
             sourceVesselName = null;
             spawnTransform = null;
             CurrentPart = null;
-            if (caliber > 60)
+            if (caliber >= BDArmorySettings.APS_THRESHOLD) //if (caliber > 60)
             {
                 BDATargetManager.FiredRockets.Remove(this);
             }
@@ -332,10 +334,15 @@ namespace BDArmory.Bullets
             currPosition = transform.position;
             float dist = (currPosition - prevPosition).magnitude;
             RocketRay = new Ray(prevPosition, currPosition - prevPosition);
-            var hits = Physics.RaycastAll(RocketRay, dist, collisionLayerMask);
-            if (hits.Length > 0)
+            var hitCount = Physics.RaycastNonAlloc(RocketRay, hits, dist, collisionLayerMask);
+            if (hitCount == hits.Length) // If there's a whole bunch of stuff in the way (unlikely), then we need to increase the size of our hits buffer.
             {
-                var orderedHits = hits.OrderBy(x => x.distance);
+                hits = Physics.RaycastAll(RocketRay, dist, collisionLayerMask);
+                hitCount = hits.Length;
+            }
+            if (hitCount > 0)
+            {
+                var orderedHits = hits.Take(hitCount).OrderBy(x => x.distance);
 
                 using (var hitsEnu = orderedHits.GetEnumerator())
                 {
@@ -395,7 +402,7 @@ namespace BDArmory.Bullets
 
                         if (ProjectileUtils.CheckGroundHit(hitPart, hit, caliber))
                         {
-                            ProjectileUtils.CheckBuildingHit(hit, rocketMass * 1000, rb.velocity, bulletDmgMult);
+                            if (!BDArmorySettings.PAINTBALL_MODE) ProjectileUtils.CheckBuildingHit(hit, rocketMass * 1000, rb.velocity, bulletDmgMult);
                             Detonate(hit.point, false);
                             return;
                         }
@@ -450,8 +457,15 @@ namespace BDArmory.Bullets
                             //calculate bullet deformation
                             float newCaliber = ProjectileUtils.CalculateDeformation(armorStrength, bulletEnergy, caliber, impactVelocity, hardness, Density, HERatio, 1, false);
                             //calculate penetration
-                            //penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, rocketMass * 1000, impactVelocity, Ductility, Density, Strength, thickness, 1);
-                            penetration = ProjectileUtils.CalculatePenetration(caliber, impactVelocity, rocketMass * 1000f, 1f , Strength, vFactor, muParam1, muParam2, muParam3);
+                            /*if (Ductility > 0.05)
+                            {*/
+                            penetration = ProjectileUtils.CalculatePenetration(caliber, impactVelocity, rocketMass * 1000f, 1f, Strength, vFactor, muParam1, muParam2, muParam3);
+                            /*}
+                            else
+                            {
+                                penetration = ProjectileUtils.CalculateCeramicPenetration(caliber, newCaliber, rocketMass * 1000, impactVelocity, Ductility, Density, Strength, thickness, 1);
+                            }*/
+
                             caliber = newCaliber; //update bullet with new caliber post-deformation(if any)
                             penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration, thickness);
 
@@ -612,13 +626,29 @@ namespace BDArmory.Bullets
         {
             bool detonate = false;
 
+            if (isAPSprojectile && (tgtShell != null || tgtRocket != null))
+            {
+                if (Vector3.Distance(transform.position, tgtShell != null ? tgtShell.transform.position : tgtRocket.transform.position) < detonationRange / 2)
+                {
+                    if (BDArmorySettings.DEBUG_WEAPONS)
+                        Debug.Log("[BDArmory.PooledRocket]: rocket proximity to APS target | Distance overlap = " + detonationRange + "| tgt name = " + tgtShell != null ? tgtShell.name : tgtRocket.name);
+                    return detonate = true;
+                }
+            }
+
             if (distanceFromStart <= blastRadius * 2) return false;
 
             if (!(((explosive || nuclear) && tntMass > 0) || beehive)) return false;
 
             if (flak)
             {
-                using (var hitsEnu = Physics.OverlapSphere(transform.position, detonationRange, explosionLayerMask).AsEnumerable().GetEnumerator())
+                var overlapSphereColliderCount = Physics.OverlapSphereNonAlloc(transform.position, detonationRange, proximityOverlapSphereColliders, explosionLayerMask);
+                if (overlapSphereColliderCount == proximityOverlapSphereColliders.Length)
+                {
+                    proximityOverlapSphereColliders = Physics.OverlapSphere(transform.position, detonationRange, explosionLayerMask);
+                    overlapSphereColliderCount = proximityOverlapSphereColliders.Length;
+                }
+                using (var hitsEnu = proximityOverlapSphereColliders.Take(overlapSphereColliderCount).GetEnumerator())
                 {
                     while (hitsEnu.MoveNext())
                     {
@@ -642,15 +672,6 @@ namespace BDArmory.Bullets
                         {
                             Debug.LogWarning("[BDArmory.PooledRocket]: Exception thrown in ProximityAirDetonation: " + e.Message + "\n" + e.StackTrace);
                         }
-                    }
-                }
-                if (isAPSprojectile && (tgtShell != null || tgtRocket != null))
-                {
-                    if (Vector3.Distance(transform.position, tgtShell != null ? tgtShell.transform.position : tgtRocket.transform.position) < detonationRange / 2)
-                    {
-                        if (BDArmorySettings.DEBUG_WEAPONS)
-                            Debug.Log("[BDArmory.PooledRocket]: rocket proximity to APS target | Distance overlap = " + detonationRange + "| tgt name = " + tgtShell != null ? tgtShell.name : tgtRocket.name);
-                        return detonate = true;
                     }
                 }
             }
@@ -701,7 +722,13 @@ namespace BDArmory.Bullets
                         }
                         if (gravitic)
                         {
-                            using (var hitsEnu = Physics.OverlapSphere(transform.position, blastRadius, explosionLayerMask).AsEnumerable().GetEnumerator())
+                            var overlapSphereColliderCount = Physics.OverlapSphereNonAlloc(transform.position, blastRadius, detonateOverlapSphereColliders, explosionLayerMask);
+                            if (overlapSphereColliderCount == detonateOverlapSphereColliders.Length)
+                            {
+                                detonateOverlapSphereColliders = Physics.OverlapSphere(transform.position, blastRadius, explosionLayerMask);
+                                overlapSphereColliderCount = detonateOverlapSphereColliders.Length;
+                            }
+                            using (var hitsEnu = detonateOverlapSphereColliders.Take(overlapSphereColliderCount).GetEnumerator())
                             {
                                 while (hitsEnu.MoveNext())
                                 {
@@ -744,14 +771,20 @@ namespace BDArmory.Bullets
                                         if (BDArmorySettings.DEBUG_WEAPONS)
                                             Debug.Log("[BDArmory.Rocket]: Applying fire to " + p.name + " at distance " + distance + "m, for " + BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)) + " seconds"); ;
                                     }
+                                    if (BDArmorySettings.DEBUG_WEAPONS)
+                                        Debug.Log("[Rocket] incendiary raytrace: " + hit.point.x + "; " + hit.point.y + "; " + hit.point.z);
                                 }
-                                if (BDArmorySettings.DEBUG_WEAPONS)
-                                    Debug.Log("[Rocket] incendiary raytrace: " + hit.point.x + "; " + hit.point.y + "; " + hit.point.z);
                             }
                         }
                         if (concussion || EMP || choker)
                         {
-                            using (var hitsEnu = Physics.OverlapSphere(transform.position, 25, explosionLayerMask).AsEnumerable().GetEnumerator())
+                            var overlapSphereColliderCount = Physics.OverlapSphereNonAlloc(transform.position, 25, detonateOverlapSphereColliders, explosionLayerMask);
+                            if (overlapSphereColliderCount == detonateOverlapSphereColliders.Length)
+                            {
+                                detonateOverlapSphereColliders = Physics.OverlapSphere(transform.position, 25, explosionLayerMask);
+                                overlapSphereColliderCount = detonateOverlapSphereColliders.Length;
+                            }
+                            using (var hitsEnu = detonateOverlapSphereColliders.Take(overlapSphereColliderCount).GetEnumerator())
                             {
                                 var craftHit = new HashSet<Vessel>();
                                 while (hitsEnu.MoveNext())
@@ -798,7 +831,7 @@ namespace BDArmory.Bullets
                         else
                         {
                             if (nuclear)
-                                NukeFX.CreateExplosion(currPosition, ExplosionSourceType.BattleDamage, sourceVesselName, rocket.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
+                                NukeFX.CreateExplosion(currPosition, ExplosionSourceType.Rocket, sourceVesselName, rocket.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
                             else
                                 ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, direction, -1, false, rocketMass * 1000, -1, dmgMult, shaped ? "shapedcharge" : "standard", PenetratingHit);
                         }
@@ -857,7 +890,6 @@ namespace BDArmory.Bullets
                     pBullet.caliber = sBullet.caliber;
                     pBullet.bulletVelocity = sBullet.bulletVelocity;
                     pBullet.bulletMass = sBullet.bulletMass;
-                    pBullet.explosive = sBullet.explosive;
                     pBullet.incendiary = sBullet.incendiary;
                     pBullet.apBulletMod = sBullet.apBulletMod;
                     pBullet.bulletDmgMult = bulletDmgMult;
@@ -880,7 +912,7 @@ namespace BDArmory.Bullets
                     pBullet.tracerLuminance = 1.75f;
                     pBullet.bulletDrop = true;
 
-                    if (sBullet.explosive)
+                    if (sBullet.tntMass > 0)
                     {
                         pBullet.explModelPath = explModelPath;
                         pBullet.explSoundPath = explSoundPath;

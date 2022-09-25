@@ -261,7 +261,7 @@ namespace BDArmory.WeaponMounts
 
         IEnumerator DelayedMoveStackNode(float offset)
         {
-            yield return null;
+            yield return new WaitForFixedUpdate();
             MoveEndStackNode(offset);
         }
 
@@ -528,7 +528,7 @@ namespace BDArmory.WeaponMounts
             rdyMissile = null;
             railIndex = index;
 
-            yield return new WaitForSeconds(rotationDelay);
+            yield return new WaitForSecondsFixed(rotationDelay);
 
             Quaternion targetRot = Quaternion.Euler(0, 0, (float)index * -railAngle);
 

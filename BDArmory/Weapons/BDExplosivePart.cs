@@ -40,12 +40,12 @@ namespace BDArmory.Weapons
             if (Armed)
             {
                 guiStatusString = "ARMED";
-                Events["Toggle"].guiName = Localizer.Format("Disarm Warhead");//"Enable Engage Options"
+                Events["Toggle"].guiName = StringUtils.Localize("Disarm Warhead");//"Enable Engage Options"
             }
             else
             {
                 guiStatusString = "Safe";
-                Events["Toggle"].guiName = Localizer.Format("Arm Warhead");//"Disable Engage Options"
+                Events["Toggle"].guiName = StringUtils.Localize("Arm Warhead");//"Disable Engage Options"
             }
         }
 
@@ -60,12 +60,12 @@ namespace BDArmory.Weapons
             if (IFF_On)
             {
                 guiIFFString = "Ignore Allies";
-                Events["ToggleIFF"].guiName = Localizer.Format("Disable IFF");//"Enable Engage Options"
+                Events["ToggleIFF"].guiName = StringUtils.Localize("Disable IFF");//"Enable Engage Options"
             }
             else
             {
                 guiIFFString = "Indescriminate";
-                Events["ToggleIFF"].guiName = Localizer.Format("Enable IFF");//"Disable Engage Options"
+                Events["ToggleIFF"].guiName = StringUtils.Localize("Enable IFF");//"Disable Engage Options"
             }
         }
 
@@ -103,7 +103,7 @@ namespace BDArmory.Weapons
         {
             Armed = true;
             guiStatusString = "ARMED"; // Future me, this needs localization at some point
-            Events["Toggle"].guiName = Localizer.Format("Disarm Warhead");//"Enable Engage Options"
+            Events["Toggle"].guiName = StringUtils.Localize("Disarm Warhead");//"Enable Engage Options"
         }
 
         [KSPAction("Detonate")]
@@ -134,6 +134,7 @@ namespace BDArmory.Weapons
         private double previousMass = -1;
 
         public bool hasDetonated;
+        Collider[] proximityHitColliders = new Collider[100];
 
         public override void OnStart(StartState state)
         {
@@ -182,22 +183,22 @@ namespace BDArmory.Weapons
                 if (Armed)
                 {
                     guiStatusString = "ARMED";
-                    Events["Toggle"].guiName = Localizer.Format("Disarm Warhead");
+                    Events["Toggle"].guiName = StringUtils.Localize("Disarm Warhead");
                 }
                 else
                 {
                     guiStatusString = "Safe";
-                    Events["Toggle"].guiName = Localizer.Format("Arm Warhead");
+                    Events["Toggle"].guiName = StringUtils.Localize("Arm Warhead");
                 }
                 if (IFF_On)
                 {
                     guiIFFString = "Ignore Allies";
-                    Events["ToggleIFF"].guiName = Localizer.Format("Disable IFF");
+                    Events["ToggleIFF"].guiName = StringUtils.Localize("Disable IFF");
                 }
                 else
                 {
                     guiIFFString = "Indescriminate";
-                    Events["ToggleIFF"].guiName = Localizer.Format("Enable IFF");
+                    Events["ToggleIFF"].guiName = StringUtils.Localize("Enable IFF");
                 }
                 if (manualOverride)
                 {
@@ -237,43 +238,37 @@ namespace BDArmory.Weapons
             {
                 OnUpdateEditor();
             }
-            if (hasDetonated)
-            {
-                this.part.explode();
-            }
         }
 
         public override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
-            if (HighLogic.LoadedSceneIsFlight)
+            if (!HighLogic.LoadedSceneIsFlight) return;
+            if (!isMissile)
             {
-                if (!isMissile)
+                if (IFF_On)
                 {
-                    if (IFF_On)
+                    updateTimer -= Time.fixedDeltaTime;
+                    if (updateTimer < 0)
                     {
-                        updateTimer -= Time.fixedDeltaTime;
-                        if (updateTimer < 0)
-                        {
-                            GetTeamID(); //have this only called once a sec
-                            updateTimer = 1.0f;    //next update in half a sec only
-                        }
+                        GetTeamID(); //have this only called once a sec
+                        updateTimer = 1.0f;    //next update in half a sec only
                     }
-                    if (manualOverride) // don't call proximity code if a missile/MMG, use theirs
+                }
+                if (manualOverride) // don't call proximity code if a missile/MMG, use theirs
+                {
+                    if (Armed)
                     {
-                        if (Armed)
+                        if (VesselModuleRegistry.GetModule<MissileFire>(vessel) == null)
                         {
-                            if (VesselModuleRegistry.GetModule<MissileFire>(vessel) == null)
+                            if (sourcevessel != null && sourcevessel != part.vessel)
                             {
-                                if (sourcevessel != null && sourcevessel != part.vessel)
-                                {
-                                    distanceFromStart = Vector3.Distance(part.vessel.transform.position, sourcevessel.transform.position);
-                                }
+                                distanceFromStart = Vector3.Distance(part.vessel.transform.position, sourcevessel.transform.position);
                             }
-                            if (Checkproximity(distanceFromStart))
-                            {
-                                Detonate();
-                            }
+                        }
+                        if (Checkproximity(distanceFromStart))
+                        {
+                            Detonate();
                         }
                     }
                 }
@@ -323,7 +318,7 @@ namespace BDArmory.Weapons
         }
         public void DetonateIfPossible()
         {
-            if (part == null) return;
+            if (!HighLogic.LoadedSceneIsFlight || part == null) return;
             if (!hasDetonated && Armed)
             {
                 Vector3 direction = default(Vector3);
@@ -337,6 +332,7 @@ namespace BDArmory.Weapons
                 hasDetonated = true;
                 if (BDArmorySettings.DEBUG_MISSILES)
                     Debug.Log("[BDArmory.BDExplosivePart]: " + part + " (" + (uint)(part.GetInstanceID()) + ") from " + (sourcevessel != null ? sourcevessel.vesselName : null) + " detonating with a " + warheadType + " warhead");
+                part.explode();
             }
         }
 
@@ -356,6 +352,7 @@ namespace BDArmory.Weapons
                 ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 120, part, sourcevessel != null ? sourcevessel.vesselName : null, sourceWeapon != null ? sourceWeapon.GetShortName() : null, direction, -1, false, warheadType == "standard" ? part.mass : 0, -1, 1, warheadType);
                 hasDetonated = true;
                 part.Destroy();
+                part.explode();
             }
         }
 
@@ -383,7 +380,14 @@ namespace BDArmory.Weapons
                 return detonate = false;
             }
 
-            using (var hitsEnu = Physics.OverlapSphere(transform.position, detonationRange, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19)).AsEnumerable().GetEnumerator())
+            var layerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19 | LayerMasks.Wheels);
+            var hitCount = Physics.OverlapSphereNonAlloc(transform.position, detonationRange, proximityHitColliders, layerMask);
+            if (hitCount == proximityHitColliders.Length)
+            {
+                proximityHitColliders = Physics.OverlapSphere(transform.position, detonationRange, layerMask);
+                hitCount = proximityHitColliders.Length;
+            }
+            using (var hitsEnu = proximityHitColliders.Take(hitCount).GetEnumerator())
             {
                 while (hitsEnu.MoveNext())
                 {
