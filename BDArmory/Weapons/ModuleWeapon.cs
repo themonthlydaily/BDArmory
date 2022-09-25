@@ -1741,7 +1741,7 @@ namespace BDArmory.Weapons
                     {
                         reticlePosition = pointingAtPosition + fixedLeadOffset;
 
-                        if (!slaved || GPSTarget)
+                        if (!slaved && !GPSTarget)
                         {
                             GUIUtils.DrawLineBetweenWorldPositions(pointingAtPosition, reticlePosition, 2,
                                 new Color(0, 1, 0, 0.6f));
