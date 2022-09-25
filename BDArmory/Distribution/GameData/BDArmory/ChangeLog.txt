@@ -20,6 +20,7 @@ IMPROVEMENTS / FIXES
 	- Random position noise due to chaff no longer scales with RCS, is instead fixed to a random number between 16 and 256.
 - Weapons:
 	- Fixed bug where the target velocity and acceleration was not being reset once a target was no longer tracked which resulted in lead being erroneously compensated for while mouse aiming.
+	- Added ability to manually aim guns using GPS coordinates, primarily for artillery. This behavior is not yet a functionality in Guard Mode, however when a GPS target is manually selected, turrets will now aim to attempt to hit said target.
 
 v1.5.2.1
 IMPROVEMENTS / FIXES
