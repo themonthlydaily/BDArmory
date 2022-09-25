@@ -490,12 +490,12 @@ namespace BDArmory.FX
                 lineOfSightHits = Physics.RaycastAll(partRay, blastRange, explosionLayerMask);
                 hitCount = lineOfSightHits.Length;
             }
-            int reverseHitCount = 0;
             //check if explosion is originating inside a part
-            reverseHitCount = Physics.RaycastNonAlloc(new Ray(partPosition - Position, Position), reverseHits, blastRange, explosionLayerMask);
+            Ray reverseRay = new Ray(partRay.origin + blastRange * partRay.direction, -partRay.direction);
+            int reverseHitCount = Physics.RaycastNonAlloc(reverseRay, reverseHits, blastRange, explosionLayerMask);
             if (reverseHitCount == reverseHits.Length)
             {
-                reverseHits = Physics.RaycastAll(new Ray(partPosition - Position, Position), blastRange, explosionLayerMask);
+                reverseHits = Physics.RaycastAll(reverseRay, blastRange, explosionLayerMask);
                 reverseHitCount = reverseHits.Length;
             }
             for (int i = 0; i < reverseHitCount; ++i)
