@@ -136,8 +136,8 @@ namespace BDArmory.Guidances
             double a = 9.80665f;
             double d = missileAltitude;
 
-            double time1 = (-vi + Math.Sqrt(Math.Pow(vi, 2) - 4 * (0.5f * a) * (-d))) / a;
-            double time2 = (-vi - Math.Sqrt(Math.Pow(vi, 2) - 4 * (0.5f * a) * (-d))) / a;
+            double time1 = (-vi + Math.Sqrt(vi * vi - 4 * (0.5f * a) * (-d))) / a;
+            double time2 = (-vi - Math.Sqrt(vi * vi - 4 * (0.5f * a) * (-d))) / a;
 
             return Math.Max(time1, time2);
         }
@@ -318,7 +318,7 @@ namespace BDArmory.Guidances
         private double CalculateFutureAltitude(float predictionTime)
         {
             Vector3 futurePosition = _missile.vessel.CoM + _missile.vessel.Velocity() * predictionTime
-                + 0.5f * _missile.vessel.acceleration_immediate * Math.Pow(predictionTime, 2);
+                + 0.5f * _missile.vessel.acceleration_immediate * predictionTime * predictionTime;
 
             return GetCurrentAltitudeAtPosition(futurePosition);
         }

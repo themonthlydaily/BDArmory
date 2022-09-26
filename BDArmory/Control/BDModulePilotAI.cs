@@ -29,6 +29,7 @@ namespace BDArmory.Control
         bool extending;
         bool extendParametersSet = false;
         float extendDistance;
+        float lastExtendDistanceSqr = 0;
         bool extendHorizontally = true; // Measure the extendDistance horizonally (for A2G) or not (for A2A).
         float desiredMinAltitude;
         public string extendingReason = "";
@@ -37,6 +38,8 @@ namespace BDArmory.Control
         bool requestedExtend;
         Vector3 requestedExtendTpos;
         float extendRequestMinDistance = 0;
+        MissileBase extendForMissile = null;
+        float extendAbortTimer = 0;
 
         public bool IsExtending
         {
@@ -47,13 +50,17 @@ namespace BDArmory.Control
         bool wasEvading = false;
         public bool IsEvading => evading;
 
-        public void StopExtending(string reason)
+        public void StopExtending(string reason, bool cooldown = false)
         {
             extending = false;
+            requestedExtend = false;
             extendingReason = "";
             extendTarget = null;
             extendRequestMinDistance = 0;
-            if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: {vessel.vesselName} stopped extending due to {reason}.");
+            extendAbortTimer = cooldown ? -5f : 0f;
+            lastExtendDistanceSqr = 0;
+            extendForMissile = null;
+            if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: {Time.time:F3} {vessel.vesselName} stopped extending due to {reason}.");
         }
 
         /// <summary>
@@ -62,13 +69,19 @@ namespace BDArmory.Control
         /// </summary>
         /// <param name="reason">Reason for extending</param>
         /// <param name="target">The target to extend from</param>
+        /// <param name="minDistance">The minimum distance to extend for</param>
         /// <param name="tPosition">The position to extend from if the target is null</param>
-        public void RequestExtend(string reason = "requested", Vessel target = null, float minDistance = 0, Vector3 tPosition = default)
+        /// <param name="missile">The missile to fire if extending to fire a missile</param>
+        /// <param name="ignoreCooldown">Override the cooldown period</param>
+        public void RequestExtend(string reason = "requested", Vessel target = null, float minDistance = 0, Vector3 tPosition = default, MissileBase missile = null, bool ignoreCooldown = false)
         {
+            if (ignoreCooldown) extendAbortTimer = 0f; // Disable the cooldown.
+            else if (extendAbortTimer < 0) return; // Ignore request while in cooldown.
             requestedExtend = true;
             extendTarget = target;
             extendRequestMinDistance = minDistance;
             requestedExtendTpos = extendTarget != null ? target.CoM : tPosition;
+            extendForMissile = missile;
             extendingReason = reason;
         }
         public void DebugExtending() // Debug being stuck in extending (enable DEBUG_AI, then click the "Debug Extending" button)
@@ -493,6 +506,11 @@ namespace BDArmory.Control
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 5000f, stepIncrement = 25f, scene = UI_Scene.All)]
         public float extendTargetDist = 300f;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ExtendAbortTime", advancedTweakable = true, //Extend Abort Time
+            groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
+            UI_FloatRange(minValue = 5f, maxValue = 30f, stepIncrement = 1f, scene = UI_Scene.All)]
+        public float extendAbortTime = 15f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ExtendToggle", advancedTweakable = true,//Extend Toggle
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
@@ -1672,6 +1690,11 @@ namespace BDArmory.Control
             threatRating = evasionThreshold + 1f; // Don't evade by default
             wasEvading = evading;
             evading = false;
+            if (extendAbortTimer < 0) // Extending is in cooldown.
+            {
+                extendAbortTimer += TimeWarp.fixedDeltaTime;
+                if (extendAbortTimer > 0) extendAbortTimer = 0;
+            }
             if (weaponManager != null)
             {
                 if (weaponManager.incomingMissileTime <= weaponManager.cmThreshold)
@@ -1829,7 +1852,6 @@ namespace BDArmory.Control
                 weaponManager.ForceScan();
                 evasiveTimer = 0;
                 SetStatus("Extending");
-                if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Extending");
                 FlyExtend(s, lastTargetPosition);
                 return;
             }
@@ -2074,10 +2096,11 @@ namespace BDArmory.Control
 
             if (missile != null)
             {
-                var minDynamicLaunchRange = MissileLaunchParams.GetDynamicLaunchParams(missile, v.Velocity(), v.transform.position).minLaunchRange;
+                float boresightFactor = (vessel.LandedOrSplashed || v.LandedOrSplashed || missile.uncagedLock) ? 0.75f : 0.35f;
+                float minDynamicLaunchRange = MissileLaunchParams.GetDynamicLaunchParams(missile, v.Velocity(), v.transform.position, missile.maxOffBoresight * boresightFactor).minLaunchRange;
                 if (canExtend && targetDot > 0 && distanceToTarget < minDynamicLaunchRange && vessel.srfSpeed > idleSpeed)
                 {
-                    RequestExtend("too close for missile", v, minDynamicLaunchRange); // Get far enough away to use the missile.
+                    RequestExtend($"too close for missile: {minDynamicLaunchRange}m", v, minDynamicLaunchRange, missile: missile); // Get far enough away to use the missile.
                 }
             }
 
@@ -2414,6 +2437,10 @@ namespace BDArmory.Control
                 StopExtending("target override");
                 return false;
             }
+            if (extendAbortTimer < 0) // In cooldown, extending disabled.
+            {
+                return false;
+            }
             if (!extending)
             {
                 extendParametersSet = false; // Reset this flag for new extends.
@@ -2432,7 +2459,15 @@ namespace BDArmory.Control
             if (extending && extendParametersSet)
             {
                 if (extendTarget != null) // Update the last known target position.
-                { lastTargetPosition = extendTarget.CoM; }
+                {
+                    lastTargetPosition = extendTarget.CoM;
+                    if (extendForMissile != null) // If extending to fire a missile, update the extend distance for the dynamic launch range.
+                    {
+                        float boresightFactor = (vessel.LandedOrSplashed || extendTarget.LandedOrSplashed || extendForMissile.uncagedLock) ? 0.75f : 0.35f;
+                        var minDynamicLaunchRange = MissileLaunchParams.GetDynamicLaunchParams(extendForMissile, extendTarget.Velocity(), extendTarget.transform.position, extendForMissile.maxOffBoresight * boresightFactor).minLaunchRange;
+                        extendDistance = Mathf.Max(extendDistanceAirToAir, minDynamicLaunchRange);
+                    }
+                }
                 return true; // Already extending.
             }
             if (!wasEvading) evasionNonlinearityDirection = Mathf.Sign(UnityEngine.Random.Range(-1f, 1f)); // This applies to extending too.
@@ -2443,7 +2478,7 @@ namespace BDArmory.Control
                 extendDistance = extendRequestMinDistance; //4500; //what, are we running from nukes? blast radius * 1.5 should be sufficient
                 desiredMinAltitude = defaultAltitude;
                 extendParametersSet = true;
-                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: {vessel.vesselName} is extending due to dropping a bomb!");
+                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: {Time.time:F3} {vessel.vesselName} is extending due to dropping a bomb!");
                 return true;
             }
 
@@ -2478,7 +2513,7 @@ namespace BDArmory.Control
                     lastTargetPosition = targetVessel.transform.position;
                     extendTarget = targetVessel;
                     extendParametersSet = true;
-                    if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: {vessel.vesselName} is extending due to a ground target.");
+                    if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: {Time.time:F3} {vessel.vesselName} is extending due to a ground target.");
                     return true;
                 }
             }
@@ -2491,7 +2526,7 @@ namespace BDArmory.Control
                 extendHorizontally = false;
                 desiredMinAltitude = Mathf.Max((float)vessel.radarAltitude + _extendAngleAirToAir * extendDistance, minAltitude);
                 extendParametersSet = true;
-                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: {vessel.vesselName} is extending due to an air target ({extendingReason}).");
+                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: {Time.time:F3} {vessel.vesselName} is extending due to an air target ({extendingReason}).");
                 return true;
             }
 
@@ -2520,8 +2555,28 @@ namespace BDArmory.Control
         void FlyExtend(FlightCtrlState s, Vector3 tPosition)
         {
             var extendVector = extendHorizontally ? Vector3.ProjectOnPlane(vessel.transform.position - tPosition, upDirection) : vessel.transform.position - tPosition;
-            if (extendVector.sqrMagnitude < extendDistance * extendDistance) // Extend from position is closer (horizontally) than the extend distance.
+            var extendDistanceSqr = extendVector.sqrMagnitude;
+            if (extendDistanceSqr < extendDistance * extendDistance) // Extend from position is closer (horizontally) than the extend distance.
             {
+                if (extendDistanceSqr > lastExtendDistanceSqr) // Gaining distance.
+                {
+                    if (extendAbortTimer > 0) // Reduce the timer to 0.
+                    {
+                        extendAbortTimer -= 0.5f * TimeWarp.fixedDeltaTime; // Reduce at half the rate of increase, so oscillating pairs of craft eventually time out and abort.
+                        if (extendAbortTimer < 0) extendAbortTimer = 0;
+                    }
+                }
+                else // Not gaining distance.
+                {
+                    extendAbortTimer += TimeWarp.fixedDeltaTime;
+                    if (extendAbortTimer > extendAbortTime) // Abort if not gaining distance.
+                    {
+                        StopExtending($"extend abort time ({extendAbortTime}s) reached at distance {extendVector.magnitude}m of {extendDistance}m", true);
+                        return;
+                    }
+                }
+                lastExtendDistanceSqr = extendDistanceSqr;
+
                 Vector3 targetDirection = extendVector.normalized * extendDistance;
                 Vector3 target = vessel.transform.position + targetDirection; // Target extend position horizontally.
                 target = GetTerrainSurfacePosition(target) + (vessel.upAxis * Mathf.Min(defaultAltitude, MissileGuidance.GetRaycastRadarAltitude(vesselTransform.position))); // Adjust for terrain changes at target extend position.
@@ -2533,12 +2588,13 @@ namespace BDArmory.Control
                 }
                 else
                 {
+                    if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Extending: {extendVector.magnitude:F0}m of {extendDistance:F0}m{(extendAbortTimer > 0 ? $" ({extendAbortTimer:F1}s of {extendAbortTime:F1}s)" : "")}");
                     FlyToPosition(s, target);
                 }
             }
             else // We're far enough away, stop extending.
             {
-                StopExtending($"gone far enough (" + extendVector.magnitude + " of " + extendDistance + ")");
+                StopExtending($"gone far enough ({extendVector.magnitude} of {extendDistance})");
             }
         }
 
