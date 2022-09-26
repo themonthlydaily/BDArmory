@@ -462,6 +462,7 @@ namespace BDArmory.WeaponMounts
             for (int i = 0; i < missileChildren.Length; i++)
             {
                 if (missileChildren[i].GetShortName() != ml.GetShortName()) continue;
+                if (missileChildren[i].HasFired) continue;
                 RotateToIndex(missileToRailIndex[i], false);
                 nextMissile = missileChildren[i];
                 return;
@@ -797,7 +798,7 @@ namespace BDArmory.WeaponMounts
             UpdateIndexDictionary();
         }
 
-        void UpdateMissilePositions()
+        public void UpdateMissilePositions()
         {
             if (missileCount == 0)
             {
@@ -806,7 +807,7 @@ namespace BDArmory.WeaponMounts
 
             for (int i = 0; i < missileChildren.Length; i++)
             {
-                if (!missileTransforms[i] || !missileChildren[i] || missileChildren[i].HasFired) continue;
+                if (!missileTransforms[i] || !missileChildren[i]) continue;
                 missileTransforms[i].position = missileReferenceTransforms[i].position;
                 missileTransforms[i].rotation = missileReferenceTransforms[i].rotation;
 

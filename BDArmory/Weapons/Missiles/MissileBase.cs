@@ -363,7 +363,9 @@ namespace BDArmory.Weapons.Missiles
                 {
                     if (craftPart.Current is null) continue;
                     if (craftPart.Current.name != missilePartName) continue;
-                    ++missilecount;
+                    var ammo = craftPart.Current.GetPart().FindModuleImplementing<ModuleMissileRearm>();
+                    if (ammo != null) missilecount += (int)ammo.ammoCount;
+                    else ++missilecount;
                 }
         }
 

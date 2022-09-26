@@ -20,6 +20,7 @@ namespace BDArmory.Weapons.Missiles
 {
     public class MissileLauncher : MissileBase
     {
+        Coroutine reloadRoutine;
         #region Variable Declarations
 
         [KSPField]
@@ -39,6 +40,9 @@ namespace BDArmory.Weapons.Missiles
         public BDRotaryRail rotaryRail = null;
         public BDDeployableRail deployableRail = null;
         public ModuleMissileRearm reloadableRail = null;
+        private BDStagingAreaGauge gauge;
+        private float reloadTimer = 0;
+        private Vector3 origScale = Vector3.one;
 
         [KSPField]
         public string exhaustPrefabPath;
@@ -197,7 +201,7 @@ namespace BDArmory.Weapons.Missiles
         List<KSPParticleEmitter> pEmitters;
         List<BDAGaplessParticleEmitter> gaplessEmitters;
 
-        float cmTimer;
+        //float cmTimer;
 
         //deploy animation
         [KSPField]
@@ -279,6 +283,8 @@ namespace BDArmory.Weapons.Missiles
         float[] rcsFiredTimes;
         KSPParticleEmitter[] rcsTransforms;
 
+        private bool launched = false;
+        private bool OldInfAmmo = false;
         #endregion Variable Declarations
 
         [KSPAction("Fire Missile")]
@@ -368,7 +374,6 @@ namespace BDArmory.Weapons.Missiles
             {
                 shortName = part.partInfo.title;
             }
-
             gaplessEmitters = new List<BDAGaplessParticleEmitter>();
             pEmitters = new List<KSPParticleEmitter>();
             boostEmitters = new List<KSPParticleEmitter>();
@@ -407,14 +412,15 @@ namespace BDArmory.Weapons.Missiles
 
             if (HighLogic.LoadedSceneIsFlight)
             {
-                //TODO: Backward compatibility workaround
-                var tnt = part.FindModuleImplementing<BDExplosivePart>();
-                if (tnt is null)
+                if (warheadType == WarheadTypes.Standard || warheadType == WarheadTypes.ContinuousRod)
                 {
-                    FromBlastPowerToTNTMass();
-                }
-                else
-                {
+                    var tnt = part.FindModuleImplementing<BDExplosivePart>();
+                    if (tnt is null)
+                    {
+                        tnt = (BDExplosivePart)part.AddModule("BDExplosivePart");
+                        tnt.tntMass = BlastPhysicsUtils.CalculateExplosiveMass(blastRadius);
+                    }
+
                     //New Explosive module
                     DisablingExplosives(part);
                     if (tnt.explModelPath == ModuleWeapon.defaultExplModelPath) tnt.explModelPath = explModelPath; // If the BDExplosivePart is using the default explosion part and sound,
@@ -426,128 +432,132 @@ namespace BDArmory.Weapons.Missiles
                 {
                     MissileReferenceTransform = part.partTransform;
                 }
-
-                if (!string.IsNullOrEmpty(exhaustPrefabPath))
+                reloadableRail = part.FindModuleImplementing<ModuleMissileRearm>();
+                origScale = part.partTransform.localScale;
+                gauge = (BDStagingAreaGauge)part.AddModule("BDStagingAreaGauge");
+                part.force_activate();
+                //if (!reloadableRail)
                 {
-                    using (var t = part.FindModelTransforms("exhaustTransform").AsEnumerable().GetEnumerator())
-                        while (t.MoveNext())
-                        {
-                            if (t.Current == null) continue;
-                            AttachExhaustPrefab(exhaustPrefabPath, this, t.Current);
-                        }
-                }
-
-                if (!string.IsNullOrEmpty(boostExhaustPrefabPath) && !string.IsNullOrEmpty(boostExhaustTransformName))
-                {
-                    using (var t = part.FindModelTransforms(boostExhaustTransformName).AsEnumerable().GetEnumerator())
-                        while (t.MoveNext())
-                        {
-                            if (t.Current == null) continue;
-                            AttachExhaustPrefab(boostExhaustPrefabPath, this, t.Current);
-                        }
-                }
-
-                boosters = new List<GameObject>();
-                if (!string.IsNullOrEmpty(boostTransformName))
-                {
-                    using (var t = part.FindModelTransforms(boostTransformName).AsEnumerable().GetEnumerator())
-                        while (t.MoveNext())
-                        {
-                            if (t.Current == null) continue;
-                            boosters.Add(t.Current.gameObject);
-                            using (var be = t.Current.GetComponentsInChildren<KSPParticleEmitter>().AsEnumerable().GetEnumerator())
-                                while (be.MoveNext())
-                                {
-                                    if (be.Current == null) continue;
-                                    if (be.Current.useWorldSpace)
-                                    {
-                                        if (be.Current.GetComponent<BDAGaplessParticleEmitter>()) continue;
-                                        BDAGaplessParticleEmitter ge = be.Current.gameObject.AddComponent<BDAGaplessParticleEmitter>();
-                                        ge.part = part;
-                                        boostGaplessEmitters.Add(ge);
-                                    }
-                                    else
-                                    {
-                                        if (!boostEmitters.Contains(be.Current))
-                                        {
-                                            boostEmitters.Add(be.Current);
-                                        }
-                                        EffectBehaviour.AddParticleEmitter(be.Current);
-                                    }
-                                }
-                        }
-                }
-
-                using (var pEmitter = part.partTransform.Find("model").GetComponentsInChildren<KSPParticleEmitter>().AsEnumerable().GetEnumerator())
-                    while (pEmitter.MoveNext())
+                    if (!string.IsNullOrEmpty(exhaustPrefabPath))
                     {
-                        if (pEmitter.Current == null) continue;
-                        if (pEmitter.Current.GetComponent<BDAGaplessParticleEmitter>() || boostEmitters.Contains(pEmitter.Current))
-                        {
-                            continue;
-                        }
-
-                        if (pEmitter.Current.useWorldSpace)
-                        {
-                            BDAGaplessParticleEmitter gaplessEmitter = pEmitter.Current.gameObject.AddComponent<BDAGaplessParticleEmitter>();
-                            gaplessEmitter.part = part;
-                            gaplessEmitters.Add(gaplessEmitter);
-                        }
-                        else
-                        {
-                            if (pEmitter.Current.transform.name != boostTransformName)
+                        using (var t = part.FindModelTransforms("exhaustTransform").AsEnumerable().GetEnumerator())
+                            while (t.MoveNext())
                             {
-                                pEmitters.Add(pEmitter.Current);
+                                if (t.Current == null) continue;
+                                AttachExhaustPrefab(exhaustPrefabPath, this, t.Current);
+                            }
+                    }
+
+                    if (!string.IsNullOrEmpty(boostExhaustPrefabPath) && !string.IsNullOrEmpty(boostExhaustTransformName))
+                    {
+                        using (var t = part.FindModelTransforms(boostExhaustTransformName).AsEnumerable().GetEnumerator())
+                            while (t.MoveNext())
+                            {
+                                if (t.Current == null) continue;
+                                AttachExhaustPrefab(boostExhaustPrefabPath, this, t.Current);
+                            }
+                    }
+
+                    boosters = new List<GameObject>();
+                    if (!string.IsNullOrEmpty(boostTransformName))
+                    {
+                        using (var t = part.FindModelTransforms(boostTransformName).AsEnumerable().GetEnumerator())
+                            while (t.MoveNext())
+                            {
+                                if (t.Current == null) continue;
+                                boosters.Add(t.Current.gameObject);
+                                using (var be = t.Current.GetComponentsInChildren<KSPParticleEmitter>().AsEnumerable().GetEnumerator())
+                                    while (be.MoveNext())
+                                    {
+                                        if (be.Current == null) continue;
+                                        if (be.Current.useWorldSpace)
+                                        {
+                                            if (be.Current.GetComponent<BDAGaplessParticleEmitter>()) continue;
+                                            BDAGaplessParticleEmitter ge = be.Current.gameObject.AddComponent<BDAGaplessParticleEmitter>();
+                                            ge.part = part;
+                                            boostGaplessEmitters.Add(ge);
+                                        }
+                                        else
+                                        {
+                                            if (!boostEmitters.Contains(be.Current))
+                                            {
+                                                boostEmitters.Add(be.Current);
+                                            }
+                                            EffectBehaviour.AddParticleEmitter(be.Current);
+                                        }
+                                    }
+                            }
+                    }
+
+                    using (var pEmitter = part.partTransform.Find("model").GetComponentsInChildren<KSPParticleEmitter>().AsEnumerable().GetEnumerator())
+                        while (pEmitter.MoveNext())
+                        {
+                            if (pEmitter.Current == null) continue;
+                            if (pEmitter.Current.GetComponent<BDAGaplessParticleEmitter>() || boostEmitters.Contains(pEmitter.Current))
+                            {
+                                continue;
+                            }
+
+                            if (pEmitter.Current.useWorldSpace)
+                            {
+                                BDAGaplessParticleEmitter gaplessEmitter = pEmitter.Current.gameObject.AddComponent<BDAGaplessParticleEmitter>();
+                                gaplessEmitter.part = part;
+                                gaplessEmitters.Add(gaplessEmitter);
                             }
                             else
                             {
-                                boostEmitters.Add(pEmitter.Current);
+                                if (pEmitter.Current.transform.name != boostTransformName)
+                                {
+                                    pEmitters.Add(pEmitter.Current);
+                                }
+                                else
+                                {
+                                    boostEmitters.Add(pEmitter.Current);
+                                }
+                                EffectBehaviour.AddParticleEmitter(pEmitter.Current);
                             }
-                            EffectBehaviour.AddParticleEmitter(pEmitter.Current);
                         }
-                    }
 
-                using (IEnumerator<Light> light = gameObject.GetComponentsInChildren<Light>().AsEnumerable().GetEnumerator())
-                    while (light.MoveNext())
-                    {
-                        if (light.Current == null) continue;
-                        light.Current.intensity = 0;
-                    }
-
-                cmTimer = Time.time;
-
-                part.force_activate();
-
-                using (var pe = pEmitters.GetEnumerator())
-                    while (pe.MoveNext())
-                    {
-                        if (pe.Current == null) continue;
-                        if (hasRCS)
+                    using (IEnumerator<Light> light = gameObject.GetComponentsInChildren<Light>().AsEnumerable().GetEnumerator())
+                        while (light.MoveNext())
                         {
-                            if (pe.Current.gameObject.name == "rcsUp") upRCS = pe.Current;
-                            else if (pe.Current.gameObject.name == "rcsDown") downRCS = pe.Current;
-                            else if (pe.Current.gameObject.name == "rcsLeft") leftRCS = pe.Current;
-                            else if (pe.Current.gameObject.name == "rcsRight") rightRCS = pe.Current;
-                            else if (pe.Current.gameObject.name == "rcsForward") forwardRCS = pe.Current;
+                            if (light.Current == null) continue;
+                            light.Current.intensity = 0;
                         }
 
-                        if (!pe.Current.gameObject.name.Contains("rcs") && !pe.Current.useWorldSpace)
+                    //cmTimer = Time.time;
+
+                    using (var pe = pEmitters.GetEnumerator())
+                        while (pe.MoveNext())
                         {
-                            pe.Current.sizeGrow = 99999;
+                            if (pe.Current == null) continue;
+                            if (hasRCS)
+                            {
+                                if (pe.Current.gameObject.name == "rcsUp") upRCS = pe.Current;
+                                else if (pe.Current.gameObject.name == "rcsDown") downRCS = pe.Current;
+                                else if (pe.Current.gameObject.name == "rcsLeft") leftRCS = pe.Current;
+                                else if (pe.Current.gameObject.name == "rcsRight") rightRCS = pe.Current;
+                                else if (pe.Current.gameObject.name == "rcsForward") forwardRCS = pe.Current;
+                            }
+
+                            if (!pe.Current.gameObject.name.Contains("rcs") && !pe.Current.useWorldSpace)
+                            {
+                                pe.Current.sizeGrow = 99999;
+                            }
                         }
+
+                    if (rotationTransformName != string.Empty)
+                    {
+                        rotationTransform = part.FindModelTransform(rotationTransformName);
                     }
 
-                if (rotationTransformName != string.Empty)
-                {
-                    rotationTransform = part.FindModelTransform(rotationTransformName);
+                    if (hasRCS)
+                    {
+                        SetupRCS();
+                        KillRCS();
+                    }
+                    SetupAudio();
                 }
-
-                if (hasRCS)
-                {
-                    SetupRCS();
-                    KillRCS();
-                }
-                SetupAudio();
             }
 
             if (GuidanceMode != GuidanceModes.Cruise)
@@ -591,20 +601,6 @@ namespace BDArmory.Weapons.Missiles
                 Fields["terminalGuidanceShouldActivate"].guiActiveEditor = false;
             }
 
-            if (deployAnimationName != "")
-            {
-                deployStates = GUIUtils.SetUpAnimation(deployAnimationName, part);
-            }
-            else
-            {
-                deployedDrag = simpleDrag;
-            }
-
-            if (flightAnimationName != "")
-            {
-                animStates = GUIUtils.SetUpAnimation(flightAnimationName, part);
-            }
-
             SetInitialDetonationDistance();
 
             // set uncagedLock = true if deprecated allAspect = true
@@ -645,24 +641,7 @@ namespace BDArmory.Weapons.Missiles
                 activeRadarLockTrackCurve.Add(activeRadarRange, RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS);           // TODO: tune & balance constants!
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: OnStart missile " + shortName + ": setting default locktrackcurve with maxrange/minrcs: " + activeRadarLockTrackCurve.maxTime + "/" + RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS);
             }
-            /*
-            List<ClusterBomb>.Enumerator cluster = part.FindModulesImplementing<ClusterBomb>().GetEnumerator();
-            while (cluster.MoveNext())
-            {
-                if (cluster.Current == null) continue;
-                clusterbomb = cluster.Current.submunitions.Count;
-                break;
-            }
-            cluster.Dispose();
-            List<ModuleEMP>.Enumerator emp = part.FindModulesImplementing<ModuleEMP>().GetEnumerator();
-            while (emp.MoveNext())
-            {
-                if (emp.Current == null) continue;
-                EMP = emp.Current;
-                break;
-            }
-            emp.Dispose();
-            */
+
             IEnumerator<PartModule> partModules = part.Modules.GetEnumerator();
             while (partModules.MoveNext())
             {
@@ -676,16 +655,16 @@ namespace BDArmory.Weapons.Missiles
                     }
                     else warheadType = WarheadTypes.Standard;
                 }
-                else if (partModules.Current.moduleName == "ClusterBomb")
+                if (partModules.Current.moduleName == "ClusterBomb")
                 {
                     clusterbomb = ((ClusterBomb)partModules.Current).submunitions.Count;
                 }
-                else if (partModules.Current.moduleName == "ModuleEMP")
+                if (partModules.Current.moduleName == "ModuleEMP")
                 {
                     warheadType = WarheadTypes.EMP;
                     StandOffDistance = ((ModuleEMP)partModules.Current).proximity;
                 }
-                else if (partModules.Current.moduleName == "BDModuleNuke")
+                if (partModules.Current.moduleName == "BDModuleNuke")
                 {
                     warheadType = WarheadTypes.Nuke;
                     StandOffDistance = BDAMath.Sqrt(((BDModuleNuke)partModules.Current).yield) * 500;
@@ -834,13 +813,76 @@ namespace BDArmory.Weapons.Missiles
         {
             if (HasFired) return;
 
+            HasFired = true;
+            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: Missile Fired! " + vessel.vesselName);
+
+            var wpm = VesselModuleRegistry.GetMissileFire(vessel, true);
+            if (wpm != null) Team = wpm.Team;
+            SourceVessel = vessel;
+            if (reloadableRail)
+            {
+                part.partTransform.localScale = Vector3.zero;
+                part.ShieldedFromAirstream = true;
+                part.crashTolerance = 100; 
+                reloadableRail.SpawnMissile();
+                MissileLauncher ml = reloadableRail.SpawnedMissile.FindModuleImplementing<MissileLauncher>();
+                ml.Team = Team;
+                ml.SourceVessel = SourceVessel;
+                ml.TimeFired = Time.time;
+                ml.vessel.vesselName = GetShortName();
+                ml.DetonationDistance = DetonationDistance;
+                ml.DetonateAtMinimumDistance = DetonateAtMinimumDistance;
+                ml.dropTime = dropTime;
+                ml.detonationTime = detonationTime;
+                ml.BallisticOverShootFactor = BallisticOverShootFactor;
+                ml.BallisticAngle = BallisticAngle;
+                ml.CruiseAltitude = CruiseAltitude;
+                ml.CruiseSpeed = CruiseSpeed;
+                ml.CruisePredictionTime = CruisePredictionTime;
+                ml.decoupleForward = decoupleForward;
+                ml.decoupleSpeed = decoupleSpeed;
+                ml.maxAltitude = maxAltitude;
+                ml.terminalGuidanceShouldActivate = terminalGuidanceShouldActivate;
+                if (ml.TargetingMode == MissileBase.TargetingModes.Laser) ml.lockedCamera = lockedCamera;
+                else if (ml.TargetingMode == MissileBase.TargetingModes.Gps || ml.TargetingMode == MissileBase.TargetingModes.AntiRad)
+                {
+                    ml.targetGPSCoords = targetGPSCoords;
+                    ml.TargetAcquired = TargetAcquired;
+                }
+                else if (ml.TargetingMode == MissileBase.TargetingModes.Heat) ml.heatTarget = heatTarget;
+                else if (ml.TargetingMode == MissileBase.TargetingModes.Radar)
+                {
+                    ml.radarTarget = radarTarget;
+                    ml.vrd = vrd;
+                }
+                ml.targetVessel = targetVessel;
+                ml.HasFired = true;
+                ml.MissileLaunch();
+                if (!BDArmorySettings.INFINITE_AMMO) reloadableRail.ammoCount--;
+                if (reloadableRail.ammoCount > 0 || BDArmorySettings.INFINITE_AMMO)
+                {
+                    if (!(reloadRoutine != null))
+                    {
+                        reloadRoutine = StartCoroutine(MissileReload());
+                    }
+                }
+            }
+            else
+            {
+                TimeFired = Time.time;
+                part.decouple(0);
+                part.Unpack();
+                vessel.vesselName = GetShortName();
+                MissileLaunch();
+            }
+        }
+
+        private void MissileLaunch()
+        {
+            launched = true;
             try // FIXME Remove this once the fix is sufficiently tested.
             {
                 SetupExplosive(this.part);
-                HasFired = true;
-
-                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: Missile Fired! " + vessel.vesselName);
-
                 GameEvents.onPartDie.Add(PartDie);
                 BDATargetManager.FiredMissiles.Add(this);
 
@@ -849,12 +891,8 @@ namespace BDArmory.Weapons.Missiles
                     BDArmorySetup.numberOfParticleEmitters++;
                 }
 
-                var wpm = VesselModuleRegistry.GetMissileFire(vessel, true);
-                if (wpm != null) Team = wpm.Team;
-
                 if (sfAudioSource == null) SetupAudio();
                 sfAudioSource.PlayOneShot(GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/deployClick"));
-                SourceVessel = vessel;
 
                 //TARGETING
                 TargetPosition = transform.position + (transform.forward * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
@@ -863,9 +901,8 @@ namespace BDArmory.Weapons.Missiles
                 SetLaserTargeting();
                 SetAntiRadTargeting();
 
-                part.decouple(0);
                 part.force_activate();
-                part.Unpack();
+
                 vessel.situation = Vessel.Situations.FLYING;
                 part.rb.isKinematic = false;
                 part.bodyLiftMultiplier = 0;
@@ -875,15 +912,7 @@ namespace BDArmory.Weapons.Missiles
                 AddTargetInfoToVessel();
                 StartCoroutine(DecoupleRoutine());
 
-                vessel.vesselName = GetShortName();
                 vessel.vesselType = VesselType.Probe;
-
-                TimeFired = Time.time;
-
-                if (reloadableRail)
-                {
-                    reloadableRail.BeginReload();
-                }
 
                 //setting ref transform for navball
                 GameObject refObject = new GameObject();
@@ -898,6 +927,8 @@ namespace BDArmory.Weapons.Missiles
                 part.explosionPotential = 0; // Minimise the default part explosion FX that sometimes gets offset from the main explosion.
 
                 StartCoroutine(MissileRoutine());
+                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: Missile Launched!");
+
             }
             catch (Exception e)
             {
@@ -909,6 +940,20 @@ namespace BDArmory.Weapons.Missiles
                 try { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG null sfAudioSource?: " + (sfAudioSource == null)); } catch (Exception e2) { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG sfAudioSource: " + e2.Message); }
                 throw; // Re-throw the exception so behaviour is unchanged so we see it.
             }
+        }
+
+        IEnumerator MissileReload()
+        {
+            yield return new WaitForSecondsFixed(reloadableRail.reloadTime);
+            HasFired = false;
+            part.partTransform.localScale = origScale;
+            reloadTimer = 0;
+            gauge.UpdateReloadMeter(1);
+            part.crashTolerance = 5;
+            if (!inCargoBay) part.ShieldedFromAirstream = false;
+            if (deployableRail) deployableRail.UpdateChildrenPos();
+            if (rotaryRail) rotaryRail.UpdateMissilePositions();
+            reloadRoutine = null;
         }
 
         IEnumerator DecoupleRoutine()
@@ -970,14 +1015,12 @@ namespace BDArmory.Weapons.Missiles
             {
                 debugString.Length = 0;
 
-                if (HasFired && !HasExploded && part != null)
+                if (HasFired && launched && !HasExploded && part != null)
                 {
                     CheckDetonationState();
                     CheckDetonationDistance();
-
                     part.rb.isKinematic = false;
                     AntiSpin();
-
                     //simpleDrag
                     if (useSimpleDrag)
                     {
@@ -998,7 +1041,6 @@ namespace BDArmory.Weapons.Missiles
                         sfAudioSource.PlayOneShot(GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/missileFlyby"));
                         hasPlayedFlyby = true;
                     }
-
                     if (vessel.isActiveVessel)
                     {
                         audioSource.dopplerLevel = 0;
@@ -1007,7 +1049,6 @@ namespace BDArmory.Weapons.Missiles
                     {
                         audioSource.dopplerLevel = 1f;
                     }
-
                     if (TimeIndex > 0.5f)
                     {
                         if (torpedo)
@@ -1029,6 +1070,7 @@ namespace BDArmory.Weapons.Missiles
 
                     UpdateThrustForces();
                     UpdateGuidance();
+
                     //RaycastCollisions();
 
                     //Timed detonation
@@ -1055,6 +1097,25 @@ namespace BDArmory.Weapons.Missiles
                         Part:ModulesOnFixedUpdate()
                         Part:FixedUpdate()
                 */
+            }
+            if (reloadableRail)
+            {
+                if (HasFired)
+                {
+                    reloadTimer = Mathf.Clamp((reloadTimer + 1 * TimeWarp.fixedDeltaTime / reloadableRail.reloadTime), 0, 1);
+                    gauge.UpdateReloadMeter(reloadTimer);
+                }
+                if (OldInfAmmo != BDArmorySettings.INFINITE_AMMO)
+                {
+                    if (reloadableRail.ammoCount < 1 && BDArmorySettings.INFINITE_AMMO)
+                    {
+                        if (!(reloadRoutine != null))
+                        {
+                            reloadRoutine = StartCoroutine(MissileReload());
+                        }
+                    }
+                    OldInfAmmo = BDArmorySettings.INFINITE_AMMO;
+                }
             }
         }
 
@@ -1438,6 +1499,7 @@ namespace BDArmory.Weapons.Missiles
             StartCoroutine(DeployAnimRoutine());
             yield return new WaitForSecondsFixed(dropTime);
             yield return StartCoroutine(BoostRoutine());
+
             StartCoroutine(FlightAnimRoutine());
             yield return new WaitForSecondsFixed(cruiseDelay);
             yield return StartCoroutine(CruiseRoutine());

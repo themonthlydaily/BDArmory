@@ -331,9 +331,9 @@ namespace BDArmory.UI
                 if (!FerramAerospace.hasFAR)
                 {
                     line++;
-                    GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorTotalLift") + ": " + totalLift.ToString("0.00"), style);
+                    GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorTotalLift") + ": " + totalLift.ToString("0.00" + " m2"), style);
                     line++;
-                    GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorWingLoading") + ": " + wingLoading.ToString("0.00"), style);
+                    GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorWingLoading") + ": " + wingLoading.ToString("0.0" + " kg/m2"), style);
                 }
                 line += 1.5f;
             }
@@ -589,7 +589,9 @@ namespace BDArmory.UI
                         totalLift += wing.deflectionLiftCoeff * Vector3.Project(wing.transform.forward, Vector3.up).sqrMagnitude; // Only return vertically oriented lift components
                     }
                 }
-            wingLoading = totalLift / EditorLogic.fetch.ship.GetTotalMass();
+            wingLoading = (EditorLogic.fetch.ship.GetTotalMass() * 1000) / (totalLift *= 3.51f);
+
+            //wingLoading = totalLift / EditorLogic.fetch.ship.GetTotalMass(); //convert to kg/m2. 1 LiftingArea is ~ 3.51m2, or ~285kg/m2
         }
 
         IEnumerator calcArmorMassAndCost()

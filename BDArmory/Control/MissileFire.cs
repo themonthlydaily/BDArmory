@@ -931,6 +931,11 @@ namespace BDArmory.Control
                             var gun = weapon.Current.GetPart().FindModuleImplementing<ModuleWeapon>();
                             if (gun.isReloading || gun.isOverheated || gun.pointingAtSelf || !(gun.ammoCount > 0 || BDArmorySettings.INFINITE_AMMO)) continue; //instead of returning the first weapon in a weapon group, return the first weapon in a group that actually can fire
                         }
+                        if (weapon.Current.GetWeaponClass() == WeaponClasses.Missile || weapon.Current.GetWeaponClass() == WeaponClasses.Bomb || weapon.Current.GetWeaponClass() == WeaponClasses.SLW)
+                        {
+                            var msl = weapon.Current.GetPart().FindModuleImplementing<MissileLauncher>();
+                            if (msl.HasFired) continue; //return first missile that is ready to fire
+                        }
                         sw = weapon.Current;
                         break;
                     }
@@ -2627,7 +2632,7 @@ namespace BDArmory.Control
             if (missile is MissileBase)
             {
                 MissileBase ml = missile;
-                if (checkClearance && (!CheckBombClearance(ml) || (ml is MissileLauncher && ((MissileLauncher)ml).rotaryRail && !((MissileLauncher)ml).rotaryRail.readyMissile == ml)))
+                if (checkClearance && (!CheckBombClearance(ml) || (ml is MissileLauncher && ((MissileLauncher)ml).rotaryRail && !((MissileLauncher)ml).rotaryRail.readyMissile == ml))|| ml.HasFired)
                 {
                     using (var otherMissile = VesselModuleRegistry.GetModules<MissileBase>(vessel).GetEnumerator())
                         while (otherMissile.MoveNext())
@@ -2635,6 +2640,7 @@ namespace BDArmory.Control
                             if (otherMissile.Current == null) continue;
                             if (otherMissile.Current == ml || otherMissile.Current.GetShortName() != ml.GetShortName() ||
                                 !CheckBombClearance(otherMissile.Current)) continue;
+                            if (otherMissile.Current.HasFired) continue;
                             CurrentMissile = otherMissile.Current;
                             selectedWeapon = otherMissile.Current;
                             FireCurrentMissile(false);
@@ -2934,7 +2940,15 @@ namespace BDArmory.Control
                 //Debug.Log("[BDArmory.MissileFire]: =====selected weapon: " + selectedWeapon.GetPart().name);
                 if (!CurrentMissile || CurrentMissile.part.name != selectedWeapon.GetPart().name)
                 {
-                    CurrentMissile = selectedWeapon.GetPart().FindModuleImplementing<MissileBase>();
+                    using (var Missile = VesselModuleRegistry.GetModules<MissileBase>(vessel).GetEnumerator())
+                        while (Missile.MoveNext())
+                        {
+                            if (Missile.Current == null) continue;
+                            if (Missile.Current.part.name != selectedWeapon.GetPart().name) continue;
+                            if (Missile.Current.HasFired) continue;
+                            CurrentMissile = Missile.Current;
+                        }
+                    //CurrentMissile = selectedWeapon.GetPart().FindModuleImplementing<MissileBase>();
                 }
             }
             else
@@ -3348,7 +3362,7 @@ namespace BDArmory.Control
                 {
                     if (mt.Current == null) continue;
                     if (!mt.Current.isActiveAndEnabled) continue;
-                    if (weaponIndex > 0 && cm && mt.Current.ContainsMissileOfType(cm) && cm.deployableRail == mt.Current)
+                    if (weaponIndex > 0 && cm && mt.Current.ContainsMissileOfType(cm) && cm.deployableRail == mt.Current && !cm.HasFired)
                     {
                         mt.Current.EnableRail();
                     }
@@ -3427,6 +3441,7 @@ namespace BDArmory.Control
                         if (launcher != null)
                         {
                             if (weaponArray[weaponIndex].GetPart() == null || launcher.part.name != weaponArray[weaponIndex].GetPart().name) continue;
+                            if (launcher.HasFired) continue;
                         }
                         else
                         {
@@ -3464,7 +3479,7 @@ namespace BDArmory.Control
                     {
                         return missile;
                     }
-                    if (missile.rotaryRail.readyToFire && missile.rotaryRail.readyMissile == CurrentMissile)
+                    if (missile.rotaryRail.readyToFire && missile.rotaryRail.readyMissile == CurrentMissile && !missile.HasFired)
                     {
                         return missile;
                     }
@@ -3474,7 +3489,7 @@ namespace BDArmory.Control
                     {
                         if (ml.Current == null) continue;
                         if (weaponArray[weaponIndex].GetPart() == null || ml.Current.part.name != weaponArray[weaponIndex].GetPart().name) continue;
-
+                        if (ml.Current.HasFired) continue;
                         if (!ml.Current.rotaryRail)
                         {
                             return ml.Current;
@@ -5270,6 +5285,16 @@ namespace BDArmory.Control
                     {
                         MissileBase ml = (MissileBase)weaponCandidate;
                         if (distanceToTarget < engageableWeapon.GetEngagementRangeMin()) return false;
+                        bool readyMissiles = false;
+                        using (var msl = VesselModuleRegistry.GetModules<MissileBase>(vessel).GetEnumerator())
+                            while (msl.MoveNext())
+                            {
+                                if (msl.Current == null) continue;
+                                if (msl.Current.HasFired) continue;
+                                readyMissiles = true;
+                                break;
+                            }
+                        if (!readyMissiles) return false;
                         // lock radar if needed
                         if (ml.TargetingMode == MissileBase.TargetingModes.Radar)
                         {
@@ -5298,8 +5323,14 @@ namespace BDArmory.Control
 
                 case WeaponClasses.Bomb:
                     if (distanceToTarget < engageableWeapon.GetEngagementRangeMin()) return false;
-                    if (!vessel.LandedOrSplashed)
-                        return true;    // TODO: bomb always allowed?
+                    if (!vessel.LandedOrSplashed) // TODO: bomb always allowed?
+                        using (var bomb = VesselModuleRegistry.GetModules<MissileBase>(vessel).GetEnumerator())
+                        while (bomb.MoveNext())
+                        {
+                            if (bomb.Current == null) continue;
+                            if (bomb.Current.HasFired) continue;
+                            return true;
+                        }
                     break;
 
                 case WeaponClasses.Rocket:

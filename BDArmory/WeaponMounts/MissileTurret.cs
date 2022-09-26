@@ -500,7 +500,7 @@ namespace BDArmory.WeaponMounts
 
             for (int i = 0; i < missileChildren.Length; i++)
             {
-                if (missileTransforms[i] && missileChildren[i] && !missileChildren[i].HasFired)
+                if (missileTransforms[i] && missileChildren[i])// && !missileChildren[i].HasFired)
                 {
                     missileTransforms[i].position = missileReferenceTransforms[i].position;
                     missileTransforms[i].rotation = missileReferenceTransforms[i].rotation;
