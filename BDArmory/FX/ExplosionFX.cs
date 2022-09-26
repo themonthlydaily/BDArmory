@@ -990,6 +990,8 @@ namespace BDArmory.FX
             float caliber = 120, Part explosivePart = null, string sourceVesselName = null, string sourceWeaponName = null, Vector3 direction = default(Vector3),
             float angle = 100f, bool isfx = false, float projectilemass = 0, float caseLimiter = -1, float dmgMutator = 1, string type = "standard", Part Hitpart = null)
         {
+            if (BDArmorySettings.DEBUG_MISSILES && explosionSourceType == ExplosionSourceType.Missile && (!explosionFXPools.ContainsKey(explModelPath) || !audioClips.ContainsKey(soundPath)))
+            { Debug.Log($"[BDArmory.ExplosionFX]: Setting up object pool for explosion of type {explModelPath} with audio {soundPath}{(sourceWeaponName != null ? $" for {sourceWeaponName}" : "")}"); }
             CreateObjectPool(explModelPath, soundPath);
 
             Quaternion rotation;
