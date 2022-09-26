@@ -325,13 +325,13 @@ namespace BDArmory.FX
             if (audioClips == null)
             {
                 audioClips = new Dictionary<AudioClipType, AudioClip>{
-                    {AudioClipType.Ricochet1, GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/ricochet1")},
-                    {AudioClipType.Ricochet2, GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/ricochet1")},
-                    {AudioClipType.Ricochet3, GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/ricochet3")},
-                    {AudioClipType.BulletHit1, GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/bulletHit1")},
-                    {AudioClipType.BulletHit2, GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/bulletHit2")},
-                    {AudioClipType.BulletHit3, GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/bulletHit3")},
-                    {AudioClipType.Artillery_Shot, GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/Artillery_Shot")},
+                    {AudioClipType.Ricochet1, SoundUtils.GetAudioClip("BDArmory/Sounds/ricochet1")},
+                    {AudioClipType.Ricochet2, SoundUtils.GetAudioClip("BDArmory/Sounds/ricochet1")},
+                    {AudioClipType.Ricochet3, SoundUtils.GetAudioClip("BDArmory/Sounds/ricochet3")},
+                    {AudioClipType.BulletHit1, SoundUtils.GetAudioClip("BDArmory/Sounds/bulletHit1")},
+                    {AudioClipType.BulletHit2, SoundUtils.GetAudioClip("BDArmory/Sounds/bulletHit2")},
+                    {AudioClipType.BulletHit3, SoundUtils.GetAudioClip("BDArmory/Sounds/bulletHit3")},
+                    {AudioClipType.Artillery_Shot, SoundUtils.GetAudioClip("BDArmory/Sounds/Artillery_Shot")},
                 };
             }
         }

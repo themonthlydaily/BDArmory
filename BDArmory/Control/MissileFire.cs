@@ -1054,11 +1054,11 @@ namespace BDArmory.Control
 
         public override void OnAwake()
         {
-            clickSound = GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/click");
-            warningSound = GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/warning");
-            armOnSound = GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/armOn");
-            armOffSound = GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/armOff");
-            heatGrowlSound = GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/heatGrowl");
+            clickSound = SoundUtils.GetAudioClip("BDArmory/Sounds/click");
+            warningSound = SoundUtils.GetAudioClip("BDArmory/Sounds/warning");
+            armOnSound = SoundUtils.GetAudioClip("BDArmory/Sounds/armOn");
+            armOffSound = SoundUtils.GetAudioClip("BDArmory/Sounds/armOff");
+            heatGrowlSound = SoundUtils.GetAudioClip("BDArmory/Sounds/heatGrowl");
 
             //HEAT LOCKING
             heatTarget = TargetSignatureData.noTarget;

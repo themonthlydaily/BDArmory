@@ -1029,7 +1029,7 @@ namespace BDArmory.Bullets
             audioSource.pitch = 1f;
             audioSource.priority = 255;
             audioSource.spatialBlend = 1;
-            audioSource.clip = GameDatabase.Instance.GetAudioClip(rocketSoundPath);
+            audioSource.clip = SoundUtils.GetAudioClip(rocketSoundPath);
 
             UpdateVolume();
             BDArmorySetup.OnVolumeChange += UpdateVolume;

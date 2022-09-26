@@ -1261,7 +1261,7 @@ namespace BDArmory.Weapons
                 SetupAudio();
                 if (eWeaponType == WeaponTypes.Laser || ChargeTime > 0)
                 {
-                    chargeSound = GameDatabase.Instance.GetAudioClip(chargeSoundPath);
+                    chargeSound = SoundUtils.GetAudioClip(chargeSoundPath);
                 }
                 // Setup gauges
                 gauge = (BDStagingAreaGauge)part.AddModule("BDStagingAreaGauge");
@@ -2447,7 +2447,7 @@ namespace BDArmory.Weapons
         }
         public void SetupLaserSpecifics()
         {
-            //chargeSound = GameDatabase.Instance.GetAudioClip(chargeSoundPath);
+            //chargeSound = SoundUtils.GetAudioClip(chargeSoundPath);
             if (HighLogic.LoadedSceneIsFlight)
             {
                 audioSource.clip = fireSound;
@@ -3102,8 +3102,8 @@ namespace BDArmory.Weapons
 
         void SetupAudio()
         {
-            fireSound = GameDatabase.Instance.GetAudioClip(fireSoundPath);
-            overheatSound = GameDatabase.Instance.GetAudioClip(overheatSoundPath);
+            fireSound = SoundUtils.GetAudioClip(fireSoundPath);
+            overheatSound = SoundUtils.GetAudioClip(overheatSoundPath);
             if (!audioSource)
             {
                 audioSource = gameObject.AddComponent<AudioSource>();
@@ -3128,11 +3128,11 @@ namespace BDArmory.Weapons
 
             if (reloadAudioPath != string.Empty)
             {
-                reloadAudioClip = (AudioClip)GameDatabase.Instance.GetAudioClip(reloadAudioPath);
+                reloadAudioClip = SoundUtils.GetAudioClip(reloadAudioPath);
             }
             if (reloadCompletePath != string.Empty)
             {
-                reloadCompleteAudioClip = (AudioClip)GameDatabase.Instance.GetAudioClip(reloadCompletePath);
+                reloadCompleteAudioClip = SoundUtils.GetAudioClip(reloadCompletePath);
             }
 
             if (!lowpassFilter && gameObject.GetComponents<AudioLowPassFilter>().Length == 0)

@@ -17,7 +17,7 @@ namespace BDArmory.FX
     public class ExplosionFx : MonoBehaviour
     {
         public static Dictionary<string, ObjectPool> explosionFXPools = new Dictionary<string, ObjectPool>();
-        public static Dictionary<string, AudioClip> audioClips = new Dictionary<string, AudioClip>(); // Pool the audio clips separately.
+        public static Dictionary<string, AudioClip> audioClips = new Dictionary<string, AudioClip>(); // Pool the audio clips separately. Note: this isn't really necessary now that we have SoundUtils.
         public KSPParticleEmitter[] pEmitters { get; set; }
         public Light LightFx { get; set; }
         public float StartTime { get; set; }
@@ -118,12 +118,12 @@ namespace BDArmory.FX
             audioSource = gameObject.GetComponent<AudioSource>();
             // if (ExSound == null)
             // {
-            //     ExSound = GameDatabase.Instance.GetAudioClip(SoundPath);
+            //     ExSound = SoundUtils.GetAudioClip(SoundPath);
 
             //     if (ExSound == null)
             //     {
             //         Debug.LogError("[BDArmory.ExplosionFX]: " + SoundPath + " was not found, using the default sound instead. Please fix your model.");
-            //         ExSound = GameDatabase.Instance.GetAudioClip(ModuleWeapon.defaultExplSoundPath);
+            //         ExSound = SoundUtils.GetAudioClip(ModuleWeapon.defaultExplSoundPath);
             //     }
             // }
             if (!string.IsNullOrEmpty(SoundPath))
@@ -954,11 +954,11 @@ namespace BDArmory.FX
         {
             if (!string.IsNullOrEmpty(soundPath) && (!audioClips.ContainsKey(soundPath) || audioClips[soundPath] is null))
             {
-                var audioClip = GameDatabase.Instance.GetAudioClip(soundPath);
+                var audioClip = SoundUtils.GetAudioClip(soundPath);
                 if (audioClip is null)
                 {
                     Debug.LogError("[BDArmory.ExplosionFX]: " + soundPath + " was not found, using the default sound instead. Please fix your model.");
-                    audioClip = GameDatabase.Instance.GetAudioClip(ModuleWeapon.defaultExplSoundPath);
+                    audioClip = SoundUtils.GetAudioClip(ModuleWeapon.defaultExplSoundPath);
                 }
                 audioClips.Add(soundPath, audioClip);
             }
@@ -972,7 +972,7 @@ namespace BDArmory.FX
                     explosionFXTemplate = GameDatabase.Instance.GetModel(ModuleWeapon.defaultExplModelPath);
                 }
                 var eFx = explosionFXTemplate.AddComponent<ExplosionFx>();
-                // eFx.ExSound = GameDatabase.Instance.GetAudioClip(soundPath); //this is reporting as null in ExplosionFX proper? "PlayOneShot was called with a null AudioClip."
+                // eFx.ExSound = SoundUtils.GetAudioClip(soundPath); //this is reporting as null in ExplosionFX proper? "PlayOneShot was called with a null AudioClip."
                 eFx.audioSource = explosionFXTemplate.AddComponent<AudioSource>();
                 eFx.audioSource.minDistance = 200;
                 eFx.audioSource.maxDistance = 5500;

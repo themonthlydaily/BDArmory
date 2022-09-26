@@ -125,12 +125,12 @@ namespace BDArmory.FX
                 audioSource = gameObject.GetComponent<AudioSource>();
                 // if (ExSound == null)
                 // {
-                //     ExSound = GameDatabase.Instance.GetAudioClip(SoundPath);
+                //     ExSound = SoundUtils.GetAudioClip(SoundPath);
 
                 //     if (ExSound == null)
                 //     {
                 //         Debug.LogError("[BDArmory.ExplosionFX]: " + ExSound + " was not found, using the default sound instead. Please fix your model.");
-                //         ExSound = GameDatabase.Instance.GetAudioClip(ModuleWeapon.defaultExplSoundPath);
+                //         ExSound = SoundUtils.GetAudioClip(ModuleWeapon.defaultExplSoundPath);
                 //     }
                 // }
                 // audioSource.PlayOneShot(ExSound);
@@ -556,11 +556,11 @@ namespace BDArmory.FX
         {
             if (!string.IsNullOrEmpty(soundPath) && (!audioClips.ContainsKey(soundPath) || audioClips[soundPath] is null))
             {
-                var audioClip = GameDatabase.Instance.GetAudioClip(soundPath);
+                var audioClip = SoundUtils.GetAudioClip(soundPath);
                 if (audioClip is null)
                 {
                     Debug.LogError("[BDArmory.ExplosionFX]: " + soundPath + " was not found, using the default sound instead. Please fix your model.");
-                    audioClip = GameDatabase.Instance.GetAudioClip(ModuleWeapon.defaultExplSoundPath);
+                    audioClip = SoundUtils.GetAudioClip(ModuleWeapon.defaultExplSoundPath);
                 }
                 audioClips.Add(soundPath, audioClip);
             }
