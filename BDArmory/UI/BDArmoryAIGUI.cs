@@ -368,7 +368,6 @@ namespace BDArmory.UI
                         { "vesselCollisionAvoidanceLookAheadPeriod", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselCollisionAvoidanceLookAheadPeriod, 0, 3) },
                         { "vesselCollisionAvoidanceStrength", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselCollisionAvoidanceStrength, 0, 2) },
                         { "vesselStandoffDistance", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselStandoffDistance, 0, 1000) },
-                        // { "extendMult", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendMult, 0, 2) },
                         { "extendDistanceAirToAir", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendDistanceAirToAir, 0, 2000) },
                         { "extendAngleAirToAir", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendAngleAirToAir, -10, 45) },
                         { "extendDistanceAirToGroundGuns", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendDistanceAirToGroundGuns, 0, 5000) },
@@ -376,6 +375,7 @@ namespace BDArmory.UI
                         { "extendTargetVel", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendTargetVel, 0, 2) },
                         { "extendTargetAngle", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendTargetAngle, 0, 180) },
                         { "extendTargetDist", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendTargetDist, 0, 5000) },
+                        { "extendAbortTime", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendAbortTime, 5, 30) },
 
                         { "turnRadiusTwiddleFactorMin", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.turnRadiusTwiddleFactorMin, 0.1, 5) },
                         { "turnRadiusTwiddleFactorMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.turnRadiusTwiddleFactorMax, 0.1, 5) },
@@ -442,7 +442,6 @@ namespace BDArmory.UI
                     inputFields["evasionThreshold"].maxValue = ActivePilot.UpToEleven ? 300 : 100;
                     inputFields["evasionTimeThreshold"].maxValue = ActivePilot.UpToEleven ? 1 : 3;
                     inputFields["vesselStandoffDistance"].maxValue = ActivePilot.UpToEleven ? 5000 : 1000;
-                    // inputFields["extendMult"].maxValue = ActivePilot.UpToEleven ? 200 : 2;
                     inputFields["extendDistanceAirToAir"].maxValue = ActivePilot.UpToEleven ? 20000 : 2000;
                     inputFields["extendAngleAirToAir"].maxValue = ActivePilot.UpToEleven ? 90 : 45;
                     inputFields["extendAngleAirToAir"].minValue = ActivePilot.UpToEleven ? -90 : -10;
@@ -730,7 +729,7 @@ namespace BDArmory.UI
                     line += 1.5f;
 
                     showRam = GUI.Toggle(SubsectionRect(leftIndent, line),
-                        showRam, StringUtils.Localize("#LOC_BDArmory_PilotAI_Ramming"), showRam ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"rammin"
+                        showRam, StringUtils.Localize("#LOC_BDArmory_PilotAI_Ramming"), showRam ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Ramming"
                     line += 1.5f;
 
                     showMisc = GUI.Toggle(SubsectionRect(leftIndent, line),
@@ -812,6 +811,7 @@ namespace BDArmory.UI
                                 GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_EvadeHelp_ExtendAngle"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //extend target angle
                                 GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_EvadeHelp_ExtendDist"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //extend target dist
                                 GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_EvadeHelp_ExtendVel"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //extend target velocity
+                                GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_EvadeHelp_ExtendAbortTime"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //extend abort time
                                 GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_EvadeHelp_Nonlinearity"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //evade/extend nonlinearity
                                 GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_EvadeHelp_ExtendToggle"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //evade/extend toggle
                             }
@@ -1968,29 +1968,25 @@ namespace BDArmory.UI
                                 #region Extend Target triggers
                                 if (!NumFieldsEnabled)
                                 {
-                                    ActivePilot.extendTargetVel =
-                                        GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth),
-                                            ActivePilot.extendTargetVel, 0, 2);
-                                    ActivePilot.extendTargetVel = Mathf.Round(ActivePilot.extendTargetVel * 10f) / 10f;
+                                    ActivePilot.extendTargetVel = GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth), ActivePilot.extendTargetVel, 0, 2);
+                                    ActivePilot.extendTargetVel = BDAMath.RoundToUnit(ActivePilot.extendTargetVel, 0.1f);
                                 }
                                 else
                                 {
                                     inputFields["extendTargetVel"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["extendTargetVel"].possibleValue, 6));
                                     ActivePilot.extendTargetVel = (float)inputFields["extendTargetVel"].currentValue;
                                 }
-                                GUI.Label(SettinglabelRect(leftIndent, evadeLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_ExtendTargetVel") + ": " + ActivePilot.extendTargetVel.ToString("0.0"), Label);//"dynamic damping min"
+                                GUI.Label(SettinglabelRect(leftIndent, evadeLines), $"{StringUtils.Localize("#LOC_BDArmory_AIWindow_ExtendTargetVel")}: {ActivePilot.extendTargetVel:0.0}m/s", Label);
                                 evadeLines++;
                                 if (contextTipsEnabled)
                                 {
-                                    GUI.Label(ContextLabelRect(leftIndent, evadeLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_Extendvel"), contextLabel);//"dynamic damp min"
+                                    GUI.Label(ContextLabelRect(leftIndent, evadeLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_Extendvel"), contextLabel);
                                     evadeLines++;
                                 }
 
                                 if (!NumFieldsEnabled)
                                 {
-                                    ActivePilot.extendTargetAngle =
-                                        GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth),
-                                            ActivePilot.extendTargetAngle, 0, 180);
+                                    ActivePilot.extendTargetAngle = GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth), ActivePilot.extendTargetAngle, 0, 180);
                                     ActivePilot.extendTargetAngle = Mathf.Round(ActivePilot.extendTargetAngle);
                                 }
                                 else
@@ -1998,31 +1994,47 @@ namespace BDArmory.UI
                                     inputFields["extendTargetAngle"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["extendTargetAngle"].possibleValue, 6));
                                     ActivePilot.extendTargetAngle = (float)inputFields["extendTargetAngle"].currentValue;
                                 }
-                                GUI.Label(SettinglabelRect(leftIndent, evadeLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_ExtendTargetAngle") + ": " + ActivePilot.extendTargetAngle.ToString("0"), Label);// "dynamic damping min"
+                                GUI.Label(SettinglabelRect(leftIndent, evadeLines), $"{StringUtils.Localize("#LOC_BDArmory_AIWindow_ExtendTargetAngle")}: {ActivePilot.extendTargetAngle}°", Label);
                                 evadeLines++;
                                 if (contextTipsEnabled)
                                 {
-                                    GUI.Label(ContextLabelRect(leftIndent, evadeLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_ExtendAngle"), contextLabel);//"dynamic damp min"
+                                    GUI.Label(ContextLabelRect(leftIndent, evadeLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_ExtendAngle"), contextLabel);
                                     evadeLines++;
                                 }
 
                                 if (!NumFieldsEnabled)
                                 {
-                                    ActivePilot.extendTargetDist =
-                                        GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth),
-                                            ActivePilot.extendTargetDist, 0, 5000);
-                                    ActivePilot.extendTargetDist = Mathf.Round(ActivePilot.extendTargetDist / 25) * 25;
+                                    ActivePilot.extendTargetDist = GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth), ActivePilot.extendTargetDist, 0, 5000);
+                                    ActivePilot.extendTargetDist = BDAMath.RoundToUnit(ActivePilot.extendTargetDist, 25);
                                 }
                                 else
                                 {
                                     inputFields["extendTargetDist"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["extendTargetDist"].possibleValue, 6));
                                     ActivePilot.extendTargetDist = (float)inputFields["extendTargetDist"].currentValue;
                                 }
-                                GUI.Label(SettinglabelRect(leftIndent, evadeLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_ExtendTargetDist") + ": " + ActivePilot.extendTargetDist.ToString("0.00"), Label);//"dynamic damping min"
+                                GUI.Label(SettinglabelRect(leftIndent, evadeLines), $"{StringUtils.Localize("#LOC_BDArmory_AIWindow_ExtendTargetDist")}: {ActivePilot.extendTargetDist}m", Label);
                                 evadeLines++;
                                 if (contextTipsEnabled)
                                 {
-                                    GUI.Label(ContextLabelRect(leftIndent, evadeLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_ExtendDist"), contextLabel);//"dynamic damp min"
+                                    GUI.Label(ContextLabelRect(leftIndent, evadeLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_ExtendDist"), contextLabel);
+                                    evadeLines++;
+                                }
+
+                                if (!NumFieldsEnabled)
+                                {
+                                    ActivePilot.extendAbortTime = GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth), ActivePilot.extendAbortTime, 5, 30);
+                                    ActivePilot.extendAbortTime = Mathf.Round(ActivePilot.extendAbortTime);
+                                }
+                                else
+                                {
+                                    inputFields["extendAbortTime"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["extendAbortTime"].possibleValue, 4));
+                                    ActivePilot.extendAbortTime = (float)inputFields["extendAbortTime"].currentValue;
+                                }
+                                GUI.Label(SettinglabelRect(leftIndent, evadeLines), $"{StringUtils.Localize("#LOC_BDArmory_AIWindow_ExtendAbortTime")}: {ActivePilot.extendAbortTime}s", Label);
+                                evadeLines++;
+                                if (contextTipsEnabled)
+                                {
+                                    GUI.Label(ContextLabelRect(leftIndent, evadeLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_ExtendAbortTimeContext"), contextLabel);
                                     evadeLines++;
                                 }
                                 #endregion

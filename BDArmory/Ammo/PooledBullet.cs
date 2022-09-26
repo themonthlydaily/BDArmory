@@ -665,10 +665,11 @@ namespace BDArmory.Bullets
                 hitCount = hits.Length;
             }
 
-            var reverseHitCount = Physics.RaycastNonAlloc(new Ray(currPosition + currentVelocity * period, -currentVelocity), reverseHits, dist, layerMask);
+            var reverseRay = new Ray(bulletRay.origin + dist * bulletRay.direction, -bulletRay.direction);
+            var reverseHitCount = Physics.RaycastNonAlloc(reverseRay, reverseHits, dist, layerMask);
             if (reverseHitCount == reverseHits.Length)
             {
-                reverseHits = Physics.RaycastAll(new Ray(currPosition + currentVelocity * period, -currentVelocity), dist, layerMask);
+                reverseHits = Physics.RaycastAll(reverseRay, dist, layerMask);
                 reverseHitCount = reverseHits.Length;
             }
             for (int i = 0; i < reverseHitCount; ++i)
@@ -676,6 +677,7 @@ namespace BDArmory.Bullets
 
             if (hitCount + reverseHitCount > 0)
             {
+                // Note: this should probably use something like the CollateHits function in ExplosionFX, but doesn't seem to be as performance critical here.
                 var orderedHits = hits.Take(hitCount).Concat(reverseHits.Take(reverseHitCount)).OrderBy(x => x.distance);
                 using (var hit = orderedHits.GetEnumerator())
                     while (hit.MoveNext()) if (BulletHitAnalysis(hit.Current, period)) return true;
