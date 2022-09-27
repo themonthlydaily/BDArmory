@@ -1188,8 +1188,8 @@ namespace BDArmory.Weapons
                                     }
                                     if (!validAmmo)
                                     {
-                                        customAmmoBelt[i] = testAmmo[0];
                                         Debug.LogWarning("[BDArmory.ModuleWeapon] Invalid ammo type " + customAmmoBelt[i] + " in ammo belt! reverting to valid ammo type " + testAmmo[0]);
+                                        customAmmoBelt[i] = testAmmo[0];
                                     }
                                 }
                             }
