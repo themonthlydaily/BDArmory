@@ -264,8 +264,14 @@ namespace BDArmory.Competition.VesselSpawning
                 {
                     var count = 1;
                     var potentialName = vessel.vesselName + "_" + count;
-                    while (spawnedVesselURLs.ContainsKey(potentialName))
+                    while (spawnedVesselURLs.ContainsKey(potentialName) && count < 100)
                         potentialName = vessel.vesselName + "_" + (++count);
+                    if (count == 100)
+                    {
+                        LogMessage($"Unable to find a non-conflicting name for {vessel.vesselName}");
+                        spawnFailureReason = SpawnFailureReason.TimedOut;
+                        yield break;
+                    }
                     vessel.vesselName = potentialName;
                 }
                 spawnedVesselURLs.Add(vessel.vesselName, vesselSpawnConfig.craftURL);
