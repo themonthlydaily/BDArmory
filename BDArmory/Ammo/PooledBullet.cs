@@ -589,10 +589,11 @@ namespace BDArmory.Bullets
                 hitCount = hits.Length;
             }
 
-            var reverseHitCount = Physics.RaycastNonAlloc(new Ray(currPosition + relativeVelocity * period, -relativeVelocity), reverseHits, dist, layerMask);
+            var reverseRay = new Ray(bulletRay.origin + dist * bulletRay.direction, -bulletRay.direction);
+            var reverseHitCount = Physics.RaycastNonAlloc(reverseRay, reverseHits, dist, layerMask);
             if (reverseHitCount == reverseHits.Length)
             {
-                reverseHits = Physics.RaycastAll(new Ray(currPosition + relativeVelocity * period, -relativeVelocity), dist, layerMask);
+                reverseHits = Physics.RaycastAll(reverseRay, dist, layerMask);
                 reverseHitCount = reverseHits.Length;
             }
             for (int i = 0; i < reverseHitCount; ++i)
@@ -636,10 +637,11 @@ namespace BDArmory.Bullets
             }
             allHits.AddRange(hits.Take(hitCount));
 
-            var reverseHitCount = Physics.RaycastNonAlloc(new Ray(currPosition + currentVelocity * period, -currentVelocity), reverseHits, dist, layerMask);
+            var reverseRay = new Ray(bulletRay.origin + dist * bulletRay.direction, -bulletRay.direction);
+            var reverseHitCount = Physics.RaycastNonAlloc(reverseRay, reverseHits, dist, layerMask);
             if (reverseHitCount == reverseHits.Length)
             {
-                reverseHits = Physics.RaycastAll(new Ray(currPosition + currentVelocity * period, -currentVelocity), dist, layerMask);
+                reverseHits = Physics.RaycastAll(reverseRay, dist, layerMask);
                 reverseHitCount = reverseHits.Length;
             }
             for (int i = 0; i < reverseHitCount; ++i)
@@ -999,7 +1001,7 @@ namespace BDArmory.Bullets
                         StopCoroutine(DelayedDetonationRoutine());
                     }
                     ExplosiveDetonation(hitPart, hit, bulletRay);
-                    ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, ExplosionSourceType.Bullet, bulletMass, penetrationFactor); //calc daamge from bullet exploding 
+                    ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, ExplosionSourceType.Bullet, bulletMass, penetrationFactor); //calc damage from bullet exploding 
                     ProjectileUtils.ApplyScore(hitPart, sourceVesselName, distanceTraveled, 0, bullet.name, ExplosionSourceType.Bullet, penTicker > 0 ? false : true);
                     hasDetonated = true;
                     KillBullet();
