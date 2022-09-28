@@ -17,7 +17,7 @@ namespace BDArmory.FX
     public class ExplosionFx : MonoBehaviour
     {
         public static Dictionary<string, ObjectPool> explosionFXPools = new Dictionary<string, ObjectPool>();
-        public static Dictionary<string, AudioClip> audioClips = new Dictionary<string, AudioClip>(); // Pool the audio clips separately. Note: this is really a shallow copy of the AudioClips in SoundUtils.
+        public static Dictionary<string, AudioClip> audioClips = new Dictionary<string, AudioClip>(); // Pool the audio clips separately. Note: this is really a shallow copy of the AudioClips in SoundUtils, but with invalid AudioClips replaced by the default explosion AudioClip.
         public KSPParticleEmitter[] pEmitters { get; set; }
         public Light LightFx { get; set; }
         public float StartTime { get; set; }

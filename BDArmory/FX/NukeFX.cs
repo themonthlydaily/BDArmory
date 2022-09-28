@@ -27,7 +27,6 @@ namespace BDArmory.FX
         public Light LightFx { get; set; }
         public KSPParticleEmitter[] pEmitters { get; set; }
         public float StartTime { get; set; }
-        public AudioClip ExSound { get; set; }
         public string SoundPath { get; set; }
         public AudioSource audioSource { get; set; }
         public float thermalRadius { get; set; } //clamped blast range
@@ -123,21 +122,9 @@ namespace BDArmory.FX
                 LightFx = gameObject.GetComponent<Light>();
                 LightFx.range = 0;
                 audioSource = gameObject.GetComponent<AudioSource>();
-                // if (ExSound == null)
-                // {
-                //     ExSound = SoundUtils.GetAudioClip(SoundPath);
-
-                //     if (ExSound == null)
-                //     {
-                //         Debug.LogError("[BDArmory.ExplosionFX]: " + ExSound + " was not found, using the default sound instead. Please fix your model.");
-                //         ExSound = SoundUtils.GetAudioClip(ModuleWeapon.defaultExplSoundPath);
-                //     }
-                // }
-                // audioSource.PlayOneShot(ExSound);
                 if (!string.IsNullOrEmpty(SoundPath))
                 {
-                    var audioClip = audioClips[SoundPath];
-                    audioSource.PlayOneShot(audioClip);
+                    audioSource.PlayOneShot(audioClips[SoundPath]);
                 }
             }
         }
@@ -230,7 +217,7 @@ namespace BDArmory.FX
                     }
                     catch (Exception e)
                     {
-                        Debug.LogError($"[BDArmory.ExplosionFX]: Exception in overlapSphere collider processing: {e.Message}\n{e.StackTrace}");
+                        Debug.LogError($"[BDArmory.NukeFX]: Exception in overlapSphere collider processing: {e.Message}\n{e.StackTrace}");
                     }
                 }
             }
@@ -559,7 +546,7 @@ namespace BDArmory.FX
                 var audioClip = SoundUtils.GetAudioClip(soundPath);
                 if (audioClip is null)
                 {
-                    Debug.LogError("[BDArmory.ExplosionFX]: " + soundPath + " was not found, using the default sound instead. Please fix your model.");
+                    Debug.LogError("[BDArmory.NukeFX]: " + soundPath + " was not found, using the default sound instead. Please fix your model.");
                     audioClip = SoundUtils.GetAudioClip(ModuleWeapon.defaultExplSoundPath);
                 }
                 audioClips.Add(soundPath, audioClip);
