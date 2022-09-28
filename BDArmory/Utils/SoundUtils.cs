@@ -36,7 +36,7 @@ namespace BDArmory.Utils
         public static void ClearAudioCache() => audioClips.Clear(); // Maybe someone has a reason for doing this to reload sounds dynamically? They'd need a way to refresh the GameDatabase too though.
 
         /// <summary>
-        /// Check whether the soundPath is in the audioclip cache or not.
+        /// Check whether the soundPath is in the audioclip cache or not and that the audioclip is not null if it is.
         /// </summary>
         /// <param name="soundPath"></param>
         /// <returns></returns>
