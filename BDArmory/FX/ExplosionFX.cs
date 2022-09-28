@@ -17,7 +17,7 @@ namespace BDArmory.FX
     public class ExplosionFx : MonoBehaviour
     {
         public static Dictionary<string, ObjectPool> explosionFXPools = new Dictionary<string, ObjectPool>();
-        public static Dictionary<string, AudioClip> audioClips = new Dictionary<string, AudioClip>(); // Pool the audio clips separately. Note: this isn't really necessary now that we have SoundUtils.
+        public static Dictionary<string, AudioClip> audioClips = new Dictionary<string, AudioClip>(); // Pool the audio clips separately. Note: this is really a shallow copy of the AudioClips in SoundUtils.
         public KSPParticleEmitter[] pEmitters { get; set; }
         public Light LightFx { get; set; }
         public float StartTime { get; set; }
@@ -128,8 +128,7 @@ namespace BDArmory.FX
             // }
             if (!string.IsNullOrEmpty(SoundPath))
             {
-                var audioClip = audioClips[SoundPath];
-                audioSource.PlayOneShot(audioClip);
+                audioSource.PlayOneShot(audioClips[SoundPath]);
             }
             if (BDArmorySettings.DEBUG_DAMAGE)
             {
@@ -972,7 +971,6 @@ namespace BDArmory.FX
                     explosionFXTemplate = GameDatabase.Instance.GetModel(ModuleWeapon.defaultExplModelPath);
                 }
                 var eFx = explosionFXTemplate.AddComponent<ExplosionFx>();
-                // eFx.ExSound = SoundUtils.GetAudioClip(soundPath); //this is reporting as null in ExplosionFX proper? "PlayOneShot was called with a null AudioClip."
                 eFx.audioSource = explosionFXTemplate.AddComponent<AudioSource>();
                 eFx.audioSource.minDistance = 200;
                 eFx.audioSource.maxDistance = 5500;
