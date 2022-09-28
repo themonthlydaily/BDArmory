@@ -348,7 +348,7 @@ namespace BDArmory.Modules
             }
             var wait = new WaitForFixedUpdate();
             while (p.vessel != null && (!p.vessel.loaded || p.vessel.packed)) yield return wait; // Wait for the vessel to be loaded. (Avoids kerbals not being registered in seats.)
-            if (p.vessel == null)
+            if (p.vessel == null || c == null)
             {
                 Destroy(this);
                 yield break;
