@@ -270,7 +270,7 @@ namespace BDArmory.Modules
             }
             else
             {
-                if (fromTo.host != null)
+                if (fromTo.host != null && fromTo.host.loaded)
                 {
                     Debug.LogWarning("[BDArmory.KerbalSafety]: " + fromTo.host + " got eaten by the Kraken!");
                     fromTo.host.gameObject.SetActive(false);
