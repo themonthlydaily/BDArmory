@@ -404,8 +404,22 @@ namespace BDArmory.Extensions
 
         public static bool IsMissile(this Part part)
         {
-            return part.Modules.Contains("MissileBase") || part.Modules.Contains("MissileLauncher") ||
-                   part.Modules.Contains("BDModularGuidance");
+            if (part.Modules.Contains("BDModularGuidance")) return true;
+            if (part.Modules.Contains("MissileBase") || part.Modules.Contains("MissileLauncher"))
+            {
+                if (!part.Modules.Contains("MultiMissileLauncher")) return true;
+                IEnumerator<PartModule> partModules = part.Modules.GetEnumerator();
+                while (partModules.MoveNext())
+                {
+                    if (partModules.Current.moduleName == "MultiMissileLauncher")
+                    {
+                        return (((Weapons.Missiles.MultiMissileLauncher)partModules.Current).isClusterMissile);
+                    }
+                }
+                //return ((part.Modules.Contains("MissileBase") || part.Modules.Contains("MissileLauncher") ||
+                //      part.Modules.Contains("BDModularGuidance"))
+            }
+            return false;
         }
         public static bool IsWeapon(this Part part)
         {

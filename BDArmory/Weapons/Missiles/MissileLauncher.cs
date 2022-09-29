@@ -2148,8 +2148,11 @@ namespace BDArmory.Weapons.Missiles
             if (SourceVessel == null) SourceVessel = vessel;
             if (multiLauncher && multiLauncher.isClusterMissile)
             {
-                reloadableRail.MissileName = multiLauncher.subMunitionName;
-                multiLauncher.fireMissile(true);
+                if (!HasDied)
+                {
+                    reloadableRail.MissileName = multiLauncher.subMunitionName;
+                    multiLauncher.fireMissile(true);
+                }
             }
             else
             {
@@ -2208,6 +2211,7 @@ namespace BDArmory.Weapons.Missiles
         {
             if (p == part)
             {
+                HasDied = true;
                 Detonate();
                 BDATargetManager.FiredMissiles.Remove(this);
                 GameEvents.onPartDie.Remove(PartDie);
@@ -2603,36 +2607,81 @@ namespace BDArmory.Weapons.Missiles
             output.AppendLine($"Warhead:");
             while (partModules.MoveNext())
             {
-                if (partModules.Current == null) continue;
-                if (partModules.Current.moduleName == "BDExplosivePart")
+                if (partModules.Current == null && !multiLauncher) continue;
+                if (partModules.Current.moduleName == "MultiMissileLauncher")
                 {
-                    ((BDExplosivePart)partModules.Current).ParseWarheadType();
-                    if (clusterbomb > 1)
+                    if (((MultiMissileLauncher)partModules.Current).isClusterMissile)
                     {
-                        output.AppendLine($"Cluster Bomb:");
-                        output.AppendLine($"- Sub-Munition Count: {clusterbomb} ");
+                        output.AppendLine($"Cluster Missile:");
+                        output.AppendLine($"- Sub-Munition Count: {((MultiMissileLauncher)partModules.Current).salvoSize} ");
                     }
-                    float tntMass = ((BDExplosivePart)partModules.Current).tntMass;
-                    output.AppendLine($"- Blast radius: {Math.Round(BlastPhysicsUtils.CalculateBlastRange(tntMass), 2)} m");
-                    output.AppendLine($"- tnt Mass: {tntMass} kg");
-                    output.AppendLine($"- {((BDExplosivePart)partModules.Current).warheadReportingName} warhead");
+                    using (var parts = PartLoader.LoadedPartsList.GetEnumerator())
+                        while (parts.MoveNext())
+                        {
+                            if (parts.Current.partConfig == null || parts.Current.partPrefab == null)
+                                continue;
+                            if (!parts.Current.partPrefab.partInfo.name.Contains(((MultiMissileLauncher)partModules.Current).subMunitionName)) continue;
+                            foreach (PartModule m in parts.Current.partPrefab.Modules)
+                            {
+                                if (m.moduleName == "BDExplosivePart")
+                                {
+                                    ((BDExplosivePart)m).ParseWarheadType();
+                                    float tntMass = ((BDExplosivePart)m).tntMass;
+                                    output.AppendLine($"- Blast radius: {Math.Round(BlastPhysicsUtils.CalculateBlastRange(tntMass), 2)} m");
+                                    output.AppendLine($"- tnt Mass: {tntMass} kg");
+                                    output.AppendLine($"- {((BDExplosivePart)m).warheadReportingName} warhead");
+                                }
+                                if (partModules.Current.moduleName == "ModuleEMP")
+                                {
+                                    float proximity = ((ModuleEMP)m).proximity;
+                                    output.AppendLine($"- EMP Blast Radius: {proximity} m");
+                                }
+                                if (partModules.Current.moduleName == "BDModuleNuke")
+                                {
+                                    float yield = ((BDModuleNuke)m).yield;
+                                    float radius = ((BDModuleNuke)m).thermalRadius;
+                                    float EMPRadius = ((BDModuleNuke)m).isEMP ? BDAMath.Sqrt(yield) * 500 : -1;
+                                    output.AppendLine($"- Yield: {yield} kT");
+                                    output.AppendLine($"- Max radius: {radius} m");
+                                    if (EMPRadius > 0) output.AppendLine($"- EMP Blast Radius: {EMPRadius} m");
+                                }
+                                else continue;
+                                break;
+                            }
+                        }
                 }
-                if (partModules.Current.moduleName == "ModuleEMP")
+                else
                 {
-                    float proximity = ((ModuleEMP)partModules.Current).proximity;
-                    output.AppendLine($"- EMP Blast Radius: {proximity} m");
+                    if (partModules.Current.moduleName == "BDExplosivePart")
+                    {
+                        ((BDExplosivePart)partModules.Current).ParseWarheadType();
+                        if (clusterbomb > 1)
+                        {
+                            output.AppendLine($"Cluster Bomb:");
+                            output.AppendLine($"- Sub-Munition Count: {clusterbomb} ");
+                        }
+                        float tntMass = ((BDExplosivePart)partModules.Current).tntMass;
+                        output.AppendLine($"- Blast radius: {Math.Round(BlastPhysicsUtils.CalculateBlastRange(tntMass), 2)} m");
+                        output.AppendLine($"- tnt Mass: {tntMass} kg");
+                        output.AppendLine($"- {((BDExplosivePart)partModules.Current).warheadReportingName} warhead");
+                    }
+                    if (partModules.Current.moduleName == "ModuleEMP")
+                    {
+                        float proximity = ((ModuleEMP)partModules.Current).proximity;
+                        output.AppendLine($"- EMP Blast Radius: {proximity} m");
+                    }
+                    if (partModules.Current.moduleName == "BDModuleNuke")
+                    {
+                        float yield = ((BDModuleNuke)partModules.Current).yield;
+                        float radius = ((BDModuleNuke)partModules.Current).thermalRadius;
+                        float EMPRadius = ((BDModuleNuke)partModules.Current).isEMP ? BDAMath.Sqrt(yield) * 500 : -1;
+                        output.AppendLine($"- Yield: {yield} kT");
+                        output.AppendLine($"- Max radius: {radius} m");
+                        if (EMPRadius > 0) output.AppendLine($"- EMP Blast Radius: {EMPRadius} m");
+                    }
+                    else continue;
+                    break;
                 }
-                if (partModules.Current.moduleName == "BDModuleNuke")
-                {
-                    float yield = ((BDModuleNuke)partModules.Current).yield;
-                    float radius = ((BDModuleNuke)partModules.Current).thermalRadius;
-                    float EMPRadius = ((BDModuleNuke)partModules.Current).isEMP ? BDAMath.Sqrt(yield) * 500 : -1;
-                    output.AppendLine($"- Yield: {yield} kT");
-                    output.AppendLine($"- Max radius: {radius} m");
-                    if (EMPRadius > 0) output.AppendLine($"- EMP Blast Radius: {EMPRadius} m");
-                }
-                else continue;
-                break;
             }
             partModules.Dispose();
 

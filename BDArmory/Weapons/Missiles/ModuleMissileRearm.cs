@@ -23,8 +23,8 @@ namespace BDArmory.Weapons.Missiles
         private float missileCost = 0;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_OrdinanceAvailable"),//Ordinance Available
-UI_FloatRange(minValue = 1f, maxValue = 20, stepIncrement = 1f, scene = UI_Scene.Editor)]
-        public float ammoCount = 3; //need to figure out where ammo is stored, for mass addition/subtraction - in the missile? external missile ammo bin? CoM?
+UI_FloatRange(minValue = 1f, maxValue = 4, stepIncrement = 1f, scene = UI_Scene.Editor)]
+        public float ammoCount = 1; //need to figure out where ammo is stored, for mass addition/subtraction - in the missile? external missile ammo bin? CoM?
 
         [KSPField]
         public string MissileName = "bahaAim120";
@@ -90,7 +90,7 @@ UI_FloatRange(minValue = 1f, maxValue = 20, stepIncrement = 1f, scene = UI_Scene
             {
                 if (part.parent.FindModuleImplementing<MissileTurret>()) //turrets work... sorta. Missiles are reloading more or less where they should be, but there's some massive force being imparted on the turret every launch
                 {// test UpdateMissileChildren fix used for rotary rails?
-                    ammoCount = 0;
+                    ammoCount = 1;
                     Fields["ammoCount"].guiActiveEditor = false;
                 }
                 else

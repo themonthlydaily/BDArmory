@@ -32,14 +32,13 @@ namespace BDArmory.Weapons.Missiles
         [KSPField] public bool isMultiLauncher = false; //is this a multimissile pod?
         [KSPField] public bool useSymCounterpart = false; //have symmetrically placed parts fire along with this part as part of salvo? Requires isMultMissileLauncher = true;
         [KSPField] public bool overrideReferenceTransform = false; //override the missileReferenceTransform in Missilelauncher to use vessel prograde
+        [KSPField] public float rippleRPM = 650;
         [KSPField] public string deployAnimationName;
 
         AnimationState deployState;
-
         ModuleMissileRearm missileSpawner = null;
         MissileLauncher missileLauncher = null;
         MissileFire wpm = null;
-        public float rippleRPM = 650;
         private int tubesFired = 0;
         Part SymPart = null;
         public void Start()

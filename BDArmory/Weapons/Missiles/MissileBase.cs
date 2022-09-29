@@ -247,6 +247,8 @@ namespace BDArmory.Weapons.Missiles
 
         public bool HasExploded { get; set; } = false;
 
+        public bool HasDied { get; set; } = false;
+
         public int clusterbomb { get; set; } = 1;
 
         protected IGuidance _guidance;
