@@ -60,7 +60,7 @@ UI_FloatRange(minValue = 1f, maxValue = 20, stepIncrement = 1f, scene = UI_Scene
                                 part.RemoveModule(MMR);
                             }
                             */
-                            Debug.Log("[BDArmory.ModuleMissileRearm] spawned " + SpawnedMissile.name + "; ammo remaining: " + ammoCount);
+                            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.ModuleMissileRearm] spawned " + SpawnedMissile.name + "; ammo remaining: " + ammoCount);
                             return;
                         }
                     }
@@ -88,14 +88,8 @@ UI_FloatRange(minValue = 1f, maxValue = 20, stepIncrement = 1f, scene = UI_Scene
         {
             if (part.parent)
             {
-                if (part.parent.FindModuleImplementing<BDRotaryRail>()) //test UpdateMissileChildren fix, else uncomment
-                {
-                    //ammoCount = 0;
-                    //Fields["ammoCount"].guiActiveEditor = false; //something still broken with rotary rails, so disabling reloads on rotTails for now
-                                                                 //turrets work... sorta. Missiles are reloading more or less where they should be, but there's some massive force being imparted on the turret every launch
-                }
-                else if (part.parent.FindModuleImplementing<MissileTurret>())
-                {
+                if (part.parent.FindModuleImplementing<MissileTurret>()) //turrets work... sorta. Missiles are reloading more or less where they should be, but there's some massive force being imparted on the turret every launch
+                {// test UpdateMissileChildren fix used for rotary rails?
                     ammoCount = 0;
                     Fields["ammoCount"].guiActiveEditor = false;
                 }
@@ -141,7 +135,7 @@ UI_FloatRange(minValue = 1f, maxValue = 20, stepIncrement = 1f, scene = UI_Scene
 
         static IEnumerator FinalizeMissile(Part missile, Part launcher)
         {
-            Debug.Log("[BDArmory.ModuleMissileRearm]: Creating " + missile);
+            //Debug.Log("[BDArmory.ModuleMissileRearm]: Creating " + missile);
             string originatingVesselName = missile.vessel.vesselName;
             missile.physicalSignificance = Part.PhysicalSignificance.NONE;
             missile.PromoteToPhysicalPart();

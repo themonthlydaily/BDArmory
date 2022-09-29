@@ -62,7 +62,6 @@ namespace BDArmory.Weapons.Missiles
                     deployState.normalizedTime = 0;
                     deployState.speed = 0;
                     deployState.enabled = true;
-                    //Debug.Log("[BDArmory.MultiMissileLauncher] setup deploy anim " + deployState.name);
                 }
             }
             //GameEvents.onEditorShipModified.Add(ShipModified);
@@ -130,7 +129,6 @@ namespace BDArmory.Weapons.Missiles
             if (subMunitionPath != "")
             {
                 PopulateMissileDummies(true);
-                Debug.Log("[BDArmory.MultiMissileLauncher] Populating missile dummies...");
             }
         }
         public void PopulateMissileDummies(bool refresh = false)
@@ -255,7 +253,6 @@ namespace BDArmory.Weapons.Missiles
                 {
                     if (wpm.multiMissileTgtNum >= 2 && wpm != null)
                     {
-                        Debug.Log("1");
                         if (TargetID > Mathf.Min((wpm.targetsAssigned.Count - 1), wpm.multiMissileTgtNum))
                         {
                             TargetID = -1; //if more missiles than targets, loop target list
@@ -267,7 +264,6 @@ namespace BDArmory.Weapons.Missiles
                         }
                         else
                         {
-                            Debug.Log("2");
                             if (wpm.targetsAssigned.Count > 0 && wpm.targetsAssigned[TargetID].Vessel != null)
                             {
                                 if ((ml.engageAir && wpm.targetsAssigned[TargetID].isFlying) ||
@@ -313,7 +309,6 @@ namespace BDArmory.Weapons.Missiles
                                                 }
                                             }
                                     }
-                                    Debug.Log("3");
                                 }
                                 TargetID++;
                             }
@@ -322,13 +317,11 @@ namespace BDArmory.Weapons.Missiles
                     else
                     {
                         if (wpm != null) wpm.SendTargetDataToMissile(ml);
-                        Debug.Log("4");
                     }
                 }
                 else
                 {
                     wpm.SendTargetDataToMissile(ml);
-                    Debug.Log("6");
                 }
                 ml.launched = true;
                 ml.TargetPosition = vessel.ReferenceTransform.position + (vessel.ReferenceTransform.up * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
