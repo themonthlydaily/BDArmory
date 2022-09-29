@@ -232,6 +232,10 @@ namespace BDArmory.Weapons.Missiles
                 ml.dropTime = 0;
                 ml.guidanceActive = true;
                 ml.detonationTime = missileLauncher.detonationTime;
+                ml.engageAir = missileLauncher.engageAir;
+                ml.engageGround = missileLauncher.engageGround;
+                ml.engageMissile = missileLauncher.engageMissile;
+                ml.engageSLW = missileLauncher.engageSLW;
                 if (missileLauncher.GuidanceMode == GuidanceModes.AGMBallistic)
                 {
                     ml.BallisticOverShootFactor = missileLauncher.BallisticOverShootFactor;

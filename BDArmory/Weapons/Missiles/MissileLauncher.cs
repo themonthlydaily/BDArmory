@@ -923,6 +923,10 @@ namespace BDArmory.Weapons.Missiles
             ml.DetonateAtMinimumDistance = DetonateAtMinimumDistance;
             ml.dropTime = dropTime;
             ml.detonationTime = detonationTime;
+            ml.engageAir = engageAir;
+            ml.engageGround = engageGround;
+            ml.engageMissile = engageMissile;
+            ml.engageSLW = engageSLW;
             if (GuidanceMode == GuidanceModes.AGMBallistic)
             {
                 ml.BallisticOverShootFactor = BallisticOverShootFactor; //are some of these null, and causeing this to quit? 

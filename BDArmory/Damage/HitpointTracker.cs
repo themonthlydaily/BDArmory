@@ -328,7 +328,7 @@ namespace BDArmory.Damage
                     //UI_ProgressBar Armorleft = (UI_ProgressBar)Fields["ArmorRemaining"].uiControlFlight;
                     //Armorleft.scene = UI_Scene.None;
                 }
-                if (part.IsMissile()) //FIXME - this will catch MultiMissileLaunchers, despite them being more like RocketPods or hull parts than missiels. 
+                if (part.IsMissile())
                 {
                     Fields["ArmorTypeNum"].guiActiveEditor = false;
                     Fields["guiArmorTypeString"].guiActiveEditor = false;
