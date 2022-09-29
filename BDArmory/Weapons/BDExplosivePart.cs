@@ -93,6 +93,9 @@ namespace BDArmory.Weapons
         public string warheadReportingName;
 
         [KSPField]
+        public float caliber = 120;
+
+        [KSPField]
         public string explModelPath = "BDArmory/Models/explosion/explosion";
 
         [KSPField]
@@ -316,19 +319,26 @@ namespace BDArmory.Weapons
                     break;
             }
         }
+
         public void DetonateIfPossible()
+        {
+            DetonateIfPossible(default(Vector3));
+        }
+        public void DetonateIfPossible(Vector3 direction)
         {
             if (!HighLogic.LoadedSceneIsFlight || part == null) return;
             if (!hasDetonated && Armed)
             {
-                Vector3 direction = default(Vector3);
+                //Vector3 direction = default(Vector3);
 
-                if (warheadType != "standard")
+                if (warheadType != "standard" && direction == default(Vector3))
                 {
-                    direction = (part.transform.position + part.rb.velocity * Time.deltaTime).normalized;
+                    //direction = (part.transform.position + part.rb.velocity * Time.deltaTime).normalized;
+                    direction = (part.rb.velocity).normalized;
                 }
+
                 var sourceWeapon = part.FindModuleImplementing<EngageableWeapon>();
-                ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 120, part, sourcevessel != null ? sourcevessel.vesselName : null, sourceWeapon != null ? sourceWeapon.GetShortName() : null, direction, -1, false, warheadType == "standard" ? part.mass : 0, -1, 1, warheadType);
+                ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, caliber, part, sourcevessel != null ? sourcevessel.vesselName : null, sourceWeapon != null ? sourceWeapon.GetShortName() : null, direction, -1, false, warheadType == "standard" ? part.mass : 0, -1, 1, warheadType);
                 hasDetonated = true;
                 if (BDArmorySettings.DEBUG_MISSILES)
                     Debug.Log("[BDArmory.BDExplosivePart]: " + part + " (" + (uint)(part.GetInstanceID()) + ") from " + (sourcevessel != null ? sourcevessel.vesselName : null) + " detonating with a " + warheadType + " warhead");
@@ -336,20 +346,22 @@ namespace BDArmory.Weapons
             }
         }
 
-        private void Detonate()
+        private void Detonate(Vector3 direction = default(Vector3))
         {
             if (!hasDetonated && Armed)
             {
-                Vector3 direction = default(Vector3);
+                //Vector3 direction = default(Vector3);
 
-                if (warheadType != "standard")
+                if (warheadType != "standard" && direction == default(Vector3))
                 {
-                    direction = (part.transform.position + part.rb.velocity * Time.deltaTime).normalized;
+                    //direction = (part.transform.position + part.rb.velocity * Time.deltaTime).normalized;
+                    direction = (part.rb.velocity).normalized;
                 }
+
                 var sourceWeapon = part.FindModuleImplementing<EngageableWeapon>();
                 if (BDArmorySettings.DEBUG_MISSILES)
                     Debug.Log("[BDArmory.BDExplosivePart]: " + part + " (" + (uint)(part.GetInstanceID()) + ") from " + (sourcevessel != null ? sourcevessel.vesselName : null) + " detonating with a " + warheadType + " warhead");
-                ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 120, part, sourcevessel != null ? sourcevessel.vesselName : null, sourceWeapon != null ? sourceWeapon.GetShortName() : null, direction, -1, false, warheadType == "standard" ? part.mass : 0, -1, 1, warheadType);
+                ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, caliber, part, sourcevessel != null ? sourcevessel.vesselName : null, sourceWeapon != null ? sourceWeapon.GetShortName() : null, direction, -1, false, warheadType == "standard" ? part.mass : 0, -1, 1, warheadType);
                 hasDetonated = true;
                 part.Destroy();
                 part.explode();

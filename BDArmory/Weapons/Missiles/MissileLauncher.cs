@@ -1997,7 +1997,7 @@ namespace BDArmory.Weapons.Missiles
             if (warheadType == WarheadTypes.Standard)
             {
                 var tnt = part.FindModuleImplementing<BDExplosivePart>();
-                tnt.DetonateIfPossible();
+                tnt.DetonateIfPossible(GetForwardTransform());
             }
             else if (warheadType == WarheadTypes.Nuke)
             {

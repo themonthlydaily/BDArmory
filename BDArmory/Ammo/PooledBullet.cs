@@ -797,7 +797,7 @@ namespace BDArmory.Bullets
                         
                         // If the projectile gets too small things go wonky with the formulas for penetration
                         // they'll still work honestly, but I'd rather avoid those situations
-                        if ((kDist * length) < 1.2f * caliber)
+                        /*if ((kDist * length) < 1.2f * caliber)
                         {
                             float massFactor = (1.2f * caliber / length);
                             bulletMass = bulletMass * massFactor;
@@ -807,7 +807,12 @@ namespace BDArmory.Bullets
                         {
                             bulletMass = bulletMass * kDist;
                             length = (length - 10) * kDist + 10;
-                        }
+                        }*/
+
+                        // Deprecated above since the penetration formula was modified to
+                        // deal with such cases
+                        bulletMass = bulletMass * kDist;
+                        length = (length - 10) * kDist + 10;
 
                         if (BDArmorySettings.DEBUG_WEAPONS)
                         {
@@ -903,6 +908,19 @@ namespace BDArmory.Bullets
                 float muParam1;
                 float muParam2;
                 float muParam3;
+
+                if (hitPart.skinTemperature > safeTemp) //has the armor started melting/denaturing/whatever?
+                {
+                    //vFactor *= 1/(1.25f*0.75f-0.25f*0.75f*0.75f);
+                    vFactor *= 1.25490196078f; // Uses the above equation but just calculated out.
+                    // The equation 1/(1.25*x-0.25*x^2) approximates the effect of changing yield strength
+                    // by a factor of x
+                    if (hitPart.skinTemperature > safeTemp * 1.5f)
+                    {
+                        vFactor *= 1.77777777778f; // Same as used above, but here with x = 0.5. Maybe this should be
+                        // some kind of a curve?
+                    }
+                }
 
                 int armorType = (int)Armor.ArmorTypeNum;
                 if (BDArmorySettings.DEBUG_ARMOR)

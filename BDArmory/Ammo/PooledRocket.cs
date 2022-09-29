@@ -447,6 +447,19 @@ namespace BDArmory.Bullets
                             float muParam2 = Armor.muParam2;
                             float muParam3 = Armor.muParam3;
 
+                            if (hitPart.skinTemperature > safeTemp) //has the armor started melting/denaturing/whatever?
+                            {
+                                //vFactor *= 1/(1.25f*0.75f-0.25f*0.75f*0.75f);
+                                vFactor *= 1.25490196078f; // Uses the above equation but just calculated out.
+                                                           // The equation 1/(1.25*x-0.25*x^2) approximates the effect of changing yield strength
+                                                           // by a factor of x
+                                if (hitPart.skinTemperature > safeTemp * 1.5f)
+                                {
+                                    vFactor *= 1.77777777778f; // Same as used above, but here with x = 0.5. Maybe this should be
+                                                               // some kind of a curve?
+                                }
+                            }
+
                             int armorType = (int)Armor.ArmorTypeNum;
                             if (BDArmorySettings.DEBUG_ARMOR)
                             {
@@ -718,7 +731,8 @@ namespace BDArmory.Bullets
                         Vector3 direction = default(Vector3);
                         if (shaped)
                         {
-                            direction = (pos + rb.velocity * Time.deltaTime).normalized;
+                            //direction = (pos + rb.velocity * Time.deltaTime).normalized;
+                            direction = (rb.velocity).normalized;
                         }
                         if (gravitic)
                         {
@@ -895,7 +909,7 @@ namespace BDArmory.Bullets
                     pBullet.bulletDmgMult = bulletDmgMult;
                     pBullet.ballisticCoefficient = sBullet.bulletMass / (((Mathf.PI * 0.25f * sBullet.caliber * sBullet.caliber) / 1000000f) * 0.295f);
                     pBullet.timeElapsedSinceCurrentSpeedWasAdjusted = 0;
-                    pBullet.timeToLiveUntil = 4000 / sBullet.bulletVelocity * 1.1f + Time.time;
+                    pBullet.timeToLiveUntil = 10000 / sBullet.bulletVelocity * 1.1f + Time.time;
                     Vector3 firedVelocity = VectorUtils.GaussianDirectionDeviation(currentVelocity.normalized, (sBullet.subProjectileCount / BDAMath.Sqrt(currentVelocity.magnitude / 10))) * (sBullet.bulletVelocity / 10); //more subprojectiles = wider spread, higher base velocity = tighter spread
                     pBullet.currentVelocity = (currentVelocity + Krakensbane.GetFrameVelocityV3f()) + firedVelocity; // use the real velocity, w/o offloading
                     pBullet.sourceWeapon = sourceWeapon;

@@ -1203,6 +1203,8 @@ namespace BDArmory.Damage
                 muParam1S = 0.947031140f;
                 muParam2S = 1.55575776f;
                 muParam3S = 2.75371552f;
+                HEEquiv = 1f;
+                HEATEquiv = 1f;
 
                 SafeUseTemp = 2500;
                 if (BDArmorySettings.DEBUG_ARMOR)
@@ -1228,6 +1230,8 @@ namespace BDArmory.Damage
                 muParam1S = 1.92650831f;
                 muParam2S = 2.65274119f;
                 muParam3S = 7.37037039f;
+                HEEquiv = 0.1601427673f;
+                HEATEquiv = 0.5528789891f;
 
                 SafeUseTemp = 993;
                 Armor = 10;
@@ -1331,7 +1335,7 @@ namespace BDArmory.Damage
             }
             else
             {
-                Armor = 10;
+                //Armor = 10;
                 Fields["Armor"].guiActiveEditor = false;
                 Fields["guiArmorTypeString"].guiActiveEditor = false;
                 Fields["guiArmorTypeString"].guiActive = false;

@@ -719,7 +719,7 @@ namespace BDArmory.Utils
                     Mathf.PI) * (sabot ? 19.0f : 11.34f)) + 1.0f) * 10.0f;
             }
 
-            float penetration = 0;
+            //float penetration = 0;
             // 1400 is an arbitrary velocity around where the linear function used to
             // simplify diverges from the result predicted by the Frank and Zook S2 based
             // equation used. It is also inaccurate under 1400 for long rod projectiles
@@ -744,14 +744,28 @@ namespace BDArmory.Utils
             // Perhaps capping this with the hydrodynamic limit makes sense, but even with
             // these kind of penetrators they easily blow past the hydrodynamic limit in
             // actual experiments so I'm a little hesitant about putting it in.
+
+            // Above text has been deprecated, Tate is used for everything and projectile
+            // aspect ratio is now used to reduce penetration at L/D < 1
+
+            float penetration = ((length - caliber) * (1.0f - Mathf.Exp((-vFactor *
+                    bulletVelocity * bulletVelocity) * muParam1)) * muParam2 + caliber *
+                    muParam3 * Mathf.Log(1.0f + vFactor * bulletVelocity *
+                    bulletVelocity)) * apBulletMod;
+
             if (length < caliber)
             {
                 // Formula based on IDA paper P5032, Appendix D, modified to match the
                 // Krupp equation this mod used before.
-                penetration = (BDAMath.Sqrt(bulletMass * 1000.0f / (0.7f * Strength * Mathf.PI
-                    * caliber)) * 0.727457902089f * bulletVelocity) * apBulletMod;
+                //penetration = (BDAMath.Sqrt(bulletMass * 1000.0f / (0.7f * Strength * Mathf.PI
+                //    * caliber)) * 0.727457902089f * bulletVelocity) * apBulletMod;
+
+                // Deprecated the above formula in favor of this, it actually follows the
+                // old Krupp formula's predictions pretty well. It may not necessarily be
+                // 100% accurate but it gets the job done
+                penetration = penetration * length / caliber;
             }
-            else
+            /*else
             {
                 // Formula based on "Energy-efficient penetration and perforation of
                 // targets in the hypervelocity regime" by Frank and Zook (1987) Used the
@@ -763,10 +777,12 @@ namespace BDArmory.Utils
                     bulletVelocity * bulletVelocity) * muParam1)) * muParam2 + caliber *
                     muParam3 * Mathf.Log(1.0f + vFactor * bulletVelocity *
                     bulletVelocity)) * apBulletMod;
-            }
+            }*/
+
+
             if (BDArmorySettings.DEBUG_ARMOR)
             {
-                Debug.Log("[BDArmory.ProjectileUtils{Calc Penetration}]: Length: " + length + "; sabot: " + sabot + " ;Penetration: " + Mathf.Round(penetration / 10) + " cm");
+                Debug.Log("[BDArmory.ProjectileUtils{Calc Penetration}]: Caliber: " + caliber + " Length: " + length + "; sabot: " + sabot + " ;Penetration: " + Mathf.Round(penetration / 10) + " cm");
                 Debug.Log("[BDArmory.ProjectileUtils{Calc Penetration}]: vFactor: " + vFactor + "; EXP: " + Mathf.Exp((-vFactor *
                     bulletVelocity * bulletVelocity) * muParam1) + " ;MuParam1: " + muParam1);
                 Debug.Log("[BDArmory.ProjectileUtils{Calc Penetration}]: MuParam2: " + muParam2 + "; muParam3: " + muParam3 + " ;log: " + Mathf.Log(1.0f + vFactor * bulletVelocity *
