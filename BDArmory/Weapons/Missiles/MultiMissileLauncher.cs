@@ -50,9 +50,10 @@ namespace BDArmory.Weapons.Missiles
             if (!missileSpawner) //MultiMissile launchers/cluster missiles need a MMR module for spawning their submunitions, so add one if not present
             {
                 missileSpawner = (ModuleMissileRearm)part.AddModule("ModuleMissileRearm");
-                missileSpawner.ammoCount = 1;
+                missileSpawner.maxAmmo = salvoSize = 10;
                 Debug.Log("[BDArmory.MultiMissileLauncher] no ModuleMissileRearm on " + part.name + ". Please fix your .cfg");
-            }            
+            }
+            missileSpawner.ammoCount = salvoSize;
             if (!string.IsNullOrEmpty(deployAnimationName))
             {
                 deployState = GUIUtils.SetUpSingleAnimation(deployAnimationName, part);

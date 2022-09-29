@@ -718,7 +718,7 @@ namespace BDArmory.Bullets
                         Vector3 direction = default(Vector3);
                         if (shaped)
                         {
-                            direction = (pos + rb.velocity * Time.deltaTime).normalized;
+                            direction = (pos + (rb.velocity * Time.deltaTime)).normalized;
                         }
                         if (gravitic)
                         {
