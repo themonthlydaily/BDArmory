@@ -226,10 +226,10 @@ namespace BDArmory.FX
                 // simplifies down to a linear equation
                 SCRange = (49f * Caliber * 20f) * 0.001f;
 
-                if (BDArmorySettings.DEBUG_WEAPONS && (warheadType == WarheadTypes.ShapedCharge))
-                {
-                    Debug.Log("[BDArmory.ExplosionFX] SCRange: " + SCRange + "m. Normalized Direction: " + Direction.normalized.ToString("G4"));
-                }
+                //if (BDArmorySettings.DEBUG_WEAPONS && (warheadType == WarheadTypes.ShapedCharge))
+                //{
+                //    Debug.Log("[BDArmory.ExplosionFX] SCRange: " + SCRange + "m. Normalized Direction: " + Direction.normalized.ToString("G4"));
+                //}
 
                 Ray SCRay = new Ray(Position, SCRange > Range ? (Direction.normalized * SCRange) : (Direction.normalized * Range));
                 //Ray SCRay = new Ray(Position, (Direction.normalized * Range));
@@ -771,10 +771,10 @@ namespace BDArmory.FX
             bool shapedEffect = ((warheadType == WarheadTypes.ShapedCharge || warheadType == WarheadTypes.ContinuousRod) && eventToExecute.withinAngleofEffect);
 
 
-            if (BDArmorySettings.DEBUG_WEAPONS && shapedEffect)
-            {
-                Debug.Log("[BDArmory.ExplosionFX] Part: " + part.name + ". Real Distance: " + realDistance + "m. SCRange: " + SCRange + "m.");
-            }
+            //if (BDArmorySettings.DEBUG_WEAPONS && shapedEffect)
+            //{
+            //    Debug.Log("[BDArmory.ExplosionFX] Part: " + part.name + ". Real Distance: " + realDistance + "m. SCRange: " + SCRange + "m.");
+            //}
 
             if ((realDistance <= Range) || (realDistance <= SCRange)) //within radius of Blast
             {
@@ -897,10 +897,10 @@ namespace BDArmory.FX
                                     //penetration = ProjectileUtils.CalculatePenetration(Caliber, warheadType == WarheadTypes.ShapedCharge ? 5000f : ExplosionVelocity, warheadType == WarheadTypes.ShapedCharge ? Power * 0.0555f : ProjMass, apMod, 940, 0.00000094776185184f, 0.6560606203f, 1.201909309f, 1.777919321f);
                                     penetrationFactor = ProjectileUtils.CalculateArmorPenetration(part, penetration * standoffFactor - (cumulativeArmorOfIntermediateParts)*(cumulativeArmorOfIntermediateParts)/penetration, thickness * armorEquiv);
 
-                                    if (BDArmorySettings.DEBUG_WEAPONS)
-                                    {
-                                        Debug.Log("[BDArmory.ExplosionFX] Penetration: " + penetration + "mm. Thickness: " + thickness * armorEquiv + "mm. armorEquiv: " + armorEquiv + ". Intermediate Armor: " + ((cumulativeArmorOfIntermediateParts) * (cumulativeArmorOfIntermediateParts) / penetration)  + "mm. Penetration Factor: " + penetrationFactor + ". Standoff Factor: " + standoffFactor);
-                                    }
+                                    //if (BDArmorySettings.DEBUG_ARMOR)
+                                    //{
+                                    //    Debug.Log("[BDArmory.ExplosionFX] Penetration: " + penetration + "mm. Thickness: " + thickness * armorEquiv + "mm. armorEquiv: " + armorEquiv + ". Intermediate Armor: " + ((cumulativeArmorOfIntermediateParts) * (cumulativeArmorOfIntermediateParts) / penetration)  + "mm. Penetration Factor: " + penetrationFactor + ". Standoff Factor: " + standoffFactor);
+                                    //}
 
                                     if (RA != null)
                                     {

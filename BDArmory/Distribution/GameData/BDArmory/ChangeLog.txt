@@ -24,6 +24,16 @@ IMPROVEMENTS / FIXES
 - Weapons:
 	- Fixed bug where the target velocity and acceleration was not being reset once a target was no longer tracked which resulted in lead being erroneously compensated for while mouse aiming.
 	- Added ability to manually aim guns using GPS coordinates, primarily for artillery. This behavior is not yet a functionality in Guard Mode, however when a GPS target is manually selected, turrets will now aim to attempt to hit said target.
+	- Improved shaped charge warhead behavior, now armor penetration and beyond-armor effect is much more realistic.
+	- Fixed issue with missile and rocket warheads where direction of blasts were not along the directions of their warheads.
+	- Added "caliber" field to the BDExplosivePart module, it's an optional field for shaped charge projectiles which influences its effectiveness.
+	- apBulletMod now influences shaped charge projectile penetration, modifying this allows for the penetration of shaped charge shells to be tweaked.
+	- Armor protection against explosions is now influenced by angling, angling armor now makes it more difficult for the blast to punch through the armor plate.
+	- Added modifier that allows for tweaking of armor effectiveness against explosions.
+- Armor:
+	- Improved hypervelocity projectile post-penetration effects. Now Whipple shields should work properly, the more spacing between the armor plates the better the performance against hypervelocity rounds.
+	- Modified behavior of penetration formula below a projectile L/D ratio of 1 so penetration values are more consistent.
+	- Re-added temperature effects to armor protection levels, if the armor reaches its max safe temperature or goes above said temperature, performance is degraded.
 
 v1.5.2.1
 IMPROVEMENTS / FIXES
