@@ -649,7 +649,7 @@ namespace BDArmory.WeaponMounts
 
                 nextRailIndex = Mathf.RoundToInt(Mathf.Repeat(missileToRailIndex[missileIndex] + 1, numberOfRails));
 
-                UpdateMissileChildren();
+                if (!missileChildren[missileIndex].reloadableRail) UpdateMissileChildren();
 
                 if (wm)
                 {

@@ -4618,11 +4618,14 @@ namespace BDArmory.Weapons
                             {
                                 if ((closestTarget == Vector3.zero || (MissileTgt.transform.position - fireTransforms[0].position).sqrMagnitude < (closestTarget - fireTransforms[0].position).sqrMagnitude))
                                 {
-                                    closestTarget = MissileTgt.transform.position;
-                                    //tgtVelocity = MissileTgt.velocity;
-                                    visualTargetPart = MissileTgt.Vessel.Parts.FirstOrDefault();
-                                    tgtShell = null;
-                                    tgtRocket = null;
+                                    if (MissileTgt != null)
+                                    {
+                                        closestTarget = MissileTgt.transform.position;
+                                        //tgtVelocity = MissileTgt.velocity;
+                                        visualTargetPart = MissileTgt.Vessel.Parts.FirstOrDefault();
+                                        tgtShell = null;
+                                        tgtRocket = null;
+                                    }
                                 }
                             }
                         }

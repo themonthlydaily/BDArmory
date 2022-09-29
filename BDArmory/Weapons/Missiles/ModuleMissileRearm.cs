@@ -13,44 +13,54 @@ namespace BDArmory.Weapons.Missiles
 {
     public class ModuleMissileRearm : PartModule, IPartMassModifier, IPartCostModifier
     {
-        public float GetModuleMass(float baseMass, ModifierStagingSituation situation) => ammoCount * missileMass;
+        public float GetModuleMass(float baseMass, ModifierStagingSituation situation) => Mathf.Max((ammoCount - 1), 0) * missileMass;
 
         public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.FIXED;
-        public float GetModuleCost(float baseCost, ModifierStagingSituation situation) => ammoCount * missileCost;
+        public float GetModuleCost(float baseCost, ModifierStagingSituation situation) => Mathf.Max((ammoCount - 1), 0) * missileCost;
         public ModifierChangeWhen GetModuleCostChangeWhen() => ModifierChangeWhen.FIXED;
 
-        private Transform MissileTransform = null;
         private float missileMass = 0;
         private float missileCost = 0;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_OrdinanceAvailable"),//Ordinance Available
-UI_FloatRange(minValue = 0f, maxValue = 20, stepIncrement = 1f, scene = UI_Scene.Editor)]
+UI_FloatRange(minValue = 1f, maxValue = 20, stepIncrement = 1f, scene = UI_Scene.Editor)]
         public float ammoCount = 3; //need to figure out where ammo is stored, for mass addition/subtraction - in the missile? external missile ammo bin? CoM?
 
         [KSPField]
-        private string MissileName = "bahaAim120";
+        public string MissileName = "bahaAim120";
 
         [KSPField] public float reloadTime = 5f;
         [KSPField] public bool AccountForAmmo = true;
-
+        [KSPField] public float maxAmmo = 20;
         AvailablePart missilePart;
         public Part SpawnedMissile;
-        public void SpawnMissile()
+        public void SpawnMissile(Transform MissileTransform, bool offset = false)
         {
             if (ammoCount >= 1 || BDArmorySettings.INFINITE_AMMO)
             {
                 if (missilePart != null)
                 {
+                    if (MissileTransform == null) MissileTransform = part.partTransform;
+
                     foreach (PartModule m in missilePart.partPrefab.Modules)
                     {
                         if (m.moduleName == "MissileLauncher")
                         {
                             var partNode = new ConfigNode();
-                            PartSnapshot(missilePart.partPrefab).CopyTo(partNode); 
-                            Debug.Log("[BDArmory.ModuleMissileRearm]: Node" + missilePart.partPrefab.srfAttachNode.originalPosition);
-                            SpawnedMissile = CreatePart(partNode, MissileTransform.transform.position - MissileTransform.TransformDirection(missilePart.partPrefab.srfAttachNode.originalPosition),
-                                this.part.transform.rotation, this.part);
-                            //if (!BDArmorySettings.INFINITE_AMMO) ammoCount -= 1;
+                            PartSnapshot(missilePart.partPrefab).CopyTo(partNode);
+                            //SpawnedMissile = CreatePart(partNode, MissileTransform.transform.position - MissileTransform.TransformDirection(missilePart.partPrefab.srfAttachNode.originalPosition),
+                            SpawnedMissile = CreatePart(partNode, offset ? (MissileTransform.position + MissileTransform.forward * 1.5f) : MissileTransform.transform.position, MissileTransform.rotation, this.part);
+                            var MMR = SpawnedMissile.FindModuleImplementing<ModuleMissileRearm>();
+                            if (MMR != null) MMR.ammoCount = 0;
+                            /* //keep the module, can be used for cluster missile submunition creation
+                            if (SpawnedMissile.GetComponent<ModuleMissileRearm>() != null) 
+                            {
+                                ModuleMissileRearm MMR; 
+                                MMR = part.GetComponent<ModuleMissileRearm>();
+                                part.RemoveModule(MMR);
+                            }
+                            */
+                            Debug.Log("[BDArmory.ModuleMissileRearm] spawned " + SpawnedMissile.name + "; ammo remaining: " + ammoCount);
                             return;
                         }
                     }
@@ -62,11 +72,12 @@ UI_FloatRange(minValue = 0f, maxValue = 20, stepIncrement = 1f, scene = UI_Scene
         {
             this.enabled = true;
             this.part.force_activate();
-            StartCoroutine(GetMissileValues()); 
-            if (HighLogic.LoadedSceneIsEditor)
-            {
-                GameEvents.onEditorShipModified.Add(ShipModified);
-            }
+            var MML = part.FindModuleImplementing<MultiMissileLauncher>();
+			if (MML == null || MML && MML.isClusterMissile) MissileName = part.name;
+            StartCoroutine(GetMissileValues());
+            GameEvents.onEditorShipModified.Add(ShipModified);
+            UI_FloatRange Ammo = (UI_FloatRange)Fields["ammoCount"].uiControlEditor;
+            Ammo.maxValue = maxAmmo;
         }
         private void OnDestroy()
         {
@@ -75,24 +86,35 @@ UI_FloatRange(minValue = 0f, maxValue = 20, stepIncrement = 1f, scene = UI_Scene
 
         public void ShipModified(ShipConstruct data)
         {
-            if (part.parent.FindModuleImplementing<BDRotaryRail>())
+            if (part.parent)
             {
-                ammoCount = 0;
-                Fields["ammoCount"].guiActiveEditor = false; //something still broken with rotary rails, so disabling reloads on rotTails for now
-            }
-            else
-            {
-                Fields["ammoCount"].guiActiveEditor = true;
+                if (part.parent.FindModuleImplementing<BDRotaryRail>()) //test UpdateMissileChildren fix, else uncomment
+                {
+                    //ammoCount = 0;
+                    //Fields["ammoCount"].guiActiveEditor = false; //something still broken with rotary rails, so disabling reloads on rotTails for now
+                                                                 //turrets work... sorta. Missiles are reloading more or less where they should be, but there's some massive force being imparted on the turret every launch
+                }
+                else if (part.parent.FindModuleImplementing<MissileTurret>())
+                {
+                    ammoCount = 0;
+                    Fields["ammoCount"].guiActiveEditor = false;
+                }
+                else
+                {
+                    Fields["ammoCount"].guiActiveEditor = true;
+                }
             }
         }
 
+        public void UpdateMissileValues()
+        {
+            StartCoroutine(GetMissileValues());
+        }
         IEnumerator GetMissileValues()
         {
             yield return new WaitForFixedUpdate();
             MissileLauncher ml = part.FindModuleImplementing<MissileLauncher>();
             {
-                MissileTransform = ml.MissileReferenceTransform;
-                MissileName = part.name;
                 ml.reloadableRail = this;
                 Debug.Log("[BDArmory.ModuleMissileRearm]: " + MissileName);
                 using (var parts = PartLoader.LoadedPartsList.GetEnumerator())
@@ -101,8 +123,7 @@ UI_FloatRange(minValue = 0f, maxValue = 20, stepIncrement = 1f, scene = UI_Scene
                         if (parts.Current.partConfig == null || parts.Current.partPrefab == null)
                             continue;
                         if (!parts.Current.partPrefab.partInfo.name.Contains(MissileName)) continue;
-                        missilePart = parts.Current;
-                        Debug.Log("[BDArmory.ModuleMissileRearm] found missile prefab");
+                        missilePart = parts.Current;                        
                         break;
                     }
                 if (AccountForAmmo)
@@ -118,7 +139,7 @@ UI_FloatRange(minValue = 0f, maxValue = 20, stepIncrement = 1f, scene = UI_Scene
             }
         }
 
-        static IEnumerator FinalizeMissile(Part missile, OnPartReady onPartReady, Part launcher)
+        static IEnumerator FinalizeMissile(Part missile, Part launcher)
         {
             Debug.Log("[BDArmory.ModuleMissileRearm]: Creating " + missile);
             string originatingVesselName = missile.vessel.vesselName;
@@ -194,16 +215,12 @@ UI_FloatRange(minValue = 0f, maxValue = 20, stepIncrement = 1f, scene = UI_Scene
         /// <param name="position">Initial position of the new part.</param>
         /// <param name="rotation">Initial rotation of the new part.</param>
         /// <param name="fromPart"></param>
-        /// <param name="onPartReady">
-        /// Callback to call when new part is fully operational and its joint is created (if any). It's
-        /// undetermined how long it may take before the callback is called. The calling code must expect
-        /// that there will be several frame updates and at least one fixed frame update.
+
         public static Part CreatePart(
             ConfigNode partConfig,
             Vector3 position,
             Quaternion rotation,
-            Part launcherPart,
-            OnPartReady onPartReady = null)
+            Part launcherPart)
         {
             var refVessel = launcherPart.vessel;
             var partNodeCopy = new ConfigNode();
@@ -230,15 +247,13 @@ UI_FloatRange(minValue = 0f, maxValue = 20, stepIncrement = 1f, scene = UI_Scene
             newPart.transform.rotation = rotation;
             if (newPart.rb != null)
             {
-                //newPart.rb.position = launcherPart.transform.TransformPoint(position.localPosition);
-                //newPart.rb.rotation = launcherPart.transform.rotation * position.localRotation;
                 newPart.rb.velocity = launcherPart.Rigidbody.velocity;
                 newPart.rb.angularVelocity = launcherPart.Rigidbody.angularVelocity;
             }
             newPart.missionID = launcherPart.missionID;
             newPart.UpdateOrgPosAndRot(newPart.vessel.rootPart);
 
-            newPart.StartCoroutine(FinalizeMissile(newPart, onPartReady, launcherPart));
+            newPart.StartCoroutine(FinalizeMissile(newPart, launcherPart));
             return newPart;
         }
     }
