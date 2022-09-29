@@ -2164,7 +2164,8 @@ namespace BDArmory.Weapons.Missiles
                 if (warheadType == WarheadTypes.Standard || warheadType == WarheadTypes.ContinuousRod)
                 {
                     var tnt = part.FindModuleImplementing<BDExplosivePart>();
-                    tnt.DetonateIfPossible(MissileReferenceTransform.position + MissileReferenceTransform.forward * 10);
+                    tnt.direction = MissileReferenceTransform.position + MissileReferenceTransform.forward * 10;
+                    tnt.DetonateIfPossible();
                 }
                 else if (warheadType == WarheadTypes.Nuke)
                 {

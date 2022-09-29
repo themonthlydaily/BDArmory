@@ -136,6 +136,8 @@ namespace BDArmory.Weapons
         public bool hasDetonated;
         Collider[] proximityHitColliders = new Collider[100];
 
+        public Vector3 direction;
+
         public override void OnStart(StartState state)
         {
             if (HighLogic.LoadedSceneIsFlight)
@@ -164,6 +166,7 @@ namespace BDArmory.Weapons
             */
             CalculateBlast();
             ParseWarheadType();
+            direction = part.partTransform.forward;
         }
 
         public void GuiSetup()
@@ -316,13 +319,11 @@ namespace BDArmory.Weapons
                     break;
             }
         }
-        public void DetonateIfPossible(Vector3 direction = default(Vector3))
+        public void DetonateIfPossible()
         {
             if (!HighLogic.LoadedSceneIsFlight || part == null) return;
             if (!hasDetonated && Armed)
             {
-                //Vector3 direction = default(Vector3);
-
                 if (warheadType == "standard")
                 {
                     //direction = (part.transform.position + part.rb.velocity * Time.deltaTime).normalized;
@@ -341,7 +342,7 @@ namespace BDArmory.Weapons
         {
             if (!hasDetonated && Armed)
             {
-                Vector3 direction = part.partTransform.forward;
+                direction = part.partTransform.forward;
 
                 if (warheadType == "standard")
                 {
