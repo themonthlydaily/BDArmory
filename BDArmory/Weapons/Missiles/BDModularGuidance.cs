@@ -1158,7 +1158,7 @@ namespace BDArmory.Weapons.Missiles
                 if (explosiveParts != null)
                 {
                     foreach (var explosivePart in explosiveParts)
-                    { if (!explosivePart.manualOverride) explosivePart.DetonateIfPossible(); }
+                    { if (!explosivePart.manualOverride) explosivePart.DetonateIfPossible(explosivePart.part.partTransform.forward); }
                     if (explosiveParts.Any(explosivePart => explosivePart.hasDetonated))
                     {
                         HasExploded = true;

@@ -44,7 +44,7 @@ namespace BDArmory.Weapons.Missiles
         public void Start()
         {
             MakeMissileArray();
-            List<MissileDummy> missileDummies = new List<MissileDummy>();
+            //List<MissileDummy> missileDummies = new List<MissileDummy>();
             missileSpawner = part.FindModuleImplementing<ModuleMissileRearm>();
             missileLauncher = part.FindModuleImplementing<MissileLauncher>();
             if (!missileSpawner) //MultiMissile launchers/cluster missiles need a MMR module for spawning their submunitions, so add one if not present

@@ -2160,17 +2160,17 @@ namespace BDArmory.Weapons.Missiles
             }
             else
             {
-                if (warheadType == WarheadTypes.Standard)
+                if (warheadType == WarheadTypes.Standard || warheadType == WarheadTypes.ContinuousRod)
                 {
                     var tnt = part.FindModuleImplementing<BDExplosivePart>();
-                    tnt.DetonateIfPossible();
+                    tnt.DetonateIfPossible(MissileReferenceTransform.position + MissileReferenceTransform.forward * 10);
                 }
                 else if (warheadType == WarheadTypes.Nuke)
                 {
                     var U235 = part.FindModuleImplementing<BDModuleNuke>();
                     U235.Detonate();
                 }
-                else //TODO: Remove this backguard compatibility
+                else // EMP/really ond legacy missiles using BlastPower
                 {
                     Vector3 position = transform.position;//+rigidbody.velocity*Time.fixedDeltaTime;
 

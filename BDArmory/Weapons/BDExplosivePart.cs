@@ -316,16 +316,17 @@ namespace BDArmory.Weapons
                     break;
             }
         }
-        public void DetonateIfPossible()
+        public void DetonateIfPossible(Vector3 direction = default(Vector3))
         {
             if (!HighLogic.LoadedSceneIsFlight || part == null) return;
             if (!hasDetonated && Armed)
             {
-                Vector3 direction = default(Vector3);
+                //Vector3 direction = default(Vector3);
 
-                if (warheadType != "standard")
+                if (warheadType == "standard")
                 {
-                    direction = (part.transform.position + part.rb.velocity * Time.deltaTime).normalized;
+                    //direction = (part.transform.position + part.rb.velocity * Time.deltaTime).normalized;
+                    direction = default(Vector3);
                 }
                 var sourceWeapon = part.FindModuleImplementing<EngageableWeapon>();
                 ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 120, part, sourcevessel != null ? sourcevessel.vesselName : null, sourceWeapon != null ? sourceWeapon.GetShortName() : null, direction, -1, false, warheadType == "standard" ? part.mass : 0, -1, 1, warheadType);
@@ -340,11 +341,12 @@ namespace BDArmory.Weapons
         {
             if (!hasDetonated && Armed)
             {
-                Vector3 direction = default(Vector3);
+                Vector3 direction = part.partTransform.forward;
 
-                if (warheadType != "standard")
+                if (warheadType == "standard")
                 {
-                    direction = (part.transform.position + part.rb.velocity * Time.deltaTime).normalized;
+                    direction = default(Vector3);
+                    //direction = (part.transform.position + part.rb.velocity * Time.deltaTime).normalized;
                 }
                 var sourceWeapon = part.FindModuleImplementing<EngageableWeapon>();
                 if (BDArmorySettings.DEBUG_MISSILES)
