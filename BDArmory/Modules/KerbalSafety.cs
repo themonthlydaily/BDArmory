@@ -270,7 +270,7 @@ namespace BDArmory.Modules
             }
             else
             {
-                if (fromTo.host != null)
+                if (fromTo.host != null && fromTo.host.loaded)
                 {
                     Debug.LogWarning("[BDArmory.KerbalSafety]: " + fromTo.host + " got eaten by the Kraken!");
                     fromTo.host.gameObject.SetActive(false);
@@ -348,7 +348,7 @@ namespace BDArmory.Modules
             }
             var wait = new WaitForFixedUpdate();
             while (p.vessel != null && (!p.vessel.loaded || p.vessel.packed)) yield return wait; // Wait for the vessel to be loaded. (Avoids kerbals not being registered in seats.)
-            if (p.vessel == null)
+            if (p.vessel == null || c == null)
             {
                 Destroy(this);
                 yield break;

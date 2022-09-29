@@ -100,8 +100,8 @@ namespace BDArmory.Guidances
             double a = 9.80665f * missile.BallisticOverShootFactor;
             double d = missile.vessel.GetFutureAltitude(predictionTime);
 
-            double time1 = (-vi + Math.Sqrt(Math.Pow(vi, 2) - 4 * (0.5f * a) * (-d))) / a;
-            double time2 = (-vi - Math.Sqrt(Math.Pow(vi, 2) - 4 * (0.5f * a) * (-d))) / a;
+            double time1 = (-vi + Math.Sqrt(vi * vi - 4 * (0.5f * a) * (-d))) / a;
+            double time2 = (-vi - Math.Sqrt(vi * vi - 4 * (0.5f * a) * (-d))) / a;
 
             return Math.Max(time1, time2);
         }
