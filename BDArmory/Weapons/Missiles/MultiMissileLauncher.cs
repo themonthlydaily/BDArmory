@@ -209,13 +209,13 @@ namespace BDArmory.Weapons.Missiles
                     tubesFired = 0;
                     break;
                 }
-                if (missileSpawner.ammoCount < 1 && !BDArmorySettings.INFINITE_AMMO)
+                if (missileSpawner.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE)
                 {
                     tubesFired = 0;
                     break;
                 }
                 missileSpawner.SpawnMissile(launchTransforms[m], true);
-                if (!BDArmorySettings.INFINITE_AMMO) missileSpawner.ammoCount--;
+                if (!BDArmorySettings.INFINITE_ORDINANCE) missileSpawner.ammoCount--;
                 MissileLauncher ml = missileSpawner.SpawnedMissile.FindModuleImplementing<MissileLauncher>();
                 if (!missileRegistry)
                 {

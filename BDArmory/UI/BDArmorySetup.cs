@@ -2845,11 +2845,7 @@ namespace BDArmory.UI
                 BDArmorySettings.BATTLEDAMAGE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.BATTLEDAMAGE, StringUtils.Localize("#LOC_BDArmory_Settings_BattleDamage"));
                 BDArmorySettings.INFINITE_AMMO = GUI.Toggle(SRightRect(line), BDArmorySettings.INFINITE_AMMO, StringUtils.Localize("#LOC_BDArmory_Settings_InfiniteAmmo"));//"Infinite Ammo"
                 BDArmorySettings.TAG_MODE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.TAG_MODE, StringUtils.Localize("#LOC_BDArmory_Settings_TagMode"));//"Tag Mode"
-                if (BDArmorySettings.PAINTBALL_MODE != (BDArmorySettings.PAINTBALL_MODE = GUI.Toggle(SRightRect(line), BDArmorySettings.PAINTBALL_MODE, StringUtils.Localize("#LOC_BDArmory_Settings_PaintballMode"))))//"Paintball Mode"
-                {
-                    BulletHitFX.SetupShellPool();
-                    BDArmorySettings.BATTLEDAMAGE = false;
-                }
+                BDArmorySettings.INFINITE_ORDINANCE = GUI.Toggle(SRightRect(line), BDArmorySettings.INFINITE_AMMO, StringUtils.Localize("#LOC_BDArmory_Settings_InfiniteMissiles"));//"Infinite Ammo"
                 if (BDArmorySettings.GRAVITY_HACKS != (BDArmorySettings.GRAVITY_HACKS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.GRAVITY_HACKS, StringUtils.Localize("#LOC_BDArmory_Settings_GravityHacks"))))//"Gravity hacks"
                 {
                     if (BDArmorySettings.GRAVITY_HACKS)
@@ -2865,7 +2861,12 @@ namespace BDArmory.UI
                         VehiclePhysics.Gravity.Refresh();
                     }
                 }
-                if (BDArmorySettings.PEACE_MODE != (BDArmorySettings.PEACE_MODE = GUI.Toggle(SRightRect(line), BDArmorySettings.PEACE_MODE, StringUtils.Localize("#LOC_BDArmory_Settings_PeaceMode"))))//"Peace Mode"
+                if (BDArmorySettings.PAINTBALL_MODE != (BDArmorySettings.PAINTBALL_MODE = GUI.Toggle(SRightRect(line), BDArmorySettings.PAINTBALL_MODE, StringUtils.Localize("#LOC_BDArmory_Settings_PaintballMode"))))//"Paintball Mode"
+                {
+                    BulletHitFX.SetupShellPool();
+                    BDArmorySettings.BATTLEDAMAGE = false;
+                }
+                if (BDArmorySettings.PEACE_MODE != (BDArmorySettings.PEACE_MODE = GUI.Toggle(SRightRect(++line), BDArmorySettings.PEACE_MODE, StringUtils.Localize("#LOC_BDArmory_Settings_PeaceMode"))))//"Peace Mode"
                 {
                     BDATargetManager.ClearDatabase();
                     if (OnPeaceEnabled != null)
@@ -2875,7 +2876,7 @@ namespace BDArmory.UI
                 }
                 //Mutators
                 var oldMutators = BDArmorySettings.MUTATOR_MODE;
-                BDArmorySettings.MUTATOR_MODE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.MUTATOR_MODE, StringUtils.Localize("#LOC_BDArmory_Settings_Mutators"));
+                BDArmorySettings.MUTATOR_MODE = GUI.Toggle(SLeftRect(line), BDArmorySettings.MUTATOR_MODE, StringUtils.Localize("#LOC_BDArmory_Settings_Mutators"));
                 {
                     if (BDArmorySettings.MUTATOR_MODE)
                     {

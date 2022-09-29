@@ -36,7 +36,7 @@ UI_FloatRange(minValue = 1f, maxValue = 4, stepIncrement = 1f, scene = UI_Scene.
         public Part SpawnedMissile;
         public void SpawnMissile(Transform MissileTransform, bool offset = false)
         {
-            if (ammoCount >= 1 || BDArmorySettings.INFINITE_AMMO)
+            if (ammoCount >= 1 || BDArmorySettings.INFINITE_ORDINANCE)
             {
                 if (missilePart != null)
                 {

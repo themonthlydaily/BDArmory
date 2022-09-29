@@ -878,7 +878,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 //multiLauncher.rippleRPM = wpm.rippleRPM;               
                 //if (wpm.rippleRPM > 0) multiLauncher.rippleRPM = wpm.rippleRPM;
-                if (reloadableRail.ammoCount > 1 || BDArmorySettings.INFINITE_AMMO) multiLauncher.fireMissile();
+                if (reloadableRail.ammoCount > 1 || BDArmorySettings.INFINITE_ORDINANCE) multiLauncher.fireMissile();
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: firing Multilauncher! " + vessel.vesselName + "; " + multiLauncher.subMunitionName);
             }
             else
@@ -948,8 +948,8 @@ namespace BDArmory.Weapons.Missiles
             ml.TargetPosition = transform.position + (multiLauncher ? vessel.ReferenceTransform.up * 5000 : transform.forward * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
             ml.MissileLaunch();
 
-            if (!BDArmorySettings.INFINITE_AMMO) reloadableRail.ammoCount--;
-            if (reloadableRail.ammoCount > 0 || BDArmorySettings.INFINITE_AMMO)
+            if (!BDArmorySettings.INFINITE_ORDINANCE) reloadableRail.ammoCount--;
+            if (reloadableRail.ammoCount > 0 || BDArmorySettings.INFINITE_ORDINANCE)
             {
                 if (!(reloadRoutine != null))
                 {
@@ -1192,9 +1192,9 @@ namespace BDArmory.Weapons.Missiles
                     reloadTimer = Mathf.Clamp((reloadTimer + 1 * TimeWarp.fixedDeltaTime / reloadableRail.reloadTime), 0, 1);
                     if (vessel.isActiveVessel) gauge.UpdateReloadMeter(reloadTimer); //sometimes gauge not appearing? Need to add stagingIcon to .cfgs? Investigate later
                 }
-                if (OldInfAmmo != BDArmorySettings.INFINITE_AMMO)
+                if (OldInfAmmo != BDArmorySettings.INFINITE_ORDINANCE)
                 {
-                    if (reloadableRail.ammoCount < 1 && BDArmorySettings.INFINITE_AMMO)
+                    if (reloadableRail.ammoCount < 1 && BDArmorySettings.INFINITE_ORDINANCE)
                     {
                         if (!(reloadRoutine != null))
                         {
@@ -1202,7 +1202,7 @@ namespace BDArmory.Weapons.Missiles
                             reloadRoutine = StartCoroutine(MissileReload());
                         }
                     }
-                    OldInfAmmo = BDArmorySettings.INFINITE_AMMO;
+                    OldInfAmmo = BDArmorySettings.INFINITE_ORDINANCE;
                 }
             }
         }
