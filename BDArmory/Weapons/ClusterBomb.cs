@@ -94,7 +94,7 @@ namespace BDArmory.Weapons
 
         void DeploySubmunitions()
         {
-            missileLauncher.sfAudioSource.PlayOneShot(GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/flare"));
+            missileLauncher.sfAudioSource.PlayOneShot(SoundUtils.GetAudioClip("BDArmory/Sounds/flareSound"));
             FXMonger.Explode(part, transform.position + part.rb.velocity * Time.fixedDeltaTime, 0.1f);
 
             deployed = true;

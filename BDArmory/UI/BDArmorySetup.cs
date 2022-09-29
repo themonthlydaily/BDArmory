@@ -2492,6 +2492,10 @@ namespace BDArmory.UI
 #if DEBUG  // Only visible when compiled in Debug configuration.
                     if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
                     {
+                        if (GUI.Button(SLineRect(++line), "Test GetAudioClip"))
+                        {
+                            StartCoroutine(TestGetAudioClip());
+                        }
                         if (GUI.Button(SLineRect(++line), "Test vesselName vs GetName()"))
                         {
                             StartCoroutine(TestVesselName());
@@ -4016,6 +4020,29 @@ namespace BDArmory.UI
                 result = vessel.GetDisplayName();
             dt = Time.realtimeSinceStartup - tic;
             Debug.Log($"DEBUG Name {result} with vessel.GetDisplayName() took {dt / N:G3}s");
+        }
+
+        IEnumerator TestGetAudioClip()
+        {
+            int N = 1 << 16;
+            var tic = Time.realtimeSinceStartup;
+            AudioClip clip;
+            var vessel = FlightGlobals.ActiveVessel;
+            if (vessel is null) yield break;
+            yield return null;
+            yield return null;
+            for (int i = 0; i < N; ++i)
+                clip = GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/deployClick");
+            var dt = Time.realtimeSinceStartup - tic;
+            Debug.Log($"DEBUG GetAudioClip took {dt / N:G3}s");
+            yield return null;
+            yield return null;
+            tic = Time.realtimeSinceStartup;
+            clip = null;
+            for (int i = 0; i < N; ++i)
+                clip = SoundUtils.GetAudioClip("BDArmory/Sounds/deployClick");
+            dt = Time.realtimeSinceStartup - tic;
+            Debug.Log($"DEBUG GetAudioClip took {dt / N:G3}s");
         }
 #endif
     }

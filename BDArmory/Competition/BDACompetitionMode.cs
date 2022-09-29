@@ -3068,7 +3068,7 @@ namespace BDArmory.Competition
             strings.Add("Mono used: " + UnityEngine.Profiling.Profiler.GetMonoUsedSizeLong() / 1024 / 1024 + "MB");
             strings.Add("GfxDriver: " + UnityEngine.Profiling.Profiler.GetAllocatedMemoryForGraphicsDriver() / 1024 / 1024 + "MB");
             strings.Add("plus unspecified runtime (native) memory.");
-            Debug.Log("[BDArmory.BDACompetitionMode]: DEBUG Memory Usage: " + string.Join(", ", strings));
+            Debug.Log("[BDArmory.BDACompetitionMode]: Memory Usage: " + string.Join(", ", strings));
         }
 
         public void CheckNumbersOfThings() // DEBUG
@@ -3111,7 +3111,7 @@ namespace BDArmory.Competition
         {
             CheckMemoryUsage();
 #if DEBUG
-            CheckNumbersOfThings();
+            if(BDArmorySettings.DEBUG_SETTINGS_TOGGLE) CheckNumbersOfThings();
 #endif
         }
 
@@ -3377,24 +3377,24 @@ namespace BDArmory.Competition
             var toRemove = new List<uint>();
             foreach (var key in FlightGlobals.PersistentVesselIds.Keys)
                 if (FlightGlobals.PersistentVesselIds[key] == null) toRemove.Add(key);
-            Debug.Log($"DEBUG Found {toRemove.Count} null persistent vessel references.");
+            if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE) Debug.Log($"[BDArmory.BDACompetitionMode]: DEBUG Found {toRemove.Count} null persistent vessel references.");
             foreach (var key in toRemove) FlightGlobals.PersistentVesselIds.Remove(key);
 
             toRemove.Clear();
             foreach (var key in FlightGlobals.PersistentLoadedPartIds.Keys)
                 if (FlightGlobals.PersistentLoadedPartIds[key] == null) toRemove.Add(key);
-            Debug.Log($"DEBUG Found {toRemove.Count} null persistent loaded part references.");
+            if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE) Debug.Log($"[BDArmory.BDACompetitionMode]: DEBUG Found {toRemove.Count} null persistent loaded part references.");
             foreach (var key in toRemove) FlightGlobals.PersistentLoadedPartIds.Remove(key);
 
             // Usually doesn't find any.
             toRemove.Clear();
             foreach (var key in FlightGlobals.PersistentUnloadedPartIds.Keys)
                 if (FlightGlobals.PersistentUnloadedPartIds[key] == null) toRemove.Add(key);
-            Debug.Log($"DEBUG Found {toRemove.Count} null persistent unloaded part references.");
+            if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE) Debug.Log($"[BDArmory.BDACompetitionMode]: DEBUG Found {toRemove.Count} null persistent unloaded part references.");
             foreach (var key in toRemove) FlightGlobals.PersistentUnloadedPartIds.Remove(key);
 
             var protoVessels = HighLogic.CurrentGame.flightState.protoVessels.Where(pv => pv.vesselRef == null).ToList();
-            if (protoVessels.Count > 0) { Debug.Log($"DEBUG Found {protoVessels.Count} inactive ProtoVessels in flightState."); }
+            if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE) if (protoVessels.Count > 0) { Debug.Log($"[BDArmory.BDACompetitionMode]: DEBUG Found {protoVessels.Count} inactive ProtoVessels in flightState."); }
             foreach (var protoVessel in protoVessels)
             {
                 if (protoVessel == null) continue;

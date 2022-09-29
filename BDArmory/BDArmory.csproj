@@ -307,6 +307,7 @@
     <Compile Include="Utils\ResourceUtils.cs" />
     <Compile Include="Utils\SplineUtils.cs" />
     <Compile Include="Utils\StringUtils.cs" />
+    <Compile Include="Utils\SoundUtils.cs" />
     <Compile Include="Utils\UIControlUtils.cs" />
     <Compile Include="Utils\VectorUtils.cs" />
     <Compile Include="Utils\VesselModuleRegistry.cs" />

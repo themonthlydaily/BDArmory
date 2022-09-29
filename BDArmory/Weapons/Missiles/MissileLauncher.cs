@@ -742,7 +742,7 @@ namespace BDArmory.Weapons.Missiles
 
             if (audioClipPath != string.Empty)
             {
-                audioSource.clip = GameDatabase.Instance.GetAudioClip(audioClipPath);
+                audioSource.clip = SoundUtils.GetAudioClip(audioClipPath);
             }
 
             if (sfAudioSource == null)
@@ -757,12 +757,12 @@ namespace BDArmory.Weapons.Missiles
 
             if (audioClipPath != string.Empty)
             {
-                thrustAudio = GameDatabase.Instance.GetAudioClip(audioClipPath);
+                thrustAudio = SoundUtils.GetAudioClip(audioClipPath);
             }
 
             if (boostClipPath != string.Empty)
             {
-                boostAudio = GameDatabase.Instance.GetAudioClip(boostClipPath);
+                boostAudio = SoundUtils.GetAudioClip(boostClipPath);
             }
 
             UpdateVolume();
@@ -973,7 +973,8 @@ namespace BDArmory.Weapons.Missiles
                 }
 
                 if (sfAudioSource == null) SetupAudio();
-                sfAudioSource.PlayOneShot(GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/deployClick"));
+                sfAudioSource.PlayOneShot(SoundUtils.GetAudioClip("BDArmory/Sounds/deployClick"));
+                SourceVessel = vessel;
 
                 //TARGETING
                 startDirection = transform.forward;
@@ -1125,7 +1126,7 @@ namespace BDArmory.Weapons.Missiles
                        && Vector3.Angle(vessel.Velocity(), FlightGlobals.ActiveVessel.transform.position - transform.position) < 60)
                     {
                         if (sfAudioSource == null) SetupAudio();
-                        sfAudioSource.PlayOneShot(GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/missileFlyby"));
+                        sfAudioSource.PlayOneShot(SoundUtils.GetAudioClip("BDArmory/Sounds/missileFlyby"));
                         hasPlayedFlyby = true;
                     }
                     if (vessel.isActiveVessel)
@@ -1738,7 +1739,7 @@ namespace BDArmory.Weapons.Missiles
             }
 
             if (!(thrust > 0)) return;
-            sfAudioSource.PlayOneShot(GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/launch"));
+            sfAudioSource.PlayOneShot(SoundUtils.GetAudioClip("BDArmory/Sounds/launch"));
             RadarWarningReceiver.WarnMissileLaunch(transform.position, transform.forward);
         }
 
@@ -2258,7 +2259,7 @@ namespace BDArmory.Weapons.Missiles
                         if (Time.time - rcsFiredTimes[i] > rcsAudioMinInterval)
                         {
                             if (sfAudioSource == null) SetupAudio();
-                            sfAudioSource.PlayOneShot(GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/popThrust"));
+                            sfAudioSource.PlayOneShot(SoundUtils.GetAudioClip("BDArmory/Sounds/popThrust"));
                             rcsTransforms[i].emit = true;
                             rcsFiredTimes[i] = Time.time;
                         }
