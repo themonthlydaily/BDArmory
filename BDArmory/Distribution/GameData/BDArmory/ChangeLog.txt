@@ -4,21 +4,24 @@ IMPROVEMENTS / FIXES
 	- Use an alternative method of calculating vessel bounds to get the vessel radius. — Fixes some weird results with parasite fighters from KSP's internal function for this.
 	- Missile and countermeasure settings are now accessible in the Gameplay Settings section of the BDA Settings menu.
 	- Animate animations in the physics update so that the work with time-scaling.
-	- Localisation corrections/updates.
+	- Localisation corrections/updates. Also in German.
 	- Lots of optimisations.
 	- Add Notes.md for devs with notes on optimisation and the current branches.
+	- Add caching for all AudioClips to reduce GC.
 - Competition:
 	- Add option to disable the HUD on tournament start.
 - Damage:
 	- Fix the bug preventing explosive damage applying to buildings.
 	- Rework how damage is applied to buildings and how they regenerate.
 	- Add a building damage multiplier.
+	- Fix reverse raycasts that were using the wrong rays.
 - AI / WM:
 	- Add a "Debug Extending" button when AI debugging is enabled that prints extending debug info when clicked if the active vessel is extending.
 	- Fix GPS missiles not obeying max missile per target setting when the target is traveling at high speeds.
 	- Add an Extend Abort Time slider to the AI, where the AI will abort extending if it fails to gain distance for this amount of time. (Note: this isn't a pure timer; while not gaining distance the timer increases, but will otherwise reduce to 0 at half the rate.)
 	- Add a 5s cooldown on extending if the Extend Abort Time is triggered (overriden for various extend requests, e.g., dropping bombs/nukes).
 	- Dynamically update the extend distance for launching a missile while extending.
+	- Limit the DLZ calculation for the extend distance for firing missiles to being maxOffBoresight off-target - avoids extreme extending distances.
 - Detectors:
 	- Random position noise due to chaff no longer scales with RCS, is instead fixed to a random number between 16 and 256.
 - Weapons:

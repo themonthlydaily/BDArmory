@@ -1175,23 +1175,19 @@ namespace BDArmory.Weapons
                     {
                         if (!string.IsNullOrEmpty(ammoBelt) && ammoBelt != "def")
                         {
-                            customAmmoBelt = BDAcTools.ParseNames(ammoBelt);
-                            List<string> testAmmo = BDAcTools.ParseNames(bulletType);
-                            for (int i = 0; i < customAmmoBelt.Count; i++)
+                            var validAmmoTypes = BDAcTools.ParseNames(bulletType);
+                            if (validAmmoTypes.Count == 0)
                             {
-                                bool validAmmo = false;
-                                for (int t = 0; t < testAmmo.Count; t++)
+                                Debug.LogError($"[BDArmory.ModuleWeapon]: Weapon {WeaponName} has no valid ammo types! Reverting to 'def'.");
+                                validAmmoTypes = new List<string> { "def" };
+                            }
+                            customAmmoBelt = BDAcTools.ParseNames(ammoBelt);
+                            for (int i = 0; i < customAmmoBelt.Count; ++i)
+                            {
+                                if (!validAmmoTypes.Contains(customAmmoBelt[i]))
                                 {
-                                    if (customAmmoBelt[i].Contains(testAmmo[t]))
-                                    {
-                                        validAmmo = true;
-                                        break;
-                                    }
-                                    if (!validAmmo)
-                                    {
-                                        customAmmoBelt[i] = testAmmo[0];
-                                        Debug.LogWarning("[BDArmory.ModuleWeapon] Invalid ammo type " + customAmmoBelt[i] + " in ammo belt! reverting to valid ammo type " + testAmmo[0]);
-                                    }
+                                    Debug.LogWarning($"[BDArmory.ModuleWeapon] Invalid ammo type {customAmmoBelt[i]} at position {i} in ammo belt! reverting to valid ammo type {validAmmoTypes[0]}");
+                                    customAmmoBelt[i] = validAmmoTypes[0];
                                 }
                             }
                             baseBulletVelocity = BulletInfo.bullets[customAmmoBelt[0].ToString()].bulletVelocity;
@@ -1262,7 +1258,7 @@ namespace BDArmory.Weapons
                 SetupAudio();
                 if (eWeaponType == WeaponTypes.Laser || ChargeTime > 0)
                 {
-                    chargeSound = GameDatabase.Instance.GetAudioClip(chargeSoundPath);
+                    chargeSound = SoundUtils.GetAudioClip(chargeSoundPath);
                 }
                 // Setup gauges
                 gauge = (BDStagingAreaGauge)part.AddModule("BDStagingAreaGauge");
@@ -2448,7 +2444,7 @@ namespace BDArmory.Weapons
         }
         public void SetupLaserSpecifics()
         {
-            //chargeSound = GameDatabase.Instance.GetAudioClip(chargeSoundPath);
+            //chargeSound = SoundUtils.GetAudioClip(chargeSoundPath);
             if (HighLogic.LoadedSceneIsFlight)
             {
                 audioSource.clip = fireSound;
@@ -3105,8 +3101,8 @@ namespace BDArmory.Weapons
 
         void SetupAudio()
         {
-            fireSound = GameDatabase.Instance.GetAudioClip(fireSoundPath);
-            overheatSound = GameDatabase.Instance.GetAudioClip(overheatSoundPath);
+            fireSound = SoundUtils.GetAudioClip(fireSoundPath);
+            overheatSound = SoundUtils.GetAudioClip(overheatSoundPath);
             if (!audioSource)
             {
                 audioSource = gameObject.AddComponent<AudioSource>();
@@ -3131,11 +3127,11 @@ namespace BDArmory.Weapons
 
             if (reloadAudioPath != string.Empty)
             {
-                reloadAudioClip = (AudioClip)GameDatabase.Instance.GetAudioClip(reloadAudioPath);
+                reloadAudioClip = SoundUtils.GetAudioClip(reloadAudioPath);
             }
             if (reloadCompletePath != string.Empty)
             {
-                reloadCompleteAudioClip = (AudioClip)GameDatabase.Instance.GetAudioClip(reloadCompletePath);
+                reloadCompleteAudioClip = SoundUtils.GetAudioClip(reloadCompletePath);
             }
 
             if (!lowpassFilter && gameObject.GetComponents<AudioLowPassFilter>().Length == 0)

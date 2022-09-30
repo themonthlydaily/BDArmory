@@ -177,7 +177,7 @@ namespace BDArmory.CounterMeasure
             {
                 case "flare":
                     cmType = CountermeasureTypes.Flare;
-                    cmSound = GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/flareSound");
+                    cmSound = SoundUtils.GetAudioClip("BDArmory/Sounds/flareSound");
                     if (!flarePool)
                     {
                         SetupFlarePool();
@@ -187,7 +187,7 @@ namespace BDArmory.CounterMeasure
 
                 case "chaff":
                     cmType = CountermeasureTypes.Chaff;
-                    cmSound = GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/smokeEject");
+                    cmSound = SoundUtils.GetAudioClip("BDArmory/Sounds/smokeEject");
                     resourceName = "CMChaff";
                     vci = vessel.gameObject.GetComponent<VesselChaffInfo>();
                     if (!vci)
@@ -202,8 +202,8 @@ namespace BDArmory.CounterMeasure
 
                 case "smoke":
                     cmType = CountermeasureTypes.Smoke;
-                    cmSound = GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/smokeEject");
-                    smokePoofSound = GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/smokePoof");
+                    cmSound = SoundUtils.GetAudioClip("BDArmory/Sounds/smokeEject");
+                    smokePoofSound = SoundUtils.GetAudioClip("BDArmory/Sounds/smokePoof");
                     resourceName = "CMSmoke";
                     if (smokePool == null)
                     {
