@@ -413,7 +413,8 @@ namespace BDArmory.Weapons.Missiles
                     pEemitter.Current.emit = false;
                 }
 
-            reloadableRail = part.FindModuleImplementing<ModuleMissileRearm>();
+            //reloadableRail = part.FindModuleImplementing<ModuleMissileRearm>();
+
             multiLauncher = part.FindModuleImplementing<MultiMissileLauncher>();
             if (!reloadableRail && multiLauncher) //MultiMissile launchers/cluster missiles need a MMR module for spawning their submunitions, so add one if not present
             {
@@ -810,17 +811,19 @@ namespace BDArmory.Weapons.Missiles
 
         public override float GetBlastRadius()
         {
-            if (blastRadius > 0) { return blastRadius; }
+            if (blastRadius > 0) { return blastRadius; } 
             else
             {
                 if (warheadType == WarheadTypes.EMP)
                 {
                     if (part.FindModuleImplementing<ModuleEMP>() != null)
                     {
-                        return part.FindModuleImplementing<ModuleEMP>().proximity;
+                        blastRadius = part.FindModuleImplementing<ModuleEMP>().proximity;
+                        return blastRadius;
                     }
                     else
                     {
+                        blastRadius = 150;
                         return 150;
                     }
                 }
@@ -828,10 +831,12 @@ namespace BDArmory.Weapons.Missiles
                 {
                     if (part.FindModuleImplementing<BDModuleNuke>() != null)
                     {
-                        return BDAMath.Sqrt(part.FindModuleImplementing<BDModuleNuke>().yield) * 500;
+                        blastRadius = BDAMath.Sqrt(part.FindModuleImplementing<BDModuleNuke>().yield) * 500;
+                        return blastRadius;
                     }
                     else
                     {
+                        blastRadius = 150;
                         return 150;
                     }
                 }
@@ -839,11 +844,12 @@ namespace BDArmory.Weapons.Missiles
                 {
                     if (part.FindModuleImplementing<BDExplosivePart>() != null)
                     {
-                        return part.FindModuleImplementing<BDExplosivePart>().GetBlastRadius();
+                        blastRadius = part.FindModuleImplementing<BDExplosivePart>().GetBlastRadius();
+                        return blastRadius;
                     }
                     else
                     {
-                        if (multiLauncher)
+                        if (multiLauncher)// when VLS implementation finished, remember to have adding a new missile resetting blastRadius to 0, future SI.
                         {
                             using (var parts = PartLoader.LoadedPartsList.GetEnumerator())
                                 while (parts.MoveNext())
@@ -855,12 +861,14 @@ namespace BDArmory.Weapons.Missiles
                                     {
                                         if (m.moduleName == "BDExplosivePart")
                                         {
-                                            return BlastPhysicsUtils.CalculateBlastRange(m.part.FindModuleImplementing<BDExplosivePart>().GetBlastRadius());
+                                            blastRadius = BlastPhysicsUtils.CalculateBlastRange(m.part.FindModuleImplementing<BDExplosivePart>().GetBlastRadius());
+                                            return blastRadius;
                                         }
                                     }
                                 }
                         }
-                        return 150;
+                        blastRadius = 150;
+                        return blastRadius;
                     }
                 }
             }
