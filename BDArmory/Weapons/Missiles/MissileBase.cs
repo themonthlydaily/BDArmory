@@ -363,20 +363,38 @@ namespace BDArmory.Weapons.Missiles
             }
         }
 
+        ModuleMissileRearm ammo;
+        bool hasAmmo = true;
+        int AmmoCount // Returns the ammo count if the part contains ModuleMissileRearm, otherwise 1.
+        {
+            get
+            {
+                if (!hasAmmo) return 1;
+                if (ammo == null)
+                {
+                    ammo = GetPart().FindModuleImplementing<ModuleMissileRearm>();
+                    if (ammo == null)
+                    {
+                        hasAmmo = false;
+                        return 1;
+                    }
+                }
+                return (int)ammo.ammoCount;
+            }
+        }
+
         public void GetMissileCount() // could stick this in GetSublabel, but that gets called every frame by BDArmorySetup?
         {
             missilecount = 0;
             if (part is null) return;
-            var missilePartName = part.name;
+            var missilePartName = GetPartName();
             if (string.IsNullOrEmpty(missilePartName)) return;
             using (var craftPart = VesselModuleRegistry.GetMissileBases(vessel).GetEnumerator())
                 while (craftPart.MoveNext())
                 {
                     if (craftPart.Current is null) continue;
-                    if (craftPart.Current.name != missilePartName) continue;
-                    var ammo = craftPart.Current.GetPart().FindModuleImplementing<ModuleMissileRearm>();
-                    if (ammo != null) missilecount += (int)ammo.ammoCount;
-                    else ++missilecount;
+                    if (craftPart.Current.GetPartName() != missilePartName) continue;
+                    missilecount += craftPart.Current.AmmoCount;
                 }
         }
 
