@@ -1158,8 +1158,10 @@ namespace BDArmory.Bullets
                         {
                             bulletMass = 1.2f * bulletMass * caliber / length;
 
+                            adjustedPenRatio /= (1.2f * caliber / length);
+
                             // In the case we are reaching that cap we decrease the velocity by
-                            // the adjustedPenRatio
+                            // the adjustedPenRatio minus the portion that went into erosion
                             currentVelocity = currentVelocity * adjustedPenRatio;
                             impactVelocity = impactVelocity * adjustedPenRatio;
                         }
