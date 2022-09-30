@@ -28,11 +28,21 @@ IMPROVEMENTS / FIXES
 	- Fixed bug where the target velocity and acceleration was not being reset once a target was no longer tracked which resulted in lead being erroneously compensated for while mouse aiming.
 	- Added ability to manually aim guns using GPS coordinates, primarily for artillery. This behavior is not a functionality in Guard Mode, however when a GPS target is manually selected, turrets will now aim to attempt to hit said target.
 	- Improved shaped charge warhead behavior, now armor penetration and beyond-armor effect is much more realistic.
+		- Warheads now approximately match real-world penetration performance, given the warhead size and caliber are accurate. Dual-purpose and other multi-function warheads will overperform as the equations assume all of the warhead is a shaped charge. Older and larger warheads may also overperform due to modelling being based on modern warheads.
 	- Fixed issue with missile and rocket warheads where direction of blasts were not along the directions of their warheads.
 	- Added "caliber" field to the BDExplosivePart module, it's an optional field for shaped charge projectiles which influences its effectiveness.
 	- apBulletMod now influences shaped charge projectile penetration, modifying this allows for the penetration of shaped charge shells to be tweaked.
+	- Added optional "apMod" field to the BDExplosivePart module, it's functions the same way as apBulletMod for bullets and its primary purpose is to allow users to create dual-purpose shaped charge warheads, where part of the tntMass of the warhead isn't going into the shaped charge effect, reducing penetration.
+	- Added optional "apMod" field to rocket configuration file. This allows tweaking of rocket penetration, functioning the same way as apBulletMod for bullets, affecting physical armor penetration as well as shaped charge armor penetration if the rocket is equipped with a shaped charge warhead.
 	- Armor protection against explosions is now influenced by angling, angling armor now makes it more difficult for the blast to punch through the armor plate.
-	- Added modifier that allows for tweaking of armor effectiveness against explosions.
+	- Added global setting that allows for tweaking of armor effectiveness against explosion blast penetration. The higher the setting, the harder to damage parts behind armor plates via blast damage.
+	- Tweaked several missiles and rockets to reflect the new shaped charge mechanics:
+		- RBS-15 and RBS-15AL have had their warheads decreased from 300 kg to 200 kg to reflect their real counterparts. Added caliber field, set at 500 mm.
+		- AGM-114R Hellfire missile has had its warhead decreased from 12 kg to 8 kg, with a 172 mm caliber to reflect performance estimates of earlier known models of the Hellfire. Warhead may not match -114R performance.
+		- AGM-65 Maverick missile is set to have a 305 mm caliber and an apMod field added with performance set to 950 mm of penetration. No good estimates of the warhead penetration were found so an approximate estimate based on a 27 kg charge was used.
+		- BGM-71 TOW missile has had its warhead decreased from 10 kg to 3.9 kg and has a 152 mm caliber to be around TOW/ITOW performance.
+		- Hydra-70 has had its penetration tweaked with apMod to match estimates of the M151 HEDP warhead penetration performance.
+		- AGM-86 now has caliber field, set to 620 mm.
 - Armor:
 	- Improved hypervelocity projectile post-penetration effects. Now Whipple shields should work properly, the more spacing between the armor plates the better the performance against hypervelocity rounds.
 	- Modified behavior of penetration formula below a projectile L/D ratio of 1 so penetration values are more consistent.
