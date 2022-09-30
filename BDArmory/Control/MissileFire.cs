@@ -2656,7 +2656,7 @@ namespace BDArmory.Control
                         }
                     CurrentMissile = ml;
                     selectedWeapon = ml;
-                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: No Clearance! Cannot fire " + CurrentMissile.name);
+                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: No Clearance! Cannot fire " + CurrentMissile.GetShortName());
                     return false;
                 }
                 if (ml is MissileLauncher && ((MissileLauncher)ml).missileTurret)
@@ -2812,8 +2812,8 @@ namespace BDArmory.Control
 
                     if (weapon.Current.GetWeaponClass() == WeaponClasses.Gun || weapon.Current.GetWeaponClass() == WeaponClasses.Rocket || weapon.Current.GetWeaponClass() == WeaponClasses.DefenseLaser)
                     {
-                        if (!gunRippleIndex.ContainsKey(weapon.Current.GetPart().partInfo.name)) //I think the empty rocketpod? contine might have been tripping up the ripple dict and not adding the hydra
-                            gunRippleIndex.Add(weapon.Current.GetPart().partInfo.name, 0);
+                        if (!gunRippleIndex.ContainsKey(weapon.Current.GetPartName())) //I think the empty rocketpod? contine might have been tripping up the ripple dict and not adding the hydra
+                            gunRippleIndex.Add(weapon.Current.GetPartName(), 0);
                     }
                     //dont add empty rocket pods
                     if (weapon.Current.GetWeaponClass() == WeaponClasses.Rocket &&
@@ -2946,13 +2946,13 @@ namespace BDArmory.Control
             if (selectedWeapon != null && (selectedWeapon.GetWeaponClass() == WeaponClasses.Bomb || selectedWeapon.GetWeaponClass() == WeaponClasses.Missile || selectedWeapon.GetWeaponClass() == WeaponClasses.SLW))
             {
                 //Debug.Log("[BDArmory.MissileFire]: =====selected weapon: " + selectedWeapon.GetPart().name);
-                if (!CurrentMissile || CurrentMissile.part.name != selectedWeapon.GetPart().name)
+                if (!CurrentMissile || CurrentMissile.GetPartName() != selectedWeapon.GetPartName())
                 {
                     using (var Missile = VesselModuleRegistry.GetModules<MissileBase>(vessel).GetEnumerator())
                         while (Missile.MoveNext())
                         {
                             if (Missile.Current == null) continue;
-                            if (Missile.Current.part.name != selectedWeapon.GetPart().name) continue;
+                            if (Missile.Current.GetPartName() != selectedWeapon.GetPartName()) continue;
                             if (Missile.Current.launched) continue;
                             CurrentMissile = Missile.Current;
                         }
@@ -3325,7 +3325,7 @@ namespace BDArmory.Control
                             return;
                         }
 
-                        if (rotRail.Current.readyMissile.part.name != cm.part.name)
+                        if (rotRail.Current.readyMissile.GetPartName() != cm.GetPartName())
                         {
                             rotRail.Current.RotateToMissile(cm);
                         }
@@ -3336,7 +3336,7 @@ namespace BDArmory.Control
                         {
                             rotRail.Current.RotateToMissile(cm);
                         }
-                        else if (rotRail.Current.nextMissile.part.name != cm.part.name)
+                        else if (rotRail.Current.nextMissile.GetPartName() != cm.GetPartName())
                         {
                             rotRail.Current.RotateToMissile(cm);
                         }
@@ -3448,7 +3448,7 @@ namespace BDArmory.Control
                         MissileLauncher launcher = ml.Current as MissileLauncher;
                         if (launcher != null)
                         {
-                            if (weaponArray[weaponIndex].GetPart() == null || launcher.part.name != weaponArray[weaponIndex].GetPart().name) continue;
+                            if (weaponArray[weaponIndex].GetPart() == null || launcher.GetPartName() != weaponArray[weaponIndex].GetPartName()) continue;
                             if (launcher.launched) continue;
                         }
                         else
@@ -3481,7 +3481,7 @@ namespace BDArmory.Control
                 //TODO BDModularGuidance, ModuleDrone: Implemente rotaryRail support
                 MissileLauncher missile = CurrentMissile as MissileLauncher;
                 if (missile == null) return null;
-                if (weaponArray[weaponIndex].GetPart() != null && missile.part.name == weaponArray[weaponIndex].GetPart().name)
+                if (weaponArray[weaponIndex].GetPart() != null && missile.GetPartName() == weaponArray[weaponIndex].GetPartName())
                 {
                     if (!missile.rotaryRail)
                     {
@@ -3496,14 +3496,14 @@ namespace BDArmory.Control
                     while (ml.MoveNext())
                     {
                         if (ml.Current == null) continue;
-                        if (weaponArray[weaponIndex].GetPart() == null || ml.Current.part.name != weaponArray[weaponIndex].GetPart().name) continue;
+                        if (weaponArray[weaponIndex].GetPart() == null || ml.Current.GetPartName() != weaponArray[weaponIndex].GetPartName()) continue;
                         if (ml.Current.launched) continue;
                         if (!ml.Current.rotaryRail)
                         {
                             return ml.Current;
                         }
                         if (ml.Current.rotaryRail.readyMissile == null || ml.Current.rotaryRail.readyMissile.part == null) continue;
-                        if (ml.Current.rotaryRail.readyToFire && ml.Current.rotaryRail.readyMissile.part.name == weaponArray[weaponIndex].GetPart().name)
+                        if (ml.Current.rotaryRail.readyToFire && ml.Current.rotaryRail.readyMissile.GetPartName() == weaponArray[weaponIndex].GetPartName())
                         {
                             return ml.Current.rotaryRail.readyMissile;
                         }

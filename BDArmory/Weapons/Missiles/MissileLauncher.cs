@@ -437,6 +437,7 @@ namespace BDArmory.Weapons.Missiles
             }
             if (HighLogic.LoadedSceneIsFlight)
             {
+                missileName = part.name;
                 if (warheadType == WarheadTypes.Standard || warheadType == WarheadTypes.ContinuousRod)
                 {
                     var tnt = part.FindModuleImplementing<BDExplosivePart>();

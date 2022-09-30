@@ -41,6 +41,13 @@ namespace BDArmory.Weapons.Missiles
             return missileType;
         }
 
+        public string GetPartName()
+        {
+            return missileName;
+        }
+
+        public string missileName { get; set; } = "";
+
         [KSPField]
         public string missileType = "missile";
 

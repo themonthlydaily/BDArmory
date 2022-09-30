@@ -315,6 +315,13 @@ namespace BDArmory.Weapons
             return string.Empty;
         }
 
+        public string GetPartName()
+        {
+            return WeaponName;
+        }
+
+        string missileName { get; set; } = "";
+
         public bool resourceSteal = false;
         public float strengthMutator = 1;
         public bool instagib = false;

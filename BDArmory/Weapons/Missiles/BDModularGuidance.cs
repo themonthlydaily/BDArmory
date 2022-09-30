@@ -397,6 +397,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 shortName = "Unnamed";
             }
+
             part.force_activate();
             RefreshGuidanceMode();
 
@@ -408,7 +409,7 @@ namespace BDArmory.Weapons.Missiles
 
             weaponClass = WeaponClasses.Missile;
             WeaponName = GetShortName();
-
+            if (HighLogic.LoadedSceneIsFlight) missileName = shortName;
             activeRadarRange = ActiveRadarRange;
             chaffEffectivity = ChaffEffectivity;
             //TODO: BDModularGuidance should be configurable?
