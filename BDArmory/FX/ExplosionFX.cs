@@ -892,6 +892,8 @@ namespace BDArmory.FX
                                 float standoffTemp = realDistance / (14f * Caliber * 20f * 0.001f);
                                 float standoffFactor = 1f / (1f + standoffTemp * standoffTemp);
 
+                                float remainingPen = penetration * standoffFactor - (cumulativeArmorOfIntermediateParts * cumulativeArmorOfIntermediateParts / penetration);
+
                                 var Armor = part.FindModuleImplementing<HitpointTracker>();
                                 if (Armor != null)
                                 {
@@ -910,12 +912,12 @@ namespace BDArmory.FX
                                     //penetration = ProjectileUtils.CalculatePenetration(Caliber, Caliber, warheadType == WarheadTypes.ShapedCharge ? Power / 2 : ProjMass, ExplosionVelocity, Ductility, Density, Strength, thickness, 1);
                                     // Moved penetration since it's now calculated off of a universal material rather than specific materials
                                     //penetration = ProjectileUtils.CalculatePenetration(Caliber, warheadType == WarheadTypes.ShapedCharge ? 5000f : ExplosionVelocity, warheadType == WarheadTypes.ShapedCharge ? Power * 0.0555f : ProjMass, apMod, 940, 0.00000094776185184f, 0.6560606203f, 1.201909309f, 1.777919321f);
-                                    penetrationFactor = ProjectileUtils.CalculateArmorPenetration(part, penetration * standoffFactor - cumulativeArmorOfIntermediateParts, thickness * armorEquiv);
+                                    penetrationFactor = ProjectileUtils.CalculateArmorPenetration(part, remainingPen, thickness * armorEquiv);
 
-                                    //if (BDArmorySettings.DEBUG_ARMOR)
-                                    //{
-                                    //    Debug.Log("[BDArmory.ExplosionFX] Penetration: " + penetration + "mm. Thickness: " + thickness * armorEquiv + "mm. armorEquiv: " + armorEquiv + ". Intermediate Armor: " + cumulativeArmorOfIntermediateParts  + "mm. Penetration Factor: " + penetrationFactor + ". Standoff Factor: " + standoffFactor);
-                                    //}
+                                    if (BDArmorySettings.DEBUG_WEAPONS)
+                                    {
+                                        Debug.Log("[BDArmory.ExplosionFX] Penetration: " + penetration + "mm. Thickness: " + thickness * armorEquiv + "mm. armorEquiv: " + armorEquiv + ". Intermediate Armor: " + (penetration * standoffFactor - remainingPen) + "mm. Penetration Factor: " + penetrationFactor + ". Standoff Factor: " + standoffFactor);
+                                    }
 
                                     if (RA != null)
                                     {
@@ -934,7 +936,7 @@ namespace BDArmory.FX
                                                 return;
                                             }
                                         }
-                                        penetrationFactor = ProjectileUtils.CalculateArmorPenetration(part, penetration * standoffFactor - cumulativeArmorOfIntermediateParts, thickness * armorEquiv); //RA stop round?
+                                        penetrationFactor = ProjectileUtils.CalculateArmorPenetration(part, remainingPen, thickness * armorEquiv); //RA stop round?
                                     }
                                     //else ProjectileUtils.CalculateArmorDamage(part, penetrationFactor, Caliber, hardness, Ductility, Density, ExplosionVelocity, SourceVesselName, ExplosionSourceType.Missile, type);
                                     else if (penetrationFactor > 0)
@@ -945,7 +947,7 @@ namespace BDArmory.FX
                                 else
                                 {
                                     // Based on 10 mm of aluminium
-                                    penetrationFactor = 10f * (warheadType == WarheadTypes.ShapedCharge ? 0.5528789891f : 0.1601427673f) / (penetration * standoffFactor - cumulativeArmorOfIntermediateParts);
+                                    penetrationFactor = 10f * (warheadType == WarheadTypes.ShapedCharge ? 0.5528789891f : 0.1601427673f) / (remainingPen);
                                 }
 
                                 if (penetrationFactor > 0)
