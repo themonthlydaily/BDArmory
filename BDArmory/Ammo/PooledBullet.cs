@@ -1116,7 +1116,7 @@ namespace BDArmory.Bullets
                 // whipple shields but that behavior is fairly complex and I'm already in way over my head.
 
                 // Calculating this ratio once since we're going to need it a bunch
-                float adjustedPenRatio = (1 - (float)Math.Sqrt(thickness / penetration));
+                float adjustedPenRatio = (1 - BDAMath.Sqrt(thickness / penetration));
 
                 // If impact is at high speed
                 if (impactSpeed > 1200f)
