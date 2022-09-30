@@ -524,7 +524,7 @@ namespace BDArmory.FX
 
             LoSIntermediateParts.Clear();
             var totalHitCount = CollateHits(ref lineOfSightHits, hitCount, ref reverseHits, reverseHitCount); // This is the most expensive part of this method and the cause of most of the slow-downs with explosions.
-            int ii = 1;
+            int ii = 0;
             for (int i = 0; i < totalHitCount; ++i)
             {
                 hit = sortedLoSHits[i];
@@ -561,16 +561,31 @@ namespace BDArmory.FX
                                 partArmour *= Armor.HEEquiv;
                             }
 
-                            float factor = 1.05f;
+                            float factor = 1.0f;
 
-                            for (int j = 0; j < ii/2; j++)
+                            // Exponentiation by Squaring
+                            if (ii > 0)
                             {
-                                factor *= factor;
-                            }
+                                factor = 1.05f;
+                                int temp = ii;
+                                float temp2 = 1;
 
-                            if (ii/2*2<ii)
-                            {
-                                factor *= 1.05f;
+                                while (temp > 1)
+                                {
+                                    if ((temp / 2) * 2 == temp)
+                                    {
+                                        factor *= factor;
+                                        temp /= 2;
+                                    }
+                                    else
+                                    {
+                                        temp2 *= factor;
+                                        factor *= factor;
+                                        temp = (temp - 1) / 2;
+                                    }
+                                }
+
+                                factor *= temp2;
                             }
 
                             ii++;
