@@ -719,6 +719,7 @@ namespace BDArmory.Bullets
                         if (shaped)
                         {
                             direction = (pos + (rb.velocity * Time.deltaTime)).normalized;
+                            //direction = transform.forward //ideal, but no guarantee that mod rockets have correct transform orientation
                         }
                         if (gravitic)
                         {

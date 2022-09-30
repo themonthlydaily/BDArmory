@@ -4610,11 +4610,11 @@ namespace BDArmory.Weapons
                         if (BDATargetManager.FiredMissiles.Count > 0)
                         {
                             MissileTgt = BDATargetManager.GetClosestMissileTarget(weaponManager);
-                            if ((MissileTgt.transform.position - fireTransforms[0].position).sqrMagnitude < (maxTargetingRange * 2) * (maxTargetingRange * 2))
+                            if (MissileTgt != null)
                             {
-                                if ((closestTarget == Vector3.zero || (MissileTgt.transform.position - fireTransforms[0].position).sqrMagnitude < (closestTarget - fireTransforms[0].position).sqrMagnitude))
+                                if ((MissileTgt.transform.position - fireTransforms[0].position).sqrMagnitude < (maxTargetingRange * 2) * (maxTargetingRange * 2))
                                 {
-                                    if (MissileTgt != null)
+                                    if ((closestTarget == Vector3.zero || (MissileTgt.transform.position - fireTransforms[0].position).sqrMagnitude < (closestTarget - fireTransforms[0].position).sqrMagnitude))
                                     {
                                         closestTarget = MissileTgt.transform.position;
                                         //tgtVelocity = MissileTgt.velocity;
