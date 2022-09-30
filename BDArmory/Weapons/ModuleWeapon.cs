@@ -2565,6 +2565,7 @@ namespace BDArmory.Weapons
                                 rocket.explSoundPath = explSoundPath;
                                 rocket.spawnTransform = currentRocketTfm;
                                 rocket.caliber = rocketInfo.caliber;
+                                rocket.apMod = rocketInfo.apMod;
                                 rocket.rocketMass = rocketMass;
                                 rocket.blastRadius = blastRadius;
                                 rocket.thrust = thrust;
@@ -2651,6 +2652,7 @@ namespace BDArmory.Weapons
                                             rocket.explSoundPath = explSoundPath;
                                             rocket.spawnTransform = currentRocketTfm;
                                             rocket.caliber = rocketInfo.caliber;
+                                            rocket.apMod = rocketInfo.apMod;
                                             rocket.rocketMass = rocketMass;
                                             rocket.blastRadius = blastRadius;
                                             rocket.thrust = thrust;
