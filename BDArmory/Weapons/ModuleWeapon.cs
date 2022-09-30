@@ -293,7 +293,7 @@ namespace BDArmory.Weapons
         {
             //using (List<Part>.Enumerator craftPart = vessel.parts.GetEnumerator())
             //{
-            ammoLeft = "Ammo Left: " + ammoCount.ToString("0");
+            ammoLeft = $"Ammo Left: {ammoCount:0}";
             int lastAmmoID = this.AmmoID;
             using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                 while (weapon.MoveNext())
@@ -303,7 +303,7 @@ namespace BDArmory.Weapons
                     if (weapon.Current.AmmoID != this.AmmoID && weapon.Current.AmmoID != lastAmmoID)
                     {
                         vessel.GetConnectedResourceTotals(weapon.Current.AmmoID, out double ammoCurrent, out double ammoMax);
-                        ammoLeft += "; " + ammoCurrent.ToString("0");
+                        ammoLeft += $"; {ammoCurrent:0}";
                         lastAmmoID = weapon.Current.AmmoID;
                     }
                 }
@@ -4174,16 +4174,15 @@ namespace BDArmory.Weapons
                 float convergeAngle = 90 - Vector3.Angle(yawVector, refTransform.up);
                 if (Vector3.Dot(fireTransforms[0].forward, projAxis) > 0)
                 {
-                    convergeDistance = "Converge: " +
-                                       Mathf.Round((xDist * Mathf.Tan(convergeAngle * Mathf.Deg2Rad))).ToString() + "m";
+                    convergeDistance = $"Converge: {Mathf.Round((xDist * Mathf.Tan(convergeAngle * Mathf.Deg2Rad))).ToString()} m";
                 }
                 else
                 {
                     convergeDistance = "Diverging";
                 }
 
-                string xAngle = "X: " + Vector3.Angle(fireTransforms[0].forward, pitchVector).ToString("0.00");
-                string yAngle = "Y: " + Vector3.Angle(fireTransforms[0].forward, yawVector).ToString("0.00");
+                string xAngle = $"X: {Vector3.Angle(fireTransforms[0].forward, pitchVector):0.00}";
+                string yAngle = $"Y: {Vector3.Angle(fireTransforms[0].forward, yawVector):0.00}";
 
                 GUI.Label(angleRect, xAngle + "\n" + yAngle + "\n" + convergeDistance);
             }
@@ -4341,7 +4340,7 @@ namespace BDArmory.Weapons
                         TargetInfo currentTarget = visualTargetVessel.gameObject.GetComponent<TargetInfo>();
                         if (currentTarget == null)
                         {
-                            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + (visualTargetVessel != null ? visualTargetVessel.vesselName : "'unknown'") + " has no TargetInfo.");
+                            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Targeted vessel {(visualTargetVessel != null ? visualTargetVessel.vesselName : "'unknown'")} has no TargetInfo.");
                             return;
                         }
                         targetRadius = visualTargetVessel.GetRadius(fireTransforms[0].forward, currentTarget.bounds);
@@ -4416,7 +4415,7 @@ namespace BDArmory.Weapons
                             }
                             if (targetparts.Count == 0)
                             {
-                                if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + visualTargetVessel.vesselName + " has no targetable parts.");
+                                if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Targeted vessel {visualTargetVessel.vesselName} has no targetable parts.");
                                 targetPosition = visualTargetVessel.CoM;
                             }
                             else

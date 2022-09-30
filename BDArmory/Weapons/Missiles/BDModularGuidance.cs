@@ -424,7 +424,7 @@ namespace BDArmory.Weapons.Missiles
                 float b = -1f * ((1f - 1f / 1.2f));
                 float[] x = new float[6] { 0f * a, 0.2f * a, 0.4f * a, 0.6f * a, 0.8f * a, 1f * a };
                 if (BDArmorySettings.DEBUG_MISSILES)
-                    Debug.Log("[BDArmory.BDModularGuidance]: OnStart missile " + shortName + ": setting default lockedSensorFOVBias curve to:");
+                    Debug.Log($"[BDArmory.BDModularGuidance]: OnStart missile {shortName}: setting default lockedSensorFOVBias curve to:");
                 for (int i = 0; i < 6; i++)
                 {
                     lockedSensorFOVBias.Add(x[i], b / (a * a) * x[i] * x[i] + 1f, -1f / 3f * x[i] / (a * a), -1f / 3f * x[i] / (a * a));
@@ -440,7 +440,7 @@ namespace BDArmory.Weapons.Missiles
                 lockedSensorVelocityBias.Add(180f, 1f);
                 if (BDArmorySettings.DEBUG_MISSILES)
                 {
-                    Debug.Log("[BDArmory.BDModularGuidance]: OnStart missile " + shortName + ": setting default lockedSensorVelocityBias curve to:");
+                    Debug.Log($"[BDArmory.BDModularGuidance]: OnStart missile {shortName}: setting default lockedSensorVelocityBias curve to:");
                     Debug.Log("key = 0 1");
                     Debug.Log("key = 180 1");
                 }
@@ -452,7 +452,7 @@ namespace BDArmory.Weapons.Missiles
                 activeRadarLockTrackCurve.Add(0f, 0f);
                 activeRadarLockTrackCurve.Add(activeRadarRange, RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS);           // TODO: tune & balance constants!
                 if (BDArmorySettings.DEBUG_MISSILES)
-                    Debug.Log("[BDArmory.BDModularGuidance]: OnStart missile " + shortName + ": setting default locktrackcurve with maxrange/minrcs: " + activeRadarLockTrackCurve.maxTime + "/" + RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS);
+                    Debug.Log($"[BDArmory.BDModularGuidance]: OnStart missile {shortName}: setting default locktrackcurve with maxrange/minrcs: {activeRadarLockTrackCurve.maxTime} / {RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS}");
             }
 
             var explosiveParts = VesselModuleRegistry.GetModules<BDExplosivePart>(vessel);
@@ -711,7 +711,7 @@ namespace BDArmory.Weapons.Missiles
 
         private void ResetMissile()
         {
-            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.BDModularGuidance]: Resetting missile " + vessel.vesselName);
+            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.BDModularGuidance]: Resetting missile {vessel.vesselName}");
             heatTarget = TargetSignatureData.noTarget;
             vrd = null;
             radarTarget = TargetSignatureData.noTarget;
@@ -731,7 +731,7 @@ namespace BDArmory.Weapons.Missiles
             MissileState = MissileStates.Idle;
             if (mfChecked && weaponManager != null)
             {
-                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.BDModularGuidance]: disabling target lock for " + vessel.vesselName);
+                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.BDModularGuidance]: disabling target lock for {vessel.vesselName}");
                 weaponManager.guardFiringMissile = false; // Disable target lock.
                 mfChecked = false;
             }
@@ -743,7 +743,7 @@ namespace BDArmory.Weapons.Missiles
 
             if (MissileState == MissileStates.PostThrust && (vessel.LandedOrSplashed || vessel.Velocity().magnitude < 10f))
             {
-                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.BDModularGuidance]: Missile CheckMiss showed miss for " + vessel.vesselName);
+                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.BDModularGuidance]: Missile CheckMiss showed miss for {vessel.vesselName}");
 
                 var pilotAI = VesselModuleRegistry.GetModule<BDModulePilotAI>(vessel); // Get the pilot AI if the  missile has one.
                 if (pilotAI != null)
@@ -775,7 +775,7 @@ namespace BDArmory.Weapons.Missiles
                 }
                 if (mfChecked && weaponManager != null && !weaponManager.guardFiringMissile)
                 {
-                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.BDModularGuidance]: enabling target lock for " + vessel.vesselName);
+                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.BDModularGuidance]: enabling target lock for {vessel.vesselName}");
                     weaponManager.guardFiringMissile = true; // Enable target lock.
                 }
 

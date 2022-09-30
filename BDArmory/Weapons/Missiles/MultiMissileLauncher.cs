@@ -51,7 +51,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 missileSpawner = (ModuleMissileRearm)part.AddModule("ModuleMissileRearm");
                 missileSpawner.maxAmmo = salvoSize = 10;
-                Debug.Log("[BDArmory.MultiMissileLauncher] no ModuleMissileRearm on " + part.name + ". Please fix your .cfg");
+                Debug.Log($"[BDArmory.MultiMissileLauncher] no ModuleMissileRearm on {part.name}. Please fix your .cfg");
             }
             missileSpawner.ammoCount = salvoSize;
             if (!string.IsNullOrEmpty(deployAnimationName))
@@ -202,7 +202,7 @@ namespace BDArmory.Weapons.Missiles
             }
             for (int m = tubesFired; m < salvoSize; m++)
             {
-                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MultiMissileLauncher] starting ripple launch on tube " + m + ", ripple delay:" + timeGap.ToString("F3"));
+                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MultiMissileLauncher] starting ripple launch on tube {m}, ripple delay: {timeGap:F3}");
                 yield return new WaitForSecondsFixed(timeGap);
                 if (tubesFired > salvoSize) //catch if launcher is trying to launch more missiles than it has
                 {
@@ -287,7 +287,7 @@ namespace BDArmory.Weapons.Missiles
                                             ml.vrd = missileLauncher.vrd;
                                         }
                                         ml.targetVessel = wpm.targetsAssigned[TargetID];
-                                        if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MultiMissileLauncher] Assigning target " + wpm.targetsAssigned[TargetID]);
+                                        if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MultiMissileLauncher] Assigning target {wpm.targetsAssigned[TargetID]}");
                                     }
                                     else //else try remaining targets
                                     {
@@ -308,7 +308,7 @@ namespace BDArmory.Weapons.Missiles
                                                         ml.vrd = missileLauncher.vrd;
                                                     }
                                                     ml.targetVessel = item.Current;
-                                                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MultiMissileLauncher] original target out of sensor range; engaging " + item.Current.Vessel.GetName());
+                                                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MultiMissileLauncher] original target out of sensor range; engaging {item.Current.Vessel.GetName()}");
                                                     break;
                                                 }
                                             }
