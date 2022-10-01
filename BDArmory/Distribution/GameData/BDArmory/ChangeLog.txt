@@ -36,13 +36,15 @@ IMPROVEMENTS / FIXES
 	- Added optional "apMod" field to rocket configuration file. This allows tweaking of rocket penetration, functioning the same way as apBulletMod for bullets, affecting physical armor penetration as well as shaped charge armor penetration if the rocket is equipped with a shaped charge warhead.
 	- Armor protection against explosions is now influenced by angling, angling armor now makes it more difficult for the blast to punch through the armor plate.
 	- Added global setting that allows for tweaking of armor effectiveness against explosion blast penetration. The higher the setting, the harder to damage parts behind armor plates via blast damage.
-	- Tweaked several missiles and rockets to reflect the new shaped charge mechanics:
+	- Tweaked several missiles, bullets and rockets to reflect the new shaped charge mechanics:
 		- RBS-15 and RBS-15AL have had their warheads decreased from 300 kg to 200 kg to reflect their real counterparts. Added caliber field, set at 500 mm.
 		- AGM-114R Hellfire missile has had its warhead decreased from 12 kg to 8 kg, with a 172 mm caliber to reflect performance estimates of earlier known models of the Hellfire. Warhead may not match -114R performance.
 		- AGM-65 Maverick missile is set to have a 305 mm caliber and an apMod field added with performance set to 950 mm of penetration. No good estimates of the warhead penetration were found so an approximate estimate based on a 27 kg charge was used.
 		- BGM-71 TOW missile has had its warhead decreased from 10 kg to 3.9 kg and has a 152 mm caliber to be around TOW/ITOW performance.
 		- Hydra-70 has had its penetration tweaked with apMod to match estimates of the M151 HEDP warhead penetration performance.
 		- AGM-86 now has caliber field, set to 620 mm.
+		- Adjusted 120 mm HEAT and AP rounds to have around the same amount of penetration, balanced for gameplay (210 mm / 216 mm). Realistic configs also exist under the names "120mmBulletHEAT" and "120mmBulletSabot", a commented out line in m1Abrams.cfg can be uncommented in order to use these.
+
 - Armor:
 	- Improved hypervelocity projectile post-penetration effects. Now Whipple shields should work properly, the more spacing between the armor plates the better the performance against hypervelocity rounds.
 	- Modified behavior of penetration formula below a projectile L/D ratio of 1 so penetration values are more consistent.
