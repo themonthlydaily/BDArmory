@@ -1159,7 +1159,7 @@ namespace BDArmory.FX
                 case "shapedcharge":
                     eFx.warheadType = WarheadTypes.ShapedCharge;
                     //eFx.AngleOfEffect = 10f;
-                    eFx.AngleOfEffect = 2.5f;
+                    eFx.AngleOfEffect = 5f;
                     eFx.Caliber = caliber > 0 ? caliber * 0.05f : 6f;
                     eFx.apMod = apMod;
                     break;
