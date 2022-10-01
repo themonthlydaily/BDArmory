@@ -800,10 +800,10 @@ namespace BDArmory.FX
             bool shapedEffect = ((warheadType == WarheadTypes.ShapedCharge || warheadType == WarheadTypes.ContinuousRod) && eventToExecute.withinAngleofEffect);
 
 
-            //if (BDArmorySettings.DEBUG_WEAPONS && shapedEffect)
-            //{
-            //    Debug.Log("[BDArmory.ExplosionFX] Part: " + part.name + ". Real Distance: " + realDistance + "m. SCRange: " + SCRange + "m.");
-            //}
+            if (BDArmorySettings.DEBUG_WEAPONS && shapedEffect)
+            {
+                Debug.Log("[BDArmory.ExplosionFX] Part: " + part.name + ". Real Distance: " + realDistance + "m. SCRange: " + SCRange + "m.");
+            }
 
             if ((realDistance <= Range) || (realDistance <= SCRange)) //within radius of Blast
             {
