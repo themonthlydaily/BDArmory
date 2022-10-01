@@ -445,7 +445,7 @@ namespace BDArmory.FX
                 //if (IsAngleAllowed(Direction, hit))
                 //{
                 //Adding damage hit
-                if (distance <= blastRange)//part within total range of shrapnel + blast?
+                if (distance <= (blastRange > SCRange ? blastRange : SCRange))//part within total range of shrapnel + blast?
                 {
                     eventList.Add(new PartBlastHitEvent()
                     {
@@ -1159,7 +1159,7 @@ namespace BDArmory.FX
                 case "shapedcharge":
                     eFx.warheadType = WarheadTypes.ShapedCharge;
                     //eFx.AngleOfEffect = 10f;
-                    eFx.AngleOfEffect = 5f;
+                    eFx.AngleOfEffect = 2.5f;
                     eFx.Caliber = caliber > 0 ? caliber * 0.05f : 6f;
                     eFx.apMod = apMod;
                     break;
