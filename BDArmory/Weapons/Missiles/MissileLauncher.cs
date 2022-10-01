@@ -40,7 +40,6 @@ namespace BDArmory.Weapons.Missiles
         public MissileTurret missileTurret = null;
         public BDRotaryRail rotaryRail = null;
         public BDDeployableRail deployableRail = null;
-        public ModuleMissileRearm reloadableRail = null;
         public MultiMissileLauncher multiLauncher = null;
         private BDStagingAreaGauge gauge;
         private float reloadTimer = 0;
@@ -412,14 +411,20 @@ namespace BDArmory.Weapons.Missiles
                     EffectBehaviour.AddParticleEmitter(pEemitter.Current);
                     pEemitter.Current.emit = false;
                 }
-
-            //reloadableRail = part.FindModuleImplementing<ModuleMissileRearm>();
+            if (reloadableRail == null && hasAmmo)
+            {
+                reloadableRail = part.FindModuleImplementing<ModuleMissileRearm>();
+                if (reloadableRail == null) hasAmmo = false;
+            }
 
             multiLauncher = part.FindModuleImplementing<MultiMissileLauncher>();
             if (!reloadableRail && multiLauncher) //MultiMissile launchers/cluster missiles need a MMR module for spawning their submunitions, so add one if not present
             {
                 reloadableRail = (ModuleMissileRearm)part.AddModule("ModuleMissileRearm");
-                reloadableRail.ammoCount = 1;
+                reloadableRail.ammoCount = multiLauncher.salvoSize;
+                reloadableRail.maxAmmo = multiLauncher.salvoSize * 10;
+                hasAmmo = true;
+                Debug.LogError($"[BDArmory.MissileLauncher] {GetPartName()} is missing a ModuleMissileRearm in its .cfg. Please fix your .cfg");
             }
             if (multiLauncher != null)
             {

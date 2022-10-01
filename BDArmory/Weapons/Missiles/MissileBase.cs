@@ -363,8 +363,8 @@ namespace BDArmory.Weapons.Missiles
             }
         }
 
-        public ModuleMissileRearm reloadableRail;
-        bool hasAmmo = true;
+        public ModuleMissileRearm reloadableRail = null;
+        public bool hasAmmo = true;
         int AmmoCount // Returns the ammo count if the part contains ModuleMissileRearm, otherwise 1.
         {
             get

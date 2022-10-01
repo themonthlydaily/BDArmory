@@ -45,13 +45,15 @@ namespace BDArmory.Weapons.Missiles
         {
             MakeMissileArray();
             //List<MissileDummy> missileDummies = new List<MissileDummy>();
-            missileSpawner = part.FindModuleImplementing<ModuleMissileRearm>();
             missileLauncher = part.FindModuleImplementing<MissileLauncher>();
-            if (!missileSpawner) //MultiMissile launchers/cluster missiles need a MMR module for spawning their submunitions, so add one if not present
+            missileSpawner = missileLauncher.reloadableRail;
+            if (missileSpawner == null) //MultiMissile launchers/cluster missiles need a MMR module for spawning their submunitions, so add one if not present
             {
                 missileSpawner = (ModuleMissileRearm)part.AddModule("ModuleMissileRearm");
                 missileSpawner.maxAmmo = salvoSize = 10;
-                Debug.Log($"[BDArmory.MultiMissileLauncher] no ModuleMissileRearm on {part.name}. Please fix your .cfg");
+                Debug.LogError($"[BDArmory.MultiMissileLauncher] no ModuleMissileRearm on {part.name}. Please fix your .cfg");
+                missileLauncher.reloadableRail = missileSpawner;
+                missileLauncher.hasAmmo = true;
             }
             missileSpawner.ammoCount = salvoSize;
             if (!string.IsNullOrEmpty(deployAnimationName))
