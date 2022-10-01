@@ -36,7 +36,7 @@ namespace BDArmory.FX
         public float Power { get; set; }
         public Vector3 Position { get; set; }
         public Vector3 Direction { get; set; }
-        public float AngleOfEffect { get; set; }
+        public float cosAngleOfEffect { get; set; }
         public Part ExplosivePart { get; set; }
         public bool isFX { get; set; }
         public float CASEClamp { get; set; }
@@ -476,7 +476,8 @@ namespace BDArmory.FX
             if (warheadType == WarheadTypes.ContinuousRod)
             {
                 if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ExplosionFX]: " + p.name + " at " + Vector3.Angle(direction, (hit.point - Position).normalized) + " angle from CR explosion direction");
-                if (Vector3.Angle(direction, (hit.point - Position).normalized) >= 60 && Vector3.Angle(direction, (hit.point - Position).normalized) <= 90)
+                //if (Vector3.Angle(direction, (hit.point - Position).normalized) >= 60 && Vector3.Angle(direction, (hit.point - Position).normalized) <= 90)
+                if (Vector3.Dot(direction, (hit.point - Position).normalized) <= 0.5 && Vector3.Dot(direction, (hit.point - Position).normalized) >= 0)
                 {
                     return true;
                 }
@@ -485,7 +486,7 @@ namespace BDArmory.FX
             else
             {
                 if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ExplosionFX]: " + p.name + " at " + Vector3.Angle(direction, (hit.point - Position).normalized) + $" angle from {warheadType} explosion direction");
-                return (Vector3.Angle(direction, (hit.point - Position).normalized) <= AngleOfEffect);
+                return (Vector3.Dot(direction, (hit.point - Position).normalized) >= cosAngleOfEffect);
             }
         }
 
@@ -1159,13 +1160,15 @@ namespace BDArmory.FX
                 case "shapedcharge":
                     eFx.warheadType = WarheadTypes.ShapedCharge;
                     //eFx.AngleOfEffect = 10f;
-                    eFx.AngleOfEffect = 5f;
+                    //eFx.AngleOfEffect = 5f;
+                    eFx.cosAngleOfEffect = 0.99619469809174553229501f; // cos(5 degrees)
                     eFx.Caliber = caliber > 0 ? caliber * 0.05f : 6f;
                     eFx.apMod = apMod;
                     break;
                 default:
                     eFx.warheadType = WarheadTypes.Standard;
-                    eFx.AngleOfEffect = angle >= 0f ? Mathf.Clamp(angle, 0f, 180f) : 100f;
+                    eFx.cosAngleOfEffect = angle >= 0f ? Mathf.Clamp(angle, 0f, 180f) : 100f;
+                    eFx.cosAngleOfEffect = (float)Math.Cos(Math.PI * eFx.cosAngleOfEffect / 180.0);
                     break;
             }
 
