@@ -32,7 +32,9 @@ namespace BDArmory.UI
         private float totalArmorMass;
         private float totalArmorCost;
         private float totalLift;
+        private float totalLiftArea;
         private float wingLoading;
+        private float WLRatio;
         private bool CalcArmor = false;
         private bool shipModifiedfromCalcArmor = false;
         private bool SetType = false;
@@ -331,9 +333,9 @@ namespace BDArmory.UI
                 if (!FerramAerospace.hasFAR)
                 {
                     line++;
-                    GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_ArmorTotalLift")}: {totalLift:0.00} m2", style);
+                    GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_ArmorTotalLift")}: {totalLift:0.00} ({totalLiftArea} m2)", style);
                     line++;
-                    GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_ArmorWingLoading")}: {wingLoading:0.0} kg/m2", style);
+                    GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_ArmorWingLoading")}: {wingLoading:0.0} ({WLRatio} kg/m2)", style);
                 }
                 line += 1.5f;
             }
@@ -589,9 +591,9 @@ namespace BDArmory.UI
                         totalLift += wing.deflectionLiftCoeff * Vector3.Project(wing.transform.forward, Vector3.up).sqrMagnitude; // Only return vertically oriented lift components
                     }
                 }
-            wingLoading = (EditorLogic.fetch.ship.GetTotalMass() * 1000) / (totalLift *= 3.51f);
-
-            //wingLoading = totalLift / EditorLogic.fetch.ship.GetTotalMass(); //convert to kg/m2. 1 LiftingArea is ~ 3.51m2, or ~285kg/m2
+            wingLoading = totalLift / EditorLogic.fetch.ship.GetTotalMass(); //convert to kg/m2. 1 LiftingArea is ~ 3.51m2, or ~285kg/m2
+            totalLiftArea = totalLift * 3.51f;
+            WLRatio = (EditorLogic.fetch.ship.GetTotalMass() * 1000) / totalLiftArea;
         }
 
         IEnumerator calcArmorMassAndCost()
