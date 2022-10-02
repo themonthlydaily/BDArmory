@@ -931,7 +931,7 @@ namespace BDArmory.FX
 
                                     if (BDArmorySettings.DEBUG_WEAPONS)
                                     {
-                                        Debug.Log("[BDArmory.ExplosionFX] Penetration: " + penetration + "mm. Thickness: " + thickness * armorEquiv + "mm. armorEquiv: " + armorEquiv + ". Intermediate Armor: " + (penetration * standoffFactor - remainingPen) + "mm. Penetration Factor: " + penetrationFactor + ". Standoff Factor: " + standoffFactor);
+                                        Debug.Log("[BDArmory.ExplosionFX] Penetration: " + penetration + "mm. Thickness: " + thickness * armorEquiv + "mm. armorEquiv: " + armorEquiv + ". Intermediate Armor: " + (penetration * standoffFactor - remainingPen) + "mm. Remaining Penetration: " + remainingPen + "mm. Penetration Factor: " + penetrationFactor + ". Standoff Factor: " + standoffFactor);
                                     }
 
                                     if (RA != null)
@@ -1161,7 +1161,7 @@ namespace BDArmory.FX
                     eFx.warheadType = WarheadTypes.ShapedCharge;
                     //eFx.AngleOfEffect = 10f;
                     //eFx.AngleOfEffect = 5f;
-                    eFx.cosAngleOfEffect = 0.99619469809174553229501f; // cos(5 degrees)
+                    eFx.cosAngleOfEffect = (float)Math.Cos(Math.PI * 5f / 180.0); // cos(5 degrees)
                     eFx.Caliber = caliber > 0 ? caliber * 0.05f : 6f;
                     eFx.apMod = apMod;
                     break;
