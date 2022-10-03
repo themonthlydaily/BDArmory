@@ -250,6 +250,8 @@ namespace BDArmory.Weapons.Missiles
 
         List<GameObject> boosters;
 
+        List<GameObject> fairings;
+
         [KSPField]
         public bool decoupleBoosters = false;
 
@@ -265,6 +267,9 @@ namespace BDArmory.Weapons.Missiles
         public string boostTransformName = string.Empty;
         List<KSPParticleEmitter> boostEmitters;
         List<BDAGaplessParticleEmitter> boostGaplessEmitters;
+
+        [KSPField]
+        public string fairingTransformName = string.Empty;
 
         [KSPField]
         public bool torpedo = false;
@@ -518,6 +523,17 @@ namespace BDArmory.Weapons.Missiles
                                             EffectBehaviour.AddParticleEmitter(be.Current);
                                         }
                                     }
+                            }
+                    }
+
+                    fairings = new List<GameObject>();
+                    if (!string.IsNullOrEmpty(fairingTransformName))
+                    {
+                        using (var t = part.FindModelTransforms(fairingTransformName).AsEnumerable().GetEnumerator())
+                            while (t.MoveNext())
+                            {
+                                if (t.Current == null) continue;
+                                fairings.Add(t.Current.gameObject);                                
                             }
                     }
 
@@ -893,7 +909,7 @@ namespace BDArmory.Weapons.Missiles
                 //multiLauncher.rippleRPM = wpm.rippleRPM;               
                 //if (wpm.rippleRPM > 0) multiLauncher.rippleRPM = wpm.rippleRPM;
                 if (reloadableRail.ammoCount > 1 || BDArmorySettings.INFINITE_ORDINANCE) multiLauncher.fireMissile();
-                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: firing Multilauncher! {vessel.vesselName}; {multiLauncher.subMunitionName}");
+                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: firing Multilauncher! {vessel.vesselName}; {multiLauncher.subMunitionName}");                                    
             }
             else
             {
@@ -961,6 +977,11 @@ namespace BDArmory.Weapons.Missiles
             wpm.SendTargetDataToMissile(ml);
             ml.TargetPosition = transform.position + (multiLauncher ? vessel.ReferenceTransform.up * 5000 : transform.forward * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
             ml.MissileLaunch();
+            if (multiLauncher && multiLauncher.isClusterMissile)
+            {
+                ml.reloadableRail.MissileName = multiLauncher.subMunitionName;
+                ml.reloadableRail.UpdateMissileValues();
+            }
 
             if (!BDArmorySettings.INFINITE_ORDINANCE) reloadableRail.ammoCount--;
             if (reloadableRail.ammoCount > 0 || BDArmorySettings.INFINITE_ORDINANCE)
@@ -2169,7 +2190,15 @@ namespace BDArmory.Weapons.Missiles
             {
                 if (!HasDied)
                 {
-                    reloadableRail.MissileName = multiLauncher.subMunitionName;
+                    if (fairings.Count > 0)
+                    {
+                        using (var fairing = fairings.GetEnumerator())
+                            while (fairing.MoveNext())
+                            {
+                                if (fairing.Current == null) continue;
+                                fairing.Current.AddComponent<DecoupledBooster>().DecoupleBooster(part.rb.velocity, boosterDecoupleSpeed);
+                            }
+                    }
                     multiLauncher.fireMissile(true);
                 }
             }

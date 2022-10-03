@@ -20,7 +20,7 @@ namespace BDArmory.Weapons.Missiles
 
     public class MultiMissileLauncher : PartModule
 	{
-        public static ObjectPool mslDummyPool;
+        public static Dictionary<string, ObjectPool> mslDummyPool = new Dictionary<string, ObjectPool>();
         Coroutine missileSalvo;
 
         Transform[] launchTransforms;
@@ -147,7 +147,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 if (refresh)
                 {
-                    GameObject dummy = mslDummyPool.GetPooledObject();
+                    GameObject dummy = mslDummyPool[subMunitionPath].GetPooledObject();
                     MissileDummy dummyThis = dummy.GetComponentInChildren<MissileDummy>();
                     dummyThis.AttachAt(part, launchTransforms[i]);
                 }
@@ -163,6 +163,7 @@ namespace BDArmory.Weapons.Missiles
         public void fireMissile(bool killWhenDone = false)
         {
             if (!HighLogic.LoadedSceneIsFlight) return;
+            if (isClusterMissile) salvoSize = launchTransforms.Length;
             if (!(missileSalvo != null))
             {
                 missileSalvo = StartCoroutine(salvoFire(killWhenDone));
@@ -190,8 +191,6 @@ namespace BDArmory.Weapons.Missiles
             int TargetID = -1;
             bool missileRegistry = false;
             //missileSpawner.MissileName = subMunitionName;
-            if (isClusterMissile) missileSpawner.UpdateMissileValues();
-            yield return new WaitForFixedUpdate(); //wait for values to update
             if (deployState != null)
             {
                 deployState.enabled = true;
@@ -231,7 +230,7 @@ namespace BDArmory.Weapons.Missiles
                 ml.TimeFired = Time.time;
                 ml.DetonationDistance = missileLauncher.DetonationDistance;
                 ml.DetonateAtMinimumDistance = missileLauncher.DetonateAtMinimumDistance;
-                ml.decoupleForward = true;
+                ml.decoupleForward = missileLauncher.decoupleForward;
                 ml.dropTime = 0;
                 ml.guidanceActive = true;
                 ml.detonationTime = missileLauncher.detonationTime;
@@ -366,8 +365,19 @@ namespace BDArmory.Weapons.Missiles
 
         public void SetupMissileDummyPool(string modelpath)
         {
-            if (mslDummyPool == null)
-                mslDummyPool = MissileDummy.CreateDummyPool(modelpath);
+            var key = modelpath;
+            if (!mslDummyPool.ContainsKey(key) || mslDummyPool[key] == null)
+            {
+                var Template = GameDatabase.Instance.GetModel(modelpath);
+                if (Template == null)
+                {
+                    Debug.LogError("[BDArmory.MultiMissilelauncher]: model '" + modelpath + "' not found. Expect exceptions if trying to use this missile.");
+                    return;
+                }
+                Template.SetActive(false);
+                Template.AddComponent<MissileDummy>();
+                mslDummyPool[key] = ObjectPool.CreateObjectPool(Template, 10, true, true);
+            }
         }
     }
 }

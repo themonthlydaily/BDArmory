@@ -51,7 +51,7 @@ UI_FloatRange(minValue = 1f, maxValue = 4, stepIncrement = 1f, scene = UI_Scene.
                             //SpawnedMissile = CreatePart(partNode, MissileTransform.transform.position - MissileTransform.TransformDirection(missilePart.partPrefab.srfAttachNode.originalPosition),
                             SpawnedMissile = CreatePart(partNode, offset ? (MissileTransform.position + MissileTransform.forward * 1.5f) : MissileTransform.transform.position, MissileTransform.rotation, this.part);
                             var MMR = SpawnedMissile.FindModuleImplementing<ModuleMissileRearm>();
-                            if (MMR != null) MMR.ammoCount = 0;
+                            if (MMR != null) AccountForAmmo = false;
                             /* //keep the module, can be used for cluster missile submunition creation
                             if (SpawnedMissile.GetComponent<ModuleMissileRearm>() != null) 
                             {

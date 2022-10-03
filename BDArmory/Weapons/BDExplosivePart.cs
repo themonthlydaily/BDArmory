@@ -323,7 +323,7 @@ namespace BDArmory.Weapons
             if (!HighLogic.LoadedSceneIsFlight || part == null) return;
             if (!hasDetonated && Armed)
             {
-				direction = part.partTransform.forward; //both the missileReferenceTransform and smallWarhead part's forward direction is Z+, or transform.forward.
+				direction = warheadType == "standard" ? default : part.partTransform.forward; //both the missileReferenceTransform and smallWarhead part's forward direction is Z+, or transform.forward.
                 // could also do warheadType == "standard" ? default: part.partTransform.forward, as this simplifies the isAngleAllowed check in ExplosionFX, but at the cost of standard heads always being 360deg blasts (but we don't have limited angle balsts for missiels at present anyway, so not a bit deal RN)
                 var sourceWeapon = part.FindModuleImplementing<EngageableWeapon>();
                 ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 120, part, sourcevessel != null ? sourcevessel.vesselName : null, sourceWeapon != null ? sourceWeapon.GetShortName() : null, direction, -1, false, warheadType == "standard" ? part.mass : 0, -1, 1, warheadType);
@@ -338,7 +338,7 @@ namespace BDArmory.Weapons
         {
             if (!hasDetonated && Armed)
             {
-                direction = part.partTransform.forward;
+                direction = warheadType == "standard" ? default : part.partTransform.forward;
 
                 var sourceWeapon = part.FindModuleImplementing<EngageableWeapon>();
                 if (BDArmorySettings.DEBUG_MISSILES)
