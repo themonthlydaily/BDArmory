@@ -157,6 +157,7 @@ namespace BDArmory.Weapons.Missiles
                     {
                         if (launchTransforms[i].localScale != Vector3.one) launchTransforms[i].localScale = Vector3.one;
                     }
+                    tubesFired = 0;
                 }
             }
         }
@@ -187,6 +188,7 @@ namespace BDArmory.Weapons.Missiles
         }
         IEnumerator salvoFire(bool LaunchThenDestroy) 
         {
+            int launchesThisSalvo = 0;
             float timeGap = (60 / rippleRPM) * TimeWarp.CurrentRate;
             int TargetID = -1;
             bool missileRegistry = false;
@@ -201,14 +203,13 @@ namespace BDArmory.Weapons.Missiles
                 deployState.enabled = false;
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MultiMissileLauncher] deploy anim complete");
             }
-            for (int m = tubesFired; m < salvoSize; m++)
+            for (int m = tubesFired; m < launchTransforms.Length; m++)
             {
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MultiMissileLauncher] starting ripple launch on tube {m}, ripple delay: {timeGap:F3}");
                 yield return new WaitForSecondsFixed(timeGap);
-                if (tubesFired > salvoSize) //catch if launcher is trying to launch more missiles than it has
+                if (launchesThisSalvo > salvoSize) //catch if launcher is trying to launch more missiles than it has
                 {
-                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MultiMissileLauncher] oops! firing more missiles than tubes or ammo");
-                    tubesFired = 0;
+                    //if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MultiMissileLauncher] oops! firing more missiles than tubes or ammo");
                     break;
                 }
                 if (missileSpawner.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE)
@@ -280,39 +281,88 @@ namespace BDArmory.Weapons.Missiles
                                         if (ml.TargetingMode == MissileBase.TargetingModes.Heat)
                                         {
                                             Vector3 direction = (wpm.targetsAssigned[TargetID].position * wpm.targetsAssigned[TargetID].velocity.magnitude) - missileLauncher.MissileReferenceTransform.position;
-                                            ml.heatTarget = BDATargetManager.GetHeatTarget(vessel, vessel, new Ray(missileLauncher.MissileReferenceTransform.position + (50 * missileLauncher.GetForwardTransform()), direction), TargetSignatureData.noTarget, ml.lockedSensorFOV * 0.5f, ml.heatThreshold, true, ml.lockedSensorFOVBias, ml.lockedSensorVelocityBias, wpm);
+                                            ml.heatTarget = BDATargetManager.GetHeatTarget(ml.SourceVessel, vessel, new Ray(missileLauncher.MissileReferenceTransform.position + (50 * missileLauncher.GetForwardTransform()), direction), TargetSignatureData.noTarget, ml.lockedSensorFOV * 0.5f, ml.heatThreshold, true, ml.lockedSensorFOVBias, ml.lockedSensorVelocityBias, wpm);
                                         }
                                         if (ml.TargetingMode == MissileBase.TargetingModes.Radar)
                                         {
-                                            ml.radarLOAL = true;
-                                            ml.vrd = missileLauncher.vrd;
+                                            //ml.radarLOAL = true;
+                                            ml.vrd = missileLauncher.vrd; //look into better method of assigning multiple radar targets - link into sourcevessel's vessleradardata.lockedtargetdata, iterate though target list?
+                                            List<TargetSignatureData> possibleTargets = missileLauncher.vrd.GetLockedTargets();
+                                            for (int i = 0; i < possibleTargets.Count; i++)
+                                            {
+                                                if (possibleTargets[i].vessel == wpm.targetsAssigned[TargetID].Vessel)
+                                                {
+                                                    ml.radarTarget = possibleTargets[i];
+                                                }
+                                            }
                                         }
                                         ml.targetVessel = wpm.targetsAssigned[TargetID];
                                         if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MultiMissileLauncher] Assigning target {wpm.targetsAssigned[TargetID]}");
                                     }
-                                    else //else try remaining targets
+                                    else //else try remaining targets on the list. 
                                     {
-                                        using (List<TargetInfo>.Enumerator item = wpm.targetsAssigned.GetEnumerator())
-                                            while (item.MoveNext())
+                                        for (int t = TargetID; t < wpm.targetsAssigned.Count; t++)
+                                        {
+                                            if ((ml.engageAir && !wpm.targetsAssigned[t].isFlying) ||
+                                                (ml.engageGround && !wpm.targetsAssigned[t].isLandedOrSurfaceSplashed) ||
+                                                (ml.engageSLW && !wpm.targetsAssigned[t].isUnderwater)) continue; //check engagement envelope
+
+                                            if (Vector3.Angle(wpm.targetsAssigned[t].position - missileLauncher.MissileReferenceTransform.position, missileLauncher.GetForwardTransform()) < missileLauncher.maxOffBoresight) //is the target more-or-less in front of the missile(launcher)?
                                             {
-                                                if (item.Current.Vessel == null) continue;
-                                                if (Vector3.Angle(item.Current.position - missileLauncher.MissileReferenceTransform.position, missileLauncher.GetForwardTransform()) < missileLauncher.maxOffBoresight) //is the target more-or-less in front of the missile(launcher)?
+                                                if (ml.TargetingMode == MissileBase.TargetingModes.Heat)
                                                 {
-                                                    if (ml.TargetingMode == MissileBase.TargetingModes.Heat)
-                                                    {
-                                                        Vector3 direction = (item.Current.position * item.Current.velocity.magnitude) - missileLauncher.MissileReferenceTransform.position;
-                                                        ml.heatTarget = BDATargetManager.GetHeatTarget(vessel, vessel, new Ray(missileLauncher.MissileReferenceTransform.position + (50 * missileLauncher.GetForwardTransform()), direction), TargetSignatureData.noTarget, ml.lockedSensorFOV * 0.5f, ml.heatThreshold, true, ml.lockedSensorFOVBias, ml.lockedSensorVelocityBias, wpm);
-                                                    }
-                                                    if (ml.TargetingMode == MissileBase.TargetingModes.Radar)
-                                                    {
-                                                        ml.radarLOAL = true;
-                                                        ml.vrd = missileLauncher.vrd;
-                                                    }
-                                                    ml.targetVessel = item.Current;
-                                                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MultiMissileLauncher] original target out of sensor range; engaging {item.Current.Vessel.GetName()}");
-                                                    break;
+                                                    Vector3 direction = (wpm.targetsAssigned[t].position * wpm.targetsAssigned[t].velocity.magnitude) - missileLauncher.MissileReferenceTransform.position;
+                                                    ml.heatTarget = BDATargetManager.GetHeatTarget(ml.SourceVessel, vessel, new Ray(missileLauncher.MissileReferenceTransform.position + (50 * missileLauncher.GetForwardTransform()), direction), TargetSignatureData.noTarget, ml.lockedSensorFOV * 0.5f, ml.heatThreshold, true, ml.lockedSensorFOVBias, ml.lockedSensorVelocityBias, wpm);
                                                 }
+                                                if (ml.TargetingMode == MissileBase.TargetingModes.Radar)
+                                                {
+                                                    //ml.radarLOAL = true;
+                                                    ml.vrd = missileLauncher.vrd; //look into better method of assigning multiple radar targets - link into sourcevessel's vessleradardata.lockedtargetdata, iterate though target list?
+                                                    List<TargetSignatureData> possibleTargets = missileLauncher.vrd.GetLockedTargets();
+                                                    for (int i = 0; i < possibleTargets.Count; i++)
+                                                    {
+                                                        if (possibleTargets[i].vessel == wpm.targetsAssigned[t].Vessel)
+                                                        {
+                                                            ml.radarTarget = possibleTargets[i];
+                                                        }
+                                                    }
+                                                }
+                                                ml.targetVessel = wpm.targetsAssigned[t];
+                                                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MultiMissileLauncher] Assigning target {wpm.targetsAssigned[t]}");
                                             }
+                                        }
+                                        if (ml.targetVessel == null) //check targets that were already assigned and passed. using the above iterator to prevent all targets outisde allowed FoV or engagement enveolpe from being assigned the firest possible target by checking later ones first
+                                        {
+                                            using (List<TargetInfo>.Enumerator item = wpm.targetsAssigned.GetEnumerator())
+                                                while (item.MoveNext())
+                                                {
+                                                    if (item.Current.Vessel == null) continue;
+                                                    if (Vector3.Angle(item.Current.position - missileLauncher.MissileReferenceTransform.position, missileLauncher.GetForwardTransform()) < missileLauncher.maxOffBoresight) //is the target more-or-less in front of the missile(launcher)?
+                                                    {
+                                                        if (ml.TargetingMode == MissileBase.TargetingModes.Heat)
+                                                        {
+                                                            Vector3 direction = (item.Current.position * item.Current.velocity.magnitude) - missileLauncher.MissileReferenceTransform.position;
+                                                            ml.heatTarget = BDATargetManager.GetHeatTarget(ml.SourceVessel, vessel, new Ray(missileLauncher.MissileReferenceTransform.position + (50 * missileLauncher.GetForwardTransform()), direction), TargetSignatureData.noTarget, ml.lockedSensorFOV * 0.5f, ml.heatThreshold, true, ml.lockedSensorFOVBias, ml.lockedSensorVelocityBias, wpm);
+                                                        }
+                                                        if (ml.TargetingMode == MissileBase.TargetingModes.Radar)
+                                                        {
+                                                            ml.radarLOAL = true;
+                                                            ml.vrd = missileLauncher.vrd;
+                                                            List<TargetSignatureData> possibleTargets = missileLauncher.vrd.GetLockedTargets();
+                                                            for (int i = 0; i < possibleTargets.Count; i++)
+                                                            {
+                                                                if (possibleTargets[i].vessel == item.Current.Vessel)
+                                                                {
+                                                                    ml.radarTarget = possibleTargets[i];
+                                                                }
+                                                            }
+                                                        }
+                                                        ml.targetVessel = item.Current;
+                                                        if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MultiMissileLauncher] original target out of sensor range; engaging {item.Current.Vessel.GetName()}");
+                                                        break;
+                                                    }
+                                                }
+                                        }
                                     }
                                 }
                                 TargetID++;
@@ -333,6 +383,7 @@ namespace BDArmory.Weapons.Missiles
                 ml.MissileLaunch();
                 launchTransforms[m].localScale = Vector3.zero;
                 tubesFired++;
+                launchesThisSalvo++;
             }
             if (deployState != null)
             {
@@ -349,7 +400,6 @@ namespace BDArmory.Weapons.Missiles
                     if (!(missileLauncher.reloadRoutine != null))
                     {
                         missileLauncher.reloadRoutine = StartCoroutine(missileLauncher.MissileReload());
-                        tubesFired = 0;
                         if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MultiMissileLauncher] all submunitions fired. Reloading");
                     }
             }
