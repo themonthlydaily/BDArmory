@@ -1335,7 +1335,7 @@ namespace BDArmory.Damage
             }
             else
             {
-                //Armor = 10;
+                Armor = 10;
                 Fields["Armor"].guiActiveEditor = false;
                 Fields["guiArmorTypeString"].guiActiveEditor = false;
                 Fields["guiArmorTypeString"].guiActive = false;
