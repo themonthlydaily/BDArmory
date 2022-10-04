@@ -910,7 +910,7 @@ namespace BDArmory.Bullets
                     pBullet.bulletDmgMult = bulletDmgMult;
                     pBullet.ballisticCoefficient = sBullet.bulletMass / (((Mathf.PI * 0.25f * sBullet.caliber * sBullet.caliber) / 1000000f) * 0.295f);
                     pBullet.timeElapsedSinceCurrentSpeedWasAdjusted = 0;
-                    pBullet.timeToLiveUntil = 10000 / sBullet.bulletVelocity * 1.1f + Time.time;
+                    pBullet.timeToLiveUntil = 4000 / sBullet.bulletVelocity * 1.1f + Time.time;
                     Vector3 firedVelocity = VectorUtils.GaussianDirectionDeviation(currentVelocity.normalized, (sBullet.subProjectileCount / BDAMath.Sqrt(currentVelocity.magnitude / 10))) * (sBullet.bulletVelocity / 10); //more subprojectiles = wider spread, higher base velocity = tighter spread
                     pBullet.currentVelocity = (currentVelocity + Krakensbane.GetFrameVelocityV3f()) + firedVelocity; // use the real velocity, w/o offloading
                     pBullet.sourceWeapon = sourceWeapon;
