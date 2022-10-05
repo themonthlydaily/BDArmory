@@ -9,8 +9,7 @@ namespace BDArmory.Utils
     /// If you need access to these adjustments during the BetterLateThanNever phase, then use Krakensbane or FloatingOrigin directly to ensure order of operations.
     ///
     /// With agressive inling, this reduces access time by a factor of ~4 for frequent access per frame.
-    /// Note: the access time is already quite small, but these are used frequently.
-    /// Included here as they're basically VectorUtils.
+    /// Note: the access time is already quite small, but these are used frequently every frame (e.g., for bullets, rockets, explosions and countermeasures).
     /// </summary>
     public static class BDKrakensbane
     {
