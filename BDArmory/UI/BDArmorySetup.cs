@@ -2492,6 +2492,30 @@ namespace BDArmory.UI
 #if DEBUG  // Only visible when compiled in Debug configuration.
                     if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
                     {
+                        if (GUI.Button(SLineRect(++line), "Test 2x Raycast vs RaycastNonAlloc"))
+                        {
+                            int N = 1 << 20;
+                            var tic = Time.realtimeSinceStartup;
+                            Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+                            RaycastHit hit;
+                            RaycastHit[] hits = new RaycastHit[100];
+                            int layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels | LayerMasks.Scenery);
+                            float dist = 10000;
+                            bool didHit = false;
+                            for (int i = 0; i < N; ++i)
+                            {
+                                didHit = Physics.Raycast(ray, out hit, dist, layerMask);
+                                didHit = Physics.Raycast(ray, out hit, dist, layerMask);
+                            }
+                            var dt = Time.realtimeSinceStartup - tic;
+                            Debug.Log($"DEBUG Raycast 2x (hit? {didHit}) took {dt / N:G3}s");
+                            int hitCount = 0;
+                            tic = Time.realtimeSinceStartup;
+                            for (int i = 0; i < N; ++i)
+                                hitCount = Physics.RaycastNonAlloc(ray, hits, dist, layerMask);
+                            dt = Time.realtimeSinceStartup - tic;
+                            Debug.Log($"DEBUG RaycastNonAlloc ({hitCount} hits) took {dt / N:G3}s");
+                        }
                         if (GUI.Button(SLineRect(++line), "Test GetFrameVelocityV3f"))
                         {
                             int N = 1 << 28;
