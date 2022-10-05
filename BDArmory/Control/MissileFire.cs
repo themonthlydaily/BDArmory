@@ -3969,7 +3969,7 @@ namespace BDArmory.Control
             //2. highest priority non-targeted target
             //3. closest non-targeted target
 
-            for (int i = 0; i < multiTargetNum; i++)
+            for (int i = 0; i < Math.Max(multiTargetNum, multiMissileTgtNum); i++)
             {
                 TargetInfo potentialMissileTarget = null;
                 //=========MISSILES=============
@@ -3998,7 +3998,7 @@ namespace BDArmory.Control
                 }
             }
 
-            for (int i = 0; i < multiTargetNum; i++)
+            for (int i = 0; i < Math.Max(multiTargetNum, multiMissileTgtNum); i++)
             {
                 TargetInfo potentialTarget = null;
                 //============VESSEL THREATS============
@@ -5692,7 +5692,7 @@ namespace BDArmory.Control
             else if (ml.TargetingMode == MissileBase.TargetingModes.Heat && heatTarget.exists)
             {
                 ml.heatTarget = heatTarget;
-                MissileLauncher mml = CurrentMissile as MissileLauncher;
+                MissileLauncher mml = ml as MissileLauncher;
                 if (!mml.multiLauncher) heatTarget = TargetSignatureData.noTarget;
                 if (BDArmorySettings.DEBUG_MISSILES)
                     Debug.Log("[BDArmory.MissileData]: Sending targetInfo to heat Missile...");

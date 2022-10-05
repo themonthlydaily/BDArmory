@@ -917,6 +917,7 @@ namespace BDArmory.Weapons.Missiles
                 if (reloadableRail)
                 {
                     if (!(reloadableMissile != null)) reloadableMissile = StartCoroutine(FireReloadableMissile());
+                    launched = true;
                 }
                 else
                 {
@@ -927,9 +928,10 @@ namespace BDArmory.Weapons.Missiles
                     vessel.vesselName = GetShortName();
                     TargetPosition = (multiLauncher ? vessel.ReferenceTransform.position + vessel.ReferenceTransform.up * 5000 : transform.position + transform.forward * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
                     MissileLaunch();
+                    wpm.heatTarget = TargetSignatureData.noTarget;
+                    launched = true;
                 }
             }
-            launched = true;
         }
         IEnumerator FireReloadableMissile()
         {
@@ -943,7 +945,6 @@ namespace BDArmory.Weapons.Missiles
 
             ml.launched = true; 
             var wpm = VesselModuleRegistry.GetMissileFire(SourceVessel, true);
-            if (wpm != null) ml.Team = wpm.Team;
             BDATargetManager.FiredMissiles.Add(ml);
             ml.SourceVessel = SourceVessel;
             ml.GuidanceMode = GuidanceMode;
@@ -975,7 +976,12 @@ namespace BDArmory.Weapons.Missiles
                 ml.maxAltitude = maxAltitude;
             ml.terminalGuidanceShouldActivate = terminalGuidanceShouldActivate;
             ml.guidanceActive = true;
-            wpm.SendTargetDataToMissile(ml);
+            if (wpm != null)
+            {
+                ml.Team = wpm.Team;
+                wpm.SendTargetDataToMissile(ml);
+                wpm.heatTarget = TargetSignatureData.noTarget;
+            }
             ml.TargetPosition = transform.position + (multiLauncher ? vessel.ReferenceTransform.up * 5000 : transform.forward * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
             ml.MissileLaunch();
             if (multiLauncher && multiLauncher.isClusterMissile)

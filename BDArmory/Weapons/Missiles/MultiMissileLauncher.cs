@@ -452,6 +452,7 @@ namespace BDArmory.Weapons.Missiles
                 launchesThisSalvo++;
             }
             wpm.heatTarget = TargetSignatureData.noTarget;
+            missileLauncher.launched = true;
             if (deployState != null)
             {
                 deployState.enabled = true;
