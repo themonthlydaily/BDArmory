@@ -1552,9 +1552,9 @@ namespace BDArmory.Control
         {
             //floating origin and velocity offloading corrections
             if (!HighLogic.LoadedSceneIsFlight) return;
-            if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
+            if (BDKrakensbane.IsActive)
             {
-                if (lastTargetPosition != null) lastTargetPosition -= FloatingOrigin.OffsetNonKrakensbane;
+                if (lastTargetPosition != null) lastTargetPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
             }
             if (weaponManager && weaponManager.guardMode && weaponManager.staleTarget)
             {

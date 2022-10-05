@@ -8,6 +8,7 @@ IMPROVEMENTS / FIXES
 	- Lots of optimisations.
 	- Add Notes.md for devs with notes on optimisation and the current branches.
 	- Add caching for all AudioClips to reduce GC.
+	- Optimised access to Krakensbane and FloatingOrigin adjustments.
 - Competition:
 	- Add option to disable the HUD on tournament start.
 - Damage:

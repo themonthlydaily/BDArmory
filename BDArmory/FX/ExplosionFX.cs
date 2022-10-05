@@ -594,10 +594,10 @@ namespace BDArmory.FX
             }
 
             //floating origin and velocity offloading corrections
-            if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
+            if (BDKrakensbane.IsActive)
             {
-                transform.position -= FloatingOrigin.OffsetNonKrakensbane;
-                Position -= FloatingOrigin.OffsetNonKrakensbane;
+                transform.position -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                Position -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
             }
             if (!isFX)
             {

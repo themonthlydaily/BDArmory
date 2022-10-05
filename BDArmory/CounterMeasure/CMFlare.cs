@@ -117,9 +117,9 @@ namespace BDArmory.CounterMeasure
             }
 
             //floating origin and velocity offloading corrections
-            if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
+            if (BDKrakensbane.IsActive)
             {
-                transform.localPosition -= FloatingOrigin.OffsetNonKrakensbane;
+                transform.localPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
             }
 
             if (velocity != Vector3.zero)
