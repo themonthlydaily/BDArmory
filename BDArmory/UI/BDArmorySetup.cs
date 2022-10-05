@@ -2494,6 +2494,8 @@ namespace BDArmory.UI
                     {
                         if (GUI.Button(SLineRect(++line), "Test 2x Raycast vs RaycastNonAlloc"))
                         {
+                            var watch = new System.Diagnostics.Stopwatch();
+                            float µsResolution = 1e6f / System.Diagnostics.Stopwatch.Frequency;
                             int N = 1 << 20;
                             var tic = Time.realtimeSinceStartup;
                             Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
@@ -2502,64 +2504,71 @@ namespace BDArmory.UI
                             int layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels | LayerMasks.Scenery);
                             float dist = 10000;
                             bool didHit = false;
+                            watch.Start();
                             for (int i = 0; i < N; ++i)
                             {
                                 didHit = Physics.Raycast(ray, out hit, dist, layerMask);
                                 didHit = Physics.Raycast(ray, out hit, dist, layerMask);
                             }
-                            var dt = Time.realtimeSinceStartup - tic;
-                            Debug.Log($"DEBUG Raycast 2x (hit? {didHit}) took {dt / N:G3}s");
+                            watch.Stop();
+                            Debug.Log($"DEBUG Raycast 2x (hit? {didHit}) took {watch.ElapsedTicks * µsResolution / N:G3}µs");
                             int hitCount = 0;
                             tic = Time.realtimeSinceStartup;
+                            watch.Reset(); watch.Start();
                             for (int i = 0; i < N; ++i)
                                 hitCount = Physics.RaycastNonAlloc(ray, hits, dist, layerMask);
-                            dt = Time.realtimeSinceStartup - tic;
-                            Debug.Log($"DEBUG RaycastNonAlloc ({hitCount} hits) took {dt / N:G3}s");
+                            watch.Stop();
+                            Debug.Log($"DEBUG RaycastNonAlloc ({hitCount} hits) took {watch.ElapsedTicks * µsResolution / N:G3}µs");
                         }
                         if (GUI.Button(SLineRect(++line), "Test GetFrameVelocityV3f"))
                         {
-                            int N = 1 << 28;
-                            var tic = Time.realtimeSinceStartup;
+                            var watch = new System.Diagnostics.Stopwatch();
+                            float resolution = 1e9f / System.Diagnostics.Stopwatch.Frequency;
+                            int N = 1000;
                             Vector3 frameVelocity;
+                            watch.Start();
                             for (int i = 0; i < N; ++i)
                                 frameVelocity = Krakensbane.GetFrameVelocityV3f();
-                            var dt = Time.realtimeSinceStartup - tic;
-                            Debug.Log($"DEBUG Getting KbVF took {dt / N:G3}s");
-                            tic = Time.realtimeSinceStartup;
+                            watch.Stop();
+                            Debug.Log($"DEBUG Getting KbVF took {watch.ElapsedTicks * resolution / N:G3}ns");
+                            watch.Reset(); watch.Start();
                             for (int i = 0; i < N; ++i)
                                 frameVelocity = BDKrakensbane.FrameVelocityV3f;
-                            dt = Time.realtimeSinceStartup - tic;
-                            Debug.Log($"DEBUG Using BDKrakensbane took {dt / N:G3}s");
+                            watch.Stop();
+                            Debug.Log($"DEBUG Using BDKrakensbane took {watch.ElapsedTicks * resolution / N:G3}ns");
                             Vector3d FOOffset;
+                            watch.Reset(); watch.Start();
                             for (int i = 0; i < N; ++i)
                                 FOOffset = FloatingOrigin.Offset;
-                            dt = Time.realtimeSinceStartup - tic;
-                            Debug.Log($"DEBUG Getting FO.Offset took {dt / N:G3}s");
-                            tic = Time.realtimeSinceStartup;
+                            watch.Stop();
+                            Debug.Log($"DEBUG Getting FO.Offset took {watch.ElapsedTicks * resolution / N:G3}ns");
+                            watch.Reset(); watch.Start();
                             for (int i = 0; i < N; ++i)
                                 FOOffset = BDKrakensbane.FloatingOriginOffset;
-                            dt = Time.realtimeSinceStartup - tic;
-                            Debug.Log($"DEBUG Using BDKrakensbane took {dt / N:G3}s");
+                            watch.Stop();
+                            Debug.Log($"DEBUG Using BDKrakensbane took {watch.ElapsedTicks * resolution / N:G3}ns");
                             Vector3d FOOffsetNKb;
+                            watch.Reset(); watch.Start();
                             for (int i = 0; i < N; ++i)
                                 FOOffsetNKb = FloatingOrigin.OffsetNonKrakensbane;
-                            dt = Time.realtimeSinceStartup - tic;
-                            Debug.Log($"DEBUG Getting FO.OffsetNonKrakensbane took {dt / N:G3}s");
-                            tic = Time.realtimeSinceStartup;
+                            watch.Stop();
+                            Debug.Log($"DEBUG Getting FO.OffsetNonKrakensbane took {watch.ElapsedTicks * resolution / N:G3}ns");
+                            watch.Reset(); watch.Start();
                             for (int i = 0; i < N; ++i)
                                 FOOffsetNKb = BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
-                            dt = Time.realtimeSinceStartup - tic;
-                            Debug.Log($"DEBUG Using BDKrakensbane took {dt / N:G3}s");
+                            watch.Stop();
+                            Debug.Log($"DEBUG Using BDKrakensbane took {watch.ElapsedTicks * resolution / N:G3}ns");
                             bool KBIsActive;
+                            watch.Reset(); watch.Start();
                             for (int i = 0; i < N; ++i)
                                 KBIsActive = !BDKrakensbane.FloatingOriginOffset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero();
-                            dt = Time.realtimeSinceStartup - tic;
-                            Debug.Log($"DEBUG Getting KB is active took {dt / N:G3}s");
-                            tic = Time.realtimeSinceStartup;
+                            watch.Stop();
+                            Debug.Log($"DEBUG Getting KB is active took {watch.ElapsedTicks * resolution / N:G3}ns");
+                            watch.Reset(); watch.Start();
                             for (int i = 0; i < N; ++i)
                                 KBIsActive = BDKrakensbane.IsActive;
-                            dt = Time.realtimeSinceStartup - tic;
-                            Debug.Log($"DEBUG Using BDKrakensbane took {dt / N:G3}s");
+                            watch.Stop();
+                            Debug.Log($"DEBUG Using BDKrakensbane took {watch.ElapsedTicks * resolution / N:G3}ns");
                         }
                         if (GUI.Button(SLineRect(++line), "Test GetAudioClip"))
                         {
