@@ -2492,6 +2492,51 @@ namespace BDArmory.UI
 #if DEBUG  // Only visible when compiled in Debug configuration.
                     if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
                     {
+                        if (GUI.Button(SLineRect(++line), "Test GetFrameVelocityV3f"))
+                        {
+                            int N = 1 << 28;
+                            var tic = Time.realtimeSinceStartup;
+                            Vector3 frameVelocity;
+                            for (int i = 0; i < N; ++i)
+                                frameVelocity = Krakensbane.GetFrameVelocityV3f();
+                            var dt = Time.realtimeSinceStartup - tic;
+                            Debug.Log($"DEBUG Getting KbVF took {dt / N:G3}s");
+                            tic = Time.realtimeSinceStartup;
+                            for (int i = 0; i < N; ++i)
+                                frameVelocity = BDKrakensbane.FrameVelocityV3f;
+                            dt = Time.realtimeSinceStartup - tic;
+                            Debug.Log($"DEBUG Using BDKrakensbane took {dt / N:G3}s");
+                            Vector3d FOOffset;
+                            for (int i = 0; i < N; ++i)
+                                FOOffset = FloatingOrigin.Offset;
+                            dt = Time.realtimeSinceStartup - tic;
+                            Debug.Log($"DEBUG Getting FO.Offset took {dt / N:G3}s");
+                            tic = Time.realtimeSinceStartup;
+                            for (int i = 0; i < N; ++i)
+                                FOOffset = BDKrakensbane.FloatingOriginOffset;
+                            dt = Time.realtimeSinceStartup - tic;
+                            Debug.Log($"DEBUG Using BDKrakensbane took {dt / N:G3}s");
+                            Vector3d FOOffsetNKb;
+                            for (int i = 0; i < N; ++i)
+                                FOOffsetNKb = FloatingOrigin.OffsetNonKrakensbane;
+                            dt = Time.realtimeSinceStartup - tic;
+                            Debug.Log($"DEBUG Getting FO.OffsetNonKrakensbane took {dt / N:G3}s");
+                            tic = Time.realtimeSinceStartup;
+                            for (int i = 0; i < N; ++i)
+                                FOOffsetNKb = BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                            dt = Time.realtimeSinceStartup - tic;
+                            Debug.Log($"DEBUG Using BDKrakensbane took {dt / N:G3}s");
+                            bool KBIsActive;
+                            for (int i = 0; i < N; ++i)
+                                KBIsActive = !BDKrakensbane.FloatingOriginOffset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero();
+                            dt = Time.realtimeSinceStartup - tic;
+                            Debug.Log($"DEBUG Getting KB is active took {dt / N:G3}s");
+                            tic = Time.realtimeSinceStartup;
+                            for (int i = 0; i < N; ++i)
+                                KBIsActive = BDKrakensbane.IsActive;
+                            dt = Time.realtimeSinceStartup - tic;
+                            Debug.Log($"DEBUG Using BDKrakensbane took {dt / N:G3}s");
+                        }
                         if (GUI.Button(SLineRect(++line), "Test GetAudioClip"))
                         {
                             StartCoroutine(TestGetAudioClip());
@@ -3869,15 +3914,15 @@ namespace BDArmory.UI
             TimingManager.FixedUpdateRemove(TimingManager.TimingStage.Late, Late);
             TimingManager.FixedUpdateRemove(TimingManager.TimingStage.BetterLateThanNever, BetterLateThanNever);
         }
-        void ObscenelyEarly() { Debug.Log($"DEBUG {Time.time} ObscenelyEarly, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
-        void Early() { Debug.Log($"DEBUG {Time.time} Early, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
-        void Precalc() { Debug.Log($"DEBUG {Time.time} Precalc, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
-        void Earlyish() { Debug.Log($"DEBUG {Time.time} Earlyish, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
-        void Normal() { Debug.Log($"DEBUG {Time.time} Normal, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
-        void FashionablyLate() { Debug.Log($"DEBUG {Time.time} FashionablyLate, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
-        void FlightIntegrator() { Debug.Log($"DEBUG {Time.time} FlightIntegrator, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
-        void Late() { Debug.Log($"DEBUG {Time.time} Late, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
-        void BetterLateThanNever() { Debug.Log($"DEBUG {Time.time} BetterLateThanNever, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
+        void ObscenelyEarly() { Debug.Log($"DEBUG {Time.time} ObscenelyEarly, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void Early() { Debug.Log($"DEBUG {Time.time} Early, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void Precalc() { Debug.Log($"DEBUG {Time.time} Precalc, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void Earlyish() { Debug.Log($"DEBUG {Time.time} Earlyish, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void Normal() { Debug.Log($"DEBUG {Time.time} Normal, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void FashionablyLate() { Debug.Log($"DEBUG {Time.time} FashionablyLate, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void FlightIntegrator() { Debug.Log($"DEBUG {Time.time} FlightIntegrator, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void Late() { Debug.Log($"DEBUG {Time.time} Late, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void BetterLateThanNever() { Debug.Log($"DEBUG {Time.time} BetterLateThanNever, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
 
         IEnumerator TestYieldWaitLengths()
         {

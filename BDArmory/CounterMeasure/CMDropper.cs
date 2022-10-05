@@ -225,7 +225,7 @@ namespace BDArmory.CounterMeasure
             cm.transform.position = transform.position;
             CMFlare cmf = cm.GetComponent<CMFlare>();
             cmf.velocity = part.rb.velocity
-                + Krakensbane.GetFrameVelocityV3f()
+                + BDKrakensbane.FrameVelocityV3f
                 + (ejectVelocity * transform.up)
                 + (UnityEngine.Random.Range(-3f, 3f) * transform.forward)
                 + (UnityEngine.Random.Range(-3f, 3f) * transform.right);

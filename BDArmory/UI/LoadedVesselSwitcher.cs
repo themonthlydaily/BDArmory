@@ -192,8 +192,8 @@ namespace BDArmory.UI
 
             if (vesselTraceEnabled)
             {
-                if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
-                    floatingOriginCorrection += FloatingOrigin.OffsetNonKrakensbane;
+                if (BDKrakensbane.IsActive)
+                    floatingOriginCorrection += BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
                 var survivingVessels = weaponManagers.SelectMany(tm => tm.Value).Where(wm => wm != null).Select(wm => wm.vessel).ToList();
                 foreach (var vessel in survivingVessels)
                 {

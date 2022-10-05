@@ -344,10 +344,10 @@ namespace BDArmory.Weapons.Missiles
         {
             if (HasFired && !HasExploded)
             {
-                if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
+                if (BDKrakensbane.IsActive)
                 {
-                    // Debug.Log($"DEBUG {Time.time} Correcting for floating origin shift of {(Vector3)FloatingOrigin.Offset:G3} ({(Vector3)FloatingOrigin.OffsetNonKrakensbane:G3}) for {vessel.vesselName} ({SourceVessel})");
-                    TargetPosition -= FloatingOrigin.OffsetNonKrakensbane;
+                    // Debug.Log($"DEBUG {Time.time} Correcting for floating origin shift of {(Vector3)BDKrakensbane.FloatingOriginOffset:G3} ({(Vector3)BDKrakensbane.FloatingOriginOffsetNonKrakensbane:G3}) for {vessel.vesselName} ({SourceVessel})");
+                    TargetPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
                 }
             }
         }
