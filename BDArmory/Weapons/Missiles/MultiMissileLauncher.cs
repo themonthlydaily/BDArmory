@@ -347,7 +347,7 @@ namespace BDArmory.Weapons.Missiles
                                         }
                                     }
                                     ml.targetVessel = wpm.targetsAssigned[TargetID];
-                                    //if (BDArmorySettings.DEBUG_MISSILES)
+                                    if (BDArmorySettings.DEBUG_MISSILES)
                                         Debug.Log($"[BDArmory.MultiMissileLauncher] Assigning target {TargetID}: {wpm.targetsAssigned[TargetID].Vessel.GetName()}; total possible targets {wpm.targetsAssigned.Count}");
                                 }
                                 else //else try remaining targets on the list. 
@@ -385,11 +385,11 @@ namespace BDArmory.Weapons.Missiles
                                                 }
                                             }
                                             ml.targetVessel = wpm.targetsAssigned[t];
-                                            //if (BDArmorySettings.DEBUG_MISSILES)
-                                                Debug.Log($"[BDArmory.MultiMissileLauncher] Assigning backup target (taretID {TargetID}) {wpm.targetsAssigned[t].Vessel.GetName()}");
+                                            if (BDArmorySettings.DEBUG_MISSILES)
+                                                Debug.Log($"[BDArmory.MultiMissileLauncher] Assigning backup target (targetID {TargetID}) {wpm.targetsAssigned[t].Vessel.GetName()}");
                                         }
                                     }
-                                    //if (BDArmorySettings.DEBUG_MISSILES) 
+                                    if (BDArmorySettings.DEBUG_MISSILES) 
                                     Debug.Log($"[BDArmory.MultiMissileLauncher] Couldn't assign valid target, trying from beginning of target list");
                                     if (ml.targetVessel == null) //check targets that were already assigned and passed. using the above iterator to prevent all targets outisde allowed FoV or engagement enveolpe from being assigned the firest possible target by checking later ones first
                                     { 
@@ -424,7 +424,7 @@ namespace BDArmory.Weapons.Missiles
                                                         }
                                                     }
                                                     ml.targetVessel = item.Current;
-                                                    //if (BDArmorySettings.DEBUG_MISSILES)
+                                                    if (BDArmorySettings.DEBUG_MISSILES)
                                                     Debug.Log($"[BDArmory.MultiMissileLauncher] original target out of sensor range; engaging {item.Current.Vessel.GetName()}");
                                                     break;
                                                 }

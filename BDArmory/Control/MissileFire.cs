@@ -929,6 +929,7 @@ namespace BDArmory.Control
                         if (weapon.Current.GetWeaponClass() == WeaponClasses.Gun || weapon.Current.GetWeaponClass() == WeaponClasses.Rocket || weapon.Current.GetWeaponClass() == WeaponClasses.DefenseLaser)
                         {
                             var gun = weapon.Current.GetPart().FindModuleImplementing<ModuleWeapon>();
+                            sw = weapon.Current; //check against salvofiring turrets - if all guns overheat at the same time, turrets get stuck in standby mode
                             if (gun.isReloading || gun.isOverheated || gun.pointingAtSelf || !(gun.ammoCount > 0 || BDArmorySettings.INFINITE_AMMO)) continue; //instead of returning the first weapon in a weapon group, return the first weapon in a group that actually can fire
                         }
                         if (weapon.Current.GetWeaponClass() == WeaponClasses.Missile || weapon.Current.GetWeaponClass() == WeaponClasses.Bomb || weapon.Current.GetWeaponClass() == WeaponClasses.SLW)
@@ -3969,7 +3970,7 @@ namespace BDArmory.Control
             //2. highest priority non-targeted target
             //3. closest non-targeted target
 
-            for (int i = 0; i < Math.Max(multiTargetNum, multiMissileTgtNum); i++)
+            for (int i = 0; i < Math.Max(multiTargetNum, multiMissileTgtNum) - 1; i++)
             {
                 TargetInfo potentialMissileTarget = null;
                 //=========MISSILES=============
@@ -3979,7 +3980,7 @@ namespace BDArmory.Control
                 {
                     missilesAssigned.Add(potentialMissileTarget);
                     targetsTried.Add(potentialMissileTarget);
-                    return;
+                    //return;
                 }
                 //then provide point defense umbrella
                 potentialMissileTarget = BDATargetManager.GetClosestMissileTarget(this);
@@ -3987,18 +3988,18 @@ namespace BDArmory.Control
                 {
                     missilesAssigned.Add(potentialMissileTarget);
                     targetsTried.Add(potentialMissileTarget);
-                    return;
+                    //return;
                 }
                 potentialMissileTarget = BDATargetManager.GetUnengagedMissileTarget(this);
                 if (potentialMissileTarget)
                 {
                     missilesAssigned.Add(potentialMissileTarget);
                     targetsTried.Add(potentialMissileTarget);
-                    return;
+                    //return;
                 }
             }
 
-            for (int i = 0; i < Math.Max(multiTargetNum, multiMissileTgtNum); i++)
+            for (int i = 0; i < Math.Max(multiTargetNum, multiMissileTgtNum) - 1; i++) //primary target already added, so subtract 1 from nultitargetnum
             {
                 TargetInfo potentialTarget = null;
                 //============VESSEL THREATS============
@@ -4010,7 +4011,7 @@ namespace BDArmory.Control
                     {
                         targetsAssigned.Add(potentialTarget);
                         targetsTried.Add(potentialTarget);
-                        return;
+                        //return;
                     }
                     potentialTarget = BDATargetManager.GetClosestTarget(this);
                     if (BDArmorySettings.DEFAULT_FFA_TARGETING)
@@ -4021,7 +4022,7 @@ namespace BDArmory.Control
                     {
                         targetsAssigned.Add(potentialTarget);
                         targetsTried.Add(potentialTarget);
-                        return;
+                        //return;
                     }
                 }
                 using (List<TargetInfo>.Enumerator finalTargets = BDATargetManager.GetAllTargetsExcluding(targetsTried, this).GetEnumerator())
@@ -4029,7 +4030,8 @@ namespace BDArmory.Control
                     {
                         if (finalTargets.Current == null) continue;
                         targetsAssigned.Add(finalTargets.Current);
-                        return;
+                        targetsTried.Add(finalTargets.Current);
+                        //return;
                     }
                 //else
                 if (potentialTarget == null)
