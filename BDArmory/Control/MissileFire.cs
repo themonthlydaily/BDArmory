@@ -5637,7 +5637,7 @@ namespace BDArmory.Control
                     heatTarget.predictedPosition - CurrentMissile.MissileReferenceTransform.position
                     : CurrentMissile.GetForwardTransform();
 
-                heatTarget = BDATargetManager.GetHeatTarget(vessel, vessel, new Ray(CurrentMissile.MissileReferenceTransform.position + (50 * CurrentMissile.GetForwardTransform()), direction), TargetSignatureData.noTarget, scanRadius, CurrentMissile.heatThreshold, CurrentMissile.uncagedLock, CurrentMissile.lockedSensorFOVBias, CurrentMissile.lockedSensorVelocityBias, this);
+                heatTarget = BDATargetManager.GetHeatTarget(vessel, vessel, new Ray(CurrentMissile.MissileReferenceTransform.position + (50 * CurrentMissile.GetForwardTransform()), direction), TargetSignatureData.noTarget, scanRadius, CurrentMissile.heatThreshold, CurrentMissile.uncagedLock, CurrentMissile.lockedSensorFOVBias, CurrentMissile.lockedSensorVelocityBias, this, currentTarget);
             }
         }
 
@@ -5692,7 +5692,8 @@ namespace BDArmory.Control
             else if (ml.TargetingMode == MissileBase.TargetingModes.Heat && heatTarget.exists)
             {
                 ml.heatTarget = heatTarget;
-                heatTarget = TargetSignatureData.noTarget;
+                MissileLauncher mml = CurrentMissile as MissileLauncher;
+                if (!mml.multiLauncher) heatTarget = TargetSignatureData.noTarget;
                 if (BDArmorySettings.DEBUG_MISSILES)
                     Debug.Log("[BDArmory.MissileData]: Sending targetInfo to heat Missile...");
                 ml.targetVessel = ml.heatTarget.vessel.gameObject.GetComponent<TargetInfo>();

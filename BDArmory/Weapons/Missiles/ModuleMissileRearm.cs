@@ -75,7 +75,7 @@ UI_FloatRange(minValue = 1f, maxValue = 4, stepIncrement = 1f, scene = UI_Scene.
             var MML = part.FindModuleImplementing<MultiMissileLauncher>();
 			if (MML == null || MML && MML.isClusterMissile) MissileName = part.name;
             StartCoroutine(GetMissileValues());
-            GameEvents.onEditorShipModified.Add(ShipModified);
+            //GameEvents.onEditorShipModified.Add(ShipModified);
             UI_FloatRange Ammo = (UI_FloatRange)Fields["ammoCount"].uiControlEditor;
             Ammo.maxValue = maxAmmo;
         }
@@ -88,7 +88,8 @@ UI_FloatRange(minValue = 1f, maxValue = 4, stepIncrement = 1f, scene = UI_Scene.
         {
             if (part.parent)
             {
-                if (part.parent.FindModuleImplementing<MissileTurret>()) //turrets work... sorta. Missiles are reloading more or less where they should be, but there's some massive force being imparted on the turret every launch
+                
+                if (part.parent.FindModuleImplementing<MissileTurret>()) //turrets work... sorta. Missiles are reloading where they should be, but there's some massive force being imparted on the turret every launch
                 {// test UpdateMissileChildren fix used for rotary rails?
                     ammoCount = 1;
                     Fields["ammoCount"].guiActiveEditor = false;
@@ -97,6 +98,7 @@ UI_FloatRange(minValue = 1f, maxValue = 4, stepIncrement = 1f, scene = UI_Scene.
                 {
                     Fields["ammoCount"].guiActiveEditor = true;
                 }
+                
             }
         }
 
@@ -110,7 +112,7 @@ UI_FloatRange(minValue = 1f, maxValue = 4, stepIncrement = 1f, scene = UI_Scene.
             MissileLauncher ml = part.FindModuleImplementing<MissileLauncher>();
             {
                 ml.reloadableRail = this;
-                Debug.Log("[BDArmory.ModuleMissileRearm]: " + MissileName);
+                //Debug.Log("[BDArmory.ModuleMissileRearm]: " + MissileName);
                 using (var parts = PartLoader.LoadedPartsList.GetEnumerator())
                     while (parts.MoveNext())
                     {

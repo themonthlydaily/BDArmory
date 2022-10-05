@@ -900,14 +900,15 @@ namespace BDArmory.Weapons.Missiles
             if (HasFired || launched) return;
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: Missile launch initiated! {vessel.vesselName}");
 
-            var wpm = VesselModuleRegistry.GetMissileFire(vessel, true);
+            var wpm = VesselModuleRegistry.GetMissileFire(SourceVessel != null ? SourceVessel : vessel, true);
             if (wpm != null) Team = wpm.Team;
-            SourceVessel = vessel;
+            if (SourceVessel == null) SourceVessel = vessel;
 
             if (multiLauncher && multiLauncher.isMultiLauncher)
             {
                 //multiLauncher.rippleRPM = wpm.rippleRPM;               
                 //if (wpm.rippleRPM > 0) multiLauncher.rippleRPM = wpm.rippleRPM;
+                multiLauncher.Team = Team;
                 if (reloadableRail.ammoCount > 1 || BDArmorySettings.INFINITE_ORDINANCE) multiLauncher.fireMissile();
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: firing Multilauncher! {vessel.vesselName}; {multiLauncher.subMunitionName}");                                    
             }
@@ -940,9 +941,9 @@ namespace BDArmory.Weapons.Missiles
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: Spawning missile {reloadableRail.SpawnedMissile.name}; type: {ml.homingType}/{ml.targetingType}");
             yield return new WaitUntilFixed(() => ml.SetupComplete); // Wait until missile fully initialized.
 
-            ml.launched = true; //not getting called for radar missiles - something above is stopping this prematurely
-            var wpm = VesselModuleRegistry.GetMissileFire(vessel, true);
-            if (wpm != null) Team = wpm.Team;
+            ml.launched = true; 
+            var wpm = VesselModuleRegistry.GetMissileFire(SourceVessel, true);
+            if (wpm != null) ml.Team = wpm.Team;
             BDATargetManager.FiredMissiles.Add(ml);
             ml.SourceVessel = SourceVessel;
             ml.GuidanceMode = GuidanceMode;
@@ -1492,7 +1493,7 @@ namespace BDArmory.Weapons.Missiles
                 {
                     case TargetingModes.Heat:
                         // gets ground heat targets and after locking one, disallows the lock to break to another target
-                        heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, new Ray(transform.position + (50 * GetForwardTransform()), GetForwardTransform()), heatTarget, lockedSensorFOV / 2, heatThreshold, uncagedLock, lockedSensorFOVBias, lockedSensorVelocityBias, SourceVessel ? VesselModuleRegistry.GetModule<MissileFire>(SourceVessel) : null);
+                        heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, new Ray(transform.position + (50 * GetForwardTransform()), GetForwardTransform()), heatTarget, lockedSensorFOV / 2, heatThreshold, uncagedLock, lockedSensorFOVBias, lockedSensorVelocityBias, SourceVessel ? VesselModuleRegistry.GetModule<MissileFire>(SourceVessel) : null, targetVessel);
                         if (heatTarget.exists)
                         {
                             if (BDArmorySettings.DEBUG_MISSILES)
@@ -2199,6 +2200,7 @@ namespace BDArmory.Weapons.Missiles
                                 fairing.Current.AddComponent<DecoupledBooster>().DecoupleBooster(part.rb.velocity, boosterDecoupleSpeed);
                             }
                     }
+                    multiLauncher.Team = Team;
                     multiLauncher.fireMissile(true);
                 }
             }

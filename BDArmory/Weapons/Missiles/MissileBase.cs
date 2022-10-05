@@ -571,7 +571,7 @@ namespace BDArmory.Weapons.Missiles
                 DrawDebugLine(lookRay.origin, lookRay.origin + lookRay.direction * 10000, Color.magenta);
 
                 // Update heat target
-                heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, lookRay, predictedHeatTarget, lockedSensorFOV / 2, heatThreshold, uncagedLock, lockedSensorFOVBias, lockedSensorVelocityBias, (SourceVessel == null ? null : SourceVessel.gameObject == null ? null : SourceVessel.gameObject.GetComponent<MissileFire>()));
+                heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, lookRay, predictedHeatTarget, lockedSensorFOV / 2, heatThreshold, uncagedLock, lockedSensorFOVBias, lockedSensorVelocityBias, (SourceVessel == null ? null : SourceVessel.gameObject == null ? null : SourceVessel.gameObject.GetComponent<MissileFire>()), targetVessel);
 
                 if (heatTarget.exists)
                 {

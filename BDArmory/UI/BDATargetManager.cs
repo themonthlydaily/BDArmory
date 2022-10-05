@@ -437,7 +437,7 @@ namespace BDArmory.UI
             return flareTarget;
         }
 
-        public static TargetSignatureData GetHeatTarget(Vessel sourceVessel, Vessel missileVessel, Ray ray, TargetSignatureData priorHeatTarget, float scanRadius, float highpassThreshold, bool uncagedLock, FloatCurve lockedSensorFOVBias, FloatCurve lockedSensorVelocityBias, MissileFire mf = null)
+        public static TargetSignatureData GetHeatTarget(Vessel sourceVessel, Vessel missileVessel, Ray ray, TargetSignatureData priorHeatTarget, float scanRadius, float highpassThreshold, bool uncagedLock, FloatCurve lockedSensorFOVBias, FloatCurve lockedSensorVelocityBias, MissileFire mf = null, TargetInfo desiredTarget = null)
         {
             float minMass = 0.05f;  //otherwise the RAMs have trouble shooting down incoming missiles
             TargetSignatureData finalData = TargetSignatureData.noTarget;
@@ -454,8 +454,11 @@ namespace BDArmory.UI
                     continue;
                 if (vessel.vesselType == VesselType.Debris)
                     continue;
-                if (mf != null && mf.guardMode && (mf.currentTarget == null || mf.currentTarget.Vessel != vessel)) //clamp heaters to desired target
+                if (mf != null && mf.guardMode && (desiredTarget == null || desiredTarget.Vessel != vessel)) //clamp heaters to desired target  
+                {             
+                    //Debug.Log($"[BDATargetManager] looking at {vessel.GetName()}; has MF: {mf}; Guardmode: {(mf != null ? mf.guardMode.ToString() : "N/A")}");
                     continue;
+                }
 
                 TargetInfo tInfo = vessel.gameObject.GetComponent<TargetInfo>();
 
