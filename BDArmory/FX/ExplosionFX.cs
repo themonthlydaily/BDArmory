@@ -561,14 +561,16 @@ namespace BDArmory.FX
                                 partArmour *= Armor.HEEquiv;
                             }
 
-                            partArmour = factor*Mathf.Max(partArmour / Vector3.Dot((hit.point + partHit.Rigidbody.velocity * TimeIndex - Position).normalized, -hit.normal), 1);
+                            float armorCos = Mathf.Abs(Vector3.Dot((hit.point + partHit.Rigidbody.velocity * TimeIndex - Position).normalized, -hit.normal));
+
+                            partArmour = factor*Mathf.Max(partArmour / armorCos, 1);
 
                             factor *= 1.05f;
 
-                            //if (BDArmorySettings.DEBUG_WEAPONS)
-                            //{
-                            //    Debug.Log($"[BDArmory.ExplosionFX] Part: {partHit.name}; Contributing: {partArmour}mm;");
-                            //}
+                            if (BDArmorySettings.DEBUG_WEAPONS)
+                            {
+                                Debug.Log($"[BDArmory.ExplosionFX] Part: {partHit.name}; Contributing: {partArmour}mm; Angle: {Mathf.Rad2Deg*Mathf.Acos(armorCos)}");
+                            }
                         }
                         var RA = partHit.FindModuleImplementing<ModuleReactiveArmor>();
                         if (RA != null)
@@ -866,7 +868,7 @@ namespace BDArmory.FX
                             {
                                 //float HitAngle = Vector3.Angle((eventToExecute.HitPoint + rb.velocity * TimeIndex - Position).normalized, -eventToExecute.Hit.normal);
                                 //float anglemultiplier = (float)Math.Cos(Math.PI * HitAngle / 180.0);
-                                float anglemultiplier = Vector3.Dot((eventToExecute.HitPoint + rb.velocity * TimeIndex - Position).normalized, -eventToExecute.Hit.normal);
+                                float anglemultiplier = Mathf.Abs(Vector3.Dot((eventToExecute.HitPoint + rb.velocity * TimeIndex - Position).normalized, -eventToExecute.Hit.normal));
                                 float thickness = ProjectileUtils.CalculateThickness(part, anglemultiplier);
                                 if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.ExplosionFX]: Part {part.name} hit by {warheadType}; {Mathf.Rad2Deg*Mathf.Acos(anglemultiplier)} deg hit, armor thickness: {thickness}");
                                 //float thicknessBetween = eventToExecute.IntermediateParts.Select(p => p.Item3).Sum(); //add armor thickness of intervening parts, if any
@@ -1022,7 +1024,7 @@ namespace BDArmory.FX
             {
                 //float HitAngle = Vector3.Angle((eventToExecute.HitPoint + rb.velocity * TimeIndex - Position).normalized, -eventToExecute.Hit.normal);
                 //float anglemultiplier = (float)Math.Cos(Math.PI * HitAngle / 180.0);
-                float anglemultiplier = Vector3.Dot((eventToExecute.HitPoint + rb.velocity * TimeIndex - Position).normalized, -eventToExecute.Hit.normal);
+                float anglemultiplier = Mathf.Abs(Vector3.Dot((eventToExecute.HitPoint + rb.velocity * TimeIndex - Position).normalized, -eventToExecute.Hit.normal));
                 float thickness = ProjectileUtils.CalculateThickness(part, anglemultiplier);
                 var Armor = part.FindModuleImplementing<HitpointTracker>();
                 if (Armor != null)

@@ -1186,7 +1186,7 @@ namespace BDArmory.Weapons.Missiles
                                                 if (hitPart.vessel != SourceVessel && hitPart.vessel != vessel)
                                                 {
                                                     //We found a hit to other vessel
-                                                    vessel.SetPosition(hit.point);
+                                                    vessel.SetPosition(hit.point - 0.5f * missileDistancePerFrame.normalized);
                                                     DetonationDistanceState = DetonationDistanceStates.Detonate;
                                                     Detonate();
                                                     return;

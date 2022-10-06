@@ -1310,13 +1310,24 @@ namespace BDArmory.Targeting
                 }
                 else
                 {
+                    KerbalEVA hitEVA = rayHit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+                    Part p = hitEVA ? hitEVA.part : rayHit.collider.GetComponentInParent<Part>();
+
+                    if (!hitEVA)
+                    {
+                        var pMissile = p.FindModuleImplementing<MissileLauncher>();
+                        if (pMissile != null)
+                        {
+                            if (pMissile.SourceVessel == vessel) return;
+                        }
+                    }
+
                     groundStabilized = true;
                     groundTargetPosition = rayHit.point;
 
                     if (CoMLock)
                     {
-                        KerbalEVA hitEVA = rayHit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
-                        Part p = hitEVA ? hitEVA.part : rayHit.collider.GetComponentInParent<Part>();
+                        
                         if (p && p.vessel && p.vessel.CoM != Vector3.zero)
                         {
                             groundTargetPosition = p.vessel.CoM + (p.vessel.Velocity() * Time.fixedDeltaTime);
