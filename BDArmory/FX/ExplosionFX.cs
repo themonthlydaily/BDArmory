@@ -564,6 +564,11 @@ namespace BDArmory.FX
                             partArmour = factor*Mathf.Max(partArmour / Vector3.Dot((hit.point + partHit.Rigidbody.velocity * TimeIndex - Position).normalized, -hit.normal), 1);
 
                             factor *= 1.05f;
+
+                            if (BDArmorySettings.DEBUG_WEAPONS)
+                            {
+                                Debug.Log($"[BDArmory.ExplosionFX] Part: {partHit.name}; Contributing: {partArmour}mm;");
+                            }
                         }
                         var RA = partHit.FindModuleImplementing<ModuleReactiveArmor>();
                         if (RA != null)
@@ -870,7 +875,7 @@ namespace BDArmory.FX
                                 float standoffTemp = realDistance / (14f * Caliber * 20f * 0.001f);
                                 float standoffFactor = 1f / (1f + standoffTemp * standoffTemp);
 
-                                float remainingPen = penetration * standoffFactor - (cumulativeArmorOfIntermediateParts * cumulativeArmorOfIntermediateParts / penetration);
+                                float remainingPen = penetration * standoffFactor - cumulativeArmorOfIntermediateParts;
 
                                 var Armor = part.FindModuleImplementing<HitpointTracker>();
                                 if (Armor != null)
@@ -894,7 +899,7 @@ namespace BDArmory.FX
 
                                     if (BDArmorySettings.DEBUG_WEAPONS)
                                     {
-                                        Debug.Log($"[BDArmory.ExplosionFX] Penetration: {penetration} mm; Thickness: {thickness * armorEquiv} mm; armorEquiv: {armorEquiv}; Intermediate Armor: { penetration* standoffFactor -remainingPen} mm; Remaining Penetration: {remainingPen} mm; Penetration Factor: {penetrationFactor}; Standoff Factor: {standoffFactor}");
+                                        Debug.Log($"[BDArmory.ExplosionFX] Penetration: {penetration} mm; Thickness: {thickness * armorEquiv} mm; armorEquiv: {armorEquiv}; Intermediate Armor: { penetration * standoffFactor -remainingPen} mm; Remaining Penetration: {remainingPen} mm; Penetration Factor: {penetrationFactor}; Standoff Factor: {standoffFactor}");
                                     }
 
                                     if (RA != null)
