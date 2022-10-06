@@ -77,7 +77,7 @@ namespace BDArmory.Bullets
         bool startUnderwater = false;
         Ray RocketRay;
         private float impactVelocity;
-        public Vector3 currentVelocity = Vector3.zero;
+        public Vector3 currentVelocity = Vector3.zero; // Current real velocity w/o offloading
 
         public bool hasPenetrated = false;
         public bool hasDetonated = false;
@@ -250,11 +250,11 @@ namespace BDArmory.Bullets
                 return;
             }
             //floating origin and velocity offloading corrections
-            if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
+            if (BDKrakensbane.IsActive)
             {
-                transform.position -= FloatingOrigin.OffsetNonKrakensbane;
-                prevPosition -= FloatingOrigin.OffsetNonKrakensbane;
-                startPosition -= FloatingOrigin.OffsetNonKrakensbane;
+                transform.position -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                prevPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                startPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
             }
             distanceFromStart = Vector3.Distance(transform.position, startPosition);
 
@@ -262,7 +262,7 @@ namespace BDArmory.Bullets
             {
                 transform.parent = null;
                 rb.isKinematic = false;
-                rb.velocity = parentRB.velocity + Krakensbane.GetFrameVelocityV3f();
+                rb.velocity = parentRB.velocity + BDKrakensbane.FrameVelocityV3f;
             }
 
             if (rb && !rb.isKinematic)
@@ -280,7 +280,7 @@ namespace BDArmory.Bullets
 
                 //model transform. always points prograde
                 transform.rotation = Quaternion.RotateTowards(transform.rotation,
-                    Quaternion.LookRotation(rb.velocity + Krakensbane.GetFrameVelocity(), transform.up),
+                    Quaternion.LookRotation(rb.velocity, transform.up),
                     Mathf.Clamp01(atmosMultiplier * 2.5f) * (0.5f * (Time.time - startTime)) * 50 * Time.fixedDeltaTime);
 
 
@@ -302,7 +302,7 @@ namespace BDArmory.Bullets
                     //rb.AddRelativeForce(dragVector);
                     //Debug.Log("[ROCKETDRAG] current vel: " + rb.velocity.magnitude.ToString("0.0") + "; current dragforce: " + dragVector.magnitude + "; current atm density: " + atmosMultiplier.ToString("0.00"));
                 }
-                currentVelocity = rb.velocity;
+                currentVelocity = rb.velocity; // The rb.velocity is w/o offloading here, since rockets aren't vessels.
             }
 
             if (Time.time - startTime > thrustTime)
@@ -374,7 +374,7 @@ namespace BDArmory.Bullets
                             hitPart = hitEVA.part;
                             // relative velocity, separate from the below statement, because the hitpart might be assigned only above
                             if (hitPart.rb != null)
-                                impactVelocity = (rb.velocity - (hitPart.rb.velocity + Krakensbane.GetFrameVelocityV3f())).magnitude;
+                                impactVelocity = (rb.velocity - (hitPart.rb.velocity + BDKrakensbane.FrameVelocityV3f)).magnitude;
                             else
                                 impactVelocity = rb.velocity.magnitude;
                             if (dmgMult < 0)
@@ -396,7 +396,7 @@ namespace BDArmory.Bullets
                         if (hitPart != null && hitPart.rb != null)
                             // using relative velocity vector instead of just rocket velocity
                             // since KSP vessels can easily be moving faster than rockets
-                            impactVector = rb.velocity - (hitPart.rb.velocity + Krakensbane.GetFrameVelocityV3f());
+                            impactVector = rb.velocity - (hitPart.rb.velocity + BDKrakensbane.FrameVelocityV3f);
 
                         float hitAngle = Vector3.Angle(impactVector, -hit.normal);
 
@@ -898,7 +898,7 @@ namespace BDArmory.Bullets
                     pBullet.timeElapsedSinceCurrentSpeedWasAdjusted = 0;
                     pBullet.timeToLiveUntil = 4000 / sBullet.bulletVelocity * 1.1f + Time.time;
                     Vector3 firedVelocity = VectorUtils.GaussianDirectionDeviation(currentVelocity.normalized, (sBullet.subProjectileCount / BDAMath.Sqrt(currentVelocity.magnitude / 10))) * (sBullet.bulletVelocity / 10); //more subprojectiles = wider spread, higher base velocity = tighter spread
-                    pBullet.currentVelocity = (currentVelocity + Krakensbane.GetFrameVelocityV3f()) + firedVelocity; // use the real velocity, w/o offloading
+                    pBullet.currentVelocity = currentVelocity + firedVelocity; // currentVelocity is already the real velocity w/o offloading
                     pBullet.sourceWeapon = sourceWeapon;
                     pBullet.sourceVessel = sourceVessel;
                     pBullet.team = team;
