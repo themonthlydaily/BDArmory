@@ -51,7 +51,7 @@ namespace BDArmory.Damage
         private float OldHullType = -1;
 
         [KSPField(guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Armor_HullMat")]//Status
-        public string guiHullTypeString = Localizer.Format("#LOC_BDArmory_Aluminium");
+        public string guiHullTypeString = StringUtils.Localize("#LOC_BDArmory_Aluminium");
 
         public float HullMassAdjust = 0f;
         public float HullCostAdjust = 0f;
@@ -68,6 +68,8 @@ namespace BDArmory.Damage
 
         [KSPField(advancedTweakable = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorMass")]//armor mass
         public float armorMass = 0f;
+
+        private float totalArmorQty = 0f;
 
         [KSPField(advancedTweakable = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorCost")]//armor cost
         public float armorCost = 0f;
@@ -174,6 +176,7 @@ namespace BDArmory.Damage
         private bool _hullConfigured = false;
         private bool _hpConfigured = false;
         private bool _finished_setting_up = false;
+        public bool Ready => _finished_setting_up && _hpConfigured && _hullConfigured && _armorConfigured;
 
         public bool isOnFire = false;
 
@@ -460,7 +463,7 @@ namespace BDArmory.Damage
 
         IEnumerator DelayedOnStart()
         {
-            yield return null;
+            yield return new WaitForFixedUpdate();
             if (part == null) yield break;
             partMass = part.partInfo.partPrefab.mass;
             _updateMass = true;
@@ -511,7 +514,7 @@ namespace BDArmory.Damage
         IEnumerator DelayedShipModified() // Wait a frame before triggering to allow proc wings to update it's mass properly.
         {
             _delayedShipModifiedRunning = true;
-            yield return null;
+            yield return new WaitForFixedUpdate();
             _delayedShipModifiedRunning = false;
             if (part == null) yield break;
             _updateHitpoints = true;
@@ -543,20 +546,6 @@ namespace BDArmory.Damage
         {
             if (!_finished_setting_up) return;
             RefreshHitPoints();
-            if (HighLogic.LoadedSceneIsFlight && !GameIsPaused)
-            {
-                if (BDArmorySettings.HEART_BLEED_ENABLED && ShouldHeartBleed())
-                {
-                    HeartBleed();
-                }
-                if (ArmorTypeNum > 1 || ArmorPanel)
-                {
-                    if (part.skinTemperature > SafeUseTemp * 1.5f)
-                    {
-                        ReduceArmor((armorVolume * ((float)part.skinTemperature / SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
-                    }
-                }
-            }
         }
 
         void Update() // This stops running once things are set up.
@@ -583,9 +572,9 @@ namespace BDArmory.Damage
             }
         }
 
-        void FixedUpdate() // This stops running once things are set up.
+        void FixedUpdate()
         {
-            if (_updateMass)
+            if (_updateMass) // This stops running once things are set up.
             {
                 _updateMass = false;
                 var oldPartMass = partMass;
@@ -614,6 +603,21 @@ namespace BDArmory.Damage
                     }
                     _hullModified = true; // Modifying the mass modifies the hull.
                     _updateHitpoints = true;
+                }
+            }
+
+            if (HighLogic.LoadedSceneIsFlight && !GameIsPaused)
+            {
+                if (BDArmorySettings.HEART_BLEED_ENABLED && ShouldHeartBleed())
+                {
+                    HeartBleed();
+                }
+                if (ArmorTypeNum > 1 || ArmorPanel)
+                {
+                    if (part.skinTemperature > SafeUseTemp * 1.5f)
+                    {
+                        ReduceArmor((armorVolume * ((float)part.skinTemperature / SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
+                    }
                 }
             }
         }
@@ -673,12 +677,12 @@ namespace BDArmory.Damage
             HPMode = !HPMode;
             if (!HPMode)
             {
-                Events["ToggleHPOption"].guiName = Localizer.Format("Revert to Legacy HP calc");
+                Events["ToggleHPOption"].guiName = StringUtils.Localize("Revert to Legacy HP calc");
                 maxHitPoints = oldmaxHitpoints;
             }
             else
             {
-                Events["ToggleHPOption"].guiName = Localizer.Format("Test Refactored Calc");
+                Events["ToggleHPOption"].guiName = StringUtils.Localize("Test Refactored Calc");
                 oldmaxHitpoints = maxHitPoints;
                 maxHitPoints = -1;
             }
@@ -713,7 +717,8 @@ namespace BDArmory.Damage
                             if (density > 1e5f || density < 10)
                             {
                                 if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} extreme density detected: {density}! Trying alternate approach based on partSize.");
-                                structuralVolume = (partSize.x * partSize.y + partSize.x * partSize.z + partSize.y * partSize.z) * 2f * sizeAdjust * Mathf.PI / 6f * 0.1f; // Box area * sphere/cube ratio * 10cm. We use sphere/cube ratio to get similar results as part.GetAverageBoundSize().
+                                //structuralVolume = (partSize.x * partSize.y + partSize.x * partSize.z + partSize.y * partSize.z) * 2f * sizeAdjust * Mathf.PI / 6f * 0.1f; // Box area * sphere/cube ratio * 10cm. We use sphere/cube ratio to get similar results as part.GetAverageBoundSize().
+                                structuralVolume = armorVolume * Mathf.PI / 6f * 0.1f; //part bounds change between editor and flight, so use existing persistant size value
                                 density = (partMass * 1000f) / structuralVolume;
                                 if (density > 1e5f || density < 10)
                                 {
@@ -897,7 +902,7 @@ namespace BDArmory.Damage
                             hitpoints = Mathf.Min(hitpoints, (BDArmorySettings.HP_THRESHOLD >= 100 ? BDArmorySettings.HP_THRESHOLD : 2000f) * Mathf.Log(hitpoints / scale + 1)); //use default of 2K for RP if slider set to unclamped
                         }
 
-                        switch (HullTypeNum)
+                            switch (HullTypeNum)
                         {
                             case 1:
                                 hitpoints /= 4;
@@ -1032,10 +1037,10 @@ namespace BDArmory.Damage
                 Debug.Log("[HPTracker] armor mass: " + armorMass + "; mass to reduce: " + (massToReduce * Math.Round((Density / 1000000), 3)) + "kg"); //g/m3
             }
             float reduceMass = (massToReduce * (Density / 1000000000)); //g/cm3 conversion to yield tons
-            if (armorMass > 0)
+            if (totalArmorQty > 0)
             {
                 //Armor -= ((reduceMass * 2) / armorMass) * Armor; //armor that's 50% air isn't going to stop anything and could be considered 'destroyed' so lets reflect that by doubling armor loss (this will also nerf armor panels from 'god-tier' to merely 'very very good'
-                Armor -= ((reduceMass * 1.5f) / armorMass) * Armor;
+                Armor -= ((reduceMass * 1.5f) / totalArmorQty) * Armor;
                 if (Armor < 0)
                 {
                     Armor = 0;
@@ -1061,7 +1066,8 @@ namespace BDArmory.Damage
                     DestroyPart();
                 }
             }
-            armorMass -= reduceMass; //tons
+            totalArmorQty -= reduceMass;
+            armorMass = totalArmorQty * BDArmorySettings.ARMOR_MASS_MOD; //tons
             if (armorMass <= 0)
             {
                 armorMass = 0;
@@ -1253,6 +1259,7 @@ namespace BDArmory.Damage
             var oldArmorMass = armorMass;
             armorMass = 0;
             armorCost = 0;
+            totalArmorQty = 0;
             if (ArmorTypeNum > 1 && (!BDArmorySettings.LEGACY_ARMOR || (!BDArmorySettings.RESET_ARMOUR || (BDArmorySettings.RESET_ARMOUR && ArmorThickness > 10)))) //don't apply cost/mass to None armor type
             {
                 armorMass = (Armor / 1000) * armorVolume * Density / 1000; //armor mass in tons
@@ -1265,6 +1272,8 @@ namespace BDArmory.Damage
                 SelectedArmorType = "None";
                 armorCost = (Armor / 1000) * armorVolume * armorInfo.Cost;
             }
+            totalArmorQty = armorMass; //grabbing a copy of unmodified armorMAss so it can be used in armorMass' place for armor reduction without having to un/re-modify the mass before and after armor hits
+            armorMass *= BDArmorySettings.ARMOR_MASS_MOD;
             //part.RefreshAssociatedWindows(); //having this fire every time a change happens prevents sliders from being used. Add delay timer?
             if (OldArmorType != ArmorTypeNum || oldArmorMass != armorMass)
             {
@@ -1362,7 +1371,7 @@ namespace BDArmory.Damage
         {
             if (waitingForHullSetup) yield break;  // Already waiting.
             waitingForHullSetup = true;
-            yield return null;
+            yield return new WaitForFixedUpdate();
             waitingForHullSetup = false;
             if (part == null) yield break; // The part disappeared!
 
@@ -1380,7 +1389,7 @@ namespace BDArmory.Damage
             if (HullTypeNum == 1)
             {
                 HullMassAdjust = partMass / 3 - partMass;
-                guiHullTypeString = Localizer.Format("#LOC_BDArmory_Wood");
+                guiHullTypeString = StringUtils.Localize("#LOC_BDArmory_Wood");
                 part.maxTemp = 770;
                 HullCostAdjust = Mathf.Max(((part.partInfo.cost + part.partInfo.variant.Cost) - (float)resourceCost) / 2, (part.partInfo.cost + part.partInfo.variant.Cost) - 500) - ((part.partInfo.cost + part.partInfo.variant.Cost) - (float)resourceCost);//make wooden parts up to 500 funds cheaper
                 //this returns cost of base variant, yielding part vairaints that are discounted by 50% or 500 of base varaint cost, not current variant. method to get currently selected variant?
@@ -1388,14 +1397,14 @@ namespace BDArmory.Damage
             else if (HullTypeNum == 2)
             {
                 HullMassAdjust = 0;
-                guiHullTypeString = Localizer.Format("#LOC_BDArmory_Aluminium");
+                guiHullTypeString = StringUtils.Localize("#LOC_BDArmory_Aluminium");
                 //removing maxtemp from aluminium and steel to prevent hull type from causing issues with, say, spacecraft re-entry on installs with BDA not used exclusively for BDA
                 HullCostAdjust = 0;
             }
             else //hulltype 3
             {
                 HullMassAdjust = partMass;
-                guiHullTypeString = Localizer.Format("#LOC_BDArmory_Steel");
+                guiHullTypeString = StringUtils.Localize("#LOC_BDArmory_Steel");
                 HullCostAdjust = Mathf.Min(((part.partInfo.cost + part.partInfo.variant.Cost) - (float)resourceCost) * 2, ((part.partInfo.cost + part.partInfo.variant.Cost) - (float)resourceCost) + 1500); //make steel parts rather more expensive
             }
             if (OldHullType != HullTypeNum || OldHullMassAdjust != HullMassAdjust)

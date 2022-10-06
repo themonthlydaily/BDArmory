@@ -198,15 +198,16 @@ namespace BDArmory.UI
                 using (List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator())
                     while (v.MoveNext())
                     {
-                        if (v.Current == null) continue;
+                        if (v.Current == null || v.Current.packed || !v.Current.loaded) continue;
                         if (BDTISettings.MISSILES)
                         {
                             using (var ml = VesselModuleRegistry.GetModules<MissileBase>(v.Current).GetEnumerator())
                                 while (ml.MoveNext())
                                 {
                                     if (ml.Current == null) continue;
+                                    MissileLauncher launcher = ml.Current as MissileLauncher;
                                     //if (ml.Current.MissileState != MissileBase.MissileStates.Idle && ml.Current.MissileState != MissileBase.MissileStates.Drop)
-                                    if (ml.Current.HasFired && !ml.Current.HasMissed && !ml.Current.HasExploded) //culling post-thrust missiles makes AGMs get cleared almost immediately after launch
+                                    if ((ml.Current.HasFired && (!launcher.multiLauncher || launcher.multiLauncher && launcher.multiLauncher.isClusterMissile)) && !ml.Current.HasMissed && !ml.Current.HasExploded) //culling post-thrust missiles makes AGMs get cleared almost immediately after launch
                                     {
                                         Vector3 sPos = FlightGlobals.ActiveVessel.vesselTransform.position;
                                         Vector3 tPos = v.Current.vesselTransform.position;

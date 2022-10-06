@@ -316,6 +316,7 @@ namespace BDArmory.Competition
 
         public void StopCompetition()
         {
+            if (LoadedVesselSwitcher.Instance is not null) LoadedVesselSwitcher.Instance.ResetDeadVessels(); // Reset the dead vessels in the LVS so that the final corrected results are shown.
             LogResults();
             if (competitionIsActive && ContinuousSpawning.Instance.vesselsSpawningContinuously)
             {
@@ -392,7 +393,10 @@ namespace BDArmory.Competition
             decisionTick = BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY > 60 ? -1 : competitionStartTime + BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY; // every 60 seconds we do nasty things
             FX.BulletHitFX.CleanPartsOnFireInfo();
             Scores.ConfigurePlayers(GetAllPilots().Select(p => p.vessel).ToList()); // Get the competitors.
+            if (BDArmorySettings.RUNWAY_PROJECT && Scores.Players.Contains("Pinata")) { hasPinata = true; pinataAlive = false; } else { hasPinata = false; pinataAlive = false; } // Piñata.
             if (SpawnUtils.originalTeams.Count == 0) SpawnUtils.SaveTeams(); // If the vessels weren't spawned in with Vessel Spawner, save the current teams.
+            if (LoadedVesselSwitcher.Instance is not null) LoadedVesselSwitcher.Instance.ResetDeadVessels();
+            System.GC.Collect(); // Clear out garbage at a convenient time.
         }
 
         IEnumerator DogfightCompetitionModeRoutine(float distance, bool startDespiteFailures = false)
@@ -845,7 +849,7 @@ namespace BDArmory.Competition
             MutatorResetTime = Planetarium.GetUniversalTime();
             if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //selected mutator applied globally
             {
-                ScreenMessages.PostScreenMessage(Localizer.Format("#LOC_BDArmory_UI_MutatorStart") + ": " + currentMutator + ". " + (BDArmorySettings.MUTATOR_APPLY_TIMER ? (BDArmorySettings.MUTATOR_DURATION > 0 ? BDArmorySettings.MUTATOR_DURATION * 60 : BDArmorySettings.COMPETITION_DURATION * 60) + " seconds left" : ""), 5, ScreenMessageStyle.UPPER_CENTER);
+                ScreenMessages.PostScreenMessage(StringUtils.Localize("#LOC_BDArmory_UI_MutatorStart") + ": " + currentMutator + ". " + (BDArmorySettings.MUTATOR_APPLY_TIMER ? (BDArmorySettings.MUTATOR_DURATION > 0 ? BDArmorySettings.MUTATOR_DURATION * 60 : BDArmorySettings.COMPETITION_DURATION * 60) + " seconds left" : ""), 5, ScreenMessageStyle.UPPER_CENTER);
             }
         }
 
@@ -964,7 +968,7 @@ namespace BDArmory.Competition
         {
             if (explodingWM.Contains(vessel)) yield break; // Already scheduled for exploding.
             explodingWM.Add(vessel);
-            yield return new WaitForSeconds(delay);
+            yield return new WaitForSecondsFixed(delay);
             if (vessel == null) // It's already dead.
             {
                 explodingWM = explodingWM.Where(v => v != null).ToHashSet(); // Clean the hashset.
@@ -1010,6 +1014,7 @@ namespace BDArmory.Competition
 
         #region Runway Project
         public bool killerGMenabled = false;
+        public bool hasPinata = false;
         public bool pinataAlive = false;
         public bool s4r1FiringRateUpdatedFromShotThisFrame = false;
         public bool s4r1FiringRateUpdatedFromHitThisFrame = false;
@@ -2170,7 +2175,7 @@ namespace BDArmory.Competition
             string aliveString = string.Join(",", alive.ToArray());
             previousNumberCompetitive = numberOfCompetitiveVessels;
             // if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "] STILLALIVE: " + aliveString); // This just fills the logs needlessly.
-            if (BDArmorySettings.RUNWAY_PROJECT)
+            if (BDArmorySettings.RUNWAY_PROJECT && hasPinata)
             {
                 // If we find a vessel named "Pinata" that's a special case object
                 // this should probably be configurable.
@@ -2406,7 +2411,7 @@ namespace BDArmory.Competition
             if ((BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_TIMER) && BDArmorySettings.MUTATOR_DURATION > 0 && now - MutatorResetTime >= BDArmorySettings.MUTATOR_DURATION * 60d && BDArmorySettings.MUTATOR_LIST.Count > 0)
             {
 
-                ScreenMessages.PostScreenMessage(Localizer.Format("#LOC_BDArmory_UI_MutatorShuffle"), 5, ScreenMessageStyle.UPPER_CENTER);
+                ScreenMessages.PostScreenMessage(StringUtils.Localize("#LOC_BDArmory_UI_MutatorShuffle"), 5, ScreenMessageStyle.UPPER_CENTER);
                 ConfigureMutator();
                 foreach (var vessel in FlightGlobals.Vessels)
                 {
@@ -3063,7 +3068,7 @@ namespace BDArmory.Competition
             strings.Add("Mono used: " + UnityEngine.Profiling.Profiler.GetMonoUsedSizeLong() / 1024 / 1024 + "MB");
             strings.Add("GfxDriver: " + UnityEngine.Profiling.Profiler.GetAllocatedMemoryForGraphicsDriver() / 1024 / 1024 + "MB");
             strings.Add("plus unspecified runtime (native) memory.");
-            Debug.Log("[BDArmory.BDACompetitionMode]: DEBUG Memory Usage: " + string.Join(", ", strings));
+            Debug.Log("[BDArmory.BDACompetitionMode]: Memory Usage: " + string.Join(", ", strings));
         }
 
         public void CheckNumbersOfThings() // DEBUG
@@ -3106,7 +3111,7 @@ namespace BDArmory.Competition
         {
             CheckMemoryUsage();
 #if DEBUG
-            CheckNumbersOfThings();
+            if(BDArmorySettings.DEBUG_SETTINGS_TOGGLE) CheckNumbersOfThings();
 #endif
         }
 
@@ -3372,24 +3377,24 @@ namespace BDArmory.Competition
             var toRemove = new List<uint>();
             foreach (var key in FlightGlobals.PersistentVesselIds.Keys)
                 if (FlightGlobals.PersistentVesselIds[key] == null) toRemove.Add(key);
-            Debug.Log($"DEBUG Found {toRemove.Count} null persistent vessel references.");
+            if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE) Debug.Log($"[BDArmory.BDACompetitionMode]: DEBUG Found {toRemove.Count} null persistent vessel references.");
             foreach (var key in toRemove) FlightGlobals.PersistentVesselIds.Remove(key);
 
             toRemove.Clear();
             foreach (var key in FlightGlobals.PersistentLoadedPartIds.Keys)
                 if (FlightGlobals.PersistentLoadedPartIds[key] == null) toRemove.Add(key);
-            Debug.Log($"DEBUG Found {toRemove.Count} null persistent loaded part references.");
+            if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE) Debug.Log($"[BDArmory.BDACompetitionMode]: DEBUG Found {toRemove.Count} null persistent loaded part references.");
             foreach (var key in toRemove) FlightGlobals.PersistentLoadedPartIds.Remove(key);
 
             // Usually doesn't find any.
             toRemove.Clear();
             foreach (var key in FlightGlobals.PersistentUnloadedPartIds.Keys)
                 if (FlightGlobals.PersistentUnloadedPartIds[key] == null) toRemove.Add(key);
-            Debug.Log($"DEBUG Found {toRemove.Count} null persistent unloaded part references.");
+            if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE) Debug.Log($"[BDArmory.BDACompetitionMode]: DEBUG Found {toRemove.Count} null persistent unloaded part references.");
             foreach (var key in toRemove) FlightGlobals.PersistentUnloadedPartIds.Remove(key);
 
             var protoVessels = HighLogic.CurrentGame.flightState.protoVessels.Where(pv => pv.vesselRef == null).ToList();
-            if (protoVessels.Count > 0) { Debug.Log($"DEBUG Found {protoVessels.Count} inactive ProtoVessels in flightState."); }
+            if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE) if (protoVessels.Count > 0) { Debug.Log($"[BDArmory.BDACompetitionMode]: DEBUG Found {protoVessels.Count} inactive ProtoVessels in flightState."); }
             foreach (var protoVessel in protoVessels)
             {
                 if (protoVessel == null) continue;

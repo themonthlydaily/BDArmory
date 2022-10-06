@@ -48,7 +48,7 @@ namespace BDArmory.UI
 
             // New team button
             Rect newTeamButtonRect = new Rect(width - margin - newTeanButtonWidth, height, newTeanButtonWidth, buttonHeight);
-            if (GUI.Button(newTeamButtonRect, Localizer.Format("#LOC_BDArmory_Generic_New"), BDArmorySetup.BDGuiSkin.button))//"New"
+            if (GUI.Button(newTeamButtonRect, StringUtils.Localize("#LOC_BDArmory_Generic_New"), BDArmorySetup.BDGuiSkin.button))//"New"
             {
                 if (!string.IsNullOrEmpty(newTeamName.Trim()))
                 {
@@ -164,8 +164,7 @@ namespace BDArmory.UI
 
         private IEnumerator WaitForBdaSettings()
         {
-            while (BDArmorySetup.Instance == null)
-                yield return null;
+            yield return new WaitUntil(() => BDArmorySetup.Instance is not null);
 
             ready = true;
             guiCheckIndex = GUIUtils.RegisterGUIRect(new Rect());

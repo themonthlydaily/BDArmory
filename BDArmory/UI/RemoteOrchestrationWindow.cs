@@ -65,7 +65,7 @@ namespace BDArmory.UI
                 80085,
                 BDArmorySetup.WindowRectRemoteOrchestration,
                 WindowRemoteOrchestration,
-                Localizer.Format("#LOC_BDArmory_BDARemoteOrchestration_Title"),//"BDA Remote Orchestration"
+                StringUtils.Localize("#LOC_BDArmory_BDARemoteOrchestration_Title"),//"BDA Remote Orchestration"
                 BDArmorySetup.BDGuiSkin.window
             );
             BDArmorySetup.SetGUIOpacity(false);
@@ -95,10 +95,7 @@ namespace BDArmory.UI
 
         private IEnumerator WaitForSetup()
         {
-            while (BDArmorySetup.Instance == null || BDAScoreService.Instance == null || BDAScoreService.Instance.client == null)
-            {
-                yield return null;
-            }
+            yield return new WaitWhile(() => BDArmorySetup.Instance == null || BDAScoreService.Instance == null || BDAScoreService.Instance.client == null);
             service = BDAScoreService.Instance;
             UpdateClientStatus();
             ready = true;
