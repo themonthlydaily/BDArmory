@@ -37,13 +37,14 @@ namespace BDArmory.Weapons.Missiles
         [KSPField] public float rippleRPM = 650;
         [KSPField] public string deployAnimationName;
         [KSPField] public string RailNode = "rail"; //name of attachnode for VLS MMLs to set missile loadout
+        [KSPField] public float tntMass = 1; //for MissileLauncher GetInfo()
         AnimationState deployState;
         ModuleMissileRearm missileSpawner = null;
         MissileLauncher missileLauncher = null;
         MissileFire wpm = null;
         private int tubesFired = 0;
         Part SymPart = null;
-        public BDTeam Team { get; set; } = BDTeam.Get("Neutral");
+        public BDTeam Team = BDTeam.Get("Neutral");
         public void Start()
         {
             MakeMissileArray();

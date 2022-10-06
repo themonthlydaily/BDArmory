@@ -32,6 +32,7 @@ UI_FloatRange(minValue = 1f, maxValue = 4, stepIncrement = 1f, scene = UI_Scene.
         [KSPField] public float reloadTime = 5f;
         [KSPField] public bool AccountForAmmo = true;
         [KSPField] public float maxAmmo = 20;
+        public float tntmass = 1;
         AvailablePart missilePart;
         public Part SpawnedMissile;
         public void SpawnMissile(Transform MissileTransform, bool offset = false)
@@ -122,6 +123,7 @@ UI_FloatRange(minValue = 1f, maxValue = 4, stepIncrement = 1f, scene = UI_Scene.
                         missilePart = parts.Current;                        
                         break;
                     }
+                tntmass = missilePart.partPrefab.FindModuleImplementing<BDExplosivePart>().tntMass;
                 if (AccountForAmmo)
                 {
                     missileCost = missilePart.partPrefab.partInfo.cost;
