@@ -297,6 +297,7 @@
     <Compile Include="Utils\FARUtils.cs" />
     <Compile Include="Utils\FireSpitterUtils.cs" />
     <Compile Include="Utils\GUIUtils.cs" />
+    <Compile Include="Utils\KrakensbaneUtils.cs" />
     <Compile Include="Utils\KSPForceApplier.cs" />
     <Compile Include="Utils\LayerMask.cs" />
     <Compile Include="Utils\ObjectPool.cs" />
@@ -327,9 +328,11 @@
     <Compile Include="Weapons\Missiles\BDMMLauncher.cs" />
     <Compile Include="Weapons\Missiles\BDModularGuidance.cs" />
     <Compile Include="Weapons\Missiles\MissileBase.cs" />
+    <Compile Include="Weapons\Missiles\MissileDummy.cs" />
     <Compile Include="Weapons\Missiles\MissileLaunchParams.cs" />
     <Compile Include="Weapons\Missiles\MissileLauncher.cs" />
     <Compile Include="Weapons\Missiles\ModuleMissileRearm.cs" />
+    <Compile Include="Weapons\Missiles\MultiMissileLauncher.cs" />
     <Compile Include="Weapons\ModuleEMP.cs" />
     <Compile Include="Weapons\ModuleWeapon.cs" />
     <Compile Include="Weapons\RippleOption.cs" />

@@ -41,6 +41,13 @@ namespace BDArmory.Weapons.Missiles
             return missileType;
         }
 
+        public string GetPartName()
+        {
+            return missileName;
+        }
+
+        public string missileName { get; set; } = "";
+
         [KSPField]
         public string missileType = "missile";
 
@@ -219,6 +226,8 @@ namespace BDArmory.Weapons.Missiles
         public WarheadTypes warheadType;
         public bool HasFired { get; set; } = false;
 
+        public bool launched = false;
+
         public BDTeam Team { get; set; } = BDTeam.Get("Neutral");
 
         public bool HasMissed { get; set; } = false;
@@ -244,6 +253,8 @@ namespace BDArmory.Weapons.Missiles
         public Vessel SourceVessel { get; set; } = null;
 
         public bool HasExploded { get; set; } = false;
+
+        public bool HasDied { get; set; } = false;
 
         public int clusterbomb { get; set; } = 1;
 
@@ -344,10 +355,33 @@ namespace BDArmory.Weapons.Missiles
         {
             if (HasFired && !HasExploded)
             {
-                if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
+                if (BDKrakensbane.IsActive)
                 {
-                    // Debug.Log($"DEBUG {Time.time} Correcting for floating origin shift of {(Vector3)FloatingOrigin.Offset:G3} ({(Vector3)FloatingOrigin.OffsetNonKrakensbane:G3}) for {vessel.vesselName} ({SourceVessel})");
-                    TargetPosition -= FloatingOrigin.OffsetNonKrakensbane;
+                    // Debug.Log($"DEBUG {Time.time} Correcting for floating origin shift of {(Vector3)BDKrakensbane.FloatingOriginOffset:G3} ({(Vector3)BDKrakensbane.FloatingOriginOffsetNonKrakensbane:G3}) for {vessel.vesselName} ({SourceVessel})");
+                    TargetPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                }
+            }
+        }
+
+        public ModuleMissileRearm reloadableRail = null;
+        public bool hasAmmo = true;
+        int AmmoCount // Returns the ammo count if the part contains ModuleMissileRearm, otherwise 1.
+        {
+            get
+            {
+                if (!hasAmmo) return 1;
+                return (int)reloadableRail.ammoCount;
+            }
+        }
+
+        public void Start()
+        {
+            if (reloadableRail == null)
+            {
+                reloadableRail = GetPart().FindModuleImplementing<ModuleMissileRearm>();
+                if (reloadableRail == null)
+                {
+                    hasAmmo = false;
                 }
             }
         }
@@ -356,20 +390,20 @@ namespace BDArmory.Weapons.Missiles
         {
             missilecount = 0;
             if (part is null) return;
-            var missilePartName = part.name;
+            var missilePartName = GetPartName();
             if (string.IsNullOrEmpty(missilePartName)) return;
             using (var craftPart = VesselModuleRegistry.GetMissileBases(vessel).GetEnumerator())
                 while (craftPart.MoveNext())
                 {
                     if (craftPart.Current is null) continue;
-                    if (craftPart.Current.name != missilePartName) continue;
-                    ++missilecount;
+                    if (craftPart.Current.GetPartName() != missilePartName) continue;
+                    missilecount += craftPart.Current.AmmoCount;
                 }
         }
 
         public string GetSubLabel()
         {
-            return Sublabel = "Guidance: " + Enum.GetName(typeof(TargetingModes), TargetingMode) + "; Remaining: " + missilecount; //
+            return Sublabel = $"Guidance: {Enum.GetName(typeof(TargetingModes), TargetingMode)}; Remaining: {missilecount}"; 
         }
 
         public Part GetPart()
@@ -537,7 +571,7 @@ namespace BDArmory.Weapons.Missiles
                 DrawDebugLine(lookRay.origin, lookRay.origin + lookRay.direction * 10000, Color.magenta);
 
                 // Update heat target
-                heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, lookRay, predictedHeatTarget, lockedSensorFOV / 2, heatThreshold, uncagedLock, lockedSensorFOVBias, lockedSensorVelocityBias, (SourceVessel == null ? null : SourceVessel.gameObject == null ? null : SourceVessel.gameObject.GetComponent<MissileFire>()));
+                heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, lookRay, predictedHeatTarget, lockedSensorFOV / 2, heatThreshold, uncagedLock, lockedSensorFOVBias, lockedSensorVelocityBias, (SourceVessel == null ? null : SourceVessel.gameObject == null ? null : SourceVessel.gameObject.GetComponent<MissileFire>()), targetVessel);
 
                 if (heatTarget.exists)
                 {
@@ -787,7 +821,7 @@ namespace BDArmory.Weapons.Missiles
                                                     RadarWarningReceiver.PingRWR(ray, lockedSensorFOV, RadarWarningReceiver.RWRThreatTypes.Torpedo, 2f);
                                                 else
                                                     RadarWarningReceiver.PingRWR(ray, lockedSensorFOV, RadarWarningReceiver.RWRThreatTypes.MissileLaunch, 2f);
-                                                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileBase]: Pitbull! Radar missilebase has gone active.  Radar sig strength: " + radarTarget.signalStrength.ToString("0.0"));
+                                                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileBase]: Pitbull! Radar missilebase has gone active.  Radar sig strength: {radarTarget.signalStrength:0.0}");
                                             }
                                             else if (locksCount > 2)
                                             {
@@ -903,7 +937,7 @@ namespace BDArmory.Weapons.Missiles
                         else
                             RadarWarningReceiver.PingRWR(new Ray(transform.position, radarTarget.predictedPosition - transform.position), lockedSensorFOV, RadarWarningReceiver.RWRThreatTypes.MissileLaunch, 2f);
 
-                        if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileBase]: Pitbull! Radar missileBase has gone active.  Radar sig strength: " + radarTarget.signalStrength.ToString("0.0"));
+                        if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileBase]: Pitbull! Radar missileBase has gone active.  Radar sig strength: {radarTarget.signalStrength:0.0}");
                     }
                     return;
                 }
@@ -950,7 +984,7 @@ namespace BDArmory.Weapons.Missiles
                 var staticLaunchThresholdSqr = maxStaticLaunchRange * maxStaticLaunchRange / 16f;
                 if ((source - VectorUtils.GetWorldSurfacePostion(targetGPSCoords, vessel.mainBody)).sqrMagnitude < staticLaunchThresholdSqr && Vector3.Angle(source - transform.position, GetForwardTransform()) < maxOffBoresight)
                 {
-                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileBase]: Radar ping! Adjusting target position by " + (source - VectorUtils.GetWorldSurfacePostion(targetGPSCoords, vessel.mainBody)).magnitude + " to " + TargetPosition);
+                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileBase]: Radar ping! Adjusting target position by {(source - VectorUtils.GetWorldSurfacePostion(targetGPSCoords, vessel.mainBody)).magnitude} to {TargetPosition}");
                     TargetAcquired = true;
                     TargetPosition = source;
                     targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(TargetPosition, vessel.mainBody);
@@ -1219,7 +1253,7 @@ namespace BDArmory.Weapons.Missiles
 
             if (BDArmorySettings.DEBUG_MISSILES)
             {
-                Debug.Log("[BDArmory.MissileBase]: DetonationDistanceState = : " + DetonationDistanceState);
+                Debug.Log($"[BDArmory.MissileBase]: DetonationDistanceState = : {DetonationDistanceState}");
             }
         }
 
@@ -1239,7 +1273,7 @@ namespace BDArmory.Weapons.Missiles
             }
             if (BDArmorySettings.DEBUG_MISSILES)
             {
-                Debug.Log("[BDArmory.MissileBase]: DetonationDistance = : " + DetonationDistance);
+                Debug.Log($"[BDArmory.MissileBase]: DetonationDistance = : {DetonationDistance}");
             }
         }
 

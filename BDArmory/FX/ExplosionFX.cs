@@ -238,7 +238,7 @@ namespace BDArmory.FX
                     shapedChargeHits = Physics.RaycastAll(SCRay, SCRange > Range ? SCRange : Range, explosionLayerMask);
                     hitCount = shapedChargeHits.Length;
                 }
-                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.ExplosionFX]: SC plasmaJet raycast hits: " + hitCount);
+                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.ExplosionFX]: SC plasmaJet raycast hits: {hitCount}");
                 if (hitCount > 0)
                 {
                     var orderedHits = shapedChargeHits.Take(hitCount).OrderBy(x => x.distance);
@@ -395,7 +395,7 @@ namespace BDArmory.FX
                     {
                         message += " parts damaged due to explosion";
                     }
-                    message += (SourceWeaponName != null ? " (" + SourceWeaponName + ")" : "") + (sourceVesselName != null ? " from " + sourceVesselName : "") + ".";
+                    message += (SourceWeaponName != null ? $" ({SourceWeaponName})" : "") + (sourceVesselName != null ? $"from {sourceVesselName}" : "") + ".";
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
                 }
                 // Note: damage hasn't actually been applied to the parts yet, just assigned as events, so we can't know if they survived.
@@ -475,7 +475,7 @@ namespace BDArmory.FX
             }
             if (warheadType == WarheadTypes.ContinuousRod)
             {
-                if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ExplosionFX]: " + p.name + " at " + Vector3.Angle(direction, (hit.point - Position).normalized) + " angle from CR explosion direction");
+                if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.ExplosionFX]: {p.name} at {Vector3.Angle(direction, (hit.point - Position).normalized)} angle from CR explosion direction");
                 //if (Vector3.Angle(direction, (hit.point - Position).normalized) >= 60 && Vector3.Angle(direction, (hit.point - Position).normalized) <= 90)
                 if (Vector3.Dot(direction, (hit.point - Position).normalized) <= 0.5 && Vector3.Dot(direction, (hit.point - Position).normalized) >= 0)
                 {
@@ -485,7 +485,7 @@ namespace BDArmory.FX
             }
             else
             {
-                if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ExplosionFX]: " + p.name + " at " + Vector3.Angle(direction, (hit.point - Position).normalized) + $" angle from {warheadType} explosion direction");
+                if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.ExplosionFX]: {p.name} at {Vector3.Angle(direction, (hit.point - Position).normalized)} angle from {warheadType} explosion direction");
                 return (Vector3.Dot(direction, (hit.point - Position).normalized) >= cosAngleOfEffect);
             }
         }
@@ -660,10 +660,10 @@ namespace BDArmory.FX
             }
 
             //floating origin and velocity offloading corrections
-            if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
+            if (BDKrakensbane.IsActive)
             {
-                transform.position -= FloatingOrigin.OffsetNonKrakensbane;
-                Position -= FloatingOrigin.OffsetNonKrakensbane;
+                transform.position -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                Position -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
             }
             if (!isFX)
             {
@@ -773,16 +773,12 @@ namespace BDArmory.FX
                 //based on testing, I think facilityDamageFraction starts at values between 5 and 100, and demolished the building if it hits 0 - which means it will work great as a HP value in the other direction
                 if (building.FacilityDamageFraction > building.impactMomentumThreshold * 2)
                 {
-                    if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ExplosionFX]: Building " + building.name + " demolished due to Explosive damage! Dmg to building: " + building.Damage);
+                    if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.ExplosionFX]: Building {building.name} demolished due to Explosive damage! Dmg to building: {building.Damage}");
                     building.Demolish();
                 }
                 if (BDArmorySettings.DEBUG_DAMAGE)
                 {
-                    Debug.Log("[BDArmory.ExplosionFX]: Explosion hit destructible building " + building.name + "! Hitpoints Applied: " + damageToBuilding.ToString("F3") +
-                             ", Building Damage : " + building.FacilityDamageFraction +
-                             " Building Threshold : " + building.impactMomentumThreshold * 2 +
-                             $", (Range: {Range}, Distance: {eventToExecute.Distance}, Factor: {distanceFactor}, Power: {Power})");
-
+                    Debug.Log($"[BDArmory.ExplosionFX]: Explosion hit destructible building {building.name}! Hitpoints Applied: {damageToBuilding:F3}, Building Damage: {building.FacilityDamageFraction}, Building Threshold : {building.impactMomentumThreshold * 2}, (Range: {Range}, Distance: {eventToExecute.Distance}, Factor: {distanceFactor}, Power: {Power})");
                 }
             }
         }
@@ -848,17 +844,10 @@ namespace BDArmory.FX
                         if (BDArmorySettings.DEBUG_DAMAGE)
                         {
                             Debug.Log(
-                                "[BDArmory.ExplosionFX]: Executing blast event Part: {" + part.name + "}, " +
-                                " VelocityChange: {" + blastInfo.VelocityChange + "}," +
-                                " Distance: {" + realDistance + "}," +
-                                " TotalPressure: {" + blastInfo.TotalPressure + "}," +
-                                " Damage: {" + blastInfo.Damage + "} (reduced from " + damageWithoutIntermediateParts + " by " + eventToExecute.IntermediateParts.Count + " parts)," +
-                                " EffectiveArea: {" + blastInfo.EffectivePartArea + "}," +
-                                " Positive Phase duration: {" + blastInfo.PositivePhaseDuration + "}," +
-                                " Vessel mass: {" + Math.Round(vesselMass * 1000f) + "}," +
-                                " TimeIndex: {" + TimeIndex + "}," +
-                                " TimePlanned: {" + eventToExecute.TimeToImpact + "}," +
-                                " NegativePressure: {" + eventToExecute.IsNegativePressure + "}");
+                            $"[BDArmory.ExplosionFX]: Executing blast event Part: [{part.name}], VelocityChange: [{blastInfo.VelocityChange}], Distance: [{realDistance}]," +
+                            $" TotalPressure: [{blastInfo.TotalPressure}], Damage: [{blastInfo.Damage}] (reduced from {damageWithoutIntermediateParts} by {eventToExecute.IntermediateParts.Count} parts)," +
+                            $" EffectiveArea: [{blastInfo.EffectivePartArea}], Positive Phase duration: [{blastInfo.PositivePhaseDuration}]," +
+                            $" Vessel mass: [{Math.Round(vesselMass * 1000f)}], TimeIndex: [{TimeIndex}], TimePlanned: [{eventToExecute.TimeToImpact}], NegativePressure: [{eventToExecute.IsNegativePressure}]");
                         }
 
                         // Add Reverse Negative Event
@@ -900,9 +889,9 @@ namespace BDArmory.FX
                                 //float anglemultiplier = (float)Math.Cos(Math.PI * HitAngle / 180.0);
                                 float anglemultiplier = Vector3.Dot((eventToExecute.HitPoint + rb.velocity * TimeIndex - Position).normalized, -eventToExecute.Hit.normal);
                                 float thickness = ProjectileUtils.CalculateThickness(part, anglemultiplier);
-                                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.ExplosiveFX]: Part " + part.name + " hit by " + warheadType + "; " + Math.Acos(anglemultiplier)*180f/Math.PI + " deg hit, armor thickness: " + thickness);
+                                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.ExplosionFX]: Part {part.name} hit by {warheadType}; {Math.Acos(anglemultiplier) * 180f / Math.PI} deg hit, armor thickness: {thickness}");
                                 //float thicknessBetween = eventToExecute.IntermediateParts.Select(p => p.Item3).Sum(); //add armor thickness of intervening parts, if any
-                                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.ExplosiveFX]: Effective Armor thickness from intermediate parts: " + cumulativeArmorOfIntermediateParts);
+                                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.ExplosionFX]: Effective Armor thickness from intermediate parts: {thickness}");
                                 //float penetration = 0;
                                 float standoffTemp = realDistance / (14f * Caliber * 20f * 0.001f);
                                 float standoffFactor = 1f / (1f + standoffTemp * standoffTemp);
@@ -931,7 +920,7 @@ namespace BDArmory.FX
 
                                     if (BDArmorySettings.DEBUG_WEAPONS)
                                     {
-                                        Debug.Log("[BDArmory.ExplosionFX] Penetration: " + penetration + "mm. Thickness: " + thickness * armorEquiv + "mm. armorEquiv: " + armorEquiv + ". Intermediate Armor: " + (penetration * standoffFactor - remainingPen) + "mm. Remaining Penetration: " + remainingPen + "mm. Penetration Factor: " + penetrationFactor + ". Standoff Factor: " + standoffFactor);
+                                        Debug.Log($"[BDArmory.ExplosionFX] Penetration: {penetration} mm; Thickness: {thickness * armorEquiv} mm; armorEquiv: {armorEquiv}; Intermediate Armor: { penetration* standoffFactor -remainingPen} mm; Remaining Penetration: {remainingPen} mm; Penetration Factor: {penetrationFactor}; Standoff Factor: {standoffFactor}");
                                     }
 
                                     if (RA != null)
@@ -939,7 +928,7 @@ namespace BDArmory.FX
                                         if (penetrationFactor > 1)
                                         {
                                             float thicknessModifier = RA.armorModifier;
-                                            if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.ExplosionFX]: Beginning Reactive Armor Hit; NXRA: " + RA.NXRA + "; thickness Mod: " + RA.armorModifier);
+                                            if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.ExplosionFX]: Beginning Reactive Armor Hit; NXRA: {RA.NXRA}; thickness Mod: {RA.armorModifier}");
                                             if (RA.NXRA) //non-explosive RA, always active
                                             {
                                                 thickness *= thicknessModifier;
@@ -1204,7 +1193,7 @@ namespace BDArmory.FX
             rb.AddForceAtPosition(force, position, ForceMode.VelocityChange);
             if (BDArmorySettings.DEBUG_DAMAGE)
             {
-                Debug.Log("[BDArmory.ExplosionFX]: Force Applied | Explosive : " + Math.Round(force.magnitude, 2));
+                Debug.Log($"[BDArmory.ExplosionFX]: Force Applied | Explosive : {Math.Round(force.magnitude, 2)}");
             }
         }
     }

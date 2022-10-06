@@ -193,7 +193,7 @@ namespace BDArmory.WeaponMounts
             setupComplete = true;
             for (int i = 0; i < missileChildren.Length; i++)
             {
-                if (!missileTransforms[i] || !missileChildren[i] || missileChildren[i].HasFired) continue;
+                if (!missileTransforms[i] || !missileChildren[i]) continue;
                 Part missilePart = missileChildren[i].part;
                 missilePart.ShieldedFromAirstream = true;
                 if (hideMissiles) missilePart.SetOpacity(0);
@@ -234,7 +234,7 @@ namespace BDArmory.WeaponMounts
             if (part.isActiveAndEnabled) retractRoutine = StartCoroutine(Retract());
         }
 
-        void UpdateChildrenPos()
+        public void UpdateChildrenPos()
         {
             /*
             using (List<Part>.Enumerator p = part.children.GetEnumerator())
@@ -254,7 +254,7 @@ namespace BDArmory.WeaponMounts
 
             for (int i = 0; i < missileChildren.Length; i++)
             {
-                if (!missileTransforms[i] || !missileChildren[i] || missileChildren[i].HasFired) continue;
+                if (!missileTransforms[i] || !missileChildren[i] || missileChildren[i].vessel != this.vessel) continue;
                 missileTransforms[i].position = missileReferenceTransforms[i].position; //wait, is this just moving the mesh, but the part stays where it is? Would explain the need for CoM offset
                 missileTransforms[i].rotation = missileReferenceTransforms[i].rotation; //have this reset on spawn?
                 //float scaleVector = Mathf.Lerp(scaleVector, 1, 0.02f / deployState.length); //have the missile scale (so big missiles can fit inside shallow bays without clipping through base of the bay? Future SI, play around with this

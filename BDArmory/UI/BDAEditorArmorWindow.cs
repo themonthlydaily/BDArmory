@@ -32,7 +32,9 @@ namespace BDArmory.UI
         private float totalArmorMass;
         private float totalArmorCost;
         private float totalLift;
+        private float totalLiftArea;
         private float wingLoading;
+        private float WLRatio;
         private bool CalcArmor = false;
         private bool shipModifiedfromCalcArmor = false;
         private bool SetType = false;
@@ -308,7 +310,7 @@ namespace BDArmory.UI
 
             if (!BDArmorySettings.RESET_ARMOUR)
             {
-                GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorThickness") + ": " + Thickness + "mm", style);
+                GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_ArmorThickness")}: {Thickness} mm", style);
                 line++;
                 if (!useNumField)
                 {
@@ -325,15 +327,15 @@ namespace BDArmory.UI
                     line++;
                 }
                 line += 0.75f;
-                GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorTotalMass") + ": " + totalArmorMass.ToString("0.00"), style);
+                GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_ArmorTotalMass")}: {totalArmorMass:0.00}", style);
                 line++;
-                GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorTotalCost") + ": " + Mathf.Round(totalArmorCost), style);
+                GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_ArmorTotalCost")}: {Mathf.Round(totalArmorCost)}", style);
                 if (!FerramAerospace.hasFAR)
                 {
                     line++;
-                    GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorTotalLift") + ": " + totalLift.ToString("0.00"), style);
+                    GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_ArmorTotalLift")}: {totalLift:0.00} ({totalLiftArea} m2)", style);
                     line++;
-                    GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorWingLoading") + ": " + wingLoading.ToString("0.00"), style);
+                    GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_ArmorWingLoading")}: {wingLoading:0.0} ({WLRatio} kg/m2)", style);
                 }
                 line += 1.5f;
             }
@@ -387,27 +389,27 @@ namespace BDArmory.UI
                     {
                         if (selectedArmor != "None")
                         {
-                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 120, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorStrength") + " " + ArmorStrength, style);
+                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 120, lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_ArmorStrength")}: {ArmorStrength}", style);
                             //StatLines++;
-                            GUI.Label(new Rect(135, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorHardness") + " " + ArmorHardness, style);
+                            GUI.Label(new Rect(135, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_ArmorHardness")}: {ArmorHardness} ", style);
                             StatLines++;
-                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 120, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorDuctility") + " " + ArmorDuctility, style);
+                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 120, lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_ArmorDuctility")}: {ArmorDuctility}", style);
                             //StatLines++;
-                            GUI.Label(new Rect(135, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorDiffusivity") + " " + ArmorDiffusivity, style);
+                            GUI.Label(new Rect(135, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_ArmorDiffusivity")}: {ArmorDiffusivity}", style);
                             StatLines++;
-                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 120, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorMaxTemp") + " " + ArmorMaxTemp + " K", style);
+                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 120, lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_ArmorMaxTemp")}: {ArmorMaxTemp} K", style);
                             //StatLines++;
-                            GUI.Label(new Rect(135, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorDensity") + " " + ArmorDensity + " kg/m3", style);
+                            GUI.Label(new Rect(135, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_ArmorDensity")}: {ArmorDensity} kg/m3", style);
                             StatLines++;
-                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 120, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorCost") + " " + ArmorCost + "/m3", style);
+                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 120, lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_ArmorCost")}: {ArmorCost} /m3", style);
                             StatLines++;
-                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), StringUtils.Localize("#LOC_BDArmory_BulletResist") + ": " + (relValue < 1.2 ? (relValue < 0.5 ? "* * * * *" : "* * * *") : (relValue > 2.8 ? (relValue > 4 ? "*" : "* *") : "* * *")), style);
+                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_BulletResist")}:{(relValue < 1.2 ? (relValue < 0.5 ? "* * * * *" : "* * * *") : (relValue > 2.8 ? (relValue > 4 ? "*" : "* *") : "* * *"))}", style);
                             StatLines++;
 
-                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), StringUtils.Localize("#LOC_BDArmory_ExplosionResist") + ": " + ((ArmorDuctility < 0.05f && ArmorHardness < 500) ? "* *" : (exploValue > 8000 ? (exploValue > 20000 ? "* * * * *" : "* * * *") : (exploValue < 4000 ? (exploValue < 2000 ? "*" : "* *") : "* * *"))), style);
+                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_ExplosionResist")}: {((ArmorDuctility < 0.05f && ArmorHardness < 500) ? "* *" : (exploValue > 8000 ? (exploValue > 20000 ? "* * * * *" : "* * * *") : (exploValue < 4000 ? (exploValue < 2000 ? "*" : "* *") : "* * *")))}", style);
                             StatLines++;
 
-                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), StringUtils.Localize("#LOC_BDArmory_LaserResist") + ": " + (ArmorDiffusivity > 150 ? (ArmorDiffusivity > 199 ? "* * * * *" : "* * * *") : (ArmorDiffusivity < 50 ? (ArmorDiffusivity < 10 ? "*" : "* *") : "* * *")), style);
+                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_LaserResist")}: {(ArmorDiffusivity > 150 ? (ArmorDiffusivity > 199 ? "* * * * *" : "* * * *") : (ArmorDiffusivity < 50 ? (ArmorDiffusivity < 10 ? "*" : "* *") : "* * *"))}", style);
                             StatLines++;
 
                             if (ArmorDuctility < 0.05)
@@ -418,7 +420,7 @@ namespace BDArmory.UI
                         }
                         if (selectedArmor != "Mild Steel" && selectedArmor != "None")
                         {
-                            GUI.Label(new Rect(10, (line + armorLines + StatLines) * lineHeight, 300, lineHeight), StringUtils.Localize("#LOC_BDArmory_EquivalentThickness") + ": " + relValue * Thickness + "mm", style);
+                            GUI.Label(new Rect(10, (line + armorLines + StatLines) * lineHeight, 300, lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_EquivalentThickness")}: {relValue * Thickness} mm", style);
                             line++;
                         }
                     }
@@ -589,7 +591,9 @@ namespace BDArmory.UI
                         totalLift += wing.deflectionLiftCoeff * Vector3.Project(wing.transform.forward, Vector3.up).sqrMagnitude; // Only return vertically oriented lift components
                     }
                 }
-            wingLoading = totalLift / EditorLogic.fetch.ship.GetTotalMass();
+            wingLoading = totalLift / EditorLogic.fetch.ship.GetTotalMass(); //convert to kg/m2. 1 LiftingArea is ~ 3.51m2, or ~285kg/m2
+            totalLiftArea = totalLift * 3.51f;
+            WLRatio = (EditorLogic.fetch.ship.GetTotalMass() * 1000) / totalLiftArea;
         }
 
         IEnumerator calcArmorMassAndCost()

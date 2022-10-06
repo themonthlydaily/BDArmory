@@ -113,7 +113,7 @@ namespace BDArmory.Bullets
         public float timeToLiveUntil;
         Light lightFlash;
         bool wasInitiated;
-        public Vector3 currentVelocity;
+        public Vector3 currentVelocity; // Current real velocity w/o offloading
         public float bulletMass;
         public float caliber = 1;
         public float bulletVelocity; //muzzle velocity
@@ -342,10 +342,10 @@ namespace BDArmory.Bullets
             }
 
             //floating origin and velocity offloading corrections
-            if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
+            if (BDKrakensbane.IsActive)
             {
-                transform.position -= FloatingOrigin.OffsetNonKrakensbane;
-                startPosition -= FloatingOrigin.OffsetNonKrakensbane;
+                transform.position -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                startPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
             }
 
             if (fadeColor)
@@ -361,7 +361,7 @@ namespace BDArmory.Bullets
                 if (isAPSprojectile)
                 {
                     if (HEType != PooledBulletTypes.Explosive && tntMass > 0)
-                        ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, currentVelocity, -1, true);
+                        ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, -1, true);
                 }
                 return;
             }
@@ -730,7 +730,7 @@ namespace BDArmory.Bullets
                 hitPart = hitEVA.part;
                 // relative velocity, separate from the below statement, because the hitpart might be assigned only above
                 if (hitPart.rb != null)
-                    impactSpeed = (GetDragAdjustedVelocity() - (hitPart.rb.velocity + Krakensbane.GetFrameVelocityV3f())).magnitude;
+                    impactSpeed = (GetDragAdjustedVelocity() - (hitPart.rb.velocity + BDKrakensbane.FrameVelocityV3f)).magnitude;
                 else
                     impactSpeed = GetDragAdjustedVelocity().magnitude;
                 distanceTraveled += hit.distance;
@@ -755,7 +755,7 @@ namespace BDArmory.Bullets
             {
                 // using relative velocity vector instead of just bullet velocity
                 // since KSP vessels might move faster than bullets
-                impactVelocity -= (hitPart.rb.velocity + Krakensbane.GetFrameVelocityV3f());
+                impactVelocity -= (hitPart.rb.velocity + BDKrakensbane.FrameVelocityV3f);
             }
 
             impactSpeed = impactVelocity.magnitude;
@@ -1365,7 +1365,7 @@ namespace BDArmory.Bullets
                 pBullet.timeElapsedSinceCurrentSpeedWasAdjusted = 0;
                 pBullet.timeToLiveUntil = 4000 / bulletVelocity * 1.1f + Time.time;
                 Vector3 firedVelocity = VectorUtils.GaussianDirectionDeviation(currentVelocity.normalized, (subMunitionType.subProjectileCount / BDAMath.Sqrt((currentVelocity * dragVelocityFactor).magnitude / 10))) * (subMunitionType.bulletVelocity / 10); //more subprojectiles = wider spread, higher base velocity = tighter spread
-                pBullet.currentVelocity = (GetDragAdjustedVelocity() + Krakensbane.GetFrameVelocityV3f()) + firedVelocity; // use the real velocity, w/o offloading
+                pBullet.currentVelocity = GetDragAdjustedVelocity() + firedVelocity; // currentVelocity is already the real velocity w/o offloading
                 pBullet.sourceWeapon = sourceWeapon;
                 pBullet.sourceVessel = sourceVessel;
                 pBullet.team = team;

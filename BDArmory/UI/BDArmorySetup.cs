@@ -1064,7 +1064,7 @@ namespace BDArmory.UI
                 }
 
                 GUIStyle teamButtonStyle = BDGuiSkin.box;
-                string teamText = StringUtils.Localize("#LOC_BDArmory_WMWindow_TeamText") + ": " + ActiveWeaponManager.Team.Name + (ActiveWeaponManager.Team.Neutral ? (ActiveWeaponManager.Team.Name != "Neutral" ? "(N)" : "") : "");//Team
+                string teamText = StringUtils.Localize("#LOC_BDArmory_WMWindow_TeamText") + $": {ActiveWeaponManager.Team.Name + (ActiveWeaponManager.Team.Neutral ? (ActiveWeaponManager.Team.Name != "Neutral" ? "(N)" : "") : "")}";//Team
                 if (GUI.Button(new Rect(leftIndent + (contentWidth / 2), contentTop + (line * entryHeight), contentWidth / 2, entryHeight), teamText, teamButtonStyle))
                 {
                     if (Event.current.button == 1)
@@ -1905,7 +1905,7 @@ namespace BDArmory.UI
                             if (isActive)
                             {
                                 moduleStyle = centerLabelRed;
-                                label = "[" + label + "]";
+                                label = $"[{label}]";
                             }
                             if (GUI.Button(new Rect(leftIndent, +(moduleLines * entryHeight), contentWidth, entryHeight),
                                 label, moduleStyle))
@@ -2126,7 +2126,7 @@ namespace BDArmory.UI
             Rect listRect = new Rect(gpsBorder, gpsBorder, WindowRectGps.width - (2 * gpsBorder),
                 WindowRectGps.height - (2 * gpsBorder));
             GUI.BeginGroup(listRect);
-            string targetLabel = StringUtils.Localize("#LOC_BDArmory_WMWindow_GPSTarget") + ": " + ActiveWeaponManager.designatedGPSInfo.name;//GPS Target
+            string targetLabel = $"{StringUtils.Localize("#LOC_BDArmory_WMWindow_GPSTarget")}: {ActiveWeaponManager.designatedGPSInfo.name}";//GPS Target
             GUI.Label(new Rect(0, 0, listRect.width, gpsEntryHeight), targetLabel, kspTitleLabel);
 
             // Expand/Collapse Target Toggle button
@@ -2370,7 +2370,7 @@ namespace BDArmory.UI
             GameSettings.ADVANCED_TWEAKABLES = GUI.Toggle(GameSettings.ADVANCED_TWEAKABLES ? SLeftRect(++line) : SLineRect(++line), GameSettings.ADVANCED_TWEAKABLES, StringUtils.Localize("#autoLOC_900906") + (GameSettings.ADVANCED_TWEAKABLES ? "" : " <— Access many more AI tuning options")); // Advanced tweakables
             BDArmorySettings.ADVANDED_USER_SETTINGS = GUI.Toggle(GameSettings.ADVANCED_TWEAKABLES ? SRightRect(line) : SLineRect(++line), BDArmorySettings.ADVANDED_USER_SETTINGS, StringUtils.Localize("#LOC_BDArmory_Settings_AdvancedUserSettings"));// Advanced User Settings
 
-            if (GUI.Button(SLineRect(++line), (BDArmorySettings.GRAPHICS_UI_SECTION_TOGGLE ? StringUtils.Localize("#LOC_BDArmory_Generic_Hide") : StringUtils.Localize("#LOC_BDArmory_Generic_Show")) + " " + StringUtils.Localize("#LOC_BDArmory_Settings_GraphicsSettingsToggle")))//Show/hide Graphics/UI settings.
+            if (GUI.Button(SLineRect(++line), $"{(BDArmorySettings.GRAPHICS_UI_SECTION_TOGGLE ? StringUtils.Localize("#LOC_BDArmory_Generic_Hide") : StringUtils.Localize("#LOC_BDArmory_Generic_Show"))} {StringUtils.Localize("#LOC_BDArmory_Settings_GraphicsSettingsToggle")}"))//Show/hide Graphics/UI settings.
             {
                 BDArmorySettings.GRAPHICS_UI_SECTION_TOGGLE = !BDArmorySettings.GRAPHICS_UI_SECTION_TOGGLE;
             }
@@ -2492,6 +2492,84 @@ namespace BDArmory.UI
 #if DEBUG  // Only visible when compiled in Debug configuration.
                     if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
                     {
+                        if (GUI.Button(SLineRect(++line), "Test 2x Raycast vs RaycastNonAlloc"))
+                        {
+                            var watch = new System.Diagnostics.Stopwatch();
+                            float µsResolution = 1e6f / System.Diagnostics.Stopwatch.Frequency;
+                            int N = 1 << 20;
+                            var tic = Time.realtimeSinceStartup;
+                            Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+                            RaycastHit hit;
+                            RaycastHit[] hits = new RaycastHit[100];
+                            int layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels | LayerMasks.Scenery);
+                            float dist = 10000;
+                            bool didHit = false;
+                            watch.Start();
+                            for (int i = 0; i < N; ++i)
+                            {
+                                didHit = Physics.Raycast(ray, out hit, dist, layerMask);
+                                didHit = Physics.Raycast(ray, out hit, dist, layerMask);
+                            }
+                            watch.Stop();
+                            Debug.Log($"DEBUG Raycast 2x (hit? {didHit}) took {watch.ElapsedTicks * µsResolution / N:G3}µs");
+                            int hitCount = 0;
+                            tic = Time.realtimeSinceStartup;
+                            watch.Reset(); watch.Start();
+                            for (int i = 0; i < N; ++i)
+                                hitCount = Physics.RaycastNonAlloc(ray, hits, dist, layerMask);
+                            watch.Stop();
+                            Debug.Log($"DEBUG RaycastNonAlloc ({hitCount} hits) took {watch.ElapsedTicks * µsResolution / N:G3}µs");
+                        }
+                        if (GUI.Button(SLineRect(++line), "Test GetFrameVelocityV3f"))
+                        {
+                            var watch = new System.Diagnostics.Stopwatch();
+                            float resolution = 1e9f / System.Diagnostics.Stopwatch.Frequency;
+                            int N = 1000;
+                            Vector3 frameVelocity;
+                            watch.Start();
+                            for (int i = 0; i < N; ++i)
+                                frameVelocity = Krakensbane.GetFrameVelocityV3f();
+                            watch.Stop();
+                            Debug.Log($"DEBUG Getting KbVF took {watch.ElapsedTicks * resolution / N:G3}ns");
+                            watch.Reset(); watch.Start();
+                            for (int i = 0; i < N; ++i)
+                                frameVelocity = BDKrakensbane.FrameVelocityV3f;
+                            watch.Stop();
+                            Debug.Log($"DEBUG Using BDKrakensbane took {watch.ElapsedTicks * resolution / N:G3}ns");
+                            Vector3d FOOffset;
+                            watch.Reset(); watch.Start();
+                            for (int i = 0; i < N; ++i)
+                                FOOffset = FloatingOrigin.Offset;
+                            watch.Stop();
+                            Debug.Log($"DEBUG Getting FO.Offset took {watch.ElapsedTicks * resolution / N:G3}ns");
+                            watch.Reset(); watch.Start();
+                            for (int i = 0; i < N; ++i)
+                                FOOffset = BDKrakensbane.FloatingOriginOffset;
+                            watch.Stop();
+                            Debug.Log($"DEBUG Using BDKrakensbane took {watch.ElapsedTicks * resolution / N:G3}ns");
+                            Vector3d FOOffsetNKb;
+                            watch.Reset(); watch.Start();
+                            for (int i = 0; i < N; ++i)
+                                FOOffsetNKb = FloatingOrigin.OffsetNonKrakensbane;
+                            watch.Stop();
+                            Debug.Log($"DEBUG Getting FO.OffsetNonKrakensbane took {watch.ElapsedTicks * resolution / N:G3}ns");
+                            watch.Reset(); watch.Start();
+                            for (int i = 0; i < N; ++i)
+                                FOOffsetNKb = BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                            watch.Stop();
+                            Debug.Log($"DEBUG Using BDKrakensbane took {watch.ElapsedTicks * resolution / N:G3}ns");
+                            bool KBIsActive;
+                            watch.Reset(); watch.Start();
+                            for (int i = 0; i < N; ++i)
+                                KBIsActive = !BDKrakensbane.FloatingOriginOffset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero();
+                            watch.Stop();
+                            Debug.Log($"DEBUG Getting KB is active took {watch.ElapsedTicks * resolution / N:G3}ns");
+                            watch.Reset(); watch.Start();
+                            for (int i = 0; i < N; ++i)
+                                KBIsActive = BDKrakensbane.IsActive;
+                            watch.Stop();
+                            Debug.Log($"DEBUG Using BDKrakensbane took {watch.ElapsedTicks * resolution / N:G3}ns");
+                        }
                         if (GUI.Button(SLineRect(++line), "Test GetAudioClip"))
                         {
                             StartCoroutine(TestGetAudioClip());
@@ -2632,7 +2710,7 @@ namespace BDArmory.UI
                 line += 0.5f;
             }
 
-            if (GUI.Button(SLineRect(++line), (BDArmorySettings.GAMEPLAY_SETTINGS_TOGGLE ? StringUtils.Localize("#LOC_BDArmory_Generic_Hide") : StringUtils.Localize("#LOC_BDArmory_Generic_Show")) + " " + StringUtils.Localize("#LOC_BDArmory_Settings_GeneralSettingsToggle")))//Show/hide Gameplay settings.
+            if (GUI.Button(SLineRect(++line), $"{(BDArmorySettings.GAMEPLAY_SETTINGS_TOGGLE ? StringUtils.Localize("#LOC_BDArmory_Generic_Hide") : StringUtils.Localize("#LOC_BDArmory_Generic_Show"))} {StringUtils.Localize("#LOC_BDArmory_Settings_GeneralSettingsToggle")}"))//Show/hide Gameplay settings.
             {
                 BDArmorySettings.GAMEPLAY_SETTINGS_TOGGLE = !BDArmorySettings.GAMEPLAY_SETTINGS_TOGGLE;
             }
@@ -2759,7 +2837,7 @@ namespace BDArmory.UI
                 line += 0.5f;
             }
 
-            if (GUI.Button(SLineRect(++line), (BDArmorySettings.SLIDER_SETTINGS_TOGGLE ? StringUtils.Localize("#LOC_BDArmory_Generic_Hide") : StringUtils.Localize("#LOC_BDArmory_Generic_Show")) + " " + StringUtils.Localize("#LOC_BDArmory_Settings_SliderSettingsToggle")))//Show/hide General Slider settings.
+            if (GUI.Button(SLineRect(++line), $"{(BDArmorySettings.SLIDER_SETTINGS_TOGGLE ? StringUtils.Localize("#LOC_BDArmory_Generic_Hide") : StringUtils.Localize("#LOC_BDArmory_Generic_Show"))} {StringUtils.Localize("#LOC_BDArmory_Settings_SliderSettingsToggle")}"))//Show/hide General Slider settings.
             {
                 BDArmorySettings.SLIDER_SETTINGS_TOGGLE = !BDArmorySettings.SLIDER_SETTINGS_TOGGLE;
             }
@@ -2842,7 +2920,7 @@ namespace BDArmory.UI
                 line += 0.5f;
             }
 
-            if (GUI.Button(SLineRect(++line), (BDArmorySettings.GAME_MODES_SETTINGS_TOGGLE ? StringUtils.Localize("#LOC_BDArmory_Generic_Hide") : StringUtils.Localize("#LOC_BDArmory_Generic_Show")) + " " + StringUtils.Localize("#LOC_BDArmory_Settings_GameModesSettingsToggle")))//Show/hide Game Modes settings.
+            if (GUI.Button(SLineRect(++line), $"{(BDArmorySettings.GAME_MODES_SETTINGS_TOGGLE ? StringUtils.Localize("#LOC_BDArmory_Generic_Hide") : StringUtils.Localize("#LOC_BDArmory_Generic_Show"))} {StringUtils.Localize("#LOC_BDArmory_Settings_GameModesSettingsToggle")}"))//Show/hide Game Modes settings.
             {
                 BDArmorySettings.GAME_MODES_SETTINGS_TOGGLE = !BDArmorySettings.GAME_MODES_SETTINGS_TOGGLE;
             }
@@ -2853,11 +2931,7 @@ namespace BDArmory.UI
                 BDArmorySettings.BATTLEDAMAGE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.BATTLEDAMAGE, StringUtils.Localize("#LOC_BDArmory_Settings_BattleDamage"));
                 BDArmorySettings.INFINITE_AMMO = GUI.Toggle(SRightRect(line), BDArmorySettings.INFINITE_AMMO, StringUtils.Localize("#LOC_BDArmory_Settings_InfiniteAmmo"));//"Infinite Ammo"
                 BDArmorySettings.TAG_MODE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.TAG_MODE, StringUtils.Localize("#LOC_BDArmory_Settings_TagMode"));//"Tag Mode"
-                if (BDArmorySettings.PAINTBALL_MODE != (BDArmorySettings.PAINTBALL_MODE = GUI.Toggle(SRightRect(line), BDArmorySettings.PAINTBALL_MODE, StringUtils.Localize("#LOC_BDArmory_Settings_PaintballMode"))))//"Paintball Mode"
-                {
-                    BulletHitFX.SetupShellPool();
-                    BDArmorySettings.BATTLEDAMAGE = false;
-                }
+                BDArmorySettings.INFINITE_ORDINANCE = GUI.Toggle(SRightRect(line), BDArmorySettings.INFINITE_ORDINANCE, StringUtils.Localize("#LOC_BDArmory_Settings_InfiniteMissiles"));//"Infinite Ammo"
                 if (BDArmorySettings.GRAVITY_HACKS != (BDArmorySettings.GRAVITY_HACKS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.GRAVITY_HACKS, StringUtils.Localize("#LOC_BDArmory_Settings_GravityHacks"))))//"Gravity hacks"
                 {
                     if (BDArmorySettings.GRAVITY_HACKS)
@@ -2873,7 +2947,12 @@ namespace BDArmory.UI
                         VehiclePhysics.Gravity.Refresh();
                     }
                 }
-                if (BDArmorySettings.PEACE_MODE != (BDArmorySettings.PEACE_MODE = GUI.Toggle(SRightRect(line), BDArmorySettings.PEACE_MODE, StringUtils.Localize("#LOC_BDArmory_Settings_PeaceMode"))))//"Peace Mode"
+                if (BDArmorySettings.PAINTBALL_MODE != (BDArmorySettings.PAINTBALL_MODE = GUI.Toggle(SRightRect(line), BDArmorySettings.PAINTBALL_MODE, StringUtils.Localize("#LOC_BDArmory_Settings_PaintballMode"))))//"Paintball Mode"
+                {
+                    BulletHitFX.SetupShellPool();
+                    BDArmorySettings.BATTLEDAMAGE = false;
+                }
+                if (BDArmorySettings.PEACE_MODE != (BDArmorySettings.PEACE_MODE = GUI.Toggle(SRightRect(++line), BDArmorySettings.PEACE_MODE, StringUtils.Localize("#LOC_BDArmory_Settings_PeaceMode"))))//"Peace Mode"
                 {
                     BDATargetManager.ClearDatabase();
                     if (OnPeaceEnabled != null)
@@ -2883,7 +2962,7 @@ namespace BDArmory.UI
                 }
                 //Mutators
                 var oldMutators = BDArmorySettings.MUTATOR_MODE;
-                BDArmorySettings.MUTATOR_MODE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.MUTATOR_MODE, StringUtils.Localize("#LOC_BDArmory_Settings_Mutators"));
+                BDArmorySettings.MUTATOR_MODE = GUI.Toggle(SLeftRect(line), BDArmorySettings.MUTATOR_MODE, StringUtils.Localize("#LOC_BDArmory_Settings_Mutators"));
                 {
                     if (BDArmorySettings.MUTATOR_MODE)
                     {
@@ -2932,7 +3011,7 @@ namespace BDArmory.UI
                                 switch (Event.current.button)
                                 {
                                     case 1: // right click
-                                        Debug.Log("[BDArmory.BDArmorySetup]: MutatorList: " + string.Join("; ", BDArmorySettings.MUTATOR_LIST));
+                                        Debug.Log($"[BDArmory.BDArmorySetup]: MutatorList: {string.Join("; ", BDArmorySettings.MUTATOR_LIST)}");
                                         break;
                                     default:
                                         BDArmorySettings.MUTATOR_LIST.Clear();
@@ -3243,7 +3322,7 @@ namespace BDArmory.UI
 
             if (BDArmorySettings.BATTLEDAMAGE)
             {
-                if (GUI.Button(SLineRect(++line), (BDArmorySettings.BATTLEDAMAGE_TOGGLE ? StringUtils.Localize("#LOC_BDArmory_Generic_Hide") : StringUtils.Localize("#LOC_BDArmory_Generic_Show")) + " " + StringUtils.Localize("#LOC_BDArmory_Settings_BDSettingsToggle")))//Show/hide Battle Damage settings.
+                if (GUI.Button(SLineRect(++line), $"{(BDArmorySettings.BATTLEDAMAGE_TOGGLE ? StringUtils.Localize("#LOC_BDArmory_Generic_Hide") : StringUtils.Localize("#LOC_BDArmory_Generic_Show"))} {StringUtils.Localize("#LOC_BDArmory_Settings_BDSettingsToggle")}"))//Show/hide Battle Damage settings.
                 {
                     BDArmorySettings.BATTLEDAMAGE_TOGGLE = !BDArmorySettings.BATTLEDAMAGE_TOGGLE;
                 }
@@ -3319,7 +3398,7 @@ namespace BDArmory.UI
             {
                 line += 0.2f;
 
-                GUI.Label(SLeftSliderRect(++line), StringUtils.Localize("#LOC_BDArmory_Settings_RWRWindowScale") + ": " + (BDArmorySettings.RWR_WINDOW_SCALE * 100).ToString("0") + "%", leftLabel); // RWR Window Scale
+                GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_RWRWindowScale")}: {(BDArmorySettings.RWR_WINDOW_SCALE * 100):0} %", leftLabel); // RWR Window Scale
                 float rwrScale = BDArmorySettings.RWR_WINDOW_SCALE;
                 rwrScale = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), rwrScale, BDArmorySettings.RWR_WINDOW_SCALE_MIN, BDArmorySettings.RWR_WINDOW_SCALE_MAX) * 100.0f) * 0.01f;
                 if (rwrScale.ToString(CultureInfo.InvariantCulture) != BDArmorySettings.RWR_WINDOW_SCALE.ToString(CultureInfo.InvariantCulture))
@@ -3327,7 +3406,7 @@ namespace BDArmory.UI
                     ResizeRwrWindow(rwrScale);
                 }
 
-                GUI.Label(SLeftSliderRect(++line), StringUtils.Localize("#LOC_BDArmory_Settings_RadarWindowScale") + ": " + (BDArmorySettings.RADAR_WINDOW_SCALE * 100).ToString("0") + "%", leftLabel); // Radar Window Scale
+                GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_RadarWindowScale")}: {(BDArmorySettings.RADAR_WINDOW_SCALE * 100):0} %", leftLabel); // Radar Window Scale
                 float radarScale = BDArmorySettings.RADAR_WINDOW_SCALE;
                 radarScale = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), radarScale, BDArmorySettings.RADAR_WINDOW_SCALE_MIN, BDArmorySettings.RADAR_WINDOW_SCALE_MAX) * 100.0f) * 0.01f;
                 if (radarScale.ToString(CultureInfo.InvariantCulture) != BDArmorySettings.RADAR_WINDOW_SCALE.ToString(CultureInfo.InvariantCulture))
@@ -3335,7 +3414,7 @@ namespace BDArmory.UI
                     ResizeRadarWindow(radarScale);
                 }
 
-                GUI.Label(SLeftSliderRect(++line), StringUtils.Localize("#LOC_BDArmory_Settings_TargetWindowScale") + ": " + (BDArmorySettings.TARGET_WINDOW_SCALE * 100).ToString("0") + "%", leftLabel); // Target Window Scale
+                GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_TargetWindowScale")}: {(BDArmorySettings.TARGET_WINDOW_SCALE * 100):0} %", leftLabel); // Target Window Scale
                 float targetScale = BDArmorySettings.TARGET_WINDOW_SCALE;
                 targetScale = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), targetScale, BDArmorySettings.TARGET_WINDOW_SCALE_MIN, BDArmorySettings.TARGET_WINDOW_SCALE_MAX) * 100.0f) * 0.01f;
                 if (targetScale.ToString(CultureInfo.InvariantCulture) != BDArmorySettings.TARGET_WINDOW_SCALE.ToString(CultureInfo.InvariantCulture))
@@ -3359,10 +3438,10 @@ namespace BDArmory.UI
             {
                 line += 0.2f;
 
-                GUI.Label(SLeftSliderRect(++line), StringUtils.Localize("#LOC_BDArmory_Settings_TriggerHold") + ": " + BDArmorySettings.TRIGGER_HOLD_TIME.ToString("0.00") + "s", leftLabel);//Trigger Hold
+                GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_TriggerHold")}: {BDArmorySettings.TRIGGER_HOLD_TIME: 0} s", leftLabel);//Trigger Hold
                 BDArmorySettings.TRIGGER_HOLD_TIME = GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.TRIGGER_HOLD_TIME, 0.02f, 1f);
 
-                GUI.Label(SLeftSliderRect(++line), StringUtils.Localize("#LOC_BDArmory_Settings_UIVolume") + ": " + (BDArmorySettings.BDARMORY_UI_VOLUME * 100).ToString("0"), leftLabel);//UI Volume
+                GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_UIVolume")}: {(BDArmorySettings.BDARMORY_UI_VOLUME * 100):0}", leftLabel);//UI Volume
                 float uiVol = BDArmorySettings.BDARMORY_UI_VOLUME;
                 uiVol = GUI.HorizontalSlider(SRightSliderRect(line), uiVol, 0f, 1f);
                 if (uiVol != BDArmorySettings.BDARMORY_UI_VOLUME && OnVolumeChange != null)
@@ -3371,7 +3450,7 @@ namespace BDArmory.UI
                 }
                 BDArmorySettings.BDARMORY_UI_VOLUME = uiVol;
 
-                GUI.Label(SLeftSliderRect(++line), StringUtils.Localize("#LOC_BDArmory_Settings_WeaponVolume") + ": " + (BDArmorySettings.BDARMORY_WEAPONS_VOLUME * 100).ToString("0"), leftLabel);//Weapon Volume
+                GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_WeaponVolume")}: {(BDArmorySettings.BDARMORY_WEAPONS_VOLUME * 100):0}", leftLabel);//Weapon Volume
                 float weaponVol = BDArmorySettings.BDARMORY_WEAPONS_VOLUME;
                 weaponVol = GUI.HorizontalSlider(SRightSliderRect(line), weaponVol, 0f, 1f);
                 if (uiVol != BDArmorySettings.BDARMORY_WEAPONS_VOLUME && OnVolumeChange != null)
@@ -3398,7 +3477,7 @@ namespace BDArmory.UI
                 line += 0.5f;
             }
 
-            if (GUI.Button(SLineRect(++line), (BDArmorySettings.COMPETITION_SETTINGS_TOGGLE ? StringUtils.Localize("#LOC_BDArmory_Generic_Hide") : StringUtils.Localize("#LOC_BDArmory_Generic_Show")) + " " + StringUtils.Localize("#LOC_BDArmory_Settings_CompSettingsToggle")))//Show/hide Competition settings.
+            if (GUI.Button(SLineRect(++line), $"{(BDArmorySettings.COMPETITION_SETTINGS_TOGGLE ? StringUtils.Localize("#LOC_BDArmory_Generic_Hide") : StringUtils.Localize("#LOC_BDArmory_Generic_Show"))} {StringUtils.Localize("#LOC_BDArmory_Settings_CompSettingsToggle")}"))//Show/hide Competition settings.
             {
                 BDArmorySettings.COMPETITION_SETTINGS_TOGGLE = !BDArmorySettings.COMPETITION_SETTINGS_TOGGLE;
             }
@@ -3525,7 +3604,7 @@ namespace BDArmory.UI
             {
                 line += 0.5f;
 
-                GUI.Label(SLineRect(++line), "=== " + StringUtils.Localize("#LOC_BDArmory_Settings_DogfightCompetition") + " ===", centerLabel);//Dogfight Competition
+                GUI.Label(SLineRect(++line), $"=== {StringUtils.Localize("#LOC_BDArmory_Settings_DogfightCompetition")} ===", centerLabel);//Dogfight Competition
                 if (BDACompetitionMode.Instance.competitionIsActive)
                 {
                     if (GUI.Button(SLineRect(++line), StringUtils.Localize("#LOC_BDArmory_Settings_StopCompetition"))) // Stop competition.
@@ -3535,7 +3614,7 @@ namespace BDArmory.UI
                 }
                 else if (BDACompetitionMode.Instance.competitionStarting)
                 {
-                    GUI.Label(SLineRect(++line), StringUtils.Localize("#LOC_BDArmory_Settings_CompetitionStarting") + " (" + compDistGui + ")");//Starting Competition...
+                    GUI.Label(SLineRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_CompetitionStarting")} ({compDistGui})");//Starting Competition...
                     if (GUI.Button(SLeftButtonRect(++line), StringUtils.Localize("#LOC_BDArmory_Generic_Cancel")))//"Cancel"
                     {
                         BDACompetitionMode.Instance.StopCompetition();
@@ -3683,31 +3762,31 @@ namespace BDArmory.UI
 
             _displayViewerPosition = GUI.BeginScrollView(viewRect, _displayViewerPosition, scrollerRect, false, true);
 
-            GUI.Label(SLineRect(line++), "- " + StringUtils.Localize("#LOC_BDArmory_InputSettings_GUI") + " -", centerLabel); //GUI
+            GUI.Label(SLineRect(line++), $"- {StringUtils.Localize("#LOC_BDArmory_InputSettings_GUI")} -", centerLabel); //GUI
             InputSettingsList("GUI_", ref inputID, ref line);
             ++line;
 
-            GUI.Label(SLineRect(line++), "- " + StringUtils.Localize("#LOC_BDArmory_InputSettings_Weapons") + " -", centerLabel);//Weapons
+            GUI.Label(SLineRect(line++), $"- {StringUtils.Localize("#LOC_BDArmory_InputSettings_Weapons")} -", centerLabel);//Weapons
             InputSettingsList("WEAP_", ref inputID, ref line);
             ++line;
 
-            GUI.Label(SLineRect(line++), "- " + StringUtils.Localize("#LOC_BDArmory_InputSettings_TargetingPod") + " -", centerLabel);//Targeting Pod
+            GUI.Label(SLineRect(line++), $"- {StringUtils.Localize("#LOC_BDArmory_InputSettings_TargetingPod")} -", centerLabel);//Targeting Pod
             InputSettingsList("TGP_", ref inputID, ref line);
             ++line;
 
-            GUI.Label(SLineRect(line++), "- " + StringUtils.Localize("#LOC_BDArmory_InputSettings_Radar") + " -", centerLabel);//Radar
+            GUI.Label(SLineRect(line++), $"- {StringUtils.Localize("#LOC_BDArmory_InputSettings_Radar")} -", centerLabel);//Radar
             InputSettingsList("RADAR_", ref inputID, ref line);
             ++line;
 
-            GUI.Label(SLineRect(line++), "- " + StringUtils.Localize("#LOC_BDArmory_InputSettings_VesselSwitcher") + " -", centerLabel);//Vessel Switcher
+            GUI.Label(SLineRect(line++), $"- {StringUtils.Localize("#LOC_BDArmory_InputSettings_VesselSwitcher")} -", centerLabel);//Vessel Switcher
             InputSettingsList("VS_", ref inputID, ref line);
             ++line;
 
-            GUI.Label(SLineRect(line++), "- " + StringUtils.Localize("#LOC_BDArmory_InputSettings_Tournament") + " -", centerLabel);//Tournament
+            GUI.Label(SLineRect(line++), $"- {StringUtils.Localize("#LOC_BDArmory_InputSettings_Tournament")} -", centerLabel);//Tournament
             InputSettingsList("TOURNAMENT_", ref inputID, ref line);
             ++line;
 
-            GUI.Label(SLineRect(line++), "- " + StringUtils.Localize("#LOC_BDArmory_InputSettings_TimeScaling") + " -", centerLabel);//Time Scaling
+            GUI.Label(SLineRect(line++), $"- {StringUtils.Localize("#LOC_BDArmory_InputSettings_TimeScaling")} -", centerLabel);//Time Scaling
             InputSettingsList("TIME_", ref inputID, ref line);
             GUI.EndScrollView();
 
@@ -3754,7 +3833,7 @@ namespace BDArmory.UI
                     typeof(BDInputSettingsFields).GetField(fieldName).SetValue(null, recorded);
                 }
 
-                label = "      " + StringUtils.Localize("#LOC_BDArmory_InputSettings_recordedInput");//Press a key or button.
+                label = $"      {StringUtils.Localize("#LOC_BDArmory_InputSettings_recordedInput")}";//Press a key or button.
             }
             else
             {
@@ -3873,15 +3952,15 @@ namespace BDArmory.UI
             TimingManager.FixedUpdateRemove(TimingManager.TimingStage.Late, Late);
             TimingManager.FixedUpdateRemove(TimingManager.TimingStage.BetterLateThanNever, BetterLateThanNever);
         }
-        void ObscenelyEarly() { Debug.Log($"DEBUG {Time.time} ObscenelyEarly, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
-        void Early() { Debug.Log($"DEBUG {Time.time} Early, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
-        void Precalc() { Debug.Log($"DEBUG {Time.time} Precalc, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
-        void Earlyish() { Debug.Log($"DEBUG {Time.time} Earlyish, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
-        void Normal() { Debug.Log($"DEBUG {Time.time} Normal, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
-        void FashionablyLate() { Debug.Log($"DEBUG {Time.time} FashionablyLate, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
-        void FlightIntegrator() { Debug.Log($"DEBUG {Time.time} FlightIntegrator, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
-        void Late() { Debug.Log($"DEBUG {Time.time} Late, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
-        void BetterLateThanNever() { Debug.Log($"DEBUG {Time.time} BetterLateThanNever, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
+        void ObscenelyEarly() { Debug.Log($"DEBUG {Time.time} ObscenelyEarly, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void Early() { Debug.Log($"DEBUG {Time.time} Early, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void Precalc() { Debug.Log($"DEBUG {Time.time} Precalc, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void Earlyish() { Debug.Log($"DEBUG {Time.time} Earlyish, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void Normal() { Debug.Log($"DEBUG {Time.time} Normal, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void FashionablyLate() { Debug.Log($"DEBUG {Time.time} FashionablyLate, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void FlightIntegrator() { Debug.Log($"DEBUG {Time.time} FlightIntegrator, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void Late() { Debug.Log($"DEBUG {Time.time} Late, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void BetterLateThanNever() { Debug.Log($"DEBUG {Time.time} BetterLateThanNever, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
 
         IEnumerator TestYieldWaitLengths()
         {

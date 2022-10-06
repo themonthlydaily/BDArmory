@@ -500,7 +500,7 @@ namespace BDArmory.WeaponMounts
 
             for (int i = 0; i < missileChildren.Length; i++)
             {
-                if (missileTransforms[i] && missileChildren[i] && !missileChildren[i].HasFired)
+                if (missileTransforms[i] && missileChildren[i])// && !missileChildren[i].HasFired)
                 {
                     missileTransforms[i].position = missileReferenceTransforms[i].position;
                     missileTransforms[i].rotation = missileReferenceTransforms[i].rotation;
@@ -529,13 +529,13 @@ namespace BDArmory.WeaponMounts
                     wm.PreviousMissile = missileChildren[index];
                 }
                 missileChildren[index].FireMissile();
-                StartCoroutine(MissileRailRoutine(missileChildren[index]));
+                StartCoroutine(MissileRailRoutine(missileChildren[index])); //turret is stil getting thrusted away despite this being behind a !relaodableRail conditional. investigate
                 if (wm)
                 {
                     wm.UpdateList();
                 }
 
-                UpdateMissileChildren();
+                if (!missileChildren[index].reloadableRail) UpdateMissileChildren();
 
                 timeFired = Time.time;
             }
@@ -578,8 +578,8 @@ namespace BDArmory.WeaponMounts
                 //Vector3 projVel = Vector3.Project(ml.vessel.Velocity-railVel, ray.direction);
 
                 ml.vessel.SetPosition(projPos);
-                ml.vessel.SetWorldVelocity(railVel + (forwardSpeed * ray.direction));
-
+                if (!ml.reloadableRail) ml.vessel.SetWorldVelocity(railVel + (forwardSpeed * ray.direction)); //this is still imparting veloctity on spawned missiles? Can function without, as long as missile turret is a static SAM site or similar
+                //else ml.reloadableRail.SpawnedMissile.vessel.SetWorldVelocity(railVel + (forwardSpeed * ray.direction));
                 yield return wait;
 
                 ray.origin = turret.pitchTransform.TransformPoint(localOrigin);
@@ -634,7 +634,7 @@ namespace BDArmory.WeaponMounts
 
             for (int i = 0; i < missileCount; i++)
             {
-                if ((missileChildren[i]) && missileChildren[i].part.name == ml.part.name)
+                if ((missileChildren[i]) && missileChildren[i].part.name == ml.part.name && !missileChildren[i].HasFired)
                 {
                     return true;
                 }
