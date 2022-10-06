@@ -327,10 +327,6 @@ namespace BDArmory.Weapons
 
         public void DetonateIfPossible()
         {
-            DetonateIfPossible(default(Vector3));
-        }
-        public void DetonateIfPossible(Vector3 direction)
-        {
             if (!HighLogic.LoadedSceneIsFlight || part == null) return;
             if (!hasDetonated && Armed)
             {
