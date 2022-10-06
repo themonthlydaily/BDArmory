@@ -341,7 +341,7 @@ namespace BDArmory.Weapons
             }
         }
 
-        private void Detonate(Vector3 direction = default(Vector3))
+        private void Detonate()
         {
             if (!hasDetonated && Armed)
             {
