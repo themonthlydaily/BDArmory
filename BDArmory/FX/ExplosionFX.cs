@@ -1147,6 +1147,11 @@ namespace BDArmory.FX
                     //eFx.AngleOfEffect = 5f;
                     eFx.cosAngleOfEffect = (float)Math.Cos(Math.PI * 5f / 180.0); // cos(5 degrees)
                     eFx.Caliber = caliber > 0 ? caliber * 0.05f : 6f;
+
+                    // Hypervelocity jet caliber determined by rule of thumb equation for the caliber based on
+                    // "The Hollow Charge Effect" Bulletin of the Institution of Mining and Metallurgy. No. 520, March 1950
+                    // by W. M. Evans. Jet is approximately 20% of the caliber.
+
                     eFx.apMod = apMod;
                     break;
                 default:
@@ -1159,6 +1164,16 @@ namespace BDArmory.FX
             if (type == "shapedcharge" || type == "continuousrod")
             {
                 eFx.penetration = ProjectileUtils.CalculatePenetration(eFx.Caliber, type == "shapedcharge" ? 5000f : ExplosionVelocity, type == "shapedcharge" ? tntMassEquivalent * 0.0555f : eFx.ProjMass, apMod, 940, 0.00000094776185184f, 0.6560606203f, 1.201909309f, 1.777919321f);
+                // Approximate fitting of mass to tntMass for modern shaped charges was done,
+                // giving the estimate of 0.0555*tntMass which works surprisingly well for modern
+                // warheads. 5000 m/s is around the average velocity of the jet. In reality, the
+                // jet has a velocity which linearly decreases from the tip to the tail, with the
+                // velocity being O(detVelocity) at the tip and O(1/4*detVelocity) at the tail.
+                // The linear estimate is also from "The Hollow Charge Effect", however this is
+                // too complex for the non-numerical penetration model used. Note that the density
+                // of the liner is far overestimated here, however this is accounted for in the
+                // estimate of the liner mass and the simple fit for liner mass of modern warheads
+                // is surprisingly good using the above formula.
             }
             else
             {
