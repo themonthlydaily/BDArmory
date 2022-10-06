@@ -908,7 +908,7 @@ namespace BDArmory.Weapons.Missiles
                 //multiLauncher.rippleRPM = wpm.rippleRPM;               
                 //if (wpm.rippleRPM > 0) multiLauncher.rippleRPM = wpm.rippleRPM;
                 multiLauncher.Team = Team;
-                if (reloadableRail.ammoCount > 1 || BDArmorySettings.INFINITE_ORDINANCE) multiLauncher.fireMissile();
+                if (reloadableRail.ammoCount >= 1 || BDArmorySettings.INFINITE_ORDINANCE) multiLauncher.fireMissile();
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: firing Multilauncher! {vessel.vesselName}; {multiLauncher.subMunitionName}");                                    
             }
             else
@@ -920,13 +920,13 @@ namespace BDArmory.Weapons.Missiles
                 }
                 else
                 {
-                    BDATargetManager.FiredMissiles.Add(this);
                     TimeFired = Time.time;
                     part.decouple(0);
                     part.Unpack();
                     vessel.vesselName = GetShortName();
                     TargetPosition = (multiLauncher ? vessel.ReferenceTransform.position + vessel.ReferenceTransform.up * 5000 : transform.position + transform.forward * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
                     MissileLaunch();
+                    BDATargetManager.FiredMissiles.Add(this);
                     wpm.heatTarget = TargetSignatureData.noTarget;
                     launched = true;
                 }
@@ -1015,7 +1015,7 @@ namespace BDArmory.Weapons.Missiles
 
                 if (sfAudioSource == null) SetupAudio();
                 sfAudioSource.PlayOneShot(SoundUtils.GetAudioClip("BDArmory/Sounds/deployClick"));
-                SourceVessel = vessel;
+                //SourceVessel = vessel;
 
                 //TARGETING
                 startDirection = transform.forward;
