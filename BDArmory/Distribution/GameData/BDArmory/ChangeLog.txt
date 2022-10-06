@@ -45,10 +45,13 @@ IMPROVEMENTS / FIXES
 		- Hydra-70 has had its penetration tweaked with apMod to match estimates of the M151 HEDP warhead penetration performance.
 		- AGM-86 now has caliber field, set to 620 mm.
 		- Adjusted 120 mm HEAT and AP rounds to have around the same amount of penetration, balanced for gameplay (210 mm / 216 mm). Realistic configs also exist under the names "120mmBulletHEAT" and "120mmBulletSabot", a commented out line in m1Abrams.cfg can be uncommented in order to use these.
+	- Offset beam-riding missile laser to the right and up from the targeting camera to mitigate issues of the camera locking on to its own missiles when on CoMLock mode, causing the targeting camera to drive missiles into the ground. Mostly affected Guard Mode behavior.
+	- Fixed missile behavior with Detonation Distance set to 0, missiles should no longer phase through armor.
 - Armor:
 	- Improved hypervelocity projectile post-penetration effects. Now Whipple shields should work properly, the more spacing between the armor plates the better the performance against hypervelocity rounds.
 	- Modified behavior of penetration formula below a projectile L/D ratio of 1 so penetration values are more consistent.
 	- Re-added temperature effects to armor protection levels, if the armor reaches its max safe temperature or goes above said temperature, performance is degraded.
+	- Added new Armor Aluminium material, based on Aluminium 7039 to provide a larger variety of armor materials to select from.
 
 v1.5.2.1
 IMPROVEMENTS / FIXES
