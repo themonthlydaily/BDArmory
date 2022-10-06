@@ -1096,7 +1096,9 @@ namespace BDArmory.Weapons.Missiles
 
                 case DetonationDistanceStates.Cruising:
                     {
-                        if (Vector3.Distance(futureMissilePosition, futureTargetPosition) < GetBlastRadius() * 10)
+                        //if (Vector3.Distance(futureMissilePosition, futureTargetPosition) < GetBlastRadius() * 10)
+                        // Replaced old proximity check with proximity check based on either detonation distance or distance traveled per frame
+                        if ((futureMissilePosition - futureTargetPosition).sqrMagnitude < 100 * (relativeSpeed > DetonationDistance ? relativeSpeed*relativeSpeed : DetonationDistance*DetonationDistance))
                         {
                             //We are now close enough to start checking the detonation distance
                             DetonationDistanceState = DetonationDistanceStates.CheckingProximity;
@@ -1107,7 +1109,8 @@ namespace BDArmory.Weapons.Missiles
 
                             if (bdModularGuidance == null) return;
 
-                            if (Vector3.Distance(futureMissilePosition, futureTargetPosition) > this.DetonationDistance) return;
+                            //if (Vector3.Distance(futureMissilePosition, futureTargetPosition) > this.DetonationDistance) return;
+                            if((futureMissilePosition - futureTargetPosition).sqrMagnitude > DetonationDistance * DetonationDistance) return;
 
                             DetonationDistanceState = DetonationDistanceStates.CheckingProximity;
                         }
@@ -1130,31 +1133,36 @@ namespace BDArmory.Weapons.Missiles
                                     proximityHits = Physics.RaycastAll(rayFuturePosition, dist, layerMask);
                                     hitCount = proximityHits.Length;
                                 }
-                                using (var hitsEnu = proximityHits.Take(hitCount).GetEnumerator())
+                                if (hitCount > 0)
                                 {
-                                    while (hitsEnu.MoveNext())
+                                    Array.Sort<RaycastHit>(proximityHits,0,hitCount, RaycastHitComparer.raycastHitComparer);
+
+                                    using (var hitsEnu = proximityHits.Take(hitCount).GetEnumerator())
                                     {
-                                        RaycastHit hit = hitsEnu.Current;
-
-                                        try
+                                        while (hitsEnu.MoveNext())
                                         {
-                                            var hitPart = hit.collider.gameObject.GetComponentInParent<Part>();
-                                            if (hitPart == null) continue;
-                                            if (ProjectileUtils.IsIgnoredPart(hitPart)) continue; // Ignore ignored parts.
+                                            RaycastHit hit = hitsEnu.Current;
 
-                                            if (hitPart.vessel != SourceVessel && hitPart.vessel != vessel)
+                                            try
                                             {
-                                                //We found a hit to other vessel
-                                                vessel.SetPosition(hit.point);
-                                                DetonationDistanceState = DetonationDistanceStates.Detonate;
-                                                Detonate();
-                                                return;
+                                                var hitPart = hit.collider.gameObject.GetComponentInParent<Part>();
+                                                if (hitPart == null) continue;
+                                                if (ProjectileUtils.IsIgnoredPart(hitPart)) continue; // Ignore ignored parts.
+
+                                                if (hitPart.vessel != SourceVessel && hitPart.vessel != vessel)
+                                                {
+                                                    //We found a hit to other vessel
+                                                    vessel.SetPosition(hit.point);
+                                                    DetonationDistanceState = DetonationDistanceStates.Detonate;
+                                                    Detonate();
+                                                    return;
+                                                }
                                             }
-                                        }
-                                        catch (Exception e)
-                                        {
-                                            // ignored
-                                            Debug.LogWarning("[BDArmory.MissileBase]: Exception thrown in CheckDetonatationState: " + e.Message + "\n" + e.StackTrace);
+                                            catch (Exception e)
+                                            {
+                                                // ignored
+                                                Debug.LogWarning("[BDArmory.MissileBase]: Exception thrown in CheckDetonatationState: " + e.Message + "\n" + e.StackTrace);
+                                            }
                                         }
                                     }
                                 }
@@ -1189,9 +1197,9 @@ namespace BDArmory.Weapons.Missiles
                                         //We found a hit a different vessel than ours
                                         if (DetonateAtMinimumDistance)
                                         {
-                                            var distance = Vector3.Distance(partHit.transform.position, vessel.CoM);
-                                            var predictedDistance = Vector3.Distance(AIUtils.PredictPosition(partHit.transform.position, partHit.vessel.Velocity(), partHit.vessel.acceleration, Time.deltaTime), AIUtils.PredictPosition(vessel, Time.deltaTime));
-                                            if (distance > predictedDistance && distance > Time.fixedDeltaTime * (float)vessel.srfSpeed) // If we're closing and not going to hit within the next update, then wait.
+                                            var distance = (partHit.transform.position - vessel.CoM).sqrMagnitude;
+                                            var predictedDistance = (AIUtils.PredictPosition(partHit.transform.position, partHit.vessel.Velocity(), partHit.vessel.acceleration, Time.deltaTime) - AIUtils.PredictPosition(vessel, Time.deltaTime)).sqrMagnitude;
+                                            if (distance > predictedDistance && distance > Time.fixedDeltaTime*Time.fixedDeltaTime * (float)vessel.srfSpeed*(float)vessel.srfSpeed) // If we're closing and not going to hit within the next update, then wait.
                                                 return;
                                         }
                                         DetonationDistanceState = DetonationDistanceStates.Detonate;
@@ -1274,5 +1282,14 @@ namespace BDArmory.Weapons.Missiles
             }
             this.part.RefreshAssociatedWindows();
         }
+    }
+
+    internal class RaycastHitComparer : IComparer<RaycastHit>
+    {
+        int IComparer<RaycastHit>.Compare(RaycastHit left, RaycastHit right)
+        {
+            return left.distance.CompareTo(right.distance);
+        }
+        public static RaycastHitComparer raycastHitComparer = new RaycastHitComparer();
     }
 }
