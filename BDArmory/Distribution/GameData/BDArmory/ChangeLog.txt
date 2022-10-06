@@ -3,7 +3,7 @@ IMPROVEMENTS / FIXES
 - General:
 	- Use an alternative method of calculating vessel bounds to get the vessel radius. — Fixes some weird results with parasite fighters from KSP's internal function for this.
 	- Missile and countermeasure settings are now accessible in the Gameplay Settings section of the BDA Settings menu.
-	- Animate animations in the physics update so that the work with time-scaling.
+	- Animate animations in the physics update so that they work with time-scaling.
 	- Localisation corrections/updates. Also in German.
 	- Lots of optimisations.
 	- Add Notes.md for devs with notes on optimisation and the current branches.
@@ -16,6 +16,8 @@ IMPROVEMENTS / FIXES
 	- Rework how damage is applied to buildings and how they regenerate.
 	- Add a building damage multiplier.
 	- Fix reverse raycasts that were using the wrong rays.
+	- Fix detonate direction in BDExplosive part, missiles/rockets with ContinuousRod/ShapedCharge warheads should now have properly oriented AoEs.
+	- EMP warheads can now be set to be hard/soft EMP in their configs.
 - AI / WM:
 	- Add a "Debug Extending" button when AI debugging is enabled that prints extending debug info when clicked if the active vessel is extending.
 	- Fix GPS missiles not obeying max missile per target setting when the target is traveling at high speeds.
@@ -52,6 +54,13 @@ IMPROVEMENTS / FIXES
 	- Modified behavior of penetration formula below a projectile L/D ratio of 1 so penetration values are more consistent.
 	- Re-added temperature effects to armor protection levels, if the armor reaches its max safe temperature or goes above said temperature, performance is degraded.
 	- Added new Armor Aluminium material, based on Aluminium 7039 to provide a larger variety of armor materials to select from.
+	- Reworks ModuleMissileRearm, now works, integrated with WM, etc.
+	- Missiles with a ModuleMissileRearm can now have reloads, be affected by Infinite Ammo.
+	- Adds MultiMissileLauncher module.
+	- Adds new Infinite Ordinance toggle, for missiles with MultiMissileLauncher.
+	- Armor Tools now displays total wing srf. area, and wingloading kg/m2.
+	- Fixes NRE with APS missile interception.
+	- Fixes Max Turret Targets not targeting more than 2 vessels.
 
 v1.5.2.1
 IMPROVEMENTS / FIXES

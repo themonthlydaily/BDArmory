@@ -2196,11 +2196,6 @@ namespace BDArmory.Control
             Vector3 localAngVel = vessel.angularVelocity;
             //test
             Vector3 currTargetDir = (targetPosition - vesselTransform.position).normalized;
-            // if (steerMode == SteerModes.NormalFlight) // This block was doing nothing... what was it originally for?
-            // {
-            //     float gRotVel = ((10f * maxAllowedGForce) / ((float)vessel.srfSpeed));
-            //     //currTargetDir = Vector3.RotateTowards(prevTargetDir, currTargetDir, gRotVel*Mathf.Deg2Rad, 0);
-            // }
             if (IsExtending || IsEvading) // If we're extending or evading, add a deviation to the fly-to direction to make us harder to hit.
             {
                 var squigglySquidTime = 90f * (float)vessel.missionTime + 8f * Mathf.Sin((float)vessel.missionTime * 6.28f) + 16f * Mathf.Sin((float)vessel.missionTime * 3.14f); // Vary the rate around 90°/s to be more unpredictable.
@@ -3304,10 +3299,6 @@ namespace BDArmory.Control
 
         void UpdateGAndAoALimits(FlightCtrlState s)
         {
-            // if (vessel.dynamicPressurekPa <= 0 || vessel.srfSpeed < takeOffSpeed || belowMinAltitude && -Vector3.Dot(vessel.ReferenceTransform.forward, vessel.upAxis) < 0.8f)
-            // {
-            //     return;
-            // }
             if (vessel.dynamicPressurekPa <= 0 || vessel.atmDensity < 0.05 || vessel.LandedOrSplashed) return; // Only measure when airborne and in sufficient atmosphere.
 
             if (lastAllowedAoA != maxAllowedAoA)
@@ -3321,43 +3312,25 @@ namespace BDArmory.Control
             float curSinAoA = Vector3.Dot(vessel.Velocity().normalized, vessel.ReferenceTransform.forward);
 
             //adjust moving averages
-            //adjust gLoad average
-            // gLoadMovingAvg *= 32f;
-            // gLoadMovingAvg -= gLoadMovingAvgArray[movingAvgIndex];
-            // gLoadMovingAvgArray[movingAvgIndex] = pitchGPerDynPres;
-            // gLoadMovingAvg += pitchGPerDynPres;
-            // gLoadMovingAvg /= 32f;
             smoothedGLoad.Update(pitchGPerDynPres);
             var gLoad = smoothedGLoad.Value;
             var gLoadPred = smoothedGLoad.At(0.1f);
             if (BDArmorySettings.DEBUG_AI || BDArmorySettings.DEBUG_TELEMETRY) debugString.AppendLine($"G: {pitchG / VehiclePhysics.Gravity.reference:F1}, G-Load: current {pitchGPerDynPres:F3}, smoothed {gLoad:F3}, pred +0.1s {gLoadPred:F3} ({gLoadPred * vessel.dynamicPressurekPa / VehiclePhysics.Gravity.reference:F1}G)");
 
-            //adjusting cosAoAAvg
-            // cosAoAMovingAvg *= 32f;
-            // cosAoAMovingAvg -= cosAoAMovingAvgArray[movingAvgIndex];
-            // cosAoAMovingAvgArray[movingAvgIndex] = curCosAoA;
-            // cosAoAMovingAvg += curCosAoA;
-            // cosAoAMovingAvg /= 32f;
             smoothedSinAoA.Update(curSinAoA);
             var sinAoA = smoothedSinAoA.Value;
             var sinAoAPred = smoothedSinAoA.At(0.1f);
             if (BDArmorySettings.DEBUG_AI || BDArmorySettings.DEBUG_TELEMETRY) debugString.AppendLine($"AoA: current: {Mathf.Rad2Deg * Mathf.Asin(curSinAoA):F2}°, smoothed {Mathf.Rad2Deg * Mathf.Asin(sinAoA):F2}°, pred +0.1s {Mathf.Rad2Deg * Mathf.Asin(sinAoAPred):F2}°");
 
-            // ++movingAvgIndex;
-            // if (movingAvgIndex == gLoadMovingAvgArray.Length)
-            //     movingAvgIndex = 0;
-
-            // if (gLoadMovingAvg < maxNegG || Math.Abs(cosAoAMovingAvg - cosAoAAtMaxNegG) < 0.005f)
             if (gLoadPred < maxNegG || Math.Abs(sinAoAPred - sinAoAAtMaxNegG) < 0.005f)
             {
-                maxNegG = gLoadPred; // gLoadMovingAvg;
-                sinAoAAtMaxNegG = sinAoAPred; //cosAoAMovingAvg;
+                maxNegG = gLoadPred;
+                sinAoAAtMaxNegG = sinAoAPred;
             }
-            // if (gLoadMovingAvg > maxPosG || Math.Abs(cosAoAMovingAvg - cosAoAAtMaxPosG) < 0.005f)
             if (gLoadPred > maxPosG || Math.Abs(sinAoAPred - sinAoAAtMaxPosG) < 0.005f)
             {
-                maxPosG = gLoadPred; // gLoadMovingAvg;
-                sinAoAAtMaxPosG = sinAoAPred; // cosAoAMovingAvg;
+                maxPosG = gLoadPred;
+                sinAoAAtMaxPosG = sinAoAPred;
             }
 
             if (sinAoAAtMaxNegG >= sinAoAAtMaxPosG)
@@ -3367,13 +3340,8 @@ namespace BDArmory.Control
                 return;
             }
 
-            // if (maxPosG > maxDynPresGRecorded)
-            //     maxDynPresGRecorded = maxPosG;
-
             if (command != PilotCommands.Waypoints) // Don't decay the highest recorded G-force when following waypoints as we're likely to be heading in straight lines for longer periods.
                 dynDynPresGRecorded *= dynDecayRate; // Decay the highest observed G-force from dynamic pressure (we want a fairly recent value in case the planes dynamics have changed).
-            // if (!vessel.LandedOrSplashed && Math.Abs(gLoadMovingAvg) > dynDynPresGRecorded)
-            //     dynDynPresGRecorded = Math.Abs(gLoadMovingAvg);
             if (!vessel.LandedOrSplashed && Math.Abs(gLoadPred) > dynDynPresGRecorded)
                 dynDynPresGRecorded = Math.Abs(gLoadPred);
 
@@ -3384,9 +3352,6 @@ namespace BDArmory.Control
 
             float AoADiff = Mathf.Max(sinAoAAtMaxPosG - sinAoAAtMaxNegG, 0.01f); // Avoid divide-by-zero.
 
-            //if (Math.Abs(pitchControlDiff) < 0.005f)
-            //    return;                 //if the pitch control values are too similar, don't bother to avoid numerical errors
-
             gAoASlopePerDynPres = (maxPosG - maxNegG) / AoADiff;
             gOffsetPerDynPres = maxPosG - gAoASlopePerDynPres * sinAoAAtMaxPosG;     //g force offset
         }
@@ -3394,8 +3359,6 @@ namespace BDArmory.Control
         void AdjustPitchForGAndAoALimits(FlightCtrlState s)
         {
             float minSinAoA, maxSinAoA;
-            //debugString += "\nMax Pos G: " + maxPosG + " @ " + cosAoAAtMaxPosG;
-            //debugString += "\nMax Neg G: " + maxNegG + " @ " + cosAoAAtMaxNegG;
 
             if (vessel.LandedOrSplashed || vessel.srfSpeed < Math.Min(minSpeed, takeOffSpeed))         //if we're going too slow, don't use this
             {
@@ -3436,7 +3399,7 @@ namespace BDArmory.Control
             //update pitch control limits as needed
             float negPitchDynPresLimit, posPitchDynPresLimit;
             negPitchDynPresLimit = posPitchDynPresLimit = 0;
-            if (curSinAoANorm < -0.15f)// || Math.Abs(negPitchScalar) < 0.01f)
+            if (curSinAoANorm < -0.15f)
             {
                 float sinAoAOffset = curSinAoANorm + 1;     //set max neg aoa to be 0
                 float AoALimScalar = Math.Abs(curSinAoANorm);
@@ -3463,7 +3426,7 @@ namespace BDArmory.Control
                 if (sinAoAOffset < 0)
                     negPitchDynPresLimit = -0.3f * sinAoAOffset;
             }
-            if (curSinAoANorm > 0.15f)// || Math.Abs(posPitchScalar) < 0.01f)
+            if (curSinAoANorm > 0.15f)
             {
                 float sinAoAOffset = curSinAoANorm - 1;     //set max pos aoa to be 0
                 float AoALimScalar = Math.Abs(curSinAoANorm);
@@ -3498,15 +3461,12 @@ namespace BDArmory.Control
             {
                 if (currentG > -(maxAllowedGForce * 0.97f * bodyGravity))
                 {
-                    negPitchDynPresLimitIntegrator -= (float)(0.15 * vessel.dynamicPressurekPa);        //jsut an override in case things break
+                    negPitchDynPresLimitIntegrator -= (float)(0.15 * vessel.dynamicPressurekPa);        //just an override in case things break
 
                     maxNegG = currentG * invVesselDynPreskPa;
                     sinAoAAtMaxNegG = curSinAoA;
 
                     negPitchDynPresLimit = 0;
-
-                    //maxPosG = 0;
-                    //cosAoAAtMaxPosG = 0;
                 }
 
                 s.pitch = negLim;
@@ -3517,15 +3477,12 @@ namespace BDArmory.Control
             {
                 if (currentG < (maxAllowedGForce * 0.97f * bodyGravity))
                 {
-                    posPitchDynPresLimitIntegrator += (float)(0.15 * vessel.dynamicPressurekPa);        //jsut an override in case things break
+                    posPitchDynPresLimitIntegrator += (float)(0.15 * vessel.dynamicPressurekPa);        //just an override in case things break
 
                     maxPosG = currentG * invVesselDynPreskPa;
                     sinAoAAtMaxPosG = curSinAoA;
 
                     posPitchDynPresLimit = 0;
-
-                    //maxNegG = 0;
-                    //cosAoAAtMaxNegG = 0;
                 }
 
                 s.pitch = posLim;
