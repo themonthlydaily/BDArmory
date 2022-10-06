@@ -524,7 +524,7 @@ namespace BDArmory.FX
 
             LoSIntermediateParts.Clear();
             var totalHitCount = CollateHits(ref lineOfSightHits, hitCount, ref reverseHits, reverseHitCount); // This is the most expensive part of this method and the cause of most of the slow-downs with explosions.
-            int ii = 0;
+            float factor = 1.0f;
             for (int i = 0; i < totalHitCount; ++i)
             {
                 hit = sortedLoSHits[i];
@@ -549,7 +549,7 @@ namespace BDArmory.FX
                         var partHP = partHit.Damage();
                         if (ProjectileUtils.IsArmorPart(partHit)) partHP = BDArmorySettings.EXP_PEN_RESIST_MULT * 100;
                         var partArmour = partHit.GetArmorThickness();
-                        var Armor = part.FindModuleImplementing<HitpointTracker>();
+                        var Armor = partHit.FindModuleImplementing<HitpointTracker>();
                         if (Armor != null)
                         {
                             if (warheadType == WarheadTypes.ShapedCharge)
@@ -561,36 +561,9 @@ namespace BDArmory.FX
                                 partArmour *= Armor.HEEquiv;
                             }
 
-                            float factor = 1.0f;
-
-                            // Exponentiation by Squaring
-                            if (ii > 0)
-                            {
-                                factor = 1.05f;
-                                int temp = ii;
-                                float temp2 = 1;
-
-                                while (temp > 1)
-                                {
-                                    if ((temp / 2) * 2 == temp)
-                                    {
-                                        factor *= factor;
-                                        temp /= 2;
-                                    }
-                                    else
-                                    {
-                                        temp2 *= factor;
-                                        factor *= factor;
-                                        temp = (temp - 1) / 2;
-                                    }
-                                }
-
-                                factor *= temp2;
-                            }
-
-                            ii++;
-
                             partArmour = factor*Mathf.Max(partArmour / Vector3.Dot((hit.point + partHit.Rigidbody.velocity * TimeIndex - Position).normalized, -hit.normal), 1);
+
+                            factor *= 1.05f;
                         }
                         var RA = partHit.FindModuleImplementing<ModuleReactiveArmor>();
                         if (RA != null)
@@ -792,8 +765,6 @@ namespace BDArmory.FX
             var realDistance = eventToExecute.Distance;
             var vesselMass = part.vessel.totalMass;
             if (vesselMass == 0) vesselMass = part.mass; // Sometimes if the root part is the only part of the vessel, then part.vessel.totalMass is 0, despite the part.mass not being 0.
-	        var cumulativeHPOfIntermediateParts = eventToExecute.IntermediateParts.Select(p => p.Item2).Sum();
-            var cumulativeArmorOfIntermediateParts = eventToExecute.IntermediateParts.Select(p => p.Item3).Sum();
             bool shapedEffect = ((warheadType == WarheadTypes.ShapedCharge || warheadType == WarheadTypes.ContinuousRod) && eventToExecute.withinAngleofEffect);
 
 
@@ -823,6 +794,9 @@ namespace BDArmory.FX
                     //if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.ExplosionFX]: " + part.name + " Within AoE of detonation: " + eventToExecute.withinAngleofEffect);
                     // Overly simplistic approach: simply reduce damage by amount of HP/2 and Armor in the way. (HP/2 to simulate weak parts not fully blocking damage.) Does not account for armour reduction or angle of incidence of intermediate parts.
                     // A better approach would be to properly calculate the damage and pressure in CalculatePartBlastEffects due to the series of parts in the way.
+
+                    var cumulativeHPOfIntermediateParts = eventToExecute.IntermediateParts.Select(p => p.Item2).Sum();
+                    var cumulativeArmorOfIntermediateParts = eventToExecute.IntermediateParts.Select(p => p.Item3).Sum();
                     var damageWithoutIntermediateParts = blastInfo.Damage;
 
                     blastInfo.Damage = Mathf.Max(0f, blastInfo.Damage - 0.5f * cumulativeHPOfIntermediateParts - cumulativeArmorOfIntermediateParts);
@@ -889,7 +863,7 @@ namespace BDArmory.FX
                                 //float anglemultiplier = (float)Math.Cos(Math.PI * HitAngle / 180.0);
                                 float anglemultiplier = Vector3.Dot((eventToExecute.HitPoint + rb.velocity * TimeIndex - Position).normalized, -eventToExecute.Hit.normal);
                                 float thickness = ProjectileUtils.CalculateThickness(part, anglemultiplier);
-                                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.ExplosionFX]: Part {part.name} hit by {warheadType}; {Math.Acos(anglemultiplier) * 180f / Math.PI} deg hit, armor thickness: {thickness}");
+                                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.ExplosionFX]: Part {part.name} hit by {warheadType}; {Mathf.Rad2Deg*Mathf.Acos(anglemultiplier)} deg hit, armor thickness: {thickness}");
                                 //float thicknessBetween = eventToExecute.IntermediateParts.Select(p => p.Item3).Sum(); //add armor thickness of intervening parts, if any
                                 if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.ExplosionFX]: Effective Armor thickness from intermediate parts: {thickness}");
                                 //float penetration = 0;
@@ -1051,7 +1025,7 @@ namespace BDArmory.FX
                     thickness *= Armor.HEEquiv;
                 }
                 thickness += eventToExecute.IntermediateParts.Select(p => p.Item3).Sum(); //add armor thickness of intervening parts, if any
-                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.ExplosiveFX]: Part {part.name} hit by shrapnel; {Math.Acos(anglemultiplier)*180f/Math.PI} deg hit, cumulative armor thickness: {thickness}");
+                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.ExplosiveFX]: Part {part.name} hit by shrapnel; {Mathf.Rad2Deg*Mathf.Acos(anglemultiplier)} deg hit, cumulative armor thickness: {thickness}");
 
                 ProjectileUtils.CalculateShrapnelDamage(part, eventToExecute.Hit, Caliber, Power, realDistance, SourceVesselName, ExplosionSource, ProjMass, -1, thickness); //part hit by shrapnel, but not pressure wave
             }
@@ -1145,7 +1119,7 @@ namespace BDArmory.FX
                     eFx.warheadType = WarheadTypes.ShapedCharge;
                     //eFx.AngleOfEffect = 10f;
                     //eFx.AngleOfEffect = 5f;
-                    eFx.cosAngleOfEffect = (float)Math.Cos(Math.PI * 5f / 180.0); // cos(5 degrees)
+                    eFx.cosAngleOfEffect = Mathf.Cos(Mathf.Rad2Deg * 5f); // cos(5 degrees)
                     eFx.Caliber = caliber > 0 ? caliber * 0.05f : 6f;
 
                     // Hypervelocity jet caliber determined by rule of thumb equation for the caliber based on
@@ -1157,7 +1131,7 @@ namespace BDArmory.FX
                 default:
                     eFx.warheadType = WarheadTypes.Standard;
                     eFx.cosAngleOfEffect = angle >= 0f ? Mathf.Clamp(angle, 0f, 180f) : 100f;
-                    eFx.cosAngleOfEffect = (float)Math.Cos(Math.PI * eFx.cosAngleOfEffect / 180.0);
+                    eFx.cosAngleOfEffect = Mathf.Cos(Mathf.Rad2Deg * eFx.cosAngleOfEffect);
                     break;
             }
 

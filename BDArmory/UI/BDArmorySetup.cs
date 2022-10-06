@@ -2872,7 +2872,7 @@ namespace BDArmory.UI
 
                         
                         GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_ArmorExplosivePenetrationResistanceMultiplier")}:  ({BDArmorySettings.EXP_PEN_RESIST_MULT})", leftLabel);
-                        BDArmorySettings.EXP_PEN_RESIST_MULT = Mathf.Round((GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_PEN_RESIST_MULT * 4f, 0f, 40f))) / 4f;
+                        BDArmorySettings.EXP_PEN_RESIST_MULT = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_PEN_RESIST_MULT, 0f, 10f), 0.25f);
 
                         GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_ExplosiveBattleDamageMultiplier")}:  ({BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE})", leftLabel);
                         BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE, 0f, 2f), 0.1f);

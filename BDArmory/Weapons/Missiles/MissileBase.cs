@@ -1231,9 +1231,9 @@ namespace BDArmory.Weapons.Missiles
                                         //We found a hit a different vessel than ours
                                         if (DetonateAtMinimumDistance)
                                         {
-                                            var distance = (partHit.transform.position - vessel.CoM).sqrMagnitude;
-                                            var predictedDistance = (AIUtils.PredictPosition(partHit.transform.position, partHit.vessel.Velocity(), partHit.vessel.acceleration, Time.deltaTime) - AIUtils.PredictPosition(vessel, Time.deltaTime)).sqrMagnitude;
-                                            if (distance > predictedDistance && distance > Time.fixedDeltaTime*Time.fixedDeltaTime * (float)vessel.srfSpeed*(float)vessel.srfSpeed) // If we're closing and not going to hit within the next update, then wait.
+                                            var distanceSqr = (partHit.transform.position - vessel.CoM).sqrMagnitude;
+                                            var predictedDistanceSqr = (AIUtils.PredictPosition(partHit.transform.position, partHit.vessel.Velocity(), partHit.vessel.acceleration, Time.deltaTime) - AIUtils.PredictPosition(vessel, Time.deltaTime)).sqrMagnitude;
+                                            if (distanceSqr > predictedDistanceSqr && distanceSqr > Time.fixedDeltaTime*Time.fixedDeltaTime * (float)vessel.srfSpeed*(float)vessel.srfSpeed) // If we're closing and not going to hit within the next update, then wait.
                                                 return;
                                         }
                                         DetonationDistanceState = DetonationDistanceStates.Detonate;
