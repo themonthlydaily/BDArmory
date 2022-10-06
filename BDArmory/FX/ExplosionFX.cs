@@ -565,10 +565,10 @@ namespace BDArmory.FX
 
                             factor *= 1.05f;
 
-                            if (BDArmorySettings.DEBUG_WEAPONS)
-                            {
-                                Debug.Log($"[BDArmory.ExplosionFX] Part: {partHit.name}; Contributing: {partArmour}mm;");
-                            }
+                            //if (BDArmorySettings.DEBUG_WEAPONS)
+                            //{
+                            //    Debug.Log($"[BDArmory.ExplosionFX] Part: {partHit.name}; Contributing: {partArmour}mm;");
+                            //}
                         }
                         var RA = partHit.FindModuleImplementing<ModuleReactiveArmor>();
                         if (RA != null)
