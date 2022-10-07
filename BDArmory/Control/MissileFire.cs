@@ -4295,6 +4295,7 @@ namespace BDArmory.Control
                             {
                                 if (mlauncher.TargetingMode == MissileBase.TargetingModes.Radar && radars.Count <= 0) continue; //dont select RH missiles when no radar aboard
                                 if (mlauncher.TargetingMode == MissileBase.TargetingModes.Laser && targetingPods.Count <= 0) continue; //don't select LH missiles when no FLIR aboard
+                                if (mlauncher.reloadableRail != null && (mlauncher.reloadableRail.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE)) continue; //don't select when out of ordinance
                                 candidateDetDist = mlauncher.DetonationDistance;
                                 candidateAccel = mlauncher.thrust / mlauncher.part.mass; //for anti-missile, prioritize proxidetonation and accel
                                 bool EMP = mlauncher.warheadType == MissileBase.WarheadTypes.EMP;
@@ -4595,6 +4596,7 @@ namespace BDArmory.Control
                             {
                                 if (mlauncher.TargetingMode == MissileBase.TargetingModes.Radar && radars.Count <= 0) continue; //dont select RH missiles when no radar aboard
                                 if (mlauncher.TargetingMode == MissileBase.TargetingModes.Laser && targetingPods.Count <= 0) continue; //don't select LH missiles when no FLIR aboard
+                                if (mlauncher.reloadableRail != null && (mlauncher.reloadableRail.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE)) continue; //don't select when out of ordinance
                                 candidateDetDist = mlauncher.DetonationDistance;
                                 candidateTurning = mlauncher.maxTurnRateDPS; //for anti-aircraft, prioritize detonation dist and turn capability
                                 candidatePriority = Mathf.RoundToInt(mlauncher.priority);
@@ -4834,6 +4836,7 @@ namespace BDArmory.Control
                         {
                             MissileLauncher Bomb = item.Current as MissileLauncher;
                             if (targetWeapon != null && targetWeapon.GetWeaponClass() == WeaponClasses.Missile) continue;
+                            if (Bomb.reloadableRail != null && (Bomb.reloadableRail.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE)) continue; //don't select when out of ordinance
                             //if (firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                             // only useful if we are flying
                             float candidateYield = Bomb.GetBlastRadius();
@@ -4924,6 +4927,7 @@ namespace BDArmory.Control
                             MissileLauncher Missile = item.Current as MissileLauncher;
                             if (Missile.TargetingMode == MissileBase.TargetingModes.Radar && radars.Count <= 0) continue; //dont select RH missiles when no radar aboard
                             if (Missile.TargetingMode == MissileBase.TargetingModes.Laser && targetingPods.Count <= 0) continue; //don't select LH missiles when no FLIR aboard
+                            if (Missile.reloadableRail != null && (Missile.reloadableRail.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE)) continue; //don't select when out of ordinance
                             if (vessel.Splashed && FlightGlobals.getAltitudeAtPos(item.Current.GetPart().transform.position) < -2) continue;
                             //if (firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                             float candidateYield = Missile.GetBlastRadius();
@@ -5000,6 +5004,7 @@ namespace BDArmory.Control
                         {
                             //if (firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                             MissileLauncher SLW = item.Current as MissileLauncher;
+                            if (SLW.reloadableRail != null && (SLW.reloadableRail.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE)) continue; //don't select when out of ordinance
                             float candidateYield = SLW.GetBlastRadius();
                             bool EMP = SLW.warheadType == MissileBase.WarheadTypes.EMP;
                             int candidatePriority = Mathf.RoundToInt(SLW.priority);
@@ -5040,6 +5045,7 @@ namespace BDArmory.Control
                             MissileLauncher SLW = item.Current as MissileLauncher;
                             if (SLW.TargetingMode == MissileBase.TargetingModes.Radar && radars.Count <= 0) continue; //dont select RH missiles when no radar aboard
                             if (SLW.TargetingMode == MissileBase.TargetingModes.Laser && targetingPods.Count <= 0) continue; //don't select LH missiles when no FLIR aboard
+                            if (SLW.reloadableRail != null && (SLW.reloadableRail.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE)) continue; //don't select when out of ordinance
                             float candidateYield = SLW.GetBlastRadius();
                             bool EMP = SLW.warheadType == MissileBase.WarheadTypes.EMP;
                             int candidatePriority = Mathf.RoundToInt(SLW.priority);
