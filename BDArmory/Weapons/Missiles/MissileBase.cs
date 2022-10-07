@@ -1233,7 +1233,10 @@ namespace BDArmory.Weapons.Missiles
                                         {
                                             var distanceSqr = (partHit.transform.position - vessel.CoM).sqrMagnitude;
                                             var predictedDistanceSqr = (AIUtils.PredictPosition(partHit.transform.position, partHit.vessel.Velocity(), partHit.vessel.acceleration, Time.deltaTime) - AIUtils.PredictPosition(vessel, Time.deltaTime)).sqrMagnitude;
-                                            if (distanceSqr > predictedDistanceSqr && distanceSqr > Time.fixedDeltaTime*Time.fixedDeltaTime * (float)vessel.srfSpeed*(float)vessel.srfSpeed) // If we're closing and not going to hit within the next update, then wait.
+                                            
+                                            //float missileDistFrame = Time.fixedDeltaTime * (float)vessel.srfSpeed;
+
+                                            if (distanceSqr > predictedDistanceSqr && distanceSqr > missileDistancePerFrame.sqrMagnitude) // If we're closing and not going to hit within the next update, then wait.
                                                 return;
                                         }
                                         DetonationDistanceState = DetonationDistanceStates.Detonate;
