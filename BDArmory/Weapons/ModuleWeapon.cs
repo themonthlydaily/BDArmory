@@ -1914,7 +1914,7 @@ namespace BDArmory.Weapons
                                     timeFired = Time.time - iTime;
 
                                     Vector3 firedVelocity = VectorUtils.GaussianDirectionDeviation(fireTransform.forward, (maxDeviation / 2)) * bulletVelocity;
-                                    pBullet.currentVelocity = (part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) + firedVelocity; // use the real velocity, w/o offloading
+                                    pBullet.currentVelocity = (part.rb.velocity + BDKrakensbane.FrameVelocityV3f) + firedVelocity; // use the real velocity, w/o offloading
 
                                     pBullet.sourceWeapon = this.part;
                                     pBullet.sourceVessel = vessel;
@@ -2029,7 +2029,7 @@ namespace BDArmory.Weapons
                                         // The following gets bullet tracers to line up properly when at orbital velocities.
                                         var bVel = pBullet.currentVelocity;
                                         var pVel = part.rb.velocity;
-                                        var kbVel = Krakensbane.GetFrameVelocityV3f();
+                                        var kbVel = BDKrakensbane.FrameVelocityV3f;
                                         pBullet.currentVelocity = firedVelocity;
                                         pBullet.MoveBullet(iTime); // Move the bullet forward by the amount of time within the physics frame determined by it's firing rate. Note: the default is 1 frame and reduces to 0.
                                         pBullet.currentVelocity = bVel;
@@ -3176,11 +3176,11 @@ namespace BDArmory.Weapons
             bool manualAiming = false;
             if (aiControlled && !slaved && weaponManager is not null && (!targetAcquired || weaponManager.staleTarget))
             {
-                if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
+                if (BDKrakensbane.IsActive)
                 {
-                    lastFinalAimTarget -= FloatingOrigin.OffsetNonKrakensbane;
+                    lastFinalAimTarget -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
 #if DEBUG
-                    debugLastTargetPosition -= FloatingOrigin.OffsetNonKrakensbane;
+                    debugLastTargetPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
 #endif
                 }
                 // Continue aiming towards where the target is expected to be while reloading based on the last measured pos, vel, acc.
@@ -3261,7 +3261,7 @@ namespace BDArmory.Weapons
 #if DEBUG
                     debugCorrection = Vector3.zero;
 #endif
-                    var kbVel = Krakensbane.GetFrameVelocityV3f();
+                    var kbVel = BDKrakensbane.FrameVelocityV3f;
                     Vector3 bulletRelativePosition, bulletEffectiveVelocity, bulletRelativeVelocity, bulletAcceleration, bulletRelativeAcceleration, targetPredictedPosition, bulletDropOffset, firingDirection, lastFiringDirection;
                     firingDirection = fireTransforms[0].forward;
                     var firePosition = fireTransforms[0].position + (baseBulletVelocity * firingDirection) * Time.fixedDeltaTime; // Bullets are initially placed up to 1 frame ahead (iTime). Not offsetting by part vel gives the correct initial placement.
@@ -3394,7 +3394,7 @@ namespace BDArmory.Weapons
                 {
                     float simTime = 0;
                     Vector3 pointingDirection = fireTransform.forward;
-                    Vector3 simVelocity = part.rb.velocity + Krakensbane.GetFrameVelocityV3f();
+                    Vector3 simVelocity = part.rb.velocity + BDKrakensbane.FrameVelocityV3f;
                     Vector3 simCurrPos = fireTransform.position;
                     Vector3 simPrevPos = simCurrPos;
                     Vector3 simStartPos = simCurrPos;
@@ -3519,7 +3519,7 @@ namespace BDArmory.Weapons
                         }
 
                         // Rotation (aero stabilize).
-                        pointingDirection = Vector3.RotateTowards(pointingDirection, simVelocity + Krakensbane.GetFrameVelocityV3f(), atmosMultiplier * (0.5f * simTime) * 50 * simDeltaTime * Mathf.Deg2Rad, 0);
+                        pointingDirection = Vector3.RotateTowards(pointingDirection, simVelocity + BDKrakensbane.FrameVelocityV3f, atmosMultiplier * (0.5f * simTime) * 50 * simDeltaTime * Mathf.Deg2Rad, 0);
 
                         // Velocity update (half of current time and half of the next... that's why it's called leapfrog).
                         if (simTime < thrustTime)
@@ -3552,7 +3552,7 @@ namespace BDArmory.Weapons
                         trajectoryRenderer.enabled = true;
                         trajectoryRenderer.positionCount = trajectoryPoints.Count;
                         int i = 0;
-                        var offset = Krakensbane.GetFrameVelocity().IsZero() ? AIUtils.PredictPosition(Vector3.zero, vessel.Velocity(), vessel.acceleration, Time.fixedDeltaTime) : Vector3.zero;
+                        var offset = BDKrakensbane.IsActive ? Vector3.zero : AIUtils.PredictPosition(Vector3.zero, vessel.Velocity(), vessel.acceleration, Time.fixedDeltaTime);
                         using (var point = trajectoryPoints.GetEnumerator())
                             while (point.MoveNext())
                             {
@@ -3661,7 +3661,7 @@ namespace BDArmory.Weapons
                 trajectoryRenderer.enabled = true;
                 trajectoryRenderer.positionCount = trajectoryPoints.Count;
                 int i = 0;
-                var offset = Krakensbane.GetFrameVelocity().IsZero() ? AIUtils.PredictPosition(Vector3.zero, vessel.Velocity(), vessel.acceleration, Time.fixedDeltaTime) : Vector3.zero;
+                var offset = BDKrakensbane.IsActive ? Vector3.zero : AIUtils.PredictPosition(Vector3.zero, vessel.Velocity(), vessel.acceleration, Time.fixedDeltaTime);
                 using (var point = trajectoryPoints.GetEnumerator())
                     while (point.MoveNext())
                     {
@@ -3890,7 +3890,7 @@ namespace BDArmory.Weapons
             }
 
             // Projectile. Use bullet velocity or estimate of the rocket velocity post-thrust.
-            var projectileEffectiveVelocity = part.rb.velocity + (eWeaponType == WeaponTypes.Rocket ? (Krakensbane.GetFrameVelocityV3f() + thrust * thrustTime / rocketMass * firingDirection) : (baseBulletVelocity * firingDirection));
+            var projectileEffectiveVelocity = part.rb.velocity + (eWeaponType == WeaponTypes.Rocket ? (BDKrakensbane.FrameVelocityV3f + thrust * thrustTime / rocketMass * firingDirection) : (baseBulletVelocity * firingDirection));
             var gravity = (Vector3)FlightGlobals.getGeeForceAtPosition(fireTransform.position); // Use the local gravity value as long distance doesn't really matter here.
             var projectileAcceleration = bulletDrop || eWeaponType == WeaponTypes.Rocket ? gravity : Vector3.zero; // Drag is ignored.
 
@@ -4447,7 +4447,7 @@ namespace BDArmory.Weapons
                     slaved = true;
                     targetRadius = weaponManager.slavedTarget.vessel != null ? weaponManager.slavedTarget.vessel.GetRadius() : 35f;
                     targetPosition = weaponManager.slavedPosition;
-                    targetVelocity = weaponManager.slavedTarget.vessel != null ? weaponManager.slavedTarget.vessel.rb_velocity : (weaponManager.slavedVelocity - Krakensbane.GetFrameVelocityV3f());
+                    targetVelocity = weaponManager.slavedTarget.vessel != null ? weaponManager.slavedTarget.vessel.rb_velocity : (weaponManager.slavedVelocity - BDKrakensbane.FrameVelocityV3f);
                     //targetAcceleration = weaponManager.slavedTarget.vessel != null ? weaponManager.slavedTarget.vessel.acceleration : weaponManager.slavedAcceleration;
                     //CS0172 Type of conditional expression cannot be determined because 'Vector3' and 'Vector3' implicitly convert to one another
                     if (weaponManager.slavedTarget.vessel != null) targetAcceleration = weaponManager.slavedTarget.vessel.acceleration;
@@ -4461,7 +4461,7 @@ namespace BDArmory.Weapons
                 if (weaponManager.vesselRadarData && weaponManager.vesselRadarData.locked)
                 {
                     TargetSignatureData targetData = weaponManager.vesselRadarData.lockedTargetData.targetData;
-                    targetVelocity = targetData.velocity - Krakensbane.GetFrameVelocityV3f();
+                    targetVelocity = targetData.velocity - BDKrakensbane.FrameVelocityV3f;
                     targetPosition = targetData.predictedPosition;
                     targetRadius = 35f;
                     targetAcceleration = targetData.acceleration;
@@ -4649,7 +4649,7 @@ namespace BDArmory.Weapons
                         targetVelocity = visualTargetPart.vessel.rb_velocity;
                         targetPosition = visualTargetPart.transform.position;
                     }
-                    //targetVelocity -= Krakensbane.GetFrameVelocityV3f();
+                    //targetVelocity -= BDKrakensbane.FrameVelocity;
                     targetRadius = 1;
 
                     targetAcceleration = visualTargetPart != null && visualTargetPart.vessel != null ? (Vector3)visualTargetPart.vessel.acceleration : Vector3.zero;

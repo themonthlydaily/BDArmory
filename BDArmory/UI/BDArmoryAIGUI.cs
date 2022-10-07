@@ -358,7 +358,7 @@ namespace BDArmory.UI
                         { "waypointPreRollTime", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.waypointPreRollTime, 0, 2) },
                         { "waypointYawAuthorityTime", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.waypointYawAuthorityTime, 0, 10) },
                         { "maxAllowedGForce", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAllowedGForce, 2, 45) },
-                        { "maxAllowedAoA", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAllowedAoA, 0, 85) },
+                        { "maxAllowedAoA", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAllowedAoA, 0, 90) },
 
                         { "minEvasionTime", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.minEvasionTime, 0, 1) },
                         { "evasionNonlinearity", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionNonlinearity, 0, 10) },
@@ -435,7 +435,7 @@ namespace BDArmory.UI
                     inputFields["idleSpeed"].maxValue = ActivePilot.UpToEleven ? 3000 : 200;
 
                     inputFields["maxAllowedGForce"].maxValue = ActivePilot.UpToEleven ? 1000 : 45;
-                    inputFields["maxAllowedAoA"].maxValue = ActivePilot.UpToEleven ? 180 : 85;
+                    inputFields["maxAllowedAoA"].maxValue = ActivePilot.UpToEleven ? 180 : 90;
 
                     inputFields["minEvasionTime"].maxValue = ActivePilot.UpToEleven ? 10 : 1;
                     inputFields["evasionNonlinearity"].maxValue = ActivePilot.UpToEleven ? 90 : 10;
@@ -1661,7 +1661,7 @@ namespace BDArmory.UI
                             GUI.Label(SettinglabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_maxAllowedAoA") + ": " + ActivePilot.maxAllowedAoA.ToString("0.0"), Label);//"dynamic damping min"
                             if (!NumFieldsEnabled)
                             {
-                                ActivePilot.maxAllowedAoA = BDAMath.RoundToUnit(GUI.HorizontalSlider(SettingSliderRect(leftIndent, ctrlLines, contentWidth), ActivePilot.maxAllowedAoA, 0, ActivePilot.UpToEleven ? 180 : 85), 2.5f);
+                                ActivePilot.maxAllowedAoA = BDAMath.RoundToUnit(GUI.HorizontalSlider(SettingSliderRect(leftIndent, ctrlLines, contentWidth), ActivePilot.maxAllowedAoA, 0f, ActivePilot.UpToEleven ? 180f : 90f), 2.5f);
                             }
                             else
                             {
