@@ -505,22 +505,24 @@ namespace BDArmory.FX
             var partPosition = part.transform.position;
             Ray partRay = new Ray(Position, partPosition - Position);
 
-            var hitCount = Physics.RaycastNonAlloc(partRay, lineOfSightHits, blastRange, explosionLayerMask);
+            float range = blastRange > SCRange ? blastRange : SCRange;
+
+            var hitCount = Physics.RaycastNonAlloc(partRay, lineOfSightHits, range, explosionLayerMask);
             if (hitCount == lineOfSightHits.Length) // If there's a whole bunch of stuff in the way (unlikely), then we need to increase the size of our hits buffer.
             {
-                lineOfSightHits = Physics.RaycastAll(partRay, blastRange, explosionLayerMask);
+                lineOfSightHits = Physics.RaycastAll(partRay, range, explosionLayerMask);
                 hitCount = lineOfSightHits.Length;
             }
             //check if explosion is originating inside a part
-            Ray reverseRay = new Ray(partRay.origin + blastRange * partRay.direction, -partRay.direction);
-            int reverseHitCount = Physics.RaycastNonAlloc(reverseRay, reverseHits, blastRange, explosionLayerMask);
+            Ray reverseRay = new Ray(partRay.origin + range * partRay.direction, -partRay.direction);
+            int reverseHitCount = Physics.RaycastNonAlloc(reverseRay, reverseHits, range, explosionLayerMask);
             if (reverseHitCount == reverseHits.Length)
             {
-                reverseHits = Physics.RaycastAll(reverseRay, blastRange, explosionLayerMask);
+                reverseHits = Physics.RaycastAll(reverseRay, range, explosionLayerMask);
                 reverseHitCount = reverseHits.Length;
             }
             for (int i = 0; i < reverseHitCount; ++i)
-            { reverseHits[i].distance = blastRange - reverseHits[i].distance; }
+            { reverseHits[i].distance = range - reverseHits[i].distance; }
 
             LoSIntermediateParts.Clear();
             var totalHitCount = CollateHits(ref lineOfSightHits, hitCount, ref reverseHits, reverseHitCount); // This is the most expensive part of this method and the cause of most of the slow-downs with explosions.
@@ -563,14 +565,14 @@ namespace BDArmory.FX
 
                             float armorCos = Mathf.Abs(Vector3.Dot((hit.point + partHit.Rigidbody.velocity * TimeIndex - Position).normalized, -hit.normal));
 
+                            //if (BDArmorySettings.DEBUG_WEAPONS)
+                            //{
+                            //    Debug.Log($"[BDArmory.ExplosionFX] Part: {partHit.name}; Thickness: {partArmour}mm; Angle: {Mathf.Rad2Deg * Mathf.Acos(armorCos)}; Contributed: {factor * Mathf.Max(partArmour / armorCos, 1)}mm; Distance: {hit.distance};");
+                            //}
+
                             partArmour = factor*Mathf.Max(partArmour / armorCos, 1);
 
                             factor *= 1.05f;
-
-                            if (BDArmorySettings.DEBUG_WEAPONS)
-                            {
-                                Debug.Log($"[BDArmory.ExplosionFX] Part: {partHit.name}; Contributing: {partArmour}mm; Angle: {Mathf.Rad2Deg*Mathf.Acos(armorCos)}");
-                            }
                         }
                         var RA = partHit.FindModuleImplementing<ModuleReactiveArmor>();
                         if (RA != null)

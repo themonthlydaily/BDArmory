@@ -1313,13 +1313,16 @@ namespace BDArmory.Targeting
                     KerbalEVA hitEVA = rayHit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
                     Part p = hitEVA ? hitEVA.part : rayHit.collider.GetComponentInParent<Part>();
 
-                    if (!hitEVA)
+                    bool pCheck = false;
+
+                    if (p && p.vessel)
                     {
                         var pMissile = p.FindModuleImplementing<MissileLauncher>();
                         if (pMissile != null)
                         {
                             if (pMissile.SourceVessel == vessel) return;
                         }
+                        pCheck = true;
                     }
 
                     groundStabilized = true;
@@ -1328,7 +1331,7 @@ namespace BDArmory.Targeting
                     if (CoMLock)
                     {
                         
-                        if (p && p.vessel && p.vessel.CoM != Vector3.zero)
+                        if (pCheck && p.vessel.CoM != Vector3.zero)
                         {
                             groundTargetPosition = p.vessel.CoM + (p.vessel.Velocity() * Time.fixedDeltaTime);
                             StartCoroutine(StabilizeNextFrame());
