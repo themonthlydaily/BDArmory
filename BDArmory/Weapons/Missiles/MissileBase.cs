@@ -374,8 +374,9 @@ namespace BDArmory.Weapons.Missiles
             }
         }
 
-        public void Start()
+        public override void OnAwake()
         {
+            base.OnAwake();
             if (reloadableRail == null)
             {
                 reloadableRail = GetPart().FindModuleImplementing<ModuleMissileRearm>();
