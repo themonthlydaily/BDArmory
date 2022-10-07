@@ -230,7 +230,7 @@ namespace BDArmory.FX
                 //    Debug.Log("[BDArmory.ExplosionFX] SCRange: " + SCRange + "m. Normalized Direction: " + Direction.normalized.ToString("G4"));
                 //}
 
-                Ray SCRay = new Ray(Position, SCRange > Range ? (Direction.normalized * SCRange) : (Direction.normalized * Range));
+                Ray SCRay = new Ray(Position, SCRange > Range ? (Direction * SCRange) : (Direction * Range));
                 //Ray SCRay = new Ray(Position, (Direction.normalized * Range));
                 var hitCount = Physics.RaycastNonAlloc(SCRay, shapedChargeHits, SCRange > Range ? SCRange : Range, explosionLayerMask);
                 if (hitCount == shapedChargeHits.Length) // If there's a whole bunch of stuff in the way (unlikely), then we need to increase the size of our hits buffer.
