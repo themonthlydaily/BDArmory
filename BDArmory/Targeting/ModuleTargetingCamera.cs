@@ -1317,7 +1317,7 @@ namespace BDArmory.Targeting
 
                     if (p && p.vessel)
                     {
-                        var pMissile = p.FindModuleImplementing<MissileLauncher>();
+                        var pMissile = VesselModuleRegistry.GetModule<MissileBase>(p.vessel);
                         if (pMissile != null)
                         {
                             if (pMissile.SourceVessel == vessel) return;
