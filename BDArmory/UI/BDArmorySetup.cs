@@ -2492,12 +2492,48 @@ namespace BDArmory.UI
 #if DEBUG  // Only visible when compiled in Debug configuration.
                     if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
                     {
+                        if (GUI.Button(SLineRect(++line), "Test Collider.ClosestPoint[OnBounds]"))
+                        {
+                            var watch = new System.Diagnostics.Stopwatch();
+                            float µsResolution = 1e6f / System.Diagnostics.Stopwatch.Frequency;
+                            int N = 1 << 16;
+                            Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+                            int layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels | LayerMasks.Scenery);
+                            float dist = 10000;
+                            RaycastHit hit;
+                            Vector3 closestPoint = default;
+                            watch.Start();
+                            if (Physics.Raycast(ray, out hit, dist, layerMask))
+                            {
+                                watch.Stop();
+                                var raycastTicks = watch.ElapsedTicks;
+                                string raycastString = $"Raycast took {raycastTicks * µsResolution:G3}µs";
+                                Part partHit = hit.collider.GetComponentInParent<Part>();
+                                MeshCollider mcol = null;
+                                bool isMeshCollider = false;
+                                bool isNonConvexMeshCollider = false;
+                                watch.Reset(); watch.Start();
+                                for (int i = 0; i < N; ++i)
+                                {
+                                    mcol = hit.collider as MeshCollider;
+                                    isMeshCollider = mcol != null;
+                                    if (isMeshCollider && !mcol.convex)  // non-convex mesh colliders are expensive to use ClosestPoint on.
+                                    {
+                                        isNonConvexMeshCollider = true;
+                                        closestPoint = hit.collider.ClosestPointOnBounds(ray.origin);
+                                    }
+                                    else
+                                        closestPoint = hit.collider.ClosestPoint(ray.origin);
+                                }
+                                watch.Stop();
+                                Debug.Log($"DEBUG {raycastString}, {(isNonConvexMeshCollider ? "ClosestPointOnBounds" : "ClosestPoint")} ({closestPoint}) on{(isMeshCollider ? $" {(isNonConvexMeshCollider ? "non-" : "")}convex mesh" : "")} collider {hit.collider} from camera ({ray.origin}) took {watch.ElapsedTicks * µsResolution / N:G3}µs{(partHit != null ? $", offset from part ({partHit.name}): {closestPoint - partHit.transform.position}" : "")}, offset from hit: {hit.point - closestPoint}");
+                            }
+                        }
                         if (GUI.Button(SLineRect(++line), "Test 2x Raycast vs RaycastNonAlloc"))
                         {
                             var watch = new System.Diagnostics.Stopwatch();
                             float µsResolution = 1e6f / System.Diagnostics.Stopwatch.Frequency;
                             int N = 1 << 20;
-                            var tic = Time.realtimeSinceStartup;
                             Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
                             RaycastHit hit;
                             RaycastHit[] hits = new RaycastHit[100];
@@ -2513,7 +2549,6 @@ namespace BDArmory.UI
                             watch.Stop();
                             Debug.Log($"DEBUG Raycast 2x (hit? {didHit}) took {watch.ElapsedTicks * µsResolution / N:G3}µs");
                             int hitCount = 0;
-                            tic = Time.realtimeSinceStartup;
                             watch.Reset(); watch.Start();
                             for (int i = 0; i < N; ++i)
                                 hitCount = Physics.RaycastNonAlloc(ray, hits, dist, layerMask);
