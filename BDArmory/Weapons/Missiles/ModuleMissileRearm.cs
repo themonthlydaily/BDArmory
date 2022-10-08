@@ -26,7 +26,7 @@ namespace BDArmory.Weapons.Missiles
 UI_FloatRange(minValue = 1f, maxValue = 4, stepIncrement = 1f, scene = UI_Scene.Editor)]
         public float ammoCount = 1; //need to figure out where ammo is stored, for mass addition/subtraction - in the missile? external missile ammo bin? CoM?
 
-        [KSPField]
+        [KSPField(isPersistant = true)]
         public string MissileName = "bahaAim120";
 
         [KSPField] public float reloadTime = 5f;
@@ -113,14 +113,14 @@ UI_FloatRange(minValue = 1f, maxValue = 4, stepIncrement = 1f, scene = UI_Scene.
             MissileLauncher ml = part.FindModuleImplementing<MissileLauncher>();
             {
                 ml.reloadableRail = this;
-                //Debug.Log("[BDArmory.ModuleMissileRearm]: " + MissileName);
                 using (var parts = PartLoader.LoadedPartsList.GetEnumerator())
                     while (parts.MoveNext())
                     {
                         if (parts.Current.partConfig == null || parts.Current.partPrefab == null)
                             continue;
                         if (!parts.Current.partPrefab.partInfo.name.Contains(MissileName)) continue;
-                        missilePart = parts.Current;                        
+                        missilePart = parts.Current;
+                        Debug.Log($"[BDArmory.ModuleMissileRearm]: looking for {MissileName}; found {missilePart.partPrefab.partInfo.name}");
                         break;
                     }
                 tntmass = missilePart.partPrefab.FindModuleImplementing<BDExplosivePart>().tntMass;

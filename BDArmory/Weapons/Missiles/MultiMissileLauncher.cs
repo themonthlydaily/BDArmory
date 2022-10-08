@@ -26,8 +26,8 @@ namespace BDArmory.Weapons.Missiles
         Coroutine missileSalvo;
 
         Transform[] launchTransforms;
-        [KSPField] public string subMunitionName; //name of missile in .cfg - e.g. "bahaAim120"
-        [KSPField] public string subMunitionPath; //model path for missile
+        [KSPField(isPersistant = true)] public string subMunitionName; //name of missile in .cfg - e.g. "bahaAim120"
+        [KSPField(isPersistant = true)] public string subMunitionPath; //model path for missile
         [KSPField] public string launchTransformName; //name of transform launcTransforms are parented to - see Rocketlauncher transform hierarchy
         [KSPField] public int salvoSize = 1; //leave blank to have salvoSize = launchTransforms.count
         [KSPField] public bool isClusterMissile = false; //cluster submunitions deployed instead of standard detonation? Fold this into warHeadType?
@@ -43,6 +43,8 @@ namespace BDArmory.Weapons.Missiles
         MissileLauncher missileLauncher = null;
         MissileFire wpm = null;
         private int tubesFired = 0;
+        [KSPField(isPersistant = true)]
+        private bool LoadoutModified = false;
         Part SymPart = null;
         public BDTeam Team = BDTeam.Get("Neutral");
         public void Start()
@@ -86,6 +88,21 @@ namespace BDArmory.Weapons.Missiles
                     }                
             }
             wpm = VesselModuleRegistry.GetMissileFire(missileLauncher.vessel, true);
+            if (LoadoutModified)
+            {
+                missileSpawner.MissileName = subMunitionName;
+                missileSpawner.UpdateMissileValues();
+                using (var parts = PartLoader.LoadedPartsList.GetEnumerator())
+                    while (parts.MoveNext())
+                    {
+                        if (parts.Current.partConfig == null || parts.Current.partPrefab == null)
+                            continue;
+                        if (!parts.Current.partPrefab.partInfo.name.Contains(subMunitionName)) continue;
+                        UpdateFields(parts.Current.partPrefab.FindModuleImplementing<MissileLauncher>());
+                        break;
+                    }
+                
+            }
         }
         private void OnDestroy()
         {
@@ -120,18 +137,30 @@ namespace BDArmory.Weapons.Missiles
                             {
                                 if (missile == null) return;
 
-                                if (missile.FindModuleImplementing<MissileLauncher>()) 
+                                if (missile.FindModuleImplementing<MissileLauncher>())
                                 {
                                     subMunitionName = missile.name;
-                                    Debug.Log($"[BDArmory.MultiMissileLauncher] new submunition name: {subMunitionName}"); //find out what is throwing an error, NRE
-                                    subMunitionPath = GetMeshurl((UrlDir.UrlConfig)GameDatabase.Instance.root.GetConfigs(missile.partInfo.partConfig.name)); //might be easier to mess around with MeshFilter instead?
+                                    //Debug.Log($"[BDArmory.MultiMissileLauncher] new submunition name: {subMunitionName}"); //find out what is throwing an error, NRE
+                                    //Debug.Log($"[BDArmory.MultiMissileLauncher] partConfig {missile.partInfo.partConfig}"); //ok, this is printing the actual .cfg, which if combined with partURL and the .cfg mesh = / MODEl URL would give the submunition path
+
+                                    subMunitionPath = GetMeshurl((UrlDir.UrlConfig)GameDatabase.Instance.root.GetConfig(missile.partInfo.partUrl)); //might be easier to mess around with MeshFilter instead?
                                     PopulateMissileDummies(true);
+                                    MissileLauncher MLConfig = missile.FindModuleImplementing<MissileLauncher>();
+                                    LoadoutModified = true;
+                                    if (missileSpawner)
+                                    {
+                                        missileSpawner.MissileName = subMunitionName;
+                                        missileSpawner.UpdateMissileValues();
+                                    }
+                                    UpdateFields(MLConfig);
+                                    //method to delete attached part in SPH/VAB?
                                 }
                             }
                         }
                     }
             }
         }
+        
         private string GetMeshurl(UrlDir.UrlConfig cfgdir)
         {
             string mesh = "model";
@@ -143,27 +172,69 @@ namespace BDArmory.Weapons.Missiles
                 string[] words = mesh.Split(sep);
                 mesh = words[0];
             }
-            string filename = string.Format("{0}" + "/" + "{1}.mu", cfgdir.parent.parent.path, mesh);
             string url = string.Format("{0}/{1}", cfgdir.parent.parent.url, mesh);
-            Debug.Log($"[BDArmory.MultiMissileLauncher] Found model URL of {url}");
-            if (!System.IO.File.Exists(filename))
-            {
-                string[] files = System.IO.Directory.GetFiles(cfgdir.parent.parent.path, "*.mu");
-                if (files.Length != 0)
-                {
-                    files[0] = files[0].Remove(0, cfgdir.parent.parent.path.Length);
-                    char[] sep = { '\\', '.', '/' };
-                    string[] words = files[0].Split(sep);
-                    url = url.Substring(0, url.LastIndexOf('/') + 1) + words[1];
-                    Debug.Log($"[BDArmory.MultiMissileLauncher] Original URL not found! Using {url}");
-                }
-                else
-                {
-                    Debug.LogWarning("No mesh found, using default");
-                }
-            }
+            Debug.Log($"[BDArmory.MultiMissileLauncher] Found model URL of {url}");            
             return url;
         }
+
+        void UpdateFields(MissileLauncher MLConfig)
+        {
+            missileLauncher.homingType = MLConfig.homingType;
+            missileLauncher.targetingType = MLConfig.targetingType;
+            missileLauncher.missileType = MLConfig.missileType;
+            missileLauncher.maxStaticLaunchRange = MLConfig.maxStaticLaunchRange;
+            missileLauncher.minStaticLaunchRange = MLConfig.minStaticLaunchRange;
+            missileLauncher.engageRangeMin = MLConfig.minStaticLaunchRange;
+            missileLauncher.engageRangeMax = MLConfig.maxStaticLaunchRange;
+            missileLauncher.maxOffBoresight = MLConfig.maxOffBoresight;
+            missileLauncher.DetonateAtMinimumDistance = MLConfig.DetonateAtMinimumDistance;
+            missileLauncher.lockedSensorFOV = MLConfig.lockedSensorFOV;
+            missileLauncher.lockedSensorFOVBias = MLConfig.lockedSensorFOVBias;
+            missileLauncher.lockedSensorVelocityBias = MLConfig.lockedSensorVelocityBias;
+            missileLauncher.heatThreshold = MLConfig.heatThreshold;
+            missileLauncher.chaffEffectivity = MLConfig.chaffEffectivity;
+            missileLauncher.allAspect = MLConfig.allAspect;
+            missileLauncher.uncagedLock = MLConfig.uncagedLock;
+            missileLauncher.isTimed = MLConfig.isTimed;
+            missileLauncher.radarLOAL = MLConfig.radarLOAL;
+            missileLauncher.dropTime = MLConfig.dropTime;
+            missileLauncher.detonationTime = MLConfig.detonationTime;
+            missileLauncher.DetonationDistance = MLConfig.DetonationDistance;
+            missileLauncher.activeRadarRange = MLConfig.activeRadarRange;
+            missileLauncher.activeRadarLockTrackCurve = MLConfig.activeRadarLockTrackCurve;
+            missileLauncher.BallisticOverShootFactor = MLConfig.BallisticOverShootFactor;
+            missileLauncher.BallisticAngle = MLConfig.BallisticAngle;
+            missileLauncher.CruiseAltitude = MLConfig.CruiseAltitude;
+            missileLauncher.CruiseSpeed = MLConfig.CruiseSpeed;
+            missileLauncher.CruisePredictionTime = MLConfig.CruisePredictionTime;
+            missileLauncher.antiradTargets = MLConfig.antiradTargets;
+            missileLauncher.steerMult = MLConfig.steerMult;
+            missileLauncher.thrust = MLConfig.thrust;
+            missileLauncher.maxAoA = MLConfig.maxAoA;
+            missileLauncher.decoupleForward = MLConfig.decoupleForward;
+            missileLauncher.decoupleSpeed = MLConfig.decoupleSpeed;
+            missileLauncher.thrust = MLConfig.thrust;
+            missileLauncher.maxAoA = MLConfig.maxAoA;
+            missileLauncher.clearanceRadius = MLConfig.clearanceRadius;
+            missileLauncher.clearanceLength = MLConfig.clearanceLength;
+            missileLauncher.optimumAirspeed = MLConfig.optimumAirspeed;
+            missileLauncher.blastRadius = MLConfig.blastRadius;
+            missileLauncher.maxTurnRateDPS = MLConfig.maxTurnRateDPS;
+            missileLauncher.proxyDetonate = MLConfig.proxyDetonate;
+            missileLauncher.maxAltitude = MLConfig.maxAltitude;
+            missileLauncher.terminalManeuvering = MLConfig.terminalManeuvering;
+            missileLauncher.terminalGuidanceType = MLConfig.terminalGuidanceType;
+            missileLauncher.terminalGuidanceShouldActivate = MLConfig.terminalGuidanceShouldActivate;
+            missileLauncher.torpedo = MLConfig.torpedo;
+            missileLauncher.engageAir = MLConfig.engageAir;
+            missileLauncher.engageGround = MLConfig.engageGround;
+            missileLauncher.engageMissile = MLConfig.engageMissile;
+            missileLauncher.engageSLW = MLConfig.engageSLW;
+            missileLauncher.shortName = MLConfig.shortName;
+            GUIUtils.RefreshAssociatedWindows(missileLauncher.part);
+            missileLauncher.SetFields();
+        }
+
 
         void MakeMissileArray()
         {
@@ -185,10 +256,10 @@ namespace BDArmory.Weapons.Missiles
         }
         public void PopulateMissileDummies(bool refresh = false)
         {
-            SetupMissileDummyPool(subMunitionPath);
             if (refresh)
             {
-                foreach (var existingDummy in part.GetComponents<MissileDummy>())
+                SetupMissileDummyPool(subMunitionPath);
+                foreach (var existingDummy in part.GetComponentsInChildren<MissileDummy>())
                 {
                     existingDummy.Deactivate(); //if changing out missiles loaded into a VLS or similar, reset missile dummies
                 }
@@ -497,7 +568,9 @@ namespace BDArmory.Weapons.Missiles
                 Template.AddComponent<MissileDummy>();
                 mslDummyPool[key] = ObjectPool.CreateObjectPool(Template, 10, true, true);
             }
+
         }
+
     }
 }
 
