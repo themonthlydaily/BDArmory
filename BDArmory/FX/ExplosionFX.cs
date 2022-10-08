@@ -550,10 +550,14 @@ namespace BDArmory.FX
                     {
                         var partHP = partHit.Damage();
                         if (ProjectileUtils.IsArmorPart(partHit)) partHP = BDArmorySettings.EXP_PEN_RESIST_MULT * 100;
-                        var partArmour = partHit.GetArmorThickness();
+                        //var partArmour = partHit.GetArmorThickness();
+                        float partArmour = 0f;
                         var Armor = partHit.FindModuleImplementing<HitpointTracker>();
                         if (Armor != null)
                         {
+                            float armorCos = Mathf.Abs(Vector3.Dot((hit.point + partHit.Rigidbody.velocity * TimeIndex - Position).normalized, -hit.normal));
+                            partArmour = ProjectileUtils.CalculateThickness(part, armorCos);
+
                             if (warheadType == WarheadTypes.ShapedCharge)
                             {
                                 partArmour *= Armor.HEATEquiv;
@@ -562,8 +566,6 @@ namespace BDArmory.FX
                             {
                                 partArmour *= Armor.HEEquiv;
                             }
-
-                            float armorCos = Mathf.Abs(Vector3.Dot((hit.point + partHit.Rigidbody.velocity * TimeIndex - Position).normalized, -hit.normal));
 
                             //if (BDArmorySettings.DEBUG_WEAPONS)
                             //{
@@ -1128,7 +1130,7 @@ namespace BDArmory.FX
                     eFx.warheadType = WarheadTypes.ShapedCharge;
                     //eFx.AngleOfEffect = 10f;
                     //eFx.AngleOfEffect = 5f;
-                    eFx.cosAngleOfEffect = Mathf.Cos(Mathf.Rad2Deg * 5f); // cos(5 degrees)
+                    eFx.cosAngleOfEffect = Mathf.Cos(Mathf.Rad2Deg * 2.5f); // cos(5 degrees)
                     eFx.Caliber = caliber > 0 ? caliber * 0.05f : 6f;
 
                     // Hypervelocity jet caliber determined by rule of thumb equation for the caliber based on

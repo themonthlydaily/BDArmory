@@ -2005,7 +2005,7 @@ namespace BDArmory.Weapons.Missiles
                 guidanceActive = false;
                 return;
             }
-            Ray laserBeam = new Ray(targetingPod.cameraParentTransform.position + targetingPod.cameraParentTransform.right*0.25f + targetingPod.cameraParentTransform.up*0.2f + (targetingPod.vessel.Velocity() * Time.fixedDeltaTime), targetingPod.targetPointPosition - targetingPod.cameraParentTransform.position);
+            Ray laserBeam = new Ray(targetingPod.cameraParentTransform.position + (targetingPod.vessel.Velocity() * Time.fixedDeltaTime), targetingPod.targetPointPosition - targetingPod.cameraParentTransform.position);
             Vector3 target = MissileGuidance.GetBeamRideTarget(laserBeam, part.transform.position, vessel.Velocity(), beamCorrectionFactor, beamCorrectionDamping, (TimeIndex > 0.25f ? previousBeam : laserBeam));
             previousBeam = laserBeam;
             DrawDebugLine(part.transform.position, target);
