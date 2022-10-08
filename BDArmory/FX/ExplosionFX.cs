@@ -572,7 +572,7 @@ namespace BDArmory.FX
                             //    Debug.Log($"[BDArmory.ExplosionFX] Part: {partHit.name}; Thickness: {partArmour}mm; Angle: {Mathf.Rad2Deg * Mathf.Acos(armorCos)}; Contributed: {factor * Mathf.Max(partArmour / armorCos, 1)}mm; Distance: {hit.distance};");
                             //}
 
-                            partArmour = factor*Mathf.Max(partArmour / armorCos, 1);
+                            partArmour *= factor;
 
                             factor *= 1.05f;
                         }
