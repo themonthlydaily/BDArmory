@@ -875,18 +875,32 @@ namespace BDArmory.UI
 
             if (Time.time - dependencyLastCheckTime > (dependencyWarnings.Count() == 0 ? 60 : 5)) // Only check once per minute if no issues are found, otherwise 5s.
             {
-                dependencyLastCheckTime = Time.time;
-                dependencyWarnings.Clear();
-                if (!ModuleManagerLoaded) dependencyWarnings.Add("Module Manager dependency is missing!");
-                if (!PhysicsRangeExtenderLoaded) dependencyWarnings.Add("Physics Range Extender dependency is missing!");
-                else if (BDACompetitionMode.Instance != null && (BDACompetitionMode.Instance.competitionIsActive || BDACompetitionMode.Instance.competitionStarting) && !(bool)PREModEnabledField.GetValue(null)) dependencyWarnings.Add("Physics Range Extender is disabled!");
-                if (dependencyWarnings.Count() > 0) dependencyWarnings.Add("BDArmory will not work properly.");
+                CheckDependencies();
             }
             if (dependencyWarnings.Count() > 0)
             {
                 GUI.Label(new Rect(Screen.width / 2 - 300 + 2, Screen.height / 6 + 2, 600, 100), string.Join("\n", dependencyWarnings), redErrorShadowStyle);
                 GUI.Label(new Rect(Screen.width / 2 - 300, Screen.height / 6, 600, 100), string.Join("\n", dependencyWarnings), redErrorStyle);
             }
+        }
+
+        /// <summary>
+        /// Check that the dependencies are satisfied.
+        /// </summary>
+        /// <returns>true if they are, false otherwise.</returns>
+        public bool CheckDependencies()
+        {
+            dependencyLastCheckTime = Time.time;
+            dependencyWarnings.Clear();
+            if (!ModuleManagerLoaded) dependencyWarnings.Add("Module Manager dependency is missing!");
+            if (!PhysicsRangeExtenderLoaded) dependencyWarnings.Add("Physics Range Extender dependency is missing!");
+            else if ((
+                    (BDACompetitionMode.Instance != null && (BDACompetitionMode.Instance.competitionIsActive || BDACompetitionMode.Instance.competitionStarting))
+                    || VesselSpawnerStatus.vesselsSpawning
+                )
+                && !(bool)PREModEnabledField.GetValue(null)) dependencyWarnings.Add("Physics Range Extender is disabled!");
+            if (dependencyWarnings.Count() > 0) dependencyWarnings.Add("BDArmory will not work properly.");
+            return dependencyWarnings.Count() == 0;
         }
 
         public bool hasVesselSwitcher = false;
@@ -2904,6 +2918,10 @@ namespace BDArmory.UI
 
                         GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_ImplosiveDamageMultiplier")}:  ({BDArmorySettings.EXP_IMP_MOD})", leftLabel);
                         BDArmorySettings.EXP_IMP_MOD = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_IMP_MOD, 0f, 1f), 0.05f);
+
+                        
+                        GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_ArmorExplosivePenetrationResistanceMultiplier")}:  ({BDArmorySettings.EXP_PEN_RESIST_MULT})", leftLabel);
+                        BDArmorySettings.EXP_PEN_RESIST_MULT = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_PEN_RESIST_MULT, 0f, 10f), 0.25f);
 
                         GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_ExplosiveBattleDamageMultiplier")}:  ({BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE})", leftLabel);
                         BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE, 0f, 2f), 0.1f);

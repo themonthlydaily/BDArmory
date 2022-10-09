@@ -29,6 +29,7 @@ namespace BDArmory.Bullets
         public string rocketName;
         public float rocketMass;
         public float caliber;
+        public float apMod;
         public float thrust;
         private Vector3 thrustVector;
         private Vector3 dragVector;
@@ -447,6 +448,19 @@ namespace BDArmory.Bullets
                             float muParam2 = Armor.muParam2;
                             float muParam3 = Armor.muParam3;
 
+                            if (hitPart.skinTemperature > safeTemp) //has the armor started melting/denaturing/whatever?
+                            {
+                                //vFactor *= 1/(1.25f*0.75f-0.25f*0.75f*0.75f);
+                                vFactor *= 1.25490196078f; // Uses the above equation but just calculated out.
+                                                           // The equation 1/(1.25*x-0.25*x^2) approximates the effect of changing yield strength
+                                                           // by a factor of x
+                                if (hitPart.skinTemperature > safeTemp * 1.5f)
+                                {
+                                    vFactor *= 1.77777777778f; // Same as used above, but here with x = 0.5. Maybe this should be
+                                                               // some kind of a curve?
+                                }
+                            }
+
                             int armorType = (int)Armor.ArmorTypeNum;
                             if (BDArmorySettings.DEBUG_ARMOR)
                             {
@@ -459,7 +473,7 @@ namespace BDArmory.Bullets
                             //calculate penetration
                             /*if (Ductility > 0.05)
                             {*/
-                            penetration = ProjectileUtils.CalculatePenetration(caliber, impactVelocity, rocketMass * 1000f, 1f, Strength, vFactor, muParam1, muParam2, muParam3);
+                            penetration = ProjectileUtils.CalculatePenetration(caliber, impactVelocity, rocketMass * 1000f, apMod, Strength, vFactor, muParam1, muParam2, muParam3);
                             /*}
                             else
                             {
@@ -834,7 +848,7 @@ namespace BDArmory.Bullets
                             if (nuclear)
                                 NukeFX.CreateExplosion(currPosition, ExplosionSourceType.Rocket, sourceVesselName, rocket.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
                             else
-                                ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, direction, -1, false, rocketMass * 1000, -1, dmgMult, shaped ? "shapedcharge" : "standard", PenetratingHit);
+                                ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, direction, -1, false, rocketMass * 1000, -1, dmgMult, shaped ? "shapedcharge" : "standard", PenetratingHit,apMod);
                         }
                     }
                 }
@@ -973,6 +987,7 @@ namespace BDArmory.Bullets
                     rocket.explModelPath = explModelPath;
                     rocket.explSoundPath = explSoundPath;
                     rocket.caliber = sRocket.caliber;
+                    rocket.apMod = sRocket.apMod;
                     rocket.rocketMass = sRocket.rocketMass;
                     rocket.blastRadius = blastRadius = BlastPhysicsUtils.CalculateBlastRange(sRocket.tntMass);
                     rocket.thrust = sRocket.thrust;
