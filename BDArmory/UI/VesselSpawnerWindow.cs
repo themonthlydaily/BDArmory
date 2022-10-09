@@ -718,20 +718,22 @@ namespace BDArmory.UI
                     if (!BDArmorySettings.WAYPOINTS_ONE_AT_A_TIME)
                     {
                         TournamentCoordinator.Instance.Configure(new SpawnConfigStrategy(
-                            new SpawnConfig(
-                                Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_WORLDINDEX : WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].worldIndex, // Right-click => use the VesselSpawnerWindow settings instead of the defaults.
-                                Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x : spawnLatitude,
-                                Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y : spawnLongitude,
-                                BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+                            new CircularSpawnConfig(
+                                new SpawnConfig(
+                                    Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_WORLDINDEX : WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].worldIndex, // Right-click => use the VesselSpawnerWindow settings instead of the defaults.
+                                    Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x : spawnLatitude,
+                                    Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y : spawnLongitude,
+                                    BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+                                    BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
+                                    true,
+                                    BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS,
+                                    BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS,
+                                    null,
+                                    null,
+                                    BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION
+                                ),
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
-                                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
-                                BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
-                                true,
-                                BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS,
-                                BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS,
-                                null,
-                                null,
-                                BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION)
+                                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE)
                             ),
                             new WaypointFollowingStrategy(course),
                             CircularSpawning.Instance
@@ -744,21 +746,23 @@ namespace BDArmory.UI
                     {
                         var craftFiles = Directory.GetFiles(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION), "*.craft").ToList();
                         var strategies = craftFiles.Select(craftFile => new SpawnConfigStrategy(
-                            new SpawnConfig(
-                                Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_WORLDINDEX : WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].worldIndex,
-                                Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x : spawnLatitude,
-                                Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y : spawnLongitude,
-                                BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+                            new CircularSpawnConfig(
+                                new SpawnConfig(
+                                    Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_WORLDINDEX : WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].worldIndex,
+                                    Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x : spawnLatitude,
+                                    Event.current.button == 1 ? BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y : spawnLongitude,
+                                    BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+                                    BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
+                                    true,
+                                    BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS,
+                                    0, // This should always be 0 (FFA) to avoid the logic for spawning teams in one-at-a-time mode.
+                                    null,
+                                    null,
+                                    null,
+                                    new List<string>() { craftFile }
+                                ),
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
-                                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
-                                BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
-                                true,
-                                BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS,
-                                0, // This should always be 0 (FFA) to avoid the logic for spawning teams in one-at-a-time mode.
-                                null,
-                                null,
-                                null,
-                                new List<string>() { craftFile }
+                                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE
                             ))).ToList();
                         TournamentCoordinator.Instance.RunForEach(strategies,
                             new WaypointFollowingStrategy(course),
@@ -793,15 +797,17 @@ namespace BDArmory.UI
                     if (!ContinuousSpawning.Instance.vesselsSpawningContinuously && !_vesselsSpawned && Event.current.button == 0) // Left click
                     {
                         ContinuousSpawning.Instance.SpawnVesselsContinuously(
-                            new SpawnConfig(
-                                BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
-                                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+                            new CircularSpawnConfig(
+                                new SpawnConfig(
+                                    BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
+                                    BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+                                    BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
+                                    true, true, 1, null, null,
+                                    BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION
+                                ),
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
-                                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
-                                BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
-                                true, true, 1, null, null,
-                                BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION
-                                )
+                                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE
+                            )
                             ); // Spawn vessels continuously at 1km above terrain.
                     }
                 }
@@ -820,20 +826,22 @@ namespace BDArmory.UI
             if (BDArmorySettings.DEBUG_SPAWNING && GUI.Button(SLineRect(++line), "Test point spawn", BDArmorySetup.BDGuiSkin.button))
             {
                 StartCoroutine(SingleVesselSpawning.Instance.Spawn(
-                    new SpawnConfig(
-                        BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
-                        BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
-                        BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
-                        BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+                    new CircularSpawnConfig(
+                        new SpawnConfig(
+                            BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
+                            BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
+                            BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
+                            BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+                            BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
+                            false,
+                            false,
+                            0,
+                            null,
+                            null,
+                            BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION
+                        ),
                         BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
-                        BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
-                        BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
-                        false,
-                        false,
-                        0,
-                        null,
-                        null,
-                        BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION
+                        BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE
                     )
                 ));
             }
