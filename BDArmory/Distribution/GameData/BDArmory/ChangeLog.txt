@@ -9,10 +9,13 @@ IMPROVEMENTS / FIXES
 	- Add Notes.md for devs with notes on optimisation and the current branches.
 	- Add caching for all AudioClips to reduce GC.
 	- Optimised access to Krakensbane and FloatingOrigin adjustments.
+	- Fix proc structural panel, now properly no longer has lift.
+	-HP log scaling now on by default when RUNWAY_PROJECT is enabled.
 - UI:
 	- Updated German localization by EzBro.
 - Competition:
 	- Add option to automatically disable the HUD on tournament start.
+	- Fixes nukes causing hit craft to be reported as 'Crashed and Burned' in competitions.
 - Spawning:
 	- Fix spawning breakage due to PRE not being enabled and enable PRE checks and warnings during spawning.
 	- Recover KSP's camera after spawning failure.
@@ -35,6 +38,8 @@ IMPROVEMENTS / FIXES
 		- Note: this doesn't fix AoA/G-load limiting, it just improves the response time of its calculations.
 - Detectors:
 	- Random position noise due to chaff no longer scales with RCS, is instead fixed to a random number between 16 and 256.
+- ECM:
+	- ECM Jammer and Cloaking devices now can specify resource used when operating (default is EC)
 - Weapons:
 	- Fixed bug where the target velocity and acceleration was not being reset once a target was no longer tracked which resulted in lead being erroneously compensated for while mouse aiming.
 	- Added ability to manually aim guns using GPS coordinates, primarily for artillery. This behavior is not a functionality in Guard Mode, however when a GPS target is manually selected, turrets will now aim to attempt to hit said target.
@@ -60,16 +65,21 @@ IMPROVEMENTS / FIXES
 	- Reworks ModuleMissileRearm, now works, integrated with WM, etc.
 	- Missiles with a ModuleMissileRearm can now have reloads, be affected by Infinite Ammo.
 	- Adds MultiMissileLauncher module.
-	- Adds new Infinite Ordinance toggle, for missiles with MultiMissileLauncher.
-	- Armor Tools now displays total wing srf. area, and wingloading kg/m2.
+	- Adds new Infinite Ordinance toggle, for missiles with ModuleMissileRearm/MultiMissileLauncher.
 	- Fixes NRE with APS missile interception.
+	- Inaccurate or multi-shot APS (CIWS rotary cannon, etc) no longer guaranteed to kill incoming projectiles with first shot.
 	- Fixes Max Turret Targets not targeting more than 2 vessels.
+	- Fix Gravity gun and other impulse/gravitic laser weapons dealing damage.
+	- Fix manual rocket turret aiming.
 - Armor:
 	- Improved hypervelocity projectile post-penetration effects. Now Whipple shields should work properly, the more spacing between the armor plates the better the performance against hypervelocity rounds.
 	- Modified behavior of penetration formula below a projectile L/D ratio of 1 so penetration values are more consistent.
 	- Re-added temperature effects to armor protection levels, if the armor reaches its max safe temperature or goes above said temperature, performance is degraded.
 	- Added new Armor Aluminium material, based on Aluminium 7039 to provide a larger variety of armor materials to select from.
-
+	- Adds Armor Mass Mult slider to allow tweaking armor weight in-game.
+	- Armor Type "none" now disabled armor thickness slider, should fix PAW issue with 1.9.1 installs.
+	- Armor Tools now displays total wing srf. area, and wingloading kg/m2.
+	- Fix Armor tools mass/cost readout giving incorrect values when using global armor type.
 v1.5.2.1
 IMPROVEMENTS / FIXES
 - Fix a variety of exceptions in pre-1.11.1 KSP due to missing API functions.
