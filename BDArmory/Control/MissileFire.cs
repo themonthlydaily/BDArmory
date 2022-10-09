@@ -787,6 +787,12 @@ namespace BDArmory.Control
                     PartExploderSystem.AddPartToExplode(part);
                 }
             }
+            foreach (var tnt in VesselModuleRegistry.GetModules<BDExplosivePart>(vessel))
+            {
+                if (tnt == null) continue;
+                tnt.ArmAG(null);
+                tnt.DetonateIfPossible();
+            }
         }
 
         public BDTeam Team
@@ -2641,7 +2647,7 @@ namespace BDArmory.Control
             if (missile is MissileBase)
             {
                 MissileBase ml = missile;
-                if (checkClearance && (!CheckBombClearance(ml) || (ml is MissileLauncher && ((MissileLauncher)ml).rotaryRail && !((MissileLauncher)ml).rotaryRail.readyMissile == ml))|| ml.launched)
+                if (checkClearance && (!CheckBombClearance(ml) || (ml is MissileLauncher && ((MissileLauncher)ml).rotaryRail && !((MissileLauncher)ml).rotaryRail.readyMissile == ml)) || ml.launched)
                 {
                     using (var otherMissile = VesselModuleRegistry.GetModules<MissileBase>(vessel).GetEnumerator())
                         while (otherMissile.MoveNext())
@@ -5341,12 +5347,12 @@ namespace BDArmory.Control
                     if (distanceToTarget < engageableWeapon.GetEngagementRangeMin()) return false;
                     if (!vessel.LandedOrSplashed) // TODO: bomb always allowed?
                         using (var bomb = VesselModuleRegistry.GetModules<MissileBase>(vessel).GetEnumerator())
-                        while (bomb.MoveNext())
-                        {
-                            if (bomb.Current == null) continue;
-                            if (bomb.Current.launched) continue;
-                            return true;
-                        }
+                            while (bomb.MoveNext())
+                            {
+                                if (bomb.Current == null) continue;
+                                if (bomb.Current.launched) continue;
+                                return true;
+                            }
                     break;
 
                 case WeaponClasses.Rocket:
@@ -6359,7 +6365,7 @@ namespace BDArmory.Control
                     }
                     if (BDArmorySettings.DEBUG_WEAPONS)
                     {
-                        Debug.Log($"[BDArmory.MissileFire]: {selectedWeapon} cannot reach target ({distance} vs {weapon.Current.maxEffectiveDistance}, yawRange: {weapon.Current.yawRange }). Continuing.");
+                        Debug.Log($"[BDArmory.MissileFire]: {selectedWeapon} cannot reach target ({distance} vs {weapon.Current.maxEffectiveDistance}, yawRange: {weapon.Current.yawRange}). Continuing.");
                     }
                     //else return 0;
                 }

@@ -875,18 +875,32 @@ namespace BDArmory.UI
 
             if (Time.time - dependencyLastCheckTime > (dependencyWarnings.Count() == 0 ? 60 : 5)) // Only check once per minute if no issues are found, otherwise 5s.
             {
-                dependencyLastCheckTime = Time.time;
-                dependencyWarnings.Clear();
-                if (!ModuleManagerLoaded) dependencyWarnings.Add("Module Manager dependency is missing!");
-                if (!PhysicsRangeExtenderLoaded) dependencyWarnings.Add("Physics Range Extender dependency is missing!");
-                else if (BDACompetitionMode.Instance != null && (BDACompetitionMode.Instance.competitionIsActive || BDACompetitionMode.Instance.competitionStarting) && !(bool)PREModEnabledField.GetValue(null)) dependencyWarnings.Add("Physics Range Extender is disabled!");
-                if (dependencyWarnings.Count() > 0) dependencyWarnings.Add("BDArmory will not work properly.");
+                CheckDependencies();
             }
             if (dependencyWarnings.Count() > 0)
             {
                 GUI.Label(new Rect(Screen.width / 2 - 300 + 2, Screen.height / 6 + 2, 600, 100), string.Join("\n", dependencyWarnings), redErrorShadowStyle);
                 GUI.Label(new Rect(Screen.width / 2 - 300, Screen.height / 6, 600, 100), string.Join("\n", dependencyWarnings), redErrorStyle);
             }
+        }
+
+        /// <summary>
+        /// Check that the dependencies are satisfied.
+        /// </summary>
+        /// <returns>true if they are, false otherwise.</returns>
+        public bool CheckDependencies()
+        {
+            dependencyLastCheckTime = Time.time;
+            dependencyWarnings.Clear();
+            if (!ModuleManagerLoaded) dependencyWarnings.Add("Module Manager dependency is missing!");
+            if (!PhysicsRangeExtenderLoaded) dependencyWarnings.Add("Physics Range Extender dependency is missing!");
+            else if ((
+                    (BDACompetitionMode.Instance != null && (BDACompetitionMode.Instance.competitionIsActive || BDACompetitionMode.Instance.competitionStarting))
+                    || VesselSpawnerStatus.vesselsSpawning
+                )
+                && !(bool)PREModEnabledField.GetValue(null)) dependencyWarnings.Add("Physics Range Extender is disabled!");
+            if (dependencyWarnings.Count() > 0) dependencyWarnings.Add("BDArmory will not work properly.");
+            return dependencyWarnings.Count() == 0;
         }
 
         public bool hasVesselSwitcher = false;
@@ -2492,12 +2506,48 @@ namespace BDArmory.UI
 #if DEBUG  // Only visible when compiled in Debug configuration.
                     if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
                     {
+                        if (GUI.Button(SLineRect(++line), "Test Collider.ClosestPoint[OnBounds]"))
+                        {
+                            var watch = new System.Diagnostics.Stopwatch();
+                            float µsResolution = 1e6f / System.Diagnostics.Stopwatch.Frequency;
+                            int N = 1 << 16;
+                            Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+                            int layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels | LayerMasks.Scenery);
+                            float dist = 10000;
+                            RaycastHit hit;
+                            Vector3 closestPoint = default;
+                            watch.Start();
+                            if (Physics.Raycast(ray, out hit, dist, layerMask))
+                            {
+                                watch.Stop();
+                                var raycastTicks = watch.ElapsedTicks;
+                                string raycastString = $"Raycast took {raycastTicks * µsResolution:G3}µs";
+                                Part partHit = hit.collider.GetComponentInParent<Part>();
+                                MeshCollider mcol = null;
+                                bool isMeshCollider = false;
+                                bool isNonConvexMeshCollider = false;
+                                watch.Reset(); watch.Start();
+                                for (int i = 0; i < N; ++i)
+                                {
+                                    mcol = hit.collider as MeshCollider;
+                                    isMeshCollider = mcol != null;
+                                    if (isMeshCollider && !mcol.convex)  // non-convex mesh colliders are expensive to use ClosestPoint on.
+                                    {
+                                        isNonConvexMeshCollider = true;
+                                        closestPoint = hit.collider.ClosestPointOnBounds(ray.origin);
+                                    }
+                                    else
+                                        closestPoint = hit.collider.ClosestPoint(ray.origin);
+                                }
+                                watch.Stop();
+                                Debug.Log($"DEBUG {raycastString}, {(isNonConvexMeshCollider ? "ClosestPointOnBounds" : "ClosestPoint")} ({closestPoint}) on{(isMeshCollider ? $" {(isNonConvexMeshCollider ? "non-" : "")}convex mesh" : "")} collider {hit.collider} from camera ({ray.origin}) took {watch.ElapsedTicks * µsResolution / N:G3}µs{(partHit != null ? $", offset from part ({partHit.name}): {closestPoint - partHit.transform.position}" : "")}, offset from hit: {hit.point - closestPoint}");
+                            }
+                        }
                         if (GUI.Button(SLineRect(++line), "Test 2x Raycast vs RaycastNonAlloc"))
                         {
                             var watch = new System.Diagnostics.Stopwatch();
                             float µsResolution = 1e6f / System.Diagnostics.Stopwatch.Frequency;
                             int N = 1 << 20;
-                            var tic = Time.realtimeSinceStartup;
                             Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
                             RaycastHit hit;
                             RaycastHit[] hits = new RaycastHit[100];
@@ -2513,7 +2563,6 @@ namespace BDArmory.UI
                             watch.Stop();
                             Debug.Log($"DEBUG Raycast 2x (hit? {didHit}) took {watch.ElapsedTicks * µsResolution / N:G3}µs");
                             int hitCount = 0;
-                            tic = Time.realtimeSinceStartup;
                             watch.Reset(); watch.Start();
                             for (int i = 0; i < N; ++i)
                                 hitCount = Physics.RaycastNonAlloc(ray, hits, dist, layerMask);

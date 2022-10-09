@@ -25,6 +25,7 @@ IMPROVEMENTS / FIXES
 	- Add a 5s cooldown on extending if the Extend Abort Time is triggered (overriden for various extend requests, e.g., dropping bombs/nukes).
 	- Dynamically update the extend distance for launching a missile while extending.
 	- Limit the DLZ calculation for the extend distance for firing missiles to being maxOffBoresight off-target - avoids extreme extending distances.
+	- Expand the WM's Self-Destruct AG to arm and detonate all explosive parts too.
 - Detectors:
 	- Random position noise due to chaff no longer scales with RCS, is instead fixed to a random number between 16 and 256.
 - Weapons:
