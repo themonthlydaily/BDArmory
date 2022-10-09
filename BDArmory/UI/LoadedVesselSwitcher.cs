@@ -1353,11 +1353,12 @@ namespace BDArmory.UI
             FlightInputHandler.ResumeVesselCtrlState(v);
         }
 
-        public IEnumerator SwitchToVesselWhenPossible(Vessel vessel)
+        public IEnumerator SwitchToVesselWhenPossible(Vessel vessel, float distance = 0)
         {
             var wait = new WaitForFixedUpdate();
             while (vessel != null && (!vessel.loaded || vessel.packed)) yield return wait;
             while (vessel != null && vessel != FlightGlobals.ActiveVessel) { ForceSwitchVessel(vessel); yield return wait; }
+            if (distance > 0) FlightCamera.fetch.SetDistance(distance);
         }
 
         public void TriggerSwitchVessel(float delay)

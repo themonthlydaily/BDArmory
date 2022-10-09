@@ -15,7 +15,7 @@ using BDArmory.Weapons.Missiles;
 
 namespace BDArmory.Competition.VesselSpawning
 {
-    public enum SpawnFailureReason { None, NoCraft, NoTerrain, InvalidVessel, VesselLostParts, VesselFailedToSpawn, TimedOut, Cancelled };
+    public enum SpawnFailureReason { None, NoCraft, NoTerrain, InvalidVessel, VesselLostParts, VesselFailedToSpawn, TimedOut, Cancelled, DependencyIssues };
 
     public static class SpawnUtils
     {
@@ -449,6 +449,15 @@ namespace BDArmory.Competition.VesselSpawning
             }
             if (FlightGlobals.ActiveVessel != null && FlightGlobals.ActiveVessel.state != Vessel.State.DEAD)
                 LoadedVesselSwitcher.Instance.ForceSwitchVessel(FlightGlobals.ActiveVessel); // Update the camera.
+            else // Spawn a spawn probe to avoid KSP breaking the camera.
+            {
+                var spawnProbe = VesselSpawner.SpawnSpawnProbe(flightCamera.Distance * flightCamera.mainCamera.transform.forward);
+                if (spawnProbe != null)
+                {
+                    spawnProbe.Landed = false;
+                    StartCoroutine(LoadedVesselSwitcher.Instance.SwitchToVesselWhenPossible(spawnProbe, 10));
+                }
+            }
             spawnLocationCamera.SetActive(false);
         }
         #endregion
