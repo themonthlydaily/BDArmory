@@ -1,4 +1,4 @@
-﻿
+﻿v1.5.3.0
 IMPROVEMENTS / FIXES
 - General:
 	- Use an alternative method of calculating vessel bounds to get the vessel radius. — Fixes some weird results with parasite fighters from KSP's internal function for this.
@@ -10,7 +10,10 @@ IMPROVEMENTS / FIXES
 	- Add caching for all AudioClips to reduce GC.
 	- Optimised access to Krakensbane and FloatingOrigin adjustments.
 - Competition:
-	- Add option to disable the HUD on tournament start.
+	- Add option to automatically disable the HUD on tournament start.
+- Spawning:
+	- Fix spawning breakage due to PRE not being enabled and enable PRE checks and warnings during spawning.
+	- Recover KSP's camera after spawning failure.
 - Damage:
 	- Fix the bug preventing explosive damage applying to buildings.
 	- Rework how damage is applied to buildings and how they regenerate.
