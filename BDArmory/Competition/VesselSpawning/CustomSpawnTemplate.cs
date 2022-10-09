@@ -24,6 +24,11 @@ namespace BDArmory.Competition.VesselSpawning
             Instance = this;
         }
 
+        void Start()
+        {
+            if (customSpawnConfig == null) LoadTemplate();
+        }
+
         void LogMessage(string message, bool toScreen = true, bool toLog = true) => LogMessageFrom("CustomTemplateSpawning", message, toScreen, toLog);
 
         public override IEnumerator Spawn(SpawnConfig spawnConfig)
@@ -87,9 +92,25 @@ namespace BDArmory.Competition.VesselSpawning
         {
             #region Initialisation and sanity checks
             // Tally up the craft to spawn and figure out teams.
-            spawnConfig.craftFiles = spawnConfig.vesselSpawnConfigs.SelectMany(c => c).Select(c => c.craftURL).ToList();
+            spawnConfig.craftFiles = spawnConfig.customVesselSpawnConfigs.SelectMany(c => c).Select(c => c.craftURL).ToList();
             spawnConfig.teamsSpecific = spawnConfig.craftFiles.Select(f => new List<string> { f }).ToHashSet().ToList(); // Teams are the unique vessel filenames.
             LogMessage("Spawning " + spawnConfig.craftFiles.Count + " vessels at an altitude of " + spawnConfig.altitude.ToString("G0") + "m" + (spawnConfig.craftFiles.Count > 8 ? ", this may take some time..." : "."));
+
+            var vesselSpawnConfigs = new List<VesselSpawnConfig>();
+            foreach(var customVesselSpawnConfig in spawnConfig.customVesselSpawnConfigs.SelectMany(c => c))
+            {
+                vesselSpawnConfigs.Add(new VesselSpawnConfig(
+                    customVesselSpawnConfig.craftURL,
+                    FlightGlobals.currentMainBody.GetWorldSurfacePosition(customSpawnConfig.latitude, customSpawnConfig.longitude, spawnConfig.altitude),
+                    default,
+                    (float)spawnConfig.altitude,
+                    0,
+                    false,
+                    customVesselSpawnConfig.teamIndex,
+                    false,
+                    customVesselSpawnConfig.kerbalName
+                ));
+            }
             #endregion
 
             yield return AcquireSpawnPoint(spawnConfig, 100f, false);
@@ -99,7 +120,7 @@ namespace BDArmory.Competition.VesselSpawning
                 yield break;
             }
 
-            yield return SpawnVessels(spawnConfig.vesselSpawnConfigs.SelectMany(c => c).ToList());
+            yield return SpawnVessels(vesselSpawnConfigs);
             if (spawnFailureReason != SpawnFailureReason.None)
             {
                 vesselsSpawning = false;
@@ -139,27 +160,68 @@ namespace BDArmory.Competition.VesselSpawning
         #endregion
 
         #region Templates
-        public void LoadTemplate(string templateName)
-        { }
+        public CustomSpawnConfig customSpawnConfig = null;
+        public void LoadTemplate(string templateName = null)
+        {
+            if (string.IsNullOrEmpty(templateName)) // Empty template
+            {
+                customSpawnConfig = new CustomSpawnConfig(
+                    "",
+                    new SpawnConfig(
+                        BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
+                        BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
+                        BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
+                        BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+                        BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED),
+                    new List<List<CustomVesselSpawnConfig>>());
+            }
+            else
+            {
+                // Load the template from disk.
+            }
+        }
 
         /// <summary>
         /// Save the current setup as a template.
         /// Vessel positions rotations and teams are saved.
         /// </summary>
         /// <param name="templateName"></param>
-        public void SaveTemplate(string templateName)
+        public void SaveTemplate()
         {
             // For the vessels in the vessel switcher, save the position, rotations and teams.
             // Also, save the planet and centroid of the positions to the SpawnConfig
-            
+            customSpawnConfig.worldIndex = BDArmorySettings.VESSEL_SPAWN_WORLDINDEX;
+            customSpawnConfig.latitude = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x;
+            customSpawnConfig.longitude = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y;
+            customSpawnConfig.altitude = BDArmorySettings.VESSEL_SPAWN_ALTITUDE;
+            customSpawnConfig.easeInSpeed = BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED;
+            customSpawnConfig.customVesselSpawnConfigs.Clear();
+            // foreach (var v in WeaponManagers.SelectMany(tm => tm.Value).Where(wm => wm != null && wm.vessel != null).Select(wm => wm.vessel))
+            int teamCount = 0;
+            foreach (var team in LoadedVesselSwitcher.Instance.WeaponManagers)
+            {
+                var teamConfigs = new List<CustomVesselSpawnConfig>();
+                foreach (var member in team.Value)
+                {
+                    CustomVesselSpawnConfig vesselSpawnConfig = new CustomVesselSpawnConfig();
+                    FlightGlobals.currentMainBody.GetLatLonAlt(member.vessel.transform.position, out vesselSpawnConfig.latitude, out vesselSpawnConfig.longitude, out vesselSpawnConfig.altitude);
+                    vesselSpawnConfig.heading = (Vector3.SignedAngle(member.vessel.ReferenceTransform.up, member.vessel.north, member.vessel.up) + 360f) % 360f;
+                    vesselSpawnConfig.teamIndex = teamCount;
+                    teamConfigs.Add(vesselSpawnConfig);
+                }
+                customSpawnConfig.customVesselSpawnConfigs.Add(teamConfigs);
+                ++teamCount;
+            }
+            // FIXME Save this config to disk.
+            Debug.Log($"DEBUG {customSpawnConfig.ToString()}");
         }
 
 
         // UI: select vessel from switcher => automatically fill slots below with the same craft.
-        public bool ConfigureTemplate(CustomSpawnConfig customSpawnConfig, List<List<string>> vesselURLs, List<List<string>> kerbalNames)
+        public bool ConfigureTemplate(List<List<string>> vesselURLs, List<List<string>> kerbalNames)
         {
             // Sanity check
-            int numberOfTeams = customSpawnConfig.vesselSpawnConfigs.Count;
+            int numberOfTeams = customSpawnConfig.customVesselSpawnConfigs.Count;
             if (vesselURLs.Count != numberOfTeams || kerbalNames.Count != numberOfTeams)
             {
                 LogMessage($"Incorrect number of vessels or kerbal names for this spawn template!");
@@ -168,7 +230,7 @@ namespace BDArmory.Competition.VesselSpawning
             // Update the vessel spawn configs with new vessel URLs and custom kerbal names.
             for (int team = 0; team < numberOfTeams; ++team)
             {
-                var teamCount = customSpawnConfig.vesselSpawnConfigs[team].Count;
+                var teamCount = customSpawnConfig.customVesselSpawnConfigs[team].Count;
                 if (vesselURLs[team].Count != teamCount || kerbalNames[team].Count != teamCount)
                 {
                     LogMessage($"Incorrect number of vessels or kerbal names for this spawn template!");
@@ -176,7 +238,7 @@ namespace BDArmory.Competition.VesselSpawning
                 }
                 for (int member = 0; member < teamCount; ++member)
                 {
-                    var config = customSpawnConfig.vesselSpawnConfigs[team][member];
+                    var config = customSpawnConfig.customVesselSpawnConfigs[team][member];
                     config.craftURL = vesselURLs[team][member];
                     config.kerbalName = kerbalNames[team][member];
                 }
@@ -186,6 +248,50 @@ namespace BDArmory.Competition.VesselSpawning
             customSpawnConfig.killEverythingFirst = true;
             return true;
         }
+
+        #endregion
+
+        #region UI
+        Vector2 _displayViewerPosition = default;
+        List<ProtoCrewMember> SelectedCrewMembers = new List<ProtoCrewMember>();
+        /// <summary>
+        /// Crew selection window borrowed from VesselMover and modified.
+        /// </summary>
+        /// <param name="windowID"></param>
+        public void CrewSelectionWindow(int windowID)
+        {
+            KerbalRoster kerbalRoster = HighLogic.CurrentGame.CrewRoster;
+            GUILayout.BeginVertical();
+            _displayViewerPosition = GUILayout.BeginScrollView(_displayViewerPosition, GUI.skin.box, GUILayout.Height(250), GUILayout.Width(280));
+            using (var kerbals = kerbalRoster.Kerbals(ProtoCrewMember.RosterStatus.Available).GetEnumerator())
+                while (kerbals.MoveNext())
+                {
+                    ProtoCrewMember crewMember = kerbals.Current;
+                    if (crewMember == null) continue;
+                    bool selected = SelectedCrewMembers.Contains(crewMember);
+                    GUIStyle buttonStyle = selected ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button;
+                    selected = GUILayout.Toggle(selected, $"{crewMember.name}, {crewMember.gender}, {crewMember.trait}", buttonStyle);
+                    if (selected && !SelectedCrewMembers.Contains(crewMember))
+                    {
+                        SelectedCrewMembers.Clear();
+                        SelectedCrewMembers.Add(crewMember);
+                    }
+                    else if (!selected && SelectedCrewMembers.Contains(crewMember))
+                    {
+                        SelectedCrewMembers.Clear();
+                    }
+                }
+            GUILayout.EndScrollView();
+            GUILayout.Space(20);
+            if (GUILayout.Button("Select", BDArmorySetup.BDGuiSkin.button))
+            {
+                // VesselSpawn.SelectedCrewData = SelectedCrewMembers;
+                // VesselSpawn.IsSelectingCrew = false;
+                // VesselSpawn.IsCrewSelected = true;
+            }
+            GUILayout.EndVertical();
+        }
+
         #endregion
     }
 }

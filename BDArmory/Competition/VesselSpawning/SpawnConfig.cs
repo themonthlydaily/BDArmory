@@ -116,10 +116,22 @@ namespace BDArmory.Competition.VesselSpawning
     [Serializable]
     public class CustomSpawnConfig : SpawnConfig
     {
-        public CustomSpawnConfig(SpawnConfig spawnConfig, List<List<VesselSpawnConfig>> vesselSpawnConfigs) : base(spawnConfig)
+        public CustomSpawnConfig(string name, SpawnConfig spawnConfig, List<List<CustomVesselSpawnConfig>> vesselSpawnConfigs) : base(spawnConfig)
         {
-            this.vesselSpawnConfigs = vesselSpawnConfigs;
+            this.name = name;
+            this.customVesselSpawnConfigs = vesselSpawnConfigs;
         }
-        public List<List<VesselSpawnConfig>> vesselSpawnConfigs;
+        public string name;
+        public List<List<CustomVesselSpawnConfig>> customVesselSpawnConfigs;
+    }
+    public struct CustomVesselSpawnConfig
+    {
+        public string craftURL;
+        public string kerbalName;
+        public double latitude;
+        public double longitude;
+        public double altitude;
+        public float heading;
+        public int teamIndex;
     }
 }
