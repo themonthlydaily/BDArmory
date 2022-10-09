@@ -29,6 +29,8 @@ IMPROVEMENTS / FIXES
 	- Dynamically update the extend distance for launching a missile while extending.
 	- Limit the DLZ calculation for the extend distance for firing missiles to being maxOffBoresight off-target - avoids extreme extending distances.
 	- Expand the WM's Self-Destruct AG to arm and detonate all explosive parts too.
+	- Adjust the smoothing for the AoA and G-load limiting from a moving window (with a ~0.6s delay) to double exponential smoothing (with a ~0.1 delay compensated for by a 0.1s ahead prediction).
+		- Note: this doesn't fix AoA/G-load limiting, it just improves the response time of its calculations.
 - Detectors:
 	- Random position noise due to chaff no longer scales with RCS, is instead fixed to a random number between 16 and 256.
 - Weapons:
