@@ -9,6 +9,8 @@ IMPROVEMENTS / FIXES
 	- Add Notes.md for devs with notes on optimisation and the current branches.
 	- Add caching for all AudioClips to reduce GC.
 	- Optimised access to Krakensbane and FloatingOrigin adjustments.
+- UI:
+	- Updated German localization by EzBro.
 - Competition:
 	- Add option to automatically disable the HUD on tournament start.
 - Spawning:
