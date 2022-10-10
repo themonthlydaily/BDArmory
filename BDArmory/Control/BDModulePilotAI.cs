@@ -354,6 +354,11 @@ namespace BDArmory.Control
             groupName = "pilotAI_Speeds", groupDisplayName = "#LOC_BDArmory_PilotAI_Speeds", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1.0f, scene = UI_Scene.All)]
         public float ABPriority = 50f;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ABOverrideThreshold", advancedTweakable = true, //Afterburner Override Threshold
+            groupName = "pilotAI_Speeds", groupDisplayName = "#LOC_BDArmory_PilotAI_Speeds", groupStartCollapsed = true),
+            UI_FloatRange(minValue = 0f, maxValue = 200f, stepIncrement = 1.0f, scene = UI_Scene.All)]
+        public float ABOverrideThreshold = 0f;
         #endregion
 
         #region Control Limits
@@ -2766,6 +2771,7 @@ namespace BDArmory.Control
             speedController.forceAfterburner = forceAfterburner;
             speedController.throttleOverride = throttleOverride;
             speedController.afterburnerPriority = ABPriority;
+            speedController.forceAfterburnerIfMaxThrottle = vessel.srfSpeed < ABOverrideThreshold;
         }
 
         Vector3 threatRelativePosition;
