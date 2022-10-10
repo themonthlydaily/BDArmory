@@ -113,7 +113,7 @@ namespace BDArmory.Competition.VesselSpawning
                     LogMessage($"Spawn folder {spawnFolder} doesn't exist!");
                     vesselsSpawning = false;
                     spawnFailureReason = SpawnFailureReason.NoCraft;
-                    SpawnUtils.RevertSpawnLocationCamera(true);
+                    SpawnUtils.RevertSpawnLocationCamera(true, true);
                     yield break;
                 }
                 if (spawnConfig.numberOfTeams == 1) // Scan subfolders
@@ -151,7 +151,7 @@ namespace BDArmory.Competition.VesselSpawning
                 LogMessage("Vessel spawning: found no craft files in " + Path.Combine(AutoSpawnPath, spawnConfig.folder));
                 vesselsSpawning = false;
                 spawnFailureReason = SpawnFailureReason.NoCraft;
-                SpawnUtils.RevertSpawnLocationCamera(true);
+                SpawnUtils.RevertSpawnLocationCamera(true, true);
                 yield break;
             }
             bool useOriginalTeamNames = spawnConfig.assignTeams && (spawnConfig.numberOfTeams == 1 || spawnConfig.numberOfTeams == -1); // We'll be using the folders or craft filenames as team names in the originalTeams dictionary.
@@ -171,7 +171,7 @@ namespace BDArmory.Competition.VesselSpawning
             if (spawnFailureReason != SpawnFailureReason.None)
             {
                 vesselsSpawning = false;
-                SpawnUtils.RevertSpawnLocationCamera(true);
+                SpawnUtils.RevertSpawnLocationCamera(true, true);
                 yield break;
             }
 
@@ -225,7 +225,7 @@ namespace BDArmory.Competition.VesselSpawning
             if (spawnFailureReason != SpawnFailureReason.None)
             {
                 vesselsSpawning = false;
-                SpawnUtils.RevertSpawnLocationCamera(true);
+                SpawnUtils.RevertSpawnLocationCamera(true, true);
                 yield break;
             }
 
@@ -266,7 +266,7 @@ namespace BDArmory.Competition.VesselSpawning
             {
                 LogMessage("Vessel spawning FAILED! " + spawnFailureReason);
                 vesselsSpawning = false;
-                SpawnUtils.RevertSpawnLocationCamera(true);
+                SpawnUtils.RevertSpawnLocationCamera(true, true);
                 yield break;
             }
 

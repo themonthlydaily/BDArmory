@@ -68,7 +68,7 @@ namespace BDArmory.Competition.VesselSpawning
 
         #region Camera
         public static void ShowSpawnPoint(int worldIndex, double latitude, double longitude, double altitude = 0, float distance = 100, bool spawning = false) => SpawnUtilsInstance.Instance.ShowSpawnPoint(worldIndex, latitude, longitude, altitude, distance, spawning); // Note: this may launch a coroutine when not spawning and there's no active vessel!
-        public static void RevertSpawnLocationCamera(bool keepTransformValues = true) => SpawnUtilsInstance.Instance.RevertSpawnLocationCamera(keepTransformValues);
+        public static void RevertSpawnLocationCamera(bool keepTransformValues = true, bool revertIfDead = false) => SpawnUtilsInstance.Instance.RevertSpawnLocationCamera(keepTransformValues, revertIfDead);
         #endregion
 
         #region Teams
@@ -430,7 +430,7 @@ namespace BDArmory.Competition.VesselSpawning
             ShowSpawnPoint(worldIndex, latitude, longitude, altitude, distance, spawning, false);
         }
 
-        public void RevertSpawnLocationCamera(bool keepTransformValues = true)
+        public void RevertSpawnLocationCamera(bool keepTransformValues = true, bool revertIfDead = false)
         {
             if (spawnLocationCamera == null || !spawnLocationCamera.activeSelf) return;
             if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.SpawnUtils]: Reverting spawn location camera.");
@@ -449,7 +449,7 @@ namespace BDArmory.Competition.VesselSpawning
             }
             if (FlightGlobals.ActiveVessel != null && FlightGlobals.ActiveVessel.state != Vessel.State.DEAD)
                 LoadedVesselSwitcher.Instance.ForceSwitchVessel(FlightGlobals.ActiveVessel); // Update the camera.
-            else // Spawn a spawn probe to avoid KSP breaking the camera.
+            else if (revertIfDead) // Spawn a spawn probe to avoid KSP breaking the camera.
             {
                 var spawnProbe = VesselSpawner.SpawnSpawnProbe(flightCamera.Distance * flightCamera.mainCamera.transform.forward);
                 if (spawnProbe != null)
