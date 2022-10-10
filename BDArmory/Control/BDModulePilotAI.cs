@@ -3320,7 +3320,7 @@ namespace BDArmory.Control
             smoothedSinAoA.Update(curSinAoA);
             var sinAoA = smoothedSinAoA.Value;
             var sinAoAPred = smoothedSinAoA.At(0.1f);
-            if (BDArmorySettings.DEBUG_AI || BDArmorySettings.DEBUG_TELEMETRY) debugString.AppendLine($"AoA: current: {Mathf.Rad2Deg * Mathf.Asin(curSinAoA):F2}°, smoothed {Mathf.Rad2Deg * Mathf.Asin(sinAoA):F2}°, pred +0.1s {Mathf.Rad2Deg * Mathf.Asin(sinAoAPred):F2}°");
+            if (BDArmorySettings.DEBUG_AI || BDArmorySettings.DEBUG_TELEMETRY) debugString.AppendLine($"AoA: current: {Mathf.Rad2Deg * Mathf.Asin(curSinAoA):F2}°, smoothed {Mathf.Rad2Deg * Mathf.Asin(sinAoA):F2}°, pred +0.1s {Mathf.Rad2Deg * Mathf.Asin(sinAoAPred):F2}°"); // Note: sinAoA can go beyond ±1, giving NaN in the debug line.
 
             if (gLoadPred < maxNegG || Math.Abs(sinAoAPred - sinAoAAtMaxNegG) < 0.005f)
             {
@@ -3350,7 +3350,7 @@ namespace BDArmory.Control
                 dynVelocityMagSqr = dynVelocityMagSqr * dynVelSmoothingCoef + (1f - dynVelSmoothingCoef) * (float)vessel.Velocity().sqrMagnitude; // Smooth the recently measured speed for determining the turn radius.
             }
 
-            float AoADiff = Mathf.Max(sinAoAAtMaxPosG - sinAoAAtMaxNegG, 0.01f); // Avoid divide-by-zero.
+            float AoADiff = Mathf.Max(sinAoAAtMaxPosG - sinAoAAtMaxNegG, 0.001f); // Avoid divide-by-zero.
 
             gAoASlopePerDynPres = (maxPosG - maxNegG) / AoADiff;
             gOffsetPerDynPres = maxPosG - gAoASlopePerDynPres * sinAoAAtMaxPosG;     //g force offset
@@ -3358,7 +3358,8 @@ namespace BDArmory.Control
 
         void AdjustPitchForGAndAoALimits(FlightCtrlState s)
         {
-            float minSinAoA, maxSinAoA;
+            float minSinAoA = 0, maxSinAoA = 0, curSinAoA = 0;
+            float negPitchDynPresLimit = 0, posPitchDynPresLimit = 0;
 
             if (vessel.LandedOrSplashed || vessel.srfSpeed < Math.Min(minSpeed, takeOffSpeed))         //if we're going too slow, don't use this
             {
@@ -3370,88 +3371,90 @@ namespace BDArmory.Control
 
             float invVesselDynPreskPa = 1f / (float)vessel.dynamicPressurekPa;
 
-            maxSinAoA = maxAllowedGForce * bodyGravity * invVesselDynPreskPa;
-            minSinAoA = -maxSinAoA;
-
-            maxSinAoA -= gOffsetPerDynPres;
-            minSinAoA -= gOffsetPerDynPres;
-
-            maxSinAoA /= gAoASlopePerDynPres;
-            minSinAoA /= gAoASlopePerDynPres;
-
-            if (maxSinAoA > maxAllowedSinAoA)
-                maxSinAoA = maxAllowedSinAoA;
-
-            if (minSinAoA < -maxAllowedSinAoA)
-                minSinAoA = -maxAllowedSinAoA;
-
-            float curSinAoA = Vector3.Dot(vessel.Velocity() / vessel.srfSpeed, vessel.ReferenceTransform.forward);
-
-            float centerSinAoA = (minSinAoA + maxSinAoA) * 0.5f;
-            float curSinAoACentered = curSinAoA - centerSinAoA;
-            float sinAoADiff = Mathf.Max(0.5f * Math.Abs(maxSinAoA - minSinAoA), 0.01f); // Avoid divide-by-zero.
-            float curSinAoANorm = curSinAoACentered / sinAoADiff;      //scaled so that from centerAoA to maxAoA is 1
-
-            float negPitchScalar, posPitchScalar;
-            negPitchScalar = negPitchDynPresLimitIntegrator * invVesselDynPreskPa - lastPitchInput;
-            posPitchScalar = lastPitchInput - posPitchDynPresLimitIntegrator * invVesselDynPreskPa;
-
-            //update pitch control limits as needed
-            float negPitchDynPresLimit, posPitchDynPresLimit;
-            negPitchDynPresLimit = posPitchDynPresLimit = 0;
-            if (curSinAoANorm < -0.15f)
+            if (maxAllowedAoA < 90)
             {
-                float sinAoAOffset = curSinAoANorm + 1;     //set max neg aoa to be 0
-                float AoALimScalar = Math.Abs(curSinAoANorm);
-                AoALimScalar *= AoALimScalar;
-                AoALimScalar *= AoALimScalar;
-                AoALimScalar *= AoALimScalar;
-                if (AoALimScalar > 1)
-                    AoALimScalar = 1;
+                maxSinAoA = maxAllowedGForce * bodyGravity * invVesselDynPreskPa;
+                minSinAoA = -maxSinAoA;
 
-                float pitchInputScalar = negPitchScalar;
-                pitchInputScalar = 1 - Mathf.Clamp01(Math.Abs(pitchInputScalar));
-                pitchInputScalar *= pitchInputScalar;
-                pitchInputScalar *= pitchInputScalar;
-                pitchInputScalar *= pitchInputScalar;
-                if (pitchInputScalar < 0)
-                    pitchInputScalar = 0;
+                maxSinAoA -= gOffsetPerDynPres;
+                minSinAoA -= gOffsetPerDynPres;
 
-                float deltaSinAoANorm = curSinAoA - lastSinAoA;
-                deltaSinAoANorm /= sinAoADiff;
+                maxSinAoA /= gAoASlopePerDynPres;
+                minSinAoA /= gAoASlopePerDynPres;
 
-                if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Updating Neg Gs");
-                negPitchDynPresLimitIntegrator -= 0.01f * Mathf.Clamp01(AoALimScalar + pitchInputScalar) * sinAoAOffset * (float)vessel.dynamicPressurekPa;
-                negPitchDynPresLimitIntegrator -= 0.005f * deltaSinAoANorm * (float)vessel.dynamicPressurekPa;
-                if (sinAoAOffset < 0)
-                    negPitchDynPresLimit = -0.3f * sinAoAOffset;
-            }
-            if (curSinAoANorm > 0.15f)
-            {
-                float sinAoAOffset = curSinAoANorm - 1;     //set max pos aoa to be 0
-                float AoALimScalar = Math.Abs(curSinAoANorm);
-                AoALimScalar *= AoALimScalar;
-                AoALimScalar *= AoALimScalar;
-                AoALimScalar *= AoALimScalar;
-                if (AoALimScalar > 1)
-                    AoALimScalar = 1;
+                if (maxSinAoA > maxAllowedSinAoA)
+                    maxSinAoA = maxAllowedSinAoA;
 
-                float pitchInputScalar = posPitchScalar;
-                pitchInputScalar = 1 - Mathf.Clamp01(Math.Abs(pitchInputScalar));
-                pitchInputScalar *= pitchInputScalar;
-                pitchInputScalar *= pitchInputScalar;
-                pitchInputScalar *= pitchInputScalar;
-                if (pitchInputScalar < 0)
-                    pitchInputScalar = 0;
+                if (minSinAoA < -maxAllowedSinAoA)
+                    minSinAoA = -maxAllowedSinAoA;
 
-                float deltaSinAoANorm = curSinAoA - lastSinAoA;
-                deltaSinAoANorm /= sinAoADiff;
+                curSinAoA = Vector3.Dot(vessel.Velocity().normalized, vessel.ReferenceTransform.forward);
 
-                if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Updating Pos Gs");
-                posPitchDynPresLimitIntegrator -= 0.01f * Mathf.Clamp01(AoALimScalar + pitchInputScalar) * sinAoAOffset * (float)vessel.dynamicPressurekPa;
-                posPitchDynPresLimitIntegrator -= 0.005f * deltaSinAoANorm * (float)vessel.dynamicPressurekPa;
-                if (sinAoAOffset > 0)
-                    posPitchDynPresLimit = -0.3f * sinAoAOffset;
+                float centerSinAoA = (minSinAoA + maxSinAoA) * 0.5f;
+                float curSinAoACentered = curSinAoA - centerSinAoA;
+                float sinAoADiff = Mathf.Max(0.5f * Math.Abs(maxSinAoA - minSinAoA), 0.001f); // Avoid divide-by-zero.
+                float curSinAoANorm = curSinAoACentered / sinAoADiff;      //scaled so that from centerAoA to maxAoA is 1
+
+                float negPitchScalar, posPitchScalar;
+                negPitchScalar = negPitchDynPresLimitIntegrator * invVesselDynPreskPa - lastPitchInput;
+                posPitchScalar = lastPitchInput - posPitchDynPresLimitIntegrator * invVesselDynPreskPa;
+
+                //update pitch control limits as needed
+                negPitchDynPresLimit = posPitchDynPresLimit = 0;
+                if (curSinAoANorm < -0.15f)
+                {
+                    float sinAoAOffset = curSinAoANorm + 1;     //set max neg aoa to be 0
+                    float AoALimScalar = Math.Abs(curSinAoANorm);
+                    AoALimScalar *= AoALimScalar;
+                    AoALimScalar *= AoALimScalar;
+                    AoALimScalar *= AoALimScalar;
+                    if (AoALimScalar > 1)
+                        AoALimScalar = 1;
+
+                    float pitchInputScalar = negPitchScalar;
+                    pitchInputScalar = 1 - Mathf.Clamp01(Math.Abs(pitchInputScalar));
+                    pitchInputScalar *= pitchInputScalar;
+                    pitchInputScalar *= pitchInputScalar;
+                    pitchInputScalar *= pitchInputScalar;
+                    if (pitchInputScalar < 0)
+                        pitchInputScalar = 0;
+
+                    float deltaSinAoANorm = curSinAoA - lastSinAoA;
+                    deltaSinAoANorm /= sinAoADiff;
+
+                    if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Updating Neg Gs");
+                    negPitchDynPresLimitIntegrator -= 0.01f * Mathf.Clamp01(AoALimScalar + pitchInputScalar) * sinAoAOffset * (float)vessel.dynamicPressurekPa;
+                    negPitchDynPresLimitIntegrator -= 0.005f * deltaSinAoANorm * (float)vessel.dynamicPressurekPa;
+                    if (sinAoAOffset < 0)
+                        negPitchDynPresLimit = -0.3f * sinAoAOffset;
+                }
+                if (curSinAoANorm > 0.15f)
+                {
+                    float sinAoAOffset = curSinAoANorm - 1;     //set max pos aoa to be 0
+                    float AoALimScalar = Math.Abs(curSinAoANorm);
+                    AoALimScalar *= AoALimScalar;
+                    AoALimScalar *= AoALimScalar;
+                    AoALimScalar *= AoALimScalar;
+                    if (AoALimScalar > 1)
+                        AoALimScalar = 1;
+
+                    float pitchInputScalar = posPitchScalar;
+                    pitchInputScalar = 1 - Mathf.Clamp01(Math.Abs(pitchInputScalar));
+                    pitchInputScalar *= pitchInputScalar;
+                    pitchInputScalar *= pitchInputScalar;
+                    pitchInputScalar *= pitchInputScalar;
+                    if (pitchInputScalar < 0)
+                        pitchInputScalar = 0;
+
+                    float deltaSinAoANorm = curSinAoA - lastSinAoA;
+                    deltaSinAoANorm /= sinAoADiff;
+
+                    if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Updating Pos Gs");
+                    posPitchDynPresLimitIntegrator -= 0.01f * Mathf.Clamp01(AoALimScalar + pitchInputScalar) * sinAoAOffset * (float)vessel.dynamicPressurekPa;
+                    posPitchDynPresLimitIntegrator -= 0.005f * deltaSinAoANorm * (float)vessel.dynamicPressurekPa;
+                    if (sinAoAOffset > 0)
+                        posPitchDynPresLimit = -0.3f * sinAoAOffset;
+                }
             }
 
             float currentG = -Vector3.Dot(vessel.acceleration, vessel.ReferenceTransform.forward);
@@ -3492,6 +3495,7 @@ namespace BDArmory.Control
             lastPitchInput = s.pitch;
             lastSinAoA = curSinAoA;
 
+            // if ((BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) && negLim>posLim) debugString.AppendLine($"Bad limits: curSinAoA: {curSinAoA}, sinAoADiff: {sinAoADiff}, : curSinAoANorm: {curSinAoANorm}, maxAllowedAoA: {maxAllowedAoA}, maxAllowedSinAoA: {maxAllowedSinAoA}");
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine(String.Format("Final Pitch: {0,7:F4}  (Limits: {1,7:F4} — {2,6:F4})", s.pitch, negLim, posLim));
         }
 
