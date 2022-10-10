@@ -347,6 +347,7 @@ namespace BDArmory.UI
                         { "strafingSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.strafingSpeed, 10, 200) },
                         { "idleSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.idleSpeed, 10, 200) },
                         { "ABPriority", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.ABPriority, 0, 100) },
+                        { "ABOverrideThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.ABOverrideThreshold, 0, 200) },
 
                         { "maxSteer", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxSteer, 0.1, 1) },
                         { "lowSpeedSwitch", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.lowSpeedSwitch, 10, 500) },
@@ -1490,6 +1491,19 @@ namespace BDArmory.UI
                             }
                             GUI.Label(SettinglabelRect(leftIndent, spdLines), StringUtils.Localize("#LOC_BDArmory_ABPriority") + ": " + ActivePilot.ABPriority.ToString("0"), Label);//"AB priority"
                             if (contextTipsEnabled) GUI.Label(ContextLabelRect(leftIndent, ++spdLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_ABPriority"), contextLabel);//"AB priority context help"
+
+                            if (!NumFieldsEnabled)
+                            {
+                                ActivePilot.ABOverrideThreshold = GUI.HorizontalSlider(SettingSliderRect(leftIndent, ++spdLines, contentWidth), ActivePilot.ABOverrideThreshold, 0, 200);
+                                ActivePilot.ABOverrideThreshold = Mathf.Round(ActivePilot.ABOverrideThreshold);
+                            }
+                            else
+                            {
+                                inputFields["ABOverrideThreshold"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ++spdLines, contentWidth), inputFields["ABOverrideThreshold"].possibleValue, 6));
+                                ActivePilot.ABOverrideThreshold = (float)inputFields["ABOverrideThreshold"].currentValue;
+                            }
+                            GUI.Label(SettinglabelRect(leftIndent, spdLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_ABOverrideThreshold") + ": " + ActivePilot.ABOverrideThreshold.ToString("0"), Label);//"AB Override Threshold"
+                            if (contextTipsEnabled) GUI.Label(ContextLabelRect(leftIndent, ++spdLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_ABOverrideThreshold_Context"), contextLabel);//"AB priority context help"
 
                             GUI.EndGroup();
                             speedHeight = Mathf.Lerp(speedHeight, ++spdLines, 0.15f);
