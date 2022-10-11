@@ -791,6 +791,7 @@ namespace BDArmory.UI
                                 GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_SpeedHelp_gnd"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //strafe speed
                                 GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_SpeedHelp_idle"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //idle speed
                                 GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_SpeedHelp_ABpriority"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //AB priority
+                                GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_SpeedHelp_ABOverrideThreshold"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //AB override threshold
                             }
                             if (showControl)
                             {
