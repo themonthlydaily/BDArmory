@@ -421,6 +421,11 @@ namespace BDArmory.Control
             groupName = "pilotAI_ControlLimits", groupDisplayName = "#LOC_BDArmory_PilotAI_ControlLimits", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 90f, stepIncrement = 2.5f, scene = UI_Scene.All)]
         public float maxAllowedAoA = 35;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_postStallAoA", //Post-stall AoA
+            groupName = "pilotAI_ControlLimits", groupDisplayName = "#LOC_BDArmory_PilotAI_ControlLimits", groupStartCollapsed = true),
+            UI_FloatRange(minValue = 0f, maxValue = 90f, stepIncrement = 2.5f, scene = UI_Scene.All)]
+        public float postStallAoA = 35;
         #endregion
 
         #region EvadeExtend
@@ -586,6 +591,7 @@ namespace BDArmory.Control
             { nameof(altitudeSteerLimiterAltitude), 100000f },
             { nameof(maxAllowedGForce), 1000f },
             { nameof(maxAllowedAoA), 180f },
+            { nameof(postStallAoA), 180f },
             // { nameof(extendMult), 200f },
             { nameof(extendDistanceAirToAir), 20000f },
             { nameof(extendAngleAirToAir), 90f },
@@ -2220,7 +2226,7 @@ namespace BDArmory.Control
 
             //test poststall
             float AoA = Vector3.Angle(vessel.ReferenceTransform.up, vessel.Velocity());
-            if (AoA > maxAllowedAoA)
+            if (AoA > postStallAoA)
             {
                 steerMode = SteerModes.Aiming;
             }
