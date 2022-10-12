@@ -5209,7 +5209,7 @@ namespace BDArmory.Control
             {
                 if (BDArmorySettings.DEBUG_AI)
                 {
-                    Debug.Log("[BDArmory.MissileFire]: {vessel.vesselName} - No weapon selected for target {target.Vessel.vesselName}");
+                    Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} - No weapon selected for target {target.Vessel.vesselName}");
                     // Debug.Log("DEBUG target isflying:" + target.isFlying + ", isLorS:" + target.isLandedOrSurfaceSplashed + ", isUW:" + target.isUnderwater);
                     // if (target.isFlying)
                     //     foreach (var weapon in weaponTypesAir)
