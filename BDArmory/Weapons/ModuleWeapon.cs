@@ -233,6 +233,7 @@ namespace BDArmory.Weapons
         Vector3 laserPoint;
         public bool slaved;
         public bool GPSTarget;
+        public bool radarTarget;
 
         public Transform turretBaseTransform
         {
@@ -832,7 +833,7 @@ namespace BDArmory.Weapons
         //auto proximity tracking
         [KSPField]
         public float autoProxyTrackRange = 0;
-        bool atprAcquired;
+        public bool atprAcquired;
         int aptrTicker;
 
         float timeFired;
@@ -4309,6 +4310,7 @@ namespace BDArmory.Weapons
             targetAcquired = false;
             slaved = false;
             GPSTarget = false;
+            radarTarget = false;
             bool atprWasAcquired = atprAcquired;
             atprAcquired = false;
             lastTargetAcquisitionType = targetAcquisitionType;
@@ -4478,6 +4480,7 @@ namespace BDArmory.Weapons
                     }
                     targetAcquired = true;
                     targetAcquisitionType = TargetAcquisitionType.Radar;
+                    radarTarget = true;
                     return;
                 }
 
