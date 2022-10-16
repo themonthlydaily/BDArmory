@@ -1598,7 +1598,7 @@ namespace BDArmory.Control
                             var weapon = (ModuleWeapon)weaponCandidate;
                             if (weapon is null) continue;
                             weaponHeatDebugStrings.Add(String.Format(" - {0}: heat: {1,6:F1}, max: {2}, overheated: {3}", weapon.shortName, weapon.heat, weapon.maxHeat, weapon.isOverheated));
-                            weaponAimDebugStrings.Add($" - Lead Offset: {weapon.GetLeadOffset()}, FinalAimTgt: {weapon.finalAimTarget}, tgt Position: {weapon.targetPosition}, pointingAtSelf: {weapon.pointingAtSelf}, safeToFire: {weapon.safeToFire}, tgt CosAngle {weapon.targetCosAngle}, wpn CosAngle {weapon.targetAdjustedMaxCosAngle}, Wpn Autofire {weapon.autoFire}, RoF {weapon.roundsPerMinute}, MaxRoF {weapon.baseRPM}");
+                            weaponAimDebugStrings.Add($" - Target: {(weapon.visualTargetPart != null ? weapon.visualTargetPart.name : weapon.visualTargetVessel != null ? weapon.visualTargetVessel.vesselName : weapon.GPSTarget ? "GPS" : weapon.slaved ? "slaved" : weapon.radarTarget ? "radar" : weapon.atprAcquired ? "atpr" : "none")}, Lead Offset: {weapon.GetLeadOffset()}, FinalAimTgt: {weapon.finalAimTarget}, tgt Position: {weapon.targetPosition}, pointingAtSelf: {weapon.pointingAtSelf}, safeToFire: {weapon.safeToFire}, tgt CosAngle {weapon.targetCosAngle}, wpn CosAngle {weapon.targetAdjustedMaxCosAngle}, Wpn Autofire {weapon.autoFire}, RoF {weapon.roundsPerMinute}, MaxRoF {weapon.baseRPM}");
                             // weaponAimDebugStrings.Add($" - Target pos: {weapon.targetPosition.ToString("G3")}, vel: {weapon.targetVelocity.ToString("G4")}, acc: {weapon.targetAcceleration.ToString("G6")}");
                             // weaponAimDebugStrings.Add($" - Target rel pos: {(weapon.targetPosition - weapon.fireTransforms[0].position).ToString("G3")} ({(weapon.targetPosition - weapon.fireTransforms[0].position).magnitude:F1}), rel vel: {(weapon.targetVelocity - weapon.part.rb.velocity).ToString("G4")}, rel acc: {((Vector3)(weapon.targetAcceleration - weapon.vessel.acceleration)).ToString("G6")}");
 #if DEBUG
@@ -5209,7 +5209,7 @@ namespace BDArmory.Control
             {
                 if (BDArmorySettings.DEBUG_AI)
                 {
-                    Debug.Log("[BDArmory.MissileFire]: {vessel.vesselName} - No weapon selected for target {target.Vessel.vesselName}");
+                    Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} - No weapon selected for target {target.Vessel.vesselName}");
                     // Debug.Log("DEBUG target isflying:" + target.isFlying + ", isLorS:" + target.isLandedOrSurfaceSplashed + ", isUW:" + target.isUnderwater);
                     // if (target.isFlying)
                     //     foreach (var weapon in weaponTypesAir)
