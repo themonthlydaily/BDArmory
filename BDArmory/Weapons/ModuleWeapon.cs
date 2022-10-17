@@ -146,7 +146,7 @@ namespace BDArmory.Weapons
             {
                 var fireTransform = (eWeaponType == WeaponTypes.Rocket && rocketPod) ? rockets[0].parent : fireTransforms[0];
                 var theta = FiringTolerance * targetRadius / (finalAimTarget - fireTransform.position).magnitude + Mathf.Deg2Rad * maxDeviation / 2f; // Approximation to arctan(α*r/d) + θ/2. (arctan(x) = x-x^3/3 + O(x^5))
-                return finalAimTarget.IsZero() ? 1f : 1f - 0.5f * theta * theta; // Approximation to cos(theta). (cos(x) = 1-x^2/2!+O(x^4))
+                return finalAimTarget.IsZero() ? 1f : Mathf.Max(1f - 0.5f * theta * theta, 0); // Approximation to cos(theta). (cos(x) = 1-x^2/2!+O(x^4))
             }
         }
         public Vector3 targetPosition;
@@ -2326,7 +2326,7 @@ namespace BDArmory.Weapons
                                                     if (hitP && hitP != p && hitP.vessel && hitP.vessel != vessel)
                                                     {
                                                         //p.AddDamage(damage);
-                                                        p.AddSkinThermalFlux(damage);
+                                                        p.AddSkinThermalFlux(damage); //add modifier to adjust damage by armor diffusivity value
                                                     }
                                                 }
                                                 if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Heatray Applying {damage} heat to target");
@@ -3810,8 +3810,8 @@ namespace BDArmory.Weapons
                 if (autoFire && autofireShotCount >= fireBurstLength)
                 {
                     autoFire = false;
-                    visualTargetVessel = null;
-                    visualTargetPart = null;
+                    //visualTargetVessel = null; //if there's no target, these get nulled in MissileFire. Nulling them here would cause Ai to stop engaging target with longer TargetScanIntervals as 
+                    //visualTargetPart = null; //there's no longer a targetVessel/part to do leadOffset aim calcs for.
                     tgtShell = null;
                     tgtRocket = null;
                     autofireShotCount = 0;
@@ -3836,10 +3836,10 @@ namespace BDArmory.Weapons
                 if (autoFire && Time.time - autoFireTimer > autoFireLength && !isAPS)
                 {
                     autoFire = false;
-                    visualTargetVessel = null;
-                    visualTargetPart = null;
-                    tgtShell = null;
-                    tgtRocket = null;
+                    //visualTargetVessel = null;
+                    //visualTargetPart = null;
+                    //tgtShell = null;
+                    //tgtRocket = null;
                     if (SpoolUpTime > 0)
                     {
                         roundsPerMinute = baseRPM / 10;

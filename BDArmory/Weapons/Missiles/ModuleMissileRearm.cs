@@ -35,7 +35,7 @@ UI_FloatRange(minValue = 1f, maxValue = 4, stepIncrement = 1f, scene = UI_Scene.
         public float tntmass = 1;
         AvailablePart missilePart;
         public Part SpawnedMissile;
-        public void SpawnMissile(Transform MissileTransform, bool offset = false)
+        public void SpawnMissile(Transform MissileTransform, float offset = 0)
         {
             if (ammoCount >= 1 || BDArmorySettings.INFINITE_ORDINANCE)
             {
@@ -50,7 +50,7 @@ UI_FloatRange(minValue = 1f, maxValue = 4, stepIncrement = 1f, scene = UI_Scene.
                             var partNode = new ConfigNode();
                             PartSnapshot(missilePart.partPrefab).CopyTo(partNode);
                             //SpawnedMissile = CreatePart(partNode, MissileTransform.transform.position - MissileTransform.TransformDirection(missilePart.partPrefab.srfAttachNode.originalPosition),
-                            SpawnedMissile = CreatePart(partNode, offset ? (MissileTransform.position + MissileTransform.forward * 1.5f) : MissileTransform.transform.position, MissileTransform.rotation, this.part);
+                            SpawnedMissile = CreatePart(partNode, offset > 0 ? (MissileTransform.position + MissileTransform.forward * offset) : MissileTransform.transform.position, MissileTransform.rotation, this.part);
                             var MMR = SpawnedMissile.FindModuleImplementing<ModuleMissileRearm>();
                             if (MMR != null) AccountForAmmo = false;
                             /* //keep the module, can be used for cluster missile submunition creation

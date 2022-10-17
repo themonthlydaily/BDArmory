@@ -35,6 +35,7 @@ namespace BDArmory.Weapons.Missiles
         [KSPField] public bool useSymCounterpart = false; //have symmetrically placed parts fire along with this part as part of salvo? Requires isMultMissileLauncher = true;
         [KSPField] public bool overrideReferenceTransform = false; //override the missileReferenceTransform in Missilelauncher to use vessel prograde
         [KSPField] public float rippleRPM = 650;
+        [KSPField] public float offset = 0; //add an offset to missile spawn position?
         [KSPField] public string deployAnimationName;
         [KSPField] public string RailNode = "rail"; //name of attachnode for VLS MMLs to set missile loadout
         [KSPField] public float tntMass = 1; //for MissileLauncher GetInfo()
@@ -60,8 +61,8 @@ namespace BDArmory.Weapons.Missiles
                 Debug.LogError($"[BDArmory.MultiMissileLauncher] no ModuleMissileRearm on {part.name}. Please fix your .cfg");
                 missileLauncher.reloadableRail = missileSpawner;
                 missileLauncher.hasAmmo = true;
+                if (!isClusterMissile) missileSpawner.ammoCount = launchTransforms.Length;
             }
-            if (!isClusterMissile) missileSpawner.ammoCount = salvoSize;
             if (!string.IsNullOrEmpty(deployAnimationName))
             {
                 deployState = GUIUtils.SetUpSingleAnimation(deployAnimationName, part);
@@ -338,14 +339,9 @@ namespace BDArmory.Weapons.Missiles
                     tubesFired = 0;
                     break;
                 }
-                missileSpawner.SpawnMissile(launchTransforms[m], true);
+                missileSpawner.SpawnMissile(launchTransforms[m], offset);
                 if (!BDArmorySettings.INFINITE_ORDINANCE) missileSpawner.ammoCount--;
                 MissileLauncher ml = missileSpawner.SpawnedMissile.FindModuleImplementing<MissileLauncher>();
-                if (!missileRegistry)
-                {
-                    BDATargetManager.FiredMissiles.Add(ml); //so multi-missile salvoes only count as a single missile fired by the WM for maxMissilesPerTarget
-                    if (salvoSize > 1) missileRegistry = true;
-                }
                 yield return new WaitUntilFixed(() => ml.SetupComplete); // Wait until missile fully initialized.
                 ml.Team = Team;
                 ml.SourceVessel = missileLauncher.SourceVessel;
@@ -384,6 +380,7 @@ namespace BDArmory.Weapons.Missiles
                         if (TargetID > Mathf.Min((wpm.targetsAssigned.Count - 1), wpm.multiMissileTgtNum))
                         {
                             TargetID = 0; //if more missiles than targets, loop target list
+                            missileRegistry = true;
                         }
 
                         if (wpm.targetsAssigned.Count > 0 && wpm.targetsAssigned[TargetID].Vessel != null)
@@ -516,6 +513,10 @@ namespace BDArmory.Weapons.Missiles
                 {
                     wpm.SendTargetDataToMissile(ml);
                 }
+                if (!missileRegistry)
+                {
+                    BDATargetManager.FiredMissiles.Add(ml); //so multi-missile salvoes only count as a single missile fired by the WM for maxMissilesPerTarget
+                }
                 ml.launched = true;
                 ml.TargetPosition = vessel.ReferenceTransform.position + (vessel.ReferenceTransform.up * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
                 ml.MissileLaunch();
@@ -551,6 +552,7 @@ namespace BDArmory.Weapons.Missiles
                 }
             }
             missileSalvo = null;
+            if (salvoSize < launchTransforms.Length && missileLauncher.reloadRoutine == null && (BDArmorySettings.INFINITE_AMMO || missileSpawner.ammoCount > 0)) missileLauncher.launched = false;
         }
 
         public void SetupMissileDummyPool(string modelpath)

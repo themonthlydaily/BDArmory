@@ -1398,7 +1398,7 @@ namespace BDArmory.Damage
             {
                 HullMassAdjust = 0;
                 guiHullTypeString = StringUtils.Localize("#LOC_BDArmory_Aluminium");
-                //removing maxtemp from aluminium and steel to prevent hull type from causing issues with, say, spacecraft re-entry on installs with BDA not used exclusively for BDA
+                part.maxTemp = part.partInfo.partPrefab.maxTemp; //reset maxTemp to .cfg value
                 HullCostAdjust = 0;
             }
             else //hulltype 3
@@ -1406,6 +1406,7 @@ namespace BDArmory.Damage
                 HullMassAdjust = partMass;
                 guiHullTypeString = StringUtils.Localize("#LOC_BDArmory_Steel");
                 HullCostAdjust = Mathf.Min(((part.partInfo.cost + part.partInfo.variant.Cost) - (float)resourceCost) * 2, ((part.partInfo.cost + part.partInfo.variant.Cost) - (float)resourceCost) + 1500); //make steel parts rather more expensive
+                //part.maxTemp = 3000? 3200?
             }
             if (OldHullType != HullTypeNum || OldHullMassAdjust != HullMassAdjust)
             {
