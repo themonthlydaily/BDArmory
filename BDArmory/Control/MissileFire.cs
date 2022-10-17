@@ -1377,7 +1377,7 @@ namespace BDArmory.Control
                     if (missileBase.targetVessel == null) continue;
                     if (missileBase.SourceVessel != this.vessel) continue;
                     //if (missileBase.MissileState != MissileBase.MissileStates.PostThrust && !missileBase.HasMissed && !missileBase.HasExploded)
-                    if (missileBase.HasFired && !missileBase.HasMissed && !missileBase.HasExploded || missileBase.GetWeaponClass() == WeaponClasses.Bomb) //culling post-thrust missiles makes AGMs get cleared almost immediately after launch
+                    if ((missileBase.HasFired || missileBase.launched) && !missileBase.HasMissed && !missileBase.HasExploded || missileBase.GetWeaponClass() == WeaponClasses.Bomb) //culling post-thrust missiles makes AGMs get cleared almost immediately after launch
                     {
                         if (!missilesAway.ContainsKey(missileBase.targetVessel))
                         {
@@ -1598,21 +1598,23 @@ namespace BDArmory.Control
                             var weapon = (ModuleWeapon)weaponCandidate;
                             if (weapon is null) continue;
                             weaponHeatDebugStrings.Add(String.Format(" - {0}: heat: {1,6:F1}, max: {2}, overheated: {3}", weapon.shortName, weapon.heat, weapon.maxHeat, weapon.isOverheated));
-                            weaponAimDebugStrings.Add($" - Target: {(weapon.visualTargetPart != null ? weapon.visualTargetPart.name : weapon.visualTargetVessel != null ? weapon.visualTargetVessel.vesselName : weapon.GPSTarget ? "GPS" : weapon.slaved ? "slaved" : weapon.radarTarget ? "radar" : weapon.atprAcquired ? "atpr" : "none")}, Lead Offset: {weapon.GetLeadOffset()}, FinalAimTgt: {weapon.finalAimTarget}, tgt Position: {weapon.targetPosition}, pointingAtSelf: {weapon.pointingAtSelf}, safeToFire: {weapon.safeToFire}, tgt CosAngle {weapon.targetCosAngle}, wpn CosAngle {weapon.targetAdjustedMaxCosAngle}, Wpn Autofire {weapon.autoFire}, RoF {weapon.roundsPerMinute}, MaxRoF {weapon.baseRPM}");
+                            weaponAimDebugStrings.Add($" - Lead Offset: {weapon.GetLeadOffset()}, FinalAimTgt: {weapon.finalAimTarget}, tgt Position: {weapon.targetPosition}, pointingAtSelf: {weapon.pointingAtSelf}, safeToFire: {weapon.safeToFire}, tgt CosAngle {weapon.targetCosAngle}, wpn CosAngle {weapon.targetAdjustedMaxCosAngle}, Wpn Autofire {weapon.autoFire}, target Radius {weapon.targetRadius}, RoF {weapon.roundsPerMinute}, MaxRoF {weapon.baseRPM}");
                             // weaponAimDebugStrings.Add($" - Target pos: {weapon.targetPosition.ToString("G3")}, vel: {weapon.targetVelocity.ToString("G4")}, acc: {weapon.targetAcceleration.ToString("G6")}");
                             // weaponAimDebugStrings.Add($" - Target rel pos: {(weapon.targetPosition - weapon.fireTransforms[0].position).ToString("G3")} ({(weapon.targetPosition - weapon.fireTransforms[0].position).magnitude:F1}), rel vel: {(weapon.targetVelocity - weapon.part.rb.velocity).ToString("G4")}, rel acc: {((Vector3)(weapon.targetAcceleration - weapon.vessel.acceleration)).ToString("G6")}");
 #if DEBUG
                             if (weapon.visualTargetVessel != null && weapon.visualTargetVessel.loaded) weaponAimDebugStrings.Add($" - Visual target {(weapon.visualTargetPart is not null ? weapon.visualTargetPart.name : "CoM")} on {weapon.visualTargetVessel.vesselName}, distance: {(weapon.finalAimTarget - weapon.fireTransforms[0].position).magnitude:F1}, radius: {weapon.targetRadius:F1} ({weapon.visualTargetVessel.GetBounds()}), max deviation: {weapon.maxDeviation}, firing tolerance: {weapon.FiringTolerance}");
 #endif
-                        }
-                        int shots = 0;
-                        int hits = 0;
+                        }						
+                        float shots = 0;
+                        float hits = 0;
+                        float accuracy = 0;
                         if (BDACompetitionMode.Instance.Scores.ScoreData.ContainsKey(vessel.vesselName))
                         {
                             hits = BDACompetitionMode.Instance.Scores.ScoreData[vessel.vesselName].hits;
                             shots = BDACompetitionMode.Instance.Scores.ScoreData[vessel.vesselName].shotsFired;
+                            if (shots > 0) accuracy = hits / shots;
                         }
-                        weaponHeatDebugStrings.Add($" - Shots Fired: {shots}, Shots Hit: {hits}, Accuracy: {(shots > 0 ? hits / shots : 0f)}");
+                        weaponHeatDebugStrings.Add($" - Shots Fired: {shots}, Shots Hit: {hits}, Accuracy: {accuracy:F3}");
 
                         if (weaponHeatDebugStrings.Count > 0)
                         {

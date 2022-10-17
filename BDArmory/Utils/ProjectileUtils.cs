@@ -29,6 +29,7 @@ namespace BDArmory.Utils
         static HashSet<string> armorParts;
         public static bool IsArmorPart(Part part)
         {
+            if (BDArmorySettings.LEGACY_ARMOR) return false;
             if (armorParts == null)
             {
                 armorParts = PartLoader.LoadedPartsList.Select(p => p.partPrefab.partInfo.name).Where(name => name.ToLower().Contains("armor")).ToHashSet();
