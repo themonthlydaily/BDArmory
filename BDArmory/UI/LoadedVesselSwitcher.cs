@@ -192,8 +192,8 @@ namespace BDArmory.UI
 
             if (vesselTraceEnabled)
             {
-                if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
-                    floatingOriginCorrection += FloatingOrigin.OffsetNonKrakensbane;
+                if (BDKrakensbane.IsActive)
+                    floatingOriginCorrection += BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
                 var survivingVessels = weaponManagers.SelectMany(tm => tm.Value).Where(wm => wm != null).Select(wm => wm.vessel).ToList();
                 foreach (var vessel in survivingVessels)
                 {
@@ -1353,11 +1353,12 @@ namespace BDArmory.UI
             FlightInputHandler.ResumeVesselCtrlState(v);
         }
 
-        public IEnumerator SwitchToVesselWhenPossible(Vessel vessel)
+        public IEnumerator SwitchToVesselWhenPossible(Vessel vessel, float distance = 0)
         {
             var wait = new WaitForFixedUpdate();
             while (vessel != null && (!vessel.loaded || vessel.packed)) yield return wait;
             while (vessel != null && vessel != FlightGlobals.ActiveVessel) { ForceSwitchVessel(vessel); yield return wait; }
+            if (distance > 0) FlightCamera.fetch.SetDistance(distance);
         }
 
         public void TriggerSwitchVessel(float delay)

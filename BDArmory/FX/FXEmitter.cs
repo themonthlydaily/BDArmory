@@ -123,9 +123,9 @@ namespace BDArmory.FX
                 return;
             }
 
-            if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
+            if (BDKrakensbane.IsActive)
             {
-                transform.position -= FloatingOrigin.OffsetNonKrakensbane;
+                transform.position -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
             }
 
             if ((disabled || overrideLifeTime) && TimeIndex > particlesMaxEnergy)

@@ -29,6 +29,7 @@ namespace BDArmory.Bullets
         public string rocketName;
         public float rocketMass;
         public float caliber;
+        public float apMod;
         public float thrust;
         private Vector3 thrustVector;
         private Vector3 dragVector;
@@ -77,7 +78,7 @@ namespace BDArmory.Bullets
         bool startUnderwater = false;
         Ray RocketRay;
         private float impactVelocity;
-        public Vector3 currentVelocity = Vector3.zero;
+        public Vector3 currentVelocity = Vector3.zero; // Current real velocity w/o offloading
 
         public bool hasPenetrated = false;
         public bool hasDetonated = false;
@@ -250,11 +251,11 @@ namespace BDArmory.Bullets
                 return;
             }
             //floating origin and velocity offloading corrections
-            if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
+            if (BDKrakensbane.IsActive)
             {
-                transform.position -= FloatingOrigin.OffsetNonKrakensbane;
-                prevPosition -= FloatingOrigin.OffsetNonKrakensbane;
-                startPosition -= FloatingOrigin.OffsetNonKrakensbane;
+                transform.position -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                prevPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                startPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
             }
             distanceFromStart = Vector3.Distance(transform.position, startPosition);
 
@@ -262,7 +263,7 @@ namespace BDArmory.Bullets
             {
                 transform.parent = null;
                 rb.isKinematic = false;
-                rb.velocity = parentRB.velocity + Krakensbane.GetFrameVelocityV3f();
+                rb.velocity = parentRB.velocity + BDKrakensbane.FrameVelocityV3f;
             }
 
             if (rb && !rb.isKinematic)
@@ -280,7 +281,7 @@ namespace BDArmory.Bullets
 
                 //model transform. always points prograde
                 transform.rotation = Quaternion.RotateTowards(transform.rotation,
-                    Quaternion.LookRotation(rb.velocity + Krakensbane.GetFrameVelocity(), transform.up),
+                    Quaternion.LookRotation(rb.velocity, transform.up),
                     Mathf.Clamp01(atmosMultiplier * 2.5f) * (0.5f * (Time.time - startTime)) * 50 * Time.fixedDeltaTime);
 
 
@@ -302,7 +303,7 @@ namespace BDArmory.Bullets
                     //rb.AddRelativeForce(dragVector);
                     //Debug.Log("[ROCKETDRAG] current vel: " + rb.velocity.magnitude.ToString("0.0") + "; current dragforce: " + dragVector.magnitude + "; current atm density: " + atmosMultiplier.ToString("0.00"));
                 }
-                currentVelocity = rb.velocity;
+                currentVelocity = rb.velocity; // The rb.velocity is w/o offloading here, since rockets aren't vessels.
             }
 
             if (Time.time - startTime > thrustTime)
@@ -374,7 +375,7 @@ namespace BDArmory.Bullets
                             hitPart = hitEVA.part;
                             // relative velocity, separate from the below statement, because the hitpart might be assigned only above
                             if (hitPart.rb != null)
-                                impactVelocity = (rb.velocity - (hitPart.rb.velocity + Krakensbane.GetFrameVelocityV3f())).magnitude;
+                                impactVelocity = (rb.velocity - (hitPart.rb.velocity + BDKrakensbane.FrameVelocityV3f)).magnitude;
                             else
                                 impactVelocity = rb.velocity.magnitude;
                             if (dmgMult < 0)
@@ -396,7 +397,7 @@ namespace BDArmory.Bullets
                         if (hitPart != null && hitPart.rb != null)
                             // using relative velocity vector instead of just rocket velocity
                             // since KSP vessels can easily be moving faster than rockets
-                            impactVector = rb.velocity - (hitPart.rb.velocity + Krakensbane.GetFrameVelocityV3f());
+                            impactVector = rb.velocity - (hitPart.rb.velocity + BDKrakensbane.FrameVelocityV3f);
 
                         float hitAngle = Vector3.Angle(impactVector, -hit.normal);
 
@@ -447,6 +448,19 @@ namespace BDArmory.Bullets
                             float muParam2 = Armor.muParam2;
                             float muParam3 = Armor.muParam3;
 
+                            if (hitPart.skinTemperature > safeTemp) //has the armor started melting/denaturing/whatever?
+                            {
+                                //vFactor *= 1/(1.25f*0.75f-0.25f*0.75f*0.75f);
+                                vFactor *= 1.25490196078f; // Uses the above equation but just calculated out.
+                                                           // The equation 1/(1.25*x-0.25*x^2) approximates the effect of changing yield strength
+                                                           // by a factor of x
+                                if (hitPart.skinTemperature > safeTemp * 1.5f)
+                                {
+                                    vFactor *= 1.77777777778f; // Same as used above, but here with x = 0.5. Maybe this should be
+                                                               // some kind of a curve?
+                                }
+                            }
+
                             int armorType = (int)Armor.ArmorTypeNum;
                             if (BDArmorySettings.DEBUG_ARMOR)
                             {
@@ -459,7 +473,7 @@ namespace BDArmory.Bullets
                             //calculate penetration
                             /*if (Ductility > 0.05)
                             {*/
-                            penetration = ProjectileUtils.CalculatePenetration(caliber, impactVelocity, rocketMass * 1000f, 1f, Strength, vFactor, muParam1, muParam2, muParam3);
+                            penetration = ProjectileUtils.CalculatePenetration(caliber, impactVelocity, rocketMass * 1000f, apMod, Strength, vFactor, muParam1, muParam2, muParam3);
                             /*}
                             else
                             {
@@ -834,7 +848,7 @@ namespace BDArmory.Bullets
                             if (nuclear)
                                 NukeFX.CreateExplosion(currPosition, ExplosionSourceType.Rocket, sourceVesselName, rocket.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
                             else
-                                ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, direction, -1, false, rocketMass * 1000, -1, dmgMult, shaped ? "shapedcharge" : "standard", PenetratingHit);
+                                ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, direction, -1, false, rocketMass * 1000, -1, dmgMult, shaped ? "shapedcharge" : "standard", PenetratingHit,apMod);
                         }
                     }
                 }
@@ -898,7 +912,7 @@ namespace BDArmory.Bullets
                     pBullet.timeElapsedSinceCurrentSpeedWasAdjusted = 0;
                     pBullet.timeToLiveUntil = 4000 / sBullet.bulletVelocity * 1.1f + Time.time;
                     Vector3 firedVelocity = VectorUtils.GaussianDirectionDeviation(currentVelocity.normalized, (sBullet.subProjectileCount / BDAMath.Sqrt(currentVelocity.magnitude / 10))) * (sBullet.bulletVelocity / 10); //more subprojectiles = wider spread, higher base velocity = tighter spread
-                    pBullet.currentVelocity = (currentVelocity + Krakensbane.GetFrameVelocityV3f()) + firedVelocity; // use the real velocity, w/o offloading
+                    pBullet.currentVelocity = currentVelocity + firedVelocity; // currentVelocity is already the real velocity w/o offloading
                     pBullet.sourceWeapon = sourceWeapon;
                     pBullet.sourceVessel = sourceVessel;
                     pBullet.team = team;
@@ -973,6 +987,7 @@ namespace BDArmory.Bullets
                     rocket.explModelPath = explModelPath;
                     rocket.explSoundPath = explSoundPath;
                     rocket.caliber = sRocket.caliber;
+                    rocket.apMod = sRocket.apMod;
                     rocket.rocketMass = sRocket.rocketMass;
                     rocket.blastRadius = blastRadius = BlastPhysicsUtils.CalculateBlastRange(sRocket.tntMass);
                     rocket.thrust = sRocket.thrust;

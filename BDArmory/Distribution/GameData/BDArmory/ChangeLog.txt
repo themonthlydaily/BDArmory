@@ -1,4 +1,12 @@
-﻿
+﻿IMPROVEMENTS / FIXES
+- Spawning:
+	- Only spawn SpawnProbe for dead current vessel if spawning is aborted.
+- AI / WM:
+	- Fix AoA limits above 90° not behaving as expected by only limiting the AoA if the limit is below 90°.
+	- Add an Afterburner Override Threshold slider (force AB active below this speed threshold if at full throttle).
+	- Add a post-stall AoA threshold for switching flight-mode when beyond this threshold.
+
+v1.5.3.0
 IMPROVEMENTS / FIXES
 - General:
 	- Use an alternative method of calculating vessel bounds to get the vessel radius. — Fixes some weird results with parasite fighters from KSP's internal function for this.
@@ -8,8 +16,17 @@ IMPROVEMENTS / FIXES
 	- Lots of optimisations.
 	- Add Notes.md for devs with notes on optimisation and the current branches.
 	- Add caching for all AudioClips to reduce GC.
+	- Optimised access to Krakensbane and FloatingOrigin adjustments.
+	- Fix proc structural panel, now properly no longer has lift.
+	- HP log scaling now on by default when RUNWAY_PROJECT is enabled.
+- UI:
+	- Updated German localization by EzBro.
 - Competition:
-	- Add option to disable the HUD on tournament start.
+	- Add option to automatically disable the HUD on tournament start.
+	- Fixes nukes causing hit craft to be reported as 'Crashed and Burned' in competitions.
+- Spawning:
+	- Fix spawning breakage due to PRE not being enabled and enable PRE checks and warnings during spawning.
+	- Recover KSP's camera after spawning failure.
 - Damage:
 	- Fix the bug preventing explosive damage applying to buildings.
 	- Rework how damage is applied to buildings and how they regenerate.
@@ -24,18 +41,54 @@ IMPROVEMENTS / FIXES
 	- Add a 5s cooldown on extending if the Extend Abort Time is triggered (overriden for various extend requests, e.g., dropping bombs/nukes).
 	- Dynamically update the extend distance for launching a missile while extending.
 	- Limit the DLZ calculation for the extend distance for firing missiles to being maxOffBoresight off-target - avoids extreme extending distances.
+	- Expand the WM's Self-Destruct AG to arm and detonate all explosive parts too.
+	- Adjust the smoothing for the AoA and G-load limiting from a moving window (with a ~0.6s delay) to double exponential smoothing (with a ~0.1 delay compensated for by a 0.1s ahead prediction).
+		- Note: this doesn't fix AoA/G-load limiting, it just improves the response time of its calculations.
 - Detectors:
 	- Random position noise due to chaff no longer scales with RCS, is instead fixed to a random number between 16 and 256.
+- ECM:
+	- ECM Jammer and Cloaking devices now can specify resource used when operating (default is EC).
 - Weapons:
 	- Fixed bug where the target velocity and acceleration was not being reset once a target was no longer tracked which resulted in lead being erroneously compensated for while mouse aiming.
+	- Added ability to manually aim guns using GPS coordinates, primarily for artillery. This behavior is not a functionality in Guard Mode, however when a GPS target is manually selected, turrets will now aim to attempt to hit said target.
+	- Improved shaped charge warhead behavior, now armor penetration and beyond-armor effect is much more realistic.
+		- Warheads now approximately match real-world penetration performance, given the warhead size and caliber are accurate. Dual-purpose and other multi-function warheads will overperform as the equations assume all of the warhead is a shaped charge. Older and larger warheads may also overperform due to modelling being based on modern warheads.
+	- Fixed issue with missile and rocket warheads where direction of blasts were not along the directions of their warheads.
+	- Added "caliber" field to the BDExplosivePart module, it's an optional field for shaped charge projectiles which influences its effectiveness.
+	- apBulletMod now influences shaped charge projectile penetration, modifying this allows for the penetration of shaped charge shells to be tweaked.
+	- Added optional "apMod" field to the BDExplosivePart module, it's functions the same way as apBulletMod for bullets and its primary purpose is to allow users to create dual-purpose shaped charge warheads, where part of the tntMass of the warhead isn't going into the shaped charge effect, reducing penetration.
+	- Added optional "apMod" field to rocket configuration file. This allows tweaking of rocket penetration, functioning the same way as apBulletMod for bullets, affecting physical armor penetration as well as shaped charge armor penetration if the rocket is equipped with a shaped charge warhead.
+	- Armor protection against explosions is now influenced by angling, angling armor now makes it more difficult for the blast to punch through the armor plate.
+	- Added global setting that allows for tweaking of armor effectiveness against explosion blast penetration. The higher the setting, the harder to damage parts behind armor plates via blast damage.
+	- Tweaked several missiles, bullets and rockets to reflect the new shaped charge mechanics:
+		- RBS-15 and RBS-15AL have had their warheads decreased from 300 kg to 200 kg to reflect their real counterparts. Added caliber field, set at 500 mm.
+		- AGM-114R Hellfire missile has had its warhead decreased from 12 kg to 8 kg, with a 172 mm caliber to reflect performance estimates of earlier known models of the Hellfire. Warhead may not match -114R performance.
+		- AGM-65 Maverick missile is set to have a 305 mm caliber and an apMod field added with performance set to 950 mm of penetration. No good estimates of the warhead penetration were found so an approximate estimate based on a 27 kg charge was used.
+		- BGM-71 TOW missile has had its warhead decreased from 10 kg to 3.9 kg and has a 152 mm caliber to be around TOW/ITOW performance.
+		- Hydra-70 has had its penetration tweaked with apMod to match estimates of the M151 HEDP warhead penetration performance.
+		- AGM-86 now has caliber field, set to 620 mm.
+		- Adjusted 120 mm HEAT and AP rounds to have around the same amount of penetration, balanced for gameplay (210 mm / 216 mm). Realistic configs also exist under the names "120mmBulletHEAT" and "120mmBulletSabot", a commented out line in m1Abrams.cfg can be uncommented in order to use these.
+	- Offset beam-riding missile laser to the right and up from the targeting camera to mitigate issues of the camera locking on to its own missiles when on CoMLock mode, causing the targeting camera to drive missiles into the ground. Mostly affected Guard Mode behavior.
+	- Fixed missile behavior with Detonation Distance set to 0, missiles should no longer phase through armor.
 	- Reworks ModuleMissileRearm, now works, integrated with WM, etc.
 	- Missiles with a ModuleMissileRearm can now have reloads, be affected by Infinite Ammo.
 	- Adds MultiMissileLauncher module.
-	- Adds new Infinite Ordinance toggle, for missiles with MultiMissileLauncher.
-	- Armor Tools now displays total wing srf. area, and wingloading kg/m2.
+	- Adds new Infinite Ordinance toggle, for missiles with ModuleMissileRearm/MultiMissileLauncher.
 	- Fixes NRE with APS missile interception.
+	- Inaccurate or multi-shot APS (CIWS rotary cannon, etc) no longer guaranteed to kill incoming projectiles with first shot.
 	- Fixes Max Turret Targets not targeting more than 2 vessels.
-
+	- Fix Gravity gun and other impulse/gravitic laser weapons dealing damage.
+	- Fix manual rocket turret aiming.
+- Armor:
+	- Improved hypervelocity projectile post-penetration effects. Now Whipple shields should work properly, the more spacing between the armor plates the better the performance against hypervelocity rounds.
+	- Modified behavior of penetration formula below a projectile L/D ratio of 1 so penetration values are more consistent.
+	- Re-added temperature effects to armor protection levels, if the armor reaches its max safe temperature or goes above said temperature, performance is degraded.
+	- Added new Armor Aluminium material, based on Aluminium 7039 to provide a larger variety of armor materials to select from.
+	- Adds Armor Mass Mult slider to allow tweaking armor weight in-game.
+	- Armor Type "none" now disabled armor thickness slider, should fix PAW issue with 1.9.1 installs.
+	- Armor Tools now displays total wing srf. area, and wingloading kg/m2.
+	- Fix Armor tools mass/cost readout giving incorrect values when using global armor type.
+	
 v1.5.2.1
 IMPROVEMENTS / FIXES
 - Fix a variety of exceptions in pre-1.11.1 KSP due to missing API functions.

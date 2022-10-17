@@ -857,6 +857,7 @@ namespace BDArmory.Competition
                     Debug.Log("[BDArmory.BDATournament]: " + message);
 
                     int attempts = 0;
+                    bool unrecoverable = false;
                     competitionStarted = false;
                     while (!competitionStarted && attempts++ < 3) // 3 attempts is plenty
                     {
@@ -882,15 +883,23 @@ namespace BDArmory.Competition
                                     BDACompetitionMode.Instance.competitionStatus.Add("Failed to start heat due to " + CircularSpawning.Instance.spawnFailureReason + ", trying again.");
                                     attempts = Math.Max(attempts, 2); // Try only once more.
                                     break;
+                                case SpawnFailureReason.DependencyIssues:
+                                    message = $"Failed to start heat due to {CircularSpawning.Instance.spawnFailureReason}, aborting. Make sure dependencies are installed and enabled, then revert to launch and try again.";
+                                    BDACompetitionMode.Instance.competitionStatus.Add(message);
+                                    Debug.LogWarning($"[BDArmory.BDATournament]: {message}");
+                                    attempts = 3;
+                                    unrecoverable = true;
+                                    break;
                                 default: // Spawning is unrecoverable.
                                     BDACompetitionMode.Instance.competitionStatus.Add("Failed to start heat due to " + CircularSpawning.Instance.spawnFailureReason + ", aborting.");
                                     attempts = 3;
+                                    unrecoverable = true;
                                     break;
                             }
                     }
                     if (!competitionStarted)
                     {
-                        message = "Failed to run heat after 3 spawning attempts, failure reasons: " + CircularSpawning.Instance.spawnFailureReason + ", " + BDACompetitionMode.Instance.competitionStartFailureReason + ". Stopping tournament. Please fix the failure reason before continuing the tournament.";
+                        message = $"Failed to run heat {(unrecoverable?"due to unrecoverable error": $"after 3 spawning attempts")}, failure reasons: " + CircularSpawning.Instance.spawnFailureReason + ", " + BDACompetitionMode.Instance.competitionStartFailureReason + ". Stopping tournament. Please fix the failure reason before continuing the tournament.";
                         Debug.Log("[BDArmory.BDATournament]: " + message);
                         BDACompetitionMode.Instance.competitionStatus.Add(message);
                         tournamentStatus = TournamentStatus.Stopped;

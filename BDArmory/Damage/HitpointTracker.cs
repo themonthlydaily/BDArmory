@@ -135,6 +135,11 @@ namespace BDArmory.Damage
         [KSPField(isPersistant = true)]
         public float muParam3S;
 
+        [KSPField(isPersistant = true)]
+        public float HEEquiv;
+        [KSPField(isPersistant = true)]
+        public float HEATEquiv;
+
         private bool startsArmored = false;
         public bool ArmorPanel = false;
 
@@ -1175,6 +1180,8 @@ namespace BDArmory.Damage
                 muParam1S = armorInfo.muParam1S;
                 muParam2S = armorInfo.muParam2S;
                 muParam3S = armorInfo.muParam3S;
+                HEEquiv = armorInfo.HEEquiv;
+                HEATEquiv = armorInfo.HEATEquiv;
 
                 SetArmor();
             }
@@ -1196,6 +1203,8 @@ namespace BDArmory.Damage
                 muParam1S = 0.947031140f;
                 muParam2S = 1.55575776f;
                 muParam3S = 2.75371552f;
+                HEEquiv = 1f;
+                HEATEquiv = 1f;
 
                 SafeUseTemp = 2500;
                 if (BDArmorySettings.DEBUG_ARMOR)
@@ -1221,6 +1230,8 @@ namespace BDArmory.Damage
                 muParam1S = 1.92650831f;
                 muParam2S = 2.65274119f;
                 muParam3S = 7.37037039f;
+                HEEquiv = 0.1601427673f;
+                HEATEquiv = 0.5528789891f;
 
                 SafeUseTemp = 993;
                 Armor = 10;

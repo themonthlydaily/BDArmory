@@ -311,9 +311,9 @@ namespace BDArmory.FX
             if (!gameObject.activeInHierarchy) return;
 
             //floating origin and velocity offloading corrections
-            if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
+            if (BDKrakensbane.IsActive)
             {
-                transform.position -= FloatingOrigin.OffsetNonKrakensbane;
+                transform.position -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
             }
             if (Time.time - startTime > detonationTimer)
             {

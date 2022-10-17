@@ -297,6 +297,7 @@
     <Compile Include="Utils\FARUtils.cs" />
     <Compile Include="Utils\FireSpitterUtils.cs" />
     <Compile Include="Utils\GUIUtils.cs" />
+    <Compile Include="Utils\KrakensbaneUtils.cs" />
     <Compile Include="Utils\KSPForceApplier.cs" />
     <Compile Include="Utils\LayerMask.cs" />
     <Compile Include="Utils\ObjectPool.cs" />
@@ -305,6 +306,7 @@
     <Compile Include="Utils\PartExploderSystem.cs" />
     <Compile Include="Utils\ProjectileUtils.cs" />
     <Compile Include="Utils\ResourceUtils.cs" />
+    <Compile Include="Utils\SmoothingUtils.cs" />
     <Compile Include="Utils\SplineUtils.cs" />
     <Compile Include="Utils\StringUtils.cs" />
     <Compile Include="Utils\SoundUtils.cs" />

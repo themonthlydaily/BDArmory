@@ -252,6 +252,7 @@ namespace BDArmory.Competition.VesselSpawning
                 LogMessage("Failed to spawn craft " + craftName);
                 yield break; // Note: this doesn't cancel spawning.
             }
+            else if (BDArmorySettings.DEBUG_SPAWNING) LogMessage($"Initial spawn of {vessel.vesselName} succeeded.", false);
             vessel.Landed = false; // Tell KSP that it's not landed so KSP doesn't mess with its position.
             vessel.ResumeStaging(); // Trigger staging to resume to get staging icons to work properly.
             if (vesselSpawnConfig.reuseURLVesselName && spawnedVesselURLs.ContainsValue(vesselSpawnConfig.craftURL))
@@ -282,16 +283,33 @@ namespace BDArmory.Competition.VesselSpawning
             var heightFromTerrain = vessel.GetHeightFromTerrain() - 35f; // The SpawnVesselFromCraftFile routine adds 35m for some reason.
 
             // Wait until the vessel's part list gets updated.
+            var tic = Time.time;
             do
             {
                 yield return waitForFixedUpdate;
                 if (vessel == null)
                 {
                     LogMessage(vesselName + " disappeared during spawning!");
-                    spawnFailureReason = SpawnFailureReason.VesselLostParts;
+                    if (!BDArmorySetup.Instance.CheckDependencies()) // Check for PRE not being enabled, which can cause this.
+                    {
+                        LogMessage($"PRE isn't enabled!", false);
+                        spawnFailureReason = SpawnFailureReason.DependencyIssues;
+                    }
+                    else spawnFailureReason = SpawnFailureReason.VesselLostParts;
                     yield break;
                 }
-            } while (vessel.parts.Count == 0);
+            } while (vessel.Parts.Count == 0 && Time.time - tic < 30f);
+            if (vessel.Parts.Count == 0)
+            {
+                LogMessage($"Parts list on {vessel.vesselName} failed to populate within 30s.");
+                if (!BDArmorySetup.Instance.CheckDependencies()) // Check for PRE not being enabled, which can cause this.
+                {
+                    LogMessage($"PRE isn't enabled!", false);
+                    spawnFailureReason = SpawnFailureReason.DependencyIssues;
+                }
+                else spawnFailureReason = SpawnFailureReason.VesselFailedToSpawn;
+                yield break;
+            }
             spawnedVesselPartCounts[vesselName] = SpawnUtils.PartCount(vessel); // Get the part-count without EVA kerbals.
 
             // Wait another update so that the reference transforms get updated.

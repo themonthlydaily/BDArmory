@@ -875,18 +875,32 @@ namespace BDArmory.UI
 
             if (Time.time - dependencyLastCheckTime > (dependencyWarnings.Count() == 0 ? 60 : 5)) // Only check once per minute if no issues are found, otherwise 5s.
             {
-                dependencyLastCheckTime = Time.time;
-                dependencyWarnings.Clear();
-                if (!ModuleManagerLoaded) dependencyWarnings.Add("Module Manager dependency is missing!");
-                if (!PhysicsRangeExtenderLoaded) dependencyWarnings.Add("Physics Range Extender dependency is missing!");
-                else if (BDACompetitionMode.Instance != null && (BDACompetitionMode.Instance.competitionIsActive || BDACompetitionMode.Instance.competitionStarting) && !(bool)PREModEnabledField.GetValue(null)) dependencyWarnings.Add("Physics Range Extender is disabled!");
-                if (dependencyWarnings.Count() > 0) dependencyWarnings.Add("BDArmory will not work properly.");
+                CheckDependencies();
             }
             if (dependencyWarnings.Count() > 0)
             {
                 GUI.Label(new Rect(Screen.width / 2 - 300 + 2, Screen.height / 6 + 2, 600, 100), string.Join("\n", dependencyWarnings), redErrorShadowStyle);
                 GUI.Label(new Rect(Screen.width / 2 - 300, Screen.height / 6, 600, 100), string.Join("\n", dependencyWarnings), redErrorStyle);
             }
+        }
+
+        /// <summary>
+        /// Check that the dependencies are satisfied.
+        /// </summary>
+        /// <returns>true if they are, false otherwise.</returns>
+        public bool CheckDependencies()
+        {
+            dependencyLastCheckTime = Time.time;
+            dependencyWarnings.Clear();
+            if (!ModuleManagerLoaded) dependencyWarnings.Add("Module Manager dependency is missing!");
+            if (!PhysicsRangeExtenderLoaded) dependencyWarnings.Add("Physics Range Extender dependency is missing!");
+            else if ((
+                    (BDACompetitionMode.Instance != null && (BDACompetitionMode.Instance.competitionIsActive || BDACompetitionMode.Instance.competitionStarting))
+                    || VesselSpawnerStatus.vesselsSpawning
+                )
+                && !(bool)PREModEnabledField.GetValue(null)) dependencyWarnings.Add("Physics Range Extender is disabled!");
+            if (dependencyWarnings.Count() > 0) dependencyWarnings.Add("BDArmory will not work properly.");
+            return dependencyWarnings.Count() == 0;
         }
 
         public bool hasVesselSwitcher = false;
@@ -2492,6 +2506,119 @@ namespace BDArmory.UI
 #if DEBUG  // Only visible when compiled in Debug configuration.
                     if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
                     {
+                        if (GUI.Button(SLineRect(++line), "Test Collider.ClosestPoint[OnBounds]"))
+                        {
+                            var watch = new System.Diagnostics.Stopwatch();
+                            float µsResolution = 1e6f / System.Diagnostics.Stopwatch.Frequency;
+                            int N = 1 << 16;
+                            Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+                            int layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels | LayerMasks.Scenery);
+                            float dist = 10000;
+                            RaycastHit hit;
+                            Vector3 closestPoint = default;
+                            watch.Start();
+                            if (Physics.Raycast(ray, out hit, dist, layerMask))
+                            {
+                                watch.Stop();
+                                var raycastTicks = watch.ElapsedTicks;
+                                string raycastString = $"Raycast took {raycastTicks * µsResolution:G3}µs";
+                                Part partHit = hit.collider.GetComponentInParent<Part>();
+                                MeshCollider mcol = null;
+                                bool isMeshCollider = false;
+                                bool isNonConvexMeshCollider = false;
+                                watch.Reset(); watch.Start();
+                                for (int i = 0; i < N; ++i)
+                                {
+                                    mcol = hit.collider as MeshCollider;
+                                    isMeshCollider = mcol != null;
+                                    if (isMeshCollider && !mcol.convex)  // non-convex mesh colliders are expensive to use ClosestPoint on.
+                                    {
+                                        isNonConvexMeshCollider = true;
+                                        closestPoint = hit.collider.ClosestPointOnBounds(ray.origin);
+                                    }
+                                    else
+                                        closestPoint = hit.collider.ClosestPoint(ray.origin);
+                                }
+                                watch.Stop();
+                                Debug.Log($"DEBUG {raycastString}, {(isNonConvexMeshCollider ? "ClosestPointOnBounds" : "ClosestPoint")} ({closestPoint}) on{(isMeshCollider ? $" {(isNonConvexMeshCollider ? "non-" : "")}convex mesh" : "")} collider {hit.collider} from camera ({ray.origin}) took {watch.ElapsedTicks * µsResolution / N:G3}µs{(partHit != null ? $", offset from part ({partHit.name}): {closestPoint - partHit.transform.position}" : "")}, offset from hit: {hit.point - closestPoint}");
+                            }
+                        }
+                        if (GUI.Button(SLineRect(++line), "Test 2x Raycast vs RaycastNonAlloc"))
+                        {
+                            var watch = new System.Diagnostics.Stopwatch();
+                            float µsResolution = 1e6f / System.Diagnostics.Stopwatch.Frequency;
+                            int N = 1 << 20;
+                            Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+                            RaycastHit hit;
+                            RaycastHit[] hits = new RaycastHit[100];
+                            int layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels | LayerMasks.Scenery);
+                            float dist = 10000;
+                            bool didHit = false;
+                            watch.Start();
+                            for (int i = 0; i < N; ++i)
+                            {
+                                didHit = Physics.Raycast(ray, out hit, dist, layerMask);
+                                didHit = Physics.Raycast(ray, out hit, dist, layerMask);
+                            }
+                            watch.Stop();
+                            Debug.Log($"DEBUG Raycast 2x (hit? {didHit}) took {watch.ElapsedTicks * µsResolution / N:G3}µs");
+                            int hitCount = 0;
+                            watch.Reset(); watch.Start();
+                            for (int i = 0; i < N; ++i)
+                                hitCount = Physics.RaycastNonAlloc(ray, hits, dist, layerMask);
+                            watch.Stop();
+                            Debug.Log($"DEBUG RaycastNonAlloc ({hitCount} hits) took {watch.ElapsedTicks * µsResolution / N:G3}µs");
+                        }
+                        if (GUI.Button(SLineRect(++line), "Test GetFrameVelocityV3f"))
+                        {
+                            var watch = new System.Diagnostics.Stopwatch();
+                            float resolution = 1e9f / System.Diagnostics.Stopwatch.Frequency;
+                            int N = 1000;
+                            Vector3 frameVelocity;
+                            watch.Start();
+                            for (int i = 0; i < N; ++i)
+                                frameVelocity = Krakensbane.GetFrameVelocityV3f();
+                            watch.Stop();
+                            Debug.Log($"DEBUG Getting KbVF took {watch.ElapsedTicks * resolution / N:G3}ns");
+                            watch.Reset(); watch.Start();
+                            for (int i = 0; i < N; ++i)
+                                frameVelocity = BDKrakensbane.FrameVelocityV3f;
+                            watch.Stop();
+                            Debug.Log($"DEBUG Using BDKrakensbane took {watch.ElapsedTicks * resolution / N:G3}ns");
+                            Vector3d FOOffset;
+                            watch.Reset(); watch.Start();
+                            for (int i = 0; i < N; ++i)
+                                FOOffset = FloatingOrigin.Offset;
+                            watch.Stop();
+                            Debug.Log($"DEBUG Getting FO.Offset took {watch.ElapsedTicks * resolution / N:G3}ns");
+                            watch.Reset(); watch.Start();
+                            for (int i = 0; i < N; ++i)
+                                FOOffset = BDKrakensbane.FloatingOriginOffset;
+                            watch.Stop();
+                            Debug.Log($"DEBUG Using BDKrakensbane took {watch.ElapsedTicks * resolution / N:G3}ns");
+                            Vector3d FOOffsetNKb;
+                            watch.Reset(); watch.Start();
+                            for (int i = 0; i < N; ++i)
+                                FOOffsetNKb = FloatingOrigin.OffsetNonKrakensbane;
+                            watch.Stop();
+                            Debug.Log($"DEBUG Getting FO.OffsetNonKrakensbane took {watch.ElapsedTicks * resolution / N:G3}ns");
+                            watch.Reset(); watch.Start();
+                            for (int i = 0; i < N; ++i)
+                                FOOffsetNKb = BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                            watch.Stop();
+                            Debug.Log($"DEBUG Using BDKrakensbane took {watch.ElapsedTicks * resolution / N:G3}ns");
+                            bool KBIsActive;
+                            watch.Reset(); watch.Start();
+                            for (int i = 0; i < N; ++i)
+                                KBIsActive = !BDKrakensbane.FloatingOriginOffset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero();
+                            watch.Stop();
+                            Debug.Log($"DEBUG Getting KB is active took {watch.ElapsedTicks * resolution / N:G3}ns");
+                            watch.Reset(); watch.Start();
+                            for (int i = 0; i < N; ++i)
+                                KBIsActive = BDKrakensbane.IsActive;
+                            watch.Stop();
+                            Debug.Log($"DEBUG Using BDKrakensbane took {watch.ElapsedTicks * resolution / N:G3}ns");
+                        }
                         if (GUI.Button(SLineRect(++line), "Test GetAudioClip"))
                         {
                             StartCoroutine(TestGetAudioClip());
@@ -2791,6 +2918,10 @@ namespace BDArmory.UI
 
                         GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_ImplosiveDamageMultiplier")}:  ({BDArmorySettings.EXP_IMP_MOD})", leftLabel);
                         BDArmorySettings.EXP_IMP_MOD = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_IMP_MOD, 0f, 1f), 0.05f);
+
+                        
+                        GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_ArmorExplosivePenetrationResistanceMultiplier")}:  ({BDArmorySettings.EXP_PEN_RESIST_MULT})", leftLabel);
+                        BDArmorySettings.EXP_PEN_RESIST_MULT = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_PEN_RESIST_MULT, 0f, 10f), 0.25f);
 
                         GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_ExplosiveBattleDamageMultiplier")}:  ({BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE})", leftLabel);
                         BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE, 0f, 2f), 0.1f);
@@ -3870,15 +4001,15 @@ namespace BDArmory.UI
             TimingManager.FixedUpdateRemove(TimingManager.TimingStage.Late, Late);
             TimingManager.FixedUpdateRemove(TimingManager.TimingStage.BetterLateThanNever, BetterLateThanNever);
         }
-        void ObscenelyEarly() { Debug.Log($"DEBUG {Time.time} ObscenelyEarly, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
-        void Early() { Debug.Log($"DEBUG {Time.time} Early, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
-        void Precalc() { Debug.Log($"DEBUG {Time.time} Precalc, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
-        void Earlyish() { Debug.Log($"DEBUG {Time.time} Earlyish, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
-        void Normal() { Debug.Log($"DEBUG {Time.time} Normal, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
-        void FashionablyLate() { Debug.Log($"DEBUG {Time.time} FashionablyLate, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
-        void FlightIntegrator() { Debug.Log($"DEBUG {Time.time} FlightIntegrator, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
-        void Late() { Debug.Log($"DEBUG {Time.time} Late, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
-        void BetterLateThanNever() { Debug.Log($"DEBUG {Time.time} BetterLateThanNever, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
+        void ObscenelyEarly() { Debug.Log($"DEBUG {Time.time} ObscenelyEarly, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void Early() { Debug.Log($"DEBUG {Time.time} Early, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void Precalc() { Debug.Log($"DEBUG {Time.time} Precalc, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void Earlyish() { Debug.Log($"DEBUG {Time.time} Earlyish, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void Normal() { Debug.Log($"DEBUG {Time.time} Normal, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void FashionablyLate() { Debug.Log($"DEBUG {Time.time} FashionablyLate, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void FlightIntegrator() { Debug.Log($"DEBUG {Time.time} FlightIntegrator, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void Late() { Debug.Log($"DEBUG {Time.time} Late, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void BetterLateThanNever() { Debug.Log($"DEBUG {Time.time} BetterLateThanNever, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
 
         IEnumerator TestYieldWaitLengths()
         {
