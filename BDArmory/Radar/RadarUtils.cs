@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -121,6 +122,8 @@ namespace BDArmory.Radar
         };
         private static int numAspects = rcsAspects.GetLength(0); // Number of aspects
         public static float[,] worstRCSAspects = new float[3, 3]; // Worst three aspects
+        static double[] rcsValues;
+        static Color32[] pixels;
 
         /// <summary>
         /// Force radar signature update
@@ -324,8 +327,8 @@ namespace BDArmory.Radar
                     Debug.Log($"[BDArmory.RadarUtils]: Rendering radar snapshot of vessel {v.name}, type {v.vesselType}");
                 else
                     Debug.Log("[BDArmory.RadarUtils]: Rendering radar snapshot of vessel");
-                Debug.Log("[BDArmory.RadarUtils]: - bounds: " + vesselbounds.ToString());
-                Debug.Log("[BDArmory.RadarUtils]: - rotation: " + t.rotation.ToString());
+                Debug.Log($"[BDArmory.RadarUtils]: - bounds: {vesselbounds}");
+                Debug.Log($"[BDArmory.RadarUtils]: - rotation: {t.rotation}");
                 //Debug.Log("[BDArmory.RadarUtils]: - size: " + vesselbounds.size + ", magnitude: " + vesselbounds.size.magnitude);
             }
 
@@ -345,11 +348,12 @@ namespace BDArmory.Radar
             }
 
             float rcsVariable = 0f;
-            worstRCSAspects = new float[3, 3];
-            double[] rcsValues = new double[numAspects];
+            if (worstRCSAspects is null) worstRCSAspects = new float[3, 3];
+            Array.Clear(worstRCSAspects, 0, 9);
+            if (rcsValues is null) rcsValues = new double[numAspects];
+            Array.Clear(rcsValues, 0, numAspects);
             rcsTotal = 0;
             Vector3 aspect;
-            Color32[] pixels;
 
             // Loop through all aspects
             for (int i = 0; i < numAspects; i++)

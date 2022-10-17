@@ -65,7 +65,7 @@ namespace BDArmory.UI
                 80085,
                 BDArmorySetup.WindowRectRemoteOrchestration,
                 WindowRemoteOrchestration,
-                Localizer.Format("#LOC_BDArmory_BDARemoteOrchestration_Title"),//"BDA Remote Orchestration"
+                StringUtils.Localize("#LOC_BDArmory_BDARemoteOrchestration_Title"),//"BDA Remote Orchestration"
                 BDArmorySetup.BDGuiSkin.window
             );
             BDArmorySetup.SetGUIOpacity(false);

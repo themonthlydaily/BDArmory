@@ -40,12 +40,12 @@ namespace BDArmory.Weapons
             if (Armed)
             {
                 guiStatusString = "ARMED";
-                Events["Toggle"].guiName = Localizer.Format("Disarm Warhead");//"Enable Engage Options"
+                Events["Toggle"].guiName = StringUtils.Localize("Disarm Warhead");//"Enable Engage Options"
             }
             else
             {
                 guiStatusString = "Safe";
-                Events["Toggle"].guiName = Localizer.Format("Arm Warhead");//"Disable Engage Options"
+                Events["Toggle"].guiName = StringUtils.Localize("Arm Warhead");//"Disable Engage Options"
             }
         }
 
@@ -60,12 +60,12 @@ namespace BDArmory.Weapons
             if (IFF_On)
             {
                 guiIFFString = "Ignore Allies";
-                Events["ToggleIFF"].guiName = Localizer.Format("Disable IFF");//"Enable Engage Options"
+                Events["ToggleIFF"].guiName = StringUtils.Localize("Disable IFF");//"Enable Engage Options"
             }
             else
             {
                 guiIFFString = "Indescriminate";
-                Events["ToggleIFF"].guiName = Localizer.Format("Enable IFF");//"Disable Engage Options"
+                Events["ToggleIFF"].guiName = StringUtils.Localize("Enable IFF");//"Disable Engage Options"
             }
         }
 
@@ -103,7 +103,7 @@ namespace BDArmory.Weapons
         {
             Armed = true;
             guiStatusString = "ARMED"; // Future me, this needs localization at some point
-            Events["Toggle"].guiName = Localizer.Format("Disarm Warhead");//"Enable Engage Options"
+            Events["Toggle"].guiName = StringUtils.Localize("Disarm Warhead");//"Enable Engage Options"
         }
 
         [KSPAction("Detonate")]
@@ -134,6 +134,9 @@ namespace BDArmory.Weapons
         private double previousMass = -1;
 
         public bool hasDetonated;
+        Collider[] proximityHitColliders = new Collider[100];
+
+        public Vector3 direction;
 
         public override void OnStart(StartState state)
         {
@@ -182,22 +185,22 @@ namespace BDArmory.Weapons
                 if (Armed)
                 {
                     guiStatusString = "ARMED";
-                    Events["Toggle"].guiName = Localizer.Format("Disarm Warhead");
+                    Events["Toggle"].guiName = StringUtils.Localize("Disarm Warhead");
                 }
                 else
                 {
                     guiStatusString = "Safe";
-                    Events["Toggle"].guiName = Localizer.Format("Arm Warhead");
+                    Events["Toggle"].guiName = StringUtils.Localize("Arm Warhead");
                 }
                 if (IFF_On)
                 {
                     guiIFFString = "Ignore Allies";
-                    Events["ToggleIFF"].guiName = Localizer.Format("Disable IFF");
+                    Events["ToggleIFF"].guiName = StringUtils.Localize("Disable IFF");
                 }
                 else
                 {
                     guiIFFString = "Indescriminate";
-                    Events["ToggleIFF"].guiName = Localizer.Format("Enable IFF");
+                    Events["ToggleIFF"].guiName = StringUtils.Localize("Enable IFF");
                 }
                 if (manualOverride)
                 {
@@ -320,12 +323,8 @@ namespace BDArmory.Weapons
             if (!HighLogic.LoadedSceneIsFlight || part == null) return;
             if (!hasDetonated && Armed)
             {
-                Vector3 direction = default(Vector3);
-
-                if (warheadType != "standard")
-                {
-                    direction = (part.transform.position + part.rb.velocity * Time.deltaTime).normalized;
-                }
+				direction = warheadType == "standard" ? default : part.partTransform.forward; //both the missileReferenceTransform and smallWarhead part's forward direction is Z+, or transform.forward.
+                // could also do warheadType == "standard" ? default: part.partTransform.forward, as this simplifies the isAngleAllowed check in ExplosionFX, but at the cost of standard heads always being 360deg blasts (but we don't have limited angle balsts for missiels at present anyway, so not a bit deal RN)
                 var sourceWeapon = part.FindModuleImplementing<EngageableWeapon>();
                 ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 120, part, sourcevessel != null ? sourcevessel.vesselName : null, sourceWeapon != null ? sourceWeapon.GetShortName() : null, direction, -1, false, warheadType == "standard" ? part.mass : 0, -1, 1, warheadType);
                 hasDetonated = true;
@@ -339,12 +338,8 @@ namespace BDArmory.Weapons
         {
             if (!hasDetonated && Armed)
             {
-                Vector3 direction = default(Vector3);
+                direction = warheadType == "standard" ? default : part.partTransform.forward;
 
-                if (warheadType != "standard")
-                {
-                    direction = (part.transform.position + part.rb.velocity * Time.deltaTime).normalized;
-                }
                 var sourceWeapon = part.FindModuleImplementing<EngageableWeapon>();
                 if (BDArmorySettings.DEBUG_MISSILES)
                     Debug.Log("[BDArmory.BDExplosivePart]: " + part + " (" + (uint)(part.GetInstanceID()) + ") from " + (sourcevessel != null ? sourcevessel.vesselName : null) + " detonating with a " + warheadType + " warhead");
@@ -379,7 +374,14 @@ namespace BDArmory.Weapons
                 return detonate = false;
             }
 
-            using (var hitsEnu = Physics.OverlapSphere(transform.position, detonationRange, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19 | LayerMasks.Wheels)).AsEnumerable().GetEnumerator())
+            var layerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19 | LayerMasks.Wheels);
+            var hitCount = Physics.OverlapSphereNonAlloc(transform.position, detonationRange, proximityHitColliders, layerMask);
+            if (hitCount == proximityHitColliders.Length)
+            {
+                proximityHitColliders = Physics.OverlapSphere(transform.position, detonationRange, layerMask);
+                hitCount = proximityHitColliders.Length;
+            }
+            using (var hitsEnu = proximityHitColliders.Take(hitCount).GetEnumerator())
             {
                 while (hitsEnu.MoveNext())
                 {

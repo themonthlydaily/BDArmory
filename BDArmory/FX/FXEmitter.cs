@@ -59,12 +59,12 @@ namespace BDArmory.FX
                 audioSource = gameObject.GetComponent<AudioSource>();
                 if (ExSound == null)
                 {
-                    ExSound = GameDatabase.Instance.GetAudioClip(SoundPath);
+                    ExSound = SoundUtils.GetAudioClip(SoundPath);
 
                     if (ExSound == null)
                     {
                         Debug.LogError("[BDArmory.FXEmitter]: " + ExSound + " was not found, using the default sound instead. Please fix your model.");
-                        ExSound = GameDatabase.Instance.GetAudioClip(ModuleWeapon.defaultExplSoundPath);
+                        ExSound = SoundUtils.GetAudioClip(ModuleWeapon.defaultExplSoundPath);
                     }
                 }
                 audioSource.PlayOneShot(ExSound); //get distance to active vessel and add a delay?

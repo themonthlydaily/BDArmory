@@ -55,6 +55,8 @@ namespace BDArmory.FX
 
         KSPParticleEmitter[] pEmitters;
 
+        Collider[] blastHitColliders = new Collider[100];
+
         void OnEnable()
         {
             if (parentPart == null)
@@ -373,7 +375,7 @@ namespace BDArmory.FX
             }
             if (surfaceFire && parentPart.vessel.horizontalSrfSpeed > 120) //blow out surface fires if moving fast enough
             {
-                burnTime = 5; 
+                burnTime = 5;
             }
             // Note: the following can set the parentPart to null.
             if (disableTime > 0 && Time.time - disableTime > _highestEnergy) //wait until last emitted particle has finished
@@ -445,7 +447,13 @@ namespace BDArmory.FX
                 if (excessFuel)
                 {
                     float blastRadius = BlastPhysicsUtils.CalculateBlastRange(tntMassEquivalent);
-                    using (var blastHits = Physics.OverlapSphere(parentPart.transform.position, blastRadius, explosionLayerMask).AsEnumerable().GetEnumerator())
+                    var hitCount = Physics.OverlapSphereNonAlloc(parentPart.transform.position, blastRadius, blastHitColliders, explosionLayerMask);
+                    if (hitCount == blastHitColliders.Length)
+                    {
+                        blastHitColliders = Physics.OverlapSphere(parentPart.transform.position, blastRadius, explosionLayerMask);
+                        hitCount = blastHitColliders.Length;
+                    }
+                    using (var blastHits = blastHitColliders.Take(hitCount).GetEnumerator())
                         while (blastHits.MoveNext())
                         {
                             if (blastHits.Current == null) continue;
