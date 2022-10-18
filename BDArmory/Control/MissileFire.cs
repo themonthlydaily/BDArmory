@@ -1606,7 +1606,7 @@ namespace BDArmory.Control
 #if DEBUG
                             if (weapon.visualTargetVessel != null && weapon.visualTargetVessel.loaded) weaponAimDebugStrings.Add($" - Visual target {(weapon.visualTargetPart is not null ? weapon.visualTargetPart.name : "CoM")} on {weapon.visualTargetVessel.vesselName}, distance: {(weapon.finalAimTarget - weapon.fireTransforms[0].position).magnitude:F1}, radius: {weapon.targetRadius:F1} ({weapon.visualTargetVessel.GetBounds()}), max deviation: {weapon.maxDeviation}, firing tolerance: {weapon.FiringTolerance}");
 #endif
-                        }
+                        }						
                         float shots = 0;
                         float hits = 0;
                         float accuracy = 0;

@@ -420,7 +420,11 @@ namespace BDArmory.Weapons.Missiles
 
             if (HighLogic.LoadedSceneIsFlight)
             {
-                if (multiLauncher) missileName = multiLauncher.subMunitionName;
+                if (multiLauncher)
+                {
+                    hasAmmo = true;
+                    missileName = multiLauncher.subMunitionName;
+                }
                 else missileName = part.name;
                 if (warheadType == WarheadTypes.Standard || warheadType == WarheadTypes.ContinuousRod)
                 {
