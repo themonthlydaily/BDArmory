@@ -23,6 +23,7 @@ namespace BDArmory.Weapons.Missiles
     public class MultiMissileLauncher : PartModule
 	{
         public static Dictionary<string, ObjectPool> mslDummyPool = new Dictionary<string, ObjectPool>();
+        Vector3 dummyScale = Vector3.one;
         Coroutine missileSalvo;
 
         Transform[] launchTransforms;
@@ -163,7 +164,7 @@ namespace BDArmory.Weapons.Missiles
                     }
             }
         }
-        
+
         private string GetMeshurl(UrlDir.UrlConfig cfgdir)
         {
             //check if part uses a MODEL node to grab an (external?) .mu file
@@ -172,10 +173,28 @@ namespace BDArmory.Weapons.Missiles
             {
                 var MODEL = cfgdir.config.GetNode("MODEL");
                 url = MODEL.GetValue("model") ?? "";
-                Debug.Log($"[BDArmory.MultiMissileLauncher] Found model URL of {url}");
+                dummyScale = Vector3.one;
+                if (MODEL.HasValue("scale"))
+                {
+                    string[] strings = MODEL.GetValue("scale").Split(","[0]);
+                    dummyScale.x = Single.Parse(strings[0]);
+                    dummyScale.y = Single.Parse(strings[1]);
+                    dummyScale.z = Single.Parse(strings[2]);
+                }
+                else
+                {
+                    if (cfgdir.config.HasValue("rescaleFactor"))
+                    {
+                        float scale = Single.Parse(cfgdir.config.GetValue("rescaleFactor"));
+                        dummyScale.x = scale;
+                        dummyScale.y = scale;
+                        dummyScale.z = scale;
+                    }
+                }
+                Debug.Log($"[BDArmory.MultiMissileLauncher] Found model URL of {url} and scale {dummyScale}");
                 return url;
-            }
 
+            }
             string mesh = "model";
             //in case the mesh is not model.mu
             if (cfgdir.config.HasValue("mesh"))
@@ -184,6 +203,13 @@ namespace BDArmory.Weapons.Missiles
                 char[] sep = { '.' };
                 string[] words = mesh.Split(sep);
                 mesh = words[0];
+            }
+            if (cfgdir.config.HasValue("rescaleFactor"))
+            {
+                float scale = Single.Parse(cfgdir.config.GetValue("rescaleFactor"));
+                dummyScale.x = scale;
+                dummyScale.y = scale;
+                dummyScale.z = scale;
             }
             url = string.Format("{0}/{1}", cfgdir.parent.parent.url, mesh);
             Debug.Log($"[BDArmory.MultiMissileLauncher] Found model URL of {url}");            
@@ -284,6 +310,7 @@ namespace BDArmory.Weapons.Missiles
                     GameObject dummy = mslDummyPool[subMunitionPath].GetPooledObject();
                     MissileDummy dummyThis = dummy.GetComponentInChildren<MissileDummy>();
                     dummyThis.AttachAt(part, launchTransforms[i]);
+                    dummy.transform.localScale = dummyScale;
                 }
                 else
                 {
@@ -359,6 +386,11 @@ namespace BDArmory.Weapons.Missiles
                 yield return new WaitUntilFixed(() => ml.SetupComplete); // Wait until missile fully initialized.
                 ml.Team = Team;
                 ml.SourceVessel = missileLauncher.SourceVessel;
+                if (string.IsNullOrEmpty(ml.GetShortName()))
+                {
+                    ml.shortName = missileLauncher.GetShortName() + " Missile";
+                }
+                ml.vessel.vesselName = ml.GetShortName();
                 ml.TimeFired = Time.time;
                 ml.DetonationDistance = missileLauncher.DetonationDistance;
                 ml.DetonateAtMinimumDistance = missileLauncher.DetonateAtMinimumDistance;
