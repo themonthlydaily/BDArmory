@@ -1,4 +1,5 @@
-﻿IMPROVEMENTS / FIXES
+﻿v1.5.3.1
+IMPROVEMENTS / FIXES
 - Spawning:
 	- Only spawn SpawnProbe for dead current vessel if spawning is aborted.
 - AI / WM:
