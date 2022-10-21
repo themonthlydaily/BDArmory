@@ -157,7 +157,7 @@ namespace BDArmory.Utils
         public static void UseMouseEventInRect(Rect rect)
         {
             if (Event.current == null) return;
-            if (GUIUtils.MouseIsInRect(rect) && Event.current.isMouse && (Event.current.type == EventType.MouseDown || Event.current.type == EventType.MouseUp))
+            if (GUIUtils.MouseIsInRect(rect) && ((Event.current.isMouse && (Event.current.type == EventType.MouseDown || Event.current.type == EventType.MouseUp)) || Event.current.isScrollWheel))
             {
                 Event.current.Use();
             }
@@ -197,6 +197,7 @@ namespace BDArmory.Utils
                 if (windowPosition.x + windowPosition.width < 1) windowPosition.x = 1 - windowPosition.width;
                 if (windowPosition.y + windowPosition.height < 1) windowPosition.y = 1 - windowPosition.height;
             }
+            GUIUtilsInstance.Reset(); // Reset once-per-frame checks.
         }
 
         internal static Rect GuiToScreenRect(Rect rect)
@@ -275,6 +276,11 @@ namespace BDArmory.Utils
 
             if (!BDInputSettingsFields.WEAP_FIRE_KEY.inputString.Contains("mouse")) return false;
 
+            return GUIUtilsInstance.fetch.mouseIsOnGUI;
+        }
+
+        static bool _CheckMouseIsOnGui()
+        {
             Vector3 inverseMousePos = new Vector3(Input.mousePosition.x, Screen.height - Input.mousePosition.y, 0);
             Rect topGui = new Rect(0, 0, Screen.width, 65);
 
@@ -316,6 +322,7 @@ namespace BDArmory.Utils
 
         public static void ResizeGuiWindow(Rect windowrect, Vector2 mousePos)
         {
+            GUIUtilsInstance.Reset();
         }
 
         public static List<Rect> extraGUIRects;
@@ -329,6 +336,7 @@ namespace BDArmory.Utils
 
             int index = extraGUIRects.Count;
             extraGUIRects.Add(rect);
+            GUIUtilsInstance.Reset();
             return index;
         }
 
@@ -340,6 +348,7 @@ namespace BDArmory.Utils
             }
 
             extraGUIRects[index] = rect;
+            GUIUtilsInstance.Reset();
         }
 
         public static bool MouseIsInRect(Rect rect)
@@ -367,5 +376,71 @@ namespace BDArmory.Utils
             // window.Dispose();
         }
 
+
+        public static void SetScrollZoom()
+        {
+            if (CheckMouseIsOnGui()) BeginDisableScrollZoom();
+            else EndDisableScrollZoom();
+        }
+        static bool scrollZoomEnabled = true;
+        static float originalScrollRate = 1;
+        public static void BeginDisableScrollZoom()
+        {
+            if (!scrollZoomEnabled) return;
+            Debug.Log($"DEBUG Disabling scroll-zoom");
+            originalScrollRate = GameSettings.AXIS_MOUSEWHEEL.primary.scale;
+            GameSettings.AXIS_MOUSEWHEEL.primary.scale = 0;
+            scrollZoomEnabled = false;
+        }
+        public static void EndDisableScrollZoom()
+        {
+            if (scrollZoomEnabled) return;
+            Debug.Log($"DEBUG Enabling scroll-zoom");
+            GameSettings.AXIS_MOUSEWHEEL.primary.scale = originalScrollRate;
+            scrollZoomEnabled = true;
+        }
+
+        [KSPAddon(KSPAddon.Startup.EveryScene, false)]
+        internal class GUIUtilsInstance : MonoBehaviour
+        {
+            public bool mouseIsOnGUI
+            {
+                get
+                {
+                    if (!_mouseIsOnGUICheckedThisFrame)
+                    {
+                        _mouseIsOnGUI = GUIUtils._CheckMouseIsOnGui();
+                        _mouseIsOnGUICheckedThisFrame = true;
+                        // Debug.Log($"DEBUG Mouse is {(_mouseIsOnGUI ? "" : "not ")}on the GUI.");
+                    }
+                    return _mouseIsOnGUI;
+                }
+            }
+            bool _mouseIsOnGUI = false;
+            bool _mouseIsOnGUICheckedThisFrame = false;
+
+            public static GUIUtilsInstance fetch;
+            void Awake()
+            {
+                if (fetch != null) Destroy(this);
+                fetch = this;
+            }
+
+            void Update()
+            {
+                _mouseIsOnGUICheckedThisFrame = false;
+            }
+
+            public static void Reset()
+            {
+                if (fetch == null) return;
+                fetch.Update();
+            }
+
+            void Destroy()
+            {
+                GUIUtils.EndDisableScrollZoom();
+            }
+        }
     }
 }

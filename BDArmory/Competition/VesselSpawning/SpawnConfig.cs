@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
@@ -123,15 +124,16 @@ namespace BDArmory.Competition.VesselSpawning
         }
         public string name;
         public List<List<CustomVesselSpawnConfig>> customVesselSpawnConfigs;
+        public override string ToString() => $"{{name: {name}, worldIndex: {worldIndex}, lat: {latitude:F3}, lon: {longitude:F3}, alt: {altitude:F0}; {string.Join("; ", customVesselSpawnConfigs.Select(cfgs => string.Join(", ", cfgs)))}}}";
     }
-    public struct CustomVesselSpawnConfig
+    public class CustomVesselSpawnConfig
     {
         public string craftURL;
         public string kerbalName;
         public double latitude;
         public double longitude;
-        public double altitude;
         public float heading;
         public int teamIndex;
+        public override string ToString() => $"{{{(string.IsNullOrEmpty(craftURL)?"": $"{Path.GetFileNameWithoutExtension(craftURL)}, ")}{(string.IsNullOrEmpty(kerbalName)?"":$"{kerbalName}, ")}lat: {latitude:G3}, lon: {longitude:G3}, heading: {heading:F0}°, team: {teamIndex}}}";
     }
 }

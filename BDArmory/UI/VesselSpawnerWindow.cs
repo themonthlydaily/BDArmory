@@ -83,9 +83,14 @@ namespace BDArmory.UI
             return new Rect(_windowWidth / 2 + _margin / 4, line * _lineHeight, (_windowWidth - 2 * _margin) / 2 - _margin / 4, _lineHeight);
         }
 
-        Rect SQuarterRect(float line, int pos)
+        Rect SQuarterRect(float line, int pos, int span = 1, float indent = 0)
         {
-            return new Rect(_margin + (pos % 4) * (_windowWidth - 2f * _margin) / 4f, (line + (int)(pos / 4)) * _lineHeight, (_windowWidth - 2.5f * _margin) / 4f, _lineHeight);
+            return new Rect(_margin + (pos % 4) * (_windowWidth - 2f * _margin) / 4f + indent, (line + (int)(pos / 4)) * _lineHeight, span * (_windowWidth - 2f * _margin) / 4f - indent, _lineHeight);
+        }
+
+        Rect ShortLabel(float line, float width)
+        {
+            return new Rect(_margin, line * _lineHeight, width, _lineHeight);
         }
 
         List<Rect> SRight2Rects(float line)
@@ -691,25 +696,39 @@ namespace BDArmory.UI
                     // FIXME We want a drop-down to select which spawn template to use, with an option of creating a new one. We can do something similar to the spawn points GUI for this.
                     spawnTemplate.name = GUI.TextField(SLeftRect(++line), spawnTemplate.name);
                     if (GUI.Button(SQuarterRect(line, 2), StringUtils.Localize("#LOC_BDArmory_SpawnTemplate_Load"), BDArmorySetup.BDGuiSkin.button))
-                    { CustomTemplateSpawning.Instance.LoadTemplate(spawnTemplate.name); }
+                    {
+                        // FIXME Use a drop-down selector instead, like with world selection in spawn points.
+                        //CustomTemplateSpawning.Instance.ShowTemplateSelection(Event.current.mousePosition + BDArmorySetup.WindowRectVesselSpawner.position);
+
+                    }
                     if (GUI.Button(SQuarterRect(line, 3), StringUtils.Localize("#LOC_BDArmory_SpawnTemplate_Save"), BDArmorySetup.BDGuiSkin.button))
                     { CustomTemplateSpawning.Instance.SaveTemplate(); }
                     // We then want a table of teams of craft buttons for selecting the craft with kerbal buttons beside them for selecting the kerbals.
+                    char teamName = 'A';
                     foreach (var team in spawnTemplate.customVesselSpawnConfigs)
                     {
                         foreach (var member in team)
                         {
-                            if (GUI.Button(SLeftButtonRect(++line), member.craftURL, BDArmorySetup.BDGuiSkin.button))
+                            GUI.Label(ShortLabel(++line, 20), $"{teamName}: ");
+                            if (GUI.Button(SQuarterRect(line, 0, 3, 20), Path.GetFileNameWithoutExtension(member.craftURL), BDArmorySetup.BDGuiSkin.button))
                             {
-                                Debug.Log($"DEBUG Select craft");
+                                if (Event.current.button == 1)//Right click
+                                    CustomTemplateSpawning.Instance.HideVesselSelection(member);
+                                else
+                                    CustomTemplateSpawning.Instance.ShowVesselSelection(Event.current.mousePosition + BDArmorySetup.WindowRectVesselSpawner.position, member, team);
                             }
-                            if (GUI.Button(SRightButtonRect(line), member.kerbalName, BDArmorySetup.BDGuiSkin.button))
+                            if (GUI.Button(SQuarterRect(line, 3, 1), string.IsNullOrEmpty(member.kerbalName) ? "random" : member.kerbalName, BDArmorySetup.BDGuiSkin.button))
                             {
-                                Debug.Log($"DEBUG Select kerbal");
+                                if (Event.current.button == 1) // Right click
+                                    CustomTemplateSpawning.Instance.HideCrewSelection(member);
+                                else
+                                    CustomTemplateSpawning.Instance.ShowCrewSelection(Event.current.mousePosition + BDArmorySetup.WindowRectVesselSpawner.position, member);
                             }
                         }
-                        line += 0.2f;
+                        ++teamName;
+                        line += 0.25f;
                     }
+                    line -= 0.5f;
                 }
             }
             ++line;
@@ -813,14 +832,12 @@ namespace BDArmory.UI
             {
                 if (BDACompetitionMode.Instance.competitionIsActive || BDACompetitionMode.Instance.competitionStarting)
                 {
-                    if (GUI.Button(SLineRect(++line), StringUtils.Localize("#LOC_BDArmory_Settings_StopCompetition"))) // Stop competition.
-                    {
+                    if (GUI.Button(SLineRect(++line), StringUtils.Localize("#LOC_BDArmory_Settings_StopCompetition"), BDArmorySetup.BDGuiSkin.box)) // Stop competition.
                         BDACompetitionMode.Instance.StopCompetition();
-                    }
                 }
                 else
                 {
-                    if (GUI.Button(SLineRect(++line), StringUtils.Localize("#LOC_BDArmory_Settings_StartCompetition")))
+                    if (GUI.Button(SLineRect(++line), StringUtils.Localize("#LOC_BDArmory_Settings_SpawnAndStartCompetition"), BDArmorySetup.BDGuiSkin.button))
                     {
                         // Stop any currently running tournament.
                         BDATournament.Instance.StopTournament();
@@ -829,10 +846,11 @@ namespace BDArmory.UI
                             TournamentCoordinator.Instance.Stop();
                             TournamentCoordinator.Instance.StopForEach();
                         }
-                        // Configure the current custom spawn template with the selected vessels and kerbals.
-                        CustomTemplateSpawning.Instance.ConfigureTemplate(null, null); // FIXME
-                        // Run the competition.
-                        BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE, BDArmorySettings.COMPETITION_START_DESPITE_FAILURES);
+                        // // Configure the current custom spawn template with the selected vessels and kerbals.
+                        // CustomTemplateSpawning.Instance.ConfigureTemplate(null, null); // FIXME
+                        // // Spawn the craft and start the competition.
+                        // CustomTemplateSpawning.Instance.SpawnCustomTemplate(CustomTemplateSpawning.Instance.customSpawnConfig);
+                        CustomTemplateSpawning.Instance.Fixme();
                     }
                 }
             }
