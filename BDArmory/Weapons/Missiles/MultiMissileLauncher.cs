@@ -21,7 +21,7 @@ namespace BDArmory.Weapons.Missiles
     /// </summary>
 
     public class MultiMissileLauncher : PartModule
-	{
+    {
         public static Dictionary<string, ObjectPool> mslDummyPool = new Dictionary<string, ObjectPool>();
         Vector3 dummyScale = Vector3.one;
         Coroutine missileSalvo;
@@ -36,6 +36,7 @@ namespace BDArmory.Weapons.Missiles
         [KSPField] public bool useSymCounterpart = false; //have symmetrically placed parts fire along with this part as part of salvo? Requires isMultMissileLauncher = true;
         [KSPField] public bool overrideReferenceTransform = false; //override the missileReferenceTransform in Missilelauncher to use vessel prograde
         [KSPField] public float rippleRPM = 650;
+        [KSPField] public float launcherCooldown = 0; //additional delay after firing before launcher can fire next salvo
         [KSPField] public float offset = 0; //add an offset to missile spawn position?
         [KSPField] public string deployAnimationName;
         [KSPField] public string RailNode = "rail"; //name of attachnode for VLS MMLs to set missile loadout
@@ -47,7 +48,6 @@ namespace BDArmory.Weapons.Missiles
         private int tubesFired = 0;
         [KSPField(isPersistant = true)]
         private bool LoadoutModified = false;
-        Part SymPart = null;
         public BDTeam Team = BDTeam.Get("Neutral");
         public void Start()
         {
@@ -76,19 +76,9 @@ namespace BDArmory.Weapons.Missiles
                 }
             }
             GameEvents.onEditorShipModified.Add(ShipModified);
-            GameEvents.onPartDie.Add(OnPartDie);
-            if (useSymCounterpart)
+            if (HighLogic.LoadedSceneIsFlight)
             {
-                //find sym part, find sym.MissileLauncher, check symML !HasFired, sym ML.FireMissile()
-                using (List<Part>.Enumerator pSym = part.symmetryCounterparts.GetEnumerator())
-                    while (pSym.MoveNext())
-                    {
-                        if (pSym.Current == null) continue;
-                        if (pSym.Current != part && pSym.Current.vessel == vessel)
-                        {
-                            SymPart = pSym.Current;
-                        }
-                    }                
+                GameEvents.onPartDie.Add(OnPartDie);
             }
             wpm = VesselModuleRegistry.GetMissileFire(missileLauncher.vessel, true);
             if (LoadoutModified)
@@ -104,7 +94,7 @@ namespace BDArmory.Weapons.Missiles
                         UpdateFields(parts.Current.partPrefab.FindModuleImplementing<MissileLauncher>());
                         break;
                     }
-                
+
             }
         }
         private void OnDestroy()
@@ -143,9 +133,6 @@ namespace BDArmory.Weapons.Missiles
                                 if (missile.FindModuleImplementing<MissileLauncher>())
                                 {
                                     subMunitionName = missile.name;
-                                    //Debug.Log($"[BDArmory.MultiMissileLauncher] new submunition name: {subMunitionName}"); //find out what is throwing an error, NRE
-                                    //Debug.Log($"[BDArmory.MultiMissileLauncher] partConfig {missile.partInfo.partConfig}"); //ok, this is printing the actual .cfg, which if combined with partURL and the .cfg mesh = / MODEl URL would give the submunition path
-
                                     subMunitionPath = GetMeshurl((UrlDir.UrlConfig)GameDatabase.Instance.root.GetConfig(missile.partInfo.partUrl)); //might be easier to mess around with MeshFilter instead?
                                     PopulateMissileDummies(true);
                                     MissileLauncher MLConfig = missile.FindModuleImplementing<MissileLauncher>();
@@ -157,7 +144,6 @@ namespace BDArmory.Weapons.Missiles
                                     }
                                     UpdateFields(MLConfig);
                                     EditorLogic.DeletePart(missile);
-                                    //method to delete attached part in SPH/VAB?
                                 }
                             }
                         }
@@ -191,7 +177,7 @@ namespace BDArmory.Weapons.Missiles
                         dummyScale.z = scale;
                     }
                 }
-                Debug.Log($"[BDArmory.MultiMissileLauncher] Found model URL of {url} and scale {dummyScale}");
+                //Debug.Log($"[BDArmory.MultiMissileLauncher] Found model URL of {url} and scale {dummyScale}");
                 return url;
 
             }
@@ -212,7 +198,7 @@ namespace BDArmory.Weapons.Missiles
                 dummyScale.z = scale;
             }
             url = string.Format("{0}/{1}", cfgdir.parent.parent.url, mesh);
-            Debug.Log($"[BDArmory.MultiMissileLauncher] Found model URL of {url}");            
+            //Debug.Log($"[BDArmory.MultiMissileLauncher] Found model URL of {url}");
             return url;
         }
 
@@ -329,25 +315,29 @@ namespace BDArmory.Weapons.Missiles
             if (!(missileSalvo != null))
             {
                 missileSalvo = StartCoroutine(salvoFire(killWhenDone));
-                if (SymPart != null)
+                if (useSymCounterpart)
                 {
-                    using (var ml = VesselModuleRegistry.GetModules<MissileBase>(vessel).GetEnumerator())
-                        while (ml.MoveNext())
+                    using (List<Part>.Enumerator pSym = part.symmetryCounterparts.GetEnumerator())
+                        while (pSym.MoveNext())
                         {
-                            if (ml.Current == null) continue;
-                            if (ml.Current.part != SymPart) continue;
-                            if (wpm != null) wpm.SendTargetDataToMissile(ml.Current);
-                            MissileLauncher launcher = ml.Current as MissileLauncher;
-                            if (launcher != null)
+                            if (pSym.Current == null) continue;
+                            if (pSym.Current != part && pSym.Current.vessel == vessel)
                             {
-                                if (launcher.HasFired) continue;
-                                launcher.FireMissile();
+                                var ml = pSym.Current.FindModuleImplementing<MissileBase>();
+                                if (ml == null) continue;
+                                if (wpm != null) wpm.SendTargetDataToMissile(ml);
+                                MissileLauncher launcher = ml as MissileLauncher;
+                                if (launcher != null)
+                                {
+                                    if (launcher.HasFired) continue;
+                                    launcher.FireMissile();
+                                }
                             }
                         }
                 }
             }
         }
-        IEnumerator salvoFire(bool LaunchThenDestroy) 
+        IEnumerator salvoFire(bool LaunchThenDestroy)
         {
             int launchesThisSalvo = 0;
             float timeGap = (60 / rippleRPM) * TimeWarp.CurrentRate;
@@ -454,7 +444,7 @@ namespace BDArmory.Weapons.Missiles
                                         {
                                             if (scannedTargets[i].exists && scannedTargets[i].vessel == wpm.targetsAssigned[TargetID].Vessel)
                                             {
-                                                if(BDArmorySettings.DEBUG_MISSILES)
+                                                if (BDArmorySettings.DEBUG_MISSILES)
                                                     Debug.Log($"[BDArmory.MultiMissileLauncher] Found Radar target");
                                                 ml.radarTarget = scannedTargets[i];
                                                 break;
@@ -483,7 +473,7 @@ namespace BDArmory.Weapons.Missiles
                                             if (ml.TargetingMode == MissileBase.TargetingModes.Radar)
                                             {
                                                 //ml.radarLOAL = true;
-                                                ml.vrd = missileLauncher.vrd; 
+                                                ml.vrd = missileLauncher.vrd;
                                                 TargetSignatureData[] scannedTargets = new TargetSignatureData[(int)wpm.multiMissileTgtNum];
                                                 RadarUtils.RadarUpdateMissileLock(new Ray(ml.transform.position, ml.GetForwardTransform()), ml.lockedSensorFOV * 3, ref scannedTargets, 0.4f, ml);
                                                 TargetSignatureData lockedTarget = TargetSignatureData.noTarget;
@@ -504,10 +494,10 @@ namespace BDArmory.Weapons.Missiles
                                                 Debug.Log($"[BDArmory.MultiMissileLauncher] Assigning backup target (targetID {TargetID}) {wpm.targetsAssigned[t].Vessel.GetName()}");
                                         }
                                     }
-                                    if (BDArmorySettings.DEBUG_MISSILES) 
-                                    Debug.Log($"[BDArmory.MultiMissileLauncher] Couldn't assign valid target, trying from beginning of target list");
+                                    if (BDArmorySettings.DEBUG_MISSILES)
+                                        Debug.Log($"[BDArmory.MultiMissileLauncher] Couldn't assign valid target, trying from beginning of target list");
                                     if (ml.targetVessel == null) //check targets that were already assigned and passed. using the above iterator to prevent all targets outisde allowed FoV or engagement enveolpe from being assigned the firest possible target by checking later ones first
-                                    { 
+                                    {
                                         using (List<TargetInfo>.Enumerator item = wpm.targetsAssigned.GetEnumerator())
                                             while (item.MoveNext())
                                             {
@@ -540,7 +530,7 @@ namespace BDArmory.Weapons.Missiles
                                                     }
                                                     ml.targetVessel = item.Current;
                                                     if (BDArmorySettings.DEBUG_MISSILES)
-                                                    Debug.Log($"[BDArmory.MultiMissileLauncher] original target out of sensor range; engaging {item.Current.Vessel.GetName()}");
+                                                        Debug.Log($"[BDArmory.MultiMissileLauncher] original target out of sensor range; engaging {item.Current.Vessel.GetName()}");
                                                     break;
                                                 }
                                             }
@@ -595,8 +585,22 @@ namespace BDArmory.Weapons.Missiles
                     missileLauncher.DestroyMissile();
                 }
             }
+            if (salvoSize < launchTransforms.Length && missileLauncher.reloadRoutine == null && (BDArmorySettings.INFINITE_AMMO || missileSpawner.ammoCount > 0))
+            {
+                if (launcherCooldown > 0)
+                {
+                    missileLauncher.heatTimer = launcherCooldown;
+                    yield return new WaitForSecondsFixed(launcherCooldown);
+                    missileLauncher.launched = false;
+                    missileLauncher.heatTimer = -1;
+                }
+                else
+                {
+                    missileLauncher.heatTimer = -1;
+                    missileLauncher.launched = false;
+                }
+            }
             missileSalvo = null;
-            if (salvoSize < launchTransforms.Length && missileLauncher.reloadRoutine == null && (BDArmorySettings.INFINITE_AMMO || missileSpawner.ammoCount > 0)) missileLauncher.launched = false;
         }
 
         public void SetupMissileDummyPool(string modelpath)
@@ -616,7 +620,74 @@ namespace BDArmory.Weapons.Missiles
             }
 
         }
+        public override string GetInfo()
+        {
+            StringBuilder output = new StringBuilder();
 
+            output.Append(Environment.NewLine);
+            output.AppendLine($"Multi Missile Launcher:");
+            output.AppendLine($"- Salvo Size: {salvoSize}");
+            output.AppendLine($"- Cooldown: {launcherCooldown} s");
+            output.AppendLine($"- Salvo Size: {salvoSize}");
+            output.AppendLine($" - Warhead:");
+            AvailablePart missilePart = null;
+            using (var parts = PartLoader.LoadedPartsList.GetEnumerator())
+                while (parts.MoveNext())
+                {
+                    Debug.Log($"[BDArmory.MML]: Looking for {subMunitionName}");
+                    if (parts.Current.partConfig == null || parts.Current.partPrefab == null)
+                        continue;
+                    if (!parts.Current.partPrefab.partInfo.name.Contains(subMunitionName)) continue;
+                    missilePart = parts.Current;
+                    Debug.Log($"[BDArmory.MML]: found {missilePart.partPrefab.partInfo.name}");
+                    break;
+                }
+            if (missilePart != null)
+            {
+                var MML = (missilePart.partPrefab.FindModuleImplementing<MultiMissileLauncher>());
+                if (MML != null)
+                {
+                    if (MML.isClusterMissile)
+                    {
+                        output.AppendLine($"Cluster Missile:");
+                        output.AppendLine($"- SubMunition Count: {MML.salvoSize} ");
+                        output.AppendLine($"- Blast radius: {Math.Round(BlastPhysicsUtils.CalculateBlastRange(tntMass), 2)} m");
+                        output.AppendLine($"- tnt Mass: {tntMass} kg");
+                    }
+                }
+                Debug.Log($"[BDArmory.MML]: has BDExplosivePart: {missilePart.partPrefab.FindModuleImplementing<BDExplosivePart>()}");
+                var ExplosivePart = (missilePart.partPrefab.FindModuleImplementing<BDExplosivePart>());
+                if (ExplosivePart != null)
+                {
+                    ExplosivePart.ParseWarheadType();
+                    if (missilePart.partPrefab.FindModuleImplementing<ClusterBomb>())
+                    {
+                        output.AppendLine($"Cluster Bomb:");
+                        output.AppendLine($"- Sub-Munition Count: {missilePart.partPrefab.FindModuleImplementing<ClusterBomb>().submunitions.Count} ");
+                    }
+                    output.AppendLine($"- Blast radius: {Math.Round(BlastPhysicsUtils.CalculateBlastRange(ExplosivePart.tntMass), 2)} m");
+                    output.AppendLine($"- tnt Mass: {ExplosivePart.tntMass} kg");
+                    output.AppendLine($"- {ExplosivePart.warheadReportingName} warhead");
+                }
+                var EMP = (missilePart.partPrefab.FindModuleImplementing<ModuleEMP>());
+                if (EMP != null)
+                {
+                    output.AppendLine($"Electro-Magnetic Pulse");
+                    output.AppendLine($"- EMP Blast Radius: {EMP.proximity} m");
+                }
+                var Nuke = (missilePart.partPrefab.FindModuleImplementing<BDModuleNuke>());
+                if (Nuke != null)
+                {
+                    float yield = Nuke.yield;
+                    float radius = Nuke.thermalRadius;
+                    float EMPRadius = Nuke.isEMP ? BDAMath.Sqrt(yield) * 500 : -1;
+                    output.AppendLine($"- Yield: {yield} kT");
+                    output.AppendLine($"- Max radius: {radius} m");
+                    if (EMPRadius > 0) output.AppendLine($"- EMP Blast Radius: {EMPRadius} m");
+                }
+            }
+            return output.ToString();
+        }
     }
 }
 
