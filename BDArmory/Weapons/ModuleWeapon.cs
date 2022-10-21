@@ -4038,7 +4038,7 @@ namespace BDArmory.Weapons
 
             if (isAPS)
             {
-                TrackIncomingprojectile();
+                TrackIncomingProjectile();
             }
             else
             {
@@ -4550,7 +4550,7 @@ namespace BDArmory.Weapons
             }
         }
 
-        void TrackIncomingprojectile() //this is holding onto initial target for some reason, not properly nulling target somewher it should be nulled
+        void TrackIncomingProjectile() //this is holding onto initial target for some reason, not properly nulling target somewhere it should be nulled
         {
             targetAcquired = false;
             slaved = false;
@@ -4818,6 +4818,7 @@ namespace BDArmory.Weapons
             }
             if (!calledByReload)
             {
+                weaponState = WeaponStates.PoweringUp;
                 UpdateGUIWeaponState();
             }
             if (hasDeployAnim && deployState)
