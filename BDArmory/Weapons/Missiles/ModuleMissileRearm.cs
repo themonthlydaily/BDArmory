@@ -8,6 +8,7 @@ using UnityEngine;
 
 using BDArmory.WeaponMounts;
 using BDArmory.Settings;
+using System.Text;
 
 namespace BDArmory.Weapons.Missiles
 {
@@ -122,10 +123,17 @@ UI_FloatRange(minValue = 1f, maxValue = 4, stepIncrement = 1f, scene = UI_Scene.
                             continue;
                         if (!parts.Current.partPrefab.partInfo.name.Contains(MissileName)) continue;
                         missilePart = parts.Current;
-                        Debug.Log($"[BDArmory.ModuleMissileRearm]: looking for {MissileName}; found {missilePart.partPrefab.partInfo.name}");
+                        //Debug.Log($"[BDArmory.ModuleMissileRearm]: found {missilePart.partPrefab.partInfo.name}");
                         break;
                     }
-                tntmass = missilePart.partPrefab.FindModuleImplementing<BDExplosivePart>().tntMass;
+                try
+                {
+                    tntmass = missilePart.partPrefab.FindModuleImplementing<BDExplosivePart>().tntMass;
+                }
+                catch
+                {
+                    tntmass = 0;
+                }
                 if (AccountForAmmo)
                 {
                     missileCost = missilePart.partPrefab.partInfo.cost;
@@ -255,6 +263,17 @@ UI_FloatRange(minValue = 1f, maxValue = 4, stepIncrement = 1f, scene = UI_Scene.
 
             newPart.StartCoroutine(FinalizeMissile(newPart, launcherPart));
             return newPart;
+        }
+        public override string GetInfo()
+        {
+            StringBuilder output = new StringBuilder();
+
+            output.Append(Environment.NewLine);
+            output.AppendLine($"Missile Rearming");
+            output.AppendLine($"- Reload Time: {reloadTime} s");
+            output.AppendLine($"- Maximum Ordinance: {maxAmmo}");
+            output.AppendLine($"- Ammo Mass/Cost: {AccountForAmmo}");
+            return output.ToString();
         }
     }
 }

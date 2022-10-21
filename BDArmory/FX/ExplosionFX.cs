@@ -313,8 +313,7 @@ namespace BDArmory.FX
                     if (hitCollidersEnu.Current == null) continue;
                     try
                     {
-                        Part partHit = hitCollidersEnu.Current.GetComponentInParent<Part>();
-
+                        Part partHit = hitCollidersEnu.Current.gameObject.GetComponentInParent<Part>();
                         if (partHit != null)
                         {
                             if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
@@ -325,6 +324,7 @@ namespace BDArmory.FX
                                 if (damaged && BDACompetitionMode.Instance)
                                 {
                                     bool registered = false;
+
                                     var damagedVesselName = partHit.vessel != null ? partHit.vessel.GetName() : null;
                                     switch (ExplosionSource)
                                     {
@@ -460,6 +460,7 @@ namespace BDArmory.FX
                     });
                 }
                 partsAdded.Add(part);
+
                 return true;
                 //}
             }

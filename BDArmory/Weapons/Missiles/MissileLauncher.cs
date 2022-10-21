@@ -43,6 +43,7 @@ namespace BDArmory.Weapons.Missiles
         public MultiMissileLauncher multiLauncher = null;
         private BDStagingAreaGauge gauge;
         private float reloadTimer = 0;
+        public float heatTimer = -1;
         private Vector3 origScale = Vector3.one;
 
         [KSPField]
@@ -1270,7 +1271,15 @@ namespace BDArmory.Weapons.Missiles
                 if (launched && reloadRoutine != null)
                 {
                     reloadTimer = Mathf.Clamp((reloadTimer + 1 * TimeWarp.fixedDeltaTime / reloadableRail.reloadTime), 0, 1);
-                    if (vessel.isActiveVessel) gauge.UpdateReloadMeter(reloadTimer); //sometimes gauge not appearing? Need to add stagingIcon to .cfgs? Investigate later
+                    if (vessel.isActiveVessel) gauge.UpdateReloadMeter(reloadTimer);
+                }
+                if (heatTimer > 0)
+                {
+                    heatTimer -= TimeWarp.fixedDeltaTime;
+                    if (vessel.isActiveVessel)
+                    {
+                        gauge.UpdateHeatMeter(heatTimer/multiLauncher.launcherCooldown);
+                    }
                 }
                 if (OldInfAmmo != BDArmorySettings.INFINITE_ORDINANCE)
                 {
@@ -2265,7 +2274,7 @@ namespace BDArmory.Weapons.Missiles
                 {
                     Vector3 position = transform.position;//+rigidbody.velocity*Time.fixedDeltaTime;
 
-                    ExplosionFx.CreateExplosion(position, blastPower, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, SourceVessel.vesselName, part.FindModuleImplementing<EngageableWeapon>().GetShortName(), default(Vector3), -1, false, part.mass * 1000);
+                    ExplosionFx.CreateExplosion(position, blastPower, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, SourceVessel.vesselName, GetShortName(), default(Vector3), -1, false, part.mass * 1000);
                 }
                 if (part != null)
                 {
@@ -2702,61 +2711,18 @@ namespace BDArmory.Weapons.Missiles
             output.AppendLine($"Warhead:");
             while (partModules.MoveNext())
             {
-                if (partModules.Current == null && !multiLauncher) continue;
+                if (partModules.Current == null) continue;
                 if (partModules.Current.moduleName == "MultiMissileLauncher")
                 {
                     if (((MultiMissileLauncher)partModules.Current).isClusterMissile)
                     {
-                        output.AppendLine($"Cluster Missile:");                    
-                    }
-                    if (((MultiMissileLauncher)partModules.Current).isMultiLauncher)
-                    {
-                    }
-                        output.AppendLine($"Multi Missile:");
+                        output.AppendLine($"Cluster Missile:");
                         output.AppendLine($"- SubMunition Count: {((MultiMissileLauncher)partModules.Current).salvoSize} ");
                         float tntMass = ((MultiMissileLauncher)partModules.Current).tntMass;
                         output.AppendLine($"- Blast radius: {Math.Round(BlastPhysicsUtils.CalculateBlastRange(tntMass), 2)} m");
                         output.AppendLine($"- tnt Mass: {tntMass} kg");
-                    /*
-                    using (var parts = PartLoader.LoadedPartsList.GetEnumerator())
-                        while (parts.MoveNext())
-                        {
-                            if (parts.Current.partConfig == null || parts.Current.partPrefab == null) continue;
-                            if (!parts.Current.partPrefab.partInfo.name.Contains(multiLauncher.subMunitionName)) continue;
-                            var warhead = parts.Current.partPrefab.FindModuleImplementing<BDExplosivePart>();
-                            {
-                                if (warhead != null)
-                                {
-                                    //((BDExplosivePart)subMunitionModules.Current).ParseWarheadType();
-                                    //float tntMass = ((BDExplosivePart)subMunitionModules.Current).tntMass;
-                                    warhead.ParseWarheadType();
-                                    float tntMass = warhead.tntMass;
-                                    output.AppendLine($"- Blast radius: {Math.Round(BlastPhysicsUtils.CalculateBlastRange(tntMass), 2)} m");
-                                    output.AppendLine($"- tnt Mass: {tntMass} kg");
-                                    output.AppendLine($"- {warhead.warheadReportingName} warhead");
-                                }
-                                var EMP = parts.Current.partPrefab.FindModuleImplementing<ModuleEMP>();
-                                if (EMP != null)
-                                {
-                                    output.AppendLine($"- EMP Blast Radius: {EMP.proximity} m");
-                                }
-                                var Nuke = parts.Current.partPrefab.FindModuleImplementing<BDModuleNuke>();
-                                if (Nuke != null)
-                                {
-                                    float EMPRadius = Nuke.isEMP ? BDAMath.Sqrt(Nuke.yield) * 500 : -1;
-                                    output.AppendLine($"- Yield: {Nuke.yield} kT");
-                                    output.AppendLine($"- Max radius: {Nuke.thermalRadius} m");
-                                    if (EMPRadius > 0) output.AppendLine($"- EMP Blast Radius: {EMPRadius} m");
-                                }
-                                else continue;
-                                break;
-                            }
-                        }
-                }
-                else
-                {
-                    
-                    */
+                    }
+                    if (((MultiMissileLauncher)partModules.Current).isMultiLauncher) continue;
                 }
                 if (partModules.Current.moduleName == "BDExplosivePart")
                 {
