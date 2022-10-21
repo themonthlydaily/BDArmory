@@ -6531,7 +6531,7 @@ namespace BDArmory.Control
                         }
                         else
                         {
-                            if (!weapon.Current.isAPS) weapon.Current.DisableWeapon();
+                            if (!weapon.Current.isAPS || weapon.Current.isAPS && (weapon.Current.ammoCount <= 0 && !BDArmorySettings.INFINITE_AMMO)) weapon.Current.DisableWeapon();
                         }
                     }
                     else
