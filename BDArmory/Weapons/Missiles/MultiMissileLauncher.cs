@@ -374,6 +374,12 @@ namespace BDArmory.Weapons.Missiles
                 if (!BDArmorySettings.INFINITE_ORDINANCE) missileSpawner.ammoCount--;
                 MissileLauncher ml = missileSpawner.SpawnedMissile.FindModuleImplementing<MissileLauncher>();
                 yield return new WaitUntilFixed(() => ml.SetupComplete); // Wait until missile fully initialized.
+                var tnt = VesselModuleRegistry.GetModule<BDExplosivePart>(vessel, true);
+                if (tnt != null)
+                {
+                    tnt.sourcevessel = missileLauncher.SourceVessel;
+                    tnt.isMissile = true;
+                }
                 ml.Team = Team;
                 ml.SourceVessel = missileLauncher.SourceVessel;
                 if (string.IsNullOrEmpty(ml.GetShortName()))
@@ -403,7 +409,6 @@ namespace BDArmory.Weapons.Missiles
                     ml.CruiseSpeed = missileLauncher.CruiseSpeed;
                     ml.CruisePredictionTime = missileLauncher.CruisePredictionTime;
                 }
-                ml.decoupleForward = missileLauncher.decoupleForward;
                 ml.decoupleSpeed = 5;
                 if (missileLauncher.GuidanceMode == GuidanceModes.AGM)
                     ml.maxAltitude = missileLauncher.maxAltitude;
@@ -690,6 +695,3 @@ namespace BDArmory.Weapons.Missiles
         }
     }
 }
-
-//huh. Vessel is a Monobehavior... Could a Vessel component be added to, say, rockets? if So, going the rocket route for missile pods/reloads would much simpler as most of the targeting code would no longer need to be rewritted to look for TargetInfos instead of Vessels. Would still need to mod the Bullet/Rocket/laser/Explosion hit code, and add an internal HP value, but...
-//performance hit/memleaks from spawning in new parts/vessels? Investigate

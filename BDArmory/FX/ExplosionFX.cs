@@ -199,7 +199,7 @@ namespace BDArmory.FX
                 switch (ExplosionSource)
                 {
                     case ExplosionSourceType.Missile:
-                        var explosivePart = ExplosivePart ? ExplosivePart.FindModuleImplementing<BDExplosivePart>() : null;
+                        var explosivePart = ExplosivePart ? ExplosivePart.FindModuleImplementing<BDExplosivePart>() : null; //isn't this already set in the explosion setup?
                         sourceVesselName = explosivePart ? explosivePart.sourcevessel.GetName() : SourceVesselName;
                         break;
                     default: // Everything else.
@@ -317,6 +317,7 @@ namespace BDArmory.FX
                         if (partHit != null)
                         {
                             if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
+                            if (partHit.name == ExplosivePart.name) continue; //don't fratricide fellow missiles/bombs in a launched salvo when the first detonates
                             if (partHit.mass > 0 && !explosionEventsPartsAdded.Contains(partHit))
                             {
                                 var damaged = ProcessPartEvent(partHit, sourceVesselName, explosionEventsPreProcessing, explosionEventsPartsAdded);
@@ -795,7 +796,7 @@ namespace BDArmory.FX
                     {
                         blastInfo = BlastPhysicsUtils.CalculatePartBlastEffects(part, realDistance, vesselMass * 1000f, Power, Range);
                     }
-                    else //majority of force concentrated in blast cone for shaped warheads, not going to apply much force to stuff outside 
+                    else //majority of force concentrated in blast AoE for shaped warheads, not going to apply much force to stuff outside 
                     {
                         if (realDistance < Range / 2) //further away than half the blast range, falloff blast effect outside primary AoE
                         {

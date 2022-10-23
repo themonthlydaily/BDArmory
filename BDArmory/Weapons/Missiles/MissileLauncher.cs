@@ -2263,6 +2263,7 @@ namespace BDArmory.Weapons.Missiles
                 if (warheadType == WarheadTypes.Standard || warheadType == WarheadTypes.ContinuousRod)
                 {
                     var tnt = part.FindModuleImplementing<BDExplosivePart>();
+                    tnt.sourcevessel = SourceVessel;
                     tnt.DetonateIfPossible();
                 }
                 else if (warheadType == WarheadTypes.Nuke)
