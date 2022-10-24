@@ -1,10 +1,13 @@
-﻿IMPROVEMENTS / FIXES
+﻿v1.5.3.1
+IMPROVEMENTS / FIXES
 - Spawning:
 	- Only spawn SpawnProbe for dead current vessel if spawning is aborted.
 - AI / WM:
 	- Fix AoA limits above 90° not behaving as expected by only limiting the AoA if the limit is below 90°.
 	- Add an Afterburner Override Threshold slider (force AB active below this speed threshold if at full throttle).
 	- Add a post-stall AoA threshold for switching flight-mode when beyond this threshold.
+- Weapons:
+	- Fix weapons with startup/shutdown animations getting stuck, preventing them from firing.
 
 v1.5.3.0
 IMPROVEMENTS / FIXES
