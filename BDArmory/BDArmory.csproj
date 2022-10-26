@@ -385,10 +385,12 @@
     <None Include="Distribution\GameData\BDArmory\MMPatches\000000_HitpointModule_PartFixes.cfg" />
     <None Include="Distribution\GameData\BDArmory\MMPatches\10_bdac_stealth.cfg" />
     <None Include="Distribution\GameData\BDArmory\MMPatches\Armor_CVE.cfg" />
+    <None Include="Distribution\GameData\BDArmory\MMPatches\BDA_battledamage.cfg" />
     <None Include="Distribution\GameData\BDArmory\MMPatches\BDA_GroundRadar.cfg" />
     <None Include="Distribution\GameData\BDArmory\MMPatches\BDA_TweakScale.cfg" />
     <None Include="Distribution\GameData\BDArmory\MMPatches\bdmk22_cockpit.cfg" />
     <None Include="Distribution\GameData\BDArmory\MMPatches\Explode_Mode_Squad_Tanks.cfg" />
+    <None Include="Distribution\GameData\BDArmory\MMPatches\StructPWing.cfg" />
     <None Include="Distribution\GameData\BDArmory\Models\bulletDecal\BulletDecal1.mu" />
     <None Include="Distribution\GameData\BDArmory\Models\bulletDecal\BulletDecal2.mu" />
     <None Include="Distribution\GameData\BDArmory\Models\bulletDecal\BulletDecal2b.mu" />

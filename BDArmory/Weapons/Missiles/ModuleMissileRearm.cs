@@ -8,25 +8,28 @@ using UnityEngine;
 
 using BDArmory.WeaponMounts;
 using BDArmory.Settings;
+using System.Text;
 
 namespace BDArmory.Weapons.Missiles
 {
     public class ModuleMissileRearm : PartModule, IPartMassModifier, IPartCostModifier
     {
-        public float GetModuleMass(float baseMass, ModifierStagingSituation situation) => Mathf.Max((ammoCount - 1), 0) * missileMass;
+        public float GetModuleMass(float baseMass, ModifierStagingSituation situation) => Mathf.Max((isMultiLauncher ? ammoCount : ammoCount - 1), 0) * missileMass;
 
         public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.FIXED;
-        public float GetModuleCost(float baseCost, ModifierStagingSituation situation) => Mathf.Max((ammoCount - 1), 0) * missileCost;
+        public float GetModuleCost(float baseCost, ModifierStagingSituation situation) => Mathf.Max((isMultiLauncher ? ammoCount : ammoCount - 1), 0) * missileCost;
         public ModifierChangeWhen GetModuleCostChangeWhen() => ModifierChangeWhen.FIXED;
 
         private float missileMass = 0;
         private float missileCost = 0;
 
+        public bool isMultiLauncher = false;
+
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_OrdinanceAvailable"),//Ordinance Available
 UI_FloatRange(minValue = 1f, maxValue = 4, stepIncrement = 1f, scene = UI_Scene.Editor)]
         public float ammoCount = 1; //need to figure out where ammo is stored, for mass addition/subtraction - in the missile? external missile ammo bin? CoM?
 
-        [KSPField]
+        [KSPField(isPersistant = true)]
         public string MissileName = "bahaAim120";
 
         [KSPField] public float reloadTime = 5f;
@@ -35,7 +38,7 @@ UI_FloatRange(minValue = 1f, maxValue = 4, stepIncrement = 1f, scene = UI_Scene.
         public float tntmass = 1;
         AvailablePart missilePart;
         public Part SpawnedMissile;
-        public void SpawnMissile(Transform MissileTransform, bool offset = false)
+        public void SpawnMissile(Transform MissileTransform, float offset = 0)
         {
             if (ammoCount >= 1 || BDArmorySettings.INFINITE_ORDINANCE)
             {
@@ -50,7 +53,7 @@ UI_FloatRange(minValue = 1f, maxValue = 4, stepIncrement = 1f, scene = UI_Scene.
                             var partNode = new ConfigNode();
                             PartSnapshot(missilePart.partPrefab).CopyTo(partNode);
                             //SpawnedMissile = CreatePart(partNode, MissileTransform.transform.position - MissileTransform.TransformDirection(missilePart.partPrefab.srfAttachNode.originalPosition),
-                            SpawnedMissile = CreatePart(partNode, offset ? (MissileTransform.position + MissileTransform.forward * 1.5f) : MissileTransform.transform.position, MissileTransform.rotation, this.part);
+                            SpawnedMissile = CreatePart(partNode, offset > 0 ? (MissileTransform.position + MissileTransform.forward * offset) : MissileTransform.transform.position, MissileTransform.rotation, this.part);
                             var MMR = SpawnedMissile.FindModuleImplementing<ModuleMissileRearm>();
                             if (MMR != null) AccountForAmmo = false;
                             /* //keep the module, can be used for cluster missile submunition creation
@@ -113,17 +116,24 @@ UI_FloatRange(minValue = 1f, maxValue = 4, stepIncrement = 1f, scene = UI_Scene.
             MissileLauncher ml = part.FindModuleImplementing<MissileLauncher>();
             {
                 ml.reloadableRail = this;
-                //Debug.Log("[BDArmory.ModuleMissileRearm]: " + MissileName);
                 using (var parts = PartLoader.LoadedPartsList.GetEnumerator())
                     while (parts.MoveNext())
                     {
                         if (parts.Current.partConfig == null || parts.Current.partPrefab == null)
                             continue;
                         if (!parts.Current.partPrefab.partInfo.name.Contains(MissileName)) continue;
-                        missilePart = parts.Current;                        
+                        missilePart = parts.Current;
+                        //Debug.Log($"[BDArmory.ModuleMissileRearm]: found {missilePart.partPrefab.partInfo.name}");
                         break;
                     }
-                tntmass = missilePart.partPrefab.FindModuleImplementing<BDExplosivePart>().tntMass;
+                try
+                {
+                    tntmass = missilePart.partPrefab.FindModuleImplementing<BDExplosivePart>().tntMass;
+                }
+                catch
+                {
+                    tntmass = 0;
+                }
                 if (AccountForAmmo)
                 {
                     missileCost = missilePart.partPrefab.partInfo.cost;
@@ -253,6 +263,17 @@ UI_FloatRange(minValue = 1f, maxValue = 4, stepIncrement = 1f, scene = UI_Scene.
 
             newPart.StartCoroutine(FinalizeMissile(newPart, launcherPart));
             return newPart;
+        }
+        public override string GetInfo()
+        {
+            StringBuilder output = new StringBuilder();
+
+            output.Append(Environment.NewLine);
+            output.AppendLine($"Missile Rearming");
+            output.AppendLine($"- Reload Time: {reloadTime} s");
+            output.AppendLine($"- Maximum Ordinance: {maxAmmo}");
+            output.AppendLine($"- Ammo Mass/Cost: {AccountForAmmo}");
+            return output.ToString();
         }
     }
 }
