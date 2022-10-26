@@ -585,7 +585,7 @@ namespace BDArmory.Radar
                 UpdateInputs();
             }
 
-            drawGUI = (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && !vessel.packed && rCount > 0 &&
+            drawGUI = (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && !vessel.packed && rCount + iCount > 0 &&
                        vessel.isActiveVessel && BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled);
         }
 
@@ -1162,7 +1162,7 @@ namespace BDArmory.Radar
                 GUI.matrix = Matrix4x4.identity;
             }
 
-            if (noData)
+            if (noData && iCount == 0)
             {
                 GUI.Label(RadarDisplayRect, "NO DATA\n", lockStyle);
             }
