@@ -886,7 +886,18 @@ namespace BDArmory.Damage
                                         hitpoints *= FerramAerospace.GetFARMassMult(part); //PWing HP no longer mass dependant, so lets have FAR's structural strengthening/weakening have an effect on HP. you want light wings? they're going to be fragile, and vice versa
                                     }
                                     armorVolume = ProceduralWing.GetPWingArea(part);
-                                    if (!part.name.Contains("B9.Aero.Wing.Procedural.Panel")) previousEdgeLift = false;
+                                    if (!part.name.Contains("B9.Aero.Wing.Procedural.Panel"))
+                                    { 
+                                        previousEdgeLift = false; 
+                                    }
+                                    else
+                                    {
+                                        if (HighLogic.LoadedSceneIsFlight)
+                                        {
+                                            var lift = part.FindModuleImplementing<ModuleLiftingSurface>();
+                                            if (lift != null) lift.deflectionLiftCoeff = 0;
+                                        }
+                                    }
                                 }
                             }
                             if (hitpoints < 0) //sanity checks

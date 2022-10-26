@@ -1828,9 +1828,9 @@ namespace BDArmory.Weapons
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                 timeGap = ((60 / BDArmorySettings.FIRE_RATE_OVERRIDE) * fireTransforms.Length) * TimeWarp.CurrentRate;
 
-            if (useRippleFire)
+            if (useRippleFire && fireState.Length > 1)
             {
-                timeGap /= fireTransforms.Length; //to maintain RPM if only firing one barrel at a time
+                timeGap /= fireTransforms.Length; //to maintain RPM if only firing one barrel at a time - This should only be being called on guns with multiple fireanims(and thus multiple independant barrels); is causing twinlinked weapons to gain 2x firespeed in barrageMode
             }
             if (Time.time - timeFired > timeGap
                 && !isOverheated
@@ -2130,7 +2130,7 @@ namespace BDArmory.Weapons
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41 && !isAPS)
                 timeGap = ((60 / BDArmorySettings.FIRE_RATE_OVERRIDE) * fireTransforms.Length) * TimeWarp.CurrentRate;
 
-            if (useRippleFire)
+            if (useRippleFire && fireState.Length > 1)
             {
                 timeGap /= fireTransforms.Length; //to maintain RPM if only firing one barrel at a time
             }
@@ -2524,7 +2524,7 @@ namespace BDArmory.Weapons
             if (!rocketPod)
                 timeGap *= fireTransforms.Length;
 
-            if (useRippleFire)
+            if (useRippleFire && fireState.Length > 1)
             {
                 timeGap /= fireTransforms.Length; //to maintain RPM if only firing one barrel at a time
             }
@@ -4696,7 +4696,7 @@ namespace BDArmory.Weapons
             if (shell != null || rocket != null)
             {
                 delayTime = -1;
-                if (baseDeviation > 0.05 && eWeaponType == WeaponTypes.Ballistic || (eWeaponType == WeaponTypes.Laser && pulseLaser)) //if using rotary cannon/CIWS for APS
+                if (baseDeviation > 0.05 && (eWeaponType == WeaponTypes.Ballistic || (eWeaponType == WeaponTypes.Laser && pulseLaser))) //if using rotary cannon/CIWS for APS
                 {
                     if (UnityEngine.Random.Range(0, (targetDistance - (Mathf.Cos(baseDeviation) * targetDistance))) > 1)
                     {
@@ -4818,6 +4818,7 @@ namespace BDArmory.Weapons
             }
             if (!calledByReload)
             {
+                weaponState = WeaponStates.PoweringUp;
                 UpdateGUIWeaponState();
             }
             if (hasDeployAnim && deployState)
@@ -5413,6 +5414,7 @@ namespace BDArmory.Weapons
                         }
                         ParseBulletFuzeType(binfo.fuzeType);
                         ParseBulletHEType(binfo.explosive);
+                        output.AppendLine("");
                         output.AppendLine($"Bullet type: {(string.IsNullOrEmpty(binfo.DisplayName) ? binfo.name : binfo.DisplayName)}");
                         output.AppendLine($"Bullet mass: {Math.Round(binfo.bulletMass, 2)} kg");
                         output.AppendLine($"Muzzle velocity: {Math.Round(binfo.bulletVelocity, 2)} m/s");
@@ -5422,6 +5424,7 @@ namespace BDArmory.Weapons
                             output.AppendLine($"Cannister Round");
                             output.AppendLine($" - Submunition count: {binfo.subProjectileCount}");
                         }
+                        output.AppendLine($"Estimated Penetration: {ProjectileUtils.CalculatePenetration(binfo.caliber, binfo.bulletVelocity, binfo.bulletMass, binfo.apBulletMod, 940, 8.45001135e-07f, 0.656060636f, 1.20190930f, 1.77791929f):F2} mm");
                         if ((binfo.tntMass > 0) && !binfo.nuclear)
                         {
                             output.AppendLine($"Blast:");
@@ -5472,7 +5475,6 @@ namespace BDArmory.Weapons
                             BulletInfo sinfo = BulletInfo.bullets[binfo.subMunitionType.ToString()];
                             output.AppendLine($"- deploys {sinfo.subProjectileCount}x {(string.IsNullOrEmpty(sinfo.DisplayName) ? sinfo.name : sinfo.DisplayName)}");
                         }
-                        output.AppendLine("");
                     }
                 }
                 if (weaponType == "rocket")

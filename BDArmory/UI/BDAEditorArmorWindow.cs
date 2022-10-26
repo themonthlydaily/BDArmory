@@ -47,6 +47,10 @@ namespace BDArmory.UI
         private float ArmorDuctility = 0.6f;
         private float ArmorDiffusivity = 237;
         private float ArmorMaxTemp = 993;
+        private float ArmorVfactor = 8.45001135e-07f;
+        private float ArmorMu1 = 0.656060636f;
+        private float ArmorMu2 = 1.20190930f;
+        private float ArmorMu3 = 1.77791929f;
         private float ArmorCost = 0;
         private bool armorslist = false;
         private float Thickness = 10;
@@ -120,29 +124,30 @@ namespace BDArmory.UI
         private void OnEditorShipModifiedEvent(ShipConstruct data)
         {
             if (data is null) return;
-            delayedRefreshVisuals = true;
+            //delayedRefreshVisuals = true;
             if (!delayedRefreshVisualsInProgress)
                 StartCoroutine(DelayedRefreshVisuals(data));
         }
 
-        private bool delayedRefreshVisuals = false;
+        //private bool delayedRefreshVisuals = false;
         private bool delayedRefreshVisualsInProgress = false;
         IEnumerator DelayedRefreshVisuals(ShipConstruct ship)
         {
             delayedRefreshVisualsInProgress = true;
             var wait = new WaitForFixedUpdate();
-            while (delayedRefreshVisuals) // Wait until ship modified events stop coming.
-            {
-                delayedRefreshVisuals = false;
+            //while (delayedRefreshVisuals) // Wait until ship modified events stop coming. //preventing the remainder of the ienumerator from getting called. reverting to a simpler wai implementation  -SI
+            //{
+                //delayedRefreshVisuals = false;
                 yield return wait;
-            }
-            yield return new WaitUntilFixed(() =>
-                ship == null || ship.Parts == null || ship.Parts.TrueForAll(p =>
-                {
-                    if (p == null) return true;
-                    var hp = p.GetComponent<Damage.HitpointTracker>();
-                    return hp == null || hp.Ready;
-                })); // Wait for HP changes to delayed ship modified events in HitpointTracker
+            yield return wait;
+            //}
+            //yield return new WaitUntilFixed(() =>
+            //    ship == null || ship.Parts == null || ship.Parts.TrueForAll(p =>
+            //    {
+            //        if (p == null) return true;
+            //        var hp = p.GetComponent<Damage.HitpointTracker>();
+            //        return hp == null || hp.Ready;
+            //    })); // Wait for HP changes to delayed ship modified events in HitpointTracker
             delayedRefreshVisualsInProgress = false;
 
             if (showArmorWindow)
@@ -159,13 +164,16 @@ namespace BDArmory.UI
                     refreshLiftvisualizer = true;
                 }
                 shipModifiedfromCalcArmor = false;
+                CalculateArmorMass();
+                if (!FerramAerospace.hasFAR)
+                    CalculateTotalLift(); // Re-calculate lift and wing loading on armor change
+                //Debug.Log("[ArmorTool] Recalculating mass/lift");
             }
         }
 
         private void OnDestroy()
         {
             GameEvents.onEditorShipModified.Remove(OnEditorShipModifiedEvent);
-
             if (toolbarButton)
             {
                 ApplicationLauncher.Instance.RemoveModApplication(toolbarButton);
@@ -490,8 +498,6 @@ namespace BDArmory.UI
                 return;
 
             bool modified = false;
-            totalArmorMass = 0;
-            totalArmorCost = 0;
             var selectedArmorIndex = ArmorInfo.armors.FindIndex(t => t.name == selectedArmor);
             if (selectedArmorIndex < 0)
                 return;
@@ -564,6 +570,10 @@ namespace BDArmory.UI
             ArmorHardness = ArmorInfo.armors[selectedArmorIndex].Hardness;
             ArmorMaxTemp = ArmorInfo.armors[selectedArmorIndex].SafeUseTemp;
             ArmorStrength = ArmorInfo.armors[selectedArmorIndex].Strength;
+            ArmorVfactor = ArmorInfo.armors[selectedArmorIndex].vFactor;
+            ArmorMu1 = ArmorInfo.armors[selectedArmorIndex].muParam1;
+            ArmorMu2 = ArmorInfo.armors[selectedArmorIndex].muParam2;
+            ArmorMu3 = ArmorInfo.armors[selectedArmorIndex].muParam3;
 
             if (modified)
             {
@@ -600,6 +610,8 @@ namespace BDArmory.UI
         {
             yield return new WaitForEndOfFrame();
             yield return new WaitForEndOfFrame();
+            totalArmorMass = 0;
+            totalArmorCost = 0;
             using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator())
                 while (parts.MoveNext())
                 {
@@ -607,7 +619,9 @@ namespace BDArmory.UI
                     HitpointTracker armor = parts.Current.GetComponent<HitpointTracker>();
                     if (armor != null)
                     {
-                        totalArmorMass += armor.armorMass;
+                        if (armor.ArmorTypeNum == 1) continue;
+
+                        totalArmorMass += armor.armorMass; 
                         totalArmorCost += armor.armorCost;
                     }
                 }
@@ -814,7 +828,7 @@ namespace BDArmory.UI
                 float newCaliber = ProjectileUtils.CalculateDeformation(yieldStrength, bulletEnergy, 30, 1109, 1176, 7850, 0.19f, 0.8f, false);
                 */
                 //armorValue = ProjectileUtils.CalculatePenetration(30, newCaliber, 0.388f, 1109, ArmorDuctility, ArmorDensity, ArmorStrength, 30, 0.8f, false);
-                armorValue = ProjectileUtils.CalculatePenetration(30, 1109, 0.388f, 0.8f, 940, 8.45001135e-07f, 0.656060636f, 1.20190930f, 1.77791929f);
+                armorValue = ProjectileUtils.CalculatePenetration(30, 1109, 0.388f, 0.8f, ArmorStrength, ArmorVfactor, ArmorMu1, ArmorMu2, ArmorMu3); //why is this hardcoded? it needs to be the selected armor mat's vars
                 relValue = Mathf.Round(armorValue / steelValue * 10) / 10;
                 exploValue = ArmorStrength * (1 + ArmorDuctility) * (ArmorDensity / 1000);
             }
