@@ -2013,7 +2013,7 @@ namespace BDArmory.Control
                         if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"targetAngVel: {targetAngVel:F4}, magnifier: {magnifier:F2}");
                         target -= magnifier * leadOffset; // The effect of this is to exagerate the lead if the angular velocity is > 1
                         angleToTarget = Vector3.Angle(vesselTransform.up, target - vesselTransform.position);
-                        if (distanceToTarget < weaponManager.gunRange && angleToTarget < 20)
+                        if (distanceToTarget < weaponManager.gunRange && angleToTarget < 20) // FIXME This ought to be changed to a dynamic angle like the firing angle.
                         {
                             steerMode = SteerModes.Aiming; //steer to aim
                         }
@@ -2080,7 +2080,7 @@ namespace BDArmory.Control
 
             //manage speed when close to enemy
             float finalMaxSpeed = maxSpeed;
-            if (targetDot > 0f) // Target is ahead.
+            if (steerMode == SteerModes.Aiming) // Target is ahead and we're trying to aim at them. Outside this angle, we want full thrust to turn faster onto the target.
             {
                 if (strafingDistance < 0f) // target flying, or beyond range of beginning strafing run for landed/splashed targets.
                 {
@@ -2237,11 +2237,12 @@ namespace BDArmory.Control
                 steerMode = SteerModes.Aiming;
             }
 
-            //slow down for tighter turns
-            float velAngleToTarget = Mathf.Clamp(Vector3.Angle(targetPosition - vesselTransform.position, vessel.Velocity()), 0, 90);
+            //slow down for tighter turns, unless we're already at high AoA, in which case we want more thrust
             float speedReductionFactor = 1.25f;
             float finalSpeed;
-            if (vessel.atmDensity > 0.05f) finalSpeed = Mathf.Min(speedController.targetSpeed, Mathf.Clamp(maxSpeed - (speedReductionFactor * velAngleToTarget), idleSpeed, maxSpeed));
+            // float velAngleToTarget = Mathf.Clamp(Vector3.Angle(targetPosition - vesselTransform.position, vessel.Velocity()), 0, 90);
+            // if (vessel.atmDensity > 0.05f) finalSpeed = Mathf.Min(speedController.targetSpeed, Mathf.Clamp(maxSpeed - (speedReductionFactor * velAngleToTarget), idleSpeed, maxSpeed));
+            if (vessel.atmDensity > 0.05f) finalSpeed = Mathf.Min(speedController.targetSpeed, Mathf.Clamp(maxSpeed - speedReductionFactor * (angleToTarget - AoA), idleSpeed, maxSpeed));
             else finalSpeed = Mathf.Min(speedController.targetSpeed, maxSpeed);
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Final Target Speed: {finalSpeed}");
 
