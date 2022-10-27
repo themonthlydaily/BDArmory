@@ -21,7 +21,7 @@ namespace BDArmory.UI
     {
         #region Fields
         public static VesselSpawnerWindow Instance;
-        private int _guiCheckIndex;
+        private static int _guiCheckIndex = -1;
         private static readonly float _buttonSize = 20;
         private static readonly float _margin = 5;
         private static readonly float _lineHeight = _buttonSize;
@@ -161,7 +161,7 @@ namespace BDArmory.UI
             yield return new WaitUntil(() => BDArmorySetup.Instance is not null);
 
             BDArmorySetup.Instance.hasVesselSpawner = true;
-            _guiCheckIndex = GUIUtils.RegisterGUIRect(new Rect());
+            if (_guiCheckIndex < 0) _guiCheckIndex = GUIUtils.RegisterGUIRect(new Rect());
             _ready = true;
         }
 
@@ -242,7 +242,7 @@ namespace BDArmory.UI
             GUI.DragWindow(new Rect(0, 0, _windowWidth - _buttonSize - _margin, _buttonSize + _margin));
             if (GUI.Button(new Rect(_windowWidth - _buttonSize - (_margin - 2), _margin, _buttonSize - 2, _buttonSize - 2), "X", BDArmorySetup.BDGuiSkin.button))
             {
-                BDArmorySetup.Instance.showVesselSpawnerGUI = false;
+                SetVisible(false);
                 BDArmorySetup.SaveConfig();
             }
 
@@ -905,33 +905,39 @@ namespace BDArmory.UI
                     SpawnUtils.CancelSpawning();
                 }
             }
-// #if DEBUG
-//             if (BDArmorySettings.DEBUG_SPAWNING && GUI.Button(SLineRect(++line), "Test point spawn", BDArmorySetup.BDGuiSkin.button))
-//             {
-//                 StartCoroutine(SingleVesselSpawning.Instance.Spawn(
-//                     new CircularSpawnConfig(
-//                         new SpawnConfig(
-//                             BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
-//                             BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
-//                             BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
-//                             BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
-//                             BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
-//                             false,
-//                             false,
-//                             0,
-//                             null,
-//                             null,
-//                             BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION
-//                         ),
-//                         BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
-//                         BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE
-//                     )
-//                 ));
-//             }
-// #endif
+            // #if DEBUG
+            //             if (BDArmorySettings.DEBUG_SPAWNING && GUI.Button(SLineRect(++line), "Test point spawn", BDArmorySetup.BDGuiSkin.button))
+            //             {
+            //                 StartCoroutine(SingleVesselSpawning.Instance.Spawn(
+            //                     new CircularSpawnConfig(
+            //                         new SpawnConfig(
+            //                             BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
+            //                             BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
+            //                             BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
+            //                             BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+            //                             BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
+            //                             false,
+            //                             false,
+            //                             0,
+            //                             null,
+            //                             null,
+            //                             BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION
+            //                         ),
+            //                         BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
+            //                         BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE
+            //                     )
+            //                 ));
+            //             }
+            // #endif
 
             line += 1.25f; // Bottom internal margin
             _windowHeight = (line * _lineHeight);
+        }
+
+        public void SetVisible(bool visible)
+        {
+            BDArmorySetup.Instance.showVesselSpawnerGUI = visible;
+            GUIUtils.SetGUIRectVisible(_guiCheckIndex, visible);
         }
     }
 }

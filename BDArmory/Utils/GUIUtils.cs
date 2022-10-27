@@ -308,12 +308,13 @@ namespace BDArmory.Utils
                         return true;
                 }
 
-                if (extraGUIRects != null)
+            }
+            if (extraGUIRects != null)
+            {
+                foreach (var guiRect in extraGUIRects.Values)
                 {
-                    for (int i = 0; i < extraGUIRects.Count; i++)
-                    {
-                        if (extraGUIRects[i].Contains(inverseMousePos)) return true;
-                    }
+                    if (!guiRect.visible) continue;
+                    if (guiRect.rect.Contains(inverseMousePos)) return true;
                 }
             }
 
@@ -325,29 +326,38 @@ namespace BDArmory.Utils
             GUIUtilsInstance.Reset();
         }
 
-        public static List<Rect> extraGUIRects;
+        public class ExtraGUIRect
+        {
+            public ExtraGUIRect(Rect rect) { this.rect = rect; }
+            public bool visible = false;
+            public Rect rect;
+        }
+        public static Dictionary<int, ExtraGUIRect> extraGUIRects;
 
         public static int RegisterGUIRect(Rect rect)
         {
             if (extraGUIRects == null)
             {
-                extraGUIRects = new List<Rect>();
+                extraGUIRects = new Dictionary<int, ExtraGUIRect>();
             }
 
             int index = extraGUIRects.Count;
-            extraGUIRects.Add(rect);
+            extraGUIRects.Add(index, new ExtraGUIRect(rect));
             GUIUtilsInstance.Reset();
             return index;
         }
 
         public static void UpdateGUIRect(Rect rect, int index)
         {
-            if (extraGUIRects == null)
-            {
-                Debug.LogWarning("[BDArmory.Misc]: Trying to update a GUI rect for mouse position check, but Rect list is null.");
-            }
+            if (extraGUIRects == null || !extraGUIRects.ContainsKey(index)) return;
+            extraGUIRects[index].rect = rect;
+            GUIUtilsInstance.Reset();
+        }
 
-            extraGUIRects[index] = rect;
+        public static void SetGUIRectVisible(int index, bool visible)
+        {
+            if (extraGUIRects == null || !extraGUIRects.ContainsKey(index)) return;
+            extraGUIRects[index].visible = visible;
             GUIUtilsInstance.Reset();
         }
 
@@ -377,6 +387,9 @@ namespace BDArmory.Utils
         }
 
 
+        /// <summary>
+        /// Disable zooming with the scroll wheel if the mouse is over a registered GUI window.
+        /// </summary>
         public static void SetScrollZoom()
         {
             if (CheckMouseIsOnGui()) BeginDisableScrollZoom();
@@ -387,7 +400,6 @@ namespace BDArmory.Utils
         public static void BeginDisableScrollZoom()
         {
             if (!scrollZoomEnabled) return;
-            Debug.Log($"DEBUG Disabling scroll-zoom");
             originalScrollRate = GameSettings.AXIS_MOUSEWHEEL.primary.scale;
             GameSettings.AXIS_MOUSEWHEEL.primary.scale = 0;
             scrollZoomEnabled = false;
@@ -395,8 +407,7 @@ namespace BDArmory.Utils
         public static void EndDisableScrollZoom()
         {
             if (scrollZoomEnabled) return;
-            Debug.Log($"DEBUG Enabling scroll-zoom");
-            GameSettings.AXIS_MOUSEWHEEL.primary.scale = originalScrollRate;
+            GameSettings.AXIS_MOUSEWHEEL.primary.scale = originalScrollRate; // FIXME This mostly works, but scrolling isn't re-enabled until something else occurs, such as "right click -> adjust camera".
             scrollZoomEnabled = true;
         }
 
@@ -411,7 +422,6 @@ namespace BDArmory.Utils
                     {
                         _mouseIsOnGUI = GUIUtils._CheckMouseIsOnGui();
                         _mouseIsOnGUICheckedThisFrame = true;
-                        // Debug.Log($"DEBUG Mouse is {(_mouseIsOnGUI ? "" : "not ")}on the GUI.");
                     }
                     return _mouseIsOnGUI;
                 }
@@ -429,6 +439,11 @@ namespace BDArmory.Utils
             void Update()
             {
                 _mouseIsOnGUICheckedThisFrame = false;
+            }
+
+            void LateUpdate()
+            {
+                SetScrollZoom();
             }
 
             public static void Reset()

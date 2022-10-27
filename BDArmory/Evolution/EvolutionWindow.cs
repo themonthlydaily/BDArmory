@@ -14,7 +14,7 @@ namespace BDArmory.Evolution
         public static EvolutionWindow Instance;
         private BDAModuleEvolution evolution;
 
-        private int _guiCheckIndex;
+        private static int _guiCheckIndex = -1;
         private static readonly float _buttonSize = 20;
         private static readonly float _margin = 5;
         private static readonly float _lineHeight = _buttonSize;
@@ -97,6 +97,12 @@ namespace BDArmory.Evolution
             BDArmorySetup.WindowRectEvolution.height = windowHeight;
         }
 
+        public void SetVisible(bool visible)
+        {
+            BDArmorySetup.Instance.showEvolutionGUI = visible;
+            GUIUtils.SetGUIRectVisible(_guiCheckIndex, visible);
+        }
+
         private IEnumerator WaitForSetup()
         {
             while (BDArmorySetup.Instance == null || BDAModuleEvolution.Instance == null)
@@ -107,7 +113,7 @@ namespace BDArmory.Evolution
 
             BDArmorySetup.Instance.hasEvolution = true;
             ready = true;
-            _guiCheckIndex = GUIUtils.RegisterGUIRect(new Rect());
+            if (_guiCheckIndex < 0) _guiCheckIndex = GUIUtils.RegisterGUIRect(new Rect());
         }
 
         private void WindowEvolution(int id)

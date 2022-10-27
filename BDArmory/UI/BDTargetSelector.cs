@@ -17,7 +17,7 @@ namespace BDArmory.UI
         const float buttonHeight = 20;
         const float buttonGap = 2;
 
-        private int guiCheckIndex;
+        private static int guiCheckIndex = -1;
         private bool ready = false;
         private bool open = false;
         private Rect window;
@@ -28,9 +28,15 @@ namespace BDArmory.UI
 
         public void Open(MissileFire weaponManager, Vector2 position)
         {
-            open = true;
+            SetVisible(true);
             targetWeaponManager = weaponManager;
             windowLocation = position;
+        }
+
+        void SetVisible(bool visible)
+        {
+            open = visible;
+            GUIUtils.SetGUIRectVisible(guiCheckIndex, visible);
         }
 
         private void TargetingSelectorWindow(int id)
@@ -40,7 +46,7 @@ namespace BDArmory.UI
             GUI.Label(new Rect(margin, height, width - 2 * margin, buttonHeight), StringUtils.Localize("#LOC_BDArmory_Selecttargeting"), labelStyle);
             if (GUI.Button(new Rect(width - 18, 2, 16, 16), "X"))
             {
-                open = false;
+                SetVisible(false);
             }
             height += buttonHeight;
 
@@ -188,7 +194,7 @@ namespace BDArmory.UI
             yield return new WaitUntil(() => BDArmorySetup.Instance is not null);
 
             ready = true;
-            guiCheckIndex = GUIUtils.RegisterGUIRect(new Rect());
+            if (guiCheckIndex < 0) guiCheckIndex = GUIUtils.RegisterGUIRect(new Rect());
         }
     }
 }

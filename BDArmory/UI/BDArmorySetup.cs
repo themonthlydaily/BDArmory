@@ -17,6 +17,7 @@ using BDArmory.Competition.VesselSpawning;
 using BDArmory.Control;
 using BDArmory.CounterMeasure;
 using BDArmory.Extensions;
+using BDArmory.Evolution;
 using BDArmory.FX;
 using BDArmory.GameModes;
 using BDArmory.Modules;
@@ -955,7 +956,7 @@ namespace BDArmory.UI
                 GUIStyle vsStyle = showVesselSwitcherGUI ? BDGuiSkin.box : BDGuiSkin.button;
                 if (GUI.Button(new Rect(columnWidth - _windowMargin - ++buttonNumber * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "VS", vsStyle))
                 {
-                    showVesselSwitcherGUI = !showVesselSwitcherGUI;
+                    LoadedVesselSwitcher.Instance.SetVisible(!showVesselSwitcherGUI);
                 }
             }
 
@@ -965,7 +966,7 @@ namespace BDArmory.UI
                 GUIStyle vsStyle = showVesselSpawnerGUI ? BDGuiSkin.box : BDGuiSkin.button;
                 if (GUI.Button(new Rect(columnWidth - _windowMargin - ++buttonNumber * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "Sp", vsStyle))
                 {
-                    showVesselSpawnerGUI = !showVesselSpawnerGUI;
+                    VesselSpawnerWindow.Instance.SetVisible(!showVesselSpawnerGUI);
                     if (!showVesselSpawnerGUI)
                         SaveConfig();
                 }
@@ -977,7 +978,7 @@ namespace BDArmory.UI
                 var evolutionSkin = showEvolutionGUI ? BDGuiSkin.box : BDGuiSkin.button; ;
                 if (GUI.Button(new Rect(columnWidth - _windowMargin - ++buttonNumber * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "EV", evolutionSkin))
                 {
-                    showEvolutionGUI = !showEvolutionGUI;
+                    EvolutionWindow.Instance.SetVisible(!showEvolutionGUI);
                 }
             }
 

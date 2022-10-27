@@ -22,6 +22,7 @@ namespace BDArmory.UI
         public static bool NumFieldsEnabled = false;
         public static bool windowBDAAIGUIEnabled;
         internal static bool resizingWindow = false;
+        internal static int _guiCheckIndex = -1;
 
         public static ApplicationLauncherButton button;
 
@@ -66,6 +67,7 @@ namespace BDArmory.UI
         GUIStyle Title;
         GUIStyle contextLabel;
         GUIStyle infoLinkStyle;
+
 
         void Awake()
         {
@@ -129,6 +131,7 @@ namespace BDArmory.UI
                 GameEvents.onEditorPartPlaced.Add(OnEditorPartPlacedEvent); //do per part placement instead of calling a findModule call every time *anything* changes on thevessel
                 GameEvents.onEditorPartDeleted.Add(OnEditorPartDeletedEvent);
             }
+            if (_guiCheckIndex < 0) _guiCheckIndex = GUIUtils.RegisterGUIRect(BDArmorySetup.WindowRectAI);
         }
         public void AddToolbarButton()
         {
@@ -166,12 +169,14 @@ namespace BDArmory.UI
         public void ShowAIGUI()
         {
             windowBDAAIGUIEnabled = true;
+            GUIUtils.SetGUIRectVisible(_guiCheckIndex, windowBDAAIGUIEnabled);
             GetAI();
         }
 
         public void HideAIGUI()
         {
             windowBDAAIGUIEnabled = false;
+            GUIUtils.SetGUIRectVisible(_guiCheckIndex, windowBDAAIGUIEnabled);
             BDAWindowSettingsField.Save(); // Save window settings.
         }
 
@@ -583,6 +588,8 @@ namespace BDArmory.UI
             if (Event.current.type == EventType.MouseUp && resizingWindow) { resizingWindow = false; }
             BDArmorySetup.WindowRectAI = GUI.Window(GetInstanceID(), BDArmorySetup.WindowRectAI, WindowRectAI, "", BDArmorySetup.BDGuiSkin.window);//"BDA Weapon Manager"
             if (HighLogic.LoadedSceneIsFlight) BDArmorySetup.SetGUIOpacity(false);
+            GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectAI);
+            GUIUtils.UpdateGUIRect(BDArmorySetup.WindowRectAI, _guiCheckIndex);
             GUIUtils.UseMouseEventInRect(BDArmorySetup.WindowRectAI);
         }
 
@@ -2613,7 +2620,6 @@ namespace BDArmory.UI
             BDArmorySetup.WindowRectAI.width = WindowWidth;
             if (!resizingWindow && BDArmorySettings.STRICT_WINDOW_BOUNDARIES && WindowHeight < previousWindowHeight && Mathf.Round(BDArmorySetup.WindowRectAI.y + previousWindowHeight) == Screen.height) // Window shrunk while being at edge of screen.
                 BDArmorySetup.WindowRectAI.y = Screen.height - BDArmorySetup.WindowRectAI.height;
-            GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectAI);
         }
         #endregion GUI
 
