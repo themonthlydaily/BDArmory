@@ -846,11 +846,12 @@ namespace BDArmory.UI
                             TournamentCoordinator.Instance.Stop();
                             TournamentCoordinator.Instance.StopForEach();
                         }
-                        // // Configure the current custom spawn template with the selected vessels and kerbals.
-                        // CustomTemplateSpawning.Instance.ConfigureTemplate(null, null); // FIXME
-                        // // Spawn the craft and start the competition.
-                        // CustomTemplateSpawning.Instance.SpawnCustomTemplate(CustomTemplateSpawning.Instance.customSpawnConfig);
-                        CustomTemplateSpawning.Instance.Fixme();
+                        // Configure the current custom spawn template.
+                        if (CustomTemplateSpawning.Instance.ConfigureTemplate())
+                        {
+                            // Spawn the craft and start the competition.
+                            CustomTemplateSpawning.Instance.SpawnCustomTemplate(CustomTemplateSpawning.Instance.customSpawnConfig);
+                        }
                     }
                 }
             }

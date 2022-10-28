@@ -74,8 +74,8 @@ namespace BDArmory.Competition.VesselSpawning
         public bool airborne; // Whether the vessel should be spawned in an airborne configuration or not.
         public int teamIndex;
         public bool reuseURLVesselName; // Reuse the vesselName for the same craftURL (for continuous spawning).
-        public string kerbalName; // Override the kerbal name.
-        public VesselSpawnConfig(string craftURL, Vector3 position, Vector3 direction, float altitude, float pitch, bool airborne, int teamIndex = 0, bool reuseURLVesselName = false, string kerbalName = null)
+        public List<ProtoCrewMember> crew; // Override the crew.
+        public VesselSpawnConfig(string craftURL, Vector3 position, Vector3 direction, float altitude, float pitch, bool airborne, int teamIndex = 0, bool reuseURLVesselName = false, List<ProtoCrewMember> crew = null)
         {
             this.craftURL = craftURL;
             this.position = position;
@@ -85,7 +85,7 @@ namespace BDArmory.Competition.VesselSpawning
             this.airborne = airborne;
             this.teamIndex = teamIndex;
             this.reuseURLVesselName = reuseURLVesselName;
-            this.kerbalName = kerbalName;
+            this.crew = crew.ToList(); // Take a copy.
         }
     }
 
@@ -134,6 +134,6 @@ namespace BDArmory.Competition.VesselSpawning
         public double longitude;
         public float heading;
         public int teamIndex;
-        public override string ToString() => $"{{{(string.IsNullOrEmpty(craftURL)?"": $"{Path.GetFileNameWithoutExtension(craftURL)}, ")}{(string.IsNullOrEmpty(kerbalName)?"":$"{kerbalName}, ")}lat: {latitude:G3}, lon: {longitude:G3}, heading: {heading:F0}°, team: {teamIndex}}}";
+        public override string ToString() => $"{{{(string.IsNullOrEmpty(craftURL) ? "" : $"{Path.GetFileNameWithoutExtension(craftURL)}, ")}{(string.IsNullOrEmpty(kerbalName) ? "" : $"{kerbalName}, ")}lat: {latitude:G3}, lon: {longitude:G3}, heading: {heading:F0}°, team: {teamIndex}}}";
     }
 }
