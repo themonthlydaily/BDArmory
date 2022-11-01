@@ -572,6 +572,7 @@ namespace BDArmory.UI
             RocketInfo.Load();
             ArmorInfo.Load();
             MutatorInfo.Load();
+            HullInfo.Load();
 
             compDistGui = BDArmorySettings.COMPETITION_DISTANCE.ToString();
             HoSTag = BDArmorySettings.HOS_BADGE;
