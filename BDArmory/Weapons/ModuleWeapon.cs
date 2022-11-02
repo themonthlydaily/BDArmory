@@ -2338,6 +2338,8 @@ namespace BDArmory.Weapons
                                     else
                                     {
                                         HitpointTracker armor = p.GetComponent<HitpointTracker>();
+                                        if (laserDamage != 0)
+                                        {
                                         var angularSpread = tanAngle * distance; //Scales down the damage based on the increased surface area of the area being hit by the laser. Think flashlight on a wall.
                                         initialDamage = (laserDamage / (1 + Mathf.PI * angularSpread * angularSpread) * 0.425f);
 
@@ -2357,14 +2359,14 @@ namespace BDArmory.Weapons
                                         p.AddDamage(damage);
                                         if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Damage Applied to {p.name} on {p.vessel.GetName()}: {damage}");
                                         if (pulseLaser) BattleDamageHandler.CheckDamageFX(p, caliber, 1 + (damage / initialDamage), HEpulses, false, part.vessel.GetName(), hit, false, false); //beams will proc BD once every scoreAccumulatorTick
-
+                                        }
                                         if (HEpulses)
                                         {
                                             ExplosionFx.CreateExplosion(hit.point,
                                                            (laserDamage / 30000),
                                                            explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName, null);
                                         }
-                                        if (impulseWeapon)
+                                        if (Impulse != 0)
                                         {
                                             if (!pulseLaser)
                                             {
