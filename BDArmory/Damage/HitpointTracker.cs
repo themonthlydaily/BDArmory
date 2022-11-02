@@ -1451,6 +1451,7 @@ namespace BDArmory.Damage
                 if ((part.isEngine() || part.IsWeapon()) && HullInfo.materials[HullInfo.materialNames[(int)HullTypeNum - 1]].massMod < 1) //can armor engines, but not make them out of wood.
                 {
                     HullTypeNum = HullInfo.materials.FindIndex(t => t.name == "Aluminium") + 1;
+                    part.maxTemp = part.partInfo.partPrefab.maxTemp;
                 }
                 hullInfo = HullInfo.materials[HullInfo.materialNames[(int)HullTypeNum - 1]];
                 HullMassAdjust = (partMass * hullInfo.massMod) - partMass;
