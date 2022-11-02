@@ -397,21 +397,28 @@ namespace BDArmory.Utils
         }
         static bool scrollZoomEnabled = true;
         static float originalScrollRate = 1;
+        static bool _originalScrollRateSet = false;
         public static void BeginDisableScrollZoom()
         {
             if (!scrollZoomEnabled) return;
-            originalScrollRate = GameSettings.AXIS_MOUSEWHEEL.primary.scale;
+            if (!_originalScrollRateSet)
+            {
+                originalScrollRate = GameSettings.AXIS_MOUSEWHEEL.primary.scale; // Get the original scroll rate once.
+                _originalScrollRateSet = true;
+            }
             GameSettings.AXIS_MOUSEWHEEL.primary.scale = 0;
             scrollZoomEnabled = false;
         }
         public static void EndDisableScrollZoom()
         {
             if (scrollZoomEnabled) return;
-            GameSettings.AXIS_MOUSEWHEEL.primary.scale = originalScrollRate; // FIXME This mostly works, but scrolling isn't re-enabled until something else occurs, such as "right click -> adjust camera".
+            if (_originalScrollRateSet)
+                GameSettings.AXIS_MOUSEWHEEL.primary.scale = originalScrollRate;
             scrollZoomEnabled = true;
         }
 
-        [KSPAddon(KSPAddon.Startup.EveryScene, false)]
+
+        [KSPAddon(KSPAddon.Startup.AllGameScenes, false)]
         internal class GUIUtilsInstance : MonoBehaviour
         {
             public bool mouseIsOnGUI

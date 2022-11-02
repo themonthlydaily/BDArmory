@@ -4,6 +4,8 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
+using BDArmory.Utils;
+
 namespace BDArmory.Competition.VesselSpawning
 {
     /// <summary>
@@ -124,10 +126,22 @@ namespace BDArmory.Competition.VesselSpawning
         }
         public string name;
         public List<List<CustomVesselSpawnConfig>> customVesselSpawnConfigs;
-        public override string ToString() => $"{{name: {name}, worldIndex: {worldIndex}, lat: {latitude:F3}, lon: {longitude:F3}, alt: {altitude:F0}; {string.Join("; ", customVesselSpawnConfigs.Select(cfgs => string.Join(", ", cfgs)))}}}";
+        public override string ToString() => $"{{name: {name}, worldIndex: {worldIndex}, lat: {latitude:F3}, lon: {longitude:F3}, alt: {altitude:F0}; {(customVesselSpawnConfigs == null ? "" : string.Join("; ", customVesselSpawnConfigs.Select(cfgs => string.Join(", ", cfgs))))}}}";
     }
+
+    /// <summary>
+    /// The individual custom vessel spawn configs.
+    /// </summary>
+    [Serializable]
     public class CustomVesselSpawnConfig
     {
+        public CustomVesselSpawnConfig(double latitude, double longitude, float heading, int teamIndex)
+        {
+            this.latitude = latitude;
+            this.longitude = longitude;
+            this.heading = heading;
+            this.teamIndex = teamIndex;
+        }
         public string craftURL;
         public string kerbalName;
         public double latitude;

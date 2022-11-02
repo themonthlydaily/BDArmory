@@ -88,6 +88,11 @@ namespace BDArmory.UI
             return new Rect(_margin + (pos % 4) * (_windowWidth - 2f * _margin) / 4f + indent, (line + (int)(pos / 4)) * _lineHeight, span * (_windowWidth - 2f * _margin) / 4f - indent, _lineHeight);
         }
 
+        Rect SEighthRect(float line, int pos, int span = 1, float indent = 0)
+        {
+            return new Rect(_margin + (pos % 8) * (_windowWidth - 2f * _margin) / 8f + indent, (line + (int)(pos / 8)) * _lineHeight, span * (_windowWidth - 2f * _margin) / 8f - indent, _lineHeight);
+        }
+
         Rect ShortLabel(float line, float width)
         {
             return new Rect(_margin, line * _lineHeight, width, _lineHeight);
@@ -686,23 +691,28 @@ namespace BDArmory.UI
             }
             else // Custom Spawn Template
             {
-                if (GUI.Button(SLineRect(++line), $"{(BDArmorySettings.SHOW_CUSTOM_SPAWN_TEMPLATE_OPTIONS ? StringUtils.Localize("#LOC_BDArmory_Generic_Hide") : StringUtils.Localize("#LOC_BDArmory_Generic_Show"))} {StringUtils.Localize("#LOC_BDArmory_Settings_CustomSpawnTemplateOptions")}", BDArmorySettings.SHOW_CUSTOM_SPAWN_TEMPLATE_OPTIONS ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))//Show/hide tournament options
+                if (GUI.Button(SLineRect(++line), $"{(BDArmorySettings.CUSTOM_SPAWN_TEMPLATE_SHOW_OPTIONS ? StringUtils.Localize("#LOC_BDArmory_Generic_Hide") : StringUtils.Localize("#LOC_BDArmory_Generic_Show"))} {StringUtils.Localize("#LOC_BDArmory_Settings_CustomSpawnTemplateOptions")}", BDArmorySettings.CUSTOM_SPAWN_TEMPLATE_SHOW_OPTIONS ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))//Show/hide tournament options
                 {
-                    BDArmorySettings.SHOW_CUSTOM_SPAWN_TEMPLATE_OPTIONS = !BDArmorySettings.SHOW_CUSTOM_SPAWN_TEMPLATE_OPTIONS;
+                    BDArmorySettings.CUSTOM_SPAWN_TEMPLATE_SHOW_OPTIONS = !BDArmorySettings.CUSTOM_SPAWN_TEMPLATE_SHOW_OPTIONS;
                 }
-                if (BDArmorySettings.SHOW_CUSTOM_SPAWN_TEMPLATE_OPTIONS)
+                if (BDArmorySettings.CUSTOM_SPAWN_TEMPLATE_SHOW_OPTIONS)
                 {
+                    line += 0.25f;
                     var spawnTemplate = CustomTemplateSpawning.Instance.customSpawnConfig;
-                    // FIXME We want a drop-down to select which spawn template to use, with an option of creating a new one. We can do something similar to the spawn points GUI for this.
-                    spawnTemplate.name = GUI.TextField(SLeftRect(++line), spawnTemplate.name);
-                    if (GUI.Button(SQuarterRect(line, 2), StringUtils.Localize("#LOC_BDArmory_SpawnTemplate_Load"), BDArmorySetup.BDGuiSkin.button))
+                    spawnTemplate.name = GUI.TextField(SQuarterRect(++line, 0, 2), spawnTemplate.name); // Writing in the text field updates the name of the current template.
+                    if (GUI.Button(SQuarterRect(line, 2), StringUtils.Localize("#LOC_BDArmory_Generic_Load"), BDArmorySetup.BDGuiSkin.button))
                     {
-                        // FIXME Use a drop-down selector instead, like with world selection in spawn points.
-                        //CustomTemplateSpawning.Instance.ShowTemplateSelection(Event.current.mousePosition + BDArmorySetup.WindowRectVesselSpawner.position);
-
+                        CustomTemplateSpawning.Instance.ShowTemplateSelection(Event.current.mousePosition + BDArmorySetup.WindowRectVesselSpawner.position);
                     }
-                    if (GUI.Button(SQuarterRect(line, 3), StringUtils.Localize("#LOC_BDArmory_SpawnTemplate_Save"), BDArmorySetup.BDGuiSkin.button))
-                    { CustomTemplateSpawning.Instance.SaveTemplate(); }
+                    if (GUI.Button(SEighthRect(line, 6), StringUtils.Localize("#LOC_BDArmory_Generic_Save"), BDArmorySetup.BDGuiSkin.button)) // Save overwrites the current template with the current vessel positions in the LoadedVesselSwitcher.
+                    {
+                        CustomTemplateSpawning.Instance.SaveTemplate();
+                    }
+                    if (GUI.Button(SEighthRect(line, 7), StringUtils.Localize("#LOC_BDArmory_Generic_New"), BDArmorySetup.BDGuiSkin.button)) // New generates a new template from the current vessels in the LoadedVesselSwitcher.
+                    {
+                        spawnTemplate = CustomTemplateSpawning.Instance.NewTemplate();
+                    }
+                    line += 0.25f;
                     // We then want a table of teams of craft buttons for selecting the craft with kerbal buttons beside them for selecting the kerbals.
                     char teamName = 'A';
                     foreach (var team in spawnTemplate.customVesselSpawnConfigs)
@@ -710,7 +720,8 @@ namespace BDArmory.UI
                         foreach (var member in team)
                         {
                             GUI.Label(ShortLabel(++line, 20), $"{teamName}: ");
-                            if (GUI.Button(SQuarterRect(line, 0, 3, 20), Path.GetFileNameWithoutExtension(member.craftURL), BDArmorySetup.BDGuiSkin.button))
+                            // if (GUI.Button(SQuarterRect(line, 0, 3, 20), Path.GetFileNameWithoutExtension(member.craftURL), BDArmorySetup.BDGuiSkin.button))
+                            if (GUI.Button(SQuarterRect(line, 0, 3, 20), CustomTemplateSpawning.Instance.ShipName(member.craftURL), BDArmorySetup.BDGuiSkin.button))
                             {
                                 if (Event.current.button == 1)//Right click
                                     CustomTemplateSpawning.Instance.HideVesselSelection(member);
@@ -728,7 +739,7 @@ namespace BDArmory.UI
                         ++teamName;
                         line += 0.25f;
                     }
-                    line -= 0.5f;
+                    --line;
                 }
             }
             ++line;
@@ -837,7 +848,9 @@ namespace BDArmory.UI
                 }
                 else
                 {
-                    if (GUI.Button(SLineRect(++line), StringUtils.Localize("#LOC_BDArmory_Settings_SpawnAndStartCompetition"), BDArmorySetup.BDGuiSkin.button))
+                    var spawnAndStartCompetition = GUI.Button(SLeftButtonRect(++line), StringUtils.Localize("#LOC_BDArmory_Settings_SpawnAndStartCompetition"), BDArmorySetup.BDGuiSkin.button);
+                    var spawnOnly = GUI.Button(SRightButtonRect(line), StringUtils.Localize("#LOC_BDArmory_Settings_SpawnOnly"), BDArmorySetup.BDGuiSkin.button);
+                    if (spawnOnly || spawnAndStartCompetition)
                     {
                         // Stop any currently running tournament.
                         BDATournament.Instance.StopTournament();
@@ -847,7 +860,7 @@ namespace BDArmory.UI
                             TournamentCoordinator.Instance.StopForEach();
                         }
                         // Configure the current custom spawn template.
-                        if (CustomTemplateSpawning.Instance.ConfigureTemplate())
+                        if (CustomTemplateSpawning.Instance.ConfigureTemplate(spawnAndStartCompetition))
                         {
                             // Spawn the craft and start the competition.
                             CustomTemplateSpawning.Instance.SpawnCustomTemplate(CustomTemplateSpawning.Instance.customSpawnConfig);
