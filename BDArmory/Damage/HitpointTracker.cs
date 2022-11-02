@@ -1456,7 +1456,8 @@ namespace BDArmory.Damage
                 hullInfo = HullInfo.materials[HullInfo.materialNames[(int)HullTypeNum - 1]];
                 HullMassAdjust = (partMass * hullInfo.massMod) - partMass;
                 guiHullTypeString = String.IsNullOrEmpty(hullInfo.localizedName) ? hullInfo.name : StringUtils.Localize(hullInfo.localizedName);
-                part.maxTemp = hullInfo.maxTemp;
+                if (hullInfo.maxTemp > 0) part.maxTemp = hullInfo.maxTemp;
+                else part.maxTemp = part.partInfo.partPrefab.maxTemp;
                 ignitionTemp = hullInfo.ignitionTemp;
                 hullType = hullInfo.name;
                 float partCost = part.partInfo.cost + part.partInfo.variant.Cost;
