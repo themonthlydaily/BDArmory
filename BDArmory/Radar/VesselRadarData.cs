@@ -926,7 +926,11 @@ namespace BDArmory.Radar
             //==============================
             GUI.BeginGroup(RadarDisplayRect);
 
-            if (availableRadars.Count + availableIRSTs.Count == 0) return;
+            if (availableRadars.Count + availableIRSTs.Count == 0)
+            {
+                GUI.EndGroup();
+                return;
+            }
             //bool omnidirectionalDisplay = (radarCount == 1 && linkedRadars[0].omnidirectional);
             float directionalFieldOfView = omniDisplay ? 0 : availableRadars.Count > 0 ? availableRadars[0].directionalFieldOfView : availableIRSTs[0].directionalFieldOfView;
             //bool linked = (radarCount > 1);
