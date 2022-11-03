@@ -418,7 +418,7 @@ namespace BDArmory.Utils
         }
 
 
-        [KSPAddon(KSPAddon.Startup.AllGameScenes, false)]
+        [KSPAddon(KSPAddon.Startup.EveryScene, false)]
         internal class GUIUtilsInstance : MonoBehaviour
         {
             public bool mouseIsOnGUI
