@@ -325,6 +325,10 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static string LAST_USED_SAVEGAME = "";                 // Name of the last used savegame (for auto_generate_tournament_on_resume).
         [BDAPersistentSettingsField] public static bool AUTO_DISABLE_UI = false;                   // Automatically disable the UI when starting tournaments.
 
+        // Custom Spawn Template
+        [BDAPersistentSettingsField] public static bool CUSTOM_SPAWN_TEMPLATE_SHOW_OPTIONS = false; // Custom Spawn Template options.
+        [BDAPersistentSettingsField] public static bool CUSTOM_SPAWN_TEMPLATE_REPLACE_TEAM = false; // Replace all vessels on the team.
+
         // Time override settings
         [BDAPersistentSettingsField] public static bool TIME_OVERRIDE = false;                     // Enable the time control slider.
         [BDAPersistentSettingsField] public static float TIME_SCALE = 1f;                          // Time scale factor (higher speeds up the game rate without adjusting the physics time-step).

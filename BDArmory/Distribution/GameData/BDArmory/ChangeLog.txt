@@ -1,4 +1,18 @@
-﻿v1.5.3.1
+﻿IMPROVEMENTS / FIXES
+- AI / WM:
+	- Allow kamikaze ramming of ground targets by overriding terrain avoidance and min alt behaviour when on final approach.
+- Spawning:
+	- Custom Spawn Templates
+		- Set up your desired template by spawning vessels with VesselMover (or otherwise) and assigning teams.
+		- Create a new template from the current configuration or save over the current one.
+		- Edit the templates directly in BDArmory/PluginData/spawn_templates.cfg to adjust headings, etc.
+		- Load/delete existing templates.
+		- Assign vessels and specific kerbals to the template's slots, then spawn and start a competition without having to muck around with VesselMover or the "turning bug".
+- UI:
+	- Fix the internal GUI rects being updated properly and add option to disable their visibility to the mouse.
+	- Scroll-zoom prevention while the mouse is over BDA+ windows.
+
+v1.5.3.1
 IMPROVEMENTS / FIXES
 - Spawning:
 	- Only spawn SpawnProbe for dead current vessel if spawning is aborted.

@@ -52,6 +52,7 @@ namespace BDArmory.Control
 
         public void StopExtending(string reason, bool cooldown = false)
         {
+            if (!extending) return;
             extending = false;
             requestedExtend = false;
             extendingReason = "";
@@ -1609,7 +1610,7 @@ namespace BDArmory.Control
                 vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
             }
 
-            steerMode = SteerModes.NormalFlight;
+            if (!ramming) steerMode = SteerModes.NormalFlight; // Reset the steer mode, unless we're ramming.
             useVelRollTarget = false;
 
             // landed and still, chill out
@@ -1629,14 +1630,14 @@ namespace BDArmory.Control
             if ((float)vessel.radarAltitude < minAltitude)
             { belowMinAltitude = true; }
 
-            if (gainAltInhibited && (!belowMinAltitude || !(currentStatus == "Engaging" || currentStatus == "Evading" || currentStatus.StartsWith("Gain Alt"))))
-            { // Allow switching between "Engaging", "Evading" and "Gain Alt." while below minimum altitude without disabling the gain altitude inhibitor.
+            if (gainAltInhibited && (!belowMinAltitude || !(currentStatus == "Engaging" || currentStatus == "Evading" || currentStatus == "Ramming speed!" || currentStatus.StartsWith("Gain Alt"))))
+            { // Allow switching between "Engaging", "Evading", "Ramming speed!" and "Gain Alt." while below minimum altitude without disabling the gain altitude inhibitor.
                 gainAltInhibited = false;
                 if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDModulePilotAI]: " + vessel.vesselName + " is no longer inhibiting gain alt");
             }
 
-            if (!gainAltInhibited && belowMinAltitude && (currentStatus == "Engaging" || currentStatus == "Evading") && vessel.atmDensity > 0.1f)
-            { // Vessel went below minimum altitude while "Engaging" or "Evading", enable the gain altitude inhibitor.
+            if (!gainAltInhibited && belowMinAltitude && (currentStatus == "Engaging" || currentStatus == "Evading" || currentStatus == "Ramming speed!") && vessel.atmDensity > 0.1f)
+            { // Vessel went below minimum altitude while "Engaging", "Evading" or "Ramming speed!", enable the gain altitude inhibitor.
                 gainAltInhibited = true;
                 if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDModulePilotAI]: " + vessel.vesselName + " was " + currentStatus + " and went below min altitude, inhibiting gain alt.");
             }
@@ -1651,7 +1652,7 @@ namespace BDArmory.Control
             CheckLandingGear();
             if (IsRunningWaypoints) UpdateWaypoint(); // Update the waypoint state.
 
-            if (!vessel.LandedOrSplashed && (FlyAvoidTerrain(s) || (!ramming && FlyAvoidOthers(s)))) // Avoid terrain and other planes.
+            if (!vessel.LandedOrSplashed && ((!(ramming && steerMode == SteerModes.Aiming) && FlyAvoidTerrain(s)) || (!ramming && FlyAvoidOthers(s)))) // Avoid terrain and other planes, unless we're trying to ram stuff.
             { turningTimer = 0; }
             else if (initialTakeOff) // Take off.
             {
@@ -2449,6 +2450,12 @@ namespace BDArmory.Control
             }
             if (extendAbortTimer < 0) // In cooldown, extending disabled.
             {
+                StopExtending("in cooldown");
+                return false;
+            }
+            if (ramming) // Disable extending if in ramming mode.
+            {
+                StopExtending("ramming speed");
                 return false;
             }
             if (!extending)

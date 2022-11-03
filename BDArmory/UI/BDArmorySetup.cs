@@ -17,6 +17,7 @@ using BDArmory.Competition.VesselSpawning;
 using BDArmory.Control;
 using BDArmory.CounterMeasure;
 using BDArmory.Extensions;
+using BDArmory.Evolution;
 using BDArmory.FX;
 using BDArmory.GameModes;
 using BDArmory.Modules;
@@ -176,6 +177,7 @@ namespace BDArmory.UI
         GUIStyle waterMarkStyle;
         GUIStyle redErrorStyle;
         GUIStyle redErrorShadowStyle;
+        public static GUIStyle closeButtonStyle;
 
         public SortedList<string, BDTeam> Teams = new SortedList<string, BDTeam>
         {
@@ -522,6 +524,9 @@ namespace BDArmory.UI
 
             redErrorShadowStyle = new GUIStyle(redErrorStyle);
             redErrorShadowStyle.normal.textColor = new Color(0, 0, 0, 0.75f);
+
+            closeButtonStyle = new GUIStyle(BDGuiSkin.button) { alignment = TextAnchor.MiddleCenter };
+            closeButtonStyle.normal.textColor = Color.red;
             //
 
             using (var a = AppDomain.CurrentDomain.GetAssemblies().ToList().GetEnumerator())
@@ -955,7 +960,7 @@ namespace BDArmory.UI
                 GUIStyle vsStyle = showVesselSwitcherGUI ? BDGuiSkin.box : BDGuiSkin.button;
                 if (GUI.Button(new Rect(columnWidth - _windowMargin - ++buttonNumber * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "VS", vsStyle))
                 {
-                    showVesselSwitcherGUI = !showVesselSwitcherGUI;
+                    LoadedVesselSwitcher.Instance.SetVisible(!showVesselSwitcherGUI);
                 }
             }
 
@@ -965,7 +970,7 @@ namespace BDArmory.UI
                 GUIStyle vsStyle = showVesselSpawnerGUI ? BDGuiSkin.box : BDGuiSkin.button;
                 if (GUI.Button(new Rect(columnWidth - _windowMargin - ++buttonNumber * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "Sp", vsStyle))
                 {
-                    showVesselSpawnerGUI = !showVesselSpawnerGUI;
+                    VesselSpawnerWindow.Instance.SetVisible(!showVesselSpawnerGUI);
                     if (!showVesselSpawnerGUI)
                         SaveConfig();
                 }
@@ -977,7 +982,7 @@ namespace BDArmory.UI
                 var evolutionSkin = showEvolutionGUI ? BDGuiSkin.box : BDGuiSkin.button; ;
                 if (GUI.Button(new Rect(columnWidth - _windowMargin - ++buttonNumber * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "EV", evolutionSkin))
                 {
-                    showEvolutionGUI = !showEvolutionGUI;
+                    EvolutionWindow.Instance.SetVisible(!showEvolutionGUI);
                 }
             }
 
@@ -2919,7 +2924,7 @@ namespace BDArmory.UI
                         GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_ImplosiveDamageMultiplier")}:  ({BDArmorySettings.EXP_IMP_MOD})", leftLabel);
                         BDArmorySettings.EXP_IMP_MOD = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_IMP_MOD, 0f, 1f), 0.05f);
 
-                        
+
                         GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_ArmorExplosivePenetrationResistanceMultiplier")}:  ({BDArmorySettings.EXP_PEN_RESIST_MULT})", leftLabel);
                         BDArmorySettings.EXP_PEN_RESIST_MULT = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_PEN_RESIST_MULT, 0f, 10f), 0.25f);
 
