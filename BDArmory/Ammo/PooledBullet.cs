@@ -1380,7 +1380,7 @@ namespace BDArmory.Bullets
                 pBullet.tracerLuminance = tracerLuminance;
                 pBullet.bulletDrop = bulletDrop;
 
-                if (subMunitionType.tntMass > 0)
+                if (subMunitionType.tntMass > 0 || subMunitionType.beehive)
                 {
                     pBullet.explModelPath = explModelPath;
                     pBullet.explSoundPath = explSoundPath;
