@@ -87,7 +87,7 @@ namespace BDArmory.Competition.VesselSpawning
             this.airborne = airborne;
             this.teamIndex = teamIndex;
             this.reuseURLVesselName = reuseURLVesselName;
-            this.crew = crew.ToList(); // Take a copy.
+            this.crew = crew == null ? null : crew.ToList(); // Take a copy.
         }
     }
 
