@@ -12,7 +12,8 @@ namespace BDArmory.Utils
         {
             if (!localizedStrings.TryGetValue(template, out string result))
             {
-                localizedStrings[template] = Localizer.Format(template);
+                result = Localizer.Format(template);
+                localizedStrings[template] = result;
             }
             return result;
         }

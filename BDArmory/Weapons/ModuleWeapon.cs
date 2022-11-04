@@ -2338,33 +2338,35 @@ namespace BDArmory.Weapons
                                     else
                                     {
                                         HitpointTracker armor = p.GetComponent<HitpointTracker>();
-                                        var angularSpread = tanAngle * distance; //Scales down the damage based on the increased surface area of the area being hit by the laser. Think flashlight on a wall.
-                                        initialDamage = (laserDamage / (1 + Mathf.PI * angularSpread * angularSpread) * 0.425f);
+                                        if (laserDamage != 0)
+                                        {
+                                          var angularSpread = tanAngle * distance; //Scales down the damage based on the increased surface area of the area being hit by the laser. Think flashlight on a wall.
+                                          initialDamage = (laserDamage / (1 + Mathf.PI * angularSpread * angularSpread) * 0.425f);
 
-                                        if (armor != null)// technically, lasers shouldn't do damage until armor gone, but that would require localized armor tracking instead of the monolithic model currently used                                              
-                                        {
-                                            damage = (initialDamage * (pulseLaser ? 1 : TimeWarp.fixedDeltaTime)) * Mathf.Clamp((1 - (BDAMath.Sqrt(armor.Diffusivity * (armor.Density / 1000)) * armor.ArmorThickness) / initialDamage), 0.005f, 1); //old calc lacked a clamp, could potentially become negative damage
-                                        }  //clamps laser damage to not go negative, allow some small amount of bleedthrough - ~30 Be/Steel will negate ABL, ~62 Ti, 42 DU
-                                        else
-                                        {
-                                            damage = initialDamage;
-                                            if (!pulseLaser)
-                                            {
-                                                damage = initialDamage * TimeWarp.fixedDeltaTime;
-                                            }
+                                          if (armor != null)// technically, lasers shouldn't do damage until armor gone, but that would require localized armor tracking instead of the monolithic model currently used                                              
+                                          {
+                                             damage = (initialDamage * (pulseLaser ? 1 : TimeWarp.fixedDeltaTime)) * Mathf.Clamp((1 - (BDAMath.Sqrt(armor.Diffusivity * (armor.Density / 1000)) * armor.ArmorThickness) / initialDamage), 0.005f, 1); //old calc lacked a clamp, could potentially become negative damage
+                                          }  //clamps laser damage to not go negative, allow some small amount of bleedthrough - ~30 Be/Steel will negate ABL, ~62 Ti, 42 DU
+                                          else
+                                          {
+                                              damage = initialDamage;
+                                              if (!pulseLaser)
+                                              {
+                                                  damage = initialDamage * TimeWarp.fixedDeltaTime;
+                                              }
+                                          }
+                                          p.ReduceArmor(damage / 10000); //really should be tied into diffuisvity, density, and SafeUseTemp - lasers would need to melt/ablate material away; needs to be in cm^3. Review later
+                                          p.AddDamage(damage);
+                                          if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Damage Applied to {p.name} on {p.vessel.GetName()}: {damage}");
+                                          if (pulseLaser) BattleDamageHandler.CheckDamageFX(p, caliber, 1 + (damage / initialDamage), HEpulses, false, part.vessel.GetName(), hit, false, false); //beams will proc BD once every scoreAccumulatorTick
                                         }
-                                        p.ReduceArmor(damage / 10000); //really should be tied into diffuisvity, density, and SafeUseTemp - lasers would need to melt/ablate material away; needs to be in cm^3. Review later
-                                        p.AddDamage(damage);
-                                        if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Damage Applied to {p.name} on {p.vessel.GetName()}: {damage}");
-                                        if (pulseLaser) BattleDamageHandler.CheckDamageFX(p, caliber, 1 + (damage / initialDamage), HEpulses, false, part.vessel.GetName(), hit, false, false); //beams will proc BD once every scoreAccumulatorTick
-
                                         if (HEpulses)
                                         {
                                             ExplosionFx.CreateExplosion(hit.point,
                                                            (laserDamage / 30000),
                                                            explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName, null);
                                         }
-                                        if (impulseWeapon)
+                                        if (Impulse != 0)
                                         {
                                             if (!pulseLaser)
                                             {
@@ -2831,6 +2833,7 @@ namespace BDArmory.Weapons
                 if (EcCurrent > ECPerShot * 0.95f && !CheatOptions.InfiniteElectricity)
                 {
                     part.RequestResource(ECID, ECPerShot, ResourceFlowMode.ALL_VESSEL);
+                    if (requestResourceAmount == 0) return true; //weapon only uses ECperShot (electrolasers, mainly)
                 }
                 else
                 {
@@ -4038,7 +4041,7 @@ namespace BDArmory.Weapons
 
             if (isAPS)
             {
-                TrackIncomingprojectile();
+                TrackIncomingProjectile();
             }
             else
             {
@@ -4550,7 +4553,7 @@ namespace BDArmory.Weapons
             }
         }
 
-        void TrackIncomingprojectile() //this is holding onto initial target for some reason, not properly nulling target somewher it should be nulled
+        void TrackIncomingProjectile() //this is holding onto initial target for some reason, not properly nulling target somewhere it should be nulled
         {
             targetAcquired = false;
             slaved = false;

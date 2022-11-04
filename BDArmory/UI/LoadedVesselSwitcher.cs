@@ -21,7 +21,7 @@ namespace BDArmory.UI
         private readonly float _buttonGap = 1;
         private readonly float _buttonHeight = 20;
 
-        private int _guiCheckIndex;
+        private static int _guiCheckIndex = -1;
         public static LoadedVesselSwitcher Instance;
         private readonly float _margin = 5;
 
@@ -150,7 +150,7 @@ namespace BDArmory.UI
 
             _ready = true;
             BDArmorySetup.Instance.hasVesselSwitcher = true;
-            _guiCheckIndex = GUIUtils.RegisterGUIRect(new Rect());
+            if (_guiCheckIndex < 0) _guiCheckIndex = GUIUtils.RegisterGUIRect(new Rect());
         }
 
         private void MissileFireOnToggleTeam(MissileFire wm, BDTeam team)
@@ -313,6 +313,12 @@ namespace BDArmory.UI
             }
         }
 
+        public void SetVisible(bool visible)
+        {
+            BDArmorySetup.Instance.showVesselSwitcherGUI = visible;
+            GUIUtils.SetGUIRectVisible(_guiCheckIndex, visible);
+        }
+
         private void SetNewHeight(float windowHeight)
         {
             var previousWindowHeight = BDArmorySetup.WindowRectVesselSwitcher.height;
@@ -435,7 +441,7 @@ namespace BDArmory.UI
 
             if (GUI.Button(new Rect(BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - _buttonHeight - _margin, 4, _buttonHeight, _buttonHeight), "X", BDArmorySetup.BDGuiSkin.button))
             {
-                BDArmorySetup.Instance.showVesselSwitcherGUI = false;
+                SetVisible(false);
                 return;
             }
 
