@@ -19,7 +19,6 @@ namespace BDArmory.UI
         private ApplicationLauncherButton toolbarButton = null;
 
         private bool showArmorWindow = false;
-        private bool showHullMenu = false;
         private string windowTitle = StringUtils.Localize("#LOC_BDArmory_ArmorTool");
         private Rect windowRect = new Rect(300, 150, 300, 350);
         private float lineHeight = 20;
@@ -28,6 +27,14 @@ namespace BDArmory.UI
         private GUIContent armorBoxText;
         private BDGUIComboBox armorBox;
         private int previous_index = -1;
+
+        private GUIContent[] hullGUI;
+        private GUIContent hullBoxText;
+        private BDGUIComboBox hullBox;
+        private int previous_mat = -1;
+        private float oldLines = -1;
+
+        GUIStyle listStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
 
         private float totalArmorMass;
         private float totalArmorCost;
@@ -52,7 +59,9 @@ namespace BDArmory.UI
         private float ArmorMu2 = 1.20190930f;
         private float ArmorMu3 = 1.77791929f;
         private float ArmorCost = 0;
+
         private bool armorslist = false;
+        private bool hullslist = false;
         private float Thickness = 10;
         private bool useNumField = false;
         private float oldThickness = 10;
@@ -69,10 +78,7 @@ namespace BDArmory.UI
         private bool refreshHPvisualizer = false;
         private bool refreshHullvisualizer = true;
         private bool refreshLiftvisualizer = false;
-        private bool isWood = false;
-        private bool isSteel = false;
-        private bool isAluminium = true;
-        private int hullmat = 2;
+        private string hullmat = "Aluminium";
 
         private float steelValue = 1;
         private float armorValue = 1;
@@ -106,6 +112,7 @@ namespace BDArmory.UI
             //steelValue = ProjectileUtils.CalculatePenetration(30, newCaliber, 0.388f, 1109, 0.15f, 7850, 940, 30, 0.8f, false);
             steelValue = ProjectileUtils.CalculatePenetration(30, 1109, 0.388f, 0.8f, 940, 8.45001135e-07f, 0.656060636f, 1.20190930f, 1.77791929f);
             exploValue = 940 * 1.15f * 7.85f;
+            listStyle.fixedHeight = 18; //make list contents slightly smaller
         }
 
         private void FillArmorList()
@@ -116,11 +123,23 @@ namespace BDArmory.UI
                 GUIContent gui = new GUIContent(ArmorInfo.armors[i].name);
                 armorGUI[i] = gui;
             }
-
+            Debug.Log("ArmorType string localized to: " + StringUtils.Localize("#LOC_BDArmory_ArmorSelect"));
             armorBoxText = new GUIContent();
             armorBoxText.text = StringUtils.Localize("#LOC_BDArmory_ArmorSelect");
         }
+        private void FillHullList()
+        {
+            hullGUI = new GUIContent[HullInfo.materials.Count];
+            for (int i = 0; i < HullInfo.materials.Count; i++)
+            {
+                GUIContent gui = new GUIContent(HullInfo.materials[i].name);
+                hullGUI[i] = gui;
+            }
 
+            hullBoxText = new GUIContent();
+            Debug.Log("HullType string localized to: " + StringUtils.Localize("#LOC_BDArmory_Armor_HullType"));
+            hullBoxText.text = StringUtils.Localize("#LOC_BDArmory_Armor_HullType");
+        }
         private void OnEditorShipModifiedEvent(ShipConstruct data)
         {
             if (data is null) return;
@@ -359,13 +378,11 @@ namespace BDArmory.UI
                     thicknessField["Thickness"].maxValue = maxThickness;
                     CalculateArmorMass();
                 }
-                GUI.Label(new Rect(40, line * lineHeight, 300, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorSelect"), style);
-                line++;
+                //GUI.Label(new Rect(40, line * lineHeight, 300, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorSelect"), style);
+                //line++;
                 if (!armorslist)
                 {
                     FillArmorList();
-                    GUIStyle listStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
-                    listStyle.fixedHeight = 18; //make list contents slightly smaller
                     armorBox = new BDGUIComboBox(new Rect(10, line * lineHeight, 280, lineHeight), new Rect(10, line * lineHeight, 280, lineHeight), armorBoxText, armorGUI, 120, listStyle);
                     armorslist = true;
                 }
@@ -438,52 +455,33 @@ namespace BDArmory.UI
             if (!BDArmorySettings.RESET_HULL)
             {
                 line += 0.5f;
-                showHullMenu = GUI.Toggle(new Rect(10, (line + armorLines + StatLines) * lineHeight, 280, lineHeight),
-                    showHullMenu, StringUtils.Localize("#LOC_BDArmory_Armor_HullMat"), showHullMenu ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
-                HullLines += 1.15f;
-
-                if (showHullMenu)
+                if (!hullslist)
                 {
-                    if (isSteel != (isSteel = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight), isSteel, StringUtils.Localize("#LOC_BDArmory_Steel"), isSteel ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)))
+                    FillHullList();
+                    hullBox = new BDGUIComboBox(new Rect(10, (line + armorLines + StatLines) * lineHeight, 280, lineHeight), new Rect(10, (line + armorLines + StatLines) * lineHeight, 280, lineHeight), hullBoxText, hullGUI, 60, listStyle);
+                    hullslist = true;
+                }
+                hullBox.UpdateRect(new Rect(10, (line + armorLines + StatLines) * lineHeight, 280, lineHeight));
+                if (armorLines + StatLines != oldLines)
+                {
+					oldLines = armorLines + StatLines;
+                    //really? ComboBox needs to be instantiated each time it needs to be moved? It can't be used as a method ala all the other GUI components?
+                }
+                int selected_mat = hullBox.Show();
+                HullLines++;
+                if (hullBox.isOpen)
+                {
+                    HullLines += 3;
+                }
+                if (selected_mat != previous_mat)
+                {
+                    if (selected_mat != -1)
                     {
-                        if (isSteel)
-                        {
-                            isWood = false;
-                            isAluminium = false;
-                            hullmat = 3;
-                            CalculateArmorMass(true);
-                        }
-                    }
-                    HullLines += 1.15f;
-                    if (isWood != (isWood = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight), isWood, StringUtils.Localize("#LOC_BDArmory_Wood"), isWood ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)))
-                    {
-                        if (isWood)
-                        {
-                            isAluminium = false;
-                            isSteel = false;
-                            hullmat = 1;
-                            CalculateArmorMass(true);
-                        }
-                    }
-                    HullLines += 1.15f;
-                    if (isAluminium != (isAluminium = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight), isAluminium, StringUtils.Localize("#LOC_BDArmory_Aluminium"), isAluminium ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)))
-                    {
-                        if (isAluminium)
-                        {
-                            isWood = false;
-                            isSteel = false;
-                            hullmat = 2;
-                            CalculateArmorMass(true);
-                        }
-                    }
-                    HullLines += 1.15f;
-                    if (!isSteel && !isWood && !isAluminium)
-                    {
-                        isAluminium = true;
-                        hullmat = 2;
+                        hullmat = HullInfo.materials[selected_mat].name;
                         CalculateArmorMass(true);
                     }
-                }
+                    previous_mat = selected_mat;
+                }               
             }
             line += 0.5f;
             GUI.DragWindow();
@@ -549,7 +547,7 @@ namespace BDArmory.UI
                         }
                         else
                         {
-                            armor.HullTypeNum = hullmat;
+                            armor.HullTypeNum = HullInfo.materials.FindIndex(t => t.name == hullmat) + 1;
                             armor.HullModified(null, null);
                             modified = true;
                         }

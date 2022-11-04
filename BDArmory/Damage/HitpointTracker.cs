@@ -50,8 +50,11 @@ namespace BDArmory.Damage
         public float HullTypeNum = 2;
         private float OldHullType = -1;
 
+        [KSPField(isPersistant = true)]
+        public string hullType = "Aluminium";
+
         [KSPField(guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Armor_HullMat")]//Status
-        public string guiHullTypeString = StringUtils.Localize("#LOC_BDArmory_Aluminium");
+        public string guiHullTypeString;
 
         public float HullMassAdjust = 0f;
         public float HullCostAdjust = 0f;
@@ -81,6 +84,7 @@ namespace BDArmory.Damage
         public string guiArmorTypeString = "def";
 
         private ArmorInfo armorInfo;
+        private HullInfo hullInfo;
 
         private bool armorReset = false;
 
@@ -120,8 +124,6 @@ namespace BDArmory.Damage
 
         [KSPField(isPersistant = true)]
         public float vFactor;
-
-
         [KSPField(isPersistant = true)]
         public float muParam1;
         [KSPField(isPersistant = true)]
@@ -184,6 +186,12 @@ namespace BDArmory.Damage
         public bool Ready => _finished_setting_up && _hpConfigured && _hullConfigured && _armorConfigured;
 
         public bool isOnFire = false;
+
+        [KSPField(isPersistant = true)]
+        public float ignitionTemp;
+        private double skinskinConduction = 1;
+        private double skinInternalConduction = 1;
+
 
         public static bool GameIsPaused
         {
@@ -298,6 +306,15 @@ namespace BDArmory.Damage
             {
                 ArmorPanel = false;
             }
+            if (!((HullTypeNum == 1 || HullTypeNum == 3) && hullType == "Aluminium")) //catch for legacy .craft files
+            {
+                HullTypeNum = HullInfo.materials.FindIndex(t => t.name == hullType) + 1;
+            }  
+            ArmorTypeNum = ArmorInfo.armors.FindIndex(t => t.name == SelectedArmorType) + 1;
+            guiArmorTypeString = SelectedArmorType;
+            guiHullTypeString = StringUtils.Localize(HullInfo.materials[HullInfo.materialNames[(int)HullTypeNum - 1]].localizedName);            
+            skinskinConduction = part.partInfo.partPrefab.skinSkinConductionMult;
+            skinInternalConduction = part.partInfo.partPrefab.skinSkinConductionMult;
             if (HighLogic.LoadedSceneIsFlight)
             {
                 if (BDArmorySettings.RESET_ARMOUR)
@@ -307,7 +324,7 @@ namespace BDArmory.Damage
                 if (BDArmorySettings.RESET_HULL || ArmorPanel)
                 {
                     IgnoreForArmorSetup = true;
-                    HullTypeNum = 2;
+                    HullTypeNum = HullInfo.materials.FindIndex(t => t.name == "Aluminium") + 1;
                     SetHullMass();
                 }
 
@@ -315,11 +332,22 @@ namespace BDArmory.Damage
             }
             if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor)
             {
-                int typecount = 0;
+                int armorCount = 0;
                 for (int i = 0; i < ArmorInfo.armorNames.Count; i++)
                 {
-                    typecount++;
+                    armorCount++;
                 }
+                UI_FloatRange ATrangeEditor = (UI_FloatRange)Fields["ArmorTypeNum"].uiControlEditor;
+                ATrangeEditor.onFieldChanged = ArmorModified;
+                ATrangeEditor.maxValue = (float)armorCount;
+                int hullCount = 0;
+                for (int i = 0; i < HullInfo.materialNames.Count; i++)
+                {
+                    hullCount++;
+                }
+                UI_FloatRange HTrangeEditor = (UI_FloatRange)Fields["HullTypeNum"].uiControlEditor;
+                HTrangeEditor.onFieldChanged = HullModified;
+                HTrangeEditor.maxValue = (float)hullCount;
                 if (ProjectileUtils.IsIgnoredPart(this.part))
                 {
                     isAI = true;
@@ -340,9 +368,6 @@ namespace BDArmory.Damage
                     Fields["armorCost"].guiActiveEditor = false;
                     Fields["armorMass"].guiActiveEditor = false;
                 }
-                UI_FloatRange ATrangeEditor = (UI_FloatRange)Fields["ArmorTypeNum"].uiControlEditor;
-                ATrangeEditor.onFieldChanged = ArmorModified;
-                ATrangeEditor.maxValue = (float)typecount;
                 if (isAI || part.IsMissile())
                 {
                     Fields["ArmorTypeNum"].guiActiveEditor = false;
@@ -357,12 +382,11 @@ namespace BDArmory.Damage
                     Fields["armorMass"].guiActiveEditor = false;
                     ATrangeEditor.maxValue = 1;
                 }
-                UI_FloatRange HTrangeEditor = (UI_FloatRange)Fields["HullTypeNum"].uiControlEditor;
-                HTrangeEditor.onFieldChanged = HullModified;
+
                 //if part is an engine/fueltank don't allow wood construction/mass reduction
                 if (part.IsMissile() || part.IsWeapon() || ArmorPanel || isAI || BDArmorySettings.LEGACY_ARMOR || BDArmorySettings.RESET_HULL)
                 {
-                    HullTypeNum = 2;
+                    HullTypeNum = HullInfo.materials.FindIndex(t => t.name == "Aluminium") + 1;
                     HTrangeEditor.minValue = 2;
                     HTrangeEditor.maxValue = 2;
                     Fields["HullTypeNum"].guiActiveEditor = false;
@@ -385,6 +409,14 @@ namespace BDArmory.Damage
                     //{
                     //    ArmorTypeNum = 2;
                     //}
+                }
+                else
+                {
+                    Fields["Armor"].guiActiveEditor = false;
+                    Fields["guiArmorTypeString"].guiActiveEditor = false;
+                    Fields["guiArmorTypeString"].guiActive = false;
+                    Fields["armorCost"].guiActiveEditor = false;
+                    Fields["armorMass"].guiActiveEditor = false;
                 }
             }
             GameEvents.onEditorShipModified.Add(ShipModified);
@@ -617,11 +649,36 @@ namespace BDArmory.Damage
                 {
                     HeartBleed();
                 }
-                if (ArmorTypeNum > 1 || ArmorPanel)
+                //if (ArmorTypeNum > 1 || ArmorPanel)
+                if (ArmorTypeNum != (ArmorInfo.armors.FindIndex(t => t.name == "None") + 1) || ArmorPanel)
                 {
-                    if (part.skinTemperature > SafeUseTemp * 1.5f)
+					if (part.skinTemperature > SafeUseTemp * 1.5f)
+					{
+						ReduceArmor((armorVolume * ((float)part.skinTemperature / SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
+					}
+				}
+                if (!BDArmorySettings.BD_FIRES_ENABLED || !BDArmorySettings.BD_FIRE_HEATDMG) return; // Disabled.
+
+                if (BDArmorySettings.BD_FIRES_ENABLED && BDArmorySettings.BD_FIRE_HEATDMG)
+                {
+                    if (!isOnFire)
                     {
-                        ReduceArmor((armorVolume * ((float)part.skinTemperature / SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
+                        if (ignitionTemp > 0 && part.temperature > ignitionTemp) 
+                        {
+                            string fireStarter;
+                            var vesselFire = part.vessel.GetComponentInChildren<FX.FireFX>();
+                            if (vesselFire != null)
+                            {
+                                fireStarter = vesselFire.SourceVessel;
+                            }
+                            else
+                            {
+                                fireStarter = part.vessel.GetName();
+                            }
+							FX.BulletHitFX.AttachFire(transform.position, part, 50, fireStarter);
+                            if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDarmory.HitPointTracker]: Hull auto-ignition! {part.name} is on fire!; temperature: {part.temperature}");
+                            isOnFire = true;
+                        }
                     }
                 }
             }
@@ -917,34 +974,14 @@ namespace BDArmory.Damage
                             var scale = (BDArmorySettings.HP_THRESHOLD >= 100 ? BDArmorySettings.HP_THRESHOLD : 2000f) / (Mathf.Exp(1) - 1);
                             hitpoints = Mathf.Min(hitpoints, (BDArmorySettings.HP_THRESHOLD >= 100 ? BDArmorySettings.HP_THRESHOLD : 2000f) * Mathf.Log(hitpoints / scale + 1)); //use default of 2K for RP if slider set to unclamped
                         }
-
-                            switch (HullTypeNum)
-                        {
-                            case 1:
-                                hitpoints /= 4;
-                                break;
-                            case 3:
-                                hitpoints *= 1.75f;
-                                break;
-                        }
+                        hitpoints *= HullInfo.materials[hullType].healthMod;
                         hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
                         if (hitpoints < 100) hitpoints = 100;
                         if (BDArmorySettings.DEBUG_ARMOR && maxHitPoints <= 0 && Hitpoints != hitpoints) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} updated HP: {Hitpoints}->{hitpoints} at time {Time.time}, partMass: {partMass}, density: {density}, structuralVolume: {structuralVolume}, structuralMass {structuralMass}");
                     }
                     else // Override based on part configuration for custom parts
                     {
-                        switch (HullTypeNum)
-                        {
-                            case 1:
-                                hitpoints = maxHitPoints / 4;
-                                break;
-                            case 3:
-                                hitpoints = maxHitPoints * 1.75f;
-                                break;
-                            default:
-                                hitpoints = maxHitPoints;
-                                break;
-                        }
+                        hitpoints = maxHitPoints * HullInfo.materials[hullType].healthMod;
                         hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
                         if (hitpoints < 100) hitpoints = 100;
                         if (BDArmorySettings.DEBUG_ARMOR && maxHitPoints <= 0 && Hitpoints != hitpoints) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} updated HP: {Hitpoints}->{hitpoints} at time {Time.time}");
@@ -1150,23 +1187,12 @@ namespace BDArmory.Damage
             {
                 if ((ArmorTypeNum - 1) > ArmorInfo.armorNames.Count) //in case of trying to load a craft using a mod armor type that isn't installed and having a armorTypeNum larger than the index size
                 {
-                    /*
-                    if (startsArmored || ArmorPanel)
-                    {
-                        if (ArmorTypeNum == 1)
-                        {
-                            ArmorTypeNum = 2; //part starts with armor
-                        }
-                    }
-                    else
-                    {
-                    */
-                    ArmorTypeNum = 1; //reset to 'None'
-                    //}
+                    //ArmorTypeNum = 1; //reset to 'None'
+                    ArmorTypeNum = ArmorInfo.armors.FindIndex(t => t.name == "None") + 1;
                 }
                 if (isAI || part.IsMissile() || BDArmorySettings.RESET_ARMOUR)
                 {
-                    ArmorTypeNum = 1; //reset to 'None'
+                    ArmorTypeNum = ArmorInfo.armors.FindIndex(t => t.name == "None") + 1;
                 }
                 armorInfo = ArmorInfo.armors[ArmorInfo.armorNames[(int)ArmorTypeNum - 1]]; //what does this return if armorname cannot be found (mod armor removed/not present in install?)
 
@@ -1175,7 +1201,7 @@ namespace BDArmory.Damage
                 //	armorInfo = ArmorInfo.armors[SelectedArmorType];
                 //    ArmorTypeNum = ArmorInfo.armors.FindIndex(t => t.name == SelectedArmorType); //adjust part's current armor setting to match
                 //}
-                guiArmorTypeString = armorInfo.name;
+                guiArmorTypeString = armorInfo.name; //FIXME - Localize these
                 SelectedArmorType = armorInfo.name;
                 Density = armorInfo.Density;
                 Diffusivity = armorInfo.Diffusivity;
@@ -1198,7 +1224,7 @@ namespace BDArmory.Damage
             }
             if (BDArmorySettings.LEGACY_ARMOR)
             {
-                guiArmorTypeString = "Steel";
+                guiArmorTypeString = guiArmorTypeString = StringUtils.Localize("#LOC_BDArmory_Steel");
                 SelectedArmorType = "Legacy Armor";
                 Density = 7850;
                 Diffusivity = 48.5f;
@@ -1225,7 +1251,7 @@ namespace BDArmory.Damage
             }
             else if (BDArmorySettings.RESET_ARMOUR) //don't reset armor panels
             {
-                guiArmorTypeString = "None";
+                guiArmorTypeString = guiArmorTypeString = StringUtils.Localize("#LOC_BDArmory_WMWindow_NoneWeapon"); //"none"
                 SelectedArmorType = "None";
                 Density = 2700;
                 Diffusivity = 237f;
@@ -1248,7 +1274,7 @@ namespace BDArmory.Damage
                 Armor = 10;
                 if (ArmorPanel)
                 {
-                    ArmorTypeNum = 2;
+                    ArmorTypeNum = ArmorInfo.armors.FindIndex(t => t.name == "Steel") + 1;
                     Armor = 25;
                     Density = 7850;
                     Diffusivity = 48.5f;
@@ -1279,20 +1305,29 @@ namespace BDArmory.Damage
                 }
             }
             var oldArmorMass = armorMass;
+            part.skinInternalConductionMult = skinskinConduction; //reset to .cfg value
+            part.skinSkinConductionMult = skinInternalConduction; //reset to .cfg value
+            part.skinMassPerArea = 1; //default value
             armorMass = 0;
             armorCost = 0;
             totalArmorQty = 0;
-            if (ArmorTypeNum > 1 && (!BDArmorySettings.LEGACY_ARMOR || (!BDArmorySettings.RESET_ARMOUR || (BDArmorySettings.RESET_ARMOUR && ArmorThickness > 10)))) //don't apply cost/mass to None armor type
+            if (ArmorTypeNum != (ArmorInfo.armors.FindIndex(t => t.name == "None") + 1) && (!BDArmorySettings.LEGACY_ARMOR || (!BDArmorySettings.RESET_ARMOUR || (BDArmorySettings.RESET_ARMOUR && ArmorThickness > 10)))) //don't apply cost/mass to None armor type
             {
                 armorMass = (Armor / 1000) * armorVolume * Density / 1000; //armor mass in tons
                 armorCost = (Armor / 1000) * armorVolume * armorInfo.Cost; //armor cost, tons
+				part.skinInternalConductionMult = skinInternalConduction * (Ductility / 237); //how well does the armor allow external heat to flow into the part internals?
+                part.skinSkinConductionMult =  skinskinConduction * (Ductility / 237); //how well does the armor conduct heat to connected part skins?
+                part.skinMassPerArea = (Density / 1000) * ArmorThickness;
             }
-            if (ArmorTypeNum == 1 && ArmorPanel)
+            if (ArmorTypeNum == (ArmorInfo.armors.FindIndex(t => t.name == "None") + 1) && ArmorPanel)
             {
                 armorMass = (Armor / 1000) * armorVolume * Density / 1000;
-                guiArmorTypeString = "Aluminium";
+                guiArmorTypeString = StringUtils.Localize("#LOC_BDArmory_Aluminium");
                 SelectedArmorType = "None";
                 armorCost = (Armor / 1000) * armorVolume * armorInfo.Cost;
+                part.skinInternalConductionMult = skinInternalConduction * (Ductility / 237); //how well does the armor allow external heat to flow into the part internals?
+                part.skinSkinConductionMult = skinskinConduction * (Ductility / 237); //how well does the armor conduct heat to connected part skins?
+                part.skinMassPerArea = (Density / 1000) * ArmorThickness;
             }
             totalArmorQty = armorMass; //grabbing a copy of unmodified armorMAss so it can be used in armorMass' place for armor reduction without having to un/re-modify the mass before and after armor hits
             armorMass *= BDArmorySettings.ARMOR_MASS_MOD;
@@ -1314,7 +1349,7 @@ namespace BDArmory.Damage
             //if (isAI) return; //replace with newer implementation
             if (BDArmorySettings.LEGACY_ARMOR || BDArmorySettings.RESET_ARMOUR) return;
             if (part.IsMissile()) return;
-            if (ArmorTypeNum > 1 || ArmorPanel)
+            if (ArmorTypeNum != (ArmorInfo.armors.FindIndex(t => t.name == "None") + 1) || ArmorPanel)
             {
                 /*
                 UI_FloatRange armorFieldFlight = (UI_FloatRange)Fields["Armor"].uiControlFlight;
@@ -1402,34 +1437,35 @@ namespace BDArmory.Damage
         void SetHullMass()
         {
             if (IgnoreForArmorSetup) return;
-            if (isAI || ArmorPanel || BDArmorySettings.RESET_HULL || BDArmorySettings.LEGACY_ARMOR) HullTypeNum = 2;
-            if ((part.isEngine() || part.IsWeapon()) && HullTypeNum < 2) //can armor engines, but not make them out of wood.
-            {
-                HullTypeNum = 2;
-            }
+            if (isAI || ArmorPanel || BDArmorySettings.RESET_HULL || BDArmorySettings.LEGACY_ARMOR) HullTypeNum = HullInfo.materials.FindIndex(t => t.name == "Aluminium");
+
             var OldHullMassAdjust = HullMassAdjust;
-            if (HullTypeNum == 1)
+            if (OldHullType != HullTypeNum)
             {
-                HullMassAdjust = partMass / 3 - partMass;
-                guiHullTypeString = StringUtils.Localize("#LOC_BDArmory_Wood");
-                part.maxTemp = 770;
-                HullCostAdjust = Mathf.Max(((part.partInfo.cost + part.partInfo.variant.Cost) - (float)resourceCost) / 2, (part.partInfo.cost + part.partInfo.variant.Cost) - 500) - ((part.partInfo.cost + part.partInfo.variant.Cost) - (float)resourceCost);//make wooden parts up to 500 funds cheaper
-                //this returns cost of base variant, yielding part vairaints that are discounted by 50% or 500 of base varaint cost, not current variant. method to get currently selected variant?
+                if ((HullTypeNum - 1) > HullInfo.materialNames.Count) //in case of trying to load a craft using a mod hull type that isn't installed and having a hullTypeNum larger than the index size
+                {
+                    if (HullInfo.materialNames.Contains("Aluminium")) Debug.LogError("[BDArmory.HitpointTracker] BD_Materials.cfg missing! Please fix your BDA insteall");
+                    HullTypeNum = HullInfo.materials.FindIndex(t => t.name == "Aluminium") + 1;
+                }
+
+                if ((part.isEngine() || part.IsWeapon()) && HullInfo.materials[HullInfo.materialNames[(int)HullTypeNum - 1]].massMod < 1) //can armor engines, but not make them out of wood.
+                {
+                    HullTypeNum = HullInfo.materials.FindIndex(t => t.name == "Aluminium") + 1;
+                    part.maxTemp = part.partInfo.partPrefab.maxTemp;
+                }
+                hullInfo = HullInfo.materials[HullInfo.materialNames[(int)HullTypeNum - 1]];
+                HullMassAdjust = (partMass * hullInfo.massMod) - partMass;
+                guiHullTypeString = String.IsNullOrEmpty(hullInfo.localizedName) ? hullInfo.name : StringUtils.Localize(hullInfo.localizedName);
+                if (hullInfo.maxTemp > 0) part.maxTemp = hullInfo.maxTemp;
+                else part.maxTemp = part.partInfo.partPrefab.maxTemp;
+                ignitionTemp = hullInfo.ignitionTemp;
+                hullType = hullInfo.name;
+                float partCost = part.partInfo.cost + part.partInfo.variant.Cost;
+                if (hullInfo.costMod < 1) HullCostAdjust = Mathf.Max((partCost - (float)resourceCost) * hullInfo.costMod, partCost - (1000 - (hullInfo.costMod * 1000))) - (partCost - (float)resourceCost);//make wooden parts up to 500 funds cheaper
+                else HullCostAdjust = Mathf.Min((partCost - (float)resourceCost) * hullInfo.costMod, (partCost - (float)resourceCost) + (hullInfo.costMod * 1000)); //make steel parts rather more expensive
+                //this returns cost of base variant, yielding part variant that are discounted by 50% or 500 of base variant cost, not current variant. method to get currently selected variant?
             }
-            else if (HullTypeNum == 2)
-            {
-                HullMassAdjust = 0;
-                guiHullTypeString = StringUtils.Localize("#LOC_BDArmory_Aluminium");
-                part.maxTemp = part.partInfo.partPrefab.maxTemp; //reset maxTemp to .cfg value
-                HullCostAdjust = 0;
-            }
-            else //hulltype 3
-            {
-                HullMassAdjust = partMass;
-                guiHullTypeString = StringUtils.Localize("#LOC_BDArmory_Steel");
-                HullCostAdjust = Mathf.Min(((part.partInfo.cost + part.partInfo.variant.Cost) - (float)resourceCost) * 2, ((part.partInfo.cost + part.partInfo.variant.Cost) - (float)resourceCost) + 1500); //make steel parts rather more expensive
-                //part.maxTemp = 3000? 3200?
-            }
+
             if (OldHullType != HullTypeNum || OldHullMassAdjust != HullMassAdjust)
             {
                 if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} updated hull mass {OldHullMassAdjust}->{HullMassAdjust} (part mass {partMass}, total mass {part.mass + HullMassAdjust - OldHullMassAdjust}) or type {OldHullType}->{HullTypeNum} at time {Time.time}");
