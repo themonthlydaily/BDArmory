@@ -386,7 +386,7 @@ namespace BDArmory.UI
                     armorBox = new BDGUIComboBox(new Rect(10, line * lineHeight, 280, lineHeight), new Rect(10, line * lineHeight, 280, lineHeight), armorBoxText, armorGUI, 120, listStyle);
                     armorslist = true;
                 }
-
+		armorBox.UpdateRect(new Rect(10, line * lineHeight, 280, lineHeight));
                 int selected_index = armorBox.Show();
                 armorLines++;
                 if (armorBox.isOpen)
