@@ -1158,7 +1158,16 @@ namespace BDArmory.Bullets
                         // We cap the minimum L/D to be 1.2 to avoid that edge case in the pen formula
                         if ((massRatio * (length-10f) + 10f) < (1.1f * caliber))
                         {
-                            float ratio = (1.1f * caliber - 10f) / (length - 10f);
+                            float ratio;
+
+                            if (caliber < 10f)
+                            {
+                                ratio = (1.1f * caliber / length);
+                            }
+                            else
+                            {
+                                ratio = (1.1f * caliber - 10f) / (length - 10f);
+                            }
 
                             bulletMass *= ratio;
 
