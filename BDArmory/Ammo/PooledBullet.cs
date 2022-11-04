@@ -1385,6 +1385,21 @@ namespace BDArmory.Bullets
                     pBullet.explModelPath = explModelPath;
                     pBullet.explSoundPath = explSoundPath;
                     pBullet.tntMass = subMunitionType.tntMass;
+                    string HEtype = subMunitionType.explosive;
+                    HEtype.ToLower();
+                    switch (HEtype)
+                    {
+                        case "standard":
+                            pBullet.HEType = PooledBullet.PooledBulletTypes.Explosive;
+                            break;
+                        //legacy support for older configs that are still explosive = true
+                        case "true":
+                            pBullet.HEType = PooledBullet.PooledBulletTypes.Explosive;
+                            break;
+                        case "shaped":
+                            pBullet.HEType = PooledBullet.PooledBulletTypes.Shaped;
+                            break;
+                    }
                     pBullet.detonationRange = detonationRange;
                     pBullet.maxAirDetonationRange = maxAirDetonationRange;
                     pBullet.defaultDetonationRange = defaultDetonationRange;
@@ -1394,6 +1409,7 @@ namespace BDArmory.Bullets
                 {
                     pBullet.fuzeType = PooledBullet.BulletFuzeTypes.None;
                     pBullet.sabot = (((((subMunitionType.bulletMass * 1000) / ((subMunitionType.caliber * subMunitionType.caliber * Mathf.PI / 400) * 19) + 1) * 10) > subMunitionType.caliber * 4)) ? true : false;
+                    pBullet.HEType = PooledBullet.PooledBulletTypes.Slug;
                 }
                 pBullet.EMP = subMunitionType.EMP;
                 pBullet.nuclear = subMunitionType.nuclear;
