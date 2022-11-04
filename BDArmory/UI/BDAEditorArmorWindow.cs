@@ -123,7 +123,6 @@ namespace BDArmory.UI
                 GUIContent gui = new GUIContent(ArmorInfo.armors[i].name);
                 armorGUI[i] = gui;
             }
-            Debug.Log("ArmorType string localized to: " + StringUtils.Localize("#LOC_BDArmory_ArmorSelect"));
             armorBoxText = new GUIContent();
             armorBoxText.text = StringUtils.Localize("#LOC_BDArmory_ArmorSelect");
         }
@@ -137,7 +136,6 @@ namespace BDArmory.UI
             }
 
             hullBoxText = new GUIContent();
-            Debug.Log("HullType string localized to: " + StringUtils.Localize("#LOC_BDArmory_Armor_HullType"));
             hullBoxText.text = StringUtils.Localize("#LOC_BDArmory_Armor_HullType");
         }
         private void OnEditorShipModifiedEvent(ShipConstruct data)
