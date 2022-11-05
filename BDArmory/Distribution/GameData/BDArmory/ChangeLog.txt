@@ -29,6 +29,7 @@ IMPROVEMENTS / FIXES
 	- Fix accuracy readout when Telemetry debug option enabled.
 - Weapons:
 	- Add a penetration depth stat to weapons' partmenu infocards.	
+	- Adjustments to post-penetration for high-velocity projectiles near L/D = 1.
 	- Fix Barrage rate of Fire for multi-barrel weapons with a singe fire animation.
 	- Fix Gravity gun (and other 0 damage lasers) annhilating their target/crashing the game.
 	- Weapons that only use ECPerShot (requestResourceAmount = 0) now properly fire again.
