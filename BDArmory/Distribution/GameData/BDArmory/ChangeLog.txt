@@ -1,4 +1,6 @@
-﻿v1.5.4.0
+﻿IMPROVEMENTS / FIXES
+
+v1.5.4.0
 IMPROVEMENTS / FIXES
 - General
 	- Fix Structural Pwing causing vessels to explode in flight.

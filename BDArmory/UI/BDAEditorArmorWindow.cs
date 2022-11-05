@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using KSP.Localization;
+using System.Linq;
 using KSP.UI.Screens;
 using UnityEngine;
 
@@ -142,30 +142,45 @@ namespace BDArmory.UI
         private void OnEditorShipModifiedEvent(ShipConstruct data)
         {
             if (data is null) return;
-            //delayedRefreshVisuals = true;
+            delayedRefreshVisuals = true;
             if (!delayedRefreshVisualsInProgress)
                 StartCoroutine(DelayedRefreshVisuals(data));
         }
 
-        //private bool delayedRefreshVisuals = false;
+        private bool delayedRefreshVisuals = false;
         private bool delayedRefreshVisualsInProgress = false;
         IEnumerator DelayedRefreshVisuals(ShipConstruct ship)
         {
             delayedRefreshVisualsInProgress = true;
             var wait = new WaitForFixedUpdate();
-            //while (delayedRefreshVisuals) // Wait until ship modified events stop coming. //preventing the remainder of the ienumerator from getting called. reverting to a simpler wai implementation  -SI
-            //{
-            //delayedRefreshVisuals = false;
-            yield return wait;
-            yield return wait;
-            //}
-            //yield return new WaitUntilFixed(() =>
-            //    ship == null || ship.Parts == null || ship.Parts.TrueForAll(p =>
-            //    {
-            //        if (p == null) return true;
-            //        var hp = p.GetComponent<Damage.HitpointTracker>();
-            //        return hp == null || hp.Ready;
-            //    })); // Wait for HP changes to delayed ship modified events in HitpointTracker
+            int count = 0, countLimit = 50;
+            while (delayedRefreshVisuals && ++count < countLimit) // Wait until ship modified events stop coming, or countLimit ticks.
+            {
+                delayedRefreshVisuals = false;
+                yield return wait;
+            }
+            if (count == countLimit) Debug.LogWarning($"[BDArmory.BDAEditorArmorWindow]: Continuous stream of OnEditorShipModifiedEvents for over {countLimit} frames.");
+            count = 0;
+            yield return new WaitUntilFixed(() => ++count == countLimit ||
+               ship == null || ship.Parts == null || ship.Parts.TrueForAll(p =>
+               {
+                   if (p == null) return true;
+                   var hp = p.GetComponent<Damage.HitpointTracker>();
+                   return hp == null || hp.Ready;
+               })); // Wait for HP changes to delayed ship modified events in HitpointTracker
+            if (count == countLimit)
+            {
+                string reason = "";
+                if (ship != null && ship.Parts != null)
+                    reason = string.Join("; ", ship.Parts.Select(p =>
+                    {
+                        if (p == null) return null;
+                        var hp = p.GetComponent<Damage.HitpointTracker>();
+                        if (hp == null || hp.Ready) return null;
+                        return hp;
+                    }).Where(hp => hp != null).Select(hp => $"{hp.part.name}: {hp.Why}"));
+                Debug.LogWarning($"[BDArmory.BDAEditorArmorWindow]: Ship HP failed to settle within {countLimit} frames.{(string.IsNullOrEmpty(reason) ? "" : $" {reason}")}");
+            }
             delayedRefreshVisualsInProgress = false;
 
             if (showArmorWindow)

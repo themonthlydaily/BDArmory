@@ -183,7 +183,23 @@ namespace BDArmory.Damage
         private bool _hullConfigured = false;
         private bool _hpConfigured = false;
         private bool _finished_setting_up = false;
-        public bool Ready => _finished_setting_up && _hpConfigured && _hullConfigured && _armorConfigured;
+        public bool Ready => (_finished_setting_up || !HighLogic.LoadedSceneIsFlight) && _hpConfigured && _hullConfigured && _armorConfigured;
+        public string Why
+        {
+            get
+            {
+                if (Ready) return "Ready";
+                else
+                {
+                    List<string> reasons = new List<string>();
+                    if (!_finished_setting_up && HighLogic.LoadedSceneIsFlight) reasons.Add("still setting up");
+                    if (!_hpConfigured) reasons.Add("HP not configured");
+                    if (!_hullConfigured) reasons.Add("hull not configured");
+                    if (!_armorConfigured) reasons.Add("armor not configured");
+                    return string.Join(", ", reasons);
+                }
+            }
+        }
 
         public bool isOnFire = false;
 
@@ -309,10 +325,10 @@ namespace BDArmory.Damage
             if (!((HullTypeNum == 1 || HullTypeNum == 3) && hullType == "Aluminium")) //catch for legacy .craft files
             {
                 HullTypeNum = HullInfo.materials.FindIndex(t => t.name == hullType) + 1;
-            }  
+            }
             ArmorTypeNum = ArmorInfo.armors.FindIndex(t => t.name == SelectedArmorType) + 1;
             guiArmorTypeString = SelectedArmorType;
-            guiHullTypeString = StringUtils.Localize(HullInfo.materials[HullInfo.materialNames[(int)HullTypeNum - 1]].localizedName);            
+            guiHullTypeString = StringUtils.Localize(HullInfo.materials[HullInfo.materialNames[(int)HullTypeNum - 1]].localizedName);
             skinskinConduction = part.partInfo.partPrefab.skinSkinConductionMult;
             skinInternalConduction = part.partInfo.partPrefab.skinSkinConductionMult;
             if (HighLogic.LoadedSceneIsFlight)
@@ -443,10 +459,10 @@ namespace BDArmory.Damage
             }
             Armour = Armor;
             StartCoroutine(DelayedOnStart()); // Delay updating mass, armour, hull and HP so mods like proc wings and tweakscale get the right values.
-            // if (HighLogic.LoadedSceneIsFlight)
-            // {
-            //     if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.HitpointTracker]: ARMOR: part mass is: " + (part.mass - armorMass) + "; Armor mass is: " + armorMass + "; hull mass adjust: " + HullmassAdjust + "; total: " + part.mass);
-            // }
+                                              // if (HighLogic.LoadedSceneIsFlight)
+                                              // {
+                                              //     if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.HitpointTracker]: ARMOR: part mass is: " + (part.mass - armorMass) + "; Armor mass is: " + armorMass + "; hull mass adjust: " + HullmassAdjust + "; total: " + part.mass);
+                                              // }
             CalculateDryCost();
         }
 
@@ -652,18 +668,18 @@ namespace BDArmory.Damage
                 //if (ArmorTypeNum > 1 || ArmorPanel)
                 if (ArmorTypeNum != (ArmorInfo.armors.FindIndex(t => t.name == "None") + 1) || ArmorPanel)
                 {
-					if (part.skinTemperature > SafeUseTemp * 1.5f)
-					{
-						ReduceArmor((armorVolume * ((float)part.skinTemperature / SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
-					}
-				}
+                    if (part.skinTemperature > SafeUseTemp * 1.5f)
+                    {
+                        ReduceArmor((armorVolume * ((float)part.skinTemperature / SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
+                    }
+                }
                 if (!BDArmorySettings.BD_FIRES_ENABLED || !BDArmorySettings.BD_FIRE_HEATDMG) return; // Disabled.
 
                 if (BDArmorySettings.BD_FIRES_ENABLED && BDArmorySettings.BD_FIRE_HEATDMG)
                 {
                     if (!isOnFire)
                     {
-                        if (ignitionTemp > 0 && part.temperature > ignitionTemp) 
+                        if (ignitionTemp > 0 && part.temperature > ignitionTemp)
                         {
                             string fireStarter;
                             var vesselFire = part.vessel.GetComponentInChildren<FX.FireFX>();
@@ -675,7 +691,7 @@ namespace BDArmory.Damage
                             {
                                 fireStarter = part.vessel.GetName();
                             }
-							FX.BulletHitFX.AttachFire(transform.position, part, 50, fireStarter);
+                            FX.BulletHitFX.AttachFire(transform.position, part, 50, fireStarter);
                             if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDarmory.HitPointTracker]: Hull auto-ignition! {part.name} is on fire!; temperature: {part.temperature}");
                             isOnFire = true;
                         }
@@ -728,7 +744,7 @@ namespace BDArmory.Damage
         #endregion
 
         #region Hitpoints Functions
-        
+
         //[KSPField(isPersistant = true)]
         //public bool HPMode = false;
         float oldmaxHitpoints;
@@ -773,7 +789,7 @@ namespace BDArmory.Damage
                             var sphereSurface = 4 * Mathf.PI * sphereRadius * sphereRadius;
                             var thickness = 0.1f;// * part.GetTweakScaleMultiplier(); // Tweakscale scales mass as r^3 insted of 0.1*r^2, however it doesn't take the increased volume of the hull into account when scaling resource amounts.
                             structuralVolume = Mathf.Max(sphereSurface * thickness, 1e-3f); // Prevent 0 volume, just in case. structural volume is 10cm * surface area of equivalent sphere.
-                            //bool clampHP = false;
+                                                                                            //bool clampHP = false;
 
                             density = (partMass * 1000f) / structuralVolume;
                             if (density > 1e5f || density < 10)
@@ -910,7 +926,7 @@ namespace BDArmory.Damage
 
                         if (isProcWing)
                         {
-                            if (!BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.PWING_EDGE_LIFT) 
+                            if (!BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.PWING_EDGE_LIFT)
                             {
                                 if (FerramAerospace.CheckForFAR()) //half-baked legacy method that we're stuck with lest FJRT whine
                                 {
@@ -944,8 +960,8 @@ namespace BDArmory.Damage
                                     }
                                     armorVolume = ProceduralWing.GetPWingArea(part);
                                     if (!part.name.Contains("B9.Aero.Wing.Procedural.Panel"))
-                                    { 
-                                        previousEdgeLift = false; 
+                                    {
+                                        previousEdgeLift = false;
                                     }
                                     else
                                     {
@@ -1315,8 +1331,8 @@ namespace BDArmory.Damage
             {
                 armorMass = (Armor / 1000) * armorVolume * Density / 1000; //armor mass in tons
                 armorCost = (Armor / 1000) * armorVolume * armorInfo.Cost; //armor cost, tons
-				part.skinInternalConductionMult = skinInternalConduction * (Ductility / 237); //how well does the armor allow external heat to flow into the part internals?
-                part.skinSkinConductionMult =  skinskinConduction * (Ductility / 237); //how well does the armor conduct heat to connected part skins?
+                part.skinInternalConductionMult = skinInternalConduction * (Ductility / 237); //how well does the armor allow external heat to flow into the part internals?
+                part.skinSkinConductionMult = skinskinConduction * (Ductility / 237); //how well does the armor conduct heat to connected part skins?
                 part.skinMassPerArea = (Density / 1000) * ArmorThickness;
             }
             if (ArmorTypeNum == (ArmorInfo.armors.FindIndex(t => t.name == "None") + 1) && ArmorPanel)
@@ -1463,7 +1479,7 @@ namespace BDArmory.Damage
                 float partCost = part.partInfo.cost + part.partInfo.variant.Cost;
                 if (hullInfo.costMod < 1) HullCostAdjust = Mathf.Max((partCost - (float)resourceCost) * hullInfo.costMod, partCost - (1000 - (hullInfo.costMod * 1000))) - (partCost - (float)resourceCost);//make wooden parts up to 500 funds cheaper
                 else HullCostAdjust = Mathf.Min((partCost - (float)resourceCost) * hullInfo.costMod, (partCost - (float)resourceCost) + (hullInfo.costMod * 1000)); //make steel parts rather more expensive
-                //this returns cost of base variant, yielding part variant that are discounted by 50% or 500 of base variant cost, not current variant. method to get currently selected variant?
+                                                                                                                                                                    //this returns cost of base variant, yielding part variant that are discounted by 50% or 500 of base variant cost, not current variant. method to get currently selected variant?
             }
 
             if (OldHullType != HullTypeNum || OldHullMassAdjust != HullMassAdjust)
