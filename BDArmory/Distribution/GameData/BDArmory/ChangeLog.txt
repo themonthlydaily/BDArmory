@@ -1,4 +1,49 @@
-﻿v1.5.3.1
+﻿v1.5.4.0
+IMPROVEMENTS / FIXES
+- General
+	- Fix Structural Pwing causing vessels to explode in flight.
+	- Fix Structural Pwing still shifting CoL sphere in SHP/VAB.
+	- Structural Pwing moved to structural tab.
+	- Rework the BDGUIComboBox.
+-Armor/Hull:
+	- Setting material to wood and then back to Al/steel now properly resets maxTemp to default.
+	- Expanded Hull material functionality; users can now implement custom hull materials, similar to how the current armor system works.
+		- Adds new BD_Materials.cfg
+	- LEGACY_ARMOR toggle now properly sets armor panels back to having BDAc-era HP amounts.
+- AI / WM:
+	- Allow kamikaze ramming of ground targets by overriding terrain avoidance and min alt behaviour when on final approach.
+- Spawning:
+	- Custom Spawn Templates
+		- Set up your desired template by spawning vessels with VesselMover (or otherwise) and assigning teams.
+		- Create a new template from the current configuration or save over the current one.
+		- Edit the templates directly in BDArmory/PluginData/spawn_templates.cfg to adjust headings, etc.
+		- Load/delete existing templates.
+		- Assign vessels and specific kerbals to the template's slots, then spawn and start a competition without having to muck around with VesselMover or the "turning bug".
+- Radar	
+	- Fix Radar GUI display range for datalinked radars.
+	- Fix IRST being unable to activate VRD without a radar enabled.
+- UI:
+	- Fix the internal GUI rects being updated properly and add option to disable their visibility to the mouse.
+	- Scroll-zoom prevention while the mouse is over BDA+ windows.
+	- Fix various Armor Tool functionalities.
+	- Fix accuracy readout when Telemetry debug option enabled.
+- Weapons:
+	- Add a penetration depth stat to weapons' partmenu infocards.	
+	- Fix Barrage rate of Fire for multi-barrel weapons with a singe fire animation.
+	- Fix Gravity gun (and other 0 damage lasers) annhilating their target/crashing the game.
+	- Weapons that only use ECPerShot (requestResourceAmount = 0) now properly fire again.
+	- Adds new field to bullet definitions [subProjectileDispersion] to allow setting custom dispersion cone for shotgun/beehive ammunition.
+	- Beehive ammo explosive submunitions are now properly explosive.
+	- Fix weapons nulling current target and throwing off lead offset calcs on vessels with long TargetScanIntervals.
+	- Missiles:
+		- Missiles/bombs in a salvo no longer fratricide each other when the first one detonates.
+		- Add launch offset param to MultiMissileLauncher.
+		- Fix MMLs unable to fire if using salvos smaller than total launcher count.
+		- MML salvoes now add one missile away per target fired on, not just primary target.
+		- MML missiles no longer labeled as [vesselname] debris when using Missile icons and Vessel Label UI Icon options.
+		- Fix mass for MultiMissilelauncher rails.
+
+v1.5.3.1
 IMPROVEMENTS / FIXES
 - Spawning:
 	- Only spawn SpawnProbe for dead current vessel if spawning is aborted.

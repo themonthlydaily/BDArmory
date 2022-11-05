@@ -1828,9 +1828,9 @@ namespace BDArmory.Weapons
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                 timeGap = ((60 / BDArmorySettings.FIRE_RATE_OVERRIDE) * fireTransforms.Length) * TimeWarp.CurrentRate;
 
-            if (useRippleFire)
+            if (useRippleFire && fireState.Length > 1)
             {
-                timeGap /= fireTransforms.Length; //to maintain RPM if only firing one barrel at a time
+                timeGap /= fireTransforms.Length; //to maintain RPM if only firing one barrel at a time - This should only be being called on guns with multiple fireanims(and thus multiple independant barrels); is causing twinlinked weapons to gain 2x firespeed in barrageMode
             }
             if (Time.time - timeFired > timeGap
                 && !isOverheated
@@ -2130,7 +2130,7 @@ namespace BDArmory.Weapons
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41 && !isAPS)
                 timeGap = ((60 / BDArmorySettings.FIRE_RATE_OVERRIDE) * fireTransforms.Length) * TimeWarp.CurrentRate;
 
-            if (useRippleFire)
+            if (useRippleFire && fireState.Length > 1)
             {
                 timeGap /= fireTransforms.Length; //to maintain RPM if only firing one barrel at a time
             }
@@ -2338,33 +2338,35 @@ namespace BDArmory.Weapons
                                     else
                                     {
                                         HitpointTracker armor = p.GetComponent<HitpointTracker>();
-                                        var angularSpread = tanAngle * distance; //Scales down the damage based on the increased surface area of the area being hit by the laser. Think flashlight on a wall.
-                                        initialDamage = (laserDamage / (1 + Mathf.PI * angularSpread * angularSpread) * 0.425f);
+                                        if (laserDamage != 0)
+                                        {
+                                          var angularSpread = tanAngle * distance; //Scales down the damage based on the increased surface area of the area being hit by the laser. Think flashlight on a wall.
+                                          initialDamage = (laserDamage / (1 + Mathf.PI * angularSpread * angularSpread) * 0.425f);
 
-                                        if (armor != null)// technically, lasers shouldn't do damage until armor gone, but that would require localized armor tracking instead of the monolithic model currently used                                              
-                                        {
-                                            damage = (initialDamage * (pulseLaser ? 1 : TimeWarp.fixedDeltaTime)) * Mathf.Clamp((1 - (BDAMath.Sqrt(armor.Diffusivity * (armor.Density / 1000)) * armor.ArmorThickness) / initialDamage), 0.005f, 1); //old calc lacked a clamp, could potentially become negative damage
-                                        }  //clamps laser damage to not go negative, allow some small amount of bleedthrough - ~30 Be/Steel will negate ABL, ~62 Ti, 42 DU
-                                        else
-                                        {
-                                            damage = initialDamage;
-                                            if (!pulseLaser)
-                                            {
-                                                damage = initialDamage * TimeWarp.fixedDeltaTime;
-                                            }
+                                          if (armor != null)// technically, lasers shouldn't do damage until armor gone, but that would require localized armor tracking instead of the monolithic model currently used                                              
+                                          {
+                                             damage = (initialDamage * (pulseLaser ? 1 : TimeWarp.fixedDeltaTime)) * Mathf.Clamp((1 - (BDAMath.Sqrt(armor.Diffusivity * (armor.Density / 1000)) * armor.ArmorThickness) / initialDamage), 0.005f, 1); //old calc lacked a clamp, could potentially become negative damage
+                                          }  //clamps laser damage to not go negative, allow some small amount of bleedthrough - ~30 Be/Steel will negate ABL, ~62 Ti, 42 DU
+                                          else
+                                          {
+                                              damage = initialDamage;
+                                              if (!pulseLaser)
+                                              {
+                                                  damage = initialDamage * TimeWarp.fixedDeltaTime;
+                                              }
+                                          }
+                                          p.ReduceArmor(damage / 10000); //really should be tied into diffuisvity, density, and SafeUseTemp - lasers would need to melt/ablate material away; needs to be in cm^3. Review later
+                                          p.AddDamage(damage);
+                                          if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Damage Applied to {p.name} on {p.vessel.GetName()}: {damage}");
+                                          if (pulseLaser) BattleDamageHandler.CheckDamageFX(p, caliber, 1 + (damage / initialDamage), HEpulses, false, part.vessel.GetName(), hit, false, false); //beams will proc BD once every scoreAccumulatorTick
                                         }
-                                        p.ReduceArmor(damage / 10000); //really should be tied into diffuisvity, density, and SafeUseTemp - lasers would need to melt/ablate material away; needs to be in cm^3. Review later
-                                        p.AddDamage(damage);
-                                        if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Damage Applied to {p.name} on {p.vessel.GetName()}: {damage}");
-                                        if (pulseLaser) BattleDamageHandler.CheckDamageFX(p, caliber, 1 + (damage / initialDamage), HEpulses, false, part.vessel.GetName(), hit, false, false); //beams will proc BD once every scoreAccumulatorTick
-
                                         if (HEpulses)
                                         {
                                             ExplosionFx.CreateExplosion(hit.point,
                                                            (laserDamage / 30000),
                                                            explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName, null);
                                         }
-                                        if (impulseWeapon)
+                                        if (Impulse != 0)
                                         {
                                             if (!pulseLaser)
                                             {
@@ -2524,7 +2526,7 @@ namespace BDArmory.Weapons
             if (!rocketPod)
                 timeGap *= fireTransforms.Length;
 
-            if (useRippleFire)
+            if (useRippleFire && fireState.Length > 1)
             {
                 timeGap /= fireTransforms.Length; //to maintain RPM if only firing one barrel at a time
             }
@@ -2831,6 +2833,7 @@ namespace BDArmory.Weapons
                 if (EcCurrent > ECPerShot * 0.95f && !CheatOptions.InfiniteElectricity)
                 {
                     part.RequestResource(ECID, ECPerShot, ResourceFlowMode.ALL_VESSEL);
+                    if (requestResourceAmount == 0) return true; //weapon only uses ECperShot (electrolasers, mainly)
                 }
                 else
                 {
@@ -4696,7 +4699,7 @@ namespace BDArmory.Weapons
             if (shell != null || rocket != null)
             {
                 delayTime = -1;
-                if (baseDeviation > 0.05 && eWeaponType == WeaponTypes.Ballistic || (eWeaponType == WeaponTypes.Laser && pulseLaser)) //if using rotary cannon/CIWS for APS
+                if (baseDeviation > 0.05 && (eWeaponType == WeaponTypes.Ballistic || (eWeaponType == WeaponTypes.Laser && pulseLaser))) //if using rotary cannon/CIWS for APS
                 {
                     if (UnityEngine.Random.Range(0, (targetDistance - (Mathf.Cos(baseDeviation) * targetDistance))) > 1)
                     {
@@ -5414,6 +5417,7 @@ namespace BDArmory.Weapons
                         }
                         ParseBulletFuzeType(binfo.fuzeType);
                         ParseBulletHEType(binfo.explosive);
+                        output.AppendLine("");
                         output.AppendLine($"Bullet type: {(string.IsNullOrEmpty(binfo.DisplayName) ? binfo.name : binfo.DisplayName)}");
                         output.AppendLine($"Bullet mass: {Math.Round(binfo.bulletMass, 2)} kg");
                         output.AppendLine($"Muzzle velocity: {Math.Round(binfo.bulletVelocity, 2)} m/s");
@@ -5423,6 +5427,7 @@ namespace BDArmory.Weapons
                             output.AppendLine($"Cannister Round");
                             output.AppendLine($" - Submunition count: {binfo.subProjectileCount}");
                         }
+                        output.AppendLine($"Estimated Penetration: {ProjectileUtils.CalculatePenetration(binfo.caliber, binfo.bulletVelocity, binfo.bulletMass, binfo.apBulletMod, 940, 8.45001135e-07f, 0.656060636f, 1.20190930f, 1.77791929f):F2} mm");
                         if ((binfo.tntMass > 0) && !binfo.nuclear)
                         {
                             output.AppendLine($"Blast:");
@@ -5473,7 +5478,6 @@ namespace BDArmory.Weapons
                             BulletInfo sinfo = BulletInfo.bullets[binfo.subMunitionType.ToString()];
                             output.AppendLine($"- deploys {sinfo.subProjectileCount}x {(string.IsNullOrEmpty(sinfo.DisplayName) ? sinfo.name : sinfo.DisplayName)}");
                         }
-                        output.AppendLine("");
                     }
                 }
                 if (weaponType == "rocket")

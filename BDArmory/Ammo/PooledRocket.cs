@@ -910,8 +910,8 @@ namespace BDArmory.Bullets
                     pBullet.bulletDmgMult = bulletDmgMult;
                     pBullet.ballisticCoefficient = sBullet.bulletMass / (((Mathf.PI * 0.25f * sBullet.caliber * sBullet.caliber) / 1000000f) * 0.295f);
                     pBullet.timeElapsedSinceCurrentSpeedWasAdjusted = 0;
-                    pBullet.timeToLiveUntil = 4000 / sBullet.bulletVelocity * 1.1f + Time.time;
-                    Vector3 firedVelocity = VectorUtils.GaussianDirectionDeviation(currentVelocity.normalized, (sBullet.subProjectileCount / BDAMath.Sqrt(currentVelocity.magnitude / 10))) * (sBullet.bulletVelocity / 10); //more subprojectiles = wider spread, higher base velocity = tighter spread
+                    pBullet.timeToLiveUntil = 2000 / sBullet.bulletVelocity * 1.1f + Time.time;
+                    Vector3 firedVelocity = VectorUtils.GaussianDirectionDeviation(currentVelocity.normalized, sBullet.subProjectileDispersion > 0 ? sBullet.subProjectileDispersion : (sBullet.subProjectileCount / BDAMath.Sqrt(currentVelocity.magnitude / 100))) * sBullet.bulletVelocity; //more subprojectiles = wider spread, higher base velocity = tighter spread
                     pBullet.currentVelocity = currentVelocity + firedVelocity; // currentVelocity is already the real velocity w/o offloading
                     pBullet.sourceWeapon = sourceWeapon;
                     pBullet.sourceVessel = sourceVessel;
@@ -927,11 +927,26 @@ namespace BDArmory.Bullets
                     pBullet.tracerLuminance = 1.75f;
                     pBullet.bulletDrop = true;
 
-                    if (sBullet.tntMass > 0)
+                    if (sBullet.tntMass > 0 || sBullet.beehive)
                     {
                         pBullet.explModelPath = explModelPath;
                         pBullet.explSoundPath = explSoundPath;
                         pBullet.tntMass = sBullet.tntMass;
+                        string HEtype = sBullet.explosive;
+                        HEtype.ToLower();
+                        switch (HEtype)
+                        {
+                            case "standard":
+                                pBullet.HEType = PooledBullet.PooledBulletTypes.Explosive;
+                                break;
+                            //legacy support for older configs that are still explosive = true
+                            case "true":
+                                pBullet.HEType = PooledBullet.PooledBulletTypes.Explosive;
+                                break;
+                            case "shaped":
+                                pBullet.HEType = PooledBullet.PooledBulletTypes.Shaped;
+                                break;
+                        }
                         pBullet.detonationRange = detonationRange;
                         pBullet.maxAirDetonationRange = maxAirDetonationRange;
                         pBullet.defaultDetonationRange = 1000;
@@ -941,6 +956,7 @@ namespace BDArmory.Bullets
                     {
                         pBullet.fuzeType = PooledBullet.BulletFuzeTypes.None;
                         pBullet.sabot = (((((sBullet.bulletMass * 1000) / ((sBullet.caliber * sBullet.caliber * Mathf.PI / 400) * 19) + 1) * 10) > sBullet.caliber * 4)) ? true : false;
+                        pBullet.HEType = PooledBullet.PooledBulletTypes.Slug;
                     }
                     pBullet.EMP = sBullet.EMP;
                     pBullet.nuclear = sBullet.nuclear;
