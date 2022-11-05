@@ -14,6 +14,7 @@ IMPROVEMENTS / FIXES
 	- LEGACY_ARMOR toggle now properly sets armor panels back to having BDAc-era HP amounts.
 - AI / WM:
 	- Allow kamikaze ramming of ground targets by overriding terrain avoidance and min alt behaviour when on final approach.
+	- Improved cornering by only reducing throttle to match speed when in aiming steer mode and increasing the max speed clamp for tight cornering when at higher AoA.
 - Spawning:
 	- Custom Spawn Templates
 		- Set up your desired template by spawning vessels with VesselMover (or otherwise) and assigning teams.
