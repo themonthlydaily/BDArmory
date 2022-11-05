@@ -796,7 +796,7 @@ namespace BDArmory.Bullets
                         // Just makes more sense to me not to have it in there.
                         float kTerm = ((float)(distanceTraveled + hit.distance - distanceLastHit) * 1000f) / (14f * 10f * caliber);
                         kDist = 1f / (kDist * (1f + kTerm * kTerm)); // Then using it in the formula
-                        
+
                         // If the projectile gets too small things go wonky with the formulas for penetration
                         // they'll still work honestly, but I'd rather avoid those situations
                         /*if ((kDist * length) < 1.2f * caliber)
@@ -1152,11 +1152,11 @@ namespace BDArmory.Bullets
                             // change all this stuff I'm doing for hypervelocity stuff.
                             massRatio = (0.45f + 0.5f * (2500f / impactSpeed)) * adjustedPenRatio;
                         }
-                        
-                        
+
+
 
                         // We cap the minimum L/D to be 1.2 to avoid that edge case in the pen formula
-                        if ((massRatio * (length-10f) + 10f) < (1.1f * caliber))
+                        if ((massRatio * (length - 10f) + 10f) < (1.1f * caliber))
                         {
                             float ratio;
 
