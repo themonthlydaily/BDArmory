@@ -34,7 +34,7 @@ namespace BDArmory.UI
         private int previous_mat = -1;
         private float oldLines = -1;
 
-        GUIStyle listStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
+        GUIStyle listStyle;
 
         private float totalArmorMass;
         private float totalArmorCost;
@@ -112,6 +112,7 @@ namespace BDArmory.UI
             //steelValue = ProjectileUtils.CalculatePenetration(30, newCaliber, 0.388f, 1109, 0.15f, 7850, 940, 30, 0.8f, false);
             steelValue = ProjectileUtils.CalculatePenetration(30, 1109, 0.388f, 0.8f, 940, 8.45001135e-07f, 0.656060636f, 1.20190930f, 1.77791929f);
             exploValue = 940 * 1.15f * 7.85f;
+            listStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
             listStyle.fixedHeight = 18; //make list contents slightly smaller
         }
 
@@ -154,8 +155,8 @@ namespace BDArmory.UI
             var wait = new WaitForFixedUpdate();
             //while (delayedRefreshVisuals) // Wait until ship modified events stop coming. //preventing the remainder of the ienumerator from getting called. reverting to a simpler wai implementation  -SI
             //{
-                //delayedRefreshVisuals = false;
-                yield return wait;
+            //delayedRefreshVisuals = false;
+            yield return wait;
             yield return wait;
             //}
             //yield return new WaitUntilFixed(() =>
@@ -377,19 +378,18 @@ namespace BDArmory.UI
                     CalculateArmorMass();
                 }
                 //GUI.Label(new Rect(40, line * lineHeight, 300, lineHeight), StringUtils.Localize("#LOC_BDArmory_ArmorSelect"), style);
-                //line++;
                 if (!armorslist)
                 {
                     FillArmorList();
                     armorBox = new BDGUIComboBox(new Rect(10, line * lineHeight, 280, lineHeight), new Rect(10, line * lineHeight, 280, lineHeight), armorBoxText, armorGUI, 120, listStyle);
                     armorslist = true;
                 }
-		armorBox.UpdateRect(new Rect(10, line * lineHeight, 280, lineHeight));
+                armorBox.UpdateRect(new Rect(10, line * lineHeight, 280, lineHeight));
                 int selected_index = armorBox.Show();
                 armorLines++;
-                if (armorBox.isOpen)
+                if (armorBox.IsOpen)
                 {
-                    armorLines += 6;
+                    armorLines += armorBox.Height / lineHeight;
                 }
                 if (selected_index != previous_index)
                 {
@@ -456,20 +456,19 @@ namespace BDArmory.UI
                 if (!hullslist)
                 {
                     FillHullList();
-                    hullBox = new BDGUIComboBox(new Rect(10, (line + armorLines + StatLines) * lineHeight, 280, lineHeight), new Rect(10, (line + armorLines + StatLines) * lineHeight, 280, lineHeight), hullBoxText, hullGUI, 60, listStyle);
+                    hullBox = new BDGUIComboBox(new Rect(10, (line + armorLines + StatLines) * lineHeight, 280, lineHeight), new Rect(10, (line + armorLines + StatLines) * lineHeight, 280, lineHeight), hullBoxText, hullGUI, 120, listStyle);
                     hullslist = true;
                 }
                 hullBox.UpdateRect(new Rect(10, (line + armorLines + StatLines) * lineHeight, 280, lineHeight));
                 if (armorLines + StatLines != oldLines)
                 {
-					oldLines = armorLines + StatLines;
-                    //really? ComboBox needs to be instantiated each time it needs to be moved? It can't be used as a method ala all the other GUI components?
+                    oldLines = armorLines + StatLines;
                 }
                 int selected_mat = hullBox.Show();
                 HullLines++;
-                if (hullBox.isOpen)
+                if (hullBox.IsOpen)
                 {
-                    HullLines += 3;
+                    HullLines += hullBox.Height / lineHeight;
                 }
                 if (selected_mat != previous_mat)
                 {
@@ -479,7 +478,7 @@ namespace BDArmory.UI
                         CalculateArmorMass(true);
                     }
                     previous_mat = selected_mat;
-                }               
+                }
             }
             line += 0.5f;
             GUI.DragWindow();
@@ -617,7 +616,7 @@ namespace BDArmory.UI
                     {
                         if (armor.ArmorTypeNum == 1) continue;
 
-                        totalArmorMass += armor.armorMass; 
+                        totalArmorMass += armor.armorMass;
                         totalArmorCost += armor.armorCost;
                     }
                 }
