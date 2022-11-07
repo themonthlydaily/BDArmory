@@ -1269,9 +1269,6 @@ namespace BDArmory.Weapons
                 // Setup gauges
                 gauge = (BDStagingAreaGauge)part.AddModule("BDStagingAreaGauge");
                 gauge.AmmoName = ammoName;
-                gauge.AudioSource = audioSource;
-                gauge.ReloadAudioClip = reloadAudioClip;
-                gauge.ReloadCompleteAudioClip = reloadCompleteAudioClip;
 
                 AmmoID = PartResourceLibrary.Instance.GetDefinition(ammoName).id;
                 ECID = PartResourceLibrary.Instance.GetDefinition("ElectricCharge").id;
@@ -2338,7 +2335,7 @@ namespace BDArmory.Weapons
                                     else
                                     {
                                         HitpointTracker armor = p.GetComponent<HitpointTracker>();
-                                        if (laserDamage != 0)
+                                        if (laserDamage > 0)
                                         {
                                             var angularSpread = tanAngle * distance; //Scales down the damage based on the increased surface area of the area being hit by the laser. Think flashlight on a wall.
                                             initialDamage = (laserDamage / (1 + Mathf.PI * angularSpread * angularSpread) * 0.425f);
@@ -2414,7 +2411,7 @@ namespace BDArmory.Weapons
                                     {
                                         ScoreAccumulator = 0;
                                         BDACompetitionMode.Instance.Scores.RegisterBulletHit(aName, tName, WeaponName, distance);
-                                        if (!pulseLaser) BattleDamageHandler.CheckDamageFX(p, caliber, 1 + (damage / initialDamage), HEpulses, false, part.vessel.GetName(), hit, false, false);
+                                        if (!pulseLaser && laserDamage > 0) BattleDamageHandler.CheckDamageFX(p, caliber, 1 + (damage / initialDamage), HEpulses, false, part.vessel.GetName(), hit, false, false);
                                         //pulse lasers check battle damage earlier in the code
                                     }
                                     else
@@ -3935,6 +3932,7 @@ namespace BDArmory.Weapons
                     {
                         //StartCoroutine(IncrementRippleIndex(0));
                         StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate)); //FIXME - possibly not getting called in all circumstances? Investigate later, future SI
+                        //Debug.Log($"[BDarmory.moduleWeapon] Weapon on rippleindex {weaponManager.GetRippleIndex(WeaponName)} cant't fire, skipping to next weapon after a {initialFireDelay * TimeWarp.CurrentRate} sec delay");
                         isRippleFiring = true;
                     }
                     if (eWeaponType == WeaponTypes.Laser)
@@ -4259,6 +4257,10 @@ namespace BDArmory.Weapons
                     }
                 }
                 if (!oneShotSound) audioSource.Stop();
+                if (!String.IsNullOrEmpty(reloadAudioPath))
+                {
+                    audioSource.PlayOneShot(reloadAudioClip);
+                }
                 wasFiring = false;
                 weaponManager.ResetGuardInterval();
                 showReloadMeter = true;
@@ -4273,8 +4275,11 @@ namespace BDArmory.Weapons
                 }
                 else
                 {
-                    StopShutdownStartupRoutines();
-                    shutdownRoutine = StartCoroutine(ShutdownRoutine(true));
+                    if (hasDeployAnim)
+                    {
+                        StopShutdownStartupRoutines();
+                        shutdownRoutine = StartCoroutine(ShutdownRoutine(true));
+                    }
                 }
             }
             if (!hasReloadAnim && hasDeployAnim && (AnimTimer >= 1 && isReloading))
@@ -4305,6 +4310,10 @@ namespace BDArmory.Weapons
                 if (eWeaponType == WeaponTypes.Rocket && rocketPod)
                 {
                     UpdateRocketScales();
+                }
+                if (!String.IsNullOrEmpty(reloadCompletePath))
+                {
+                    audioSource.PlayOneShot(reloadCompleteAudioClip);
                 }
             }
         }

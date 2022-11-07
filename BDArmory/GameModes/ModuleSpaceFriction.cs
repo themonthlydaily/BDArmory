@@ -170,13 +170,18 @@ namespace BDArmory.GameModes
                         float accelMult = 1f;
                         if (vessel.verticalSpeed > 1) //vessel ascending
                         {
-                            accelMult = Mathf.Clamp(Mathf.Abs((float)vessel.verticalSpeed), 1f, 100);
+                            accelMult = Mathf.Clamp(Mathf.Abs((float)vessel.verticalSpeed), 1f, 100); //rework order of operations, SI!
                         }
                         if (vessel.radarAltitude < Mathf.Max((vesselAlt / 10), 5))
                         {
-                            accelMult = Mathf.Clamp((float)vessel.radarAltitude / vesselAlt, 0.3f, 1);
+                            if (vessel.situation != Vessel.Situations.LANDED || vessel.situation != Vessel.Situations.SPLASHED)
+                            {
+                                accelMult = Mathf.Clamp(Mathf.Abs((float)vessel.verticalSpeed), 1f, 100);
+                            }
+                            else
+                                accelMult = Mathf.Clamp((float)vessel.radarAltitude / vesselAlt, 0.3f, 1);
                         }
-                        if (vessel.radarAltitude < vesselAlt)
+                        if (vessel.radarAltitude < vesselAlt) //need check for vessels that start out landed so they don't rocket into the sky
                         {
                             for (int i = 0; i < part.vessel.Parts.Count; i++)
                             {
@@ -184,6 +189,9 @@ namespace BDArmory.GameModes
                                 {
                                     part.vessel.Parts[i].Rigidbody.AddForce((-FlightGlobals.getGeeForceAtPosition(part.vessel.Parts[i].transform.position) * ((vesselAlt / part.vessel.radarAltitude)) / accelMult), ForceMode.Acceleration);
                                 }
+                                //If wanting podracers or other hoverVees that are stable rather than rolling abot CoM; could ahve this intead modified to only apply force to part w/Spacehack module
+                                //on start have it find num of total lift modules, then divide total force by num of modules to have each provide that fraction of lift; would result in multiple points of antigrav for stability/
+                                //local loss of lift with loss of an antigrav generator
                             }
                         }
                     }

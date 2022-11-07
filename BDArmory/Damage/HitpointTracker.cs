@@ -188,15 +188,9 @@ namespace BDArmory.Damage
         public bool isOnFire = false;
 
         [KSPField(isPersistant = true)]
-        public float ignitionTemp;
+        public float ignitionTemp = -1;
         private double skinskinConduction = 1;
         private double skinInternalConduction = 1;
-
-
-        public static bool GameIsPaused
-        {
-            get { return PauseMenu.isOpen || Time.timeScale == 0; }
-        }
 
         public override void OnLoad(ConfigNode node)
         {
@@ -324,10 +318,9 @@ namespace BDArmory.Damage
                 if (BDArmorySettings.RESET_HULL || ArmorPanel)
                 {
                     IgnoreForArmorSetup = true;
-                    HullTypeNum = HullInfo.materials.FindIndex(t => t.name == "Aluminium") + 1;
-                    SetHullMass();
+                    HullTypeNum = HullInfo.materials.FindIndex(t => t.name == "Aluminium") + 1;                    
                 }
-
+                SetHullMass();
                 part.RefreshAssociatedWindows();
             }
             if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor)
@@ -643,43 +636,41 @@ namespace BDArmory.Damage
                 }
             }
 
-            if (HighLogic.LoadedSceneIsFlight && !GameIsPaused)
-            {
-                if (BDArmorySettings.HEART_BLEED_ENABLED && ShouldHeartBleed())
-                {
-                    HeartBleed();
-                }
-                //if (ArmorTypeNum > 1 || ArmorPanel)
-                if (ArmorTypeNum != (ArmorInfo.armors.FindIndex(t => t.name == "None") + 1) || ArmorPanel)
-                {
-					if (part.skinTemperature > SafeUseTemp * 1.5f)
-					{
-						ReduceArmor((armorVolume * ((float)part.skinTemperature / SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
-					}
-				}
-                if (!BDArmorySettings.BD_FIRES_ENABLED || !BDArmorySettings.BD_FIRE_HEATDMG) return; // Disabled.
+            if (!HighLogic.LoadedSceneIsFlight || !FlightGlobals.ready || UI.BDArmorySetup.GameIsPaused) return; // Not in flight scene, not ready or paused.
+            if (vessel == null || vessel.packed || part == null) return; // Vessel or part is dead or packed.
+            //FixedUpdate is only getting called once, at start? The above conditional is identical to the one in ModuleSelfSealingTank, which works, but here doesn't?
 
-                if (BDArmorySettings.BD_FIRES_ENABLED && BDArmorySettings.BD_FIRE_HEATDMG)
+            if (BDArmorySettings.HEART_BLEED_ENABLED && ShouldHeartBleed())
+            {
+                HeartBleed();
+            }
+            if (BDArmorySettings.BD_FIRES_ENABLED && BDArmorySettings.BD_FIRE_HEATDMG)
+            {
+                if (!isOnFire)
                 {
-                    if (!isOnFire)
+                    if ((ignitionTemp > 0) && part.temperature > ignitionTemp)
                     {
-                        if (ignitionTemp > 0 && part.temperature > ignitionTemp) 
+                        string fireStarter;
+                        var vesselFire = part.vessel.GetComponentInChildren<FX.FireFX>();
+                        if (vesselFire != null)
                         {
-                            string fireStarter;
-                            var vesselFire = part.vessel.GetComponentInChildren<FX.FireFX>();
-                            if (vesselFire != null)
-                            {
-                                fireStarter = vesselFire.SourceVessel;
-                            }
-                            else
-                            {
-                                fireStarter = part.vessel.GetName();
-                            }
-							FX.BulletHitFX.AttachFire(transform.position, part, 50, fireStarter);
-                            if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDarmory.HitPointTracker]: Hull auto-ignition! {part.name} is on fire!; temperature: {part.temperature}");
-                            isOnFire = true;
+                            fireStarter = vesselFire.SourceVessel;
                         }
+                        else
+                        {
+                            fireStarter = part.vessel.GetName();
+                        }
+                        FX.BulletHitFX.AttachFire(transform.position, part, 50, fireStarter);
+                        if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDarmory.HitPointTracker]: Hull auto-ignition! {part.name} is on fire!; temperature: {part.temperature}");
+                        isOnFire = true;
                     }
+                }
+            }
+            if (ArmorTypeNum != (ArmorInfo.armors.FindIndex(t => t.name == "None") + 1) || ArmorPanel)
+            {
+                if (part.skinTemperature > SafeUseTemp * 1.5f)
+                {
+                    ReduceArmor((armorVolume * ((float)part.skinTemperature / SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
                 }
             }
         }
@@ -1315,8 +1306,8 @@ namespace BDArmory.Damage
             {
                 armorMass = (Armor / 1000) * armorVolume * Density / 1000; //armor mass in tons
                 armorCost = (Armor / 1000) * armorVolume * armorInfo.Cost; //armor cost, tons
-				part.skinInternalConductionMult = skinInternalConduction * (Ductility / 237); //how well does the armor allow external heat to flow into the part internals?
-                part.skinSkinConductionMult =  skinskinConduction * (Ductility / 237); //how well does the armor conduct heat to connected part skins?
+				part.skinInternalConductionMult = skinInternalConduction * BDAMath.Sqrt(Diffusivity / 237); //how well does the armor allow external heat to flow into the part internals?
+                part.skinSkinConductionMult =  skinskinConduction * BDAMath.Sqrt(Diffusivity / 237); //how well does the armor conduct heat to connected part skins?
                 part.skinMassPerArea = (Density / 1000) * ArmorThickness;
             }
             if (ArmorTypeNum == (ArmorInfo.armors.FindIndex(t => t.name == "None") + 1) && ArmorPanel)
@@ -1325,8 +1316,8 @@ namespace BDArmory.Damage
                 guiArmorTypeString = StringUtils.Localize("#LOC_BDArmory_Aluminium");
                 SelectedArmorType = "None";
                 armorCost = (Armor / 1000) * armorVolume * armorInfo.Cost;
-                part.skinInternalConductionMult = skinInternalConduction * (Ductility / 237); //how well does the armor allow external heat to flow into the part internals?
-                part.skinSkinConductionMult = skinskinConduction * (Ductility / 237); //how well does the armor conduct heat to connected part skins?
+                part.skinInternalConductionMult = skinInternalConduction * BDAMath.Sqrt(Diffusivity / 237); //how well does the armor allow external heat to flow into the part internals?
+                part.skinSkinConductionMult = skinskinConduction * BDAMath.Sqrt(Diffusivity / 237); //how well does the armor conduct heat to connected part skins?
                 part.skinMassPerArea = (Density / 1000) * ArmorThickness;
             }
             totalArmorQty = armorMass; //grabbing a copy of unmodified armorMAss so it can be used in armorMass' place for armor reduction without having to un/re-modify the mass before and after armor hits
@@ -1456,8 +1447,16 @@ namespace BDArmory.Damage
                 hullInfo = HullInfo.materials[HullInfo.materialNames[(int)HullTypeNum - 1]];
                 HullMassAdjust = (partMass * hullInfo.massMod) - partMass;
                 guiHullTypeString = String.IsNullOrEmpty(hullInfo.localizedName) ? hullInfo.name : StringUtils.Localize(hullInfo.localizedName);
-                if (hullInfo.maxTemp > 0) part.maxTemp = hullInfo.maxTemp;
-                else part.maxTemp = part.partInfo.partPrefab.maxTemp;
+                if (hullInfo.maxTemp > 0)
+                {
+                    part.maxTemp = hullInfo.maxTemp;
+                    part.skinMaxTemp = hullInfo.maxTemp;
+                }
+                else
+                {
+                    part.maxTemp = part.partInfo.partPrefab.maxTemp;
+                    part.skinMaxTemp = part.partInfo.partPrefab.skinMaxTemp;
+                }
                 ignitionTemp = hullInfo.ignitionTemp;
                 hullType = hullInfo.name;
                 float partCost = part.partInfo.cost + part.partInfo.variant.Cost;

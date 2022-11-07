@@ -9,10 +9,6 @@ namespace BDArmory.UI
 {
     public class BDStagingAreaGauge : PartModule
     {
-        public AudioSource AudioSource;
-        public AudioClip ReloadAudioClip = null;
-        public AudioClip ReloadCompleteAudioClip = null;
-
         public string AmmoName = "";
 
         //UI gauges(next to staging icon)
@@ -103,20 +99,12 @@ namespace BDArmory.UI
                 if (reloadBar == null)
                 {
                     reloadBar = InitReloadBar();
-                    if (ReloadAudioClip)
-                    {
-                        AudioSource.PlayOneShot(ReloadAudioClip);
-                    }
                 }
                 reloadBar?.SetValue(reloadRemaining, 0, 1);
             }
             else if (reloadBar != null)
             {
                 ForceRedraw();
-                if (ReloadCompleteAudioClip)
-                {
-                    AudioSource.PlayOneShot(ReloadCompleteAudioClip);
-                }
             }
         }
 
