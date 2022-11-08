@@ -120,6 +120,7 @@ namespace BDArmory.UI
         }
 
         GUIStyle leftLabel;
+        GUIStyle listStyle;
         #endregion
         private string txtName = string.Empty;
         private void Awake()
@@ -137,6 +138,8 @@ namespace BDArmory.UI
             leftLabel = new GUIStyle();
             leftLabel.alignment = TextAnchor.UpperLeft;
             leftLabel.normal.textColor = Color.white;
+            listStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
+            listStyle.fixedHeight = 18; //make list contents slightly smaller
 
             // Spawn fields
             spawnFields = new Dictionary<string, NumericInputField> {
@@ -463,9 +466,7 @@ namespace BDArmory.UI
                 if (!planetslist)
                 {
                     FillPlanetList();
-                    GUIStyle listStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
-                    listStyle.fixedHeight = 18; //make list contents slightly smaller
-                    planetBox = new BDGUIComboBox(SLeftButtonRect(line), SLeftButtonRect(line), planetText, planetGUI, _lineHeight * 6, listStyle);
+                    planetBox = new BDGUIComboBox(SLeftButtonRect(line), SLineRect(line), planetText, planetGUI, _lineHeight * 6, listStyle, 3);
                     planetslist = true;
                 }
                 planetBox.UpdateRect(SLeftButtonRect(line));
@@ -474,10 +475,9 @@ namespace BDArmory.UI
                 {
                     SpawnUtils.ShowSpawnPoint(selected_index, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 20);
                 }
-                line += 1.3f;
-                if (planetBox.isOpen)
+                if (planetBox.IsOpen)
                 {
-                    line += 6.3f;
+                    line += planetBox.Height / _lineHeight;
                 }
                 if (selected_index != previous_index)
                 {
@@ -495,6 +495,7 @@ namespace BDArmory.UI
                     previous_index = 1;
                 }
                 ////////////////////
+                ++line;
                 int i = 0;
                 foreach (var spawnLocation in SpawnLocations.spawnLocations)
                 {

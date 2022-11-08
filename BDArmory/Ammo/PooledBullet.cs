@@ -796,7 +796,7 @@ namespace BDArmory.Bullets
                         // Just makes more sense to me not to have it in there.
                         float kTerm = ((float)(distanceTraveled + hit.distance - distanceLastHit) * 1000f) / (14f * 10f * caliber);
                         kDist = 1f / (kDist * (1f + kTerm * kTerm)); // Then using it in the formula
-                        
+
                         // If the projectile gets too small things go wonky with the formulas for penetration
                         // they'll still work honestly, but I'd rather avoid those situations
                         /*if ((kDist * length) < 1.2f * caliber)
@@ -1123,14 +1123,14 @@ namespace BDArmory.Bullets
                 // If impact is at high speed
                 if (impactSpeed > 1200f)
                 {
-                    // If the projectile is still above a L/D ratio of 1.2 (should be 1 but I want to
-                    // avoid the edge case in the pen formula where L/D = 1
-                    if (length / caliber > 1.2f)
+                    // If the projectile is still above a L/D ratio of 1.1 (should be 1 but I want to
+                    // avoid the edge case in the pen formula where L/D = 1)
+                    if (length / caliber > 1.1f)
                     {
                         // Then we set the mass ratio to the default for impacts under 2500 m/s
                         // we take off 5% by default to decrease penetration efficiency through
                         // multiple plates a little more
-                        float massRatio = 0.95f * adjustedPenRatio;
+                        float massRatio = 0.975f * adjustedPenRatio;
 
                         if (impactSpeed > 2500f)
                         {
@@ -1152,15 +1152,26 @@ namespace BDArmory.Bullets
                             // change all this stuff I'm doing for hypervelocity stuff.
                             massRatio = (0.45f + 0.5f * (2500f / impactSpeed)) * adjustedPenRatio;
                         }
-                        
-                        
+
+
 
                         // We cap the minimum L/D to be 1.2 to avoid that edge case in the pen formula
-                        if (massRatio < 1.2f * caliber / length)
+                        if ((massRatio * (length - 10f) + 10f) < (1.1f * caliber))
                         {
-                            bulletMass = 1.2f * bulletMass * caliber / length;
+                            float ratio;
 
-                            adjustedPenRatio /= (1.2f * caliber / length);
+                            if (caliber < 10f)
+                            {
+                                ratio = (1.1f * caliber / length);
+                            }
+                            else
+                            {
+                                ratio = (1.1f * caliber - 10f) / (length - 10f);
+                            }
+
+                            bulletMass *= ratio;
+
+                            adjustedPenRatio /= ratio;
 
                             // In the case we are reaching that cap we decrease the velocity by
                             // the adjustedPenRatio minus the portion that went into erosion
