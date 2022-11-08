@@ -167,7 +167,7 @@ namespace BDArmory.Utils
     public class WaitUntilFixed : IEnumerator
     {
         private WaitForFixedUpdate wait = new WaitForFixedUpdate();
-        public virtual object Current => this.wait;
+        public virtual object Current => wait;
         Func<bool> predicate;
 
         public WaitUntilFixed(Func<bool> predicate)
@@ -175,8 +175,7 @@ namespace BDArmory.Utils
             this.predicate = predicate;
         }
 
-        public bool MoveNext() => this.keepWaiting;
-        public virtual bool keepWaiting => !predicate();
+        public bool MoveNext() => !predicate();
         public virtual void Reset() { }
     }
 
@@ -186,7 +185,7 @@ namespace BDArmory.Utils
     public class WaitWhileFixed : IEnumerator
     {
         private WaitForFixedUpdate wait = new WaitForFixedUpdate();
-        public virtual object Current => this.wait;
+        public virtual object Current => wait;
         Func<bool> predicate;
 
         public WaitWhileFixed(Func<bool> predicate)
@@ -194,8 +193,7 @@ namespace BDArmory.Utils
             this.predicate = predicate;
         }
 
-        public bool MoveNext() => this.keepWaiting;
-        public virtual bool keepWaiting => predicate();
+        public bool MoveNext() => predicate();
         public virtual void Reset() { }
     }
 }

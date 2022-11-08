@@ -152,6 +152,7 @@
     <Compile Include="Competition\TournamentCoordinator.cs" />
     <Compile Include="Competition\VesselSpawning\CircularSpawning.cs" />
     <Compile Include="Competition\VesselSpawning\ContinuousSpawning.cs" />
+    <Compile Include="Competition\VesselSpawning\CustomSpawnTemplate.cs" />
     <Compile Include="Competition\VesselSpawning\SingleVesselSpawning.cs" />
     <Compile Include="Competition\VesselSpawning\SpawnConfig.cs" />
     <Compile Include="Competition\VesselSpawning\SpawnLocations.cs" />

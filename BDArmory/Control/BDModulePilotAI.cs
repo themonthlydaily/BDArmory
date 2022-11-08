@@ -52,6 +52,7 @@ namespace BDArmory.Control
 
         public void StopExtending(string reason, bool cooldown = false)
         {
+            if (!extending) return;
             extending = false;
             requestedExtend = false;
             extendingReason = "";
@@ -1609,7 +1610,7 @@ namespace BDArmory.Control
                 vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
             }
 
-            steerMode = SteerModes.NormalFlight;
+            if (!ramming) steerMode = SteerModes.NormalFlight; // Reset the steer mode, unless we're ramming.
             useVelRollTarget = false;
 
             // landed and still, chill out
@@ -1629,14 +1630,14 @@ namespace BDArmory.Control
             if ((float)vessel.radarAltitude < minAltitude)
             { belowMinAltitude = true; }
 
-            if (gainAltInhibited && (!belowMinAltitude || !(currentStatus == "Engaging" || currentStatus == "Evading" || currentStatus.StartsWith("Gain Alt"))))
-            { // Allow switching between "Engaging", "Evading" and "Gain Alt." while below minimum altitude without disabling the gain altitude inhibitor.
+            if (gainAltInhibited && (!belowMinAltitude || !(currentStatus == "Engaging" || currentStatus == "Evading" || currentStatus == "Ramming speed!" || currentStatus.StartsWith("Gain Alt"))))
+            { // Allow switching between "Engaging", "Evading", "Ramming speed!" and "Gain Alt." while below minimum altitude without disabling the gain altitude inhibitor.
                 gainAltInhibited = false;
                 if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDModulePilotAI]: " + vessel.vesselName + " is no longer inhibiting gain alt");
             }
 
-            if (!gainAltInhibited && belowMinAltitude && (currentStatus == "Engaging" || currentStatus == "Evading") && vessel.atmDensity > 0.1f)
-            { // Vessel went below minimum altitude while "Engaging" or "Evading", enable the gain altitude inhibitor.
+            if (!gainAltInhibited && belowMinAltitude && (currentStatus == "Engaging" || currentStatus == "Evading" || currentStatus == "Ramming speed!") && vessel.atmDensity > 0.1f)
+            { // Vessel went below minimum altitude while "Engaging", "Evading" or "Ramming speed!", enable the gain altitude inhibitor.
                 gainAltInhibited = true;
                 if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDModulePilotAI]: " + vessel.vesselName + " was " + currentStatus + " and went below min altitude, inhibiting gain alt.");
             }
@@ -1651,7 +1652,7 @@ namespace BDArmory.Control
             CheckLandingGear();
             if (IsRunningWaypoints) UpdateWaypoint(); // Update the waypoint state.
 
-            if (!vessel.LandedOrSplashed && (FlyAvoidTerrain(s) || (!ramming && FlyAvoidOthers(s)))) // Avoid terrain and other planes.
+            if (!vessel.LandedOrSplashed && ((!(ramming && steerMode == SteerModes.Aiming) && FlyAvoidTerrain(s)) || (!ramming && FlyAvoidOthers(s)))) // Avoid terrain and other planes, unless we're trying to ram stuff.
             { turningTimer = 0; }
             else if (initialTakeOff) // Take off.
             {
@@ -2013,7 +2014,7 @@ namespace BDArmory.Control
                         if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"targetAngVel: {targetAngVel:F4}, magnifier: {magnifier:F2}");
                         target -= magnifier * leadOffset; // The effect of this is to exagerate the lead if the angular velocity is > 1
                         angleToTarget = Vector3.Angle(vesselTransform.up, target - vesselTransform.position);
-                        if (distanceToTarget < weaponManager.gunRange && angleToTarget < 20)
+                        if (distanceToTarget < weaponManager.gunRange && angleToTarget < 20) // FIXME This ought to be changed to a dynamic angle like the firing angle.
                         {
                             steerMode = SteerModes.Aiming; //steer to aim
                         }
@@ -2080,7 +2081,7 @@ namespace BDArmory.Control
 
             //manage speed when close to enemy
             float finalMaxSpeed = maxSpeed;
-            if (targetDot > 0f) // Target is ahead.
+            if (steerMode == SteerModes.Aiming) // Target is ahead and we're trying to aim at them. Outside this angle, we want full thrust to turn faster onto the target.
             {
                 if (strafingDistance < 0f) // target flying, or beyond range of beginning strafing run for landed/splashed targets.
                 {
@@ -2237,11 +2238,12 @@ namespace BDArmory.Control
                 steerMode = SteerModes.Aiming;
             }
 
-            //slow down for tighter turns
-            float velAngleToTarget = Mathf.Clamp(Vector3.Angle(targetPosition - vesselTransform.position, vessel.Velocity()), 0, 90);
+            //slow down for tighter turns, unless we're already at high AoA, in which case we want more thrust
             float speedReductionFactor = 1.25f;
             float finalSpeed;
-            if (vessel.atmDensity > 0.05f) finalSpeed = Mathf.Min(speedController.targetSpeed, Mathf.Clamp(maxSpeed - (speedReductionFactor * velAngleToTarget), idleSpeed, maxSpeed));
+            // float velAngleToTarget = Mathf.Clamp(Vector3.Angle(targetPosition - vesselTransform.position, vessel.Velocity()), 0, 90);
+            // if (vessel.atmDensity > 0.05f) finalSpeed = Mathf.Min(speedController.targetSpeed, Mathf.Clamp(maxSpeed - (speedReductionFactor * velAngleToTarget), idleSpeed, maxSpeed));
+            if (vessel.atmDensity > 0.05f) finalSpeed = Mathf.Min(speedController.targetSpeed, Mathf.Clamp(maxSpeed - speedReductionFactor * (angleToTarget - AoA), idleSpeed, maxSpeed));
             else finalSpeed = Mathf.Min(speedController.targetSpeed, maxSpeed);
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Final Target Speed: {finalSpeed}");
 
@@ -2448,6 +2450,12 @@ namespace BDArmory.Control
             }
             if (extendAbortTimer < 0) // In cooldown, extending disabled.
             {
+                StopExtending("in cooldown");
+                return false;
+            }
+            if (ramming) // Disable extending if in ramming mode.
+            {
+                StopExtending("ramming speed");
                 return false;
             }
             if (!extending)

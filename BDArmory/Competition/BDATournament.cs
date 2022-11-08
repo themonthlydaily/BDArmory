@@ -18,9 +18,9 @@ namespace BDArmory.Competition
 {
     // A serializable configuration for loading and saving the tournament state.
     [Serializable]
-    public class RoundConfig : SpawnConfig
+    public class RoundConfig : CircularSpawnConfig
     {
-        public RoundConfig(int round, int heat, bool completed, SpawnConfig config) : base(config) { this.round = round; this.heat = heat; this.completed = completed; SerializeTeams(); }
+        public RoundConfig(int round, int heat, bool completed, CircularSpawnConfig config) : base(config) { this.round = round; this.heat = heat; this.completed = completed; SerializeTeams(); }
         public int round;
         public int heat;
         public bool completed;
@@ -90,7 +90,7 @@ namespace BDArmory.Competition
         public int vesselsPerTeam;
         public bool fullTeams;
         public TournamentType tournamentType = TournamentType.FFA;
-        [NonSerialized] public Dictionary<int, Dictionary<int, SpawnConfig>> rounds; // <Round, <Heat, SpawnConfig>>
+        [NonSerialized] public Dictionary<int, Dictionary<int, CircularSpawnConfig>> rounds; // <Round, <Heat, CircularSpawnConfig>>
         [NonSerialized] public Dictionary<int, HashSet<int>> completed = new Dictionary<int, HashSet<int>>();
         [NonSerialized] private List<Queue<string>> teamSpawnQueues = new List<Queue<string>>();
         [NonSerialized] private List<Queue<string>> opponentTeamSpawnQueues = new List<Queue<string>>();
@@ -133,7 +133,7 @@ namespace BDArmory.Competition
                     fullHeatCount = craftFiles.Count / vesselsPerHeat;
                     break;
             }
-            rounds = new Dictionary<int, Dictionary<int, SpawnConfig>>();
+            rounds = new Dictionary<int, Dictionary<int, CircularSpawnConfig>>();
             switch (tournamentStyle)
             {
                 case 0: // RNG
@@ -147,11 +147,11 @@ namespace BDArmory.Competition
                             int vesselsThisHeat = vesselsPerHeat;
                             int count = 0;
                             List<string> selectedFiles = craftFiles.Take(vesselsThisHeat).ToList();
-                            rounds.Add(rounds.Count, new Dictionary<int, SpawnConfig>());
+                            rounds.Add(rounds.Count, new Dictionary<int, CircularSpawnConfig>());
                             int heatIndex = 0;
                             while (selectedFiles.Count > 0)
                             {
-                                rounds[roundIndex].Add(rounds[roundIndex].Count, new SpawnConfig(
+                                rounds[roundIndex].Add(rounds[roundIndex].Count, new CircularSpawnConfig(
                                     BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
@@ -181,10 +181,10 @@ namespace BDArmory.Competition
                         Debug.Log($"[BDArmory.BDATournament]: " + message);
                         BDACompetitionMode.Instance.competitionStatus.Add(message);
                         // Generate all combinations of vessels for a round.
-                        var heatList = new List<SpawnConfig>();
+                        var heatList = new List<CircularSpawnConfig>();
                         foreach (var combination in Combinations(vesselCount, vesselsPerHeat))
                         {
-                            heatList.Add(new SpawnConfig(
+                            heatList.Add(new CircularSpawnConfig(
                                 BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
                                 BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
                                 BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
@@ -205,7 +205,7 @@ namespace BDArmory.Competition
                         for (int roundIndex = 0; roundIndex < numberOfRounds; ++roundIndex)
                         {
                             heatList.Shuffle(); // Randomise the playing order within each round.
-                            rounds.Add(roundIndex, heatList.Select((heat, index) => new KeyValuePair<int, SpawnConfig>(index, heat)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+                            rounds.Add(roundIndex, heatList.Select((heat, index) => new KeyValuePair<int, CircularSpawnConfig>(index, heat)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
                         }
                         break;
                     }
@@ -312,7 +312,7 @@ namespace BDArmory.Competition
             teamSpawnQueues.Clear();
 
             int fullHeatCount = teamFiles.Count / teamsPerHeat;
-            rounds = new Dictionary<int, Dictionary<int, SpawnConfig>>();
+            rounds = new Dictionary<int, Dictionary<int, CircularSpawnConfig>>();
             switch (tournamentStyle)
             {
                 case 0: // RNG
@@ -327,11 +327,11 @@ namespace BDArmory.Competition
                             int count = 0;
                             var selectedTeams = teamsIndex.Take(teamsThisHeat).ToList();
                             var selectedCraft = SelectTeamCraft(selectedTeams, vesselsPerTeam);
-                            rounds.Add(rounds.Count, new Dictionary<int, SpawnConfig>());
+                            rounds.Add(rounds.Count, new Dictionary<int, CircularSpawnConfig>());
                             int heatIndex = 0;
                             while (selectedTeams.Count > 0)
                             {
-                                rounds[roundIndex].Add(rounds[roundIndex].Count, new SpawnConfig(
+                                rounds[roundIndex].Add(rounds[roundIndex].Count, new CircularSpawnConfig(
                                     BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
@@ -366,11 +366,11 @@ namespace BDArmory.Competition
                         // Populate the rounds.
                         for (int roundIndex = 0; roundIndex < numberOfRounds; ++roundIndex)
                         {
-                            var heatList = new List<SpawnConfig>();
+                            var heatList = new List<CircularSpawnConfig>();
                             foreach (var combination in combinations)
                             {
                                 var selectedCraft = SelectTeamCraft(combination.Select(i => teamsIndex[i]).ToList(), vesselsPerTeam); // Vessel selection for a team can vary between rounds if the number of vessels in a team doesn't match the vesselsPerTeam parameter.
-                                heatList.Add(new SpawnConfig(
+                                heatList.Add(new CircularSpawnConfig(
                                     BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
@@ -388,7 +388,7 @@ namespace BDArmory.Competition
                                 ));
                             }
                             heatList.Shuffle(); // Randomise the playing order within each round.
-                            rounds.Add(roundIndex, heatList.Select((heat, index) => new KeyValuePair<int, SpawnConfig>(index, heat)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+                            rounds.Add(roundIndex, heatList.Select((heat, index) => new KeyValuePair<int, CircularSpawnConfig>(index, heat)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
                         }
                         break;
                     }
@@ -447,14 +447,14 @@ namespace BDArmory.Competition
                         // Populate the rounds.
                         for (int roundIndex = 0; roundIndex < numberOfRounds; ++roundIndex)
                         {
-                            var heatList = new List<SpawnConfig>();
+                            var heatList = new List<CircularSpawnConfig>();
                             foreach (var combination in combinations)
                             {
                                 var selectedCraft = SelectTeamCraft(combination.Select(i => teamsIndex[i]).ToList(), vesselsPerTeam); // Vessel selection for a team can vary between rounds if the number of vessels in a team doesn't match the vesselsPerTeam parameter.
                                 foreach (var opponentCombination in opponentCombinations)
                                 {
                                     var selectedOpponentCraft = SelectTeamCraft(opponentCombination.Select(i => opponentTeamsIndex[i]).ToList(), BDArmorySettings.TOURNAMENT_OPPONENT_VESSELS_PER_TEAM, true); // Vessel selection for a team can vary between rounds if the number of vessels in a team doesn't match the vesselsPerTeam parameter.
-                                    heatList.Add(new SpawnConfig(
+                                    heatList.Add(new CircularSpawnConfig(
                                         BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
                                         BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
                                         BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
@@ -473,7 +473,7 @@ namespace BDArmory.Competition
                                 }
                             }
                             heatList.Shuffle(); // Randomise the playing order within each round.
-                            rounds.Add(roundIndex, heatList.Select((heat, index) => new KeyValuePair<int, SpawnConfig>(index, heat)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+                            rounds.Add(roundIndex, heatList.Select((heat, index) => new KeyValuePair<int, CircularSpawnConfig>(index, heat)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
                         }
                         #endregion
                         break;
@@ -588,7 +588,7 @@ namespace BDArmory.Competition
                 vesselsPerTeam = data.vesselsPerTeam;
                 fullTeams = data.fullTeams;
                 tournamentType = data.tournamentType;
-                rounds = new Dictionary<int, Dictionary<int, SpawnConfig>>();
+                rounds = new Dictionary<int, Dictionary<int, CircularSpawnConfig>>();
                 completed = new Dictionary<int, HashSet<int>>();
                 for (int i = 1; i < strings.Length; ++i)
                 {
@@ -597,8 +597,8 @@ namespace BDArmory.Competition
                         var roundConfig = JsonUtility.FromJson<RoundConfig>(strings[i]);
                         if (!strings[i].Contains("worldIndex")) roundConfig.worldIndex = 1; // Default old tournament states to be on Kerbin.
                         roundConfig.DeserializeTeams();
-                        if (!rounds.ContainsKey(roundConfig.round)) rounds.Add(roundConfig.round, new Dictionary<int, SpawnConfig>());
-                        rounds[roundConfig.round].Add(roundConfig.heat, new SpawnConfig(
+                        if (!rounds.ContainsKey(roundConfig.round)) rounds.Add(roundConfig.round, new Dictionary<int, CircularSpawnConfig>());
+                        rounds[roundConfig.round].Add(roundConfig.heat, new CircularSpawnConfig(
                             roundConfig.worldIndex,
                             roundConfig.latitude,
                             roundConfig.longitude,
@@ -1265,7 +1265,7 @@ namespace BDArmory.Competition
                 yield return new WaitWhile(() => (BDAModuleEvolution.Instance == null && Time.time - tic < 10)); // Wait for the tournament to be loaded or time out.
                 if (BDAModuleEvolution.Instance == null) yield break;
                 BDArmorySetup.windowBDAToolBarEnabled = true;
-                BDArmorySetup.Instance.showVesselSwitcherGUI = true;
+                LoadedVesselSwitcher.Instance.SetVisible(true);
                 BDArmorySetup.Instance.showEvolutionGUI = true;
                 BDAModuleEvolution.Instance.ResumeEvolution(evolutionState);
             }
@@ -1289,8 +1289,8 @@ namespace BDArmory.Competition
                 yield return new WaitWhile(() => ((BDATournament.Instance == null || BDATournament.Instance.tournamentID == 0) && Time.time - tic < 10)); // Wait for the tournament to be loaded or time out.
                 if (BDATournament.Instance == null || BDATournament.Instance.tournamentID == 0) yield break;
                 BDArmorySetup.windowBDAToolBarEnabled = true;
-                BDArmorySetup.Instance.showVesselSwitcherGUI = true;
-                BDArmorySetup.Instance.showVesselSpawnerGUI = true;
+                LoadedVesselSwitcher.Instance.SetVisible(true);
+                VesselSpawnerWindow.Instance.SetVisible(true);
                 BDATournament.Instance.RunTournament();
             }
         }
