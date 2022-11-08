@@ -629,7 +629,7 @@ namespace BDArmory.Competition
             {
                 waiting = false;
 
-                if (leaders.Any(leader => leader is null || leader.weaponManager is null))
+                if (leaders.Any(leader => leader == null || leader.weaponManager == null))
                 {
                     var survivingLeaders = leaders.Where(l => l != null && l.weaponManager != null).Select(l => l.vessel.vesselName).ToList();
                     var missingLeaders = leaderNames.Where(l => !survivingLeaders.Contains(l)).ToList();
@@ -651,7 +651,7 @@ namespace BDArmory.Competition
 
                 try // Somehow, if a vessel gets destroyed during competition start, the following can throw a null reference exception despite checking for nulls! This is due to the IBDAIControl.transform getter.
                 {
-                    if (startDespiteFailures && pilots.Values.SelectMany(p => p).Any(p => p is null || p.weaponManager is null)) leaderNames = RefreshPilots(out pilots, out leaders, true);
+                    if (startDespiteFailures && pilots.Values.SelectMany(p => p).Any(p => p == null || p.weaponManager == null)) leaderNames = RefreshPilots(out pilots, out leaders, true);
                     foreach (var leader in leaders)
                     {
                         foreach (var otherLeader in leaders)
@@ -714,7 +714,7 @@ namespace BDArmory.Competition
             previousNumberCompetitive = 2; // For entering into tag mode
 
             //start the match
-            if (startDespiteFailures && pilots.Values.SelectMany(p => p).Any(p => p is null || p.weaponManager is null)) leaderNames = RefreshPilots(out pilots, out leaders, true);
+            if (startDespiteFailures && pilots.Values.SelectMany(p => p).Any(p => p == null || p.weaponManager == null)) leaderNames = RefreshPilots(out pilots, out leaders, true);
             foreach (var teamPilots in pilots.Values)
             {
                 if (teamPilots == null)
@@ -2158,7 +2158,7 @@ namespace BDArmory.Competition
                         vData.averageCount++;
                         if (vData.landedState && BDArmorySettings.COMPETITION_KILL_TIMER > 0)
                         {
-                            if (VesselModuleRegistry.GetBDModuleSurfaceAI(vessel, true) is null) // Ignore surface AI vessels for the kill timer.
+                            if (VesselModuleRegistry.GetBDModuleSurfaceAI(vessel, true) == null) // Ignore surface AI vessels for the kill timer.
                             {
                                 KillTimer[vesselName] = (int)(now - vData.landedKillTimer);
                                 if (now - vData.landedKillTimer > BDArmorySettings.COMPETITION_KILL_TIMER)
