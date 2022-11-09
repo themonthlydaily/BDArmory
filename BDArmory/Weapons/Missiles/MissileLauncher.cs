@@ -207,7 +207,7 @@ namespace BDArmory.Weapons.Missiles
 
         //deploy animation
         [KSPField]
-        public string deployAnimationName = ""; 
+        public string deployAnimationName = "";
 
         [KSPField]
         public float deployedDrag = 0.02f;
@@ -511,7 +511,7 @@ namespace BDArmory.Weapons.Missiles
                             while (t.MoveNext())
                             {
                                 if (t.Current == null) continue;
-                                fairings.Add(t.Current.gameObject);                                
+                                fairings.Add(t.Current.gameObject);
                             }
                     }
 
@@ -871,7 +871,7 @@ namespace BDArmory.Weapons.Missiles
 
         public override float GetBlastRadius()
         {
-            if (blastRadius > 0) { return blastRadius; } 
+            if (blastRadius > 0) { return blastRadius; }
             else
             {
                 if (warheadType == WarheadTypes.EMP)
@@ -948,7 +948,7 @@ namespace BDArmory.Weapons.Missiles
                 //if (wpm.rippleRPM > 0) multiLauncher.rippleRPM = wpm.rippleRPM;
                 multiLauncher.Team = Team;
                 if (reloadableRail.ammoCount >= 1 || BDArmorySettings.INFINITE_ORDINANCE) multiLauncher.fireMissile();
-                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: firing Multilauncher! {vessel.vesselName}; {multiLauncher.subMunitionName}");                                    
+                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: firing Multilauncher! {vessel.vesselName}; {multiLauncher.subMunitionName}");
             }
             else
             {
@@ -966,7 +966,7 @@ namespace BDArmory.Weapons.Missiles
                     TargetPosition = (multiLauncher ? vessel.ReferenceTransform.position + vessel.ReferenceTransform.up * 5000 : transform.position + transform.forward * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
                     MissileLaunch();
                     BDATargetManager.FiredMissiles.Add(this);
-                    wpm.heatTarget = TargetSignatureData.noTarget;
+                    if (wpm != null) wpm.heatTarget = TargetSignatureData.noTarget;
                     launched = true;
                 }
             }
@@ -981,7 +981,7 @@ namespace BDArmory.Weapons.Missiles
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: Spawning missile {reloadableRail.SpawnedMissile.name}; type: {ml.homingType}/{ml.targetingType}");
             yield return new WaitUntilFixed(() => ml.SetupComplete); // Wait until missile fully initialized.
 
-            ml.launched = true; 
+            ml.launched = true;
             var wpm = VesselModuleRegistry.GetMissileFire(SourceVessel, true);
             BDATargetManager.FiredMissiles.Add(ml);
             ml.SourceVessel = SourceVessel;
@@ -1278,7 +1278,7 @@ namespace BDArmory.Weapons.Missiles
                     heatTimer -= TimeWarp.fixedDeltaTime;
                     if (vessel.isActiveVessel)
                     {
-                        gauge.UpdateHeatMeter(heatTimer/multiLauncher.launcherCooldown);
+                        gauge.UpdateHeatMeter(heatTimer / multiLauncher.launcherCooldown);
                     }
                 }
                 if (OldInfAmmo != BDArmorySettings.INFINITE_ORDINANCE)
@@ -2309,7 +2309,7 @@ namespace BDArmory.Weapons.Missiles
             if (multiLauncher && multiLauncher.overrideReferenceTransform)
                 return vessel.ReferenceTransform.up;
             else
-            return MissileReferenceTransform.forward;
+                return MissileReferenceTransform.forward;
         }
 
         protected override void PartDie(Part p)

@@ -237,7 +237,7 @@ namespace BDArmory.UI
                                             {
                                                 if (GUIUtils.WorldToGUIPos(ml.Current.vessel.CoM, out guiPos))
                                                 {
-                                                    IconUIStyle.normal.textColor = BDTISetup.Instance.ColorAssignments[ml.Current.Team.Name];
+                                                    IconUIStyle.normal.textColor = BDTISetup.Instance.ColorAssignments.ContainsKey(ml.Current.Team.Name) ? BDTISetup.Instance.ColorAssignments[ml.Current.Team.Name] : Color.gray;
                                                     Rect nameRect = new Rect((guiPos.x + (24 * BDTISettings.ICONSCALE)), guiPos.y - 4, 100, 32);
                                                     Rect shadowRect = new Rect((nameRect.x + 1), nameRect.y + 1, 100, 32);
                                                     GUI.Label(shadowRect, ml.Current.vessel.vesselName, DropshadowStyle);
@@ -299,7 +299,7 @@ namespace BDArmory.UI
                                             if (GUIUtils.WorldToGUIPos(wm.Current.vessel.CoM, out guiPos))
                                             {
                                                 Rect nameRect = new Rect((guiPos.x + (24 * BDTISettings.ICONSCALE)), guiPos.y - 4, 100, 32);
-                                                Rect shadowRect = new Rect((nameRect.x + 1), nameRect.y +1, 100, 32);
+                                                Rect shadowRect = new Rect((nameRect.x + 1), nameRect.y + 1, 100, 32);
                                                 GUI.Label(shadowRect, wm.Current.vessel.vesselName, DropshadowStyle);
                                                 GUI.Label(nameRect, wm.Current.vessel.vesselName, IconUIStyle);
                                             }
