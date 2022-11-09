@@ -595,14 +595,13 @@ namespace BDArmory.Damage
             }
         }
 
-        public override void OnUpdate() // This only runs in flight mode.
+        void Update()
         {
-            if (!_finished_setting_up) return;
-            RefreshHitPoints();
-        }
-
-        void Update() // This stops running once things are set up.
-        {
+            if (_finished_setting_up) // Only gets set in flight mode.
+            {
+                RefreshHitPoints();
+                return;
+            }
             if (HighLogic.LoadedSceneIsEditor || HighLogic.LoadedSceneIsFlight) // Also needed in flight mode for initial setup of mass, hull and HP, but shouldn't be triggered afterwards as ShipModified is only for the editor.
             {
                 if (_armorModified)
@@ -620,14 +619,13 @@ namespace BDArmory.Damage
                 if (HighLogic.LoadedSceneIsFlight && _armorConfigured && _hullConfigured && _hpConfigured) // No more changes, we're done.
                 {
                     _finished_setting_up = true;
-                    enabled = false;
                 }
             }
         }
 
         void FixedUpdate()
         {
-            if (_updateMass) // This stops running once things are set up.
+            if (_updateMass)
             {
                 _updateMass = false;
                 var oldPartMass = partMass;

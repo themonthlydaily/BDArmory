@@ -2512,6 +2512,10 @@ namespace BDArmory.UI
 #if DEBUG  // Only visible when compiled in Debug configuration.
                     if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
                     {
+                        if (GUI.Button(SLineRect(++line), "Vessel Mass"))
+                        {
+                            BDACompetitionMode.Instance.competitionStatus.Add($"{FlightGlobals.ActiveVessel.vesselName} has mass {FlightGlobals.ActiveVessel.GetTotalMass()}t");
+                        }
                         if (GUI.Button(SLineRect(++line), "Test Collider.ClosestPoint[OnBounds]"))
                         {
                             var watch = new System.Diagnostics.Stopwatch();
