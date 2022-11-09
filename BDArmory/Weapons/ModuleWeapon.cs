@@ -188,7 +188,7 @@ namespace BDArmory.Weapons
 
         public Vector3? FiringSolutionVector => finalAimTarget.IsZero() ? (Vector3?)null : (finalAimTarget - fireTransforms[0].position).normalized;
 
-        public bool recentlyFiring //used by guard to know if it should evaid this
+        public bool recentlyFiring //used by guard to know if it should evade this
         {
             get { return Time.time - timeFired < 1; }
         }
@@ -836,7 +836,7 @@ namespace BDArmory.Weapons
         public bool atprAcquired;
         int aptrTicker;
 
-        float timeFired;
+        public float timeFired;
         public float initialFireDelay = 0; //used to ripple fire multiple weapons of this type
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Barrage")]//Barrage

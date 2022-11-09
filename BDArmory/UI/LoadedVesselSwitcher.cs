@@ -1243,19 +1243,10 @@ namespace BDArmory.UI
                                         //else got weapons and engaging
                                     }
                                     vesselScore *= 0.031623f * BDAMath.Sqrt(targetDistance); // Equal to 1 at 1000m
-                                    if (wm.Current.currentGun != null)
-                                    {
-                                        if (wm.Current.currentGun.recentlyFiring)
-                                        {
-                                            // shooting at things is more interesting
-                                            vesselScore *= 0.25f;
-                                        }
-                                    }
-                                    if (wm.Current.guardFiringMissile)
-                                    {
-                                        // firing a missile at things is more interesting
-                                        vesselScore *= 0.2f;
-                                    }
+                                    if (wm.Current.recentlyFiring) // Firing guns or missiles at stuff is more interesting.
+                                        vesselScore *= 0.25f;
+                                    if (wm.Current.guardFiringMissile) // Firing missiles is a bit more interesting than firing guns.
+                                        vesselScore *= 0.8f;
                                     // scoring for automagic camera check should not be in here
                                     if (wm.Current.underAttack || wm.Current.underFire)
                                     {
@@ -1283,14 +1274,19 @@ namespace BDArmory.UI
                                     {
                                         vesselScore *= 0.3f; // because taking hits is very interesting;
                                     }
-                                    if (!recentlyLanded && wm.Current.vessel.LandedOrSplashed)
+                                    if (wm.Current.vessel.LandedOrSplashed)
                                     {
                                         if (wm.Current.vessel.srfSpeed > 2) //margin for physics jitter
                                         {
                                             vesselScore *= Mathf.Min(((80 / (float)wm.Current.vessel.srfSpeed) / 2), 4); //srf Ai driven stuff thats still mobile
                                         }
                                         else
-                                            vesselScore *= 4; // not interesting.
+                                        {
+                                            if (recentlyLanded)
+                                                vesselScore *= 2; // less interesting.
+                                            else
+                                                vesselScore *= 4; // not interesting.
+                                        }
                                     }
                                     // if we're the active vessel add a penalty over time to force it to switch away eventually
                                     if (wm.Current.vessel.isActiveVessel)

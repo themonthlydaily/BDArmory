@@ -450,6 +450,22 @@ namespace BDArmory.Control
         float underAttackLastNotified = 0f;
         public bool underFire;
         float underFireLastNotified = 0f;
+        HashSet<WeaponClasses> recentlyFiringWeaponClasses = new HashSet<WeaponClasses> { WeaponClasses.Gun, WeaponClasses.Rocket, WeaponClasses.DefenseLaser };
+        public bool recentlyFiring // Recently firing property for CameraTools.
+        {
+            get
+            {
+                if (guardFiringMissile) return true; // Fired a missile recently.
+                foreach (var weaponCandidate in weaponArray)
+                {
+                    if (weaponCandidate == null || !recentlyFiringWeaponClasses.Contains(weaponCandidate.GetWeaponClass())) continue;
+                    var weapon = (ModuleWeapon)weaponCandidate;
+                    if (weapon == null) continue;
+                    if (Time.time - weapon.timeFired < BDArmorySettings.CAMERA_SWITCH_FREQUENCY / 2f) return true; // Fired a gun recently.
+                }
+                return false;
+            }
+        }
 
         public Vector3 incomingThreatPosition;
         public Vessel incomingThreatVessel;
@@ -1606,7 +1622,7 @@ namespace BDArmory.Control
 #if DEBUG
                             if (weapon.visualTargetVessel != null && weapon.visualTargetVessel.loaded) weaponAimDebugStrings.Add($" - Visual target {(weapon.visualTargetPart is not null ? weapon.visualTargetPart.name : "CoM")} on {weapon.visualTargetVessel.vesselName}, distance: {(weapon.finalAimTarget - weapon.fireTransforms[0].position).magnitude:F1}, radius: {weapon.targetRadius:F1} ({weapon.visualTargetVessel.GetBounds()}), max deviation: {weapon.maxDeviation}, firing tolerance: {weapon.FiringTolerance}");
 #endif
-                        }						
+                        }
                         float shots = 0;
                         float hits = 0;
                         float accuracy = 0;
