@@ -452,10 +452,11 @@ namespace BDArmory.Damage
             }
             Armour = Armor;
             StartCoroutine(DelayedOnStart()); // Delay updating mass, armour, hull and HP so mods like proc wings and tweakscale get the right values.
-                                              // if (HighLogic.LoadedSceneIsFlight)
-                                              // {
-                                              //     if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.HitpointTracker]: ARMOR: part mass is: " + (part.mass - armorMass) + "; Armor mass is: " + armorMass + "; hull mass adjust: " + HullmassAdjust + "; total: " + part.mass);
-                                              // }
+            if (HighLogic.LoadedSceneIsFlight)
+            {
+                //if (BDArmorySettings.DEBUG_ARMOR) 
+                Debug.Log("[BDArmory.HitpointTracker]: ARMOR: part mass is: " + (part.mass - armorMass) + "; Armor mass is: " + armorMass + "; hull mass adjust: " + HullMassAdjust + "; total: " + part.mass);
+            }
             CalculateDryCost();
         }
 
@@ -650,7 +651,7 @@ namespace BDArmory.Damage
                 }
             }
 
-            if (HighLogic.LoadedSceneIsFlight && !GameIsPaused)
+            if (HighLogic.LoadedSceneIsFlight && !UI.BDArmorySetup.GameIsPaused)
             {
                 if (BDArmorySettings.HEART_BLEED_ENABLED && ShouldHeartBleed())
                 {
@@ -1446,7 +1447,6 @@ namespace BDArmory.Damage
             if (IgnoreForArmorSetup) return;
             if (isAI || ArmorPanel || BDArmorySettings.RESET_HULL || BDArmorySettings.LEGACY_ARMOR) HullTypeNum = HullInfo.materials.FindIndex(t => t.name == "Aluminium");
 
-            var OldHullMassAdjust = HullMassAdjust;
             if (OldHullType != HullTypeNum)
             {
                 if ((HullTypeNum - 1) > HullInfo.materialNames.Count) //in case of trying to load a craft using a mod hull type that isn't installed and having a hullTypeNum larger than the index size
@@ -1460,7 +1460,10 @@ namespace BDArmory.Damage
                     HullTypeNum = HullInfo.materials.FindIndex(t => t.name == "Aluminium") + 1;
                     part.maxTemp = part.partInfo.partPrefab.maxTemp;
                 }
+
                 hullInfo = HullInfo.materials[HullInfo.materialNames[(int)HullTypeNum - 1]];
+            }
+                var OldHullMassAdjust = HullMassAdjust;
                 HullMassAdjust = (partMass * hullInfo.massMod) - partMass;
                 guiHullTypeString = String.IsNullOrEmpty(hullInfo.localizedName) ? hullInfo.name : StringUtils.Localize(hullInfo.localizedName);
                 if (hullInfo.maxTemp > 0)
@@ -1478,9 +1481,8 @@ namespace BDArmory.Damage
                 hullType = hullInfo.name;
                 float partCost = part.partInfo.cost + part.partInfo.variant.Cost;
                 if (hullInfo.costMod < 1) HullCostAdjust = Mathf.Max((partCost - (float)resourceCost) * hullInfo.costMod, partCost - (1000 - (hullInfo.costMod * 1000))) - (partCost - (float)resourceCost);//make wooden parts up to 500 funds cheaper
-                else HullCostAdjust = Mathf.Min((partCost - (float)resourceCost) * hullInfo.costMod, (partCost - (float)resourceCost) + (hullInfo.costMod * 1000)); //make steel parts rather more expensive
-                                                                                                                                                                    //this returns cost of base variant, yielding part variant that are discounted by 50% or 500 of base variant cost, not current variant. method to get currently selected variant?
-            }
+                else HullCostAdjust = Mathf.Min((partCost - (float)resourceCost) * hullInfo.costMod, (partCost - (float)resourceCost) + (hullInfo.costMod * 1000)); //make steel parts rather more expensive                                                                                                                                                                 
+                //this returns cost of base variant, yielding part variant that are discounted by 50% or 500 of base variant cost, not current variant. method to get currently selected variant?
 
             if (OldHullType != HullTypeNum || OldHullMassAdjust != HullMassAdjust)
             {

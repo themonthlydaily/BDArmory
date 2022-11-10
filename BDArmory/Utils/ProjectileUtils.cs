@@ -15,8 +15,40 @@ namespace BDArmory.Utils
 {
     class ProjectileUtils
     {
-        public static string settingsConfigURL = Path.Combine(KSPUtil.ApplicationRootPath, "GameData/BDArmory/BulletDefs/PartsBlacklists.cfg");
-        static HashSet<string> IgnoredPartNames;
+        public static string settingsConfigURL = Path.Combine(KSPUtil.ApplicationRootPath, "GameData/BDArmory/PluginData/PartsBlacklists.cfg");
+        public static void SetUpPartsHashSets()
+        {
+            var fileNode = ConfigNode.Load(settingsConfigURL);
+            if (fileNode == null)
+            {
+                fileNode = new ConfigNode();
+                if (!Directory.GetParent(settingsConfigURL).Exists)
+                { Directory.GetParent(settingsConfigURL).Create(); }
+                if (!fileNode.HasNode("IgnoredParts"))
+                {
+                    fileNode.AddNode("IgnoredParts");
+                }
+                ConfigNode Iparts = fileNode.GetNode("IgnoredParts");
+                Iparts.SetValue("Part1", "ladder1", true);
+                Iparts.SetValue("Part2", "telescopicLadder", true);
+                Iparts.SetValue("Part3", "telescopicLadderBay", true);
+
+                if (!fileNode.HasNode("MaterialsBlacklist"))
+                {
+                    fileNode.AddNode("MaterialsBlacklist");
+                }
+                ConfigNode BLparts = fileNode.GetNode("MaterialsBlacklist");
+                BLparts.SetValue("Part1", "InflatableHeatShield", true);
+                BLparts.SetValue("Part2", "foldingRad*", true);
+                BLparts.SetValue("Part3", "radPanel*", true);
+                BLparts.SetValue("Part4", "ISRU*", true);
+                BLparts.SetValue("Part5", "Scanner*", true);
+                BLparts.SetValue("Part5", "Drill*", true);
+
+                fileNode.Save(settingsConfigURL);
+            }
+        }
+            static HashSet<string> IgnoredPartNames;
         public static bool IsIgnoredPart(Part part)
         {
             if (IgnoredPartNames == null)
@@ -24,14 +56,21 @@ namespace BDArmory.Utils
                 IgnoredPartNames = new HashSet<string> { "bdPilotAI", "bdShipAI", "missileController", "bdammGuidanceModule" };
                 IgnoredPartNames.UnionWith(PartLoader.LoadedPartsList.Select(p => p.partPrefab.partInfo.name).Where(name => name.Contains("flagPart")));
                 IgnoredPartNames.UnionWith(PartLoader.LoadedPartsList.Select(p => p.partPrefab.partInfo.name).Where(name => name.Contains("conformaldecals")));
-                ConfigNode fileNode = ConfigNode.Load(Path.Combine(KSPUtil.ApplicationRootPath, settingsConfigURL));
-                if (!fileNode.HasNode("IgnoredParts")) return false;
-                ConfigNode parts = fileNode.GetNode("IgnoredParts");
-                for (int i = 0; i < parts.CountValues; i++)
+
+                var fileNode = ConfigNode.Load(settingsConfigURL);
+                if (fileNode.HasNode("IgnoredParts"))
                 {
-                    if (!IgnoredPartNames.Contains(parts.values[i].name))
+                    ConfigNode parts = fileNode.GetNode("IgnoredParts");
+                    //Debug.Log($"[BDArmory.ProjectileUtils]: partsBlacklist.cfg IgnoredParts count: " + parts.CountValues);
+                    for (int i = 0; i < parts.CountValues; i++)
                     {
-                        IgnoredPartNames.Add(parts.values[i].name);
+                        if (parts.values[i].value.Contains("*"))
+                        {
+                            string partsName = parts.values[i].value.Trim('*');
+                            IgnoredPartNames.UnionWith(PartLoader.LoadedPartsList.Select(p => p.partPrefab.partInfo.name).Where(name => name.Contains(partsName)));
+                        }
+                        else
+                            IgnoredPartNames.Add(parts.values[i].value);
                     }
                 }
                 if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.ProjectileUtils]: Ignored Parts: " + string.Join(", ", IgnoredPartNames));
@@ -57,23 +96,24 @@ namespace BDArmory.Utils
             {
                 materialsBlacklist = new HashSet<string> { "bdPilotAI", "bdShipAI", "missileController", "bdammGuidanceModule" };
 
-                ConfigNode fileNode = ConfigNode.Load(Path.Combine(KSPUtil.ApplicationRootPath, settingsConfigURL));
-                if (!fileNode.HasNode("MaterialsBlacklist")) return false;
-                ConfigNode parts = fileNode.GetNode("MaterialsBlacklist");
-                for (int i = 0; i < parts.CountValues; i++)
+                var fileNode = ConfigNode.Load(settingsConfigURL);
+                if (fileNode.HasNode("MaterialsBlacklist"))
                 {
-                    if (!materialsBlacklist.Contains(parts.values[i].name))
+                    ConfigNode parts = fileNode.GetNode("MaterialsBlacklist");
+                    //Debug.Log($"[BDArmory.ProjectileUtils]: partsBlacklist.cfg BlacklistParts count: " + parts.CountValues);
+                    for (int i = 0; i < parts.CountValues; i++)
                     {
-                        if (parts.values[i].name.Contains("*"))
+                        if (parts.values[i].value.Contains("*"))
                         {
-                            string partsName = parts.values[i].name;
-                            partsName.Trim('*');
+                            string partsName = parts.values[i].value.Trim('*');
+                            Debug.Log($"[BDArmory.ProjectileUtils]: Found wildcard, name:" + partsName);
                             materialsBlacklist.UnionWith(PartLoader.LoadedPartsList.Select(p => p.partPrefab.partInfo.name).Where(name => name.Contains(partsName)));
                         }
-                        materialsBlacklist.Add(parts.values[i].name);
+                        else
+                            materialsBlacklist.Add(parts.values[i].value);
                     }
                 }
-                if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.ProjectileUtils]: Part Material placklist: " + string.Join(", ", IgnoredPartNames));
+                if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.ProjectileUtils]: Part Material blacklist: " + string.Join(", ", materialsBlacklist));
             }
             return ProjectileUtils.materialsBlacklist.Contains(Part.partInfo.name);
         }
