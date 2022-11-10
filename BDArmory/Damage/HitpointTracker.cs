@@ -377,7 +377,7 @@ namespace BDArmory.Damage
                 }
 
                 //if part is an engine/fueltank don't allow wood construction/mass reduction
-                if (part.IsMissile() || part.IsWeapon() || ArmorPanel || isAI || BDArmorySettings.LEGACY_ARMOR || BDArmorySettings.RESET_HULL)
+                if (part.IsMissile() || part.IsWeapon() || ArmorPanel || isAI || BDArmorySettings.LEGACY_ARMOR || BDArmorySettings.RESET_HULL || ProjectileUtils.isMaterialBlackListpart(this.part))
                 {
                     HullTypeNum = HullInfo.materials.FindIndex(t => t.name == "Aluminium") + 1;
                     HTrangeEditor.minValue = 2;
@@ -634,16 +634,24 @@ namespace BDArmory.Damage
                     _hullModified = true; // Modifying the mass modifies the hull.
                     _updateHitpoints = true;
                 }
-            }
-
+            }            
+        }
+        public override void OnFixedUpdate()
+        {
             if (!HighLogic.LoadedSceneIsFlight || !FlightGlobals.ready || UI.BDArmorySetup.GameIsPaused) return; // Not in flight scene, not ready or paused.
             if (vessel == null || vessel.packed || part == null) return; // Vessel or part is dead or packed.
-            //FixedUpdate is only getting called once, at start? The above conditional is identical to the one in ModuleSelfSealingTank, which works, but here doesn't?
-
+            if (ArmorTypeNum != (ArmorInfo.armors.FindIndex(t => t.name == "None") + 1) || ArmorPanel)
+            {
+                if (part.skinTemperature > SafeUseTemp * 1.5f)
+                {
+                    ReduceArmor((armorVolume * ((float)part.skinTemperature / SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
+                }
+            }
             if (BDArmorySettings.HEART_BLEED_ENABLED && ShouldHeartBleed())
             {
                 HeartBleed();
             }
+            //Makes sense to leave hull material fires/heartbleed here, as both directly affect part HP, so most efficient to do that within the HP module
             if (BDArmorySettings.BD_FIRES_ENABLED && BDArmorySettings.BD_FIRE_HEATDMG)
             {
                 if (!isOnFire)
@@ -666,15 +674,7 @@ namespace BDArmory.Damage
                     }
                 }
             }
-            if (ArmorTypeNum != (ArmorInfo.armors.FindIndex(t => t.name == "None") + 1) || ArmorPanel)
-            {
-                if (part.skinTemperature > SafeUseTemp * 1.5f)
-                {
-                    ReduceArmor((armorVolume * ((float)part.skinTemperature / SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
-                }
-            }
         }
-
         private void RefreshHitPoints()
         {
             if (_updateHitpoints)
@@ -1458,6 +1458,7 @@ namespace BDArmory.Damage
                     part.skinMaxTemp = part.partInfo.partPrefab.skinMaxTemp;
                 }
                 ignitionTemp = hullInfo.ignitionTemp;
+                part.crashTolerance = part.partInfo.partPrefab.crashTolerance * hullInfo.ImpactMod;
                 hullType = hullInfo.name;
                 float partCost = part.partInfo.cost + part.partInfo.variant.Cost;
                 if (hullInfo.costMod < 1) HullCostAdjust = Mathf.Max((partCost - (float)resourceCost) * hullInfo.costMod, partCost - (1000 - (hullInfo.costMod * 1000))) - (partCost - (float)resourceCost);//make wooden parts up to 500 funds cheaper

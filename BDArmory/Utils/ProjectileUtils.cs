@@ -9,11 +9,13 @@ using BDArmory.Extensions;
 using BDArmory.FX;
 using BDArmory.GameModes;
 using BDArmory.Settings;
+using System.IO;
 
 namespace BDArmory.Utils
 {
     class ProjectileUtils
     {
+        public static string settingsConfigURL = Path.Combine(KSPUtil.ApplicationRootPath, "GameData/BDArmory/BulletDefs/PartsBlacklists.cfg");
         static HashSet<string> IgnoredPartNames;
         public static bool IsIgnoredPart(Part part)
         {
@@ -22,6 +24,16 @@ namespace BDArmory.Utils
                 IgnoredPartNames = new HashSet<string> { "bdPilotAI", "bdShipAI", "missileController", "bdammGuidanceModule" };
                 IgnoredPartNames.UnionWith(PartLoader.LoadedPartsList.Select(p => p.partPrefab.partInfo.name).Where(name => name.Contains("flagPart")));
                 IgnoredPartNames.UnionWith(PartLoader.LoadedPartsList.Select(p => p.partPrefab.partInfo.name).Where(name => name.Contains("conformaldecals")));
+                ConfigNode fileNode = ConfigNode.Load(Path.Combine(KSPUtil.ApplicationRootPath, settingsConfigURL));
+                if (!fileNode.HasNode("IgnoredParts")) return false;
+                ConfigNode parts = fileNode.GetNode("IgnoredParts");
+                for (int i = 0; i < parts.CountValues; i++)
+                {
+                    if (!IgnoredPartNames.Contains(parts.values[i].name))
+                    {
+                        IgnoredPartNames.Add(parts.values[i].name);
+                    }
+                }
                 if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.ProjectileUtils]: Ignored Parts: " + string.Join(", ", IgnoredPartNames));
             }
             return ProjectileUtils.IgnoredPartNames.Contains(part.partInfo.name);
@@ -36,6 +48,34 @@ namespace BDArmory.Utils
                 if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.ProjectileUtils]: Armor Parts: " + string.Join(", ", armorParts));
             }
             return armorParts.Contains(part.partInfo.name);
+        }
+
+        static HashSet<string> materialsBlacklist;
+        public static bool isMaterialBlackListpart(Part Part)
+        {
+            if (materialsBlacklist == null)
+            {
+                materialsBlacklist = new HashSet<string> { "bdPilotAI", "bdShipAI", "missileController", "bdammGuidanceModule" };
+
+                ConfigNode fileNode = ConfigNode.Load(Path.Combine(KSPUtil.ApplicationRootPath, settingsConfigURL));
+                if (!fileNode.HasNode("MaterialsBlacklist")) return false;
+                ConfigNode parts = fileNode.GetNode("MaterialsBlacklist");
+                for (int i = 0; i < parts.CountValues; i++)
+                {
+                    if (!materialsBlacklist.Contains(parts.values[i].name))
+                    {
+                        if (parts.values[i].name.Contains("*"))
+                        {
+                            string partsName = parts.values[i].name;
+                            partsName.Trim('*');
+                            materialsBlacklist.UnionWith(PartLoader.LoadedPartsList.Select(p => p.partPrefab.partInfo.name).Where(name => name.Contains(partsName)));
+                        }
+                        materialsBlacklist.Add(parts.values[i].name);
+                    }
+                }
+                if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.ProjectileUtils]: Part Material placklist: " + string.Join(", ", IgnoredPartNames));
+            }
+            return ProjectileUtils.materialsBlacklist.Contains(Part.partInfo.name);
         }
 
         public static void ApplyDamage(Part hitPart, RaycastHit hit, float multiplier, float penetrationfactor, float caliber, float projmass, float impactVelocity, float DmgMult, double distanceTraveled, bool explosive, bool incendiary, bool hasRichocheted, Vessel sourceVessel, string name, string team, ExplosionSourceType explosionSource, bool firstHit, bool partAlreadyHit, bool cockpitPen)
