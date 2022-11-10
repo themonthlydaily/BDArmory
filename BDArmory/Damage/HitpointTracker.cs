@@ -1450,7 +1450,11 @@ namespace BDArmory.Damage
         }
         void SetHullMass()
         {
-            if (IgnoreForArmorSetup) return;
+            if (IgnoreForArmorSetup)
+            {
+                _hullConfigured = true;
+                return;
+            }
             if (isAI || ArmorPanel || BDArmorySettings.RESET_HULL || BDArmorySettings.LEGACY_ARMOR) HullTypeNum = HullInfo.materials.FindIndex(t => t.name == "Aluminium");
 
             var OldHullMassAdjust = HullMassAdjust;
