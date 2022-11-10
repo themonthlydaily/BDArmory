@@ -44,6 +44,8 @@ namespace BDArmory.Competition
         private double finalGracePeriodStart = -1;
         public static float gravityMultiplier = 1f;
         float lastGravityMultiplier;
+        public static float MinAlt = 1f;
+        float lastMinAlt;
         private string deadOrAlive = "";
         static HashSet<string> outOfAmmo = new HashSet<string>(); // outOfAmmo register for tracking which planes are out of ammo.
 
@@ -289,6 +291,12 @@ namespace BDArmory.Competition
                     gravityMultiplier = 1f;
                     PhysicsGlobals.GraviticForceMultiplier = (double)gravityMultiplier;
                     VehiclePhysics.Gravity.Refresh();
+                }
+                if (BDArmorySettings.ALTITUDE_HACKS)
+                {
+                    BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW = -40;
+                    MinAlt = 50;
+                    lastMinAlt = 50;
                 }
                 RemoveDebrisNow();
                 GameEvents.onVesselPartCountChanged.Add(OnVesselModified);
@@ -2364,6 +2372,30 @@ namespace BDArmory.Competition
                 {
                     lastGravityMultiplier = gravityMultiplier;
                     competitionStatus.Add("Competition: Adjusting gravity to " + gravityMultiplier.ToString("0.0") + "G!");
+                }
+            }
+
+            //Set MinAlt
+            if (BDArmorySettings.ALTITUDE_HACKS && competitionIsActive)
+            {
+                int maxVesselsActive = (ContinuousSpawning.Instance.vesselsSpawningContinuously && BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS > 0) ? BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS : Scores.Players.Count;
+                double time = now - competitionStartTime;
+                MinAlt = 20 + 8000f * (float)(Scores.deathCount % maxVesselsActive) / (float)(maxVesselsActive - 1); // From 1km to 8km.
+                MinAlt += (ContinuousSpawning.Instance.vesselsSpawningContinuously ? BDAMath.Sqrt(5f - 5f * Mathf.Cos((float)time / 600f * Mathf.PI)) : BDAMath.Sqrt((float)time / 60f)) * 1000; // Plus up to 3.16km.
+
+                using (List<IBDAIControl>.Enumerator pilots = GetAllPilots().GetEnumerator())
+                {
+                    while (pilots.MoveNext())
+                    {
+                        var pilotAI = VesselModuleRegistry.GetModule<BDModulePilotAI>(pilots.Current.vessel); // Get the pilot AI if the vessel has one.
+                        pilotAI.minAltitude = MinAlt;
+                    }
+                }
+                if (Mathf.RoundToInt(MinAlt / 100) != Mathf.RoundToInt(lastMinAlt / 100)) // Only write a message when it shows something different.
+                {
+                    lastMinAlt = MinAlt;
+                    competitionStatus.Add("Competition: Adjusting min Altitude to " + MinAlt.ToString("0.0") + "m!");
+                    BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW = (MinAlt / 100 < 20 ? MinAlt / 100 : (MinAlt / 1000) + 18);
                 }
             }
 

@@ -172,6 +172,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool TAG_MODE = false;
         [BDAPersistentSettingsField] public static bool PAINTBALL_MODE = false;
         [BDAPersistentSettingsField] public static bool GRAVITY_HACKS = false;
+        [BDAPersistentSettingsField] public static bool ALTITUDE_HACKS = false; //transfer to a RunWayRound number?
         [BDAPersistentSettingsField] public static bool BATTLEDAMAGE = false;
         [BDAPersistentSettingsField] public static bool HEART_BLEED_ENABLED = false;
         [BDAPersistentSettingsField] public static bool RESOURCE_STEAL_ENABLED = false;

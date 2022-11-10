@@ -3305,6 +3305,11 @@ namespace BDArmory.UI
                                 BDArmorySettings.ENABLE_HOS = !BDArmorySettings.ENABLE_HOS;
                                 CheatCodeGUI = "";
                             }
+                            else if (CheatCodeGUI.ToLower() == "altitudehack") //until we figure out where to put this
+                            {
+                                BDArmorySettings.ALTITUDE_HACKS = !BDArmorySettings.ALTITUDE_HACKS;
+                                CheatCodeGUI = "";
+                            }
                         }
                         //BDArmorySettings.ZOMBIE_MODE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.ZOMBIE_MODE, StringUtils.Localize("#LOC_BDArmory_settings_ZombieMode"));
                         if (BDArmorySettings.ZOMBIE_MODE)
