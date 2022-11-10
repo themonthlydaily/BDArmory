@@ -639,7 +639,7 @@ namespace BDArmory.Weapons.Missiles
             using (var parts = PartLoader.LoadedPartsList.GetEnumerator())
                 while (parts.MoveNext())
                 {
-                    Debug.Log($"[BDArmory.MML]: Looking for {subMunitionName}");
+                    //Debug.Log($"[BDArmory.MML]: Looking for {subMunitionName}");
                     if (parts.Current.partConfig == null || parts.Current.partPrefab == null)
                         continue;
                     if (!parts.Current.partPrefab.partInfo.name.Contains(subMunitionName)) continue;

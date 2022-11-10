@@ -333,7 +333,7 @@ namespace BDArmory.FX
                         {
                             parentPart.temperature += burnRate * Mathf.Clamp((float)((1 - (mp.amount / mp.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 4 * BDArmorySettings.BD_TANK_LEAK_RATE) * Time.deltaTime;
                         }
-                        else if (ec != null || ox != null)
+                        else //if (ec != null || ox != null)
                         {
                             parentPart.temperature += burnRate * BDArmorySettings.BD_FIRE_DAMAGE * Time.fixedDeltaTime;
                         }

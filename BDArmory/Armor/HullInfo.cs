@@ -16,12 +16,13 @@ namespace BDArmory.Armor
         public float healthMod { get; private set; } //cost modifier
         public float ignitionTemp { get; private set; } //can material catch fire?
         public float maxTemp { get; private set; } //In Kelvin, determines max temp material can sustain before part is destroyed
+        public float ImpactMod { get; private set; } //impact tolerance modifier
 
         public static HullInfos materials;
         public static List<string> materialNames;
         public static HullInfo defaultMaterial;
 
-        public HullInfo(string name, string localizedName, float massMod, float costMod, float healthMod, float ignitionTemp, float maxTemp)
+        public HullInfo(string name, string localizedName, float massMod, float costMod, float healthMod, float ignitionTemp, float maxTemp, float ImpactMod)
         {
             this.name = name;
             this.localizedName = localizedName;
@@ -30,6 +31,7 @@ namespace BDArmory.Armor
             this.healthMod = healthMod;
             this.ignitionTemp = ignitionTemp;
             this.maxTemp = maxTemp;
+            this.ImpactMod = ImpactMod;
         }
 
         public static void Load()
@@ -55,7 +57,8 @@ namespace BDArmory.Armor
                         (float)ParseField(node, "costMod", typeof(float)),
                         (float)ParseField(node, "healthMod", typeof(float)),
                         (float)ParseField(node, "ignitionTemp", typeof(float)),
-                        (float)ParseField(node, "maxTemp", typeof(float))
+                        (float)ParseField(node, "maxTemp", typeof(float)),
+                        1 //(float)ParseField(node, "ImpactMod", typeof(float))
                     );
                     materials.Add(defaultMaterial);
                     materialNames.Add("def");
@@ -86,7 +89,8 @@ namespace BDArmory.Armor
                         (float)ParseField(node, "costMod", typeof(float)),
                         (float)ParseField(node, "healthMod", typeof(float)),
                         (float)ParseField(node, "ignitionTemp", typeof(float)),
-                        (float)ParseField(node, "maxTemp", typeof(float))
+                        (float)ParseField(node, "maxTemp", typeof(float)),
+                        (float)ParseField(node, "ImpactMod", typeof(float))
                         )
                     );
                     materialNames.Add(name_);

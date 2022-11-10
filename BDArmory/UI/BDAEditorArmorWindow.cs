@@ -629,7 +629,7 @@ namespace BDArmory.UI
                     HitpointTracker armor = parts.Current.GetComponent<HitpointTracker>();
                     if (armor != null)
                     {
-                        if (armor.ArmorTypeNum == 1) continue;
+                        if (armor.ArmorTypeNum == 1 && !armor.ArmorPanel) continue;
 
                         totalArmorMass += armor.armorMass;
                         totalArmorCost += armor.armorCost;
@@ -657,7 +657,7 @@ namespace BDArmory.UI
                             }
                             if (HullVisualizer)
                             {
-                                VisualizerColor = Color.HSVToRGB(a.HullTypeNum / 3, 1, 1f);
+                                VisualizerColor = Color.HSVToRGB(a.HullTypeNum / (HullInfo.materials.Count + 1), 1, 1f);
                             }
                             if (LiftVisualizer)
                             {

@@ -204,15 +204,9 @@ namespace BDArmory.Damage
         public bool isOnFire = false;
 
         [KSPField(isPersistant = true)]
-        public float ignitionTemp;
+        public float ignitionTemp = -1;
         private double skinskinConduction = 1;
         private double skinInternalConduction = 1;
-
-
-        public static bool GameIsPaused
-        {
-            get { return PauseMenu.isOpen || Time.timeScale == 0; }
-        }
 
         public override void OnLoad(ConfigNode node)
         {
@@ -340,10 +334,9 @@ namespace BDArmory.Damage
                 if (BDArmorySettings.RESET_HULL || ArmorPanel)
                 {
                     IgnoreForArmorSetup = true;
-                    HullTypeNum = HullInfo.materials.FindIndex(t => t.name == "Aluminium") + 1;
-                    SetHullMass();
+                    HullTypeNum = HullInfo.materials.FindIndex(t => t.name == "Aluminium") + 1;                    
                 }
-
+                SetHullMass();
                 part.RefreshAssociatedWindows();
             }
             if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor)
@@ -400,7 +393,7 @@ namespace BDArmory.Damage
                 }
 
                 //if part is an engine/fueltank don't allow wood construction/mass reduction
-                if (part.IsMissile() || part.IsWeapon() || ArmorPanel || isAI || BDArmorySettings.LEGACY_ARMOR || BDArmorySettings.RESET_HULL)
+                if (part.IsMissile() || part.IsWeapon() || ArmorPanel || isAI || BDArmorySettings.LEGACY_ARMOR || BDArmorySettings.RESET_HULL || ProjectileUtils.isMaterialBlackListpart(this.part))
                 {
                     HullTypeNum = HullInfo.materials.FindIndex(t => t.name == "Aluminium") + 1;
                     HTrangeEditor.minValue = 2;
@@ -697,7 +690,6 @@ namespace BDArmory.Damage
                 }
             }
         }
-
         private void RefreshHitPoints()
         {
             if (_updateHitpoints)
@@ -1329,8 +1321,9 @@ namespace BDArmory.Damage
             {
                 armorMass = (Armor / 1000) * armorVolume * Density / 1000; //armor mass in tons
                 armorCost = (Armor / 1000) * armorVolume * armorInfo.Cost; //armor cost, tons
-                part.skinInternalConductionMult = skinInternalConduction * (Ductility / 237); //how well does the armor allow external heat to flow into the part internals?
-                part.skinSkinConductionMult = skinskinConduction * (Ductility / 237); //how well does the armor conduct heat to connected part skins?
+
+				part.skinInternalConductionMult = skinInternalConduction * BDAMath.Sqrt(Diffusivity / 237); //how well does the armor allow external heat to flow into the part internals?
+                part.skinSkinConductionMult =  skinskinConduction * BDAMath.Sqrt(Diffusivity / 237); //how well does the armor conduct heat to connected part skins?
                 part.skinMassPerArea = (Density / 1000) * ArmorThickness;
             }
             if (ArmorTypeNum == (ArmorInfo.armors.FindIndex(t => t.name == "None") + 1) && ArmorPanel)
@@ -1339,8 +1332,8 @@ namespace BDArmory.Damage
                 guiArmorTypeString = StringUtils.Localize("#LOC_BDArmory_Aluminium");
                 SelectedArmorType = "None";
                 armorCost = (Armor / 1000) * armorVolume * armorInfo.Cost;
-                part.skinInternalConductionMult = skinInternalConduction * (Ductility / 237); //how well does the armor allow external heat to flow into the part internals?
-                part.skinSkinConductionMult = skinskinConduction * (Ductility / 237); //how well does the armor conduct heat to connected part skins?
+                part.skinInternalConductionMult = skinInternalConduction * BDAMath.Sqrt(Diffusivity / 237); //how well does the armor allow external heat to flow into the part internals?
+                part.skinSkinConductionMult = skinskinConduction * BDAMath.Sqrt(Diffusivity / 237); //how well does the armor conduct heat to connected part skins?
                 part.skinMassPerArea = (Density / 1000) * ArmorThickness;
             }
             totalArmorQty = armorMass; //grabbing a copy of unmodified armorMAss so it can be used in armorMass' place for armor reduction without having to un/re-modify the mass before and after armor hits
@@ -1470,9 +1463,18 @@ namespace BDArmory.Damage
                 hullInfo = HullInfo.materials[HullInfo.materialNames[(int)HullTypeNum - 1]];
                 HullMassAdjust = (partMass * hullInfo.massMod) - partMass;
                 guiHullTypeString = String.IsNullOrEmpty(hullInfo.localizedName) ? hullInfo.name : StringUtils.Localize(hullInfo.localizedName);
-                if (hullInfo.maxTemp > 0) part.maxTemp = hullInfo.maxTemp;
-                else part.maxTemp = part.partInfo.partPrefab.maxTemp;
+                if (hullInfo.maxTemp > 0)
+                {
+                    part.maxTemp = hullInfo.maxTemp;
+                    part.skinMaxTemp = hullInfo.maxTemp;
+                }
+                else
+                {
+                    part.maxTemp = part.partInfo.partPrefab.maxTemp;
+                    part.skinMaxTemp = part.partInfo.partPrefab.skinMaxTemp;
+                }
                 ignitionTemp = hullInfo.ignitionTemp;
+                part.crashTolerance = part.partInfo.partPrefab.crashTolerance * hullInfo.ImpactMod;
                 hullType = hullInfo.name;
                 float partCost = part.partInfo.cost + part.partInfo.variant.Cost;
                 if (hullInfo.costMod < 1) HullCostAdjust = Mathf.Max((partCost - (float)resourceCost) * hullInfo.costMod, partCost - (1000 - (hullInfo.costMod * 1000))) - (partCost - (float)resourceCost);//make wooden parts up to 500 funds cheaper
