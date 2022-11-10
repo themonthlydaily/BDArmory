@@ -1,4 +1,12 @@
 ﻿IMPROVEMENTS / FIXES
+- General:
+	- Fix a crash-to-desktop due to firing missiles with action groups but without a WM.
+	- Add a 'recentlyFiring' property for CameraTools that checks all guns for having fired recently (instead of just the current one) and for having fired a missile recently. Make the camera vessel selection use this too.
+	- Internal fixes for hull/armour/HP setup logic.
+- AI / WM:
+	- Fix not finding the AI in the SPH for the AI GUI.
+- Weapons:
+	- Don't activate all engines on modular missiles when firing them, leave it up to the configured action groups.
 
 v1.5.4.0
 IMPROVEMENTS / FIXES
