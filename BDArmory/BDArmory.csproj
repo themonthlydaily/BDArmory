@@ -358,7 +358,6 @@
     <None Include="Distribution\GameData\BDArmory\BulletDefs\BD_Materials.cfg" />
     <None Include="Distribution\GameData\BDArmory\BulletDefs\BD_Mutators.cfg" />
     <None Include="Distribution\GameData\BDArmory\BulletDefs\BD_Rockets.cfg" />
-    <None Include="Distribution\GameData\BDArmory\BulletDefs\PartsBlacklists.cfg" />
     <None Include="Distribution\GameData\BDArmory\craft\BDA - Test Plane - AA.craft" />
     <None Include="Distribution\GameData\BDArmory\craft\BDA - Test Plane - AG.craft" />
     <None Include="Distribution\GameData\BDArmory\craft\BDA - Test Platform - Missile.craft" />
