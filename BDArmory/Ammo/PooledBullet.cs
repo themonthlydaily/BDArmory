@@ -1160,13 +1160,19 @@ namespace BDArmory.Bullets
                         {
                             float ratio;
 
-                            if (caliber < 10f)
+                            if ( (caliber) < 10f || (length < 10.05f))
                             {
                                 ratio = (1.1f * caliber / length);
                             }
                             else
                             {
                                 ratio = (1.1f * caliber - 10f) / (length - 10f);
+                            }
+
+                            if (ratio > 1)
+                            {
+                                Debug.LogError($"DEBUG {ratio} is greater than 1! Length: {length} Caliber: {caliber}.");
+                                ratio = 1;
                             }
 
                             bulletMass *= ratio;
