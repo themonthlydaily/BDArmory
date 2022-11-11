@@ -1171,7 +1171,7 @@ namespace BDArmory.Bullets
 
                             if (ratio > 1)
                             {
-                                Debug.LogError($"DEBUG {ratio} is greater than 1! Length: {length} Caliber: {caliber}.");
+                                Debug.LogError($"DEBUG Bullet Ratio: {ratio} is greater than 1! Length: {length} Caliber: {caliber}.");
                                 ratio = 1;
                             }
 
