@@ -796,7 +796,7 @@ namespace BDArmory.Bullets
                         // Just makes more sense to me not to have it in there.
                         float kTerm = ((float)(distanceTraveled + hit.distance - distanceLastHit) * 1000f) / (14f * 10f * caliber);
                         kDist = 1f / (kDist * (1f + kTerm * kTerm)); // Then using it in the formula
-                        
+
                         // If the projectile gets too small things go wonky with the formulas for penetration
                         // they'll still work honestly, but I'd rather avoid those situations
                         /*if ((kDist * length) < 1.2f * caliber)
@@ -1152,11 +1152,11 @@ namespace BDArmory.Bullets
                             // change all this stuff I'm doing for hypervelocity stuff.
                             massRatio = (0.45f + 0.5f * (2500f / impactSpeed)) * adjustedPenRatio;
                         }
-                        
-                        
+
+
 
                         // We cap the minimum L/D to be 1.2 to avoid that edge case in the pen formula
-                        if ((massRatio * (length-10f) + 10f) < (1.1f * caliber))
+                        if ((massRatio * (length - 10f) + 10f) < (1.1f * caliber))
                         {
                             float ratio;
 
@@ -1380,8 +1380,8 @@ namespace BDArmory.Bullets
                 pBullet.bulletDmgMult = bulletDmgMult;
                 pBullet.ballisticCoefficient = subMunitionType.bulletMass / (((Mathf.PI * 0.25f * subMunitionType.caliber * subMunitionType.caliber) / 1000000f) * 0.295f);
                 pBullet.timeElapsedSinceCurrentSpeedWasAdjusted = 0;
-                pBullet.timeToLiveUntil = 4000 / bulletVelocity * 1.1f + Time.time;
-                Vector3 firedVelocity = VectorUtils.GaussianDirectionDeviation(currentVelocity.normalized, (subMunitionType.subProjectileCount / BDAMath.Sqrt((currentVelocity * dragVelocityFactor).magnitude / 10))) * (subMunitionType.bulletVelocity / 10); //more subprojectiles = wider spread, higher base velocity = tighter spread
+                pBullet.timeToLiveUntil = 2000 / bulletVelocity * 1.1f + Time.time;
+                Vector3 firedVelocity = VectorUtils.GaussianDirectionDeviation(currentVelocity.normalized, subMunitionType.subProjectileDispersion > 0 ? subMunitionType.subProjectileDispersion : (subMunitionType.subProjectileCount / BDAMath.Sqrt((currentVelocity * dragVelocityFactor).magnitude / 100))) * subMunitionType.bulletVelocity; //more subprojectiles = wider spread, higher base velocity = tighter spread
                 pBullet.currentVelocity = GetDragAdjustedVelocity() + firedVelocity; // currentVelocity is already the real velocity w/o offloading
                 pBullet.sourceWeapon = sourceWeapon;
                 pBullet.sourceVessel = sourceVessel;
@@ -1397,11 +1397,26 @@ namespace BDArmory.Bullets
                 pBullet.tracerLuminance = tracerLuminance;
                 pBullet.bulletDrop = bulletDrop;
 
-                if (subMunitionType.tntMass > 0)
+                if (subMunitionType.tntMass > 0 || subMunitionType.beehive)
                 {
                     pBullet.explModelPath = explModelPath;
                     pBullet.explSoundPath = explSoundPath;
                     pBullet.tntMass = subMunitionType.tntMass;
+                    string HEtype = subMunitionType.explosive;
+                    HEtype.ToLower();
+                    switch (HEtype)
+                    {
+                        case "standard":
+                            pBullet.HEType = PooledBullet.PooledBulletTypes.Explosive;
+                            break;
+                        //legacy support for older configs that are still explosive = true
+                        case "true":
+                            pBullet.HEType = PooledBullet.PooledBulletTypes.Explosive;
+                            break;
+                        case "shaped":
+                            pBullet.HEType = PooledBullet.PooledBulletTypes.Shaped;
+                            break;
+                    }
                     pBullet.detonationRange = detonationRange;
                     pBullet.maxAirDetonationRange = maxAirDetonationRange;
                     pBullet.defaultDetonationRange = defaultDetonationRange;
@@ -1411,6 +1426,7 @@ namespace BDArmory.Bullets
                 {
                     pBullet.fuzeType = PooledBullet.BulletFuzeTypes.None;
                     pBullet.sabot = (((((subMunitionType.bulletMass * 1000) / ((subMunitionType.caliber * subMunitionType.caliber * Mathf.PI / 400) * 19) + 1) * 10) > subMunitionType.caliber * 4)) ? true : false;
+                    pBullet.HEType = PooledBullet.PooledBulletTypes.Slug;
                 }
                 pBullet.EMP = subMunitionType.EMP;
                 pBullet.nuclear = subMunitionType.nuclear;

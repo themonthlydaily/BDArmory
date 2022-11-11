@@ -22,6 +22,7 @@ namespace BDArmory.UI
         public static bool NumFieldsEnabled = false;
         public static bool windowBDAAIGUIEnabled;
         internal static bool resizingWindow = false;
+        internal static int _guiCheckIndex = -1;
 
         public static ApplicationLauncherButton button;
 
@@ -66,6 +67,7 @@ namespace BDArmory.UI
         GUIStyle Title;
         GUIStyle contextLabel;
         GUIStyle infoLinkStyle;
+
 
         void Awake()
         {
@@ -129,6 +131,7 @@ namespace BDArmory.UI
                 GameEvents.onEditorPartPlaced.Add(OnEditorPartPlacedEvent); //do per part placement instead of calling a findModule call every time *anything* changes on thevessel
                 GameEvents.onEditorPartDeleted.Add(OnEditorPartDeletedEvent);
             }
+            if (_guiCheckIndex < 0) _guiCheckIndex = GUIUtils.RegisterGUIRect(BDArmorySetup.WindowRectAI);
         }
         public void AddToolbarButton()
         {
@@ -166,12 +169,15 @@ namespace BDArmory.UI
         public void ShowAIGUI()
         {
             windowBDAAIGUIEnabled = true;
-            GetAI();
+            GUIUtils.SetGUIRectVisible(_guiCheckIndex, windowBDAAIGUIEnabled);
+            if (HighLogic.LoadedSceneIsFlight) GetAI();
+            else GetAIEditor();
         }
 
         public void HideAIGUI()
         {
             windowBDAAIGUIEnabled = false;
+            GUIUtils.SetGUIRectVisible(_guiCheckIndex, windowBDAAIGUIEnabled);
             BDAWindowSettingsField.Save(); // Save window settings.
         }
 
@@ -247,11 +253,20 @@ namespace BDArmory.UI
         {
             // Make sure we're synced between the sliders and input fields in case something changed just before the switch.
             SyncInputFieldsNow(NumFieldsEnabled);
+            if (_getAICoroutine != null) StopCoroutine(_getAICoroutine);
+            _getAICoroutine = StartCoroutine(GetAICoroutine());
+        }
+        Coroutine _getAICoroutine;
+        IEnumerator GetAICoroutine()
+        {
             // Then, reset all the fields as this is only occurring on vessel change, so they need resetting anyway.
             ActivePilot = null;
             ActiveDriver = null;
             inputFields = null;
-            if (FlightGlobals.ActiveVessel == null) return;
+            var tic = Time.time;
+            if (FlightGlobals.ActiveVessel == null)
+                yield return new WaitUntilFixed(() => FlightGlobals.ActiveVessel != null || Time.time - tic > 1); // Give it up to a second to find the active vessel.
+            if (FlightGlobals.ActiveVessel == null) yield break;
             // Now, get the new AI and update stuff.
             ActivePilot = VesselModuleRegistry.GetBDModulePilotAI(FlightGlobals.ActiveVessel, true);
             if (ActivePilot == null)
@@ -269,30 +284,43 @@ namespace BDArmory.UI
                 SetChooseOptionSliders();
             }
         }
+
         void GetAIEditor()
         {
-            if (EditorLogic.fetch.ship == null) return;
-            foreach (var p in EditorLogic.fetch.ship.Parts) // Take the AIs in the order they were placed on the ship.
+            if (_getAIEditorCoroutine != null) StopCoroutine(_getAIEditorCoroutine);
+            _getAIEditorCoroutine = StartCoroutine(GetAIEditorCoroutine());
+        }
+        Coroutine _getAIEditorCoroutine;
+        IEnumerator GetAIEditorCoroutine()
+        {
+            var tic = Time.time;
+            if (EditorLogic.fetch.ship == null || EditorLogic.fetch.ship.Parts == null)
+                yield return new WaitUntilFixed(() => (EditorLogic.fetch.ship != null && EditorLogic.fetch.ship.Parts != null) || Time.time - tic > 1); // Give it up to a second to find the editor ship and parts.
+            if (EditorLogic.fetch.ship != null && EditorLogic.fetch.ship.Parts != null)
             {
-                foreach (var AI in p.FindModulesImplementing<BDModulePilotAI>())
+                foreach (var p in EditorLogic.fetch.ship.Parts) // Take the AIs in the order they were placed on the ship.
                 {
-                    if (AI == null) continue;
-                    if (AI == ActivePilot) return; // We found the current ActivePilot!
-                    ActivePilot = AI;
-                    inputFields = null; // Reset the input fields to the current AI.
-                    SetInputFields(ActivePilot.GetType());
-                    return;
-                }
-                foreach (var AI in p.FindModulesImplementing<BDModuleSurfaceAI>())
-                {
-                    if (AI == null) continue;
-                    if (AI == ActiveDriver) return; // We found the current ActiveDriver!
-                    ActiveDriver = AI;
-                    inputFields = null; // Reset the input fields to the current AI.
-                    SetInputFields(ActiveDriver.GetType());
-                    return;
+                    foreach (var AI in p.FindModulesImplementing<BDModulePilotAI>())
+                    {
+                        if (AI == null) continue;
+                        if (AI == ActivePilot) yield break; // We found the current ActivePilot!
+                        ActivePilot = AI;
+                        inputFields = null; // Reset the input fields to the current AI.
+                        SetInputFields(ActivePilot.GetType());
+                        yield break;
+                    }
+                    foreach (var AI in p.FindModulesImplementing<BDModuleSurfaceAI>())
+                    {
+                        if (AI == null) continue;
+                        if (AI == ActiveDriver) yield break; // We found the current ActiveDriver!
+                        ActiveDriver = AI;
+                        inputFields = null; // Reset the input fields to the current AI.
+                        SetInputFields(ActiveDriver.GetType());
+                        yield break;
+                    }
                 }
             }
+
             // No AIs were found, clear everything.
             ActivePilot = null;
             ActiveDriver = null;
@@ -583,6 +611,8 @@ namespace BDArmory.UI
             if (Event.current.type == EventType.MouseUp && resizingWindow) { resizingWindow = false; }
             BDArmorySetup.WindowRectAI = GUI.Window(GetInstanceID(), BDArmorySetup.WindowRectAI, WindowRectAI, "", BDArmorySetup.BDGuiSkin.window);//"BDA Weapon Manager"
             if (HighLogic.LoadedSceneIsFlight) BDArmorySetup.SetGUIOpacity(false);
+            GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectAI);
+            GUIUtils.UpdateGUIRect(BDArmorySetup.WindowRectAI, _guiCheckIndex);
             GUIUtils.UseMouseEventInRect(BDArmorySetup.WindowRectAI);
         }
 
@@ -646,8 +676,7 @@ namespace BDArmory.UI
 
             GUI.DragWindow(new Rect(_windowMargin + _buttonSize * 6, 0, (ColumnWidth * 2) - (2 * _windowMargin) - (10 * _buttonSize), _windowMargin + _buttonSize));
 
-            GUI.Label(new Rect(100, contentTop, contentWidth, entryHeight),
-               StringUtils.Localize("#LOC_BDArmory_AIWindow_title"), Title);// "No AI found."
+            GUI.Label(new Rect(100, contentTop, contentWidth, entryHeight), StringUtils.Localize("#LOC_BDArmory_AIWindow_title"), Title);// "No AI found."
 
             line += 1.25f;
             line += 0.25f;
@@ -2613,7 +2642,6 @@ namespace BDArmory.UI
             BDArmorySetup.WindowRectAI.width = WindowWidth;
             if (!resizingWindow && BDArmorySettings.STRICT_WINDOW_BOUNDARIES && WindowHeight < previousWindowHeight && Mathf.Round(BDArmorySetup.WindowRectAI.y + previousWindowHeight) == Screen.height) // Window shrunk while being at edge of screen.
                 BDArmorySetup.WindowRectAI.y = Screen.height - BDArmorySetup.WindowRectAI.height;
-            GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectAI);
         }
         #endregion GUI
 
