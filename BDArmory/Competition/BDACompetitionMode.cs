@@ -44,7 +44,7 @@ namespace BDArmory.Competition
         private double finalGracePeriodStart = -1;
         public static float gravityMultiplier = 1f;
         float lastGravityMultiplier;
-        public static float MinAlt = 1f;
+        public float MinAlt = 1f;
         float lastMinAlt;
         private string deadOrAlive = "";
         static HashSet<string> outOfAmmo = new HashSet<string>(); // outOfAmmo register for tracking which planes are out of ammo.
@@ -291,12 +291,6 @@ namespace BDArmory.Competition
                     gravityMultiplier = 1f;
                     PhysicsGlobals.GraviticForceMultiplier = (double)gravityMultiplier;
                     VehiclePhysics.Gravity.Refresh();
-                }
-                if (BDArmorySettings.ALTITUDE_HACKS)
-                {
-                    BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW = -40;
-                    MinAlt = 50;
-                    lastMinAlt = 50;
                 }
                 RemoveDebrisNow();
                 GameEvents.onVesselPartCountChanged.Add(OnVesselModified);
@@ -1740,15 +1734,22 @@ namespace BDArmory.Competition
                     }
                 }
             }
-            if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW > -39f) // Kill off those flying too low.
+            if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW > -39f || BDArmorySettings.ALTITUDE_HACKS) // Kill off those flying too low.
             {
                 float limit;
-                if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < -28f) limit = (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW + 28f) * 1000f; // -10km — -1km @ 1km
-                else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < -19f) limit = (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW + 19f) * 100f; // -900m — -100m @ 100m
-                else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 0f) limit = BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW * 5f; // -95m — -5m  @ 5m
-                else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 20f) limit = BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW * 100f; // 0m — 1900m @ 100m
-                else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 39f) limit = (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 18f) * 1000f; // 2km — 20km @ 1km
-                else limit = ((BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 38f) * 5f + 20f) * 1000f; // 25km — 50km @ 5km
+                if (BDArmorySettings.ALTITUDE_HACKS)
+                {
+                    limit = MinAlt;
+                }
+                else
+                {
+                    if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < -28f) limit = (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW + 28f) * 1000f; // -10km — -1km @ 1km
+                    else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < -19f) limit = (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW + 19f) * 100f; // -900m — -100m @ 100m
+                    else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 0f) limit = BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW * 5f; // -95m — -5m  @ 5m
+                    else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 20f) limit = BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW * 100f; // 0m — 1900m @ 100m
+                    else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 39f) limit = (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 18f) * 1000f; // 2km — 20km @ 1km
+                    else limit = ((BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 38f) * 5f + 20f) * 1000f; // 25km — 50km @ 5km
+                }
                 foreach (var weaponManager in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).ToList())
                 {
                     if (alive.Contains(weaponManager.vessel.vesselName) && weaponManager.vessel.radarAltitude < limit)
@@ -2395,7 +2396,6 @@ namespace BDArmory.Competition
                 {
                     lastMinAlt = MinAlt;
                     competitionStatus.Add("Competition: Adjusting min Altitude to " + MinAlt.ToString("0.0") + "m!");
-                    BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW = (MinAlt / 100 < 20 ? MinAlt / 100 : (MinAlt / 1000) + 18);
                 }
             }
 
