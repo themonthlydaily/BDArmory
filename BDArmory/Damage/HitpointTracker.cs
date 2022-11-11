@@ -452,11 +452,11 @@ namespace BDArmory.Damage
             }
             Armour = Armor;
             StartCoroutine(DelayedOnStart()); // Delay updating mass, armour, hull and HP so mods like proc wings and tweakscale get the right values.
-            if (HighLogic.LoadedSceneIsFlight)
-            {
+            //if (HighLogic.LoadedSceneIsFlight)
+            //{
                 //if (BDArmorySettings.DEBUG_ARMOR) 
-                Debug.Log("[BDArmory.HitpointTracker]: ARMOR: part mass is: " + (part.mass - armorMass) + "; Armor mass is: " + armorMass + "; hull mass adjust: " + HullMassAdjust + "; total: " + part.mass);
-            }
+                //Debug.Log("[BDArmory.HitpointTracker]: ARMOR: part mass is: " + (part.mass - armorMass) + "; Armor mass is: " + armorMass + "; hull mass adjust: " + HullMassAdjust + "; total: " + part.mass);
+            //}
             CalculateDryCost();
         }
 
