@@ -1160,9 +1160,9 @@ namespace BDArmory.Bullets
                         {
                             float ratio;
 
-                            if ( (caliber) < 10f || (length < 10.05f))
+                            if (caliber < 10f || length < 10.05f)
                             {
-                                ratio = (1.1f * caliber / length);
+                                ratio = 1.1f * caliber / length;
                             }
                             else
                             {
