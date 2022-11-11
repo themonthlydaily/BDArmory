@@ -1004,8 +1004,8 @@ namespace BDArmory.Damage
             }
             else
             {
-                hitpoints = 5;
-                Armor = 2;
+                hitpoints = maxHitPoints > 0 ? maxHitPoints : 5;
+                Armor = ArmorThickness > 0 ? ArmorThickness : 2;
             }
             if (!_finished_setting_up && _armorConfigured && _hullConfigured) _hpConfigured = true;
             return hitpoints;
