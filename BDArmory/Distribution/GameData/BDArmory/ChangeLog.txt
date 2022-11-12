@@ -7,6 +7,7 @@
 	- Fix not finding the AI in the SPH for the AI GUI.
 - Weapons:
 	- Don't activate all engines on modular missiles when firing them, leave it up to the configured action groups.
+	- Adjustment to post-penetration calculations to prevent non-physical penetration/bullet mass adjustments. 
 
 v1.5.4.0
 IMPROVEMENTS / FIXES
