@@ -1,4 +1,5 @@
-﻿IMPROVEMENTS / FIXES
+﻿v1.5.4.1
+IMPROVEMENTS / FIXES
 - General:
 	- Fix a crash-to-desktop due to firing missiles with action groups but without a WM.
 	- Add a 'recentlyFiring' property for CameraTools that checks all guns for having fired recently (instead of just the current one) and for having fired a missile recently. Make the camera vessel selection use this too.
@@ -9,19 +10,19 @@
 - Weapons:
 	- Don't activate all engines on modular missiles when firing them, leave it up to the configured action groups.
 	- 0 damage beam lasers will no longer cause battledamage.
-  - Adjusts post-penetration calculations to prevent non-physical penetration/bullet mass adjustments. 
-- Spawning
-	- Spawner will now spawn craft facing inwards, if spawn distance is larger than competition distance.
-- Armor/Hull
+	- Adjusts post-penetration calculations to prevent non-physical penetration/bullet mass adjustments. 
+- Spawning:
+	- Spawner will now spawn craft facing inwards if spawn distance is larger than competition distance.
+- Armor/Hull:
 	- Armor Tool Hull Visualizer now displays all materials, not just Wood/Al/Steel.
 	- Aluminium armor plates now register their mass for Total Armor cost/mass in the Armor tool.
 	- Fix issue with parts using custom materials with greater than stock maxTemps still exploding at stock maxtemp.
 	- Add crashTolerance modifier to hull materials.
 	- Fix Hull Material modifiers not applying in Flight.
-	- Add user-customizable exclusion list (/BDArmory/PluginData/PartMaterialsBlacklist.cfg) for IgnoredParts/parts that shouldn't have material options. 
-	- Fires from incindiary rounds igniting flammable parts now generates heat if BD FIRE_HEATDMG enabled.
+	- Add user-customizable exclusion list (BDArmory/PluginData/PartMaterialsBlacklist.cfg) for IgnoredParts/parts that shouldn't have material options. 
+	- Fires from incendiary rounds igniting flammable parts now generates heat if BD FIRE_HEATDMG enabled.
 - RWP 
-	-Add Min Altitude Increases on Death gamemode.
+	- Add Min Altitude Increases on Death game-mode.
 
 v1.5.4.0
 IMPROVEMENTS / FIXES
