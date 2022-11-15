@@ -2293,7 +2293,7 @@ namespace BDArmory.UI
                     }
                     else contentHeight = 0;
                 }
-                else
+                else if (ActiveDriver != null)
                 {
                     line++;
                     ActiveDriver.UpToEleven = GUI.Toggle(SubsectionRect(leftIndent, line),
@@ -2317,16 +2317,22 @@ namespace BDArmory.UI
                             scrollInfoVector = scrollViewScope.scrollPosition;
 
                             GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_Help"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //Pid desc
-                            GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_Slopes"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //tgt pitch, slope angle desc
-                            GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_Speeds"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //cruise, flank speed desc
-                            GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_Drift"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //drift angle desc
-                            GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_bank"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //bank angle desc
-                            GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_steerMult"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //steer mult desc
-                            GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_SteerDamp"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //steer damp desc
-                            GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_Orientation"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //attack vector, broadside desc
+                            if (ActiveDriver.SurfaceType != AIUtils.VehicleMovementType.Stationary)
+                            {
+                                GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_Slopes"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //tgt pitch, slope angle desc
+                                GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_Speeds"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //cruise, flank speed desc
+                                GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_Drift"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //drift angle desc
+                                GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_bank"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //bank angle desc
+                                GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_steerMult"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //steer mult desc
+                                GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_SteerDamp"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //steer damp desc
+                                GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_Orientation"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //attack vector, broadside desc
+                            }
                             GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_Engagement"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //engage ranges desc
-                            GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_RCS"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //RCS desc
-                            GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_Mass"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //avoid mass desc
+                            if (ActiveDriver.SurfaceType != AIUtils.VehicleMovementType.Stationary)
+                            {
+                                GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_RCS"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //RCS desc
+                                GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_Mass"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //avoid mass desc
+                            }
                         }
                         EndArea();
                     }
@@ -2358,126 +2364,130 @@ namespace BDArmory.UI
                         GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_VeeType"), contextLabel);//"Wobbly"
                         driverLines++;
                     }
-                    if (!NumFieldsEnabled)
-                    {
-                        ActiveDriver.MaxSlopeAngle =
-                            GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth),
-                                ActiveDriver.MaxSlopeAngle, 10, ActiveDriver.UpToEleven ? 90 : 30);
-                        ActiveDriver.MaxSlopeAngle = Mathf.Round(ActiveDriver.MaxSlopeAngle);
-                    }
-                    else
-                    {
-                        inputFields["MaxSlopeAngle"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["MaxSlopeAngle"].possibleValue, 6));
-                        ActiveDriver.MaxSlopeAngle = (float)inputFields["MaxSlopeAngle"].currentValue;
-                    }
-                    GUI.Label(SettinglabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_MaxSlopeAngle") + ": " + ActiveDriver.MaxSlopeAngle.ToString("0"), Label);//"Steer Ki"
-                    driverLines++;
 
-                    if (contextTipsEnabled)
+                    if (ActiveDriver.SurfaceType != AIUtils.VehicleMovementType.Stationary)
                     {
-                        GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_SlopeAngle"), contextLabel);//"undershoot"
-                        driverLines++;
-                    }
-                    if (!NumFieldsEnabled)
-                    {
-                        ActiveDriver.CruiseSpeed =
+                        if (!NumFieldsEnabled)
+                        {
+                            ActiveDriver.MaxSlopeAngle =
                                 GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth),
-                                    ActiveDriver.CruiseSpeed, 5, ActiveDriver.UpToEleven ? 300 : 60);
-                        ActiveDriver.CruiseSpeed = Mathf.Round(ActiveDriver.CruiseSpeed);
-                    }
-                    else
-                    {
-                        inputFields["CruiseSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["CruiseSpeed"].possibleValue, 6));
-                        ActiveDriver.CruiseSpeed = (float)inputFields["CruiseSpeed"].currentValue;
-                    }
-                    GUI.Label(SettinglabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_CruiseSpeed") + ": " + ActiveDriver.CruiseSpeed.ToString("0"), Label);//"Steer Damping"
-
-                    driverLines++;
-                    if (contextTipsEnabled)
-                    {
-                        GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_idleSpeed"), contextLabel);//"Wobbly"
+                                    ActiveDriver.MaxSlopeAngle, 10, ActiveDriver.UpToEleven ? 90 : 30);
+                            ActiveDriver.MaxSlopeAngle = Mathf.Round(ActiveDriver.MaxSlopeAngle);
+                        }
+                        else
+                        {
+                            inputFields["MaxSlopeAngle"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["MaxSlopeAngle"].possibleValue, 6));
+                            ActiveDriver.MaxSlopeAngle = (float)inputFields["MaxSlopeAngle"].currentValue;
+                        }
+                        GUI.Label(SettinglabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_MaxSlopeAngle") + ": " + ActiveDriver.MaxSlopeAngle.ToString("0"), Label);//"Steer Ki"
                         driverLines++;
-                    }
-                    if (!NumFieldsEnabled)
-                    {
-                        ActiveDriver.MaxSpeed =
-                               GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth),
-                            ActiveDriver.MaxSpeed, 5, ActiveDriver.UpToEleven ? 400 : 80);
-                        ActiveDriver.MaxSpeed = Mathf.Round(ActiveDriver.MaxSpeed);
-                    }
-                    else
-                    {
-                        inputFields["MaxSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["MaxSpeed"].possibleValue, 6));
-                        ActiveDriver.MaxSpeed = (float)inputFields["MaxSpeed"].currentValue;
-                    }
-                    GUI.Label(SettinglabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_MaxSpeed") + ": " + ActiveDriver.MaxSpeed.ToString("0"), Label);//"Steer Damping"
+                        if (contextTipsEnabled)
+                        {
+                            GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_SlopeAngle"), contextLabel);//"undershoot"
+                            driverLines++;
+                        }
 
-                    driverLines++;
-                    if (contextTipsEnabled)
-                    {
-                        GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_MaxSpeed"), contextLabel);//"Wobbly"
+                        if (!NumFieldsEnabled)
+                        {
+                            ActiveDriver.CruiseSpeed =
+                                    GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth),
+                                        ActiveDriver.CruiseSpeed, 5, ActiveDriver.UpToEleven ? 300 : 60);
+                            ActiveDriver.CruiseSpeed = Mathf.Round(ActiveDriver.CruiseSpeed);
+                        }
+                        else
+                        {
+                            inputFields["CruiseSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["CruiseSpeed"].possibleValue, 6));
+                            ActiveDriver.CruiseSpeed = (float)inputFields["CruiseSpeed"].currentValue;
+                        }
+                        GUI.Label(SettinglabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_CruiseSpeed") + ": " + ActiveDriver.CruiseSpeed.ToString("0"), Label);//"Steer Damping"
                         driverLines++;
-                    }
-                    if (!NumFieldsEnabled)
-                    {
-                        ActiveDriver.MaxDrift =
-                        GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth),
-                            ActiveDriver.MaxDrift, 1, 180);
-                        ActiveDriver.MaxDrift = Mathf.Round(ActiveDriver.MaxDrift);
-                    }
-                    else
-                    {
-                        inputFields["MaxDrift"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["MaxDrift"].possibleValue, 6));
-                        ActiveDriver.MaxDrift = (float)inputFields["MaxDrift"].currentValue;
-                    }
-                    GUI.Label(SettinglabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_MaxDrift") + ": " + ActiveDriver.MaxDrift.ToString("0"), Label);//"Steer Damping"
+                        if (contextTipsEnabled)
+                        {
+                            GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_idleSpeed"), contextLabel);//"Wobbly"
+                            driverLines++;
+                        }
 
-                    driverLines++;
-                    if (contextTipsEnabled)
-                    {
-                        GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_MaxDrift"), contextLabel);//"Wobbly"
+                        if (!NumFieldsEnabled)
+                        {
+                            ActiveDriver.MaxSpeed =
+                                   GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth),
+                                ActiveDriver.MaxSpeed, 5, ActiveDriver.UpToEleven ? 400 : 80);
+                            ActiveDriver.MaxSpeed = Mathf.Round(ActiveDriver.MaxSpeed);
+                        }
+                        else
+                        {
+                            inputFields["MaxSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["MaxSpeed"].possibleValue, 6));
+                            ActiveDriver.MaxSpeed = (float)inputFields["MaxSpeed"].currentValue;
+                        }
+                        GUI.Label(SettinglabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_MaxSpeed") + ": " + ActiveDriver.MaxSpeed.ToString("0"), Label);//"Steer Damping"
                         driverLines++;
-                    }
-                    if (!NumFieldsEnabled)
-                    {
-                        ActiveDriver.TargetPitch =
+                        if (contextTipsEnabled)
+                        {
+                            GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_MaxSpeed"), contextLabel);//"Wobbly"
+                            driverLines++;
+                        }
+
+                        if (!NumFieldsEnabled)
+                        {
+                            ActiveDriver.MaxDrift =
                             GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth),
-                                ActiveDriver.TargetPitch, -10, 10);
-                        ActiveDriver.TargetPitch = Mathf.Round(ActiveDriver.TargetPitch * 10) / 10;
-                    }
-                    else
-                    {
-                        inputFields["TargetPitch"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["TargetPitch"].possibleValue, 6));
-                        ActiveDriver.TargetPitch = (float)inputFields["TargetPitch"].currentValue;
-                    }
-                    GUI.Label(SettinglabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_TargetPitch") + ": " + ActiveDriver.TargetPitch.ToString("0.0"), Label);//"Steer Damping"
-
-                    driverLines++;
-                    if (contextTipsEnabled)
-                    {
-                        GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_Pitch"), contextLabel);//"Wobbly"
+                                ActiveDriver.MaxDrift, 1, 180);
+                            ActiveDriver.MaxDrift = Mathf.Round(ActiveDriver.MaxDrift);
+                        }
+                        else
+                        {
+                            inputFields["MaxDrift"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["MaxDrift"].possibleValue, 6));
+                            ActiveDriver.MaxDrift = (float)inputFields["MaxDrift"].currentValue;
+                        }
+                        GUI.Label(SettinglabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_MaxDrift") + ": " + ActiveDriver.MaxDrift.ToString("0"), Label);//"Steer Damping"
                         driverLines++;
-                    }
-                    if (!NumFieldsEnabled)
-                    {
-                        ActiveDriver.BankAngle =
-                            GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth),
-                                ActiveDriver.BankAngle, -45, 45);
-                        ActiveDriver.BankAngle = Mathf.Round(ActiveDriver.BankAngle);
-                    }
-                    else
-                    {
-                        inputFields["BankAngle"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["BankAngle"].possibleValue, 6));
-                        ActiveDriver.BankAngle = (float)inputFields["BankAngle"].currentValue;
-                    }
-                    GUI.Label(SettinglabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_BankAngle") + ": " + ActiveDriver.BankAngle.ToString("0"), Label);//"Steer Damping"
+                        if (contextTipsEnabled)
+                        {
+                            GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_MaxDrift"), contextLabel);//"Wobbly"
+                            driverLines++;
+                        }
 
-                    driverLines++;
-                    if (contextTipsEnabled)
-                    {
-                        GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_bankLimit"), contextLabel);//"Wobbly"
+                        if (!NumFieldsEnabled)
+                        {
+                            ActiveDriver.TargetPitch =
+                                GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth),
+                                    ActiveDriver.TargetPitch, -10, 10);
+                            ActiveDriver.TargetPitch = Mathf.Round(ActiveDriver.TargetPitch * 10) / 10;
+                        }
+                        else
+                        {
+                            inputFields["TargetPitch"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["TargetPitch"].possibleValue, 6));
+                            ActiveDriver.TargetPitch = (float)inputFields["TargetPitch"].currentValue;
+                        }
+                        GUI.Label(SettinglabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_TargetPitch") + ": " + ActiveDriver.TargetPitch.ToString("0.0"), Label);//"Steer Damping"
                         driverLines++;
+                        if (contextTipsEnabled)
+                        {
+                            GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_Pitch"), contextLabel);//"Wobbly"
+                            driverLines++;
+                        }
+
+                        if (!NumFieldsEnabled)
+                        {
+                            ActiveDriver.BankAngle =
+                                GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth),
+                                    ActiveDriver.BankAngle, -45, 45);
+                            ActiveDriver.BankAngle = Mathf.Round(ActiveDriver.BankAngle);
+                        }
+                        else
+                        {
+                            inputFields["BankAngle"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["BankAngle"].possibleValue, 6));
+                            ActiveDriver.BankAngle = (float)inputFields["BankAngle"].currentValue;
+                        }
+                        GUI.Label(SettinglabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_BankAngle") + ": " + ActiveDriver.BankAngle.ToString("0"), Label);//"Steer Damping"
+                        driverLines++;
+                        if (contextTipsEnabled)
+                        {
+                            GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_bankLimit"), contextLabel);//"Wobbly"
+                            driverLines++;
+                        }
                     }
+
                     if (!NumFieldsEnabled)
                     {
                         ActiveDriver.steerMult =
@@ -2491,13 +2501,13 @@ namespace BDArmory.UI
                         ActiveDriver.steerMult = (float)inputFields["steerMult"].currentValue;
                     }
                     GUI.Label(SettinglabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_SteerFactor") + ": " + ActiveDriver.steerMult.ToString("0.0"), Label);//"Steer Damping"
-
                     driverLines++;
                     if (contextTipsEnabled)
                     {
                         GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_SteerMult"), contextLabel);//"Wobbly"
                         driverLines++;
                     }
+
                     if (!NumFieldsEnabled)
                     {
                         ActiveDriver.steerDamping =
@@ -2511,7 +2521,6 @@ namespace BDArmory.UI
                         ActiveDriver.steerDamping = (float)inputFields["steerDamping"].currentValue;
                     }
                     GUI.Label(SettinglabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_SteerDamping") + ": " + ActiveDriver.steerDamping.ToString("0.0"), Label);//"Steer Damping"
-
                     driverLines++;
                     if (contextTipsEnabled)
                     {
@@ -2519,14 +2528,18 @@ namespace BDArmory.UI
                         driverLines++;
                     }
 
-                    ActiveDriver.BroadsideAttack = GUI.Toggle(ToggleButtonRect(leftIndent, driverLines, contentWidth),
-                        ActiveDriver.BroadsideAttack, StringUtils.Localize("#LOC_BDArmory_BroadsideAttack") + " : " + (ActiveDriver.BroadsideAttack ? StringUtils.Localize("#LOC_BDArmory_BroadsideAttack_enabledText") : StringUtils.Localize("#LOC_BDArmory_BroadsideAttack_disabledText")), ActiveDriver.BroadsideAttack ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Dynamic pid"
-                    driverLines += 1.25f;
-                    if (contextTipsEnabled)
+                    if (ActiveDriver.SurfaceType != AIUtils.VehicleMovementType.Stationary)
                     {
-                        GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_AtkVector"), contextLabel);//"dynamic damp min"
-                        driverLines++;
+                        ActiveDriver.BroadsideAttack = GUI.Toggle(ToggleButtonRect(leftIndent, driverLines, contentWidth),
+                            ActiveDriver.BroadsideAttack, StringUtils.Localize("#LOC_BDArmory_BroadsideAttack") + " : " + (ActiveDriver.BroadsideAttack ? StringUtils.Localize("#LOC_BDArmory_BroadsideAttack_enabledText") : StringUtils.Localize("#LOC_BDArmory_BroadsideAttack_disabledText")), ActiveDriver.BroadsideAttack ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Dynamic pid"
+                        driverLines += 1.25f;
+                        if (contextTipsEnabled)
+                        {
+                            GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_AtkVector"), contextLabel);//"dynamic damp min"
+                            driverLines++;
+                        }
                     }
+
                     if (!NumFieldsEnabled)
                     {
                         ActiveDriver.MinEngagementRange =
@@ -2540,13 +2553,13 @@ namespace BDArmory.UI
                         ActiveDriver.MinEngagementRange = (float)inputFields["MinEngagementRange"].currentValue;
                     }
                     GUI.Label(SettinglabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_EngageRangeMin") + ": " + ActiveDriver.MinEngagementRange.ToString("0"), Label);//"Steer Damping"
-
                     driverLines++;
                     if (contextTipsEnabled)
                     {
                         GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_MinEngage"), contextLabel);//"Wobbly"
                         driverLines++;
                     }
+
                     if (!NumFieldsEnabled)
                     {
                         ActiveDriver.MaxEngagementRange =
@@ -2560,7 +2573,6 @@ namespace BDArmory.UI
                         ActiveDriver.MaxEngagementRange = (float)inputFields["MaxEngagementRange"].currentValue;
                     }
                     GUI.Label(SettinglabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_EngageRangeMax") + ": " + ActiveDriver.MaxEngagementRange.ToString("0"), Label);//"Steer Damping"
-
                     driverLines++;
                     if (contextTipsEnabled)
                     {
@@ -2576,41 +2588,41 @@ namespace BDArmory.UI
                         GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_RCS"), contextLabel);//"dynamic damp min"
                         driverLines++;
                     }
-                    if (!NumFieldsEnabled)
+                    if (ActiveDriver.SurfaceType != AIUtils.VehicleMovementType.Stationary)
                     {
-                        ActiveDriver.AvoidMass =
-                            GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth),
-                            ActiveDriver.AvoidMass, 0, ActiveDriver.UpToEleven ? 1000000f : 100);
-                        ActiveDriver.AvoidMass = Mathf.Round(ActiveDriver.AvoidMass);
-                    }
-                    else
-                    {
-                        inputFields["AvoidMass"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["AvoidMass"].possibleValue, 7));
-                        ActiveDriver.AvoidMass = (float)inputFields["AvoidMass"].currentValue;
-                    }
-                    GUI.Label(SettinglabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_MinObstacleMass") + ": " + ActiveDriver.AvoidMass.ToString("0"), Label);//"Steer Damping"
-
-                    driverLines++;
-                    if (contextTipsEnabled)
-                    {
-                        GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_Mass"), contextLabel);//"Wobbly"
+                        if (!NumFieldsEnabled)
+                        {
+                            ActiveDriver.AvoidMass =
+                                GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth),
+                                ActiveDriver.AvoidMass, 0, ActiveDriver.UpToEleven ? 1000000f : 100);
+                            ActiveDriver.AvoidMass = Mathf.Round(ActiveDriver.AvoidMass);
+                        }
+                        else
+                        {
+                            inputFields["AvoidMass"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["AvoidMass"].possibleValue, 7));
+                            ActiveDriver.AvoidMass = (float)inputFields["AvoidMass"].currentValue;
+                        }
+                        GUI.Label(SettinglabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_MinObstacleMass") + ": " + ActiveDriver.AvoidMass.ToString("0"), Label);//"Steer Damping"
                         driverLines++;
-                    }
+                        if (contextTipsEnabled)
+                        {
+                            GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_Mass"), contextLabel);//"Wobbly"
+                            driverLines++;
+                        }
 
-                    if (broadsideDir != (broadsideDir = Mathf.RoundToInt(GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth), broadsideDir, 0, ActiveDriver.orbitDirections.Length - 1))))
-                    {
-                        ActiveDriver.SetBroadsideDirection(ActiveDriver.orbitDirections[broadsideDir]);
-                        ActiveDriver.ChooseOptionsUpdated(null, null);
-                    }
-                    GUI.Label(SettinglabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_PreferredBroadsideDirection") + ": " + ActiveDriver.OrbitDirectionName, Label);//"Wobbly"
-
-                    driverLines++;
-                    if (contextTipsEnabled)
-                    {
-                        GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_BroadsideDir"), contextLabel);//"Wobbly"
+                        if (broadsideDir != (broadsideDir = Mathf.RoundToInt(GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth), broadsideDir, 0, ActiveDriver.orbitDirections.Length - 1))))
+                        {
+                            ActiveDriver.SetBroadsideDirection(ActiveDriver.orbitDirections[broadsideDir]);
+                            ActiveDriver.ChooseOptionsUpdated(null, null);
+                        }
+                        GUI.Label(SettinglabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_PreferredBroadsideDirection") + ": " + ActiveDriver.OrbitDirectionName, Label);//"Wobbly"
                         driverLines++;
+                        if (contextTipsEnabled)
+                        {
+                            GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_BroadsideDir"), contextLabel);//"Wobbly"
+                            driverLines++;
+                        }
                     }
-
                     GUI.EndGroup();
 
                     contentHeight = driverLines * entryHeight;

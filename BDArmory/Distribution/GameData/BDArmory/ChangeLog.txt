@@ -1,4 +1,8 @@
 ﻿- Add a --tsv option to the n-choose-k parsing script to output a TSV file instead of a CSV file.
+- AI / WM:
+	- Fixes for Stationary surface vessel mode.
+		- No longer panics, even if airborne (allows for floating/free-fall turrets).
+		- Attitude control is applied when an enemy is within the engagement range.
 
 v1.5.4.1
 IMPROVEMENTS / FIXES
