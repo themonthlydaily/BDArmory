@@ -1,4 +1,6 @@
-﻿v1.5.4.1
+﻿- Add a --tsv option to the n-choose-k parsing script to output a TSV file instead of a CSV file.
+
+v1.5.4.1
 IMPROVEMENTS / FIXES
 - General:
 	- Fix a crash-to-desktop due to firing missiles with action groups but without a WM.
@@ -21,7 +23,7 @@ IMPROVEMENTS / FIXES
 	- Fix Hull Material modifiers not applying in Flight.
 	- Add user-customizable exclusion list (BDArmory/PluginData/PartMaterialsBlacklist.cfg) for IgnoredParts/parts that shouldn't have material options. 
 	- Fires from incendiary rounds igniting flammable parts now generates heat if BD FIRE_HEATDMG enabled.
-- RWP 
+- RWP:
 	- Add Min Altitude Increases on Death game-mode.
 
 v1.5.4.0
