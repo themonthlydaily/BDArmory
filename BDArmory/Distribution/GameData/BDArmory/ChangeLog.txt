@@ -1,8 +1,15 @@
-﻿- Add a --tsv option to the n-choose-k parsing script to output a TSV file instead of a CSV file.
+﻿- General:
+	- Add a --tsv option to the n-choose-k parsing script to output a TSV file instead of a CSV file.
+	- Tweaks to scroll-zoom prevention.
 - AI / WM:
 	- Fixes for Stationary surface vessel mode.
 		- No longer panics, even if airborne (allows for floating/free-fall turrets).
-		- Attitude control is applied when an enemy is within the engagement range.
+		- Attitude control (using RCS and reaction wheels) is applied when an enemy is within the engagement range.
+- Spawning:
+	- Allow a specific list of observers to be excluded from being removed during spawning and competitions.
+	- Allow spawning custom templates with only 1 team if not immediately starting a competition.
+- RWP:
+	- Fixes for remote orchestration.
 
 v1.5.4.1
 IMPROVEMENTS / FIXES
@@ -37,7 +44,7 @@ IMPROVEMENTS / FIXES
 	- Fix Structural Pwing still shifting CoL sphere in SHP/VAB.
 	- Structural Pwing moved to structural tab.
 	- Rework the BDGUIComboBox.
--Armor/Hull:
+- Armor / Hull:
 	- Setting material to wood and then back to Al/steel now properly resets maxTemp to default.
 	- Expanded Hull material functionality; users can now implement custom hull materials, similar to how the current armor system works.
 		- Adds new BD_Materials.cfg
@@ -52,7 +59,7 @@ IMPROVEMENTS / FIXES
 		- Edit the templates directly in BDArmory/PluginData/spawn_templates.cfg to adjust headings, etc.
 		- Load/delete existing templates.
 		- Assign vessels and specific kerbals to the template's slots, then spawn and start a competition without having to muck around with VesselMover or the "turning bug".
-- Radar	
+- Radar:
 	- Fix Radar GUI display range for datalinked radars.
 	- Fix IRST being unable to activate VRD without a radar enabled.
 - UI:
