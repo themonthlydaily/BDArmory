@@ -39,7 +39,7 @@ namespace BDArmory.Competition.VesselSpawning
         {
             var circularSpawnConfig = spawnConfig as CircularSpawnConfig;
             if (circularSpawnConfig == null) yield break;
-            SpawnVesselsContinuouslyAsCoroutine(circularSpawnConfig);
+            yield return SpawnVesselsContinuouslyAsCoroutine(circularSpawnConfig);
         }
 
         public void CancelSpawning()

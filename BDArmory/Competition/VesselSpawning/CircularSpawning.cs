@@ -34,8 +34,12 @@ namespace BDArmory.Competition.VesselSpawning
         public override IEnumerator Spawn(SpawnConfig spawnConfig)
         {
             var circularSpawnConfig = spawnConfig as CircularSpawnConfig;
-            if (circularSpawnConfig == null) yield break;
-            SpawnAllVesselsOnceAsCoroutine(circularSpawnConfig);
+            if (circularSpawnConfig == null)
+            {
+                Debug.LogError($"[BDArmory.CircularSpawning]: SpawnConfig wasn't a valid CircularSpawnConfig");
+                yield break;
+            }
+            yield return SpawnAllVesselsOnceAsCoroutine(circularSpawnConfig);
         }
         public void CancelSpawning()
         {
