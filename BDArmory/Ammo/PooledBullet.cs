@@ -210,6 +210,8 @@ namespace BDArmory.Bullets
                 }
             }
             distanceTraveled = 0; // Reset the distance travelled for the bullet (since it comes from a pool).
+            distanceLastHit = double.PositiveInfinity; // Reset variables used in post-penetration calculations.
+            kDist = 1;
 
             if (!wasInitiated)
             {
