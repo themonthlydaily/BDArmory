@@ -1,6 +1,8 @@
 ﻿- General:
 	- Add a --tsv option to the n-choose-k parsing script to output a TSV file instead of a CSV file.
 	- Tweaks to scroll-zoom prevention.
+	- Exclude weapons from the bounds calculations as they sometimes give weird values (e.g., lasers when firing).
+	- Further fixes for post-penetration bugs.
 - AI / WM:
 	- Fixes for Stationary surface vessel mode.
 		- No longer panics, even if airborne (allows for floating/free-fall turrets).
