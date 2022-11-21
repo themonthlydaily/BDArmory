@@ -14,6 +14,7 @@
 - Spawning:
 	- Allow a specific list of observers to be excluded from being removed during spawning and competitions.
 	- Allow spawning custom templates with only 1 team if not immediately starting a competition.
+	- Allow spawning non-valid craft via the custom spawn templates if not immediately starting a competition.
 - RWP:
 	- Fixes for remote orchestration.
 
