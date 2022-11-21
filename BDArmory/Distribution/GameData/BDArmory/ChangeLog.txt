@@ -2,11 +2,13 @@
 	- Add a --tsv option to the n-choose-k parsing script to output a TSV file instead of a CSV file.
 	- Tweaks to scroll-zoom prevention.
 	- Exclude weapons from the bounds calculations as they sometimes give weird values (e.g., lasers when firing).
-	- Further fixes for post-penetration bugs.
 - AI / WM:
 	- Fixes for Stationary surface vessel mode.
 		- No longer panics, even if airborne (allows for floating/free-fall turrets).
 		- Attitude control (using RCS and reaction wheels) is applied when an enemy is within the engagement range.
+- Weapons:
+	- Further fixes for post-penetration bugs.
+	- Remove the extra delay from dropping the final countermeasure in a sequence.
 - Spawning:
 	- Allow a specific list of observers to be excluded from being removed during spawning and competitions.
 	- Allow spawning custom templates with only 1 team if not immediately starting a competition.

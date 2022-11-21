@@ -2548,7 +2548,7 @@ namespace BDArmory.Control
             isChaffing = true;
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} starting chaff routine");
             // yield return new WaitForSecondsFixed(0.2f); // Reaction time delay
-            for (int i = 0; i < repetition; i++)
+            for (int i = 0; i < repetition; ++i)
             {
                 using (var cm = VesselModuleRegistry.GetModules<CMDropper>(vessel).GetEnumerator())
                     while (cm.MoveNext())
@@ -2559,7 +2559,8 @@ namespace BDArmory.Control
                             cm.Current.DropCM();
                         }
                     }
-                yield return new WaitForSecondsFixed(interval);
+                if (i < repetition - 1) // Don't wait on the last one.
+                    yield return new WaitForSecondsFixed(interval);
             }
             yield return new WaitForSecondsFixed(chaffWaitTime);
             isChaffing = false;
@@ -2571,7 +2572,7 @@ namespace BDArmory.Control
             isFlaring = true;
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} starting flare routine");
             // yield return new WaitForSecondsFixed(0.2f); // Reaction time delay
-            for (int i = 0; i < repetition; i++)
+            for (int i = 0; i < repetition; ++i)
             {
                 using (var cm = VesselModuleRegistry.GetModules<CMDropper>(vessel).GetEnumerator())
                     while (cm.MoveNext())
@@ -2582,7 +2583,8 @@ namespace BDArmory.Control
                             cm.Current.DropCM();
                         }
                     }
-                yield return new WaitForSecondsFixed(interval);
+                if (i < repetition - 1) // Don't wait on the last one.
+                    yield return new WaitForSecondsFixed(interval);
             }
             yield return new WaitForSecondsFixed(cmWaitTime);
             isFlaring = false;
@@ -2595,7 +2597,7 @@ namespace BDArmory.Control
             isFlaring = true;
             isChaffing = true;
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} starting All CM routine");
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < count; ++i)
             {
                 using (var cm = VesselModuleRegistry.GetModules<CMDropper>(vessel).GetEnumerator())
                     while (cm.MoveNext())
@@ -2608,7 +2610,8 @@ namespace BDArmory.Control
                             cm.Current.DropCM();
                         }
                     }
-                yield return new WaitForSecondsFixed(1f);
+                if (i < count - 1) // Don't wait on the last one.
+                    yield return new WaitForSecondsFixed(1f);
             }
             isFlaring = false;
             isChaffing = false;
