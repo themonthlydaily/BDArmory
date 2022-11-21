@@ -6,8 +6,10 @@
 	- Fixes for Stationary surface vessel mode.
 		- No longer panics, even if airborne (allows for floating/free-fall turrets).
 		- Attitude control (using RCS and reaction wheels) is applied when an enemy is within the engagement range.
-- Weapons:
+- Armor:
+	- Fix stack overflow in ToggleScaleClamp for symmetric parts.
 	- Further fixes for post-penetration bugs.
+- Weapons:
 	- Remove the extra delay from dropping the final countermeasure in a sequence.
 - Spawning:
 	- Allow a specific list of observers to be excluded from being removed during spawning and competitions.
