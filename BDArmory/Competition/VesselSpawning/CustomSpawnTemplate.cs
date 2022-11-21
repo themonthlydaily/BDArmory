@@ -644,6 +644,7 @@ namespace BDArmory.Competition.VesselSpawning
         Rect crewSelectionWindowRect = new Rect(0, 0, 300, 400);
         Vector2 crewSelectionScrollPos = default;
         HashSet<string> SelectedCrewMembers = new HashSet<string>();
+        HashSet<string> ObserverCrewMembers = new HashSet<string>();
 
         /// <summary>
         /// Show the crew selection window.
@@ -668,6 +669,7 @@ namespace BDArmory.Competition.VesselSpawning
                 if (crew.rosterStatus != ProtoCrewMember.RosterStatus.Assigned)
                     crew.rosterStatus = ProtoCrewMember.RosterStatus.Available;
             }
+            RefreshObserverCrewMembers();
         }
 
         /// <summary>
@@ -699,7 +701,7 @@ namespace BDArmory.Competition.VesselSpawning
                 while (kerbals.MoveNext())
                 {
                     ProtoCrewMember crewMember = kerbals.Current;
-                    if (crewMember == null || SelectedCrewMembers.Contains(crewMember.name)) continue;
+                    if (crewMember == null || SelectedCrewMembers.Contains(crewMember.name) || ObserverCrewMembers.Contains(crewMember.name)) continue;
                     if (GUILayout.Button($"{crewMember.name}, {crewMember.gender}, {crewMember.trait}", BDArmorySetup.BDGuiSkin.button))
                     {
                         SelectedCrewMembers.Remove(currentVesselSpawnConfig.kerbalName);
@@ -746,8 +748,37 @@ namespace BDArmory.Competition.VesselSpawning
             SelectedCrewMembers.Clear();
             foreach (var team in customSpawnConfig.customVesselSpawnConfigs)
                 foreach (var member in team)
-                    if (member.kerbalName != null)
+                    if (!string.IsNullOrEmpty(member.kerbalName))
                         SelectedCrewMembers.Add(member.kerbalName);
+        }
+
+        /// <summary>
+        /// Refresh the crew members that are on observer craft.
+        /// </summary>
+        public void RefreshObserverCrewMembers()
+        {
+            ObserverCrewMembers.Clear();
+            // Find any crew on observer vessels.
+            foreach (var vessel in VesselSpawnerWindow.Instance.Observers)
+            {
+                if (vessel == null || !vessel.loaded) continue;
+                foreach (var part in vessel.Parts)
+                    {
+                        if (part == null) continue;
+                        foreach (var crew in part.protoModuleCrew)
+                        {
+                            if (crew == null) continue;
+                            ObserverCrewMembers.Add(crew.name);
+                        }
+                    }
+            }
+            // Remove any observers from already assigned slots.
+            foreach (var team in customSpawnConfig.customVesselSpawnConfigs)
+                foreach (var member in team)
+                    if (!string.IsNullOrEmpty(member.kerbalName) && ObserverCrewMembers.Contains(member.kerbalName))
+                        member.kerbalName = null;
+            // Then refresh the selected crew.
+            RefreshSelectedCrew();
         }
         #endregion
 

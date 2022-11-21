@@ -993,6 +993,8 @@ namespace BDArmory.UI
             else
             {
                 potentialObservers.Clear();
+                if (BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS == 11) // Custom Spawn Template
+                    CustomTemplateSpawning.Instance.RefreshObserverCrewMembers();
             }
             showObserverWindow = show;
             GUIUtils.SetGUIRectVisible(_observerGUICheckIndex, show);
