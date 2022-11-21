@@ -1115,6 +1115,7 @@ namespace BDArmory.UI
                             mf.targetWeightClosureTime * target.Current.TargetPriClosureTime(mf) +
                             mf.targetWeightWeaponNumber * target.Current.TargetPriWeapons(target.Current.weaponManager, mf) +
                             mf.targetWeightMass * target.Current.TargetPriMass(target.Current.weaponManager, mf) +
+                            mf.targetWeightDamage * target.Current.TargetPriDmg(target.Current.weaponManager) +
                             mf.targetWeightFriendliesEngaging * target.Current.TargetPriFriendliesEngaging(mf) +
                             mf.targetWeightThreat * target.Current.TargetPriThreat(target.Current.weaponManager, mf) +
                             mf.targetWeightAoD * target.Current.TargetPriAoD(mf) +

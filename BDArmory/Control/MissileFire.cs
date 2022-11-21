@@ -614,6 +614,11 @@ namespace BDArmory.Control
             UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightMass = 0;
 
+        private string targetDmgLabel = StringUtils.Localize("#LOC_BDArmory_TargetPriority_TargetDmg");
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetDmg", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Damage
+            UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float targetWeightDamage = -1;
+
         private string targetFriendliesEngagingLabel = StringUtils.Localize("#LOC_BDArmory_TargetPriority_FewerTeammatesEngaging");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_FewerTeammatesEngaging", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Number Friendlies Engaging
             UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
@@ -3995,33 +4000,38 @@ namespace BDArmory.Control
             //1. incoming missile threats
             //2. highest priority non-targeted target
             //3. closest non-targeted target
-
-            for (int i = 0; i < Math.Max(multiTargetNum, multiMissileTgtNum) - 1; i++)
+            if (targetMissiles)
             {
-                TargetInfo potentialMissileTarget = null;
-                //=========MISSILES=============
-                //prioritize incoming missiles
-                potentialMissileTarget = BDATargetManager.GetMissileTarget(this, true);
-                if (potentialMissileTarget)
+                for (int i = 0; i < Math.Max(multiTargetNum, multiMissileTgtNum) - 1; i++)
                 {
-                    missilesAssigned.Add(potentialMissileTarget);
-                    targetsTried.Add(potentialMissileTarget);
-                    //return;
-                }
-                //then provide point defense umbrella
-                potentialMissileTarget = BDATargetManager.GetClosestMissileTarget(this);
-                if (potentialMissileTarget)
-                {
-                    missilesAssigned.Add(potentialMissileTarget);
-                    targetsTried.Add(potentialMissileTarget);
-                    //return;
-                }
-                potentialMissileTarget = BDATargetManager.GetUnengagedMissileTarget(this);
-                if (potentialMissileTarget)
-                {
-                    missilesAssigned.Add(potentialMissileTarget);
-                    targetsTried.Add(potentialMissileTarget);
-                    //return;
+                    TargetInfo potentialMissileTarget = null;
+                    //=========MISSILES=============
+                    //prioritize incoming missiles
+                    potentialMissileTarget = BDATargetManager.GetMissileTarget(this, true);
+                    if (potentialMissileTarget)
+                    {
+                        missilesAssigned.Add(potentialMissileTarget);
+                        targetsTried.Add(potentialMissileTarget);
+                        if (BDArmorySettings.DEBUG_AI)
+                            Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} targeting missile {potentialMissileTarget.Vessel.GetName()} as a secondary target");
+                    }
+                    //then provide point defense umbrella
+                    potentialMissileTarget = BDATargetManager.GetClosestMissileTarget(this);
+                    if (potentialMissileTarget)
+                    {
+                        missilesAssigned.Add(potentialMissileTarget);
+                        targetsTried.Add(potentialMissileTarget);
+                        if (BDArmorySettings.DEBUG_AI)
+                            Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} targeting closest missile {potentialMissileTarget.Vessel.GetName()} as a secondary target");
+                    }
+                    potentialMissileTarget = BDATargetManager.GetUnengagedMissileTarget(this);
+                    if (potentialMissileTarget)
+                    {
+                        missilesAssigned.Add(potentialMissileTarget);
+                        targetsTried.Add(potentialMissileTarget);
+                        if (BDArmorySettings.DEBUG_AI)
+                            Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} targeting free missile {potentialMissileTarget.Vessel.GetName()} as a secondary target");
+                    }
                 }
             }
 
@@ -4037,7 +4047,8 @@ namespace BDArmory.Control
                     {
                         targetsAssigned.Add(potentialTarget);
                         targetsTried.Add(potentialTarget);
-                        //return;
+                        if (BDArmorySettings.DEBUG_AI)
+                            Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} targeting priority target {potentialTarget.Vessel.GetName()} as a secondary target");
                     }
                     potentialTarget = BDATargetManager.GetClosestTarget(this);
                     if (BDArmorySettings.DEFAULT_FFA_TARGETING)
@@ -4048,7 +4059,8 @@ namespace BDArmory.Control
                     {
                         targetsAssigned.Add(potentialTarget);
                         targetsTried.Add(potentialTarget);
-                        //return;
+                        if (BDArmorySettings.DEBUG_AI)
+                            Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} targeting bias target {potentialTarget.Vessel.GetName()} as a secondary target");
                     }
                 }
                 using (List<TargetInfo>.Enumerator finalTargets = BDATargetManager.GetAllTargetsExcluding(targetsTried, this).GetEnumerator())
@@ -4057,15 +4069,15 @@ namespace BDArmory.Control
                         if (finalTargets.Current == null) continue;
                         targetsAssigned.Add(finalTargets.Current);
                         targetsTried.Add(finalTargets.Current);
-                        //return;
+                        if (BDArmorySettings.DEBUG_AI)
+                            Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} targeting remaining target {finalTargets.Current.Vessel.GetName()} as a secondary target");
                     }
-                //else
-                if (potentialTarget == null)
-                {
-                    return;
-                }
             }
-            Debug.Log("[BDArmory.MissileFire]: Unhandled secondary target case");
+            if (targetsAssigned.Count == 0)
+            {
+                if (BDArmorySettings.DEBUG_AI)
+                    Debug.Log("[BDArmory.MissileFire]: No available secondary targets");
+            }
         }
 
         // Update target priority UI
@@ -4091,6 +4103,7 @@ namespace BDArmory.Control
             var TargetClosureTimeFields = Fields["targetWeightClosureTime"];
             var TargetWeaponNumberFields = Fields["targetWeightWeaponNumber"];
             var TargetMassFields = Fields["targetWeightMass"];
+            var TargetDamageFields = Fields["targetWeightDamage"];
             var TargetFriendliesEngagingFields = Fields["targetWeightFriendliesEngaging"];
             var TargetThreatFields = Fields["targetWeightThreat"];
             var TargetProtectTeammateFields = Fields["targetWeightProtectTeammate"];
@@ -4107,6 +4120,7 @@ namespace BDArmory.Control
             float targetClosureTimeValue = target.TargetPriClosureTime(this);
             float targetWeaponNumberValue = target.TargetPriWeapons(target.weaponManager, this);
             float targetMassValue = target.TargetPriMass(target.weaponManager, this);
+            float targetDamageValue = target.TargetPriDmg(target.weaponManager);
             float targetFriendliesEngagingValue = target.TargetPriFriendliesEngaging(this);
             float targetThreatValue = target.TargetPriThreat(target.weaponManager, this);
             float targetProtectTeammateValue = target.TargetPriProtectTeammate(target.weaponManager, this);
@@ -4122,6 +4136,7 @@ namespace BDArmory.Control
                 targetWeightClosureTime * targetClosureTimeValue +
                 targetWeightWeaponNumber * targetWeaponNumberValue +
                 targetWeightMass * targetMassValue +
+                targetWeightDamage * targetDamageValue + 
                 targetWeightFriendliesEngaging * targetFriendliesEngagingValue +
                 targetWeightThreat * targetThreatValue +
                 targetWeightAoD * targetAoDValue +
@@ -4139,6 +4154,7 @@ namespace BDArmory.Control
             TargetClosureTimeFields.guiName = targetClosureTimeLabel + $": {targetClosureTimeValue:0.00}";
             TargetWeaponNumberFields.guiName = targetWeaponNumberLabel + $": {targetWeaponNumberValue:0.00}";
             TargetMassFields.guiName = targetMassLabel + $": {targetMassValue:0.00}";
+            TargetDamageFields.guiName = targetDmgLabel + $": {targetDamageValue:0.00}";
             TargetFriendliesEngagingFields.guiName = targetFriendliesEngagingLabel + $": {targetFriendliesEngagingValue:0.00}";
             TargetThreatFields.guiName = targetThreatLabel + $": {targetThreatValue:0.00}";
             TargetProtectTeammateFields.guiName = targetProtectTeammateLabel + $": {targetProtectTeammateValue:0.00}";
@@ -4367,7 +4383,7 @@ namespace BDArmory.Control
             }
 
             //else if (!target.isLanded)
-            else if (target.isFlying)
+            else if (target.isFlying && !target.isMissile)
             {
                 // iterate over weaponTypesAir and pick suitable one based on engagementRange (and dynamic launch zone for missiles)
                 // Prioritize by:

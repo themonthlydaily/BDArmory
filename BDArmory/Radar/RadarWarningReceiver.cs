@@ -32,10 +32,11 @@ namespace BDArmory.Radar
             Detection = 5,
             Sonar = 6,
             Torpedo = 7,
-            TorpedoLock = 8
+            TorpedoLock = 8,
+            Jamming = 9
         }
 
-        string[] iconLabels = new string[] { "S", "F", "A", "M", "M", "D", "So", "T", "T" };
+        string[] iconLabels = new string[] { "S", "F", "A", "M", "M", "D", "So", "T", "T", "J" };
 
         public MissileFire weaponManager;
 
@@ -175,7 +176,7 @@ namespace BDArmory.Radar
         public void EnableRWR()
         {
             OnRadarPing += ReceivePing;
-            OnMissileLaunch += ReceiveLaunchWarning;
+            OnMissileLaunch += ReceiveLaunchWarning; //should the radar warning reciever be pinging for non-radar missiles?
             rwrEnabled = true;
         }
 

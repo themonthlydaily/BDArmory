@@ -426,20 +426,23 @@ namespace BDArmory.Weapons.Missiles
                     hasAmmo = true;
                     missileName = multiLauncher.subMunitionName;
                 }
-                else missileName = part.name;
-                if (warheadType == WarheadTypes.Standard || warheadType == WarheadTypes.ContinuousRod)
+                else
                 {
-                    var tnt = part.FindModuleImplementing<BDExplosivePart>();
-                    if (tnt is null)
+                    missileName = part.name;
+                    if (warheadType == WarheadTypes.Standard || warheadType == WarheadTypes.ContinuousRod)
                     {
-                        tnt = (BDExplosivePart)part.AddModule("BDExplosivePart");
-                        tnt.tntMass = BlastPhysicsUtils.CalculateExplosiveMass(blastRadius);
-                    }
+                        var tnt = part.FindModuleImplementing<BDExplosivePart>();
+                        if (tnt is null)
+                        {
+                            tnt = (BDExplosivePart)part.AddModule("BDExplosivePart");
+                            tnt.tntMass = BlastPhysicsUtils.CalculateExplosiveMass(blastRadius);
+                        }
 
-                    //New Explosive module
-                    DisablingExplosives(part);
-                    if (tnt.explModelPath == ModuleWeapon.defaultExplModelPath) tnt.explModelPath = explModelPath; // If the BDExplosivePart is using the default explosion part and sound,
-                    if (tnt.explSoundPath == ModuleWeapon.defaultExplSoundPath) tnt.explSoundPath = explSoundPath; // override them with those of the MissileLauncher (if specified).
+                        //New Explosive module
+                        DisablingExplosives(part);
+                        if (tnt.explModelPath == ModuleWeapon.defaultExplModelPath) tnt.explModelPath = explModelPath; // If the BDExplosivePart is using the default explosion part and sound,
+                        if (tnt.explSoundPath == ModuleWeapon.defaultExplSoundPath) tnt.explSoundPath = explSoundPath; // override them with those of the MissileLauncher (if specified).
+                    }
                 }
 
                 MissileReferenceTransform = part.FindModelTransform("missileTransform");
@@ -647,7 +650,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 if (multiLauncher.isClusterMissile)
                 {
-                    DetonationDistance = 500;
+                    DetonationDistance = 750;
                     DetonateAtMinimumDistance = false;
                     Fields["DetonateAtMinimumDistance"].guiActive = true;
                     Fields["DetonateAtMinimumDistance"].guiActiveEditor = true;
@@ -924,7 +927,7 @@ namespace BDArmory.Weapons.Missiles
                                 Debug.Log("[MissileLauncher.GetBlastRadius] needing to use MMR tntmass value!");
                                 return blastRadius = BlastPhysicsUtils.CalculateBlastRange(reloadableRail.tntmass);
                             }
-                            else return 500; //clustermissile det radius hardcoded for now
+                            else return 750; //clustermissile det radius hardcoded for now
                         }
                         blastRadius = 150;
                         return blastRadius;
@@ -1698,6 +1701,7 @@ namespace BDArmory.Weapons.Missiles
                     while (anim.MoveNext())
                     {
                         if (anim.Current == null) continue;
+                        anim.Current.enabled = true;
                         anim.Current.speed = 1;
                     }
             }
@@ -1716,6 +1720,7 @@ namespace BDArmory.Weapons.Missiles
                     while (anim.MoveNext())
                     {
                         if (anim.Current == null) continue;
+                        anim.Current.enabled = true;
                         if (!OneShotAnim)
                         {
                             anim.Current.wrapMode = WrapMode.Loop;
@@ -2245,7 +2250,6 @@ namespace BDArmory.Weapons.Missiles
                 {
                     if (fairings.Count > 0)
                     {
-                        Debug.Log("[ClusterMissile] Blowing fairings!");
                         using (var fairing = fairings.GetEnumerator())
                             while (fairing.MoveNext())
                             {
@@ -2253,7 +2257,6 @@ namespace BDArmory.Weapons.Missiles
                                 fairing.Current.AddComponent<DecoupledBooster>().DecoupleBooster(part.rb.velocity, boosterDecoupleSpeed);
                             }
                     }
-                    Debug.Log("[ClusterMissile] firing clustermissile submunitions");
                     multiLauncher.Team = Team;
                     multiLauncher.fireMissile(true);
                 }

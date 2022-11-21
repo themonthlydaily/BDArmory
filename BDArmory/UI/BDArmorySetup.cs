@@ -556,7 +556,7 @@ namespace BDArmory.UI
                             break;
 
                         case "BDArmory":
-                            Version = a.Current.GetName().Version.ToString();
+                            Version = a.Current.GetName().Version.ToString() + " SI Dev";
                             break;
                     }
                 }
@@ -1676,7 +1676,7 @@ namespace BDArmory.UI
                         ActiveWeaponManager.targetWeightAirPreference.ToString(), leftLabel);
                     priorityLines++;
 
-                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), StringUtils.Localize("#LOC_BDArmory_WMWindow_targetAngletoTarget"), leftLabel); //target proximity"
+                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), StringUtils.Localize("#LOC_BDArmory_WMWindow_targetAngletoTarget"), leftLabel); //target angle"
                     if (!NumFieldsEnabled)
                     {
                         ActiveWeaponManager.targetWeightATA =
@@ -1694,7 +1694,7 @@ namespace BDArmory.UI
                         ActiveWeaponManager.targetWeightATA.ToString(), leftLabel);
                     priorityLines++;
 
-                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), StringUtils.Localize("#LOC_BDArmory_WMWindow_targetAngleDist"), leftLabel); //target proximity"
+                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), StringUtils.Localize("#LOC_BDArmory_WMWindow_targetAngleDist"), leftLabel); //Angle over Distance"
                     if (!NumFieldsEnabled)
                     {
                         ActiveWeaponManager.targetWeightAoD =
@@ -1712,7 +1712,7 @@ namespace BDArmory.UI
                         ActiveWeaponManager.targetWeightAoD.ToString(), leftLabel);
                     priorityLines++;
 
-                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), StringUtils.Localize("#LOC_BDArmory_WMWindow_targetAccel"), leftLabel); //target proximity"
+                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), StringUtils.Localize("#LOC_BDArmory_WMWindow_targetAccel"), leftLabel); //target accel"
                     if (!NumFieldsEnabled)
                     {
                         ActiveWeaponManager.targetWeightAccel =
@@ -1730,7 +1730,7 @@ namespace BDArmory.UI
                         ActiveWeaponManager.targetWeightAccel.ToString(), leftLabel);
                     priorityLines++;
 
-                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), StringUtils.Localize("#LOC_BDArmory_WMWindow_targetClosingTime"), leftLabel); //target proximity"
+                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), StringUtils.Localize("#LOC_BDArmory_WMWindow_targetClosingTime"), leftLabel); //target closing time"
                     if (!NumFieldsEnabled)
                     {
                         ActiveWeaponManager.targetWeightClosureTime =
@@ -1748,7 +1748,7 @@ namespace BDArmory.UI
                         ActiveWeaponManager.targetWeightClosureTime.ToString(), leftLabel);
                     priorityLines++;
 
-                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), StringUtils.Localize("#LOC_BDArmory_WMWindow_targetgunNumber"), leftLabel); //target proximity"
+                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), StringUtils.Localize("#LOC_BDArmory_WMWindow_targetgunNumber"), leftLabel); //target weapon num."
                     if (!NumFieldsEnabled)
                     {
                         ActiveWeaponManager.targetWeightWeaponNumber =
@@ -1766,7 +1766,7 @@ namespace BDArmory.UI
                         ActiveWeaponManager.targetWeightWeaponNumber.ToString(), leftLabel);
                     priorityLines++;
 
-                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), StringUtils.Localize("#LOC_BDArmory_WMWindow_targetMass"), leftLabel); //target proximity"
+                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), StringUtils.Localize("#LOC_BDArmory_WMWindow_targetMass"), leftLabel); //target mass"
                     if (!NumFieldsEnabled)
                     {
                         ActiveWeaponManager.targetWeightMass =
@@ -1784,7 +1784,25 @@ namespace BDArmory.UI
                         ActiveWeaponManager.targetWeightMass.ToString(), leftLabel);
                     priorityLines++;
 
-                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), StringUtils.Localize("#LOC_BDArmory_WMWindow_targetAllies"), leftLabel); //target proximity"
+                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), StringUtils.Localize("#LOC_BDArmory_TargetPriority_TargetDmg"), leftLabel); //target Damage"
+                    if (!NumFieldsEnabled)
+                    {
+                        ActiveWeaponManager.targetWeightDamage =
+                            GUI.HorizontalSlider(
+                                new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight),
+                                ActiveWeaponManager.targetWeightDamage, -10, 10);
+                        ActiveWeaponManager.targetWeightDamage = Mathf.Round(ActiveWeaponManager.targetWeightDamage * 10) / 10;
+                    }
+                    else
+                    {
+                        textNumFields["targetWeightDamage"].tryParseValue(GUI.TextField(new Rect(leftIndent + (90), (priorityLines * entryHeight), contentWidth - 90 - 38, entryHeight), textNumFields["targetWeightDamage"].possibleValue, 4));
+                        ActiveWeaponManager.targetWeightDamage = (float)textNumFields["targetWeightDamage"].currentValue;
+                    }
+                    GUI.Label(new Rect(leftIndent + (contentWidth - 35), (priorityLines * entryHeight), 35, entryHeight),
+                        ActiveWeaponManager.targetWeightMass.ToString(), leftLabel);
+                    priorityLines++;
+
+                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), StringUtils.Localize("#LOC_BDArmory_WMWindow_targetAllies"), leftLabel); //target mass"
                     if (!NumFieldsEnabled)
                     {
                         ActiveWeaponManager.targetWeightFriendliesEngaging =
@@ -2111,6 +2129,7 @@ namespace BDArmory.UI
                             GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_WMWindow_targetClosingTime_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt closing time
                             GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_WMWindow_targetgunNumber_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt weapons num
                             GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_WMWindow_targetMass_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt mass
+                            GUILayout.Label(StringUtils.Localize("LOC_BDArmory_WMWindow_targetDmg_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt Damage
                             GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_WMWindow_targetAllies_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt allies attacking
                             GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_WMWindow_targetThreat_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt threat
                             GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_WMWindow_targetVIP_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt VIP

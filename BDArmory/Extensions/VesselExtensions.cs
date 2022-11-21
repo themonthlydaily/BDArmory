@@ -69,13 +69,16 @@ namespace BDArmory.Extensions
         // Get a vessel's "radius".
         public static float GetRadius(this Vessel vessel, Vector3 fireTransform = default(Vector3), Vector3 bounds = default(Vector3))
         {
+            //Clamp this to an upper maximum, in case of massive ship/arsenalbird sized targets? Or limit that to subsystem targeting?
+
             if (fireTransform == Vector3.zero || bounds == Vector3.zero)
             {
                 // Get vessel size.
                 Vector3 size = vessel.vesselSize;
 
-                // Get largest dimension.
-                return Mathf.Max(Mathf.Max(size.x, size.y), size.z) / 2f;
+				// Get largest dimension.
+				return Mathf.Max(Mathf.Max(size.x, size.y), size.z) / 2f;
+                //wouldn't smallest/median dimension make more sense, here?
             }
             else
             {

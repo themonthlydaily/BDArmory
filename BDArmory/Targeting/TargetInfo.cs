@@ -401,7 +401,7 @@ namespace BDArmory.Targeting
             ataDot = (ataDot + 1) / 2; // Adjust from 0-1 instead of -1 to 1
             return ataDot * ataDot;
         }
-        public float TargetPriEngagement(MissileFire mf) // Square cosine of antenna train angle
+        public float TargetPriEngagement(MissileFire mf) // Differentiate between flying and surface targets
         {
             if (mf == null) return 0; // no WM, so no valid target, no impact on targeting score
             if (mf.vessel.LandedOrSplashed)
@@ -490,6 +490,20 @@ namespace BDArmory.Targeting
                 float targetMass = mf.vessel.GetTotalMass();
                 float myMass = myMf.vessel.GetTotalMass();
                 return Mathf.Clamp(Mathf.Log10(targetMass / myMass) / 2f, -1, 1); // Ranges -1 to 1, -1 if we are 100 times as heavy as target, 1 target is 100 times as heavy as us
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+        public float TargetPriDmg(MissileFire mf) // Relative HP of Target
+        {
+            if (mf == null) return 0;
+            if (mf.vessel != null)
+            {
+                float TargetPriDmg = 1 - Mathf.Clamp(mf.currentHP / mf.totalHP, 0, 1); //ranges from 0-1, 0 is undamaged, 1 is cockpit falling out of the sky
+                return TargetPriDmg;
             }
             else
             {

@@ -209,13 +209,14 @@ namespace BDArmory.Radar
         /// <summary>
         /// Internal method: get a vessels siganture modifiers (ecm, stealth, ...)
         /// </summary>
-        private static float GetVesselModifiedSignature(Vessel v, TargetInfo ti)
+        public static float GetVesselModifiedSignature(Vessel v, TargetInfo ti)
         {
             ti.radarRCSReducedSignature = ti.radarBaseSignature;
             ti.radarModifiedSignature = ti.radarBaseSignature;
             ti.radarLockbreakFactor = 1;
 
-            //
+            //Wouldn't this make more sense to calculate once when ECM (de)activated, instead of re-calcing every fixedUpdate tick?
+            /*
             // read vessel ecminfo for active jammers and calculate effects:
             VesselECMJInfo vesseljammer = v.gameObject.GetComponent<VesselECMJInfo>();
             if (vesseljammer)
@@ -237,9 +238,8 @@ namespace BDArmory.Radar
                 // Use clamp to prevent RCS reduction resulting in increased lockbreak factor, which negates value of RCS reduction)
                 ti.radarLockbreakFactor = (ti.radarRCSReducedSignature == 0) ? 0f :
                     Mathf.Max(Mathf.Clamp01(ti.radarRCSReducedSignature / ti.radarModifiedSignature) * (1 - (vesseljammer.lockBreakStrength / ti.radarRCSReducedSignature / 100)), 0); // 0 is minimum lockbreak factor
-
             }
-
+            */
             return ti.radarModifiedSignature;
         }
 
@@ -274,7 +274,6 @@ namespace BDArmory.Radar
                 return jammingDistance;
 
             jammingDistance = GetVesselRadarCrossSection(v).radarJammingDistance;
-
             return jammingDistance;
         }
 
@@ -1438,8 +1437,8 @@ namespace BDArmory.Radar
                                             case MissileBase.TargetingModes.Laser:
                                                 results.foundAGM = true;
                                                 break;
-                                            case MissileBase.TargetingModes.AntiRad:
-                                                results.foundAntiRadiationMissile = true;
+                                            case MissileBase.TargetingModes.AntiRad: //How does one differentiate between a passive IR sensor and a passive AR sensor?
+                                                results.foundAntiRadiationMissile = true; //admittedly, combining the two would result in launching flares at ARMs and turning off radar when having incoming heaters...
                                                 break;
                                         }
                                     }

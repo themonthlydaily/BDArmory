@@ -86,7 +86,7 @@ namespace BDArmory.FX
             scale = BDAMath.Sqrt(400 * (6 * yield)) / 219;
             if (BDArmorySettings.DEBUG_DAMAGE)
             {
-                Debug.Log($"[BDArmory.NukeFX]: Explosion started tntMass: {yield}  BlastRadius: {thermalRadius} StartTime: {StartTime}, Duration: {MaxTime}");
+                Debug.Log($"[BDArmory.NukeFX]: Explosion started! yield: {yield}  BlastRadius: {thermalRadius} StartTime: {StartTime}, Duration: {MaxTime}");
             }
             if (HighLogic.LoadedSceneIsFlight)
             {
@@ -335,7 +335,7 @@ namespace BDArmory.FX
                         //scaling calc is roughly SqRt( 400 * (6x))
                         //fireball diameter is 59 * Mathf.Pow(yield, 0.4f), apparently?
                         if (!string.IsNullOrWhiteSpace(flashModelPath))
-                            FXEmitter.CreateFX(transform.position, scale, flashModelPath, "", 0.3f, 0.3f, default, true);
+                            FXEmitter.CreateFX(transform.position, scale, flashModelPath, "", 0.3f, -1, default, true);
                         if (!string.IsNullOrWhiteSpace(shockModelPath))
                             FXEmitter.CreateFX(transform.position, scale * lastValidAtmDensity, shockModelPath, "", 0.3f, -1, default, true);
                         if (!string.IsNullOrWhiteSpace(blastModelPath))

@@ -54,16 +54,8 @@ UI_FloatRange(minValue = 1f, maxValue = 4, stepIncrement = 1f, scene = UI_Scene.
                             PartSnapshot(missilePart.partPrefab).CopyTo(partNode);
                             //SpawnedMissile = CreatePart(partNode, MissileTransform.transform.position - MissileTransform.TransformDirection(missilePart.partPrefab.srfAttachNode.originalPosition),
                             SpawnedMissile = CreatePart(partNode, offset > 0 ? (MissileTransform.position + MissileTransform.forward * offset) : MissileTransform.transform.position, MissileTransform.rotation, this.part);
-                            var MMR = SpawnedMissile.FindModuleImplementing<ModuleMissileRearm>();
-                            if (MMR != null) AccountForAmmo = false;
-                            /* //keep the module, can be used for cluster missile submunition creation
-                            if (SpawnedMissile.GetComponent<ModuleMissileRearm>() != null) 
-                            {
-                                ModuleMissileRearm MMR; 
-                                MMR = part.GetComponent<ModuleMissileRearm>();
-                                part.RemoveModule(MMR);
-                            }
-                            */
+                            ModuleMissileRearm MMR = SpawnedMissile.FindModuleImplementing<ModuleMissileRearm>();
+                            if (MMR != null) part.RemoveModule(MMR);
                             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.ModuleMissileRearm] spawned " + SpawnedMissile.name + "; ammo remaining: " + ammoCount);
                             return;
                         }

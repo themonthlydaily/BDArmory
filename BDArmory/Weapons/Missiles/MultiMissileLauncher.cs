@@ -58,12 +58,18 @@ namespace BDArmory.Weapons.Missiles
             if (missileSpawner == null) //MultiMissile launchers/cluster missiles need a MMR module for spawning their submunitions, so add one if not present in case cfg not set up properly
             {
                 missileSpawner = (ModuleMissileRearm)part.AddModule("ModuleMissileRearm");
-                missileSpawner.maxAmmo = salvoSize = 10;
-                Debug.LogError($"[BDArmory.MultiMissileLauncher] no ModuleMissileRearm on {part.name}. Please fix your .cfg");
+                missileSpawner.maxAmmo = isClusterMissile ? salvoSize : salvoSize * 5;
+                missileSpawner.ammoCount = launchTransforms.Length;
                 missileLauncher.reloadableRail = missileSpawner;
                 missileLauncher.hasAmmo = true;
-                if (!isClusterMissile) missileSpawner.ammoCount = launchTransforms.Length;
             }
+            if (isClusterMissile)
+            {
+                missileSpawner.AccountForAmmo = false;
+            }
+            else //Clustermissiles replace/generate MMR on launch, other missiles should have it in the .cfg
+                Debug.LogError($"[BDArmory.MultiMissileLauncher] no ModuleMissileRearm on {part.name}. Please fix your .cfg");
+
             missileSpawner.isMultiLauncher = true;
             if (!string.IsNullOrEmpty(deployAnimationName))
             {
@@ -80,7 +86,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 GameEvents.onPartDie.Add(OnPartDie);
             }
-            wpm = VesselModuleRegistry.GetMissileFire(missileLauncher.vessel, true);
+            wpm = VesselModuleRegistry.GetMissileFire(missileLauncher.SourceVessel, true);
             if (LoadoutModified)
             {
                 missileSpawner.MissileName = subMunitionName;
@@ -297,6 +303,8 @@ namespace BDArmory.Weapons.Missiles
                     MissileDummy dummyThis = dummy.GetComponentInChildren<MissileDummy>();
                     dummyThis.AttachAt(part, launchTransforms[i]);
                     dummy.transform.localScale = dummyScale;
+                    var mslAnim = dummy.GetComponentInChildren<Animation>();
+                    if (mslAnim != null) mslAnim.enabled = false;
                 }
                 else
                 {
@@ -363,7 +371,7 @@ namespace BDArmory.Weapons.Missiles
                     //if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MultiMissileLauncher] oops! firing more missiles than tubes or ammo");
                     break;
                 }
-                if (missileSpawner.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE)
+                if (!isClusterMissile && (missileSpawner.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE))
                 {
                     tubesFired = 0;
                     break;
@@ -371,7 +379,7 @@ namespace BDArmory.Weapons.Missiles
                 tubesFired++;
                 launchesThisSalvo++;
                 missileSpawner.SpawnMissile(launchTransforms[m], offset);
-                if (!BDArmorySettings.INFINITE_ORDINANCE) missileSpawner.ammoCount--;
+                if (!BDArmorySettings.INFINITE_ORDINANCE || (BDArmorySettings.INFINITE_ORDINANCE && isClusterMissile)) missileSpawner.ammoCount--;
                 MissileLauncher ml = missileSpawner.SpawnedMissile.FindModuleImplementing<MissileLauncher>();
                 yield return new WaitUntilFixed(() => ml.SetupComplete); // Wait until missile fully initialized.
                 var tnt = VesselModuleRegistry.GetModule<BDExplosivePart>(vessel, true);
@@ -413,9 +421,11 @@ namespace BDArmory.Weapons.Missiles
                 if (missileLauncher.GuidanceMode == GuidanceModes.AGM)
                     ml.maxAltitude = missileLauncher.maxAltitude;
                 ml.terminalGuidanceShouldActivate = missileLauncher.terminalGuidanceShouldActivate;
-                if (isClusterMissile) ml.multiLauncher.overrideReferenceTransform = true;
+                //if (isClusterMissile) ml.multiLauncher.overrideReferenceTransform = true;
+                Debug.Log("[BDArmory.MultiMissileLauncher] WM found? " + wpm != null ? "True" : "false");
                 if (ml.TargetingMode == MissileBase.TargetingModes.Heat || ml.TargetingMode == MissileBase.TargetingModes.Radar)
                 {
+                    Debug.Log("[BDArmory.MultiMissileLauncher] 1");
                     if (wpm.multiMissileTgtNum >= 2 && wpm != null)
                     {
                         if (TargetID > Mathf.Min((wpm.targetsAssigned.Count - 1), wpm.multiMissileTgtNum))
@@ -547,13 +557,16 @@ namespace BDArmory.Weapons.Missiles
                     }
                     else
                     {
+                        Debug.Log("[BDArmory.MultiMissileLauncher] 10");
                         if (wpm != null) wpm.SendTargetDataToMissile(ml);
                     }
                 }
                 else
                 {
-                    wpm.SendTargetDataToMissile(ml);
+                    Debug.Log("[BDArmory.MultiMissileLauncher] 10B");
+                    if (wpm != null) wpm.SendTargetDataToMissile(ml);
                 }
+                Debug.Log("[BDArmory.MultiMissileLauncher] 11");
                 if (!missileRegistry)
                 {
                     BDATargetManager.FiredMissiles.Add(ml); //so multi-missile salvoes only count as a single missile fired by the WM for maxMissilesPerTarget
@@ -576,7 +589,7 @@ namespace BDArmory.Weapons.Missiles
             }
             if (tubesFired >= launchTransforms.Length) //add a timer for reloading a partially emptied MML if it hasn't been used for a while?
             {
-                if (BDArmorySettings.INFINITE_AMMO || missileSpawner.ammoCount >= salvoSize)
+                if (BDArmorySettings.INFINITE_ORDINANCE || missileSpawner.ammoCount >= salvoSize)
                     if (!(missileLauncher.reloadRoutine != null))
                     {
                         missileLauncher.reloadRoutine = StartCoroutine(missileLauncher.MissileReload());
@@ -590,22 +603,25 @@ namespace BDArmory.Weapons.Missiles
                     missileLauncher.DestroyMissile();
                 }
             }
-            if (salvoSize < launchTransforms.Length && missileLauncher.reloadRoutine == null && (BDArmorySettings.INFINITE_AMMO || missileSpawner.ammoCount > 0))
+            else
             {
-                if (launcherCooldown > 0)
+                if (salvoSize < launchTransforms.Length && missileLauncher.reloadRoutine == null && (BDArmorySettings.INFINITE_ORDINANCE || missileSpawner.ammoCount > 0))
                 {
-                    missileLauncher.heatTimer = launcherCooldown;
-                    yield return new WaitForSecondsFixed(launcherCooldown);
-                    missileLauncher.launched = false;
-                    missileLauncher.heatTimer = -1;
+                    if (launcherCooldown > 0)
+                    {
+                        missileLauncher.heatTimer = launcherCooldown;
+                        yield return new WaitForSecondsFixed(launcherCooldown);
+                        missileLauncher.launched = false;
+                        missileLauncher.heatTimer = -1;
+                    }
+                    else
+                    {
+                        missileLauncher.heatTimer = -1;
+                        missileLauncher.launched = false;
+                    }
                 }
-                else
-                {
-                    missileLauncher.heatTimer = -1;
-                    missileLauncher.launched = false;
-                }
+                missileSalvo = null;
             }
-            missileSalvo = null;
         }
 
         public void SetupMissileDummyPool(string modelpath)

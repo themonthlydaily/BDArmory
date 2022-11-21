@@ -2294,15 +2294,19 @@ namespace BDArmory.Weapons
                                                 p.vessel.rootPart.AddModule("ModuleDrainEC");
                                             }
                                             var emp = p.vessel.rootPart.FindModuleImplementing<ModuleDrainEC>();
+                                            float EMPDamage = 0;
                                             if (!pulseLaser)
                                             {
-                                                emp.incomingDamage += (ECPerShot / 1000);
+                                                EMPDamage = ECPerShot / 1000;
+                                                emp.incomingDamage += EMPDamage;
                                             }
                                             else
                                             {
-                                                emp.incomingDamage += (ECPerShot / 20);
+                                                EMPDamage = ECPerShot / 20;
+                                                emp.incomingDamage += EMPDamage;
                                             }
                                             emp.softEMP = true;
+                                            damage = EMPDamage;
                                             if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: EMP Buildup Applied to {p.vessel.GetName()}: {(pulseLaser ? (ECPerShot / 20) : (ECPerShot / 1000))}");
                                         }
                                         else
@@ -2380,6 +2384,8 @@ namespace BDArmory.Weapons
                                                     p.rb.AddForceAtPosition((tf.position - p.transform.position).normalized * (float)Impulse, p.transform.position, ForceMode.Acceleration);
                                                 }
                                                 if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Impulse of {Impulse} Applied to {p.vessel.GetName()}");
+                                                //if (laserDamage == 0) 
+                                                    damage += Impulse / 100;
                                             }
                                         }
                                         if (graviticWeapon)
@@ -2399,6 +2405,8 @@ namespace BDArmory.Weapons
                                                 ME.massMod += (massAdjustment * TimeWarp.fixedDeltaTime);
                                                 ME.duration += duration;
                                                 if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Gravitic Buildup Applied to {p.vessel.GetName()}: {massAdjustment}t added");
+                                                //if (laserDamage == 0) 
+                                                    damage += massAdjustment * 100;
                                             }
                                         }
                                     }
@@ -4349,7 +4357,7 @@ namespace BDArmory.Weapons
                 if (aiControlled && weaponManager && visualTargetVessel &&
                     (visualTargetVessel.transform.position - transform.position).sqrMagnitude < weaponManager.guardRange * weaponManager.guardRange)
                 {
-                    targetRadius = visualTargetVessel.GetRadius();
+                    //targetRadius = visualTargetVessel.GetRadius();
 
                     if (visualTargetPart == null || visualTargetPart.vessel != visualTargetVessel)
                     {
@@ -4359,12 +4367,13 @@ namespace BDArmory.Weapons
                             if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Targeted vessel {(visualTargetVessel != null ? visualTargetVessel.vesselName : "'unknown'")} has no TargetInfo.");
                             return;
                         }
-                        targetRadius = visualTargetVessel.GetRadius(fireTransforms[0].forward, currentTarget.bounds);
+                        //targetRadius = visualTargetVessel.GetRadius(fireTransforms[0].forward, currentTarget.bounds);
                         List<Part> targetparts = new List<Part>();
                         if (targetCOM)
                         {
                             targetPosition = visualTargetVessel.CoM;
                             visualTargetPart = null; //make sure this gets reset
+                            targetRadius = visualTargetVessel.GetRadius(fireTransforms[0].forward, currentTarget.bounds);
                         }
                         else
                         {
@@ -4438,6 +4447,7 @@ namespace BDArmory.Weapons
                             {
                                 visualTargetPart = targetparts[targetID];
                                 targetPosition = visualTargetPart.transform.position;
+                                targetRadius = 5; //allow for more focused targeting of weighted subsystems
                             }
                         }
                     }
@@ -4447,10 +4457,12 @@ namespace BDArmory.Weapons
                         {
                             targetPosition = visualTargetVessel.CoM;
                             visualTargetPart = null; //make sure these get reset
+                            targetRadius = visualTargetVessel.GetRadius();
                         }
                         else
                         {
                             targetPosition = visualTargetPart.transform.position;
+                            targetRadius = 5;
                         }
                     }
                     targetVelocity = visualTargetVessel.rb_velocity;
