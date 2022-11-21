@@ -164,7 +164,7 @@ namespace BDArmory.Competition.VesselSpawning
 
             #region Post-spawning
             // Spawning has succeeded, vessels have been renamed where necessary and vessels are ready. Time to assign teams and any other stuff.
-            yield return PostSpawnMainSequence(spawnConfig, false);
+            yield return PostSpawnMainSequence(spawnConfig, false, !startCompetitionAfterSpawning);
             if (spawnFailureReason != SpawnFailureReason.None)
             {
                 LogMessage("Vessel spawning FAILED! " + spawnFailureReason);
@@ -177,7 +177,7 @@ namespace BDArmory.Competition.VesselSpawning
             SpawnUtils.RevertSpawnLocationCamera(true);
             if ((FlightGlobals.ActiveVessel == null || FlightGlobals.ActiveVessel.state == Vessel.State.DEAD) && spawnedVessels.Count > 0)
             {
-                LoadedVesselSwitcher.Instance.ForceSwitchVessel(spawnedVessels.Take(UnityEngine.Random.Range(1, spawnedVessels.Count)).Last().Value); // Update the camera.
+                yield return LoadedVesselSwitcher.Instance.SwitchToVesselWhenPossible(spawnedVessels.Take(UnityEngine.Random.Range(1, spawnedVessels.Count)).Last().Value); // Update the camera.
             }
             FlightCamera.fetch.SetDistance(50);
 
