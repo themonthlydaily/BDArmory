@@ -693,7 +693,6 @@ namespace BDArmory.Control
                         if (weapon.Current.isAPS)
                         {
                             weapon.Current.DisableWeapon();
-                            weapon.Current.aiControlled = false;
                         }
                     }
                 weaponIndex = 0;
@@ -708,8 +707,8 @@ namespace BDArmory.Control
                         if (weapon.Current.isAPS)
                         {
                             weapon.Current.EnableWeapon();
-                            weapon.Current.aiControlled = true;
                         }
+                        weapon.Current.aiControlled = true;
                     }
                 if (radars.Count > 0)
                 {

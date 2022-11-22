@@ -2449,6 +2449,8 @@ namespace BDArmory.UI
                     { BDArmoryAIGUI.Instance.RemoveToolbarButton(); }
                 }
                 BDArmorySettings.DISPLAY_COMPETITION_STATUS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.DISPLAY_COMPETITION_STATUS, StringUtils.Localize("#LOC_BDArmory_Settings_DisplayCompetitionStatus"));
+                if (BDArmorySettings.SCROLL_ZOOM_PREVENTION != (BDArmorySettings.SCROLL_ZOOM_PREVENTION = GUI.Toggle(SRightRect(line), BDArmorySettings.SCROLL_ZOOM_PREVENTION, StringUtils.Localize("#LOC_BDArmory_Settings_ScrollZoomPrevention"))))
+                { GUIUtils.EndDisableScrollZoom(); }
                 if (BDArmorySettings.DISPLAY_COMPETITION_STATUS)
                 {
                     BDArmorySettings.DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI = GUI.Toggle(SLeftRect(++line, 1), BDArmorySettings.DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI, StringUtils.Localize("#LOC_BDArmory_Settings_DisplayCompetitionStatusHiddenUI"));

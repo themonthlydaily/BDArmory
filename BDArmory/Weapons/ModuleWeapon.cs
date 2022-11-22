@@ -59,7 +59,8 @@ namespace BDArmory.Weapons
             PoweringUp,
             PoweringDown,
             Locked,
-            Standby // Not currently firing, but can still track the current target.
+            Standby, // Not currently firing, but can still track the current target.
+            EnabledForSecondaryFiring // Enabled, but only for secondary firing.
         }
 
         public enum BulletDragTypes
@@ -886,6 +887,53 @@ namespace BDArmory.Weapons
 
         int barrelIndex = 0;
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Custom Fire Key"), UI_Label(scene = UI_Scene.All)]
+        public string customFireKey = "";
+        BDInputInfo CustomFireKey;
+        [KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Set Custom Fire Key")] // Set Custom Fire Key
+        void SetCustomFireKey()
+        {
+            if (!bindingKey)
+                StartCoroutine(BindCustomFireKey());
+        }
+        bool bindingKey = false;
+        IEnumerator BindCustomFireKey()
+        {
+            bindingKey = true;
+            int id = 0;
+            BDKeyBinder.BindKey(id);
+            while (bindingKey)
+            {
+                if (BDKeyBinder.IsRecordingID(id))
+                {
+                    string recordedInput;
+                    if (BDKeyBinder.current.AcquireInputString(out recordedInput))
+                    {
+                        SetCustomFireKey(recordedInput);
+                        bindingKey = false;
+                        yield break;
+                    }
+                }
+                else
+                {
+                    bindingKey = false;
+                    yield break;
+                }
+                yield return null;
+            }
+        }
+        public void SetCustomFireKey(string key, bool applySym = true)
+        {
+            CustomFireKey = new BDInputInfo(key, "Custom Fire Key");
+            customFireKey = CustomFireKey.inputString;
+            if (!applySym) return;
+            using (List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator())
+                while (sym.MoveNext())
+                {
+                    if (sym.Current == null) continue;
+                    sym.Current.FindModuleImplementing<ModuleWeapon>().SetCustomFireKey(key, false);
+                }
+        }
         #endregion KSPFields
 
         #region KSPActions
@@ -1475,6 +1523,7 @@ namespace BDArmory.Weapons
             BDArmorySetup.OnVolumeChange += UpdateVolume;
             if (HighLogic.LoadedSceneIsFlight)
             { TimingManager.FixedUpdateAdd(TimingManager.TimingStage.FashionablyLate, AimAndFire); }
+            CustomFireKey = new BDInputInfo(customFireKey, "Custom Fire");
         }
 
         void OnDestroy()
@@ -1592,9 +1641,19 @@ namespace BDArmory.Weapons
                     }
                 }
 
-                if (weaponState == WeaponStates.Enabled && (TimeWarp.WarpMode != TimeWarp.Modes.HIGH || TimeWarp.CurrentRate == 1))
+                var secondaryFireKeyActive = false;
+                if ((vessel.isActiveVessel || BDArmorySettings.REMOTE_SHOOTING) && !MapView.MapIsEnabled && !aiControlled)
                 {
-                    userFiring = (BDInputUtils.GetKey(BDInputSettingsFields.WEAP_FIRE_KEY) && (vessel.isActiveVessel || BDArmorySettings.REMOTE_SHOOTING) && !MapView.MapIsEnabled && !aiControlled && !GUIUtils.CheckMouseIsOnGui()); //don't fire if mouse on WM GUI; Issue #348
+                    secondaryFireKeyActive = BDInputUtils.GetKey(CustomFireKey);
+                    if (secondaryFireKeyActive) EnableWeapon(secondaryFiring: true);
+                    else if (weaponState == WeaponStates.EnabledForSecondaryFiring) StandbyWeapon();
+                }
+
+                if ((weaponState == WeaponStates.Enabled || weaponState == WeaponStates.EnabledForSecondaryFiring) && (TimeWarp.WarpMode != TimeWarp.Modes.HIGH || TimeWarp.CurrentRate == 1))
+                {
+                    userFiring = (((weaponState == WeaponStates.Enabled && BDInputUtils.GetKey(BDInputSettingsFields.WEAP_FIRE_KEY) && !GUIUtils.CheckMouseIsOnGui()) //don't fire if mouse on WM GUI; Issue #348
+                            || secondaryFireKeyActive)
+                        && (vessel.isActiveVessel || BDArmorySettings.REMOTE_SHOOTING) && !MapView.MapIsEnabled && !aiControlled);
                     if (!(((userFiring || agHoldFiring) && !isAPS) || (autoFire && //if user pulling the trigger || AI controlled and on target if turreted || finish a burstfire weapon's burst
                         (!turret || turret.TargetInRange(finalAimTarget, 10, float.MaxValue))) || (BurstFire && RoundsRemaining > 0 && RoundsRemaining < RoundsPerMag)))
                     {
@@ -1664,7 +1723,7 @@ namespace BDArmory.Weapons
 
                 UpdateHeat();
                 if (weaponState == WeaponStates.Standby && (TimeWarp.WarpMode != TimeWarp.Modes.HIGH || TimeWarp.CurrentRate == 1)) { aimOnly = true; }
-                if (weaponState == WeaponStates.Enabled && (TimeWarp.WarpMode != TimeWarp.Modes.HIGH || TimeWarp.CurrentRate == 1))
+                if ((weaponState == WeaponStates.Enabled || weaponState == WeaponStates.EnabledForSecondaryFiring) && (TimeWarp.WarpMode != TimeWarp.Modes.HIGH || TimeWarp.CurrentRate == 1))
                 {
                     aimAndFireIfPossible = true; // Aim and fire in a later timing phase of FixedUpdate. This synchronises firing with the physics instead of waiting until the scene is rendered. It also occurs before Krakensbane adjustments have been made (in the Late timing phase).
                 }
@@ -1724,8 +1783,8 @@ namespace BDArmory.Weapons
 
         void OnGUI()
         {
-            if (trajectoryRenderer != null && (!BDArmorySettings.DEBUG_LINES || !(weaponState == WeaponStates.Enabled || weaponState == WeaponStates.Standby))) { trajectoryRenderer.enabled = false; }
-            if (HighLogic.LoadedSceneIsFlight && weaponState == WeaponStates.Enabled && vessel && !vessel.packed && vessel.isActiveVessel &&
+            if (trajectoryRenderer != null && (!BDArmorySettings.DEBUG_LINES || !(weaponState == WeaponStates.Enabled || weaponState == WeaponStates.EnabledForSecondaryFiring || weaponState == WeaponStates.Standby))) { trajectoryRenderer.enabled = false; }
+            if (HighLogic.LoadedSceneIsFlight && (weaponState == WeaponStates.Enabled || weaponState == WeaponStates.EnabledForSecondaryFiring) && vessel && !vessel.packed && vessel.isActiveVessel &&
                 BDArmorySettings.DRAW_AIMERS && !aiControlled && !MapView.MapIsEnabled && !pointingAtSelf && !isAPS)
             {
                 float size = 30;
@@ -1789,7 +1848,7 @@ namespace BDArmory.Weapons
             }
 
 #if DEBUG
-            if (BDArmorySettings.DEBUG_LINES && weaponState == WeaponStates.Enabled && vessel && !vessel.packed && !MapView.MapIsEnabled)
+            if (BDArmorySettings.DEBUG_LINES && (weaponState == WeaponStates.Enabled || weaponState == WeaponStates.EnabledForSecondaryFiring) && vessel && !vessel.packed && !MapView.MapIsEnabled)
             {
                 GUIUtils.MarkPosition(debugTargetPosition, transform, Color.cyan);
                 GUIUtils.DrawLineBetweenWorldPositions(debugTargetPosition, debugTargetPosition + debugRelVelAdj, 2, Color.green);
@@ -2337,25 +2396,25 @@ namespace BDArmory.Weapons
                                         HitpointTracker armor = p.GetComponent<HitpointTracker>();
                                         if (laserDamage > 0)
                                         {
-                                          var angularSpread = tanAngle * distance; //Scales down the damage based on the increased surface area of the area being hit by the laser. Think flashlight on a wall.
-                                          initialDamage = (laserDamage / (1 + Mathf.PI * angularSpread * angularSpread) * 0.425f);
+                                            var angularSpread = tanAngle * distance; //Scales down the damage based on the increased surface area of the area being hit by the laser. Think flashlight on a wall.
+                                            initialDamage = (laserDamage / (1 + Mathf.PI * angularSpread * angularSpread) * 0.425f);
 
-                                          if (armor != null)// technically, lasers shouldn't do damage until armor gone, but that would require localized armor tracking instead of the monolithic model currently used                                              
-                                          {
-                                             damage = (initialDamage * (pulseLaser ? 1 : TimeWarp.fixedDeltaTime)) * Mathf.Clamp((1 - (BDAMath.Sqrt(armor.Diffusivity * (armor.Density / 1000)) * armor.ArmorThickness) / initialDamage), 0.005f, 1); //old calc lacked a clamp, could potentially become negative damage
-                                          }  //clamps laser damage to not go negative, allow some small amount of bleedthrough - ~30 Be/Steel will negate ABL, ~62 Ti, 42 DU
-                                          else
-                                          {
-                                              damage = initialDamage;
-                                              if (!pulseLaser)
-                                              {
-                                                  damage = initialDamage * TimeWarp.fixedDeltaTime;
-                                              }
-                                          }
-                                          p.ReduceArmor(damage / 10000); //really should be tied into diffuisvity, density, and SafeUseTemp - lasers would need to melt/ablate material away; needs to be in cm^3. Review later
-                                          p.AddDamage(damage);
-                                          if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Damage Applied to {p.name} on {p.vessel.GetName()}: {damage}");
-                                          if (pulseLaser) BattleDamageHandler.CheckDamageFX(p, caliber, 1 + (damage / initialDamage), HEpulses, false, part.vessel.GetName(), hit, false, false); //beams will proc BD once every scoreAccumulatorTick
+                                            if (armor != null)// technically, lasers shouldn't do damage until armor gone, but that would require localized armor tracking instead of the monolithic model currently used                                              
+                                            {
+                                                damage = (initialDamage * (pulseLaser ? 1 : TimeWarp.fixedDeltaTime)) * Mathf.Clamp((1 - (BDAMath.Sqrt(armor.Diffusivity * (armor.Density / 1000)) * armor.ArmorThickness) / initialDamage), 0.005f, 1); //old calc lacked a clamp, could potentially become negative damage
+                                            }  //clamps laser damage to not go negative, allow some small amount of bleedthrough - ~30 Be/Steel will negate ABL, ~62 Ti, 42 DU
+                                            else
+                                            {
+                                                damage = initialDamage;
+                                                if (!pulseLaser)
+                                                {
+                                                    damage = initialDamage * TimeWarp.fixedDeltaTime;
+                                                }
+                                            }
+                                            p.ReduceArmor(damage / 10000); //really should be tied into diffuisvity, density, and SafeUseTemp - lasers would need to melt/ablate material away; needs to be in cm^3. Review later
+                                            p.AddDamage(damage);
+                                            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Damage Applied to {p.name} on {p.vessel.GetName()}: {damage}");
+                                            if (pulseLaser) BattleDamageHandler.CheckDamageFX(p, caliber, 1 + (damage / initialDamage), HEpulses, false, part.vessel.GetName(), hit, false, false); //beams will proc BD once every scoreAccumulatorTick
                                         }
                                         if (HEpulses)
                                         {
@@ -3024,14 +3083,14 @@ namespace BDArmory.Weapons
         }
 
         HashSet<WeaponStates> enabledStates = new HashSet<WeaponStates> { WeaponStates.Enabled, WeaponStates.PoweringUp, WeaponStates.Locked };
-        public void EnableWeapon()
+        public void EnableWeapon(bool secondaryFiring = false)
         {
-            if (enabledStates.Contains(weaponState))
+            if (enabledStates.Contains(weaponState) || (secondaryFiring && weaponState == WeaponStates.EnabledForSecondaryFiring))
                 return;
 
             StopShutdownStartupRoutines();
 
-            startupRoutine = StartCoroutine(StartupRoutine());
+            startupRoutine = StartCoroutine(StartupRoutine(secondaryFiring: secondaryFiring));
         }
 
         HashSet<WeaponStates> disabledStates = new HashSet<WeaponStates> { WeaponStates.Disabled, WeaponStates.PoweringDown };
@@ -4822,7 +4881,7 @@ namespace BDArmory.Weapons
             guiStatusString = weaponState.ToString();
         }
 
-        IEnumerator StartupRoutine(bool calledByReload = false)
+        IEnumerator StartupRoutine(bool calledByReload = false, bool secondaryFiring = false)
         {
             if (hasReloadAnim && isReloading) //wait for reload to finish before shutting down
             {
@@ -4844,7 +4903,10 @@ namespace BDArmory.Weapons
             }
             if (!calledByReload)
             {
-                weaponState = WeaponStates.Enabled;
+                if (!secondaryFiring)
+                    weaponState = WeaponStates.Enabled;
+                else
+                    weaponState = WeaponStates.EnabledForSecondaryFiring;
             }
             UpdateGUIWeaponState();
             BDArmorySetup.Instance.UpdateCursorState();
