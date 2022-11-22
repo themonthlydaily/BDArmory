@@ -9,6 +9,7 @@
 - Weapons:
 	- Don't activate all engines on modular missiles when firing them, leave it up to the configured action groups.
 	- 0 damage beam lasers will no longer cause battledamage.
+  - Adjusts post-penetration calculations to prevent non-physical penetration/bullet mass adjustments. 
 - Spawning
 	- Spawner will now spawn craft facing inwards, if spawn distance is larger than competition distance.
 - Armor/Hull
