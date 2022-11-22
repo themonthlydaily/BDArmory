@@ -1192,7 +1192,7 @@ namespace BDArmory.Weapons
                             {
                                 if (!validAmmoTypes.Contains(customAmmoBelt[i]))
                                 {
-                                    Debug.LogWarning($"[BDArmory.ModuleWeapon] Invalid ammo type {customAmmoBelt[i]} at position {i} in ammo belt! reverting to valid ammo type {validAmmoTypes[0]}");
+                                    Debug.LogWarning($"[BDArmory.ModuleWeapon] Invalid ammo type {customAmmoBelt[i]} at position {i} in ammo belt of {WeaponName} on {vessel.vesselName}! reverting to valid ammo type {validAmmoTypes[0]}");
                                     customAmmoBelt[i] = validAmmoTypes[0];
                                 }
                             }
@@ -5773,7 +5773,7 @@ namespace BDArmory.Weapons
             {
                 editor.Unlock("BD_MN_GUILock");
             }
-            guiWindowRect = GUILayout.Window(GetInstanceID(), guiWindowRect, GUIWindow, "Weapon Group GUI", Styles.styleEditorPanel);
+            guiWindowRect = GUILayout.Window(GUIUtility.GetControlID(FocusType.Passive), guiWindowRect, GUIWindow, "Weapon Group GUI", Styles.styleEditorPanel);
         }
 
         public void GUIWindow(int windowID)

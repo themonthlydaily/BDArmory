@@ -402,15 +402,23 @@ namespace BDArmory.Competition.VesselSpawning
         /// <param name="spawnConfig"></param>
         /// <param name="spawnAirborne"></param>
         /// <returns></returns>
-        protected IEnumerator PostSpawnMainSequence(SpawnConfig spawnConfig, bool spawnAirborne)
+        protected IEnumerator PostSpawnMainSequence(SpawnConfig spawnConfig, bool spawnAirborne, bool ignoreValidity = false)
         {
-            if (BDArmorySettings.DEBUG_SPAWNING) LogMessage("Checking vessel validity", false);
-            yield return CheckVesselValidity(spawnedVessels);
-            if (spawnFailureReason != SpawnFailureReason.None) yield break;
+            if (!ignoreValidity)
+            {
+                if (BDArmorySettings.DEBUG_SPAWNING) LogMessage("Checking vessel validity", false);
+                yield return CheckVesselValidity(spawnedVessels);
+                if (spawnFailureReason != SpawnFailureReason.None) yield break;
 
-            if (BDArmorySettings.DEBUG_SPAWNING) LogMessage("Waiting for weapon managers", false);
-            yield return WaitForWeaponManagers(spawnedVessels, spawnedVesselPartCounts, spawnConfig.numberOfTeams != 1 && spawnConfig.numberOfTeams != -1);
-            if (spawnFailureReason != SpawnFailureReason.None) yield break;
+                if (BDArmorySettings.DEBUG_SPAWNING) LogMessage("Waiting for weapon managers", false);
+                yield return WaitForWeaponManagers(spawnedVessels, spawnedVesselPartCounts, spawnConfig.numberOfTeams != 1 && spawnConfig.numberOfTeams != -1);
+                if (spawnFailureReason != SpawnFailureReason.None) yield break;
+            }
+            else
+            {
+                yield return waitForFixedUpdate; // We need to yield two frames for the spawned vessels' positions to be updated properly.
+                yield return waitForFixedUpdate;
+            }
 
             // Reset craft positions and rotations as sometimes KSP packs and unpacks vessels between frames and resets things! (Possibly due to kerbals in command seats?)
             if (BDArmorySettings.DEBUG_SPAWNING) LogMessage("Resetting final spawn positions", false);
@@ -440,7 +448,7 @@ namespace BDArmory.Competition.VesselSpawning
             if (BDArmorySettings.DEBUG_SPAWNING) LogMessage("Checking for renamed vessels", false);
             SpawnUtils.CheckForRenamedVessels(spawnedVessels);
 
-            if (BDArmorySettings.RUNWAY_PROJECT)
+            if (BDArmorySettings.RUNWAY_PROJECT && !ignoreValidity)
             {
                 // Check AI/WM counts and placement for RWP.
                 foreach (var vesselName in spawnedVessels.Keys)
@@ -746,15 +754,21 @@ namespace BDArmory.Competition.VesselSpawning
         protected void AirborneActivation(Vessel vessel)
         {
             // Activate the vessel with AG10, or failing that, staging.
-            var weaponManager = VesselModuleRegistry.GetModule<MissileFire>(vessel);
             vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[10]); // Modular Missiles use lower AGs (1-3) for staging, use a high AG number to not affect them
-            weaponManager.AI.ActivatePilot();
-            weaponManager.AI.CommandTakeOff();
-            if (weaponManager.guardMode)
+            var weaponManager = VesselModuleRegistry.GetModule<MissileFire>(vessel);
+            if (weaponManager != null)
             {
-                if (BDArmorySettings.DEBUG_SPAWNING) LogMessage($"Disabling guardMode on {vessel.vesselName}.", false);
-                weaponManager.ToggleGuardMode(); // Disable guard mode (in case someone enabled it on AG10 or in the SPH).
-                weaponManager.SetTarget(null);
+                if (weaponManager.AI != null)
+                {
+                    weaponManager.AI.ActivatePilot();
+                    weaponManager.AI.CommandTakeOff();
+                }
+                if (weaponManager.guardMode)
+                {
+                    if (BDArmorySettings.DEBUG_SPAWNING) LogMessage($"Disabling guardMode on {vessel.vesselName}.", false);
+                    weaponManager.ToggleGuardMode(); // Disable guard mode (in case someone enabled it on AG10 or in the SPH).
+                    weaponManager.SetTarget(null);
+                }
             }
 
             if (!BDArmorySettings.NO_ENGINES && SpawnUtils.CountActiveEngines(vessel) == 0) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.

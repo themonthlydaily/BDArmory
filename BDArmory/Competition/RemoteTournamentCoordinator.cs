@@ -97,7 +97,7 @@ namespace BDArmory.Competition
             var altitude = BDArmorySettings.VESSEL_SPAWN_ALTITUDE;
             var spawnRadius = BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR;
             // var spawnStrategy = new PointSpawnStrategy(craftUrl, latitude, longitude, 2*altitude, 315.0f);
-            Debug.Log("[RemoteTournamentCoordinator] Creating Spawn Strategy - WorldIndex: " + worldIndex + "; course name: " + WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].name);
+            Debug.Log("[BDArmory.RemoteTournamentCoordinator] Creating Spawn Strategy - WorldIndex: " + worldIndex + "; course name: " + WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].name);
             var spawnStrategy = new SpawnConfigStrategy(
                 new CircularSpawnConfig(
                     new SpawnConfig(

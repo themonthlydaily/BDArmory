@@ -258,7 +258,7 @@ namespace BDArmory.UI
         {
             if (showArmorWindow)
             {
-                windowRect = GUI.Window(this.GetInstanceID(), windowRect, WindowArmor, windowTitle, BDArmorySetup.BDGuiSkin.window);
+                windowRect = GUI.Window(GUIUtility.GetControlID(FocusType.Passive), windowRect, WindowArmor, windowTitle, BDArmorySetup.BDGuiSkin.window);
             }
             PreventClickThrough();
         }

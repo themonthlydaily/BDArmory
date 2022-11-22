@@ -175,7 +175,7 @@ namespace BDArmory.UI
             }
             if (open)
             {
-				windowRect = GUI.Window(this.GetInstanceID(), windowRect, AmmoSelectorWindow, "", BDArmorySetup.BDGuiSkin.window);
+				windowRect = GUI.Window(GUIUtility.GetControlID(FocusType.Passive), windowRect, AmmoSelectorWindow, "", BDArmorySetup.BDGuiSkin.window);
             }
             PreventClickThrough();
         }
