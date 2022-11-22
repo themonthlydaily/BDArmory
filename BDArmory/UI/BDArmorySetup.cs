@@ -556,7 +556,7 @@ namespace BDArmory.UI
                             break;
 
                         case "BDArmory":
-                            Version = a.Current.GetName().Version.ToString() + " SI Dev";
+                            Version = a.Current.GetName().Version.ToString();
                             break;
                     }
                 }

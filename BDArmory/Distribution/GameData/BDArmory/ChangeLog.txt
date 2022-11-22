@@ -1,4 +1,19 @@
-﻿IMPROVEMENTS / FIXES
+﻿﻿- Add a --tsv option to the n-choose-k parsing script to output a TSV file instead of a CSV file.
+
+- Add version watermark to Competition UI
+- Add 'target damage' Target Priority setting
+- Some optimizatiosn to the ECMJammer code
+- Jammers now appear on Radar Warning Receivers
+- Fix missing NukeFX Flash  
+- Improvements to Spacehacks repulsor code
+	- Will no longer shred landed ships
+	- landing gear will now serve as repulsors when Repulsor mode is enabled instead of effect propigating through CoM, should result in more stable hovercraft
+- Fix non-damaging lasers not scoring
+- Tighten up firing angle when using subsystem targeting; Ai will now fire when subsystem part within angle, not entire vessel
+- Fixes to cluster missile code
+- 
+v1.5.4.1
+IMPROVEMENTS / FIXES
 - General:
 	- Fix a crash-to-desktop due to firing missiles with action groups but without a WM.
 	- Add a 'recentlyFiring' property for CameraTools that checks all guns for having fired recently (instead of just the current one) and for having fired a missile recently. Make the camera vessel selection use this too.
