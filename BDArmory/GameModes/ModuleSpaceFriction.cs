@@ -186,19 +186,17 @@ namespace BDArmory.GameModes
                                 }
                             }
 
-                            if (VesselModuleRegistry.GetRepulsorModules(vessel).Count > 0)
-                            {
-                                using (var craftPart = VesselModuleRegistry.GetRepulsorModules(vessel).GetEnumerator())
-                                    while (craftPart.MoveNext())
+                            var repulsorModules = VesselModuleRegistry.GetRepulsorModules(vessel);
+                            using (var craftPart = repulsorModules.GetEnumerator())
+                                while (craftPart.MoveNext())
+                                {
+                                    if (craftPart.Current is null) continue;
+                                    if (craftPart.Current.part.PhysicsSignificance != 1) //attempting to apply rigidbody force to non-significant parts will NRE
                                     {
-                                        if (craftPart.Current is null) continue;
-                                        if (craftPart.Current.part.PhysicsSignificance != 1) //attempting to apply rigidbody force to non-significant parts will NRE
-                                        {
-                                            craftPart.Current.part.Rigidbody.AddForce(((-FlightGlobals.getGeeForceAtPosition(craftPart.Current.part.transform.position) * ((part.vessel.GetTotalMass() * 10) / repulsors)) * ((vesselAlt / Mathf.Max(BodyUtils.GetRadarAltitudeAtPos(craftPart.Current.part.transform.position), 1))) / accelMult), ForceMode.Acceleration);
-                                        }
+                                        craftPart.Current.part.Rigidbody.AddForce(((-FlightGlobals.getGeeForceAtPosition(craftPart.Current.part.transform.position) * ((part.vessel.GetTotalMass() * 10) / repulsors)) * ((vesselAlt / Mathf.Max(BodyUtils.GetRadarAltitudeAtPos(craftPart.Current.part.transform.position), 1))) / accelMult), ForceMode.Acceleration);
                                     }
-                            }
-                            else
+                                }
+                            /*else
                             {
                                 for (int i = 0; i < part.vessel.Parts.Count; i++)
                                 {
@@ -207,7 +205,7 @@ namespace BDArmory.GameModes
                                         part.vessel.Parts[i].Rigidbody.AddForce((-FlightGlobals.getGeeForceAtPosition(part.vessel.Parts[i].transform.position) * ((vesselAlt / Mathf.Max((float)part.vessel.radarAltitude, 1))) / accelMult), ForceMode.Acceleration);
                                     }
                                 }
-                            }
+                            }*/
                         }
                     }
                 }

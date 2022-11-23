@@ -797,6 +797,7 @@ namespace BDArmory.UI
                 { "targetWeightClosureTime", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveWeaponManager.targetWeightClosureTime, -10, 10) },
                 { "targetWeightWeaponNumber", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveWeaponManager.targetWeightWeaponNumber, -10, 10) },
                 { "targetWeightMass", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveWeaponManager.targetWeightMass,-10, 10) },
+                { "targetWeightDamage", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveWeaponManager.targetWeightDamage,-10, 10) },
                 { "targetWeightFriendliesEngaging", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveWeaponManager.targetWeightFriendliesEngaging, -10, 10) },
                 { "targetWeightThreat", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveWeaponManager.targetWeightThreat, -10, 10) },
                 { "targetWeightProtectTeammate", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveWeaponManager.targetWeightProtectTeammate, -10, 10) },
@@ -1799,7 +1800,7 @@ namespace BDArmory.UI
                         ActiveWeaponManager.targetWeightDamage = (float)textNumFields["targetWeightDamage"].currentValue;
                     }
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (priorityLines * entryHeight), 35, entryHeight),
-                        ActiveWeaponManager.targetWeightMass.ToString(), leftLabel);
+                        ActiveWeaponManager.targetWeightDamage.ToString(), leftLabel);
                     priorityLines++;
 
                     GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), StringUtils.Localize("#LOC_BDArmory_WMWindow_targetAllies"), leftLabel); //target mass"
@@ -2129,7 +2130,7 @@ namespace BDArmory.UI
                             GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_WMWindow_targetClosingTime_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt closing time
                             GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_WMWindow_targetgunNumber_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt weapons num
                             GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_WMWindow_targetMass_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt mass
-                            GUILayout.Label(StringUtils.Localize("LOC_BDArmory_WMWindow_targetDmg_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt Damage
+                            GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_WMWindow_targetDmg_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt Damage
                             GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_WMWindow_targetAllies_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt allies attacking
                             GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_WMWindow_targetThreat_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt threat
                             GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_WMWindow_targetVIP_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt VIP

@@ -322,8 +322,7 @@ namespace BDArmory.Weapons.Missiles
             if (isClusterMissile) salvoSize = launchTransforms.Length;
             if (!(missileSalvo != null))
             {
-                missileSalvo = StartCoroutine(salvoFire(killWhenDone));
-                Debug.Log("[MultiMissileLauncher] sourceVessel is: " + missileLauncher.SourceVessel);
+                missileSalvo = StartCoroutine(salvoFire(killWhenDone));                
                 wpm = VesselModuleRegistry.GetMissileFire(missileLauncher.SourceVessel, true);
                 if (useSymCounterpart)
                 {

@@ -337,7 +337,7 @@ namespace BDArmory.UI
             int numButtons = 10;
             int numButtonsOnLeft = 5;
             GUI.DragWindow(new Rect(numButtonsOnLeft * _buttonHeight + _margin, 0f, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - numButtons * _buttonHeight - 3f * _margin, _titleHeight));
-            //GUI.Label(new Rect(5f * _buttonHeight + _margin * 2, 4f, _buttonHeight * 10, _buttonHeight), BDArmorySetup.Instance.Version);
+            GUI.Label(new Rect(BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - (numButtons - numButtonsOnLeft) * _buttonHeight - _margin - 70f, 4f, 70f, _titleHeight - 4f), BDArmorySetup.Instance.Version);
             if (GUI.Button(new Rect(0f * _buttonHeight + _margin, 4f, _buttonHeight, _buttonHeight), "><", BDArmorySetup.BDGuiSkin.button)) // Don't get so small that the buttons get hidden.
             {
                 BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH -= 50f;
@@ -639,7 +639,7 @@ namespace BDArmory.UI
             }
 
             height += _margin;
-            _windowHeight = height;
+            _windowHeight = Mathf.Max(height, _titleHeight + _buttonHeight);
         }
 
         StringBuilder VSEntryString = new StringBuilder();

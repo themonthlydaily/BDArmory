@@ -223,6 +223,11 @@ namespace BDArmory.Utils
                 registryKerbalEVA[vessel] = vessel.FindPartModulesImplementing<KerbalEVA>();
                 if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.VesselModuleRegistry]: Specialised registry entry for {vessel.vesselName} updated to have {registryKerbalEVA[vessel].Count} modules of type {typeof(KerbalEVA).Name}.");
             }
+            if (registryRepulsorModule.ContainsKey(vessel) && (partsAdded || registryRepulsorModule[vessel].Count > 0))
+            {
+                registryRepulsorModule[vessel] = vessel.FindPartModulesImplementing<ModuleWheelBase>();
+                if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.VesselModuleRegistry]: Specialised registry entry for {vessel.vesselName} updated to have {registryRepulsorModule[vessel].Count} modules of type {typeof(ModuleWheelBase).Name}.");
+            }
         }
         #endregion
 

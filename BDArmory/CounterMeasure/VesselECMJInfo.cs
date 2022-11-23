@@ -42,10 +42,6 @@ namespace BDArmory.CounterMeasure
         {
             get { return rcsr; }
         }
-        public static bool GameIsPaused
-        {
-            get { return PauseMenu.isOpen || Time.timeScale == 0; }
-        }
         void Awake()
         {
             jammers = new List<ModuleECMJammer>();
@@ -161,7 +157,7 @@ namespace BDArmory.CounterMeasure
                 rcsr = 1;
             }
 			
-            TargetInfo ti = RadarUtils.GetVesselRadarSignature(vessel);
+            ti = RadarUtils.GetVesselRadarSignature(vessel);
             ti.radarRCSReducedSignature = ti.radarBaseSignature;
             ti.radarModifiedSignature = ti.radarBaseSignature;
             ti.radarLockbreakFactor = 1;
@@ -182,7 +178,7 @@ namespace BDArmory.CounterMeasure
         }
         void FixedUpdate()
         {
-            if (GameIsPaused) return;
+            if (UI.BDArmorySetup.GameIsPaused) return;
 
             if (jEnabled && jammerStrength > 0)
             {

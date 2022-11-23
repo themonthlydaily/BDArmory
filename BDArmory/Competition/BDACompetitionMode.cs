@@ -204,11 +204,12 @@ namespace BDArmory.Competition
             statusStyle.fontStyle = FontStyle.Bold;
             statusStyle.alignment = TextAnchor.UpperLeft;
             dateStyle = new GUIStyle(statusStyle);
+            int shadowOffset = 2;
             if (BDArmorySetup.GAME_UI_ENABLED)
             {
                 clockRect = new Rect(10, 42, 100, 30);
                 dateRect = new Rect(100, 38, 100, 20);
-                versionRect = new Rect(100, 68, 100, 20);
+                versionRect = new Rect(200, 46, 100, 20);
                 statusRect = new Rect(30, 80, Screen.width - 130, Mathf.FloorToInt(Screen.height / 2));
                 statusStyle.fontSize = 22;
                 dateStyle.fontSize = 14;
@@ -217,23 +218,24 @@ namespace BDArmory.Competition
             {
                 clockRect = new Rect(10, 6, 80, 20);
                 dateRect = new Rect(10, 26, 100, 20);
-                versionRect = new Rect(10, 46, 100, 20);
+                versionRect = new Rect(10, 48, 100, 20);
                 statusRect = new Rect(80, 6, Screen.width - 80, Mathf.FloorToInt(Screen.height / 2));
+                shadowOffset = 1;
                 statusStyle.fontSize = 14;
                 dateStyle.fontSize = 10;
             }
             clockRectShadow = new Rect(clockRect);
-            clockRectShadow.x += 2;
-            clockRectShadow.y += 2;
+            clockRectShadow.x += shadowOffset;
+            clockRectShadow.y += shadowOffset;
             dateRectShadow = new Rect(dateRect);
-            dateRectShadow.x += 2;
-            dateRectShadow.y += 2;
+            dateRectShadow.x += shadowOffset;
+            dateRectShadow.y += shadowOffset;
             versionRectShadow = new Rect(versionRect);
-            versionRectShadow.x += 2;
-            dateRectShadow.y += 2;
+            versionRectShadow.x += shadowOffset;
+            versionRectShadow.y += shadowOffset;
             statusRectShadow = new Rect(statusRect);
-            statusRectShadow.x += 2;
-            statusRectShadow.y += 2;
+            statusRectShadow.x += shadowOffset;
+            statusRectShadow.y += shadowOffset;
             statusStyleShadow = new GUIStyle(statusStyle);
             statusStyleShadow.normal.textColor = new Color(0, 0, 0, 0.75f);
             dateStyleShadow = new GUIStyle(dateStyle);
