@@ -9,12 +9,14 @@
 	- Fixes for Stationary surface vessel mode.
 		- No longer panics, even if airborne (allows for floating/free-fall turrets).
 		- Attitude control (using RCS and reaction wheels) is applied when an enemy is within the engagement range.
+	- Add keybindings for "Next Weapon", "Prev Weapon" and "Fire Missile" in the WM (keybindings for firing guns are on the weapons).
 - Armor:
 	- Fix stack overflow in ToggleScaleClamp for symmetric parts.
 	- Further fixes for post-penetration bugs.
 - Weapons:
 	- Remove the extra delay from dropping the final countermeasure in a sequence.
-	- Add a custom fire keybinding to weapons that can be used to temporarily enable and fire weapons with keys other than the main firing key (request from forums).
+	- Add a custom fire keybinding to weapons that can be used to temporarily enable and fire weapons with keys other than the main firing key.
+		- Click the toggle on the weapon PAW, then press the desired button. Left click to cancel, escape to clear.
 - Spawning:
 	- Allow a specific list of observers to be excluded from being removed during spawning and competitions.
 	- Allow spawning custom templates with only 1 team if not immediately starting a competition.

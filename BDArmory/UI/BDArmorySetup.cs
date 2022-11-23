@@ -2313,9 +2313,9 @@ namespace BDArmory.UI
             return new Rect(settingsWidth / 2 + settingsMargin / 4, line * settingsLineHeight, (settingsWidth - 2 * settingsMargin) / 2 - settingsMargin / 4, settingsLineHeight);
         }
 
-        Rect SLineThirdRect(float line, int pos)
+        Rect SLineThirdRect(float line, int pos, int span = 1)
         {
-            return new Rect(settingsMargin + pos * (settingsWidth - 2f * settingsMargin) / 3f, line * settingsLineHeight, (settingsWidth - 2f * settingsMargin) / 3f, settingsLineHeight);
+            return new Rect(settingsMargin + pos * (settingsWidth - 2f * settingsMargin) / 3f, line * settingsLineHeight, span * (settingsWidth - 2f * settingsMargin) / 3f, settingsLineHeight);
         }
 
         Rect SQuarterRect(float line, int pos, int span = 1)
@@ -3927,14 +3927,13 @@ namespace BDArmory.UI
                         .SetValue(null, new BDInputInfo(inputInfo.description));
                 }
             }
-            GUI.Label(SLeftRect(line), label);
+            GUI.Label(SLineThirdRect(line, 0, 2), label);
             line++;
         }
 
         Rect SSetKeyRect(float line)
         {
-            return new Rect(settingsMargin + (2 * (settingsWidth - 2 * settingsMargin) / 3), line * settingsLineHeight,
-                (settingsWidth - (2 * settingsMargin)) / 6, settingsLineHeight);
+            return new Rect(settingsMargin + (2 * (settingsWidth - 2 * settingsMargin) / 3), line * settingsLineHeight, (settingsWidth - (2 * settingsMargin)) / 6, settingsLineHeight);
         }
 
         Rect SClearKeyRect(float line)
