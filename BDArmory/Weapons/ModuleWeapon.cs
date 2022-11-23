@@ -2095,10 +2095,6 @@ namespace BDArmory.Weapons
                                         pBullet.SetTracerPosition();
                                         pBullet.transform.position += (pVel + kbVel) * Time.fixedDeltaTime;
                                     }
-                                    else
-                                    {
-                                        // Debug.Log("DEBUG immediately hit after " + pBullet.DistanceTraveled + "m and time " + iTime);
-                                    }
                                 }
                                 //heat
 
@@ -3075,7 +3071,7 @@ namespace BDArmory.Weapons
                 Ray ray = new Ray(fireTransforms[i].position, fireTransforms[i].forward);
                 RaycastHit hit;
 
-                if (Physics.Raycast(ray, out hit, maxTargetingRange, layerMask1))
+                if (Physics.Raycast(ray, out hit, checkRange, layerMask1))
                 {
                     KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
                     Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
@@ -3086,7 +3082,7 @@ namespace BDArmory.Weapons
                     }
                 }
 
-                pointingAtPosition = fireTransforms[i].position + (ray.direction * targetDistance);
+                pointingAtPosition = fireTransforms[i].position + (ray.direction * checkRange);
             }
         }
 
@@ -3454,10 +3450,17 @@ namespace BDArmory.Weapons
                 else if (eWeaponType == WeaponTypes.Ballistic && BDArmorySettings.AIM_ASSIST && BDArmorySettings.DRAW_AIMERS)
                 {
                     Vector3 simVelocity = part.rb.velocity + baseBulletVelocity * fireTransform.forward;
-                    Vector3 simCurrPos = fireTransform.position + (baseBulletVelocity * fireTransform.forward) * Time.fixedDeltaTime; // Bullets are initially placed up to 1 frame ahead (iTime).
-                    var simDeltaTime = Mathf.Clamp(Mathf.Min(maxTargetingRange, Mathf.Max(targetDistance, origTargetDistance)) / simVelocity.magnitude / 2f, Time.fixedDeltaTime, Time.fixedDeltaTime * BDArmorySettings.BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER); // With leap-frog, we can use a higher time-step and still get better accuracy than forward Euler (what was used before). Always take at least 2 steps though.
-                    var timeOfFlight = BallisticTrajectorySimulation(ref simCurrPos, simVelocity, Mathf.Min(maxTargetingRange, (simCurrPos - targetPosition).magnitude), maxTargetingRange / baseBulletVelocity, simDeltaTime, FlightGlobals.getAltitudeAtPos(targetPosition) < 0);
-                    bulletPrediction = simCurrPos;
+                    if (Physics.Raycast(new Ray(fireTransform.position, baseBulletVelocity * fireTransform.forward), out RaycastHit hit, Time.fixedDeltaTime * baseBulletVelocity, layerMask1)) // Check between the barrel and the point the bullet appears.
+                    {
+                        bulletPrediction = hit.point;
+                    }
+                    else
+                    {
+                        Vector3 simCurrPos = fireTransform.position + (baseBulletVelocity * fireTransform.forward) * Time.fixedDeltaTime; // Bullets are initially placed up to 1 frame ahead (iTime).
+                        var simDeltaTime = Mathf.Clamp(Mathf.Min(maxTargetingRange, Mathf.Max(targetDistance, origTargetDistance)) / simVelocity.magnitude / 2f, Time.fixedDeltaTime, Time.fixedDeltaTime * BDArmorySettings.BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER); // With leap-frog, we can use a higher time-step and still get better accuracy than forward Euler (what was used before). Always take at least 2 steps though.
+                        var timeOfFlight = BallisticTrajectorySimulation(ref simCurrPos, simVelocity, Mathf.Min(maxTargetingRange, (simCurrPos - targetPosition).magnitude), maxTargetingRange / baseBulletVelocity, simDeltaTime, FlightGlobals.getAltitudeAtPos(targetPosition) < 0);
+                        bulletPrediction = simCurrPos;
+                    }
                     Vector3 pointingPos = fireTransform.position + (fireTransform.forward * targetDistance);
                     trajectoryOffset = pointingPos - bulletPrediction;
                 }
