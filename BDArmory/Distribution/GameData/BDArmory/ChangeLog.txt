@@ -4,33 +4,36 @@
 	- Exclude weapons from the bounds calculations as they sometimes give weird values (e.g., lasers when firing).
 - UI:
 	- Add an option in the UI settings for disabling scroll-zoom prevention when over BDA windows.
-  - Add version watermark to Competition UI.
+	- Add version watermark to Competition UI.
 - AI / WM:
 	- Fixes for Stationary surface vessel mode.
 		- No longer panics, even if airborne (allows for floating/free-fall turrets).
 		- Attitude control (using RCS and reaction wheels) is applied when an enemy is within the engagement range.
-  - Add 'Target Damage' Target Priority setting.
+	- Add 'Target Damage' Target Priority setting.
 - Detectors
-  - Some optimizatiosn to the ECMJammer code.
-  - Active jammers now appear on Radar Warning Receivers.
+	- Some optimizatiosn to the ECMJammer code.
+	- Active jammers now appear on Radar Warning Receivers.
+	- Add keybindings for "Next Weapon", "Prev Weapon" and "Fire Missile" in the WM (keybindings for firing guns are on the weapons).
 - Armor:
 	- Fix stack overflow in ToggleScaleClamp for symmetric parts.
 	- Further fixes for post-penetration bugs.
 - Weapons:
 	- Remove the extra delay from dropping the final countermeasure in a sequence.
-  - Fix non-damaging lasers not scoring.
-  - Tightened up firing angle when using subsystem targeting; AI will now fire when subsystem part is within angle, not entire vessel.
-  - Fix missing NukeFX Flash.
+	- Fix non-damaging lasers not scoring.
+	- Tightened up firing angle when using subsystem targeting; AI will now fire when subsystem part is within angle, not entire vessel.
+	- Fix missing NukeFX Flash.
 	- Add a custom fire keybinding to weapons that can be used to temporarily enable and fire weapons with keys other than the main firing key (request from forums).
 	- Fix the targeting reticle placement at very short range.
+	- Add a custom fire keybinding to weapons that can be used to temporarily enable and fire weapons with keys other than the main firing key.
+		- Click the toggle on the weapon PAW, then press the desired button. Left click to cancel, escape to clear.
 - Spawning:
 	- Allow a specific list of observers to be excluded from being removed during spawning and competitions.
 	- Allow spawning custom templates with only 1 team if not immediately starting a competition.
 	- Allow spawning non-valid craft via the custom spawn templates if not immediately starting a competition.
 - RWP:
 	- Fixes for remote orchestration.  
-  - Improvements to Spacehacks repulsor code; will no longer shred landed ships.
-	  - Landing gear will now serve as repulsors when Repulsor mode is enabled instead of effect propagating through CoM, should result in more stable hovercraft.
+	- Improvements to Spacehacks repulsor code; will no longer shred landed ships.
+		- Landing gear will now serve as repulsors when Repulsor mode is enabled instead of effect propagating through CoM, should result in more stable hovercraft.
 
 v1.5.4.1
 IMPROVEMENTS / FIXES
