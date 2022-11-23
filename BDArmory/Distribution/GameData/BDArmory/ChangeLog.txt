@@ -2,6 +2,8 @@
 	- Add a --tsv option to the n-choose-k parsing script to output a TSV file instead of a CSV file.
 	- Tweaks to scroll-zoom prevention.
 	- Exclude weapons from the bounds calculations as they sometimes give weird values (e.g., lasers when firing).
+- UI:
+	- Add an option in the UI settings for disabling scroll-zoom prevention when over BDA windows.
   - Add version watermark to Competition UI.
 - AI / WM:
 	- Fixes for Stationary surface vessel mode.
@@ -19,6 +21,8 @@
   - Fix non-damaging lasers not scoring.
   - Tightened up firing angle when using subsystem targeting; AI will now fire when subsystem part is within angle, not entire vessel.
   - Fix missing NukeFX Flash.
+	- Add a custom fire keybinding to weapons that can be used to temporarily enable and fire weapons with keys other than the main firing key (request from forums).
+
 - Spawning:
 	- Allow a specific list of observers to be excluded from being removed during spawning and competitions.
 	- Allow spawning custom templates with only 1 team if not immediately starting a competition.
