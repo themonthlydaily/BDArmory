@@ -255,6 +255,7 @@ namespace BDArmory.Competition.VesselSpawning
         public void RemoveVessel(Vessel vessel)
         {
             if (vessel == null) return;
+            if (VesselSpawnerWindow.Instance.Observers.Contains(vessel)) return; // Don't remove observers.
             if (BDArmorySettings.ASTEROID_RAIN && vessel.vesselType == VesselType.SpaceObject) return; // Don't remove asteroids we're using.
             if (BDArmorySettings.ASTEROID_FIELD && vessel.vesselType == VesselType.SpaceObject) return; // Don't remove asteroids we're using.
             StartCoroutine(RemoveVesselCoroutine(vessel));

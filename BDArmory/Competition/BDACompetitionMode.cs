@@ -1925,7 +1925,9 @@ namespace BDArmory.Competition
             }
             if (vessel != null)
             {
-                if (vessel.parts.Count == 1 && vessel.parts[0].IsKerbalEVA()) // The vessel is a kerbal on EVA. Ignore it for now.
+                if (VesselSpawnerWindow.Instance.Observers.Contains(vessel) // Ignore observers.
+                   || (vessel.parts.Count == 1 && vessel.parts[0].IsKerbalEVA()) // The vessel is a kerbal on EVA. Ignore it for now.
+                )
                 {
                     // KerbalSafetyManager.Instance.CheckForFallingKerbals(vessel);
                     if (nonCompetitorsToRemove.Contains(vessel)) nonCompetitorsToRemove.Remove(vessel);
@@ -3152,7 +3154,7 @@ namespace BDArmory.Competition
         {
             CheckMemoryUsage();
 #if DEBUG
-            if(BDArmorySettings.DEBUG_SETTINGS_TOGGLE) CheckNumbersOfThings();
+            if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE) CheckNumbersOfThings();
 #endif
         }
 

@@ -34,8 +34,12 @@ namespace BDArmory.Competition.VesselSpawning
         public override IEnumerator Spawn(SpawnConfig spawnConfig)
         {
             var circularSpawnConfig = spawnConfig as CircularSpawnConfig;
-            if (circularSpawnConfig == null) yield break;
-            SpawnAllVesselsOnceAsCoroutine(circularSpawnConfig);
+            if (circularSpawnConfig == null)
+            {
+                Debug.LogError($"[BDArmory.CircularSpawning]: SpawnConfig wasn't a valid CircularSpawnConfig");
+                yield break;
+            }
+            yield return SpawnAllVesselsOnceAsCoroutine(circularSpawnConfig);
         }
         public void CancelSpawning()
         {
@@ -218,7 +222,7 @@ namespace BDArmory.Competition.VesselSpawning
                         var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(teamHeading + heading, radialUnitVector) * refDirection, radialUnitVector).normalized; // Local position
                         Vector3 position = teamSpawnPosition + spawnDistance / 4f * direction; // Spawn in clusters around the team spawn points.
                         direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(teamHeading + heading / 8f, radialUnitVector) * refDirection, radialUnitVector).normalized; // Facing direction
-                        if (spawnDistance * 1.25f > BDArmorySettings.COMPETITION_DISTANCE / 2f / Mathf.Sin(Mathf.PI / spawnedVesselCount)) direction *= -1f; 
+                        if (spawnDistance * 1.25f > BDArmorySettings.COMPETITION_DISTANCE / 2f / Mathf.Sin(Mathf.PI / spawnedVesselCount)) direction *= -1f;
                         vesselSpawnConfigs.Add(new VesselSpawnConfig(craftUrl, position, direction, (float)spawnConfig.altitude, -80f, spawnAirborne));
                         ++spawnedVesselCount;
                         ++teamSpawnCount;

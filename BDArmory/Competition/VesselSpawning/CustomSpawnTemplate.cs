@@ -164,7 +164,7 @@ namespace BDArmory.Competition.VesselSpawning
 
             #region Post-spawning
             // Spawning has succeeded, vessels have been renamed where necessary and vessels are ready. Time to assign teams and any other stuff.
-            yield return PostSpawnMainSequence(spawnConfig, false);
+            yield return PostSpawnMainSequence(spawnConfig, false, !startCompetitionAfterSpawning);
             if (spawnFailureReason != SpawnFailureReason.None)
             {
                 LogMessage("Vessel spawning FAILED! " + spawnFailureReason);
@@ -177,7 +177,7 @@ namespace BDArmory.Competition.VesselSpawning
             SpawnUtils.RevertSpawnLocationCamera(true);
             if ((FlightGlobals.ActiveVessel == null || FlightGlobals.ActiveVessel.state == Vessel.State.DEAD) && spawnedVessels.Count > 0)
             {
-                LoadedVesselSwitcher.Instance.ForceSwitchVessel(spawnedVessels.Take(UnityEngine.Random.Range(1, spawnedVessels.Count)).Last().Value); // Update the camera.
+                yield return LoadedVesselSwitcher.Instance.SwitchToVesselWhenPossible(spawnedVessels.Take(UnityEngine.Random.Range(1, spawnedVessels.Count)).Last().Value); // Update the camera.
             }
             FlightCamera.fetch.SetDistance(50);
 
@@ -371,7 +371,7 @@ namespace BDArmory.Competition.VesselSpawning
         public bool ConfigureTemplate(bool startCompetitionAfterSpawning)
         {
             // Sanity check
-            if (customSpawnConfig.customVesselSpawnConfigs.Count(team => team.Count(cfg => !string.IsNullOrEmpty(cfg.craftURL)) > 0) < 2) // At least two non-empty teams.
+            if (startCompetitionAfterSpawning && customSpawnConfig.customVesselSpawnConfigs.Count(team => team.Count(cfg => !string.IsNullOrEmpty(cfg.craftURL)) > 0) < 2) // At least two non-empty teams.
             {
                 BDACompetitionMode.Instance.competitionStatus.Add("Not enough vessels selected for a competition.");
                 return false;
@@ -398,27 +398,28 @@ namespace BDArmory.Competition.VesselSpawning
                 if (Event.current.type == EventType.MouseDown && !templateSelectionWindowRect.Contains(Event.current.mousePosition))
                     HideTemplateSelection();
                 else
-                    templateSelectionWindowRect = GUILayout.Window(GetInstanceID(), templateSelectionWindowRect, TemplateSelectionWindow, "Template Selection", BDArmorySetup.BDGuiSkin.window);
+                    templateSelectionWindowRect = GUILayout.Window(GUIUtility.GetControlID(FocusType.Passive), templateSelectionWindowRect, TemplateSelectionWindow, StringUtils.Localize("#LOC_BDArmory_Settings_CustomSpawnTemplate_TemplateSelection"), BDArmorySetup.BDGuiSkin.window);
             }
             if (showCrewSelection)
             {
                 if (Event.current.type == EventType.MouseDown && !crewSelectionWindowRect.Contains(Event.current.mousePosition))
                     HideCrewSelection();
                 else
-                    crewSelectionWindowRect = GUILayout.Window(GetInstanceID(), crewSelectionWindowRect, CrewSelectionWindow, "Crew Selection", BDArmorySetup.BDGuiSkin.window);
+                    crewSelectionWindowRect = GUILayout.Window(GUIUtility.GetControlID(FocusType.Passive), crewSelectionWindowRect, CrewSelectionWindow, StringUtils.Localize("#LOC_BDArmory_Settings_CustomSpawnTemplate_CrewSelection"), BDArmorySetup.BDGuiSkin.window);
             }
             if (showVesselSelection)
             {
                 if (Event.current.type == EventType.MouseDown && !vesselSelectionWindowRect.Contains(Event.current.mousePosition))
                     HideVesselSelection();
                 else
-                    vesselSelectionWindowRect = GUILayout.Window(GetInstanceID(), vesselSelectionWindowRect, VesselSelectionWindow, "Vessel Selection", BDArmorySetup.BDGuiSkin.window);
+                    vesselSelectionWindowRect = GUILayout.Window(GUIUtility.GetControlID(FocusType.Passive), vesselSelectionWindowRect, VesselSelectionWindow, StringUtils.Localize("#LOC_BDArmory_Settings_CustomSpawnTemplate_VesselSelection"), BDArmorySetup.BDGuiSkin.window);
             }
         }
 
         #region Template Selection
         internal static int _templateGUICheckIndex = -1;
         bool showTemplateSelection = false;
+        bool bringTemplateSelectionToFront = false;
         Rect templateSelectionWindowRect = new Rect(0, 0, 300, 200);
         Vector2 templateSelectionScrollPos = default;
         /// <summary>
@@ -430,6 +431,7 @@ namespace BDArmory.Competition.VesselSpawning
             HideOtherWindows("template");
             templateSelectionWindowRect.position = position + new Vector2(-templateSelectionWindowRect.width / 2, 20); // Centred and slightly below.
             showTemplateSelection = true;
+            bringTemplateSelectionToFront = true;
             GUIUtils.SetGUIRectVisible(_templateGUICheckIndex, true);
         }
 
@@ -447,7 +449,7 @@ namespace BDArmory.Competition.VesselSpawning
         {
             GUI.DragWindow(new Rect(0, 0, templateSelectionWindowRect.width, 20));
             GUILayout.BeginVertical();
-            templateSelectionScrollPos = GUILayout.BeginScrollView(templateSelectionScrollPos, GUI.skin.box, GUILayout.Width(templateSelectionWindowRect.width - 20), GUILayout.MaxHeight(templateSelectionWindowRect.height - 10));
+            templateSelectionScrollPos = GUILayout.BeginScrollView(templateSelectionScrollPos, GUI.skin.box, GUILayout.Width(templateSelectionWindowRect.width - 15), GUILayout.MaxHeight(templateSelectionWindowRect.height - 10));
             using (var templateName = customSpawnConfigs.GetEnumerator())
                 while (templateName.MoveNext())
                 {
@@ -475,7 +477,11 @@ namespace BDArmory.Competition.VesselSpawning
             GUIUtils.RepositionWindow(ref templateSelectionWindowRect);
             GUIUtils.UpdateGUIRect(templateSelectionWindowRect, _templateGUICheckIndex);
             GUIUtils.UseMouseEventInRect(templateSelectionWindowRect);
-            GUI.BringWindowToFront(windowID);
+            if (bringTemplateSelectionToFront)
+            {
+                GUI.BringWindowToFront(windowID);
+                bringTemplateSelectionToFront = false;
+            }
         }
         #endregion
 
@@ -484,6 +490,7 @@ namespace BDArmory.Competition.VesselSpawning
         List<CustomVesselSpawnConfig> currentTeamSpawnConfigs;
         internal static int _vesselGUICheckIndex = -1;
         bool showVesselSelection = false;
+        bool bringVesselSelectionToFront = false;
         Rect vesselSelectionWindowRect = new Rect(0, 0, 600, 800);
         Vector2 vesselSelectionScrollPos = default;
 
@@ -512,6 +519,7 @@ namespace BDArmory.Competition.VesselSpawning
             }
             vesselSelectionWindowRect.position = position + new Vector2(-vesselSelectionWindowRect.width - 120, -vesselSelectionWindowRect.height / 2); // Centred and slightly offset to allow clicking the same spot.
             showVesselSelection = true;
+            bringVesselSelectionToFront = true;
             GUIUtils.SetGUIRectVisible(_vesselGUICheckIndex, true);
         }
 
@@ -532,7 +540,7 @@ namespace BDArmory.Competition.VesselSpawning
         {
             GUI.DragWindow(new Rect(0, 0, vesselSelectionWindowRect.width, 20));
             GUILayout.BeginVertical();
-            vesselSelectionScrollPos = GUILayout.BeginScrollView(vesselSelectionScrollPos, GUI.skin.box, GUILayout.Width(vesselSelectionWindowRect.width - 20), GUILayout.MaxHeight(vesselSelectionWindowRect.height - 60));
+            vesselSelectionScrollPos = GUILayout.BeginScrollView(vesselSelectionScrollPos, GUI.skin.box, GUILayout.Width(vesselSelectionWindowRect.width - 15), GUILayout.MaxHeight(vesselSelectionWindowRect.height - 60));
             using (var vessels = craftBrowser.craftList.GetEnumerator())
                 while (vessels.MoveNext())
                 {
@@ -580,7 +588,11 @@ namespace BDArmory.Competition.VesselSpawning
             GUIUtils.RepositionWindow(ref vesselSelectionWindowRect);
             GUIUtils.UpdateGUIRect(vesselSelectionWindowRect, _vesselGUICheckIndex);
             GUIUtils.UseMouseEventInRect(vesselSelectionWindowRect);
-            GUI.BringWindowToFront(windowID);
+            if (bringVesselSelectionToFront)
+            {
+                bringVesselSelectionToFront = false;
+                GUI.BringWindowToFront(windowID);
+            }
         }
 
         internal class CustomCraftBrowserDialog
@@ -628,9 +640,11 @@ namespace BDArmory.Competition.VesselSpawning
         #region Crew Selection
         internal static int _crewGUICheckIndex = -1;
         bool showCrewSelection = false;
+        bool bringCrewSelectionToFront = false;
         Rect crewSelectionWindowRect = new Rect(0, 0, 300, 400);
         Vector2 crewSelectionScrollPos = default;
         HashSet<string> SelectedCrewMembers = new HashSet<string>();
+        HashSet<string> ObserverCrewMembers = new HashSet<string>();
 
         /// <summary>
         /// Show the crew selection window.
@@ -648,12 +662,14 @@ namespace BDArmory.Competition.VesselSpawning
             currentVesselSpawnConfig = vesselSpawnConfig;
             crewSelectionWindowRect.position = position + new Vector2(50, -crewSelectionWindowRect.height / 2); // Centred and slightly offset to allow clicking the same spot.
             showCrewSelection = true;
+            bringCrewSelectionToFront = true;
             GUIUtils.SetGUIRectVisible(_crewGUICheckIndex, true);
             foreach (var crew in HighLogic.CurrentGame.CrewRoster.Kerbals(ProtoCrewMember.KerbalType.Crew)) // Set any non-assigned crew as available.
             {
                 if (crew.rosterStatus != ProtoCrewMember.RosterStatus.Assigned)
                     crew.rosterStatus = ProtoCrewMember.RosterStatus.Available;
             }
+            RefreshObserverCrewMembers();
         }
 
         /// <summary>
@@ -680,12 +696,12 @@ namespace BDArmory.Competition.VesselSpawning
             KerbalRoster kerbalRoster = HighLogic.CurrentGame.CrewRoster;
             GUI.DragWindow(new Rect(0, 0, crewSelectionWindowRect.width, 20));
             GUILayout.BeginVertical();
-            crewSelectionScrollPos = GUILayout.BeginScrollView(crewSelectionScrollPos, GUI.skin.box, GUILayout.Width(crewSelectionWindowRect.width - 20), GUILayout.MaxHeight(crewSelectionWindowRect.height - 60));
+            crewSelectionScrollPos = GUILayout.BeginScrollView(crewSelectionScrollPos, GUI.skin.box, GUILayout.Width(crewSelectionWindowRect.width - 15), GUILayout.MaxHeight(crewSelectionWindowRect.height - 60));
             using (var kerbals = kerbalRoster.Kerbals(ProtoCrewMember.KerbalType.Crew).GetEnumerator())
                 while (kerbals.MoveNext())
                 {
                     ProtoCrewMember crewMember = kerbals.Current;
-                    if (crewMember == null || SelectedCrewMembers.Contains(crewMember.name)) continue;
+                    if (crewMember == null || SelectedCrewMembers.Contains(crewMember.name) || ObserverCrewMembers.Contains(crewMember.name)) continue;
                     if (GUILayout.Button($"{crewMember.name}, {crewMember.gender}, {crewMember.trait}", BDArmorySetup.BDGuiSkin.button))
                     {
                         SelectedCrewMembers.Remove(currentVesselSpawnConfig.kerbalName);
@@ -717,7 +733,11 @@ namespace BDArmory.Competition.VesselSpawning
             GUIUtils.RepositionWindow(ref crewSelectionWindowRect);
             GUIUtils.UpdateGUIRect(crewSelectionWindowRect, _crewGUICheckIndex);
             GUIUtils.UseMouseEventInRect(crewSelectionWindowRect);
-            GUI.BringWindowToFront(windowID);
+            if (bringCrewSelectionToFront)
+            {
+                bringCrewSelectionToFront = false;
+                GUI.BringWindowToFront(windowID);
+            }
         }
 
         /// <summary>
@@ -728,8 +748,37 @@ namespace BDArmory.Competition.VesselSpawning
             SelectedCrewMembers.Clear();
             foreach (var team in customSpawnConfig.customVesselSpawnConfigs)
                 foreach (var member in team)
-                    if (member.kerbalName != null)
+                    if (!string.IsNullOrEmpty(member.kerbalName))
                         SelectedCrewMembers.Add(member.kerbalName);
+        }
+
+        /// <summary>
+        /// Refresh the crew members that are on observer craft.
+        /// </summary>
+        public void RefreshObserverCrewMembers()
+        {
+            ObserverCrewMembers.Clear();
+            // Find any crew on observer vessels.
+            foreach (var vessel in VesselSpawnerWindow.Instance.Observers)
+            {
+                if (vessel == null || !vessel.loaded) continue;
+                foreach (var part in vessel.Parts)
+                    {
+                        if (part == null) continue;
+                        foreach (var crew in part.protoModuleCrew)
+                        {
+                            if (crew == null) continue;
+                            ObserverCrewMembers.Add(crew.name);
+                        }
+                    }
+            }
+            // Remove any observers from already assigned slots.
+            foreach (var team in customSpawnConfig.customVesselSpawnConfigs)
+                foreach (var member in team)
+                    if (!string.IsNullOrEmpty(member.kerbalName) && ObserverCrewMembers.Contains(member.kerbalName))
+                        member.kerbalName = null;
+            // Then refresh the selected crew.
+            RefreshSelectedCrew();
         }
         #endregion
 

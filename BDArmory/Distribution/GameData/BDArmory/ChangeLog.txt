@@ -1,17 +1,37 @@
-﻿﻿- Add a --tsv option to the n-choose-k parsing script to output a TSV file instead of a CSV file.
+﻿- General:
+	- Add a --tsv option to the n-choose-k parsing script to output a TSV file instead of a CSV file.
+	- Tweaks to scroll-zoom prevention.
+	- Exclude weapons from the bounds calculations as they sometimes give weird values (e.g., lasers when firing).
+- UI:
+	- Add an option in the UI settings for disabling scroll-zoom prevention when over BDA windows.
+  - Add version watermark to Competition UI.
+- AI / WM:
+	- Fixes for Stationary surface vessel mode.
+		- No longer panics, even if airborne (allows for floating/free-fall turrets).
+		- Attitude control (using RCS and reaction wheels) is applied when an enemy is within the engagement range.
+  - Add 'Target Damage' Target Priority setting.
+- Detectors
+  - Some optimizatiosn to the ECMJammer code.
+  - Active jammers now appear on Radar Warning Receivers.
+- Armor:
+	- Fix stack overflow in ToggleScaleClamp for symmetric parts.
+	- Further fixes for post-penetration bugs.
+- Weapons:
+	- Remove the extra delay from dropping the final countermeasure in a sequence.
+  - Fix non-damaging lasers not scoring.
+  - Tightened up firing angle when using subsystem targeting; AI will now fire when subsystem part is within angle, not entire vessel.
+  - Fix missing NukeFX Flash.
+	- Add a custom fire keybinding to weapons that can be used to temporarily enable and fire weapons with keys other than the main firing key (request from forums).
 
-- Add version watermark to Competition UI
-- Add 'target damage' Target Priority setting
-- Some optimizatiosn to the ECMJammer code
-- Jammers now appear on Radar Warning Receivers
-- Fix missing NukeFX Flash  
-- Improvements to Spacehacks repulsor code
-	- Will no longer shred landed ships
-	- landing gear will now serve as repulsors when Repulsor mode is enabled instead of effect propigating through CoM, should result in more stable hovercraft
-- Fix non-damaging lasers not scoring
-- Tighten up firing angle when using subsystem targeting; Ai will now fire when subsystem part within angle, not entire vessel
-- Fixes to cluster missile code
-- 
+- Spawning:
+	- Allow a specific list of observers to be excluded from being removed during spawning and competitions.
+	- Allow spawning custom templates with only 1 team if not immediately starting a competition.
+	- Allow spawning non-valid craft via the custom spawn templates if not immediately starting a competition.
+- RWP:
+	- Fixes for remote orchestration.  
+  - Improvements to Spacehacks repulsor code; will no longer shred landed ships.
+	  - Landing gear will now serve as repulsors when Repulsor mode is enabled instead of effect propagating through CoM, should result in more stable hovercraft.
+
 v1.5.4.1
 IMPROVEMENTS / FIXES
 - General:
@@ -24,19 +44,19 @@ IMPROVEMENTS / FIXES
 - Weapons:
 	- Don't activate all engines on modular missiles when firing them, leave it up to the configured action groups.
 	- 0 damage beam lasers will no longer cause battledamage.
-  - Adjusts post-penetration calculations to prevent non-physical penetration/bullet mass adjustments. 
-- Spawning
-	- Spawner will now spawn craft facing inwards, if spawn distance is larger than competition distance.
-- Armor/Hull
+	- Adjusts post-penetration calculations to prevent non-physical penetration/bullet mass adjustments. 
+- Spawning:
+	- Spawner will now spawn craft facing inwards if spawn distance is larger than competition distance.
+- Armor/Hull:
 	- Armor Tool Hull Visualizer now displays all materials, not just Wood/Al/Steel.
 	- Aluminium armor plates now register their mass for Total Armor cost/mass in the Armor tool.
 	- Fix issue with parts using custom materials with greater than stock maxTemps still exploding at stock maxtemp.
 	- Add crashTolerance modifier to hull materials.
 	- Fix Hull Material modifiers not applying in Flight.
-	- Add user-customizable exclusion list (/BDArmory/PluginData/PartMaterialsBlacklist.cfg) for IgnoredParts/parts that shouldn't have material options. 
-	- Fires from incindiary rounds igniting flammable parts now generates heat if BD FIRE_HEATDMG enabled.
-- RWP 
-	-Add Min Altitude Increases on Death gamemode.
+	- Add user-customizable exclusion list (BDArmory/PluginData/PartMaterialsBlacklist.cfg) for IgnoredParts/parts that shouldn't have material options. 
+	- Fires from incendiary rounds igniting flammable parts now generates heat if BD FIRE_HEATDMG enabled.
+- RWP:
+	- Add Min Altitude Increases on Death game-mode.
 
 v1.5.4.0
 IMPROVEMENTS / FIXES
@@ -45,7 +65,7 @@ IMPROVEMENTS / FIXES
 	- Fix Structural Pwing still shifting CoL sphere in SHP/VAB.
 	- Structural Pwing moved to structural tab.
 	- Rework the BDGUIComboBox.
--Armor/Hull:
+- Armor / Hull:
 	- Setting material to wood and then back to Al/steel now properly resets maxTemp to default.
 	- Expanded Hull material functionality; users can now implement custom hull materials, similar to how the current armor system works.
 		- Adds new BD_Materials.cfg
@@ -60,7 +80,7 @@ IMPROVEMENTS / FIXES
 		- Edit the templates directly in BDArmory/PluginData/spawn_templates.cfg to adjust headings, etc.
 		- Load/delete existing templates.
 		- Assign vessels and specific kerbals to the template's slots, then spawn and start a competition without having to muck around with VesselMover or the "turning bug".
-- Radar	
+- Radar:
 	- Fix Radar GUI display range for datalinked radars.
 	- Fix IRST being unable to activate VRD without a radar enabled.
 - UI:

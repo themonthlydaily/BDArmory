@@ -83,6 +83,11 @@ namespace BDArmory.UI
             return new Rect(_windowWidth / 2 + _margin / 4, line * _lineHeight, (_windowWidth - 2 * _margin) / 2 - _margin / 4, _lineHeight);
         }
 
+        Rect SThirdRect(float line, int pos, int span = 1, float indent = 0)
+        {
+            return new Rect(_margin + pos * (_windowWidth - 2f * _margin) / 3f + indent, line * _lineHeight, span * (_windowWidth - 2f * _margin) / 3f - indent, _lineHeight);
+        }
+
         Rect SQuarterRect(float line, int pos, int span = 1, float indent = 0)
         {
             return new Rect(_margin + (pos % 4) * (_windowWidth - 2f * _margin) / 4f + indent, (line + (int)(pos / 4)) * _lineHeight, span * (_windowWidth - 2f * _margin) / 4f - indent, _lineHeight);
@@ -170,6 +175,7 @@ namespace BDArmory.UI
 
             BDArmorySetup.Instance.hasVesselSpawner = true;
             if (_guiCheckIndex < 0) _guiCheckIndex = GUIUtils.RegisterGUIRect(new Rect());
+            if (_observerGUICheckIndex < 0) _observerGUICheckIndex = GUIUtils.RegisterGUIRect(new Rect());
             _ready = true;
         }
 
@@ -189,6 +195,7 @@ namespace BDArmory.UI
         private void Update()
         {
             HotKeys();
+            if (potentialObserversNeedsRefreshing) RefreshObservers();
         }
 
         private void OnGUI()
@@ -207,7 +214,7 @@ namespace BDArmory.UI
             );
             BDArmorySetup.SetGUIOpacity();
             BDArmorySetup.WindowRectVesselSpawner = GUI.Window(
-                GetInstanceID(), // InstanceID should be unique. FIXME All GUI.Windows should use the same method of generating unique IDs to avoid duplicates.
+                GUIUtility.GetControlID(FocusType.Passive),
                 BDArmorySetup.WindowRectVesselSpawner,
                 WindowVesselSpawner,
                 StringUtils.Localize("#LOC_BDArmory_BDAVesselSpawner_Title"),//"BDA Vessel Spawner"
@@ -215,6 +222,13 @@ namespace BDArmory.UI
             );
             BDArmorySetup.SetGUIOpacity(false);
             GUIUtils.UpdateGUIRect(BDArmorySetup.WindowRectVesselSpawner, _guiCheckIndex);
+            if (showObserverWindow)
+            {
+                if (Event.current.type == EventType.MouseDown && !observerWindowRect.Contains(Event.current.mousePosition))
+                    ShowObserverWindow(false);
+                else
+                    observerWindowRect = GUILayout.Window(GUIUtility.GetControlID(FocusType.Passive), observerWindowRect, ObserverWindow, StringUtils.Localize("#LOC_BDArmory_ObserverSelection_Title"), BDArmorySetup.BDGuiSkin.window);
+            }
         }
 
         void HotKeys()
@@ -442,15 +456,19 @@ namespace BDArmory.UI
                     VesselSpawnerField.Save();
                 }
 
-                if (GUI.Button(SLeftButtonRect(++line), StringUtils.Localize("#LOC_BDArmory_Settings_ClearDebrisNow"), BDArmorySetup.BDGuiSkin.button))
+                if (GUI.Button(SThirdRect(++line, 0), StringUtils.Localize("#LOC_BDArmory_Settings_ClearDebrisNow"), BDArmorySetup.BDGuiSkin.button))
                 {
                     // Clean up debris now
                     BDACompetitionMode.Instance.RemoveDebrisNow();
                 }
-                if (GUI.Button(SRightButtonRect(line), StringUtils.Localize("#LOC_BDArmory_Settings_ClearBystandersNow"), BDArmorySetup.BDGuiSkin.button))
+                if (GUI.Button(SThirdRect(line, 1), StringUtils.Localize("#LOC_BDArmory_Settings_ClearBystandersNow"), BDArmorySetup.BDGuiSkin.button))
                 {
                     // Clean up bystanders now
                     BDACompetitionMode.Instance.RemoveNonCompetitors(true);
+                }
+                if (GUI.Button(SThirdRect(line, 2), StringUtils.Localize("#LOC_BDArmory_Settings_Observers"), BDArmorySetup.BDGuiSkin.button))
+                {
+                    ShowObserverWindow(true, Event.current.mousePosition + BDArmorySetup.WindowRectVesselSpawner.position);
                 }
                 line += 0.3f;
             }
@@ -954,5 +972,87 @@ namespace BDArmory.UI
             BDArmorySetup.Instance.showVesselSpawnerGUI = visible;
             GUIUtils.SetGUIRectVisible(_guiCheckIndex, visible);
         }
+
+        #region Observers
+        static int _observerGUICheckIndex = -1;
+        bool showObserverWindow = false;
+        bool bringObserverWindowToFront = false;
+        bool potentialObserversNeedsRefreshing = false;
+        Rect observerWindowRect = new Rect(0, 0, 300, 250);
+        Vector2 observerSelectionScrollPos = default;
+        List<Vessel> potentialObservers = new List<Vessel>();
+        public HashSet<Vessel> Observers = new HashSet<Vessel>();
+        void ShowObserverWindow(bool show, Vector2 position = default)
+        {
+            if (show)
+            {
+                observerWindowRect.position = position + new Vector2(50, -observerWindowRect.height / 2); // Centred and slightly offset to allow clicking the same spot.
+                RefreshObservers();
+                bringObserverWindowToFront = true;
+            }
+            else
+            {
+                potentialObservers.Clear();
+                if (BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS == 11) // Custom Spawn Template
+                    CustomTemplateSpawning.Instance.RefreshObserverCrewMembers();
+            }
+            showObserverWindow = show;
+            GUIUtils.SetGUIRectVisible(_observerGUICheckIndex, show);
+        }
+        void ObserverWindow(int windowID)
+        {
+            GUI.DragWindow(new Rect(0, 0, observerWindowRect.width, 20));
+            GUILayout.BeginVertical();
+            observerSelectionScrollPos = GUILayout.BeginScrollView(observerSelectionScrollPos, GUI.skin.box, GUILayout.Width(observerWindowRect.width - 15), GUILayout.MaxHeight(observerWindowRect.height - 20));
+            int count = 0;
+            using (var potentialObserver = potentialObservers.GetEnumerator())
+                while (potentialObserver.MoveNext())
+                {
+                    if (potentialObserver.Current == null) { potentialObserversNeedsRefreshing = true; continue; }
+                    bool isSelected = Observers.Contains(potentialObserver.Current);
+                    if (isSelected) ++count;
+                    if (GUILayout.Button(potentialObserver.Current.vesselName, isSelected ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button, GUILayout.Height(30)))
+                    {
+                        if (isSelected) Observers.Remove(potentialObserver.Current);
+                        else Observers.Add(potentialObserver.Current);
+                    }
+                }
+            GUILayout.EndScrollView();
+            if (count == potentialObservers.Count)
+            {
+                if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_ObserverSelection_SelectNone"), BDArmorySetup.BDGuiSkin.box, GUILayout.Height(30)))
+                    Observers.Clear();
+            }
+            else
+            {
+                if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_ObserverSelection_SelectAll"), BDArmorySetup.BDGuiSkin.button, GUILayout.Height(30)))
+                    Observers = potentialObservers.Where(o => o != null).ToHashSet();
+            }
+            GUILayout.EndVertical();
+            GUIUtils.RepositionWindow(ref observerWindowRect);
+            GUIUtils.UpdateGUIRect(observerWindowRect, _observerGUICheckIndex);
+            GUIUtils.UseMouseEventInRect(observerWindowRect);
+            if (bringObserverWindowToFront)
+            {
+                bringObserverWindowToFront = false;
+                GUI.BringWindowToFront(windowID);
+            }
+        }
+        void RefreshObservers()
+        {
+            potentialObservers.Clear();
+            foreach (var vessel in FlightGlobals.Vessels)
+            {
+                if (vessel == null) continue;
+                if (vessel.vesselType == VesselType.Debris || vessel.vesselType == VesselType.SpaceObject) continue; // Ignore debris and space objects.
+                if (VesselModuleRegistry.GetModuleCount<Control.IBDAIControl>(vessel) > 0 // Check for an AI.
+                    && VesselModuleRegistry.GetModuleCount<Control.MissileFire>(vessel) > 0 // Check for a WM.
+                    && vessel.IsControllable
+                ) continue; // It's an active vessel, skip it.
+                potentialObservers.Add(vessel);
+            }
+            Observers = Observers.Where(o => potentialObservers.Contains(o)).ToHashSet();
+        }
+        #endregion
     }
 }

@@ -49,7 +49,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool DEBUG_LINES = false;                 //AI/Weapon aim visualizers
         [BDAPersistentSettingsField] public static bool DEBUG_OTHER = false;                 //internal debugging
         [BDAPersistentSettingsField] public static bool DEBUG_ARMOR = false;                 //armor and HP
-		[BDAPersistentSettingsField] public static bool DEBUG_WEAPONS = false;               //Debug messages for guns/rockets/lasers and their projectiles
+        [BDAPersistentSettingsField] public static bool DEBUG_WEAPONS = false;               //Debug messages for guns/rockets/lasers and their projectiles
         [BDAPersistentSettingsField] public static bool DEBUG_MISSILES = false;              //Missile launch, tracking and targeting debug labels
         [BDAPersistentSettingsField] public static bool DEBUG_DAMAGE = false;                //Explosions and battle damage logging
         [BDAPersistentSettingsField] public static bool DEBUG_AI = false;                    //AI debugging
@@ -86,6 +86,7 @@ namespace BDArmory.Settings
         //[BDAPersistentSettingsField] public static bool ADVANCED_EDIT = true;                     //Used for debug fields not nomrally shown to regular users //SI - Only usage is a commented out function in BDExplosivePart
         [BDAPersistentSettingsField] public static bool DISPLAY_COMPETITION_STATUS = true;             //Display competition status
         [BDAPersistentSettingsField] public static bool DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI = false; // Display the competition status when using the "hidden UI"
+        [BDAPersistentSettingsField] public static bool SCROLL_ZOOM_PREVENTION = true;                 // Prevent scroll-zoom when over most BDA windows.
         [BDAPersistentSettingsField] public static bool BULLET_WATER_DRAG = true;
         [BDAPersistentSettingsField] public static bool PERSISTENT_FX = false;
         [BDAPersistentSettingsField] public static bool LEGACY_ARMOR = false;
@@ -225,7 +226,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static float BD_FIRE_CHANCE_TRACER = 10;
         [BDAPersistentSettingsField] public static float BD_FIRE_CHANCE_HE = 25;
         [BDAPersistentSettingsField] public static float BD_FIRE_CHANCE_INCENDIARY = 90;
-		[BDAPersistentSettingsField] public static bool ALLOW_ZOMBIE_BD = false;          // Allow battle damage to proc when using zombie mode?
+        [BDAPersistentSettingsField] public static bool ALLOW_ZOMBIE_BD = false;          // Allow battle damage to proc when using zombie mode?
         [BDAPersistentSettingsField] public static bool ENABLE_HOS = false;
         [BDAPersistentSettingsField] public static List<string> HALL_OF_SHAME_LIST = new List<string>();
         [BDAPersistentSettingsField] public static float HOS_FIRE = 0;

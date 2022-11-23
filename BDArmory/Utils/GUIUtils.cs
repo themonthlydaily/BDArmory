@@ -400,10 +400,15 @@ namespace BDArmory.Utils
         static bool _originalScrollRateSet = false;
         public static void BeginDisableScrollZoom()
         {
-            if (!scrollZoomEnabled) return;
+            if (!scrollZoomEnabled || !BDArmorySettings.SCROLL_ZOOM_PREVENTION) return;
             if (!_originalScrollRateSet)
             {
                 originalScrollRate = GameSettings.AXIS_MOUSEWHEEL.primary.scale; // Get the original scroll rate once.
+                if (originalScrollRate == 0)
+                {
+                    Debug.LogWarning($"[BDArmory.GUIUtils]: Original scroll rate was 0, resetting it to 1.");
+                    originalScrollRate = 1; // Sometimes it's getting set to 0 for some reason. Default it back to 1.
+                }
                 _originalScrollRateSet = true;
             }
             GameSettings.AXIS_MOUSEWHEEL.primary.scale = 0;

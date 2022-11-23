@@ -63,7 +63,7 @@ namespace BDArmory.Armor
         }
 
         [KSPEvent(guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_UnclampTuning_disabledText", active = true)]//Toggle scale limit
-        public void ToggleScaleClamp()
+        public void ToggleScaleClamp(bool applySym = true)
         {
             clamped = !clamped;
             UI_FloatRange AWidth = (UI_FloatRange)Fields["Width"].uiControlEditor;
@@ -82,13 +82,15 @@ namespace BDArmory.Armor
                 Events["ToggleScaleClamp"].guiName = StringUtils.Localize("#LOC_BDArmory_UnclampTuning_disabledText");
             }
             GUIUtils.RefreshAssociatedWindows(part);
-            using (List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator())
-                while (sym.MoveNext())
-                {
-                    if (sym.Current == null) continue;
-                    sym.Current.FindModuleImplementing<BDAdjustableArmor>().ToggleScaleClamp();
-                }
-            GUIUtils.RefreshAssociatedWindows(part);
+            if (applySym)
+            {
+                using (List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator())
+                    while (sym.MoveNext())
+                    {
+                        if (sym.Current == null) continue;
+                        sym.Current.FindModuleImplementing<BDAdjustableArmor>().ToggleScaleClamp(false);
+                    }
+            }
         }
         bool clamped = true;
 
