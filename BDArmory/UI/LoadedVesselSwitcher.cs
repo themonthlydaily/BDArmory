@@ -1243,10 +1243,12 @@ namespace BDArmory.UI
                                         //else got weapons and engaging
                                     }
                                     vesselScore *= 0.031623f * BDAMath.Sqrt(targetDistance); // Equal to 1 at 1000m
-                                    if (wm.Current.recentlyFiring) // Firing guns or missiles at stuff is more interesting.
+                                    if (wm.Current.recentlyFiring) // Firing guns or missiles at stuff is more interesting. (Uses 1/2 the camera switch frequency on all guns.)
                                         vesselScore *= 0.25f;
                                     if (wm.Current.guardFiringMissile) // Firing missiles is a bit more interesting than firing guns.
                                         vesselScore *= 0.8f;
+                                    if (wm.Current.currentGun != null && wm.Current.currentGun.recentlyFiring && wm.Current.vessel == FlightGlobals.ActiveVessel) // 1s timer on current gun.
+                                        vesselScore *= 0.1f; // Actively firing guns on the current vessel are even more interesting, try not to switch away at the last second!
                                     // scoring for automagic camera check should not be in here
                                     if (wm.Current.underAttack || wm.Current.underFire)
                                     {
