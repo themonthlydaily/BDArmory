@@ -2894,7 +2894,7 @@ namespace BDArmory.Weapons
             if (ECPerShot != 0)
             {
                 vessel.GetConnectedResourceTotals(ECID, out double EcCurrent, out double ecMax);
-                if (EcCurrent > ECPerShot * 0.95f && !CheatOptions.InfiniteElectricity)
+                if (EcCurrent > ECPerShot * 0.95f || CheatOptions.InfiniteElectricity)
                 {
                     part.RequestResource(ECID, ECPerShot, ResourceFlowMode.ALL_VESSEL);
                     if (requestResourceAmount == 0) return true; //weapon only uses ECperShot (electrolasers, mainly)

@@ -176,10 +176,9 @@ namespace BDArmory.CounterMeasure
             ti.radarLockbreakFactor = (ti.radarRCSReducedSignature == 0) ? 0f :
                 Mathf.Max(Mathf.Clamp01(ti.radarRCSReducedSignature / ti.radarModifiedSignature) * (1 - (totalLBstrength / ti.radarRCSReducedSignature / 100)), 0); // 0 is minimum lockbreak factor
         }
-        void FixedUpdate()
+        void OnFixedUpdate()
         {
             if (UI.BDArmorySetup.GameIsPaused) return;
-
             if (jEnabled && jammerStrength > 0)
             {
                 using (var loadedvessels = UI.BDATargetManager.LoadedVessels.GetEnumerator())
