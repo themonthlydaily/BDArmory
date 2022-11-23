@@ -4,6 +4,7 @@
 	- Exclude weapons from the bounds calculations as they sometimes give weird values (e.g., lasers when firing).
 - UI:
 	- Add an option in the UI settings for disabling scroll-zoom prevention when over BDA windows.
+	- Fix the targeting reticle placement at very short range.
 - AI / WM:
 	- Fixes for Stationary surface vessel mode.
 		- No longer panics, even if airborne (allows for floating/free-fall turrets).
