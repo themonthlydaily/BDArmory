@@ -13,6 +13,7 @@ namespace BDArmory.Extensions
         public static void AddDamage(this Part p, float damage)
         {
             if (BDArmorySettings.PAINTBALL_MODE) return; // Don't add damage when paintball mode is enabled
+            damage *= (BDArmorySettings.DMG_MULTIPLIER / 100);
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.ZOMBIE_MODE)
             {
                 if (p.vessel.rootPart != null)
