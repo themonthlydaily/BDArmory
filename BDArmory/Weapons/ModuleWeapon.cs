@@ -887,10 +887,10 @@ namespace BDArmory.Weapons
 
         int barrelIndex = 0;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Custom Fire Key"), UI_Label(scene = UI_Scene.All)]
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CustomFireKey"), UI_Label(scene = UI_Scene.All)]
         public string customFireKey = "";
         BDInputInfo CustomFireKey;
-        [KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Set Custom Fire Key")] // Set Custom Fire Key
+        [KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_SetCustomFireKey")] // Set Custom Fire Key
         void SetCustomFireKey()
         {
             if (!bindingKey)
@@ -899,6 +899,7 @@ namespace BDArmory.Weapons
         bool bindingKey = false;
         IEnumerator BindCustomFireKey()
         {
+            Events["SetCustomFireKey"].guiName = StringUtils.Localize("#LOC_BDArmory_InputSettings_recordedInput");
             bindingKey = true;
             int id = 0;
             BDKeyBinder.BindKey(id);
@@ -909,18 +910,22 @@ namespace BDArmory.Weapons
                     string recordedInput;
                     if (BDKeyBinder.current.AcquireInputString(out recordedInput))
                     {
-                        SetCustomFireKey(recordedInput);
+                        if (recordedInput == "escape") // Clear the binding
+                            SetCustomFireKey("");
+                        else if (recordedInput != "mouse 0") // Left clicking cancels
+                            SetCustomFireKey(recordedInput);
                         bindingKey = false;
-                        yield break;
+                        break;
                     }
                 }
                 else
                 {
                     bindingKey = false;
-                    yield break;
+                    break;
                 }
                 yield return null;
             }
+            Events["SetCustomFireKey"].guiName = StringUtils.Localize("#LOC_BDArmory_SetCustomFireKey");
         }
         public void SetCustomFireKey(string key, bool applySym = true)
         {
@@ -993,6 +998,7 @@ namespace BDArmory.Weapons
             agHoldFiring = false;
             yield break;
         }
+
         [KSPEvent(guiActive = true, guiName = "#LOC_BDArmory_Jettison", active = true, guiActiveEditor = false)]//Jettison
         public void Jettison() // make rocketpods jettisonable
         {
@@ -1003,6 +1009,11 @@ namespace BDArmory.Weapons
             part.decouple(0);
             if (BDArmorySetup.Instance.ActiveWeaponManager != null)
                 BDArmorySetup.Instance.ActiveWeaponManager.UpdateList();
+        }
+        [KSPAction("Jettison")] // Give them an action group too.
+        public void AGJettison(KSPActionParam param)
+        {
+            Jettison();
         }
         #endregion KSPActions
 
@@ -1387,6 +1398,7 @@ namespace BDArmory.Weapons
                 if ((turret || eWeaponType != WeaponTypes.Rocket) || (eWeaponType == WeaponTypes.Rocket && (!rocketPod || (rocketPod && externalAmmo))))
                 {
                     Events["Jettison"].guiActive = false;
+                    Actions["AGJettison"].active = false;
                 }
             }
             //setup animations
