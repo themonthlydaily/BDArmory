@@ -25,7 +25,7 @@
 	- Add a custom fire keybinding to weapons that can be used to temporarily enable and fire weapons with keys other than the main firing key.
 		- Click the toggle on the weapon PAW, then press the desired button. Left click to cancel, escape to clear.
 	- Fix the targeting reticle placement at very short range.
-
+	- Add an action group for jettisoning rocket pods.
 - Spawning:
 	- Allow a specific list of observers to be excluded from being removed during spawning and competitions.
 	- Allow spawning custom templates with only 1 team if not immediately starting a competition.

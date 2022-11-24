@@ -998,6 +998,7 @@ namespace BDArmory.Weapons
             agHoldFiring = false;
             yield break;
         }
+
         [KSPEvent(guiActive = true, guiName = "#LOC_BDArmory_Jettison", active = true, guiActiveEditor = false)]//Jettison
         public void Jettison() // make rocketpods jettisonable
         {
@@ -1008,6 +1009,11 @@ namespace BDArmory.Weapons
             part.decouple(0);
             if (BDArmorySetup.Instance.ActiveWeaponManager != null)
                 BDArmorySetup.Instance.ActiveWeaponManager.UpdateList();
+        }
+        [KSPAction("Jettison")] // Give them an action group too.
+        public void AGJettison(KSPActionParam param)
+        {
+            Jettison();
         }
         #endregion KSPActions
 
@@ -1392,6 +1398,7 @@ namespace BDArmory.Weapons
                 if ((turret || eWeaponType != WeaponTypes.Rocket) || (eWeaponType == WeaponTypes.Rocket && (!rocketPod || (rocketPod && externalAmmo))))
                 {
                     Events["Jettison"].guiActive = false;
+                    Actions["AGJettison"].active = false;
                 }
             }
             //setup animations
