@@ -916,14 +916,14 @@ namespace BDArmory.Weapons.Missiles
                         {
                             if (multiLauncher.isMultiLauncher)
                             {
-                                blastRadius = 10; //set default value if empty reloadable rail/multilauncher with no submunition set in .cfg on start
                                 using (var parts = PartLoader.LoadedPartsList.GetEnumerator())
                                     while (parts.MoveNext())
                                     {
                                         if (parts.Current.partConfig == null || parts.Current.partPrefab == null) continue;
                                         if (!parts.Current.partPrefab.partInfo.name.Contains(multiLauncher.subMunitionName)) continue;
-                                        blastRadius = parts.Current.partPrefab.FindModuleImplementing<BDExplosivePart>().GetBlastRadius();
-                                        return blastRadius; 
+                                        var explosivePart = parts.Current.partPrefab.FindModuleImplementing<BDExplosivePart>();
+                                        blastRadius = explosivePart != null ? explosivePart.GetBlastRadius() : 0;
+                                        return blastRadius;
                                     }
                                 Debug.Log("[MissileLauncher.GetBlastRadius] needing to use MMR tntmass value!");
                                 return blastRadius = BlastPhysicsUtils.CalculateBlastRange(reloadableRail.tntmass);
