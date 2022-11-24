@@ -912,17 +912,18 @@ namespace BDArmory.Weapons.Missiles
                     }
                     else
                     {
-                        if (multiLauncher)// when VLS implementation finished, remember to have adding a new missile resetting blastRadius to 0, future SI.
+                        if (multiLauncher)
                         {
                             if (multiLauncher.isMultiLauncher)
                             {
+                                blastRadius = 10; //set default value if empty reloadable rail/multilauncher with no submunition set in .cfg on start
                                 using (var parts = PartLoader.LoadedPartsList.GetEnumerator())
                                     while (parts.MoveNext())
                                     {
                                         if (parts.Current.partConfig == null || parts.Current.partPrefab == null) continue;
                                         if (!parts.Current.partPrefab.partInfo.name.Contains(multiLauncher.subMunitionName)) continue;
                                         blastRadius = parts.Current.partPrefab.FindModuleImplementing<BDExplosivePart>().GetBlastRadius();
-                                        return blastRadius; //try this? also getting tntmass in ModuleMissileRearm, could always just find values there, and grab them for the GetInof()
+                                        return blastRadius; 
                                     }
                                 Debug.Log("[MissileLauncher.GetBlastRadius] needing to use MMR tntmass value!");
                                 return blastRadius = BlastPhysicsUtils.CalculateBlastRange(reloadableRail.tntmass);

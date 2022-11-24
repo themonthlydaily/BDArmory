@@ -62,14 +62,14 @@ namespace BDArmory.Weapons.Missiles
                 missileSpawner.ammoCount = launchTransforms.Length;
                 missileLauncher.reloadableRail = missileSpawner;
                 missileLauncher.hasAmmo = true;
+                if (!isClusterMissile) //Clustermissiles replace/generate MMR on launch, other missiles should have it in the .cfg
+                    Debug.LogError($"[BDArmory.MultiMissileLauncher] no ModuleMissileRearm on {part.name}. Please fix your .cfg");
             }
             if (isClusterMissile)
             {
                 missileSpawner.AccountForAmmo = false;
                 missileSpawner.ammoCount = launchTransforms.Length;
             }
-            else //Clustermissiles replace/generate MMR on launch, other missiles should have it in the .cfg
-                Debug.LogError($"[BDArmory.MultiMissileLauncher] no ModuleMissileRearm on {part.name}. Please fix your .cfg");
 
             missileSpawner.isMultiLauncher = true;
             if (!string.IsNullOrEmpty(deployAnimationName))
@@ -249,7 +249,6 @@ namespace BDArmory.Weapons.Missiles
             missileLauncher.clearanceRadius = MLConfig.clearanceRadius;
             missileLauncher.clearanceLength = MLConfig.clearanceLength;
             missileLauncher.optimumAirspeed = MLConfig.optimumAirspeed;
-            missileLauncher.blastRadius = MLConfig.blastRadius;
             missileLauncher.maxTurnRateDPS = MLConfig.maxTurnRateDPS;
             missileLauncher.proxyDetonate = MLConfig.proxyDetonate;
             missileLauncher.maxAltitude = MLConfig.maxAltitude;
@@ -262,6 +261,9 @@ namespace BDArmory.Weapons.Missiles
             missileLauncher.engageMissile = MLConfig.engageMissile;
             missileLauncher.engageSLW = MLConfig.engageSLW;
             missileLauncher.shortName = MLConfig.shortName;
+            missileLauncher.blastRadius = -1;
+            missileLauncher.blastRadius = MLConfig.blastRadius;
+            missileLauncher.GetBlastRadius();
             GUIUtils.RefreshAssociatedWindows(missileLauncher.part);
             missileLauncher.SetFields();
         }
