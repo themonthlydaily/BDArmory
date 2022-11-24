@@ -6505,6 +6505,20 @@ namespace BDArmory.Control
             }
         }
 
+        public bool CheckAmmo(MissileBase weapon)
+        {
+            int ammoCount = weapon.missilecount;
+            if (BDArmorySettings.INFINITE_ORDINANCE) //check for infinite ammo
+            {
+                return true;
+            }
+            else
+            { 
+                if (ammoCount > 0) return true;
+            } 
+            return false;
+        }
+
         public bool outOfAmmo = false; // Indicator for being out of ammo.
         public bool HasWeaponsAndAmmo(List<WeaponClasses> weaponClasses = null)
         { // Check if the vessel has both weapons and ammo for them. Optionally, restrict checks to a subset of the weapon classes.
@@ -6517,6 +6531,10 @@ namespace BDArmory.Control
                 if (weapon.GetWeaponClass() == WeaponClasses.Gun || weapon.GetWeaponClass() == WeaponClasses.Rocket)
                 {
                     if (BDArmorySettings.INFINITE_AMMO || CheckAmmo((ModuleWeapon)weapon)) { hasWeaponsAndAmmo = true; break; } // If the gun has ammo or we're using infinite ammo, return true after cleaning up.
+                }
+                else if (weapon.GetWeaponClass() == WeaponClasses.Missile || weapon.GetWeaponClass() == WeaponClasses.Bomb || weapon.GetWeaponClass() == WeaponClasses.SLW)
+                {
+                    if (BDArmorySettings.INFINITE_ORDINANCE || CheckAmmo((MissileBase)weapon)) { hasWeaponsAndAmmo = true; break; } // If the gun has ammo or we're using infinite ammo, return true after cleaning up.
                 }
                 else { hasWeaponsAndAmmo = true; break; } // Other weapon types don't have ammo, or use electric charge, which could recharge.
             }
@@ -6535,6 +6553,10 @@ namespace BDArmory.Control
                 {
                     if (weapon.GetShortName().EndsWith("Laser")) { countWeaponsAndAmmo++; continue; } // If it's a laser (counts as a gun) consider it as having ammo and count it, since electric charge can replenish.
                     if (BDArmorySettings.INFINITE_AMMO || CheckAmmo((ModuleWeapon)weapon)) { countWeaponsAndAmmo++; } // If the gun has ammo or we're using infinite ammo, count it.
+                }
+                else if (weapon.GetWeaponClass() == WeaponClasses.Missile || weapon.GetWeaponClass() == WeaponClasses.SLW || weapon.GetWeaponClass() == WeaponClasses.Bomb)
+                {
+                    if (BDArmorySettings.INFINITE_ORDINANCE || CheckAmmo((MissileBase)weapon)) { countWeaponsAndAmmo++; } // If the gun has ammo or we're using infinite ammo, count it.
                 }
                 else { countWeaponsAndAmmo++; } // Other weapon types don't have ammo, or use electric charge, which could recharge, so count them.
             }
