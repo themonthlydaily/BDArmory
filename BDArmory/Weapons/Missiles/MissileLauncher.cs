@@ -928,7 +928,7 @@ namespace BDArmory.Weapons.Missiles
                                 Debug.Log("[MissileLauncher.GetBlastRadius] needing to use MMR tntmass value!");
                                 return blastRadius = BlastPhysicsUtils.CalculateBlastRange(reloadableRail.tntmass);
                             }
-                            else return 750; //clustermissile det radius hardcoded for now
+                            else return blastRadius = 750; //clustermissile det radius hardcoded for now
                         }
                         blastRadius = 150;
                         return blastRadius;

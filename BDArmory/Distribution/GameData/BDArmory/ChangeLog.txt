@@ -4,16 +4,16 @@
 	- Exclude weapons from the bounds calculations as they sometimes give weird values (e.g., lasers when firing).
 - UI:
 	- Add an option in the UI settings for disabling scroll-zoom prevention when over BDA windows.
-	- Add version watermark to Competition UI.
+	- Add version watermark to Competition UI and Vessel Switcher window.
 - AI / WM:
 	- Fixes for Stationary surface vessel mode.
 		- No longer panics, even if airborne (allows for floating/free-fall turrets).
 		- Attitude control (using RCS and reaction wheels) is applied when an enemy is within the engagement range.
 	- Add 'Target Damage' Target Priority setting.
-- Detectors
-	- Some optimizatiosn to the ECMJammer code.
-	- Active jammers now appear on Radar Warning Receivers.
 	- Add keybindings for "Next Weapon", "Prev Weapon" and "Fire Missile" in the WM (keybindings for firing guns are on the weapons).
+- Detectors
+	- Some optimizations to the ECMJammer code.
+	- Active jammers now appear on Radar Warning Receivers.
 - Armor:
 	- Fix stack overflow in ToggleScaleClamp for symmetric parts.
 	- Further fixes for post-penetration bugs.
