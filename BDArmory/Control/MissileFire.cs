@@ -1295,7 +1295,7 @@ namespace BDArmory.Control
 
             UpdateTargetingAudio();
 
-            if (vessel.isActiveVessel) // Manual firing.
+            if (vessel.isActiveVessel && !guardMode) // Manual firing.
             {
                 if (!CheckMouseIsOnGui() && isArmed && BDInputUtils.GetKey(BDInputSettingsFields.WEAP_FIRE_KEY))
                 {
@@ -1306,10 +1306,12 @@ namespace BDArmory.Control
                     triggerTimer = 0;
                     hasSingleFired = false;
                 }
+                if (BDInputUtils.GetKey(BDInputSettingsFields.WEAP_FIRE_MISSILE_KEY)) FireMissile();
+                if (BDInputUtils.GetKeyDown(BDInputSettingsFields.WEAP_NEXT_KEY)) CycleWeapon(true);
+                if (BDInputUtils.GetKeyDown(BDInputSettingsFields.WEAP_PREV_KEY)) CycleWeapon(false);
 
                 //firing missiles and rockets===
-                if (!guardMode &&
-                    selectedWeapon != null &&
+                if (selectedWeapon != null &&
                     (selectedWeapon.GetWeaponClass() == WeaponClasses.Missile
                      || selectedWeapon.GetWeaponClass() == WeaponClasses.Bomb
                      || selectedWeapon.GetWeaponClass() == WeaponClasses.SLW
@@ -1333,8 +1335,7 @@ namespace BDArmory.Control
                         }
                     }
                 }
-                else if (!guardMode &&
-                         selectedWeapon != null &&
+                else if (selectedWeapon != null &&
                          ((selectedWeapon.GetWeaponClass() == WeaponClasses.Gun
                          || selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket
                          || selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser) && currentGun.canRippleFire))//&& currentGun.roundsPerMinute < 1500)) //set this based on if the WG can ripple vs if first weapon in the WG happens to be > 1500 RPM
@@ -1343,8 +1344,12 @@ namespace BDArmory.Control
                 }
                 else
                 {
-                    canRipple = false;
+                    canRipple = false; // Disable the ripple options in the WM gui.
                 }
+            }
+            else
+            {
+                canRipple = false; // Disable the ripple options in the WM gui.
             }
         }
 
@@ -2774,8 +2779,8 @@ namespace BDArmory.Control
                 return;
             }
             if (selectedWeapon.GetWeaponClass() == WeaponClasses.Missile ||
-            selectedWeapon.GetWeaponClass() == WeaponClasses.SLW ||
-            selectedWeapon.GetWeaponClass() == WeaponClasses.Bomb)
+                selectedWeapon.GetWeaponClass() == WeaponClasses.SLW ||
+                selectedWeapon.GetWeaponClass() == WeaponClasses.Bomb)
             {
                 FireCurrentMissile(true);
             }
