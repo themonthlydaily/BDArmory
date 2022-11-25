@@ -2452,7 +2452,7 @@ namespace BDArmory.Weapons
                                                 }
                                                 if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Impulse of {Impulse} Applied to {p.vessel.GetName()}");
                                                 //if (laserDamage == 0) 
-                                                    damage += Impulse / 100;
+                                                damage += Impulse / 100;
                                             }
                                         }
                                         if (graviticWeapon)
@@ -2473,7 +2473,7 @@ namespace BDArmory.Weapons
                                                 ME.duration += duration;
                                                 if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Gravitic Buildup Applied to {p.vessel.GetName()}: {massAdjustment}t added");
                                                 //if (laserDamage == 0) 
-                                                    damage += massAdjustment * 100;
+                                                damage += massAdjustment * 100;
                                             }
                                         }
                                     }
@@ -2646,6 +2646,7 @@ namespace BDArmory.Weapons
                                 rocket.blastRadius = blastRadius;
                                 rocket.thrust = thrust;
                                 rocket.thrustTime = thrustTime;
+                                rocket.lifeTime = rocketInfo.lifeTime;
                                 rocket.flak = proximityDetonation;
                                 rocket.detonationRange = detonationRange;
                                 rocket.maxAirDetonationRange = maxAirDetonationRange;
@@ -2733,6 +2734,7 @@ namespace BDArmory.Weapons
                                             rocket.blastRadius = blastRadius;
                                             rocket.thrust = thrust;
                                             rocket.thrustTime = thrustTime;
+                                            rocket.lifeTime = rocketInfo.lifeTime;
                                             rocket.flak = proximityDetonation;
                                             rocket.detonationRange = detonationRange;
                                             rocket.maxAirDetonationRange = maxAirDetonationRange;
@@ -3277,46 +3279,50 @@ namespace BDArmory.Weapons
                 {
                     fireTransform = rockets[0].parent; // support for legacy RLs
                 }
-                if (!slaved && !GPSTarget && !aiControlled && (yawRange > 0 || maxPitch - minPitch > 0) && !isAPS)
+                if (!slaved && !GPSTarget && !aiControlled && !isAPS)
                 {
-                    //MouseControl
                     manualAiming = true;
-                    Vector3 mouseAim = new Vector3(Input.mousePosition.x / Screen.width, Input.mousePosition.y / Screen.height, 0);
-                    Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(mouseAim);
-                    RaycastHit hit;
-
-                    if (Physics.Raycast(ray, out hit, maxTargetingRange, layerMask1))
+                    if (yawRange > 0 || maxPitch - minPitch > 0)
                     {
-                        KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
-                        Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
+                        //MouseControl
+                        Vector3 mouseAim = new Vector3(Input.mousePosition.x / Screen.width, Input.mousePosition.y / Screen.height, 0);
+                        Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(mouseAim);
+                        RaycastHit hit;
 
-                        if (p != null && p.vessel != null && p.vessel == vessel) //aim through self vessel if occluding mouseray
+                        if (Physics.Raycast(ray, out hit, maxTargetingRange, layerMask1))
                         {
-                            targetPosition = ray.origin + ray.direction * maxTargetingRange;
-                        }
-                        else
-                        {
-                            targetPosition = hit.point;
-                        }
-                    }
-                    else
-                    {
-                        if (visualTargetVessel != null && visualTargetVessel.loaded)
-                        {
-                            if (!targetCOM && visualTargetPart != null)
+                            KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+                            Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
+
+                            if (p != null && p.vessel != null && p.vessel == vessel) //aim through self vessel if occluding mouseray
                             {
-                                targetPosition = ray.origin + ray.direction * Vector3.Distance(visualTargetPart.transform.position, ray.origin);
+                                targetPosition = ray.origin + ray.direction * maxTargetingRange;
                             }
                             else
                             {
-                                targetPosition = ray.origin + ray.direction * Vector3.Distance(visualTargetVessel.transform.position, ray.origin);
+                                targetPosition = hit.point;
                             }
                         }
                         else
                         {
-                            targetPosition = ray.origin + ray.direction * maxTargetingRange;
+                            if (visualTargetVessel != null && visualTargetVessel.loaded)
+                            {
+                                if (!targetCOM && visualTargetPart != null)
+                                {
+                                    targetPosition = ray.origin + ray.direction * Vector3.Distance(visualTargetPart.transform.position, ray.origin);
+                                }
+                                else
+                                {
+                                    targetPosition = ray.origin + ray.direction * Vector3.Distance(visualTargetVessel.transform.position, ray.origin);
+                                }
+                            }
+                            else
+                            {
+                                targetPosition = ray.origin + ray.direction * maxTargetingRange;
+                            }
                         }
                     }
+                    else targetPosition = fireTransform.position + fireTransform.forward * maxTargetingRange; // For fixed weapons, aim straight ahead (needed for targetDistance below for the trajectory sim).
                     finalTarget = targetPosition; // In case aim assist and AI control is off.
                 }
                 if (BDArmorySettings.BULLET_WATER_DRAG)
@@ -3479,11 +3485,17 @@ namespace BDArmory.Weapons
                 else if (eWeaponType == WeaponTypes.Rocket)
                 {
                     float simTime = 0;
+                    float maxTime = rocketInfo.lifeTime;
+                    float maxDistance = Mathf.Min(Mathf.Min(targetDistance, maxTargetingRange), maxAirDetonationRange); // Rockets often detonate earlier than their lifetime.
                     Vector3 pointingDirection = fireTransform.forward;
                     Vector3 simVelocity = part.rb.velocity + BDKrakensbane.FrameVelocityV3f;
                     Vector3 simCurrPos = fireTransform.position;
                     Vector3 simPrevPos = simCurrPos;
                     Vector3 simStartPos = simCurrPos;
+                    Vector3 closestPointOfApproach = simCurrPos;
+                    float closestDistanceSqr = float.MaxValue;
+                    RaycastHit hit;
+                    bool hitDetected = false;
                     float simDeltaTime = Time.fixedDeltaTime;
                     float atmosMultiplier = Mathf.Clamp01(2.5f * (float)FlightGlobals.getAtmDensity(vessel.staticPressurekPa, vessel.externalTemperature, vessel.mainBody));
                     bool slaved = turret && weaponManager && (weaponManager.slavingTurrets || weaponManager.guardMode);
@@ -3503,7 +3515,6 @@ namespace BDArmory.Weapons
 
                     while (true)
                     {
-                        RaycastHit hit;
 
                         // No longer thrusting, finish up with a ballistic sim.
                         if (simTime > thrustTime)
@@ -3513,12 +3524,23 @@ namespace BDArmory.Weapons
                             { simVelocity -= 0.5f * simDeltaTime * gravity; }
                             simVelocity -= 0.5f * thrust / rocketMass * simDeltaTime * pointingDirection; // Note: we're ignoring the underwater slow-down here.
 
-                            var currentTargetDistance = Mathf.Min(maxTargetingRange, (simCurrPos - targetPosition).magnitude);
-                            simDeltaTime = Mathf.Clamp(currentTargetDistance / simVelocity.magnitude / 2f, Time.fixedDeltaTime, Time.fixedDeltaTime * BDArmorySettings.BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER);
-                            var timeToCPA = AIUtils.ClosestTimeToCPA(targetPosition - simCurrPos, targetVelocity - simVelocity, targetAcceleration - gravity, maxTargetingRange / simVelocity.magnitude - simTime); // For aiming, we want the closest approach to refine our aim.
-                            bulletPrediction = AIUtils.PredictPosition(simCurrPos, simVelocity, gravity, timeToCPA);
+                            var distanceRemaining = Mathf.Min(maxDistance - (simCurrPos - simStartPos).magnitude, (targetPosition - simCurrPos).magnitude);
+                            var timeRemaining = maxTime - simTime;
+                            simDeltaTime = Mathf.Clamp(Mathf.Min(distanceRemaining / simVelocity.magnitude, timeRemaining) / 8f, Time.fixedDeltaTime, Time.fixedDeltaTime * BDArmorySettings.BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER); // Take 8 steps for smoother visuals.
+                            var timeToCPA = AIUtils.ClosestTimeToCPA(targetPosition - simCurrPos, targetVelocity - simVelocity, targetAcceleration - gravity, timeRemaining); // For aiming, we want the closest approach to refine our aim.
+                            closestPointOfApproach = AIUtils.PredictPosition(simCurrPos, simVelocity, gravity, timeToCPA);
+                            if (!hitDetected) bulletPrediction = closestPointOfApproach;
+                            if (BDArmorySettings.AIM_ASSIST && BDArmorySettings.DRAW_AIMERS && !hitDetected)
+                            {
+                                var trajCount = trajectoryPoints.Count;
+                                var timeOfFlight = BallisticTrajectorySimulation(ref simCurrPos, simVelocity, distanceRemaining, timeRemaining, simDeltaTime, FlightGlobals.getAltitudeAtPos(targetPosition) < 0, SimulationStage.Normal, false); // For visuals, we want the trajectory sim with collision detection. Note: this is done after to avoid messing with simCurrPos.
+                                if (!hitDetected)
+                                {
+                                    bulletPrediction = simCurrPos; // Overwrite the bulletPrediction with the results of the trajectory sim if a hit was detected.
+                                    hitDetected = true;
+                                }
+                            }
                             simTime += timeToCPA;
-                            if (BDArmorySettings.AIM_ASSIST && BDArmorySettings.DRAW_AIMERS) BallisticTrajectorySimulation(ref simCurrPos, simVelocity, currentTargetDistance, maxTargetingRange / simVelocity.magnitude - simTime, simDeltaTime, FlightGlobals.getAltitudeAtPos(targetPosition) < 0, SimulationStage.Normal, false); // For visuals, we want the trajectory sim with collision detection. Note: this is done after to avoid messing with simCurrPos.
                             break;
                         }
 
@@ -3526,81 +3548,47 @@ namespace BDArmory.Weapons
                         simTime += simDeltaTime;
 
                         // Position update (current time).
+                        simPrevPos = simCurrPos;
                         simCurrPos += simVelocity * simDeltaTime;
-                        if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DRAW_AIMERS)
-                            trajectoryPoints.Add(simCurrPos);
 
-                        // Check for collisions.
-                        if (!aiControlled && !slaved)
+                        // Check for collisions within the last update.
+                        if (!hitDetected && !aiControlled && !slaved)
                         {
-                            if (Physics.Raycast(simPrevPos, simCurrPos - simPrevPos, out hit, Vector3.Distance(simPrevPos, simCurrPos), layerMask1))
+                            if (Physics.Raycast(simPrevPos, simVelocity, out hit, Vector3.Distance(simPrevPos, simCurrPos), layerMask1) && (hit.collider != null && hit.collider.gameObject != null && hit.collider.gameObject.GetComponentInParent<Part>() != part)) // Any hit other than the part firing the rocket.
                             {
-                                /*
-                                Vessel hitVessel = null;
-                                try
-                                {
-                                    if (hit.collider.gameObject != FlightGlobals.currentMainBody.gameObject) // Ignore terrain hits. FIXME The collider could still be a building (SpaceCenterBuilding?), but chances of this is low.
-                                    {
-                                        KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
-                                        var part = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
-                                        if (part)
-                                        {
-                                            hitVessel = part.vessel;
-                                        }
-                                    }
-                                }
-                                catch (NullReferenceException e)
-                                {
-                                    Debug.LogError("[BDArmory.ModuleWeapon]: NullReferenceException while simulating trajectory: " + e.Message);
-                                }
-
-                                if (hitVessel == null || hitVessel != vessel)
-                                {
-                                    bulletPrediction = hit.point; //this is why rocket aimers appear a few meters infront of muzzle
-                                    break;
-                                }
-                                */
-                                try
-                                {
-                                    if (hit.collider.gameObject == FlightGlobals.currentMainBody.gameObject)
-                                    {
-                                        bulletPrediction = hit.point;
-                                        break;
-                                    }
-                                    else
-                                    {
-                                        KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
-                                        DestructibleBuilding building = hit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
-                                        var part = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
-                                        if (part || building != null)
-                                        {
-                                            bulletPrediction = hit.point;
-                                            break;
-                                        }
-                                    }
-                                }
-                                catch (NullReferenceException e)
-                                {
-                                    Debug.LogError("[BDArmory.ModuleWeapon]: NullReferenceException while simulating trajectory: " + e.Message);
-                                }
+                                bulletPrediction = hit.point;
+                                hitDetected = true;
                             }
-                            //else if (FlightGlobals.getAltitudeAtPos(simCurrPos) < 0) // Note: this prevents aiming below sea-level. 
-                            //{
+                            // else if (FlightGlobals.getAltitudeAtPos(simCurrPos) < 0) // Note: this prevents aiming below sea-level. 
+                            // {
                             //    bulletPrediction = simCurrPos;
                             //   break;
-                            //}
+                            // }
                         }
 
-                        // Book-keeping and max distance checks.
-                        simPrevPos = simCurrPos;
-                        if ((simStartPos - simCurrPos).sqrMagnitude > targetDistance * targetDistance)
+                        // Check for closest approach within the last update.
+                        if ((simPrevPos - targetPosition).sqrMagnitude < closestDistanceSqr)
                         {
-                            bulletPrediction = simStartPos + (simCurrPos - simStartPos).normalized * targetDistance;
+                            var timeToCPA = AIUtils.ClosestTimeToCPA(targetPosition - simPrevPos, targetVelocity - simVelocity, targetAcceleration - gravity, simDeltaTime);
+                            if (timeToCPA < simDeltaTime)
+                                closestPointOfApproach = AIUtils.PredictPosition(simPrevPos, simVelocity, gravity, timeToCPA);
+                            else
+                                closestPointOfApproach = simPrevPos;
+                            closestDistanceSqr = (closestPointOfApproach - targetPosition).sqrMagnitude;
+                        }
+                        else
+                        {
+                            if (!hitDetected) bulletPrediction = closestPointOfApproach;
                             break;
                         }
-                        if ((simStartPos - simCurrPos).sqrMagnitude > maxTargetingRange * maxTargetingRange)
+
+                        if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DRAW_AIMERS && !hitDetected)
+                            trajectoryPoints.Add(simCurrPos);
+
+                        // Book-keeping and max distance checks.
+                        if (simTime > maxTime || (simStartPos - simCurrPos).sqrMagnitude > maxDistance * maxDistance)
                         {
-                            bulletPrediction = simStartPos + ((simCurrPos - simStartPos).normalized * maxTargetingRange);
+                            if (!hitDetected) bulletPrediction = simCurrPos;
                             break;
                         }
 
@@ -3648,7 +3636,7 @@ namespace BDArmory.Weapons
                     }
 
                     Vector3 pointingPos = fireTransform.position + (fireTransform.forward * targetDistance);
-                    trajectoryOffset = pointingPos - bulletPrediction;
+                    trajectoryOffset = pointingPos - closestPointOfApproach;
                     predictedFlightTime = simTime;
                 }
             }
@@ -3669,7 +3657,6 @@ namespace BDArmory.Weapons
         {
             float elapsedTime = 0f;
             var startPosition = position;
-            var maxDistanceSqr = maxDistance * maxDistance;
             if (FlightGlobals.getAltitudeAtPos(position) < 0) ignoreWater = true;
             var gravity = (Vector3)FlightGlobals.getGeeForceAtPosition(position);
             velocity += 0.5f * timeStep * gravity; // Boot-strap velocity calculation.
@@ -3679,62 +3666,90 @@ namespace BDArmory.Weapons
             {
                 if (trajectoryPoints == null) trajectoryPoints = new List<Vector3>();
                 if (resetTrajectoryPoints)
-                {
                     trajectoryPoints.Clear();
+                if (trajectoryPoints.Count == 0)
                     trajectoryPoints.Add(fireTransforms[0].position);
-                }
+                trajectoryPoints.Add(position);
             }
             while (elapsedTime < maxTime)
             {
                 ray.origin = position;
                 ray.direction = velocity;
-                var altitude = FlightGlobals.getAltitudeAtPos(position + velocity * timeStep);
-                if ((Physics.Raycast(ray, out hit, timeStep * velocity.magnitude, layerMask1) && (hit.collider != null && hit.collider.gameObject != null && hit.collider.gameObject.GetComponentInParent<Part>() != part)) // Ignore the part firing the projectile.
-                    || (!ignoreWater && altitude < 0))
+                var deltaPosition = timeStep * velocity;
+                var deltaDistance = deltaPosition.magnitude;
+                var elapsedDistance = (startPosition - position).magnitude;
+                var altitude = FlightGlobals.getAltitudeAtPos(position + deltaPosition);
+                if ((Physics.Raycast(ray, out hit, deltaDistance, layerMask1) && (hit.collider != null && hit.collider.gameObject != null && hit.collider.gameObject.GetComponentInParent<Part>() != part)) // Ignore the part firing the projectile.
+                    || (!ignoreWater && altitude < 0) // Underwater
+                    || (stage == SimulationStage.Normal && elapsedTime + timeStep > maxTime) // Out of time
+                    || (stage == SimulationStage.Normal && maxDistance - elapsedDistance < deltaDistance)) // Out of distance
                 {
                     switch (stage)
                     {
                         case SimulationStage.Normal:
-                            if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DRAW_AIMERS && trajectoryPoints.Count == 0)
-                                trajectoryPoints.Add(position);
-                            goto case SimulationStage.Refining;
+                            {
+                                if (elapsedTime + timeStep > maxTime) // Final time amount.
+                                {
+                                    // Debug.Log($"DEBUG Refining trajectory sim due to final time, time: {elapsedTime}, {timeStep}, {maxTime}, dist: {maxDistance}, {elapsedDistance}, {deltaDistance}");
+                                    velocity -= 0.5f * timeStep * gravity; // Correction to final velocity.
+                                    var finalTime = BallisticTrajectorySimulation(ref position, velocity, maxDistance - elapsedDistance, maxTime - elapsedTime, (maxTime - elapsedTime) / 4f, ignoreWater, SimulationStage.Final, false);
+                                    elapsedTime += finalTime;
+                                }
+                                else if (maxDistance - elapsedDistance < deltaDistance) // Final distance amount.
+                                {
+                                    // Debug.Log($"DEBUG Refining trajectory sim due to final distance, time: {elapsedTime}, {timeStep}, {maxTime}, dist: {maxDistance}, {elapsedDistance}, {deltaDistance}");
+                                    velocity -= 0.5f * timeStep * gravity; // Correction to final velocity.
+                                    var newTimeStep = timeStep * (maxDistance - elapsedDistance) / deltaDistance;
+                                    var finalTime = BallisticTrajectorySimulation(ref position, velocity, maxDistance - elapsedDistance, newTimeStep, newTimeStep / 4f, ignoreWater, SimulationStage.Final, false);
+                                    elapsedTime += finalTime;
+                                }
+                                else
+                                    goto case SimulationStage.Refining;
+                                break;
+                            }
                         case SimulationStage.Refining: // Perform a more accurate final step for the collision.
-                            velocity -= 0.5f * timeStep * gravity; // Correction to final velocity.
-                            var finalTime = BallisticTrajectorySimulation(ref position, velocity, velocity.magnitude * timeStep, timeStep, timeStep / 4f, ignoreWater, timeStep > 5f * Time.fixedDeltaTime ? SimulationStage.Refining : SimulationStage.Final, false);
-                            elapsedTime += finalTime;
-                            break;
+                            {
+                                // Debug.Log($"DEBUG Refining trajectory sim, time: {elapsedTime}, {timeStep}, {maxTime}, dist: {maxDistance}, {elapsedDistance}, {deltaDistance}");
+                                velocity -= 0.5f * timeStep * gravity; // Correction to final velocity.
+                                var finalTime = BallisticTrajectorySimulation(ref position, velocity, velocity.magnitude * timeStep, timeStep, timeStep / 4f, ignoreWater, timeStep > 5f * Time.fixedDeltaTime ? SimulationStage.Refining : SimulationStage.Final, false);
+                                elapsedTime += finalTime;
+                                break;
+                            }
                         case SimulationStage.Final:
-                            if (!ignoreWater && altitude < 0)
                             {
-                                var currentAltitude = FlightGlobals.getAltitudeAtPos(position);
-                                timeStep *= currentAltitude / (currentAltitude - altitude);
-                                elapsedTime += timeStep;
-                                position += timeStep * velocity;
-                                // Debug.Log("DEBUG breaking trajectory sim due to water at " + position.ToString("F6") + " at altitude " + FlightGlobals.getAltitudeAtPos(position));
+                                if (!ignoreWater && altitude < 0) // Underwater
+                                {
+                                    var currentAltitude = FlightGlobals.getAltitudeAtPos(position);
+                                    timeStep *= currentAltitude / (currentAltitude - altitude);
+                                    elapsedTime += timeStep;
+                                    position += timeStep * velocity;
+                                    // Debug.Log("DEBUG breaking trajectory sim due to water at " + position.ToString("F6") + " at altitude " + FlightGlobals.getAltitudeAtPos(position));
+                                }
+                                else // Collision
+                                {
+                                    elapsedTime += (hit.point - position).magnitude / velocity.magnitude;
+                                    position = hit.point;
+                                    // Debug.Log("DEBUG breaking trajectory sim due to hit at " + position.ToString("F6") + " at altitude " + FlightGlobals.getAltitudeAtPos(position));
+                                }
+                                break;
                             }
-                            else
-                            {
-                                elapsedTime += (hit.point - position).magnitude / velocity.magnitude;
-                                position = hit.point;
-                                // Debug.Log("DEBUG breaking trajectory sim due to hit at " + position.ToString("F6") + " at altitude " + FlightGlobals.getAltitudeAtPos(position));
-                            }
-                            break;
                     }
                     break;
                 }
                 if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DRAW_AIMERS && stage != SimulationStage.Final)
                     trajectoryPoints.Add(position);
-                position += timeStep * velocity;
+                position += deltaPosition;
                 gravity = (Vector3)FlightGlobals.getGeeForceAtPosition(position);
                 velocity += timeStep * gravity;
                 elapsedTime += timeStep;
-                if ((startPosition - position).sqrMagnitude > maxDistanceSqr)
+                if (elapsedDistance > maxDistance)
                 {
                     // Debug.Log($"DEBUG breaking trajectory sim due to max distance: {maxDistance} at altitude {FlightGlobals.getAltitudeAtPos(position)}");
                     break;
                 }
             }
-            if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DRAW_AIMERS && stage == SimulationStage.Normal)
+            // if (elapsedTime > maxTime) Debug.Log($"DEBUG Time elapsed: {elapsedTime} / {maxTime}, dist: {maxDistance}, {(startPosition - position).magnitude}, {(timeStep * velocity).magnitude}");
+            if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DRAW_AIMERS && resetTrajectoryPoints)
             {
                 trajectoryPoints.Add(position);
                 trajectoryRenderer = gameObject.GetComponent<LineRenderer>();

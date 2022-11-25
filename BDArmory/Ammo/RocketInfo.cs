@@ -14,6 +14,7 @@ namespace BDArmory.Bullets
         public float apMod { get; private set; }
         public float thrust { get; private set; }
         public float thrustTime { get; private set; }
+        public float lifeTime { get; private set; } = 10f; // Need this here for trajectory sim timing. Could make it a proper config value.
         public bool shaped { get; private set; }
         public bool flak { get; private set; }
         public bool EMP { get; private set; }
