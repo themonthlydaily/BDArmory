@@ -3532,7 +3532,6 @@ namespace BDArmory.Weapons
                             if (!hitDetected) bulletPrediction = closestPointOfApproach;
                             if (BDArmorySettings.AIM_ASSIST && BDArmorySettings.DRAW_AIMERS && !hitDetected)
                             {
-                                var trajCount = trajectoryPoints.Count;
                                 var timeOfFlight = BallisticTrajectorySimulation(ref simCurrPos, simVelocity, distanceRemaining, timeRemaining, simDeltaTime, FlightGlobals.getAltitudeAtPos(targetPosition) < 0, SimulationStage.Normal, false); // For visuals, we want the trajectory sim with collision detection. Note: this is done after to avoid messing with simCurrPos.
                                 if (!hitDetected)
                                 {
