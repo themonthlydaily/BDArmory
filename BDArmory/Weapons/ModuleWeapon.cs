@@ -4530,6 +4530,7 @@ namespace BDArmory.Weapons
                             {
                                 if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Targeted vessel {visualTargetVessel.vesselName} has no targetable parts.");
                                 targetPosition = visualTargetVessel.CoM;
+                                targetRadius = visualTargetVessel.GetRadius(fireTransforms[0].forward, currentTarget.bounds);
                             }
                             else
                             {
