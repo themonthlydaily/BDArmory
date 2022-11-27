@@ -1,4 +1,10 @@
-﻿v1.5.5.0
+﻿v1.5.5.1
+IMPROVEMENTS / FIXES
+- Fix NRE in trajectory sim.
+- Fix active vessel not firing under AI control.
+- Fix firing of missiles via hotkey not respecting ripple/single setting.
+
+v1.5.5.0
 IMPROVEMENTS / FIXES
 - General:
 	- Add a --tsv option to the n-choose-k parsing script to output a TSV file instead of a CSV file.
