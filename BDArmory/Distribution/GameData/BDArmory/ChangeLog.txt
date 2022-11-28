@@ -1,4 +1,8 @@
-﻿v1.5.5.1
+﻿IMPROVEMENTS / FIXES
+- Weapons:
+	- Add a stagger option to barrage mode that fires barrages in bursts and adds variability to the reload times. Mostly only suitable for slow-firing ship guns.
+
+v1.5.5.1
 IMPROVEMENTS / FIXES
 - Fix NRE in trajectory sim.
 - Fix active vessel not firing under AI control.
