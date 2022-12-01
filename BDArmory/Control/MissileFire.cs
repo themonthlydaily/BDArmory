@@ -233,6 +233,7 @@ namespace BDArmory.Control
             //Debug.Log("[BDArmory.MissileFire]: Saved ripple data");
         }
 
+        public float barrageStagger = 0f;
         public bool hasSingleFired;
 
         public bool engageAir = true;
@@ -983,7 +984,7 @@ namespace BDArmory.Control
         [KSPAction("Fire Missile")]
         public void AGFire(KSPActionParam param)
         {
-            FireMissile();
+            FireMissileManually(false);
         }
 
         [KSPAction("Fire Guns (Hold)")]
@@ -1297,16 +1298,25 @@ namespace BDArmory.Control
 
             if (vessel.isActiveVessel && !guardMode) // Manual firing.
             {
+                bool missileTriggerHeld = false;
                 if (!CheckMouseIsOnGui() && isArmed && BDInputUtils.GetKey(BDInputSettingsFields.WEAP_FIRE_KEY))
                 {
                     triggerTimer += Time.fixedDeltaTime;
+                    missileTriggerHeld = true;
                 }
                 else
                 {
                     triggerTimer = 0;
+                }
+                if (BDInputUtils.GetKey(BDInputSettingsFields.WEAP_FIRE_MISSILE_KEY))
+                {
+                    FireMissileManually(false);
+                    missileTriggerHeld = true;
+                }
+                if (hasSingleFired && !missileTriggerHeld)
+                {
                     hasSingleFired = false;
                 }
-                if (BDInputUtils.GetKey(BDInputSettingsFields.WEAP_FIRE_MISSILE_KEY)) FireMissile();
                 if (BDInputUtils.GetKeyDown(BDInputSettingsFields.WEAP_NEXT_KEY)) CycleWeapon(true);
                 if (BDInputUtils.GetKeyDown(BDInputSettingsFields.WEAP_PREV_KEY)) CycleWeapon(false);
 
@@ -1318,22 +1328,7 @@ namespace BDArmory.Control
                     ))
                 {
                     canRipple = true;
-                    if (!MapView.MapIsEnabled && triggerTimer > BDArmorySettings.TRIGGER_HOLD_TIME && !hasSingleFired)
-                    {
-                        if (rippleFire)
-                        {
-                            if (Time.time - rippleTimer > 60f / rippleRPM)
-                            {
-                                FireMissile();
-                                rippleTimer = Time.time;
-                            }
-                        }
-                        else
-                        {
-                            FireMissile();
-                            hasSingleFired = true;
-                        }
-                    }
+                    FireMissileManually(true);
                 }
                 else if (selectedWeapon != null &&
                          ((selectedWeapon.GetWeaponClass() == WeaponClasses.Gun
@@ -1350,6 +1345,8 @@ namespace BDArmory.Control
             else
             {
                 canRipple = false; // Disable the ripple options in the WM gui.
+                triggerTimer = 0;
+                hasSingleFired = false; // The AI uses this as part of it's authorisation check for guns!
             }
         }
 
@@ -2787,6 +2784,29 @@ namespace BDArmory.Control
             UpdateList();
         }
 
+        /// <summary>
+        /// Fire a missile via trigger, action group or hotkey.
+        /// </summary>
+        void FireMissileManually(bool mainTrigger)
+        {
+            if (!MapView.MapIsEnabled && !hasSingleFired && ((mainTrigger && triggerTimer > BDArmorySettings.TRIGGER_HOLD_TIME) || !mainTrigger))
+            {
+                if (rippleFire)
+                {
+                    if (Time.time - rippleTimer > 60f / rippleRPM)
+                    {
+                        FireMissile();
+                        rippleTimer = Time.time;
+                    }
+                }
+                else
+                {
+                    FireMissile();
+                    hasSingleFired = true;
+                }
+            }
+        }
+
         #endregion Fire
 
         #region Weapon Info
@@ -4143,7 +4163,7 @@ namespace BDArmory.Control
                 targetWeightClosureTime * targetClosureTimeValue +
                 targetWeightWeaponNumber * targetWeaponNumberValue +
                 targetWeightMass * targetMassValue +
-                targetWeightDamage * targetDamageValue + 
+                targetWeightDamage * targetDamageValue +
                 targetWeightFriendliesEngaging * targetFriendliesEngagingValue +
                 targetWeightThreat * targetThreatValue +
                 targetWeightAoD * targetAoDValue +
@@ -6518,9 +6538,9 @@ namespace BDArmory.Control
                 return true;
             }
             else
-            { 
+            {
                 if (ammoCount > 0) return true;
-            } 
+            }
             return false;
         }
 

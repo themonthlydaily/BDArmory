@@ -70,7 +70,7 @@ namespace BDArmory.Bullets
         public string rocketSoundPath;
 
         float startTime;
-        public float lifeTime = 10;
+        public float lifeTime;
 
         Vector3 prevPosition;
         public Vector3 currPosition;
@@ -622,7 +622,7 @@ namespace BDArmory.Bullets
             }
             prevPosition = currPosition;
 
-            if (Time.time - startTime > lifeTime) // life's 10s, quite a long time for faster rockets
+            if (Time.time - startTime > lifeTime)
             {
                 Detonate(transform.position, true);
             }
@@ -678,8 +678,8 @@ namespace BDArmory.Bullets
 
                             BDACompetitionMode.Instance.Scores.RegisterRocketHit(aName, tName, 1);
 
-                            if (BDArmorySettings.DEBUG_WEAPONS)
-                                Debug.Log("[BDArmory.PooledRocket]: rocket proximity sphere hit | Distance overlap = " + detonationRange + "| Part name = " + partHit.name);
+                            if (BDArmorySettings.DEBUG_WEAPONS || BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
+                                Debug.Log($"[BDArmory.PooledRocket]: rocket proximity sphere hit | Distance overlap = {detonationRange} | Part name = {partHit.name} on {partHit.vessel.vesselName}");
                             return detonate = true;
                         }
                         catch (Exception e)
