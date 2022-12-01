@@ -1,4 +1,6 @@
 ﻿IMPROVEMENTS / FIXES
+- General:
+	- Russian localisation thanks to user Akteon_.
 - Weapons:
 	- Add a stagger option to barrage mode that fires barrages in bursts and adds variability to the reload times. Mostly only suitable for slow-firing ship guns.
 
