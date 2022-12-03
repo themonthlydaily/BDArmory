@@ -26,6 +26,9 @@ namespace BDArmory.Control
 
         SteerModes steerMode = SteerModes.NormalFlight;
 
+        public float FlatSpin = 0; // 0 is not in FlatSpin, -1 is clockwise spin, 1 is counter-clockwise spin (set up this way instead of bool to allow future implementation for asymmetric thrust)
+        float flatSpinStartTime = float.MaxValue;
+
         bool extending;
         bool extendParametersSet = false;
         float extendDistance;
@@ -1640,6 +1643,7 @@ namespace BDArmory.Control
             upDirection = VectorUtils.GetUpDirection(vessel.transform.position);
 
             CalculateAccelerationAndTurningCircle();
+            CalculateFlatSpin();
 
             if ((float)vessel.radarAltitude < minAltitude)
             { belowMinAltitude = true; }
@@ -1656,7 +1660,7 @@ namespace BDArmory.Control
                 if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDModulePilotAI]: " + vessel.vesselName + " was " + currentStatus + " and went below min altitude, inhibiting gain alt.");
             }
 
-            if (vessel.srfSpeed < minSpeed)
+            if ((vessel.srfSpeed < minSpeed) || (FlatSpin != 0))
             { regainEnergy = true; }
             else if (!belowMinAltitude && vessel.srfSpeed > Mathf.Min(minSpeed + 20f, idleSpeed))
             { regainEnergy = false; }
@@ -2158,10 +2162,14 @@ namespace BDArmory.Control
             Vector3 targetDirection = Vector3.RotateTowards(planarDirection, -upDirection, angle, 0);
             targetDirection = Vector3.RotateTowards(vessel.Velocity(), targetDirection, 15f * Mathf.Deg2Rad, 0).normalized;
 
+            throttleOverride = (FlatSpin == 0) ? throttleOverride : 0f;
+
             if (throttleOverride >= 0)
                 AdjustThrottle(maxSpeed, false, true, false, throttleOverride);
             else
                 AdjustThrottle(maxSpeed, false, true);
+
+            if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Regaining energy, {throttleOverride}");
 
             FlyToPosition(s, vesselTransform.position + (targetDirection * 100), true);
         }
@@ -2439,6 +2447,7 @@ namespace BDArmory.Control
 
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
             {
+                debugString.AppendLine($"Yaw Ang Vel: { vessel.angularVelocity.z}, Pitch Ang Vel: { vessel.angularVelocity.y}, Roll Ang Vel: { vessel.angularVelocity.x}");
                 debugString.AppendLine(String.Format("steerMode: {0}, rollError: {1,7:F4}, pitchError: {2,7:F4}, yawError: {3,7:F4}", steerMode, rollError, pitchError, yawError));
                 debugString.AppendLine($"finalMaxSteer: {finalMaxSteer:G3}, dynAdj: {dynamicAdjustment:G3}");
                 // debugString.AppendLine($"Bank Angle: " + bankAngle);
@@ -3541,6 +3550,31 @@ namespace BDArmory.Control
 
             turnRadius = dynVelocityMagSqr / maxLiftAcceleration; //radius that we can turn in assuming constant velocity, assuming simple circular motion (this is a terrible assumption, the AI usually turns on afterboosters!)
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Turn Radius: {turnRadius}m");
+        }
+
+        void CalculateFlatSpin()
+        {
+            // Checks to see if craft has a yaw rate of > 20 deg/s with pitch/roll being less (flat spin) for longer than 2s, if so sets the FlatSpin flag which will trigger
+            // RegainEnergy with throttle set to idle.
+            
+            float spinRate = vessel.angularVelocity.z;
+            if ((Mathf.Abs(spinRate) > 0.35f) && (Mathf.Abs(spinRate) > Mathf.Max(Mathf.Abs(vessel.angularVelocity.x), Mathf.Abs(vessel.angularVelocity.y))))
+            {
+                if (flatSpinStartTime == float.MaxValue)
+                    flatSpinStartTime = Time.time;
+
+                if ((Time.time - flatSpinStartTime) > 2f)
+                {
+                    FlatSpin = Mathf.Sign(spinRate); // 1 for counter-clockwise, -1 for clockwise
+                    if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) 
+                        debugString.AppendLine($"Flat Spin Detected, {vessel.angularVelocity.z*Mathf.PI/180f} deg/s, {(Time.time - flatSpinStartTime)}s");
+                }
+            }
+            else
+            {
+                FlatSpin = 0; // No flat spin, set to zero
+                flatSpinStartTime = float.MaxValue;
+            }
         }
 
         Vector3 DefaultAltPosition()
