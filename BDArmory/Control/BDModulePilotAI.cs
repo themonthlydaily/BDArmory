@@ -2445,7 +2445,6 @@ namespace BDArmory.Control
 
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
             {
-                debugString.AppendLine($"Yaw Ang Vel: { vessel.angularVelocity.z}, Pitch Ang Vel: { vessel.angularVelocity.y}, Roll Ang Vel: { vessel.angularVelocity.x}");
                 debugString.AppendLine(String.Format("steerMode: {0}, rollError: {1,7:F4}, pitchError: {2,7:F4}, yawError: {3,7:F4}", steerMode, rollError, pitchError, yawError));
                 debugString.AppendLine($"finalMaxSteer: {finalMaxSteer:G3}, dynAdj: {dynamicAdjustment:G3}");
                 // debugString.AppendLine($"Bank Angle: " + bankAngle);
