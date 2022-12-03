@@ -1643,7 +1643,7 @@ namespace BDArmory.Control
             upDirection = VectorUtils.GetUpDirection(vessel.transform.position);
 
             CalculateAccelerationAndTurningCircle();
-            CalculateFlatSpin();
+            CheckFlatSpin();
 
             if ((float)vessel.radarAltitude < minAltitude)
             { belowMinAltitude = true; }
@@ -3549,7 +3549,7 @@ namespace BDArmory.Control
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Turn Radius: {turnRadius}m");
         }
 
-        void CalculateFlatSpin()
+        void CheckFlatSpin()
         {
             // Checks to see if craft has a yaw rate of > 20 deg/s with pitch/roll being less (flat spin) for longer than 2s, if so sets the FlatSpin flag which will trigger
             // RegainEnergy with throttle set to idle.
@@ -3564,7 +3564,7 @@ namespace BDArmory.Control
                 {
                     FlatSpin = Mathf.Sign(spinRate); // 1 for counter-clockwise, -1 for clockwise
                     if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) 
-                        debugString.AppendLine($"Flat Spin Detected, {vessel.angularVelocity.z*Mathf.PI/180f} deg/s, {(Time.time - flatSpinStartTime)}s");
+                        debugString.AppendLine($"Flat Spin Detected, {spinRate * 180f/Mathf.PI} deg/s, {(Time.time - flatSpinStartTime)}s");
                 }
             }
             else
