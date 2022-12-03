@@ -250,7 +250,7 @@ namespace BDArmory.Control
             UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All)]
         bool autoTune = false;
         public bool AutoTune { get { return autoTune; } set { autoTune = value; OnAutoTuneChanged(null, null); } }
-        PIDAutoTuning pidAutoTuning;
+        public PIDAutoTuning pidAutoTuning;
 
         [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_AutoTuningLoss", groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true), UI_Label(scene = UI_Scene.All)]
         public string autoTuningLossLabel = "";
@@ -289,11 +289,22 @@ namespace BDArmory.Control
             UI_FloatRange(minValue = 50f, maxValue = 800f, stepIncrement = 5.0f, scene = UI_Scene.All)]
         public float autoTuningSpeed = 200f;
 
-        //Toggle Fixed P
-        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_PIDAutoTuningFixedP", advancedTweakable = true,
-            groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
-            UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All)]
-        public bool autoTuningOptionFixedP = false;
+        // Fixed fields for auto-tuning (only accessible via the AI GUI for now)
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false)] public bool autoTuningOptionFixedP = false;
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false)] public bool autoTuningOptionFixedI = false;
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false)] public bool autoTuningOptionFixedD = false;
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false)] public bool autoTuningOptionFixedDOff = false;
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false)] public bool autoTuningOptionFixedDOn = false;
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false)] public bool autoTuningOptionFixedDF = false;
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false)] public bool autoTuningOptionFixedDPOff = false;
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false)] public bool autoTuningOptionFixedDPOn = false;
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false)] public bool autoTuningOptionFixedDPF = false;
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false)] public bool autoTuningOptionFixedDYOff = false;
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false)] public bool autoTuningOptionFixedDYOn = false;
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false)] public bool autoTuningOptionFixedDYF = false;
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false)] public bool autoTuningOptionFixedDROff = false;
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false)] public bool autoTuningOptionFixedDROn = false;
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false)] public bool autoTuningOptionFixedDRF = false;
 
         //Clamp Maximums
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_PIDAutoTuningClampMaximums", advancedTweakable = true,
@@ -1340,6 +1351,7 @@ namespace BDArmory.Control
                 {
                     var fieldName = field.name;
                     if (!fieldName.StartsWith("autoTuningOption")) continue;
+                    if (fieldName.StartsWith("autoTuningOptionFixed")) continue;
                     if (Fields.TryGetFieldUIControl<UI_Control>(fieldName, out UI_Control autoTuneField))
                     {
                         autoTuneField.onFieldChanged = OnAutoTuneOptionsChanged;
@@ -1370,6 +1382,7 @@ namespace BDArmory.Control
             {
                 foreach (var field in Fields)
                 {
+                    if (field.name.StartsWith("autoTuningOptionFixed")) continue;
                     if (field.name.StartsWith("autoTuning"))
                     {
                         field.guiActiveEditor = autoTune;
@@ -1380,6 +1393,7 @@ namespace BDArmory.Control
             {
                 foreach (var field in Fields)
                 {
+                    if (field.name.StartsWith("autoTuningOptionFixed")) continue;
                     if (field.name.StartsWith("autoTuning"))
                     {
                         field.guiActive = autoTune;
@@ -4226,10 +4240,6 @@ namespace BDArmory.Control
             if (string.IsNullOrEmpty(AI.autoTuningLossLabel)) AI.autoTuningLossLabel = $"measuring";
             AI.autoTuningLossLabel2 = $"LR: {lr.current:G2}, Roll rel.: {optimiser.rollRelevance:G2}";
             AI.autoTuningLossLabel3 = $"{currentField}, sample nr: {sampleNumber + 1}";
-            if ((AI.autoTuningOptionFixedP && !fixedFields.Any(f => f.StartsWith("steerMult"))) || (!AI.autoTuningOptionFixedP && fixedFields.Any(f => f.StartsWith("steerMult"))))
-            {
-                ToggleFixedP();
-            }
 
             // pitchChange = 30f * UnityEngine.Random.Range(-1f, 1f) * UnityEngine.Random.Range(-1f, 1f); // Adjust pitch by ±30°, biased towards 0°.
         }
@@ -4256,11 +4266,6 @@ namespace BDArmory.Control
                 if (field.group.name == "pilotAI_PID" && field.guiActive && field.uiControlFlight.GetType() == typeof(UI_FloatRange))
                 {
                     if (field.name.StartsWith("autoTuning")) continue;
-                    if (AI.autoTuningOptionFixedP && field.name.StartsWith("steerMult"))
-                    {
-                        fixedFields.Add(field.name);
-                        continue;
-                    }
                     // Exclude relevant damping fields when disabled
                     if (AI.dynamicSteerDamping)
                     {
@@ -4274,6 +4279,26 @@ namespace BDArmory.Control
                             fixedFields.Add(field.name);
                             continue;
                         } // else all damping fields shown on UI are in use
+                    }
+                    // Exclude fields selected by the user to be excluded.
+                    if ((AI.autoTuningOptionFixedP && field.name == "steerMult")
+                        || (AI.autoTuningOptionFixedI && field.name == "steerKiAdjust")
+                        || (AI.autoTuningOptionFixedD && field.name == "steerDamping")
+                        || (AI.autoTuningOptionFixedDOff && field.name == "DynamicDampingMin")
+                        || (AI.autoTuningOptionFixedDOn && field.name == "DynamicDampingMax")
+                        || (AI.autoTuningOptionFixedDF && field.name == "dynamicSteerDampingFactor")
+                        || (AI.autoTuningOptionFixedDPOff && field.name == "DynamicDampingPitchMin")
+                        || (AI.autoTuningOptionFixedDPOn && field.name == "DynamicDampingPitchMax")
+                        || (AI.autoTuningOptionFixedDPF && field.name == "dynamicSteerDampingPitchFactor")
+                        || (AI.autoTuningOptionFixedDYOff && field.name == "DynamicDampingYawMin")
+                        || (AI.autoTuningOptionFixedDYOn && field.name == "DynamicDampingYawMax")
+                        || (AI.autoTuningOptionFixedDYF && field.name == "dynamicSteerDampingYawFactor")
+                        || (AI.autoTuningOptionFixedDROff && field.name == "DynamicDampingRollMin")
+                        || (AI.autoTuningOptionFixedDROn && field.name == "DynamicDampingRollMax")
+                        || (AI.autoTuningOptionFixedDRF && field.name == "dynamicSteerDampingRollFactor"))
+                    {
+                        fixedFields.Add(field.name);
+                        continue;
                     }
                     var uiControl = (UI_FloatRange)field.uiControlFlight;
                     if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Found PID field: {field.guiName} with value {field.GetValue(AI)} and limits {uiControl.minValue} — {uiControl.maxValue}");
@@ -4316,7 +4341,7 @@ namespace BDArmory.Control
                         return;
                     }
                     optimiser.Update();
-                    AI.autoTuningLossLabel = $"{loss:G6}";
+                    AI.autoTuningLossLabel = $"{loss:G6}   (best: {lr.best:G6})";
                     AI.autoTuningLossLabel2 = $"LR: {lr.current:G2}, Roll rel.: {optimiser.rollRelevance:G2}";
                     ++currentFieldIndex;
                     UpdatePIDValues(false);
@@ -4413,18 +4438,6 @@ namespace BDArmory.Control
                     if (baseValues.ContainsKey(fieldName))
                         fields[fieldName].SetValue(baseValues[fieldName], AI);
             }
-        }
-
-        public void ToggleFixedP()
-        {
-            if (fixedFields != null && fields != null && fixedFields.Any(f => f.StartsWith("steerMult"))) // When full 3-axis PID is implmented, the P fields should all start with "steerMult".
-            {
-                foreach (var fieldName in fixedFields.Where(f => f.StartsWith("steerMult") && fields.ContainsKey(f)))
-                {
-                    fields[fieldName].SetValue(baseValues[fieldName], AI);
-                }
-            }
-            ResetGradient();
         }
     }
 }

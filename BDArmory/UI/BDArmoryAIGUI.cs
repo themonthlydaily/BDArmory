@@ -43,6 +43,7 @@ namespace BDArmory.UI
         bool showTerrain;
         bool showRam;
         bool showMisc;
+        bool fixedAutoTuneFields = false;
 
         int Drivertype = 0;
         int broadsideDir = 0;
@@ -1321,12 +1322,47 @@ namespace BDArmory.UI
                                     GUI.Label(ContextLabelRect(leftIndent, pidLines + autoTuneLines++), StringUtils.Localize("#LOC_BDArmory_AIWindow_PIDAutoTuningSpeedContext"), Label);
                                 }
 
-                                ActivePilot.autoTuningOptionFixedP = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 0, 2, contentWidth), ActivePilot.autoTuningOptionFixedP, StringUtils.Localize("#LOC_BDArmory_AIWindow_PIDAutoTuningFixedP"), ActivePilot.autoTuningOptionFixedP ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
+                                fixedAutoTuneFields = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 0, 2, contentWidth), fixedAutoTuneFields, StringUtils.Localize("#LOC_BDArmory_AIWindow_PIDAutoTuningFixedFields"), fixedAutoTuneFields ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
 
                                 ActivePilot.autoTuningOptionClampMaximums = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 1, 2, contentWidth), ActivePilot.autoTuningOptionClampMaximums, StringUtils.Localize("#LOC_BDArmory_AIWindow_PIDAutoTuningClampMaximums"), ActivePilot.autoTuningOptionClampMaximums ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
-                                autoTuneLines += 1.25f;
+                                ++autoTuneLines;
 
-                                pidLines += autoTuneLines;
+                                if (fixedAutoTuneFields)
+                                {
+                                    bool resetGradient = false;
+                                    if (!ActivePilot.dynamicSteerDamping)
+                                    {
+                                        if (ActivePilot.autoTuningOptionFixedP != (ActivePilot.autoTuningOptionFixedP = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 0, 2, contentWidth), ActivePilot.autoTuningOptionFixedP, StringUtils.Localize("P"), ActivePilot.autoTuningOptionFixedP ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))) resetGradient = true;
+                                        if (ActivePilot.autoTuningOptionFixedI != (ActivePilot.autoTuningOptionFixedI = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 0, 2, contentWidth), ActivePilot.autoTuningOptionFixedI, StringUtils.Localize("I"), ActivePilot.autoTuningOptionFixedI ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))) resetGradient = true;
+                                        if (ActivePilot.autoTuningOptionFixedD != (ActivePilot.autoTuningOptionFixedD = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 0, 2, contentWidth), ActivePilot.autoTuningOptionFixedD, StringUtils.Localize("D"), ActivePilot.autoTuningOptionFixedD ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))) resetGradient = true;
+                                    }
+                                    else if (!ActivePilot.CustomDynamicAxisFields)
+                                    {
+                                        if (ActivePilot.autoTuningOptionFixedP != (ActivePilot.autoTuningOptionFixedP = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 0, 5, contentWidth), ActivePilot.autoTuningOptionFixedP, StringUtils.Localize("P"), ActivePilot.autoTuningOptionFixedP ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))) resetGradient = true;
+                                        if (ActivePilot.autoTuningOptionFixedI != (ActivePilot.autoTuningOptionFixedI = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 1, 5, contentWidth), ActivePilot.autoTuningOptionFixedI, StringUtils.Localize("I"), ActivePilot.autoTuningOptionFixedI ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))) resetGradient = true;
+                                        if (ActivePilot.autoTuningOptionFixedDOff != (ActivePilot.autoTuningOptionFixedDOff = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 2, 5, contentWidth), ActivePilot.autoTuningOptionFixedDOff, StringUtils.Localize("DOff"), ActivePilot.autoTuningOptionFixedDOff ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))) resetGradient = true;
+                                        if (ActivePilot.autoTuningOptionFixedDOn != (ActivePilot.autoTuningOptionFixedDOn = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 3, 5, contentWidth), ActivePilot.autoTuningOptionFixedDOn, StringUtils.Localize("DOn"), ActivePilot.autoTuningOptionFixedDOn ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))) resetGradient = true;
+                                        if (ActivePilot.autoTuningOptionFixedDF != (ActivePilot.autoTuningOptionFixedDF = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 4, 5, contentWidth), ActivePilot.autoTuningOptionFixedDF, StringUtils.Localize("DF"), ActivePilot.autoTuningOptionFixedDF ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))) resetGradient = true;
+                                    }
+                                    else
+                                    {
+                                        if (ActivePilot.autoTuningOptionFixedP != (ActivePilot.autoTuningOptionFixedP = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 0, 11, contentWidth), ActivePilot.autoTuningOptionFixedP, StringUtils.Localize("P"), ActivePilot.autoTuningOptionFixedP ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))) resetGradient = true;
+                                        if (ActivePilot.autoTuningOptionFixedI != (ActivePilot.autoTuningOptionFixedI = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 1, 11, contentWidth), ActivePilot.autoTuningOptionFixedI, StringUtils.Localize("I"), ActivePilot.autoTuningOptionFixedI ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))) resetGradient = true;
+                                        if (ActivePilot.autoTuningOptionFixedDPOff != (ActivePilot.autoTuningOptionFixedDPOff = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 2, 11, contentWidth), ActivePilot.autoTuningOptionFixedDPOff, StringUtils.Localize("DPOff"), ActivePilot.autoTuningOptionFixedDPOff ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))) resetGradient = true;
+                                        if (ActivePilot.autoTuningOptionFixedDPOn != (ActivePilot.autoTuningOptionFixedDPOn = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 3, 11, contentWidth), ActivePilot.autoTuningOptionFixedDPOn, StringUtils.Localize("DPOn"), ActivePilot.autoTuningOptionFixedDPOn ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))) resetGradient = true;
+                                        if (ActivePilot.autoTuningOptionFixedDPF != (ActivePilot.autoTuningOptionFixedDPF = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 4, 11, contentWidth), ActivePilot.autoTuningOptionFixedDPF, StringUtils.Localize("DPF"), ActivePilot.autoTuningOptionFixedDPF ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))) resetGradient = true;
+                                        if (ActivePilot.autoTuningOptionFixedDYOff != (ActivePilot.autoTuningOptionFixedDYOff = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 5, 11, contentWidth), ActivePilot.autoTuningOptionFixedDYOff, StringUtils.Localize("DYOff"), ActivePilot.autoTuningOptionFixedDYOff ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))) resetGradient = true;
+                                        if (ActivePilot.autoTuningOptionFixedDYOn != (ActivePilot.autoTuningOptionFixedDYOn = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 6, 11, contentWidth), ActivePilot.autoTuningOptionFixedDYOn, StringUtils.Localize("DYOn"), ActivePilot.autoTuningOptionFixedDYOn ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))) resetGradient = true;
+                                        if (ActivePilot.autoTuningOptionFixedDYF != (ActivePilot.autoTuningOptionFixedDYF = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 7, 11, contentWidth), ActivePilot.autoTuningOptionFixedDYF, StringUtils.Localize("DYF"), ActivePilot.autoTuningOptionFixedDYF ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))) resetGradient = true;
+                                        if (ActivePilot.autoTuningOptionFixedDROff != (ActivePilot.autoTuningOptionFixedDROff = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 8, 11, contentWidth), ActivePilot.autoTuningOptionFixedDROff, StringUtils.Localize("DROff"), ActivePilot.autoTuningOptionFixedDROff ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))) resetGradient = true;
+                                        if (ActivePilot.autoTuningOptionFixedDROn != (ActivePilot.autoTuningOptionFixedDROn = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 9, 11, contentWidth), ActivePilot.autoTuningOptionFixedDROn, StringUtils.Localize("DROn"), ActivePilot.autoTuningOptionFixedDROn ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))) resetGradient = true;
+                                        if (ActivePilot.autoTuningOptionFixedDRF != (ActivePilot.autoTuningOptionFixedDRF = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 10, 11, contentWidth), ActivePilot.autoTuningOptionFixedDRF, StringUtils.Localize("DRF"), ActivePilot.autoTuningOptionFixedDRF ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))) resetGradient = true;
+                                    }
+                                    if (resetGradient) ActivePilot.pidAutoTuning.ResetGradient();
+                                    ++autoTuneLines;
+                                }
+
+                                pidLines += autoTuneLines + 0.25f;
                             }
                             #endregion
 

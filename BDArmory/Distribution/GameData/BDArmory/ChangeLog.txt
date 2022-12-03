@@ -1,6 +1,9 @@
 ﻿IMPROVEMENTS / FIXES
 - General:
 	- Russian localisation thanks to user Akteon_.
+- AI / WM:
+	- Allow selecting which fields to auto-tune in the AI GUI. (Fixed-P option removed from the PAW.)
+	- Show the best loss value in auto-tuning.
 - Weapons:
 	- Add a stagger option to barrage mode that fires barrages in bursts and adds variability to the reload times. Mostly only suitable for slow-firing ship guns.
 
