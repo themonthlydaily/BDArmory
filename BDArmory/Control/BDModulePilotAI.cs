@@ -2169,8 +2169,6 @@ namespace BDArmory.Control
             else
                 AdjustThrottle(maxSpeed, false, true);
 
-            if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Regaining energy, {throttleOverride}");
-
             FlyToPosition(s, vesselTransform.position + (targetDirection * 100), true);
         }
 
