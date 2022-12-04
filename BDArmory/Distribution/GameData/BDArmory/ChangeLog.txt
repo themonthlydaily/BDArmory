@@ -7,6 +7,7 @@
 	- Log the latest best auto-tuning values to the KSP.log even without debug AI enabled.
 	- AI will now try to recover from flat spins by idling engines and pointing nose downward.
 	- Allow damping values to go down to 0.1 instead of 1.
+	- Prevent the AI GUI from rounding slider values when not adjusted by hand (e.g., during auto-tuning).
 - Weapons:
 	- Add a stagger option to barrage mode that fires barrages in bursts and adds variability to the reload times. Mostly only suitable for slow-firing ship guns.
 - Competitions:
