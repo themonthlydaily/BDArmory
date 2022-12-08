@@ -1,39 +1,66 @@
-﻿- General:
+﻿IMPROVEMENTS / FIXES
+- General:
+	- Russian localisation thanks to user Akteon_.
+	- Add missing part localizations for radomes and combat seat.
+- AI / WM:
+	- Allow selecting which fields to auto-tune in the AI GUI. (Fixed-P option removed from the PAW.)
+	- Show the best loss value in auto-tuning.
+	- Log the latest best auto-tuning values to the KSP.log even without debug AI enabled.
+	- AI will now try to recover from flat spins by idling engines and pointing nose downward.
+	- Allow damping values to go down to 0.1 instead of 1.
+	- Prevent the AI GUI from rounding slider values when not adjusted by hand (e.g., during auto-tuning).
+	- Craft with empty Multimissile launchers will now properly go into ramming mode(if enabled) if no other weapons.
+- Weapons:
+	- Add a stagger option to barrage mode that fires barrages in bursts and adds variability to the reload times. Mostly only suitable for slow-firing ship guns.
+	- Hellfire/EMP Hellfire now better differentiated in Weapon Manager selection list.
+- Competitions:
+	- Add a --no-header option to the parsing script.
+
+v1.5.5.1
+IMPROVEMENTS / FIXES
+- Fix NRE in trajectory sim.
+- Fix active vessel not firing under AI control.
+- Fix firing of missiles via hotkey not respecting ripple/single setting.
+
+v1.5.5.0
+IMPROVEMENTS / FIXES
+- General:
 	- Add a --tsv option to the n-choose-k parsing script to output a TSV file instead of a CSV file.
 	- Tweaks to scroll-zoom prevention.
 	- Exclude weapons from the bounds calculations as they sometimes give weird values (e.g., lasers when firing).
-  - Add keybindings for "Next Weapon", "Prev Weapon" and "Fire Missile" in the WM (keybindings for firing guns are on the weapons).
 - UI:
 	- Add an option in the UI settings for disabling scroll-zoom prevention when over BDA windows.
-  - Add version watermark to Competition UI.
+	- Add version watermark to Competition UI and Vessel Switcher window.
 - AI / WM:
 	- Fixes for Stationary surface vessel mode.
 		- No longer panics, even if airborne (allows for floating/free-fall turrets).
 		- Attitude control (using RCS and reaction wheels) is applied when an enemy is within the engagement range.
-  - Add 'Target Damage' Target Priority setting.
+	- Add 'Target Damage' Target Priority setting.
+	- Add keybindings for "Next Weapon", "Prev Weapon" and "Fire Missile" in the WM (keybindings for firing guns are on the weapons).
 - Detectors
-  - Some optimizatiosn to the ECMJammer code.
-  - Active jammers now appear on Radar Warning Receivers.
+	- Some optimizations to the ECMJammer code.
+	- Active jammers now appear on Radar Warning Receivers.
 - Armor:
 	- Fix stack overflow in ToggleScaleClamp for symmetric parts.
 	- Further fixes for post-penetration bugs.
 - Weapons:
 	- Remove the extra delay from dropping the final countermeasure in a sequence.
-  - Fix non-damaging lasers not scoring.
-  - Tightened up firing angle when using subsystem targeting; AI will now fire when subsystem part is within angle, not entire vessel.
-  - Fix missing NukeFX Flash.
+	- Fix non-damaging lasers not scoring.
+	- Tightened up firing angle when using subsystem targeting; AI will now fire when subsystem part is within angle, not entire vessel.
+	- Fix missing NukeFX Flash.
+	- Fix the targeting reticle placement at very short range.
 	- Add a custom fire keybinding to weapons that can be used to temporarily enable and fire weapons with keys other than the main firing key.
 		- Click the toggle on the weapon PAW, then press the desired button. Left click to cancel, escape to clear.
-	- Fix the targeting reticle placement at very short range.
-	- Add an action group for jettisoning rocket pods.
+	- Add an action group for jettisoning rocket pods and toggle deployable rails.
+	- Fix the trajectory simulation and targeting reticle placement for rockets.
 - Spawning:
 	- Allow a specific list of observers to be excluded from being removed during spawning and competitions.
 	- Allow spawning custom templates with only 1 team if not immediately starting a competition.
 	- Allow spawning non-valid craft via the custom spawn templates if not immediately starting a competition.
 - RWP:
 	- Fixes for remote orchestration.  
-  - Improvements to Spacehacks repulsor code; will no longer shred landed ships.
-	  - Landing gear will now serve as repulsors when Repulsor mode is enabled instead of effect propagating through CoM, should result in more stable hovercraft.
+	- Improvements to Spacehacks repulsor code; will no longer shred landed ships.
+		- Landing gear will now serve as repulsors when Repulsor mode is enabled instead of effect propagating through CoM, should result in more stable hovercraft.
 
 v1.5.4.1
 IMPROVEMENTS / FIXES
