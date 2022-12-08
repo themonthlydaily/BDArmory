@@ -928,7 +928,7 @@ namespace BDArmory.Weapons.Missiles
                                 Debug.Log("[MissileLauncher.GetBlastRadius] needing to use MMR tntmass value!");
                                 return blastRadius = BlastPhysicsUtils.CalculateBlastRange(reloadableRail.tntmass);
                             }
-                            else return 750; //clustermissile det radius hardcoded for now
+                            else return blastRadius = 750; //clustermissile det radius hardcoded for now
                         }
                         blastRadius = 150;
                         return blastRadius;
@@ -986,6 +986,7 @@ namespace BDArmory.Weapons.Missiles
             yield return new WaitUntilFixed(() => ml.SetupComplete); // Wait until missile fully initialized.
 
             ml.launched = true;
+            GetMissileCount();
             var wpm = VesselModuleRegistry.GetMissileFire(SourceVessel, true);
             BDATargetManager.FiredMissiles.Add(ml);
             ml.SourceVessel = SourceVessel;
