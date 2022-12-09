@@ -3916,12 +3916,13 @@ namespace BDArmory.Weapons
             {
                 if (autoFire && autofireShotCount >= fireBurstLength)
                 {
+                    if (Time.time - autoFireTimer > autoFireLength) autofireShotCount = 0;
                     autoFire = false;
                     //visualTargetVessel = null; //if there's no target, these get nulled in MissileFire. Nulling them here would cause Ai to stop engaging target with longer TargetScanIntervals as 
                     //visualTargetPart = null; //there's no longer a targetVessel/part to do leadOffset aim calcs for.
                     tgtShell = null;
                     tgtRocket = null;
-                    autofireShotCount = 0;
+
                     if (SpoolUpTime > 0)
                     {
                         roundsPerMinute = baseRPM / 10;
