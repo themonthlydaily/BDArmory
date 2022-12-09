@@ -396,7 +396,7 @@ namespace BDArmory.FX
                     {
                         message += " parts damaged due to explosion";
                     }
-                    message += (SourceWeaponName != null ? $" ({SourceWeaponName})" : "") + (sourceVesselName != null ? $"from {sourceVesselName}" : "") + ".";
+                    message += (SourceWeaponName != null ? $" ({SourceWeaponName})" : "") + (sourceVesselName != null ? $" from {sourceVesselName}" : "") + ".";
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
                 }
                 // Note: damage hasn't actually been applied to the parts yet, just assigned as events, so we can't know if they survived.
@@ -547,7 +547,7 @@ namespace BDArmory.FX
                     {
                         continue;
                     }
-                    if (FlightGlobals.currentMainBody != null && hit.collider.gameObject == FlightGlobals.currentMainBody.gameObject) return false; // Terrain hit. Full absorption. Should avoid NREs in the following.
+                    if (FlightGlobals.currentMainBody != null && hit.collider.gameObject == FlightGlobals.currentMainBody.gameObject) return false; // Terrain hit. Full absorption. Should avoid NREs in the following. FIXME This doesn't seem correct anymore: "Kerbin Zn1232223233" vs "Kerbin", but doesn't seem to cause issues either.
                     if (intermediateParts)
                     {
                         var partHP = partHit.Damage();

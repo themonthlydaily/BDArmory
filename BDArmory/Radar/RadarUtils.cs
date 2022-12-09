@@ -215,7 +215,7 @@ namespace BDArmory.Radar
             ti.radarModifiedSignature = ti.radarBaseSignature;
             ti.radarLockbreakFactor = 1;
 
-            //Wouldn't this make more sense to calculate once when ECM (de)activated, instead of re-calcing every fixedUpdate tick?
+            //Wouldn't this make more sense to calculate once when ECM (de)activated, instead of re-calcing every fixedUpdate tick? @JOSUE
             /*
             // read vessel ecminfo for active jammers and calculate effects:
             VesselECMJInfo vesseljammer = v.gameObject.GetComponent<VesselECMJInfo>();

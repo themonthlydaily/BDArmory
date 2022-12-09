@@ -1173,7 +1173,7 @@ namespace BDArmory.Radar
             {
                 DrawDisplayedContacts();
                 if (iCount > 0)
-                    DrawDisplayedIRContacts(); //something is throwing a GUIClips NRE somewhere before DisplayRadarControls()
+                    DrawDisplayedIRContacts();
             }
             pingPositionsDirty = false;
 
