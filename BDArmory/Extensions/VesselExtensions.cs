@@ -69,16 +69,13 @@ namespace BDArmory.Extensions
         // Get a vessel's "radius".
         public static float GetRadius(this Vessel vessel, Vector3 fireTransform = default(Vector3), Vector3 bounds = default(Vector3))
         {
-            //Clamp this to an upper maximum, in case of massive ship/arsenalbird sized targets? Or limit that to subsystem targeting?
-
             if (fireTransform == Vector3.zero || bounds == Vector3.zero)
             {
                 // Get vessel size.
                 Vector3 size = vessel.vesselSize;
 
-				// Get largest dimension.
-				return Mathf.Max(Mathf.Max(size.x, size.y), size.z) / 2f;
-                //wouldn't smallest/median dimension make more sense, here?
+                // Get largest dimension as this is mostly used for terrain/vessel avoidance. More precise "radii" should probably pass the fireTransform and bounds parameters.
+                return Mathf.Max(Mathf.Max(size.x, size.y), size.z) / 2f;
             }
             else
             {
@@ -105,7 +102,8 @@ namespace BDArmory.Extensions
                 var weapon = part.partPrefab.FindModuleImplementing<Weapons.ModuleWeapon>();
                 if (weapon != null)
                 {
-                    Debug.Log($"[BDArmory.VesselExtensions]: Adding {weapon.name} to the bounds exclusion list.");
+                    if (!string.IsNullOrEmpty(weapon.name)) // For some reason, the weapons are showing up a second time with an empty name.
+                        Debug.Log($"[BDArmory.VesselExtensions]: Adding {weapon.name} to the bounds exclusion list.");
                     badBoundsParts.Add(weapon.name); // Exclude all weapons as they can become unreasonably large if they have line renderers attached to them.
                 }
             }
