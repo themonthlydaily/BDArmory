@@ -201,7 +201,8 @@ namespace BDArmory.Radar
 
                 // Update ECM impact on RCS if base RCS is modified
                 VesselECMJInfo jammer = v.gameObject.GetComponent<VesselECMJInfo>();
-                jammer.UpdateJammerStrength();
+                if (jammer != null)
+                    jammer.UpdateJammerStrength();
             }
 
             return ti;
