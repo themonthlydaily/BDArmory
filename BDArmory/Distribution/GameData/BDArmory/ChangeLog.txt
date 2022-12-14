@@ -1,4 +1,5 @@
-﻿IMPROVEMENTS / FIXES
+﻿v1.5.6.0
+IMPROVEMENTS / FIXES
 - General:
 	- Russian localisation thanks to user Akteon_.
 	- Add missing part localizations for radomes and combat seat.
@@ -13,12 +14,13 @@
 	- AI will now try to recover from flat spins by idling engines and pointing nose downward.
 	- Allow damping values to go down to 0.1 instead of 1.
 	- Prevent the AI GUI from rounding slider values when not adjusted by hand (e.g., during auto-tuning).
-	- Craft with empty Multimissile launchers will now properly go into ramming mode(if enabled) if no other weapons.
+	- Craft with empty Multimissile launchers will now properly go into ramming mode (if enabled) if no other weapons.
+	- Make the burst fire override respect the firing interval.
 - Weapons:
 	- Add a stagger option to barrage mode that fires barrages in bursts and adds variability to the reload times. Mostly only suitable for slow-firing ship guns.
 	- Hellfire/EMP Hellfire now better differentiated in Weapon Manager selection list.
 - Competitions:
-	- Add a --no-header option to the parsing script.
+	- Add a --no-header option to the tournament parsing script.
 
 v1.5.5.1
 IMPROVEMENTS / FIXES
