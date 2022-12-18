@@ -758,7 +758,7 @@ namespace BDArmory.Competition
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError($"[BDArmory.BDACompetitionMode]: Exception thrown in DogfightCompetitionModeRoutine: " + e.Message);
+                    Debug.LogError($"[BDArmory.BDACompetitionMode]: Exception thrown in DogfightCompetitionModeRoutine: " + e.Message + "\n" + e.StackTrace);
                     if (startDespiteFailures)
                     {
                         competitionStatus.Add("Failed to update radar cross sections, continuing anyway");

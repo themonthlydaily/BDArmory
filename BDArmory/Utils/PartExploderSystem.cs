@@ -15,11 +15,6 @@ namespace BDArmory.Utils
 
         public static void AddPartToExplode(Part p)
         {
-            if (BDArmorySettings.KERBAL_SAFETY > 0 && p.IsKerbalEVA()) // Don't explode kerbals if KerbalSafety is enabled.
-            {
-                // Debug.LogWarning($"[BDArmory.PartExploderSystem]: Refusing to explode EVA kerbal {p}");
-                return;
-            }
             if (p != null)
             { ExplodingParts.Add(p); }
         }
