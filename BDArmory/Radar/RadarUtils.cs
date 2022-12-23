@@ -148,6 +148,11 @@ namespace BDArmory.Radar
             //1. baseSig = GetVesselRadarCrossSection
             TargetInfo ti = GetVesselRadarCrossSection(v);
 
+            //2. modifiedSig = GetVesselModifiedSignature(baseSig)    //ECM-jammers with rcs reduction effect; other rcs reductions (stealth)
+            ti.radarRCSReducedSignature = ti.radarBaseSignature; //These are needed for Radar functions to work!
+            ti.radarModifiedSignature = ti.radarBaseSignature;
+            //ti.radarLockbreakFactor = 1;
+
             return ti;
         }
 
