@@ -1,4 +1,8 @@
-﻿v1.5.6.0
+﻿v1.5.6.1
+IMPROVEMENTS / FIXES
+- Fix issue causing radars to return a cross-section of 0.0 for all craft.
+
+v1.5.6.0
 IMPROVEMENTS / FIXES
 - General:
 	- Russian localisation thanks to user Akteon_.
