@@ -1,4 +1,8 @@
-﻿v1.5.6.1
+﻿IMPROVEMENTS / FIXES
+- Add frontAspectHeatModifier variable to missile definitions, explained further in sidewinder.cfg. Allows you to create IR missiles that behave more like early IR rear-aspect/tail-chase missiles.
+- Remove the clamp on heat signature drop-off with range above 6 km. Prior to this change, any heat signatures more than 6 km away were capped at their 6 km value.
+
+v1.5.6.1
 IMPROVEMENTS / FIXES
 - Fix issue causing radars to return a cross-section of 0.0 for all craft.
 
