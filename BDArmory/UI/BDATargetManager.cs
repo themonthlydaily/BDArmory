@@ -535,7 +535,7 @@ namespace BDArmory.UI
                             finalData = new TargetSignatureData(vessel, score);
                         }
                     }
-                    Debug.Log($"[IR DEBUG] heatscore of {vessel.GetName()} is {score}");
+                    //Debug.Log($"[IR DEBUG] heatscore of {vessel.GetName()} is {score}");
                 }
             }
 
