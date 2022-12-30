@@ -463,17 +463,23 @@ namespace BDArmory.UI
                 TargetInfo tInfo = vessel.gameObject.GetComponent<TargetInfo>();
 
                 if (tInfo == null)
-                    return finalData;
+                {
+                    var WM = VesselModuleRegistry.GetMissileFire(vessel, true);
+                    if (WM != null)
+                    {
+                        tInfo = vessel.gameObject.AddComponent<TargetInfo>();
+                    }
+                    else
+                        return finalData; //This is causing Heaters to not work under manual control - Need Guardmode to generate TargetInfos. Could either add missing TI here, or have UpdateGuardScan proc all the time, not just in guardmode
 
+                }
                 // If no weaponManager or no target or the target is not a missile with engines on..??? and the target weighs less than 50kg, abort.
                 if (mf == null ||
                     !tInfo ||
                     !(mf && tInfo.isMissile && (tInfo.MissileBaseModule.MissileState == MissileBase.MissileStates.Boost || tInfo.MissileBaseModule.MissileState == MissileBase.MissileStates.Cruise)))
                 {
                     if (vessel.GetTotalMass() < minMass)
-                    {
                         continue;
-                    }
                 }
 
                 // Abort if target is friendly.
@@ -504,7 +510,8 @@ namespace BDArmory.UI
                     }
 
                     float score = GetVesselHeatSignature(vessel, BDArmorySettings.ASPECTED_IR_SEEKERS ? missileVessel.CoM : Vector3.zero) * Mathf.Clamp01(15 / angle); //change vector3.zero to missile.transform.position to have missile IR detection dependant on target aspect
-                    score *= (1400 * 1400) / Mathf.Clamp((vessel.CoM - ray.origin).sqrMagnitude, 90000, 36000000); //300 to 6000m. HeatSigs further than 6km will be clamped to what they'd be at 6km. Why 6km?
+                    //score *= (1400 * 1400) / Mathf.Clamp((vessel.CoM - ray.origin).sqrMagnitude, 90000, 36000000); //300 to 6000m. HeatSigs further than 6km will be clamped to what they'd be at 6km. Why 6km?
+                    score *= (1400 * 1400) / (vessel.CoM - ray.origin).sqrMagnitude; 
 
                     // Add bias targets closer to center of seeker FOV, only once missile seeker can see target
                     if ((priorHeatScore > 0f) && (angle < scanRadius))
@@ -528,9 +535,9 @@ namespace BDArmory.UI
                             finalData = new TargetSignatureData(vessel, score);
                         }
                     }
+                    Debug.Log($"[IR DEBUG] heatscore of {vessel.GetName()} is {score}");
                 }
             }
-
 
             // see if there are flares decoying us:
             bool flareSuccess = false;
@@ -556,7 +563,7 @@ namespace BDArmory.UI
             // See if a flare is closer in score to priorHeatScore than finalScore
             if (priorHeatScore > 0)
                 flareSuccess = (Mathf.Abs(flareData.signalStrength - priorHeatScore) < Mathf.Abs(finalScore - priorHeatScore)) && flareSuccess;
-            else if (BDArmorySettings.DUMB_IR_SEEKERS)
+            else if (BDArmorySettings.DUMB_IR_SEEKERS) //convert to a missile .cfg option for earlier-gen IR missiles?
                 flareSuccess = (flareData.signalStrength > finalScore) && flareSuccess;
             else
                 flareSuccess = false;
@@ -928,6 +935,7 @@ namespace BDArmory.UI
                     if (target.Current == null) continue;
                     if (target.Current.NumFriendliesEngaging(mf.Team) >= 2) continue;
                     if ((mf.multiTargetNum > 1 || mf.multiMissileTgtNum > 1) && mf.targetsAssigned.Contains(target.Current)) continue;
+                    //if (mf.vessel.GetName().Contains(BDArmorySettings.REMOTE_ORCHESTRATION_NPC_SWAPPER) && target.Current.Vessel.GetName().Contains(BDArmorySettings.REMOTE_ORCHESTRATION_NPC_SWAPPER)) continue;
                     if (target.Current && target.Current.Vessel && target.Current.isFlying && !target.Current.isMissile && target.Current.isThreat)
                     {
                         Vector3 targetRelPos = target.Current.Vessel.vesselTransform.position - mf.vessel.vesselTransform.position;
