@@ -1,5 +1,6 @@
 ﻿IMPROVEMENTS / FIXES
 - Add option in BDA settings menu to set a max HP limit for parts.
+- Fix bug in collision avoidance that sometimes resulted in more collisions between teammates.
 
 v1.5.6.2
 IMPROVEMENTS / FIXES
