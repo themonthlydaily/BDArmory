@@ -1008,6 +1008,8 @@ namespace BDArmory.Damage
                 Armor = ArmorThickness > 0 ? ArmorThickness : 2;
             }
             if (!_finished_setting_up && _armorConfigured && _hullConfigured) _hpConfigured = true;
+            if (BDArmorySettings.HP_CLAMP >= 100)
+                hitpoints = Mathf.Min(hitpoints, BDArmorySettings.HP_CLAMP);
             return hitpoints;
         }
 

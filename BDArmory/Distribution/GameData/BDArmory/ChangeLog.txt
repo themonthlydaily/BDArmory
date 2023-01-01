@@ -1,4 +1,7 @@
-﻿v1.5.6.2
+﻿IMPROVEMENTS / FIXES
+- Add option in BDA settings menu to set a max HP limit for parts.
+
+v1.5.6.2
 IMPROVEMENTS / FIXES
 - General:
 	- Fix kerbal flags exploding from overheat when placed.
