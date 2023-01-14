@@ -3,6 +3,7 @@
 - Fix bug in collision avoidance that sometimes resulted in more collisions between teammates.
 - Fix anti-aliasing settings affecting craft RCS. Craft will have consistent RCS regardless oF MSAA settings, note that craft may have slightly different RCS across different GPUs/graphics APIs.
 - Adjust RCS scaling value to give 1 m^2 cross-section for a 1 m^2 cross-section sphere (a 25% increase). This setting was most likely previously set with MSAA enabled, so it was set incorrectly.
+- Fix a bug in collisions within the initial bullet offset distance.
 
 v1.5.6.2
 IMPROVEMENTS / FIXES
