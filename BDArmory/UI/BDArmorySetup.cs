@@ -3308,17 +3308,17 @@ namespace BDArmory.UI
                 {
                     if (BDArmorySettings.RUNWAY_PROJECT != (BDArmorySettings.RUNWAY_PROJECT = GUI.Toggle(SLeftRect(++line), BDArmorySettings.RUNWAY_PROJECT, StringUtils.Localize("#LOC_BDArmory_Settings_RunwayProject"))))//Runway Project
                     {
-                        if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch.ship is not null) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship); if (oldSpaceHacks != BDArmorySettings.SPACE_HACKS)
-
+                        if (HighLogic.LoadedSceneIsFlight)
+                        {
                             SpawnUtils.HackActuatorsOnNewVessels(BDArmorySettings.RUNWAY_PROJECT);
-                            if (BDArmorySettings.RUNWAY_PROJECT) // Add the hack to all in-game intakes.
+
+                            foreach (var vessel in FlightGlobals.Vessels)
                             {
-                                foreach (var vessel in BDATargetManager.LoadedVessels)
-                                {
-                                    if (vessel == null || !vessel.loaded) continue;
-                                    SpawnUtils.HackActuators(vessel, true);
-                                }
+                                if (vessel == null || !vessel.loaded) continue;
+                                SpawnUtils.HackActuators(vessel, BDArmorySettings.RUNWAY_PROJECT);
                             }
+                        }
+                        if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch.ship is not null) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
                     }
                     if (BDArmorySettings.RUNWAY_PROJECT)
                     {

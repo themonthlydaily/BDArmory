@@ -785,8 +785,7 @@ namespace BDArmory.Bullets
                     //if ((distanceTraveled + hit.distance - distanceLastHit) * 1000f > (7f * caliber * 10f))
 
                     // Changed from the previous 7 * caliber * 10 maximum to just > caliber since that no longer exists.
-                    //if ((distanceTraveled + hit.distance - distanceLastHit) * 1000f > caliber)
-                    if ((hit.distance - distanceLastHit) * 1000f > caliber) //why is distanceTravelled included? That's total flight distance the bullet's gone from the muzzle - SI
+                    if ((distanceTraveled + hit.distance - distanceLastHit) * 1000f > caliber)
                         {
                         // The formula is based on distance and the caliber of the shaped charge, now since in our case we are talking
                         // about projectiles rather than shaped charges we'll take the projectile diameter and call that the jet size.
@@ -797,8 +796,7 @@ namespace BDArmory.Bullets
                         //float kTerm = ((float)(distanceTraveled + hit.distance - distanceLastHit) * 1000f - 7f * 10f *caliber) / (14f * 10f * caliber);
                         // Modified this from the original formula, commented out above to remove the standoff distance required for jet formation.
                         // Just makes more sense to me not to have it in there.
-                        //float kTerm = ((float)(distanceTraveled + hit.distance - distanceLastHit) * 1000f) / (14f * 10f * caliber);
-                        float kTerm = ((float)(hit.distance - distanceLastHit) * 1000f) / (14f * 10f * caliber);
+                        float kTerm = ((float)(distanceTraveled + hit.distance - distanceLastHit) * 1000f) / (14f * 10f * caliber);
 
                         kDist = 1f / (kDist * (1f + kTerm * kTerm)); // Then using it in the formula
 
@@ -823,15 +821,14 @@ namespace BDArmory.Bullets
 
                         if (BDArmorySettings.DEBUG_WEAPONS)
                         {
-                            Debug.Log("[BDArmory.PooledBullet] kDist: " + kDist + ". Distance Since Last Hit: " + (hit.distance - distanceLastHit) + " m.");
+                            Debug.Log("[BDArmory.PooledBullet] kDist: " + kDist + ". Distance Since Last Hit: " + (distanceTraveled + hit.distance - distanceLastHit) + " m.");
                         }
                     }
 
                     if (double.IsPositiveInfinity(distanceLastHit))
                     {
                         // Add the distance since this hit so the next part that gets hit has the proper distance
-                        //distanceLastHit = distanceTraveled + hit.distance;
-                        distanceLastHit = hit.distance;
+                        distanceLastHit = distanceTraveled + hit.distance;
                     }
                 }
             }

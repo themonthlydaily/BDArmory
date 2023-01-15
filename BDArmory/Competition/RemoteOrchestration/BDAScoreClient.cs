@@ -359,9 +359,9 @@ namespace BDArmory.Competition.RemoteOrchestration
                 Debug.LogWarning(string.Format("[BDArmory.BDAScoreClient] Failed to parse heat vessel collection: {0}", response));
                 return;
             }
+            SwapCraftFiles();
             foreach (VesselModel vesselModel in collection)
             {
-                SwapCraftFiles();
                 activeVessels.Add(vesselModel.id);
             }
             Debug.Log(string.Format("[BDArmory.BDAScoreClient] Active vessels: {0}", activeVessels.Count));
@@ -493,9 +493,11 @@ namespace BDArmory.Competition.RemoteOrchestration
         public void SwapCraftFiles()
         {
             DirectoryInfo info = new DirectoryInfo(vesselStagingPath);
-            FileInfo[] craftFiles = info.GetFiles("*.craft")
-                .Where(e => e.Extension == ".craft")
-                .ToArray();
+            FileInfo[] craftFiles = info.GetFiles("*.craft");
+                //.Where(e => e.Extension == ".craft").ToArray();
+            DirectoryInfo NPCinfo = new DirectoryInfo(NPCPath);
+            FileInfo[] NPCFiles = NPCinfo.GetFiles("*.craft");
+               // .Where(e => e.Extension == ".craft").ToArray();
             foreach (FileInfo file in craftFiles)
             {
                 if (file.Name.Contains(BDArmorySettings.REMOTE_ORCHESTRATION_NPC_SWAPPER))
@@ -504,10 +506,7 @@ namespace BDArmory.Competition.RemoteOrchestration
                     string filename = string.Format("{0}/{1}", vesselStagingPath, vesselname);
                     vesselname = vesselname.Remove(vesselname.Length - 6, 6); //cull the .craft from the string
                     Debug.Log("[BDArmory.BDAScoreClient] Swapping existing craft " + vesselname + " in spawn directory");
-                    DirectoryInfo NPCinfo = new DirectoryInfo(NPCPath);
-                    FileInfo[] NPCFiles = NPCinfo.GetFiles("*.craft")
-                        .Where(e => e.Extension == ".craft")
-                        .ToArray();
+                    
                     int i;
                     i = (int)UnityEngine.Random.Range(0, NPCFiles.Count() - 1);
                     Debug.Log(string.Format("[BDArmory.BDAScoreClient] {0} craft, selected number {1}", NPCFiles.Count(), i));
