@@ -521,6 +521,10 @@ namespace BDArmory.Competition
                 {
                     SpawnUtils.HackIntakes(pilot.vessel, true);
                 }
+                if (BDArmorySettings.RUNWAY_PROJECT)
+                {
+                    SpawnUtils.HackActuators(pilot.vessel, true);
+                }
             }
 
             //clear target database so pilots don't attack yet
@@ -1487,6 +1491,10 @@ namespace BDArmory.Competition
                                         {
                                             MM.EnableMutator(); //random mutator
                                         }
+                                    }
+                                    if (BDArmorySettings.RUNWAY_PROJECT)
+                                    {
+                                        SpawnUtils.HackActuators(pilot.vessel, true);
                                     }
                                     if (BDArmorySettings.ENABLE_HOS && BDArmorySettings.HALL_OF_SHAME_LIST.Count > 0)
                                     {
