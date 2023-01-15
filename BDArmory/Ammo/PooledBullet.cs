@@ -896,7 +896,7 @@ namespace BDArmory.Bullets
                 KillBullet();
                 return true; //impulse rounds shouldn't penetrate/do damage
             }
-            float anglemultiplier = Mathf.Abs((float)Math.Cos(Math.PI * hitAngle / 180.0));
+            float anglemultiplier = (float)Math.Cos(Math.PI * hitAngle / 180.0);
             //calculate armor thickness
             float thickness = ProjectileUtils.CalculateThickness(hitPart, anglemultiplier);
             //calculate armor strength
