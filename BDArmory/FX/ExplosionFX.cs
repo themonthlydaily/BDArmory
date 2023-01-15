@@ -524,7 +524,10 @@ namespace BDArmory.FX
                 reverseHitCount = reverseHits.Length;
             }
             for (int i = 0; i < reverseHitCount; ++i)
-            { reverseHits[i].distance = range - reverseHits[i].distance; }
+            {
+                reverseHits[i].distance = range - reverseHits[i].distance;
+                reverseHits[i].normal = -reverseHits[i].normal;
+            }
 
             LoSIntermediateParts.Clear();
             var totalHitCount = CollateHits(ref lineOfSightHits, hitCount, ref reverseHits, reverseHitCount); // This is the most expensive part of this method and the cause of most of the slow-downs with explosions.

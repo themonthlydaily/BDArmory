@@ -212,6 +212,7 @@ namespace BDArmory.Bullets
             distanceTraveled = 0; // Reset the distance travelled for the bullet (since it comes from a pool).
             distanceLastHit = double.PositiveInfinity; // Reset variables used in post-penetration calculations.
             kDist = 1;
+            dragVelocityFactor = 1;
 
             if (!wasInitiated)
             {
@@ -604,7 +605,10 @@ namespace BDArmory.Bullets
                 reverseHitCount = reverseHits.Length;
             }
             for (int i = 0; i < reverseHitCount; ++i)
-            { reverseHits[i].distance = dist - reverseHits[i].distance; }
+            {
+                reverseHits[i].distance = dist - reverseHits[i].distance;
+                reverseHits[i].normal = -reverseHits[i].normal;
+            }
 
             if (hitCount + reverseHitCount > 0)
             {
@@ -652,7 +656,10 @@ namespace BDArmory.Bullets
                 reverseHitCount = reverseHits.Length;
             }
             for (int i = 0; i < reverseHitCount; ++i)
-            { reverseHits[i].distance = dist - reverseHits[i].distance; }
+            {
+                reverseHits[i].distance = dist - reverseHits[i].distance;
+                reverseHits[i].normal = -reverseHits[i].normal;
+            }
             allHits.AddRange(reverseHits.Take(reverseHitCount));
         }
 
@@ -682,7 +689,10 @@ namespace BDArmory.Bullets
                 reverseHitCount = reverseHits.Length;
             }
             for (int i = 0; i < reverseHitCount; ++i)
-            { reverseHits[i].distance = dist - reverseHits[i].distance; }
+            {
+                reverseHits[i].distance = dist - reverseHits[i].distance;
+                reverseHits[i].normal = -reverseHits[i].normal;
+            }
 
             if (hitCount + reverseHitCount > 0)
             {
@@ -930,7 +940,7 @@ namespace BDArmory.Bullets
                 int armorType = (int)Armor.ArmorTypeNum;
                 if (BDArmorySettings.DEBUG_ARMOR)
                 {
-                    Debug.Log("[BDArmory.PooledBullet]: ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density + "; thickness: " + thickness);
+                    Debug.Log($"[BDArmory.PooledBullet]: ArmorVars found: Strength : {Strength}; Ductility: {Ductility}; Hardness: {hardness}; MaxTemp: {safeTemp}; Density: {Density}; thickness: {thickness}; hit angle: {hitAngle}");
                 }
 
                 //calculate bullet deformation
