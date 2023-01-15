@@ -4290,7 +4290,6 @@ namespace BDArmory.Control
             {
                 recentering = true;
                 AI.autoTuningLossLabel += "   re-centering";
-                Debug.LogWarning("DEBUG re-centering auto-tuning");
             }
         }
 
