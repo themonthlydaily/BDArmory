@@ -3020,6 +3020,11 @@ namespace BDArmory.UI
                 {
                     if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch.ship is not null) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
                 }
+                GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_HP_Clamp")}:  {(BDArmorySettings.HP_CLAMP >= 100 ? (BDArmorySettings.HP_CLAMP.ToString()) : "Unclamped")}", leftLabel); // HP Scaling Threshold
+                if (BDArmorySettings.HP_CLAMP != (BDArmorySettings.HP_CLAMP = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.HP_CLAMP, 0, 25000), 250)))
+                {
+                    if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch.ship is not null) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+                }
 
                 line += 0.5f;
             }

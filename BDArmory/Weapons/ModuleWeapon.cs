@@ -1331,8 +1331,12 @@ namespace BDArmory.Weapons
                 gauge = (BDStagingAreaGauge)part.AddModule("BDStagingAreaGauge");
                 gauge.AmmoName = ammoName;
 
-                AmmoID = PartResourceLibrary.Instance.GetDefinition(ammoName).id;
-                ECID = PartResourceLibrary.Instance.GetDefinition("ElectricCharge").id;
+                var AmmoDef = PartResourceLibrary.Instance.GetDefinition(ammoName);
+                if (AmmoDef != null)
+                    AmmoID = AmmoDef.id;
+                else
+                    Debug.LogError($"[BDArmory.ModuleWeapon]: Resource definition for {ammoName} not found!");
+                ECID = PartResourceLibrary.Instance.GetDefinition("ElectricCharge").id; // This should always be found.
                 //laser setup
                 if (eWeaponType == WeaponTypes.Laser)
                 {
@@ -2323,7 +2327,7 @@ namespace BDArmory.Weapons
                     var hitCount = Physics.RaycastNonAlloc(ray, laserHits, maxTargetingRange, layerMask1);
                     if (hitCount == laserHits.Length) // If there's a whole bunch of stuff in the way (unlikely), then we need to increase the size of our hits buffer.
                     {
-                        laserHits = Physics.RaycastAll(ray, maxTargetingRange, layerMask1); 
+                        laserHits = Physics.RaycastAll(ray, maxTargetingRange, layerMask1);
                         hitCount = laserHits.Length;
                     }
                     //Debug.Log($"[LASER DEBUG] hitCount: {hitCount}");
