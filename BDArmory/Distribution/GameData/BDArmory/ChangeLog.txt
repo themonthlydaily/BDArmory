@@ -3,6 +3,7 @@
 	- Add option in BDA settings menu to set a max HP limit for parts.
 - AI / WM:
 	- Fix bug in collision avoidance that sometimes resulted in more collisions between teammates.
+	- Add action group to the WM for removing EVA kerbals' helmets (once the vessel becomes the active one).
 - Detectors:
 	- Fix anti-aliasing settings affecting craft RCS. Craft will have consistent RCS regardless oF MSAA settings, note that craft may have slightly different RCS across different GPUs/graphics APIs.
 	- Adjust RCS scaling value to give 1 m^2 cross-section for a 1 m^2 cross-section sphere (a 25% increase). This setting was most likely previously set with MSAA enabled, so it was set incorrectly.

@@ -789,7 +789,7 @@ namespace BDArmory.Control
             }
         }
 
-        [KSPAction("Deploy Kerbal's Parachute")] // If there's an EVAing kerbal.
+        [KSPAction("Deploy Kerbals' Parachutes")] // If there's an EVAing kerbal.
         public void AGDeployKerbalsParachute(KSPActionParam param)
         {
             foreach (var chute in VesselModuleRegistry.GetModules<ModuleEvaChute>(vessel))
@@ -799,6 +799,29 @@ namespace BDArmory.Control
                 chute.deploymentState = ModuleParachute.deploymentStates.STOWED;
                 chute.Deploy();
             }
+        }
+
+        [KSPAction("Remove Kerbals' Helmets")] // Note: removing helmets only works for the active vessel, so this waits until the vessel is active before doing so.
+        public void AGRemoveKerbalsHelmets(KSPActionParam param)
+        {
+            if (!waitingToRemoveHelmets) StartCoroutine(RemoveKerbalsHelmetsWhenActiveVessel());
+        }
+
+        bool waitingToRemoveHelmets = false;
+        IEnumerator RemoveKerbalsHelmetsWhenActiveVessel()
+        {
+            waitingToRemoveHelmets = true;
+            yield return new WaitUntil(() => (vessel == null || vessel.isActiveVessel));
+            if (vessel == null) yield break;
+            foreach (var kerbal in VesselModuleRegistry.GetModules<KerbalEVA>(vessel))
+            {
+                if (kerbal == null) continue;
+                if (kerbal.CanSafelyRemoveHelmet())
+                {
+                    kerbal.ToggleHelmetAndNeckRing(false, false);
+                }
+            }
+            waitingToRemoveHelmets = false;
         }
 
         [KSPAction("Self-destruct")] // Self-destruct
