@@ -406,7 +406,7 @@ namespace BDArmory.Competition
             decisionTick = BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY > 60 ? -1 : competitionStartTime + BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY; // every 60 seconds we do nasty things
             FX.BulletHitFX.CleanPartsOnFireInfo();
             Scores.ConfigurePlayers(GetAllPilots().Select(p => p.vessel).ToList()); // Get the competitors.
-            if (BDArmorySettings.RUNWAY_PROJECT && Scores.Players.Contains("Pinata")) { hasPinata = true; pinataAlive = false; } else { hasPinata = false; pinataAlive = false; } // Piñata.
+            if (BDArmorySettings.RUNWAY_PROJECT && Scores.Players.Contains(BDArmorySettings.PINATA_NAME)) { hasPinata = true; pinataAlive = false; } else { hasPinata = false; pinataAlive = false; } // Piñata.
             if (SpawnUtils.originalTeams.Count == 0) SpawnUtils.SaveTeams(); // If the vessels weren't spawned in with Vessel Spawner, save the current teams.
             if (LoadedVesselSwitcher.Instance is not null) LoadedVesselSwitcher.Instance.ResetDeadVessels();
             System.GC.Collect(); // Clear out garbage at a convenient time.
@@ -430,6 +430,10 @@ namespace BDArmory.Competition
                         continue;
                     //so, for NPC on NPC violence prevention - have NPCs set to be allies of each other, or set to the same team? Should also probably have a toggle for if NPCs are friends w/ each other
                     if(!String.IsNullOrEmpty(BDArmorySettings.REMOTE_ORC_NPCS_TEAM) && loadedVessels.Current.GetName().Contains(BDArmorySettings.REMOTE_ORCHESTRATION_NPC_SWAPPER)) pilot.weaponManager.SetTeam(BDTeam.Get(BDArmorySettings.REMOTE_ORC_NPCS_TEAM));
+                    if (hasPinata && !pilot.vessel.GetName().Contains(BDArmorySettings.PINATA_NAME))
+                        pilot.weaponManager.SetTeam(BDTeam.Get("PinataPoppers"));
+                    else
+                        pilot.weaponManager.SetTeam(BDTeam.Get("Pinata"));
                     if (!pilots.TryGetValue(pilot.weaponManager.Team, out List<IBDAIControl> teamPilots))
                     {
                         teamPilots = new List<IBDAIControl>();
@@ -1114,6 +1118,21 @@ namespace BDArmory.Competition
                             // "0:EnableGM", // t=60, Activate the killer GM
                         };
                         break;
+                    case 60: //change this later (Pinata deployment)
+                        commandSequence = new List<string>{
+                            "0:ActionGroup:13:1", // t=0, AG4 - Enable SAS
+                            "0:ActionGroup:16:0", // t=0, Retract gear (if it's not retracted)
+                            "0:ActionGroup:10", // t=0, AG10
+                            "0:ActivateEngines", // t=0, Activate engines
+                            "0:SetThrottle:100", // t=0, Full throttle
+                            "0:SetTeam:1",      //t=0, Set everyone to same team
+                            "0:SpawnPinata:1",  //t=0, spawn pinata
+                            "0:TogglePilot:1", // t=30, Activate pilots
+                            "0:ToggleGuard:1", // t=30, Activate guard mode (attack)
+                            "5:RemoveDebris", // t=35, Remove any other debris and spectators
+                            // "0:EnableGM", // t=60, Activate the killer GM
+                        };
+                        break;
                     default: // Same as S3R3 for now, until we do something different.
                         commandSequence = new List<string>{
                             "0:MassTrim", // t=0, mass trim
@@ -1530,6 +1549,37 @@ namespace BDArmory.Competition
 
                             break;
                         }
+                    case "SetTeam":
+                        {
+                            if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: setting team.");
+                            if (parts.Count() == 3)
+                            {
+                                var newState = true;
+                                if (parts[2] == "0")
+                                {
+                                    newState = false;
+                                }
+                                foreach (var pilot in pilots)
+                                {
+                                    if (newState != pilot.pilotEnabled)
+                                        if (hasPinata && !pilot.vessel.GetName().Contains(BDArmorySettings.PINATA_NAME))
+                                            pilot.weaponManager.SetTeam(BDTeam.Get("PinataPoppers"));
+                                        else
+                                            pilot.weaponManager.SetTeam(BDTeam.Get("Pinata"));
+                                }
+                            }
+                            else
+                            {
+                                foreach (var pilot in pilots)
+                                {
+                                    if (hasPinata && !pilot.vessel.GetName().Contains(BDArmorySettings.PINATA_NAME))
+                                        pilot.weaponManager.SetTeam(BDTeam.Get("PinataPoppers"));
+                                    else
+                                        pilot.weaponManager.SetTeam(BDTeam.Get("Pinata"));
+                                }
+                            }
+                            break;
+                        }
                     case "SetThrottle":
                         {
                             if (parts.Count() == 3)
@@ -1822,7 +1872,7 @@ namespace BDArmory.Competition
                 if (VesselModuleRegistry.ignoredVesselTypes.Contains(vessel.vesselType)) continue;  // Debris handled by DebrisDelayedCleanUp, others are ignored.
                 if (nonCompetitorsToRemove.Contains(vessel)) continue; // Already scheduled for removal.
                 bool activePilot = false;
-                if (BDArmorySettings.RUNWAY_PROJECT && vessel.GetName() == "Pinata")
+                if (BDArmorySettings.RUNWAY_PROJECT && vessel.GetName() == BDArmorySettings.PINATA_NAME)
                 {
                     activePilot = true;
                 }
@@ -2210,18 +2260,18 @@ namespace BDArmory.Competition
             {
                 // If we find a vessel named "Pinata" that's a special case object
                 // this should probably be configurable.
-                if (!pinataAlive && alive.Contains("Pinata"))
+                if (!pinataAlive && alive.Contains(BDArmorySettings.PINATA_NAME))
                 {
                     Debug.Log("[BDArmory.BDACompetitionMode" + CompetitionID.ToString() + "]: Setting Pinata Flag to Alive!");
                     pinataAlive = true;
                     competitionStatus.Add("Enabling Pinata");
                 }
-                else if (pinataAlive && !alive.Contains("Pinata"))
+                else if (pinataAlive && !alive.Contains(BDArmorySettings.PINATA_NAME))
                 {
                     // switch everyone onto separate teams when the Pinata Dies
                     LoadedVesselSwitcher.Instance.MassTeamSwitch(true);
                     pinataAlive = false;
-                    competitionStatus.Add("Pinata is dead - competition is now a Free for all");
+                    competitionStatus.Add("Pinata is dead! Competition is now a Free for all");
                     // start kill clock
                     if (!killerGMenabled)
                     {
@@ -2237,7 +2287,7 @@ namespace BDArmory.Competition
                 // check everyone who's no longer alive
                 if (!alive.Contains(player))
                 {
-                    if (BDArmorySettings.RUNWAY_PROJECT && player == "Pinata") continue;
+                    if (BDArmorySettings.RUNWAY_PROJECT && player == BDArmorySettings.PINATA_NAME) continue;
                     if (Scores.ScoreData[player].aliveState == AliveState.Alive)
                     {
                         var timeOfDeath = now;

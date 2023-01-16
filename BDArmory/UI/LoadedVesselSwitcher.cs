@@ -621,7 +621,7 @@ namespace BDArmory.UI
             // Piñata killers.
             if (BDACompetitionMode.Instance.hasPinata && !BDACompetitionMode.Instance.pinataAlive)
             {
-                if (!deadVesselStrings.ContainsKey("Pinata"))
+                if (!deadVesselStrings.ContainsKey(BDArmorySettings.PINATA_NAME))
                 {
                     deadVesselString.Clear();
                     deadVesselString.Append("Pinata Killers: ");
@@ -634,7 +634,7 @@ namespace BDArmory.UI
                     }
                     deadVesselStrings.Add("Pinata", deadVesselString.ToString());
                 }
-                GUI.Label(new Rect(_margin, height, vesselButtonWidth, _buttonHeight), deadVesselStrings["Pinata"], BDArmorySetup.BDGuiSkin.label);
+                GUI.Label(new Rect(_margin, height, vesselButtonWidth, _buttonHeight), deadVesselStrings["pinata"], BDArmorySetup.BDGuiSkin.label);
                 height += _buttonHeight + _buttonGap;
             }
 

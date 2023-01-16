@@ -196,7 +196,9 @@ namespace BDArmory.Competition.VesselSpawning
                     // Figure out spawn point and orientation
                     var heading = 360f * spawnedVesselCount / spawnConfig.craftFiles.Count;
                     var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(heading, radialUnitVector) * refDirection, radialUnitVector).normalized;
-                    Vector3 position = spawnPoint + spawnDistance * direction;
+                    Vector3 position = spawnPoint;
+                    if (!craftUrl.Contains(BDArmorySettings.PINATA_NAME))//leave pinata craft at center
+                        position = spawnPoint + spawnDistance * direction;
                     if (spawnDistance > BDArmorySettings.COMPETITION_DISTANCE / 2f / Mathf.Sin(Mathf.PI / spawnedVesselCount)) direction *= -1f; //have vessels spawning further than comp dist spawn pointing inwards instead of outwards
                     vesselSpawnConfigs.Add(new VesselSpawnConfig(craftUrl, position, direction, (float)spawnConfig.altitude, -80f, spawnAirborne));
                     ++spawnedVesselCount;

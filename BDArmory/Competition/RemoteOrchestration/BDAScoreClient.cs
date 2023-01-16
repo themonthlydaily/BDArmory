@@ -482,6 +482,11 @@ namespace BDArmory.Competition.RemoteOrchestration
                 .Select(e => Regex.Replace(e, pattern, "ship = " + vesselName))
                 .Where(e => !e.Contains("VESSELNAMING"))
                 .ToArray();
+            pattern = ".*version = (.+)";
+            modifiedLines = lines
+                .Select(e => Regex.Replace(e, pattern, "version = 1.12.2"))
+                .Where(e => !e.Contains("VESSELNAMING"))
+                .ToArray();
             File.WriteAllLines(filename, modifiedLines);
             Debug.Log(string.Format("[BDArmory.BDAScoreClient] Saved craft for player {0}", vesselName));
             //if (vesselName.Contains(BDArmorySettings.REMOTE_ORCHESTRATION_NPC_SWAPPER)) //grab either ships or players that contain NPC identifier
