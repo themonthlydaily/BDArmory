@@ -632,9 +632,9 @@ namespace BDArmory.UI
                             deadVesselString.Append($" {player}");
                         }
                     }
-                    deadVesselStrings.Add("Pinata", deadVesselString.ToString());
+                    deadVesselStrings.Add(BDArmorySettings.PINATA_NAME, deadVesselString.ToString());
                 }
-                GUI.Label(new Rect(_margin, height, vesselButtonWidth, _buttonHeight), deadVesselStrings["pinata"], BDArmorySetup.BDGuiSkin.label);
+                GUI.Label(new Rect(_margin, height, vesselButtonWidth, _buttonHeight), deadVesselStrings[BDArmorySettings.PINATA_NAME], BDArmorySetup.BDGuiSkin.label);
                 height += _buttonHeight + _buttonGap;
             }
 

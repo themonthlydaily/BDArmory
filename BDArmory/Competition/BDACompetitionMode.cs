@@ -1125,9 +1125,8 @@ namespace BDArmory.Competition
                             "0:ActionGroup:10", // t=0, AG10
                             "0:ActivateEngines", // t=0, Activate engines
                             "0:SetThrottle:100", // t=0, Full throttle
-                            "0:SetTeam:1",      //t=0, Set everyone to same team
-                            "0:SpawnPinata:1",  //t=0, spawn pinata
                             "0:TogglePilot:1", // t=30, Activate pilots
+                            "0:SetTeam:1",      //t=0, Set everyone to same team
                             "0:ToggleGuard:1", // t=30, Activate guard mode (attack)
                             "5:RemoveDebris", // t=35, Remove any other debris and spectators
                             // "0:EnableGM", // t=60, Activate the killer GM
@@ -1546,37 +1545,17 @@ namespace BDArmory.Competition
                                     }
                                 }
                             }
-
                             break;
                         }
                     case "SetTeam":
                         {
                             if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: setting team.");
-                            if (parts.Count() == 3)
+                            foreach (var pilot in pilots)
                             {
-                                var newState = true;
-                                if (parts[2] == "0")
-                                {
-                                    newState = false;
-                                }
-                                foreach (var pilot in pilots)
-                                {
-                                    if (newState != pilot.pilotEnabled)
-                                        if (hasPinata && !pilot.vessel.GetName().Contains(BDArmorySettings.PINATA_NAME))
-                                            pilot.weaponManager.SetTeam(BDTeam.Get("PinataPoppers"));
-                                        else
-                                            pilot.weaponManager.SetTeam(BDTeam.Get("Pinata"));
-                                }
-                            }
-                            else
-                            {
-                                foreach (var pilot in pilots)
-                                {
-                                    if (hasPinata && !pilot.vessel.GetName().Contains(BDArmorySettings.PINATA_NAME))
-                                        pilot.weaponManager.SetTeam(BDTeam.Get("PinataPoppers"));
-                                    else
-                                        pilot.weaponManager.SetTeam(BDTeam.Get("Pinata"));
-                                }
+                                if (hasPinata && !pilot.vessel.GetName().Contains(BDArmorySettings.PINATA_NAME))
+                                    pilot.weaponManager.SetTeam(BDTeam.Get("PinataPoppers"));
+                                else
+                                    pilot.weaponManager.SetTeam(BDTeam.Get("Pinata"));
                             }
                             break;
                         }
