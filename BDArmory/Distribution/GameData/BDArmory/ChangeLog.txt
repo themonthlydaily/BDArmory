@@ -1,6 +1,7 @@
 ﻿IMPROVEMENTS / FIXES
 - General:
 	- Add option in BDA settings menu to set a max HP limit for parts.
+	- Armor Tool in the VAB/SPH renamed to BDA Craft Utilities Tool.
 - AI / WM:
 	- Fix bug in collision avoidance that sometimes resulted in more collisions between teammates.
 	- Add action group to the WM for removing EVA kerbals' helmets (once the vessel becomes the active one).
@@ -18,6 +19,8 @@
 	- Update NPC Swap code to work with current web API.
 	- Fix AIs chasing GM killed planes.
 	- Runway_Project toggle now sets all control surface actuation speeds to 30 deg/s.
+	-Re-implement PinataMode - Craft will spawn on the same team in a circle around a Pinata craft, FFA begins when Pinata dies.
+	  -Use Settings.cfg field PINATA_NAME to set name of pinata craft. Craft should be in same autospawn dir as the rest of the craft for the competition.
 
 v1.5.6.2
 IMPROVEMENTS / FIXES

@@ -199,7 +199,7 @@ namespace BDArmory.Competition.VesselSpawning
                 foreach (var craftUrl in spawnConfig.craftFiles)
                 {
                     // Figure out spawn point and orientation
-                    var heading = 360f * spawnedVesselCount / spawnConfig.craftFiles.Count;
+                    var heading = 360f * spawnedVesselCount / spawnConfig.craftFiles.Count - (PinataMode ? 1 : 0);
                     var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(heading, radialUnitVector) * refDirection, radialUnitVector).normalized;
                     Vector3 position = spawnPoint;
                     if (!craftUrl.Contains(BDArmorySettings.PINATA_NAME))//leave pinata craft at center
