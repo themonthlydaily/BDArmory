@@ -115,7 +115,7 @@ namespace BDArmory.Competition
 
             // Attacker stats.
             ++ScoreData[attacker].hits;
-            if (victim == "pinata") ++ScoreData[attacker].PinataHits;
+            if (victim == "Pinata") ++ScoreData[attacker].PinataHits;
 
             // Victim stats.
             if (ScoreData[victim].lastPersonWhoDamagedMe != attacker)
