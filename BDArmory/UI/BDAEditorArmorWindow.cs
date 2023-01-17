@@ -40,6 +40,7 @@ namespace BDArmory.UI
         private float totalArmorCost;
         private float totalLift;
         private float totalLiftArea;
+        private float totalLiftStackRatio;
         private float wingLoading;
         private float WLRatio;
         private bool CalcArmor = false;
@@ -379,6 +380,8 @@ namespace BDArmory.UI
                 line++;
                 GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_ArmorWingLoading")}: {wingLoading:0.0} ({WLRatio:F3} kg/m2)", style);
                 line++;
+                GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), $"{StringUtils.Localize("#LOC_BDArmory_ArmorLiftStacking")}: {totalLiftStackRatio:0%}", style);
+                line++;
             }
             float StatLines = 0;
             float armorLines = 0;
@@ -615,6 +618,115 @@ namespace BDArmory.UI
             wingLoading = totalLift / EditorLogic.fetch.ship.GetTotalMass(); //convert to kg/m2. 1 LiftingArea is ~ 3.51m2, or ~285kg/m2
             totalLiftArea = totalLift * 3.51f;
             WLRatio = (EditorLogic.fetch.ship.GetTotalMass() * 1000) / totalLiftArea;
+
+            CalculateTotalLiftStacking();
+        }
+
+        void CalculateTotalLiftStacking()
+        {
+            if (EditorLogic.RootPart == null)
+                return;
+
+            float liftStackedAll = 0;
+            float liftStackedAllEval = 0;
+            float liftStackedHalf = 0;
+            float liftStackedHalfEval = 0;
+
+            float liftStackedAllSqrt = 0;
+            float liftStackedAllEvalSqrt = 0;
+            float liftStackedHalfSqrt = 0;
+            float liftStackedHalfEvalSqrt = 0;
+            totalLiftStackRatio = 0;
+            Vector3 com = EditorMarker_CoM.findCenterOfMass(EditorLogic.RootPart);
+            using (List<Part>.Enumerator parts1 = EditorLogic.fetch.ship.Parts.GetEnumerator())
+                while (parts1.MoveNext())
+                {
+                    if (parts1.Current.IsMissile()) continue;
+                    if (IsAeroBrake(parts1.Current)) continue;
+                    ModuleLiftingSurface wing1 = parts1.Current.GetComponent<ModuleLiftingSurface>();
+                    if (wing1 != null)
+                    {
+                        float lift1 = wing1.deflectionLiftCoeff * Vector3.Project(wing1.transform.forward, Vector3.up).sqrMagnitude; // Only return vertically oriented lift components
+                        float lift1sqrt = BDAMath.Sqrt(lift1);
+                        Vector3 col1pos = wing1.part.partTransform.TransformPoint(wing1.part.CoLOffset);
+
+                        using (List<Part>.Enumerator parts2 = EditorLogic.fetch.ship.Parts.GetEnumerator())
+                            while (parts2.MoveNext())
+                            {
+                                if (parts1.Current == parts2.Current) continue;
+                                if (parts2.Current.IsMissile()) continue;
+                                if (IsAeroBrake(parts2.Current)) continue;
+                                ModuleLiftingSurface wing2 = parts2.Current.GetComponent<ModuleLiftingSurface>();
+                                if (wing2 != null)
+                                {
+                                    float lift2 = wing2.deflectionLiftCoeff * Vector3.Project(wing2.transform.forward, Vector3.up).sqrMagnitude; // Only return vertically oriented lift components
+                                    float lift2sqrt = BDAMath.Sqrt(lift2);
+                                    Vector3 col2pos = wing2.part.partTransform.TransformPoint(wing2.part.CoLOffset);
+
+                                    float d = Vector3.Distance(col1pos, col2pos);
+                                    float R = lift1;
+                                    float r = lift2;
+
+                                    float a = (lift1 + lift2) - Vector3.Distance(col1pos, col2pos);
+                                    float total_a = Mathf.PI * lift1 * lift1 + Mathf.PI * lift2 * lift2;
+
+                                    // Calc overlapping area between two circles
+                                    if (a <= 0)
+                                        a = 0;
+                                    if (R >= (d + r))
+                                        a = 2 * Mathf.PI * r * r;
+                                    else if (r >= (d + R))
+                                        a = 2 * Mathf.PI * R * R;
+                                    else if (a > 0)
+                                        a = r * r * Mathf.Acos((d * d + r * r - R * R) / (2 * d * r)) + R * R * Mathf.Acos((d * d + R * R - r * r) / (2 * d * R)) -
+                                            0.5f * BDAMath.Sqrt((-d + r + R) * (d + r - R) * (d - r + R) * (d + r + R));
+
+                                    // Evaluate entire craft
+                                    liftStackedAll += a;
+                                    liftStackedAllEval += total_a;
+
+                                    // Alternate sqrt method
+                                    float overlap = (lift1sqrt + lift2sqrt) - Vector3.Distance(col1pos, col2pos);
+                                    liftStackedAllSqrt += Mathf.Max(overlap, 0f);
+                                    liftStackedAllEvalSqrt += lift1sqrt + lift2sqrt;
+
+                                    // Evaluate left/right sides of craft
+                                    if (((col1pos.x - com.x) == 0) || ((col2pos.x - com.x) == 0) || (Mathf.Sign(col1pos.x - com.x) == Mathf.Sign(col2pos.x - com.x)))
+                                    {
+                                        liftStackedHalf += a;
+                                        liftStackedHalfEval += total_a;
+
+                                        // Evaluate left/right sides of craft (alternate method)
+                                        liftStackedHalfSqrt += Mathf.Max(overlap, 0f);
+                                        liftStackedHalfEvalSqrt += lift1sqrt + lift2sqrt;
+                                    }
+                                }
+                            }
+                    }
+                }
+            // Evaluating the entire craft tends to over-estimate stacking when large wings are close together, but not overlapping. Evaluating left/right fails to estimate
+            // stacking when wings are stacked along the centerline, but otherwise is the preferred estimate. This approach takes the left/right estimate for overlapping area if it is highest,
+            // but otherwise uses the average of the stacking ratios from area and stacking ratios from sqrt(lift).
+            float stackRatioAll = 2 * liftStackedAll / Mathf.Max(liftStackedAllEval, 0.01f);
+            float stackRatioHalf = 2 * liftStackedHalf / Mathf.Max(liftStackedHalfEval, 0.01f);
+
+            float stackRatioAllSqrt = liftStackedAllSqrt / Mathf.Max(liftStackedAllEvalSqrt, 0.01f);
+            float stackRatioHalfSqrt = liftStackedHalfSqrt / Mathf.Max(liftStackedHalfEvalSqrt, 0.01f);
+            float stackRatioSqrt = Mathf.Max(stackRatioHalfSqrt, 0.5f * (stackRatioHalfSqrt + stackRatioAllSqrt));
+            totalLiftStackRatio = Mathf.Max(stackRatioHalf, (stackRatioAll + stackRatioHalf + stackRatioSqrt)/3f);
+        }
+
+        bool IsAeroBrake(Part part)
+        {
+            if (part.GetComponent<ModuleLiftingSurface>() is not null)
+            {
+                if (part.GetComponent<ModuleAeroSurface>() is not null)
+                    return true;
+                else
+                    return false;
+            }
+            else
+                return false;
         }
 
         IEnumerator calcArmorMassAndCost()
