@@ -176,7 +176,7 @@ namespace BDArmory.Competition.VesselSpawning
             {
                 if (craftUrl.Contains(BDArmorySettings.PINATA_NAME)) PinataMode = true;
             }
-            var spawnDistance = spawnConfig.craftFiles.Count > 1 ? (spawnConfig.absDistanceOrFactor ? spawnConfig.distance : (spawnConfig.distance + spawnConfig.distance * (spawnConfig.craftFiles.Count - (spawnConfig.craftFiles.Count - (PinataMode ? 1 : 0))))) : 0f; // If it's a single craft, spawn it at the spawn point.
+            var spawnDistance = spawnConfig.craftFiles.Count > 1 ? (spawnConfig.absDistanceOrFactor ? spawnConfig.distance : (spawnConfig.distance + spawnConfig.distance * (spawnConfig.craftFiles.Count - (PinataMode ? 1 : 0)))) : 0f; // If it's a single craft, spawn it at the spawn point.
 
             LogMessage("Spawning " + (spawnConfig.craftFiles.Count - (PinataMode ? 1 : 0)) + " vessels at an altitude of " + spawnConfig.altitude.ToString("G0") + "m" + (spawnConfig.craftFiles.Count > 8 ? ", this may take some time..." : "."));
             #endregion

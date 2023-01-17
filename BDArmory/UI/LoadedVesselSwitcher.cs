@@ -292,7 +292,7 @@ namespace BDArmory.UI
         {
             if (_ready)
             {
-                if (_showGui && BDArmorySetup.GAME_UI_ENABLED || (BDArmorySettings.VESSEL_SWITCHER_PERSIST_UI && !BDArmorySetup.GAME_UI_ENABLED))
+                if (_showGui && (BDArmorySetup.GAME_UI_ENABLED || (BDArmorySettings.VESSEL_SWITCHER_PERSIST_UI && !BDArmorySetup.GAME_UI_ENABLED)))
                 {
                     string windowTitle = StringUtils.Localize("#LOC_BDArmory_BDAVesselSwitcher_Title");
                     if (BDArmorySettings.GRAVITY_HACKS)
@@ -555,7 +555,7 @@ namespace BDArmory.UI
             {
                 foreach (var player in BDACompetitionMode.Instance.Scores.deathOrder)
                 {
-                    if (BDACompetitionMode.Instance.hasPinata && player == "Pinata") continue; // Ignore the piñata.
+					if (BDACompetitionMode.Instance.hasPinata && player == BDArmorySettings.PINATA_NAME) continue; // Ignore the piñata.
                     if (!deadVesselStrings.ContainsKey(player))
                     {
                         deadVesselString.Clear();
@@ -627,9 +627,10 @@ namespace BDArmory.UI
                     deadVesselString.Append("Pinata Killers: ");
                     foreach (var player in BDACompetitionMode.Instance.Scores.Players)
                     {
-                        if (BDACompetitionMode.Instance.Scores.ScoreData[player].PinataHits > 0)
+                        if (BDACompetitionMode.Instance.Scores.ScoreData[player].PinataHits > 0) //not reporting any players?
                         {
                             deadVesselString.Append($" {player}");
+                            //BDACompetitionMode.Instance.Scores.ScoreData[BDArmorySettings.PINATA_NAME].lastPersonWhoDamagedMe
                         }
                     }
                     deadVesselStrings.Add(BDArmorySettings.PINATA_NAME, deadVesselString.ToString());
