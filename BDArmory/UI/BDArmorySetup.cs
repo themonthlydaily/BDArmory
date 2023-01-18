@@ -3313,6 +3313,16 @@ namespace BDArmory.UI
                 {
                     if (BDArmorySettings.RUNWAY_PROJECT != (BDArmorySettings.RUNWAY_PROJECT = GUI.Toggle(SLeftRect(++line), BDArmorySettings.RUNWAY_PROJECT, StringUtils.Localize("#LOC_BDArmory_Settings_RunwayProject"))))//Runway Project
                     {
+                        if (HighLogic.LoadedSceneIsFlight)
+                        {
+                            SpawnUtils.HackActuatorsOnNewVessels(BDArmorySettings.RUNWAY_PROJECT);
+
+                            foreach (var vessel in FlightGlobals.Vessels)
+                            {
+                                if (vessel == null || !vessel.loaded) continue;
+                                SpawnUtils.HackActuators(vessel, BDArmorySettings.RUNWAY_PROJECT);
+                            }
+                        }
                         if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch.ship is not null) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
                     }
                     if (BDArmorySettings.RUNWAY_PROJECT)
@@ -3767,7 +3777,7 @@ namespace BDArmory.UI
                                 case 44:
                                     startCompetitionText = StringUtils.Localize("#LOC_BDArmory_Settings_LowGravDeployment");
                                     break;
-                                case 60: // FIXME temporary index, to be assigned later
+                                case 53: // FIXME temporary index, to be assigned later
                                     startCompetitionText = StringUtils.Localize("#LOC_BDArmory_Settings_StartOrbitalDeployment");
                                     break;
                             }
@@ -3785,6 +3795,9 @@ namespace BDArmory.UI
                                         BDACompetitionMode.Instance.StartRapidDeployment(0);
                                         break;
                                     case 44:
+                                        BDACompetitionMode.Instance.StartRapidDeployment(0);
+                                        break;
+                                    case 53: 
                                         BDACompetitionMode.Instance.StartRapidDeployment(0);
                                         break;
                                     case 60: // FIXME temporary index, to be assigned later

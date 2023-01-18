@@ -1372,6 +1372,7 @@ namespace BDArmory.Control
                 pidAutoTuning.RevertPIDValues();
                 StoreSettings(pidAutoTuning.vesselName); // Store the current settings for recall in the SPH.
             }
+            pidAutoTuning.SetStartCoords();
             pidAutoTuning.ResetMeasurements();
 
             SetAutoTuneFields();
@@ -3553,7 +3554,7 @@ namespace BDArmory.Control
         {
             // Checks to see if craft has a yaw rate of > 20 deg/s with pitch/roll being less (flat spin) for longer than 2s, if so sets the FlatSpin flag which will trigger
             // RegainEnergy with throttle set to idle.
-            
+
             float spinRate = vessel.angularVelocity.z;
             if ((Mathf.Abs(spinRate) > 0.35f) && (Mathf.Abs(spinRate) > Mathf.Max(Mathf.Abs(vessel.angularVelocity.x), Mathf.Abs(vessel.angularVelocity.y))))
             {
@@ -3563,8 +3564,8 @@ namespace BDArmory.Control
                 if ((Time.time - flatSpinStartTime) > 2f)
                 {
                     FlatSpin = Mathf.Sign(spinRate); // 1 for counter-clockwise, -1 for clockwise
-                    if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) 
-                        debugString.AppendLine($"Flat Spin Detected, {spinRate * 180f/Mathf.PI} deg/s, {(Time.time - flatSpinStartTime)}s");
+                    if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
+                        debugString.AppendLine($"Flat Spin Detected, {spinRate * 180f / Mathf.PI} deg/s, {(Time.time - flatSpinStartTime)}s");
                 }
             }
             else
@@ -4042,6 +4043,8 @@ namespace BDArmory.Control
         float maxObservedSpeed = 0;
         float absHeadingChange = 0;
         // float pitchChange = 0;
+        Vector3d startCoords = default;
+        bool recentering = false;
 
         #region Gradient Descent (approx)
         /// <summary>
@@ -4192,6 +4195,15 @@ namespace BDArmory.Control
                     rollOscillationAreaSqr += rollErrorSqr * (AI.autoTuningOptionFastResponseRelevance + measurementTime); // * measurementTime); // Small roll errors aren't as important as small pointing errors.
                 }
             }
+            else if (recentering)
+            {
+                AI.CommandFlyTo((Vector3)startCoords);
+                if ((FlightGlobals.currentMainBody.GetWorldSurfacePosition(startCoords.x, startCoords.y, startCoords.z) - AI.vessel.transform.position).sqrMagnitude < 1e6f) // Within 1km is good enough.
+                {
+                    recentering = false;
+                    if (AI.autoTuningLossLabel.EndsWith("   re-centering")) AI.autoTuningLossLabel = AI.autoTuningLossLabel.Remove(AI.autoTuningLossLabel.Length - 15);
+                }
+            }
             else
             {
                 if (WM != null && WM.guardMode) // If guard mode is enabled, watch for target changes or something else to trigger a new measurement. This is going to be less reliable due to not using controlled fly-to directions. Don't use yet.
@@ -4273,6 +4285,12 @@ namespace BDArmory.Control
             AI.autoTuningLossLabel3 = $"{currentField}, sample nr: {sampleNumber + 1}";
 
             // pitchChange = 30f * UnityEngine.Random.Range(-1f, 1f) * UnityEngine.Random.Range(-1f, 1f); // Adjust pitch by ±30°, biased towards 0°.
+
+            if ((FlightGlobals.currentMainBody.GetWorldSurfacePosition(startCoords.x, startCoords.y, startCoords.z) - AI.vessel.transform.position).sqrMagnitude > 225e6f) // Beyond 15km should be sufficient.
+            {
+                recentering = true;
+                AI.autoTuningLossLabel += "   re-centering";
+            }
         }
 
         /// <summary>
@@ -4470,6 +4488,12 @@ namespace BDArmory.Control
                     if (baseValues.ContainsKey(fieldName))
                         fields[fieldName].SetValue(baseValues[fieldName], AI);
             }
+        }
+
+        public void SetStartCoords()
+        {
+            startCoords = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(AI.vessel.transform.position);
+            startCoords.z = (float)FlightGlobals.currentMainBody.TerrainAltitude(startCoords.x, startCoords.y) + AI.autoTuningAltitude;
         }
     }
 }

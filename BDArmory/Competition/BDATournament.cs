@@ -155,7 +155,7 @@ namespace BDArmory.Competition
                                     BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
-                                    BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+                                    BDArmorySettings.VESSEL_SPAWN_ALTITUDE_,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
                                     BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
@@ -188,7 +188,7 @@ namespace BDArmory.Competition
                                 BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
                                 BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
                                 BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
-                                BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+                                BDArmorySettings.VESSEL_SPAWN_ALTITUDE_,
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
                                 BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
@@ -335,7 +335,7 @@ namespace BDArmory.Competition
                                     BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
-                                    BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+                                    BDArmorySettings.VESSEL_SPAWN_ALTITUDE_,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
                                     BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
@@ -374,7 +374,7 @@ namespace BDArmory.Competition
                                     BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
-                                    BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+                                    BDArmorySettings.VESSEL_SPAWN_ALTITUDE_,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
                                     BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
@@ -458,7 +458,7 @@ namespace BDArmory.Competition
                                         BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
                                         BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
                                         BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
-                                        BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+                                        BDArmorySettings.VESSEL_SPAWN_ALTITUDE_,
                                         BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                         BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
                                         BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
@@ -1021,6 +1021,9 @@ namespace BDArmory.Competition
                         BDACompetitionMode.Instance.StartRapidDeployment(0);
                         break;
                     case 44:
+                        BDACompetitionMode.Instance.StartRapidDeployment(0);
+                        break;
+                    case 53: 
                         BDACompetitionMode.Instance.StartRapidDeployment(0);
                         break;
                     case 60: // FIXME temporary index, to be assigned later

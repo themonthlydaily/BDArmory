@@ -115,8 +115,7 @@ namespace BDArmory.Competition
 
             // Attacker stats.
             ++ScoreData[attacker].hits;
-            if (victim == "pinata") ++ScoreData[attacker].PinataHits;
-
+            if (victim == BDArmorySettings.PINATA_NAME) ++ScoreData[attacker].PinataHits; //not registering hits? Try switching to victim.Contains(BDArmorySettings.PINATA_NAME)?
             // Victim stats.
             if (ScoreData[victim].lastPersonWhoDamagedMe != attacker)
             {
@@ -240,6 +239,7 @@ namespace BDArmory.Competition
             // Attacker stats.
             ScoreData[attacker].totalDamagedPartsDueToRockets += partsHit;
 
+            if (victim == BDArmorySettings.PINATA_NAME) ++ScoreData[attacker].PinataHits;
             // Victim stats.
             if (ScoreData[victim].lastPersonWhoDamagedMe != attacker)
             {

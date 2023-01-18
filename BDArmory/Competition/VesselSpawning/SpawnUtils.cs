@@ -152,6 +152,8 @@ namespace BDArmory.Competition.VesselSpawning
         #region Intake hacks
         public static void HackIntakesOnNewVessels(bool enable) => SpawnUtilsInstance.Instance.HackIntakesOnNewVessels(enable);
         public static void HackIntakes(Vessel vessel, bool enable) => SpawnUtilsInstance.Instance.HackIntakes(vessel, enable);
+        public static void HackActuatorsOnNewVessels(bool enable) => SpawnUtilsInstance.Instance.HackActuatorsOnNewVessels(enable);
+        public static void HackActuators(Vessel vessel, bool enable) => SpawnUtilsInstance.Instance.HackActuators(vessel, enable);
         #endregion
 
         #region Space hacks
@@ -239,6 +241,7 @@ namespace BDArmory.Competition.VesselSpawning
         {
             if (BDArmorySettings.HACK_INTAKES) HackIntakesOnNewVessels(true);
             if (BDArmorySettings.SPACE_HACKS) SpaceFrictionOnNewVessels(true);
+            if (BDArmorySettings.RUNWAY_PROJECT) HackActuatorsOnNewVessels(true);
         }
 
         void OnDestroy()
@@ -246,6 +249,7 @@ namespace BDArmory.Competition.VesselSpawning
             VesselSpawnerField.Save();
             Destroy(spawnLocationCamera);
             HackIntakesOnNewVessels(false);
+            HackActuatorsOnNewVessels(false);
             SpaceFrictionOnNewVessels(false);
         }
 
@@ -525,7 +529,68 @@ namespace BDArmory.Competition.VesselSpawning
             }
         }
         #endregion
+        #region Control Surface Actuator hacks
+        public void HackActuatorsOnNewVessels(bool enable)
+        {
+            if (enable)
+            {
+                GameEvents.onVesselLoaded.Add(HackActuatorsEventHandler);
+                GameEvents.OnVesselRollout.Add(HackActuators);
+            }
+            else
+            {
+                GameEvents.onVesselLoaded.Remove(HackActuatorsEventHandler);
+                GameEvents.OnVesselRollout.Remove(HackActuators);
+            }
+        }
+        void HackActuatorsEventHandler(Vessel vessel) => HackActuators(vessel, true);
 
+        public void HackActuators(Vessel vessel, bool enable)
+        {
+            if (vessel == null || !vessel.loaded) return;
+            if (enable)
+            {
+                foreach (var ctrlSrf in VesselModuleRegistry.GetModules<ModuleControlSurface>(vessel))
+                    ctrlSrf.actuatorSpeed = 30;
+            }
+            else
+            {
+                foreach (var ctrlSrf in VesselModuleRegistry.GetModules<ModuleControlSurface>(vessel))
+                {
+                    var actuatorSpeed = ConfigNodeUtils.FindPartModuleConfigNodeValue(ctrlSrf.part.partInfo.partConfig, "ModuleControlSurface", "actuatorSpeed");
+                    if (!string.IsNullOrEmpty(actuatorSpeed)) // Use the default value from the part.
+                    {
+                        try
+                        {
+                            ctrlSrf.actuatorSpeed = float.Parse(actuatorSpeed);
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogError($"[BDArmory.BDArmorySetup]: Failed to parse actuatorSpeed configNode of {ctrlSrf.name}: {e.Message}");
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[BDArmory.BDArmorySetup]: No default value for actuatorSpeed found in partConfig for {ctrlSrf.name}, defaulting to true.");
+                        ctrlSrf.actuatorSpeed = 30;
+                    }
+                }
+            }
+        }
+        public void HackActuators(ShipConstruct ship) // This version only needs to enable the hack.
+        {
+            if (ship == null) return;
+            foreach (var part in ship.Parts)
+            {
+                var ctrlSrf = part.FindModulesImplementing<ModuleControlSurface>();
+                if (ctrlSrf.Count() > 0)
+                {
+                    foreach (var srf in ctrlSrf)
+                        srf.actuatorSpeed = 30;
+                }
+            }
+        }
+        #endregion
         #region Space hacks
         public void SpaceFrictionOnNewVessels(bool enable)
         {
