@@ -174,7 +174,7 @@ namespace BDArmory.Competition.VesselSpawning
             bool PinataMode = false;
             foreach (var craftUrl in spawnConfig.craftFiles)
             {
-                if (craftUrl.Contains(BDArmorySettings.PINATA_NAME)) PinataMode = true;
+                if (!String.IsNullOrEmpty(BDArmorySettings.PINATA_NAME) && craftUrl.Contains(BDArmorySettings.PINATA_NAME)) PinataMode = true;
             }
             var spawnDistance = spawnConfig.craftFiles.Count > 1 ? (spawnConfig.absDistanceOrFactor ? spawnConfig.distance : (spawnConfig.distance + spawnConfig.distance * (spawnConfig.craftFiles.Count - (PinataMode ? 1 : 0)))) : 0f; // If it's a single craft, spawn it at the spawn point.
 
@@ -202,7 +202,7 @@ namespace BDArmory.Competition.VesselSpawning
                     var heading = 360f * spawnedVesselCount / spawnConfig.craftFiles.Count - (PinataMode ? 1 : 0);
                     var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(heading, radialUnitVector) * refDirection, radialUnitVector).normalized;
                     Vector3 position = spawnPoint;
-                    if (!craftUrl.Contains(BDArmorySettings.PINATA_NAME))//leave pinata craft at center
+                    if (!PinataMode || (PinataMode && !craftUrl.Contains(BDArmorySettings.PINATA_NAME)))//leave pinata craft at center
                     {
                         position = spawnPoint + spawnDistance * direction;
                         ++spawnedVesselCount;

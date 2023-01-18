@@ -406,7 +406,7 @@ namespace BDArmory.Competition
             decisionTick = BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY > 60 ? -1 : competitionStartTime + BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY; // every 60 seconds we do nasty things
             FX.BulletHitFX.CleanPartsOnFireInfo();
             Scores.ConfigurePlayers(GetAllPilots().Select(p => p.vessel).ToList()); // Get the competitors.
-            if (BDArmorySettings.RUNWAY_PROJECT && Scores.Players.Contains(BDArmorySettings.PINATA_NAME)) { hasPinata = true; pinataAlive = false; } else { hasPinata = false; pinataAlive = false; } // Piñata.
+            if (BDArmorySettings.RUNWAY_PROJECT && !String.IsNullOrEmpty(BDArmorySettings.PINATA_NAME) && Scores.Players.Contains(BDArmorySettings.PINATA_NAME)) { hasPinata = true; pinataAlive = false; } else { hasPinata = false; pinataAlive = false; } // Piñata.
             if (SpawnUtils.originalTeams.Count == 0) SpawnUtils.SaveTeams(); // If the vessels weren't spawned in with Vessel Spawner, save the current teams.
             if (LoadedVesselSwitcher.Instance is not null) LoadedVesselSwitcher.Instance.ResetDeadVessels();
             System.GC.Collect(); // Clear out garbage at a convenient time.
@@ -431,11 +431,14 @@ namespace BDArmory.Competition
                     //so, for NPC on NPC violence prevention - have NPCs set to be allies of each other, or set to the same team? Should also probably have a toggle for if NPCs are friends w/ each other
 
                     if(!String.IsNullOrEmpty(BDArmorySettings.REMOTE_ORC_NPCS_TEAM) && loadedVessels.Current.GetName().Contains(BDArmorySettings.REMOTE_ORCHESTRATION_NPC_SWAPPER)) pilot.weaponManager.SetTeam(BDTeam.Get(BDArmorySettings.REMOTE_ORC_NPCS_TEAM));
-                    
-                    if (hasPinata && !pilot.vessel.GetName().Contains(BDArmorySettings.PINATA_NAME))
-                        pilot.weaponManager.SetTeam(BDTeam.Get("PinataPoppers"));
-                    else
-                        pilot.weaponManager.SetTeam(BDTeam.Get("Pinata"));
+
+                    if (!String.IsNullOrEmpty(BDArmorySettings.PINATA_NAME) && hasPinata)
+                    {
+                        if (!pilot.vessel.GetName().Contains(BDArmorySettings.PINATA_NAME))
+                            pilot.weaponManager.SetTeam(BDTeam.Get("PinataPoppers"));
+                        else
+                            pilot.weaponManager.SetTeam(BDTeam.Get("Pinata"));
+                    }
 
                     if (!pilots.TryGetValue(pilot.weaponManager.Team, out List<IBDAIControl> teamPilots))
                     {
@@ -1558,10 +1561,13 @@ namespace BDArmory.Competition
                             if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: setting team.");
                             foreach (var pilot in pilots)
                             {
-                                if (hasPinata && !pilot.vessel.GetName().Contains(BDArmorySettings.PINATA_NAME))
-                                    pilot.weaponManager.SetTeam(BDTeam.Get("PinataPoppers"));
-                                else
-                                    pilot.weaponManager.SetTeam(BDTeam.Get("Pinata"));
+                                if (!String.IsNullOrEmpty(BDArmorySettings.PINATA_NAME) && hasPinata)
+                                {
+                                    if (!pilot.vessel.GetName().Contains(BDArmorySettings.PINATA_NAME))
+                                        pilot.weaponManager.SetTeam(BDTeam.Get("PinataPoppers"));
+                                    else
+                                        pilot.weaponManager.SetTeam(BDTeam.Get("Pinata"));
+                                }
                             }
                             break;
                         }
@@ -2241,11 +2247,11 @@ namespace BDArmory.Competition
             string aliveString = string.Join(",", alive.ToArray());
             previousNumberCompetitive = numberOfCompetitiveVessels;
             // if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "] STILLALIVE: " + aliveString); // This just fills the logs needlessly.
-            if (BDArmorySettings.RUNWAY_PROJECT && hasPinata)
+            if (BDArmorySettings.RUNWAY_PROJECT && hasPinata && !String.IsNullOrEmpty(BDArmorySettings.PINATA_NAME))
             {
                 // If we find a vessel named "Pinata" that's a special case object
                 // this should probably be configurable.
-                if (!pinataAlive && alive.Contains(BDArmorySettings.PINATA_NAME))
+                if (!pinataAlive  && alive.Contains(BDArmorySettings.PINATA_NAME))
                 {
                     Debug.Log("[BDArmory.BDACompetitionMode" + CompetitionID.ToString() + "]: Setting Pinata Flag to Alive!");
                     pinataAlive = true;
