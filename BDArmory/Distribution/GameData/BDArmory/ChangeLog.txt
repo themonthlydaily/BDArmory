@@ -17,10 +17,12 @@
 	- Some fixes to nuke behavior in space.
 - RWP
 	- Update NPC Swap code to work with current web API.
+	- Orbitaldepolyment moved to Runway Project Round S5R3
 	- Fix AIs chasing GM killed planes.
 	- Runway_Project toggle now sets all control surface actuation speeds to 30 deg/s.
-	-Re-implement PinataMode - Craft will spawn on the same team in a circle around a Pinata craft, FFA begins when Pinata dies.
+	- Re-implement PinataMode - Craft will spawn on the same team in a circle around a Pinata craft, FFA begins when Pinata dies.
 	  -Use Settings.cfg field PINATA_NAME to set name of pinata craft. Craft should be in same autospawn dir as the rest of the craft for the competition.
+	- Sequenced Competitions now work with Web orchestration.
 
 v1.5.6.2
 IMPROVEMENTS / FIXES
