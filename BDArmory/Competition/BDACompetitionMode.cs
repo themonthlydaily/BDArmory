@@ -1110,14 +1110,17 @@ namespace BDArmory.Competition
                         commandSequence = new List<string>{
                             "0:ActionGroup:13:1", // t=0, AG4 - Enable SAS
                             "0:ActionGroup:16:0", // t=0, Retract gear (if it's not retracted)
-                            "0:HackGravity:10", // t=0, Increase gravity to 10x
-                            "30:HackGravity:1", //t=30, Reset gravity
+                            "0:ActionGroup:14:0", // t=0, Disable brakes
                             "0:ActionGroup:10", // t=30, AG10
                             "0:ActivateEngines", // t=30, Activate engines
+                            "0:HackGravity:10", // t=0, Increase gravity to 10x
+                            "0:ToggleGuard:0", // t=0, Disable guard mode (for those who triggered it early)
+                            "0:TogglePilot:0", // t=30, Disable pilots (for those who triggered it early)
+                            "30:HackGravity:1", //t=30, Reset gravity
                             "0:SetThrottle:100", // t=30, Full throttle
                             "0:TogglePilot:1", // t=30, Activate pilots
-                            "0:ToggleGuard:1", // t=30, Activate guard mode (attack)
-                            "5:RemoveDebris", // t=35, Remove any other debris and spectators
+                            "25:ToggleGuard:1", // t=55, Activate guard mode (attack)
+                            "5:RemoveDebris", // t=60, Remove any other debris and spectators
                             // "0:EnableGM", // t=60, Activate the killer GM
                         };
                         break;
@@ -1660,7 +1663,7 @@ namespace BDArmory.Competition
                                 double grav = double.Parse(parts[2]);
                                 PhysicsGlobals.GraviticForceMultiplier = grav;
                                 VehiclePhysics.Gravity.Refresh();
-                                //competitionStatus.Add("Competition: Adjusting gravity to " + grav.ToString("0.0") + "G!");
+                                competitionStatus.Add("Competition: Adjusting gravity to " + grav.ToString("0.0") + "G!");
                             }
                             break;
                         }

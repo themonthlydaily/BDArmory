@@ -3777,7 +3777,7 @@ namespace BDArmory.UI
                                 case 44:
                                     startCompetitionText = StringUtils.Localize("#LOC_BDArmory_Settings_LowGravDeployment");
                                     break;
-                                case 60: // FIXME temporary index, to be assigned later
+                                case 53: // FIXME temporary index, to be assigned later
                                     startCompetitionText = StringUtils.Localize("#LOC_BDArmory_Settings_StartOrbitalDeployment");
                                     break;
                             }
