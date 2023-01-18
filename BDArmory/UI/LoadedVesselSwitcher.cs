@@ -629,7 +629,7 @@ namespace BDArmory.UI
                     {
                         if (BDACompetitionMode.Instance.Scores.ScoreData[player].PinataHits > 0) //not reporting any players?
                         {
-                            deadVesselString.Append($" {player}");
+                            deadVesselString.Append($" {player};");
                             //BDACompetitionMode.Instance.Scores.ScoreData[BDArmorySettings.PINATA_NAME].lastPersonWhoDamagedMe
                         }
                     }
