@@ -292,7 +292,7 @@ namespace BDArmory.UI
         {
             if (_ready)
             {
-                if (_showGui && (BDArmorySetup.GAME_UI_ENABLED || (BDArmorySettings.VESSEL_SWITCHER_PERSIST_UI && !BDArmorySetup.GAME_UI_ENABLED)))
+                if (_showGui && (BDArmorySetup.GAME_UI_ENABLED || BDArmorySettings.VESSEL_SWITCHER_PERSIST_UI))
                 {
                     string windowTitle = StringUtils.Localize("#LOC_BDArmory_BDAVesselSwitcher_Title");
                     if (BDArmorySettings.GRAVITY_HACKS)
