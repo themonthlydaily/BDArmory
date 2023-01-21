@@ -1319,7 +1319,7 @@ namespace BDArmory.UI
                                         if (ActivePilot.autoTuningOptionFixedDROn != (ActivePilot.autoTuningOptionFixedDROn = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 9, 11, contentWidth), ActivePilot.autoTuningOptionFixedDROn, StringUtils.Localize("DROn"), ActivePilot.autoTuningOptionFixedDROn ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))) resetGradient = true;
                                         if (ActivePilot.autoTuningOptionFixedDRF != (ActivePilot.autoTuningOptionFixedDRF = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 10, 11, contentWidth), ActivePilot.autoTuningOptionFixedDRF, StringUtils.Localize("DRF"), ActivePilot.autoTuningOptionFixedDRF ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))) resetGradient = true;
                                     }
-                                    if (resetGradient) ActivePilot.pidAutoTuning.ResetGradient();
+                                    if (resetGradient && HighLogic.LoadedSceneIsFlight) ActivePilot.pidAutoTuning.ResetGradient();
                                     ++autoTuneLines;
                                 }
 
