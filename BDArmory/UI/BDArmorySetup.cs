@@ -2553,6 +2553,10 @@ namespace BDArmory.UI
                             var AI = VesselModuleRegistry.GetBDModulePilotAI(FlightGlobals.ActiveVessel);
                             if (AI is not null) AI.DebugExtending();
                         }
+                        if (BDArmorySettings.DEBUG_OTHER && HighLogic.LoadedSceneIsEditor && GUI.Button(SLineRect(++line), "Dump parts"))
+                        {
+                            BDAEditorTools.dumpParts();
+                        }
                     }
 #if DEBUG  // Only visible when compiled in Debug configuration.
                     if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)

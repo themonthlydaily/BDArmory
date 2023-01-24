@@ -406,6 +406,7 @@ namespace BDArmory.Competition
             competitionStartTime = competitionIsActive ? Planetarium.GetUniversalTime() : -1;
             nextUpdateTick = competitionStartTime + 2; // 2 seconds before we start tracking
             decisionTick = BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY > 60 ? -1 : competitionStartTime + BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY; // every 60 seconds we do nasty things
+            killerGMenabled = false;
             FX.BulletHitFX.CleanPartsOnFireInfo();
             Scores.ConfigurePlayers(GetAllPilots().Select(p => p.vessel).ToList()); // Get the competitors.
             if (BDArmorySettings.RUNWAY_PROJECT && !String.IsNullOrEmpty(BDArmorySettings.PINATA_NAME) && Scores.Players.Contains(BDArmorySettings.PINATA_NAME)) { hasPinata = true; pinataAlive = false; } else { hasPinata = false; pinataAlive = false; } // Piñata.
@@ -1130,9 +1131,9 @@ namespace BDArmory.Competition
                             "0:ToggleGuard:53", // t=30+, Activate guard mode (attack) (delayed)
                             "0:RemoveDebris", // t=30, Remove any other debris and spectators
                             "0:ActivateCompetition", // t=30, mark the competition as active
-                            "30:EnableGM", // t=60, Activate the killer GM
+                            // "30:EnableGM", // t=60, Activate the killer GM
                         };
-                        altitudeLimitGracePeriod = 30; // Same as the killer GM delay after activating the competition.
+                        altitudeLimitGracePeriod = 30; // t=60 (30s after the competition starts), activate the altitude limit
                         break;
                     case 60: //change this later (Pinata deployment)
                         commandSequence = new List<string>{
