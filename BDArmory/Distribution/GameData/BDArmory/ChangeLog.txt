@@ -5,6 +5,7 @@
 - AI / WM:
 	- Fix max collision avoidance strength in AI GUI.
 	- Fix NRE when adjusting autotuning fields in the SPH.
+	- AI will no longer dive into missiles approaching from directly below.
 - Weapons:
 	- Fix bug in nuke impulse calculation and some NREs.
 - RWP:
