@@ -1281,7 +1281,7 @@ namespace BDArmory.Radar
                             //evaluate if we can detect or lock such a signature at that range
                             float minDetectSig = irst.DetectionCurve.Evaluate(distance / attenuationFactor);
 
-                            if (signature > minDetectSig)
+                            if (signature >= minDetectSig)
                             {
                                 // detected by irst
                                 if (myWpnManager != null)

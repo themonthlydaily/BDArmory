@@ -11,7 +11,7 @@
 	- AI will no longer dive into missiles approaching from directly below.
 	- Reset the auto-tune PID values to the best ones when lowering the learning rate.
 - Detectors
-	- Fix radars with ability to lock targets with a signature of 0 not being able to lock targets with a signature of 0.
+	- Fix radars/IRSTs with ability to detect/lock targets with a signature of 0 not being able to detect/lock targets with a signature of 0.
 	- Fix a division by zero in the standoff jamming effect calculation when the radar signature is 0.
 - Weapons:
 	- Fix bug in nuke impulse calculation and some NREs.
