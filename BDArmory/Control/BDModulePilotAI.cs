@@ -4065,21 +4065,23 @@ namespace BDArmory.Control
             /// Update the learning rate based on the current loss.
             /// </summary>
             /// <param name="value">The current loss, or some other metric.</param>
-            public void Update(float value)
+            /// <returns>True if the learning rate decreases, False otherwise.</returns>
+            public bool Update(float value)
             {
                 if (value < _best)
                 {
                     _best = value;
                     count = 0;
                     if (_best < best) best = _best;
-                    return;
                 }
                 if (++count >= patience)
                 {
                     current *= reductionFactor;
                     count = 0;
                     _best = value; // Reset the best to avoid unnecessarily reducing the learning rate due to a fluke best score.
+                    return true;
                 }
+                return false;
             }
 
             /// <summary>
@@ -4383,7 +4385,8 @@ namespace BDArmory.Control
                         Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Updated best values: " + string.Join(", ", bestValues.Select(kvp => fields[kvp.Key].guiName + ":" + kvp.Value)) + $", LR: {lr.current}, RR: {optimiser.rollRelevance}, Loss: {loss}");
                     }
                     if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Current: " + string.Join(", ", baseValues.Select(kvp => fields[kvp.Key].guiName + ":" + kvp.Value)) + $", LR: {lr.current}, RR: {optimiser.rollRelevance}, Loss: {loss}");
-                    lr.Update(loss); // Update learning rate based on the current loss.
+                    var lrDecreased = lr.Update(loss); // Update learning rate based on the current loss.
+                    if (lrDecreased && bestValues is not null) RevertPIDValues(); // Revert to the best values when lowering the learning rate.
                     if (lr.current < 9e-4f) // Tuned about as far as it'll go, time to bail. (9e-4 instead of 1e-3 for some tolerance in the floating point comparison.)
                     {
                         AI.autoTuningLossLabel = $"{lr.best:G6}, completed.";
@@ -4476,14 +4479,18 @@ namespace BDArmory.Control
             if (AI is null) return;
             if (bestValues is not null)
             {
-                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Reverting PID values to best values.");
+                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Reverting PID values to best values: {string.Join(", ", bestValues.Select(kvp => fields[kvp.Key].guiName + ":" + kvp.Value))}");
                 foreach (var fieldName in fields.Keys.ToList())
                     if (bestValues.ContainsKey(fieldName))
+                    {
                         fields[fieldName].SetValue(bestValues[fieldName], AI);
+                        if (baseValues.ContainsKey(fieldName)) // Update the base values too.
+                            baseValues[fieldName] = bestValues[fieldName];
+                    }
             }
             else if (baseValues is not null)
             {
-                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Reverting PID values to base values.");
+                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Reverting PID values to base values: {string.Join(", ", baseValues.Select(kvp => fields[kvp.Key].guiName + ":" + kvp.Value))}");
                 foreach (var fieldName in fields.Keys.ToList())
                     if (baseValues.ContainsKey(fieldName))
                         fields[fieldName].SetValue(baseValues[fieldName], AI);

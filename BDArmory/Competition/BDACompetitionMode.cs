@@ -1379,15 +1379,7 @@ namespace BDArmory.Competition
 
         IEnumerator SequencedCompetition(List<string> commandSequence)
         {
-            var pilots = GetAllPilots();
-            if (pilots.Count < 2)
-            {
-                Debug.Log("[BDArmory.BDACompetitionMode" + CompetitionID.ToString() + "]: Unable to start sequenced competition - one or more teams is empty");
-                competitionStatus.Set("Competition: Failed!  One or more teams is empty.");
-                competitionStartFailureReason = CompetitionStartFailureReason.OnlyOneTeam;
-                StopCompetition();
-                yield break;
-            }
+            var pilots = GetAllPilots(); // We don't check the number of pilots here so that the sequence can be done with a single pilot. Instead, we check later before actually starting the competition.
             sequencedCompetitionStarting = true;
             competitionType = CompetitionType.SEQUENCED;
             double startTime = Planetarium.GetUniversalTime();
@@ -1605,7 +1597,7 @@ namespace BDArmory.Competition
                         }
                     case "SetThrottle":
                         {
-                            if (parts.Count() == 3)
+                            if (parts.Count() == 3 && pilots.Count > 1)
                             {
                                 if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Adjusting throttle to " + parts[2] + "%.");
                                 var someOtherVessel = pilots[0].vessel == FlightGlobals.ActiveVessel ? pilots[1].vessel : pilots[0].vessel;
@@ -1707,7 +1699,7 @@ namespace BDArmory.Competition
                         }
                     case "ActivateCompetition":
                         {
-                            if (!competitionIsActive)
+                            if (!competitionIsActive && pilots.Count > 1)
                             {
                                 competitionStatus.Add("Competition starting!  Good luck!");
                                 CompetitionStarted();
@@ -1731,6 +1723,14 @@ namespace BDArmory.Competition
                 }
             }
             // will need a terminator routine
+            if (pilots.Count < 2)
+            {
+                Debug.Log("[BDArmory.BDACompetitionMode" + CompetitionID.ToString() + "]: Unable to start sequenced competition - one or more teams is empty");
+                competitionStatus.Set("Competition: Failed!  One or more teams is empty.");
+                competitionStartFailureReason = CompetitionStartFailureReason.OnlyOneTeam;
+                StopCompetition();
+                yield break;
+            }
             if (!competitionIsActive)
             {
                 competitionStatus.Add("Competition starting!  Good luck!");
