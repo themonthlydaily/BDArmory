@@ -6,11 +6,13 @@
 	- Updated German localisation from EzBro.
 - Competition:
 	- Tweaks to sequenced competition start-up to allow a single plane to perform the sequence despite not having enough teams for a competition.
+	- Add an option to save the image from plot_summary.py with a transparent background.
 - AI / WM:
 	- Fix max collision avoidance strength in AI GUI.
 	- Fix NRE when adjusting autotuning fields in the SPH.
 	- AI will no longer dive into missiles approaching from directly below.
 	- Reset the auto-tune PID values to the best ones when lowering the learning rate.
+	- Add a keybind for arming/disarming the WM.
 - Weapons:
 	- Fix bug in nuke impulse calculation and some NREs.
 - RWP:
