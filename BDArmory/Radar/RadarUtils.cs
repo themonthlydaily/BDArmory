@@ -842,7 +842,7 @@ namespace BDArmory.Radar
 
             if ((BDArmorySettings.DEBUG_RADAR) && (modifiedSignature != signature)) Debug.Log("[BDArmory.RadarUtils]: Standoff Jamming: " + targetV.GetDisplayName() + " signature relative to " + v.GetDisplayName() + " modified from " + signature + " to " + modifiedSignature + "\n" + debugSOJ);
 
-            return modifiedSignature / signature;
+            return modifiedSignature / (signature == 0f ? 1f : signature);
         }
 
         /// <summary>
@@ -1068,11 +1068,12 @@ namespace BDArmory.Radar
                             {
                                 //evaluate if we can lock/track such a signature at that range
                                 float minLockSig = radar.radarLockTrackCurve.Evaluate(distance);
+                                
                                 signature *= ti.radarLockbreakFactor;    //multiply lockbreak factor from active ecm
                                                                          //do not multiply chaff factor here
                                 signature *= GetStandoffJammingModifier(radar.vessel, radar.weaponManager.Team, position, loadedvessels.Current, signature);
-
-                                if (signature > minLockSig && RadarCanDetect(radar, signature, distance)) // Must be able to detect and lock to lock targets
+                                
+                                if (signature >= minLockSig && RadarCanDetect(radar, signature, distance)) // Must be able to detect and lock to lock targets
                                 {
                                     // detected by radar
                                     if (myWpnManager != null)
@@ -1192,8 +1193,8 @@ namespace BDArmory.Radar
                 {
                     //evaluate if we can detect such a signature at that range
                     float minTrackSig = radar.radarLockTrackCurve.Evaluate(distance);
-
-                    if ((signature > minTrackSig) && (RadarCanDetect(radar, signature, distance)))
+                    
+                    if ((signature >= minTrackSig) && (RadarCanDetect(radar, signature, distance)))
                     {
                         // can be tracked
                         radar.ReceiveContactData(new TargetSignatureData(lockedVessel, signature), locked);
@@ -1311,8 +1312,8 @@ namespace BDArmory.Radar
                 float minDetectSig = radar.radarDetectionCurve.Evaluate(distance);
                 //do not consider lockbreak factor from active ecm here!
                 //do not consider chaff here
-
-                if (signature > minDetectSig)
+                
+                if (signature >= minDetectSig)
                 {
                     detected = true;
                 }
