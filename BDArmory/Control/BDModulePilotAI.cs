@@ -1754,31 +1754,11 @@ namespace BDArmory.Control
 
                     if (weaponManager)
                     {
-                        if (weaponManager.rwr != null ? weaponManager.rwr.rwrEnabled : false) //use rwr to check missile threat direction
+                        if (weaponManager.incomingMissileVessel)
                         {
-                            Vector3 missileThreat = Vector3.zero;
-                            bool missileThreatDetected = false;
-                            float closestMissileThreat = float.MaxValue;
-                            for (int i = 0; i < weaponManager.rwr.pingsData.Length; i++)
-                            {
-                                TargetSignatureData threat = weaponManager.rwr.pingsData[i];
-                                if (threat.exists && threat.signalStrength == (float)RadarWarningReceiver.RWRThreatTypes.MissileLock)
-                                {
-                                    missileThreatDetected = true;
-                                    float dist = (weaponManager.rwr.pingWorldPositions[i] - vesselTransform.position).sqrMagnitude;
-                                    if (dist < closestMissileThreat)
-                                    {
-                                        closestMissileThreat = dist;
-                                        missileThreat = weaponManager.rwr.pingWorldPositions[i];
-                                    }
-                                }
-                            }
-                            if (missileThreatDetected)
-                            {
-                                threatRelativePosition = missileThreat - vesselTransform.position;
-                                if (extending)
-                                    StopExtending("missile threat"); // Don't keep trying to extend if under fire from missiles
-                            }
+                            threatRelativePosition = weaponManager.incomingThreatPosition - vesselTransform.position;
+                            if (extending)
+                                StopExtending("missile threat"); // Don't keep trying to extend if under fire from missiles
                         }
 
                         if (weaponManager.underFire)
