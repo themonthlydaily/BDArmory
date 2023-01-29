@@ -1351,8 +1351,8 @@ namespace BDArmory.Weapons.Missiles
         string debugGuidanceTarget;
         void UpdateGuidance()
         {
-            if (guidanceActive && guidanceFailureRate > 0f)
-                if (UnityEngine.Random.Range(0f, 1f) < guidanceFailureRate)
+            if (guidanceActive && guidanceFailureRatePerFrame > 0f)
+                if (UnityEngine.Random.Range(0f, 1f) < guidanceFailureRatePerFrame)
                 {
                     guidanceActive = false;
                     BDATargetManager.FiredMissiles.Remove(this);
