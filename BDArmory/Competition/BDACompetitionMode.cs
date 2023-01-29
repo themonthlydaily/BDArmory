@@ -1123,7 +1123,6 @@ namespace BDArmory.Competition
                             "0:TimeScale:2", // t=0, scale time for faster falling
                             "0:ToggleGuard:0", // t=0, Disable guard mode (for those who triggered it early)
                             "0:TogglePilot:0", // t=0, Disable pilots (for those who triggered it early)
-                            "0:SetTimeAccel:3", //t=0 set Time Accel to speed up descent
                             "30:HackGravity:1", //t=30, Reset gravity
                             "0:TimeScale:1", // t=0, reset time scaling
                             "0:SetThrottle:100", // t=30, Full throttle
