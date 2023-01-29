@@ -804,7 +804,12 @@ namespace BDArmory.Control
         [KSPAction("Remove Kerbals' Helmets")] // Note: removing helmets only works for the active vessel, so this waits until the vessel is active before doing so.
         public void AGRemoveKerbalsHelmets(KSPActionParam param)
         {
-            if (!waitingToRemoveHelmets) StartCoroutine(RemoveKerbalsHelmetsWhenActiveVessel());
+            if (vessel.isActiveVessel)
+            {
+                foreach (var kerbal in VesselModuleRegistry.GetModules<KerbalEVA>(vessel).Where(k => k != null)) kerbal.ToggleHelmetAndNeckRing(false, false);
+                waitingToRemoveHelmets = false;
+            }
+            else if (!waitingToRemoveHelmets) StartCoroutine(RemoveKerbalsHelmetsWhenActiveVessel());
         }
 
         bool waitingToRemoveHelmets = false;
@@ -1346,6 +1351,7 @@ namespace BDArmory.Control
                 }
                 if (BDInputUtils.GetKeyDown(BDInputSettingsFields.WEAP_NEXT_KEY)) CycleWeapon(true);
                 if (BDInputUtils.GetKeyDown(BDInputSettingsFields.WEAP_PREV_KEY)) CycleWeapon(false);
+                if (BDInputUtils.GetKeyDown(BDInputSettingsFields.WEAP_TOGGLE_ARMED_KEY)) ToggleArm();
 
                 //firing missiles and rockets===
                 if (selectedWeapon != null &&

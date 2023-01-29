@@ -397,7 +397,7 @@ namespace BDArmory.UI
                         { "evasionTimeThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionTimeThreshold, 0, 1) },
                         { "collisionAvoidanceThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.collisionAvoidanceThreshold, 0, 50) },
                         { "vesselCollisionAvoidanceLookAheadPeriod", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselCollisionAvoidanceLookAheadPeriod, 0, 3) },
-                        { "vesselCollisionAvoidanceStrength", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselCollisionAvoidanceStrength, 0, 2) },
+                        { "vesselCollisionAvoidanceStrength", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselCollisionAvoidanceStrength, 0, 4) },
                         { "vesselStandoffDistance", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselStandoffDistance, 0, 1000) },
                         { "extendDistanceAirToAir", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendDistanceAirToAir, 0, 2000) },
                         { "extendAngleAirToAir", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendAngleAirToAir, -10, 45) },
@@ -1319,7 +1319,7 @@ namespace BDArmory.UI
                                         if (ActivePilot.autoTuningOptionFixedDROn != (ActivePilot.autoTuningOptionFixedDROn = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 9, 11, contentWidth), ActivePilot.autoTuningOptionFixedDROn, StringUtils.Localize("DROn"), ActivePilot.autoTuningOptionFixedDROn ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))) resetGradient = true;
                                         if (ActivePilot.autoTuningOptionFixedDRF != (ActivePilot.autoTuningOptionFixedDRF = GUI.Toggle(ToggleButtonRects(leftIndent, pidLines + autoTuneLines, 10, 11, contentWidth), ActivePilot.autoTuningOptionFixedDRF, StringUtils.Localize("DRF"), ActivePilot.autoTuningOptionFixedDRF ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))) resetGradient = true;
                                     }
-                                    if (resetGradient) ActivePilot.pidAutoTuning.ResetGradient();
+                                    if (resetGradient && HighLogic.LoadedSceneIsFlight) ActivePilot.pidAutoTuning.ResetGradient();
                                     ++autoTuneLines;
                                 }
 
@@ -1877,8 +1877,8 @@ namespace BDArmory.UI
                             {
                                 ActivePilot.vesselCollisionAvoidanceStrength =
                                     GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth),
-                                        ActivePilot.vesselCollisionAvoidanceStrength, 0, 2);
-                                ActivePilot.vesselCollisionAvoidanceStrength = Mathf.Round(ActivePilot.vesselCollisionAvoidanceStrength * 10f) / 10f;
+                                        ActivePilot.vesselCollisionAvoidanceStrength, 0, 4);
+                                ActivePilot.vesselCollisionAvoidanceStrength = BDAMath.RoundToUnit(ActivePilot.vesselCollisionAvoidanceStrength, 0.1f);
                             }
                             else
                             {

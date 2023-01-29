@@ -292,7 +292,7 @@ namespace BDArmory.UI
         {
             if (_ready)
             {
-                if (_showGui && (BDArmorySetup.GAME_UI_ENABLED || (BDArmorySettings.VESSEL_SWITCHER_PERSIST_UI && !BDArmorySetup.GAME_UI_ENABLED)))
+                if (_showGui && (BDArmorySetup.GAME_UI_ENABLED || BDArmorySettings.VESSEL_SWITCHER_PERSIST_UI))
                 {
                     string windowTitle = StringUtils.Localize("#LOC_BDArmory_BDAVesselSwitcher_Title");
                     if (BDArmorySettings.GRAVITY_HACKS)
@@ -334,7 +334,7 @@ namespace BDArmory.UI
 
         private void WindowVesselSwitcher(int id)
         {
-            int numButtons = 10;
+            int numButtons = 11;
             int numButtonsOnLeft = 5;
             GUI.DragWindow(new Rect(numButtonsOnLeft * _buttonHeight + _margin, 0f, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - numButtons * _buttonHeight - 3f * _margin, _titleHeight));
             GUI.Label(new Rect(BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - (numButtons - numButtonsOnLeft) * _buttonHeight - _margin - 70f, 4f, 70f, _titleHeight - 4f), BDArmorySetup.Instance.Version);

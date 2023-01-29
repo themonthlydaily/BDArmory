@@ -1043,7 +1043,7 @@ namespace BDArmory.Damage
 
             if (Hitpoints <= 0)
             {
-                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.HitPointTracker] Setting HP to " + Hitpoints + ", destroying");
+                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.HitPointTracker] Setting HP of {part.name} to {Hitpoints}, destroying");
                 DestroyPart();
             }
         }
