@@ -799,6 +799,7 @@ namespace BDArmory.Radar
         public static float GetStandoffJammingModifier(Vessel v, Competition.BDTeam team, Vector3 position, Vessel targetV, float signature)
         {
             if (!VesselModuleRegistry.GetModule<MissileFire>(targetV)) return 1f; // Don't evaluate SOJ effects for targets without weapons managers
+            if (signature == 0) return 1f; // Don't evaluate SOJ effects for targets with 0 signature
 
             float standOffJammingMod = 0f;
             string debugSOJ = "Standoff Jammer Lockbreak Strengths: \n";
@@ -842,7 +843,7 @@ namespace BDArmory.Radar
 
             if ((BDArmorySettings.DEBUG_RADAR) && (modifiedSignature != signature)) Debug.Log("[BDArmory.RadarUtils]: Standoff Jamming: " + targetV.GetDisplayName() + " signature relative to " + v.GetDisplayName() + " modified from " + signature + " to " + modifiedSignature + "\n" + debugSOJ);
 
-            return modifiedSignature / (signature == 0f ? 1f : signature);
+            return modifiedSignature / signature;
         }
 
         /// <summary>
