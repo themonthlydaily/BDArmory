@@ -4,6 +4,7 @@
 	- Add debug button when DEBUG_OTHER is enabled for dumping part info.
 	- Add a 'Start competition automatically' button to the Vessel Spawner window for use with 'single spawn'.
 	- Updated German localisation from EzBro.
+	- Clean up ordering and consistency in the AI GUI and in-flight WM windows.
 - Competition:
 	- Tweaks to sequenced competition start-up to allow a single plane to perform the sequence despite not having enough teams for a competition.
 	- Add an option to save the image from plot_summary.py with a transparent background.
