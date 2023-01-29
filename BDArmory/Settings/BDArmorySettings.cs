@@ -131,6 +131,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static float HP_THRESHOLD = 0;                  //HP above this value will be scaled to a logarithmic value
         [BDAPersistentSettingsField] public static float HP_CLAMP = 0;                  //HP will be clamped to this value
         [BDAPersistentSettingsField] public static bool PWING_EDGE_LIFT = true;                  //Toggle lift on PWing edges for balance with stock wings/remove edge abuse
+        [BDAPersistentSettingsField] public static bool PWING_THICKNESS_AFFECT_MASS_HP = false;
         // Physics constants
         [BDAPersistentSettingsField] public static float GLOBAL_LIFT_MULTIPLIER = 0.25f;
         [BDAPersistentSettingsField] public static float GLOBAL_DRAG_MULTIPLIER = 6f;
