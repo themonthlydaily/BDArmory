@@ -17,6 +17,7 @@ parser = argparse.ArgumentParser(description="Plot the scores of a tournament as
 parser.add_argument("tournament", nargs="?", type=str, help="The tournament to plot (optional).")
 parser.add_argument('-t', '--title', type=str, help="A title.")
 parser.add_argument('-s', '--save', type=str, nargs='?', const='tmp', help="Save a PNG image instead of displaying the graph.")
+parser.add_argument('--transparent', action='store_true', help='Save the PNG image with a transparent background.')
 parser.add_argument("--version", action='store_true', help="Show the script version, then exit.")
 args = parser.parse_args()
 
@@ -45,7 +46,8 @@ if args.save:
         fd, filename = tempfile.mkstemp(suffix='.png')
     else:
         filename = args.save
-    plt.savefig(filename, dpi='figure', bbox_inches='tight')
+    fig_args = {"dpi":"figure", "bbox_inches":"tight"}
+    plt.savefig(filename, dpi='figure', bbox_inches='tight', transparent=args.transparent)
     print(f"Image saved to {filename}")
 else:
     plt.show(block=True)
