@@ -1118,8 +1118,10 @@ namespace BDArmory.Competition
                             "0:ActivateEngines", // t=30, Activate engines
                             "0:HackGravity:10", // t=0, Increase gravity to 10x
                             "0:ToggleGuard:0", // t=0, Disable guard mode (for those who triggered it early)
-                            "0:TogglePilot:0", // t=30, Disable pilots (for those who triggered it early)
+                            "0:TogglePilot:0", // t=0, Disable pilots (for those who triggered it early)
+                            "0:SetTimeAccel:3", //t=0 set Time Accel to speed up descent
                             "30:HackGravity:1", //t=30, Reset gravity
+                            "0:SetTimeAccel:1", //t=30 Reset Time Accel
                             "0:SetThrottle:100", // t=30, Full throttle
                             "0:TogglePilot:1", // t=30, Activate pilots
                             "25:ToggleGuard:1", // t=55, Activate guard mode (attack)
@@ -1587,6 +1589,12 @@ namespace BDArmory.Competition
                                     if (currentVesselIsActive) LoadedVesselSwitcher.Instance.ForceSwitchVessel(pilot.vessel); // Switch back again.
                                 }
                             }
+                            break;
+                        }
+                    case "SetTimeAccel":
+                        {
+                            if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Adjusting TmeScale to " + parts[2] + "x.");
+                            Time.timeScale = int.Parse(parts[2]);
                             break;
                         }
                     case "RemoveDebris":

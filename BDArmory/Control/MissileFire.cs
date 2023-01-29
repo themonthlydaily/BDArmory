@@ -5799,6 +5799,8 @@ namespace BDArmory.Control
             {
                 ml.heatTarget = heatTarget;
                 MissileLauncher mml = ml as MissileLauncher;
+                if (BDArmorySettings.DEBUG_MISSILES)
+                    Debug.Log("[BDArmory.MissileData]: Missile multi-launcher or reloadable rail found...");
                 if (!mml.multiLauncher) heatTarget = TargetSignatureData.noTarget;
                 if (BDArmorySettings.DEBUG_MISSILES)
                     Debug.Log("[BDArmory.MissileData]: Sending targetInfo to heat Missile...");
@@ -6593,6 +6595,7 @@ namespace BDArmory.Control
                 else { hasWeaponsAndAmmo = true; break; } // Other weapon types don't have ammo, or use electric charge, which could recharge.
             }
             outOfAmmo = !hasWeaponsAndAmmo; // Set outOfAmmo if we don't have any guns with compatible ammo.
+            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} has run out of ammo!"); 
             return hasWeaponsAndAmmo;
         }
 

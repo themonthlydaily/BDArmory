@@ -23,6 +23,7 @@ namespace BDArmory.Weapons.Missiles
     public class MultiMissileLauncher : PartModule
     {
         public static Dictionary<string, ObjectPool> mslDummyPool = new Dictionary<string, ObjectPool>();
+        [KSPField(isPersistant = true)]
         Vector3 dummyScale = Vector3.one;
         Coroutine missileSalvo;
 
@@ -91,16 +92,16 @@ namespace BDArmory.Weapons.Missiles
             {
                 missileSpawner.MissileName = subMunitionName;
                 missileSpawner.UpdateMissileValues();
+
                 using (var parts = PartLoader.LoadedPartsList.GetEnumerator())
                     while (parts.MoveNext())
                     {
                         if (parts.Current.partConfig == null || parts.Current.partPrefab == null)
                             continue;
                         if (!parts.Current.partPrefab.partInfo.name.Contains(subMunitionName)) continue;
-                        UpdateFields(parts.Current.partPrefab.FindModuleImplementing<MissileLauncher>());
+                        UpdateFields(parts.Current.partPrefab.FindModuleImplementing<MissileLauncher>(), false);
                         break;
                     }
-
             }
         }
         private void OnDestroy()
@@ -148,7 +149,7 @@ namespace BDArmory.Weapons.Missiles
                                         missileSpawner.MissileName = subMunitionName;
                                         missileSpawner.UpdateMissileValues();
                                     }
-                                    UpdateFields(MLConfig);
+                                    UpdateFields(MLConfig, true);
                                     EditorLogic.DeletePart(missile);
                                 }
                             }
@@ -208,17 +209,11 @@ namespace BDArmory.Weapons.Missiles
             return url;
         }
 
-        void UpdateFields(MissileLauncher MLConfig)
+        void UpdateFields(MissileLauncher MLConfig, bool configurableSettings)
         {
-            missileLauncher.homingType = MLConfig.homingType;
+            missileLauncher.homingType = MLConfig.homingType; //these are all non-persistant, and need to be re-grabbed at launch
             missileLauncher.targetingType = MLConfig.targetingType;
             missileLauncher.missileType = MLConfig.missileType;
-            missileLauncher.maxStaticLaunchRange = MLConfig.maxStaticLaunchRange;
-            missileLauncher.minStaticLaunchRange = MLConfig.minStaticLaunchRange;
-            missileLauncher.engageRangeMin = MLConfig.minStaticLaunchRange;
-            missileLauncher.engageRangeMax = MLConfig.maxStaticLaunchRange;
-            missileLauncher.maxOffBoresight = MLConfig.maxOffBoresight;
-            missileLauncher.DetonateAtMinimumDistance = MLConfig.DetonateAtMinimumDistance;
             missileLauncher.lockedSensorFOV = MLConfig.lockedSensorFOV;
             missileLauncher.lockedSensorFOVBias = MLConfig.lockedSensorFOVBias;
             missileLauncher.lockedSensorVelocityBias = MLConfig.lockedSensorVelocityBias;
@@ -228,41 +223,49 @@ namespace BDArmory.Weapons.Missiles
             missileLauncher.uncagedLock = MLConfig.uncagedLock;
             missileLauncher.isTimed = MLConfig.isTimed;
             missileLauncher.radarLOAL = MLConfig.radarLOAL;
-            missileLauncher.dropTime = MLConfig.dropTime;
-            missileLauncher.detonationTime = MLConfig.detonationTime;
-            missileLauncher.DetonationDistance = MLConfig.DetonationDistance;
             missileLauncher.activeRadarRange = MLConfig.activeRadarRange;
             missileLauncher.activeRadarLockTrackCurve = MLConfig.activeRadarLockTrackCurve;
-            missileLauncher.BallisticOverShootFactor = MLConfig.BallisticOverShootFactor;
-            missileLauncher.BallisticAngle = MLConfig.BallisticAngle;
-            missileLauncher.CruiseAltitude = MLConfig.CruiseAltitude;
-            missileLauncher.CruiseSpeed = MLConfig.CruiseSpeed;
-            missileLauncher.CruisePredictionTime = MLConfig.CruisePredictionTime;
             missileLauncher.antiradTargets = MLConfig.antiradTargets;
             missileLauncher.steerMult = MLConfig.steerMult;
             missileLauncher.thrust = MLConfig.thrust;
             missileLauncher.maxAoA = MLConfig.maxAoA;
-            missileLauncher.decoupleForward = MLConfig.decoupleForward;
-            missileLauncher.decoupleSpeed = MLConfig.decoupleSpeed;
-            missileLauncher.thrust = MLConfig.thrust;
-            missileLauncher.maxAoA = MLConfig.maxAoA;
-            missileLauncher.clearanceRadius = MLConfig.clearanceRadius;
-            missileLauncher.clearanceLength = MLConfig.clearanceLength;
             missileLauncher.optimumAirspeed = MLConfig.optimumAirspeed;
             missileLauncher.maxTurnRateDPS = MLConfig.maxTurnRateDPS;
             missileLauncher.proxyDetonate = MLConfig.proxyDetonate;
-            missileLauncher.maxAltitude = MLConfig.maxAltitude;
             missileLauncher.terminalManeuvering = MLConfig.terminalManeuvering;
             missileLauncher.terminalGuidanceType = MLConfig.terminalGuidanceType;
-            missileLauncher.terminalGuidanceShouldActivate = MLConfig.terminalGuidanceShouldActivate;
             missileLauncher.torpedo = MLConfig.torpedo;
-            missileLauncher.engageAir = MLConfig.engageAir;
-            missileLauncher.engageGround = MLConfig.engageGround;
-            missileLauncher.engageMissile = MLConfig.engageMissile;
-            missileLauncher.engageSLW = MLConfig.engageSLW;
-            missileLauncher.shortName = MLConfig.shortName;
-            missileLauncher.blastRadius = -1;
-            missileLauncher.blastRadius = MLConfig.blastRadius;
+
+            if (configurableSettings)
+            {
+                missileLauncher.maxStaticLaunchRange = MLConfig.maxStaticLaunchRange;
+                missileLauncher.minStaticLaunchRange = MLConfig.minStaticLaunchRange;
+                missileLauncher.engageRangeMin = MLConfig.minStaticLaunchRange;
+                missileLauncher.engageRangeMax = MLConfig.maxStaticLaunchRange;
+                missileLauncher.maxOffBoresight = MLConfig.maxOffBoresight;
+                missileLauncher.DetonateAtMinimumDistance = MLConfig.DetonateAtMinimumDistance;
+                missileLauncher.dropTime = MLConfig.dropTime;
+                missileLauncher.detonationTime = MLConfig.detonationTime;
+                missileLauncher.DetonationDistance = MLConfig.DetonationDistance;
+                missileLauncher.BallisticOverShootFactor = MLConfig.BallisticOverShootFactor;
+                missileLauncher.BallisticAngle = MLConfig.BallisticAngle;
+                missileLauncher.CruiseAltitude = MLConfig.CruiseAltitude;
+                missileLauncher.CruiseSpeed = MLConfig.CruiseSpeed;
+                missileLauncher.CruisePredictionTime = MLConfig.CruisePredictionTime;
+                missileLauncher.decoupleForward = MLConfig.decoupleForward;
+                missileLauncher.decoupleSpeed = MLConfig.decoupleSpeed;
+                missileLauncher.clearanceRadius = MLConfig.clearanceRadius;
+                missileLauncher.clearanceLength = MLConfig.clearanceLength;
+                missileLauncher.maxAltitude = MLConfig.maxAltitude;
+                missileLauncher.terminalGuidanceShouldActivate = MLConfig.terminalGuidanceShouldActivate;
+                missileLauncher.engageAir = MLConfig.engageAir;
+                missileLauncher.engageGround = MLConfig.engageGround;
+                missileLauncher.engageMissile = MLConfig.engageMissile;
+                missileLauncher.engageSLW = MLConfig.engageSLW;
+                missileLauncher.shortName = MLConfig.shortName;
+                missileLauncher.blastRadius = -1;
+                missileLauncher.blastRadius = MLConfig.blastRadius;
+            }
             missileLauncher.GetBlastRadius();
             GUIUtils.RefreshAssociatedWindows(missileLauncher.part);
             missileLauncher.SetFields();

@@ -1870,7 +1870,7 @@ namespace BDArmory.UI
                             evadeLines++;
                             if (contextTipsEnabled)
                             {
-                                GUI.Label(ContextLabelRect(leftIndent, evadeLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_ColDist"), contextLabel);//"dynamic damp min"
+                                GUI.Label(ContextLabelRect(leftIndent, evadeLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_ColTime"), contextLabel);//"dynamic damp min"
                                 evadeLines++;
                             }
                             if (!NumFieldsEnabled)
@@ -1890,7 +1890,7 @@ namespace BDArmory.UI
                             evadeLines++;
                             if (contextTipsEnabled)
                             {
-                                GUI.Label(ContextLabelRect(leftIndent, evadeLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_ColTime"), contextLabel);//"dynamic damp min"
+                                GUI.Label(ContextLabelRect(leftIndent, evadeLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_ColStrength"), contextLabel);//"dynamic damp min"
                                 evadeLines++;
                             }
                             if (!NumFieldsEnabled)

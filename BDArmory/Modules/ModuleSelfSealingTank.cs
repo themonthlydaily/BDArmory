@@ -552,6 +552,8 @@ namespace BDArmory.Modules
                             Fields["partmass"].guiActiveEditor = false;
                             InertTank = false;
                             FireBottles = 0;
+                            FBmass = 0;
+                            FBRemaining = 0;
                         }
                         updateTimer = 0.5f; //doing it this way since PAW buttons don't seem to trigger onShipModified
                     }

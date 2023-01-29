@@ -152,6 +152,9 @@ namespace BDArmory.Competition.VesselSpawning
         #region Intake hacks
         public static void HackIntakesOnNewVessels(bool enable) => SpawnUtilsInstance.Instance.HackIntakesOnNewVessels(enable);
         public static void HackIntakes(Vessel vessel, bool enable) => SpawnUtilsInstance.Instance.HackIntakes(vessel, enable);
+        #endregion
+
+        #region ControlSurface hacks
         public static void HackActuatorsOnNewVessels(bool enable) => SpawnUtilsInstance.Instance.HackActuatorsOnNewVessels(enable);
         public static void HackActuators(Vessel vessel, bool enable) => SpawnUtilsInstance.Instance.HackActuators(vessel, enable);
         #endregion
@@ -551,7 +554,10 @@ namespace BDArmory.Competition.VesselSpawning
             if (enable)
             {
                 foreach (var ctrlSrf in VesselModuleRegistry.GetModules<ModuleControlSurface>(vessel))
+                {
                     ctrlSrf.actuatorSpeed = 30;
+                    Debug.Log($"[BDArmory.ActuatorHacks]: Setting {ctrlSrf.name} actuation speed to : {ctrlSrf.actuatorSpeed}");
+                }
             }
             else
             {
