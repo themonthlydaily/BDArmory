@@ -89,6 +89,12 @@ namespace BDArmory.Weapons.Missiles
         }
 
         [KSPField]
+        public float engineFailureRate = 0f;                              // How often the missile engine will fail to start (0-1), evaluated once on missile launch
+
+        [KSPField]
+        public float guidanceFailureRate = 0f;                              // How often the missile guidance will fail (0-1), evaluated every frame after launch
+
+        [KSPField]
         public bool guidanceActive = true;
 
         [KSPField]

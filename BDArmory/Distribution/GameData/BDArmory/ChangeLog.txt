@@ -15,6 +15,8 @@
 	- Fix a division by zero in the standoff jamming effect calculation when the radar signature is 0.
 - Weapons:
 	- Fix bug in nuke impulse calculation and some NREs.
+	- Add new engineFailureRate (default is 0, max is 1) config file variable for missiles. This is the probability the missile engine will fail to start. It is evaluated once on missile launch.
+	- Add new guidanceFailureRate (default is 0, max is 1) config file variable for missiles. This is the probability missile guidance will fail. It is evaluated every frame after launch.
 - RWP:
 	- Reset the killer GM between competitions and don't enable the killer GM for S5R3 (the altitude limit is still active).
 

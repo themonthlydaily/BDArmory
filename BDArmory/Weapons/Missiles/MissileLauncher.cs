@@ -1094,7 +1094,6 @@ namespace BDArmory.Weapons.Missiles
 
                 StartCoroutine(MissileRoutine());
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: Missile Launched!");
-
             }
             catch (Exception e)
             {
@@ -1350,6 +1349,14 @@ namespace BDArmory.Weapons.Missiles
         string debugGuidanceTarget;
         void UpdateGuidance()
         {
+            if (guidanceActive && guidanceFailureRate > 0f)
+                if (UnityEngine.Random.Range(0f, 1f) < guidanceFailureRate)
+                {
+                    guidanceActive = false;
+                    BDATargetManager.FiredMissiles.Remove(this);
+                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: Missile Guidance Failed!");
+                }     
+
             if (guidanceActive)
             {
                 switch (TargetingMode)
@@ -1678,6 +1685,15 @@ namespace BDArmory.Weapons.Missiles
         IEnumerator MissileRoutine()
         {
             MissileState = MissileStates.Drop;
+            if (engineFailureRate > 0f)
+                if (UnityEngine.Random.Range(0f, 1f) < engineFailureRate)
+                {
+                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: Missile Engine Failed on Launch!");
+                    yield return new WaitForSecondsFixed(2f); // Pilot reaction time
+                    BDATargetManager.FiredMissiles.Remove(this);
+                    yield break;
+                }
+
             StartCoroutine(DeployAnimRoutine());
             yield return new WaitForSecondsFixed(dropTime);
             yield return StartCoroutine(BoostRoutine());
