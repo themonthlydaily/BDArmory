@@ -959,7 +959,6 @@ namespace BDArmory.UI
         void WindowBDAToolbar(int windowID)
         {
             float line = 0;
-            // float leftIndent = 10;
             float contentWidth = columnWidth - 2 * leftIndent;
             float windowColumns = 1;
             int buttonNumber = 0;
@@ -1194,7 +1193,6 @@ namespace BDArmory.UI
                 {
                     rippleHeight = Mathf.Lerp(rippleHeight, 0, 0.15f);
                 }
-                //line += 1.25f;
                 line += rippleHeight;
                 line += 0.1f;
 
@@ -1285,7 +1283,6 @@ namespace BDArmory.UI
                     GUI.BeginGroup(new Rect(5, contentTop + line * entryHeight, columnWidth - 10, guardHeight * entryHeight), GUIContent.none, BDGuiSkin.box);
                     guardLines += 0.1f;
 
-                    contentWidth -= 16;
                     string guardButtonLabel = StringUtils.Localize("#LOC_BDArmory_WMWindow_NoneWeapon", (ActiveWeaponManager.guardMode ? StringUtils.Localize("#LOC_BDArmory_Generic_On") : StringUtils.Localize("#LOC_BDArmory_Generic_Off")));//"Guard Mode " + "ON""Off"
                     if (GUI.Button(ButtonRect(guardLines), guardButtonLabel, ActiveWeaponManager.guardMode ? BDGuiSkin.box : BDGuiSkin.button))
                     {
@@ -1414,12 +1411,12 @@ namespace BDArmory.UI
                     float TargetLines = 0;
                     if (showTargetOptions && showGuardMenu && !toolMinimized)
                     {
-                        TargetLines += 0.1f;
-                        GUI.BeginGroup(new Rect(5, contentTop + (guardLines * entryHeight), columnWidth - 10, TargetingHeight * entryHeight), GUIContent.none, BDGuiSkin.box);
+                        contentWidth = columnWidth - 30;
+                        guardLines += 0.25f;
+                        GUI.BeginGroup(new Rect(10, contentTop + (guardLines * entryHeight), contentWidth, (TargetingHeight + 0.25f) * entryHeight), GUIContent.none, BDGuiSkin.box);
                         TargetLines += 0.25f;
                         string CoMlabel = StringUtils.Localize("#LOC_BDArmory_TargetCOM", (ActiveWeaponManager.targetCoM ? StringUtils.Localize("#LOC_BDArmory_false") : StringUtils.Localize("#LOC_BDArmory_true")));//"Engage Air; True, False
-                        if (GUI.Button(new Rect(leftIndent, (TargetLines * entryHeight), (contentWidth - (2 * leftIndent)), entryHeight),
-                            CoMlabel, ActiveWeaponManager.targetCoM ? BDGuiSkin.box : BDGuiSkin.button))
+                        if (GUI.Button(new Rect(leftIndent, TargetLines * entryHeight, contentWidth - 2 * leftIndent, entryHeight), CoMlabel, ActiveWeaponManager.targetCoM ? BDGuiSkin.box : BDGuiSkin.button))
                         {
                             ActiveWeaponManager.targetCoM = !ActiveWeaponManager.targetCoM;
                             ActiveWeaponManager.StartGuardTurretFiring(); //reset weapon targeting assignments
@@ -1438,8 +1435,7 @@ namespace BDArmory.UI
                         }
                         TargetLines += 1.1f;
                         string Commandlabel = StringUtils.Localize("#LOC_BDArmory_Command", (ActiveWeaponManager.targetCommand ? StringUtils.Localize("#LOC_BDArmory_false") : StringUtils.Localize("#LOC_BDArmory_true")));//"Engage Air; True, False
-                        if (GUI.Button(new Rect(leftIndent, (TargetLines * entryHeight), ((contentWidth - (2 * leftIndent)) / 2), entryHeight),
-                            Commandlabel, ActiveWeaponManager.targetCommand ? BDGuiSkin.box : BDGuiSkin.button))
+                        if (GUI.Button(new Rect(leftIndent, TargetLines * entryHeight, (contentWidth - 2 * leftIndent) / 2, entryHeight), Commandlabel, ActiveWeaponManager.targetCommand ? BDGuiSkin.box : BDGuiSkin.button))
                         {
                             ActiveWeaponManager.targetCommand = !ActiveWeaponManager.targetCommand;
                             ActiveWeaponManager.StartGuardTurretFiring();
@@ -1453,8 +1449,7 @@ namespace BDArmory.UI
                             }
                         }
                         string Engineslabel = StringUtils.Localize("#LOC_BDArmory_Engines", (ActiveWeaponManager.targetEngine ? StringUtils.Localize("#LOC_BDArmory_false") : StringUtils.Localize("#LOC_BDArmory_true")));//"Engage Missile; True, False
-                        if (GUI.Button(new Rect(leftIndent + ((contentWidth - (2 * leftIndent)) / 2), (TargetLines * entryHeight), ((contentWidth - (2 * leftIndent)) / 2), entryHeight),
-                            Engineslabel, ActiveWeaponManager.targetEngine ? BDGuiSkin.box : BDGuiSkin.button))
+                        if (GUI.Button(new Rect(leftIndent + (contentWidth - 2 * leftIndent) / 2, TargetLines * entryHeight, (contentWidth - 2 * leftIndent) / 2, entryHeight), Engineslabel, ActiveWeaponManager.targetEngine ? BDGuiSkin.box : BDGuiSkin.button))
                         {
                             ActiveWeaponManager.targetEngine = !ActiveWeaponManager.targetEngine;
                             ActiveWeaponManager.StartGuardTurretFiring();
@@ -1469,8 +1464,7 @@ namespace BDArmory.UI
                         }
                         TargetLines += 1.1f;
                         string Weaponslabel = StringUtils.Localize("#LOC_BDArmory_Weapons", (ActiveWeaponManager.targetWeapon ? StringUtils.Localize("#LOC_BDArmory_false") : StringUtils.Localize("#LOC_BDArmory_true")));//"Engage Surface; True, False
-                        if (GUI.Button(new Rect(leftIndent, (TargetLines * entryHeight), ((contentWidth - (2 * leftIndent)) / 2), entryHeight),
-                            Weaponslabel, ActiveWeaponManager.targetWeapon ? BDGuiSkin.box : BDGuiSkin.button))
+                        if (GUI.Button(new Rect(leftIndent, TargetLines * entryHeight, (contentWidth - 2 * leftIndent) / 2, entryHeight), Weaponslabel, ActiveWeaponManager.targetWeapon ? BDGuiSkin.box : BDGuiSkin.button))
                         {
                             ActiveWeaponManager.targetWeapon = !ActiveWeaponManager.targetWeapon;
                             ActiveWeaponManager.StartGuardTurretFiring();
@@ -1484,8 +1478,7 @@ namespace BDArmory.UI
                             }
                         }
                         string Masslabel = StringUtils.Localize("#LOC_BDArmory_Mass", (ActiveWeaponManager.targetMass ? StringUtils.Localize("#LOC_BDArmory_false") : StringUtils.Localize("#LOC_BDArmory_true")));//"Engage SLW; True, False
-                        if (GUI.Button(new Rect(leftIndent + ((contentWidth - (2 * leftIndent)) / 2), (TargetLines * entryHeight), ((contentWidth - (2 * leftIndent)) / 2), entryHeight),
-                            Masslabel, ActiveWeaponManager.targetMass ? BDGuiSkin.box : BDGuiSkin.button))
+                        if (GUI.Button(new Rect(leftIndent + (contentWidth - 2 * leftIndent) / 2, TargetLines * entryHeight, (contentWidth - 2 * leftIndent) / 2, entryHeight), Masslabel, ActiveWeaponManager.targetMass ? BDGuiSkin.box : BDGuiSkin.button))
                         {
                             ActiveWeaponManager.targetMass = !ActiveWeaponManager.targetMass;
                             ActiveWeaponManager.StartGuardTurretFiring();
@@ -1500,8 +1493,7 @@ namespace BDArmory.UI
                         }
                         TargetLines += 1.1f;
                         string Randomlabel = StringUtils.Localize("#LOC_BDArmory_Random", (ActiveWeaponManager.targetRandom ? StringUtils.Localize("#LOC_BDArmory_false") : StringUtils.Localize("#LOC_BDArmory_true")));//"Engage Surface; True, False
-                        if (GUI.Button(new Rect(leftIndent, (TargetLines * entryHeight), ((contentWidth - (2 * leftIndent)) / 2), entryHeight),
-                            Randomlabel, ActiveWeaponManager.targetRandom ? BDGuiSkin.box : BDGuiSkin.button))
+                        if (GUI.Button(new Rect(leftIndent, TargetLines * entryHeight, (contentWidth - 2 * leftIndent) / 2, entryHeight), Randomlabel, ActiveWeaponManager.targetRandom ? BDGuiSkin.box : BDGuiSkin.button))
                         {
                             ActiveWeaponManager.targetRandom = !ActiveWeaponManager.targetRandom;
                             ActiveWeaponManager.StartGuardTurretFiring();
@@ -1522,11 +1514,9 @@ namespace BDArmory.UI
                             + (ActiveWeaponManager.targetWeapon ? StringUtils.Localize("#LOC_BDArmory_Weapons") + "; " : "")
                             + (ActiveWeaponManager.targetWeapon ? StringUtils.Localize("#LOC_BDArmory_Random") + "; " : "");
                         GUI.EndGroup();
-                        TargetLines += 0.1f;
                     }
                     TargetingHeight = Mathf.Lerp(TargetingHeight, TargetLines, 0.15f);
                     guardLines += TargetingHeight;
-                    guardLines += 0.1f;
 
                     showEngageList = GUI.Toggle(ButtonRect(++guardLines), showEngageList, showEngageList ? StringUtils.Localize("#LOC_BDArmory_DisableEngageOptions") : StringUtils.Localize("#LOC_BDArmory_EnableEngageOptions"), showEngageList ? BDGuiSkin.box : BDGuiSkin.button);//"Enable/Disable Engagement options"
                     guardLines += 0.25f;
@@ -1534,45 +1524,40 @@ namespace BDArmory.UI
                     float EngageLines = 0;
                     if (showEngageList && showGuardMenu && !toolMinimized)
                     {
-                        EngageLines += 0.1f;
-                        GUI.BeginGroup(
-                            new Rect(5, contentTop + (guardLines * entryHeight), columnWidth - 10, EngageHeight * entryHeight),
-                            GUIContent.none, BDGuiSkin.box);
+                        contentWidth = columnWidth - 30;
+                        guardLines += 0.25f;
+                        GUI.BeginGroup(new Rect(10, contentTop + guardLines * entryHeight, contentWidth, (EngageHeight + 0.25f) * entryHeight), GUIContent.none, BDGuiSkin.box);
                         EngageLines += 0.25f;
 
                         string Airlabel = StringUtils.Localize("#LOC_BDArmory_EngageAir", (ActiveWeaponManager.engageAir ? StringUtils.Localize("#LOC_BDArmory_false") : StringUtils.Localize("#LOC_BDArmory_true")));//"Engage Air; True, False
-                        if (GUI.Button(new Rect(leftIndent, (EngageLines * entryHeight), ((contentWidth - (2 * leftIndent)) / 2), entryHeight),
-                            Airlabel, ActiveWeaponManager.engageAir ? BDGuiSkin.box : BDGuiSkin.button))
+                        if (GUI.Button(new Rect(leftIndent, EngageLines * entryHeight, (contentWidth - 2 * leftIndent) / 2, entryHeight), Airlabel, ActiveWeaponManager.engageAir ? BDGuiSkin.box : BDGuiSkin.button))
                         {
                             ActiveWeaponManager.ToggleEngageAir();
                         }
                         string Missilelabel = StringUtils.Localize("#LOC_BDArmory_EngageMissile", (ActiveWeaponManager.engageMissile ? StringUtils.Localize("#LOC_BDArmory_false") : StringUtils.Localize("#LOC_BDArmory_true")));//"Engage Missile; True, False
-                        if (GUI.Button(new Rect(leftIndent + ((contentWidth - (2 * leftIndent)) / 2), (EngageLines * entryHeight), ((contentWidth - (2 * leftIndent)) / 2), entryHeight),
-                            Missilelabel, ActiveWeaponManager.engageMissile ? BDGuiSkin.box : BDGuiSkin.button))
+                        if (GUI.Button(new Rect(leftIndent + (contentWidth - 2 * leftIndent) / 2, EngageLines * entryHeight, (contentWidth - 2 * leftIndent) / 2, entryHeight), Missilelabel, ActiveWeaponManager.engageMissile ? BDGuiSkin.box : BDGuiSkin.button))
                         {
                             ActiveWeaponManager.ToggleEngageMissile();
                         }
                         EngageLines += 1.1f;
                         string Srflabel = StringUtils.Localize("#LOC_BDArmory_EngageSurface", (ActiveWeaponManager.engageSrf ? StringUtils.Localize("#LOC_BDArmory_false") : StringUtils.Localize("#LOC_BDArmory_true")));//"Engage Surface; True, False
-                        if (GUI.Button(new Rect(leftIndent, (EngageLines * entryHeight), ((contentWidth - (2 * leftIndent)) / 2), entryHeight),
-                            Srflabel, ActiveWeaponManager.engageSrf ? BDGuiSkin.box : BDGuiSkin.button))
+                        if (GUI.Button(new Rect(leftIndent, EngageLines * entryHeight, (contentWidth - 2 * leftIndent) / 2, entryHeight), Srflabel, ActiveWeaponManager.engageSrf ? BDGuiSkin.box : BDGuiSkin.button))
                         {
                             ActiveWeaponManager.ToggleEngageSrf();
                         }
 
                         string SLWlabel = StringUtils.Localize("#LOC_BDArmory_EngageSLW", (ActiveWeaponManager.engageSLW ? StringUtils.Localize("#LOC_BDArmory_false") : StringUtils.Localize("#LOC_BDArmory_true")));//"Engage SLW; True, False
-                        if (GUI.Button(new Rect(leftIndent + ((contentWidth - (2 * leftIndent)) / 2), (EngageLines * entryHeight), ((contentWidth - (2 * leftIndent)) / 2), entryHeight),
-                            SLWlabel, ActiveWeaponManager.engageSLW ? BDGuiSkin.box : BDGuiSkin.button))
+                        if (GUI.Button(new Rect(leftIndent + (contentWidth - 2 * leftIndent) / 2, EngageLines * entryHeight, (contentWidth - 2 * leftIndent) / 2, entryHeight), SLWlabel, ActiveWeaponManager.engageSLW ? BDGuiSkin.box : BDGuiSkin.button))
                         {
                             ActiveWeaponManager.ToggleEngageSLW();
                         }
                         EngageLines += 1.1f;
                         GUI.EndGroup();
-                        EngageLines += 0.1f;
                     }
                     EngageHeight = Mathf.Lerp(EngageHeight, EngageLines, 0.15f);
-                    guardLines += EngageHeight + 1;
+                    guardLines += EngageHeight;
                     GUI.EndGroup();
+                    ++guardLines;
                 }
                 guardHeight = Mathf.Lerp(guardHeight, guardLines, 0.15f);
                 line += guardHeight;
@@ -1786,7 +1771,7 @@ namespace BDArmory.UI
                         numberOfModules++;
                         bool isEnabled = ActiveWeaponManager.rwr.displayRWR;
                         string label = StringUtils.Localize("#LOC_BDArmory_WMWindow_RadarWarning");//"Radar Warning Receiver"
-                        Rect rwrRect = new Rect(leftIndent, +(moduleLines * entryHeight), contentWidth, entryHeight);
+                        Rect rwrRect = new Rect(leftIndent, +(moduleLines * entryHeight), columnWidth - 2 * leftIndent, entryHeight);
                         if (GUI.Button(rwrRect, label, isEnabled ? centerLabelOrange : centerLabel))
                         {
                             if (isEnabled)
@@ -1818,7 +1803,7 @@ namespace BDArmory.UI
                                 moduleStyle = centerLabelRed;
                                 label = $"[{label}]";
                             }
-                            if (GUI.Button(new Rect(leftIndent, +(moduleLines * entryHeight), contentWidth, entryHeight),
+                            if (GUI.Button(new Rect(leftIndent, +(moduleLines * entryHeight), columnWidth - 2 * leftIndent, entryHeight),
                                 label, moduleStyle))
                             {
                                 if (isActive)
@@ -1841,7 +1826,7 @@ namespace BDArmory.UI
                             numberOfModules++;
                             GUIStyle moduleStyle = mr.Current.radarEnabled ? centerLabelBlue : centerLabel;
                             string label = mr.Current.radarName;
-                            if (GUI.Button(new Rect(leftIndent, +(moduleLines * entryHeight), contentWidth, entryHeight),
+                            if (GUI.Button(new Rect(leftIndent, +(moduleLines * entryHeight), columnWidth - 2 * leftIndent, entryHeight),
                                 label, moduleStyle))
                             {
                                 mr.Current.Toggle();
@@ -1855,7 +1840,7 @@ namespace BDArmory.UI
                             numberOfModules++;
                             GUIStyle moduleStyle = mr.Current.irstEnabled ? centerLabelBlue : centerLabel;
                             string label = mr.Current.IRSTName;
-                            if (GUI.Button(new Rect(leftIndent, +(moduleLines * entryHeight), contentWidth, entryHeight),
+                            if (GUI.Button(new Rect(leftIndent, +(moduleLines * entryHeight), columnWidth - 2 * leftIndent, entryHeight),
                                 label, moduleStyle))
                             {
                                 mr.Current.Toggle();
@@ -1872,7 +1857,7 @@ namespace BDArmory.UI
                             numberOfModules++;
                             GUIStyle moduleStyle = jammer.Current.jammerEnabled ? centerLabelBlue : centerLabel;
                             string label = jammer.Current.part.partInfo.title;
-                            if (GUI.Button(new Rect(leftIndent, +(moduleLines * entryHeight), contentWidth, entryHeight),
+                            if (GUI.Button(new Rect(leftIndent, +(moduleLines * entryHeight), columnWidth - 2 * leftIndent, entryHeight),
                                 label, moduleStyle))
                             {
                                 jammer.Current.Toggle();
@@ -1889,7 +1874,7 @@ namespace BDArmory.UI
                             numberOfModules++;
                             GUIStyle moduleStyle = cloak.Current.cloakEnabled ? centerLabelBlue : centerLabel;
                             string label = cloak.Current.part.partInfo.title;
-                            if (GUI.Button(new Rect(leftIndent, +(moduleLines * entryHeight), contentWidth, entryHeight),
+                            if (GUI.Button(new Rect(leftIndent, +(moduleLines * entryHeight), columnWidth - 2 * leftIndent, entryHeight),
                                 label, moduleStyle))
                             {
                                 cloak.Current.Toggle();
@@ -1906,7 +1891,7 @@ namespace BDArmory.UI
                             numberOfModules++;
                             GUIStyle moduleStyle = module.Current.Enabled ? centerLabelBlue : centerLabel;
                             string label = module.Current.Name;
-                            if (GUI.Button(new Rect(leftIndent, +(moduleLines * entryHeight), contentWidth, entryHeight),
+                            if (GUI.Button(new Rect(leftIndent, +(moduleLines * entryHeight), columnWidth - 2 * leftIndent, entryHeight),
                                 label, moduleStyle))
                             {
                                 module.Current.Toggle();
@@ -1917,7 +1902,7 @@ namespace BDArmory.UI
                     //GPS coordinator
                     GUIStyle gpsModuleStyle = showWindowGPS ? centerLabelBlue : centerLabel;
                     numberOfModules++;
-                    if (GUI.Button(new Rect(leftIndent, +(moduleLines * entryHeight), contentWidth, entryHeight),
+                    if (GUI.Button(new Rect(leftIndent, +(moduleLines * entryHeight), columnWidth - 2 * leftIndent, entryHeight),
                         StringUtils.Localize("#LOC_BDArmory_WMWindow_GPSCoordinator"), gpsModuleStyle))//"GPS Coordinator"
                     {
                         showWindowGPS = !showWindowGPS;
@@ -1931,7 +1916,7 @@ namespace BDArmory.UI
                             ? centerLabelBlue
                             : centerLabel;
                         numberOfModules++;
-                        if (GUI.Button(new Rect(leftIndent, +(moduleLines * entryHeight), contentWidth, entryHeight),
+                        if (GUI.Button(new Rect(leftIndent, +(moduleLines * entryHeight), columnWidth - 2 * leftIndent, entryHeight),
                             StringUtils.Localize("#LOC_BDArmory_WMWindow_WingCommand"), wingComStyle))//"Wing Command"
                         {
                             ActiveWeaponManager.wingCommander.ToggleGUI();
@@ -2013,7 +1998,7 @@ namespace BDArmory.UI
             }
             else
             {
-                GUI.Label(new Rect(leftIndent, contentTop + (line * entryHeight), contentWidth, entryHeight),
+                GUI.Label(new Rect(leftIndent, contentTop + (line * entryHeight), columnWidth - 2 * leftIndent, entryHeight),
                    StringUtils.Localize("#LOC_BDArmory_WMWindow_NoWeaponManager"), BDGuiSkin.box);// "No Weapon Manager found."
                 line++;
             }
