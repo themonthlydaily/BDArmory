@@ -92,7 +92,9 @@ namespace BDArmory.Weapons.Missiles
         public float engineFailureRate = 0f;                              // How often the missile engine will fail to start (0-1), evaluated once on missile launch
 
         [KSPField]
-        public float guidanceFailureRate = 0f;                              // How often the missile guidance will fail (0-1), evaluated every frame after launch
+        public float guidanceFailureRate = 0f;                              // Probability the missile guidance will fail per second (0-1), evaluated every frame after launch
+
+        public float guidanceFailureRatePerFrame = 0f;                      // guidanceFailureRate (per second) converted to per frame probability
 
         [KSPField]
         public bool guidanceActive = true;
@@ -262,6 +264,8 @@ namespace BDArmory.Weapons.Missiles
         public Vessel SourceVessel { get; set; } = null;
 
         public bool HasExploded { get; set; } = false;
+
+        public bool FuseFailed { get; set; } = false;
 
         public bool HasDied { get; set; } = false;
 

@@ -646,6 +646,7 @@ namespace BDArmory.Weapons.Missiles
             InitializeEngagementRange(minStaticLaunchRange, maxStaticLaunchRange);
             SetInitialDetonationDistance();
             uncagedLock = (allAspect) ? allAspect : uncagedLock;
+            guidanceFailureRatePerFrame = (guidanceFailureRate >= 1) ? 1f : 1f - Mathf.Exp(Mathf.Log(1f - guidanceFailureRate) * Time.fixedDeltaTime); // Convert from per-second failure rate to per-frame failure rate
             if (multiLauncher != null)
             {
                 if (multiLauncher.isClusterMissile)
@@ -1338,6 +1339,7 @@ namespace BDArmory.Weapons.Missiles
 
                     var distThreshold = 0.5f * GetBlastRadius();
                     if (sqrDist < distThreshold * distThreshold) part.Destroy();
+                    if (FuseFailed) part.Destroy();
 
                     isTimed = true;
                     detonationTime = TimeIndex + 1.5f;
@@ -2244,7 +2246,7 @@ namespace BDArmory.Weapons.Missiles
 
         public override void Detonate()
         {
-            if (HasExploded || !HasFired) return;
+            if (HasExploded || FuseFailed || !HasFired) return;
 
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: Detonate Triggered");
 
@@ -2286,6 +2288,10 @@ namespace BDArmory.Weapons.Missiles
                     var tnt = part.FindModuleImplementing<BDExplosivePart>();
                     tnt.sourcevessel = SourceVessel;
                     tnt.DetonateIfPossible();
+                    FuseFailed = tnt.fuseFailed;
+                    guidanceActive = false;
+                    if (FuseFailed)
+                        HasExploded = false;
                 }
                 else if (warheadType == WarheadTypes.Nuke)
                 {
@@ -2298,7 +2304,7 @@ namespace BDArmory.Weapons.Missiles
 
                     ExplosionFx.CreateExplosion(position, blastPower, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, SourceVessel.vesselName, GetShortName(), default(Vector3), -1, false, part.mass * 1000);
                 }
-                if (part != null)
+                if (part != null && !FuseFailed)
                 {
                     DestroyMissile(); //splitting this off to a separate function so the clustermissile MultimissileLaunch can call it when the MML launch ienumerator is done
                 }
