@@ -44,6 +44,7 @@ namespace BDArmory.Utils
                 BLparts.SetValue("Part4", "ISRU*", true);
                 BLparts.SetValue("Part5", "Scanner*", true);
                 BLparts.SetValue("Part5", "Drill*", true);
+                BLparts.SetValue("Part6", "PotatoRoid", true);
 
                 fileNode.Save(settingsConfigURL);
             }
