@@ -1,4 +1,11 @@
-﻿v1.5.8.0
+﻿IMPROVEMENTS / FIXES
+- General:
+	- Blacklist the PotatoRoid due to it not having a valid prefab (they get procedurally generated) and causing NREs.
+	- Add try-catch around setting the gear action group due to the FSM sometimes breaking it and breaking pilot initialisation.
+- UI:
+	- Add a keybind for targeting the next GPS target.
+
+v1.5.8.0
 IMPROVEMENTS / FIXES
 - General:
 	- Fix Firebottle mass not resetting if a part switched from fueltank to structural.
