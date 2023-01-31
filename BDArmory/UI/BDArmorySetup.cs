@@ -2055,77 +2055,77 @@ namespace BDArmory.UI
             BDTeam myTeam = ActiveWeaponManager.Team;
             if (showTargets)
             {
-                List<GPSTargetInfo>.Enumerator coordinate = BDATargetManager.GPSTargetList(myTeam).GetEnumerator();
-                while (coordinate.MoveNext())
-                {
-                    Color origWColor = GUI.color;
-                    if (coordinate.Current.EqualsTarget(ActiveWeaponManager.designatedGPSInfo))
+                using (var coordinate = BDATargetManager.GPSTargetList(myTeam).GetEnumerator())
+                    while (coordinate.MoveNext())
                     {
-                        GUI.color = XKCDColors.LightOrange;
-                    }
-
-                    string label = BodyUtils.FormattedGeoPosShort(coordinate.Current.gpsCoordinates, false);
-                    float nameWidth = 100;
-                    if (editingGPSName && index == editingGPSNameIndex)
-                    {
-                        if (validGPSName && Event.current.type == EventType.KeyDown &&
-                            Event.current.keyCode == KeyCode.Return)
+                        Color origWColor = GUI.color;
+                        if (coordinate.Current.EqualsTarget(ActiveWeaponManager.designatedGPSInfo))
                         {
-                            editingGPSName = false;
-                            hasEnteredGPSName = true;
+                            GUI.color = XKCDColors.LightOrange;
                         }
-                        else
+
+                        string label = BodyUtils.FormattedGeoPosShort(coordinate.Current.gpsCoordinates, false);
+                        float nameWidth = 100;
+                        if (editingGPSName && index == editingGPSNameIndex)
                         {
-                            Color origColor = GUI.color;
-                            if (newGPSName.Contains(";") || newGPSName.Contains(":") || newGPSName.Contains(","))
+                            if (validGPSName && Event.current.type == EventType.KeyDown &&
+                                Event.current.keyCode == KeyCode.Return)
                             {
-                                validGPSName = false;
-                                GUI.color = Color.red;
+                                editingGPSName = false;
+                                hasEnteredGPSName = true;
                             }
                             else
                             {
-                                validGPSName = true;
+                                Color origColor = GUI.color;
+                                if (newGPSName.Contains(";") || newGPSName.Contains(":") || newGPSName.Contains(","))
+                                {
+                                    validGPSName = false;
+                                    GUI.color = Color.red;
+                                }
+                                else
+                                {
+                                    validGPSName = true;
+                                }
+
+                                newGPSName = GUI.TextField(
+                                  new Rect(0, gpsEntryCount * gpsEntryHeight, nameWidth, gpsEntryHeight), newGPSName, 12, inputFieldStyle);
+                                GUI.color = origColor;
                             }
-
-                            newGPSName = GUI.TextField(
-                              new Rect(0, gpsEntryCount * gpsEntryHeight, nameWidth, gpsEntryHeight), newGPSName, 12, inputFieldStyle);
-                            GUI.color = origColor;
                         }
-                    }
-                    else
-                    {
-                        if (GUI.Button(new Rect(0, gpsEntryCount * gpsEntryHeight, nameWidth, gpsEntryHeight),
-                          coordinate.Current.name,
-                          BDGuiSkin.button))
+                        else
                         {
-                            editingGPSName = true;
-                            editingGPSNameIndex = index;
-                            newGPSName = coordinate.Current.name;
+                            if (GUI.Button(new Rect(0, gpsEntryCount * gpsEntryHeight, nameWidth, gpsEntryHeight),
+                              coordinate.Current.name,
+                              BDGuiSkin.button))
+                            {
+                                editingGPSName = true;
+                                editingGPSNameIndex = index;
+                                newGPSName = coordinate.Current.name;
+                            }
                         }
-                    }
 
-                    if (
-                      GUI.Button(
-                        new Rect(nameWidth, gpsEntryCount * gpsEntryHeight, listRect.width - gpsEntryHeight - nameWidth,
-                          gpsEntryHeight), label, BDGuiSkin.button))
-                    {
-                        ActiveWeaponManager.designatedGPSInfo = coordinate.Current;
-                        editingGPSName = false;
-                    }
+                        if (
+                          GUI.Button(
+                            new Rect(nameWidth, gpsEntryCount * gpsEntryHeight, listRect.width - gpsEntryHeight - nameWidth,
+                              gpsEntryHeight), label, BDGuiSkin.button))
+                        {
+                            ActiveWeaponManager.designatedGPSInfo = coordinate.Current;
+                            ActiveWeaponManager.designatedGPSCoordsIndex = index;
+                            editingGPSName = false;
+                        }
 
-                    if (
-                      GUI.Button(
-                        new Rect(listRect.width - gpsEntryHeight, gpsEntryCount * gpsEntryHeight, gpsEntryHeight,
-                          gpsEntryHeight), "X", BDGuiSkin.button))
-                    {
-                        indexToRemove = index;
-                    }
+                        if (
+                          GUI.Button(
+                            new Rect(listRect.width - gpsEntryHeight, gpsEntryCount * gpsEntryHeight, gpsEntryHeight,
+                              gpsEntryHeight), "X", BDGuiSkin.button))
+                        {
+                            indexToRemove = index;
+                        }
 
-                    gpsEntryCount++;
-                    index++;
-                    GUI.color = origWColor;
-                }
-                coordinate.Dispose();
+                        gpsEntryCount++;
+                        index++;
+                        GUI.color = origWColor;
+                    }
             }
 
             if (hasEnteredGPSName && editingGPSNameIndex < BDATargetManager.GPSTargetList(myTeam).Count)

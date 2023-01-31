@@ -28,6 +28,7 @@ namespace BDArmory.Settings
         public static BDInputInfo TGP_COM = new BDInputInfo("CoM-Track");
         public static BDInputInfo TGP_NV = new BDInputInfo("Toggle NV");
         public static BDInputInfo TGP_RESET = new BDInputInfo("Reset");
+        public static BDInputInfo TGP_SELECT_NEXT_GPS_TARGET = new BDInputInfo("Select Next GPS Target");
 
         //RADAR
         public static BDInputInfo RADAR_LOCK = new BDInputInfo("Lock/Unlock");
