@@ -42,6 +42,7 @@ namespace BDArmory.FX
         public float CASEClamp { get; set; }
         public float dmgMult { get; set; }
         public float apMod { get; set; }
+        public float travelDistance { get; set; }
 
         public Part hitpart { get; set; }
         public float TimeIndex => Time.time - StartTime;
@@ -337,6 +338,10 @@ namespace BDArmory.FX
                                             if (BDACompetitionMode.Instance.Scores.RegisterMissileHit(sourceVesselName, damagedVesselName, 1))
                                                 registered = true;
                                             break;
+                                        case ExplosionSourceType.Bullet:
+                                            if (travelDistance > 0)
+                                                registered = true;
+                                            break;
                                     }
                                     if (registered)
                                     {
@@ -383,22 +388,28 @@ namespace BDArmory.FX
             }
             if (explosionEventsVesselsHit.Count > 0)
             {
-                if (ExplosionSource != ExplosionSourceType.Rocket) // Bullet explosions aren't registered in explosionEventsVesselsHit.
-                {
-                    string message = "";
-                    foreach (var vesselName in explosionEventsVesselsHit.Keys)
-                        message += (message == "" ? "" : " and ") + vesselName + " had " + explosionEventsVesselsHit[vesselName];
-                    if (ExplosionSource == ExplosionSourceType.Missile)
+                string message = "";
+                foreach (var vesselName in explosionEventsVesselsHit.Keys)
+                    message += (message == "" ? "" : " and ") + vesselName + " had " + explosionEventsVesselsHit[vesselName];
+                switch (ExplosionSource)
                     {
-                        message += " parts damaged due to missile strike";
+                        case ExplosionSourceType.Missile:
+                            message += " parts damaged due to missile strike";
+                            message += (SourceWeaponName != null ? $" ({SourceWeaponName})" : "") + (sourceVesselName != null ? $" from {sourceVesselName}" : "") + ".";
+                            break;
+                        case ExplosionSourceType.Bullet: 
+                            message += " parts damaged from ";
+                            message += (sourceVesselName != null ? $" from {sourceVesselName}'s" : "") + (SourceWeaponName != null ? $" ({SourceWeaponName})" : "shell hit") + ($" at {travelDistance:F3}m") + ".";
+                            break;
+                        case ExplosionSourceType.Rocket:
+                        {
+                            if (travelDistance < 0) break;
+                            message += " parts damaged from";
+                            message += (sourceVesselName != null ? $" from {sourceVesselName}'s" : "") + (SourceWeaponName != null ? $" ({SourceWeaponName})" : "rocket hit") + ($" at {travelDistance:F3}m") + ".";
+                            break;
+                        }
                     }
-                    else //ExplosionType BattleDamage || Other
-                    {
-                        message += " parts damaged due to explosion";
-                    }
-                    message += (SourceWeaponName != null ? $" ({SourceWeaponName})" : "") + (sourceVesselName != null ? $" from {sourceVesselName}" : "") + ".";
-                    BDACompetitionMode.Instance.competitionStatus.Add(message);
-                }
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
                 // Note: damage hasn't actually been applied to the parts yet, just assigned as events, so we can't know if they survived.
                 foreach (var vesselName in explosionEventsVesselsHit.Keys) // Note: sourceVesselName is already checked for being in the competition before damagedVesselName is added to explosionEventsVesselsHitByMissiles, so we don't need to check it here.
                 {
@@ -1086,7 +1097,7 @@ namespace BDArmory.FX
         public static void CreateExplosion(Vector3 position, float tntMassEquivalent, string explModelPath, string soundPath, ExplosionSourceType explosionSourceType,
             float caliber = 120, Part explosivePart = null, string sourceVesselName = null, string sourceWeaponName = null, Vector3 direction = default(Vector3),
             float angle = 100f, bool isfx = false, float projectilemass = 0, float caseLimiter = -1, float dmgMutator = 1, string type = "standard", Part Hitpart = null,
-            float apMod = 1f)
+            float apMod = 1f, float distancetravelled = -1)
         {
             if (BDArmorySettings.DEBUG_MISSILES && explosionSourceType == ExplosionSourceType.Missile && (!explosionFXPools.ContainsKey(explModelPath) || !audioClips.ContainsKey(soundPath)))
             { Debug.Log($"[BDArmory.ExplosionFX]: Setting up object pool for explosion of type {explModelPath} with audio {soundPath}{(sourceWeaponName != null ? $" for {sourceWeaponName}" : "")}"); }
@@ -1143,6 +1154,7 @@ namespace BDArmory.FX
                     // by W. M. Evans. Jet is approximately 20% of the caliber.
 
                     eFx.apMod = apMod;
+                    eFx.travelDistance = distancetravelled;
                     break;
                 default:
                     eFx.warheadType = WarheadTypes.Standard;

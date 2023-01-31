@@ -1,4 +1,11 @@
-﻿IMPROVEMENTS / FIXES
+﻿-Add whitelist option for guns/rockets/lasers to report hits in the competition marquee.
+-Fix heatseeker missiles fired from relaodable rails occasionally losing lock on firing
+
+
+
+
+
+IMPROVEMENTS / FIXES
 - General:
 	- Fix Firebottle mass not resetting if a part switched from fueltank to structural
 - UI:

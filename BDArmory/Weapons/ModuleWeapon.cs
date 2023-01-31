@@ -2444,7 +2444,7 @@ namespace BDArmory.Weapons
                                         if (HEpulses)
                                         {
                                             ExplosionFx.CreateExplosion(hit.point,
-                                                           (laserDamage / 30000),
+                                                           (laserDamage / 10000),
                                                            explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName, null);
                                         }
                                         if (Impulse != 0)
@@ -2501,6 +2501,11 @@ namespace BDArmory.Weapons
                                         BDACompetitionMode.Instance.Scores.RegisterBulletHit(aName, tName, WeaponName, distance);
                                         if (!pulseLaser && laserDamage > 0) BattleDamageHandler.CheckDamageFX(p, caliber, 1 + (damage / initialDamage), HEpulses, false, part.vessel.GetName(), hit, false, false);
                                         //pulse lasers check battle damage earlier in the code
+                                        if (ProjectileUtils.isReportingWeapon(part) && BDACompetitionMode.Instance.competitionIsActive)
+                                        {
+                                            string message = $"{tName} hit by {aName}'s {OriginalShortName} at {distance:F3}m!";
+                                            BDACompetitionMode.Instance.competitionStatus.Add(message);
+                                        }
                                     }
                                     else
                                     {

@@ -324,7 +324,7 @@ namespace BDArmory.Damage
             guiArmorTypeString = SelectedArmorType;
             guiHullTypeString = StringUtils.Localize(HullInfo.materials[HullInfo.materialNames[(int)HullTypeNum - 1]].localizedName);
             skinskinConduction = part.partInfo.partPrefab.skinSkinConductionMult;
-            skinInternalConduction = part.partInfo.partPrefab.skinSkinConductionMult;
+            skinInternalConduction = part.partInfo.partPrefab.skinInternalConductionMult;
             if (HighLogic.LoadedSceneIsFlight)
             {
                 if (BDArmorySettings.RESET_ARMOUR)
@@ -934,7 +934,7 @@ namespace BDArmory.Damage
                                     armorVolume = (float)Math.Round(hitpoints / hitpointMultiplier / 0.333 / 350, 1); //stock is 0.25 lift/m2, so...                                                                                                               //edges contribute to HP when they shouldn't; suggestion was to use tank volume instead (which would also allow thickness to play a role in HP), try ProceduralWing.aeroStatVolume * 700 
                                 }
                             }
-                            if (!BDArmorySettings.PWING_EDGE_LIFT || BDArmorySettings.RUNWAY_PROJECT || part.name.Contains("B9.Aero.Wing.Procedural.Panel")) //method to make pwings balanced with stock. 
+                            if (!BDArmorySettings.PWING_EDGE_LIFT || BDArmorySettings.PWING_THICKNESS_AFFECT_MASS_HP || BDArmorySettings.RUNWAY_PROJECT || part.name.Contains("B9.Aero.Wing.Procedural.Panel")) //method to make pwings balanced with stock. 
                             {
                                 hitpoints = -1;
                                 armorVolume = -1;

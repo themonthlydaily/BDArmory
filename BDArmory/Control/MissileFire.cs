@@ -5771,7 +5771,7 @@ namespace BDArmory.Control
             return matchFound;
         }
 
-        public void SendTargetDataToMissile(MissileBase ml)
+        public void SendTargetDataToMissile(MissileBase ml, bool clearHeat = true)
         { //TODO BDModularGuidance: implement all targetings on base
             if (ml.TargetingMode == MissileBase.TargetingModes.Laser && laserPointDetected)
             {
@@ -5807,7 +5807,7 @@ namespace BDArmory.Control
                 MissileLauncher mml = ml as MissileLauncher;
                 if (BDArmorySettings.DEBUG_MISSILES)
                     Debug.Log("[BDArmory.MissileData]: Missile multi-launcher or reloadable rail found...");
-                if (!mml.multiLauncher) heatTarget = TargetSignatureData.noTarget;
+                if (clearHeat) heatTarget = TargetSignatureData.noTarget;
                 if (BDArmorySettings.DEBUG_MISSILES)
                     Debug.Log("[BDArmory.MissileData]: Sending targetInfo to heat Missile...");
                 ml.targetVessel = ml.heatTarget.vessel.gameObject.GetComponent<TargetInfo>();

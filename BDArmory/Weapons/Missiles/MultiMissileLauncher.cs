@@ -339,7 +339,7 @@ namespace BDArmory.Weapons.Missiles
                             {
                                 var ml = pSym.Current.FindModuleImplementing<MissileBase>();
                                 if (ml == null) continue;
-                                if (wpm != null) wpm.SendTargetDataToMissile(ml);
+                                if (wpm != null) wpm.SendTargetDataToMissile(ml, false);
                                 MissileLauncher launcher = ml as MissileLauncher;
                                 if (launcher != null)
                                 {
@@ -561,7 +561,7 @@ namespace BDArmory.Weapons.Missiles
                     }
                     else
                     {
-                        if (wpm != null) wpm.SendTargetDataToMissile(ml);
+                        if (wpm != null) wpm.SendTargetDataToMissile(ml, false);
                     }
                 }
                 else

@@ -48,7 +48,7 @@ namespace BDArmory.Utils
                 fileNode.Save(settingsConfigURL);
             }
         }
-            static HashSet<string> IgnoredPartNames;
+        static HashSet<string> IgnoredPartNames;
         public static bool IsIgnoredPart(Part part)
         {
             if (IgnoredPartNames == null)
@@ -88,7 +88,24 @@ namespace BDArmory.Utils
             }
             return armorParts.Contains(part.partInfo.name);
         }
+        public static void SetUpWeaponReporting()
+        {
+            var fileNode = ConfigNode.Load(settingsConfigURL);
+            if (fileNode == null)
+            {
+                fileNode = new ConfigNode();
+                if (!Directory.GetParent(settingsConfigURL).Exists)
+                { Directory.GetParent(settingsConfigURL).Create(); }
+                if (!fileNode.HasNode("AnnouncerGuns"))
+                {
+                    fileNode.AddNode("AnnouncerGuns");
+                }
+                ConfigNode Iparts = fileNode.GetNode("AnnouncerGuns");
+                Iparts.SetValue("Part1", "bahaRailgun", true);
 
+                fileNode.Save(settingsConfigURL);
+            }
+        }
         static HashSet<string> materialsBlacklist;
         public static bool isMaterialBlackListpart(Part Part)
         {
@@ -117,7 +134,32 @@ namespace BDArmory.Utils
             }
             return ProjectileUtils.materialsBlacklist.Contains(Part.partInfo.name);
         }
+        static HashSet<string> reportingWeaponList;
+        public static bool isReportingWeapon(Part Part)
+        {
+            if (reportingWeaponList == null)
+            {
+                reportingWeaponList = new HashSet<string> { };
 
+                var fileNode = ConfigNode.Load(settingsConfigURL);
+                if (fileNode.HasNode("AnnouncerGuns"))
+                {
+                    ConfigNode parts = fileNode.GetNode("AnnouncerGuns");
+                    for (int i = 0; i < parts.CountValues; i++)
+                    {
+                        if (parts.values[i].value.Contains("*"))
+                        {
+                            string partsName = parts.values[i].value.Trim('*');
+                            reportingWeaponList.UnionWith(PartLoader.LoadedPartsList.Select(p => p.partPrefab.partInfo.name).Where(name => name.Contains(partsName)));
+                        }
+                        else
+                            reportingWeaponList.Add(parts.values[i].value);
+                    }
+                }
+                if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.ProjectileUtils]: Weapon Reporting List: " + string.Join(", ", reportingWeaponList));
+            }
+            return ProjectileUtils.reportingWeaponList.Contains(Part.partInfo.name);
+        }
         public static void ApplyDamage(Part hitPart, RaycastHit hit, float multiplier, float penetrationfactor, float caliber, float projmass, float impactVelocity, float DmgMult, double distanceTraveled, bool explosive, bool incendiary, bool hasRichocheted, Vessel sourceVessel, string name, string team, ExplosionSourceType explosionSource, bool firstHit, bool partAlreadyHit, bool cockpitPen)
         {
             //hitting a vessel Part
