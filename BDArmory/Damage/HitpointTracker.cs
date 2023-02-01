@@ -323,8 +323,7 @@ namespace BDArmory.Damage
             ArmorTypeNum = ArmorInfo.armors.FindIndex(t => t.name == SelectedArmorType) + 1;
             guiArmorTypeString = SelectedArmorType;
             guiHullTypeString = StringUtils.Localize(HullInfo.materials[HullInfo.materialNames[(int)HullTypeNum - 1]].localizedName);
-            // if (part != null && part.partInfo != null && part.partInfo.partPrefab != null) // PotatoRoid, I'm looking at you.
-            if (!ProjectileUtils.isMaterialBlackListpart(part)) // PotatoRoid, I'm looking at you.
+            if (part.partInfo != null && part.partInfo.partPrefab != null) // PotatoRoid, I'm looking at you.
             {
                 skinskinConduction = part.partInfo.partPrefab.skinSkinConductionMult;
                 skinInternalConduction = part.partInfo.partPrefab.skinSkinConductionMult;
@@ -516,7 +515,7 @@ namespace BDArmory.Damage
         {
             yield return new WaitForFixedUpdate();
             if (part == null) yield break;
-            if (!ProjectileUtils.isMaterialBlackListpart(part)) partMass = part.partInfo.partPrefab.mass;
+            if (part.partInfo != null && part.partInfo.partPrefab != null) partMass = part.partInfo.partPrefab.mass;
             _updateMass = true;
             _armorModified = true;
             _hullModified = true;
