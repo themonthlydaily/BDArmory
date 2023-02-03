@@ -405,6 +405,14 @@ namespace BDArmory.Control
         public GPSTargetInfo designatedGPSInfo;
 
         public Vector3d designatedGPSCoords => designatedGPSInfo.gpsCoordinates;
+        public int designatedGPSCoordsIndex = -1;
+        public void SelectNextGPSTarget()
+        {
+            var targets = BDATargetManager.GPSTargetList(Team);
+            if (targets.Count == 0) return;
+            if (++designatedGPSCoordsIndex >= targets.Count) designatedGPSCoordsIndex = 0;
+            designatedGPSInfo = targets[designatedGPSCoordsIndex];
+        }
 
         //weapon slaving
         public bool slavingTurrets = false;
@@ -1352,6 +1360,7 @@ namespace BDArmory.Control
                 if (BDInputUtils.GetKeyDown(BDInputSettingsFields.WEAP_NEXT_KEY)) CycleWeapon(true);
                 if (BDInputUtils.GetKeyDown(BDInputSettingsFields.WEAP_PREV_KEY)) CycleWeapon(false);
                 if (BDInputUtils.GetKeyDown(BDInputSettingsFields.WEAP_TOGGLE_ARMED_KEY)) ToggleArm();
+                if (BDInputUtils.GetKeyDown(BDInputSettingsFields.TGP_SELECT_NEXT_GPS_TARGET)) SelectNextGPSTarget();
 
                 //firing missiles and rockets===
                 if (selectedWeapon != null &&
@@ -6601,7 +6610,7 @@ namespace BDArmory.Control
                 else { hasWeaponsAndAmmo = true; break; } // Other weapon types don't have ammo, or use electric charge, which could recharge.
             }
             outOfAmmo = !hasWeaponsAndAmmo; // Set outOfAmmo if we don't have any guns with compatible ammo.
-            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} has run out of ammo!"); 
+            if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} has run out of ammo!");
             return hasWeaponsAndAmmo;
         }
 
