@@ -5,6 +5,9 @@
 	- Remove HP rounding and lower HP limit for MM-patched parts. Apply health modifier after applying rounding and lower HP limit for non-MM-patched parts.
 - UI:
 	- Add a keybind for targeting the next GPS target.
+	- Parts with zero lift now appear as grey in the lift visualizer.
+- AI / WM:
+	- AI will start evading missiles once the missile engine activates instead of waiting for 1 second after launch.
 
 v1.5.8.0
 IMPROVEMENTS / FIXES

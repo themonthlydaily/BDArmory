@@ -775,10 +775,10 @@ namespace BDArmory.UI
                             if (LiftVisualizer)
                             {
                                 ModuleLiftingSurface wing = parts.Current.GetComponent<ModuleLiftingSurface>();
-                                if (wing != null)
+                                if (wing != null && wing.deflectionLiftCoeff > 0f)
                                     VisualizerColor = Color.HSVToRGB(Mathf.Clamp01(Mathf.Log10(wing.deflectionLiftCoeff + 1f)) / 3, 1, 1);
                                 else
-                                    VisualizerColor = Color.HSVToRGB(0, 1, 1);
+                                    VisualizerColor = Color.HSVToRGB(0, 0, 0.5f);
                             }
                             var r = parts.Current.GetComponentsInChildren<Renderer>();
                             {

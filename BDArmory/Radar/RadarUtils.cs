@@ -1479,7 +1479,7 @@ namespace BDArmory.Radar
                 var missileBlastRadiusSqr = 3f * missile.GetBlastRadius();
                 missileBlastRadiusSqr *= missileBlastRadiusSqr;
 
-                return (missile.HasFired && missile.TimeIndex > missile.dropTime && approaching &&
+                return (missile.HasFired && missile.MissileState > MissileBase.MissileStates.Drop && approaching &&
                             (
                                 (missile.TargetPosition - (mf.vessel.CoM + (mf.vessel.Velocity() * Time.fixedDeltaTime))).sqrMagnitude < missileBlastRadiusSqr || // Target position is within blast radius of missile.
                                 mf.vessel.PredictClosestApproachSqrSeparation(missile.vessel, mf.cmThreshold) < missileBlastRadiusSqr || // Closest approach is within blast radius of missile. 
