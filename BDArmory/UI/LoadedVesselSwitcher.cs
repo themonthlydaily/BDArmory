@@ -562,15 +562,15 @@ namespace BDArmory.UI
                         // DEAD <death order>:<death time>: vesselName(<Score>[, <MissileScore>][, <RammingScore>])[ KILLED|RAMMED BY <otherVesselName>], where <Score> is the number of hits made  <RammingScore> is the number of parts destroyed.
                         deadVesselString.Append($"DEAD {BDACompetitionMode.Instance.Scores.ScoreData[player].deathOrder}:{BDACompetitionMode.Instance.Scores.ScoreData[player].deathTime:0.0} : {player} ({BDACompetitionMode.Instance.Scores.ScoreData[player].hits}");
                         if (BDACompetitionMode.Instance.Scores.ScoreData[player].totalDamagedPartsDueToRockets > 0)
-                            deadVesselString.Append($", {BDACompetitionMode.Instance.Scores.ScoreData[player].totalDamagedPartsDueToRockets}");
+                            deadVesselString.Append($", {BDACompetitionMode.Instance.Scores.ScoreData[player].totalDamagedPartsDueToRockets} rkt");
                         if (BDACompetitionMode.Instance.Scores.ScoreData[player].totalDamagedPartsDueToMissiles > 0)
-                            deadVesselString.Append($", {BDACompetitionMode.Instance.Scores.ScoreData[player].totalDamagedPartsDueToMissiles}");
+                            deadVesselString.Append($", {BDACompetitionMode.Instance.Scores.ScoreData[player].totalDamagedPartsDueToMissiles} mis");
                         if (BDACompetitionMode.Instance.Scores.ScoreData[player].totalDamagedPartsDueToRamming > 0)
-                            deadVesselString.Append($", {BDACompetitionMode.Instance.Scores.ScoreData[player].totalDamagedPartsDueToRamming}");
+                            deadVesselString.Append($", {BDACompetitionMode.Instance.Scores.ScoreData[player].totalDamagedPartsDueToRamming} ram");
                         if (ContinuousSpawning.Instance.vesselsSpawningContinuously && BDACompetitionMode.Instance.Scores.ScoreData[player].tagTotalTime > 0)
-                            deadVesselString.Append($", {BDACompetitionMode.Instance.Scores.ScoreData[player].tagTotalTime:0.0}");
+                            deadVesselString.Append($", {BDACompetitionMode.Instance.Scores.ScoreData[player].tagTotalTime:0.0} tag");
                         else if (BDACompetitionMode.Instance.Scores.ScoreData[player].tagScore > 0)
-                            deadVesselString.Append($", {BDACompetitionMode.Instance.Scores.ScoreData[player].tagScore:0.0}");
+                            deadVesselString.Append($", {BDACompetitionMode.Instance.Scores.ScoreData[player].tagScore:0.0} tag");
                         switch (BDACompetitionMode.Instance.Scores.ScoreData[player].lastDamageWasFrom)
                         {
                             case DamageFrom.Guns:
@@ -712,11 +712,11 @@ namespace BDArmory.UI
             //     postStatus += ", " + (ContinuousSpawning.Instance.vesselsSpawningContinuously ? currentTagTime.ToString("0.0") : currentTagScore.ToString("0.0"));
             // postStatus += ")";
             VSEntryString.Append($" ({currentScore}");
-            if (currentRocketScore > 0) VSEntryString.Append($", {currentRocketScore}");
-            if (currentRamScore > 0) VSEntryString.Append($", {currentRamScore}");
-            if (currentMissileScore > 0) VSEntryString.Append($", {currentMissileScore}");
+            if (currentRocketScore > 0) VSEntryString.Append($", {currentRocketScore} rkt");
+            if (currentMissileScore > 0) VSEntryString.Append($", {currentMissileScore} mis");
+            if (currentRamScore > 0) VSEntryString.Append($", {currentRamScore} ram");
             if (BDArmorySettings.TAG_MODE)
-                VSEntryString.Append($", {(ContinuousSpawning.Instance.vesselsSpawningContinuously ? currentTagTime : currentTagScore):0.0}");
+                VSEntryString.Append($", {(ContinuousSpawning.Instance.vesselsSpawningContinuously ? currentTagTime : currentTagScore):0.0} tag");
             VSEntryString.Append(")");
 
             if (wm.AI != null && wm.AI.currentStatus != null)
