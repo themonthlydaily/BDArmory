@@ -682,7 +682,6 @@ namespace BDArmory.UI
                                     float v_dist = Vector3.Distance(Vector3.Project(col1Pos, Vector3.up),Vector3.Project(col2Pos, Vector3.up));
                                     float l_spacing = Mathf.Round(Mathf.Max(lift1area, lift2area, 0.25f)*100f)/100f; // Round lift to nearest 0.01
                                     float v_factor = Mathf.Pow(Mathf.Clamp01((BDAMath.Sqrt(2 * l_spacing) - v_dist) / (BDAMath.Sqrt(2 * l_spacing) - BDAMath.Sqrt(l_spacing))), 0.1f);
-                                    Debug.Log("[BDSPACE]: dist: " + v_dist + ", v_factor: " + v_factor + ", l_spacing: " + l_spacing);
 
                                     // Add overlapping area
                                     liftStackedAll += a * v_factor;
