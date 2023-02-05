@@ -7,6 +7,7 @@
 	- Add a keybind for targeting the next GPS target.
 	- Add labels to the vessel switcher score entries for rockets, missiles, rams and tag.
 	- Parts with zero lift now appear as grey in the lift visualizer.
+	- Fix issues with wing stacking calculation. Calculation now returns ratio of vertically stacked lift area to total lift area (capped at 100%), regardless of distance between wings (biplanes/triplanes will have a non-zero stack value).
 - AI / WM:
 	- AI will start evading missiles once the missile engine activates instead of waiting for 1 second after launch.
 

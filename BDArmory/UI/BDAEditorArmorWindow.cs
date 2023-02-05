@@ -629,15 +629,8 @@ namespace BDArmory.UI
 
             float liftStackedAll = 0;
             float liftStackedAllEval = 0;
-            float liftStackedHalf = 0;
-            float liftStackedHalfEval = 0;
-
-            float liftStackedAllSqrt = 0;
-            float liftStackedAllEvalSqrt = 0;
-            float liftStackedHalfSqrt = 0;
-            float liftStackedHalfEvalSqrt = 0;
+            List<Part> evaluatedParts = new List<Part>(); ;
             totalLiftStackRatio = 0;
-            Vector3 com = EditorMarker_CoM.findCenterOfMass(EditorLogic.RootPart);
             using (List<Part>.Enumerator parts1 = EditorLogic.fetch.ship.Parts.GetEnumerator())
                 while (parts1.MoveNext())
                 {
@@ -646,74 +639,53 @@ namespace BDArmory.UI
                     ModuleLiftingSurface wing1 = parts1.Current.GetComponent<ModuleLiftingSurface>();
                     if (wing1 != null)
                     {
-                        float lift1 = wing1.deflectionLiftCoeff * Vector3.Project(wing1.transform.forward, Vector3.up).sqrMagnitude; // Only return vertically oriented lift components
-                        float lift1sqrt = BDAMath.Sqrt(lift1);
-                        Vector3 col1pos = wing1.part.partTransform.TransformPoint(wing1.part.CoLOffset);
+                        evaluatedParts.Add(parts1.Current);
+                        float lift1area = wing1.deflectionLiftCoeff * Vector3.Project(wing1.transform.forward, Vector3.up).sqrMagnitude; // Only return vertically oriented lift components
+                        float lift1rad = BDAMath.Sqrt(lift1area / Mathf.PI);
+                        Vector3 col1pos = Vector3.ProjectOnPlane(wing1.part.partTransform.TransformPoint(wing1.part.CoLOffset), Vector3.up);
+                        liftStackedAllEval += lift1area; // Add up total lift areas
 
                         using (List<Part>.Enumerator parts2 = EditorLogic.fetch.ship.Parts.GetEnumerator())
                             while (parts2.MoveNext())
                             {
+                                if (evaluatedParts.Contains(parts2.Current)) continue;
                                 if (parts1.Current == parts2.Current) continue;
                                 if (parts2.Current.IsMissile()) continue;
                                 if (IsAeroBrake(parts2.Current)) continue;
                                 ModuleLiftingSurface wing2 = parts2.Current.GetComponent<ModuleLiftingSurface>();
                                 if (wing2 != null)
                                 {
-                                    float lift2 = wing2.deflectionLiftCoeff * Vector3.Project(wing2.transform.forward, Vector3.up).sqrMagnitude; // Only return vertically oriented lift components
-                                    float lift2sqrt = BDAMath.Sqrt(lift2);
-                                    Vector3 col2pos = wing2.part.partTransform.TransformPoint(wing2.part.CoLOffset);
+                                    float lift2area = wing2.deflectionLiftCoeff * Vector3.Project(wing2.transform.forward, Vector3.up).sqrMagnitude; // Only return vertically oriented lift components
+                                    float lift2rad = BDAMath.Sqrt(lift2area / Mathf.PI);
+                                    Vector3 col2pos = Vector3.ProjectOnPlane(wing2.part.partTransform.TransformPoint(wing2.part.CoLOffset), Vector3.up);
 
                                     float d = Vector3.Distance(col1pos, col2pos);
-                                    float R = lift1;
-                                    float r = lift2;
+                                    float R = lift1rad;
+                                    float r = lift2rad;
 
-                                    float a = (lift1 + lift2) - Vector3.Distance(col1pos, col2pos);
-                                    float total_a = Mathf.PI * lift1 * lift1 + Mathf.PI * lift2 * lift2;
+                                    float a = 0;
 
                                     // Calc overlapping area between two circles
-                                    if (a <= 0)
+                                    if (d >= R + r) // Circles not overlapping
                                         a = 0;
-                                    if (R >= (d + r))
-                                        a = 2 * Mathf.PI * r * r;
-                                    else if (r >= (d + R))
-                                        a = 2 * Mathf.PI * R * R;
-                                    else if (a > 0)
+                                    else if (R >= (d + r)) // Circle 2 inside Circle 1
+                                        a = Mathf.PI * r * r;
+                                    else if (r >= (d + R)) // Circle 1 inside Circle 2
+                                        a = Mathf.PI * R * R;
+                                    else if (d < R + r) // Circles overlapping
                                         a = r * r * Mathf.Acos((d * d + r * r - R * R) / (2 * d * r)) + R * R * Mathf.Acos((d * d + R * R - r * r) / (2 * d * R)) -
                                             0.5f * BDAMath.Sqrt((-d + r + R) * (d + r - R) * (d - r + R) * (d + r + R));
 
-                                    // Evaluate entire craft
+                                    // Add overlapping area
                                     liftStackedAll += a;
-                                    liftStackedAllEval += total_a;
-
-                                    // Alternate sqrt method
-                                    float overlap = (lift1sqrt + lift2sqrt) - Vector3.Distance(col1pos, col2pos);
-                                    liftStackedAllSqrt += Mathf.Max(overlap, 0f);
-                                    liftStackedAllEvalSqrt += lift1sqrt + lift2sqrt;
-
-                                    // Evaluate left/right sides of craft
-                                    if (((col1pos.x - com.x) == 0) || ((col2pos.x - com.x) == 0) || (Mathf.Sign(col1pos.x - com.x) == Mathf.Sign(col2pos.x - com.x)))
-                                    {
-                                        liftStackedHalf += a;
-                                        liftStackedHalfEval += total_a;
-
-                                        // Evaluate left/right sides of craft (alternate method)
-                                        liftStackedHalfSqrt += Mathf.Max(overlap, 0f);
-                                        liftStackedHalfEvalSqrt += lift1sqrt + lift2sqrt;
-                                    }
                                 }
                             }
                     }
                 }
-            // Evaluating the entire craft tends to over-estimate stacking when large wings are close together, but not overlapping. Evaluating left/right fails to estimate
-            // stacking when wings are stacked along the centerline, but otherwise is the preferred estimate. This approach takes the left/right estimate for overlapping area if it is highest,
-            // but otherwise uses the average of the stacking ratios from area and stacking ratios from sqrt(lift).
-            float stackRatioAll = 2 * liftStackedAll / Mathf.Max(liftStackedAllEval, 0.01f);
-            float stackRatioHalf = 2 * liftStackedHalf / Mathf.Max(liftStackedHalfEval, 0.01f);
-
-            float stackRatioAllSqrt = liftStackedAllSqrt / Mathf.Max(liftStackedAllEvalSqrt, 0.01f);
-            float stackRatioHalfSqrt = liftStackedHalfSqrt / Mathf.Max(liftStackedHalfEvalSqrt, 0.01f);
-            float stackRatioSqrt = Mathf.Max(stackRatioHalfSqrt, 0.5f * (stackRatioHalfSqrt + stackRatioAllSqrt));
-            totalLiftStackRatio = Mathf.Max(stackRatioHalf, (stackRatioAll + stackRatioHalf + stackRatioSqrt)/3f);
+            // Look at total overlapping lift area as a percentage of total lift area. Since overlapping lift area for multiple parts can potentially be greater than the total lift area, cap 
+            // the stacking at 100%. Also, multiply stacked lift by two for the edge case where only two parts are evaluated.
+            liftStackedAll *= (evaluatedParts.Count == 2) ? 2 : 1;
+            totalLiftStackRatio = Mathf.Clamp01(liftStackedAll / Mathf.Max(liftStackedAllEval, 0.01f));
         }
 
         bool IsAeroBrake(Part part)
