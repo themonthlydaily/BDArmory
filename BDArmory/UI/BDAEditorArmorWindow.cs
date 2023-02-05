@@ -642,7 +642,8 @@ namespace BDArmory.UI
                         evaluatedParts.Add(parts1.Current);
                         float lift1area = wing1.deflectionLiftCoeff * Vector3.Project(wing1.transform.forward, Vector3.up).sqrMagnitude; // Only return vertically oriented lift components
                         float lift1rad = BDAMath.Sqrt(lift1area / Mathf.PI);
-                        Vector3 col1pos = Vector3.ProjectOnPlane(wing1.part.partTransform.TransformPoint(wing1.part.CoLOffset), Vector3.up);
+                        Vector3 col1Pos = wing1.part.partTransform.TransformPoint(wing1.part.CoLOffset);
+                        Vector3 col1PosProj = Vector3.ProjectOnPlane(col1Pos, Vector3.up);
                         liftStackedAllEval += lift1area; // Add up total lift areas
 
                         using (List<Part>.Enumerator parts2 = EditorLogic.fetch.ship.Parts.GetEnumerator())
@@ -657,9 +658,10 @@ namespace BDArmory.UI
                                 {
                                     float lift2area = wing2.deflectionLiftCoeff * Vector3.Project(wing2.transform.forward, Vector3.up).sqrMagnitude; // Only return vertically oriented lift components
                                     float lift2rad = BDAMath.Sqrt(lift2area / Mathf.PI);
-                                    Vector3 col2pos = Vector3.ProjectOnPlane(wing2.part.partTransform.TransformPoint(wing2.part.CoLOffset), Vector3.up);
+                                    Vector3 col2Pos = wing2.part.partTransform.TransformPoint(wing2.part.CoLOffset);
+                                    Vector3 col2PosProj = Vector3.ProjectOnPlane(col2Pos, Vector3.up);
 
-                                    float d = Vector3.Distance(col1pos, col2pos);
+                                    float d = Vector3.Distance(col1PosProj, col2PosProj);
                                     float R = lift1rad;
                                     float r = lift2rad;
 
@@ -676,8 +678,14 @@ namespace BDArmory.UI
                                         a = r * r * Mathf.Acos((d * d + r * r - R * R) / (2 * d * r)) + R * R * Mathf.Acos((d * d + R * R - r * r) / (2 * d * R)) -
                                             0.5f * BDAMath.Sqrt((-d + r + R) * (d + r - R) * (d - r + R) * (d + r + R));
 
+                                    // Calculate vertical spacing factor (0 penalty if surfaces are spaced sqrt(2*lift) apart)
+                                    float v_dist = Vector3.Distance(Vector3.Project(col1Pos, Vector3.up),Vector3.Project(col2Pos, Vector3.up));
+                                    float l_spacing = Mathf.Round(Mathf.Max(lift1area, lift2area, 0.25f)*100f)/100f; // Round lift to nearest 0.01
+                                    float v_factor = Mathf.Pow(Mathf.Clamp01((BDAMath.Sqrt(2 * l_spacing) - v_dist) / (BDAMath.Sqrt(2 * l_spacing) - BDAMath.Sqrt(l_spacing))), 0.1f);
+                                    Debug.Log("[BDSPACE]: dist: " + v_dist + ", v_factor: " + v_factor + ", l_spacing: " + l_spacing);
+
                                     // Add overlapping area
-                                    liftStackedAll += a;
+                                    liftStackedAll += a * v_factor;
                                 }
                             }
                     }
