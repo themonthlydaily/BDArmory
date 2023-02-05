@@ -13,6 +13,7 @@ using BDArmory.Armor;
 using BDArmory.Bullets;
 using BDArmory.Competition;
 using BDArmory.Competition.RemoteOrchestration;
+using BDArmory.Competition.VesselMover;
 using BDArmory.Competition.VesselSpawning;
 using BDArmory.Control;
 using BDArmory.CounterMeasure;
@@ -48,6 +49,7 @@ namespace BDArmory.UI
         [BDAWindowSettingsField] public static Rect WindowRectRemoteOrchestration;// = new Rect(45, 100, 200, 200);
         [BDAWindowSettingsField] public static Rect WindowRectEvolution;
         [BDAWindowSettingsField] public static Rect WindowRectVesselSpawner;
+        [BDAWindowSettingsField] public static Rect WindowRectVesselMover;
         [BDAWindowSettingsField] public static Rect WindowRectAI;
 
         //reflection field lists
@@ -926,9 +928,11 @@ namespace BDArmory.UI
 
         public bool hasVesselSwitcher = false;
         public bool hasVesselSpawner = false;
+        public bool hasVesselMover = false;
         public bool hasEvolution = false;
         public bool showVesselSwitcherGUI = false;
         public bool showVesselSpawnerGUI = false;
+        public bool showVesselMoverGUI = false;
         public bool showEvolutionGUI = false;
 
         float rippleHeight;
@@ -1000,6 +1004,12 @@ namespace BDArmory.UI
                     if (!showVesselSpawnerGUI)
                         SaveConfig();
                 }
+            }
+
+            // VesselMover button
+            if (hasVesselMover && GUI.Button(new Rect(columnWidth - _windowMargin - ++buttonNumber * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "VM", showVesselMoverGUI ? BDGuiSkin.box : BDGuiSkin.button))
+            {
+                VesselMover.Instance.SetVisible(!showVesselMoverGUI);
             }
 
             // evolution button
