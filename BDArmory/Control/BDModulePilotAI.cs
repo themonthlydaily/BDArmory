@@ -2226,6 +2226,11 @@ namespace BDArmory.Control
 
             flyingToPosition = targetPosition;
 
+            if (avoidingTerrain)
+            {
+                steerMode = SteerModes.Aiming; // Set aiming steer mode so yaw has a bigger effect.
+            }
+
             //test poststall
             float AoA = Vector3.Angle(vessel.ReferenceTransform.up, vessel.Velocity());
             if (AoA > postStallAoA)
