@@ -9,6 +9,7 @@
 	- Parts with zero lift now appear as grey in the lift visualizer.
 - AI / WM:
 	- AI will start evading missiles once the missile engine activates instead of waiting for 1 second after launch.
+	- When avoiding terrain and roll is inverted by more than 30°, reverse the roll target so that terrain avoidance is done while fully inverted.
 
 v1.5.8.0
 IMPROVEMENTS / FIXES
