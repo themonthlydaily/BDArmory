@@ -10,7 +10,7 @@
 	- Fix issues with wing stacking calculation. Calculation now returns ratio of non-separated vertically stacked lift area to total lift area (capped at 100%). Wings spaced sufficiently apart will not contribute to the stacking value.
 - AI / WM:
 	- AI will start evading missiles once the missile engine activates instead of waiting for 1 second after launch.
-	- When avoiding terrain and roll is inverted by more than 30°, reverse the roll target so that terrain avoidance is done while fully inverted.
+	- When avoiding terrain and roll is inverted by more than 30°, reverse the roll target so that terrain avoidance is done while fully inverted and enable Aiming steer mode for more yaw control.
 
 v1.5.8.0
 IMPROVEMENTS / FIXES
