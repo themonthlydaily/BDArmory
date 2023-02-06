@@ -2331,7 +2331,10 @@ namespace BDArmory.Control
 
             bool requiresLowAltitudeRollTargetCorrection = false;
             if (avoidingTerrain)
+            {
                 rollTarget = terrainAlertNormal * 100;
+                if (Vector3.Dot(-vesselTransform.forward, Vector3.ProjectOnPlane(terrainAlertNormal, vesselTransform.up).normalized) < -0.5f) rollTarget = -rollTarget; // Avoid terrain fully inverted if the plane is mostly inverted (>30°) to begin with.
+            }
             else if (belowMinAltitude && !gainAltInhibited)
                 rollTarget = vessel.upAxis * 100;
             else if (!avoidingTerrain && vessel.verticalSpeed < 0 && Vector3.Dot(rollTarget, upDirection) < 0 && Vector3.Dot(rollTarget, vessel.Velocity()) < 0) // If we're not avoiding terrain, heading downwards and the roll target is behind us and downwards, check that a circle arc of radius "turn radius" (scaled by twiddle factor minimum) tilted at angle of rollTarget has enough room to avoid hitting the ground.
