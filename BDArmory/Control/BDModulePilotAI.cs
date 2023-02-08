@@ -3637,7 +3637,7 @@ namespace BDArmory.Control
                 targetPosition += upDirection * Math.Min(distance, 1000) * vertFactor * Mathf.Clamp01(0.7f - Math.Abs(Vector3.Dot(projectedTargetDirection, projectedDirection)));
                 if (maxAltitudeEnabled)
                 {
-                    var targetRadarAlt = BodyUtils.GetRadarAltitudeAtPos(targetPosition);
+					var targetRadarAlt = BDArmorySettings.COMPETITION_ALTITUDE__LIMIT_ASL ? FlightGlobals.getAltitudeAtPos(targetPosition) : BodyUtils.GetRadarAltitudeAtPos(targetPosition);
                     if (targetRadarAlt > maxAltitude)
                     {
                         targetPosition -= (targetRadarAlt - maxAltitude) * upDirection;

@@ -1,8 +1,10 @@
 ﻿-Add whitelist option for guns/rockets/lasers to report hits in the competition marquee.
--Fix heatseeker missiles fired from relaodable rails occasionally losing lock on firing
-
-
-
+-Fix heatseeker missiles fired from relaodable rails occasionally losing lock on firing.
+-Add toggle for setting maxAltitude and GM Kill limits to ASl or AGL.
+-Fix issue causing Web API to not report scores.
+-HP no longer rounds MM patched values.
+-Steel Hull MAterial melting point increased.
+-Weapon burst length/fire angle overrides now respect symmetry.
 
 
 IMPROVEMENTS / FIXES
