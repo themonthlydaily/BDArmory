@@ -483,9 +483,8 @@ namespace BDArmory.Competition.RemoteOrchestration
                 .Where(e => !e.Contains("VESSELNAMING"))
                 .ToArray();
             pattern = ".*version = (.+)";
-            modifiedLines = lines
+            modifiedLines = modifiedLines
                 .Select(e => Regex.Replace(e, pattern, "version = 1.12.2"))
-                .Where(e => !e.Contains("VESSELNAMING"))
                 .ToArray();
             File.WriteAllLines(filename, modifiedLines);
             Debug.Log(string.Format("[BDArmory.BDAScoreClient] Saved craft for player {0}", vesselName));
@@ -497,12 +496,18 @@ namespace BDArmory.Competition.RemoteOrchestration
 
         public void SwapCraftFiles()
         {
+
             DirectoryInfo info = new DirectoryInfo(vesselStagingPath);
             FileInfo[] craftFiles = info.GetFiles("*.craft");
-                //.Where(e => e.Extension == ".craft").ToArray();
+            //.Where(e => e.Extension == ".craft").ToArray();
+            if (!Directory.Exists(NPCPath))
+            {
+                Debug.Log("[BDArmory.BDAScoreClient] Creating staging directory " + NPCPath);
+                Directory.CreateDirectory(NPCPath);
+            }
             DirectoryInfo NPCinfo = new DirectoryInfo(NPCPath);
             FileInfo[] NPCFiles = NPCinfo.GetFiles("*.craft");
-               // .Where(e => e.Extension == ".craft").ToArray();
+
             foreach (FileInfo file in craftFiles)
             {
                 if (file.Name.Contains(BDArmorySettings.REMOTE_ORCHESTRATION_NPC_SWAPPER))

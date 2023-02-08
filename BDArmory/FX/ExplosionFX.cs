@@ -390,24 +390,27 @@ namespace BDArmory.FX
             {
                 string message = "";
                 foreach (var vesselName in explosionEventsVesselsHit.Keys)
-                    message += (message == "" ? "" : " and ") + vesselName + " had " + explosionEventsVesselsHit[vesselName];
-                switch (ExplosionSource)
+                    //message += (message == "" ? "" : " and ") + vesselName + " had " + explosionEventsVesselsHit[vesselName];
+                    switch (ExplosionSource)
                     {
                         case ExplosionSourceType.Missile:
+                            message += (message == "" ? "" : " and ") + vesselName + " had " + explosionEventsVesselsHit[vesselName];
                             message += " parts damaged due to missile strike";
                             message += (SourceWeaponName != null ? $" ({SourceWeaponName})" : "") + (sourceVesselName != null ? $" from {sourceVesselName}" : "") + ".";
                             break;
-                        case ExplosionSourceType.Bullet: 
-                            message += " parts damaged from ";
+                        case ExplosionSourceType.Bullet:
+                            message += (message == "" ? "" : " and ") + vesselName + " had " + explosionEventsVesselsHit[vesselName] + " parts damaged from";
                             message += (sourceVesselName != null ? $" from {sourceVesselName}'s" : "") + (SourceWeaponName != null ? $" ({SourceWeaponName})" : "shell hit") + ($" at {travelDistance:F3}m") + ".";
                             break;
                         case ExplosionSourceType.Rocket:
-                        {
-                            if (travelDistance < 0) break;
-                            message += " parts damaged from";
-                            message += (sourceVesselName != null ? $" from {sourceVesselName}'s" : "") + (SourceWeaponName != null ? $" ({SourceWeaponName})" : "rocket hit") + ($" at {travelDistance:F3}m") + ".";
-                            break;
-                        }
+                            {
+                                if (travelDistance > 0)
+                                {
+                                    message += (message == "" ? "" : " and ") + vesselName + " had " + explosionEventsVesselsHit[vesselName] + " parts damaged from";
+                                    message += (sourceVesselName != null ? $" from {sourceVesselName}'s" : "") + (SourceWeaponName != null ? $" ({SourceWeaponName})" : "rocket hit") + ($" at {travelDistance:F3}m") + ".";
+                                }
+                                break;
+                            }
                     }
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
                 // Note: damage hasn't actually been applied to the parts yet, just assigned as events, so we can't know if they survived.

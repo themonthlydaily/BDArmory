@@ -989,6 +989,8 @@ namespace BDArmory.Control
                             var gun = weapon.Current.GetPart().FindModuleImplementing<ModuleWeapon>();
                             sw = weapon.Current; //check against salvofiring turrets - if all guns overheat at the same time, turrets get stuck in standby mode
                             if (gun.isReloading || gun.isOverheated || gun.pointingAtSelf || !(gun.ammoCount > 0 || BDArmorySettings.INFINITE_AMMO)) continue; //instead of returning the first weapon in a weapon group, return the first weapon in a group that actually can fire
+                            //no check for if all weapons in the group are reloading/overheated...
+                            //Doc also was floating the idea of a 'use this gun' button for aiming, though that would be more a PilotAi thing...
                         }
                         if (weapon.Current.GetWeaponClass() == WeaponClasses.Missile || weapon.Current.GetWeaponClass() == WeaponClasses.Bomb || weapon.Current.GetWeaponClass() == WeaponClasses.SLW)
                         {
@@ -5732,7 +5734,7 @@ namespace BDArmory.Control
                 float scanRadius = CurrentMissile.lockedSensorFOV * 0.5f;
                 float maxOffBoresight = CurrentMissile.maxOffBoresight * 0.85f;
 
-                if (vesselRadarData)
+                if (vesselRadarData) // && !CurrentMissile.IndependantSeeker) //missile with independantSeeker can't get targetdata from radar/IRST
                 {
                     if (vesselRadarData.irstCount > 0)
                     {
@@ -5748,7 +5750,7 @@ namespace BDArmory.Control
                     heatTarget.exists && Vector3.Angle(heatTarget.position - CurrentMissile.MissileReferenceTransform.position, CurrentMissile.GetForwardTransform()) < maxOffBoresight ?
                     heatTarget.predictedPosition - CurrentMissile.MissileReferenceTransform.position
                     : CurrentMissile.GetForwardTransform();
-
+                // remove AI target check/move to a missile .cfg option to allow older gen heaters?
                 heatTarget = BDATargetManager.GetHeatTarget(vessel, vessel, new Ray(CurrentMissile.MissileReferenceTransform.position + (50 * CurrentMissile.GetForwardTransform()), direction), TargetSignatureData.noTarget, scanRadius, CurrentMissile.heatThreshold, CurrentMissile.frontAspectHeatModifier, CurrentMissile.uncagedLock, CurrentMissile.lockedSensorFOVBias, CurrentMissile.lockedSensorVelocityBias, this, guardMode ? currentTarget : null);
             }
         }

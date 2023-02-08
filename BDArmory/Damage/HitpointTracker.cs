@@ -36,7 +36,7 @@ namespace BDArmory.Damage
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_ArmorRemaining"),//Armor intregity
         UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, scene = UI_Scene.Flight, maxValue = 100, minValue = 0, requireFullControl = false)]
-        public float ArmorRemaining;
+        public float ArmorRemaining = 100;
 
         public float StartingArmor;
 
@@ -982,15 +982,16 @@ namespace BDArmory.Damage
                             hitpoints = Mathf.Min(hitpoints, (BDArmorySettings.HP_THRESHOLD >= 100 ? BDArmorySettings.HP_THRESHOLD : 2000f) * Mathf.Log(hitpoints / scale + 1)); //use default of 2K for RP if slider set to unclamped
                         }
                         hitpoints *= HullInfo.materials[hullType].healthMod;
-                        hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
+                        //hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
+                        hitpoints = Mathf.Round(hitpoints);
                         if (hitpoints < 100) hitpoints = 100;
                         if (BDArmorySettings.DEBUG_ARMOR && maxHitPoints <= 0 && Hitpoints != hitpoints) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} updated HP: {Hitpoints}->{hitpoints} at time {Time.time}, partMass: {partMass}, density: {density}, structuralVolume: {structuralVolume}, structuralMass {structuralMass}");
                     }
                     else // Override based on part configuration for custom parts
                     {
                         hitpoints = maxHitPoints * HullInfo.materials[hullType].healthMod;
-                        hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
-                        if (hitpoints < 100) hitpoints = 100;
+                        //hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding; //don't round or cap MM patched HP values
+                        hitpoints = Mathf.Round(hitpoints);
                         if (BDArmorySettings.DEBUG_ARMOR && maxHitPoints <= 0 && Hitpoints != hitpoints) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} updated HP: {Hitpoints}->{hitpoints} at time {Time.time}");
                     }
                 }
@@ -1000,7 +1001,6 @@ namespace BDArmory.Damage
                                                 //hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
                                                 //armorpanel HP is panel integrity, as 'HP' is the slab of armor; having a secondary unused HP pool will only make armor massively more effective against explosions than it should due to how isInLineOfSight calculates intermediate parts
                 }
-                if (hitpoints < 100) hitpoints = 100;
             }
             else
             {

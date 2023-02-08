@@ -104,6 +104,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static float COMPETITION_KILLER_GM_GRACE_PERIOD = 150;     // Competition killer GM grace period in seconds.
         [BDAPersistentSettingsField] public static float COMPETITION_ALTITUDE_LIMIT_HIGH = 46;         // Altitude (high) in km at which to kill off craft.
         [BDAPersistentSettingsField] public static float COMPETITION_ALTITUDE_LIMIT_LOW = -1;          // Altitude (low) in km at which to kill off craft.
+        [BDAPersistentSettingsField] public static bool COMPETITION_ALTITUDE__LIMIT_ASL = false;       // Does Killer GM use ASL or AGL for latitide ceiling/floor?
         [BDAPersistentSettingsField] public static float COMPETITION_NONCOMPETITOR_REMOVAL_DELAY = 30; // Competition non-competitor removal delay in seconds.
         [BDAPersistentSettingsField] public static float COMPETITION_DISTANCE = 1000;                  // Competition distance.
         [BDAPersistentSettingsField] public static int COMPETITION_START_NOW_AFTER = 11;               // Competition auto-start now.
