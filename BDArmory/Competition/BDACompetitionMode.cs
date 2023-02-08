@@ -1866,7 +1866,7 @@ namespace BDArmory.Competition
                 }
                 foreach (var weaponManager in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).ToList())
                 {
-                    if (alive.Contains(weaponManager.vessel.vesselName) && BDArmorySettings.COMPETITION_ALTITUDE__LIMIT_ASL ? weaponManager.vessel.altitude > limit : weaponManager.vessel.radarAltitude > limit)
+                    if (alive.Contains(weaponManager.vessel.vesselName) && BDArmorySettings.COMPETITION_ALTITUDE__LIMIT_ASL ? weaponManager.vessel.altitude < limit : weaponManager.vessel.radarAltitude < limit)
                     {
                         var killerName = Scores.ScoreData[weaponManager.vessel.vesselName].lastPersonWhoDamagedMe;
                         if (killerName == "")
