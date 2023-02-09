@@ -254,7 +254,6 @@ namespace BDArmory.Competition.VesselSpawning
             }
             else if (BDArmorySettings.DEBUG_SPAWNING) LogMessage($"Initial spawn of {vessel.vesselName} succeeded.", false);
             vessel.Landed = false; // Tell KSP that it's not landed so KSP doesn't mess with its position.
-            vessel.ResumeStaging(); // Trigger staging to resume to get staging icons to work properly.
             if (vesselSpawnConfig.reuseURLVesselName && spawnedVesselURLs.ContainsValue(vesselSpawnConfig.craftURL))
             {
                 vessel.vesselName = spawnedVesselURLs.Where(kvp => kvp.Value == vesselSpawnConfig.craftURL).Select(kvp => kvp.Key).First();
@@ -365,6 +364,14 @@ namespace BDArmory.Competition.VesselSpawning
             finalSpawnPositions[vesselName] = vesselSpawnConfig.position;
             finalSpawnRotations[vesselName] = vessel.transform.rotation;
             vessel.altimeterDisplayState = AltimeterDisplayState.AGL;
+            // Fix staging (this seems to put them in the right stages, but some parts don't always work, e.g., parachutes)
+            vessel.currentStage = 0;
+            foreach (var part in vessel.parts)
+            {
+                if (part.inverseStage >= 0) part.originalStage = part.inverseStage;
+                vessel.currentStage = System.Math.Max(vessel.currentStage, part.originalStage + 1);
+            }
+            vessel.ResumeStaging(); // Trigger staging to resume to get staging icons to work properly.
 
             // Game mode adjustments.
             if (BDArmorySettings.SPACE_HACKS)
@@ -786,32 +793,43 @@ namespace BDArmory.Competition.VesselSpawning
         /// Place a spawned vessel on the ground/water surface in a single step.
         /// </summary>
         /// <param name="vessel"></param>
-        protected void PlaceSpawnedVessel(Vessel vessel)
+        /// <param name="offset">Vertical offset to place the vessel.</param>
+        /// <returns>The vertical distance to the lowest point on the vessel.</returns>
+        protected void PlaceSpawnedVessel(Vessel vessel, float offset = 0, bool allowBelowWater = false)
         {
-            var down = FlightGlobals.getGeeForceAtPosition(vessel.CoM).normalized;
-            if (BodyUtils.GetTerrainAltitudeAtPos(vessel.CoM, true) < 0) // Over water.
+            if (!vessel.mainBody.hasSolidSurface) return; // Nowhere to place it!
+            var down = (vessel.mainBody.transform.position - vessel.CoM).normalized;
+            if (!allowBelowWater && BodyUtils.GetTerrainAltitudeAtPos(vessel.CoM, true) < 0) // Over water.
             {
-                if (BDArmorySettings.DEBUG_SPAWNING) LogMessage($"{vessel.vesselName} is {vessel.altitude:G3}m above water, lowering.", false);
-                vessel.SetPosition(vessel.transform.position + vessel.altitude * down);
+                if (BDArmorySettings.DEBUG_SPAWNING) LogMessage($"{vessel.vesselName} is {vessel.altitude:G6}m above water, lowering.", false);
+                vessel.SetPosition(vessel.CoM + ((float)vessel.altitude - offset - 0.1f) * down);
                 return;
             }
             // Over land.
-            var radius = vessel.GetRadius();
-            var terrainHits = Physics.SphereCastAll(vessel.CoM - radius * down, radius, down, (float)vessel.altitude + radius, (int)LayerMasks.Scenery); // Start "radius" above the CoM so the minimum distance is the altitude of the CoM.
-            var minDistance = (float)vessel.altitude;
-            if (terrainHits.Length > 0) { minDistance = Mathf.Min(minDistance, radius + terrainHits.Min(h => h.distance)); }
-            foreach (var terrainHit in terrainHits)
+            var altitude = (float)(vessel.altitude - vessel.mainBody.TerrainAltitude(vessel.latitude, vessel.longitude, allowBelowWater));
+            var radius = vessel.GetRadius(down, vessel.GetBounds());
+            var belowHits = Physics.SphereCastAll(vessel.CoM - (radius + 100f) * down, radius, down, altitude + 2f * radius + 100f, (int)(LayerMasks.Scenery | LayerMasks.Parts | LayerMasks.Wheels | LayerMasks.EVA)); // Start "radius" above the CoM so the minimum distance is the altitude of the CoM, +100m for safety when near other objects.
+            var minDistance = altitude + 2f * radius + 100f;
+            foreach (var belowHit in belowHits)
             {
-                if (Physics.BoxCast(terrainHit.point + 2.1f * down, new Vector3(radius, 0.1f, radius), -down, out RaycastHit hit, Quaternion.FromToRotation(Vector3.up, terrainHit.normal), terrainHit.distance + 3f, (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels))) // Start 2m below the terrain to catch wheels protruding into the ground (the largest Squad wheel has radius 1m).
+                var belowHitPart = belowHit.collider.gameObject.GetComponentInParent<Part>();
+                if (belowHitPart != null && belowHitPart.vessel == vessel) continue;
+                var hits = Physics.BoxCastAll(belowHit.point + 2.1f * down, new Vector3(radius, 0.1f, radius), -down, Quaternion.FromToRotation(Vector3.up, belowHit.normal), belowHit.distance + 3f, (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels)); // Start 2m below the hit to catch wheels protruding into the ground (the largest Squad wheel has radius 1m).
+                foreach (var hit in hits)
                 {
-                    hit.distance -= 2f; // Correct for the initial offset.
                     var hitPart = hit.collider.gameObject.GetComponentInParent<Part>();
-                    if (BDArmorySettings.DEBUG_SPAWNING) LogMessage($"{vessel.vesselName}: Distance from {terrainHit.collider.name} to {hit.collider.name} ({hitPart.name}): {hit.distance:G3}m", false);
-                    minDistance = Mathf.Min(minDistance, hit.distance);
+                    if (hitPart == null || hitPart.vessel != vessel) continue;
+                    var distance = hit.distance - 2f; // Correct for the initial offset.
+                    if (BDArmorySettings.DEBUG_SPAWNING) LogMessage($"{vessel.vesselName}: Distance from {belowHit.collider.name}{(belowHitPart != null ? belowHitPart.name : "")} to {hit.collider.name} ({hitPart.name}): {distance:G6}m", false);
+                    if (distance < minDistance)
+                    {
+                        minDistance = distance;
+                    }
                 }
             }
-            if (BDArmorySettings.DEBUG_SPAWNING) LogMessage($"{vessel.vesselName} is {minDistance:G3}m above land, lowering.", false);
-            vessel.SetPosition(vessel.transform.position + down * (minDistance - 0.1f)); // Minor adjustment to prevent potential clipping.
+            if (BDArmorySettings.DEBUG_SPAWNING) LogMessage($"{vessel.vesselName} is {minDistance:G6}m above land, lowering.", false);
+            if (minDistance - offset > 0.1f)
+                vessel.SetPosition(vessel.transform.position + down * (minDistance - offset - 0.1f)); // Minor adjustment to prevent potential clipping.
         }
 
         public void AddToActiveCompetition(Vessel vessel, bool airborne)

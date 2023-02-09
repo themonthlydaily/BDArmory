@@ -943,7 +943,7 @@ namespace BDArmory.UI
         float EngageHeight;
         float modulesHeight;
         float gpsHeight;
-        bool toolMinimized;
+        bool toolMinimized = false;
 
         float leftIndent = 10;
         float guardLabelWidth = 90;
@@ -1087,8 +1087,7 @@ namespace BDArmory.UI
             if (ActiveWeaponManager != null)
             {
                 //MINIMIZE BUTTON
-                toolMinimized = GUI.Toggle(new Rect(_windowMargin, _windowMargin, _buttonSize, _buttonSize), toolMinimized, "_",
-                    toolMinimized ? BDGuiSkin.box : BDGuiSkin.button);
+                toolMinimized = GUI.Toggle(new Rect(_windowMargin, _windowMargin, _buttonSize, _buttonSize), toolMinimized, "_", toolMinimized ? BDGuiSkin.box : BDGuiSkin.button);
 
                 GUIStyle armedLabelStyle;
                 Rect armedRect = new Rect(leftIndent, contentTop + (line * entryHeight), contentWidth / 2, entryHeight);
@@ -2012,6 +2011,17 @@ namespace BDArmory.UI
                    StringUtils.Localize("#LOC_BDArmory_WMWindow_NoWeaponManager"), BDGuiSkin.box);// "No Weapon Manager found."
                 line++;
             }
+#if DEBUG
+            if (GUI.Button(new Rect(leftIndent, contentTop + (line++ * entryHeight), contentWidth, entryHeight * 1.25f), "Double click to QUIT", Time.realtimeSinceStartup - quitTimer > 1 ? BDGuiSkin.button : BDGuiSkin.box)) // Big QUIT button for debug mode. Double click within 1s to quit.
+            {
+                if (Time.realtimeSinceStartup - quitTimer < 1)
+                {
+                    SaveConfig();
+                    TournamentAutoResume.AutoQuit(0);
+                }
+                quitTimer = Time.realtimeSinceStartup;
+            }
+#endif
             toolWindowWidth = Mathf.Lerp(toolWindowWidth, columnWidth * windowColumns, 0.15f);
             toolWindowHeight = Mathf.Lerp(toolWindowHeight, contentTop + (line * entryHeight) + 5, 1);
             var previousWindowHeight = WindowRectToolbar.height;
@@ -2022,6 +2032,9 @@ namespace BDArmory.UI
                 WindowRectToolbar.y = Screen.height - WindowRectToolbar.height;
             GUIUtils.RepositionWindow(ref WindowRectToolbar);
         }
+#if DEBUG
+        float quitTimer = 0;
+#endif
 
         bool validGPSName = true;
 
@@ -2405,163 +2418,164 @@ namespace BDArmory.UI
 #if DEBUG  // Only visible when compiled in Debug configuration.
                     if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
                     {
-                        if (GUI.Button(SLineRect(++line), "Vessel Mass"))
-                        {
-                            BDACompetitionMode.Instance.competitionStatus.Add($"{FlightGlobals.ActiveVessel.vesselName} has mass {FlightGlobals.ActiveVessel.GetTotalMass()}t");
-                        }
-                        if (GUI.Button(SLineRect(++line), "Test Collider.ClosestPoint[OnBounds]"))
-                        {
-                            var watch = new System.Diagnostics.Stopwatch();
-                            float µsResolution = 1e6f / System.Diagnostics.Stopwatch.Frequency;
-                            int N = 1 << 16;
-                            Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
-                            int layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels | LayerMasks.Scenery);
-                            float dist = 10000;
-                            RaycastHit hit;
-                            Vector3 closestPoint = default;
-                            watch.Start();
-                            if (Physics.Raycast(ray, out hit, dist, layerMask))
-                            {
-                                watch.Stop();
-                                var raycastTicks = watch.ElapsedTicks;
-                                string raycastString = $"Raycast took {raycastTicks * µsResolution:G3}µs";
-                                Part partHit = hit.collider.GetComponentInParent<Part>();
-                                MeshCollider mcol = null;
-                                bool isMeshCollider = false;
-                                bool isNonConvexMeshCollider = false;
-                                watch.Reset(); watch.Start();
-                                for (int i = 0; i < N; ++i)
-                                {
-                                    mcol = hit.collider as MeshCollider;
-                                    isMeshCollider = mcol != null;
-                                    if (isMeshCollider && !mcol.convex)  // non-convex mesh colliders are expensive to use ClosestPoint on.
-                                    {
-                                        isNonConvexMeshCollider = true;
-                                        closestPoint = hit.collider.ClosestPointOnBounds(ray.origin);
-                                    }
-                                    else
-                                        closestPoint = hit.collider.ClosestPoint(ray.origin);
-                                }
-                                watch.Stop();
-                                Debug.Log($"DEBUG {raycastString}, {(isNonConvexMeshCollider ? "ClosestPointOnBounds" : "ClosestPoint")} ({closestPoint}) on{(isMeshCollider ? $" {(isNonConvexMeshCollider ? "non-" : "")}convex mesh" : "")} collider {hit.collider} from camera ({ray.origin}) took {watch.ElapsedTicks * µsResolution / N:G3}µs{(partHit != null ? $", offset from part ({partHit.name}): {closestPoint - partHit.transform.position}" : "")}, offset from hit: {hit.point - closestPoint}");
-                            }
-                        }
-                        if (GUI.Button(SLineRect(++line), "Test 2x Raycast vs RaycastNonAlloc"))
-                        {
-                            var watch = new System.Diagnostics.Stopwatch();
-                            float µsResolution = 1e6f / System.Diagnostics.Stopwatch.Frequency;
-                            int N = 1 << 20;
-                            Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
-                            RaycastHit hit;
-                            RaycastHit[] hits = new RaycastHit[100];
-                            int layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels | LayerMasks.Scenery);
-                            float dist = 10000;
-                            bool didHit = false;
-                            watch.Start();
-                            for (int i = 0; i < N; ++i)
-                            {
-                                didHit = Physics.Raycast(ray, out hit, dist, layerMask);
-                                didHit = Physics.Raycast(ray, out hit, dist, layerMask);
-                            }
-                            watch.Stop();
-                            Debug.Log($"DEBUG Raycast 2x (hit? {didHit}) took {watch.ElapsedTicks * µsResolution / N:G3}µs");
-                            int hitCount = 0;
-                            watch.Reset(); watch.Start();
-                            for (int i = 0; i < N; ++i)
-                                hitCount = Physics.RaycastNonAlloc(ray, hits, dist, layerMask);
-                            watch.Stop();
-                            Debug.Log($"DEBUG RaycastNonAlloc ({hitCount} hits) took {watch.ElapsedTicks * µsResolution / N:G3}µs");
-                        }
-                        if (GUI.Button(SLineRect(++line), "Test GetFrameVelocityV3f"))
-                        {
-                            var watch = new System.Diagnostics.Stopwatch();
-                            float resolution = 1e9f / System.Diagnostics.Stopwatch.Frequency;
-                            int N = 1000;
-                            Vector3 frameVelocity;
-                            watch.Start();
-                            for (int i = 0; i < N; ++i)
-                                frameVelocity = Krakensbane.GetFrameVelocityV3f();
-                            watch.Stop();
-                            Debug.Log($"DEBUG Getting KbVF took {watch.ElapsedTicks * resolution / N:G3}ns");
-                            watch.Reset(); watch.Start();
-                            for (int i = 0; i < N; ++i)
-                                frameVelocity = BDKrakensbane.FrameVelocityV3f;
-                            watch.Stop();
-                            Debug.Log($"DEBUG Using BDKrakensbane took {watch.ElapsedTicks * resolution / N:G3}ns");
-                            Vector3d FOOffset;
-                            watch.Reset(); watch.Start();
-                            for (int i = 0; i < N; ++i)
-                                FOOffset = FloatingOrigin.Offset;
-                            watch.Stop();
-                            Debug.Log($"DEBUG Getting FO.Offset took {watch.ElapsedTicks * resolution / N:G3}ns");
-                            watch.Reset(); watch.Start();
-                            for (int i = 0; i < N; ++i)
-                                FOOffset = BDKrakensbane.FloatingOriginOffset;
-                            watch.Stop();
-                            Debug.Log($"DEBUG Using BDKrakensbane took {watch.ElapsedTicks * resolution / N:G3}ns");
-                            Vector3d FOOffsetNKb;
-                            watch.Reset(); watch.Start();
-                            for (int i = 0; i < N; ++i)
-                                FOOffsetNKb = FloatingOrigin.OffsetNonKrakensbane;
-                            watch.Stop();
-                            Debug.Log($"DEBUG Getting FO.OffsetNonKrakensbane took {watch.ElapsedTicks * resolution / N:G3}ns");
-                            watch.Reset(); watch.Start();
-                            for (int i = 0; i < N; ++i)
-                                FOOffsetNKb = BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
-                            watch.Stop();
-                            Debug.Log($"DEBUG Using BDKrakensbane took {watch.ElapsedTicks * resolution / N:G3}ns");
-                            bool KBIsActive;
-                            watch.Reset(); watch.Start();
-                            for (int i = 0; i < N; ++i)
-                                KBIsActive = !BDKrakensbane.FloatingOriginOffset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero();
-                            watch.Stop();
-                            Debug.Log($"DEBUG Getting KB is active took {watch.ElapsedTicks * resolution / N:G3}ns");
-                            watch.Reset(); watch.Start();
-                            for (int i = 0; i < N; ++i)
-                                KBIsActive = BDKrakensbane.IsActive;
-                            watch.Stop();
-                            Debug.Log($"DEBUG Using BDKrakensbane took {watch.ElapsedTicks * resolution / N:G3}ns");
-                        }
-                        if (GUI.Button(SLineRect(++line), "Test GetAudioClip"))
-                        {
-                            StartCoroutine(TestGetAudioClip());
-                        }
-                        if (GUI.Button(SLineRect(++line), "Test vesselName vs GetName()"))
-                        {
-                            StartCoroutine(TestVesselName());
-                        }
-                        if (GUI.Button(SLineRect(++line), "Test RaycastHit merge and sort"))
-                        {
-                            StartCoroutine(TestRaycastHitMergeAndSort());
-                        }
-                        if (GUI.Button(SLineRect(++line), "Test Localizer.Format vs StringUtils.Localize"))
-                        {
-                            StartCoroutine(TestLocalization());
-                        }
-                        if (GUI.Button(SLineRect(++line), "Test yield wait lengths")) // Test yield wait lengths
-                        {
-                            StartCoroutine(TestYieldWaitLengths());
-                        }
-                        if (BDACompetitionMode.Instance != null)
-                        {
-                            if (GUI.Button(SLineRect(++line), "Run DEBUG checks"))// Run DEBUG checks
-                            {
-                                switch (Event.current.button)
-                                {
-                                    case 1: // right click
-                                        StartCoroutine(BDACompetitionMode.Instance.CheckGCPerformance());
-                                        break;
-                                    default:
-                                        BDACompetitionMode.Instance.CleanUpKSPsDeadReferences();
-                                        BDACompetitionMode.Instance.RunDebugChecks();
-                                        break;
-                                }
-                            }
-                            if (GUI.Button(SLineRect(++line), "Test Vessel Module Registry"))
-                            {
-                                StartCoroutine(VesselModuleRegistry.Instance.PerformanceTest());
-                            }
-                        }
+                        // if (GUI.Button(SLineRect(++line), "Dump staging")) { var vessel = FlightGlobals.ActiveVessel; if (vessel != null) Debug.Log($"DEBUG {vessel.vesselName} is at stage {vessel.currentStage}, part stages: {string.Join("; ", vessel.parts.Select(p => $"{p}: index: {p.inStageIndex}, offset: {p.stageOffset}, orig: {p.originalStage}, child: {p.childStageOffset}, inv: {p.inverseStage}, default inv: {p.defaultInverseStage}, inv carryover: {p.inverseStageCarryover}, manual: {p.manualStageOffset}, after: {p.stageAfter}, before: {p.stageBefore}"))}"); }
+                        // if (GUI.Button(SLineRect(++line), "Vessel Mass"))
+                        // {
+                        //     BDACompetitionMode.Instance.competitionStatus.Add($"{FlightGlobals.ActiveVessel.vesselName} has mass {FlightGlobals.ActiveVessel.GetTotalMass()}t");
+                        // }
+                        // if (GUI.Button(SLineRect(++line), "Test Collider.ClosestPoint[OnBounds]"))
+                        // {
+                        //     var watch = new System.Diagnostics.Stopwatch();
+                        //     float µsResolution = 1e6f / System.Diagnostics.Stopwatch.Frequency;
+                        //     int N = 1 << 16;
+                        //     Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+                        //     int layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels | LayerMasks.Scenery);
+                        //     float dist = 10000;
+                        //     RaycastHit hit;
+                        //     Vector3 closestPoint = default;
+                        //     watch.Start();
+                        //     if (Physics.Raycast(ray, out hit, dist, layerMask))
+                        //     {
+                        //         watch.Stop();
+                        //         var raycastTicks = watch.ElapsedTicks;
+                        //         string raycastString = $"Raycast took {raycastTicks * µsResolution:G3}µs";
+                        //         Part partHit = hit.collider.GetComponentInParent<Part>();
+                        //         MeshCollider mcol = null;
+                        //         bool isMeshCollider = false;
+                        //         bool isNonConvexMeshCollider = false;
+                        //         watch.Reset(); watch.Start();
+                        //         for (int i = 0; i < N; ++i)
+                        //         {
+                        //             mcol = hit.collider as MeshCollider;
+                        //             isMeshCollider = mcol != null;
+                        //             if (isMeshCollider && !mcol.convex)  // non-convex mesh colliders are expensive to use ClosestPoint on.
+                        //             {
+                        //                 isNonConvexMeshCollider = true;
+                        //                 closestPoint = hit.collider.ClosestPointOnBounds(ray.origin);
+                        //             }
+                        //             else
+                        //                 closestPoint = hit.collider.ClosestPoint(ray.origin);
+                        //         }
+                        //         watch.Stop();
+                        //         Debug.Log($"DEBUG {raycastString}, {(isNonConvexMeshCollider ? "ClosestPointOnBounds" : "ClosestPoint")} ({closestPoint}) on{(isMeshCollider ? $" {(isNonConvexMeshCollider ? "non-" : "")}convex mesh" : "")} collider {hit.collider} from camera ({ray.origin}) took {watch.ElapsedTicks * µsResolution / N:G3}µs{(partHit != null ? $", offset from part ({partHit.name}): {closestPoint - partHit.transform.position}" : "")}, offset from hit: {hit.point - closestPoint}");
+                        //     }
+                        // }
+                        // if (GUI.Button(SLineRect(++line), "Test 2x Raycast vs RaycastNonAlloc"))
+                        // {
+                        //     var watch = new System.Diagnostics.Stopwatch();
+                        //     float µsResolution = 1e6f / System.Diagnostics.Stopwatch.Frequency;
+                        //     int N = 1 << 20;
+                        //     Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+                        //     RaycastHit hit;
+                        //     RaycastHit[] hits = new RaycastHit[100];
+                        //     int layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels | LayerMasks.Scenery);
+                        //     float dist = 10000;
+                        //     bool didHit = false;
+                        //     watch.Start();
+                        //     for (int i = 0; i < N; ++i)
+                        //     {
+                        //         didHit = Physics.Raycast(ray, out hit, dist, layerMask);
+                        //         didHit = Physics.Raycast(ray, out hit, dist, layerMask);
+                        //     }
+                        //     watch.Stop();
+                        //     Debug.Log($"DEBUG Raycast 2x (hit? {didHit}) took {watch.ElapsedTicks * µsResolution / N:G3}µs");
+                        //     int hitCount = 0;
+                        //     watch.Reset(); watch.Start();
+                        //     for (int i = 0; i < N; ++i)
+                        //         hitCount = Physics.RaycastNonAlloc(ray, hits, dist, layerMask);
+                        //     watch.Stop();
+                        //     Debug.Log($"DEBUG RaycastNonAlloc ({hitCount} hits) took {watch.ElapsedTicks * µsResolution / N:G3}µs");
+                        // }
+                        // if (GUI.Button(SLineRect(++line), "Test GetFrameVelocityV3f"))
+                        // {
+                        //     var watch = new System.Diagnostics.Stopwatch();
+                        //     float resolution = 1e9f / System.Diagnostics.Stopwatch.Frequency;
+                        //     int N = 1000;
+                        //     Vector3 frameVelocity;
+                        //     watch.Start();
+                        //     for (int i = 0; i < N; ++i)
+                        //         frameVelocity = Krakensbane.GetFrameVelocityV3f();
+                        //     watch.Stop();
+                        //     Debug.Log($"DEBUG Getting KbVF took {watch.ElapsedTicks * resolution / N:G3}ns");
+                        //     watch.Reset(); watch.Start();
+                        //     for (int i = 0; i < N; ++i)
+                        //         frameVelocity = BDKrakensbane.FrameVelocityV3f;
+                        //     watch.Stop();
+                        //     Debug.Log($"DEBUG Using BDKrakensbane took {watch.ElapsedTicks * resolution / N:G3}ns");
+                        //     Vector3d FOOffset;
+                        //     watch.Reset(); watch.Start();
+                        //     for (int i = 0; i < N; ++i)
+                        //         FOOffset = FloatingOrigin.Offset;
+                        //     watch.Stop();
+                        //     Debug.Log($"DEBUG Getting FO.Offset took {watch.ElapsedTicks * resolution / N:G3}ns");
+                        //     watch.Reset(); watch.Start();
+                        //     for (int i = 0; i < N; ++i)
+                        //         FOOffset = BDKrakensbane.FloatingOriginOffset;
+                        //     watch.Stop();
+                        //     Debug.Log($"DEBUG Using BDKrakensbane took {watch.ElapsedTicks * resolution / N:G3}ns");
+                        //     Vector3d FOOffsetNKb;
+                        //     watch.Reset(); watch.Start();
+                        //     for (int i = 0; i < N; ++i)
+                        //         FOOffsetNKb = FloatingOrigin.OffsetNonKrakensbane;
+                        //     watch.Stop();
+                        //     Debug.Log($"DEBUG Getting FO.OffsetNonKrakensbane took {watch.ElapsedTicks * resolution / N:G3}ns");
+                        //     watch.Reset(); watch.Start();
+                        //     for (int i = 0; i < N; ++i)
+                        //         FOOffsetNKb = BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                        //     watch.Stop();
+                        //     Debug.Log($"DEBUG Using BDKrakensbane took {watch.ElapsedTicks * resolution / N:G3}ns");
+                        //     bool KBIsActive;
+                        //     watch.Reset(); watch.Start();
+                        //     for (int i = 0; i < N; ++i)
+                        //         KBIsActive = !BDKrakensbane.FloatingOriginOffset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero();
+                        //     watch.Stop();
+                        //     Debug.Log($"DEBUG Getting KB is active took {watch.ElapsedTicks * resolution / N:G3}ns");
+                        //     watch.Reset(); watch.Start();
+                        //     for (int i = 0; i < N; ++i)
+                        //         KBIsActive = BDKrakensbane.IsActive;
+                        //     watch.Stop();
+                        //     Debug.Log($"DEBUG Using BDKrakensbane took {watch.ElapsedTicks * resolution / N:G3}ns");
+                        // }
+                        // if (GUI.Button(SLineRect(++line), "Test GetAudioClip"))
+                        // {
+                        //     StartCoroutine(TestGetAudioClip());
+                        // }
+                        // if (GUI.Button(SLineRect(++line), "Test vesselName vs GetName()"))
+                        // {
+                        //     StartCoroutine(TestVesselName());
+                        // }
+                        // if (GUI.Button(SLineRect(++line), "Test RaycastHit merge and sort"))
+                        // {
+                        //     StartCoroutine(TestRaycastHitMergeAndSort());
+                        // }
+                        // if (GUI.Button(SLineRect(++line), "Test Localizer.Format vs StringUtils.Localize"))
+                        // {
+                        //     StartCoroutine(TestLocalization());
+                        // }
+                        // if (GUI.Button(SLineRect(++line), "Test yield wait lengths")) // Test yield wait lengths
+                        // {
+                        //     StartCoroutine(TestYieldWaitLengths());
+                        // }
+                        // if (BDACompetitionMode.Instance != null)
+                        // {
+                        //     if (GUI.Button(SLineRect(++line), "Run DEBUG checks"))// Run DEBUG checks
+                        //     {
+                        //         switch (Event.current.button)
+                        //         {
+                        //             case 1: // right click
+                        //                 StartCoroutine(BDACompetitionMode.Instance.CheckGCPerformance());
+                        //                 break;
+                        //             default:
+                        //                 BDACompetitionMode.Instance.CleanUpKSPsDeadReferences();
+                        //                 BDACompetitionMode.Instance.RunDebugChecks();
+                        //                 break;
+                        //         }
+                        //     }
+                        //     if (GUI.Button(SLineRect(++line), "Test Vessel Module Registry"))
+                        //     {
+                        //         StartCoroutine(VesselModuleRegistry.Instance.PerformanceTest());
+                        //     }
+                        // }
                         // if (GUI.Button(SLineRect(++line), "timing test")) // Timing tests.
                         // {
                         //     var test = FlightGlobals.ActiveVessel.transform.position;
@@ -2586,75 +2600,75 @@ namespace BDArmory.UI
                         //     }
                         //     Debug.Log("DEBUG magnitude " + (Time.realtimeSinceStartup - now) / iters + "s/iter, out: " + test_out);
                         // }
-                        if (GUI.Button(SLineRect(++line), "Hash vs SubStr test"))
-                        {
-                            var armourParts = PartLoader.LoadedPartsList.Select(p => p.partPrefab.partInfo.name).Where(name => name.ToLower().Contains("armor")).ToHashSet();
-                            Debug.Log($"DEBUG Armour parts in game: " + string.Join(", ", armourParts));
-                            int N = 1 << 24;
-                            var tic = Time.realtimeSinceStartup;
-                            for (int i = 0; i < N; ++i)
-                                armourParts.Contains("BD.PanelArmor");
-                            var dt = Time.realtimeSinceStartup - tic;
-                            Debug.Log($"DEBUG HashSet lookup took {dt / N:G3}s");
-                            var armourPart = "BD.PanelArmor";
-                            tic = Time.realtimeSinceStartup;
-                            for (int i = 0; i < N; ++i)
-                                armourPart.ToLower().Contains("armor");
-                            dt = Time.realtimeSinceStartup - tic;
-                            Debug.Log($"DEBUG SubStr lookup took {dt / N:G3}s");
+                        // if (GUI.Button(SLineRect(++line), "Hash vs SubStr test"))
+                        // {
+                        //     var armourParts = PartLoader.LoadedPartsList.Select(p => p.partPrefab.partInfo.name).Where(name => name.ToLower().Contains("armor")).ToHashSet();
+                        //     Debug.Log($"DEBUG Armour parts in game: " + string.Join(", ", armourParts));
+                        //     int N = 1 << 24;
+                        //     var tic = Time.realtimeSinceStartup;
+                        //     for (int i = 0; i < N; ++i)
+                        //         armourParts.Contains("BD.PanelArmor");
+                        //     var dt = Time.realtimeSinceStartup - tic;
+                        //     Debug.Log($"DEBUG HashSet lookup took {dt / N:G3}s");
+                        //     var armourPart = "BD.PanelArmor";
+                        //     tic = Time.realtimeSinceStartup;
+                        //     for (int i = 0; i < N; ++i)
+                        //         armourPart.ToLower().Contains("armor");
+                        //     dt = Time.realtimeSinceStartup - tic;
+                        //     Debug.Log($"DEBUG SubStr lookup took {dt / N:G3}s");
 
-                            // Using an actual part to include the part name access.
-                            var testPart = PartLoader.LoadedPartsList.Select(p => p.partPrefab).First();
-                            ProjectileUtils.IsArmorPart(testPart); // Bootstrap the HashSet
-                            tic = Time.realtimeSinceStartup;
-                            for (int i = 0; i < N; ++i)
-                                ProjectileUtils.IsArmorPart(testPart);
-                            dt = Time.realtimeSinceStartup - tic;
-                            Debug.Log($"DEBUG Real part HashSet lookup first part took {dt / N:G3}s");
-                            testPart = PartLoader.LoadedPartsList.Select(p => p.partPrefab).Last();
-                            tic = Time.realtimeSinceStartup;
-                            for (int i = 0; i < N; ++i)
-                                ProjectileUtils.IsArmorPart(testPart);
-                            dt = Time.realtimeSinceStartup - tic;
-                            Debug.Log($"DEBUG Real part HashSet lookup last part took {dt / N:G3}s");
-                            tic = Time.realtimeSinceStartup;
-                            for (int i = 0; i < N; ++i)
-                                testPart.partInfo.name.ToLower().Contains("armor");
-                            dt = Time.realtimeSinceStartup - tic;
-                            Debug.Log($"DEBUG Real part SubStr lookup took {dt / N:G3}s");
+                        //     // Using an actual part to include the part name access.
+                        //     var testPart = PartLoader.LoadedPartsList.Select(p => p.partPrefab).First();
+                        //     ProjectileUtils.IsArmorPart(testPart); // Bootstrap the HashSet
+                        //     tic = Time.realtimeSinceStartup;
+                        //     for (int i = 0; i < N; ++i)
+                        //         ProjectileUtils.IsArmorPart(testPart);
+                        //     dt = Time.realtimeSinceStartup - tic;
+                        //     Debug.Log($"DEBUG Real part HashSet lookup first part took {dt / N:G3}s");
+                        //     testPart = PartLoader.LoadedPartsList.Select(p => p.partPrefab).Last();
+                        //     tic = Time.realtimeSinceStartup;
+                        //     for (int i = 0; i < N; ++i)
+                        //         ProjectileUtils.IsArmorPart(testPart);
+                        //     dt = Time.realtimeSinceStartup - tic;
+                        //     Debug.Log($"DEBUG Real part HashSet lookup last part took {dt / N:G3}s");
+                        //     tic = Time.realtimeSinceStartup;
+                        //     for (int i = 0; i < N; ++i)
+                        //         testPart.partInfo.name.ToLower().Contains("armor");
+                        //     dt = Time.realtimeSinceStartup - tic;
+                        //     Debug.Log($"DEBUG Real part SubStr lookup took {dt / N:G3}s");
 
-                        }
-                        if (GUI.Button(SLineRect(++line), "Layer test"))
-                        {
-                            for (int i = 0; i < 32; ++i)
-                            {
-                                // Vector3 mouseAim = new Vector3(Input.mousePosition.x / Screen.width, Input.mousePosition.y / Screen.height, 0);
-                                Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
-                                RaycastHit hit;
+                        // }
+                        // if (GUI.Button(SLineRect(++line), "Layer test"))
+                        // {
+                        //     for (int i = 0; i < 32; ++i)
+                        //     {
+                        //         // Vector3 mouseAim = new Vector3(Input.mousePosition.x / Screen.width, Input.mousePosition.y / Screen.height, 0);
+                        //         Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+                        //         RaycastHit hit;
 
-                                if (Physics.Raycast(ray, out hit, 1000f, (1 << i)))
-                                {
-                                    var hitPart = hit.collider.gameObject.GetComponentInParent<Part>();
-                                    var hitEVA = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
-                                    var hitBuilding = hit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
-                                    if (hitEVA != null) hitPart = hitEVA.part;
-                                    if (hitPart != null) Debug.Log($"DEBUG Bitmask at {i} hit {hitPart.name}.");
-                                    else if (hitBuilding != null) Debug.Log($"DEBUG Bitmask at {i} hit {hitBuilding.name}");
-                                    else Debug.Log($"DEBUG Bitmask at {i} hit {hit.collider.gameObject.name}");
-                                }
-                            }
-                        }
-                        if (GUI.Button(SLineRect(++line), "Test vessel position timing."))
-                        { StartCoroutine(TestVesselPositionTiming()); }
-                        if (GUI.Button(SLineRect(++line), "FS engine status"))
-                        {
-                            foreach (var vessel in FlightGlobals.VesselsLoaded)
-                                FireSpitter.CheckStatus(vessel);
-                        }
-                        if (GUI.Button(SLineRect(++line), "Quit KSP."))
-                        {
-                            TournamentAutoResume.AutoQuit(0);
-                        }
+                        //         if (Physics.Raycast(ray, out hit, 1000f, (1 << i)))
+                        //         {
+                        //             var hitPart = hit.collider.gameObject.GetComponentInParent<Part>();
+                        //             var hitEVA = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+                        //             var hitBuilding = hit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
+                        //             if (hitEVA != null) hitPart = hitEVA.part;
+                        //             if (hitPart != null) Debug.Log($"DEBUG Bitmask at {i} hit {hitPart.name}.");
+                        //             else if (hitBuilding != null) Debug.Log($"DEBUG Bitmask at {i} hit {hitBuilding.name}");
+                        //             else Debug.Log($"DEBUG Bitmask at {i} hit {hit.collider.gameObject.name}");
+                        //         }
+                        //     }
+                        // }
+                        // if (GUI.Button(SLineRect(++line), "Test vessel position timing."))
+                        // { StartCoroutine(TestVesselPositionTiming()); }
+                        // if (GUI.Button(SLineRect(++line), "FS engine status"))
+                        // {
+                        //     foreach (var vessel in FlightGlobals.VesselsLoaded)
+                        //         FireSpitter.CheckStatus(vessel);
+                        // }
+                        // if (GUI.Button(SLineRect(++line), "Quit KSP."))
+                        // {
+                        //     TournamentAutoResume.AutoQuit(0);
+                        // }
                     }
 #endif
                 }

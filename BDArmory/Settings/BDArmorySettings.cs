@@ -275,7 +275,13 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool VESSEL_SPAWN_START_COMPETITION_AUTOMATICALLY = false; // Automatically start a competition after spawning succeeds.
 
         // Vessel Mover settings
-        [BDAPersistentSettingsField] public static bool VESSEL_MOVER_CHOOSE_CREW = false; // Choose crew when spawning vessels.
+        [BDAPersistentSettingsField] public static bool VESSEL_MOVER_CHOOSE_CREW = false;          // Choose crew when spawning vessels.
+        [BDAPersistentSettingsField] public static bool VESSEL_MOVER_CLASSIC_CRAFT_CHOOSER = true; // Use the built-in craft chooser instead of the custom one.
+        [BDAPersistentSettingsField] public static bool VESSEL_MOVER_ENABLE_BRAKES = true;         // Enable brakes when spawning vessels.
+        [BDAPersistentSettingsField] public static bool VESSEL_MOVER_ENABLE_SAS = true;            // Enable SAS when spawning vessels.
+        [BDAPersistentSettingsField] public static float VESSEL_MOVER_MIN_LOWER_SPEED = 1f;        // Minimum speed to lower vessels.
+        [BDAPersistentSettingsField] public static bool VESSEL_MOVER_LOWER_FAST = true;            // Skip lowering from high altitude.
+        [BDAPersistentSettingsField] public static bool VESSEL_MOVER_BELOW_WATER = false;          // Lower below water (on planets that have water).
 
         // Waypoints
         [BDAPersistentSettingsField] public static float WAYPOINTS_ALTITUDE = 50f;                // Altitude above ground of the waypoints.

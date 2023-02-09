@@ -3,7 +3,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using KSP.UI.Screens;
 
+using BDArmory.Competition.VesselSpawning;
+using BDArmory.Extensions;
 using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
@@ -11,11 +14,11 @@ using BDArmory.Utils;
 namespace BDArmory.Competition.VesselMover
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
-    public class VesselMover : MonoBehaviour
+    public class VesselMover : VesselSpawnerBase
     {
         public static VesselMover Instance;
 
-        enum State { None, Moving, Spawning };
+        enum State { None, Moving, Lowering, Spawning };
         State state
         {
             get { return _state; }
@@ -24,9 +27,14 @@ namespace BDArmory.Competition.VesselMover
         State _state;
         internal WaitForFixedUpdate wait = new WaitForFixedUpdate();
         HashSet<Vessel> movingVessels = new HashSet<Vessel>();
+        HashSet<Vessel> loweringVessels = new HashSet<Vessel>();
+        List<float> jumpToAltitudes = new List<float> { 10, 100, 1000, 10000, 50000 };
+        RaycastHit[] hits = new RaycastHit[10];
 
-        void Awake()
+        #region Monobehaviour routines
+        protected override void Awake()
         {
+            base.Awake();
             if (Instance != null) Destroy(Instance);
             Instance = this;
         }
@@ -35,12 +43,8 @@ namespace BDArmory.Competition.VesselMover
         {
             ready = false;
             StartCoroutine(WaitForBdaSettings());
+            ConfigureStyles();
             GameEvents.onVesselChange.Add(OnVesselChanged);
-        }
-
-        void OnDestroy()
-        {
-            GameEvents.onVesselChange.Remove(OnVesselChanged);
         }
 
         private IEnumerator WaitForBdaSettings()
@@ -53,83 +57,695 @@ namespace BDArmory.Competition.VesselMover
             BDArmorySetup.Instance.hasVesselMover = true;
         }
 
+        void OnDestroy()
+        {
+            GameEvents.onVesselChange.Remove(OnVesselChanged);
+        }
+
+        void Update()
+        {
+            if (state != State.None && FlightGlobals.ActiveVessel == null) state = State.None;
+            if (IsMoving(FlightGlobals.ActiveVessel)) HandleInput(); // Input needs to be handled in Update.
+        }
+        #endregion
+
+        #region Input
+        Vector3 positionAdjustment = Vector3.zero;
+        Quaternion rotationAdjustment = Quaternion.identity;
+        bool translating = false;
+        bool rotating = false;
+        bool jump = false;
+        bool reset = false;
+        void HandleInput()
+        {
+            positionAdjustment = Vector3.zero;
+            rotationAdjustment = Quaternion.identity;
+            translating = false;
+            rotating = false;
+
+            if (GameSettings.THROTTLE_CUTOFF.GetKeyDown()) // Reset altitude to base.
+            { reset = true; }
+            else if (Input.GetKeyDown(KeyCode.Tab)) // Jump to next reference altitude.
+            { jump = true; }
+            else if (GameSettings.THROTTLE_UP.GetKey()) // Increase altitude.
+            {
+                // _hoverAdjust += MoveSpeed * Time.fixedDeltaTime;
+                positionAdjustment.z = 1f;
+                translating = true;
+            }
+            else if (GameSettings.THROTTLE_DOWN.GetKey()) // Decrease altitude.
+            {
+                // _hoverAdjust += -(MoveSpeed * Time.fixedDeltaTime);
+                positionAdjustment.z = -1f;
+                translating = true;
+            }
+
+            if (GameSettings.PITCH_DOWN.GetKey()) // Translate forward.
+            {
+                // positionAdjustment += (forward * MoveSpeed * Time.fixedDeltaTime);
+                positionAdjustment.y = 1f;
+                translating = true;
+            }
+            else if (GameSettings.PITCH_UP.GetKey()) // Translate backward.
+            {
+                // positionAdjustment += (-forward * MoveSpeed * Time.fixedDeltaTime);
+                positionAdjustment.y = -1f;
+                translating = true;
+            }
+
+            if (GameSettings.YAW_RIGHT.GetKey()) // Translate right.
+            {
+                // positionAdjustment += (right * MoveSpeed * Time.fixedDeltaTime);
+                positionAdjustment.x = 1f;
+                translating = true;
+            }
+            else if (GameSettings.YAW_LEFT.GetKey()) // Translate left.
+            {
+                // positionAdjustment += (-right * MoveSpeed * Time.fixedDeltaTime);
+                positionAdjustment.x = -1f;
+                translating = true;
+            }
+
+            Quaternion rotation = Quaternion.identity;
+            if (GameSettings.ROLL_LEFT.GetKey()) // Roll left.
+            {
+                // _startRotation = Quaternion.AngleAxis(RotationSpeed, activeVessel.ReferenceTransform.up) * _startRotation;
+                rotating = true;
+            }
+            else if (GameSettings.ROLL_RIGHT.GetKey()) // Roll right.
+            {
+                // _startRotation = Quaternion.AngleAxis(-RotationSpeed, activeVessel.ReferenceTransform.up) * _startRotation;
+                rotating = true;
+            }
+
+            if (GameSettings.TRANSLATE_DOWN.GetKey()) // Pitch down.
+            {
+                // _startRotation = Quaternion.AngleAxis(RotationSpeed, activeVessel.ReferenceTransform.right) * _startRotation;
+                rotating = true;
+            }
+            else if (GameSettings.TRANSLATE_UP.GetKey()) // Pitch up.
+            {
+                // _startRotation = Quaternion.AngleAxis(-RotationSpeed, activeVessel.ReferenceTransform.right) * _startRotation;
+                rotating = true;
+            }
+
+            if (GameSettings.TRANSLATE_RIGHT.GetKey()) // Yaw right.
+            {
+                // _startRotation = Quaternion.AngleAxis(-RotationSpeed, activeVessel.ReferenceTransform.forward) * _startRotation;
+                rotating = true;
+            }
+            else if (GameSettings.TRANSLATE_LEFT.GetKey()) // Yaw left.
+            {
+                // _startRotation = Quaternion.AngleAxis(RotationSpeed, activeVessel.ReferenceTransform.forward) * _startRotation;
+                rotating = true;
+            }
+
+            if (GameSettings.TRANSLATE_FWD.GetKey()) // Auto-level plane
+            {
+                // Quaternion targetRot = Quaternion.LookRotation(-up, forward);
+                // _startRotation = Quaternion.RotateTowards(_startRotation, targetRot, RotationSpeed * 2);
+                rotating = true;
+            }
+            else if (GameSettings.TRANSLATE_BACK.GetKey()) // Auto-level rocket
+            {
+                // Quaternion targetRot = Quaternion.LookRotation(forward, up);
+                // _startRotation = Quaternion.RotateTowards(_startRotation, targetRot, RotationSpeed * 2);
+                rotating = true;
+            }
+        }
+        #endregion
+
+        #region Moving
+        Vector3d geoCoords;
+        bool IsValid(Vessel vessel) => vessel != null && vessel.loaded && !vessel.packed;
+        bool IsMoving(Vessel vessel) => IsValid(vessel) && movingVessels.Contains(vessel);
+        bool IsLowering(Vessel vessel) => IsValid(vessel) && loweringVessels.Contains(vessel);
         IEnumerator MoveVessel(Vessel vessel)
         {
-            if (vessel == null || vessel.packed) yield break;
-            Debug.Log($"[BDArmory.VesselMover]: Moving {vessel.vesselName}...");
-            state = State.Moving;
+            if (!IsValid(vessel)) { state = State.None; yield break; }
+            if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselMover]: Moving {vessel.vesselName}");
             movingVessels.Add(vessel);
+            state = State.Moving;
 
-            while (vessel != null && !vessel.packed && movingVessels.Contains(vessel))
+            var hadPatchedConicsSolver = vessel.PatchedConicsAttached;
+            if (hadPatchedConicsSolver)
             {
-                yield return wait;
+                if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselMover]: Detaching patched conic solver");
+                try
+                {
+                    vessel.DetachPatchedConicsSolver();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"[BDArmory.VesselMover]: Failed to remove the Patched Conic Solver: {e.Message}");
+                }
             }
+
+            // Disable various action groups. We'll enable some of them again later if specified.
+            vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, false); // Disable RCS
+            if (BDArmorySettings.VESSEL_MOVER_ENABLE_SAS) vessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false); // Disable SAS
+            if (BDArmorySettings.VESSEL_MOVER_ENABLE_BRAKES) vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, false); // Disable Brakes
+            foreach (LaunchClamp clamp in vessel.FindPartModulesImplementing<LaunchClamp>()) clamp.Release(); // Release clamps
+            KillRotation(vessel);
+            if (BDArmorySettings.VESSEL_MOVER_ENABLE_BRAKES) vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
+
+            var up = (vessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
+            float startingAltitude = 2f * vessel.GetRadius();
+            var lowerBound = GetLowerBound(vessel);
+            var safeAlt = SafeAltitude(vessel, lowerBound);
+            var position = vessel.transform.position;
+            var rotation = vessel.transform.rotation;
+            if (LandedOrSplashed(vessel) || startingAltitude > safeAlt) // Careful with initial separation from ground.
+            {
+                var count = 0;
+                while (IsMoving(vessel) && ++count <= 10)
+                {
+                    vessel.Landed = false;
+                    vessel.Splashed = false;
+                    vessel.IgnoreGForces(240);
+                    position += count * (startingAltitude - safeAlt) / 55f * up;
+                    vessel.SetPosition(position);
+                    vessel.SetWorldVelocity(Vector3d.zero);
+                    vessel.SetRotation(rotation);
+                    yield return wait;
+                    KrakensbaneCorrection(ref position);
+                }
+            }
+
+            KillRotation(vessel);
+            float moveSpeed = 0;
+            while (IsMoving(vessel))
+            {
+                if (rotating)
+                {
+                    lowerBound = GetLowerBound(vessel);
+                }
+                if (reset)
+                {
+                    var baseAltitude = 2f * vessel.GetRadius();
+                    var safeAltitude = SafeAltitude(vessel, lowerBound);
+                    if (!BDArmorySettings.VESSEL_MOVER_BELOW_WATER) safeAltitude = Mathf.Min((float)vessel.altitude, safeAltitude);
+                    if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselMover]: Resetting to base altitude {baseAltitude + lowerBound}m (safeAlt: {safeAltitude}, lower bound: {lowerBound}m)");
+                    position += (baseAltitude - safeAltitude) * up;
+                    reset = false;
+                }
+                else if (jump)
+                {
+                    var baseAltitude = 2f * vessel.GetRadius();
+                    var safeAltitude = SafeAltitude(vessel, lowerBound);
+                    var jumpToAltitude = safeAltitude < 1.1f * baseAltitude ? jumpToAltitudes.Last() : jumpToAltitudes.Where(a => a < 0.95f * safeAltitude).LastOrDefault();
+                    if (jumpToAltitude < 2f * baseAltitude) jumpToAltitude = baseAltitude;
+                    if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselMover]: Jumping to altitude {jumpToAltitude}m (safeAlt: {safeAltitude}, baseAlt: {baseAltitude})");
+                    up = (vessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
+                    position += (jumpToAltitude - safeAltitude) * up;
+                    jump = false;
+                }
+                else if (translating)
+                {
+                    up = (vessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
+                    Vector3 forward;
+                    if (MapView.MapIsEnabled)
+                    {
+                        forward = Vector3.ProjectOnPlane(-Math.Sign(vessel.latitude) * (vessel.mainBody.GetWorldSurfacePosition(vessel.latitude - Math.Sign(vessel.latitude), vessel.longitude, vessel.altitude) - vessel.GetWorldPos3D()), up).normalized;
+                    }
+                    else
+                    {
+                        if (Vector3.Dot(-up, FlightCamera.fetch.mainCamera.transform.up) > 0)
+                            forward = Vector3.ProjectOnPlane(FlightCamera.fetch.mainCamera.transform.up, up).normalized;
+                        else
+                            forward = Vector3.ProjectOnPlane(vessel.transform.position - FlightCamera.fetch.mainCamera.transform.position, up).normalized;
+                    }
+                    Vector3 right = Vector3.Cross(up, forward);
+
+                    var radarAltitude = RadarAltitude(vessel);
+                    var distance = Mathf.Abs(radarAltitude - lowerBound);
+                    float maxMoveSpeed = distance > 25f ? 20f * BDAMath.Sqrt(distance) : distance > 1f ? 4f * distance : 1f;
+                    moveSpeed = Mathf.Clamp(Mathf.MoveTowards(moveSpeed, maxMoveSpeed, maxMoveSpeed * Time.fixedDeltaTime), 0, maxMoveSpeed);
+
+                    var moveDistance = moveSpeed * Time.fixedDeltaTime;
+                    var offset = 3f * positionAdjustment.x * moveDistance * right + 3f * positionAdjustment.y * moveDistance * forward;
+                    offset += (radarAltitude - RadarAltitude(position + offset)) * up;
+                    var safeAltitude = radarAltitude < 1000 ? SafeAltitude(vessel, lowerBound, offset) : radarAltitude; // Don't bother when over 1000m.
+                    offset += Mathf.Max(positionAdjustment.z * moveSpeed * Time.fixedDeltaTime, -safeAltitude) * up;
+                    position += offset;
+                    // Debug.Log($"DEBUG position: {position:G6}, altitude: {radarAltitude}, safeAltCorrection: {safeAltitude}, distance: {distance}, moveSpeed: {moveSpeed}, maxSpeed: {maxMoveSpeed}");
+                }
+                else
+                { moveSpeed = 0; }
+
+                vessel.IgnoreGForces(240);
+                vessel.SetPosition(position);
+                vessel.SetWorldVelocity(Vector3d.zero);
+                vessel.SetRotation(rotation);
+                yield return wait;
+                KrakensbaneCorrection(ref position);
+            }
+
+            if (hadPatchedConicsSolver && !vessel.PatchedConicsAttached)
+            {
+                if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselMover]: Re-attaching patched conic solver");
+                try
+                {
+                    vessel.AttachPatchedConicsSolver();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"[BDArmory.VesselMover]: Failed to re-attach the Patched Conic Solver: {e.Message}");
+                }
+            }
+        }
+
+        void KillRotation(Vessel vessel)
+        {
+            if (vessel.angularVelocity == default) return;
+            foreach (var part in vessel.Parts)
+            {
+                var rb = part.Rigidbody;
+                if (rb == null) continue;
+                rb.angularVelocity = default;
+            }
+        }
+
+        void KrakensbaneCorrection(ref Vector3 position)
+        {
+            if (!BDKrakensbane.IsActive) return;
+            position -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
         }
 
         IEnumerator PlaceVessel(Vessel vessel)
         {
-            if (vessel == null || vessel.packed || !movingVessels.Contains(vessel)) yield break;
-            Debug.Log($"[BDArmory.VesselMover]: Placing {vessel.vesselName}...");
+            if (IsLowering(vessel)) yield break; // We're already doing this.
+            if (!IsMoving(vessel)) { state = State.None; yield break; } // The vessel isn't moving, abort.
+            if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselMover]: Placing {vessel.vesselName}");
             movingVessels.Remove(vessel);
+            loweringVessels.Add(vessel);
 
-            yield return wait;
-            state = State.None;
+            KillRotation(vessel);
+            if (BDArmorySettings.VESSEL_MOVER_ENABLE_BRAKES) vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
+            if (!FlightGlobals.currentMainBody.hasSolidSurface) { DropVessel(vessel); yield break; } // No surface to lower to!
+            if (BDArmorySettings.VESSEL_MOVER_LOWER_FAST)
+            {
+                var up = (vessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
+                var baseAltitude = 2f * vessel.GetRadius();
+                var safeAltitude = SafeAltitude(vessel) * 0.99f; // Only go 99% of the way in a single jump in case terrain is still loading in.
+                if (baseAltitude < safeAltitude)
+                    vessel.Translate((baseAltitude - safeAltitude) * up);
+                vessel.SetWorldVelocity(Vector3d.zero);
+            }
+            yield return LowerVessel(vessel);
+        }
+
+        IEnumerator LowerVessel(Vessel vessel)
+        {
+            if (!FlightGlobals.currentMainBody.hasSolidSurface) { DropVessel(vessel); yield break; } // No surface to lower to!
+            if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselMover]: Lowering {vessel.vesselName}");
+            state = State.Lowering;
+            var lowerBound = GetLowerBound(vessel);
+            var up = (vessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
+            bool finalLowering = false;
+            var previousAltitude = vessel.altitude;
+            while (IsLowering(vessel) && !LandedOrSplashed(vessel) && (!finalLowering || vessel.altitude - previousAltitude < -0.1 * BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED * Time.fixedDeltaTime))
+            {
+                var distance = SafeAltitude(vessel, lowerBound);
+                var speed = distance > 25f ? 20f * BDAMath.Sqrt(distance) : distance > BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED ? 4f * distance : BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED;
+                if (speed > BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED)
+                {
+                    vessel.SetWorldVelocity(Vector3d.zero);
+                    vessel.Translate(-speed * up * Time.fixedDeltaTime);
+                }
+                else
+                {
+                    if (!finalLowering && vessel.verticalSpeed < -1e-2) finalLowering = true;
+                    vessel.SetWorldVelocity(-speed * up);
+                }
+                // Debug.Log($"DEBUG landed/splashed: {LandedOrSplashed(vessel)}, altitude: {vessel.altitude}m ({distance}m), v-speed: {vessel.verticalSpeed}m/s, speed: {speed}");
+                previousAltitude = vessel.altitude;
+                yield return wait;
+            }
+            if (!IsLowering(vessel)) yield break; // Vessel destroyed or state switched, e.g., moving again.
+
+            // Turn on brakes and SAS (apparently helps to avoid the turning bug).
+            if (BDArmorySettings.VESSEL_MOVER_ENABLE_SAS)
+            { vessel.ActionGroups.SetGroup(KSPActionGroup.SAS, true); }
+            if (BDArmorySettings.VESSEL_MOVER_ENABLE_BRAKES)
+            {
+                vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
+                // Ease the craft to a resting position.
+                messageState = Messages.EasingCraft;
+                var startTime = Time.time;
+                var stationaryStartTime = startTime;
+                vessel.IgnoreGForces(0);
+                while (IsLowering(vessel) && Time.time - startTime < 10f && Time.time - stationaryStartTime <= 0.1f) // Damp movement for up to 10s.
+                {
+                    // if ((float)vessel.verticalSpeed < -0.1f * BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED)
+                    if ((vessel.altitude >= 0 && Math.Abs(vessel.altitude - previousAltitude) > 0.1 * BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED * Time.fixedDeltaTime)
+                        || (vessel.altitude < 0 && vessel.altitude - previousAltitude < -0.1 * BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED * Time.fixedDeltaTime))
+                    {
+                        vessel.SetWorldVelocity(vessel.GetSrfVelocity() * (0.45f + 0.5f * BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED));
+                        stationaryStartTime = Time.time;
+                        yield return wait; // Setting the velocity prevents a proper velocity calculation on the next frame, so wait an extra frame for it to take effect.
+                    }
+                    // Debug.Log($"DEBUG landed/splashed: {LandedOrSplashed(vessel)}, altitude: {vessel.altitude}m, v-speed: {vessel.verticalSpeed}m/s");
+                    previousAltitude = vessel.altitude;
+                    yield return wait;
+                }
+            }
+            if (IsLowering(vessel))
+            {
+                loweringVessels.Remove(vessel);
+                state = State.None;
+                messageState = Messages.None;
+            }
         }
 
         void DropVessel(Vessel vessel)
         {
-            if (vessel == null || vessel.packed || !movingVessels.Contains(vessel)) return;
-            Debug.Log($"[BDArmory.VesselMover]: Dropping {vessel.vesselName}...");
+            if (!IsMoving(vessel) && !IsLowering(vessel)) return; // Not in a valid state for dropping.
+            if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselMover]: Dropping {vessel.vesselName}");
             movingVessels.Remove(vessel);
+            loweringVessels.Remove(vessel);
             state = State.None;
+            messageState = Messages.None;
         }
 
+        /// <summary>
+        /// Get the vertical distance (non-negative) from the vessel transform position to the lowest point.
+        /// </summary>
+        /// <param name="vessel"></param>
+        /// <returns></returns>
+        float GetLowerBound(Vessel vessel)
+        {
+            var up = (vessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
+            var maxDim = 2f * vessel.GetRadius();
+            var radius = vessel.GetRadius(up, vessel.GetBounds());
+            var hitCount = Physics.BoxCastNonAlloc(vessel.transform.position - (maxDim + 0.1f) * up, new Vector3(radius, 0.1f, radius), up, hits, Quaternion.FromToRotation(Vector3.up, up), maxDim, (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels));
+            if (hitCount == hits.Length)
+            {
+                hits = Physics.BoxCastAll(vessel.transform.position - (maxDim + 0.1f) * up, new Vector3(radius, 0.1f, radius), up, Quaternion.FromToRotation(Vector3.up, up), maxDim, (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels));
+                hitCount = hits.Length;
+            }
+            var distances = hits.Take(hitCount).Where(hit => hit.collider != null && hit.collider.gameObject != null).Where(hit => { var part = hit.collider.gameObject.GetComponentInParent<Part>(); return part != null && part.vessel == vessel; }).Select(hit => hit.distance).ToArray();
+            if (distances.Length == 0)
+            {
+                Debug.LogWarning($"[BDArmory.VesselMover]: Failed to detect craft for lower bound!");
+                return 0;
+            }
+            return maxDim - distances.Min();
+        }
+
+        bool LandedOrSplashed(Vessel vessel) => BDArmorySettings.VESSEL_MOVER_BELOW_WATER ? vessel.Landed : vessel.LandedOrSplashed;
+        float RadarAltitude(Vessel vessel) => (float)(vessel.altitude - vessel.mainBody.TerrainAltitude(vessel.latitude, vessel.longitude, BDArmorySettings.VESSEL_MOVER_BELOW_WATER));
+        float RadarAltitude(Vector3 position) => (float)(FlightGlobals.currentMainBody.GetAltitude(position) - BodyUtils.GetTerrainAltitudeAtPos(position, BDArmorySettings.VESSEL_MOVER_BELOW_WATER));
+        float SafeAltitude(Vessel vessel, float lowerBound = -1f, Vector3 offset = default)
+        {
+            var altitude = RadarAltitude(vessel);
+            var position = vessel.transform.position + offset;
+            var up = (position - FlightGlobals.currentMainBody.transform.position).normalized;
+            var radius = vessel.GetRadius(up, vessel.GetBounds());
+            if (lowerBound < 0) lowerBound = GetLowerBound(vessel);
+
+            // Detect collisions from moving in the direction of the offset. 100m is generally sufficient.
+            var hitCount = Physics.BoxCastNonAlloc(position + 100.1f * up, new Vector3(radius, 0.1f, radius), -up, hits, Quaternion.FromToRotation(Vector3.up, up), altitude + 100f, (int)(LayerMasks.Scenery | LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels));
+            if (hitCount == hits.Length)
+            {
+                hits = Physics.BoxCastAll(position + 100.1f * up, new Vector3(radius, 0.1f, radius), -up, Quaternion.FromToRotation(Vector3.up, up), altitude + 100f, (int)(LayerMasks.Scenery | LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels));
+                hitCount = hits.Length;
+            }
+            if (hitCount > 0)
+            {
+                var distances = hits.Take(hitCount).Where(hit => hit.collider != null && hit.collider.gameObject != null).Where(hit => { var part = hit.collider.gameObject.GetComponentInParent<Part>(); return part == null || part.vessel != vessel; }).Select(hit => hit.distance).ToArray();
+                if (distances.Length > 0) altitude = Mathf.Min(altitude, distances.Min() - 100f);
+            }
+            return altitude - lowerBound - 0.1f;
+        }
+        #endregion
+
+        #region Spawning
+        Vessel spawnedVessel;
         IEnumerator SpawnVessel()
         {
-            Debug.Log($"[BDArmory.VesselMover]: Spawning vessel...");
             state = State.Spawning;
 
-            yield return wait;
+            // Open craft selection
+            string craftFile = "";
+            bool abort = false;
+            messageState = Messages.OpeningCraftBrowser;
+            if (BDArmorySettings.VESSEL_MOVER_CLASSIC_CRAFT_CHOOSER)
+            {
+                var craftBrowser = CraftBrowserDialog.Spawn(EditorFacility.SPH, HighLogic.SaveFolder, (path, loadType) => { craftFile = path; }, () => { abort = true; }, false);
+                while (!abort && string.IsNullOrEmpty(craftFile)) yield return wait;
+                craftBrowser = null;
+            }
+            else
+                craftFile = VesselSpawner.spawnProbeLocation;
+            messageState = Messages.None;
+            if (abort || string.IsNullOrEmpty(craftFile)) { state = State.None; yield break; }
+            if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselMover]: {craftFile} selected for spawning.");
 
-            state = State.None;
+            // Choose crew
+            if (BDArmorySettings.VESSEL_MOVER_CHOOSE_CREW)
+            { yield return ChooseCrew(); }
+            messageState = Messages.None;
+
+            // Select location
+            yield return GetSpawnPoint();
+            messageState = Messages.None;
+            if (geoCoords == Vector3d.zero) { state = State.None; yield break; }
+
+            // Store the camera view
+            var camera = FlightCamera.fetch;
+            var cameraOffset = FlightGlobals.ActiveVessel != null ? camera.transform.position - FlightGlobals.ActiveVessel.transform.position : Vector3.zero;
+
+            // Spawn the craft
+            yield return SpawnVessel(craftFile, geoCoords.x, geoCoords.y, geoCoords.z + 1000f); // Spawn 1km higher than requested and then move it down.
+            messageState = Messages.None;
+            if (spawnFailureReason != SpawnFailureReason.None) { state = State.None; yield break; }
+            if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselMover]: Spawned {spawnedVessel.vesselName} at {geoCoords:G6}");
+            while (spawnedVessel != null && (!spawnedVessel.loaded || spawnedVessel.packed)) yield return wait;
+            if (spawnedVessel != null)
+            {
+                var up = (spawnedVessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
+                if (FlightGlobals.currentMainBody.hasSolidSurface)
+                {
+                    var safeAltitude = SafeAltitude(spawnedVessel);
+                    if (!BDArmorySettings.VESSEL_MOVER_BELOW_WATER) safeAltitude = Mathf.Min((float)spawnedVessel.altitude, safeAltitude);
+                    spawnedVessel.Translate((2f * spawnedVessel.GetRadius() - safeAltitude) * up);
+                }
+                else // No surface to lower to!
+                {
+                    spawnedVessel.Translate(-1000f * up);
+                }
+                spawnedVessel.SetWorldVelocity(Vector3d.zero);
+            }
+
+            // Switch to it when possible
+            yield return LoadedVesselSwitcher.Instance.SwitchToVesselWhenPossible(spawnedVessel);
+            if (!IsValid(spawnedVessel))
+            {
+                Debug.LogWarning($"[BDArmory.VesselMover]: The spawned vessel disappeared before we could switch to it!");
+                state = State.None;
+                yield break;
+            }
+
+            // Restore the camera view
+            camera.SetCamCoordsFromPosition(spawnedVessel.transform.position + cameraOffset);
+
+            // Switch to moving mode
+            yield return MoveVessel(spawnedVessel);
+            spawnedVessel = null; // Clear the reference to the spawned vessel.
         }
 
+        IEnumerator ChooseCrew()
+        {
+            messageState = Messages.ChoosingCrew;
+            yield break;
+        }
+
+        IEnumerator GetSpawnPoint()
+        {
+            messageState = Messages.ChoosingSpawnPoint;
+            // Use the same indicator as the original VesselMover for familiarity.
+            GameObject indicatorObject = new GameObject();
+            LineRenderer lr = indicatorObject.AddComponent<LineRenderer>();
+            lr.material = new Material(Shader.Find("KSP/Particles/Alpha Blended"));
+            lr.material.SetColor("_TintColor", Color.green);
+            lr.material.mainTexture = Texture2D.whiteTexture;
+            lr.useWorldSpace = false;
+
+            Vector3[] positions = new Vector3[] { Vector3.zero, 10 * Vector3.forward };
+            lr.SetPositions(positions);
+            lr.positionCount = positions.Length;
+            lr.startWidth = 0.1f;
+            lr.endWidth = 1f;
+
+            Vector3 mouseAim, point;
+            Ray ray;
+            bool altitudeCorrection = false;
+            var currentMainBody = FlightGlobals.currentMainBody;
+            while (true)
+            {
+                if (Input.GetKeyDown(KeyCode.Escape))
+                {
+                    geoCoords = Vector3d.zero;
+                    break;
+                }
+
+                mouseAim = new Vector3(Input.mousePosition.x / Screen.width, Input.mousePosition.y / Screen.height, 0);
+                ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(mouseAim);
+                if (Physics.Raycast(ray, out RaycastHit hit, (ray.origin - currentMainBody.transform.position).magnitude, (int)(LayerMasks.Scenery | LayerMasks.Parts | LayerMasks.Wheels | LayerMasks.EVA)))
+                {
+                    point = hit.point;
+                    altitudeCorrection = false;
+                }
+                else if (SphereRayIntersect(ray, currentMainBody.transform.position, (float)currentMainBody.Radius, out float distance))
+                {
+                    point = ray.GetPoint(distance);
+                    altitudeCorrection = true;
+                }
+                else
+                {
+                    yield return wait;
+                    continue;
+                }
+
+                indicatorObject.transform.position = point;
+                indicatorObject.transform.rotation = Quaternion.LookRotation(point - currentMainBody.transform.position);
+
+                if (Input.GetMouseButtonDown(0))
+                {
+                    currentMainBody.GetLatLonAlt(point, out geoCoords.x, out geoCoords.y, out geoCoords.z);
+                    if (altitudeCorrection) geoCoords.z = currentMainBody.TerrainAltitude(geoCoords.x, geoCoords.y, BDArmorySettings.VESSEL_MOVER_BELOW_WATER);
+                    break;
+                }
+                yield return wait;
+            }
+            Destroy(indicatorObject);
+        }
+
+        bool SphereRayIntersect(Ray ray, Vector3 sphereCenter, float sphereRadius, out float distance)
+        {
+            distance = 0;
+            Vector3 n = ray.direction;
+            Vector3 R = ray.origin - sphereCenter;
+            float r = sphereRadius;
+            float d = Vector3.Dot(n, R); // d is non-positive if the ray originates outside the sphere and intersects it
+            if (d > 0) return false;
+            var G = d * d - R.sqrMagnitude + r * r;
+            if (G < 0) return false;
+            distance = -d - BDAMath.Sqrt(G);
+            return true;
+        }
+
+        IEnumerator SpawnVessel(string craftUrl, double latitude, double longitude, double altitude, float initialHeading = 90f, float initialPitch = 0f)
+        {
+            messageState = Messages.LoadingCraft;
+            spawnFailureReason = SpawnFailureReason.None; // Reset the spawn failure reason.
+            var spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitude, longitude, altitude);
+            var radialUnitVector = (spawnPoint - FlightGlobals.currentMainBody.transform.position).normalized;
+            var north = VectorUtils.GetNorthVector(spawnPoint, FlightGlobals.currentMainBody);
+            var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(initialHeading, radialUnitVector) * north, radialUnitVector).normalized;
+            VesselSpawnConfig vesselSpawnConfig = new VesselSpawnConfig(craftUrl, spawnPoint, direction, (float)altitude, initialPitch, false);
+
+            // Spawn vessel.
+            yield return SpawnSingleVessel(vesselSpawnConfig);
+            if (spawnFailureReason != SpawnFailureReason.None) { state = State.None; yield break; }
+            var vessel = spawnedVessels[latestSpawnedVesselName];
+            if (vessel == null)
+            {
+                spawnFailureReason = SpawnFailureReason.VesselFailedToSpawn;
+                state = State.None;
+                yield break;
+            }
+            spawnedVessel = vessel;
+        }
+
+        public override IEnumerator Spawn(SpawnConfig spawnConfig) { yield break; } // Compliance with SpawnStrategy kludge.
+        #endregion
 
         #region GUI
         static int guiCheckIndex = -1;
         bool helpShowing = false;
         bool ready = false;
-
+        float windowWidth = 300;
+        enum Messages { None, OpeningCraftBrowser, ChoosingCrew, ChoosingSpawnPoint, LoadingCraft, EasingCraft }
+        Messages messageState = Messages.None;
         private void OnGUI()
         {
-            if (!(ready && BDArmorySetup.GAME_UI_ENABLED && BDArmorySetup.Instance.showVesselMoverGUI))
+            if (!(ready && BDArmorySetup.GAME_UI_ENABLED))
                 return;
 
-            BDArmorySetup.SetGUIOpacity();
-            BDArmorySetup.WindowRectVesselMover = GUILayout.Window(
-                GUIUtility.GetControlID(FocusType.Passive),
-                BDArmorySetup.WindowRectVesselMover,
-                WindowVesselMover,
-                StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_Title"), // "BDA Vessel Mover"
-                BDArmorySetup.BDGuiSkin.window,
-                GUILayout.Width(250)
-            );
-            BDArmorySetup.SetGUIOpacity(false);
-            GUIUtils.UpdateGUIRect(BDArmorySetup.WindowRectVesselMover, guiCheckIndex);
+            if (BDArmorySetup.Instance.showVesselMoverGUI)
+            {
+                BDArmorySetup.SetGUIOpacity();
+                BDArmorySetup.WindowRectVesselMover = GUILayout.Window(
+                    GUIUtility.GetControlID(FocusType.Passive),
+                    BDArmorySetup.WindowRectVesselMover,
+                    WindowVesselMover,
+                    StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_Title"), // "BDA Vessel Mover"
+                    BDArmorySetup.BDGuiSkin.window,
+                    GUILayout.Width(windowWidth)
+                );
+                BDArmorySetup.SetGUIOpacity(false);
+                GUIUtils.UpdateGUIRect(BDArmorySetup.WindowRectVesselMover, guiCheckIndex);
+            }
+
+            switch (messageState)
+            {
+                case Messages.OpeningCraftBrowser:
+                    DrawShadowedMessage("Opening Craft Browser...");
+                    break;
+                case Messages.ChoosingCrew:
+                    DrawShadowedMessage("Opening Crew Selection...");
+                    break;
+                case Messages.ChoosingSpawnPoint:
+                    DrawShadowedMessage("Click somewhere to spawn!");
+                    break;
+                case Messages.LoadingCraft:
+                    DrawShadowedMessage("Loading Craft...");
+                    break;
+                case Messages.EasingCraft:
+                    DrawShadowedMessage("Easing Craft for up to 10s...");
+                    break;
+            }
+        }
+
+        GUIStyle messageStyle;
+        GUIStyle messageShadowStyle;
+        void ConfigureStyles()
+        {
+            messageStyle = new GUIStyle(HighLogic.Skin.label);
+            messageStyle.fontSize = 22;
+            messageStyle.alignment = TextAnchor.UpperCenter;
+
+            messageShadowStyle = new GUIStyle(messageStyle);
+            messageShadowStyle.normal.textColor = new Color(0, 0, 0, 0.75f);
+        }
+
+        void DrawShadowedMessage(string message)
+        {
+            Rect labelRect = new Rect(0, (Screen.height * 0.25f) + (Mathf.Sin(2 * Time.time) * 5), Screen.width, 200);
+            Rect shadowRect = new Rect(labelRect);
+            shadowRect.position += new Vector2(2, 2);
+            GUI.Label(shadowRect, message, messageShadowStyle);
+            GUI.Label(labelRect, message, messageStyle);
         }
 
         void OnVesselChanged(Vessel vessel)
         {
-            if (vessel == null || vessel.packed)
+            if (!IsValid(vessel))
             { state = State.None; }
             if (movingVessels.Contains(vessel))
             { state = State.Moving; }
+            else if (loweringVessels.Contains(vessel))
+            { state = State.Lowering; }
             else
             { state = State.None; }
-            movingVessels = movingVessels.Where(v => v != null && !v.packed).ToHashSet(); // Clean the moving vessels hashset.
+            // Clean the moving and lowering vessel hashsets.
+            movingVessels = movingVessels.Where(v => IsValid(v)).ToHashSet();
+            loweringVessels = loweringVessels.Where(v => IsValid(v)).ToHashSet();
         }
 
-        private void WindowVesselMover(int id)
+        void WindowVesselMover(int id)
         {
             GUI.DragWindow(new Rect(0, 0, BDArmorySetup.WindowRectVesselMover.width, 20));
             GUILayout.BeginVertical(GUILayout.ExpandHeight(true));
@@ -137,19 +753,32 @@ namespace BDArmory.Competition.VesselMover
             {
                 case State.None:
                     {
-                        // Two buttons: Move Vessel, Spawn Vessel. Two toggles: Spawn Crew, Choose Crew
-                        if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_MoveVessel"), BDArmorySetup.BDGuiSkin.button)) StartCoroutine(MoveVessel(FlightGlobals.ActiveVessel));
-                        if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_SpawnVessel"), BDArmorySetup.BDGuiSkin.button)) StartCoroutine(SpawnVessel());
+                        if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_MoveVessel"), BDArmorySetup.BDGuiSkin.button, GUILayout.Height(40))) StartCoroutine(MoveVessel(FlightGlobals.ActiveVessel));
+                        if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_SpawnVessel"), BDArmorySetup.BDGuiSkin.button, GUILayout.Height(40))) StartCoroutine(SpawnVessel());
                         GUILayout.BeginHorizontal();
                         BDArmorySettings.VESSEL_MOVER_CHOOSE_CREW = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_CHOOSE_CREW, StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_ChooseCrew"));
+                        BDArmorySettings.VESSEL_MOVER_CLASSIC_CRAFT_CHOOSER = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_CLASSIC_CRAFT_CHOOSER, StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_ClassicChooser"));
                         GUILayout.EndHorizontal();
                         break;
                     }
                 case State.Moving:
                     {
-                        // Two buttons: Place Vessel, Drop Vessel. Small Help button -> expands to show keys
-                        if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_PlaceVessel"), BDArmorySetup.BDGuiSkin.button)) StartCoroutine(PlaceVessel(FlightGlobals.ActiveVessel));
-                        if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_DropVessel"), BDArmorySetup.BDGuiSkin.button)) DropVessel(FlightGlobals.ActiveVessel);
+                        if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_PlaceVessel"), BDArmorySetup.BDGuiSkin.button, GUILayout.Height(40))) StartCoroutine(PlaceVessel(FlightGlobals.ActiveVessel));
+                        if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_DropVessel"), BDArmorySetup.BDGuiSkin.button, GUILayout.Height(40))) DropVessel(FlightGlobals.ActiveVessel);
+                        GUILayout.BeginHorizontal();
+                        GUILayout.BeginVertical();
+                        BDArmorySettings.VESSEL_MOVER_ENABLE_BRAKES = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_ENABLE_BRAKES, StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_EnableBrakes"));
+                        BDArmorySettings.VESSEL_MOVER_LOWER_FAST = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_LOWER_FAST, StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_LowerFast"));
+                        GUILayout.EndVertical();
+                        GUILayout.BeginVertical();
+                        BDArmorySettings.VESSEL_MOVER_ENABLE_SAS = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_ENABLE_SAS, StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_EnableSAS"));
+                        BDArmorySettings.VESSEL_MOVER_BELOW_WATER = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_BELOW_WATER, StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_BelowWater"));
+                        GUILayout.EndVertical();
+                        GUILayout.EndHorizontal();
+                        GUILayout.BeginHorizontal();
+                        GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_MinLowerSpeed")}: {BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED}", GUILayout.Width(130));
+                        BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED = BDAMath.RoundToUnit(GUILayout.HorizontalSlider(BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED, 0.1f, 1f), 0.1f);
+                        GUILayout.EndHorizontal();
                         if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_Generic_Help"), helpShowing ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button, GUILayout.Height(20)))
                         {
                             helpShowing = !helpShowing;
@@ -158,16 +787,42 @@ namespace BDArmory.Competition.VesselMover
                         if (helpShowing)
                         {
                             GUILayout.BeginVertical();
-                            GUILayout.Label("Help text");
-                            GUILayout.Label("goes here");
+                            GUILayout.Label($"Movement: {GameSettings.PITCH_DOWN.primary} {GameSettings.PITCH_UP.primary} {GameSettings.YAW_LEFT.primary} {GameSettings.YAW_RIGHT.primary}");
+                            GUILayout.Label($"Roll: {GameSettings.ROLL_LEFT.primary} {GameSettings.ROLL_RIGHT.primary}");
+                            GUILayout.Label($"Pitch: {GameSettings.TRANSLATE_DOWN.primary} {GameSettings.TRANSLATE_UP.primary}");
+                            GUILayout.Label($"Yaw: {GameSettings.TRANSLATE_LEFT.primary} {GameSettings.TRANSLATE_RIGHT.primary}");
+                            GUILayout.Label($"Auto rotate rocket: {GameSettings.TRANSLATE_BACK.primary}");
+                            GUILayout.Label($"Auto rotate plane: {GameSettings.TRANSLATE_FWD.primary}");
+                            GUILayout.Label($"Cycle preset altitudes: Tab");
+                            GUILayout.Label($"Reset Altitude: {GameSettings.THROTTLE_CUTOFF.primary}");
+                            GUILayout.Label($"Adjust Altitude: {GameSettings.THROTTLE_UP.primary} {GameSettings.THROTTLE_DOWN.primary}");
                             GUILayout.EndVertical();
                         }
                         break;
                     }
+                case State.Lowering:
+                    {
+                        if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_MoveVessel"), BDArmorySetup.BDGuiSkin.button, GUILayout.Height(40))) { DropVessel(FlightGlobals.ActiveVessel); StartCoroutine(MoveVessel(FlightGlobals.ActiveVessel)); }
+                        if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_DropVessel"), BDArmorySetup.BDGuiSkin.button, GUILayout.Height(40))) DropVessel(FlightGlobals.ActiveVessel);
+                        GUILayout.BeginHorizontal();
+                        GUILayout.BeginVertical();
+                        BDArmorySettings.VESSEL_MOVER_ENABLE_BRAKES = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_ENABLE_BRAKES, StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_EnableBrakes"));
+                        BDArmorySettings.VESSEL_MOVER_LOWER_FAST = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_LOWER_FAST, StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_LowerFast"));
+                        GUILayout.EndVertical();
+                        GUILayout.BeginVertical();
+                        BDArmorySettings.VESSEL_MOVER_ENABLE_SAS = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_ENABLE_SAS, StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_EnableSAS"));
+                        BDArmorySettings.VESSEL_MOVER_BELOW_WATER = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_BELOW_WATER, StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_BelowWater"));
+                        GUILayout.EndVertical();
+                        GUILayout.EndHorizontal();
+                        GUILayout.BeginHorizontal();
+                        GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_MinLowerSpeed")}: {BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED}", GUILayout.Width(130));
+                        BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED = BDAMath.RoundToUnit(GUILayout.HorizontalSlider(BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED, 0.1f, 1f), 0.1f);
+                        GUILayout.EndHorizontal();
+                        break;
+                    }
                 case State.Spawning:
                     {
-                        // Opens craft browser. Opens crew selection after craft selection if Choose Crew is enabled.
-                        if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselMover]: Spawning a vessel...");
+                        GUILayout.Label($"Spawning craft...");
                         break;
                     }
             }
@@ -183,6 +838,7 @@ namespace BDArmory.Competition.VesselMover
         void ResetWindowHeight()
         {
             BDArmorySetup.WindowRectVesselMover.height = 0;
+            GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectVesselMover);
         }
 
         public void SetVisible(bool visible)

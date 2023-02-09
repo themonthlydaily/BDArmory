@@ -555,7 +555,7 @@ namespace BDArmory.UI
             {
                 foreach (var player in BDACompetitionMode.Instance.Scores.deathOrder)
                 {
-					if (BDACompetitionMode.Instance.hasPinata && player == BDArmorySettings.PINATA_NAME) continue; // Ignore the piñata.
+                    if (BDACompetitionMode.Instance.hasPinata && player == BDArmorySettings.PINATA_NAME) continue; // Ignore the piñata.
                     if (!deadVesselStrings.ContainsKey(player))
                     {
                         deadVesselString.Clear();
@@ -1362,7 +1362,7 @@ namespace BDArmory.UI
         {
             var wait = new WaitForFixedUpdate();
             while (vessel != null && (!vessel.loaded || vessel.packed)) yield return wait;
-            while (vessel != null && vessel != FlightGlobals.ActiveVessel) { ForceSwitchVessel(vessel); yield return wait; }
+            while (vessel != null && vessel.loaded && vessel != FlightGlobals.ActiveVessel) { ForceSwitchVessel(vessel); yield return wait; }
             if (distance > 0) FlightCamera.fetch.SetDistance(distance);
         }
 
