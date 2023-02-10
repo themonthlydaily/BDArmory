@@ -53,6 +53,7 @@ namespace BDArmory.Competition.VesselMover
 
             BDArmorySetup.WindowRectVesselMover.height = 0;
             if (guiCheckIndex < 0) guiCheckIndex = GUIUtils.RegisterGUIRect(new Rect());
+            if (_crewGUICheckIndex < 0) _crewGUICheckIndex = GUIUtils.RegisterGUIRect(new Rect());
             ready = true;
             BDArmorySetup.Instance.hasVesselMover = true;
         }
@@ -833,7 +834,7 @@ namespace BDArmory.Competition.VesselMover
                         if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_VesselMover_SpawnVessel"), BDArmorySetup.ButtonStyle, GUILayout.Height(40))) StartCoroutine(SpawnVessel());
                         GUILayout.BeginHorizontal();
                         BDArmorySettings.VESSEL_MOVER_CHOOSE_CREW = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_CHOOSE_CREW, StringUtils.Localize("#LOC_BDArmory_VesselMover_ChooseCrew"));
-                        BDArmorySettings.VESSEL_MOVER_CLASSIC_CRAFT_CHOOSER = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_CLASSIC_CRAFT_CHOOSER, StringUtils.Localize("#LOC_BDArmory_VesselMover_ClassicChooser"));
+                        // BDArmorySettings.VESSEL_MOVER_CLASSIC_CRAFT_CHOOSER = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_CLASSIC_CRAFT_CHOOSER, StringUtils.Localize("#LOC_BDArmory_VesselMover_ClassicChooser"));
                         GUILayout.EndHorizontal();
                         break;
                     }
@@ -898,7 +899,8 @@ namespace BDArmory.Competition.VesselMover
                     }
                 case State.Spawning:
                     {
-                        GUILayout.Label($"Spawning craft...");
+                        GUILayout.Label($"Spawning craft...", BDArmorySetup.SelectedButtonStyle, GUILayout.Height(40));
+                        BDArmorySettings.VESSEL_MOVER_CHOOSE_CREW = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_CHOOSE_CREW, StringUtils.Localize("#LOC_BDArmory_VesselMover_ChooseCrew"));
                         break;
                     }
             }
