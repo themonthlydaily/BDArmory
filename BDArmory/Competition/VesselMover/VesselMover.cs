@@ -513,6 +513,7 @@ namespace BDArmory.Competition.VesselMover
 
         #region Spawning
         Vessel spawnedVessel;
+        HashSet<string> KerbalNames = new HashSet<string>();
         IEnumerator SpawnVessel()
         {
             state = State.Spawning;
@@ -534,6 +535,7 @@ namespace BDArmory.Competition.VesselMover
             if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselMover]: {craftFile} selected for spawning.");
 
             // Choose crew
+            KerbalNames.Clear();
             if (BDArmorySettings.VESSEL_MOVER_CHOOSE_CREW)
             { yield return ChooseCrew(); }
             messageState = Messages.None;
@@ -548,7 +550,7 @@ namespace BDArmory.Competition.VesselMover
             var cameraOffset = FlightGlobals.ActiveVessel != null ? camera.transform.position - FlightGlobals.ActiveVessel.transform.position : Vector3.zero;
 
             // Spawn the craft
-            yield return SpawnVessel(craftFile, geoCoords.x, geoCoords.y, geoCoords.z + 1000f); // Spawn 1km higher than requested and then move it down.
+            yield return SpawnVessel(craftFile, geoCoords.x, geoCoords.y, geoCoords.z + 1000f, kerbalNames: KerbalNames); // Spawn 1km higher than requested and then move it down.
             messageState = Messages.None;
             if (spawnFailureReason != SpawnFailureReason.None) { state = State.None; yield break; }
             if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselMover]: Spawned {spawnedVessel.vesselName} at {geoCoords:G6}");
@@ -589,7 +591,16 @@ namespace BDArmory.Competition.VesselMover
         IEnumerator ChooseCrew()
         {
             messageState = Messages.ChoosingCrew;
-            yield break;
+            ShowCrewSelection(new Vector2(Screen.width / 2, Screen.height / 2));
+            while (showCrewSelection)
+            {
+                if (Input.GetKeyDown(KeyCode.Escape))
+                {
+                    HideCrewSelection();
+                    break;
+                }
+                yield return wait;
+            }
         }
 
         IEnumerator GetSpawnPoint()
@@ -667,7 +678,7 @@ namespace BDArmory.Competition.VesselMover
             return true;
         }
 
-        IEnumerator SpawnVessel(string craftUrl, double latitude, double longitude, double altitude, float initialHeading = 90f, float initialPitch = 0f)
+        IEnumerator SpawnVessel(string craftUrl, double latitude, double longitude, double altitude, float initialHeading = 90f, float initialPitch = 0f, HashSet<string> kerbalNames = null)
         {
             messageState = Messages.LoadingCraft;
             spawnFailureReason = SpawnFailureReason.None; // Reset the spawn failure reason.
@@ -675,10 +686,18 @@ namespace BDArmory.Competition.VesselMover
             var radialUnitVector = (spawnPoint - FlightGlobals.currentMainBody.transform.position).normalized;
             var north = VectorUtils.GetNorthVector(spawnPoint, FlightGlobals.currentMainBody);
             var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(initialHeading, radialUnitVector) * north, radialUnitVector).normalized;
-            VesselSpawnConfig vesselSpawnConfig = new VesselSpawnConfig(craftUrl, spawnPoint, direction, (float)altitude, initialPitch, false);
+            var crew = new List<ProtoCrewMember>();
+            if (kerbalNames != null)
+            {
+                foreach (var kerbalName in kerbalNames) crew.Add(HighLogic.CurrentGame.CrewRoster[kerbalName]);
+                VesselSpawner.ReservedCrew = crew.Select(crew => crew.name).ToHashSet(); // Reserve the crew so they don't get swapped out.
+                foreach (var c in crew) c.rosterStatus = ProtoCrewMember.RosterStatus.Available; // Set all the requested crew as available.
+            }
+            VesselSpawnConfig vesselSpawnConfig = new VesselSpawnConfig(craftUrl, spawnPoint, direction, (float)altitude, initialPitch, false, crew: crew);
 
             // Spawn vessel.
             yield return SpawnSingleVessel(vesselSpawnConfig);
+            VesselSpawner.ReservedCrew.Clear(); // Clear the reserved crew again.
             if (spawnFailureReason != SpawnFailureReason.None) { state = State.None; yield break; }
             var vessel = spawnedVessels[latestSpawnedVesselName];
             if (vessel == null)
@@ -699,8 +718,11 @@ namespace BDArmory.Competition.VesselMover
         bool helpShowing = false;
         bool ready = false;
         float windowWidth = 300;
-        enum Messages { None, OpeningCraftBrowser, ChoosingCrew, ChoosingSpawnPoint, LoadingCraft, EasingCraft }
-        Messages messageState = Messages.None;
+        enum Messages { None, Custom, OpeningCraftBrowser, ChoosingCrew, ChoosingSpawnPoint, LoadingCraft, EasingCraft }
+        Messages messageState { get { return _messageState; } set { _messageState = value; if (value != Messages.None) messageDisplayTime = Time.time + 5; } }
+        Messages _messageState = Messages.None;
+        string customMessage = "";
+        float messageDisplayTime = 0;
         private void OnGUI()
         {
             if (!(ready && BDArmorySetup.GAME_UI_ENABLED))
@@ -713,16 +735,38 @@ namespace BDArmory.Competition.VesselMover
                     GUIUtility.GetControlID(FocusType.Passive),
                     BDArmorySetup.WindowRectVesselMover,
                     WindowVesselMover,
-                    StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_Title"), // "BDA Vessel Mover"
+                    StringUtils.Localize("#LOC_BDArmory_VesselMover_Title"), // "BDA Vessel Mover"
                     BDArmorySetup.BDGuiSkin.window,
                     GUILayout.Width(windowWidth)
                 );
+                if (showCrewSelection)
+                {
+                    crewSelectionWindowRect = GUILayout.Window(
+                        GUIUtility.GetControlID(FocusType.Passive),
+                        crewSelectionWindowRect,
+                        CrewSelectionWindow,
+                        StringUtils.Localize("#LOC_BDArmory_Settings_CustomSpawnTemplate_CrewSelection"),
+                        BDArmorySetup.BDGuiSkin.window
+                    );
+                }
                 BDArmorySetup.SetGUIOpacity(false);
                 GUIUtils.UpdateGUIRect(BDArmorySetup.WindowRectVesselMover, guiCheckIndex);
             }
+            else
+            {
+                if (showCrewSelection)
+                {
+                    KerbalNames.Clear();
+                    HideCrewSelection();
+                }
+            }
 
+            if (Time.time > messageDisplayTime) messageState = Messages.None;
             switch (messageState)
             {
+                case Messages.Custom:
+                    DrawShadowedMessage(customMessage);
+                    break;
                 case Messages.OpeningCraftBrowser:
                     DrawShadowedMessage("Opening Craft Browser...");
                     break;
@@ -785,33 +829,33 @@ namespace BDArmory.Competition.VesselMover
             {
                 case State.None:
                     {
-                        if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_MoveVessel"), BDArmorySetup.BDGuiSkin.button, GUILayout.Height(40))) StartCoroutine(MoveVessel(FlightGlobals.ActiveVessel));
-                        if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_SpawnVessel"), BDArmorySetup.BDGuiSkin.button, GUILayout.Height(40))) StartCoroutine(SpawnVessel());
+                        if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_VesselMover_MoveVessel"), BDArmorySetup.ButtonStyle, GUILayout.Height(40))) StartCoroutine(MoveVessel(FlightGlobals.ActiveVessel));
+                        if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_VesselMover_SpawnVessel"), BDArmorySetup.ButtonStyle, GUILayout.Height(40))) StartCoroutine(SpawnVessel());
                         GUILayout.BeginHorizontal();
-                        BDArmorySettings.VESSEL_MOVER_CHOOSE_CREW = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_CHOOSE_CREW, StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_ChooseCrew"));
-                        BDArmorySettings.VESSEL_MOVER_CLASSIC_CRAFT_CHOOSER = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_CLASSIC_CRAFT_CHOOSER, StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_ClassicChooser"));
+                        BDArmorySettings.VESSEL_MOVER_CHOOSE_CREW = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_CHOOSE_CREW, StringUtils.Localize("#LOC_BDArmory_VesselMover_ChooseCrew"));
+                        BDArmorySettings.VESSEL_MOVER_CLASSIC_CRAFT_CHOOSER = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_CLASSIC_CRAFT_CHOOSER, StringUtils.Localize("#LOC_BDArmory_VesselMover_ClassicChooser"));
                         GUILayout.EndHorizontal();
                         break;
                     }
                 case State.Moving:
                     {
-                        if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_PlaceVessel"), BDArmorySetup.BDGuiSkin.button, GUILayout.Height(40))) StartCoroutine(PlaceVessel(FlightGlobals.ActiveVessel));
-                        if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_DropVessel"), BDArmorySetup.BDGuiSkin.button, GUILayout.Height(40))) DropVessel(FlightGlobals.ActiveVessel);
+                        if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_VesselMover_PlaceVessel"), BDArmorySetup.ButtonStyle, GUILayout.Height(40))) StartCoroutine(PlaceVessel(FlightGlobals.ActiveVessel));
+                        if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_VesselMover_DropVessel"), BDArmorySetup.ButtonStyle, GUILayout.Height(40))) DropVessel(FlightGlobals.ActiveVessel);
                         GUILayout.BeginHorizontal();
                         GUILayout.BeginVertical();
-                        BDArmorySettings.VESSEL_MOVER_ENABLE_BRAKES = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_ENABLE_BRAKES, StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_EnableBrakes"));
-                        BDArmorySettings.VESSEL_MOVER_LOWER_FAST = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_LOWER_FAST, StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_LowerFast"));
+                        BDArmorySettings.VESSEL_MOVER_ENABLE_BRAKES = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_ENABLE_BRAKES, StringUtils.Localize("#LOC_BDArmory_VesselMover_EnableBrakes"));
+                        BDArmorySettings.VESSEL_MOVER_LOWER_FAST = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_LOWER_FAST, StringUtils.Localize("#LOC_BDArmory_VesselMover_LowerFast"));
                         GUILayout.EndVertical();
                         GUILayout.BeginVertical();
-                        BDArmorySettings.VESSEL_MOVER_ENABLE_SAS = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_ENABLE_SAS, StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_EnableSAS"));
-                        BDArmorySettings.VESSEL_MOVER_BELOW_WATER = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_BELOW_WATER, StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_BelowWater"));
+                        BDArmorySettings.VESSEL_MOVER_ENABLE_SAS = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_ENABLE_SAS, StringUtils.Localize("#LOC_BDArmory_VesselMover_EnableSAS"));
+                        BDArmorySettings.VESSEL_MOVER_BELOW_WATER = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_BELOW_WATER, StringUtils.Localize("#LOC_BDArmory_VesselMover_BelowWater"));
                         GUILayout.EndVertical();
                         GUILayout.EndHorizontal();
                         GUILayout.BeginHorizontal();
-                        GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_MinLowerSpeed")}: {BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED}", GUILayout.Width(130));
+                        GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_VesselMover_MinLowerSpeed")}: {BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED}", GUILayout.Width(130));
                         BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED = BDAMath.RoundToUnit(GUILayout.HorizontalSlider(BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED, 0.1f, 1f), 0.1f);
                         GUILayout.EndHorizontal();
-                        if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_Generic_Help"), helpShowing ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button, GUILayout.Height(20)))
+                        if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_Generic_Help"), helpShowing ? BDArmorySetup.SelectedButtonStyle : BDArmorySetup.ButtonStyle, GUILayout.Height(20)))
                         {
                             helpShowing = !helpShowing;
                             if (!helpShowing) ResetWindowHeight();
@@ -834,20 +878,20 @@ namespace BDArmory.Competition.VesselMover
                     }
                 case State.Lowering:
                     {
-                        if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_MoveVessel"), BDArmorySetup.BDGuiSkin.button, GUILayout.Height(40))) { DropVessel(FlightGlobals.ActiveVessel); StartCoroutine(MoveVessel(FlightGlobals.ActiveVessel)); }
-                        if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_DropVessel"), BDArmorySetup.BDGuiSkin.button, GUILayout.Height(40))) DropVessel(FlightGlobals.ActiveVessel);
+                        if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_VesselMover_MoveVessel"), BDArmorySetup.ButtonStyle, GUILayout.Height(40))) { DropVessel(FlightGlobals.ActiveVessel); StartCoroutine(MoveVessel(FlightGlobals.ActiveVessel)); }
+                        if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_VesselMover_DropVessel"), BDArmorySetup.ButtonStyle, GUILayout.Height(40))) DropVessel(FlightGlobals.ActiveVessel);
                         GUILayout.BeginHorizontal();
                         GUILayout.BeginVertical();
-                        BDArmorySettings.VESSEL_MOVER_ENABLE_BRAKES = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_ENABLE_BRAKES, StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_EnableBrakes"));
-                        BDArmorySettings.VESSEL_MOVER_LOWER_FAST = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_LOWER_FAST, StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_LowerFast"));
+                        BDArmorySettings.VESSEL_MOVER_ENABLE_BRAKES = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_ENABLE_BRAKES, StringUtils.Localize("#LOC_BDArmory_VesselMover_EnableBrakes"));
+                        BDArmorySettings.VESSEL_MOVER_LOWER_FAST = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_LOWER_FAST, StringUtils.Localize("#LOC_BDArmory_VesselMover_LowerFast"));
                         GUILayout.EndVertical();
                         GUILayout.BeginVertical();
-                        BDArmorySettings.VESSEL_MOVER_ENABLE_SAS = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_ENABLE_SAS, StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_EnableSAS"));
-                        BDArmorySettings.VESSEL_MOVER_BELOW_WATER = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_BELOW_WATER, StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_BelowWater"));
+                        BDArmorySettings.VESSEL_MOVER_ENABLE_SAS = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_ENABLE_SAS, StringUtils.Localize("#LOC_BDArmory_VesselMover_EnableSAS"));
+                        BDArmorySettings.VESSEL_MOVER_BELOW_WATER = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_BELOW_WATER, StringUtils.Localize("#LOC_BDArmory_VesselMover_BelowWater"));
                         GUILayout.EndVertical();
                         GUILayout.EndHorizontal();
                         GUILayout.BeginHorizontal();
-                        GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_BDAVesselMover_MinLowerSpeed")}: {BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED}", GUILayout.Width(130));
+                        GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_VesselMover_MinLowerSpeed")}: {BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED}", GUILayout.Width(130));
                         BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED = BDAMath.RoundToUnit(GUILayout.HorizontalSlider(BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED, 0.1f, 1f), 0.1f);
                         GUILayout.EndHorizontal();
                         break;
@@ -878,6 +922,169 @@ namespace BDArmory.Competition.VesselMover
             BDArmorySetup.Instance.showVesselMoverGUI = visible;
             GUIUtils.SetGUIRectVisible(guiCheckIndex, visible);
         }
+
+        #region Crew Selection
+        internal static int _crewGUICheckIndex = -1;
+        bool showCrewSelection = false;
+        Rect crewSelectionWindowRect = new Rect(0, 0, 300, 400);
+        Vector2 crewSelectionScrollPos = default;
+        HashSet<string> ActiveCrewMembers = new HashSet<string>();
+        bool newCustomKerbal = false;
+        string newKerbalName = "";
+        ProtoCrewMember.Gender newKerbalGender = ProtoCrewMember.Gender.Male;
+        bool removeKerbals = false;
+
+        /// <summary>
+        /// Show the crew selection window.
+        /// </summary>
+        /// <param name="position">Position of the mouse click.</param>
+        /// <param name="vesselSpawnConfig">The VesselSpawnConfig clicked on.</param>
+        public void ShowCrewSelection(Vector2 position)
+        {
+            crewSelectionWindowRect.position = position + new Vector2(50, -crewSelectionWindowRect.height / 2); // Centred and slightly offset to allow clicking the same spot.
+            showCrewSelection = true;
+            // Find any crew on active vessels.
+            ActiveCrewMembers.Clear();
+            foreach (var vessel in FlightGlobals.Vessels)
+            {
+                if (vessel == null || !vessel.loaded) continue;
+                foreach (var part in vessel.Parts)
+                {
+                    if (part == null) continue;
+                    foreach (var crew in part.protoModuleCrew)
+                    {
+                        if (crew == null) continue;
+                        ActiveCrewMembers.Add(crew.name);
+                    }
+                }
+            }
+            GUIUtils.SetGUIRectVisible(_crewGUICheckIndex, true);
+            foreach (var crew in HighLogic.CurrentGame.CrewRoster.Kerbals(ProtoCrewMember.KerbalType.Crew)) // Set any non-assigned crew as available.
+            {
+                if (crew.rosterStatus != ProtoCrewMember.RosterStatus.Assigned)
+                    crew.rosterStatus = ProtoCrewMember.RosterStatus.Available;
+            }
+        }
+
+        /// <summary>
+        /// Hide the crew selection window.
+        /// </summary>
+        public void HideCrewSelection()
+        {
+            showCrewSelection = false;
+            newCustomKerbal = false;
+            removeKerbals = false;
+            GUIUtils.SetGUIRectVisible(_crewGUICheckIndex, false);
+        }
+
+        /// <summary>
+        /// Crew selection window.
+        /// </summary>
+        /// <param name="windowID"></param>
+        public void CrewSelectionWindow(int windowID)
+        {
+            KerbalRoster kerbalRoster = HighLogic.CurrentGame.CrewRoster;
+            GUI.DragWindow(new Rect(0, 0, crewSelectionWindowRect.width, 20));
+            GUILayout.BeginVertical();
+            crewSelectionScrollPos = GUILayout.BeginScrollView(crewSelectionScrollPos, GUI.skin.box, GUILayout.Width(crewSelectionWindowRect.width - 15), GUILayout.MaxHeight(crewSelectionWindowRect.height - 60));
+            using (var kerbals = kerbalRoster.Kerbals(ProtoCrewMember.KerbalType.Crew).GetEnumerator())
+                while (kerbals.MoveNext())
+                {
+                    ProtoCrewMember crewMember = kerbals.Current;
+                    if (crewMember == null || ActiveCrewMembers.Contains(crewMember.name)) continue;
+                    if (GUILayout.Button($"{crewMember.name}, {crewMember.gender}, {crewMember.trait}", KerbalNames.Contains(crewMember.name) ? BDArmorySetup.SelectedButtonStyle : BDArmorySetup.ButtonStyle))
+                    {
+                        if (KerbalNames.Contains(crewMember.name)) KerbalNames.Remove(crewMember.name);
+                        else KerbalNames.Add(crewMember.name);
+                    }
+                }
+            GUILayout.EndScrollView();
+            GUILayout.Space(10);
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_Generic_Select"), BDArmorySetup.ButtonStyle))
+            { HideCrewSelection(); }
+            if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_VesselMover_Any"), BDArmorySetup.ButtonStyle, GUILayout.Width(crewSelectionWindowRect.width / 6)))
+            { KerbalNames.Clear(); HideCrewSelection(); }
+            if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_Generic_New"), newCustomKerbal ? BDArmorySetup.SelectedButtonStyle : BDArmorySetup.ButtonStyle, GUILayout.Width(crewSelectionWindowRect.width / 6)))
+            {
+                // Create a new Kerbal!
+                newCustomKerbal = !newCustomKerbal;
+                newKerbalName = "Enter a new Kerbal name...";
+            }
+            if (GUILayout.Button("X", removeKerbals ? BDArmorySetup.SelectedButtonStyle : BDArmorySetup.CloseButtonStyle, GUILayout.Width(27)))
+            {
+                // Remove selected Kerbals!
+                removeKerbals = !removeKerbals;
+            }
+            GUILayout.EndHorizontal();
+            if (newCustomKerbal)
+            {
+                newKerbalName = GUILayout.TextField(newKerbalName);
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_Generic_OK"), BDArmorySetup.ButtonStyle))
+                {
+                    if (!string.IsNullOrEmpty(newKerbalName) && newKerbalName != "Enter a new Kerbal name...")
+                    {
+                        if (HighLogic.CurrentGame.CrewRoster.Exists(newKerbalName))
+                        {
+                            customMessage = $"Failed to add {newKerbalName}. They already exist!";
+                            messageState = Messages.Custom;
+                            Debug.LogWarning($"[BDArmory.VesselMover]: {customMessage}");
+                        }
+                        else
+                        {
+                            var crewMember = HighLogic.CurrentGame.CrewRoster.GetNewKerbal(ProtoCrewMember.KerbalType.Crew);
+                            if (crewMember.ChangeName(newKerbalName))
+                            {
+                                crewMember.gender = newKerbalGender;
+                                KerbalRoster.SetExperienceTrait(crewMember, KerbalRoster.pilotTrait); // Make the kerbal a pilot (so they can use SAS properly).
+                                KerbalRoster.SetExperienceLevel(crewMember, KerbalRoster.GetExperienceMaxLevel()); // Make them experienced.
+                                crewMember.isBadass = true; // Make them bad-ass (likes nearby explosions).
+                            }
+                            else
+                            {
+                                customMessage = $"Failed to set name of {crewMember.name} to {newKerbalName}";
+                                messageState = Messages.Custom;
+                                Debug.LogWarning($"[BDArmory.VesselMover]: {customMessage}");
+                                HighLogic.CurrentGame.CrewRoster.Remove(crewMember.name);
+                            }
+                        }
+                    }
+                    newCustomKerbal = false;
+                }
+                if (GUILayout.Button(newKerbalGender.ToStringCached(), BDArmorySetup.ButtonStyle, GUILayout.Width(crewSelectionWindowRect.width / 4)))
+                {
+                    var genders = Enum.GetValues(typeof(ProtoCrewMember.Gender)).Cast<ProtoCrewMember.Gender>();
+                    bool found = false, set = false;
+                    foreach (var gender in genders)
+                    {
+                        if (found) { newKerbalGender = gender; set = true; break; }
+                        if (newKerbalGender == gender) found = true;
+                    }
+                    if (!set) newKerbalGender = genders.First();
+                }
+                GUILayout.EndHorizontal();
+            }
+            if (removeKerbals)
+            {
+                if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_VesselMover_ReallyRemoveKerbals"), BDArmorySetup.CloseButtonStyle))
+                {
+                    var cantRemove = KerbalRoster.GenerateInitialCrewRoster(HighLogic.CurrentGame.Mode).Crew.Select(crew => crew.name).ToHashSet();
+                    KerbalNames = KerbalNames.Where(kerbal => !cantRemove.Contains(kerbal)).ToHashSet();
+                    customMessage = $"Removing {string.Join(", ", KerbalNames)}";
+                    messageState = Messages.Custom;
+                    foreach (var kerbalName in KerbalNames) HighLogic.CurrentGame.CrewRoster.Remove(kerbalName);
+                    KerbalNames.Clear();
+                    removeKerbals = false;
+                }
+            }
+            GUILayout.EndVertical();
+            GUIUtils.RepositionWindow(ref crewSelectionWindowRect);
+            GUIUtils.UpdateGUIRect(crewSelectionWindowRect, _crewGUICheckIndex);
+            GUIUtils.UseMouseEventInRect(crewSelectionWindowRect);
+        }
+        #endregion
+
         #endregion
     }
 }

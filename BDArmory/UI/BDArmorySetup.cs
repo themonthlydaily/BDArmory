@@ -108,6 +108,7 @@ namespace BDArmory.UI
         public static GUISkin BDGuiSkin = HighLogic.Skin;
         public static GUIStyle ButtonStyle;
         public static GUIStyle SelectedButtonStyle;
+        public static GUIStyle CloseButtonStyle;
 
         //toolbar gui
         public static bool hasAddedButton = false;
@@ -182,7 +183,6 @@ namespace BDArmory.UI
         GUIStyle redErrorStyle;
         GUIStyle redErrorShadowStyle;
         GUIStyle inputFieldStyle;
-        public static GUIStyle closeButtonStyle;
         bool stylesConfigured = false;
 
         public SortedList<string, BDTeam> Teams = new SortedList<string, BDTeam>
@@ -453,8 +453,8 @@ namespace BDArmory.UI
             fireKeyGui = BDInputSettingsFields.WEAP_FIRE_KEY.inputString;
 
             //setup gui styles
-            closeButtonStyle = new GUIStyle(BDGuiSkin.button) { alignment = TextAnchor.MiddleCenter }; // Configure this one separately since it's static.
-            closeButtonStyle.normal.textColor = Color.red;
+            CloseButtonStyle = new GUIStyle(BDGuiSkin.button) { alignment = TextAnchor.MiddleCenter }; // Configure this one separately since it's static.
+            CloseButtonStyle.normal.textColor = Color.red;
 
             ButtonStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
             SelectedButtonStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
