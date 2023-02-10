@@ -236,14 +236,13 @@ namespace BDArmory.Competition.VesselSpawning
 
             Vessel vessel;
             Vector3d craftGeoCoords;
-            EditorFacility editorFacility = EditorFacility.SPH;
             var radialUnitVector = (vesselSpawnConfig.position - FlightGlobals.currentMainBody.transform.position).normalized;
             vesselSpawnConfig.position += 1000f * radialUnitVector; // Adjust the spawn point upwards by 1000m.
             FlightGlobals.currentMainBody.GetLatLonAlt(vesselSpawnConfig.position, out craftGeoCoords.x, out craftGeoCoords.y, out craftGeoCoords.z); // Convert spawn point (+1000m) to geo-coords for the actual spawning function.
             try
             {
                 // Spawn the craft with zero pitch, roll and yaw as the final rotation depends on the root transform, which takes some time to be populated.
-                vessel = VesselSpawner.SpawnVesselFromCraftFile(vesselSpawnConfig.craftURL, craftGeoCoords, 0f, 0f, 0f, out editorFacility, vesselSpawnConfig.crew); // SPAWN
+                vessel = VesselSpawner.SpawnVesselFromCraftFile(vesselSpawnConfig.craftURL, craftGeoCoords, 0f, 0f, 0f, out vesselSpawnConfig.editorFacility, vesselSpawnConfig.crew); // SPAWN
             }
             catch { vessel = null; }
             if (vessel == null)
@@ -343,8 +342,8 @@ namespace BDArmory.Competition.VesselSpawning
                 if (BDArmorySettings.DEBUG_SPAWNING && localTerrainAltitude > 0) LogMessage("Failed to find terrain for spawn adjustments", false);
             }
             // Rotation
-            vessel.SetRotation(Quaternion.FromToRotation(editorFacility == EditorFacility.SPH ? -vessel.ReferenceTransform.forward : vessel.ReferenceTransform.up, localSurfaceNormal) * vessel.transform.rotation); // Re-orient the vessel to the terrain normal (or radial unit vector).
-            vessel.SetRotation(Quaternion.AngleAxis(Vector3.SignedAngle(editorFacility == EditorFacility.SPH ? vessel.ReferenceTransform.up : -vessel.ReferenceTransform.forward, vesselSpawnConfig.direction, localSurfaceNormal), localSurfaceNormal) * vessel.transform.rotation); // Re-orient the vessel to the right direction.
+            vessel.SetRotation(Quaternion.FromToRotation(vesselSpawnConfig.editorFacility == EditorFacility.SPH ? -vessel.ReferenceTransform.forward : vessel.ReferenceTransform.up, localSurfaceNormal) * vessel.transform.rotation); // Re-orient the vessel to the terrain normal (or radial unit vector).
+            vessel.SetRotation(Quaternion.AngleAxis(Vector3.SignedAngle(vesselSpawnConfig.editorFacility == EditorFacility.SPH ? vessel.ReferenceTransform.up : -vessel.ReferenceTransform.forward, vesselSpawnConfig.direction, localSurfaceNormal), localSurfaceNormal) * vessel.transform.rotation); // Re-orient the vessel to the right direction.
             if (vesselSpawnConfig.airborne && !BDArmorySettings.SF_GRAVITY)
             { vessel.SetRotation(Quaternion.AngleAxis(-vesselSpawnConfig.pitch, vessel.ReferenceTransform.right) * vessel.transform.rotation); }
             // Position
