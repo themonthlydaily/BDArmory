@@ -106,6 +106,8 @@ namespace BDArmory.UI
 
         // Gui Skin
         public static GUISkin BDGuiSkin = HighLogic.Skin;
+        public static GUIStyle ButtonStyle;
+        public static GUIStyle SelectedButtonStyle;
 
         //toolbar gui
         public static bool hasAddedButton = false;
@@ -453,6 +455,13 @@ namespace BDArmory.UI
             //setup gui styles
             closeButtonStyle = new GUIStyle(BDGuiSkin.button) { alignment = TextAnchor.MiddleCenter }; // Configure this one separately since it's static.
             closeButtonStyle.normal.textColor = Color.red;
+
+            ButtonStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
+            SelectedButtonStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
+            var tmp = SelectedButtonStyle.normal;
+            SelectedButtonStyle.normal = SelectedButtonStyle.active;
+            SelectedButtonStyle.active = tmp;
+            SelectedButtonStyle.hover = SelectedButtonStyle.normal;
             //
 
             using (var a = AppDomain.CurrentDomain.GetAssemblies().ToList().GetEnumerator())
