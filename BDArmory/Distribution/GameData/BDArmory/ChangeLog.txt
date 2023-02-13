@@ -9,6 +9,7 @@
 -Add Infinite Propellant Gamemode toggle to BDA settings menu.
 -Fix NRE spam when trying to fire Modular Missiles.
 -Fix NRE when firing Modular Missiles and Missile Icons are enabled.
+-Modular Missiles will use RCS when fired in space.
 -Heatseekers now target the hottest part on a craft, not the CoM
 
 
