@@ -421,7 +421,7 @@ namespace BDArmory.UI
             if (HighLogic.LoadedSceneIsFlight)
             {
                 saveWindowPosition = true;     //otherwise later we should NOT save the current window positions!
-                CheatOptions.InfinitePropellant = BDArmorySettings.PEACE_MODE;
+                CheatOptions.InfinitePropellant = BDArmorySettings.INFINITE_FUEL;
             }
             // // Create settings file if not present.
             // if (ConfigNode.Load(BDArmorySettings.settingsConfigURL) == null)
@@ -3192,7 +3192,7 @@ namespace BDArmory.UI
                 }
                 if (BDArmorySettings.INFINITE_FUEL != (BDArmorySettings.INFINITE_FUEL = GUI.Toggle(SRightRect(line), BDArmorySettings.INFINITE_FUEL, StringUtils.Localize("#autoLOC_900349"))))//"Infinite Propellant"
                 {
-                    CheatOptions.InfinitePropellant = BDArmorySettings.PEACE_MODE;
+                    CheatOptions.InfinitePropellant = BDArmorySettings.INFINITE_FUEL;
                 }
                 // Heartbleed
                 BDArmorySettings.HEART_BLEED_ENABLED = GUI.Toggle(SLeftRect(++line), BDArmorySettings.HEART_BLEED_ENABLED, StringUtils.Localize("#LOC_BDArmory_Settings_HeartBleed"));//"Heart Bleed"
