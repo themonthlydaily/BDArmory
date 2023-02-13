@@ -894,6 +894,7 @@ namespace BDArmory.Competition
         public bool landedState; // Whether the vessel is landed or not.
         public double lastLandedTime; // Time that this vessel was landed last.
         public double landedKillTimer; // Counter tracking time this vessel is landed (for the kill timer).
+        public double AltitudeKillTimer; //counter tracing time this vessel is outside GM altitude restrictions (for kill timer).
         public double AverageSpeed; // Average speed of this vessel recently (for the killer GM).
         public double AverageAltitude; // Average altitude of this vessel recently (for the killer GM).
         public int averageCount; // Count for the averaging stats.

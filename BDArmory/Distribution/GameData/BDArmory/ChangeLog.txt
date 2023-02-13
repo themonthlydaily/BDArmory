@@ -3,8 +3,13 @@
 -Add toggle for setting maxAltitude and GM Kill limits to ASl or AGL.
 -Fix issue causing Web API to not report scores.
 -HP no longer rounds MM patched values.
--Steel Hull MAterial melting point increased.
+-Steel Hull Material melting point increased.
 -Weapon burst length/fire angle overrides now respect symmetry.
+-Add Kill timer for GM Altitude to give violators a chance to get back to safe altitude instead of immediate kill.
+-Add Infinite Propellant Gamemode toggle to BDA settings menu.
+-Fix NRE spam when trying to fire Modular Missiles.
+-Fix NRE when firing Modular Missiles and Missile Icons are enabled.
+-Heatseekers now target the hottest part on a craft, not the CoM
 
 
 IMPROVEMENTS / FIXES

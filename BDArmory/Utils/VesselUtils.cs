@@ -30,6 +30,12 @@ namespace BDArmory.Utils
                 {
                     UI.BDATargetManager.RemoveTarget(tInfo); //prevent other craft from chasing GM killed craft (in case of maxAltitude or similar
                 }
+                if (v != null)
+                {
+                    UI.BDATargetManager.LoadedVessels.Remove(v);
+                }
+                UI.BDATargetManager.LoadedVessels.RemoveAll(ves => ves == null);
+                UI.BDATargetManager.LoadedVessels.RemoveAll(ves => ves.loaded == false);
             }
         }
 

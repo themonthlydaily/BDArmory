@@ -1024,6 +1024,10 @@ namespace BDArmory.Weapons.Missiles
 
                 HasFired = true;
                 DetonationDistanceState = DetonationDistanceStates.NotSafe;
+                if (vessel.atmDensity < 0.05)
+                {
+                    vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
+                }
             }
             if (BDArmorySetup.Instance.ActiveWeaponManager != null)
             {

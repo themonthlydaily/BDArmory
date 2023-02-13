@@ -147,7 +147,7 @@ namespace BDArmory.Radar
         {
             //1. baseSig = GetVesselRadarCrossSection
             TargetInfo ti = GetVesselRadarCrossSection(v);
-
+            if (ti == null) return null;
             //2. modifiedSig = GetVesselModifiedSignature(baseSig)    //ECM-jammers with rcs reduction effect; other rcs reductions (stealth)
             ti.radarRCSReducedSignature = ti.radarBaseSignature; //These are needed for Radar functions to work!
             ti.radarModifiedSignature = ti.radarBaseSignature;
@@ -167,7 +167,14 @@ namespace BDArmory.Radar
             if (ti == null)
             {
                 // add targetinfo to vessel
-                ti = v.gameObject.AddComponent<TargetInfo>();
+                if (VesselModuleRegistry.GetMissileFire(v, true))
+                {
+                    ti = v.gameObject.AddComponent<TargetInfo>();
+                }
+                else
+                {
+                    return null;
+                }
             }
 
             if (ti.isMissile)
@@ -1053,7 +1060,11 @@ namespace BDArmory.Radar
 
                         // get vessel's radar signature
                         TargetInfo ti = GetVesselRadarSignature(loadedvessels.Current);
-                        float signature = ti.radarModifiedSignature;
+                        float signature;
+                        if (ti != null)
+                            signature = ti.radarModifiedSignature;
+                        else
+                            signature = 10;
                         //do not multiply chaff factor here
                         signature *= GetRadarGroundClutterModifier(radar.radarGroundClutterFactor, referenceTransform, position, loadedvessels.Current.CoM, ti);
 
@@ -1068,7 +1079,7 @@ namespace BDArmory.Radar
                             {
                                 //evaluate if we can lock/track such a signature at that range
                                 float minLockSig = radar.radarLockTrackCurve.Evaluate(distance);
-                                signature *= ti.radarLockbreakFactor;    //multiply lockbreak factor from active ecm
+                                signature *= ti != null ? ti.radarLockbreakFactor : 1;    //multiply lockbreak factor from active ecm
                                                                          //do not multiply chaff factor here
                                 signature *= GetStandoffJammingModifier(radar.vessel, radar.weaponManager.Team, position, loadedvessels.Current, signature);
 
@@ -1180,6 +1191,7 @@ namespace BDArmory.Radar
 
                 // get vessel's radar signature
                 TargetInfo ti = GetVesselRadarSignature(lockedVessel);
+                if (ti == null) return false;
                 float signature = ti.radarModifiedSignature;
                 signature *= GetRadarGroundClutterModifier(radar.radarGroundClutterFactor, radar.referenceTransform, ray.origin, lockedVessel.CoM, ti);
                 signature *= ti.radarLockbreakFactor;    //multiply lockbreak factor from active ecm
@@ -1227,7 +1239,7 @@ namespace BDArmory.Radar
             Vector3 upVector = referenceTransform.up;
             Vector3 lookDirection = Quaternion.AngleAxis(directionAngle, upVector) * forwardVector;
             TargetSignatureData finalData = TargetSignatureData.noTarget;
-
+            Tuple<float, Part> IRSig; //heat value
             // guard clauses
             if (!myWpnManager || !myWpnManager.vessel || !irst)
                 return false;
@@ -1256,9 +1268,12 @@ namespace BDArmory.Radar
                         TargetInfo tInfo = loadedvessels.Current.gameObject.GetComponent<TargetInfo>();
                         if (tInfo == null)
                         {
+                            if (VesselModuleRegistry.GetMissileFire(loadedvessels.Current))
                             tInfo = loadedvessels.Current.gameObject.AddComponent<TargetInfo>();
                         }
-                        float signature = BDATargetManager.GetVesselHeatSignature(loadedvessels.Current, irst.referenceTransform.position, 1f, irst.TempSensitivityCurve) * (irst.boresightScan ? Mathf.Clamp01(15 / angle) : 1);
+
+                        IRSig = BDATargetManager.GetVesselHeatSignature(loadedvessels.Current, irst.referenceTransform.position, 1f, irst.TempSensitivityCurve);
+                        float signature = IRSig.Item1 * (irst.boresightScan ? Mathf.Clamp01(15 / angle) : 1);
                         //signature *= (1400 * 1400) / Mathf.Clamp((loadedvessels.Current.CoM - referenceTransform.position).sqrMagnitude, 90000, 36000000); //300 to 6000m - clamping sig past 6km; Commenting out as it makes tuning detection curves much easier
 
                         signature *= Mathf.Clamp(Vector3.Angle(loadedvessels.Current.transform.position - referenceTransform.position, -VectorUtils.GetUpDirection(referenceTransform.position)) / 90, 0.5f, 1.5f);

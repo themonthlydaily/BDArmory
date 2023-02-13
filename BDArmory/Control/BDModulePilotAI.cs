@@ -1376,7 +1376,8 @@ namespace BDArmory.Control
             pidAutoTuning.ResetMeasurements();
 
             SetAutoTuneFields();
-            MaintainFuelLevels(autoTune); // Prevent fuel drain while auto-tuning.
+            //MaintainFuelLevels(autoTune); // Prevent fuel drain while auto-tuning.
+            CheatOptions.InfinitePropellant = autoTune;
             OtherUtils.SetTimeOverride(autoTune);
         }
         void SetAutoTuneFields()

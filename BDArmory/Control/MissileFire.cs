@@ -995,7 +995,8 @@ namespace BDArmory.Control
                         if (weapon.Current.GetWeaponClass() == WeaponClasses.Missile || weapon.Current.GetWeaponClass() == WeaponClasses.Bomb || weapon.Current.GetWeaponClass() == WeaponClasses.SLW)
                         {
                             var msl = weapon.Current.GetPart().FindModuleImplementing<MissileLauncher>();
-                            if (msl.launched || msl.HasFired) continue; //return first missile that is ready to fire
+                            if (msl != null)
+                                if (msl.launched || msl.HasFired) continue; //return first missile that is ready to fire
                         }
                         sw = weapon.Current;
                         break;
@@ -1459,7 +1460,6 @@ namespace BDArmory.Control
             engagedTargets = missilesAway.Count;
             //this.missilesAway = tempMissilesAway;
         }
-
         public override void OnFixedUpdate()
         {
             if (vessel == null) return;

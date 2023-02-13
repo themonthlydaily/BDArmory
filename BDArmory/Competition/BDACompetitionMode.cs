@@ -1825,7 +1825,7 @@ namespace BDArmory.Competition
             ResetSpeeds();
         }
 
-        private void CheckAltitudeLimits()
+        private void CheckAltitudeLimits() //have ths start a timer if alt exceeded, instead of immediately kill? Timing/kill elements would need to be moved to MissileFire, but doable.
         {
             if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 55f) // Kill off those flying too high.
             {
@@ -1834,6 +1834,11 @@ namespace BDArmory.Competition
                 {
                     if (alive.Contains(weaponManager.vessel.vesselName) && BDArmorySettings.COMPETITION_ALTITUDE__LIMIT_ASL ? weaponManager.vessel.altitude > limit : weaponManager.vessel.radarAltitude > limit)
                     {
+                        if (Scores.ScoreData[weaponManager.vessel.vesselName].AltitudeKillTimer == 0)
+                        {
+                            Scores.ScoreData[weaponManager.vessel.vesselName].AltitudeKillTimer = Planetarium.GetUniversalTime(); ;
+                        }
+                        /*
                         var killerName = Scores.ScoreData[weaponManager.vessel.vesselName].lastPersonWhoDamagedMe;
                         if (killerName == "")
                         {
@@ -1845,6 +1850,18 @@ namespace BDArmory.Competition
                         if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + weaponManager.vessel.vesselName + ":REMOVED:" + killerName);
                         if (KillTimer.ContainsKey(weaponManager.vessel.vesselName)) KillTimer.Remove(weaponManager.vessel.vesselName);
                         VesselUtils.ForceDeadVessel(weaponManager.vessel);
+                        */
+                    }
+                    else
+                    {
+                        if (Scores.ScoreData[weaponManager.vessel.vesselName].AltitudeKillTimer != 0)
+                        {
+                            // safely below ceiling for 15 seconds
+                            if (Planetarium.GetUniversalTime() - Scores.ScoreData[weaponManager.vessel.vesselName].AltitudeKillTimer > 0)
+                            {
+                                Scores.ScoreData[weaponManager.vessel.vesselName].AltitudeKillTimer = 0;
+                            }
+                        }
                     }
                 }
             }
@@ -1868,6 +1885,11 @@ namespace BDArmory.Competition
                 {
                     if (alive.Contains(weaponManager.vessel.vesselName) && BDArmorySettings.COMPETITION_ALTITUDE__LIMIT_ASL ? weaponManager.vessel.altitude < limit : weaponManager.vessel.radarAltitude < limit)
                     {
+                        if (Scores.ScoreData[weaponManager.vessel.vesselName].AltitudeKillTimer == 0)
+                        {
+                            Scores.ScoreData[weaponManager.vessel.vesselName].AltitudeKillTimer = Planetarium.GetUniversalTime(); ;
+                        }
+                        /*
                         var killerName = Scores.ScoreData[weaponManager.vessel.vesselName].lastPersonWhoDamagedMe;
                         if (killerName == "")
                         {
@@ -1879,6 +1901,19 @@ namespace BDArmory.Competition
                         if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + weaponManager.vessel.vesselName + ":REMOVED:" + killerName);
                         if (KillTimer.ContainsKey(weaponManager.vessel.vesselName)) KillTimer.Remove(weaponManager.vessel.vesselName);
                         VesselUtils.ForceDeadVessel(weaponManager.vessel);
+                        */
+                    }
+                    else
+                    {
+
+                        if (Scores.ScoreData[weaponManager.vessel.vesselName].AltitudeKillTimer != 0)
+                        {
+                            // safely below ceiling for 15 seconds
+                            if (Planetarium.GetUniversalTime() - Scores.ScoreData[weaponManager.vessel.vesselName].AltitudeKillTimer > 0)
+                            {
+                                Scores.ScoreData[weaponManager.vessel.vesselName].AltitudeKillTimer = 0;
+                            }
+                        }
                     }
                 }
             }
@@ -2305,6 +2340,24 @@ namespace BDArmory.Competition
                                 {
                                     vesselsToKill.Add(mf.vessel);
                                 }
+                            }
+                        }
+                        if (vData.AltitudeKillTimer > 0 && BDArmorySettings.COMPETITION_KILL_TIMER > 0)
+                        {
+                            KillTimer[vesselName] = (int)(now - vData.AltitudeKillTimer);
+                            if (now - vData.AltitudeKillTimer > BDArmorySettings.COMPETITION_KILL_TIMER)
+                            {
+                                var killerName = Scores.ScoreData[vesselName].lastPersonWhoDamagedMe;
+                                if (killerName == "")
+                                {
+                                    killerName = "Restricted Altitude!";
+                                    Scores.ScoreData[vesselName].lastPersonWhoDamagedMe = killerName;
+                                }
+                                Scores.RegisterDeath(vesselName, GMKillReason.GM);
+                                competitionStatus.Add(vesselName + " no fly zone!");
+                                if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + vesselName + ":REMOVED:" + killerName);
+                                if (KillTimer.ContainsKey(vesselName)) KillTimer.Remove(vesselName);
+                                VesselUtils.ForceDeadVessel(vessel);
                             }
                         }
                         else if (KillTimer.ContainsKey(vesselName))
