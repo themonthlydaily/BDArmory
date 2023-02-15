@@ -2,6 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using KSP.UI.Screens;
 
@@ -536,6 +537,8 @@ namespace BDArmory.Competition.VesselMover
         #region Spawning
         Vessel spawnedVessel;
         HashSet<string> KerbalNames = new HashSet<string>();
+        int crewCapacity = -1;
+        string vesselNameToSpawn = "";
         IEnumerator SpawnVessel()
         {
             state = State.Spawning;
@@ -558,6 +561,7 @@ namespace BDArmory.Competition.VesselMover
 
             // Choose crew
             KerbalNames.Clear();
+            crewCapacity = GetCrewCapacity(craftFile, out vesselNameToSpawn);
             if (BDArmorySettings.VESSEL_MOVER_CHOOSE_CREW)
             { yield return ChooseCrew(); }
             messageState = Messages.None;
@@ -608,6 +612,43 @@ namespace BDArmory.Competition.VesselMover
             // Switch to moving mode
             yield return MoveVessel(spawnedVessel);
             spawnedVessel = null; // Clear the reference to the spawned vessel.
+        }
+
+        void RecoverVessel()
+        {
+            var vessel = FlightGlobals.ActiveVessel;
+            var nearestOtherVessel = FlightGlobals.VesselsLoaded.Where(v => v != vessel).OrderBy(v => (v.transform.position - vessel.transform.position).sqrMagnitude).FirstOrDefault();
+            if (nearestOtherVessel != null)
+            {
+                if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselMover]: Switching to nearest vessel {nearestOtherVessel.vesselName}");
+                LoadedVesselSwitcher.Instance.ForceSwitchVessel(nearestOtherVessel);
+            }
+            SpawnUtils.RemoveVessel(vessel);
+        }
+
+        int GetCrewCapacity(string craftFile, out string vesselName)
+        {
+            CraftProfileInfo.PrepareCraftMetaFileLoad();
+            var craftMeta = $"{Path.GetFileNameWithoutExtension(craftFile)}.loadmeta";
+            var meta = new CraftProfileInfo();
+            if (File.Exists(craftMeta)) // If the loadMeta file exists, use it, otherwise generate one.
+            {
+                meta.LoadFromMetaFile(craftMeta);
+            }
+            else
+            {
+                var craftNode = ConfigNode.Load(craftFile);
+                meta.LoadDetailsFromCraftFile(craftNode, craftFile);
+                meta.SaveToMetaFile(craftMeta);
+            }
+            int crewCapacity = 0;
+            vesselName = meta.shipName;
+            foreach (var partName in meta.partNames)
+            {
+                if (SpawnUtils.PartCrewCounts.ContainsKey(partName))
+                    crewCapacity += SpawnUtils.PartCrewCounts[partName];
+            }
+            return crewCapacity;
         }
 
         IEnumerator ChooseCrew()
@@ -855,6 +896,7 @@ namespace BDArmory.Competition.VesselMover
                     {
                         if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_VesselMover_MoveVessel"), BDArmorySetup.ButtonStyle, GUILayout.Height(40))) StartCoroutine(MoveVessel(FlightGlobals.ActiveVessel));
                         if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_VesselMover_SpawnVessel"), BDArmorySetup.ButtonStyle, GUILayout.Height(40))) StartCoroutine(SpawnVessel());
+                        if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_VesselMover_RecoverVessel"), BDArmorySetup.ButtonStyle, GUILayout.Height(20))) RecoverVessel();
                         GUILayout.BeginHorizontal();
                         BDArmorySettings.VESSEL_MOVER_CHOOSE_CREW = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_CHOOSE_CREW, StringUtils.Localize("#LOC_BDArmory_VesselMover_ChooseCrew"));
                         // BDArmorySettings.VESSEL_MOVER_CLASSIC_CRAFT_CHOOSER = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_CLASSIC_CRAFT_CHOOSER, StringUtils.Localize("#LOC_BDArmory_VesselMover_ClassicChooser"));
@@ -1011,6 +1053,7 @@ namespace BDArmory.Competition.VesselMover
             KerbalRoster kerbalRoster = HighLogic.CurrentGame.CrewRoster;
             GUI.DragWindow(new Rect(0, 0, crewSelectionWindowRect.width, 20));
             GUILayout.BeginVertical();
+            if (BDArmorySettings.VESSEL_SPAWN_FILL_SEATS == 0) GUILayout.Label($"Select up to {crewCapacity} kerbals to populate {vesselNameToSpawn}.");
             crewSelectionScrollPos = GUILayout.BeginScrollView(crewSelectionScrollPos, GUI.skin.box, GUILayout.Width(crewSelectionWindowRect.width - 15), GUILayout.MaxHeight(crewSelectionWindowRect.height - 60));
             using (var kerbals = kerbalRoster.Kerbals(ProtoCrewMember.KerbalType.Crew).GetEnumerator())
                 while (kerbals.MoveNext())
