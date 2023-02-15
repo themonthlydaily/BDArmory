@@ -601,6 +601,9 @@ namespace BDArmory.Competition.VesselSpawning
             string profile = HighLogic.SaveFolder;
             string craftFolder;
             public Dictionary<string, CraftProfileInfo> craftList = new Dictionary<string, CraftProfileInfo>();
+            public Dictionary<string, int> crewCounts = new Dictionary<string, int>();
+            public Action<string> selectFileCallback = null;
+            public Action cancelledCallback = null;
             public static Dictionary<string, string> shipNames = new Dictionary<string, string>();
             public static GUIStyle vesselButtonStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
             public static GUIStyle vesselInfoStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.label);
@@ -625,6 +628,7 @@ namespace BDArmory.Competition.VesselSpawning
                         craftList[craft].SaveToMetaFile(craftMeta);
                     }
                 }
+                crewCounts = craftList.ToDictionary(kvp => kvp.Key, kvp=> kvp.Value.partNames.Where(p => SpawnUtils.PartCrewCounts.ContainsKey(p)).Sum(p => SpawnUtils.PartCrewCounts[p]));
                 vesselButtonStyle.stretchHeight = true;
                 vesselButtonStyle.fontSize = 20;
                 vesselInfoStyle.fontSize = 12;

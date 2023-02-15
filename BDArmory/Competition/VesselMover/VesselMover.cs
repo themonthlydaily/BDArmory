@@ -12,6 +12,8 @@ using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
 
+using static BDArmory.Competition.VesselSpawning.CustomTemplateSpawning;
+
 namespace BDArmory.Competition.VesselMover
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
@@ -61,6 +63,7 @@ namespace BDArmory.Competition.VesselMover
 
             BDArmorySetup.WindowRectVesselMover.height = 0;
             if (guiCheckIndex < 0) guiCheckIndex = GUIUtils.RegisterGUIRect(new Rect());
+            if (_vesselGUICheckIndex < 0) _vesselGUICheckIndex = GUIUtils.RegisterGUIRect(new Rect());
             if (_crewGUICheckIndex < 0) _crewGUICheckIndex = GUIUtils.RegisterGUIRect(new Rect());
             ready = true;
             BDArmorySetup.Instance.hasVesselMover = true;
@@ -539,6 +542,7 @@ namespace BDArmory.Competition.VesselMover
         HashSet<string> KerbalNames = new HashSet<string>();
         int crewCapacity = -1;
         string vesselNameToSpawn = "";
+        CustomCraftBrowserDialog craftBrowser;
         IEnumerator SpawnVessel()
         {
             state = State.Spawning;
@@ -554,7 +558,10 @@ namespace BDArmory.Competition.VesselMover
                 craftBrowser = null;
             }
             else
-                craftFile = VesselSpawner.spawnProbeLocation;
+            {
+                ShowVesselSelection((path) => { craftFile = path; }, () => { abort = true; });
+                while (!abort && string.IsNullOrEmpty(craftFile)) yield return wait;
+            }
             messageState = Messages.None;
             if (abort || string.IsNullOrEmpty(craftFile)) { state = State.None; yield break; }
             if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselMover]: {craftFile} selected for spawning.");
@@ -804,7 +811,17 @@ namespace BDArmory.Competition.VesselMover
                     BDArmorySetup.BDGuiSkin.window,
                     GUILayout.Width(windowWidth)
                 );
-                if (showCrewSelection)
+                if (showVesselSelection)
+                {
+                    vesselSelectionWindowRect = GUILayout.Window(
+                        GUIUtility.GetControlID(FocusType.Passive),
+                        vesselSelectionWindowRect,
+                        VesselSelectionWindow,
+                        StringUtils.Localize("#LOC_BDArmory_Settings_CustomSpawnTemplate_VesselSelection"),
+                        BDArmorySetup.BDGuiSkin.window
+                    );
+                }
+                else if (showCrewSelection)
                 {
                     crewSelectionWindowRect = GUILayout.Window(
                         GUIUtility.GetControlID(FocusType.Passive),
@@ -823,6 +840,10 @@ namespace BDArmory.Competition.VesselMover
                 {
                     KerbalNames.Clear();
                     HideCrewSelection();
+                }
+                if (showVesselSelection)
+                {
+                    HideVesselSelection();
                 }
             }
 
@@ -899,7 +920,7 @@ namespace BDArmory.Competition.VesselMover
                         if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_VesselMover_RecoverVessel"), BDArmorySetup.ButtonStyle, GUILayout.Height(20))) RecoverVessel();
                         GUILayout.BeginHorizontal();
                         BDArmorySettings.VESSEL_MOVER_CHOOSE_CREW = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_CHOOSE_CREW, StringUtils.Localize("#LOC_BDArmory_VesselMover_ChooseCrew"));
-                        // BDArmorySettings.VESSEL_MOVER_CLASSIC_CRAFT_CHOOSER = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_CLASSIC_CRAFT_CHOOSER, StringUtils.Localize("#LOC_BDArmory_VesselMover_ClassicChooser"));
+                        BDArmorySettings.VESSEL_MOVER_CLASSIC_CRAFT_CHOOSER = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_CLASSIC_CRAFT_CHOOSER, StringUtils.Localize("#LOC_BDArmory_VesselMover_ClassicChooser"));
                         GUILayout.EndHorizontal();
                         break;
                     }
@@ -986,9 +1007,95 @@ namespace BDArmory.Competition.VesselMover
 
         public void SetVisible(bool visible)
         {
+            if (!visible && craftBrowser != null) craftBrowser = null; // Clean up the craft browser.
             BDArmorySetup.Instance.showVesselMoverGUI = visible;
             GUIUtils.SetGUIRectVisible(guiCheckIndex, visible);
         }
+
+        #region Vessel Selection
+        internal static int _vesselGUICheckIndex = -1;
+        bool showVesselSelection = false;
+        Rect vesselSelectionWindowRect = new Rect(0, 0, 600, 800);
+        Vector2 vesselSelectionScrollPos = default;
+        float vesselSelectionTimer = 0;
+        string selectedVesselURL = "";
+
+        public void ShowVesselSelection(Action<string> selectedCallback = null, Action cancelledCallback = null)
+        {
+            if (craftBrowser == null)
+            {
+                craftBrowser = new CustomCraftBrowserDialog();
+                craftBrowser.UpdateList(craftBrowser.facility);
+            }
+            craftBrowser.selectFileCallback = selectedCallback;
+            craftBrowser.cancelledCallback = cancelledCallback;
+            vesselSelectionWindowRect.position = new Vector2((Screen.width - vesselSelectionWindowRect.width) / 2, (Screen.height - vesselSelectionWindowRect.height) / 2);
+            selectedVesselURL = "";
+            showVesselSelection = true;
+            vesselSelectionTimer = Time.realtimeSinceStartup;
+            GUIUtils.SetGUIRectVisible(_vesselGUICheckIndex, true);
+        }
+
+        public void HideVesselSelection()
+        {
+            showVesselSelection = false;
+            GUIUtils.SetGUIRectVisible(_vesselGUICheckIndex, false);
+        }
+
+        public void VesselSelectionWindow(int windowID)
+        {
+            GUI.DragWindow(new Rect(0, 0, vesselSelectionWindowRect.width, 20));
+            GUILayout.BeginVertical();
+            vesselSelectionScrollPos = GUILayout.BeginScrollView(vesselSelectionScrollPos, GUI.skin.box, GUILayout.Width(vesselSelectionWindowRect.width - 15), GUILayout.MaxHeight(vesselSelectionWindowRect.height - 60));
+            using (var vessels = craftBrowser.craftList.GetEnumerator())
+                while (vessels.MoveNext())
+                {
+                    var vesselURL = vessels.Current.Key;
+                    var vesselInfo = vessels.Current.Value;
+                    if (vesselURL == null || vesselInfo == null) continue;
+                    GUILayout.BeginHorizontal(); // Vessel buttons
+                    if (GUILayout.Button($"{vesselInfo.shipName}", selectedVesselURL == vesselURL ? BDArmorySetup.SelectedButtonStyle : BDArmorySetup.ButtonStyle, GUILayout.Height(50), GUILayout.MaxWidth(vesselSelectionWindowRect.width - 190)))
+                    {
+                        if (Time.realtimeSinceStartup - vesselSelectionTimer < 0.5f)
+                        {
+                            if (craftBrowser.selectFileCallback != null) craftBrowser.selectFileCallback(vesselURL);
+                            HideVesselSelection();
+                        }
+                        else if (selectedVesselURL == vesselURL) { selectedVesselURL = ""; }
+                        else { selectedVesselURL = vesselURL; }
+                        vesselSelectionTimer = Time.realtimeSinceStartup;
+                    }
+                    GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_Settings_CustomSpawnTemplate_Parts")}: {vesselInfo.partCount},  {StringUtils.Localize("#LOC_BDArmory_Settings_CustomSpawnTemplate_Mass")}: {(vesselInfo.totalMass < 1000f ? $"{vesselInfo.totalMass:G3}t" : $"{vesselInfo.totalMass / 1000f:G3}kt")}\nCrew count: {(craftBrowser.crewCounts.ContainsKey(vesselURL) ? craftBrowser.crewCounts[vesselURL] : "unknown")}\n{(vesselInfo.UnavailableShipParts.Count > 0 ? $"<b><color=red>{StringUtils.Localize("#LOC_BDArmory_Settings_CustomSpawnTemplate_InvalidParts")}</color></b>" : $"{StringUtils.Localize("#LOC_BDArmory_Settings_CustomSpawnTemplate_Version")}: {(vesselInfo.compatibility == VersionCompareResult.COMPATIBLE ? $"{vesselInfo.version}" : $"<color=red>{vesselInfo.version}</color>")}{(vesselInfo.UnavailableShipPartModules.Count > 0 ? $"  <color=red>{StringUtils.Localize("#LOC_BDArmory_Settings_CustomSpawnTemplate_UnknownModules")}</color>" : "")}")}", CustomCraftBrowserDialog.vesselInfoStyle);
+                    GUILayout.EndHorizontal();
+                }
+            GUILayout.EndScrollView();
+            GUILayout.Space(10);
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_Generic_Select"), selectedVesselURL != "" ? BDArmorySetup.ButtonStyle : BDArmorySetup.SelectedButtonStyle) && selectedVesselURL != "")
+            {
+                if (craftBrowser.selectFileCallback != null) craftBrowser.selectFileCallback(selectedVesselURL);
+                HideVesselSelection();
+            }
+            if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_Generic_Cancel"), BDArmorySetup.ButtonStyle))
+            {
+                if (craftBrowser.cancelledCallback != null) craftBrowser.cancelledCallback();
+                HideVesselSelection();
+            }
+            if (GUILayout.Button(craftBrowser.facility == EditorFacility.SPH ? "VAB" : "SPH", BDArmorySetup.ButtonStyle))
+            {
+                craftBrowser.facility = (craftBrowser.facility == EditorFacility.SPH ? EditorFacility.VAB : EditorFacility.SPH);
+                craftBrowser.UpdateList(craftBrowser.facility);
+            }
+            if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_Settings_CustomSpawnTemplate_Refresh"), BDArmorySetup.ButtonStyle))
+            { craftBrowser.UpdateList(craftBrowser.facility); }
+            GUILayout.EndHorizontal();
+            GUILayout.EndVertical();
+            GUIUtils.RepositionWindow(ref vesselSelectionWindowRect);
+            GUIUtils.UpdateGUIRect(vesselSelectionWindowRect, _vesselGUICheckIndex);
+            GUIUtils.UseMouseEventInRect(vesselSelectionWindowRect);
+        }
+
+        #endregion
 
         #region Crew Selection
         internal static int _crewGUICheckIndex = -1;
