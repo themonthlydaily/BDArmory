@@ -44,6 +44,13 @@ namespace BDArmory.Competition.VesselMover
             ready = false;
             StartCoroutine(WaitForBdaSettings());
             ConfigureStyles();
+            moveIndicator = new GameObject().AddComponent<LineRenderer>();
+            moveIndicator.material = new Material(Shader.Find("KSP/Emissive/Diffuse"));
+            moveIndicator.material.SetColor("_EmissiveColor", Color.green);
+            moveIndicator.startWidth = 0.15f;
+            moveIndicator.endWidth = 0.15f;
+            moveIndicator.enabled = false;
+            moveIndicator.positionCount = circleRes + 3;
             GameEvents.onVesselChange.Add(OnVesselChanged);
         }
 
@@ -66,7 +73,18 @@ namespace BDArmory.Competition.VesselMover
         void Update()
         {
             if (state != State.None && FlightGlobals.ActiveVessel == null) state = State.None;
-            if (IsMoving(FlightGlobals.ActiveVessel)) HandleInput(); // Input needs to be handled in Update.
+            if (state == State.Moving && IsMoving(FlightGlobals.ActiveVessel))
+                HandleInput(); // Input needs to be handled in Update.
+        }
+
+        void LateUpdate()
+        {
+            if (state == State.Moving && !MapView.MapIsEnabled)
+            {
+                moveIndicator.enabled = true;
+                DrawMovingIndicator();
+            }
+            else moveIndicator.enabled = false;
         }
         #endregion
 
@@ -231,98 +249,101 @@ namespace BDArmory.Competition.VesselMover
             float rotateSpeed = 0;
             while (IsMoving(vessel))
             {
-                if (translating || autoLevelPlane || autoLevelRocket)
+                if (vessel.isActiveVessel)
                 {
-                    up = (vessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
-                    if (MapView.MapIsEnabled)
+                    if (translating || autoLevelPlane || autoLevelRocket)
                     {
-                        forward = Vector3.ProjectOnPlane(-Math.Sign(vessel.latitude) * (vessel.mainBody.GetWorldSurfacePosition(vessel.latitude - Math.Sign(vessel.latitude), vessel.longitude, vessel.altitude) - vessel.GetWorldPos3D()), up).normalized;
-                    }
-                    else
-                    {
-                        if (Vector3.Dot(-up, FlightCamera.fetch.mainCamera.transform.up) > 0)
-                            forward = Vector3.ProjectOnPlane(FlightCamera.fetch.mainCamera.transform.up, up).normalized;
+                        up = (vessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
+                        if (MapView.MapIsEnabled)
+                        {
+                            forward = Vector3.ProjectOnPlane(-Math.Sign(vessel.latitude) * (vessel.mainBody.GetWorldSurfacePosition(vessel.latitude - Math.Sign(vessel.latitude), vessel.longitude, vessel.altitude) - vessel.GetWorldPos3D()), up).normalized;
+                        }
                         else
-                            forward = Vector3.ProjectOnPlane(vessel.transform.position - FlightCamera.fetch.mainCamera.transform.position, up).normalized;
+                        {
+                            if (Vector3.Dot(-up, FlightCamera.fetch.mainCamera.transform.up) > 0)
+                                forward = Vector3.ProjectOnPlane(FlightCamera.fetch.mainCamera.transform.up, up).normalized;
+                            else
+                                forward = Vector3.ProjectOnPlane(vessel.transform.position - FlightCamera.fetch.mainCamera.transform.position, up).normalized;
+                        }
+                        right = Vector3.Cross(up, forward);
                     }
-                    right = Vector3.Cross(up, forward);
-                }
 
-                // Perform rotations first to update lower bound.
-                if (rotating)
-                {
-                    var radarAltitude = RadarAltitude(vessel) - lowerBound;
-                    rotateSpeed = Mathf.Clamp(Mathf.MoveTowards(rotateSpeed, 180f, Mathf.Min(10f + 10f * rotateSpeed, 180f) * Time.fixedDeltaTime), 0f, 180f);
-                }
-                else { rotateSpeed = 0f; }
-                if (autoLevelPlane)
-                {
-                    Quaternion targetRot = Quaternion.LookRotation(-up, forward);
-                    rotation = Quaternion.RotateTowards(rotation, targetRot, rotateSpeed * 2f * Time.fixedDeltaTime);
-                }
-                else if (autoLevelRocket)
-                {
-                    Quaternion targetRot = Quaternion.LookRotation(forward, up);
-                    rotation = Quaternion.RotateTowards(rotation, targetRot, rotateSpeed * 2f * Time.fixedDeltaTime);
-                }
-                else if (rotating)
-                {
-                    if (rotationAdjustment.x != 0) rotation = Quaternion.AngleAxis(-rotateSpeed * Time.fixedDeltaTime * rotationAdjustment.x, referenceTransform.up) * rotation; // Roll
-                    if (rotationAdjustment.z != 0) rotation = Quaternion.AngleAxis(rotateSpeed * Time.fixedDeltaTime * rotationAdjustment.z, referenceTransform.right) * rotation; // Pitch
-                    if (rotationAdjustment.y != 0) rotation = Quaternion.AngleAxis(-rotateSpeed * Time.fixedDeltaTime * rotationAdjustment.y, referenceTransform.forward) * rotation; // Yaw
-                }
-                if (rotating)
-                {
-                    vessel.IgnoreGForces(240);
-                    var previousLowerBound = lowerBound;
-                    vessel.SetRotation(rotation);
-                    lowerBound = GetLowerBound(vessel);
-                    vessel.SetPosition(position);
-                    vessel.SetWorldVelocity(Vector3d.zero);
-                    position += (lowerBound - previousLowerBound) * up;
-                }
+                    // Perform rotations first to update lower bound.
+                    if (rotating)
+                    {
+                        var radarAltitude = RadarAltitude(vessel) - lowerBound;
+                        rotateSpeed = Mathf.Clamp(Mathf.MoveTowards(rotateSpeed, 180f, Mathf.Min(10f + 10f * rotateSpeed, 180f) * Time.fixedDeltaTime), 0f, 180f);
+                    }
+                    else { rotateSpeed = 0f; }
+                    if (autoLevelPlane)
+                    {
+                        Quaternion targetRot = Quaternion.LookRotation(-up, forward);
+                        rotation = Quaternion.RotateTowards(rotation, targetRot, rotateSpeed * 2f * Time.fixedDeltaTime);
+                    }
+                    else if (autoLevelRocket)
+                    {
+                        Quaternion targetRot = Quaternion.LookRotation(forward, up);
+                        rotation = Quaternion.RotateTowards(rotation, targetRot, rotateSpeed * 2f * Time.fixedDeltaTime);
+                    }
+                    else if (rotating)
+                    {
+                        if (rotationAdjustment.x != 0) rotation = Quaternion.AngleAxis(-rotateSpeed * Time.fixedDeltaTime * rotationAdjustment.x, referenceTransform.up) * rotation; // Roll
+                        if (rotationAdjustment.z != 0) rotation = Quaternion.AngleAxis(rotateSpeed * Time.fixedDeltaTime * rotationAdjustment.z, referenceTransform.right) * rotation; // Pitch
+                        if (rotationAdjustment.y != 0) rotation = Quaternion.AngleAxis(-rotateSpeed * Time.fixedDeltaTime * rotationAdjustment.y, referenceTransform.forward) * rotation; // Yaw
+                    }
+                    if (rotating)
+                    {
+                        vessel.IgnoreGForces(240);
+                        var previousLowerBound = lowerBound;
+                        vessel.SetRotation(rotation);
+                        lowerBound = GetLowerBound(vessel);
+                        vessel.SetPosition(position);
+                        vessel.SetWorldVelocity(Vector3d.zero);
+                        position += (lowerBound - previousLowerBound) * up;
+                    }
 
-                // Translations/Altitude changes
-                if (reset)
-                {
-                    var baseAltitude = 2f * vessel.GetRadius();
-                    var safeAltitude = SafeAltitude(vessel, lowerBound);
-                    if (!BDArmorySettings.VESSEL_MOVER_BELOW_WATER) safeAltitude = Mathf.Min((float)vessel.altitude, safeAltitude);
-                    if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselMover]: Resetting to base altitude {baseAltitude + lowerBound}m (safeAlt: {safeAltitude}, lower bound: {lowerBound}m)");
-                    position += (baseAltitude - safeAltitude) * up;
-                    reset = false;
-                }
-                else if (jump)
-                {
-                    var baseAltitude = 2f * vessel.GetRadius();
-                    var safeAltitude = SafeAltitude(vessel, lowerBound);
-                    var jumpToAltitude = safeAltitude < 1.1f * baseAltitude ? jumpToAltitudes.Last() : jumpToAltitudes.Where(a => a < 0.95f * safeAltitude).LastOrDefault();
-                    if (jumpToAltitude < 2f * baseAltitude) jumpToAltitude = baseAltitude;
-                    if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselMover]: Jumping to altitude {jumpToAltitude}m (safeAlt: {safeAltitude}, baseAlt: {baseAltitude})");
-                    up = (vessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
-                    position += (jumpToAltitude - safeAltitude) * up;
-                    jump = false;
-                }
-                else if (translating)
-                {
-                    var radarAltitude = RadarAltitude(vessel);
-                    var distance = Mathf.Abs(radarAltitude - lowerBound);
-                    float maxMoveSpeed = distance > 25f ? 20f * BDAMath.Sqrt(distance) : distance > 1f ? 4f * distance : 1f;
-                    moveSpeed = Mathf.Clamp(Mathf.MoveTowards(moveSpeed, maxMoveSpeed, maxMoveSpeed * Time.fixedDeltaTime), 0, maxMoveSpeed);
+                    // Translations/Altitude changes
+                    if (reset)
+                    {
+                        var baseAltitude = 2f * vessel.GetRadius();
+                        var safeAltitude = SafeAltitude(vessel, lowerBound);
+                        if (!BDArmorySettings.VESSEL_MOVER_BELOW_WATER) safeAltitude = Mathf.Min((float)vessel.altitude, safeAltitude);
+                        if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselMover]: Resetting to base altitude {baseAltitude + lowerBound}m (safeAlt: {safeAltitude}, lower bound: {lowerBound}m)");
+                        position += (baseAltitude - safeAltitude) * up;
+                        reset = false;
+                    }
+                    else if (jump)
+                    {
+                        var baseAltitude = 2f * vessel.GetRadius();
+                        var safeAltitude = SafeAltitude(vessel, lowerBound);
+                        var jumpToAltitude = safeAltitude < 1.1f * baseAltitude ? jumpToAltitudes.Last() : jumpToAltitudes.Where(a => a < 0.95f * safeAltitude).LastOrDefault();
+                        if (jumpToAltitude < 2f * baseAltitude) jumpToAltitude = baseAltitude;
+                        if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselMover]: Jumping to altitude {jumpToAltitude}m (safeAlt: {safeAltitude}, baseAlt: {baseAltitude})");
+                        up = (vessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
+                        position += (jumpToAltitude - safeAltitude) * up;
+                        jump = false;
+                    }
+                    else if (translating)
+                    {
+                        var radarAltitude = RadarAltitude(vessel);
+                        var distance = Mathf.Abs(radarAltitude - lowerBound);
+                        float maxMoveSpeed = distance > 25f ? 20f * BDAMath.Sqrt(distance) : distance > 1f ? 4f * distance : 1f;
+                        moveSpeed = Mathf.Clamp(Mathf.MoveTowards(moveSpeed, maxMoveSpeed, maxMoveSpeed * Time.fixedDeltaTime), 0, maxMoveSpeed);
 
-                    var moveDistance = moveSpeed * Time.fixedDeltaTime;
-                    var offset = 3f * positionAdjustment.x * moveDistance * right + 3f * positionAdjustment.y * moveDistance * forward;
-                    offset += (radarAltitude - RadarAltitude(position + offset)) * up;
-                    var safeAltitude = radarAltitude < 1000 ? SafeAltitude(vessel, lowerBound, offset) : radarAltitude; // Don't bother when over 1000m.
-                    offset += Mathf.Max(positionAdjustment.z * moveSpeed * Time.fixedDeltaTime, -safeAltitude) * up;
-                    position += offset;
-                    // Debug.Log($"DEBUG position: {position:G6}, altitude: {radarAltitude}, safeAltCorrection: {safeAltitude}, distance: {distance}, moveSpeed: {moveSpeed}, maxSpeed: {maxMoveSpeed}");
-                }
-                else { moveSpeed = 0; }
+                        var moveDistance = moveSpeed * Time.fixedDeltaTime;
+                        var offset = 3f * positionAdjustment.x * moveDistance * right + 3f * positionAdjustment.y * moveDistance * forward;
+                        offset += (radarAltitude - RadarAltitude(position + offset)) * up;
+                        var safeAltitude = radarAltitude < 1000 ? SafeAltitude(vessel, lowerBound, offset) : radarAltitude; // Don't bother when over 1000m.
+                        offset += Mathf.Max(positionAdjustment.z * moveSpeed * Time.fixedDeltaTime, -safeAltitude) * up;
+                        position += offset;
+                        // Debug.Log($"DEBUG position: {position:G6}, altitude: {radarAltitude}, safeAltCorrection: {safeAltitude}, distance: {distance}, moveSpeed: {moveSpeed}, maxSpeed: {maxMoveSpeed}");
+                    }
+                    else { moveSpeed = 0; }
 
-                if (translating || rotating || autoLevelPlane || autoLevelRocket)  // Correct for terrain/object collisions.
-                {
-                    var radarAltitude = RadarAltitude(vessel);
+                    if (translating || rotating || autoLevelPlane || autoLevelRocket)  // Correct for terrain/object collisions.
+                    {
+                        var radarAltitude = RadarAltitude(vessel);
+                    }
                 }
 
                 vessel.IgnoreGForces(240);
@@ -724,6 +745,8 @@ namespace BDArmory.Competition.VesselMover
         Messages _messageState = Messages.None;
         string customMessage = "";
         float messageDisplayTime = 0;
+
+
         private void OnGUI()
         {
             if (!(ready && BDArmorySetup.GAME_UI_ENABLED))
@@ -1087,6 +1110,30 @@ namespace BDArmory.Competition.VesselMover
         }
         #endregion
 
+        const int circleRes = 24;
+        private LineRenderer moveIndicator;
+        Vector3[] moveIndicatorPositions = new Vector3[circleRes + 3];
+        private void DrawMovingIndicator()
+        {
+            var vessel = FlightGlobals.ActiveVessel;
+            if (vessel == null || !vessel.loaded || vessel.packed) return;
+
+            var angle = 360f / circleRes;
+            var radius = 2f + vessel.GetRadius();
+            var centre = vessel.CoM;
+            VectorUtils.GetWorldCoordinateFrame(vessel.mainBody, centre, out Vector3 up, out Vector3 north, out Vector3 right);
+
+            moveIndicatorPositions[0] = centre + radius * north;
+            for (int i = 1; i < circleRes; i++)
+            {
+                moveIndicatorPositions[i] = centre + Quaternion.AngleAxis(i * angle, up) * north * radius;
+            }
+            moveIndicatorPositions[circleRes] = centre + radius * north;
+            moveIndicatorPositions[circleRes + 1] = centre;
+            moveIndicatorPositions[circleRes + 2] = centre + RadarAltitude(vessel) * -up;
+
+            moveIndicator.SetPositions(moveIndicatorPositions);
+        }
         #endregion
     }
 }
