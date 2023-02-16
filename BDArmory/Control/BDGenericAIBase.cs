@@ -134,8 +134,15 @@ namespace BDArmory.Control
             GameEvents.onVesselDestroy.Add(RemoveAutopilot);
 
             assignedPositionWorld = vessel.ReferenceTransform.position;
-            // I need to make sure gear is deployed on startup so it'll get properly retracted.
-            vessel.ActionGroups.SetGroup(KSPActionGroup.Gear, true);
+            try // Sometimes the FSM breaks trying to set the gear action group
+            {
+                // I need to make sure gear is deployed on startup so it'll get properly retracted.
+                vessel.ActionGroups.SetGroup(KSPActionGroup.Gear, true);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[BDArmory.BDGenericAIBase]: Failed to set Gear action group: {e.Message}");
+            }
             RefreshPartWindow();
         }
 

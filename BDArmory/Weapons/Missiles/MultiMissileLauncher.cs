@@ -327,7 +327,7 @@ namespace BDArmory.Weapons.Missiles
             if (isClusterMissile) salvoSize = launchTransforms.Length;
             if (!(missileSalvo != null))
             {
-                missileSalvo = StartCoroutine(salvoFire(killWhenDone));                
+                missileSalvo = StartCoroutine(salvoFire(killWhenDone));
                 wpm = VesselModuleRegistry.GetMissileFire(missileLauncher.SourceVessel, true);
                 if (useSymCounterpart)
                 {
@@ -661,7 +661,7 @@ namespace BDArmory.Weapons.Missiles
                         continue;
                     if (!parts.Current.partPrefab.partInfo.name.Contains(subMunitionName)) continue;
                     missilePart = parts.Current;
-                    Debug.Log($"[BDArmory.MML]: found {missilePart.partPrefab.partInfo.name}");
+                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MML]: found {missilePart.partPrefab.partInfo.name}");
                     break;
                 }
             if (missilePart != null)
@@ -677,7 +677,7 @@ namespace BDArmory.Weapons.Missiles
                         output.AppendLine($"- tnt Mass: {tntMass} kg");
                     }
                 }
-                Debug.Log($"[BDArmory.MML]: has BDExplosivePart: {missilePart.partPrefab.FindModuleImplementing<BDExplosivePart>()}");
+                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MML]: has BDExplosivePart: {missilePart.partPrefab.FindModuleImplementing<BDExplosivePart>()}");
                 var ExplosivePart = (missilePart.partPrefab.FindModuleImplementing<BDExplosivePart>());
                 if (ExplosivePart != null)
                 {

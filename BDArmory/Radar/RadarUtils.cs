@@ -806,6 +806,7 @@ namespace BDArmory.Radar
         public static float GetStandoffJammingModifier(Vessel v, Competition.BDTeam team, Vector3 position, Vessel targetV, float signature)
         {
             if (!VesselModuleRegistry.GetModule<MissileFire>(targetV)) return 1f; // Don't evaluate SOJ effects for targets without weapons managers
+            if (signature == 0) return 1f; // Don't evaluate SOJ effects for targets with 0 signature
 
             float standOffJammingMod = 0f;
             string debugSOJ = "Standoff Jammer Lockbreak Strengths: \n";
@@ -1079,11 +1080,12 @@ namespace BDArmory.Radar
                             {
                                 //evaluate if we can lock/track such a signature at that range
                                 float minLockSig = radar.radarLockTrackCurve.Evaluate(distance);
+
                                 signature *= ti != null ? ti.radarLockbreakFactor : 1;    //multiply lockbreak factor from active ecm
                                                                          //do not multiply chaff factor here
                                 signature *= GetStandoffJammingModifier(radar.vessel, radar.weaponManager.Team, position, loadedvessels.Current, signature);
-
-                                if (signature > minLockSig && RadarCanDetect(radar, signature, distance)) // Must be able to detect and lock to lock targets
+                                
+                                if (signature >= minLockSig && RadarCanDetect(radar, signature, distance)) // Must be able to detect and lock to lock targets
                                 {
                                     // detected by radar
                                     if (myWpnManager != null)
@@ -1204,8 +1206,8 @@ namespace BDArmory.Radar
                 {
                     //evaluate if we can detect such a signature at that range
                     float minTrackSig = radar.radarLockTrackCurve.Evaluate(distance);
-
-                    if ((signature > minTrackSig) && (RadarCanDetect(radar, signature, distance)))
+                    
+                    if ((signature >= minTrackSig) && (RadarCanDetect(radar, signature, distance)))
                     {
                         // can be tracked
                         radar.ReceiveContactData(new TargetSignatureData(lockedVessel, signature), locked);
@@ -1295,7 +1297,7 @@ namespace BDArmory.Radar
                             //evaluate if we can detect or lock such a signature at that range
                             float minDetectSig = irst.DetectionCurve.Evaluate(distance / attenuationFactor);
 
-                            if (signature > minDetectSig)
+                            if (signature >= minDetectSig)
                             {
                                 // detected by irst
                                 if (myWpnManager != null)
@@ -1326,8 +1328,8 @@ namespace BDArmory.Radar
                 float minDetectSig = radar.radarDetectionCurve.Evaluate(distance);
                 //do not consider lockbreak factor from active ecm here!
                 //do not consider chaff here
-
-                if (signature > minDetectSig)
+                
+                if (signature >= minDetectSig)
                 {
                     detected = true;
                 }
@@ -1492,7 +1494,7 @@ namespace BDArmory.Radar
                 var missileBlastRadiusSqr = 3f * missile.GetBlastRadius();
                 missileBlastRadiusSqr *= missileBlastRadiusSqr;
 
-                return (missile.HasFired && missile.TimeIndex > 1f && approaching &&
+                return (missile.HasFired && missile.MissileState > MissileBase.MissileStates.Drop && approaching &&
                             (
                                 (missile.TargetPosition - (mf.vessel.CoM + (mf.vessel.Velocity() * Time.fixedDeltaTime))).sqrMagnitude < missileBlastRadiusSqr || // Target position is within blast radius of missile.
                                 mf.vessel.PredictClosestApproachSqrSeparation(missile.vessel, mf.cmThreshold) < missileBlastRadiusSqr || // Closest approach is within blast radius of missile. 

@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
-VERSION = "1.17.0"
+VERSION = "1.18.0"
 
 parser = argparse.ArgumentParser(description="Tournament log parser", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('tournament', type=str, nargs='*', help="Tournament folder to parse.")
@@ -136,6 +136,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
     m = re.search('Tournament (\d+)', str(tournamentDir))
     if m is not None and len(m.groups()) > 0:
         tournamentMetadata['ID'] = m.groups()[0]
+    tournamentMetadata['rounds'] = len([roundDir for roundDir in tournamentDir.iterdir() if roundDir.is_dir() and roundDir.name.startswith('Round')])
     for round in sorted((roundDir for roundDir in tournamentDir.iterdir() if roundDir.is_dir()), key=naturalSortKey) if not args.current_dir else (tournamentDir,):
         if not args.current_dir and len(round.name) == 0:
             continue
@@ -290,6 +291,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
         'meta': {
             'ID': tournamentMetadata.get('ID', 'unknown'),
             'duration': [ts.isoformat() for ts in tournamentMetadata.get('duration', (datetime.now(), datetime.now()))],
+            'rounds': tournamentMetadata.get('rounds', -1),
         },
         'craft': {
             craft: {
@@ -469,7 +471,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
         if not args.quiet:  # Write results to console
             strings = []
             if not args.no_header and not args.current_dir and 'duration' in tournamentMetadata:
-                strings.append(f"Tournament {tournamentMetadata.get('ID', '???')} of duration {tournamentMetadata['duration'][1]-tournamentMetadata['duration'][0]} starting at {tournamentMetadata['duration'][0]}")
+                strings.append(f"Tournament {tournamentMetadata.get('ID', '???')} of duration {tournamentMetadata['duration'][1]-tournamentMetadata['duration'][0]} with {tournamentMetadata['rounds']} rounds starting at {tournamentMetadata['duration'][0]}")
             headers = ['Name', 'Wins', 'Survive', 'MIA', 'Deaths (BRMRAS)', 'D.Order', 'D.Time', 'Kills (BRMR)', 'Assists', 'Hits', 'Damage', 'DmgTaken', 'RocHits', 'RocParts', 'RocDmg', 'HitByRoc', 'MisHits', 'MisParts', 'MisDmg', 'HitByMis', 'Ram', 'BD dealt', 'BD taken', 'Acc%', 'RktAcc%', 'HP%', 'Dmg/Hit', 'Hits/Sp', 'Dmg/Sp'] if not args.scores_only else ['Name']
             if hasWaypoints and not args.scores_only:
                 headers.extend(['WPcount', 'WPtime', 'WPdev', 'WPbestC', 'WPbestT', 'WPbestD'])

@@ -66,6 +66,27 @@ namespace BDArmory.Competition.VesselSpawning
             return count;
         }
 
+        public static Dictionary<string, int> PartCrewCounts
+        {
+            get
+            {
+                if (_partCrewCounts == null)
+                {
+                    _partCrewCounts = new Dictionary<string, int>();
+                    foreach (var part in PartLoader.LoadedPartsList)
+                    {
+                        if (part == null || part.partPrefab == null || part.partPrefab.CrewCapacity < 1) continue;
+                        {
+                            if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.SpawnUtils]: {part.name} has crew capacity {part.partPrefab.CrewCapacity}.");
+                            _partCrewCounts.Add(part.name, part.partPrefab.CrewCapacity);
+                        }
+                    }
+                }
+                return _partCrewCounts;
+            }
+        }
+        static Dictionary<string, int> _partCrewCounts;
+
         #region Camera
         public static void ShowSpawnPoint(int worldIndex, double latitude, double longitude, double altitude = 0, float distance = 100, bool spawning = false) => SpawnUtilsInstance.Instance.ShowSpawnPoint(worldIndex, latitude, longitude, altitude, distance, spawning); // Note: this may launch a coroutine when not spawning and there's no active vessel!
         public static void RevertSpawnLocationCamera(bool keepTransformValues = true, bool revertIfDead = false) => SpawnUtilsInstance.Instance.RevertSpawnLocationCamera(keepTransformValues, revertIfDead);

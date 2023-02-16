@@ -15,13 +15,29 @@
 
 IMPROVEMENTS / FIXES
 - General:
-	- Fix Firebottle mass not resetting if a part switched from fueltank to structural
+	- Blacklist the PotatoRoid due to it not having a valid prefab (they get procedurally generated) and causing NREs.
+	- Add try-catch around setting the gear action group due to the FSM sometimes breaking it and breaking pilot initialisation.
+	- Remove HP rounding and lower HP limit for MM-patched parts. Apply health modifier after applying rounding and lower HP limit for non-MM-patched parts.
+- UI:
+	- Add a keybind for targeting the next GPS target.
+	- Add labels to the vessel switcher score entries for rockets, missiles, rams and tag.
+	- Parts with zero lift now appear as grey in the lift visualizer.
+	- Fix issues with wing stacking calculation. Calculation now returns ratio of non-separated vertically stacked lift area to total lift area (capped at 100%). Wings spaced sufficiently apart will not contribute to the stacking value.
+- AI / WM:
+	- AI will start evading missiles once the missile engine activates instead of waiting for 1 second after launch.
+	- When avoiding terrain and roll is inverted by more than 30°, reverse the roll target so that terrain avoidance is done while fully inverted and enable Aiming steer mode for more yaw control.
+
+v1.5.8.0
+IMPROVEMENTS / FIXES
+- General:
+	- Fix Firebottle mass not resetting if a part switched from fueltank to structural.
 - UI:
 	- Fix layout of vessel switcher window buttons and version label.
 	- Add debug button when DEBUG_OTHER is enabled for dumping part info.
 	- Add a 'Start competition automatically' button to the Vessel Spawner window for use with 'single spawn'.
 	- Updated German localisation from EzBro.
-	- Fix some Ai GUI infotext.
+	- Fix some AI GUI infotext.
+	- Clean up ordering and consistency in the AI GUI and in-flight WM windows.
 - Competition:
 	- Tweaks to sequenced competition start-up to allow a single plane to perform the sequence despite not having enough teams for a competition.
 	- Add an option to save the image from plot_summary.py with a transparent background.
@@ -31,10 +47,16 @@ IMPROVEMENTS / FIXES
 	- AI will no longer dive into missiles approaching from directly below.
 	- Reset the auto-tune PID values to the best ones when lowering the learning rate.
 	- Add a keybind for arming/disarming the WM.
+- Detectors
+	- Fix radars/IRSTs with ability to detect/lock targets with a signature of 0 not being able to detect/lock targets with a signature of 0.
+	- Fix a division by zero in the standoff jamming effect calculation when the radar signature is 0.
 - Weapons:
 	- Fix bug in nuke impulse calculation and some NREs.
 	- Fix turrets on non-active vessels following the mouse unless Remote Firing enabled.
-	- fix missiles fired from reloadable rails resetting missile settings on Launch/Spawn.
+	- Fix missiles fired from reloadable rails resetting missile settings on Launch/Spawn.
+	- Add new engineFailureRate (default is 0, max is 1) config file variable for missiles. This is the probability the missile engine will fail to start. It is evaluated once on missile launch.
+	- Add new guidanceFailureRate (default is 0, max is 1) config file variable for missiles. This is the probability per second the missile guidance will fail (0-1). It is evaluated every frame after launch.
+	- Add new fuseFailureRate (default is 0, max is 1) config file variable for BDExplosivePart modules. This is the probability the explosive fuse will fail. It is evaluated once when an explosive attempts to detonate.
 - RWP:
 	- Reset the killer GM between competitions and don't enable the killer GM for S5R3 (the altitude limit is still active).
 	- Add option to have Pwing mass and HP scale with thickness.
