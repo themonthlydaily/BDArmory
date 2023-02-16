@@ -207,7 +207,7 @@ namespace BDArmory.UI
                                     if (ml.Current == null) continue;
                                     MissileLauncher launcher = ml.Current as MissileLauncher;
                                     //if (ml.Current.MissileState != MissileBase.MissileStates.Idle && ml.Current.MissileState != MissileBase.MissileStates.Drop)
-                                    if ((ml.Current.HasFired && (!launcher.multiLauncher || launcher.multiLauncher && launcher.multiLauncher.isClusterMissile)) && !ml.Current.HasMissed && !ml.Current.HasExploded) //culling post-thrust missiles makes AGMs get cleared almost immediately after launch
+                                    if ((ml.Current.HasFired && (launcher == null || !launcher.multiLauncher || launcher.multiLauncher && launcher.multiLauncher.isClusterMissile)) && !ml.Current.HasMissed && !ml.Current.HasExploded) //culling post-thrust missiles makes AGMs get cleared almost immediately after launch
                                     {
                                         Vector3 sPos = FlightGlobals.ActiveVessel.vesselTransform.position;
                                         Vector3 tPos = v.Current.vesselTransform.position;

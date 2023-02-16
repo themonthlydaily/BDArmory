@@ -1081,12 +1081,12 @@ namespace BDArmory.Competition.VesselMover
                 if (craftBrowser.cancelledCallback != null) craftBrowser.cancelledCallback();
                 HideVesselSelection();
             }
-            if (GUILayout.Button(craftBrowser.facility == EditorFacility.SPH ? "VAB" : "SPH", BDArmorySetup.ButtonStyle))
+            if (GUILayout.Button(craftBrowser.facility == EditorFacility.SPH ? "VAB" : "SPH", BDArmorySetup.ButtonStyle, GUILayout.Width(vesselSelectionWindowRect.width / 6)))
             {
                 craftBrowser.facility = (craftBrowser.facility == EditorFacility.SPH ? EditorFacility.VAB : EditorFacility.SPH);
                 craftBrowser.UpdateList(craftBrowser.facility);
             }
-            if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_Settings_CustomSpawnTemplate_Refresh"), BDArmorySetup.ButtonStyle))
+            if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_Settings_CustomSpawnTemplate_Refresh"), BDArmorySetup.ButtonStyle, GUILayout.Width(vesselSelectionWindowRect.width / 6)))
             { craftBrowser.UpdateList(craftBrowser.facility); }
             GUILayout.EndHorizontal();
             GUILayout.EndVertical();
