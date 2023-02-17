@@ -45,7 +45,7 @@ namespace BDArmory.Targeting
             vessel = v;
             velocity = v.Velocity();
             IRSource = heatpart;
-            geoPos = VectorUtils.WorldPositionToGeoCoords(IRSource != null? IRSource.transform.position : v.CoM, v.mainBody);
+            geoPos = VectorUtils.WorldPositionToGeoCoords(IRSource != null ? IRSource.transform.position : v.CoM, v.mainBody);
             acceleration = v.acceleration_immediate;
             exists = true;
 
@@ -56,13 +56,13 @@ namespace BDArmory.Targeting
             // vessel never been picked up on radar before: create new targetinfo record
             if (targetInfo == null)
             {
-                if (VesselModuleRegistry.GetMissileFire(v));
-                targetInfo = v.gameObject.AddComponent<TargetInfo>();
+                if (VesselModuleRegistry.GetMissileFire(v))
+                    targetInfo = v.gameObject.AddComponent<TargetInfo>();
             }
 
             Team = null;
 
-            if (targetInfo) 
+            if (targetInfo)
             {
                 Team = targetInfo.Team;
             }

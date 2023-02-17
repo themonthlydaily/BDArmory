@@ -1102,6 +1102,7 @@ namespace BDArmory.Competition.VesselMover
         bool showCrewSelection = false;
         Rect crewSelectionWindowRect = new Rect(0, 0, 300, 400);
         Vector2 crewSelectionScrollPos = default;
+        float crewSelectionTimer = 0;
         HashSet<string> ActiveCrewMembers = new HashSet<string>();
         bool newCustomKerbal = false;
         string newKerbalName = "";
@@ -1138,6 +1139,7 @@ namespace BDArmory.Competition.VesselMover
                 if (crew.rosterStatus != ProtoCrewMember.RosterStatus.Assigned)
                     crew.rosterStatus = ProtoCrewMember.RosterStatus.Available;
             }
+            crewSelectionTimer = Time.realtimeSinceStartup;
         }
 
         /// <summary>
@@ -1169,9 +1171,15 @@ namespace BDArmory.Competition.VesselMover
                     if (crewMember == null || ActiveCrewMembers.Contains(crewMember.name)) continue;
                     if (GUILayout.Button($"{crewMember.name}, {crewMember.gender}, {crewMember.trait}", KerbalNames.Contains(crewMember.name) ? BDArmorySetup.SelectedButtonStyle : BDArmorySetup.ButtonStyle))
                     {
-                        if (KerbalNames.Contains(crewMember.name)) KerbalNames.Remove(crewMember.name);
+                        if (Time.realtimeSinceStartup - crewSelectionTimer < 0.5f)
+                        {
+                            KerbalNames.Add(crewMember.name);
+                            HideCrewSelection();
+                        }
+                        else if (KerbalNames.Contains(crewMember.name)) KerbalNames.Remove(crewMember.name);
                         else KerbalNames.Add(crewMember.name);
                     }
+                    crewSelectionTimer = Time.realtimeSinceStartup;
                 }
             GUILayout.EndScrollView();
             GUILayout.Space(10);

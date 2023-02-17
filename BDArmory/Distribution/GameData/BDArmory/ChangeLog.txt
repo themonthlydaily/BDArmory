@@ -26,6 +26,8 @@ IMPROVEMENTS / FIXES
 - AI / WM:
 	- AI will start evading missiles once the missile engine activates instead of waiting for 1 second after launch.
 	- When avoiding terrain and roll is inverted by more than 30°, reverse the roll target so that terrain avoidance is done while fully inverted and enable Aiming steer mode for more yaw control.
+- Countermeasures:
+	- Add selection priority to countermeasures to allow staggering of dropping countermeasures — higher priority CM dispensers trigger first.
 
 v1.5.8.0
 IMPROVEMENTS / FIXES

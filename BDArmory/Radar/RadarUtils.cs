@@ -250,7 +250,9 @@ namespace BDArmory.Radar
             if (v == null)
                 return jammingDistance;
 
-            jammingDistance = GetVesselRadarCrossSection(v).radarJammingDistance;
+            var crossSection = GetVesselRadarCrossSection(v);
+            if (crossSection != null)
+                jammingDistance = crossSection.radarJammingDistance;
             return jammingDistance;
         }
 
@@ -794,7 +796,7 @@ namespace BDArmory.Radar
             float groundClutterMutiplier = Mathf.Lerp(1, clutterFactor, (lookDownAngle / 90));
 
             //additional ground clutter factor when target is landed/splashed:
-            if (ti.isLandedOrSurfaceSplashed || ti.isSplashed)
+            if (ti != null && (ti.isLandedOrSurfaceSplashed || ti.isSplashed))
                 groundClutterMutiplier *= clutterFactor;
 
             return groundClutterMutiplier;
@@ -1082,9 +1084,9 @@ namespace BDArmory.Radar
                                 float minLockSig = radar.radarLockTrackCurve.Evaluate(distance);
 
                                 signature *= ti != null ? ti.radarLockbreakFactor : 1;    //multiply lockbreak factor from active ecm
-                                                                         //do not multiply chaff factor here
+                                                                                          //do not multiply chaff factor here
                                 signature *= GetStandoffJammingModifier(radar.vessel, radar.weaponManager.Team, position, loadedvessels.Current, signature);
-                                
+
                                 if (signature >= minLockSig && RadarCanDetect(radar, signature, distance)) // Must be able to detect and lock to lock targets
                                 {
                                     // detected by radar
@@ -1206,7 +1208,7 @@ namespace BDArmory.Radar
                 {
                     //evaluate if we can detect such a signature at that range
                     float minTrackSig = radar.radarLockTrackCurve.Evaluate(distance);
-                    
+
                     if ((signature >= minTrackSig) && (RadarCanDetect(radar, signature, distance)))
                     {
                         // can be tracked
@@ -1271,7 +1273,7 @@ namespace BDArmory.Radar
                         if (tInfo == null)
                         {
                             if (VesselModuleRegistry.GetMissileFire(loadedvessels.Current))
-                            tInfo = loadedvessels.Current.gameObject.AddComponent<TargetInfo>();
+                                tInfo = loadedvessels.Current.gameObject.AddComponent<TargetInfo>();
                         }
 
                         IRSig = BDATargetManager.GetVesselHeatSignature(loadedvessels.Current, irst.referenceTransform.position, 1f, irst.TempSensitivityCurve);
@@ -1328,7 +1330,7 @@ namespace BDArmory.Radar
                 float minDetectSig = radar.radarDetectionCurve.Evaluate(distance);
                 //do not consider lockbreak factor from active ecm here!
                 //do not consider chaff here
-                
+
                 if (signature >= minDetectSig)
                 {
                     detected = true;
