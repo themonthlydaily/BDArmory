@@ -987,6 +987,7 @@ namespace BDArmory.UI
 
             // Version.
             GUI.Label(new Rect(columnWidth - _windowMargin - (numberOfButtons - 1) * _buttonSize - 100, 23, 57, 10), Version, waterMarkStyle);
+
             //SETTINGS BUTTON
             if (!BDKeyBinder.current &&
                 GUI.Button(new Rect(columnWidth - _windowMargin - ++buttonNumber * _buttonSize, _windowMargin, _buttonSize, _buttonSize), settingsIconTexture, BDGuiSkin.button))
