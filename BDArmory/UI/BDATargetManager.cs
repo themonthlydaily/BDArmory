@@ -280,7 +280,7 @@ namespace BDArmory.UI
                         float thisScore = (float)(part.Current.thermalInternalFluxPrevious + part.Current.skinTemperature);
                         thisScore *= (tempSensitivity != default(FloatCurve)) ? tempSensitivity.Evaluate(thisScore) : 1f;
                         if (thisScore < heatScore * 1.05f && thisScore > heatScore * 0.95f)
-                        { 
+                        {
                             hottestPart.Add(part.Current);
                         }
                     }
@@ -322,9 +322,9 @@ namespace BDArmory.UI
                             }
                         }
                         // Set thrustTransform as heat source position for engines
-                        Vector3 heatSourcePosition = thrustTransform ? thrustTransform.position : closestPart.transform.position; 
+                        Vector3 heatSourcePosition = thrustTransform ? thrustTransform.position : closestPart.transform.position;
                         Ray partRay = new Ray(heatSourcePosition, sensorPosition - heatSourcePosition); //trace from heatsource to IR sensor
-                        
+
                         // First evaluate occluded heat score, then if the closestPart is a non-prop engine, evaluate the plume temperature
                         float occludedPartHeatScore = GetOccludedHeatScore(v, closestPart, heatSourcePosition, heatScore, partRay, hits, distance, thrustTransform, false, propEngine, frontAspectModifier);
                         if (thrustTransform && !propEngine)
@@ -346,7 +346,7 @@ namespace BDArmory.UI
             VesselCloakInfo vesselcamo = v.gameObject.GetComponent<VesselCloakInfo>();
             if (vesselcamo && vesselcamo.cloakEnabled)
             {
-                heatScore *= vesselcamo.thermalReductionFactor; 
+                heatScore *= vesselcamo.thermalReductionFactor;
                 heatScore = Mathf.Max(heatScore, occludedPlumeHeatScore); //Fancy heatsinks/thermoptic camo isn't going to magically cool the engine plume
             }
             if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[IRSTdebugging] final heatScore: " + heatScore);
@@ -378,7 +378,7 @@ namespace BDArmory.UI
                                                        //The heavier/further the part, the more it's going to occlude the heatsource
                     DebugCount++;
                     float sqrSpacing = (heatSourcePosition - partHit.transform.position).sqrMagnitude;
-                    OcclusionFactor += partHit.mass * (1-Mathf.Clamp01(sqrSpacing / SpacingConstant)); // occlusions from heavy parts close to the heatsource matter most
+                    OcclusionFactor += partHit.mass * (1 - Mathf.Clamp01(sqrSpacing / SpacingConstant)); // occlusions from heavy parts close to the heatsource matter most
                     lastHeatscore = (float)(partHit.thermalInternalFluxPrevious + partHit.skinTemperature);
                 }
             // Factor in occlusion from engines if they are the heat source, ignoring engine self-occlusion for prop engines or within ~50 deg cone of engine exhaust
@@ -460,7 +460,7 @@ namespace BDArmory.UI
                 if (vessel.vesselType == VesselType.Debris)
                     continue;
                 if (mf != null && mf.guardMode && (desiredTarget == null || desiredTarget.Vessel != vessel)) //clamp heaters to desired target  
-                {             
+                {
                     //Debug.Log($"[BDATargetManager] looking at {vessel.GetName()}; has MF: {mf}; Guardmode: {(mf != null ? mf.guardMode.ToString() : "N/A")}");
                     continue;
                 }
@@ -628,14 +628,15 @@ namespace BDArmory.UI
                 GetVesselHeatSignature(FlightGlobals.ActiveVessel, FlightGlobals.ActiveVessel.vesselTransform.position + 100f * FlightGlobals.ActiveVessel.vesselTransform.right).Item1.ToString("0") + ", Top/Bot: " +
                 GetVesselHeatSignature(FlightGlobals.ActiveVessel, FlightGlobals.ActiveVessel.vesselTransform.position - 100f * FlightGlobals.ActiveVessel.vesselTransform.forward).Item1.ToString("0") + "/" +
                 GetVesselHeatSignature(FlightGlobals.ActiveVessel, FlightGlobals.ActiveVessel.vesselTransform.position + 100f * FlightGlobals.ActiveVessel.vesselTransform.forward).Item1.ToString("0"));
-            debugString.AppendLine($"Radar Signature: " + RadarUtils.GetVesselRadarSignature(FlightGlobals.ActiveVessel) != null ? RadarUtils.GetVesselRadarSignature(FlightGlobals.ActiveVessel).radarModifiedSignature.ToString("0.0") : "N/A");
-            debugString.AppendLine($"Chaff multiplier: " + RadarUtils.GetVesselChaffFactor(FlightGlobals.ActiveVessel));
+            var radarSig = RadarUtils.GetVesselRadarSignature(FlightGlobals.ActiveVessel);
+            debugString.AppendLine($"Radar Signature: {(radarSig != null ? radarSig.radarModifiedSignature.ToString("0.0") : "N/A")}");
+            debugString.AppendLine($"Chaff multiplier: {RadarUtils.GetVesselChaffFactor(FlightGlobals.ActiveVessel):0.0}");
 
             var ecmjInfo = FlightGlobals.ActiveVessel.gameObject.GetComponent<VesselECMJInfo>();
             var cloakInfo = FlightGlobals.ActiveVessel.gameObject.GetComponent<VesselCloakInfo>();
             debugString.AppendLine($"ECM Jammer Strength: " + (ecmjInfo != null ? ecmjInfo.jammerStrength.ToString("0.00") : "N/A"));
             debugString.AppendLine($"ECM Lockbreak Strength: " + (ecmjInfo != null ? ecmjInfo.lockBreakStrength.ToString("0.00") : "N/A"));
-            debugString.AppendLine($"Radar Lockbreak Factor: " + RadarUtils.GetVesselRadarSignature(FlightGlobals.ActiveVessel).radarLockbreakFactor);
+            debugString.AppendLine($"Radar Lockbreak Factor: {(radarSig != null ? radarSig.radarLockbreakFactor : "N/A/")}");
             debugString.AppendLine("Visibility Modifiers: " + (cloakInfo != null ? $"Optical: {(cloakInfo.opticalReductionFactor * 100).ToString("0.00")}%, " +
                 $"Thermal: {(cloakInfo.thermalReductionFactor * 100).ToString("0.00")}%" : "N/A"));
             debugStringLineCount += 8;

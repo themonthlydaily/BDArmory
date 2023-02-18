@@ -971,10 +971,13 @@ namespace BDArmory.Radar
 
                         // get vessel's radar signature
                         TargetInfo ti = GetVesselRadarSignature(loadedvessels.Current);
-                        float signature = ti.radarModifiedSignature;
-                        // no ground clutter modifier for missiles
-                        signature *= ti.radarLockbreakFactor;    //multiply lockbreak factor from active ecm
-                                                                 //do not multiply chaff factor here
+                        float signature = 10f;
+                        if (ti != null)
+                        {
+                            signature = ti.radarModifiedSignature;
+                            // no ground clutter modifier for missiles
+                            signature *= ti.radarLockbreakFactor;    //multiply lockbreak factor from active ecm
+                        }                                                                 //do not multiply chaff factor here
                         signature *= GetStandoffJammingModifier(missile.vessel, missile.Team, ray.origin, loadedvessels.Current, signature);
 
                         // evaluate range

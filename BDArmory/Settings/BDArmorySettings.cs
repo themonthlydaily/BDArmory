@@ -115,6 +115,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static int TERRAIN_ALERT_FREQUENCY = 1;                    // Controls how often terrain avoidance checks are made (gets scaled by 1+(radarAltitude/500)^2)
         [BDAPersistentSettingsField] public static int CAMERA_SWITCH_FREQUENCY = 3;                    // Controls the minimum time between automated camera switches
         [BDAPersistentSettingsField] public static int DEATH_CAMERA_SWITCH_INHIBIT_PERIOD = 0;         // Controls the delay before the next switch after the currently active vessel dies
+        [BDAPersistentSettingsField] public static bool CAMERA_SWITCH_INCLUDE_MISSILES = false;        // Include missiles in the camera switching logic.
         [BDAPersistentSettingsField] public static int KERBAL_SAFETY_INVENTORY = 2;                    // Controls how Kerbal Safety adjusts the inventory of kerbals.
         [BDAPersistentSettingsField] public static float TRIGGER_HOLD_TIME = 0.2f;
         [BDAPersistentSettingsField] public static float BDARMORY_UI_VOLUME = 0.35f;
