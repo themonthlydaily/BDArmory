@@ -1001,7 +1001,9 @@ namespace BDArmory.Competition.VesselMover
         /// </summary>
         void ResetWindowHeight()
         {
+            bool reposition = BDArmorySetup.WindowRectVesselMover.y + BDArmorySetup.WindowRectVesselMover.height == Screen.height;
             BDArmorySetup.WindowRectVesselMover.height = 0;
+            if (reposition) BDArmorySetup.WindowRectVesselMover.y = Screen.height;
             GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectVesselMover);
         }
 
