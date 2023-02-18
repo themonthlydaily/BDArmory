@@ -2944,7 +2944,7 @@ namespace BDArmory.UI
                     {
                         OnPeaceEnabled();
                     }
-                    CheatOptions.InfinitePropellant = BDArmorySettings.PEACE_MODE;
+                    CheatOptions.InfinitePropellant = !BDArmorySettings.INFINITE_FUEL ? BDArmorySettings.PEACE_MODE : true;
                 }
                 //Mutators
                 var oldMutators = BDArmorySettings.MUTATOR_MODE;
