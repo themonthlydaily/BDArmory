@@ -364,6 +364,7 @@ namespace BDArmory.Competition.VesselMover
                 try
                 {
                     vessel.AttachPatchedConicsSolver();
+                    if (vessel.altitude > 1e5) vessel.SetWorldVelocity(UnityEngine.Random.rotation * Vector3.one * 0.01f); // Add noise to the velocity if above 100km to avoid NaNs in the Patched Cubic Solver due to a degenerate orbit.
                 }
                 catch (Exception e)
                 {
@@ -1180,8 +1181,8 @@ namespace BDArmory.Competition.VesselMover
                         }
                         else if (KerbalNames.Contains(crewMember.name)) KerbalNames.Remove(crewMember.name);
                         else KerbalNames.Add(crewMember.name);
+                        crewSelectionTimer = Time.realtimeSinceStartup;
                     }
-                    crewSelectionTimer = Time.realtimeSinceStartup;
                 }
             GUILayout.EndScrollView();
             GUILayout.Space(10);
