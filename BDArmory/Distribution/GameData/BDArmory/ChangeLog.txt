@@ -30,6 +30,7 @@
 			- Options for enabling brakes/SAS when lowered.
 			- Option for placing vessels on terrain below water (also affects terrain following while moving).
 			- Option for placement-lowering (jump to safe height, then lower the rest of the way).
+			- Option for not worrying about colliding with stuff (for getting really close to things for screenshots).
 			- Movement indicator scales with the vessel's radius (+2m).
 		- Movement and spawning don't require the active vessel to be landed.
 		- Includes a button to recover the active vessel (i.e., remove it) from flight.

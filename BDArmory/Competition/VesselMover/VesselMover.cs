@@ -83,7 +83,7 @@ namespace BDArmory.Competition.VesselMover
 
         void LateUpdate()
         {
-            if (state == State.Moving && !MapView.MapIsEnabled)
+            if (state == State.Moving && !MapView.MapIsEnabled && BDArmorySetup.GAME_UI_ENABLED)
             {
                 moveIndicator.enabled = true;
                 DrawMovingIndicator();
@@ -517,6 +517,7 @@ namespace BDArmory.Competition.VesselMover
         float SafeAltitude(Vessel vessel, float lowerBound = -1f, Vector3 offset = default)
         {
             var altitude = RadarAltitude(vessel);
+            if (BDArmorySettings.VESSEL_MOVER_DONT_WORRY_ABOUT_COLLISIONS) return altitude;
             var position = vessel.transform.position + offset;
             var up = (position - FlightGlobals.currentMainBody.transform.position).normalized;
             var radius = vessel.GetRadius(up, vessel.GetBounds());
@@ -933,6 +934,7 @@ namespace BDArmory.Competition.VesselMover
                         GUILayout.BeginVertical();
                         BDArmorySettings.VESSEL_MOVER_ENABLE_BRAKES = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_ENABLE_BRAKES, StringUtils.Localize("#LOC_BDArmory_VesselMover_EnableBrakes"));
                         BDArmorySettings.VESSEL_MOVER_LOWER_FAST = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_LOWER_FAST, StringUtils.Localize("#LOC_BDArmory_VesselMover_LowerFast"));
+                        BDArmorySettings.VESSEL_MOVER_DONT_WORRY_ABOUT_COLLISIONS = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_DONT_WORRY_ABOUT_COLLISIONS, StringUtils.Localize("#LOC_BDArmory_VesselMover_DontWorryAboutCollisions"));
                         GUILayout.EndVertical();
                         GUILayout.BeginVertical();
                         BDArmorySettings.VESSEL_MOVER_ENABLE_SAS = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_ENABLE_SAS, StringUtils.Localize("#LOC_BDArmory_VesselMover_EnableSAS"));
