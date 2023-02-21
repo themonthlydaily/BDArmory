@@ -49,6 +49,7 @@
 - AI / WM:
 	- AI will start evading missiles once the missile engine activates instead of waiting for 1 second after launch.
 	- When avoiding terrain and roll is inverted by more than 30°, reverse the roll target so that terrain avoidance is done while fully inverted and enable Aiming steer mode for more yaw control.
+	- Remove the 'premature dive fix', which causes weird flight behaviour when flying inverted.
 - Armor / Materials:
 	- Steel Hull Material melting point increased.
 - Countermeasures:
