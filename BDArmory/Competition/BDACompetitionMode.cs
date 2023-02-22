@@ -703,7 +703,7 @@ namespace BDArmory.Competition
                             StopCompetition();
                             yield break;
                         }
-                        var teamDistance = 800f + 100f * pilots[leader.weaponManager.Team].Count;
+                        var teamDistance = BDArmorySettings.COMPETITION_INTRA_TEAM_SEPARATION_BASE + BDArmorySettings.COMPETITION_INTRA_TEAM_SEPARATION_PER_MEMBER * pilots[leader.weaponManager.Team].Count;
                         foreach (var pilot in pilots[leader.weaponManager.Team])
                             if (pilot != null
                                     && pilot.currentCommand == PilotCommands.Follow
