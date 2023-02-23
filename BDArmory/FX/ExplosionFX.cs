@@ -518,7 +518,7 @@ namespace BDArmory.FX
         /// <returns></returns>
         private bool IsInLineOfSight(Part part, Part explosivePart, float startDist, out RaycastHit hit, out float distance, bool intermediateParts = true)
         {
-            var partPosition = part.transform.position;
+            var partPosition = part.transform.position; //transition over to part.Collider.ClosestPoint(Position);? Test later
             Ray partRay = new Ray(Position, partPosition - Position);
             float range = blastRange > SCRange ? blastRange : SCRange;
 
@@ -551,12 +551,12 @@ namespace BDArmory.FX
                 Part partHit = hit.collider.GetComponentInParent<Part>();
                 if (partHit == null) continue;
                 if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
-                if (startDist > -100)
-                {
-                    if (partHit == projectileHitPart) distance = 0.05f; //HE bullet slamming into armor/penning and detonating inside part
-                    else distance = startDist;
-                }
-                else distance = hit.distance;
+                //if (startDist > -100)
+                //{
+                if (partHit == projectileHitPart) distance = 0.05f; //HE bullet slamming into armor/penning and detonating inside part
+                else distance = Mathf.Max(startDist, 0.05f);
+                //}
+                //if (startDist < 0) distance = hit.distance;
 
                 if (partHit == part)
                 {
@@ -702,7 +702,10 @@ namespace BDArmory.FX
                 return;
             }
         }
-
+        /*
+        /////////
+        // Debugging for Continuous rod/shaped charge orientation, unnecessary unless something gets changed at somepoint, so commented out for now.
+        ///////////
         void OnGUI()
         {
             if (HighLogic.LoadedSceneIsFlight && BDArmorySettings.DEBUG_LINES)
@@ -718,7 +721,7 @@ namespace BDArmory.FX
                             try
                             {
                                 Part part = explosionEventsPartsAdded[i];
-                                if (IsInLineOfSight(part, null, -999 ,out hit, out distance, false))
+                                if (IsInLineOfSight(part, null, -1, out hit, out distance, false))
                                 {
                                     if (IsAngleAllowed(Direction, hit, explosionEventsPartsAdded[i]))
                                     {
@@ -743,7 +746,7 @@ namespace BDArmory.FX
                 }
             }
         }
-
+        */
 
         private void ExecuteBuildingBlastEvent(BuildingBlastHitEvent eventToExecute)
         {
