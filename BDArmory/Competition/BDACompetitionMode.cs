@@ -1572,7 +1572,7 @@ namespace BDArmory.Competition
                             foreach (var pilot in pilots) center += pilot.vessel.CoM;
                             center /= pilots.Count;
                             Vector3 centerGPS = VectorUtils.WorldPositionToGeoCoords(center, FlightGlobals.currentMainBody);
-                            centerGPS.z = BodyUtils.GetTerrainAltitudeAtPos(center) + 1000; // Target 1km above the terrain at the center.
+                            centerGPS.z = (float)BodyUtils.GetTerrainAltitudeAtPos(center) + 1000; // Target 1km above the terrain at the center.
                             foreach (var pilot in pilots)
                             {
                                 pilot.ReleaseCommand();

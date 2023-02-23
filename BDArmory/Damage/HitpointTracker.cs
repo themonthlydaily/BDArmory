@@ -262,6 +262,7 @@ namespace BDArmory.Damage
         {
             if (part != null)
             {
+                ArmorRemaining = 100;
                 var maxHitPoints_ = CalculateTotalHitpoints();
 
                 if (!_forceUpdateHitpointsUI && previousHitpoints == maxHitPoints_) return;
@@ -282,7 +283,6 @@ namespace BDArmory.Damage
                     Fields["Hitpoints"].guiActiveEditor = false;
                 }
                 Hitpoints = maxHitPoints_;
-                ArmorRemaining = 100;
                 if (!ArmorSet) overrideArmorSetFromConfig();
 
                 previousHitpoints = maxHitPoints_;
@@ -323,8 +323,12 @@ namespace BDArmory.Damage
             ArmorTypeNum = ArmorInfo.armors.FindIndex(t => t.name == SelectedArmorType) + 1;
             guiArmorTypeString = SelectedArmorType;
             guiHullTypeString = StringUtils.Localize(HullInfo.materials[HullInfo.materialNames[(int)HullTypeNum - 1]].localizedName);
-            skinskinConduction = part.partInfo.partPrefab.skinSkinConductionMult;
-            skinInternalConduction = part.partInfo.partPrefab.skinInternalConductionMult;
+
+            if (part.partInfo != null && part.partInfo.partPrefab != null) // PotatoRoid, I'm looking at you.
+            {
+                skinskinConduction = part.partInfo.partPrefab.skinSkinConductionMult;
+                skinInternalConduction = part.partInfo.partPrefab.skinSkinConductionMult;
+            }
             if (HighLogic.LoadedSceneIsFlight)
             {
                 if (BDArmorySettings.RESET_ARMOUR)
@@ -512,7 +516,7 @@ namespace BDArmory.Damage
         {
             yield return new WaitForFixedUpdate();
             if (part == null) yield break;
-            partMass = part.partInfo.partPrefab.mass;
+            if (part.partInfo != null && part.partInfo.partPrefab != null) partMass = part.partInfo.partPrefab.mass;
             _updateMass = true;
             _armorModified = true;
             _hullModified = true;
@@ -981,17 +985,17 @@ namespace BDArmory.Damage
                             var scale = (BDArmorySettings.HP_THRESHOLD >= 100 ? BDArmorySettings.HP_THRESHOLD : 2000f) / (Mathf.Exp(1) - 1);
                             hitpoints = Mathf.Min(hitpoints, (BDArmorySettings.HP_THRESHOLD >= 100 ? BDArmorySettings.HP_THRESHOLD : 2000f) * Mathf.Log(hitpoints / scale + 1)); //use default of 2K for RP if slider set to unclamped
                         }
-                        hitpoints *= HullInfo.materials[hullType].healthMod;
-                        //hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
-                        hitpoints = Mathf.Round(hitpoints);
+                        hitpoints = BDAMath.RoundToUnit(hitpoints, HpRounding);
+                        //hitpoints = Mathf.Round(hitpoints);//?
                         if (hitpoints < 100) hitpoints = 100;
+                        hitpoints *= HullInfo.materials[hullType].healthMod; // Apply health mod after rounding and lower limit.
                         if (BDArmorySettings.DEBUG_ARMOR && maxHitPoints <= 0 && Hitpoints != hitpoints) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} updated HP: {Hitpoints}->{hitpoints} at time {Time.time}, partMass: {partMass}, density: {density}, structuralVolume: {structuralVolume}, structuralMass {structuralMass}");
                     }
                     else // Override based on part configuration for custom parts
                     {
                         hitpoints = maxHitPoints * HullInfo.materials[hullType].healthMod;
-                        //hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding; //don't round or cap MM patched HP values
-                        hitpoints = Mathf.Round(hitpoints);
+                        //hitpoints = Mathf.Round(hitpoints); // / HpRounding) * HpRounding;
+
                         if (BDArmorySettings.DEBUG_ARMOR && maxHitPoints <= 0 && Hitpoints != hitpoints) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} updated HP: {Hitpoints}->{hitpoints} at time {Time.time}");
                     }
                 }

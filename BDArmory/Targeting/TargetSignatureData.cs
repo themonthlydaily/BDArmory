@@ -56,7 +56,7 @@ namespace BDArmory.Targeting
             // vessel never been picked up on radar before: create new targetinfo record
             if (targetInfo == null)
             {
-                if (VesselModuleRegistry.GetMissileFire(v));
+                if (VesselModuleRegistry.GetMissileFire(v))
                 targetInfo = v.gameObject.AddComponent<TargetInfo>();
             }
 

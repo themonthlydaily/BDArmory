@@ -207,6 +207,7 @@ namespace BDArmory.UI
                                     if (ml.Current == null) continue;
                                     MissileLauncher launcher = ml.Current as MissileLauncher;
                                     //if (ml.Current.MissileState != MissileBase.MissileStates.Idle && ml.Current.MissileState != MissileBase.MissileStates.Drop)
+                                    
                                     bool multilauncher = false;
                                     if (launcher != null)
                                     {
