@@ -12,6 +12,14 @@
 -Modular Missiles will use RCS when fired in space.
 -Heatseekers now target the hottest part on a craft, not the CoM
 
+-Fix accuracy calcs when using beehive ammo.
+-Fix HE beehive ammo submunition s not exploding on hit.
+-Some minor debug message cleanup.
+-Re-add HE ammo option ot  Oerlikon Millennium turret.
+-Fix some issues with Explosion damage calcs.
+-Add ability to disable cornering multiplier when using space hacks
+-Space hacks craft friction no longer applied to root part at the position of the CoM; large craft whould have an easier time turning now.
+-Fix issue with armor panels potentially spalling away more than the entire volume of the plate and getting instantly deleted.
 
 IMPROVEMENTS / FIXES
 - General:

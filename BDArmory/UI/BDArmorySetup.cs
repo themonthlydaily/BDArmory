@@ -3079,7 +3079,7 @@ namespace BDArmory.UI
                     {
                         OnPeaceEnabled();
                     }
-                    CheatOptions.InfinitePropellant = BDArmorySettings.PEACE_MODE;
+                    CheatOptions.InfinitePropellant = !BDArmorySettings.INFINITE_FUEL ? BDArmorySettings.PEACE_MODE : true;
                 }
                 //Mutators
                 var oldMutators = BDArmorySettings.MUTATOR_MODE;
@@ -3242,7 +3242,7 @@ namespace BDArmory.UI
                     BDArmorySettings.SF_FRICTION = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.SF_FRICTION, StringUtils.Localize("#LOC_BDArmory_Settings_SpaceFriction"));
                     BDArmorySettings.SF_GRAVITY = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.SF_GRAVITY, StringUtils.Localize("#LOC_BDArmory_Settings_IgnoreGravity"));
                     GUI.Label(SLeftSliderRect(++line, 1f), $"{StringUtils.Localize("#LOC_BDArmory_Settings_SpaceFrictionMult")}:  ({BDArmorySettings.SF_DRAGMULT})", leftLabel);//Space Friction Mult
-                    BDArmorySettings.SF_DRAGMULT = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.SF_DRAGMULT, 1f, 10));
+                    BDArmorySettings.SF_DRAGMULT = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.SF_DRAGMULT, 0f, 10));
                     BDArmorySettings.SF_REPULSOR = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.SF_REPULSOR, StringUtils.Localize("#LOC_BDArmory_Settings_Repulsor"));
                 }
                 else

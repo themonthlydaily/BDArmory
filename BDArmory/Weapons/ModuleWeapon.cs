@@ -2123,6 +2123,7 @@ namespace BDArmory.Weapons
                                         pBullet.tgtRocket = tgtRocket;
                                         if (delayTime > -1) pBullet.timeToLiveUntil = delayTime;
                                     }
+                                    BDACompetitionMode.Instance.Scores.RegisterShot(vessel.GetName());
                                     pBullet.gameObject.SetActive(true);
 
                                     if (!pBullet.CheckBulletCollisions(iTime)) // Check that the bullet won't immediately hit anything.
@@ -2478,11 +2479,11 @@ namespace BDArmory.Weapons
                                             {
                                                 if (Impulse > 0)
                                                 {
-                                                    p.rb.AddForceAtPosition((p.transform.position - tf.position).normalized * (float)Impulse, p.transform.position, ForceMode.Acceleration);
+                                                    p.rb.AddForceAtPosition((p.transform.position - tf.position).normalized * (float)Impulse, p.transform.position, ForceMode.Impulse);
                                                 }
                                                 else
                                                 {
-                                                    p.rb.AddForceAtPosition((tf.position - p.transform.position).normalized * (float)Impulse, p.transform.position, ForceMode.Acceleration);
+                                                    p.rb.AddForceAtPosition((tf.position - p.transform.position).normalized * (float)Impulse, p.transform.position, ForceMode.Impulse);
                                                 }
                                                 if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Impulse of {Impulse} Applied to {p.vessel.GetName()}");
                                                 //if (laserDamage == 0) 
