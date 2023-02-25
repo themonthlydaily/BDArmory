@@ -975,9 +975,9 @@ namespace BDArmory.Control
             if (isArmed) audioSource.PlayOneShot(armOnSound);
             else audioSource.PlayOneShot(armOffSound);
         }
-
+        private string selectedWeaponString = "None";
         [KSPField(isPersistant = false, guiActive = true, guiName = "#LOC_BDArmory_Weapon")]//Weapon
-        public string selectedWeaponString =
+        public string selectedWeaponLabel =
             "None";
 
         IBDWeapon sw;
@@ -1004,9 +1004,12 @@ namespace BDArmory.Control
                         {
                             var msl = weapon.Current.GetPart().FindModuleImplementing<MissileLauncher>();
                             if (msl != null)
+                            {
                                 if (msl.launched || msl.HasFired) continue; //return first missile that is ready to fire
+                                sw = weapon.Current;
+                            }
                         }
-                        sw = weapon.Current;
+
                         break;
                     }
                 return sw;
@@ -1017,6 +1020,7 @@ namespace BDArmory.Control
                 previousSelectedWeapon = sw;
                 sw = value;
                 selectedWeaponString = GetWeaponName(value);
+                selectedWeaponLabel = selectedWeaponString.Contains(";") ? selectedWeaponString.Substring(0, selectedWeaponString.IndexOf(";")) : selectedWeaponString;
                 UpdateSelectedWeaponState();
             }
         }
@@ -3049,7 +3053,7 @@ namespace BDArmory.Control
             if (selectedWeapon != null && (selectedWeapon.GetWeaponClass() == WeaponClasses.Bomb || selectedWeapon.GetWeaponClass() == WeaponClasses.Missile || selectedWeapon.GetWeaponClass() == WeaponClasses.SLW))
             {
                 //Debug.Log("[BDArmory.MissileFire]: =====selected weapon: " + selectedWeapon.GetPart().name);
-                if (!CurrentMissile || CurrentMissile.GetPartName() != selectedWeapon.GetPartName())
+                if (!CurrentMissile || CurrentMissile.GetPartName() != selectedWeapon.GetPartName() || CurrentMissile.engageRangeMax != float.Parse(selectedWeaponString.Substring(selectedWeaponString.IndexOf(";") + 1)))
                 {
                     using (var Missile = VesselModuleRegistry.GetModules<MissileBase>(vessel).GetEnumerator())
                         while (Missile.MoveNext())
@@ -3057,6 +3061,7 @@ namespace BDArmory.Control
                             if (Missile.Current == null) continue;
                             if (Missile.Current.GetPartName() != selectedWeapon.GetPartName()) continue;
                             if (Missile.Current.launched) continue;
+                            if (Missile.Current.engageRangeMax != float.Parse(selectedWeaponString.Substring(selectedWeaponString.IndexOf(";") + 1))) continue;
                             CurrentMissile = Missile.Current;
                         }
                     //CurrentMissile = selectedWeapon.GetPart().FindModuleImplementing<MissileBase>();
@@ -3553,6 +3558,7 @@ namespace BDArmory.Control
                         {
                             if (weaponArray[weaponIndex].GetPart() == null || launcher.GetPartName() != weaponArray[weaponIndex].GetPartName()) continue;
                             if (launcher.launched) continue;
+                            if (launcher.engageRangeMax != float.Parse(selectedWeaponString.Substring(selectedWeaponString.IndexOf(";") + 1))) continue;
                         }
                         else
                         {

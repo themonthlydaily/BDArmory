@@ -1142,7 +1142,7 @@ namespace BDArmory.UI
                 }
                 line++;
                 line += 0.25f;
-                string weaponName = ActiveWeaponManager.selectedWeaponString;
+                string weaponName = ActiveWeaponManager.selectedWeaponLabel;
                 string selectionText = StringUtils.Localize("#LOC_BDArmory_WMWindow_selectionText", weaponName);//Weapon: <<1>>
                 GUI.Label(new Rect(leftIndent, contentTop + (line * entryHeight), contentWidth, entryHeight * 1.25f), selectionText, BDGuiSkin.box);
                 line += 1.25f;
@@ -1265,6 +1265,7 @@ namespace BDArmory.UI
                         {
                             label = ActiveWeaponManager.weaponArray[i].GetShortName();
                             subLabel = ActiveWeaponManager.weaponArray[i].GetSubLabel();
+                            if (subLabel.Contains("Guidance")) label = label.Substring(0, label.IndexOf(";"));
                         }
                         else
                         {

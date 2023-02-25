@@ -419,7 +419,7 @@ namespace BDArmory.UI
                                             }
                                             if (BDTISettings.TELEMETRY)
                                             {
-                                                selectedWeapon = "Using: " + wm.Current.selectedWeaponString;
+                                                selectedWeapon = "Using: " + wm.Current.selectedWeaponLabel;
                                                 AIstate = "No AI";
                                                 if (wm.Current.AI != null)
                                                 {

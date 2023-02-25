@@ -20,6 +20,8 @@
 -Add ability to disable cornering multiplier when using space hacks
 -Space hacks craft friction no longer applied to root part at the position of the CoM; large craft whould have an easier time turning now.
 -Fix issue with armor panels potentially spalling away more than the entire volume of the plate and getting instantly deleted.
+-Fix ammo count for reloadable missiles.
+-WM will now properly respect per-missile engage range when selecting and firing missiles of the same type.
 
 IMPROVEMENTS / FIXES
 - General:
