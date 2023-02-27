@@ -72,6 +72,19 @@ namespace BDArmory.GameModes
                 return VAI;
             }
         }
+
+        BDModuleOrbitalAI OAI;
+        public BDModuleOrbitalAI orbiter
+        {
+            get
+            {
+                if (OAI) return OAI;
+                OAI = VesselModuleRegistry.GetModule<BDModuleOrbitalAI>(vessel);
+
+                return OAI;
+            }
+        }
+
         ModuleEngines Engine;
         public ModuleEngines foundEngine
         {
