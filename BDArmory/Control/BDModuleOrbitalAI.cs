@@ -26,7 +26,7 @@ namespace BDArmory.Control
 
         // User parameters changed via UI.
 
-        public bool controllerRunning = false;
+        public bool controllerRunning;
         public float updateInterval;
         public float emergencyUpdateInterval = 0.5f;
         public float combatUpdateInterval = 2.5f;
@@ -259,6 +259,7 @@ namespace BDArmory.Control
             if (!fc)
             {
                 fc = part.gameObject.AddComponent<OrbitalController>();
+                controllerRunning = true;
                 fc.controllingVessel = vessel;
                 fc.alignmentToleranceforBurn = 7.5f;
                 fc.throttleLerpRate = 3;
@@ -274,6 +275,7 @@ namespace BDArmory.Control
         public override void DeactivatePilot()
         {
             base.DeactivatePilot();
+            controllerRunning = false;
         }
 
         public void SetChooseOptions()
@@ -301,6 +303,15 @@ namespace BDArmory.Control
         {
             // switch up the alt values if up to eleven is toggled
             
+        }
+
+        private void FixedUpdate()
+        {
+            if (controllerRunning)
+            { 
+                fc.Drive();
+                CheckStatus();
+            }
         }
 
         IEnumerator setVar(string name, float value)
@@ -347,8 +358,6 @@ namespace BDArmory.Control
             upDir = VectorUtils.GetUpDirection(vesselTransform.position);
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) DebugLine("");
 
-            fc.Drive(s);
-            CheckStatus();
             pilotLogic = StartCoroutine(PilotLogic());
         }
 
@@ -1113,7 +1122,7 @@ namespace BDArmory.Control
         {
         }
 
-        public void Drive(FlightCtrlState s)
+        public void Drive()
         {
             if (controllingVessel == null)
             {
@@ -1123,13 +1132,13 @@ namespace BDArmory.Control
 
             error = Vector3.Angle(controllingVessel.ReferenceTransform.up, attitude);
 
-            UpdateSAS(controllingVessel, s);
-            UpdateThrottle(controllingVessel, s);
-            UpdateRCS(controllingVessel, s);
+            UpdateSAS(controllingVessel);
+            UpdateThrottle(controllingVessel);
+            UpdateRCS(controllingVessel);
             // todo: implement own PID as alternative.
         }
 
-        private void UpdateThrottle(Vessel v, FlightCtrlState s)
+        private void UpdateThrottle(Vessel v)
         {
             //if (throttle == 0 && throttleLerped == 0) return;
             //if (v == null) return;
@@ -1140,12 +1149,12 @@ namespace BDArmory.Control
             // Move actual throttle towards throttle target gradually.
             throttleLerped = Mathf.MoveTowards(throttleLerped, throttleActual, throttleLerpRate * Time.fixedDeltaTime);
 
-            s.mainThrottle = throttleLerped;
+            v.ctrlState.mainThrottle = throttleLerped;
             //if (FlightGlobals.ActiveVessel != null && v == FlightGlobals.ActiveVessel)
             //    FlightInputHandler.state.mainThrottle = throttleLerped; //so that the on-screen throttle gauge reflects the autopilot throttle
         }
 
-        void UpdateRCS(Vessel v, FlightCtrlState s)
+        void UpdateRCS(Vessel v)
         {
             if (RCSVector == Vector3.zero) return;
 
@@ -1162,9 +1171,9 @@ namespace BDArmory.Control
             forward = v.ReferenceTransform.up * -1;
             right = Vector3.Cross(up, forward);
 
-            s.X = Mathf.Clamp(Vector3.Dot(RCSThrust, right), -1, 1);
-            s.Y = Mathf.Clamp(Vector3.Dot(RCSThrust, up), -1, 1);
-            s.Z = Mathf.Clamp(Vector3.Dot(RCSThrust, forward), -1, 1);
+            v.ctrlState.X = Mathf.Clamp(Vector3.Dot(RCSThrust, right), -1, 1);
+            v.ctrlState.Y = Mathf.Clamp(Vector3.Dot(RCSThrust, up), -1, 1);
+            v.ctrlState.Z = Mathf.Clamp(Vector3.Dot(RCSThrust, forward), -1, 1);
 
             //Vector3 origin = v.ReferenceTransform.position;
             //KCSDebug.PlotLine(new[] { origin, origin + right * 10 * v.ctrlState.X }, rright);
@@ -1174,7 +1183,7 @@ namespace BDArmory.Control
             Vector3 origin = v.ReferenceTransform.position;
         }
 
-        void UpdateSAS(Vessel v, FlightCtrlState s)
+        void UpdateSAS(Vessel v)
         {
             if (attitude == Vector3.zero || lockAttitude) return;
             //if (v == null) return;
