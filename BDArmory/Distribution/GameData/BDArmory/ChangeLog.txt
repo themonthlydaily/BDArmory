@@ -64,7 +64,8 @@
 - Competition:
 	- Add toggle for setting maxAltitude and GM Kill limits to ASL or AGL.
 	- Add Kill timer for GM Altitude to give violators a chance to get back to safe altitude instead of immediate kill.
-	- Add customisable fields for the intra-team separation conditions when starting competitions (default: 800m + 100m per member).
+	- Add customisable fields for the intra-team separation conditions when starting competitions (default: 800m + 100m per member) (FJRT request).
+	- Add a per-round PVP score parser.
 - RWP:
 	- Fix issue causing the web API to not report scores.
 
