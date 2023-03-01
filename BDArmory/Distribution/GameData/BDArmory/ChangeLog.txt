@@ -46,7 +46,7 @@
 	- Fix issues with wing stacking calculation. Calculation now returns ratio of non-separated vertically stacked lift area to total lift area (capped at 100%). Wings spaced sufficiently apart will not contribute to the stacking value.
 	- Add option "Camera Switch: Incl. Missiles" to switch to and follow a missile fired by the active vessel until it explodes or misses (requested from FJRT, requires CameraTools v1.27.0 for optimal behaviour).
 	- Add whitelist option for guns/rockets/lasers to report hits in the competition marquee.
-	- Fix manual aim assist UI placement.
+	- Fix manual aim assist UI placement for fixed weapons.
 - AI / WM:
 	- AI will start evading missiles once the missile engine activates instead of waiting for 1 second after launch.
 	- When avoiding terrain and roll is inverted by more than 30°, reverse the roll target so that terrain avoidance is done while fully inverted and enable Aiming steer mode for more yaw control.
@@ -69,6 +69,7 @@
 	- Add a per-round PVP score parser.
 - RWP:
 	- Fix issue causing the web API to not report scores.
+	- Tag heats run via the web API with competition, stage and heat numbers in the file names.
 
 v1.5.8.0
 IMPROVEMENTS / FIXES
