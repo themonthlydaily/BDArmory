@@ -3105,7 +3105,7 @@ namespace BDArmory.Control
                 Ray rayForwardDown = new Ray(vessel.transform.position, (vessel.srf_vel_direction + relativeVelocityDownDirection).normalized);
                 Ray rayForwardLeft = new Ray(vessel.transform.position, (vessel.srf_vel_direction - relativeVelocityRightDirection).normalized);
                 Ray rayForwardRight = new Ray(vessel.transform.position, (vessel.srf_vel_direction + relativeVelocityRightDirection).normalized);
-                RaycastHit rayHit;
+                RaycastHit rayHit; // FIXME Use RaycastCommand for these.
                 if (Physics.Raycast(rayForwardDown, out rayHit, 1.5f * terrainAlertDetectionRadius, (int)LayerMasks.Scenery)) // sqrt(2) should be sufficient, so 1.5 will cover it.
                 {
                     terrainAlertDistance = rayHit.distance * -Vector3.Dot(rayHit.normal, vessel.srf_vel_direction);
@@ -3113,18 +3113,30 @@ namespace BDArmory.Control
                 }
                 if (Physics.Raycast(rayForwardUp, out rayHit, 1.5f * terrainAlertDetectionRadius, (int)LayerMasks.Scenery) && (terrainAlertDistance < 0.0f || rayHit.distance < terrainAlertDistance))
                 {
-                    terrainAlertDistance = rayHit.distance * -Vector3.Dot(rayHit.normal, vessel.srf_vel_direction);
-                    terrainAlertNormal = rayHit.normal;
+                    var distance = rayHit.distance * -Vector3.Dot(rayHit.normal, vessel.srf_vel_direction);
+                    if (distance < terrainAlertDistance)
+                    {
+                        terrainAlertDistance = distance;
+                        terrainAlertNormal = rayHit.normal;
+                    }
                 }
                 if (Physics.Raycast(rayForwardLeft, out rayHit, 1.5f * terrainAlertDetectionRadius, (int)LayerMasks.Scenery) && (terrainAlertDistance < 0.0f || rayHit.distance < terrainAlertDistance))
                 {
-                    terrainAlertDistance = rayHit.distance * -Vector3.Dot(rayHit.normal, vessel.srf_vel_direction);
-                    terrainAlertNormal = rayHit.normal;
+                    var distance = rayHit.distance * -Vector3.Dot(rayHit.normal, vessel.srf_vel_direction);
+                    if (distance < terrainAlertDistance)
+                    {
+                        terrainAlertDistance = distance;
+                        terrainAlertNormal = rayHit.normal;
+                    }
                 }
                 if (Physics.Raycast(rayForwardRight, out rayHit, 1.5f * terrainAlertDetectionRadius, (int)LayerMasks.Scenery) && (terrainAlertDistance < 0.0f || rayHit.distance < terrainAlertDistance))
                 {
-                    terrainAlertDistance = rayHit.distance * -Vector3.Dot(rayHit.normal, vessel.srf_vel_direction);
-                    terrainAlertNormal = rayHit.normal;
+                    var distance = rayHit.distance * -Vector3.Dot(rayHit.normal, vessel.srf_vel_direction);
+                    if (distance < terrainAlertDistance)
+                    {
+                        terrainAlertDistance = distance;
+                        terrainAlertNormal = rayHit.normal;
+                    }
                 }
                 if (terrainAlertDistance > 0)
                 {
