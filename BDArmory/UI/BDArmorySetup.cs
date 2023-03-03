@@ -2275,6 +2275,9 @@ namespace BDArmory.UI
         public List<string> selectedMutators;
         float mutatorHeight = 25;
         bool editKeys;
+#if DEBUG
+        // int debug_numRaycasts = 4;
+#endif
 
         void SetupSettingsSize()
         {
@@ -2434,6 +2437,40 @@ namespace BDArmory.UI
 #if DEBUG  // Only visible when compiled in Debug configuration.
                     if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
                     {
+                        // GUI.Label(SLeftSliderRect(++line), $"#raycasts {debug_numRaycasts}");
+                        // debug_numRaycasts = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), debug_numRaycasts, 1, 20));
+                        // if (GUI.Button(SLineRect(++line), "Test RaycastCommand")) // The break-even appears to be around 8 raycasts.
+                        // {
+                        //     int N = 100000;
+                        //     Unity.Collections.NativeArray<RaycastCommand> proximityRaycastCommands = new Unity.Collections.NativeArray<RaycastCommand>(debug_numRaycasts, Unity.Collections.Allocator.TempJob);
+                        //     Unity.Collections.NativeArray<RaycastHit> proximityRaycastHits = new Unity.Collections.NativeArray<RaycastHit>(debug_numRaycasts, Unity.Collections.Allocator.TempJob); // Note: RaycastCommands only return the first hit until Unity 2022.2.
+                        //     var vesselPosition = FlightGlobals.ActiveVessel.transform.position;
+                        //     var vesselSrfVelDir = FlightGlobals.ActiveVessel.srf_vel_direction;
+                        //     var relativeVelocityRightDirection = Vector3.Cross((vesselPosition - FlightGlobals.currentMainBody.transform.position).normalized, vesselSrfVelDir).normalized;
+                        //     var relativeVelocityDownDirection = Vector3.Cross(relativeVelocityRightDirection, vesselSrfVelDir).normalized;
+                        //     var terrainAlertDetectionRadius = 3f * FlightGlobals.ActiveVessel.GetRadius();
+                        //     var watch = new System.Diagnostics.Stopwatch();
+                        //     float µsResolution = 1e6f / System.Diagnostics.Stopwatch.Frequency;
+                        //     watch.Start();
+                        //     for (int i = 0; i < N; ++i)
+                        //     {
+                        //         for (int j = 0; j < debug_numRaycasts; ++j)
+                        //             proximityRaycastCommands[j] = new RaycastCommand(vesselPosition, vesselSrfVelDir - relativeVelocityDownDirection, terrainAlertDetectionRadius, (int)LayerMasks.Scenery);
+                        //         var job = RaycastCommand.ScheduleBatch(proximityRaycastCommands, proximityRaycastHits, 1, default(Unity.Jobs.JobHandle));
+                        //         job.Complete(); // Wait for the job to complete.
+                        //     }
+                        //     watch.Stop();
+                        //     Debug.Log($"Batch RaycastCommand[{debug_numRaycasts}] took {watch.ElapsedTicks * µsResolution / N:G3}µs");
+                        //     RaycastHit rayHit;
+                        //     watch.Reset(); watch.Start();
+                        //     for (int i = 0; i < N; ++i)
+                        //         for (int j = 0; j < debug_numRaycasts; ++j)
+                        //             Physics.Raycast(new Ray(vesselPosition, (vesselSrfVelDir + relativeVelocityDownDirection).normalized), out rayHit, terrainAlertDetectionRadius, (int)LayerMasks.Scenery);
+                        //     watch.Stop();
+                        //     Debug.Log($"{debug_numRaycasts} Raycasts took {watch.ElapsedTicks * µsResolution / N:G3}µs");
+                        //     proximityRaycastCommands.Dispose();
+                        //     proximityRaycastHits.Dispose();
+                        // }
                         // if (GUI.Button(SLineRect(++line), "Dump staging")) { var vessel = FlightGlobals.ActiveVessel; if (vessel != null) Debug.Log($"DEBUG {vessel.vesselName} is at stage {vessel.currentStage}, part stages: {string.Join("; ", vessel.parts.Select(p => $"{p}: index: {p.inStageIndex}, offset: {p.stageOffset}, orig: {p.originalStage}, child: {p.childStageOffset}, inv: {p.inverseStage}, default inv: {p.defaultInverseStage}, inv carryover: {p.inverseStageCarryover}, manual: {p.manualStageOffset}, after: {p.stageAfter}, before: {p.stageBefore}"))}"); }
                         // if (GUI.Button(SLineRect(++line), "Vessel Mass"))
                         // {
