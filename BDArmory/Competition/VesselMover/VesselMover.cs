@@ -98,6 +98,7 @@ namespace BDArmory.Competition.VesselMover
         bool translating = false;
         bool rotating = false;
         bool jump = false;
+        bool jumpDirection = false; // false = down, true = up
         bool reset = false;
         bool autoLevelPlane = false;
         bool autoLevelRocket = false;
@@ -113,7 +114,10 @@ namespace BDArmory.Competition.VesselMover
             if (GameSettings.THROTTLE_CUTOFF.GetKeyDown()) // Reset altitude to base.
             { reset = true; }
             else if (Input.GetKeyDown(KeyCode.Tab)) // Jump to next reference altitude.
-            { jump = true; }
+            {
+                jump = true;
+                jumpDirection = GameSettings.THROTTLE_UP.GetKey();
+            }
             else if (GameSettings.THROTTLE_UP.GetKey()) // Increase altitude.
             {
                 positionAdjustment.z = 1f;
@@ -320,8 +324,17 @@ namespace BDArmory.Competition.VesselMover
                     {
                         var baseAltitude = 2f * vessel.GetRadius();
                         var safeAltitude = SafeAltitude(vessel, lowerBound);
-                        var jumpToAltitude = safeAltitude < 1.1f * baseAltitude ? jumpToAltitudes.Last() : jumpToAltitudes.Where(a => a < 0.95f * safeAltitude).LastOrDefault();
-                        if (jumpToAltitude < 2f * baseAltitude) jumpToAltitude = baseAltitude;
+                        var jumpToAltitude = baseAltitude;
+                        if (jumpDirection) // Jump up
+                        {
+                            jumpToAltitude = jumpToAltitudes.Where(a => a > 1.05f * safeAltitude && a > 2f * baseAltitude).Select(a => Mathf.Max(a, baseAltitude)).FirstOrDefault();
+                            if (jumpToAltitude < baseAltitude) jumpToAltitude = baseAltitude;
+                        }
+                        else // Jump down
+                        {
+                            jumpToAltitude = safeAltitude < 1.1f * baseAltitude ? jumpToAltitudes.Last() : jumpToAltitudes.Where(a => a < 0.95f * safeAltitude).LastOrDefault();
+                            if (jumpToAltitude < 2f * baseAltitude) jumpToAltitude = baseAltitude;
+                        }
                         if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselMover]: Jumping to altitude {jumpToAltitude}m (safeAlt: {safeAltitude}, baseAlt: {baseAltitude})");
                         up = (vessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
                         position += (jumpToAltitude - safeAltitude) * up;
@@ -959,7 +972,7 @@ namespace BDArmory.Competition.VesselMover
                             GUILayout.Label($"Yaw: {GameSettings.TRANSLATE_LEFT.primary} {GameSettings.TRANSLATE_RIGHT.primary}");
                             GUILayout.Label($"Auto rotate rocket: {GameSettings.TRANSLATE_BACK.primary}");
                             GUILayout.Label($"Auto rotate plane: {GameSettings.TRANSLATE_FWD.primary}");
-                            GUILayout.Label($"Cycle preset altitudes: Tab");
+                            GUILayout.Label($"Cycle preset altitudes: Tab, Shift+Tab");
                             GUILayout.Label($"Reset Altitude: {GameSettings.THROTTLE_CUTOFF.primary}");
                             GUILayout.Label($"Adjust Altitude: {GameSettings.THROTTLE_UP.primary} {GameSettings.THROTTLE_DOWN.primary}");
                             GUILayout.EndVertical();
