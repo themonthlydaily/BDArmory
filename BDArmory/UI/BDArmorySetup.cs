@@ -209,7 +209,9 @@ namespace BDArmory.UI
         bool enteredHoS = false;
 
         //competition mode
-        string compDistGui = "1000";
+        string compDistGui;
+        string compIntraTeamSeparationBase;
+        string compIntraTeamSeparationPerMember;
 
         #region Textures
 
@@ -519,6 +521,8 @@ namespace BDArmory.UI
             ProjectileUtils.SetUpWeaponReporting();
 
             compDistGui = BDArmorySettings.COMPETITION_DISTANCE.ToString();
+            compIntraTeamSeparationBase = BDArmorySettings.COMPETITION_INTRA_TEAM_SEPARATION_BASE.ToString();
+            compIntraTeamSeparationPerMember = BDArmorySettings.COMPETITION_INTRA_TEAM_SEPARATION_PER_MEMBER.ToString();
             HoSTag = BDArmorySettings.HOS_BADGE;
 
             if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor)
@@ -986,7 +990,8 @@ namespace BDArmory.UI
             GUI.Label(new Rect(_windowMargin + _buttonSize, _windowMargin, columnWidth - 2 * _windowMargin - numberOfButtons * _buttonSize, _windowMargin + _buttonSize), StringUtils.Localize("#LOC_BDArmory_WMWindow_title") + "          ", kspTitleLabel);
 
             // Version.
-            GUI.Label(new Rect(columnWidth - _windowMargin - (numberOfButtons - 1) * _buttonSize - 1200, 23, 90, 10), Version, waterMarkStyle);
+            GUI.Label(new Rect(columnWidth - _windowMargin - (numberOfButtons - 1) * _buttonSize - 100, 23, 57, 10), Version, waterMarkStyle);
+
             //SETTINGS BUTTON
             if (!BDKeyBinder.current &&
                 GUI.Button(new Rect(columnWidth - _windowMargin - ++buttonNumber * _buttonSize, _windowMargin, _buttonSize, _buttonSize), settingsIconTexture, BDGuiSkin.button))
@@ -2271,6 +2276,9 @@ namespace BDArmory.UI
         public List<string> selectedMutators;
         float mutatorHeight = 25;
         bool editKeys;
+#if DEBUG
+        // int debug_numRaycasts = 4;
+#endif
 
         void SetupSettingsSize()
         {
@@ -2365,6 +2373,7 @@ namespace BDArmory.UI
                 {
                     BDArmorySettings.DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI = GUI.Toggle(SLeftRect(++line, 1), BDArmorySettings.DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI, StringUtils.Localize("#LOC_BDArmory_Settings_DisplayCompetitionStatusHiddenUI"));
                 }
+                BDArmorySettings.CAMERA_SWITCH_INCLUDE_MISSILES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.CAMERA_SWITCH_INCLUDE_MISSILES, StringUtils.Localize("#LOC_BDArmory_Settings_CameraSwitchIncludeMissiles"));
                 if (HighLogic.LoadedSceneIsEditor && BDArmorySettings.ADVANDED_USER_SETTINGS)
                 {
                     if (BDArmorySettings.SHOW_CATEGORIES != (BDArmorySettings.SHOW_CATEGORIES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.SHOW_CATEGORIES, StringUtils.Localize("#LOC_BDArmory_Settings_ShowEditorSubcategories"))))//"Show Editor Subcategories"
@@ -2429,6 +2438,40 @@ namespace BDArmory.UI
 #if DEBUG  // Only visible when compiled in Debug configuration.
                     if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
                     {
+                        // GUI.Label(SLeftSliderRect(++line), $"#raycasts {debug_numRaycasts}");
+                        // debug_numRaycasts = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), debug_numRaycasts, 1, 20));
+                        // if (GUI.Button(SLineRect(++line), "Test RaycastCommand")) // The break-even appears to be around 8 raycasts.
+                        // {
+                        //     int N = 100000;
+                        //     Unity.Collections.NativeArray<RaycastCommand> proximityRaycastCommands = new Unity.Collections.NativeArray<RaycastCommand>(debug_numRaycasts, Unity.Collections.Allocator.TempJob);
+                        //     Unity.Collections.NativeArray<RaycastHit> proximityRaycastHits = new Unity.Collections.NativeArray<RaycastHit>(debug_numRaycasts, Unity.Collections.Allocator.TempJob); // Note: RaycastCommands only return the first hit until Unity 2022.2.
+                        //     var vesselPosition = FlightGlobals.ActiveVessel.transform.position;
+                        //     var vesselSrfVelDir = FlightGlobals.ActiveVessel.srf_vel_direction;
+                        //     var relativeVelocityRightDirection = Vector3.Cross((vesselPosition - FlightGlobals.currentMainBody.transform.position).normalized, vesselSrfVelDir).normalized;
+                        //     var relativeVelocityDownDirection = Vector3.Cross(relativeVelocityRightDirection, vesselSrfVelDir).normalized;
+                        //     var terrainAlertDetectionRadius = 3f * FlightGlobals.ActiveVessel.GetRadius();
+                        //     var watch = new System.Diagnostics.Stopwatch();
+                        //     float µsResolution = 1e6f / System.Diagnostics.Stopwatch.Frequency;
+                        //     watch.Start();
+                        //     for (int i = 0; i < N; ++i)
+                        //     {
+                        //         for (int j = 0; j < debug_numRaycasts; ++j)
+                        //             proximityRaycastCommands[j] = new RaycastCommand(vesselPosition, vesselSrfVelDir - relativeVelocityDownDirection, terrainAlertDetectionRadius, (int)LayerMasks.Scenery);
+                        //         var job = RaycastCommand.ScheduleBatch(proximityRaycastCommands, proximityRaycastHits, 1, default(Unity.Jobs.JobHandle));
+                        //         job.Complete(); // Wait for the job to complete.
+                        //     }
+                        //     watch.Stop();
+                        //     Debug.Log($"Batch RaycastCommand[{debug_numRaycasts}] took {watch.ElapsedTicks * µsResolution / N:G3}µs");
+                        //     RaycastHit rayHit;
+                        //     watch.Reset(); watch.Start();
+                        //     for (int i = 0; i < N; ++i)
+                        //         for (int j = 0; j < debug_numRaycasts; ++j)
+                        //             Physics.Raycast(new Ray(vesselPosition, (vesselSrfVelDir + relativeVelocityDownDirection).normalized), out rayHit, terrainAlertDetectionRadius, (int)LayerMasks.Scenery);
+                        //     watch.Stop();
+                        //     Debug.Log($"{debug_numRaycasts} Raycasts took {watch.ElapsedTicks * µsResolution / N:G3}µs");
+                        //     proximityRaycastCommands.Dispose();
+                        //     proximityRaycastHits.Dispose();
+                        // }
                         // if (GUI.Button(SLineRect(++line), "Dump staging")) { var vessel = FlightGlobals.ActiveVessel; if (vessel != null) Debug.Log($"DEBUG {vessel.vesselName} is at stage {vessel.currentStage}, part stages: {string.Join("; ", vessel.parts.Select(p => $"{p}: index: {p.inStageIndex}, offset: {p.stageOffset}, orig: {p.originalStage}, child: {p.childStageOffset}, inv: {p.inverseStage}, default inv: {p.defaultInverseStage}, inv carryover: {p.inverseStageCarryover}, manual: {p.manualStageOffset}, after: {p.stageAfter}, before: {p.stageBefore}"))}"); }
                         // if (GUI.Button(SLineRect(++line), "Vessel Mass"))
                         // {
@@ -2945,7 +2988,7 @@ namespace BDArmory.UI
                     {
                         OnPeaceEnabled();
                     }
-                    CheatOptions.InfinitePropellant = !BDArmorySettings.INFINITE_FUEL ? BDArmorySettings.PEACE_MODE : true;
+                    CheatOptions.InfinitePropellant = BDArmorySettings.PEACE_MODE || BDArmorySettings.INFINITE_FUEL;
                 }
                 //Mutators
                 var oldMutators = BDArmorySettings.MUTATOR_MODE;
@@ -3534,12 +3577,29 @@ namespace BDArmory.UI
                 GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_CompetitionKillTimer")}: (" + (BDArmorySettings.COMPETITION_KILL_TIMER > 0 ? (BDArmorySettings.COMPETITION_KILL_TIMER + "s") : "Off") + ")", leftLabel); // FIXME the toggle and this slider could be merged
                 BDArmorySettings.COMPETITION_KILL_TIMER = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.COMPETITION_KILL_TIMER, 0, 60f));
 
-                GUI.Label(SLeftRect(++line), StringUtils.Localize("#LOC_BDArmory_Settings_CompetitionDistance"));//"Competition Distance"
-                float cDist;
-                compDistGui = GUI.TextField(SRightRect(line, 1, true), compDistGui, inputFieldStyle);
-                if (Single.TryParse(compDistGui, out cDist))
+                GUI.Label(SLeftRect(++line), StringUtils.Localize("#LOC_BDArmory_Settings_CompetitionIntraTeamSeparation")); // Intra-team separation.
+                var intraTeamSepRect = SRightRect(line, 1, true);
+                compIntraTeamSeparationBase = GUI.TextField(new Rect(intraTeamSepRect.x, intraTeamSepRect.y, intraTeamSepRect.width / 4 + 2, intraTeamSepRect.height), compIntraTeamSeparationBase, 6, inputFieldStyle);
+                GUI.Label(new Rect(intraTeamSepRect.x + intraTeamSepRect.width / 4 + 2, intraTeamSepRect.y, 15, intraTeamSepRect.height), " + ");
+                compIntraTeamSeparationPerMember = GUI.TextField(new Rect(intraTeamSepRect.x + intraTeamSepRect.width / 4 + 17, intraTeamSepRect.y, intraTeamSepRect.width / 4 + 2, intraTeamSepRect.height), compIntraTeamSeparationPerMember, 6, inputFieldStyle);
+                GUI.Label(new Rect(intraTeamSepRect.x + intraTeamSepRect.width / 2 + 25, intraTeamSepRect.y, intraTeamSepRect.width / 2 - 25, intraTeamSepRect.height), StringUtils.Localize("#LOC_BDArmory_Settings_CompetitionIntraTeamSeparationPerMember"));
+                if (Single.TryParse(compIntraTeamSeparationBase, out float cIntraBase) && BDArmorySettings.COMPETITION_INTRA_TEAM_SEPARATION_BASE != cIntraBase)
                 {
-                    BDArmorySettings.COMPETITION_DISTANCE = (int)cDist;
+                    cIntraBase = Mathf.Round(cIntraBase); BDArmorySettings.COMPETITION_INTRA_TEAM_SEPARATION_BASE = cIntraBase;
+                    if (cIntraBase != 0) compIntraTeamSeparationBase = cIntraBase.ToString();
+                }
+                if (Single.TryParse(compIntraTeamSeparationPerMember, out float cIntraPerMember) && BDArmorySettings.COMPETITION_INTRA_TEAM_SEPARATION_PER_MEMBER != cIntraPerMember)
+                {
+                    cIntraPerMember = Mathf.Round(cIntraPerMember); BDArmorySettings.COMPETITION_INTRA_TEAM_SEPARATION_PER_MEMBER = cIntraPerMember;
+                    if (cIntraPerMember != 0) compIntraTeamSeparationPerMember = cIntraPerMember.ToString();
+                }
+
+                GUI.Label(SLeftRect(++line), StringUtils.Localize("#LOC_BDArmory_Settings_CompetitionDistance"));//"Competition Distance"
+                compDistGui = GUI.TextField(SRightRect(line, 1, true), compDistGui, inputFieldStyle);
+                if (Single.TryParse(compDistGui, out float cDist) && BDArmorySettings.COMPETITION_DISTANCE != cDist)
+                {
+                    cDist = Mathf.Round(cDist); BDArmorySettings.COMPETITION_DISTANCE = cDist;
+                    if (cDist != 0) compDistGui = cDist.ToString();
                 }
 
                 line += 0.2f;

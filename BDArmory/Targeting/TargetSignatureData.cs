@@ -45,7 +45,7 @@ namespace BDArmory.Targeting
             vessel = v;
             velocity = v.Velocity();
             IRSource = heatpart;
-            geoPos = VectorUtils.WorldPositionToGeoCoords(IRSource != null? IRSource.transform.position : v.CoM, v.mainBody);
+            geoPos = VectorUtils.WorldPositionToGeoCoords(IRSource != null ? IRSource.transform.position : v.CoM, v.mainBody);
             acceleration = v.acceleration_immediate;
             exists = true;
 

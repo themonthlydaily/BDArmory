@@ -12,6 +12,7 @@ using BDArmory.Control;
 using BDArmory.Extensions;
 using BDArmory.Settings;
 using BDArmory.Utils;
+using BDArmory.Weapons.Missiles;
 
 namespace BDArmory.UI
 {
@@ -32,6 +33,7 @@ namespace BDArmory.UI
         private readonly float _titleHeight = 30;
         private double lastCameraSwitch = 0;
         private double lastCameraCheck = 0;
+        double minCameraCheckInterval = 0.25;
         private Vessel lastActiveVessel = null;
         private bool currentVesselDied = false;
         private double currentVesselDiedAt = 0;
@@ -1041,14 +1043,22 @@ namespace BDArmory.UI
         {
             if (_autoCameraSwitch && lastActiveVessel == v)
             {
-                currentVesselDied = true;
-                currentVesselDiedAt = Planetarium.GetUniversalTime();
+                if (v.IsMissile())
+                {
+                    currentVesselDied = true;
+                    currentVesselDiedAt = Time.time - (BDArmorySettings.DEATH_CAMERA_SWITCH_INHIBIT_PERIOD == 0 ? BDArmorySettings.CAMERA_SWITCH_FREQUENCY / 2f : BDArmorySettings.DEATH_CAMERA_SWITCH_INHIBIT_PERIOD) + minCameraCheckInterval;
+                }
+                else
+                {
+                    currentVesselDied = true;
+                    currentVesselDiedAt = Time.time;
+                }
             }
         }
 
         private void UpdateCamera()
         {
-            var now = Planetarium.GetUniversalTime();
+            var now = Time.time;
             double timeSinceLastCheck = now - lastCameraCheck;
             if (currentVesselDied)
             {
@@ -1058,10 +1068,12 @@ namespace BDArmory.UI
                 {
                     currentVesselDied = false;
                     lastCameraSwitch = 0;
+                    lastActiveVessel = null;
+                    timeSinceLastCheck = minCameraCheckInterval + 1f;
                 }
             }
 
-            if (timeSinceLastCheck > 0.25)
+            if (timeSinceLastCheck > minCameraCheckInterval)
             {
                 lastCameraCheck = now;
 
@@ -1074,11 +1086,16 @@ namespace BDArmory.UI
                         lastCameraSwitch = now;
                     }
                 }
-                lastActiveVessel = FlightGlobals.ActiveVessel;
                 double timeSinceChange = now - lastCameraSwitch;
 
                 float bestScore = currentMode > 1 ? 0 : 10000000;
                 Vessel bestVessel = null;
+                var activeVessel = FlightGlobals.ActiveVessel;
+                if (activeVessel != null && activeVessel.loaded && !activeVessel.packed && activeVessel.IsMissile())
+                {
+                    var mb = VesselModuleRegistry.GetMissileBase(activeVessel);
+                    if (mb != null && !mb.HasMissed && Vector3.Dot((mb.TargetPosition - mb.vessel.transform.position).normalized, mb.vessel.transform.up) < 0.5f) return; // Don't switch away from an active missile until it misses or is off-target.
+                }
                 bool foundActiveVessel = false;
                 Vector3 centroid = Vector3.zero;
                 if (currentMode == 3) //distance-based
@@ -1094,6 +1111,22 @@ namespace BDArmory.UI
                         }
                     }
                     centroid /= (float)count;
+                }
+                if (BDArmorySettings.CAMERA_SWITCH_INCLUDE_MISSILES) // Prioritise active missiles. // FIXME Not sure this bit is actually doing much.
+                {
+                    foreach (MissileBase missile in BDATargetManager.FiredMissiles)
+                    {
+                        if (missile == null || missile.HasMissed) continue; // Ignore missed missiles.
+                        var targetDirection = missile.TargetPosition - missile.transform.position;
+                        var targetDistance = targetDirection.magnitude;
+                        if (Vector3.Dot(targetDirection, missile.vessel.up) < 0.5f * targetDistance) continue; // Ignore off-target missiles.
+                        float missileScore = targetDistance < 1.1e3f ? 1e-3f : (targetDistance - 1e3f) * (targetDistance - 1e3f) * 1e-10f; // Prioritise missiles that are within 1km from their targets.
+                        if (missileScore < bestScore)
+                        {
+                            bestScore = missileScore;
+                            bestVessel = missile.vessel;
+                        }
+                    }
                 }
                 using (var wm = WeaponManagers.SelectMany(tm => tm.Value).Where(wm => wm != null && wm.vessel != null).ToList().GetEnumerator())
                     // redo the math
@@ -1313,6 +1346,7 @@ namespace BDArmory.UI
                                 }
                         }
                     }
+                lastActiveVessel = FlightGlobals.ActiveVessel;
                 if (!foundActiveVessel)
                 {
                     var score = 100 * timeSinceChange;
@@ -1353,7 +1387,8 @@ namespace BDArmory.UI
         {
             if (v == null || !v.loaded)
                 return;
-            lastCameraSwitch = Planetarium.GetUniversalTime();
+            lastCameraSwitch = Time.time;
+            lastActiveVessel = v;
             FlightGlobals.ForceSetActiveVessel(v);
             FlightInputHandler.ResumeVesselCtrlState(v);
         }
@@ -1366,9 +1401,9 @@ namespace BDArmory.UI
             if (distance > 0) FlightCamera.fetch.SetDistance(distance);
         }
 
-        public void TriggerSwitchVessel(float delay)
+        public void TriggerSwitchVessel(float delay = 0)
         {
-            lastCameraSwitch = delay > 0 ? Planetarium.GetUniversalTime() - (BDArmorySettings.CAMERA_SWITCH_FREQUENCY * timeScaleSqrt - delay) : 0f;
+            lastCameraSwitch = delay > 0 ? Time.time - (BDArmorySettings.CAMERA_SWITCH_FREQUENCY * timeScaleSqrt - delay) : 0f;
             lastCameraCheck = 0f;
             UpdateCamera();
         }

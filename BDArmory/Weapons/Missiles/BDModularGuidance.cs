@@ -707,6 +707,7 @@ namespace BDArmory.Weapons.Missiles
             TargetMf = null;
             isTimed = true;
             detonationTime = TimeIndex + 1.5f;
+            if (BDArmorySettings.CAMERA_SWITCH_INCLUDE_MISSILES && vessel.isActiveVessel) LoadedVesselSwitcher.Instance.TriggerSwitchVessel();
         }
 
         private void ResetMissile()
@@ -758,6 +759,7 @@ namespace BDArmory.Weapons.Missiles
                 TargetMf = null;
                 isTimed = true;
                 detonationTime = TimeIndex + 1.5f;
+                if (BDArmorySettings.CAMERA_SWITCH_INCLUDE_MISSILES && vessel.isActiveVessel) LoadedVesselSwitcher.Instance.TriggerSwitchVessel();
             }
         }
 
@@ -1028,6 +1030,7 @@ namespace BDArmory.Weapons.Missiles
                 {
                     vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
                 }
+                if (BDArmorySettings.CAMERA_SWITCH_INCLUDE_MISSILES && SourceVessel.isActiveVessel) LoadedVesselSwitcher.Instance.ForceSwitchVessel(vessel);
             }
             if (BDArmorySetup.Instance.ActiveWeaponManager != null)
             {
