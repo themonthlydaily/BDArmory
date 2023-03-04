@@ -218,7 +218,6 @@ namespace BDArmory.GameModes
                                         }
                                     }
                                     rep.Current.part.Rigidbody.AddForce((-grav * ((part.vessel.GetTotalMass() * 10)) * Mathf.Clamp((targetAlt / Mathf.Max(pointAltitude, 1)), 1, targetAlt) / accelMult), ForceMode.Acceleration);
-                                    Debug.Log($"[REPULSOR] negative vessel vel, applying {-grav.magnitude * ((part.vessel.GetTotalMass() * 10)) * Mathf.Clamp((targetAlt / Mathf.Max(pointAltitude, 1)), 1, targetAlt) / accelMult} force to repulsor");
                                 }
                             }
                     }
