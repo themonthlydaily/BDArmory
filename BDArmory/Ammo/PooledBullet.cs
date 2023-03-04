@@ -1669,7 +1669,7 @@ namespace BDArmory.Bullets
             {
                 if (ProjectileUtils.isReportingWeapon(sourceWeapon) && BDACompetitionMode.Instance.competitionIsActive)
                 {
-                    string msg = $"{partsHit[0].vessel.GetName()} was nailed by {sourceVesselName}'s {sourceWeapon.partInfo.title} at {initialHitDistance:F3}, damaging {partsHit.Count} parts.";
+                    string msg = $"{partsHit[0].vessel.GetName()} was nailed by {sourceVesselName}'s {sourceWeapon.partInfo.title} at {initialHitDistance:F3}m, damaging {partsHit.Count} parts.";
                     //string message = $"{partsHit[0].vessel.GetName()} was nailed by {sourceVesselName}'s {bullet.DisplayName} at {initialHitDistance:F3}, damaging {partsHit.Count} parts.";
                     BDACompetitionMode.Instance.competitionStatus.Add(msg);
                 }
