@@ -1102,6 +1102,7 @@ namespace BDArmory.Weapons.Missiles
 
                 StartCoroutine(MissileRoutine());
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: Missile Launched!");
+                if (BDArmorySettings.CAMERA_SWITCH_INCLUDE_MISSILES && SourceVessel.isActiveVessel) LoadedVesselSwitcher.Instance.ForceSwitchVessel(vessel);
             }
             catch (Exception e)
             {
@@ -1350,6 +1351,7 @@ namespace BDArmory.Weapons.Missiles
 
                     isTimed = true;
                     detonationTime = TimeIndex + 1.5f;
+                    if (BDArmorySettings.CAMERA_SWITCH_INCLUDE_MISSILES && vessel.isActiveVessel) LoadedVesselSwitcher.Instance.TriggerSwitchVessel();
                     return;
                 }
             }
@@ -1364,7 +1366,7 @@ namespace BDArmory.Weapons.Missiles
                     guidanceActive = false;
                     BDATargetManager.FiredMissiles.Remove(this);
                     if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: Missile Guidance Failed!");
-                }     
+                }
 
             if (guidanceActive)
             {

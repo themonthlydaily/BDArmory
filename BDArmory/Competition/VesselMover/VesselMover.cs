@@ -83,7 +83,7 @@ namespace BDArmory.Competition.VesselMover
 
         void LateUpdate()
         {
-            if (state == State.Moving && !MapView.MapIsEnabled)
+            if (state == State.Moving && !MapView.MapIsEnabled && BDArmorySetup.GAME_UI_ENABLED)
             {
                 moveIndicator.enabled = true;
                 DrawMovingIndicator();
@@ -98,6 +98,7 @@ namespace BDArmory.Competition.VesselMover
         bool translating = false;
         bool rotating = false;
         bool jump = false;
+        bool jumpDirection = false; // false = down, true = up
         bool reset = false;
         bool autoLevelPlane = false;
         bool autoLevelRocket = false;
@@ -113,7 +114,10 @@ namespace BDArmory.Competition.VesselMover
             if (GameSettings.THROTTLE_CUTOFF.GetKeyDown()) // Reset altitude to base.
             { reset = true; }
             else if (Input.GetKeyDown(KeyCode.Tab)) // Jump to next reference altitude.
-            { jump = true; }
+            {
+                jump = true;
+                jumpDirection = GameSettings.THROTTLE_UP.GetKey();
+            }
             else if (GameSettings.THROTTLE_UP.GetKey()) // Increase altitude.
             {
                 positionAdjustment.z = 1f;
@@ -320,8 +324,17 @@ namespace BDArmory.Competition.VesselMover
                     {
                         var baseAltitude = 2f * vessel.GetRadius();
                         var safeAltitude = SafeAltitude(vessel, lowerBound);
-                        var jumpToAltitude = safeAltitude < 1.1f * baseAltitude ? jumpToAltitudes.Last() : jumpToAltitudes.Where(a => a < 0.95f * safeAltitude).LastOrDefault();
-                        if (jumpToAltitude < 2f * baseAltitude) jumpToAltitude = baseAltitude;
+                        var jumpToAltitude = baseAltitude;
+                        if (jumpDirection) // Jump up
+                        {
+                            jumpToAltitude = jumpToAltitudes.Where(a => a > 1.05f * safeAltitude && a > 2f * baseAltitude).Select(a => Mathf.Max(a, baseAltitude)).FirstOrDefault();
+                            if (jumpToAltitude < baseAltitude) jumpToAltitude = baseAltitude;
+                        }
+                        else // Jump down
+                        {
+                            jumpToAltitude = safeAltitude < 1.1f * baseAltitude ? jumpToAltitudes.Last() : jumpToAltitudes.Where(a => a < 0.95f * safeAltitude).LastOrDefault();
+                            if (jumpToAltitude < 2f * baseAltitude) jumpToAltitude = baseAltitude;
+                        }
                         if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselMover]: Jumping to altitude {jumpToAltitude}m (safeAlt: {safeAltitude}, baseAlt: {baseAltitude})");
                         up = (vessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
                         position += (jumpToAltitude - safeAltitude) * up;
@@ -364,6 +377,7 @@ namespace BDArmory.Competition.VesselMover
                 try
                 {
                     vessel.AttachPatchedConicsSolver();
+                    if (vessel.altitude > 1e5) vessel.SetWorldVelocity(UnityEngine.Random.rotation * Vector3.one * 0.01f); // Add noise to the velocity if above 100km to avoid NaNs in the Patched Cubic Solver due to a degenerate orbit.
                 }
                 catch (Exception e)
                 {
@@ -516,6 +530,7 @@ namespace BDArmory.Competition.VesselMover
         float SafeAltitude(Vessel vessel, float lowerBound = -1f, Vector3 offset = default)
         {
             var altitude = RadarAltitude(vessel);
+            if (BDArmorySettings.VESSEL_MOVER_DONT_WORRY_ABOUT_COLLISIONS) return altitude;
             var position = vessel.transform.position + offset;
             var up = (position - FlightGlobals.currentMainBody.transform.position).normalized;
             var radius = vessel.GetRadius(up, vessel.GetBounds());
@@ -932,6 +947,7 @@ namespace BDArmory.Competition.VesselMover
                         GUILayout.BeginVertical();
                         BDArmorySettings.VESSEL_MOVER_ENABLE_BRAKES = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_ENABLE_BRAKES, StringUtils.Localize("#LOC_BDArmory_VesselMover_EnableBrakes"));
                         BDArmorySettings.VESSEL_MOVER_LOWER_FAST = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_LOWER_FAST, StringUtils.Localize("#LOC_BDArmory_VesselMover_LowerFast"));
+                        BDArmorySettings.VESSEL_MOVER_DONT_WORRY_ABOUT_COLLISIONS = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_DONT_WORRY_ABOUT_COLLISIONS, StringUtils.Localize("#LOC_BDArmory_VesselMover_DontWorryAboutCollisions"));
                         GUILayout.EndVertical();
                         GUILayout.BeginVertical();
                         BDArmorySettings.VESSEL_MOVER_ENABLE_SAS = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_ENABLE_SAS, StringUtils.Localize("#LOC_BDArmory_VesselMover_EnableSAS"));
@@ -956,7 +972,7 @@ namespace BDArmory.Competition.VesselMover
                             GUILayout.Label($"Yaw: {GameSettings.TRANSLATE_LEFT.primary} {GameSettings.TRANSLATE_RIGHT.primary}");
                             GUILayout.Label($"Auto rotate rocket: {GameSettings.TRANSLATE_BACK.primary}");
                             GUILayout.Label($"Auto rotate plane: {GameSettings.TRANSLATE_FWD.primary}");
-                            GUILayout.Label($"Cycle preset altitudes: Tab");
+                            GUILayout.Label($"Cycle preset altitudes: Tab, Shift+Tab");
                             GUILayout.Label($"Reset Altitude: {GameSettings.THROTTLE_CUTOFF.primary}");
                             GUILayout.Label($"Adjust Altitude: {GameSettings.THROTTLE_UP.primary} {GameSettings.THROTTLE_DOWN.primary}");
                             GUILayout.EndVertical();
@@ -1001,7 +1017,9 @@ namespace BDArmory.Competition.VesselMover
         /// </summary>
         void ResetWindowHeight()
         {
+            bool reposition = BDArmorySetup.WindowRectVesselMover.y + BDArmorySetup.WindowRectVesselMover.height == Screen.height;
             BDArmorySetup.WindowRectVesselMover.height = 0;
+            if (reposition) BDArmorySetup.WindowRectVesselMover.y = Screen.height;
             GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectVesselMover);
         }
 
@@ -1102,6 +1120,7 @@ namespace BDArmory.Competition.VesselMover
         bool showCrewSelection = false;
         Rect crewSelectionWindowRect = new Rect(0, 0, 300, 400);
         Vector2 crewSelectionScrollPos = default;
+        float crewSelectionTimer = 0;
         HashSet<string> ActiveCrewMembers = new HashSet<string>();
         bool newCustomKerbal = false;
         string newKerbalName = "";
@@ -1138,6 +1157,7 @@ namespace BDArmory.Competition.VesselMover
                 if (crew.rosterStatus != ProtoCrewMember.RosterStatus.Assigned)
                     crew.rosterStatus = ProtoCrewMember.RosterStatus.Available;
             }
+            crewSelectionTimer = Time.realtimeSinceStartup;
         }
 
         /// <summary>
@@ -1169,8 +1189,14 @@ namespace BDArmory.Competition.VesselMover
                     if (crewMember == null || ActiveCrewMembers.Contains(crewMember.name)) continue;
                     if (GUILayout.Button($"{crewMember.name}, {crewMember.gender}, {crewMember.trait}", KerbalNames.Contains(crewMember.name) ? BDArmorySetup.SelectedButtonStyle : BDArmorySetup.ButtonStyle))
                     {
-                        if (KerbalNames.Contains(crewMember.name)) KerbalNames.Remove(crewMember.name);
+                        if (Time.realtimeSinceStartup - crewSelectionTimer < 0.5f)
+                        {
+                            KerbalNames.Add(crewMember.name);
+                            HideCrewSelection();
+                        }
+                        else if (KerbalNames.Contains(crewMember.name)) KerbalNames.Remove(crewMember.name);
                         else KerbalNames.Add(crewMember.name);
+                        crewSelectionTimer = Time.realtimeSinceStartup;
                     }
                 }
             GUILayout.EndScrollView();

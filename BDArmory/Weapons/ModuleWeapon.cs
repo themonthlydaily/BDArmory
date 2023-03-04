@@ -1607,7 +1607,7 @@ namespace BDArmory.Weapons
 
                             GUIUtils.RefreshAssociatedWindows(weapon.Current.part);
                         }
-                }        
+                }
         }
         [KSPEvent(advancedTweakable = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_BurstLengthOverride_Enable", active = true)]//Burst length override
         public void ToggleBurstLengthOverride()
@@ -1833,21 +1833,18 @@ namespace BDArmory.Weapons
                 {
                     if (targetAcquired && (GPSTarget || slaved || yawRange < 1 || maxPitch - minPitch < 1))
                     {
-                        reticlePosition = pointingAtPosition + fixedLeadOffset;
+                        reticlePosition = (targetPosition - fixedLeadOffset).normalized * pointingAtPosition.magnitude;
 
                         if (!slaved && !GPSTarget)
                         {
-                            GUIUtils.DrawLineBetweenWorldPositions(pointingAtPosition, reticlePosition, 2,
-                                new Color(0, 1, 0, 0.6f));
+                            GUIUtils.DrawLineBetweenWorldPositions(pointingAtPosition, reticlePosition, 2, new Color(0, 1, 0, 0.6f));
                         }
 
-                        GUIUtils.DrawTextureOnWorldPos(pointingAtPosition, BDArmorySetup.Instance.greenDotTexture,
-                            new Vector2(6, 6), 0);
+                        GUIUtils.DrawTextureOnWorldPos(pointingAtPosition, BDArmorySetup.Instance.greenDotTexture, new Vector2(6, 6), 0);
 
                         if (atprAcquired)
                         {
-                            GUIUtils.DrawTextureOnWorldPos(targetPosition, BDArmorySetup.Instance.openGreenSquare,
-                                new Vector2(20, 20), 0);
+                            GUIUtils.DrawTextureOnWorldPos(targetPosition, BDArmorySetup.Instance.openGreenSquare, new Vector2(20, 20), 0);
                         }
                     }
                     else
@@ -1875,8 +1872,7 @@ namespace BDArmory.Weapons
                 {
                     if (targetAcquired)
                     {
-                        GUIUtils.DrawLineBetweenWorldPositions(fireTransforms[0].position, targetPosition, 2,
-                            Color.blue);
+                        GUIUtils.DrawLineBetweenWorldPositions(fireTransforms[0].position, targetPosition, 2, Color.blue);
                     }
                 }
             }
@@ -3295,7 +3291,7 @@ namespace BDArmory.Weapons
 
             Vector3 finalTarget = targetPosition;
             bool manualAiming = false;
-            if (aiControlled && !slaved && weaponManager is not null && (!targetAcquired || weaponManager.staleTarget))
+            if (aiControlled && !slaved && weaponManager != null && (!targetAcquired || weaponManager.staleTarget))
             {
                 if (BDKrakensbane.IsActive)
                 {
@@ -3362,7 +3358,8 @@ namespace BDArmory.Weapons
                             }
                         }
                     }
-                    else targetPosition = fireTransform.position + fireTransform.forward * maxTargetingRange; // For fixed weapons, aim straight ahead (needed for targetDistance below for the trajectory sim).
+                    else if (!targetAcquired && (weaponManager == null || !weaponManager.staleTarget))
+                        targetPosition = fireTransform.position + fireTransform.forward * maxTargetingRange; // For fixed weapons, aim straight ahead (needed for targetDistance below for the trajectory sim) if no current target.
                     finalTarget = targetPosition; // In case aim assist and AI control is off.
                 }
                 if (BDArmorySettings.BULLET_WATER_DRAG)

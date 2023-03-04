@@ -987,6 +987,7 @@ namespace BDArmory.Weapons.Missiles
 
         protected bool CheckTargetEngagementEnvelope(TargetInfo ti)
         {
+            if (ti == null) return false;
             return (ti.isMissile && engageMissile) ||
                     (!ti.isMissile && ti.isFlying && engageAir) ||
                     ((ti.isLandedOrSurfaceSplashed || ti.isSplashed) && engageGround) ||
