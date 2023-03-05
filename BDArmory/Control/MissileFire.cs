@@ -1008,7 +1008,6 @@ namespace BDArmory.Control
                             if (msl.launched || msl.HasFired) continue; //return first missile that is ready to fire
                             if (msl.GetEngageRange() != selectedWeaponsEngageRangeMax) continue;
                             sw = weapon.Current;
-                            Debug.Log($"[selectedWeapon] selected {sw.GetShortName()} with a range of {msl.GetEngageRange()}");
                         }
                         break;
                     }
@@ -2763,13 +2762,11 @@ namespace BDArmory.Control
                             if (otherMissile.Current.launched) continue;
                             CurrentMissile = otherMissile.Current;
                             selectedWeapon = otherMissile.Current;
-                            Debug.Log($"[FireCurrentMissile] updated selected missile to {GetWeaponName(selectedWeapon)} with {GetWeaponRange(selectedWeapon)}");
                             FireCurrentMissile(false);
                             return true;
                         }
                     CurrentMissile = ml;
                     selectedWeapon = ml;
-                    Debug.Log($"[FireCurrentMissile] using selected missile {GetWeaponName(selectedWeapon)} with {GetWeaponRange(selectedWeapon)}");
                     if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: No Clearance! Cannot fire {CurrentMissile.GetShortName()}");
                     return false;
                 }
@@ -3059,12 +3056,10 @@ namespace BDArmory.Control
             if (vessel == null) return;
 
             weaponIndex = Mathf.Clamp(weaponIndex, 0, weaponArray.Length - 1);
-            Debug.Log($"[prepareWeapons] selected {weaponIndex}");
             if (selectedWeapon == null || selectedWeapon.GetPart() == null || (selectedWeapon.GetPart().vessel != null && selectedWeapon.GetPart().vessel != vessel) ||
                 GetWeaponName(selectedWeapon) != GetWeaponName(weaponArray[weaponIndex]))
             {
                 selectedWeapon = weaponArray[weaponIndex];
-                Debug.Log($"[PrepareWeapons] updated selectedWeapon to {GetWeaponName(selectedWeapon)} with {GetWeaponRange(selectedWeapon)}");
                 if (vessel.isActiveVessel && Time.time - startTime > 1)
                 {
                     hasSingleFired = true;
@@ -3127,7 +3122,6 @@ namespace BDArmory.Control
                             if (Missile.Current.launched) continue;
                             if (Missile.Current.engageRangeMax != selectedWeaponsEngageRangeMax) continue;
                             CurrentMissile = Missile.Current;
-                            Debug.Log($"[UpdateSelectedWeaponState] selected {CurrentMissile.GetShortName()} with a range of {CurrentMissile.GetEngageRange()}");
                         }
                     //CurrentMissile = selectedWeapon.GetPart().FindModuleImplementing<MissileBase>();
                 }
@@ -3580,7 +3574,6 @@ namespace BDArmory.Control
                 index = 0;
             }
             weaponIndex = index;
-            Debug.Log($"[CycleWeapon] selected index {weaponIndex}");
             UpdateList();
 
             if (vessel.isActiveVessel && !guardMode)
