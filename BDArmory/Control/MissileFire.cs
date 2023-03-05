@@ -2744,7 +2744,6 @@ namespace BDArmory.Control
         bool FireCurrentMissile(bool checkClearance)
         {
             MissileBase missile = CurrentMissile;
-            Debug.Log($"[FireCurrentMissile] missile returning null!");
             if (missile == null) return false;
             bool DisengageAfterFiring = false;
             if (missile is MissileBase)
