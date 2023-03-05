@@ -292,7 +292,6 @@ namespace BDArmory.Weapons.Missiles
 
         private bool OldInfAmmo = false;
         private bool StartSetupComplete = false;
-        private string OriginalShortname;
         public bool SetupComplete => StartSetupComplete;
         #endregion Variable Declarations
 
@@ -381,8 +380,6 @@ namespace BDArmory.Weapons.Missiles
             {
                 shortName = part.partInfo.title;
             }
-            var OGName = ConfigNodeUtils.FindPartModuleConfigNodeValue(part.partInfo.partConfig, "MissileLauncher", "shortName");
-            OriginalShortname = OGName != null ? OGName : part.partInfo.title;
             gaplessEmitters = new List<BDAGaplessParticleEmitter>();
             pEmitters = new List<KSPParticleEmitter>();
             boostEmitters = new List<KSPParticleEmitter>();
@@ -408,10 +405,8 @@ namespace BDArmory.Weapons.Missiles
             if (reloadableRail == null && hasAmmo)
             {
                 reloadableRail = part.FindModuleImplementing<ModuleMissileRearm>();
-                Debug.Log("looking for Missilerearm...");
                 if (reloadableRail == null)
                 {
-                    Debug.Log("MissileRearm not found");
                     hasAmmo = false;
                 }
             }
@@ -428,7 +423,6 @@ namespace BDArmory.Weapons.Missiles
 
             if (HighLogic.LoadedSceneIsFlight)
             {
-                shortName = $"{OriginalShortname};{engageRangeMax}";
                 if (multiLauncher)
                 {
                     hasAmmo = true;
@@ -975,7 +969,7 @@ namespace BDArmory.Weapons.Missiles
                     TimeFired = Time.time;
                     part.decouple(0);
                     part.Unpack();
-                    vessel.vesselName = GetShortName().Substring(0, GetShortName().IndexOf(";"));
+                    vessel.vesselName = GetShortName();
                     TargetPosition = (multiLauncher ? vessel.ReferenceTransform.position + vessel.ReferenceTransform.up * 5000 : transform.position + transform.forward * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
                     MissileLaunch();
                     BDATargetManager.FiredMissiles.Add(this);
@@ -1002,7 +996,7 @@ namespace BDArmory.Weapons.Missiles
             ml.GuidanceMode = GuidanceMode;
             //wpm.SendTargetDataToMissile(ml);
             ml.TimeFired = Time.time;
-            ml.vessel.vesselName = GetShortName().Substring(0, GetShortName().IndexOf(";"));
+            ml.vessel.vesselName = GetShortName();
             ml.DetonationDistance = DetonationDistance;
             ml.DetonateAtMinimumDistance = DetonateAtMinimumDistance;
             ml.dropTime = dropTime;
@@ -2311,7 +2305,7 @@ namespace BDArmory.Weapons.Missiles
                 {
                     Vector3 position = transform.position;//+rigidbody.velocity*Time.fixedDeltaTime;
 
-                    ExplosionFx.CreateExplosion(position, blastPower, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, SourceVessel.vesselName, GetShortName().Substring(0, GetShortName().IndexOf(";")), default(Vector3), -1, false, part.mass * 1000);
+                    ExplosionFx.CreateExplosion(position, blastPower, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, SourceVessel.vesselName, GetShortName(), default(Vector3), -1, false, part.mass * 1000);
                 }
                 if (part != null && !FuseFailed)
                 {

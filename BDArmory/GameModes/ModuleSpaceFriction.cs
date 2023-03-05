@@ -217,7 +217,13 @@ namespace BDArmory.GameModes
                                             landedTime = Time.time;
                                         }
                                     }
-                                    rep.Current.part.Rigidbody.AddForce((-grav * ((part.vessel.GetTotalMass() * 10)) * Mathf.Clamp((targetAlt / Mathf.Max(pointAltitude, 1)), 1, targetAlt) / accelMult), ForceMode.Acceleration);
+                                    float RepulsorForce = (part.vessel.GetTotalMass() * 10) * Mathf.Clamp((targetAlt / Mathf.Max(pointAltitude, 1)), 1, targetAlt) / accelMult;
+                                    if (float.IsNaN(RepulsorForce) || float.IsInfinity(RepulsorForce))
+                                    {
+                                        Debug.LogWarning($"[BDArmory.Spacehacks]: Repulsor Force is NaN or Infinity. TargetAlt: {targetAlt}, point Alt: {pointAltitude}, AccelMult: {accelMult}, VesselMass: {part.vessel.GetTotalMass()}");
+                                    }
+                                    else
+                                    rep.Current.part.Rigidbody.AddForce(-grav * RepulsorForce, ForceMode.Acceleration);
                                 }
                             }
                     }

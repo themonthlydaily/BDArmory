@@ -46,6 +46,11 @@ namespace BDArmory.Weapons.Missiles
             return missileName;
         }
 
+        public float GetEngageRange()
+        {
+            return GetEngagementRangeMax();
+        }
+
         public string missileName { get; set; } = "";
 
         [KSPField]

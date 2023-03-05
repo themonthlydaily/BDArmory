@@ -323,6 +323,11 @@ namespace BDArmory.Weapons
             return WeaponName;
         }
 
+        public float GetEngageRange()
+        {
+            return engageRangeMax;
+        }
+
         public bool resourceSteal = false;
         public float strengthMutator = 1;
         public bool instagib = false;

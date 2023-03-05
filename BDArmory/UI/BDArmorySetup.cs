@@ -430,6 +430,7 @@ namespace BDArmory.UI
             {
                 saveWindowPosition = true;     //otherwise later we should NOT save the current window positions!
                 CheatOptions.InfinitePropellant = BDArmorySettings.INFINITE_FUEL;
+                CheatOptions.InfiniteElectricity = BDArmorySettings.INFINITE_EC;
             }
             // // Create settings file if not present.
             // if (ConfigNode.Load(BDArmorySettings.settingsConfigURL) == null)
@@ -1147,7 +1148,7 @@ namespace BDArmory.UI
                 }
                 line++;
                 line += 0.25f;
-                string weaponName = ActiveWeaponManager.selectedWeaponLabel;
+                string weaponName = ActiveWeaponManager.selectedWeaponString;
                 string selectionText = StringUtils.Localize("#LOC_BDArmory_WMWindow_selectionText", weaponName);//Weapon: <<1>>
                 GUI.Label(new Rect(leftIndent, contentTop + (line * entryHeight), contentWidth, entryHeight * 1.25f), selectionText, BDGuiSkin.box);
                 line += 1.25f;
@@ -1270,7 +1271,6 @@ namespace BDArmory.UI
                         {
                             label = ActiveWeaponManager.weaponArray[i].GetShortName();
                             subLabel = ActiveWeaponManager.weaponArray[i].GetSubLabel();
-                            if (subLabel.Contains("Guidance")) label = label.Substring(0, label.IndexOf(";"));
                         }
                         else
                         {
@@ -3114,8 +3114,12 @@ namespace BDArmory.UI
                     GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_HeartBleedThreshold")}:  ({BDArmorySettings.HEART_BLEED_THRESHOLD})", leftLabel);//Heart Bleed Threshold
                     BDArmorySettings.HEART_BLEED_THRESHOLD = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.HEART_BLEED_THRESHOLD, 1f, 100f));
                 }
+                if (BDArmorySettings.INFINITE_EC != (BDArmorySettings.INFINITE_EC = GUI.Toggle(SRightRect(++line), BDArmorySettings.INFINITE_EC, StringUtils.Localize("##autoLOC_900361 "))))//"Infinite Electricity"
+                {
+                    CheatOptions.InfiniteElectricity = BDArmorySettings.INFINITE_EC;
+                }
                 // Resource steal
-                BDArmorySettings.RESOURCE_STEAL_ENABLED = GUI.Toggle(SLeftRect(++line), BDArmorySettings.RESOURCE_STEAL_ENABLED, StringUtils.Localize("#LOC_BDArmory_Settings_ResourceSteal"));//"Resource Steal"
+                BDArmorySettings.RESOURCE_STEAL_ENABLED = GUI.Toggle(SLeftRect(line), BDArmorySettings.RESOURCE_STEAL_ENABLED, StringUtils.Localize("#LOC_BDArmory_Settings_ResourceSteal"));//"Resource Steal"
                 if (BDArmorySettings.RESOURCE_STEAL_ENABLED)
                 {
                     BDArmorySettings.RESOURCE_STEAL_RESPECT_FLOWSTATE_IN = GUI.Toggle(SLeftRect(++line, 1), BDArmorySettings.RESOURCE_STEAL_RESPECT_FLOWSTATE_IN, StringUtils.Localize("#LOC_BDArmory_Settings_ResourceSteal_RespectFlowStateIn"));//Respect Flow State In
