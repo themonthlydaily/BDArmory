@@ -2933,8 +2933,6 @@ namespace BDArmory.Control
             targetMissiles = false;
             weaponTypesGround.Clear();
             weaponTypesSLW.Clear();
-
-            new Dictionary<MissileBase, float>() { };
             //gunRippleIndex.Clear(); //since there keeps being issues with the more limited ripple dict, lets just make it perisitant for all weapons on the craft
             hasAntiRadiationOrdinance = false;
             if (vessel == null || !vessel.loaded) return;
