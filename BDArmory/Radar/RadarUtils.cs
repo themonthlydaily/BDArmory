@@ -1072,13 +1072,8 @@ namespace BDArmory.Radar
                                 //evaluate if we can lock/track such a signature at that range
                                 float minLockSig = radar.radarLockTrackCurve.Evaluate(distance);
 
-<<<<<<< dev
                                 signature *= ti.radarLockbreakFactor;    //multiply lockbreak factor from active ecm
                                                                          //do not multiply chaff factor here
-=======
-                                signature *= ti != null ? ti.radarLockbreakFactor : 1;    //multiply lockbreak factor from active ecm
-                                                                                          //do not multiply chaff factor here
->>>>>>> dev
                                 signature *= GetStandoffJammingModifier(radar.vessel, radar.weaponManager.Team, position, loadedvessels.Current, signature);
 
                                 if (signature >= minLockSig && RadarCanDetect(radar, signature, distance)) // Must be able to detect and lock to lock targets
@@ -1265,12 +1260,7 @@ namespace BDArmory.Radar
                         TargetInfo tInfo = loadedvessels.Current.gameObject.GetComponent<TargetInfo>();
                         if (tInfo == null)
                         {
-<<<<<<< dev
                             tInfo = loadedvessels.Current.gameObject.AddComponent<TargetInfo>();
-=======
-                            if (VesselModuleRegistry.GetMissileFire(loadedvessels.Current))
-                                tInfo = loadedvessels.Current.gameObject.AddComponent<TargetInfo>();
->>>>>>> dev
                         }
 
                         IRSig = BDATargetManager.GetVesselHeatSignature(loadedvessels.Current, irst.referenceTransform.position, 1f, irst.TempSensitivityCurve);

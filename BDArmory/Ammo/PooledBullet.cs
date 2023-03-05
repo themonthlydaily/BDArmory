@@ -1352,7 +1352,7 @@ namespace BDArmory.Bullets
                 return;
             }
             string fuze = subMunitionType.fuzeType.ToLower();
-            //fuze = fuze.ToLower();
+
             BulletFuzeTypes sFuze;
             switch (fuze)
             {

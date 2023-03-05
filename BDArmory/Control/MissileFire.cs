@@ -1004,11 +1004,9 @@ namespace BDArmory.Control
                         if (weapon.Current.GetWeaponClass() == WeaponClasses.Missile || weapon.Current.GetWeaponClass() == WeaponClasses.Bomb || weapon.Current.GetWeaponClass() == WeaponClasses.SLW)
                         {
                             var msl = weapon.Current.GetPart().FindModuleImplementing<MissileLauncher>();
-                            if (msl != null)
-                            {
-                                if (msl.launched || msl.HasFired) continue; //return first missile that is ready to fire
-                                sw = weapon.Current;
-                            }
+                            if (msl == null) continue;
+                            if (msl.launched || msl.HasFired) continue; //return first missile that is ready to fire
+                            sw = weapon.Current;
                         }
 
                         break;
@@ -2921,6 +2919,7 @@ namespace BDArmory.Control
             targetMissiles = false;
             weaponTypesGround.Clear();
             weaponTypesSLW.Clear();
+            new Dictionary<MissileBase, float>() { };
             //gunRippleIndex.Clear(); //since there keeps being issues with the more limited ripple dict, lets just make it perisitant for all weapons on the craft
             hasAntiRadiationOrdinance = false;
             if (vessel == null || !vessel.loaded) return;
@@ -3078,7 +3077,13 @@ namespace BDArmory.Control
             if (selectedWeapon != null && (selectedWeapon.GetWeaponClass() == WeaponClasses.Bomb || selectedWeapon.GetWeaponClass() == WeaponClasses.Missile || selectedWeapon.GetWeaponClass() == WeaponClasses.SLW))
             {
                 //Debug.Log("[BDArmory.MissileFire]: =====selected weapon: " + selectedWeapon.GetPart().name);
-                if (!CurrentMissile || CurrentMissile.GetPartName() != selectedWeapon.GetPartName() || CurrentMissile.engageRangeMax != float.Parse(selectedWeaponString.Substring(selectedWeaponString.IndexOf(";") + 1)))
+                float mslRange = -1;
+                if (selectedWeaponString.Contains(";"))
+                {
+                    float.TryParse(selectedWeaponString.Substring(selectedWeaponString.IndexOf(";") + 1), out float launchRange);
+                    mslRange = launchRange;
+                }
+                if (!CurrentMissile || CurrentMissile.GetPartName() != selectedWeapon.GetPartName() || CurrentMissile.engageRangeMax != mslRange)
                 {
                     using (var Missile = VesselModuleRegistry.GetModules<MissileBase>(vessel).GetEnumerator())
                         while (Missile.MoveNext())
@@ -3088,7 +3093,7 @@ namespace BDArmory.Control
                             if (Missile.Current.launched) continue;
                             if (selectedWeaponString.Contains(";"))
                             {
-                                if (Missile.Current.engageRangeMax != float.Parse(selectedWeaponString.Substring(selectedWeaponString.IndexOf(";") + 1))) continue;
+                                if (Missile.Current.engageRangeMax != mslRange) continue;
                             }
                             CurrentMissile = Missile.Current;
                         }
@@ -3577,6 +3582,12 @@ namespace BDArmory.Control
                 weaponArray[weaponIndex].GetWeaponClass() == WeaponClasses.SLW)
             {
                 MissileBase firstMl = null;
+                float mslRange = -1;
+                if (selectedWeaponString.Contains(";"))
+                {
+                    float.TryParse(selectedWeaponString.Substring(selectedWeaponString.IndexOf(";") + 1), out float launchRange);
+                    mslRange = launchRange;
+                }
                 using (var ml = VesselModuleRegistry.GetModules<MissileBase>(vessel).GetEnumerator())
                     while (ml.MoveNext())
                     {
@@ -3588,7 +3599,7 @@ namespace BDArmory.Control
                             if (launcher.launched) continue;
                             if (selectedWeaponString.Contains(";"))
                             {
-                                if (launcher.engageRangeMax != float.Parse(selectedWeaponString.Substring(selectedWeaponString.IndexOf(";") + 1))) continue;
+                                if (launcher.engageRangeMax != mslRange) continue;
                             }
                         }
                         else
