@@ -28,7 +28,7 @@ namespace BDArmory.Control
 
         //weapons
         private List<IBDWeapon> weaponTypes = new List<IBDWeapon>();
-        private SortedList<string, List<float>> rangeList = new SortedList<string, List<float>>();
+        private Dictionary<string, List<float>> weaponRanges = new Dictionary<string, List<float>>();
         public IBDWeapon[] weaponArray;
 
         // extension for feature_engagementenvelope: specific lists by weapon engagement type
@@ -2926,7 +2926,7 @@ namespace BDArmory.Control
         {
             weaponsListNeedsUpdating = false;
             weaponTypes.Clear();
-            rangeList.Clear();
+            weaponRanges.Clear();
             // extension for feature_engagementenvelope: also clear engagement specific weapon lists
             weaponTypesAir.Clear();
             weaponTypesMissile.Clear();
@@ -2953,7 +2953,7 @@ namespace BDArmory.Control
                                 {
                                     float range = weapon.Current.GetPart().FindModuleImplementing<MissileBase>().engageRangeMax;
 
-                                    if (rangeList.TryGetValue(weaponName, out var registeredRanges))
+                                    if (weaponRanges.TryGetValue(weaponName, out var registeredRanges))
                                     {
                                         if (registeredRanges.Contains(range))
                                             alreadyAdded = true;
@@ -2984,22 +2984,22 @@ namespace BDArmory.Control
                     {
                         continue;
                     }
-                    if (weapon.Current.GetWeaponClass() == WeaponClasses.Missile || weapon.Current.GetWeaponClass() == WeaponClasses.Bomb || weapon.Current.GetWeaponClass() == WeaponClasses.SLW)
-                    {
-                        float range = weapon.Current.GetPart().FindModuleImplementing<MissileBase>().engageRangeMax;
-
-                        if (rangeList.TryGetValue(weaponName, out var registeredRanges))
-                        {
-                            registeredRanges.Add(range);
-                        }
-                        else
-                            rangeList.Add(weaponName, new List<float> { range });
-                    }
                     if (!alreadyAdded)
                     {
                         weaponTypes.Add(weapon.Current);
+                        if (weapon.Current.GetWeaponClass() == WeaponClasses.Missile || weapon.Current.GetWeaponClass() == WeaponClasses.Bomb || weapon.Current.GetWeaponClass() == WeaponClasses.SLW)
+                        {
+                            float range = weapon.Current.GetPart().FindModuleImplementing<MissileBase>().engageRangeMax;
+
+                            if (weaponRanges.TryGetValue(weaponName, out var registeredRanges))
+                            {
+                                registeredRanges.Add(range);
+                            }
+                            else
+                                weaponRanges.Add(weaponName, new List<float> { range });
+                        }
                     }
-                        EngageableWeapon engageableWeapon = weapon.Current as EngageableWeapon;
+                    EngageableWeapon engageableWeapon = weapon.Current as EngageableWeapon;
 
                     if (engageableWeapon != null)
                     {
