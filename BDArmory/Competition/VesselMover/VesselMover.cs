@@ -966,15 +966,15 @@ namespace BDArmory.Competition.VesselMover
                         if (helpShowing)
                         {
                             GUILayout.BeginVertical();
-                            GUILayout.Label($"Movement: {GameSettings.PITCH_DOWN.primary} {GameSettings.PITCH_UP.primary} {GameSettings.YAW_LEFT.primary} {GameSettings.YAW_RIGHT.primary}");
-                            GUILayout.Label($"Roll: {GameSettings.ROLL_LEFT.primary} {GameSettings.ROLL_RIGHT.primary}");
-                            GUILayout.Label($"Pitch: {GameSettings.TRANSLATE_DOWN.primary} {GameSettings.TRANSLATE_UP.primary}");
-                            GUILayout.Label($"Yaw: {GameSettings.TRANSLATE_LEFT.primary} {GameSettings.TRANSLATE_RIGHT.primary}");
-                            GUILayout.Label($"Auto rotate rocket: {GameSettings.TRANSLATE_BACK.primary}");
-                            GUILayout.Label($"Auto rotate plane: {GameSettings.TRANSLATE_FWD.primary}");
-                            GUILayout.Label($"Cycle preset altitudes: Tab, Shift+Tab");
-                            GUILayout.Label($"Reset Altitude: {GameSettings.THROTTLE_CUTOFF.primary}");
-                            GUILayout.Label($"Adjust Altitude: {GameSettings.THROTTLE_UP.primary} {GameSettings.THROTTLE_DOWN.primary}");
+                            GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_VesselMover_Help_Movement")}: {GameSettings.PITCH_DOWN.primary}, {GameSettings.PITCH_UP.primary}, {GameSettings.YAW_LEFT.primary}, {GameSettings.YAW_RIGHT.primary}");
+                            GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_VesselMover_Help_Roll")}: {GameSettings.ROLL_LEFT.primary}, {GameSettings.ROLL_RIGHT.primary}");
+                            GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_VesselMover_Help_Pitch")}: {GameSettings.TRANSLATE_DOWN.primary}, {GameSettings.TRANSLATE_UP.primary}");
+                            GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_VesselMover_Help_Yaw")}: {GameSettings.TRANSLATE_LEFT.primary}, {GameSettings.TRANSLATE_RIGHT.primary}");
+                            GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_VesselMover_Help_AutoRotateRocket")}: {GameSettings.TRANSLATE_BACK.primary}");
+                            GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_VesselMover_Help_AutoRotatePlane")}: {GameSettings.TRANSLATE_FWD.primary}");
+                            GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_VesselMover_Help_CycleAltitudes"));
+                            GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_VesselMover_Help_ResetAltitude")}: {GameSettings.THROTTLE_CUTOFF.primary}");
+                            GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_VesselMover_Help_AdjustAltitude")}: {GameSettings.THROTTLE_UP.primary}, {GameSettings.THROTTLE_DOWN.primary}");
                             GUILayout.EndVertical();
                         }
                         break;

@@ -1,10 +1,12 @@
-﻿IMPROVEMENTS / FIXES
+﻿v1.5.9.0
+IMPROVEMENTS / FIXES
 - General:
 	- Blacklist the PotatoRoid due to it not having a valid prefab (they get procedurally generated) and causing NREs.
 	- Add try-catch around setting the gear action group due to the FSM sometimes breaking it and breaking pilot initialisation.
 	- Remove HP rounding and lower HP limit for MM-patched parts. Apply health modifier after applying rounding and lower HP limit for non-MM-patched parts.
 	- Add Infinite Propellant Gamemode toggle to BDA settings menu.
 	- Some minor debug message cleanup.
+	- Updated German localisation from EzBro.
 	- Add Vessel Mover functionality directly in BDA:
 		- Spawning:
 			- Choice of classic or custom vessel selection:
