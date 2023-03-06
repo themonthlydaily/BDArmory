@@ -223,7 +223,7 @@ namespace BDArmory.GameModes
                                         Debug.LogWarning($"[BDArmory.Spacehacks]: Repulsor Force is NaN or Infinity. TargetAlt: {targetAlt}, point Alt: {pointAltitude}, AccelMult: {accelMult}, VesselMass: {part.vessel.GetTotalMass()}");
                                     }
                                     else
-                                    rep.Current.part.Rigidbody.AddForce(-grav * RepulsorForce, ForceMode.Acceleration);
+                                        rep.Current.part.Rigidbody.AddForce(-grav * RepulsorForce, ForceMode.Acceleration);
                                 }
                             }
                     }
