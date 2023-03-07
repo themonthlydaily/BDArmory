@@ -24,30 +24,44 @@ namespace BDArmory.Utils
                 fileNode = new ConfigNode();
                 if (!Directory.GetParent(settingsConfigURL).Exists)
                 { Directory.GetParent(settingsConfigURL).Create(); }
+            }
+            // IgnoredParts
+            {
                 if (!fileNode.HasNode("IgnoredParts"))
                 {
                     fileNode.AddNode("IgnoredParts");
                 }
                 ConfigNode Iparts = fileNode.GetNode("IgnoredParts");
-                Iparts.SetValue("Part1", "ladder1", true);
-                Iparts.SetValue("Part2", "telescopicLadder", true);
-                Iparts.SetValue("Part3", "telescopicLadderBay", true);
-
+                var partNames = Iparts.GetValues().ToHashSet(); // Get the existing part names, then add our ones.
+                partNames.Add("ladder1");
+                partNames.Add("telescopicLadder");
+                partNames.Add("telescopicLadderBay");
+                Iparts.ClearValues();
+                int partIndex = 0;
+                foreach (var partName in partNames)
+                    Iparts.SetValue($"Part{++partIndex}", partName, true);
+            }
+            // MaterialsBlacklist
+            {
                 if (!fileNode.HasNode("MaterialsBlacklist"))
                 {
                     fileNode.AddNode("MaterialsBlacklist");
                 }
                 ConfigNode BLparts = fileNode.GetNode("MaterialsBlacklist");
-                BLparts.SetValue("Part1", "InflatableHeatShield", true);
-                BLparts.SetValue("Part2", "foldingRad*", true);
-                BLparts.SetValue("Part3", "radPanel*", true);
-                BLparts.SetValue("Part4", "ISRU*", true);
-                BLparts.SetValue("Part5", "Scanner*", true);
-                BLparts.SetValue("Part5", "Drill*", true);
-                BLparts.SetValue("Part6", "PotatoRoid", true);
-
-                fileNode.Save(settingsConfigURL);
+                var partNames = BLparts.GetValues().ToHashSet(); // Get the existing part names, then add our ones.
+                partNames.Add("InflatableHeatShield");
+                partNames.Add("foldingRad*");
+                partNames.Add("radPanel*");
+                partNames.Add("ISRU*");
+                partNames.Add("Scanner*");
+                partNames.Add("Drill*");
+                partNames.Add("PotatoRoid");
+                BLparts.ClearValues();
+                int partIndex = 0;
+                foreach (var partName in partNames)
+                    BLparts.SetValue($"Part{++partIndex}", partName, true);
             }
+            fileNode.Save(settingsConfigURL);
         }
         static HashSet<string> IgnoredPartNames;
         public static bool IsIgnoredPart(Part part)
@@ -92,20 +106,25 @@ namespace BDArmory.Utils
         public static void SetUpWeaponReporting()
         {
             var fileNode = ConfigNode.Load(settingsConfigURL);
-            if (fileNode == null)
+            if (fileNode == null) // Note: this shouldn't happen since SetUpPartsHashSets is called before SetUpWeaponReporting.
             {
-                fileNode = new ConfigNode();
-                if (!Directory.GetParent(settingsConfigURL).Exists)
-                { Directory.GetParent(settingsConfigURL).Create(); }
-                if (!fileNode.HasNode("AnnouncerGuns"))
-                {
-                    fileNode.AddNode("AnnouncerGuns");
-                }
-                ConfigNode Iparts = fileNode.GetNode("AnnouncerGuns");
-                Iparts.SetValue("Part1", "bahaRailgun", true);
-
-                fileNode.Save(settingsConfigURL);
+                SetUpPartsHashSets();
+                fileNode = ConfigNode.Load(settingsConfigURL);
             }
+
+            if (!fileNode.HasNode("AnnouncerGuns"))
+            {
+                fileNode.AddNode("AnnouncerGuns");
+            }
+            ConfigNode Iparts = fileNode.GetNode("AnnouncerGuns");
+            var partNames = Iparts.GetValues().ToHashSet(); // Get the existing part names, then add our ones.
+            partNames.Add("bahaRailgun");
+            Iparts.ClearValues();
+            int partIndex = 0;
+            foreach (var partName in partNames)
+                Iparts.SetValue($"Part{++partIndex}", partName, true);
+
+            fileNode.Save(settingsConfigURL);
         }
         static HashSet<string> materialsBlacklist;
         public static bool isMaterialBlackListpart(Part Part)
@@ -291,7 +310,7 @@ namespace BDArmory.Utils
                         if (ductility < 0.05f) //ceramics
                         {
                             volumeToReduce = ((Mathf.CeilToInt(caliber / 500) * Mathf.CeilToInt(caliber / 500)) * (50 * 50) * ((float)hitPart.GetArmorMaxThickness() / 10)); //cm3 //replace thickness with starting thickness, to ensure armor failure removes proper amount of armor
-                            //total failue of 50x50cm armor tile(s)
+                                                                                                                                                                             //total failue of 50x50cm armor tile(s)
                             if (BDArmorySettings.DEBUG_ARMOR)
                             {
                                 Debug.Log("[BDArmory.ProjectileUtils{CalcArmorDamage}]: Armor failure on " + hitPart + ", " + hitPart.vessel.GetName() + "!");
@@ -607,7 +626,7 @@ namespace BDArmory.Utils
                         if (ductility < 0.05f) //ceramics
                         {
                             var volumeToReduce = (Mathf.CeilToInt(spallArea / 500) * Mathf.CeilToInt(spallArea / 500)) * (50 * 50) * ((float)hitPart.GetArmorMaxThickness() / 10); //cm3
-                            //total failue of 50x50cm armor tile(s)
+                                                                                                                                                                                   //total failue of 50x50cm armor tile(s)
                             if (hardness > 500)
                             {
                                 spallMass = volumeToReduce * (Density / 1000000);
@@ -661,7 +680,7 @@ namespace BDArmory.Utils
                             if (ductility < 0.05f)
                             {
                                 var volumeToReduce = Mathf.CeilToInt(spallArea / 2500) * (50 * 50) * ((float)hitPart.GetArmorMaxThickness() / 10); //cm3
-                                //total failue of 50x50cm armor tile(s)
+                                                                                                                                                   //total failue of 50x50cm armor tile(s)
                                 if (hardness > 500)
                                 {
                                     spallMass = volumeToReduce * (Density / 1000000);
@@ -967,7 +986,7 @@ namespace BDArmory.Utils
         public static float CalculateThickness(Part hitPart, float anglemultiplier)
         {
             float thickness = (float)hitPart.GetArmorThickness(); //return mm
-            // return Mathf.Max(thickness / (anglemultiplier > 0.001f ? anglemultiplier : 0.001f), 1);
+                                                                  // return Mathf.Max(thickness / (anglemultiplier > 0.001f ? anglemultiplier : 0.001f), 1);
             return Mathf.Max(thickness / Mathf.Abs(anglemultiplier), 1);
         }
         public static bool CheckGroundHit(Part hitPart, RaycastHit hit, float caliber)

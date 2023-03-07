@@ -1,4 +1,8 @@
-﻿v1.5.9.0
+﻿IMPROVEMENTS / FIXES
+- General:
+	- Adjust how PartsBlacklist.cfg is read/written to merge the defaults with any existing custom values.
+
+v1.5.9.0
 IMPROVEMENTS / FIXES
 - General:
 	- Blacklist the PotatoRoid due to it not having a valid prefab (they get procedurally generated) and causing NREs.
