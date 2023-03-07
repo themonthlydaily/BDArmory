@@ -1,6 +1,9 @@
 ﻿IMPROVEMENTS / FIXES
 - General:
 	- Adjust how PartsBlacklist.cfg is read/written to merge the defaults with any existing custom values.
+- UI:
+	- Add a toolbar button for the BDA Vessel Mover.
+	- Make window states persistent across scene changes.
 
 v1.5.9.0
 IMPROVEMENTS / FIXES

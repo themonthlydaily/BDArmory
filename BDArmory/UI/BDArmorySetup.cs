@@ -945,9 +945,9 @@ namespace BDArmory.UI
         public bool hasVesselSpawner = false;
         public bool hasVesselMover = false;
         public bool hasEvolution = false;
-        public bool showVesselSwitcherGUI = false;
-        public bool showVesselSpawnerGUI = false;
-        public bool showVesselMoverGUI = false;
+        public static bool showVesselSwitcherGUI = false;
+        public static bool showVesselSpawnerGUI = false;
+        public static bool showVesselMoverGUI = false;
         public bool showEvolutionGUI = false;
 
         float rippleHeight;
@@ -2366,9 +2366,16 @@ namespace BDArmory.UI
                     else
                     { BDArmoryAIGUI.Instance.RemoveToolbarButton(); }
                 }
-                BDArmorySettings.DISPLAY_COMPETITION_STATUS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.DISPLAY_COMPETITION_STATUS, StringUtils.Localize("#LOC_BDArmory_Settings_DisplayCompetitionStatus"));
-                if (BDArmorySettings.SCROLL_ZOOM_PREVENTION != (BDArmorySettings.SCROLL_ZOOM_PREVENTION = GUI.Toggle(SRightRect(line), BDArmorySettings.SCROLL_ZOOM_PREVENTION, StringUtils.Localize("#LOC_BDArmory_Settings_ScrollZoomPrevention"))))
+                if (BDArmorySettings.SCROLL_ZOOM_PREVENTION != (BDArmorySettings.SCROLL_ZOOM_PREVENTION = GUI.Toggle(SLeftRect(++line), BDArmorySettings.SCROLL_ZOOM_PREVENTION, StringUtils.Localize("#LOC_BDArmory_Settings_ScrollZoomPrevention"))))
                 { GUIUtils.EndDisableScrollZoom(); }
+                if (BDArmorySettings.VM_TOOLBAR_BUTTON != (BDArmorySettings.VM_TOOLBAR_BUTTON = GUI.Toggle(SRightRect(line), BDArmorySettings.VM_TOOLBAR_BUTTON, StringUtils.Localize("#LOC_BDArmory_Settings_VMToolbarButton")))) // VM Toobar Button
+                {
+                    if (BDArmorySettings.VM_TOOLBAR_BUTTON)
+                    { VesselMover.Instance.AddToolbarButton(); }
+                    else
+                    { VesselMover.Instance.RemoveToolbarButton(); }
+                }
+                BDArmorySettings.DISPLAY_COMPETITION_STATUS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.DISPLAY_COMPETITION_STATUS, StringUtils.Localize("#LOC_BDArmory_Settings_DisplayCompetitionStatus"));
                 if (BDArmorySettings.DISPLAY_COMPETITION_STATUS)
                 {
                     BDArmorySettings.DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI = GUI.Toggle(SLeftRect(++line, 1), BDArmorySettings.DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI, StringUtils.Localize("#LOC_BDArmory_Settings_DisplayCompetitionStatusHiddenUI"));
