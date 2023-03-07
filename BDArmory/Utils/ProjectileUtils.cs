@@ -112,11 +112,13 @@ namespace BDArmory.Utils
                 fileNode = ConfigNode.Load(settingsConfigURL);
             }
 
+            string announcerGunsComment = "Note: replace '_' with '.' in part names (hint: see a craft's loadmeta file for part names)."; // Note: reading the node doesn't seem to get the comment, so we need to reset it each time.
             if (!fileNode.HasNode("AnnouncerGuns"))
             {
-                fileNode.AddNode("AnnouncerGuns");
+                fileNode.AddNode("AnnouncerGuns", announcerGunsComment);
             }
             ConfigNode Iparts = fileNode.GetNode("AnnouncerGuns");
+            Iparts.comment = announcerGunsComment;
             var partNames = Iparts.GetValues().ToHashSet(); // Get the existing part names, then add our ones.
             partNames.Add("bahaRailgun");
             Iparts.ClearValues();
