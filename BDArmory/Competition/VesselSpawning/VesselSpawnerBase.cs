@@ -344,7 +344,7 @@ namespace BDArmory.Competition.VesselSpawning
             // Rotation
             vessel.SetRotation(Quaternion.FromToRotation(vesselSpawnConfig.editorFacility == EditorFacility.SPH ? -vessel.ReferenceTransform.forward : vessel.ReferenceTransform.up, localSurfaceNormal) * vessel.transform.rotation); // Re-orient the vessel to the terrain normal (or radial unit vector).
             vessel.SetRotation(Quaternion.AngleAxis(Vector3.SignedAngle(vesselSpawnConfig.editorFacility == EditorFacility.SPH ? vessel.ReferenceTransform.up : -vessel.ReferenceTransform.forward, vesselSpawnConfig.direction, localSurfaceNormal), localSurfaceNormal) * vessel.transform.rotation); // Re-orient the vessel to the right direction.
-            if (vesselSpawnConfig.airborne && !BDArmorySettings.SF_GRAVITY)
+            if (vesselSpawnConfig.airborne && (!BDArmorySettings.SF_GRAVITY && !BDArmorySettings.SF_REPULSOR))
             { vessel.SetRotation(Quaternion.AngleAxis(-vesselSpawnConfig.pitch, vessel.ReferenceTransform.right) * vessel.transform.rotation); }
             // Position
             if (FlightGlobals.currentMainBody.hasSolidSurface)

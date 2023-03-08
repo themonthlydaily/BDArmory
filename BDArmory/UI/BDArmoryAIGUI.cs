@@ -358,12 +358,12 @@ namespace BDArmory.UI
                         { "cornerSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.cornerSpeed, 10, 500) },
                         { "altitudeSteerLimiterFactor", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.altitudeSteerLimiterFactor, -1, 1) },
                         { "altitudeSteerLimiterAltitude", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.altitudeSteerLimiterAltitude, 100, 10000) },
-                        { "maxBank", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxBank, 10, 180) },
+                        { "maxBank", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxBank, 10, (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55)? 40 : 180) },
                         { "waypointPreRollTime", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.waypointPreRollTime, 0, 2) },
                         { "waypointYawAuthorityTime", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.waypointYawAuthorityTime, 0, 10) },
                         { "maxAllowedGForce", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAllowedGForce, 2, 45) },
                         { "maxAllowedAoA", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAllowedAoA, 0, 90) },
-                        { "postStallAoA", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.postStallAoA, 0, 90) },
+                        { "postStallAoA", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.postStallAoA, 0, (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55)? 0 : 90) },
 
                         { "minEvasionTime", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.minEvasionTime, 0, 1) },
                         { "evasionNonlinearity", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionNonlinearity, 0, 10) },
@@ -442,7 +442,7 @@ namespace BDArmory.UI
 
                     inputFields["maxAllowedGForce"].maxValue = ActivePilot.UpToEleven ? 1000 : 45;
                     inputFields["maxAllowedAoA"].maxValue = ActivePilot.UpToEleven ? 180 : 90;
-                    inputFields["postStallAoA"].maxValue = ActivePilot.UpToEleven ? 180 : 90;
+                    inputFields["postStallAoA"].maxValue = ActivePilot.UpToEleven ? 180 : (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55) ? 0 : 90;
 
                     inputFields["minEvasionTime"].maxValue = ActivePilot.UpToEleven ? 10 : 1;
                     inputFields["evasionNonlinearity"].maxValue = ActivePilot.UpToEleven ? 90 : 10;
@@ -1654,7 +1654,7 @@ namespace BDArmory.UI
                             GUI.Label(SettinglabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_BankLimiter") + ": " + ActivePilot.maxBank.ToString("0"), Label);//"dynamic damping min"
                             if (!NumFieldsEnabled)
                             {
-                                ActivePilot.maxBank = BDAMath.RoundToUnit(GUI.HorizontalSlider(SettingSliderRect(leftIndent, ctrlLines, contentWidth), ActivePilot.maxBank, 10, 180), 5f);
+                                ActivePilot.maxBank = BDAMath.RoundToUnit(GUI.HorizontalSlider(SettingSliderRect(leftIndent, ctrlLines, contentWidth), ActivePilot.maxBank, 10, (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55)? 40 : 180), 5f);
                             }
                             else
                             {
@@ -1725,20 +1725,22 @@ namespace BDArmory.UI
                             {
                                 GUI.Label(ContextLabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_AoA"), contextLabel);
                             }
-
-                            GUI.Label(SettinglabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_postStallAoA") + ": " + ActivePilot.postStallAoA.ToString("0.0"), Label);
-                            if (!NumFieldsEnabled)
+                            if (!(BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55))
                             {
-                                ActivePilot.postStallAoA = BDAMath.RoundToUnit(GUI.HorizontalSlider(SettingSliderRect(leftIndent, ctrlLines, contentWidth), ActivePilot.postStallAoA, 0f, ActivePilot.UpToEleven ? 180f : 90f), 2.5f);
-                            }
-                            else
-                            {
-                                inputFields["postStallAoA"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), inputFields["postStallAoA"].possibleValue, 6, inputFieldStyle));
-                                ActivePilot.postStallAoA = (float)inputFields["postStallAoA"].currentValue;
-                            }
-                            if (contextTipsEnabled)
-                            {
-                                GUI.Label(ContextLabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_AoAPostStall"), contextLabel);
+                                GUI.Label(SettinglabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_postStallAoA") + ": " + ActivePilot.postStallAoA.ToString("0.0"), Label);
+                                if (!NumFieldsEnabled)
+                                {
+                                    ActivePilot.postStallAoA = BDAMath.RoundToUnit(GUI.HorizontalSlider(SettingSliderRect(leftIndent, ctrlLines, contentWidth), ActivePilot.postStallAoA, 0f, ActivePilot.UpToEleven ? 180f : 90f), 2.5f);
+                                }
+                                else
+                                {
+                                    inputFields["postStallAoA"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), inputFields["postStallAoA"].possibleValue, 6, inputFieldStyle));
+                                    ActivePilot.postStallAoA = (float)inputFields["postStallAoA"].currentValue;
+                                }
+                                if (contextTipsEnabled)
+                                {
+                                    GUI.Label(ContextLabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_AoAPostStall"), contextLabel);
+                                }
                             }
 
                             ++ctrlLines;

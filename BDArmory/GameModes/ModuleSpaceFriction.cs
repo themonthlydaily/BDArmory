@@ -195,7 +195,7 @@ namespace BDArmory.GameModes
                             {
                                 if (rep.Current == null) continue;
                                 float pointAltitude = BodyUtils.GetRadarAltitudeAtPos(rep.Current.transform.position);
-                                if (pointAltitude < targetAlt)
+                                if (pointAltitude < targetAlt && pointAltitude > 0)
                                 {
                                     if (pointAltitude > Mathf.Max(targetAlt - 10, 10)) //flying, nearing target alt, reduce upwards accel to prevent launching vessel upwards above target alt
                                     {
@@ -207,7 +207,7 @@ namespace BDArmory.GameModes
                                         if (vessel.situation != Vessel.Situations.LANDED && vessel.situation != Vessel.Situations.SPLASHED && vessel.situation != Vessel.Situations.PRELAUNCH)
                                         {
                                             if (Time.time - 5 > landedTime) //craft in flight
-                                                accelMult = pointAltitude / Mathf.Max(targetAlt - 10, 10); //Danger! steep upwards slope or having to counter massive downwards vel, need to boost repulsor force to prevent crash
+                                                accelMult = Mathf.Max(pointAltitude, 0.01f) / Mathf.Max(targetAlt - 10, 10); //Danger! steep upwards slope or having to counter massive downwards vel, need to boost repulsor force to prevent crash
                                             else
                                                 accelMult = 1; //initial takeoff, keep accel gradual
                                         }
