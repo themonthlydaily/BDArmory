@@ -4340,6 +4340,7 @@ namespace BDArmory.Control
         /// </summary>
         public void ResetGradient()
         {
+            if (!HighLogic.LoadedSceneIsFlight) return;
             vesselName = AI.vessel.GetDisplayName();
             fieldNames = new List<string> { "base" };
             fields = new Dictionary<string, BaseField>();
@@ -4539,6 +4540,7 @@ namespace BDArmory.Control
 
         public void SetStartCoords()
         {
+            if (!HighLogic.LoadedSceneIsFlight) return;
             startCoords = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(AI.vessel.transform.position);
             startCoords.z = (float)FlightGlobals.currentMainBody.TerrainAltitude(startCoords.x, startCoords.y) + AI.autoTuningAltitude;
         }
