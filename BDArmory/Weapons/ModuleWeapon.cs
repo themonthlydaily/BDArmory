@@ -332,7 +332,6 @@ namespace BDArmory.Weapons
         public float strengthMutator = 1;
         public bool instagib = false;
 
-#if DEBUG
         Vector3 debugTargetPosition;
         Vector3 debugLastTargetPosition;
         Vector3 debugRelVelAdj;
@@ -342,7 +341,6 @@ namespace BDArmory.Weapons
         Vector3 debugSimCPA;
         Vector3 debugBulletPred;
         Vector3 debugTargetPred;
-#endif
 
         #endregion Declarations
 
@@ -1887,8 +1885,7 @@ namespace BDArmory.Weapons
                 DrawAlignmentIndicator();
             }
 
-#if DEBUG
-            if (BDArmorySettings.DEBUG_LINES && (weaponState == WeaponStates.Enabled || weaponState == WeaponStates.EnabledForSecondaryFiring) && vessel && !vessel.packed && !MapView.MapIsEnabled)
+            if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DEBUG_WEAPONS && (weaponState == WeaponStates.Enabled || weaponState == WeaponStates.EnabledForSecondaryFiring) && vessel && !vessel.packed && !MapView.MapIsEnabled)
             {
                 GUIUtils.MarkPosition(debugTargetPosition, transform, Color.cyan);
                 GUIUtils.DrawLineBetweenWorldPositions(debugTargetPosition, debugTargetPosition + debugRelVelAdj, 2, Color.green);
@@ -1903,7 +1900,6 @@ namespace BDArmory.Weapons
                 }
                 GUIUtils.MarkPosition(finalAimTarget, transform, Color.cyan, size: 4);
             }
-#endif
         }
 
         #endregion KSP Events
@@ -3301,17 +3297,19 @@ namespace BDArmory.Weapons
                 if (BDKrakensbane.IsActive)
                 {
                     lastFinalAimTarget -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
-#if DEBUG
-                    debugLastTargetPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
-#endif
+                    if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DEBUG_WEAPONS)
+                    {
+                        debugLastTargetPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                    }
                 }
                 // Continue aiming towards where the target is expected to be while reloading based on the last measured pos, vel, acc.
                 finalAimTarget = AIUtils.PredictPosition(lastFinalAimTarget, targetVelocity, targetAcceleration, Time.time - lastGoodTargetTime); // FIXME Check this predicted position when in orbit.
                 fixedLeadOffset = targetPosition - finalAimTarget; //for aiming fixed guns to moving target
 
-#if DEBUG
-                debugTargetPosition = AIUtils.PredictPosition(debugLastTargetPosition, targetVelocity, targetAcceleration, Time.time - lastGoodTargetTime);
-#endif
+                if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DEBUG_WEAPONS)
+                {
+                    debugTargetPosition = AIUtils.PredictPosition(debugLastTargetPosition, targetVelocity, targetAcceleration, Time.time - lastGoodTargetTime);
+                }
             }
             else
             {
@@ -3385,9 +3383,7 @@ namespace BDArmory.Weapons
 
                 if ((BDArmorySettings.AIM_ASSIST || aiControlled) && eWeaponType == WeaponTypes.Ballistic)//Gun targeting
                 {
-#if DEBUG
-                    debugCorrection = Vector3.zero;
-#endif
+                    if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DEBUG_WEAPONS) debugCorrection = Vector3.zero;
                     var kbVel = BDKrakensbane.FrameVelocityV3f;
                     Vector3 bulletRelativePosition, bulletEffectiveVelocity, bulletRelativeVelocity, bulletAcceleration, bulletRelativeAcceleration, targetPredictedPosition, bulletDropOffset, firingDirection, lastFiringDirection;
                     firingDirection = fireTransforms[0].forward;
@@ -3418,24 +3414,26 @@ namespace BDArmory.Weapons
                         var correction = simulatedCPA - AIUtils.PredictPosition(firePosition, bulletEffectiveVelocity, bulletAcceleration, timeToCPA);
                         correction += 2f * (part.rb.velocity - targetVelocity) * Time.fixedDeltaTime; // Not entirely sure why this correction is needed, but it is.
                         finalTarget -= correction;
-#if DEBUG
-                        debugCorrection = correction;
-                        debugSimCPA = simulatedCPA;
-                        debugBulletPred = AIUtils.PredictPosition(firePosition, bulletEffectiveVelocity, bulletAcceleration, timeToCPA);
-                        debugTargetPred = targetPredictedPosition;
-#endif
+                        if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DEBUG_WEAPONS)
+                        {
+                            debugCorrection = correction;
+                            debugSimCPA = simulatedCPA;
+                            debugBulletPred = AIUtils.PredictPosition(firePosition, bulletEffectiveVelocity, bulletAcceleration, timeToCPA);
+                            debugTargetPred = targetPredictedPosition;
+                        }
                         targetDistance = Vector3.Distance(finalTarget, firePosition);
                     }
-#if DEBUG
-                    // Debug.Log($"DEBUG {count} iterations for convergence in aiming loop");
-                    debugTargetPosition = targetPosition;
-                    debugLastTargetPosition = debugTargetPosition;
-                    debugRelVelAdj = (targetVelocity - part.rb.velocity) * timeToCPA;
-                    debugAccAdj = 0.5f * targetAcceleration * timeToCPA * timeToCPA;
-                    debugGravAdj = bulletDropOffset;
-                    // var missDistance = AIUtils.PredictPosition(bulletRelativePosition, bulletRelativeVelocity, bulletRelativeAcceleration, timeToCPA);
-                    // if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("DEBUG δt: " + timeToCPA + ", miss: " + missDistance + ", bullet drop: " + bulletDropOffset + ", final: " + finalTarget + ", target: " + targetPosition + ", " + targetVelocity + ", " + targetAcceleration + ", distance: " + targetDistance);
-#endif
+                    if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DEBUG_WEAPONS)
+                    {
+                        // Debug.Log($"DEBUG {count} iterations for convergence in aiming loop");
+                        debugTargetPosition = targetPosition;
+                        debugLastTargetPosition = debugTargetPosition;
+                        debugRelVelAdj = (targetVelocity - part.rb.velocity) * timeToCPA;
+                        debugAccAdj = 0.5f * targetAcceleration * timeToCPA * timeToCPA;
+                        debugGravAdj = bulletDropOffset;
+                        // var missDistance = AIUtils.PredictPosition(bulletRelativePosition, bulletRelativeVelocity, bulletRelativeAcceleration, timeToCPA);
+                        // if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("DEBUG δt: " + timeToCPA + ", miss: " + missDistance + ", bullet drop: " + bulletDropOffset + ", final: " + finalTarget + ", target: " + targetPosition + ", " + targetVelocity + ", " + targetAcceleration + ", distance: " + targetDistance);
+                    }
                 }
                 if ((BDArmorySettings.AIM_ASSIST || aiControlled) && eWeaponType == WeaponTypes.Rocket) //Rocket targeting
                 {

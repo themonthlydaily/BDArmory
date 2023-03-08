@@ -153,6 +153,7 @@ namespace BDArmory.UI
             _ready = true;
             BDArmorySetup.Instance.hasVesselSwitcher = true;
             if (_guiCheckIndex < 0) _guiCheckIndex = GUIUtils.RegisterGUIRect(new Rect());
+            SetVisible(BDArmorySetup.showVesselSwitcherGUI);
         }
 
         private void MissileFireOnToggleTeam(MissileFire wm, BDTeam team)
@@ -168,9 +169,9 @@ namespace BDArmory.UI
         private void Update()
         {
             if (!_ready) return;
-            if (BDArmorySetup.Instance.showVesselSwitcherGUI != _showGui)
+            if (BDArmorySetup.showVesselSwitcherGUI != _showGui)
             {
-                _showGui = BDArmorySetup.Instance.showVesselSwitcherGUI;
+                _showGui = BDArmorySetup.showVesselSwitcherGUI;
                 UpdateList();
             }
 
@@ -292,32 +293,31 @@ namespace BDArmory.UI
 
         private void OnGUI()
         {
-            if (_ready)
+            if (!(_ready && HighLogic.LoadedSceneIsFlight))
+                return;
+            if (_showGui && (BDArmorySetup.GAME_UI_ENABLED || BDArmorySettings.VESSEL_SWITCHER_PERSIST_UI))
             {
-                if (_showGui && (BDArmorySetup.GAME_UI_ENABLED || BDArmorySettings.VESSEL_SWITCHER_PERSIST_UI))
-                {
-                    string windowTitle = StringUtils.Localize("#LOC_BDArmory_BDAVesselSwitcher_Title");
-                    if (BDArmorySettings.GRAVITY_HACKS)
-                        windowTitle = windowTitle + " (" + BDACompetitionMode.gravityMultiplier.ToString("0.0") + "G)";
+                string windowTitle = StringUtils.Localize("#LOC_BDArmory_BDAVesselSwitcher_Title");
+                if (BDArmorySettings.GRAVITY_HACKS)
+                    windowTitle = windowTitle + " (" + BDACompetitionMode.gravityMultiplier.ToString("0.0") + "G)";
 
-                    SetNewHeight(_windowHeight);
-                    // this Rect initialization ensures any save issues with height or width of the window are resolved
-                    BDArmorySetup.WindowRectVesselSwitcher = new Rect(BDArmorySetup.WindowRectVesselSwitcher.x, BDArmorySetup.WindowRectVesselSwitcher.y, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH, _windowHeight);
-                    BDArmorySetup.SetGUIOpacity();
-                    BDArmorySetup.WindowRectVesselSwitcher = GUI.Window(10293444, BDArmorySetup.WindowRectVesselSwitcher, WindowVesselSwitcher, windowTitle, BDArmorySetup.BDGuiSkin.window); //"BDA Vessel Switcher"
-                    GUIUtils.UpdateGUIRect(BDArmorySetup.WindowRectVesselSwitcher, _guiCheckIndex);
-                    BDArmorySetup.SetGUIOpacity(false);
-                }
-                else
-                {
-                    GUIUtils.UpdateGUIRect(new Rect(), _guiCheckIndex);
-                }
+                SetNewHeight(_windowHeight);
+                // this Rect initialization ensures any save issues with height or width of the window are resolved
+                BDArmorySetup.WindowRectVesselSwitcher = new Rect(BDArmorySetup.WindowRectVesselSwitcher.x, BDArmorySetup.WindowRectVesselSwitcher.y, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH, _windowHeight);
+                BDArmorySetup.SetGUIOpacity();
+                BDArmorySetup.WindowRectVesselSwitcher = GUI.Window(10293444, BDArmorySetup.WindowRectVesselSwitcher, WindowVesselSwitcher, windowTitle, BDArmorySetup.BDGuiSkin.window); //"BDA Vessel Switcher"
+                GUIUtils.UpdateGUIRect(BDArmorySetup.WindowRectVesselSwitcher, _guiCheckIndex);
+                BDArmorySetup.SetGUIOpacity(false);
+            }
+            else
+            {
+                GUIUtils.UpdateGUIRect(new Rect(), _guiCheckIndex);
             }
         }
 
         public void SetVisible(bool visible)
         {
-            BDArmorySetup.Instance.showVesselSwitcherGUI = visible;
+            BDArmorySetup.showVesselSwitcherGUI = visible;
             GUIUtils.SetGUIRectVisible(_guiCheckIndex, visible);
         }
 

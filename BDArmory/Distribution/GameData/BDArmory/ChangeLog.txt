@@ -1,10 +1,21 @@
 ﻿IMPROVEMENTS / FIXES
 - General:
+	- Adjust how PartsBlacklist.cfg is read/written to merge the defaults with any existing custom values.
+- Weapons:
+	- Use the combination of DEBUG_LINES and DEBUG_WEAPONS for showing the targeting component debug lines instead of only having them in the debug build.
+- UI:
+	- Add a toolbar button for the BDA Vessel Mover.
+	- Make window states persistent across scene changes.
+
+v1.5.9.0
+IMPROVEMENTS / FIXES
+- General:
 	- Blacklist the PotatoRoid due to it not having a valid prefab (they get procedurally generated) and causing NREs.
 	- Add try-catch around setting the gear action group due to the FSM sometimes breaking it and breaking pilot initialisation.
 	- Remove HP rounding and lower HP limit for MM-patched parts. Apply health modifier after applying rounding and lower HP limit for non-MM-patched parts.
-	- Add Infinite Propellant Gamemode toggle to BDA settings menu.
-  - Some minor debug message cleanup.
+	- Add Infinite Propellant and Infinite Electricity Gamemode toggles to BDA settings menu.
+	- Some minor debug message cleanup.
+	- Updated German localisation from EzBro.
 	- Add Vessel Mover functionality directly in BDA:
 		- Spawning:
 			- Choice of classic or custom vessel selection:
@@ -61,12 +72,12 @@
 		- Adjust the max deflection for avoiding terrain to be based on the maxAoA clamped to within 45° and 70°.
 - Armor / Materials:
 	- Steel Hull Material melting point increased.
-  - Fix issue with armor panels potentially spalling away more than the entire volume of the plate and getting instantly deleted.
+	- Fix issue with armor panels potentially spalling away more than the entire volume of the plate and getting instantly deleted.
 - Countermeasures:
 	- Add selection priority to countermeasures to allow staggering of dropping countermeasures — higher priority CM dispensers trigger first.
-  GameModes:
-  - Add ability to disable cornering multiplier when using space hacks by setting it to 0. 
-  - Space Friction no longer applied to root part at the position of the CoM; large craft whould have an easier time turning now.
+- GameModes:
+	- Add ability to disable cornering multiplier when using space hacks by setting it to 0. 
+	- Space Friction no longer applied to root part at the position of the CoM; large craft whould have an easier time turning now.
 - Weapons:
 	- Weapon burst length/fire angle overrides now respect symmetry.
 	- Fix heatseeker missiles fired from relaodable rails occasionally losing lock on firing.
@@ -74,17 +85,17 @@
 	- Fix NRE when firing Modular Missiles and Missile Icons are enabled.
 	- Modular Missiles will use RCS when fired in space.
 	- Heatseekers now target the hottest part on a craft, not the CoM.
-  - Fix HE beehive ammo submunitions not exploding on hit.
-  - Re-add HE ammo option to Oerlikon Millennium turret.
-  - Fix some issues with Explosion damage calcs, HE damage is now consistant regardless of hit location.
-  - Fix ammo count in WM GUI for reloadable missiles.
-  - AI will now properly respect per-missile engage range when selecting and firing missiles of the same type.
+	- Fix HE beehive ammo submunitions not exploding on hit.
+	- Re-add HE ammo option to Oerlikon Millennium turret.
+	- Fix some issues with Explosion damage calcs, HE damage is now consistant regardless of hit location.
+	- Fix ammo count in WM GUI for reloadable missiles.
+	- AI will now properly respect per-missile engage range when selecting and firing missiles of the same type.
 - Competition:
 	- Add toggle for setting maxAltitude and GM Kill limits to ASL or AGL.
 	- Add Kill timer for GM Altitude to give violators a chance to get back to safe altitude instead of immediate kill.
 	- Add customisable fields for the intra-team separation conditions when starting competitions (default: 800m + 100m per member) (FJRT request).
 	- Add a per-round PVP score parser.
-  - Fix accuracy calcs when using beehive ammo.
+	- Fix accuracy calcs when using beehive ammo.
 	- Fix vessel spawn altitude if RWP slider is set but not the RWP toggle.
 - RWP:
 	- Fix issue causing the web API to not report scores.
