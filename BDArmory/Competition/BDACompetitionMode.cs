@@ -291,7 +291,7 @@ namespace BDArmory.Competition
             }
         }
 
-        public void StartCompetitionMode(float distance, bool startDespiteFailures = false, string tag="")
+        public void StartCompetitionMode(float distance, bool startDespiteFailures = false, string tag = "")
         {
             if (!competitionStarting)
             {
@@ -332,7 +332,7 @@ namespace BDArmory.Competition
         public void StopCompetition()
         {
             if (LoadedVesselSwitcher.Instance is not null) LoadedVesselSwitcher.Instance.ResetDeadVessels(); // Reset the dead vessels in the LVS so that the final corrected results are shown.
-            LogResults(tag:competitionTag);
+            LogResults(tag: competitionTag);
             if (competitionIsActive && ContinuousSpawning.Instance.vesselsSpawningContinuously)
             {
                 SpawnUtils.CancelSpawning();
@@ -388,7 +388,7 @@ namespace BDArmory.Competition
             Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Competition Started");
         }
 
-        public void ResetCompetitionStuff(string tag="")
+        public void ResetCompetitionStuff(string tag = "")
         {
             // reinitilize everything when the button get hit.
             CompetitionID = (int)DateTime.UtcNow.Subtract(new DateTime(2020, 1, 1)).TotalSeconds;
@@ -1053,7 +1053,7 @@ namespace BDArmory.Competition
         public bool s4r1FiringRateUpdatedFromShotThisFrame = false;
         public bool s4r1FiringRateUpdatedFromHitThisFrame = false;
 
-        public void StartRapidDeployment(float distance, string tag="")
+        public void StartRapidDeployment(float distance, string tag = "")
         {
             if (!BDArmorySettings.RUNWAY_PROJECT) return;
             if (!sequencedCompetitionStarting)
@@ -2624,7 +2624,7 @@ namespace BDArmory.Competition
                 var message = "Ending competition due to out-of-time.";
                 competitionStatus.Add(message);
                 Debug.Log($"[BDArmory.BDACompetitionMode:{CompetitionID.ToString()}]: " + message);
-                LogResults(message:"due to out-of-time", tag:competitionTag);
+                LogResults(message: "due to out-of-time", tag: competitionTag);
                 StopCompetition();
                 return;
             }
