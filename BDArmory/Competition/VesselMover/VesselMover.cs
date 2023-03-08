@@ -20,6 +20,8 @@ namespace BDArmory.Competition.VesselMover
     public class VesselMover : VesselSpawnerBase
     {
         public static VesselMover Instance;
+        public static ApplicationLauncherButton button;
+        public static bool buttonSetup;
 
         enum State { None, Moving, Lowering, Spawning };
         State state
@@ -55,6 +57,8 @@ namespace BDArmory.Competition.VesselMover
             moveIndicator.enabled = false;
             moveIndicator.positionCount = circleRes + 3;
             GameEvents.onVesselChange.Add(OnVesselChanged);
+
+            if (BDArmorySettings.VM_TOOLBAR_BUTTON) AddToolbarButton();
         }
 
         private IEnumerator WaitForBdaSettings()
@@ -67,6 +71,7 @@ namespace BDArmory.Competition.VesselMover
             if (_crewGUICheckIndex < 0) _crewGUICheckIndex = GUIUtils.RegisterGUIRect(new Rect());
             ready = true;
             BDArmorySetup.Instance.hasVesselMover = true;
+            SetVisible(BDArmorySetup.showVesselMoverGUI);
         }
 
         void OnDestroy()
@@ -812,10 +817,10 @@ namespace BDArmory.Competition.VesselMover
 
         private void OnGUI()
         {
-            if (!(ready && BDArmorySetup.GAME_UI_ENABLED))
+            if (!(ready && BDArmorySetup.GAME_UI_ENABLED && HighLogic.LoadedSceneIsFlight))
                 return;
 
-            if (BDArmorySetup.Instance.showVesselMoverGUI)
+            if (BDArmorySetup.showVesselMoverGUI)
             {
                 BDArmorySetup.SetGUIOpacity();
                 BDArmorySetup.WindowRectVesselMover = GUILayout.Window(
@@ -966,15 +971,15 @@ namespace BDArmory.Competition.VesselMover
                         if (helpShowing)
                         {
                             GUILayout.BeginVertical();
-                            GUILayout.Label($"Movement: {GameSettings.PITCH_DOWN.primary} {GameSettings.PITCH_UP.primary} {GameSettings.YAW_LEFT.primary} {GameSettings.YAW_RIGHT.primary}");
-                            GUILayout.Label($"Roll: {GameSettings.ROLL_LEFT.primary} {GameSettings.ROLL_RIGHT.primary}");
-                            GUILayout.Label($"Pitch: {GameSettings.TRANSLATE_DOWN.primary} {GameSettings.TRANSLATE_UP.primary}");
-                            GUILayout.Label($"Yaw: {GameSettings.TRANSLATE_LEFT.primary} {GameSettings.TRANSLATE_RIGHT.primary}");
-                            GUILayout.Label($"Auto rotate rocket: {GameSettings.TRANSLATE_BACK.primary}");
-                            GUILayout.Label($"Auto rotate plane: {GameSettings.TRANSLATE_FWD.primary}");
-                            GUILayout.Label($"Cycle preset altitudes: Tab, Shift+Tab");
-                            GUILayout.Label($"Reset Altitude: {GameSettings.THROTTLE_CUTOFF.primary}");
-                            GUILayout.Label($"Adjust Altitude: {GameSettings.THROTTLE_UP.primary} {GameSettings.THROTTLE_DOWN.primary}");
+                            GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_VesselMover_Help_Movement")}: {GameSettings.PITCH_DOWN.primary}, {GameSettings.PITCH_UP.primary}, {GameSettings.YAW_LEFT.primary}, {GameSettings.YAW_RIGHT.primary}");
+                            GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_VesselMover_Help_Roll")}: {GameSettings.ROLL_LEFT.primary}, {GameSettings.ROLL_RIGHT.primary}");
+                            GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_VesselMover_Help_Pitch")}: {GameSettings.TRANSLATE_DOWN.primary}, {GameSettings.TRANSLATE_UP.primary}");
+                            GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_VesselMover_Help_Yaw")}: {GameSettings.TRANSLATE_LEFT.primary}, {GameSettings.TRANSLATE_RIGHT.primary}");
+                            GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_VesselMover_Help_AutoRotateRocket")}: {GameSettings.TRANSLATE_BACK.primary}");
+                            GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_VesselMover_Help_AutoRotatePlane")}: {GameSettings.TRANSLATE_FWD.primary}");
+                            GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_VesselMover_Help_CycleAltitudes"));
+                            GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_VesselMover_Help_ResetAltitude")}: {GameSettings.THROTTLE_CUTOFF.primary}");
+                            GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_VesselMover_Help_AdjustAltitude")}: {GameSettings.THROTTLE_UP.primary}, {GameSettings.THROTTLE_DOWN.primary}");
                             GUILayout.EndVertical();
                         }
                         break;
@@ -1026,9 +1031,16 @@ namespace BDArmory.Competition.VesselMover
         public void SetVisible(bool visible)
         {
             if (!visible && craftBrowser != null) craftBrowser = null; // Clean up the craft browser.
-            BDArmorySetup.Instance.showVesselMoverGUI = visible;
+            BDArmorySetup.showVesselMoverGUI = visible;
             GUIUtils.SetGUIRectVisible(guiCheckIndex, visible);
+            if (button != null)
+            {
+                if (visible) button.SetTrue(false);
+                else button.SetFalse(false);
+            }
         }
+        void ShowVMGUI() => SetVisible(true);
+        void HideVMGUI() => SetVisible(false);
 
         #region Vessel Selection
         internal static int _vesselGUICheckIndex = -1;
@@ -1310,6 +1322,37 @@ namespace BDArmory.Competition.VesselMover
 
             moveIndicator.SetPositions(moveIndicatorPositions);
         }
+        #endregion
+
+        #region Toolbar button
+        public void AddToolbarButton()
+        {
+            StartCoroutine(ToolbarButtonRoutine());
+        }
+        public void RemoveToolbarButton()
+        {
+            if (button == null) return;
+            if (!HighLogic.LoadedSceneIsFlight && !HighLogic.LoadedSceneIsEditor) return;
+            ApplicationLauncher.Instance.RemoveModApplication(button);
+            button = null;
+            buttonSetup = false;
+        }
+
+        IEnumerator ToolbarButtonRoutine()
+        {
+            if (buttonSetup) yield break;
+            if (!HighLogic.LoadedSceneIsFlight && !HighLogic.LoadedSceneIsEditor) yield break;
+            yield return new WaitUntil(() => ApplicationLauncher.Ready);
+
+            if (!buttonSetup)
+            {
+                Texture buttonTexture = GameDatabase.Instance.GetTexture(BDArmorySetup.textureDir + "icon_vm", false);
+                button = ApplicationLauncher.Instance.AddModApplication(ShowVMGUI, HideVMGUI, Dummy, Dummy, Dummy, Dummy, ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.VAB | ApplicationLauncher.AppScenes.FLIGHT, buttonTexture);
+                buttonSetup = true;
+                if (BDArmorySetup.showVesselMoverGUI) button.SetTrue(false);
+            }
+        }
+        void Dummy() { }
         #endregion
     }
 }

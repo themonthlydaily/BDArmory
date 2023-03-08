@@ -177,6 +177,7 @@ namespace BDArmory.UI
             if (_guiCheckIndex < 0) _guiCheckIndex = GUIUtils.RegisterGUIRect(new Rect());
             if (_observerGUICheckIndex < 0) _observerGUICheckIndex = GUIUtils.RegisterGUIRect(new Rect());
             _ready = true;
+            SetVisible(BDArmorySetup.showVesselSpawnerGUI);
         }
 
         private void FillPlanetList()
@@ -200,7 +201,7 @@ namespace BDArmory.UI
 
         private void OnGUI()
         {
-            if (!(_ready && BDArmorySetup.GAME_UI_ENABLED && BDArmorySetup.Instance.showVesselSpawnerGUI))
+            if (!(_ready && BDArmorySetup.GAME_UI_ENABLED && BDArmorySetup.showVesselSpawnerGUI && HighLogic.LoadedSceneIsFlight))
                 return;
 
             _windowWidth = BDArmorySettings.VESSEL_SPAWNER_WINDOW_WIDTH;
@@ -999,7 +1000,7 @@ namespace BDArmory.UI
 
         public void SetVisible(bool visible)
         {
-            BDArmorySetup.Instance.showVesselSpawnerGUI = visible;
+            BDArmorySetup.showVesselSpawnerGUI = visible;
             GUIUtils.SetGUIRectVisible(_guiCheckIndex, visible);
         }
 

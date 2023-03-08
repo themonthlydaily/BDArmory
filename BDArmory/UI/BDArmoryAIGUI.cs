@@ -91,7 +91,6 @@ namespace BDArmory.UI
             }
 
             if (BDArmorySettings.AI_TOOLBAR_BUTTON) AddToolbarButton();
-            if (button != null) button.enabled = windowBDAAIGUIEnabled;
 
             BDArmorySetup.WindowRectAI = new Rect(BDArmorySetup.WindowRectAI.x, BDArmorySetup.WindowRectAI.y, WindowWidth, BDArmorySetup.WindowRectAI.height);
             WindowHeight = Mathf.Max(BDArmorySetup.WindowRectAI.height, 305);
@@ -132,6 +131,7 @@ namespace BDArmory.UI
                 Texture buttonTexture = GameDatabase.Instance.GetTexture(BDArmorySetup.textureDir + "icon_ai", false);
                 button = ApplicationLauncher.Instance.AddModApplication(ShowAIGUI, HideAIGUI, Dummy, Dummy, Dummy, Dummy, ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.VAB | ApplicationLauncher.AppScenes.FLIGHT, buttonTexture);
                 buttonSetup = true;
+                if (windowBDAAIGUIEnabled) button.SetTrue(false);
             }
         }
 
@@ -147,6 +147,7 @@ namespace BDArmory.UI
             GUIUtils.SetGUIRectVisible(_guiCheckIndex, windowBDAAIGUIEnabled);
             if (HighLogic.LoadedSceneIsFlight) GetAI();
             else GetAIEditor();
+            if (button != null) button.SetTrue(false);
         }
 
         public void HideAIGUI()
@@ -154,6 +155,7 @@ namespace BDArmory.UI
             windowBDAAIGUIEnabled = false;
             GUIUtils.SetGUIRectVisible(_guiCheckIndex, windowBDAAIGUIEnabled);
             BDAWindowSettingsField.Save(); // Save window settings.
+            if (button != null) button.SetFalse(false);
         }
 
         void Dummy()

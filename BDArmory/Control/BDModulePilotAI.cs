@@ -3112,10 +3112,9 @@ namespace BDArmory.Control
 
         void UpdateTerrainAlertDetectionRadius(Vessel v)
         {
-            if (v == vessel)
-            {
-                terrainAlertDetectionRadius = Mathf.Min(2f * vessel.GetRadius(), minAltitude); // Don't go above the min altitude so we're not triggering terrain avoidance while cruising at min alt.
-            }
+            if (!HighLogic.LoadedSceneIsFlight) return;
+            if (v != vessel) return;
+            terrainAlertDetectionRadius = Mathf.Min(2f * vessel.GetRadius(), minAltitude); // Don't go above the min altitude so we're not triggering terrain avoidance while cruising at min alt.
         }
 
         RaycastHit[] terrainAvoidanceHits = new RaycastHit[10];
