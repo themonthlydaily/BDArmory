@@ -1454,20 +1454,22 @@ namespace BDArmory.UI
                                 GUIContent.none, BDArmorySetup.BDGuiSkin.box);
                             spdLines += 0.25f;
 
-                            GUI.Label(SettinglabelRect(leftIndent, spdLines), StringUtils.Localize("#LOC_BDArmory_PilotAI_Speeds"), BoldLabel);//"Speed"
-                            if (!NumFieldsEnabled)
+                            if (!(BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55))
                             {
-                                ActivePilot.maxSpeed = GUI.HorizontalSlider(SettingSliderRect(leftIndent, ++spdLines, contentWidth), ActivePilot.maxSpeed, 20, ActivePilot.UpToEleven ? 3000 : 800);
-                                ActivePilot.maxSpeed = Mathf.Round(ActivePilot.maxSpeed / 5) * 5;
+                                GUI.Label(SettinglabelRect(leftIndent, spdLines), StringUtils.Localize("#LOC_BDArmory_PilotAI_Speeds"), BoldLabel);//"Speed"
+                                if (!NumFieldsEnabled)
+                                {
+                                    ActivePilot.maxSpeed = GUI.HorizontalSlider(SettingSliderRect(leftIndent, ++spdLines, contentWidth), ActivePilot.maxSpeed, 20, ActivePilot.UpToEleven ? 3000 : 800);
+                                    ActivePilot.maxSpeed = Mathf.Round(ActivePilot.maxSpeed / 5) * 5;
+                                }
+                                else
+                                {
+                                    inputFields["maxSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ++spdLines, contentWidth), inputFields["maxSpeed"].possibleValue, 6, inputFieldStyle));
+                                    ActivePilot.maxSpeed = (float)inputFields["maxSpeed"].currentValue;
+                                }
+                                GUI.Label(SettinglabelRect(leftIndent, spdLines), StringUtils.Localize("#LOC_BDArmory_MaxSpeed") + ": " + ActivePilot.maxSpeed.ToString("0"), Label);//"max speed"
+                                if (contextTipsEnabled) GUI.Label(ContextLabelRect(leftIndent, ++spdLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_maxSpeed"), contextLabel);//"max speed"
                             }
-                            else
-                            {
-                                inputFields["maxSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ++spdLines, contentWidth), inputFields["maxSpeed"].possibleValue, 6, inputFieldStyle));
-                                ActivePilot.maxSpeed = (float)inputFields["maxSpeed"].currentValue;
-                            }
-                            GUI.Label(SettinglabelRect(leftIndent, spdLines), StringUtils.Localize("#LOC_BDArmory_MaxSpeed") + ": " + ActivePilot.maxSpeed.ToString("0"), Label);//"max speed"
-                            if (contextTipsEnabled) GUI.Label(ContextLabelRect(leftIndent, ++spdLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_maxSpeed"), contextLabel);//"max speed"
-
                             if (!NumFieldsEnabled)
                             {
                                 ActivePilot.takeOffSpeed = GUI.HorizontalSlider(SettingSliderRect(leftIndent, ++spdLines, contentWidth), ActivePilot.takeOffSpeed, 10f, ActivePilot.UpToEleven ? 2000 : 200);

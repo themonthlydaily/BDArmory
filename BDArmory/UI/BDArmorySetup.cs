@@ -3277,6 +3277,10 @@ namespace BDArmory.UI
                             GUI.Label(SLeftSliderRect(++line, 1f), $"{StringUtils.Localize("#LOC_BDArmory_settings_FireRateHitMultiplier")}:  ({BDArmorySettings.FIRE_RATE_OVERRIDE_HIT_MULTIPLIER})", leftLabel);//Fire Rate Hit Multiplier
                             BDArmorySettings.FIRE_RATE_OVERRIDE_HIT_MULTIPLIER = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FIRE_RATE_OVERRIDE_HIT_MULTIPLIER, 1f, 4f) * 10f) / 10f;
                         }
+                        if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 55 && !BDArmorySettings.WAYPOINTS_MODE)
+                        {
+                            BDArmorySettings.WAYPOINTS_MODE = true;
+                        }
                         // if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 46) BDArmorySettings.NO_ENGINES = true;
                         if (CheatCodeGUI != (CheatCodeGUI = GUI.TextField(SLeftRect(++line, 1, true), CheatCodeGUI, inputFieldStyle))) //if we need super-secret stuff
                         {

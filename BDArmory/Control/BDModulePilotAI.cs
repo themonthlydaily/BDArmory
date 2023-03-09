@@ -1494,6 +1494,7 @@ namespace BDArmory.Control
             {
                 maxBank = 40;
                 postStallAoA = 0.0f;
+                maxSpeed = 600;
                 if (HighLogic.LoadedSceneIsFlight)
                 {
                     UI_FloatRange bank = (UI_FloatRange)Fields["maxBank"].uiControlFlight;
@@ -1506,6 +1507,8 @@ namespace BDArmory.Control
                 }
                 Fields["postStallAoA"].guiActiveEditor = false;
                 Fields["postStallAoA"].guiActive = false;
+                Fields["maxSpeed"].guiActiveEditor = false;
+                Fields["maxSpeed"].guiActive = false;
             }
             SetupSliderResolution();
             SetSliderPairClamps("turnRadiusTwiddleFactorMin", "turnRadiusTwiddleFactorMax");
