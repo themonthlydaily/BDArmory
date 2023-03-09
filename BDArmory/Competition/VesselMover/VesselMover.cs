@@ -1327,12 +1327,13 @@ namespace BDArmory.Competition.VesselMover
         #region Toolbar button
         public void AddToolbarButton()
         {
+            if (!HighLogic.LoadedSceneIsFlight) return;
             StartCoroutine(ToolbarButtonRoutine());
         }
         public void RemoveToolbarButton()
         {
             if (button == null) return;
-            if (!HighLogic.LoadedSceneIsFlight && !HighLogic.LoadedSceneIsEditor) return;
+            if (!HighLogic.LoadedSceneIsFlight) return;
             ApplicationLauncher.Instance.RemoveModApplication(button);
             button = null;
             buttonSetup = false;

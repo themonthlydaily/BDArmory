@@ -1836,7 +1836,7 @@ namespace BDArmory.Weapons
                 {
                     if (targetAcquired && (GPSTarget || slaved || yawRange < 1 || maxPitch - minPitch < 1))
                     {
-                        reticlePosition = (targetPosition - fixedLeadOffset).normalized * pointingAtPosition.magnitude;
+                        reticlePosition = transform.position + (finalAimTarget - transform.position).normalized * pointingAtPosition.magnitude;
 
                         if (!slaved && !GPSTarget)
                         {
