@@ -599,7 +599,7 @@ namespace BDArmory.Control
             { nameof(steerKiAdjust), 20f },
             { nameof(steerDamping), 100f },
             { nameof(maxSteer), 1f},
-            { nameof(maxSpeed), 3000f },
+            { nameof(maxSpeed), (BDArmorySettings.RUNWAY_PROJECT_ROUND == 55) ? 600 : 3000f },
             { nameof(takeOffSpeed), 2000f },
             { nameof(minSpeed), 2000f },
             { nameof(strafingSpeed), 2000f },
@@ -1499,16 +1499,18 @@ namespace BDArmory.Control
                 {
                     UI_FloatRange bank = (UI_FloatRange)Fields["maxBank"].uiControlFlight;
                     bank.maxValue = 40;
+                    UI_FloatRange spd = (UI_FloatRange)Fields["maxSpeed"].uiControlFlight;
+                    spd.maxValue = 600;
                 }
                 else
                 {
                     UI_FloatRange bank = (UI_FloatRange)Fields["maxBank"].uiControlEditor;
                     bank.maxValue = 40;
+                    UI_FloatRange spd = (UI_FloatRange)Fields["maxSpeed"].uiControlEditor;
+                    spd.maxValue = 600;
                 }
                 Fields["postStallAoA"].guiActiveEditor = false;
                 Fields["postStallAoA"].guiActive = false;
-                Fields["maxSpeed"].guiActiveEditor = false;
-                Fields["maxSpeed"].guiActive = false;
             }
             SetupSliderResolution();
             SetSliderPairClamps("turnRadiusTwiddleFactorMin", "turnRadiusTwiddleFactorMax");

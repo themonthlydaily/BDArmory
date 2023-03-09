@@ -115,6 +115,7 @@ namespace BDArmory.Competition.VesselSpawning
             foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(vessel))
             {
                 if (ignoreModularMissileEngines && IsModularMissileEngine(engine)) continue; // Ignore modular missile engines.
+                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55) engine.independentThrottle = false;
                 var mme = engine.part.FindModuleImplementing<MultiModeEngine>();
                 if (mme == null)
                 {
