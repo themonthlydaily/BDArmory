@@ -84,7 +84,7 @@ namespace BDArmory.Competition.OrchestrationStrategies
             {
                 pilot.SetWaypoints(mappedWaypoints);
                 var Kerb = VesselModuleRegistry.GetModule<KerbalEVA>(pilot.vessel);
-                Kerb.part.ShieldedFromAirstream = true;
+                if (Kerb != null) Kerb.part.ShieldedFromAirstream = true;
             }
 
             if (BDArmorySettings.WAYPOINTS_INFINITE_FUEL_AT_START)
