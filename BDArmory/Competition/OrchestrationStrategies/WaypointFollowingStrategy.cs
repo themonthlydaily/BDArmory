@@ -83,8 +83,10 @@ namespace BDArmory.Competition.OrchestrationStrategies
             foreach (var pilot in pilots)
             {
                 pilot.SetWaypoints(mappedWaypoints);
-                var Kerb = VesselModuleRegistry.GetModule<KerbalEVA>(pilot.vessel);
-                if (Kerb != null) Kerb.part.ShieldedFromAirstream = true;
+                foreach (var Kerb in VesselModuleRegistry.GetKerbalEVAs(pilot.vessel))
+                {
+                    if (Kerb != null) Kerb.part.ShieldedFromAirstream = true; // Remove drag from EVA kerbals on seats.
+                }
             }
 
             if (BDArmorySettings.WAYPOINTS_INFINITE_FUEL_AT_START)

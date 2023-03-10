@@ -1,12 +1,25 @@
-﻿IMPROVEMENTS / FIXES
+﻿v1.5.9.1
+IMPROVEMENTS / FIXES
 - General:
 	- Adjust how PartsBlacklist.cfg is read/written to merge the defaults with any existing custom values.
+	- Fix known exceptions and NaNs.
 - Weapons:
 	- Use the combination of DEBUG_LINES and DEBUG_WEAPONS for showing the targeting component debug lines instead of only having them in the debug build.
 	- Further tweaks to the aim assist targeting reticle to account for the floating origin.
+	- Missiles/Bombs now arm their warheads when they reach a safe distance from their launching craft, to prevent anti-missile systems fragging craft by detonating ordinance immediately after launch.
 - UI:
 	- Add a toolbar button for the BDA Vessel Mover.
 	- Make window states persistent across scene changes.
+- Competition:
+	- Remove drag from seated Kerbals in the Waypoint race gamemode.
+	- Repulsor craft now spawn horizonally instead of nose down.
+- RWP:
+	- Enable various RWP S5R5 overrides to settings.
+		- Max speed fixed at 600m/s.
+		- Max bank fixed at 40°.
+		- Post-stall AoA fixed at 0°.
+		- Independent throttle disabled.
+		- Global lift multiplier increased to 0.1 from 0.036.
 
 v1.5.9.0
 IMPROVEMENTS / FIXES
