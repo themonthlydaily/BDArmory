@@ -1099,8 +1099,7 @@ namespace BDArmory.Weapons.Missiles
         public void CheckDetonationState()
         {
             //Guard clauses
-            if (!TargetAcquired) return;
-
+            //if (!TargetAcquired) return;
             var targetDistancePerFrame = TargetVelocity * Time.fixedDeltaTime;
             var missileDistancePerFrame = vessel.Velocity() * Time.fixedDeltaTime;
 
@@ -1148,11 +1147,13 @@ namespace BDArmory.Weapons.Missiles
 
                         //We are safe and we can continue with the cruising phase
                         DetonationDistanceState = DetonationDistanceStates.Cruising;
+                        SetupExplosive(this.part); //moving arming of warhead to here from launch to prevent Laser anti-missile systems zapping a missile immediately after launch and fragging the launching plane as the missile detonates
                         break;
                     }
 
                 case DetonationDistanceStates.Cruising:
                     {
+                        if (!TargetAcquired) return;
                         //if (Vector3.Distance(futureMissilePosition, futureTargetPosition) < GetBlastRadius() * 10)
                         // Replaced old proximity check with proximity check based on either detonation distance or distance traveled per frame
                         if ((futureMissilePosition - futureTargetPosition).sqrMagnitude < 100 * (relativeSpeed > DetonationDistance ? relativeSpeed*relativeSpeed : DetonationDistance*DetonationDistance))
@@ -1176,6 +1177,7 @@ namespace BDArmory.Weapons.Missiles
 
                 case DetonationDistanceStates.CheckingProximity:
                     {
+                        if (!TargetAcquired) return;
                         if (DetonationDistance == 0)
                         {
                             if (weaponClass == WeaponClasses.Bomb) return;

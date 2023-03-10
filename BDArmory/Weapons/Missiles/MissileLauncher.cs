@@ -1051,7 +1051,7 @@ namespace BDArmory.Weapons.Missiles
             HasFired = true;
             try // FIXME Remove this once the fix is sufficiently tested.
             {
-                SetupExplosive(this.part);
+                //SetupExplosive(this.part);
                 GameEvents.onPartDie.Add(PartDie);
 
                 if (GetComponentInChildren<KSPParticleEmitter>())
