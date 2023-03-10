@@ -16,6 +16,8 @@ IMPROVEMENTS / FIXES
 - RWP:
 	- Enable various RWP S5R5 overrides to settings.
 		- Max speed fixed at 600m/s.
+		- Min altitude clamped to below 50m.
+		- Max altitude enabled and set to 100m.
 		- Max bank fixed at 40°.
 		- Post-stall AoA fixed at 0°.
 		- Independent throttle disabled.
