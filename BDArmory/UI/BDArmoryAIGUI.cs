@@ -437,7 +437,7 @@ namespace BDArmory.UI
                     inputFields["minAltitude"].maxValue = ActivePilot.UpToEleven ? 60000 : 6000;
                     inputFields["maxAltitude"].maxValue = ActivePilot.UpToEleven ? 100000 : 15000;
 
-                    if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55) inputFields["maxSpeed"].maxValue = ActivePilot.UpToEleven ? 600 : 600;
+                    if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55) inputFields["maxSpeed"].maxValue = 600;
                     else inputFields["maxSpeed"].maxValue = ActivePilot.UpToEleven ? 3000 : 800;
                     inputFields["takeOffSpeed"].maxValue = ActivePilot.UpToEleven ? 2000 : 200;
                     inputFields["minSpeed"].maxValue = ActivePilot.UpToEleven ? 2000 : 200;
