@@ -387,6 +387,7 @@ namespace BDArmory.UI
                         { "turnRadiusTwiddleFactorMin", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.turnRadiusTwiddleFactorMin, 0.1, 5) },
                         { "turnRadiusTwiddleFactorMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.turnRadiusTwiddleFactorMax, 0.1, 5) },
                         { "terrainAvoidanceCriticalAngle", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.terrainAvoidanceCriticalAngle, 90f, 180f) },
+                        { "controlSurfaceDeploymentTime", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.controlSurfaceDeploymentTime, 0f, 2f) },
                         { "waypointTerrainAvoidance", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.waypointTerrainAvoidance, 0, 1) },
 
                         { "controlSurfaceLag", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.controlSurfaceLag, 0, 0.2) },
@@ -2106,6 +2107,24 @@ namespace BDArmory.UI
                             if (contextTipsEnabled)
                             {
                                 GUI.Label(ContextLabelRect(leftIndent, ++gndLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_InvertedTerrainAvoidanceCriticalAngleContext"), contextLabel);
+                            }
+                            #endregion
+
+                            #region Terrain Avoidance Control Surface Deployment Time
+                            GUI.Label(SettinglabelRect(leftIndent, ++gndLines), $"{StringUtils.Localize("#LOC_BDArmory_AIWindow_TerrainAvoidanceControlSurfaceDeploymentTime")}: {ActivePilot.controlSurfaceDeploymentTime:0.0}", Label);
+                            if (!NumFieldsEnabled)
+                            {
+                                ActivePilot.controlSurfaceDeploymentTime = GUI.HorizontalSlider(SettingSliderRect(leftIndent, gndLines, contentWidth), ActivePilot.controlSurfaceDeploymentTime, 0f, 2f);
+                                ActivePilot.controlSurfaceDeploymentTime = BDAMath.RoundToUnit(ActivePilot.controlSurfaceDeploymentTime, 0.1f);
+                            }
+                            else
+                            {
+                                inputFields["controlSurfaceDeploymentTime"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, gndLines, contentWidth), inputFields["controlSurfaceDeploymentTime"].possibleValue, 6, inputFieldStyle));
+                                ActivePilot.controlSurfaceDeploymentTime = (float)inputFields["controlSurfaceDeploymentTime"].currentValue;
+                            }
+                            if (contextTipsEnabled)
+                            {
+                                GUI.Label(ContextLabelRect(leftIndent, ++gndLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_TerrainAvoidanceControlSurfaceDeploymentTimeContext"), contextLabel);
                             }
                             #endregion
 

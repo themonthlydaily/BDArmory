@@ -1,4 +1,11 @@
-﻿v1.5.9.1
+﻿v1.5.9.2
+IMPROVEMENTS / FIXES
+- AI:
+	- Fix incorrect terrain avoidance critical angle conversion (degrees vs radians).
+	- Add a slider for setting the control surface deployment time used for terrain avoidance and reduce the amount the control surface deployment time affects the terrain detection distance.
+		- Note: the default is now lower than it was before and lowering it further can significantly reduce the terrain avoidance distance for highly manoeuverable craft.
+
+v1.5.9.1
 IMPROVEMENTS / FIXES
 - General:
 	- Adjust how PartsBlacklist.cfg is read/written to merge the defaults with any existing custom values.
