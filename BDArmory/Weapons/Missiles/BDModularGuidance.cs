@@ -196,7 +196,7 @@ namespace BDArmory.Weapons.Missiles
             if (HasFired && !HasExploded)
             {
                 UpdateGuidance();
-                CheckDetonationState();
+                CheckDetonationState(true);
                 CheckDetonationDistance();
                 CheckDelayedFired();
                 CheckNextStage();
@@ -216,7 +216,7 @@ namespace BDArmory.Weapons.Missiles
         void Update()
         {
             if (!HasFired)
-                CheckDetonationState();
+                CheckDetonationState(true);
         }
 
         private void CheckNextStage()

@@ -395,16 +395,11 @@ namespace BDArmory.Weapons.Missiles
         public override void OnAwake()
         {
             base.OnAwake();
-            /*
-            if (reloadableRail == null) //getting called before ModuleMissileRearm getting initialized and returning false
+            var MMG = GetPart().FindModuleImplementing<BDModularGuidance>();
+            if (MMG == null)
             {
-                reloadableRail = GetPart().FindModuleImplementing<ModuleMissileRearm>();
-                if (reloadableRail == null)
-                {
-                    hasAmmo = false;
-                }
+                hasAmmo = false;
             }
-            */
         }
 
         public void GetMissileCount() // could stick this in GetSublabel, but that gets called every frame by BDArmorySetup?
@@ -1096,7 +1091,7 @@ namespace BDArmory.Weapons.Missiles
             return VesselModuleRegistry.GetModules<BDExplosivePart>(vessel).Max(x => x.tntMass);
         }
 
-        public void CheckDetonationState()
+        public void CheckDetonationState(bool separateWarheads = false)
         {
             //Guard clauses
             //if (!TargetAcquired) return;
@@ -1147,7 +1142,7 @@ namespace BDArmory.Weapons.Missiles
 
                         //We are safe and we can continue with the cruising phase
                         DetonationDistanceState = DetonationDistanceStates.Cruising;
-                        SetupExplosive(this.part); //moving arming of warhead to here from launch to prevent Laser anti-missile systems zapping a missile immediately after launch and fragging the launching plane as the missile detonates
+                        if (!separateWarheads) SetupExplosive(this.part); //moving arming of warhead to here from launch to prevent Laser anti-missile systems zapping a missile immediately after launch and fragging the launching plane as the missile detonates
                         break;
                     }
 
