@@ -1108,7 +1108,7 @@ namespace BDArmory.Weapons.Missiles
                 case DetonationDistanceStates.NotSafe:
                     {
                         //Lets check if we are at a safe distance from the source vessel
-                        var dist = GetBlastRadius() * 3f;
+                        var dist = GetBlastRadius() * 1.25f; //this is from launching vessel, which assuming is also moving forward on a similar vector, could potentially result in missiles not arming for several km for faster planes/slower missiles
                         var hitCount = Physics.OverlapSphereNonAlloc(futureMissilePosition, dist, proximityHitColliders, layerMask);
                         if (hitCount == proximityHitColliders.Length)
                         {

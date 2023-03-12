@@ -2154,7 +2154,10 @@ namespace BDArmory.Weapons.Missiles
                 var distThreshold = 0.5f * GetBlastRadius();
                 if (proxyDetonate && !DetonateAtMinimumDistance && ((TargetPosition + (TargetVelocity * Time.fixedDeltaTime)) - (transform.position)).sqrMagnitude < distThreshold * distThreshold)
                 {
-                    part.Destroy(); //^look into how this interacts with MissileBase.DetonationState
+                    //part.Destroy(); //^look into how this interacts with MissileBase.DetonationState
+                    // - if the missile is still within the notSafe status, the missile will delete itself, else, the checkProximity state of DetpnationState would trigger before the missile reaches the 1/2 blastradius.
+                    // would only trigger if someone set the detonation distance override to something smallerthan 1/2 blst radius, for some reason
+                    Detonate();
                 }
             }
             else
@@ -2218,7 +2221,7 @@ namespace BDArmory.Weapons.Missiles
                 var distThreshold = 0.5f * GetBlastRadius();
                 if (proxyDetonate && !DetonateAtMinimumDistance && ((TargetPosition + (TargetVelocity * Time.fixedDeltaTime)) - (transform.position)).sqrMagnitude < distThreshold * distThreshold)
                 {
-                    part.Destroy();
+                    Detonate(); //ends up the same as part.Destroy, except it doesn't trip the hasDied flag for clustermissiles
                 }
             }
             else
