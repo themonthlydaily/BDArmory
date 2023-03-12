@@ -1,4 +1,9 @@
-﻿v1.5.9.2
+﻿IMPROVEMENTS / FIXES
+- Mod Integration:
+	- Add support for the MouseAimFlight mod.
+		- Disables the prevention of firing weapons when the mouse is over windows when the Mouse Aim mode is active.
+
+v1.5.9.2
 IMPROVEMENTS / FIXES
 - AI:
 	- Fix incorrect terrain avoidance critical angle conversion (degrees vs radians).
