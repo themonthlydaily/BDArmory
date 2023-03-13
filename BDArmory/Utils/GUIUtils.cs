@@ -424,6 +424,24 @@ namespace BDArmory.Utils
             scrollZoomEnabled = true;
         }
 
+        /// <summary>
+        /// GUILayout TextField with a grey placeholder string.
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="placeholder"></param>
+        /// <returns></returns>
+        public static string TextField(string text, string placeholder)
+        {
+            var newText = GUILayout.TextField(text);
+            if (String.IsNullOrEmpty(text))
+            {
+                var guiColor = GUI.color;
+                GUI.color = Color.grey;
+                GUI.Label(GUILayoutUtility.GetLastRect(), placeholder);
+                GUI.color = guiColor;
+            }
+            return newText;
+        }
 
         [KSPAddon(KSPAddon.Startup.EveryScene, false)]
         internal class GUIUtilsInstance : MonoBehaviour

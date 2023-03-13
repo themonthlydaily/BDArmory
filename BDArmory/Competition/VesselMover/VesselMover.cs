@@ -1048,6 +1048,7 @@ namespace BDArmory.Competition.VesselMover
         Vector2 vesselSelectionScrollPos = default;
         float vesselSelectionTimer = 0;
         string selectedVesselURL = "";
+        string selectionFilter = "";
 
         public void ShowVesselSelection(Action<string> selectedCallback = null, Action cancelledCallback = null)
         {
@@ -1075,6 +1076,7 @@ namespace BDArmory.Competition.VesselMover
         {
             GUI.DragWindow(new Rect(0, 0, vesselSelectionWindowRect.width, 20));
             GUILayout.BeginVertical();
+            selectionFilter = GUIUtils.TextField(selectionFilter, " Filter");
             vesselSelectionScrollPos = GUILayout.BeginScrollView(vesselSelectionScrollPos, GUI.skin.box, GUILayout.Width(vesselSelectionWindowRect.width - 15), GUILayout.MaxHeight(vesselSelectionWindowRect.height - 60));
             using (var vessels = craftBrowser.craftList.GetEnumerator())
                 while (vessels.MoveNext())
@@ -1082,6 +1084,10 @@ namespace BDArmory.Competition.VesselMover
                     var vesselURL = vessels.Current.Key;
                     var vesselInfo = vessels.Current.Value;
                     if (vesselURL == null || vesselInfo == null) continue;
+                    if (!string.IsNullOrEmpty(selectionFilter)) // Filter selection, case insensitive.
+                    {
+                        if (!vesselInfo.shipName.ToLower().Contains(selectionFilter.ToLower())) continue;
+                    }
                     GUILayout.BeginHorizontal(); // Vessel buttons
                     if (GUILayout.Button($"{vesselInfo.shipName}", selectedVesselURL == vesselURL ? BDArmorySetup.SelectedButtonStyle : BDArmorySetup.ButtonStyle, GUILayout.Height(50), GUILayout.MaxWidth(vesselSelectionWindowRect.width - 190)))
                     {
@@ -1221,7 +1227,7 @@ namespace BDArmory.Competition.VesselMover
             {
                 // Create a new Kerbal!
                 newCustomKerbal = !newCustomKerbal;
-                newKerbalName = "Enter a new Kerbal name...";
+                newKerbalName = "";
             }
             if (GUILayout.Button("X", removeKerbals ? BDArmorySetup.SelectedButtonStyle : BDArmorySetup.CloseButtonStyle, GUILayout.Width(27)))
             {
@@ -1231,11 +1237,12 @@ namespace BDArmory.Competition.VesselMover
             GUILayout.EndHorizontal();
             if (newCustomKerbal)
             {
-                newKerbalName = GUILayout.TextField(newKerbalName);
+                newKerbalName = GUIUtils.TextField(newKerbalName, " Enter a new Kerbal name...");
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_Generic_OK"), BDArmorySetup.ButtonStyle))
                 {
-                    if (!string.IsNullOrEmpty(newKerbalName) && newKerbalName != "Enter a new Kerbal name...")
+                    newKerbalName = newKerbalName.Trim();
+                    if (!string.IsNullOrEmpty(newKerbalName))
                     {
                         if (HighLogic.CurrentGame.CrewRoster.Exists(newKerbalName))
                         {
