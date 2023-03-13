@@ -4438,7 +4438,7 @@ namespace BDArmory.Control
             if (currentField == "base")
             {
                 baseLossSamples.Add(lossSample);
-                if (++sampleNumber == (int)AI.autoTuningOptionNumSamples)
+                if (++sampleNumber >= (int)AI.autoTuningOptionNumSamples)
                 {
                     var loss = baseLossSamples.Average();
                     if (loss < lr.best)
@@ -4475,7 +4475,7 @@ namespace BDArmory.Control
                 {
                     lossSamples[currentField].Last().Add(lossSample); // Sample at x + dx
                     firstCFDSample = true;
-                    if (++sampleNumber == (int)AI.autoTuningOptionNumSamples)
+                    if (++sampleNumber >= (int)AI.autoTuningOptionNumSamples)
                     {
                         ++currentFieldIndex;
                         sampleNumber = 0;
