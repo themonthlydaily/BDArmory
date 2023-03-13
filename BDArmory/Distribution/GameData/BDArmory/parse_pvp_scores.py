@@ -53,7 +53,7 @@ else:
         if logsDir.exists():
             tournamentFolders = list(logsDir.resolve().glob("Tournament*"))
             if len(tournamentFolders) > 0:
-                tournamentFolders = sorted(list(dir for dir in tournamentFolders if dir.is_dir()))
+                tournamentFolders = sorted(list(dir for dir in tournamentFolders if dir.is_dir()), key=naturalSortKey)
             if len(tournamentFolders) > 0:
                 tournamentDirs = [tournamentFolders[-1]]  # Latest tournament dir
         if tournamentDirs is None:  # Didn't find a tournament dir, revert to current-dir

@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
-VERSION = "1.19.0"
+VERSION = "1.20.0"
 
 parser = argparse.ArgumentParser(description="Tournament log parser", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('tournament', type=str, nargs='*', help="Tournament folder to parse.")
@@ -37,6 +37,16 @@ if args.version:
     print(f"Version: {VERSION}")
     sys.exit()
 
+
+def naturalSortKey(key: Union[str, Path]):
+    if isinstance(key, Path):
+        key = key.name
+    try:
+        return int(key.rsplit(' ')[1])  # If the key ends in an integer, split that off and use that as the sort key.
+    except:
+        return key  # Otherwise, just use the key.
+
+
 if args.current_dir and len(args.tournament) == 0:
     tournamentDirs = [Path('')]
 else:
@@ -46,7 +56,7 @@ else:
         if logsDir.exists():
             tournamentFolders = list(logsDir.resolve().glob("Tournament*"))
             if len(tournamentFolders) > 0:
-                tournamentFolders = sorted(list(dir for dir in tournamentFolders if dir.is_dir()))
+                tournamentFolders = sorted(list(dir for dir in tournamentFolders if dir.is_dir()), key=naturalSortKey)
             if len(tournamentFolders) > 0:
                 tournamentDirs = [tournamentFolders[-1]]  # Latest tournament dir
         if tournamentDirs is None:  # Didn't find a tournament dir, revert to current-dir
@@ -83,15 +93,6 @@ def cumsum(l):
     for i in l:
         v += i
         yield v
-
-
-def naturalSortKey(key: Union[str, Path]):
-    if isinstance(key, Path):
-        key = key.name
-    try:
-        return int(key.rsplit(' ')[1])  # If the key ends in an integer, split that off and use that as the sort key.
-    except:
-        return key  # Otherwise, just use the key.
 
 
 def encode_names(log_lines: List[str]) -> Tuple[Dict[str, str], List[str]]:
