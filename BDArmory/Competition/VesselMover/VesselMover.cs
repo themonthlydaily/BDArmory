@@ -1089,7 +1089,7 @@ namespace BDArmory.Competition.VesselMover
                         if (!vesselInfo.shipName.ToLower().Contains(selectionFilter.ToLower())) continue;
                     }
                     GUILayout.BeginHorizontal(); // Vessel buttons
-                    if (GUILayout.Button($"{vesselInfo.shipName}", selectedVesselURL == vesselURL ? BDArmorySetup.SelectedButtonStyle : BDArmorySetup.ButtonStyle, GUILayout.Height(50), GUILayout.MaxWidth(vesselSelectionWindowRect.width - 190)))
+                    if (GUILayout.Button($"{vesselInfo.shipName}", selectedVesselURL == vesselURL ? BDArmorySetup.SelectedButtonStyle : BDArmorySetup.ButtonStyle, GUILayout.MaxHeight(60), GUILayout.MaxWidth(vesselSelectionWindowRect.width - 190)))
                     {
                         if (Time.realtimeSinceStartup - vesselSelectionTimer < 0.5f)
                         {

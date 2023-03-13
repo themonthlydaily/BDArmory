@@ -1,4 +1,6 @@
 ﻿IMPROVEMENTS / FIXES
+- UI:
+	- Add a case-insensitive filter to the vessel selection windows in Vessel Mover and Custom Spawn Templates.
 - Mod Integration:
 	- Add support for the MouseAimFlight mod.
 		- Disables the prevention of firing weapons when the mouse is over windows when the Mouse Aim mode is active.
