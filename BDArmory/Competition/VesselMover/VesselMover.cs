@@ -789,8 +789,7 @@ namespace BDArmory.Competition.VesselMover
             yield return SpawnSingleVessel(vesselSpawnConfig);
             VesselSpawner.ReservedCrew.Clear(); // Clear the reserved crew again.
             if (spawnFailureReason != SpawnFailureReason.None) { state = State.None; yield break; }
-            var vessel = spawnedVessels[latestSpawnedVesselName];
-            if (vessel == null)
+            if (!spawnedVessels.TryGetValue(latestSpawnedVesselName, out Vessel vessel) || vessel == null)
             {
                 spawnFailureReason = SpawnFailureReason.VesselFailedToSpawn;
                 state = State.None;
