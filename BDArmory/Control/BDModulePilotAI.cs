@@ -556,13 +556,13 @@ namespace BDArmory.Control
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TerrainAvoidanceCriticalAngle", advancedTweakable = true, // Critical angle for inverted terrain avoidance.
             groupName = "pilotAI_Terrain", groupDisplayName = "#LOC_BDArmory_PilotAI_Terrain", groupStartCollapsed = true),
             UI_FloatRange(minValue = 90f, maxValue = 180f, stepIncrement = 1f, scene = UI_Scene.All)]
-        public float terrainAvoidanceCriticalAngle = 120f;
+        public float terrainAvoidanceCriticalAngle = 135f;
         float terrainAvoidanceCriticalCosAngle = -0.5f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TerrainAvoidanceControlSurfaceDeployTime", advancedTweakable = true, // Control surface deployment time.
             groupName = "pilotAI_Terrain", groupDisplayName = "#LOC_BDArmory_PilotAI_Terrain", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 2f, stepIncrement = 0.1f, scene = UI_Scene.All)]
-        public float controlSurfaceDeploymentTime = 1f;
+        public float controlSurfaceDeploymentTime = 1.5f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_WaypointTerrainAvoidance", advancedTweakable = true,//Waypoint terrain avoidance.
             groupName = "pilotAI_Terrain", groupDisplayName = "#LOC_BDArmory_PilotAI_Terrain", groupStartCollapsed = true),
@@ -2401,7 +2401,8 @@ namespace BDArmory.Control
                 if (m.magnitude < 0.1f) m = upDirection; // In case n and upDirection are colinear.
                 var a = Vector3.Dot(n, upDirection); // sin(phi) = dot(n,up)
                 var b = BDAMath.Sqrt(1f - a * a); // cos(phi) = sqrt(1-sin(phi)^2)
-                var r = turnRadiusTwiddleFactorMax * turnRadius; // Worst-case radius of turning circle. (We use the max to avoid triggering terrain avoidance since we're inverted even though the plane ought to be able to manage the turn with the min.)
+                var r = turnRadiusTwiddleFactorMax * turnRadius + 0.5f * (float)vessel.srfSpeed * controlSurfaceDeploymentTime; // Worst-case radius of turning circle. (We use the max and 1/2 ctrl srf deploy time to avoid triggering terrain avoidance since we're inverted even though the plane ought to be able to manage the turn with the min.)
+
                 var h = r * (1 + Vector3.Dot(m, vessel.srf_vel_direction)) * b; // Required altitude: h = r * (1+cos(theta)) * cos(phi).
                 if (vessel.radarAltitude < h) // Too low for this manoeuvre.
                 {
@@ -3161,7 +3162,7 @@ namespace BDArmory.Control
                     belowMinAltitude = false; // Also, reset the belowMinAltitude alert if it's active because of avoiding terrain.
                 terrainAlertDistance = float.MaxValue; // Reset the terrain alert distance.
                 float turnRadiusTwiddleFactor = turnRadiusTwiddleFactorMax; // A twiddle factor based on the orientation of the vessel, since it often takes considerable time to re-orient before avoiding the terrain. Start with the worst value.
-                terrainAlertThreatRange = turnRadiusTwiddleFactor * (turnRadius + 0.5f * (float)vessel.srfSpeed * controlSurfaceDeploymentTime); // The distance to the terrain to consider. Note: use 1/2 the ctrl srf deploy time as a better estimate of expected time taken to avoid over-emphasising the speed component.
+                terrainAlertThreatRange = turnRadiusTwiddleFactor * turnRadius + (float)vessel.srfSpeed * controlSurfaceDeploymentTime; // The distance to the terrain to consider. Note: use 1/2 the ctrl srf deploy time as a better estimate of expected time taken to avoid over-emphasising the speed component.
 
                 // First, look 45° down, up, left and right from our velocity direction for immediate danger. (This should cover most immediate dangers.)
                 Ray rayForwardUp = new Ray(vesselPosition, (vesselSrfVelDir - relativeVelocityDownDirection).normalized);
@@ -3257,7 +3258,7 @@ namespace BDArmory.Control
                         float sinTheta = Math.Min(0.0f, Vector3.Dot(vesselSrfVelDir, terrainAlertNormal)); // sin(theta) (measured relative to the plane of the surface).
                         float oneMinusCosTheta = 1.0f - BDAMath.Sqrt(Math.Max(0.0f, 1.0f - sinTheta * sinTheta));
                         turnRadiusTwiddleFactor = (turnRadiusTwiddleFactorMin + turnRadiusTwiddleFactorMax) / 2.0f - (turnRadiusTwiddleFactorMax - turnRadiusTwiddleFactorMin) / 2.0f * Vector3.Dot(terrainAlertNormal, -vessel.transform.forward); // This would depend on roll rate (i.e., how quickly the vessel can reorient itself to perform the terrain avoidance maneuver) and probably other things.
-                        float controlLagCompensation = Mathf.Max(0f, -Vector3.Dot(AIUtils.PredictPosition(vessel, 0.5f * controlSurfaceDeploymentTime * turnRadiusTwiddleFactor) - vesselPosition, terrainAlertNormal)); // Use the same deploy time as for the threat range above.
+                        float controlLagCompensation = Mathf.Max(0f, -Vector3.Dot(AIUtils.PredictPosition(vessel, controlSurfaceDeploymentTime) - vesselPosition, terrainAlertNormal)); // Use the same deploy time as for the threat range above.
                         terrainAlertThreshold = turnRadiusTwiddleFactor * turnRadius * oneMinusCosTheta + controlLagCompensation;
                         if (terrainAlertDistance < terrainAlertThreshold) // Only do something about it if the estimated turn amount is a problem.
                             avoidingTerrain = true;
@@ -3271,7 +3272,7 @@ namespace BDArmory.Control
                     {
                         float oneMinusCosTheta = 1.0f - BDAMath.Sqrt(Math.Max(0.0f, 1.0f - sinTheta * sinTheta));
                         turnRadiusTwiddleFactor = (turnRadiusTwiddleFactorMin + turnRadiusTwiddleFactorMax) / 2.0f - (turnRadiusTwiddleFactorMax - turnRadiusTwiddleFactorMin) / 2.0f * Vector3.Dot(upDirection, -vessel.transform.forward); // This would depend on roll rate (i.e., how quickly the vessel can reorient itself to perform the terrain avoidance maneuver) and probably other things.
-                        float controlLagCompensation = Mathf.Max(0f, -Vector3.Dot(AIUtils.PredictPosition(vessel, 0.5f * controlSurfaceDeploymentTime * turnRadiusTwiddleFactor) - vesselPosition, upDirection));
+                        float controlLagCompensation = Mathf.Max(0f, -Vector3.Dot(AIUtils.PredictPosition(vessel, controlSurfaceDeploymentTime) - vesselPosition, upDirection));
                         terrainAlertThreshold = turnRadiusTwiddleFactor * turnRadius * oneMinusCosTheta + controlLagCompensation;
 
                         if ((float)vessel.altitude < terrainAlertThreshold && (float)vessel.altitude < terrainAlertDistance) // If the ocean surface is closer than the terrain (if any), then override the terrain alert values.
@@ -3611,7 +3612,7 @@ namespace BDArmory.Control
             maxLiftAcceleration = Mathf.Clamp(maxLiftAcceleration, bodyGravity, maxAllowedGForce * bodyGravity); //limit it to whichever is smaller, what we can provide or what we can handle. Assume minimum of 1G to avoid extremely high turn radiuses.
 
             turnRadius = dynVelocityMagSqr / maxLiftAcceleration; //radius that we can turn in assuming constant velocity, assuming simple circular motion (this is a terrible assumption, the AI usually turns on afterboosters!)
-            if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Turn Radius: {turnRadius:G3}m (terrain threat range: {turnRadiusTwiddleFactorMax * (turnRadius + 0.5f * (float)vessel.srfSpeed * controlSurfaceDeploymentTime):G5}m)");
+            if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Turn Radius: {turnRadius:G3}m (terrain threat range: {turnRadiusTwiddleFactorMax * turnRadius + (float)vessel.srfSpeed * controlSurfaceDeploymentTime:G5}m)");
         }
 
         void CheckFlatSpin()

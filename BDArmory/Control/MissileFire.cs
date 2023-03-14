@@ -1698,7 +1698,7 @@ namespace BDArmory.Control
                             debugString.AppendLine("Aim debugging:\n" + string.Join("\n", weaponAimDebugStrings));
                         }
                     }
-                    GUI.Label(new Rect(200, Screen.height - 500, Screen.width / 2 - 200, 16 * debugString.Length), debugString.ToString());
+                    GUI.Label(new Rect(200, Screen.height - 700, Screen.width / 2 - 200, 16 * debugString.Length), debugString.ToString());
                 }
             }
         }
