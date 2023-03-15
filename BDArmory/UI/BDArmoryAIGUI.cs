@@ -366,6 +366,7 @@ namespace BDArmory.UI
                         { "maxAllowedGForce", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAllowedGForce, 2, 45) },
                         { "maxAllowedAoA", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAllowedAoA, 0, 90) },
                         { "postStallAoA", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.postStallAoA, 0, (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55)? 0 : 90) },
+                        { "rearBlindConeAngle", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.rearBlindConeAngle, 0, 90) },
 
                         { "minEvasionTime", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.minEvasionTime, 0, 1) },
                         { "evasionNonlinearity", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionNonlinearity, 0, 10) },
@@ -846,6 +847,7 @@ namespace BDArmory.UI
                                 GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_ControlHelp_limiters"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //low + high speed limiters
                                 GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_ControlHelp_bank"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //max bank desc
                                 GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_ControlHelp_clamps"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //max G + max AoA
+                                GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_ControlHelp_modeSwitches"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //post-stall + rear blind cone
                             }
                             if (showEvade)
                             {
@@ -1658,7 +1660,7 @@ namespace BDArmory.UI
                             GUI.Label(SettinglabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_BankLimiter") + ": " + ActivePilot.maxBank.ToString("0"), Label);//"dynamic damping min"
                             if (!NumFieldsEnabled)
                             {
-                                ActivePilot.maxBank = BDAMath.RoundToUnit(GUI.HorizontalSlider(SettingSliderRect(leftIndent, ctrlLines, contentWidth), ActivePilot.maxBank, 10, (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55)? 40 : 180), 5f);
+                                ActivePilot.maxBank = BDAMath.RoundToUnit(GUI.HorizontalSlider(SettingSliderRect(leftIndent, ctrlLines, contentWidth), ActivePilot.maxBank, 10, (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55) ? 40 : 180), 5f);
                             }
                             else
                             {
@@ -1729,6 +1731,7 @@ namespace BDArmory.UI
                             {
                                 GUI.Label(ContextLabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_AoA"), contextLabel);
                             }
+
                             if (!(BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55))
                             {
                                 GUI.Label(SettinglabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_postStallAoA") + ": " + ActivePilot.postStallAoA.ToString("0.0"), Label);
@@ -1745,6 +1748,21 @@ namespace BDArmory.UI
                                 {
                                     GUI.Label(ContextLabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_AoAPostStall"), contextLabel);
                                 }
+                            }
+
+                            GUI.Label(SettinglabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_RearBlindConeAngle") + ": " + ActivePilot.rearBlindConeAngle.ToString("0"), Label);
+                            if (!NumFieldsEnabled)
+                            {
+                                ActivePilot.rearBlindConeAngle = Mathf.Round(GUI.HorizontalSlider(SettingSliderRect(leftIndent, ctrlLines, contentWidth), ActivePilot.rearBlindConeAngle, 0f, 90f));
+                            }
+                            else
+                            {
+                                inputFields["rearBlindConeAngle"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), inputFields["rearBlindConeAngle"].possibleValue, 6, inputFieldStyle));
+                                ActivePilot.rearBlindConeAngle = (float)inputFields["rearBlindConeAngle"].currentValue;
+                            }
+                            if (contextTipsEnabled)
+                            {
+                                GUI.Label(ContextLabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_RearBlindConeAngleContext"), contextLabel);
                             }
 
                             ++ctrlLines;

@@ -440,6 +440,12 @@ namespace BDArmory.Control
             groupName = "pilotAI_ControlLimits", groupDisplayName = "#LOC_BDArmory_PilotAI_ControlLimits", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 90f, stepIncrement = 2.5f, scene = UI_Scene.All)]
         public float postStallAoA = 35;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_RearBlindConeAngle", advancedTweakable = true, // Rear Blind Cone Angle
+            groupName = "pilotAI_ControlLimits", groupDisplayName = "#LOC_BDArmory_PilotAI_ControlLimits", groupStartCollapsed = true),
+            UI_FloatRange(minValue = 0f, maxValue = 90f, stepIncrement = 1f, scene = UI_Scene.All)]
+        public float rearBlindConeAngle = 30f; // 30° from directly behind -> 150°
+        float rearBlindConeCosAngle = -0.866f;
         #endregion
 
         #region EvadeExtend
@@ -1273,6 +1279,19 @@ namespace BDArmory.Control
             terrainAvoidanceCriticalCosAngle = Mathf.Cos(terrainAvoidanceCriticalAngle * Mathf.Deg2Rad);
         }
 
+        public void SetOnRearBlindConeAngleChanged()
+        {
+            UI_FloatRange field = (UI_FloatRange)Fields["rearBlindConeAngle"].uiControlEditor;
+            field.onFieldChanged = OnRearBlindConeAngleChanged;
+            field = (UI_FloatRange)Fields["rearBlindConeAngle"].uiControlFlight;
+            field.onFieldChanged = OnRearBlindConeAngleChanged;
+            OnRearBlindConeAngleChanged(null, null);
+        }
+        public void OnRearBlindConeAngleChanged(BaseField field, object obj)
+        {
+            rearBlindConeCosAngle = -Mathf.Cos(rearBlindConeAngle * Mathf.Deg2Rad);
+        }
+
         IEnumerator FixAltitudesSectionLayout() // Fix the layout of the Altitudes section by briefly disabling the fields underneath the one that was removed.
         {
             var maxAltitudeToggleField = Fields["maxAltitudeToggle"];
@@ -1533,6 +1552,7 @@ namespace BDArmory.Control
             ToggleMaxAltitude();
             SetOnExtendAngleA2AChanged();
             SetOnTerrainAvoidanceCriticalAngleChanged();
+            SetOnRearBlindConeAngleChanged();
             SetupAutoTuneSliders();
             if ((HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor) && storedSettings != null && storedSettings.ContainsKey(HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName))
             {
@@ -2165,6 +2185,7 @@ namespace BDArmory.Control
             }
             else
             {
+                debugString.AppendLine($"AngleToTarget ({v.vesselName}): {angleToTarget}° Dot: {Vector3.Dot((target - vesselTransform.position).normalized, vesselTransform.up):F6}");
                 useVelRollTarget = true;
                 FlyToPosition(s, target);
                 return;
@@ -3681,15 +3702,13 @@ namespace BDArmory.Control
 
             Vector3 projectedDirection = Vector3.ProjectOnPlane(forwardDirection, upDirection);
             Vector3 projectedTargetDirection = Vector3.ProjectOnPlane(targetDirection, upDirection);
-            if (Vector3.Dot(targetDirection, forwardDirection) < 0)
+            var cosAngle = Vector3.Dot(targetDirection, forwardDirection);
+            if (cosAngle < 0)
             {
-                if (Vector3.Angle(targetDirection, forwardDirection) > 165f)
-                {
-                    targetPosition = vesselTransform.position + (Quaternion.AngleAxis(Mathf.Sign(Mathf.Sin((float)vessel.missionTime / 4)) * 45, upDirection) * (projectedDirection.normalized * 200));
-                    targetDirection = (targetPosition - vesselTransform.position).normalized;
-                }
+                if (cosAngle < rearBlindConeCosAngle)
+                    targetDirection = Vector3.RotateTowards(-vesselTransform.up, -vesselTransform.forward, Mathf.Deg2Rad * rearBlindConeAngle, 0); // If the target is in our blind spot, just pitch up to get a better view.
 
-                targetPosition = vesselTransform.position + Vector3.Cross(Vector3.Cross(forwardDirection, targetDirection), forwardDirection).normalized * 200;
+                targetPosition = vesselTransform.position + Vector3.Cross(Vector3.Cross(forwardDirection, targetDirection), forwardDirection).normalized * 200; // Make the target position 90° from vesselTransform.up.
             }
             else if (steerMode != SteerModes.Aiming)
             {
