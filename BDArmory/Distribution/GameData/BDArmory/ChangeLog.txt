@@ -4,6 +4,7 @@
 	- Add a slider for setting the angular size of the rear blind cone, in which the craft will simply pitch up to turn to a target in that direction.
 - UI:
 	- Add a case-insensitive filter to the vessel selection windows in Vessel Mover and Custom Spawn Templates.
+	- Set turret slider step sizes based on the config limits: 20—200 steps.
 - Mod Integration:
 	- Add support for the MouseAimFlight mod.
 		- Disables the prevention of firing weapons when the mouse is over windows when the Mouse Aim mode is active.
