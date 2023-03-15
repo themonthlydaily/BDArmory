@@ -366,7 +366,7 @@ namespace BDArmory.UI
                         { "maxAllowedGForce", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAllowedGForce, 2, 45) },
                         { "maxAllowedAoA", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAllowedAoA, 0, 90) },
                         { "postStallAoA", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.postStallAoA, 0, (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55)? 0 : 90) },
-                        { "rearBlindConeAngle", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.rearBlindConeAngle, 0, 90) },
+                        { "ImmelmannTurnAngle", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.ImmelmannTurnAngle, 0, 90) },
 
                         { "minEvasionTime", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.minEvasionTime, 0, 1) },
                         { "evasionNonlinearity", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionNonlinearity, 0, 10) },
@@ -1750,19 +1750,19 @@ namespace BDArmory.UI
                                 }
                             }
 
-                            GUI.Label(SettinglabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_RearBlindConeAngle") + ": " + ActivePilot.rearBlindConeAngle.ToString("0"), Label);
+                            GUI.Label(SettinglabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_ImmelmannTurnAngle") + ": " + ActivePilot.ImmelmannTurnAngle.ToString("0"), Label);
                             if (!NumFieldsEnabled)
                             {
-                                ActivePilot.rearBlindConeAngle = Mathf.Round(GUI.HorizontalSlider(SettingSliderRect(leftIndent, ctrlLines, contentWidth), ActivePilot.rearBlindConeAngle, 0f, 90f));
+                                ActivePilot.ImmelmannTurnAngle = Mathf.Round(GUI.HorizontalSlider(SettingSliderRect(leftIndent, ctrlLines, contentWidth), ActivePilot.ImmelmannTurnAngle, 0f, 90f));
                             }
                             else
                             {
-                                inputFields["rearBlindConeAngle"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), inputFields["rearBlindConeAngle"].possibleValue, 6, inputFieldStyle));
-                                ActivePilot.rearBlindConeAngle = (float)inputFields["rearBlindConeAngle"].currentValue;
+                                inputFields["ImmelmannTurnAngle"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), inputFields["ImmelmannTurnAngle"].possibleValue, 6, inputFieldStyle));
+                                ActivePilot.ImmelmannTurnAngle = (float)inputFields["ImmelmannTurnAngle"].currentValue;
                             }
                             if (contextTipsEnabled)
                             {
-                                GUI.Label(ContextLabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_RearBlindConeAngleContext"), contextLabel);
+                                GUI.Label(ContextLabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_ImmelmannTurnAngleContext"), contextLabel);
                             }
 
                             ++ctrlLines;
