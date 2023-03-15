@@ -42,6 +42,7 @@ namespace BDArmory.Weapons.Missiles
         [KSPField] public string deployAnimationName;
         [KSPField] public string RailNode = "rail"; //name of attachnode for VLS MMLs to set missile loadout
         [KSPField] public float tntMass = 1; //for MissileLauncher GetInfo()
+        [KSPField] public bool OverrideDropSettings = false; //for MissileLauncher GetInfo()
         AnimationState deployState;
         ModuleMissileRearm missileSpawner = null;
         MissileLauncher missileLauncher = null;
@@ -403,8 +404,8 @@ namespace BDArmory.Weapons.Missiles
                 ml.TimeFired = Time.time;
                 if (!isClusterMissile) ml.DetonationDistance = missileLauncher.DetonationDistance;
                 ml.DetonateAtMinimumDistance = missileLauncher.DetonateAtMinimumDistance;
-                ml.decoupleForward = missileLauncher.decoupleForward;
-                ml.dropTime = 0;
+                //ml.decoupleForward = missileLauncher.decoupleForward; //overrides needed for CLS type missile bays, breaks reloadable rails; have toggle in MultiMissileLauncher allowing decouple settings?
+                //ml.dropTime = 0;
                 ml.guidanceActive = true;
                 ml.detonationTime = missileLauncher.detonationTime;
                 ml.engageAir = missileLauncher.engageAir;
@@ -422,7 +423,7 @@ namespace BDArmory.Weapons.Missiles
                     ml.CruiseSpeed = missileLauncher.CruiseSpeed;
                     ml.CruisePredictionTime = missileLauncher.CruisePredictionTime;
                 }
-                ml.decoupleSpeed = 5;
+                //ml.decoupleSpeed = 5;
                 if (missileLauncher.GuidanceMode == GuidanceModes.AGM)
                     ml.maxAltitude = missileLauncher.maxAltitude;
                 ml.terminalGuidanceShouldActivate = missileLauncher.terminalGuidanceShouldActivate;

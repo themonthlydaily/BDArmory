@@ -163,6 +163,7 @@ namespace BDArmory.Radar
                 if (displayedIRTargets[i].vessel == weaponManager.currentTarget)
                 {
                     data = displayedIRTargets[i].targetData;
+                    return data;
                 }
             }
             data = TargetSignatureData.noTarget;

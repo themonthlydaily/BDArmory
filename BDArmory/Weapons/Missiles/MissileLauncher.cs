@@ -649,21 +649,6 @@ namespace BDArmory.Weapons.Missiles
             SetInitialDetonationDistance();
             uncagedLock = (allAspect) ? allAspect : uncagedLock;
             guidanceFailureRatePerFrame = (guidanceFailureRate >= 1) ? 1f : 1f - Mathf.Exp(Mathf.Log(1f - guidanceFailureRate) * Time.fixedDeltaTime); // Convert from per-second failure rate to per-frame failure rate
-            if (multiLauncher != null)
-            {
-                if (multiLauncher.isClusterMissile)
-                {
-                    DetonationDistance = 750;
-                    DetonateAtMinimumDistance = false;
-                    Fields["DetonateAtMinimumDistance"].guiActive = true;
-                    Fields["DetonateAtMinimumDistance"].guiActiveEditor = true;
-                }
-                if (multiLauncher.isMultiLauncher)
-                {
-                    Events["Jettison"].guiActive = false;
-                    //if (reloadableRail.MissileName != null) reloadableRail.MissileName = multiLauncher.subMunitionName;
-                }
-            }
 
             if (isTimed)
             {
@@ -743,7 +728,33 @@ namespace BDArmory.Weapons.Missiles
                 Fields["terminalGuidanceShouldActivate"].guiActive = false;
                 Fields["terminalGuidanceShouldActivate"].guiActiveEditor = false;
             }
-
+            if (multiLauncher != null)
+            {
+                if (multiLauncher.isClusterMissile)
+                {
+                    DetonationDistance = 750;
+                    DetonateAtMinimumDistance = false;
+                    Fields["DetonateAtMinimumDistance"].guiActive = true;
+                    Fields["DetonateAtMinimumDistance"].guiActiveEditor = true;
+                }
+                if (multiLauncher.isMultiLauncher)
+                {
+                    Events["Jettison"].guiActive = false;
+                    //if (reloadableRail.MissileName != null) reloadableRail.MissileName = multiLauncher.subMunitionName;
+                    if (multiLauncher.OverrideDropSettings)
+                    {
+                        Fields["dropTime"].guiActive = false;
+                        Fields["dropTime"].guiActiveEditor = false;
+                        dropTime = 0;
+                        Fields["decoupleSpeed"].guiActive = false;
+                        Fields["decoupleSpeed"].guiActiveEditor = false;
+                        decoupleSpeed = 5;
+                        Events["decoupleForward"].guiActive = false;
+                        Events["decoupleForward"].guiActiveEditor = false;
+                        decoupleForward = true;
+                    }
+                }
+            }
 
             // fill lockedSensorFOVBias with default values if not set by part config:
             if ((TargetingMode == TargetingModes.Heat || TargetingModeTerminal == TargetingModes.Heat) && heatThreshold > 0 && lockedSensorFOVBias.minTime == float.MaxValue)

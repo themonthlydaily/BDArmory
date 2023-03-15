@@ -1987,6 +1987,12 @@ namespace BDArmory.Control
                             yield return new WaitForSecondsFixed(Mathf.Min(1, (targetScanInterval * 0.25f)));
                         }
                     }
+                    if (guardTarget && !heatTarget.exists && vesselRadarData && vesselRadarData.irstCount > 0)//Switch to IRST detection?
+                    {
+                        heatTarget = vesselRadarData.activeIRTarget();
+                        yield return new WaitForSecondsFixed(Mathf.Min(1, (targetScanInterval * 0.25f)));
+                    }
+
                     // if (AIMightDirectFire() && ml && heatTarget.exists)
                     // {
                     //     float LAstartTime = Time.time;
