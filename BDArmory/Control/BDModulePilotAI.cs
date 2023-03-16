@@ -1517,9 +1517,9 @@ namespace BDArmory.Control
             }
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55)
             {
-                maxBank = 40;
+                maxBank = Mathf.Min(maxBank, 40);
                 postStallAoA = 0.0f;
-                maxSpeed = 600;
+                maxSpeed = Mathf.Min(maxSpeed, 600);
                 if (HighLogic.LoadedSceneIsFlight)
                 {
                     UI_FloatRange bank = (UI_FloatRange)Fields["maxBank"].uiControlFlight;
