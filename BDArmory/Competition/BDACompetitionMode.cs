@@ -1944,6 +1944,42 @@ namespace BDArmory.Competition
             }
         }
 
+        List<MissileFire> craftToCull = new List<MissileFire>();
+        void CullSlowWaypointRunners(double threshold)
+        {
+            var now = Planetarium.GetUniversalTime();
+            craftToCull.Clear();
+            foreach (var weaponManager in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).ToList())
+            {
+                if (weaponManager == null || weaponManager.vessel == null) continue;
+                if (weaponManager.AI != null && !((BDGenericAIBase)weaponManager.AI).IsRunningWaypoints) continue;
+                var player = weaponManager.vessel.vesselName;
+                if (!Scores.Players.Contains(player)) continue;
+                if (Scores.ScoreData[player].waypointsReached.Count == 0) // Hasn't reached the first waypoint.
+                {
+                    if (now - competitionStartTime > threshold)
+                    {
+                        craftToCull.Add(weaponManager);
+                    }
+                }
+                else if (now - Scores.ScoreData[player].waypointsReached.Last().timestamp > threshold)
+                {
+                    craftToCull.Add(weaponManager);
+                }
+            }
+            foreach (var weaponManager in craftToCull)
+            {
+                var vesselName = weaponManager.vessel.vesselName;
+                Scores.ScoreData[vesselName].lastPersonWhoDamagedMe = $"Failed to reach a waypoint within {threshold:0}s";
+                Scores.RegisterDeath(vesselName, GMKillReason.BigRedButton); // Mark it as a Big Red Button GM kill.
+                var message = $"{vesselName} failed to reach a waypoint within {threshold:0}s, killing it.";
+                competitionStatus.Add(message);
+                Debug.Log($"[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + message);
+                VesselUtils.ForceDeadVessel(weaponManager.vessel);
+            }
+            craftToCull.Clear();
+        }
+
         /// <summary>
         /// Delay enabling guard mode until the condition is satisfied.
         /// </summary>
@@ -2615,6 +2651,7 @@ namespace BDArmory.Competition
 
             if (now - competitionStartTime > altitudeLimitGracePeriod)
                 CheckAltitudeLimits();
+            if (competitionType == CompetitionType.WAYPOINTS && BDArmorySettings.COMPETITION_WAYPOINTS_GM_KILL_PERIOD > 0 && now - competitionStartTime > BDArmorySettings.COMPETITION_INITIAL_GRACE_PERIOD) CullSlowWaypointRunners(BDArmorySettings.COMPETITION_WAYPOINTS_GM_KILL_PERIOD);
             if (BDArmorySettings.RUNWAY_PROJECT)
             {
                 FindVictim();

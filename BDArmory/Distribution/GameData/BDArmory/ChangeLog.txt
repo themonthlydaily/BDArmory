@@ -18,6 +18,7 @@
 - Competition:
 	- Add an option to generate a CSV file for the overall PVP scores in the PVP parser.
 	- Use natural sorting to get the most recent tournament in the parser.
+	- Add a killer GM time threshold for running waypoint competitions, default: 60s. Craft that don't pass a waypoint within this time are killed off.
 - RWP:
 	- Only clamp, not set, the maxBank and maxSpeed to the limits for S5R5.
 
