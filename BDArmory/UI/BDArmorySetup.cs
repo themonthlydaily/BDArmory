@@ -3106,8 +3106,6 @@ namespace BDArmory.UI
                         BDArmorySettings.MUTATOR_ICONS = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.MUTATOR_ICONS, StringUtils.Localize("#LOC_BDArmory_Settings_MutatorIcons"));
                     }
                 }
-                if (CheatOptions.InfinitePropellant) BDArmorySettings.INFINITE_FUEL = true; //syncronize settings options to Alt-F12 toggle status if it's been activated there but not here
-                else BDArmorySettings.INFINITE_FUEL = false;
                 if (BDArmorySettings.INFINITE_FUEL != (BDArmorySettings.INFINITE_FUEL = GUI.Toggle(SRightRect(++line), BDArmorySettings.INFINITE_FUEL, StringUtils.Localize("#autoLOC_900349"))))//"Infinite Propellant"
                 {
                     CheatOptions.InfinitePropellant = BDArmorySettings.INFINITE_FUEL;
@@ -3123,8 +3121,6 @@ namespace BDArmory.UI
                     GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_HeartBleedThreshold")}:  ({BDArmorySettings.HEART_BLEED_THRESHOLD})", leftLabel);//Heart Bleed Threshold
                     BDArmorySettings.HEART_BLEED_THRESHOLD = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.HEART_BLEED_THRESHOLD, 1f, 100f));
                 }
-                if (CheatOptions.InfiniteElectricity) BDArmorySettings.INFINITE_EC = true;
-                else BDArmorySettings.INFINITE_EC = false;
                 if (BDArmorySettings.INFINITE_EC != (BDArmorySettings.INFINITE_EC = GUI.Toggle(SRightRect(++line), BDArmorySettings.INFINITE_EC, StringUtils.Localize("#autoLOC_900361"))))//"Infinite Electricity"
                 {
                     CheatOptions.InfiniteElectricity = BDArmorySettings.INFINITE_EC;

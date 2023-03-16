@@ -1976,7 +1976,7 @@ namespace BDArmory.Control
                     }
 
                     //try uncaged IR lock with radar
-                    if (guardTarget && !heatTarget.exists && vesselRadarData && vesselRadarData.radarCount > 0)//Switch to IRST detection?
+                    if (guardTarget && !heatTarget.exists && vesselRadarData && vesselRadarData.radarCount > 0)
                     {
                         if (!vesselRadarData.locked ||
                             (vesselRadarData.lockedTargetData.targetData.predictedPosition -
@@ -1987,7 +1987,7 @@ namespace BDArmory.Control
                             yield return new WaitForSecondsFixed(Mathf.Min(1, (targetScanInterval * 0.25f)));
                         }
                     }
-                    if (guardTarget && !heatTarget.exists && vesselRadarData && vesselRadarData.irstCount > 0)//Switch to IRST detection?
+                    if (guardTarget && !heatTarget.exists && vesselRadarData && vesselRadarData.irstCount > 0)
                     {
                         heatTarget = vesselRadarData.activeIRTarget();
                         yield return new WaitForSecondsFixed(Mathf.Min(1, (targetScanInterval * 0.25f)));

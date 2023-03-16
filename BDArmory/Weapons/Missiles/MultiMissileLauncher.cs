@@ -404,7 +404,7 @@ namespace BDArmory.Weapons.Missiles
                 ml.TimeFired = Time.time;
                 if (!isClusterMissile) ml.DetonationDistance = missileLauncher.DetonationDistance;
                 ml.DetonateAtMinimumDistance = missileLauncher.DetonateAtMinimumDistance;
-                //ml.decoupleForward = missileLauncher.decoupleForward; //overrides needed for CLS type missile bays, breaks reloadable rails; have toggle in MultiMissileLauncher allowing decouple settings?
+                //ml.decoupleForward = missileLauncher.decoupleForward;
                 //ml.dropTime = 0;
                 ml.guidanceActive = true;
                 ml.detonationTime = missileLauncher.detonationTime;
