@@ -1,4 +1,6 @@
 ﻿IMPROVEMENTS / FIXES
+- Internal:
+	- Add a Semi-Logarithmic FloatRange slider UI, which gives ranges where the values are of the form: 0.8, 0.9, 1, 2, 3, ..., 8, 9, 10, 20, 30, ..., 80, 90, 100, 200.
 - AI:
 	- Adjustments to terrain avoidance defaults and how the threat range is calculated for better default terrain avoidance.
 	- Add a slider for setting the angular size of the rear blind cone, in which the craft will simply pitch up to turn to a target in that direction.
