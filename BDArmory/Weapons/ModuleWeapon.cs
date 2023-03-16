@@ -146,6 +146,7 @@ namespace BDArmory.Weapons
             get
             {
                 var fireTransform = (eWeaponType == WeaponTypes.Rocket && rocketPod) ? rockets[0].parent : fireTransforms[0];
+                if (fireTransform == null) return 1f;
                 var theta = FiringTolerance * targetRadius / (finalAimTarget - fireTransform.position).magnitude + Mathf.Deg2Rad * maxDeviation / 2f; // Approximation to arctan(α*r/d) + θ/2. (arctan(x) = x-x^3/3 + O(x^5))
                 return finalAimTarget.IsZero() ? 1f : Mathf.Max(1f - 0.5f * theta * theta, 0); // Approximation to cos(theta). (cos(x) = 1-x^2/2!+O(x^4))
             }
@@ -1836,7 +1837,7 @@ namespace BDArmory.Weapons
                 {
                     if (targetAcquired && (GPSTarget || slaved || yawRange < 1 || maxPitch - minPitch < 1))
                     {
-                        reticlePosition = (targetPosition - fixedLeadOffset).normalized * pointingAtPosition.magnitude;
+                        reticlePosition = transform.position + (finalAimTarget - transform.position).normalized * pointingAtPosition.magnitude;
 
                         if (!slaved && !GPSTarget)
                         {

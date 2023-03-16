@@ -8,11 +8,12 @@ import traceback
 from pathlib import Path
 from typing import Union
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 
 parser = argparse.ArgumentParser(description="PVP score parser", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('tournament', type=str, nargs='*', help="Tournament folder to parse.")
 parser.add_argument('-c', '--current-dir', action='store_true', help="Parse the logs in the current directory as if it was a tournament without the folder structure.")
+parser.add_argument('--csv', action='store_true', help="Create a CSV file with the PVP scores for the entire tournament.")
 parser.add_argument("--version", action='store_true', help="Show the script version, then exit.")
 args = parser.parse_args()
 
@@ -52,7 +53,7 @@ else:
         if logsDir.exists():
             tournamentFolders = list(logsDir.resolve().glob("Tournament*"))
             if len(tournamentFolders) > 0:
-                tournamentFolders = sorted(list(dir for dir in tournamentFolders if dir.is_dir()))
+                tournamentFolders = sorted(list(dir for dir in tournamentFolders if dir.is_dir()), key=naturalSortKey)
             if len(tournamentFolders) > 0:
                 tournamentDirs = [tournamentFolders[-1]]  # Latest tournament dir
         if tournamentDirs is None:  # Didn't find a tournament dir, revert to current-dir
@@ -126,6 +127,14 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 
         with open(tournamentDir / "pvp_scores.json", 'w') as f:
             json.dump(pvp_score, f, indent=2)
+
+        if args.csv:
+            players = list(set().union(*[set(round_data.keys()) for round_index, round_data in pvp_score.items() if round_index.startswith('Round')]))
+            score_totals = {player1: {player2: sum(round_data.get(player1, {}).get(player2, 0) for round_index, round_data in pvp_score.items() if round_index.startswith('Round')) for player2 in players} for player1 in players} # Combine scores over all rounds
+            players = sorted(players, key=lambda p: sum(score_totals[p].values()), reverse=True) # Sort by overall rank
+            lines = ['Player,' + ','.join(players) + ',Sum'] + [f'{player},' + ','.join(str(s) for s in score_totals[player].values()) + f",{sum(score_totals[player].values())}" for player in players]
+            with open(tournamentDir / "pvp_scores.csv", 'w') as f:
+                f.write('\n'.join(lines))
 
     except Exception as e:
         print(f"Failed to parse {tournamentDir}. Have you run the tournament parser on it first?")

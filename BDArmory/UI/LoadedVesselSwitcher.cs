@@ -1218,7 +1218,7 @@ namespace BDArmory.UI
                                     var AI = VesselModuleRegistry.GetBDModulePilotAI(wm.Current.vessel, true);
 
                                     // If we're running a waypoints competition, only focus on vessels still running waypoints.
-                                    if (BDACompetitionMode.Instance.competitionType == CompetitionType.WAYPOINTS && AI != null && AI.currentCommand != Control.PilotCommands.Waypoints) continue;
+                                    if (BDACompetitionMode.Instance.competitionType == CompetitionType.WAYPOINTS && (AI == null || !AI.IsRunningWaypoints)) continue;
 
                                     HP = wm.Current.currentHP / wm.Current.totalHP;
                                     if (HP < 1)

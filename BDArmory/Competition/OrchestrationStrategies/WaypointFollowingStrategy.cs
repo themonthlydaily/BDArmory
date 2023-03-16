@@ -62,6 +62,8 @@ namespace BDArmory.Competition.OrchestrationStrategies
             this.waypoints = waypoints;
         }
 
+        float liftMultiplier = 0;
+
         public IEnumerator Execute(BDAScoreClient client, BDAScoreService service)
         {
             if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.WaypointFollowingStrategy]: Started");
@@ -83,8 +85,10 @@ namespace BDArmory.Competition.OrchestrationStrategies
             foreach (var pilot in pilots)
             {
                 pilot.SetWaypoints(mappedWaypoints);
-                var Kerb = VesselModuleRegistry.GetModule<KerbalEVA>(pilot.vessel);
-                if (Kerb != null) Kerb.part.ShieldedFromAirstream = true;
+                foreach (var Kerb in VesselModuleRegistry.GetKerbalEVAs(pilot.vessel))
+                {
+                    if (Kerb != null) Kerb.part.ShieldedFromAirstream = true; // Remove drag from EVA kerbals on seats.
+                }
             }
 
             if (BDArmorySettings.WAYPOINTS_INFINITE_FUEL_AT_START)
@@ -131,7 +135,11 @@ namespace BDArmory.Competition.OrchestrationStrategies
             if (BDArmorySettings.TIME_OVERRIDE && BDArmorySettings.TIME_SCALE != 0)
             { Time.timeScale = BDArmorySettings.TIME_SCALE; }
             Debug.Log("[BDArmory.BDACompetitionMode:" + BDACompetitionMode.Instance.CompetitionID.ToString() + "]: Starting Competition");
-            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55) PhysicsGlobals.LiftMultiplier = 0.1f;
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55)
+            {
+                liftMultiplier = PhysicsGlobals.LiftMultiplier;
+                PhysicsGlobals.LiftMultiplier = 0.1f;
+            }
             if (BDArmorySettings.WAYPOINTS_VISUALIZE)
             {
                 Vector3 previousLocation = FlightGlobals.ActiveVessel.transform.position;
@@ -154,13 +162,13 @@ namespace BDArmory.Competition.OrchestrationStrategies
                 }
             }
 
-            if (BDArmorySettings.WAYPOINTS_MODE || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 50 || BDArmorySettings.RUNWAY_PROJECT_ROUND == 55))
+            if (BDArmorySettings.WAYPOINTS_MODE || (BDArmorySettings.RUNWAY_PROJECT && (BDArmorySettings.RUNWAY_PROJECT_ROUND == 50 || BDArmorySettings.RUNWAY_PROJECT_ROUND == 55)))
             {
                 float terrainAltitude = (float)FlightGlobals.currentMainBody.TerrainAltitude(waypoints[0].location.x, waypoints[0].location.y);
                 Vector3d WorldCoords = VectorUtils.GetWorldSurfacePostion(new Vector3(waypoints[0].location.x, waypoints[0].location.y, waypoints[0].location.z + terrainAltitude), FlightGlobals.currentMainBody);
                 foreach (var pilot in pilots)
                 {
-                    if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 50 || BDArmorySettings.RUNWAY_PROJECT_ROUND == 55) // S4R10 alt limiter
+                    if (BDArmorySettings.RUNWAY_PROJECT && (BDArmorySettings.RUNWAY_PROJECT_ROUND == 50 || BDArmorySettings.RUNWAY_PROJECT_ROUND == 55)) // S4R10 alt limiter
                     {
                         var pilotAI = pilot as BDModulePilotAI;
                         if (pilotAI != null)
@@ -244,6 +252,11 @@ namespace BDArmory.Competition.OrchestrationStrategies
         public void CleanUp()
         {
             if (BDACompetitionMode.Instance.competitionIsActive) BDACompetitionMode.Instance.StopCompetition(); // Competition is done, so stop it and do the rest of the book-keeping.
+            if (liftMultiplier > 0)
+            {
+                PhysicsGlobals.LiftMultiplier = liftMultiplier;
+                liftMultiplier = 0;
+            }
         }
     }
 

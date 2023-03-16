@@ -366,6 +366,7 @@ namespace BDArmory.UI
                         { "maxAllowedGForce", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAllowedGForce, 2, 45) },
                         { "maxAllowedAoA", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAllowedAoA, 0, 90) },
                         { "postStallAoA", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.postStallAoA, 0, (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55)? 0 : 90) },
+                        { "ImmelmannTurnAngle", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.ImmelmannTurnAngle, 0, 90) },
 
                         { "minEvasionTime", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.minEvasionTime, 0, 1) },
                         { "evasionNonlinearity", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionNonlinearity, 0, 10) },
@@ -387,6 +388,7 @@ namespace BDArmory.UI
                         { "turnRadiusTwiddleFactorMin", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.turnRadiusTwiddleFactorMin, 0.1, 5) },
                         { "turnRadiusTwiddleFactorMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.turnRadiusTwiddleFactorMax, 0.1, 5) },
                         { "terrainAvoidanceCriticalAngle", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.terrainAvoidanceCriticalAngle, 90f, 180f) },
+                        { "controlSurfaceDeploymentTime", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.controlSurfaceDeploymentTime, 0f, 2f) },
                         { "waypointTerrainAvoidance", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.waypointTerrainAvoidance, 0, 1) },
 
                         { "controlSurfaceLag", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.controlSurfaceLag, 0, 0.2) },
@@ -845,6 +847,7 @@ namespace BDArmory.UI
                                 GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_ControlHelp_limiters"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //low + high speed limiters
                                 GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_ControlHelp_bank"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //max bank desc
                                 GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_ControlHelp_clamps"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //max G + max AoA
+                                GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_ControlHelp_modeSwitches"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //post-stall + rear blind cone
                             }
                             if (showEvade)
                             {
@@ -1658,7 +1661,7 @@ namespace BDArmory.UI
                             GUI.Label(SettinglabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_BankLimiter") + ": " + ActivePilot.maxBank.ToString("0"), Label);//"dynamic damping min"
                             if (!NumFieldsEnabled)
                             {
-                                ActivePilot.maxBank = BDAMath.RoundToUnit(GUI.HorizontalSlider(SettingSliderRect(leftIndent, ctrlLines, contentWidth), ActivePilot.maxBank, 10, (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55)? 40 : 180), 5f);
+                                ActivePilot.maxBank = BDAMath.RoundToUnit(GUI.HorizontalSlider(SettingSliderRect(leftIndent, ctrlLines, contentWidth), ActivePilot.maxBank, 10, (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55) ? 40 : 180), 5f);
                             }
                             else
                             {
@@ -1729,6 +1732,7 @@ namespace BDArmory.UI
                             {
                                 GUI.Label(ContextLabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_AoA"), contextLabel);
                             }
+
                             if (!(BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55))
                             {
                                 GUI.Label(SettinglabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_postStallAoA") + ": " + ActivePilot.postStallAoA.ToString("0.0"), Label);
@@ -1745,6 +1749,21 @@ namespace BDArmory.UI
                                 {
                                     GUI.Label(ContextLabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_AoAPostStall"), contextLabel);
                                 }
+                            }
+
+                            GUI.Label(SettinglabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_ImmelmannTurnAngle") + ": " + ActivePilot.ImmelmannTurnAngle.ToString("0"), Label);
+                            if (!NumFieldsEnabled)
+                            {
+                                ActivePilot.ImmelmannTurnAngle = Mathf.Round(GUI.HorizontalSlider(SettingSliderRect(leftIndent, ctrlLines, contentWidth), ActivePilot.ImmelmannTurnAngle, 0f, 90f));
+                            }
+                            else
+                            {
+                                inputFields["ImmelmannTurnAngle"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), inputFields["ImmelmannTurnAngle"].possibleValue, 6, inputFieldStyle));
+                                ActivePilot.ImmelmannTurnAngle = (float)inputFields["ImmelmannTurnAngle"].currentValue;
+                            }
+                            if (contextTipsEnabled)
+                            {
+                                GUI.Label(ContextLabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_ImmelmannTurnAngleContext"), contextLabel);
                             }
 
                             ++ctrlLines;
@@ -2107,6 +2126,24 @@ namespace BDArmory.UI
                             if (contextTipsEnabled)
                             {
                                 GUI.Label(ContextLabelRect(leftIndent, ++gndLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_InvertedTerrainAvoidanceCriticalAngleContext"), contextLabel);
+                            }
+                            #endregion
+
+                            #region Terrain Avoidance Control Surface Deployment Time
+                            GUI.Label(SettinglabelRect(leftIndent, ++gndLines), $"{StringUtils.Localize("#LOC_BDArmory_AIWindow_TerrainAvoidanceControlSurfaceDeploymentTime")}: {ActivePilot.controlSurfaceDeploymentTime:0.0}", Label);
+                            if (!NumFieldsEnabled)
+                            {
+                                ActivePilot.controlSurfaceDeploymentTime = GUI.HorizontalSlider(SettingSliderRect(leftIndent, gndLines, contentWidth), ActivePilot.controlSurfaceDeploymentTime, 0f, 2f);
+                                ActivePilot.controlSurfaceDeploymentTime = BDAMath.RoundToUnit(ActivePilot.controlSurfaceDeploymentTime, 0.1f);
+                            }
+                            else
+                            {
+                                inputFields["controlSurfaceDeploymentTime"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, gndLines, contentWidth), inputFields["controlSurfaceDeploymentTime"].possibleValue, 6, inputFieldStyle));
+                                ActivePilot.controlSurfaceDeploymentTime = (float)inputFields["controlSurfaceDeploymentTime"].currentValue;
+                            }
+                            if (contextTipsEnabled)
+                            {
+                                GUI.Label(ContextLabelRect(leftIndent, ++gndLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_TerrainAvoidanceControlSurfaceDeploymentTimeContext"), contextLabel);
                             }
                             #endregion
 
