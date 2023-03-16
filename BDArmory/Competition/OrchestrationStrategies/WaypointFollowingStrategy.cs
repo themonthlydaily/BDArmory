@@ -62,6 +62,8 @@ namespace BDArmory.Competition.OrchestrationStrategies
             this.waypoints = waypoints;
         }
 
+        float liftMultiplier = 0;
+
         public IEnumerator Execute(BDAScoreClient client, BDAScoreService service)
         {
             if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.WaypointFollowingStrategy]: Started");
@@ -133,7 +135,11 @@ namespace BDArmory.Competition.OrchestrationStrategies
             if (BDArmorySettings.TIME_OVERRIDE && BDArmorySettings.TIME_SCALE != 0)
             { Time.timeScale = BDArmorySettings.TIME_SCALE; }
             Debug.Log("[BDArmory.BDACompetitionMode:" + BDACompetitionMode.Instance.CompetitionID.ToString() + "]: Starting Competition");
-            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55) PhysicsGlobals.LiftMultiplier = 0.1f;
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55)
+            {
+                liftMultiplier = PhysicsGlobals.LiftMultiplier;
+                PhysicsGlobals.LiftMultiplier = 0.1f;
+            }
             if (BDArmorySettings.WAYPOINTS_VISUALIZE)
             {
                 Vector3 previousLocation = FlightGlobals.ActiveVessel.transform.position;
@@ -246,6 +252,11 @@ namespace BDArmory.Competition.OrchestrationStrategies
         public void CleanUp()
         {
             if (BDACompetitionMode.Instance.competitionIsActive) BDACompetitionMode.Instance.StopCompetition(); // Competition is done, so stop it and do the rest of the book-keeping.
+            if (liftMultiplier > 0)
+            {
+                PhysicsGlobals.LiftMultiplier = liftMultiplier;
+                liftMultiplier = 0;
+            }
         }
     }
 
