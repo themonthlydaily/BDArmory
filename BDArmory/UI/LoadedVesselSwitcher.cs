@@ -1219,6 +1219,7 @@ namespace BDArmory.UI
 
                                     // If we're running a waypoints competition, only focus on vessels still running waypoints.
                                     if (BDACompetitionMode.Instance.competitionType == CompetitionType.WAYPOINTS && (AI == null || !AI.IsRunningWaypoints)) continue;
+                                    if (BDACompetitionMode.Instance.competitionType == CompetitionType.WAYPOINTS) vesselScore *= 2f - Mathf.Clamp01((float)wm.Current.vessel.speed / AI.maxSpeed); // For waypoints races, craft going near their max speed are more interesting.
 
                                     HP = wm.Current.currentHP / wm.Current.totalHP;
                                     if (HP < 1)
