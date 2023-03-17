@@ -1959,11 +1959,13 @@ namespace BDArmory.Competition
                 {
                     if (now - competitionStartTime > threshold)
                     {
+                        // Debug.Log($"DEBUG Culling {player} due to {now - competitionStartTime}s since competition start and no waypoint reached. now: {now}, comp. start time: {competitionStartTime}");
                         craftToCull.Add(weaponManager);
                     }
                 }
-                else if (now - Scores.ScoreData[player].waypointsReached.Last().timestamp > threshold)
+                else if (now - competitionStartTime - Scores.ScoreData[player].waypointsReached.Last().timestamp > threshold)
                 {
+                    // Debug.Log($"DEBUG Culling {player} due to {now - competitionStartTime - Scores.ScoreData[player].waypointsReached.Last().timestamp}s since last waypoint reached, now: {now}, last: {Scores.ScoreData[player].waypointsReached.Last().timestamp}, WP passed: {Scores.ScoreData[player].waypointsReached.Count}, comp. start time: {competitionStartTime}");
                     craftToCull.Add(weaponManager);
                 }
             }
@@ -2651,7 +2653,7 @@ namespace BDArmory.Competition
 
             if (now - competitionStartTime > altitudeLimitGracePeriod)
                 CheckAltitudeLimits();
-            if (competitionType == CompetitionType.WAYPOINTS && BDArmorySettings.COMPETITION_WAYPOINTS_GM_KILL_PERIOD > 0 && now - competitionStartTime > BDArmorySettings.COMPETITION_INITIAL_GRACE_PERIOD) CullSlowWaypointRunners(BDArmorySettings.COMPETITION_WAYPOINTS_GM_KILL_PERIOD);
+            if (competitionIsActive && competitionType == CompetitionType.WAYPOINTS && BDArmorySettings.COMPETITION_WAYPOINTS_GM_KILL_PERIOD > 0 && now - competitionStartTime > BDArmorySettings.COMPETITION_INITIAL_GRACE_PERIOD) CullSlowWaypointRunners(BDArmorySettings.COMPETITION_WAYPOINTS_GM_KILL_PERIOD);
             if (BDArmorySettings.RUNWAY_PROJECT)
             {
                 FindVictim();
