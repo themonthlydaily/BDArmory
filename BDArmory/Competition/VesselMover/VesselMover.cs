@@ -232,7 +232,8 @@ namespace BDArmory.Competition.VesselMover
             KillRotation(vessel);
             if (BDArmorySettings.VESSEL_MOVER_ENABLE_BRAKES) vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
 
-            var up = (vessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
+            var initialUp = (vessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
+            var up = initialUp;
             Vector3 forward = default, right = default;
             float startingAltitude = 2f * vessel.GetRadius();
             var lowerBound = GetLowerBound(vessel);
@@ -260,6 +261,7 @@ namespace BDArmory.Competition.VesselMover
             KillRotation(vessel);
             float moveSpeed = 0;
             float rotateSpeed = 0;
+            var coordinateFrameAdjustAngle = Mathf.Cos(Mathf.Deg2Rad * 0.1f);
             while (IsMoving(vessel))
             {
                 if (vessel.isActiveVessel)
@@ -267,6 +269,12 @@ namespace BDArmory.Competition.VesselMover
                     if (translating || autoLevelPlane || autoLevelRocket)
                     {
                         up = (vessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
+                        if (Vector3.Dot(initialUp, up) < coordinateFrameAdjustAngle) // Up changed by > coordinateFrameAdjustAngle: rotate the vessel and reset initialUp.
+                        {
+                            rotation = Quaternion.FromToRotation(initialUp, up) * rotation;
+                            rotating = true;
+                            initialUp = up;
+                        }
                         if (MapView.MapIsEnabled)
                         {
                             forward = Vector3.ProjectOnPlane(-Math.Sign(vessel.latitude) * (vessel.mainBody.GetWorldSurfacePosition(vessel.latitude - Math.Sign(vessel.latitude), vessel.longitude, vessel.altitude) - vessel.GetWorldPos3D()), up).normalized;
@@ -813,7 +821,6 @@ namespace BDArmory.Competition.VesselMover
         Messages _messageState = Messages.None;
         string customMessage = "";
         float messageDisplayTime = 0;
-
 
         private void OnGUI()
         {

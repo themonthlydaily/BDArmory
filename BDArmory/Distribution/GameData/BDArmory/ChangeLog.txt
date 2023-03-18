@@ -17,6 +17,7 @@
 - VesselMover:
 	- Better failure handling when VesselMover fails to spawn a vessel.
 	- Adjust movement speeds to better match that of the original VM.
+	- Adjust orientation for changes in the local up direction.
 	- Add an option to automatically close the VM window on competition start.
 - Competition:
 	- Add an option to generate a CSV file for the overall PVP scores in the PVP parser.
