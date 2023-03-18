@@ -15,6 +15,7 @@
 		- Disables the prevention of firing weapons when the mouse is over windows when the Mouse Aim mode is active.
 - VesselMover:
 	- Better failure handling when VesselMover fails to spawn a vessel.
+	- Adjust movement speeds to better match that of the original VM.
 - Competition:
 	- Add an option to generate a CSV file for the overall PVP scores in the PVP parser.
 	- Use natural sorting to get the most recent tournament in the parser.

@@ -349,16 +349,17 @@ namespace BDArmory.Competition.VesselMover
                     {
                         var radarAltitude = RadarAltitude(vessel);
                         var distance = Mathf.Abs(radarAltitude - lowerBound);
-                        float maxMoveSpeed = distance > 25f ? 20f * BDAMath.Sqrt(distance) : distance > 1f ? 4f * distance : 1f;
-                        moveSpeed = Mathf.Clamp(Mathf.MoveTowards(moveSpeed, maxMoveSpeed, maxMoveSpeed * Time.fixedDeltaTime), 0, maxMoveSpeed);
+                        float maxMoveSpeed = distance < 1e4 ? 10f + distance : 100f * BDAMath.Sqrt(distance); ;
+                        moveSpeed = Mathf.Clamp(Mathf.MoveTowards(moveSpeed, maxMoveSpeed, (4.79f * moveSpeed + 0.05f * maxMoveSpeed) * Time.fixedDeltaTime), 0, maxMoveSpeed); // Accelerated acceleration for ~2s.
 
-                        var moveDistance = moveSpeed * Time.fixedDeltaTime;
-                        var offset = 3f * positionAdjustment.x * moveDistance * right + 3f * positionAdjustment.y * moveDistance * forward;
+                        var moveDistanceHorizontal = 10f * moveSpeed * Time.fixedDeltaTime;
+                        var moveDistanceVertical = moveSpeed * Time.fixedDeltaTime;
+                        var offset = positionAdjustment.x * moveDistanceHorizontal * right + positionAdjustment.y * moveDistanceHorizontal * forward;
                         offset += (radarAltitude - RadarAltitude(position + offset)) * up;
                         var safeAltitude = radarAltitude < 1000 ? SafeAltitude(vessel, lowerBound, offset) : radarAltitude; // Don't bother when over 1000m.
-                        offset += Mathf.Max(positionAdjustment.z * moveSpeed * Time.fixedDeltaTime, -safeAltitude) * up;
+                        offset += Mathf.Max(positionAdjustment.z * moveDistanceVertical, -safeAltitude) * up;
                         position += offset;
-                        // Debug.Log($"DEBUG position: {position:G6}, altitude: {radarAltitude}, safeAltCorrection: {safeAltitude}, distance: {distance}, moveSpeed: {moveSpeed}, maxSpeed: {maxMoveSpeed}");
+                        // Debug.Log($"DEBUG position: {position:G6}, altitude: {radarAltitude}, safeAltCorrection: {safeAltitude}, distance: {distance}, moveSpeed: {moveSpeed}, maxSpeed: {maxMoveSpeed}, moveDistanceHorizontal: {moveDistanceHorizontal}, moveDistanceVertical: {moveDistanceVertical}");
                     }
                     else { moveSpeed = 0; }
 
@@ -443,7 +444,7 @@ namespace BDArmory.Competition.VesselMover
             while (IsLowering(vessel) && !LandedOrSplashed(vessel) && (!finalLowering || vessel.altitude - previousAltitude < -0.1 * BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED * Time.fixedDeltaTime))
             {
                 var distance = SafeAltitude(vessel, lowerBound);
-                var speed = distance > 25f ? 20f * BDAMath.Sqrt(distance) : distance > BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED ? 4f * distance : BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED;
+                var speed = distance > 1e4 ? 100f * BDAMath.Sqrt(distance) : distance > BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED ? Mathf.Clamp(1f + 30f / distance, 1f, 4f) * distance : BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED;
                 if (speed > BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED)
                 {
                     vessel.SetWorldVelocity(Vector3d.zero);
