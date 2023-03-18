@@ -291,6 +291,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool VESSEL_MOVER_LOWER_FAST = true;            // Skip lowering from high altitude.
         [BDAPersistentSettingsField] public static bool VESSEL_MOVER_BELOW_WATER = false;          // Lower below water (on planets that have water).
         [BDAPersistentSettingsField] public static bool VESSEL_MOVER_DONT_WORRY_ABOUT_COLLISIONS = false; // Don't prevent collisions.
+        [BDAPersistentSettingsField] public static bool VESSEL_MOVER_CLOSE_ON_COMPETITION_START = false; // Close when starting a competition.
 
         // Waypoints
         [BDAPersistentSettingsField] public static float WAYPOINTS_ALTITUDE = 50f;                // Altitude above ground of the waypoints.

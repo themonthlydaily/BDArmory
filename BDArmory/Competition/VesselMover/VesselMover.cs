@@ -929,7 +929,8 @@ namespace BDArmory.Competition.VesselMover
 
         void WindowVesselMover(int id)
         {
-            GUI.DragWindow(new Rect(0, 0, BDArmorySetup.WindowRectVesselMover.width, 20));
+            GUI.DragWindow(new Rect(0, 0, BDArmorySetup.WindowRectVesselMover.width - 24, 24));
+            if (GUI.Button(new Rect(BDArmorySetup.WindowRectVesselMover.width - 24, 0, 24, 24), " X", BDArmorySetup.CloseButtonStyle)) SetVisible(false);
             GUILayout.BeginVertical(GUILayout.ExpandHeight(true));
             switch (state)
             {
@@ -941,6 +942,9 @@ namespace BDArmory.Competition.VesselMover
                         GUILayout.BeginHorizontal();
                         BDArmorySettings.VESSEL_MOVER_CHOOSE_CREW = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_CHOOSE_CREW, StringUtils.Localize("#LOC_BDArmory_VesselMover_ChooseCrew"));
                         BDArmorySettings.VESSEL_MOVER_CLASSIC_CRAFT_CHOOSER = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_CLASSIC_CRAFT_CHOOSER, StringUtils.Localize("#LOC_BDArmory_VesselMover_ClassicChooser"));
+                        GUILayout.EndHorizontal();
+                        GUILayout.BeginHorizontal();
+                        BDArmorySettings.VESSEL_MOVER_CLOSE_ON_COMPETITION_START = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_CLOSE_ON_COMPETITION_START, StringUtils.Localize("#LOC_BDArmory_VesselMover_CloseOnCompetitionStart"));
                         GUILayout.EndHorizontal();
                         break;
                     }

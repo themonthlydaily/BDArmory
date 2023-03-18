@@ -459,7 +459,7 @@ namespace BDArmory.UI
 
             //setup gui styles
             CloseButtonStyle = new GUIStyle(BDGuiSkin.button) { alignment = TextAnchor.MiddleCenter }; // Configure this one separately since it's static.
-            CloseButtonStyle.normal.textColor = Color.red;
+            CloseButtonStyle.hover.textColor = Color.red;
 
             ButtonStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
             SelectedButtonStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.button);

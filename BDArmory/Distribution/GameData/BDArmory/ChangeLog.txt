@@ -9,6 +9,7 @@
 	- Add a case-insensitive filter to the vessel selection windows in Vessel Mover and Custom Spawn Templates.
 	- Add a custom GUILayout.TextField with a grey placeholder string for nicer text entry boxes.
 	- Set turret slider step sizes based on the config limits: 20—200 steps.
+	- Add a close button to the VM window and tweak the colour scheme of other close buttons.
 - Mod Integration:
 	- Add reflection utils from CameraTools.
 	- Add initial support for the MouseAimFlight mod.
@@ -16,6 +17,7 @@
 - VesselMover:
 	- Better failure handling when VesselMover fails to spawn a vessel.
 	- Adjust movement speeds to better match that of the original VM.
+	- Add an option to automatically close the VM window on competition start.
 - Competition:
 	- Add an option to generate a CSV file for the overall PVP scores in the PVP parser.
 	- Use natural sorting to get the most recent tournament in the parser.
