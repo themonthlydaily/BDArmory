@@ -25,7 +25,9 @@
 	- Add a killer GM time threshold for running waypoint competitions, default: 60s. Craft that don't pass a waypoint within this time are killed off.
 	- Adjust the camera selection to favour craft near their max speed during waypoint races.
 - RWP:
-	- Only clamp, not set, the maxBank and maxSpeed to the limits for S5R5.
+	- Season 5, Round 5:
+		- Only clamp, not set, the maxBank and maxSpeed to the limits.
+		- Add drag to kerbals when exceeding 605m/s, scaling with the amount of overspeeding, to bring them back into line with the limit.
 
 v1.5.9.2
 IMPROVEMENTS / FIXES
