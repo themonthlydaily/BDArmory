@@ -2017,7 +2017,7 @@ namespace BDArmory.Competition
             if (dragLimiting.Contains(vessel)) yield break; // Already limiting.
             dragLimiting.Add(vessel);
             var kerbals = VesselModuleRegistry.GetKerbalEVAs(vessel).Where(kerbal => kerbal != null);
-            Debug.Log($"[BDArmory.BDACompetitionMode]: {vessel.vesselName} is over the speed limit, applying drag to {string.Join(", ", kerbals.Select(kerbal => kerbal.name))}");
+            if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode]: {vessel.vesselName} is over the speed limit, applying drag to {string.Join(", ", kerbals.Select(kerbal => kerbal.name))}");
             foreach (var kerbal in kerbals)
             {
                 kerbal.part.ShieldedFromAirstream = false; // Add drag from EVA kerbals on seats.
@@ -2036,7 +2036,7 @@ namespace BDArmory.Competition
             }
             if (vessel != null)
             {
-                Debug.Log($"[BDArmory.BDACompetitionMode]: {vessel.vesselName} is back within the speed limit, removing drag from {string.Join(", ", kerbals.Where(kerbal => kerbal != null).Select(kerbal => kerbal.name))}");
+                if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode]: {vessel.vesselName} is back within the speed limit, removing drag from {string.Join(", ", kerbals.Where(kerbal => kerbal != null).Select(kerbal => kerbal.name))}");
                 foreach (var kerbal in kerbals)
                 {
                     if (kerbal == null) continue;
