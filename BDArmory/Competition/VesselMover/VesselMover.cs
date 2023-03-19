@@ -1361,12 +1361,12 @@ namespace BDArmory.Competition.VesselMover
         {
             if (buttonSetup) yield break;
             if (!HighLogic.LoadedSceneIsFlight && !HighLogic.LoadedSceneIsEditor) yield break;
-            yield return new WaitUntil(() => ApplicationLauncher.Ready);
+            yield return new WaitUntil(() => ApplicationLauncher.Ready && BDArmorySetup.toolbarButtonAdded); // Wait until after the main BDA toolbar button.
 
             if (!buttonSetup)
             {
                 Texture buttonTexture = GameDatabase.Instance.GetTexture(BDArmorySetup.textureDir + "icon_vm", false);
-                button = ApplicationLauncher.Instance.AddModApplication(ShowVMGUI, HideVMGUI, Dummy, Dummy, Dummy, Dummy, ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.VAB | ApplicationLauncher.AppScenes.FLIGHT, buttonTexture);
+                button = ApplicationLauncher.Instance.AddModApplication(ShowVMGUI, HideVMGUI, Dummy, Dummy, Dummy, Dummy, ApplicationLauncher.AppScenes.FLIGHT, buttonTexture);
                 buttonSetup = true;
                 if (BDArmorySetup.showVesselMoverGUI) button.SetTrue(false);
             }

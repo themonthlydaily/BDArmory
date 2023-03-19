@@ -124,7 +124,7 @@ namespace BDArmory.UI
         {
             if (buttonSetup) yield break;
             if (!HighLogic.LoadedSceneIsFlight && !HighLogic.LoadedSceneIsEditor) yield break;
-            yield return new WaitUntil(() => ApplicationLauncher.Ready);
+            yield return new WaitUntil(() => ApplicationLauncher.Ready && BDArmorySetup.toolbarButtonAdded); // Wait until after the main BDA toolbar button.
 
             if (!buttonSetup)
             {
@@ -145,8 +145,8 @@ namespace BDArmory.UI
         {
             windowBDAAIGUIEnabled = true;
             GUIUtils.SetGUIRectVisible(_guiCheckIndex, windowBDAAIGUIEnabled);
-            if (HighLogic.LoadedSceneIsFlight) GetAI();
-            else GetAIEditor();
+            if (HighLogic.LoadedSceneIsFlight) Instance.GetAI(); // Call via Instance to avoid issue with the toolbar button holding a reference to a null gameobject causing an NRE when starting a coroutine.
+            else Instance.GetAIEditor();
             if (button != null) button.SetTrue(false);
         }
 

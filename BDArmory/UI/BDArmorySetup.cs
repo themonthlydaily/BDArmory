@@ -92,7 +92,7 @@ namespace BDArmory.UI
         public string Version { get; private set; } = "Unknown";
 
         //toolbar button
-        static bool toolbarButtonAdded = false;
+        public static bool toolbarButtonAdded = false;
 
         //settings gui
         public static bool windowSettingsEnabled;
@@ -652,7 +652,6 @@ namespace BDArmory.UI
             if (toolbarButtonAdded) yield break;
             yield return new WaitUntil(() => ApplicationLauncher.Ready);
             if (toolbarButtonAdded) yield break;
-            toolbarButtonAdded = true;
             Texture buttonTexture = GameDatabase.Instance.GetTexture(BDArmorySetup.textureDir + "icon", false);
             ApplicationLauncher.Instance.AddModApplication(
                 ToggleToolbarButton,
@@ -664,6 +663,7 @@ namespace BDArmory.UI
                 ApplicationLauncher.AppScenes.FLIGHT | ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.VAB,
                 buttonTexture
             );
+            toolbarButtonAdded = true;
         }
         /// <summary>
         /// Toggle the BDAToolbar or BDA settings window depending on the scene.

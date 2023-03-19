@@ -418,6 +418,7 @@ namespace BDArmory.Competition
             if (BDArmorySettings.RUNWAY_PROJECT && !String.IsNullOrEmpty(BDArmorySettings.PINATA_NAME) && Scores.Players.Contains(BDArmorySettings.PINATA_NAME)) { hasPinata = true; pinataAlive = false; } else { hasPinata = false; pinataAlive = false; } // Piñata.
             if (SpawnUtils.originalTeams.Count == 0) SpawnUtils.SaveTeams(); // If the vessels weren't spawned in with Vessel Spawner, save the current teams.
             if (LoadedVesselSwitcher.Instance is not null) LoadedVesselSwitcher.Instance.ResetDeadVessels();
+            dragLimiting.Clear();
             System.GC.Collect(); // Clear out garbage at a convenient time.
         }
 
@@ -1998,6 +1999,52 @@ namespace BDArmory.Competition
                 pilot.weaponManager.ToggleGuardMode();
             }
         }
+
+        void AdjustKerbalDrag(float speedThreshold, float scale)
+        {
+            foreach (var weaponManager in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value))
+            {
+                if (weaponManager.vessel.speed > speedThreshold)
+                {
+                    if (dragLimiting.Contains(weaponManager.vessel)) continue; // Already limiting.
+                    StartCoroutine(DragLimit(weaponManager.vessel, speedThreshold, scale));
+                }
+            }
+        }
+        HashSet<Vessel> dragLimiting = new HashSet<Vessel>();
+        IEnumerator DragLimit(Vessel vessel, float speedThreshold, float scale)
+        {
+            if (dragLimiting.Contains(vessel)) yield break; // Already limiting.
+            dragLimiting.Add(vessel);
+            var kerbals = VesselModuleRegistry.GetKerbalEVAs(vessel).Where(kerbal => kerbal != null);
+            Debug.Log($"[BDArmory.BDACompetitionMode]: {vessel.vesselName} is over the speed limit, applying drag to {string.Join(", ", kerbals.Select(kerbal => kerbal.name))}");
+            foreach (var kerbal in kerbals)
+            {
+                kerbal.part.ShieldedFromAirstream = false; // Add drag from EVA kerbals on seats.
+            }
+            var wait = new WaitForFixedUpdate();
+            while (vessel != null && vessel.speed > speedThreshold)
+            {
+                var drag = (float)(vessel.speed - speedThreshold) * scale;
+                foreach (var kerbal in kerbals)
+                {
+                    if (kerbal == null) continue;
+                    kerbal.part.minimum_drag = drag;
+                    kerbal.part.maximum_drag = drag;
+                }
+                yield return wait;
+            }
+            if (vessel != null)
+            {
+                Debug.Log($"[BDArmory.BDACompetitionMode]: {vessel.vesselName} is back within the speed limit, removing drag from {string.Join(", ", kerbals.Where(kerbal => kerbal != null).Select(kerbal => kerbal.name))}");
+                foreach (var kerbal in kerbals)
+                {
+                    if (kerbal == null) continue;
+                    kerbal.part.ShieldedFromAirstream = true;
+                }
+                dragLimiting.Remove(vessel);
+            }
+        }
         #endregion
 
         #region Debris clean-up
@@ -2183,6 +2230,8 @@ namespace BDArmory.Competition
         {
             if (competitionStartTime < 0) return; // Note: this is the same condition as competitionIsActive and could probably be dropped.
             if (competitionType == CompetitionType.WAYPOINTS && BDArmorySettings.RUNWAY_PROJECT_ROUND != 55) return; // Don't do anything below when running waypoints (for now).
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55 && competitionIsActive && competitionIsActive) AdjustKerbalDrag(605, 0.01f); // Over 605m/s, add drag at a rate of 0.01 per m/s.
+
             // Example usage of UpcomingCollisions(). Note that the timeToCPA values are only updated after an interval of half the current timeToCPA.
             // if (competitionIsActive)
             //     foreach (var upcomingCollision in UpcomingCollisions(100f).Take(3))
@@ -2429,6 +2478,7 @@ namespace BDArmory.Competition
                     pinataAlive = false;
                     competitionStatus.Add("Pinata killed by " + Scores.ScoreData[BDArmorySettings.PINATA_NAME].lastPersonWhoDamagedMe + "! Competition is now a Free for all");
                     Scores.RegisterMissileStrike(Scores.ScoreData[BDArmorySettings.PINATA_NAME].lastPersonWhoDamagedMe, BDArmorySettings.PINATA_NAME); //give a missile strike point to indicate the pinata kill on the web API
+
                     // start kill clock
                     if (!killerGMenabled)
                     {
