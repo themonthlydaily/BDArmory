@@ -1,4 +1,17 @@
-﻿v1.5.9.3
+﻿v1.5.9.4
+IMPROVEMENTS / FIXES
+- GameModes:
+	- Rewrite how repulsors work, using the default altitude as the target altitude and a decaying exponential balanced at the target altitude and with velocity damping. Include a slider for setting the strength of the repulsor effect, which affects the scale of the exponential.
+- UI:
+	- Update some Immelmann Turn text that was missed.
+	- Favour craft close to going through waypoints to switch the camera to.
+- RWP:
+	- Season 5 Round 5:
+		- Adjust how drag is applied to kerbals in S5R5 to give a smoother response.
+		- Set the Immelmann angle to 0 for S5R5 since the craft designs don't pitch well.
+		- Add a custom message for the GM kill for S5R5.
+
+v1.5.9.3
 IMPROVEMENTS / FIXES
 - Internal:
 	- Add a Semi-Logarithmic FloatRange slider UI, which gives ranges where the values are of the form: 0.8, 0.9, 1, 2, 3, ..., 8, 9, 10, 20, 30, ..., 80, 90, 100, 200.
