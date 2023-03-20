@@ -1977,6 +1977,7 @@ namespace BDArmory.Competition
                 Scores.ScoreData[vesselName].lastPersonWhoDamagedMe = $"Failed to reach a waypoint within {threshold:0}s";
                 Scores.RegisterDeath(vesselName, GMKillReason.BigRedButton); // Mark it as a Big Red Button GM kill.
                 var message = $"{vesselName} failed to reach a waypoint within {threshold:0}s, killing it.";
+                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55) message = $"{vesselName} failed to reach a waypoint within {threshold:0}s and was killed by a Tusken Raider.";
                 competitionStatus.Add(message);
                 Debug.Log($"[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + message);
                 VesselUtils.ForceDeadVessel(weaponManager.vessel);
