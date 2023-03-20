@@ -34,9 +34,8 @@ namespace BDArmory.GameModes
 
         float targetAlt = 25;
         //public float driftMult = 2; //additional drag multipler for cornering/decellerating so things don't take the same amount of time to decelerate as they do to accelerate
-        float landedTime = 0;
 
-        List<ModuleWheelBase> repulsor;
+        List<ModuleWheelBase> repulsors;
         public static bool GameIsPaused
         {
             get { return PauseMenu.isOpen || Time.timeScale == 0; }
@@ -93,8 +92,18 @@ namespace BDArmory.GameModes
                 return MF;
             }
         }
+
         void Start()
         {
+            foreach (var repMod in vessel.rootPart.FindModulesImplementing<ModuleSpaceFriction>())
+            {
+                if (repMod != this)
+                {
+                    // Not really sure how this is happening, but it is. It looks a bit like a race condition somewhere is allowing this module to be added twice.
+                    Debug.LogWarning($"[BDArmory.GameModes.ModuleSpaceFriction]: Found a duplicate space friction module on root part of {vessel.vesselName}! Removing...");
+                    Destroy(repMod);
+                }
+            }
             if (HighLogic.LoadedSceneIsFlight)
             {
                 using (var engine = VesselModuleRegistry.GetModules<ModuleEngines>(vessel).GetEnumerator())
@@ -106,8 +115,8 @@ namespace BDArmory.GameModes
                         //have this called onvesselModified?
                     }
                 frictMult /= 6; //doesn't need to be 100% of thrust at max speed, Ai will already self-limit; this also has the AI throttle down, which allows for slamming the throttle full for braking/coming about, instead of being stuck with lower TwR
-                repulsor = VesselModuleRegistry.GetRepulsorModules(vessel);
-                using (var r = repulsor.GetEnumerator())
+                repulsors = VesselModuleRegistry.GetRepulsorModules(vessel);
+                using (var r = repulsors.GetEnumerator())
                     while (r.MoveNext())
                     {
                         if (r.Current == null) continue;
@@ -175,56 +184,29 @@ namespace BDArmory.GameModes
                         targetAlt = 10;
                         if (AI != null)
                         {
-                            targetAlt = AI.minAltitude;
+                            targetAlt = AI.defaultAltitude; // Use default alt instead of min alt to keep the vessel away from 'gain alt' behaviour.
                         }
                         else if (SAI != null)
                         {
                             targetAlt = SAI.MaxSlopeAngle * 2;
                         }
                         else if (VAI != null)
-                            targetAlt = VAI.minAltitude;
+                            targetAlt = VAI.defaultAltitude;
 
-                        float accelMult = 1f;
                         Vector3d grav = FlightGlobals.getGeeForceAtPosition(vessel.CoM);
-                        if (vessel.verticalSpeed < 0) //vessel descending, kill downward vel
-                        {
-                            grav += (grav * (Mathf.Abs((float)vessel.verticalSpeed) / grav.magnitude));
-                        }
-                        using (var rep = repulsor.GetEnumerator())
-                            while (rep.MoveNext())
+                        var vesselMass = part.vessel.GetTotalMass();
+                        using (var repulsor = repulsors.GetEnumerator())
+                            while (repulsor.MoveNext())
                             {
-                                if (rep.Current == null) continue;
-                                float pointAltitude = BodyUtils.GetRadarAltitudeAtPos(rep.Current.transform.position);
-                                if (pointAltitude < targetAlt && pointAltitude > 0)
-                                {
-                                    if (pointAltitude > Mathf.Max(targetAlt - 10, 10)) //flying, nearing target alt, reduce upwards accel to prevent launching vessel upwards above target alt
-                                    {
-                                        accelMult = Mathf.Clamp(Mathf.Abs((float)vessel.verticalSpeed), 1f, 10); //downwards vel should be accounted for already; keeping this for ex-landed ships/ships encountering upwards slopes while v speed remains 0
-                                    }
-                                    else
-                                    {
-
-                                        if (vessel.situation != Vessel.Situations.LANDED && vessel.situation != Vessel.Situations.SPLASHED && vessel.situation != Vessel.Situations.PRELAUNCH)
-                                        {
-                                            if (Time.time - 5 > landedTime) //craft in flight
-                                                accelMult = Mathf.Max(pointAltitude, 0.01f) / Mathf.Max(targetAlt - 10, 10); //Danger! steep upwards slope or having to counter massive downwards vel, need to boost repulsor force to prevent crash
-                                            else
-                                                accelMult = 1; //initial takeoff, keep accel gradual
-                                        }
-                                        else
-                                        {
-                                            accelMult = 10;
-                                            landedTime = Time.time;
-                                        }
-                                    }
-                                    float RepulsorForce = (part.vessel.GetTotalMass() * 10) * Mathf.Clamp((targetAlt / Mathf.Max(pointAltitude, 1)), 1, targetAlt) / accelMult;
-                                    if (float.IsNaN(RepulsorForce) || float.IsInfinity(RepulsorForce))
-                                    {
-                                        Debug.LogWarning($"[BDArmory.Spacehacks]: Repulsor Force is NaN or Infinity. TargetAlt: {targetAlt}, point Alt: {pointAltitude}, AccelMult: {accelMult}, VesselMass: {part.vessel.GetTotalMass()}");
-                                    }
-                                    else
-                                        rep.Current.part.Rigidbody.AddForce(-grav * RepulsorForce, ForceMode.Acceleration);
-                                }
+                                if (repulsor.Current == null) continue;
+                                float pointAltitude = BodyUtils.GetRadarAltitudeAtPos(repulsor.Current.transform.position);
+                                if (pointAltitude <= 0 || pointAltitude > 2f * targetAlt) continue;
+                                var factor = Mathf.Clamp(Mathf.Exp(BDArmorySettings.SF_REPULSOR_STRENGTH * (targetAlt - pointAltitude) / targetAlt - (float)vessel.verticalSpeed / targetAlt), 0f, 2f * BDArmorySettings.SF_REPULSOR_STRENGTH); // Decaying exponential balanced at the target altitude with velocity damping.
+                                float repulsorForce = vesselMass * factor / repulsors.Count; // Spread the force between the repulsors.
+                                if (float.IsNaN(factor) || float.IsInfinity(factor)) // This should only happen if targetAlt is 0, which should never happen.
+                                    Debug.LogWarning($"[BDArmory.Spacehacks]: Repulsor Force is NaN or Infinity. TargetAlt: {targetAlt}, point Alt: {pointAltitude}, VesselMass: {vesselMass}");
+                                else
+                                    repulsor.Current.part.Rigidbody.AddForce(-grav * repulsorForce, ForceMode.Force);
                             }
                     }
                 }
