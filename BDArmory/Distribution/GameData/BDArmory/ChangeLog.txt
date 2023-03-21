@@ -5,6 +5,8 @@ IMPROVEMENTS / FIXES
 - UI:
 	- Update some Immelmann Turn text that was missed.
 	- Favour craft close to going through waypoints to switch the camera to.
+- Weapons:
+	- Correction to manual aiming when the Krakensbane frame velocity is non-zero.
 - RWP:
 	- Season 5 Round 5:
 		- Adjust how drag is applied to kerbals in S5R5 to give a smoother response.
