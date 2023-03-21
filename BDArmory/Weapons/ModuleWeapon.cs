@@ -3531,7 +3531,6 @@ namespace BDArmory.Weapons
                         bulletPrediction = simCurrPos;
                     }
                     Vector3 pointingPos = fireTransform.position + (fireTransform.forward * targetDistance);
-                    trajectoryOffset = pointingPos - bulletPrediction;
                 }
                 else if (eWeaponType == WeaponTypes.Rocket)
                 {
