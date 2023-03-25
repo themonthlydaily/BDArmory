@@ -85,9 +85,12 @@ namespace BDArmory.Competition.OrchestrationStrategies
             foreach (var pilot in pilots)
             {
                 pilot.SetWaypoints(mappedWaypoints);
-                foreach (var Kerb in VesselModuleRegistry.GetKerbalEVAs(pilot.vessel))
+                foreach (var kerbal in VesselModuleRegistry.GetKerbalEVAs(pilot.vessel))
                 {
-                    if (Kerb != null) Kerb.part.ShieldedFromAirstream = true; // Remove drag from EVA kerbals on seats.
+                    if (kerbal == null) continue;
+                    // Remove drag from EVA kerbals on seats.
+                    kerbal.part.dragModel = Part.DragModel.SPHERICAL; // Use the spherical drag model for which the min/max drag values work properly.
+                    kerbal.part.ShieldedFromAirstream = true;
                 }
             }
 
@@ -175,9 +178,10 @@ namespace BDArmory.Competition.OrchestrationStrategies
                         {
                             // Max Altitude must be 100.
                             pilotAI.maxAltitudeToggle = true;
-                            pilotAI.maxAltitude = 100f;
+                            pilotAI.maxAltitude = Mathf.Min(pilotAI.maxAltitude, 100f);
                             pilotAI.minAltitude = Mathf.Min(pilotAI.minAltitude, 50f); // Waypoints are at 50, so anything higher than this is going to trigger gain alt all the time.
-                            pilotAI.defaultAltitude = Mathf.Min(pilotAI.defaultAltitude, 100f);
+                            pilotAI.defaultAltitude = Mathf.Clamp(pilotAI.defaultAltitude, pilotAI.minAltitude, pilotAI.maxAltitude);
+                            if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 55) pilotAI.ImmelmannTurnAngle = 0; // Set the Immelmann turn angle to 0 since most of these craft dont't pitch well.
                         }
                     }
                     /*

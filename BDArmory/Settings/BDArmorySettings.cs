@@ -320,6 +320,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool SF_FRICTION = false;
         [BDAPersistentSettingsField] public static bool SF_GRAVITY = false;
         [BDAPersistentSettingsField] public static bool SF_REPULSOR = false;
+        [BDAPersistentSettingsField] public static float SF_REPULSOR_STRENGTH = 5f;
         [BDAPersistentSettingsField] public static float SF_DRAGMULT = 2f;
 
         //Mutator Mode
