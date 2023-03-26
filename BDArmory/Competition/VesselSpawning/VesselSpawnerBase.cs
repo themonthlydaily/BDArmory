@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -244,7 +245,11 @@ namespace BDArmory.Competition.VesselSpawning
                 // Spawn the craft with zero pitch, roll and yaw as the final rotation depends on the root transform, which takes some time to be populated.
                 vessel = VesselSpawner.SpawnVesselFromCraftFile(vesselSpawnConfig.craftURL, craftGeoCoords, 0f, 0f, 0f, out vesselSpawnConfig.editorFacility, vesselSpawnConfig.crew); // SPAWN
             }
-            catch { vessel = null; }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                vessel = null;
+            }
             if (vessel == null)
             {
                 var craftName = Path.GetFileNameWithoutExtension(vesselSpawnConfig.craftURL);

@@ -145,7 +145,8 @@ namespace BDArmory.Weapons
         {
             get
             {
-                var fireTransform = (eWeaponType == WeaponTypes.Rocket && rocketPod) ? rockets[0].parent : fireTransforms[0];
+                var fireTransform = (eWeaponType == WeaponTypes.Rocket && rocketPod) ? rockets[0].parent : fireTransforms != null ? fireTransforms[0] : null;
+                if (fireTransform == null) return 1f;
                 var theta = FiringTolerance * targetRadius / (finalAimTarget - fireTransform.position).magnitude + Mathf.Deg2Rad * maxDeviation / 2f; // Approximation to arctan(α*r/d) + θ/2. (arctan(x) = x-x^3/3 + O(x^5))
                 return finalAimTarget.IsZero() ? 1f : Mathf.Max(1f - 0.5f * theta * theta, 0); // Approximation to cos(theta). (cos(x) = 1-x^2/2!+O(x^4))
             }
@@ -1836,7 +1837,7 @@ namespace BDArmory.Weapons
                 {
                     if (targetAcquired && (GPSTarget || slaved || yawRange < 1 || maxPitch - minPitch < 1))
                     {
-                        reticlePosition = (targetPosition - fixedLeadOffset).normalized * pointingAtPosition.magnitude;
+                        reticlePosition = transform.position + (finalAimTarget - transform.position).normalized * pointingAtPosition.magnitude;
 
                         if (!slaved && !GPSTarget)
                         {
@@ -3321,6 +3322,8 @@ namespace BDArmory.Weapons
                 if (!slaved && !GPSTarget && !aiControlled && !isAPS && (vessel.isActiveVessel || BDArmorySettings.REMOTE_SHOOTING))
                 {
                     manualAiming = true;
+                    targetVelocity = -BDKrakensbane.FrameVelocityV3f; // Stationary targets are being moved opposite to the Krakensbane frame velocity.
+                    targetAcceleration = Vector3.zero;
                     if (yawRange > 0 || maxPitch - minPitch > 0)
                     {
                         //MouseControl
@@ -3341,6 +3344,11 @@ namespace BDArmory.Weapons
                             {
                                 targetPosition = hit.point;
                             }
+                            if (p != null)
+                            {
+                                targetVelocity = p.rb.velocity;
+                                targetAcceleration = p.vessel.acceleration;
+                            }
                         }
                         else
                         {
@@ -3349,10 +3357,14 @@ namespace BDArmory.Weapons
                                 if (!targetCOM && visualTargetPart != null)
                                 {
                                     targetPosition = ray.origin + ray.direction * Vector3.Distance(visualTargetPart.transform.position, ray.origin);
+                                    targetVelocity = visualTargetPart.rb.velocity;
+                                    targetAcceleration = visualTargetPart.vessel.acceleration;
                                 }
                                 else
                                 {
                                     targetPosition = ray.origin + ray.direction * Vector3.Distance(visualTargetVessel.transform.position, ray.origin);
+                                    targetVelocity = visualTargetVessel.rb_velocity;
+                                    targetAcceleration = visualTargetVessel.acceleration;
                                 }
                             }
                             else
@@ -3384,7 +3396,6 @@ namespace BDArmory.Weapons
                 if ((BDArmorySettings.AIM_ASSIST || aiControlled) && eWeaponType == WeaponTypes.Ballistic)//Gun targeting
                 {
                     if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DEBUG_WEAPONS) debugCorrection = Vector3.zero;
-                    var kbVel = BDKrakensbane.FrameVelocityV3f;
                     Vector3 bulletRelativePosition, bulletEffectiveVelocity, bulletRelativeVelocity, bulletAcceleration, bulletRelativeAcceleration, targetPredictedPosition, bulletDropOffset, firingDirection, lastFiringDirection;
                     firingDirection = fireTransforms[0].forward;
                     var firePosition = fireTransforms[0].position + (baseBulletVelocity * firingDirection) * Time.fixedDeltaTime; // Bullets are initially placed up to 1 frame ahead (iTime). Not offsetting by part vel gives the correct initial placement.
@@ -3507,7 +3518,7 @@ namespace BDArmory.Weapons
                 }
                 else if (eWeaponType == WeaponTypes.Ballistic && BDArmorySettings.AIM_ASSIST && BDArmorySettings.DRAW_AIMERS)
                 {
-                    Vector3 simVelocity = part.rb.velocity + baseBulletVelocity * fireTransform.forward;
+                    Vector3 simVelocity = (part.rb.velocity + BDKrakensbane.FrameVelocityV3f) + baseBulletVelocity * fireTransform.forward;
                     if (Physics.Raycast(new Ray(fireTransform.position, baseBulletVelocity * fireTransform.forward), out RaycastHit hit, Time.fixedDeltaTime * baseBulletVelocity, layerMask1)) // Check between the barrel and the point the bullet appears.
                     {
                         bulletPrediction = hit.point;
@@ -3520,7 +3531,6 @@ namespace BDArmory.Weapons
                         bulletPrediction = simCurrPos;
                     }
                     Vector3 pointingPos = fireTransform.position + (fireTransform.forward * targetDistance);
-                    trajectoryOffset = pointingPos - bulletPrediction;
                 }
                 else if (eWeaponType == WeaponTypes.Rocket)
                 {

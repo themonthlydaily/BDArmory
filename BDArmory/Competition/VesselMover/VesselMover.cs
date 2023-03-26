@@ -232,7 +232,8 @@ namespace BDArmory.Competition.VesselMover
             KillRotation(vessel);
             if (BDArmorySettings.VESSEL_MOVER_ENABLE_BRAKES) vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
 
-            var up = (vessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
+            var initialUp = (vessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
+            var up = initialUp;
             Vector3 forward = default, right = default;
             float startingAltitude = 2f * vessel.GetRadius();
             var lowerBound = GetLowerBound(vessel);
@@ -260,6 +261,7 @@ namespace BDArmory.Competition.VesselMover
             KillRotation(vessel);
             float moveSpeed = 0;
             float rotateSpeed = 0;
+            var coordinateFrameAdjustAngle = Mathf.Cos(Mathf.Deg2Rad * 0.1f);
             while (IsMoving(vessel))
             {
                 if (vessel.isActiveVessel)
@@ -267,6 +269,12 @@ namespace BDArmory.Competition.VesselMover
                     if (translating || autoLevelPlane || autoLevelRocket)
                     {
                         up = (vessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
+                        if (Vector3.Dot(initialUp, up) < coordinateFrameAdjustAngle) // Up changed by > coordinateFrameAdjustAngle: rotate the vessel and reset initialUp.
+                        {
+                            rotation = Quaternion.FromToRotation(initialUp, up) * rotation;
+                            rotating = true;
+                            initialUp = up;
+                        }
                         if (MapView.MapIsEnabled)
                         {
                             forward = Vector3.ProjectOnPlane(-Math.Sign(vessel.latitude) * (vessel.mainBody.GetWorldSurfacePosition(vessel.latitude - Math.Sign(vessel.latitude), vessel.longitude, vessel.altitude) - vessel.GetWorldPos3D()), up).normalized;
@@ -349,16 +357,17 @@ namespace BDArmory.Competition.VesselMover
                     {
                         var radarAltitude = RadarAltitude(vessel);
                         var distance = Mathf.Abs(radarAltitude - lowerBound);
-                        float maxMoveSpeed = distance > 25f ? 20f * BDAMath.Sqrt(distance) : distance > 1f ? 4f * distance : 1f;
-                        moveSpeed = Mathf.Clamp(Mathf.MoveTowards(moveSpeed, maxMoveSpeed, maxMoveSpeed * Time.fixedDeltaTime), 0, maxMoveSpeed);
+                        float maxMoveSpeed = distance < 1e4 ? 10f + distance : 100f * BDAMath.Sqrt(distance); ;
+                        moveSpeed = Mathf.Clamp(Mathf.MoveTowards(moveSpeed, maxMoveSpeed, (4.79f * moveSpeed + 0.05f * maxMoveSpeed) * Time.fixedDeltaTime), 0, maxMoveSpeed); // Accelerated acceleration for ~2s.
 
-                        var moveDistance = moveSpeed * Time.fixedDeltaTime;
-                        var offset = 3f * positionAdjustment.x * moveDistance * right + 3f * positionAdjustment.y * moveDistance * forward;
+                        var moveDistanceHorizontal = 10f * moveSpeed * Time.fixedDeltaTime;
+                        var moveDistanceVertical = moveSpeed * Time.fixedDeltaTime;
+                        var offset = positionAdjustment.x * moveDistanceHorizontal * right + positionAdjustment.y * moveDistanceHorizontal * forward;
                         offset += (radarAltitude - RadarAltitude(position + offset)) * up;
                         var safeAltitude = radarAltitude < 1000 ? SafeAltitude(vessel, lowerBound, offset) : radarAltitude; // Don't bother when over 1000m.
-                        offset += Mathf.Max(positionAdjustment.z * moveSpeed * Time.fixedDeltaTime, -safeAltitude) * up;
+                        offset += Mathf.Max(positionAdjustment.z * moveDistanceVertical, -safeAltitude) * up;
                         position += offset;
-                        // Debug.Log($"DEBUG position: {position:G6}, altitude: {radarAltitude}, safeAltCorrection: {safeAltitude}, distance: {distance}, moveSpeed: {moveSpeed}, maxSpeed: {maxMoveSpeed}");
+                        // Debug.Log($"DEBUG position: {position:G6}, altitude: {radarAltitude}, safeAltCorrection: {safeAltitude}, distance: {distance}, moveSpeed: {moveSpeed}, maxSpeed: {maxMoveSpeed}, moveDistanceHorizontal: {moveDistanceHorizontal}, moveDistanceVertical: {moveDistanceVertical}");
                     }
                     else { moveSpeed = 0; }
 
@@ -443,7 +452,7 @@ namespace BDArmory.Competition.VesselMover
             while (IsLowering(vessel) && !LandedOrSplashed(vessel) && (!finalLowering || vessel.altitude - previousAltitude < -0.1 * BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED * Time.fixedDeltaTime))
             {
                 var distance = SafeAltitude(vessel, lowerBound);
-                var speed = distance > 25f ? 20f * BDAMath.Sqrt(distance) : distance > BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED ? 4f * distance : BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED;
+                var speed = distance > 1e4 ? 100f * BDAMath.Sqrt(distance) : distance > BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED ? Mathf.Clamp(1f + 30f / distance, 1f, 4f) * distance : BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED;
                 if (speed > BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED)
                 {
                     vessel.SetWorldVelocity(Vector3d.zero);
@@ -789,8 +798,7 @@ namespace BDArmory.Competition.VesselMover
             yield return SpawnSingleVessel(vesselSpawnConfig);
             VesselSpawner.ReservedCrew.Clear(); // Clear the reserved crew again.
             if (spawnFailureReason != SpawnFailureReason.None) { state = State.None; yield break; }
-            var vessel = spawnedVessels[latestSpawnedVesselName];
-            if (vessel == null)
+            if (!spawnedVessels.TryGetValue(latestSpawnedVesselName, out Vessel vessel) || vessel == null)
             {
                 spawnFailureReason = SpawnFailureReason.VesselFailedToSpawn;
                 state = State.None;
@@ -813,7 +821,6 @@ namespace BDArmory.Competition.VesselMover
         Messages _messageState = Messages.None;
         string customMessage = "";
         float messageDisplayTime = 0;
-
 
         private void OnGUI()
         {
@@ -929,7 +936,8 @@ namespace BDArmory.Competition.VesselMover
 
         void WindowVesselMover(int id)
         {
-            GUI.DragWindow(new Rect(0, 0, BDArmorySetup.WindowRectVesselMover.width, 20));
+            GUI.DragWindow(new Rect(0, 0, BDArmorySetup.WindowRectVesselMover.width - 24, 24));
+            if (GUI.Button(new Rect(BDArmorySetup.WindowRectVesselMover.width - 24, 0, 24, 24), " X", BDArmorySetup.CloseButtonStyle)) SetVisible(false);
             GUILayout.BeginVertical(GUILayout.ExpandHeight(true));
             switch (state)
             {
@@ -941,6 +949,9 @@ namespace BDArmory.Competition.VesselMover
                         GUILayout.BeginHorizontal();
                         BDArmorySettings.VESSEL_MOVER_CHOOSE_CREW = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_CHOOSE_CREW, StringUtils.Localize("#LOC_BDArmory_VesselMover_ChooseCrew"));
                         BDArmorySettings.VESSEL_MOVER_CLASSIC_CRAFT_CHOOSER = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_CLASSIC_CRAFT_CHOOSER, StringUtils.Localize("#LOC_BDArmory_VesselMover_ClassicChooser"));
+                        GUILayout.EndHorizontal();
+                        GUILayout.BeginHorizontal();
+                        BDArmorySettings.VESSEL_MOVER_CLOSE_ON_COMPETITION_START = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_CLOSE_ON_COMPETITION_START, StringUtils.Localize("#LOC_BDArmory_VesselMover_CloseOnCompetitionStart"));
                         GUILayout.EndHorizontal();
                         break;
                     }
@@ -1049,6 +1060,7 @@ namespace BDArmory.Competition.VesselMover
         Vector2 vesselSelectionScrollPos = default;
         float vesselSelectionTimer = 0;
         string selectedVesselURL = "";
+        string selectionFilter = "";
 
         public void ShowVesselSelection(Action<string> selectedCallback = null, Action cancelledCallback = null)
         {
@@ -1076,6 +1088,7 @@ namespace BDArmory.Competition.VesselMover
         {
             GUI.DragWindow(new Rect(0, 0, vesselSelectionWindowRect.width, 20));
             GUILayout.BeginVertical();
+            selectionFilter = GUIUtils.TextField(selectionFilter, " Filter");
             vesselSelectionScrollPos = GUILayout.BeginScrollView(vesselSelectionScrollPos, GUI.skin.box, GUILayout.Width(vesselSelectionWindowRect.width - 15), GUILayout.MaxHeight(vesselSelectionWindowRect.height - 60));
             using (var vessels = craftBrowser.craftList.GetEnumerator())
                 while (vessels.MoveNext())
@@ -1083,8 +1096,12 @@ namespace BDArmory.Competition.VesselMover
                     var vesselURL = vessels.Current.Key;
                     var vesselInfo = vessels.Current.Value;
                     if (vesselURL == null || vesselInfo == null) continue;
+                    if (!string.IsNullOrEmpty(selectionFilter)) // Filter selection, case insensitive.
+                    {
+                        if (!vesselInfo.shipName.ToLower().Contains(selectionFilter.ToLower())) continue;
+                    }
                     GUILayout.BeginHorizontal(); // Vessel buttons
-                    if (GUILayout.Button($"{vesselInfo.shipName}", selectedVesselURL == vesselURL ? BDArmorySetup.SelectedButtonStyle : BDArmorySetup.ButtonStyle, GUILayout.Height(50), GUILayout.MaxWidth(vesselSelectionWindowRect.width - 190)))
+                    if (GUILayout.Button($"{vesselInfo.shipName}", selectedVesselURL == vesselURL ? BDArmorySetup.SelectedButtonStyle : BDArmorySetup.ButtonStyle, GUILayout.MaxHeight(60), GUILayout.MaxWidth(vesselSelectionWindowRect.width - 190)))
                     {
                         if (Time.realtimeSinceStartup - vesselSelectionTimer < 0.5f)
                         {
@@ -1222,7 +1239,7 @@ namespace BDArmory.Competition.VesselMover
             {
                 // Create a new Kerbal!
                 newCustomKerbal = !newCustomKerbal;
-                newKerbalName = "Enter a new Kerbal name...";
+                newKerbalName = "";
             }
             if (GUILayout.Button("X", removeKerbals ? BDArmorySetup.SelectedButtonStyle : BDArmorySetup.CloseButtonStyle, GUILayout.Width(27)))
             {
@@ -1232,11 +1249,12 @@ namespace BDArmory.Competition.VesselMover
             GUILayout.EndHorizontal();
             if (newCustomKerbal)
             {
-                newKerbalName = GUILayout.TextField(newKerbalName);
+                newKerbalName = GUIUtils.TextField(newKerbalName, " Enter a new Kerbal name...");
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_Generic_OK"), BDArmorySetup.ButtonStyle))
                 {
-                    if (!string.IsNullOrEmpty(newKerbalName) && newKerbalName != "Enter a new Kerbal name...")
+                    newKerbalName = newKerbalName.Trim();
+                    if (!string.IsNullOrEmpty(newKerbalName))
                     {
                         if (HighLogic.CurrentGame.CrewRoster.Exists(newKerbalName))
                         {
@@ -1327,12 +1345,13 @@ namespace BDArmory.Competition.VesselMover
         #region Toolbar button
         public void AddToolbarButton()
         {
+            if (!HighLogic.LoadedSceneIsFlight) return;
             StartCoroutine(ToolbarButtonRoutine());
         }
         public void RemoveToolbarButton()
         {
             if (button == null) return;
-            if (!HighLogic.LoadedSceneIsFlight && !HighLogic.LoadedSceneIsEditor) return;
+            if (!HighLogic.LoadedSceneIsFlight) return;
             ApplicationLauncher.Instance.RemoveModApplication(button);
             button = null;
             buttonSetup = false;
@@ -1342,12 +1361,12 @@ namespace BDArmory.Competition.VesselMover
         {
             if (buttonSetup) yield break;
             if (!HighLogic.LoadedSceneIsFlight && !HighLogic.LoadedSceneIsEditor) yield break;
-            yield return new WaitUntil(() => ApplicationLauncher.Ready);
+            yield return new WaitUntil(() => ApplicationLauncher.Ready && BDArmorySetup.toolbarButtonAdded); // Wait until after the main BDA toolbar button.
 
             if (!buttonSetup)
             {
                 Texture buttonTexture = GameDatabase.Instance.GetTexture(BDArmorySetup.textureDir + "icon_vm", false);
-                button = ApplicationLauncher.Instance.AddModApplication(ShowVMGUI, HideVMGUI, Dummy, Dummy, Dummy, Dummy, ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.VAB | ApplicationLauncher.AppScenes.FLIGHT, buttonTexture);
+                button = ApplicationLauncher.Instance.AddModApplication(ShowVMGUI, HideVMGUI, Dummy, Dummy, Dummy, Dummy, ApplicationLauncher.AppScenes.FLIGHT, buttonTexture);
                 buttonSetup = true;
                 if (BDArmorySetup.showVesselMoverGUI) button.SetTrue(false);
             }

@@ -1,11 +1,85 @@
 ﻿IMPROVEMENTS / FIXES
+- AI:
+	- Set the main throttle, pitch, yaw and roll axis groups when setting the flight control state. This allows use of axis groups in BDA+ with these axes.
+
+v1.5.9.4
+IMPROVEMENTS / FIXES
+- GameModes:
+	- Rewrite how repulsors work, using the default altitude as the target altitude and a decaying exponential balanced at the target altitude and with velocity damping. Include a slider for setting the strength of the repulsor effect, which affects the scale of the exponential.
+- UI:
+	- Update some Immelmann Turn text that was missed.
+	- Favour craft close to going through waypoints to switch the camera to.
+- Weapons:
+	- Correction to manual aiming when the Krakensbane frame velocity is non-zero.
+- RWP:
+	- Season 5 Round 5:
+		- Adjust how drag is applied to kerbals in S5R5 to give a smoother response.
+		- Set the Immelmann angle to 0 for S5R5 since the craft designs don't pitch well.
+		- Add a custom message for the GM kill for S5R5.
+
+v1.5.9.3
+IMPROVEMENTS / FIXES
+- Internal:
+	- Add a Semi-Logarithmic FloatRange slider UI, which gives ranges where the values are of the form: 0.8, 0.9, 1, 2, 3, ..., 8, 9, 10, 20, 30, ..., 80, 90, 100, 200.
+- AI:
+	- Adjustments to terrain avoidance defaults and how the threat range is calculated for better default terrain avoidance.
+	- Add a slider for setting the angular size of the cone for performing an Immelmann turn, in which the craft will simply pitch up to turn to a target in that direction.
+	- Fix for auto-tuning if the user moves the number of samples slider to lower than the current sample number.
+- UI:
+	- Add a case-insensitive filter to the vessel selection windows in Vessel Mover and Custom Spawn Templates.
+	- Add a custom GUILayout.TextField with a grey placeholder string for nicer text entry boxes.
+	- Set turret slider step sizes based on the config limits: 20—200 steps.
+	- Add a close button to the VM window and tweak the colour scheme of other close buttons.
+- Mod Integration:
+	- Add reflection utils from CameraTools.
+	- Add initial support for the MouseAimFlight mod.
+		- Disables the prevention of firing weapons when the mouse is over windows when the Mouse Aim mode is active.
+- VesselMover:
+	- Better failure handling when VesselMover fails to spawn a vessel.
+	- Adjust movement speeds to better match that of the original VM.
+	- Adjust orientation for changes in the local up direction.
+	- Add an option to automatically close the VM window on competition start.
+- Competition:
+	- Add an option to generate a CSV file for the overall PVP scores in the PVP parser.
+	- Use natural sorting to get the most recent tournament in the parser.
+	- Add a killer GM time threshold for running waypoint competitions, default: 60s. Craft that don't pass a waypoint within this time are killed off.
+	- Adjust the camera selection to favour craft near their max speed during waypoint races.
+- RWP:
+	- Season 5, Round 5:
+		- Only clamp, not set, the maxBank and maxSpeed to the limits.
+		- Add drag to kerbals when exceeding 605m/s, scaling with the amount of overspeeding, to bring them back into line with the limit.
+
+v1.5.9.2
+IMPROVEMENTS / FIXES
+- AI:
+	- Fix incorrect terrain avoidance critical angle conversion (degrees vs radians).
+	- Add a slider for setting the control surface deployment time used for terrain avoidance and reduce the amount the control surface deployment time affects the terrain detection distance.
+		- Note: the default is now lower than it was before and lowering it further can significantly reduce the terrain avoidance distance for highly manoeuverable craft.
+
+v1.5.9.1
+IMPROVEMENTS / FIXES
 - General:
 	- Adjust how PartsBlacklist.cfg is read/written to merge the defaults with any existing custom values.
+	- Fix known exceptions and NaNs.
 - Weapons:
 	- Use the combination of DEBUG_LINES and DEBUG_WEAPONS for showing the targeting component debug lines instead of only having them in the debug build.
+	- Further tweaks to the aim assist targeting reticle to account for the floating origin.
+	- Missiles/Bombs now arm their warheads when they reach a safe distance from their launching craft, to prevent anti-missile systems fragging craft by detonating ordinance immediately after launch.
 - UI:
 	- Add a toolbar button for the BDA Vessel Mover.
 	- Make window states persistent across scene changes.
+- Competition:
+	- Remove drag from seated Kerbals in the Waypoint race gamemode.
+	- Repulsor craft now spawn horizonally instead of nose down.
+- RWP:
+	- Enable various RWP S5R5 overrides to settings.
+		- Max speed fixed at 600m/s.
+		- Min altitude clamped to below 50m.
+		- Max altitude enabled and set to 100m.
+		- Max bank fixed at 40°.
+		- Post-stall AoA fixed at 0°.
+		- Independent throttle disabled.
+		- Global lift multiplier increased to 0.1 from 0.036.
 
 v1.5.9.0
 IMPROVEMENTS / FIXES

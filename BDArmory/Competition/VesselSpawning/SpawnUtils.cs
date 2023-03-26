@@ -76,9 +76,20 @@ namespace BDArmory.Competition.VesselSpawning
                     foreach (var part in PartLoader.LoadedPartsList)
                     {
                         if (part == null || part.partPrefab == null || part.partPrefab.CrewCapacity < 1) continue;
+                        if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.SpawnUtils]: {part.name} has crew capacity {part.partPrefab.CrewCapacity}.");
+                        if (!_partCrewCounts.ContainsKey(part.name))
+                        { _partCrewCounts.Add(part.name, part.partPrefab.CrewCapacity); }
+                        else // Duplicate part name!
                         {
-                            if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.SpawnUtils]: {part.name} has crew capacity {part.partPrefab.CrewCapacity}.");
-                            _partCrewCounts.Add(part.name, part.partPrefab.CrewCapacity);
+                            if (part.partPrefab.CrewCapacity != _partCrewCounts[part.name])
+                            {
+                                Debug.LogWarning($"[BDArmory.SpawnUtils]: Found a duplicate part {part.name} with a different crew capacity! {_partCrewCounts[part.name]} vs {part.partPrefab.CrewCapacity}, using the minimum.");
+                                _partCrewCounts[part.name] = Mathf.Min(_partCrewCounts[part.name], part.partPrefab.CrewCapacity);
+                            }
+                            else
+                            {
+                                Debug.LogWarning($"[BDArmory.SpawnUtils]: Found a duplicate part {part.name} with the same crew capacity!");
+                            }
                         }
                     }
                 }
