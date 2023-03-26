@@ -493,6 +493,7 @@ namespace BDArmory.Competition.VesselSpawning
         bool bringVesselSelectionToFront = false;
         Rect vesselSelectionWindowRect = new Rect(0, 0, 600, 800);
         Vector2 vesselSelectionScrollPos = default;
+        string selectionFilter = "";
 
         CustomCraftBrowserDialog craftBrowser;
         public string ShipName(string craft) => (!string.IsNullOrEmpty(craft) && CustomCraftBrowserDialog.shipNames.TryGetValue(craft, out string shipName)) ? shipName : "";
@@ -540,6 +541,7 @@ namespace BDArmory.Competition.VesselSpawning
         {
             GUI.DragWindow(new Rect(0, 0, vesselSelectionWindowRect.width, 20));
             GUILayout.BeginVertical();
+            selectionFilter = GUIUtils.TextField(selectionFilter, " Filter");
             vesselSelectionScrollPos = GUILayout.BeginScrollView(vesselSelectionScrollPos, GUI.skin.box, GUILayout.Width(vesselSelectionWindowRect.width - 15), GUILayout.MaxHeight(vesselSelectionWindowRect.height - 60));
             using (var vessels = craftBrowser.craftList.GetEnumerator())
                 while (vessels.MoveNext())
@@ -547,8 +549,12 @@ namespace BDArmory.Competition.VesselSpawning
                     var vesselURL = vessels.Current.Key;
                     var vesselInfo = vessels.Current.Value;
                     if (vesselURL == null || vesselInfo == null) continue;
+                    if (!string.IsNullOrEmpty(selectionFilter)) // Filter selection, case insensitive.
+                    {
+                        if (!vesselInfo.shipName.ToLower().Contains(selectionFilter.ToLower())) continue;
+                    }
                     GUILayout.BeginHorizontal(); // Vessel buttons
-                    if (GUILayout.Button($"{vesselInfo.shipName}", CustomCraftBrowserDialog.vesselButtonStyle, GUILayout.MaxWidth(vesselSelectionWindowRect.width - 190)))
+                    if (GUILayout.Button($"{vesselInfo.shipName}", CustomCraftBrowserDialog.vesselButtonStyle, GUILayout.MaxHeight(60), GUILayout.MaxWidth(vesselSelectionWindowRect.width - 190)))
                     {
                         currentVesselSpawnConfig.craftURL = vesselURL;
                         foreach (var vesselSpawnConfig in currentTeamSpawnConfigs) // Set the other empty slots for the team to the same vessel.

@@ -475,7 +475,7 @@ namespace BDArmory.Control
         protected int waypointLapLimit = 1;
         protected Vector3 waypointPosition = default;
         //protected float waypointRadius = 500f;
-        protected float waypointRange = 999f;
+        public float waypointRange = 999f;
 
         public bool IsRunningWaypoints => command == PilotCommands.Waypoints &&
             activeWaypointLap <= waypointLapLimit &&
