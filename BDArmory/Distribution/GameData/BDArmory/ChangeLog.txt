@@ -5,6 +5,8 @@
 	- Add option to immediately place the vessel after spawning.
 	- Adjustments to movement in map mode.
 	- Safer placement-lower.
+- Competition:
+	- Add sorting and "scores" for waypoint runs in the Vessel Switcher for waypoints game mode.
 
 v1.5.9.4
 IMPROVEMENTS / FIXES
