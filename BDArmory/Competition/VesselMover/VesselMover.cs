@@ -116,22 +116,25 @@ namespace BDArmory.Competition.VesselMover
             autoLevelPlane = false;
             autoLevelRocket = false;
 
-            if (GameSettings.THROTTLE_CUTOFF.GetKeyDown()) // Reset altitude to base.
-            { reset = true; }
-            else if (Input.GetKeyDown(KeyCode.Tab)) // Jump to next reference altitude.
+            if (!MapView.MapIsEnabled) // No altitude changes while in map mode.
             {
-                jump = true;
-                jumpDirection = GameSettings.THROTTLE_UP.GetKey();
-            }
-            else if (GameSettings.THROTTLE_UP.GetKey()) // Increase altitude.
-            {
-                positionAdjustment.z = 1f;
-                translating = true;
-            }
-            else if (GameSettings.THROTTLE_DOWN.GetKey()) // Decrease altitude.
-            {
-                positionAdjustment.z = -1f;
-                translating = true;
+                if (GameSettings.THROTTLE_CUTOFF.GetKeyDown()) // Reset altitude to base.
+                { reset = true; }
+                else if (Input.GetKeyDown(KeyCode.Tab)) // Jump to next reference altitude.
+                {
+                    jump = true;
+                    jumpDirection = GameSettings.THROTTLE_UP.GetKey();
+                }
+                else if (GameSettings.THROTTLE_UP.GetKey()) // Increase altitude.
+                {
+                    positionAdjustment.z = 1f;
+                    translating = true;
+                }
+                else if (GameSettings.THROTTLE_DOWN.GetKey()) // Decrease altitude.
+                {
+                    positionAdjustment.z = -1f;
+                    translating = true;
+                }
             }
 
             if (GameSettings.PITCH_DOWN.GetKey()) // Translate forward.
@@ -262,6 +265,7 @@ namespace BDArmory.Competition.VesselMover
             float moveSpeed = 0;
             float rotateSpeed = 0;
             var coordinateFrameAdjustAngle = Mathf.Cos(Mathf.Deg2Rad * 0.1f);
+            float preMapViewAltitude = 0;
             while (IsMoving(vessel))
             {
                 if (vessel.isActiveVessel)
@@ -281,10 +285,7 @@ namespace BDArmory.Competition.VesselMover
                         }
                         else
                         {
-                            if (Vector3.Dot(-up, FlightCamera.fetch.mainCamera.transform.up) > 0)
-                                forward = Vector3.ProjectOnPlane(FlightCamera.fetch.mainCamera.transform.up, up).normalized;
-                            else
-                                forward = Vector3.ProjectOnPlane(vessel.transform.position - FlightCamera.fetch.mainCamera.transform.position, up).normalized;
+                            forward = Vector3.ProjectOnPlane(vessel.transform.position - FlightCamera.fetch.mainCamera.transform.position, up).normalized;
                         }
                         right = Vector3.Cross(up, forward);
                     }
@@ -299,7 +300,12 @@ namespace BDArmory.Competition.VesselMover
                     if (autoLevelPlane)
                     {
                         Quaternion targetRot = Quaternion.LookRotation(-up, forward);
-                        rotation = Quaternion.RotateTowards(rotation, targetRot, rotateSpeed * 2f * Time.fixedDeltaTime);
+                        var angleDelta = Quaternion.Angle(rotation, targetRot);
+                        if (angleDelta > 0) // Note Quaternion.Angle is considered 0 below around 0.03, so this only runs a few times when finally approaching the target angle.
+                        {
+                            if (angleDelta < rotateSpeed * 4f * Time.fixedDeltaTime) rotation = Quaternion.Slerp(rotation, targetRot, 0.5f); // Slerp the last part to avoid overshooting, which shouldn't happen, but does!
+                            else rotation = Quaternion.RotateTowards(rotation, targetRot, rotateSpeed * 2f * Time.fixedDeltaTime);
+                        }
                     }
                     else if (autoLevelRocket)
                     {
@@ -324,7 +330,23 @@ namespace BDArmory.Competition.VesselMover
                     }
 
                     // Translations/Altitude changes
-                    if (reset)
+                    if (MapView.MapIsEnabled && preMapViewAltitude == 0) // Map View was enabled, raise the craft to at least 10km.
+                    {
+                        preMapViewAltitude = RadarAltitude(vessel); // When map view gets enabled, store the altitude the craft was at.
+                        var altitude = Mathf.Max(Mathf.Max((float)vessel.mainBody.Radius * 0.05f, 1e4f), preMapViewAltitude); // Then raise the vessel to at least 10km to avoid terrain loading.
+                        var safeAltitude = SafeAltitude(vessel, lowerBound);
+                        position += (altitude - safeAltitude) * up;
+                        if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselMover]: Switching to map altitude {altitude + lowerBound}m");
+                    }
+                    else if (!MapView.MapIsEnabled && preMapViewAltitude != 0) // Map View was disabled, lower the craft back to it's original altitude (min base+1km). Leave horizontal movement for later frames.
+                    {
+                        preMapViewAltitude = Mathf.Max(preMapViewAltitude, 2f * vessel.GetRadius() + 1000f);
+                        var safeAltitude = SafeAltitude(vessel, lowerBound);
+                        position += (preMapViewAltitude - safeAltitude) * up;
+                        if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselMover]: Reverting to pre-map altitude {preMapViewAltitude + lowerBound}m (safeAlt: {safeAltitude}, lower bound: {lowerBound}m)");
+                        preMapViewAltitude = 0;
+                    }
+                    else if (reset)
                     {
                         var baseAltitude = 2f * vessel.GetRadius();
                         var safeAltitude = SafeAltitude(vessel, lowerBound);
@@ -357,7 +379,7 @@ namespace BDArmory.Competition.VesselMover
                     {
                         var radarAltitude = RadarAltitude(vessel);
                         var distance = Mathf.Abs(radarAltitude - lowerBound);
-                        float maxMoveSpeed = distance < 1e4 ? 10f + distance : 100f * BDAMath.Sqrt(distance); ;
+                        float maxMoveSpeed = MapView.MapIsEnabled ? 1e5f : (distance < 1e4f ? 10f + distance : 100f * BDAMath.Sqrt(distance));
                         moveSpeed = Mathf.Clamp(Mathf.MoveTowards(moveSpeed, maxMoveSpeed, (4.79f * moveSpeed + 0.05f * maxMoveSpeed) * Time.fixedDeltaTime), 0, maxMoveSpeed); // Accelerated acceleration for ~2s.
 
                         var moveDistanceHorizontal = 10f * moveSpeed * Time.fixedDeltaTime;
@@ -370,11 +392,6 @@ namespace BDArmory.Competition.VesselMover
                         // Debug.Log($"DEBUG position: {position:G6}, altitude: {radarAltitude}, safeAltCorrection: {safeAltitude}, distance: {distance}, moveSpeed: {moveSpeed}, maxSpeed: {maxMoveSpeed}, moveDistanceHorizontal: {moveDistanceHorizontal}, moveDistanceVertical: {moveDistanceVertical}");
                     }
                     else { moveSpeed = 0; }
-
-                    if (translating || rotating || autoLevelPlane || autoLevelRocket)  // Correct for terrain/object collisions.
-                    {
-                        var radarAltitude = RadarAltitude(vessel);
-                    }
                 }
 
                 vessel.IgnoreGForces(240);
@@ -417,10 +434,10 @@ namespace BDArmory.Competition.VesselMover
             position -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
         }
 
-        IEnumerator PlaceVessel(Vessel vessel)
+        IEnumerator PlaceVessel(Vessel vessel, bool skipMovingCheck = false)
         {
             if (IsLowering(vessel)) yield break; // We're already doing this.
-            if (!IsMoving(vessel)) { state = State.None; yield break; } // The vessel isn't moving, abort.
+            if (!skipMovingCheck && !IsMoving(vessel)) { state = State.None; yield break; } // The vessel isn't moving, abort.
             if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselMover]: Placing {vessel.vesselName}");
             movingVessels.Remove(vessel);
             loweringVessels.Add(vessel);
@@ -432,7 +449,7 @@ namespace BDArmory.Competition.VesselMover
             {
                 var up = (vessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
                 var baseAltitude = 2f * vessel.GetRadius();
-                var safeAltitude = SafeAltitude(vessel) * 0.99f; // Only go 99% of the way in a single jump in case terrain is still loading in.
+                var safeAltitude = SafeAltitude(vessel) * 0.95f; // Only go 95% of the way in a single jump in case terrain is still loading in.
                 if (baseAltitude < safeAltitude)
                     vessel.Translate((baseAltitude - safeAltitude) * up);
                 vessel.SetWorldVelocity(Vector3d.zero);
@@ -541,7 +558,7 @@ namespace BDArmory.Competition.VesselMover
         bool LandedOrSplashed(Vessel vessel) => BDArmorySettings.VESSEL_MOVER_BELOW_WATER ? vessel.Landed : vessel.LandedOrSplashed;
         float RadarAltitude(Vessel vessel) => (float)(vessel.altitude - vessel.mainBody.TerrainAltitude(vessel.latitude, vessel.longitude, BDArmorySettings.VESSEL_MOVER_BELOW_WATER));
         float RadarAltitude(Vector3 position) => (float)(FlightGlobals.currentMainBody.GetAltitude(position) - BodyUtils.GetTerrainAltitudeAtPos(position, BDArmorySettings.VESSEL_MOVER_BELOW_WATER));
-        float SafeAltitude(Vessel vessel, float lowerBound = -1f, Vector3 offset = default)
+        float SafeAltitude(Vessel vessel, float lowerBound = -1f, Vector3 offset = default) // Get the safe altitude range we can adjust by.
         {
             var altitude = RadarAltitude(vessel);
             if (BDArmorySettings.VESSEL_MOVER_DONT_WORRY_ABOUT_COLLISIONS) return altitude;
@@ -646,7 +663,14 @@ namespace BDArmory.Competition.VesselMover
             camera.SetCamCoordsFromPosition(spawnedVessel.transform.position + cameraOffset);
 
             // Switch to moving mode
-            yield return MoveVessel(spawnedVessel);
+            if (BDArmorySettings.VESSEL_MOVER_PLACE_AFTER_SPAWN)
+            {
+                yield return PlaceVessel(spawnedVessel, true);
+            }
+            else
+            {
+                yield return MoveVessel(spawnedVessel);
+            }
             spawnedVessel = null; // Clear the reference to the spawned vessel.
         }
 
@@ -1018,7 +1042,10 @@ namespace BDArmory.Competition.VesselMover
                 case State.Spawning:
                     {
                         GUILayout.Label($"Spawning craft...", BDArmorySetup.SelectedButtonStyle, GUILayout.Height(40));
+                        GUILayout.BeginHorizontal();
                         BDArmorySettings.VESSEL_MOVER_CHOOSE_CREW = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_CHOOSE_CREW, StringUtils.Localize("#LOC_BDArmory_VesselMover_ChooseCrew"));
+                        BDArmorySettings.VESSEL_MOVER_PLACE_AFTER_SPAWN = GUILayout.Toggle(BDArmorySettings.VESSEL_MOVER_PLACE_AFTER_SPAWN, StringUtils.Localize("#LOC_BDArmory_VesselMover_PlaceAfterSpawn"));
+                        GUILayout.EndHorizontal();
                         break;
                     }
             }

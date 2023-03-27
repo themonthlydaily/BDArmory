@@ -703,8 +703,7 @@ namespace BDArmory.UI
 
                 if (BDInputUtils.GetKeyDown(BDInputSettingsFields.TIME_SCALING))
                 {
-                    BDArmorySettings.TIME_OVERRIDE = !BDArmorySettings.TIME_OVERRIDE;
-                    Time.timeScale = BDArmorySettings.TIME_OVERRIDE ? BDArmorySettings.TIME_SCALE : 1f;
+                    OtherUtils.SetTimeOverride(!BDArmorySettings.TIME_OVERRIDE);
                 }
             }
             else if (HighLogic.LoadedSceneIsEditor)
