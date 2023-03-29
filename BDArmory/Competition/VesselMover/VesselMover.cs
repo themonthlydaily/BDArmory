@@ -1088,6 +1088,7 @@ namespace BDArmory.Competition.VesselMover
         float vesselSelectionTimer = 0;
         string selectedVesselURL = "";
         string selectionFilter = "";
+        bool focusFilterField = false; // Focus the filter text field.
 
         public void ShowVesselSelection(Action<string> selectedCallback = null, Action cancelledCallback = null)
         {
@@ -1101,6 +1102,7 @@ namespace BDArmory.Competition.VesselMover
             vesselSelectionWindowRect.position = new Vector2((Screen.width - vesselSelectionWindowRect.width) / 2, (Screen.height - vesselSelectionWindowRect.height) / 2);
             selectedVesselURL = "";
             showVesselSelection = true;
+            focusFilterField = true;
             vesselSelectionTimer = Time.realtimeSinceStartup;
             GUIUtils.SetGUIRectVisible(_vesselGUICheckIndex, true);
         }
@@ -1115,7 +1117,12 @@ namespace BDArmory.Competition.VesselMover
         {
             GUI.DragWindow(new Rect(0, 0, vesselSelectionWindowRect.width, 20));
             GUILayout.BeginVertical();
-            selectionFilter = GUIUtils.TextField(selectionFilter, " Filter");
+            selectionFilter = GUIUtils.TextField(selectionFilter, " Filter", "VMFilterField");
+            if (focusFilterField)
+            {
+                GUI.FocusControl("VMFilterField");
+                focusFilterField = false;
+            }
             vesselSelectionScrollPos = GUILayout.BeginScrollView(vesselSelectionScrollPos, GUI.skin.box, GUILayout.Width(vesselSelectionWindowRect.width - 15), GUILayout.MaxHeight(vesselSelectionWindowRect.height - 60));
             using (var vessels = craftBrowser.craftList.GetEnumerator())
                 while (vessels.MoveNext())
@@ -1180,6 +1187,8 @@ namespace BDArmory.Competition.VesselMover
         HashSet<string> ActiveCrewMembers = new HashSet<string>();
         bool newCustomKerbal = false;
         string newKerbalName = "";
+        bool focusKerbalNameField = false; // Focus the kerbal name field.
+        bool notThisFrame = true; // Delay for dynamically added text field.
         ProtoCrewMember.Gender newKerbalGender = ProtoCrewMember.Gender.Male;
         bool removeKerbals = false;
 
@@ -1267,6 +1276,8 @@ namespace BDArmory.Competition.VesselMover
                 // Create a new Kerbal!
                 newCustomKerbal = !newCustomKerbal;
                 newKerbalName = "";
+                focusKerbalNameField = newCustomKerbal;
+                notThisFrame = true;
             }
             if (GUILayout.Button("X", removeKerbals ? BDArmorySetup.SelectedButtonStyle : BDArmorySetup.CloseButtonStyle, GUILayout.Width(27)))
             {
@@ -1276,7 +1287,14 @@ namespace BDArmory.Competition.VesselMover
             GUILayout.EndHorizontal();
             if (newCustomKerbal)
             {
-                newKerbalName = GUIUtils.TextField(newKerbalName, " Enter a new Kerbal name...");
+                newKerbalName = GUIUtils.TextField(newKerbalName, " Enter a new Kerbal name...", "kerbalNameField");
+                if (!notThisFrame && focusKerbalNameField)
+                {
+                    GUI.FocusControl("kerbalNameField");
+                    Debug.Log($"DEBUG Focus on kerbal name field");
+                    focusKerbalNameField = false;
+                }
+                if (notThisFrame) notThisFrame = false;
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_Generic_OK"), BDArmorySetup.ButtonStyle))
                 {
