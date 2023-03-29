@@ -1434,7 +1434,7 @@ namespace BDArmory.Weapons
                 reloadState = GUIUtils.SetUpSingleAnimation(reloadAnimName, part);
                 if (reloadState != null)
                 {
-                    reloadState.normalizedTime = 0;
+                    reloadState.normalizedTime = 1;
                     reloadState.speed = 0;
                     reloadState.enabled = true;
                 }
@@ -1462,8 +1462,8 @@ namespace BDArmory.Weapons
             if (hasFireAnimation)
             {
                 List<string> animList = BDAcTools.ParseNames(fireAnimName);
-                animList = animList.OrderBy(w => w).ToList();
-                fireState = new AnimationState[animList.Count]; //this should become animList.Count, for cases where there's a multibarrel weapon with a single fireanim
+                //animList = animList.OrderBy(w => w).ToList();
+                fireState = new AnimationState[animList.Count]; 
                 //for (int i = 0; i < fireTransforms.Length; i++)
                 for (int i = 0; i < animList.Count; i++)
                 {
@@ -1471,7 +1471,7 @@ namespace BDArmory.Weapons
                     {
                         fireState[i] = GUIUtils.SetUpSingleAnimation(animList[i].ToString(), part);
                         //Debug.Log("[BDArmory.ModuleWeapon] Added fire anim " + i);
-                        fireState[i].enabled = false;
+                        fireState[i].normalizedTime = 0;
                     }
                     catch
                     {
@@ -2483,14 +2483,14 @@ namespace BDArmory.Weapons
                                             }
                                             if (p.rb != null && p.rb.mass > 0)
                                             {
-                                                if (Impulse > 0)
-                                                {
+                                                //if (Impulse > 0)
+                                                //{
                                                     p.rb.AddForceAtPosition((p.transform.position - tf.position).normalized * (float)Impulse, p.transform.position, ForceMode.Impulse);
-                                                }
-                                                else
-                                                {
-                                                    p.rb.AddForceAtPosition((tf.position - p.transform.position).normalized * (float)Impulse, p.transform.position, ForceMode.Impulse);
-                                                }
+                                                //}
+                                                //else
+                                                //{
+                                                //    p.rb.AddForceAtPosition((tf.position - p.transform.position).normalized * (float)Impulse, p.transform.position, ForceMode.Impulse);
+                                                //}
                                                 if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Impulse of {Impulse} Applied to {p.vessel.GetName()}");
                                                 //if (laserDamage == 0) 
                                                 damage += Impulse / 100;
@@ -2978,10 +2978,7 @@ namespace BDArmory.Weapons
             //Debug.Log("[BDArmory.ModuleWeapon]: fireState length = " + fireState.Length);
             for (int i = 0; i < fireState.Length; i++)
             {
-                try
-                {
-                    //Debug.Log("[BDArmory.ModuleWeapon]: playing Fire Anim, i = " + i + "; fire anim " + fireState[i].name);
-                }
+                try{}
                 catch
                 {
                     Debug.Log("[BDArmory.ModuleWeapon]: error with fireanim number " + barrelIndex);
@@ -3005,6 +3002,7 @@ namespace BDArmory.Weapons
                     }
                     fireState[i].speed = fireAnimSpeed;
                     fireState[i].normalizedTime = Mathf.Repeat(fireState[i].normalizedTime, 1);
+                    Debug.Log("[BDArmory.ModuleWeapon]: playing Fire Anim, i = " + i + "; fire anim " + fireState[i].name);
                 }
             }
         }
@@ -5064,6 +5062,13 @@ namespace BDArmory.Weapons
         IEnumerator ReloadRoutine()
         {
             guiStatusString = "Reloading";
+
+            for (int i = 0; i < fireState.Length; i++)
+            {
+                fireState[i].normalizedTime = 0;
+                fireState[i].speed = 0;
+                fireState[i].enabled = false;
+            }
 
             reloadState.normalizedTime = 0;
             reloadState.enabled = true;
