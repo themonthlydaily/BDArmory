@@ -2166,9 +2166,7 @@ namespace BDArmory.Weapons
                         }
                     }
 
-                if (useRippleFire)
-                {
-                    if (fireState.Length > 1) 
+                    if (fireState.Length > 1)
                     {
                         barrelIndex++;
                         animIndex++;
@@ -2194,7 +2192,6 @@ namespace BDArmory.Weapons
                             //need to know what next weapon in ripple sequence is, and have firedelay be set to whatever it's RPM is, not this weapon's or a generic average
                         }
                     }
-                }
             }
             else
             {
@@ -2251,32 +2248,30 @@ namespace BDArmory.Weapons
                             LaserBeam(aName);
                         }
                         heat += heatPerShot;
-                        if (useRippleFire)
+
+                        if (fireState.Length > 1)
                         {
-                            if (fireState.Length > 1)
+                            barrelIndex++;
+                            animIndex++;
+                            //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " is " + barrelIndex + "; total barrels " + fireTransforms.Length);
+                            if ((!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag))) && barrelIndex + 1 > fireTransforms.Length) //only advance ripple index if weapon isn't brustfire, has finished burst, or has fired with all barrels
                             {
-                                barrelIndex++;
-                                animIndex++;
-                                //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " is " + barrelIndex + "; total barrels " + fireTransforms.Length);
-                                if ((!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag))) && barrelIndex + 1 > fireTransforms.Length) //only advance ripple index if weapon isn't brustfire, has finished burst, or has fired with all barrels
+                                StartCoroutine(IncrementRippleIndex(InitialFireDelay * TimeWarp.CurrentRate));
+                                isRippleFiring = true;
+                                if (barrelIndex + 1 > fireTransforms.Length)
                                 {
-                                    StartCoroutine(IncrementRippleIndex(InitialFireDelay * TimeWarp.CurrentRate));
-                                    isRippleFiring = true;
-                                    if (barrelIndex + 1 > fireTransforms.Length)
-                                    {
-                                        barrelIndex = 0;
-                                        //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " reset");
-                                    }
+                                    barrelIndex = 0;
+                                    //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " reset");
                                 }
-                                if (animIndex + 1 > fireState.Length) animIndex = 0;
                             }
-                            else
+                            if (animIndex + 1 > fireState.Length) animIndex = 0;
+                        }
+                        else
+                        {
+                            if (!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag)))
                             {
-                                if (!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag)))
-                                {
-                                    StartCoroutine(IncrementRippleIndex(InitialFireDelay * TimeWarp.CurrentRate));
-                                    isRippleFiring = true;
-                                }
+                                StartCoroutine(IncrementRippleIndex(InitialFireDelay * TimeWarp.CurrentRate));
+                                isRippleFiring = true;
                             }
                         }
                     }
@@ -2846,32 +2841,29 @@ namespace BDArmory.Weapons
                         timeFired = Time.time - iTime;
                     }
                 }
-                if (useRippleFire)
+                if (fireState.Length > 1)
                 {
-                    if (fireState.Length > 1)
+                    barrelIndex++;
+                    animIndex++;
+                    //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " is " + barrelIndex + "; total barrels " + fireTransforms.Length);
+                    if ((!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag))) && barrelIndex + 1 > fireTransforms.Length) //only advance ripple index if weapon isn't brustfire, has finished burst, or has fired with all barrels
                     {
-                        barrelIndex++;
-                        animIndex++;
-                        //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " is " + barrelIndex + "; total barrels " + fireTransforms.Length);
-                        if ((!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag))) && barrelIndex + 1 > fireTransforms.Length) //only advance ripple index if weapon isn't brustfire, has finished burst, or has fired with all barrels
+                        StartCoroutine(IncrementRippleIndex(InitialFireDelay * TimeWarp.CurrentRate));
+                        isRippleFiring = true;
+                        if (barrelIndex + 1 > fireTransforms.Length)
                         {
-                            StartCoroutine(IncrementRippleIndex(InitialFireDelay * TimeWarp.CurrentRate));
-                            isRippleFiring = true;
-                            if (barrelIndex + 1 > fireTransforms.Length)
-                            {
-                                barrelIndex = 0;
-                                //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " reset");
-                            }
+                            barrelIndex = 0;
+                            //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " reset");
                         }
-                        if (animIndex + 1 > fireState.Length) animIndex = 0;
                     }
-                    else
+                    if (animIndex + 1 > fireState.Length) animIndex = 0;
+                }
+                else
+                {
+                    if (!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag)))
                     {
-                        if (!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag)))
-                        {
-                            StartCoroutine(IncrementRippleIndex(InitialFireDelay * TimeWarp.CurrentRate));
-                            isRippleFiring = true;
-                        }
+                        StartCoroutine(IncrementRippleIndex(InitialFireDelay * TimeWarp.CurrentRate));
+                        isRippleFiring = true;
                     }
                 }
             }
@@ -2983,7 +2975,7 @@ namespace BDArmory.Weapons
                 {
                     Debug.Log("[BDArmory.ModuleWeapon]: error with fireanim number " + barrelIndex);
                 }
-                if ((!useRippleFire) || (useRippleFire && i == animIndex))
+                if ((!useRippleFire && fireTransforms.Length > 1) || (i == animIndex)) //play fireanims sequentially, unless a multibarrel weapon in salvomode, then play all fireanims simultaneously
                 {
                     float unclampedSpeed = (roundsPerMinute * fireState[i].length) / 60f;
                     if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
@@ -3002,7 +2994,7 @@ namespace BDArmory.Weapons
                     }
                     fireState[i].speed = fireAnimSpeed;
                     fireState[i].normalizedTime = Mathf.Repeat(fireState[i].normalizedTime, 1);
-                    Debug.Log("[BDArmory.ModuleWeapon]: playing Fire Anim, i = " + i + "; fire anim " + fireState[i].name);
+                    if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.ModuleWeapon]: playing Fire Anim, i = " + i + "; fire anim " + fireState[i].name);
                 }
             }
         }
@@ -4411,11 +4403,6 @@ namespace BDArmory.Weapons
                         laserRenderers[i].enabled = false;
                     }
                 }
-                if (!oneShotSound) audioSource.Stop();
-                if (!String.IsNullOrEmpty(reloadAudioPath))
-                {
-                    audioSource.PlayOneShot(reloadAudioClip);
-                }
                 wasFiring = false;
                 weaponManager.ResetGuardInterval();
                 showReloadMeter = true;
@@ -5062,14 +5049,18 @@ namespace BDArmory.Weapons
         IEnumerator ReloadRoutine()
         {
             guiStatusString = "Reloading";
-
+            yield return new WaitForSecondsFixed(fireAnimSpeed); //wait for fire anim to finish.
             for (int i = 0; i < fireState.Length; i++)
             {
                 fireState[i].normalizedTime = 0;
                 fireState[i].speed = 0;
                 fireState[i].enabled = false;
             }
-
+            if (!oneShotSound) audioSource.Stop();
+            if (!String.IsNullOrEmpty(reloadAudioPath))
+            {
+                audioSource.PlayOneShot(reloadAudioClip);
+            }
             reloadState.normalizedTime = 0;
             reloadState.enabled = true;
             reloadState.speed = (reloadState.length / ReloadTime);//ensure reload anim is not longer than reload time
