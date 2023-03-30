@@ -4422,6 +4422,11 @@ namespace BDArmory.Weapons
                         StopShutdownStartupRoutines();
                         shutdownRoutine = StartCoroutine(ShutdownRoutine(true));
                     }
+                    if (!oneShotSound) audioSource.Stop();
+                    if (!String.IsNullOrEmpty(reloadAudioPath))
+                    {
+                        audioSource.PlayOneShot(reloadAudioClip);
+                    }
                 }
             }
             if (!hasReloadAnim && hasDeployAnim && (AnimTimer >= 1 && isReloading))
