@@ -4385,10 +4385,10 @@ namespace BDArmory.Weapons
         {
             if (isReloading)
             {
-                ReloadTimer = Mathf.Min(ReloadTimer + TimeWarp.fixedDeltaTime / ReloadTime, 1);
+                ReloadTimer = Mathf.Min(ReloadTimer + TimeWarp.fixedDeltaTime / (hasReloadAnim ? ReloadTime + fireAnimSpeed : ReloadTime), 1);
                 if (hasDeployAnim)
                 {
-                    AnimTimer = Mathf.Min(AnimTimer + TimeWarp.fixedDeltaTime / ReloadAnimTime, 1);
+                    AnimTimer = Mathf.Min(AnimTimer + TimeWarp.fixedDeltaTime / (hasReloadAnim ? ReloadTime + fireAnimSpeed : ReloadTime), 1);
                 }
             }
             if ((RoundsRemaining >= RoundsPerMag && !isReloading) && (ammoCount > 0 || BDArmorySettings.INFINITE_AMMO))
