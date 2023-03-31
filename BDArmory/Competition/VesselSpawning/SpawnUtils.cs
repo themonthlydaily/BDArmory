@@ -678,7 +678,7 @@ namespace BDArmory.Competition.VesselSpawning
             var tic = Time.time;
             yield return new Utils.WaitUntilFixed(() => vessel == null || vessel.Parts.Count != 0 || Time.time - tic > 10); // Wait for up to 10s for the vessel's parts to be populated (usually it takes 2 frames after spawning).
             if (vessel == null || vessel.Parts.Count == 0) yield break;
-            if (!restore) // Wipe all KAL on the vessel.
+            if (!restore) // Wipe all KAL modules on the vessel.
             {
                 foreach (var kal in vessel.FindPartModulesImplementing<Expansions.Serenity.ModuleRoboticController>())
                 {
@@ -687,41 +687,36 @@ namespace BDArmory.Competition.VesselSpawning
                 }
                 yield break;
             }
-            foreach (var snapshot in vessel.protoVessel.protoPartSnapshots) // The protoVessel contains the original ProtoPartModuleSnapshots with the info we need.
-            {
-                foreach (var module in snapshot.modules)
-                {
-                    if (module.moduleName == "ModuleRoboticController") // Found a KAL
+            foreach (var protoPartSnapshot in vessel.protoVessel.protoPartSnapshots) // The protoVessel contains the original ProtoPartModuleSnapshots with the info we need.
+                foreach (var protoPartModuleSnapshot in protoPartSnapshot.modules)
+                    if (protoPartModuleSnapshot.moduleName == "ModuleRoboticController") // Found a KAL
                     {
-                        var kal = module.moduleRef as Expansions.Serenity.ModuleRoboticController;
-                        var controlledAxes = module.moduleValues.GetNode("CONTROLLEDAXES");
+                        var kal = protoPartModuleSnapshot.moduleRef as Expansions.Serenity.ModuleRoboticController;
+                        var controlledAxes = protoPartModuleSnapshot.moduleValues.GetNode("CONTROLLEDAXES");
+                        kal.ControlledAxes.Clear(); // Clear the existing axes (they should be clear already due to mismatching part persistent IDs, but better safe than sorry).
                         int rowIndex = 0;
-                        foreach (var axisNode in controlledAxes.GetNodes("AXIS"))
-                        {
+                        foreach (var axisNode in controlledAxes.GetNodes("AXIS")) // For each axis to be controlled, locate the part in the spawned vessel that has the correct module.
                             if (uint.TryParse(axisNode.GetValue("moduleId"), out uint moduleId)) // Get the persistentId of the module it's supposed to be affecting, which is correctly set in some part.
                             {
                                 foreach (var part in vessel.Parts)
                                     foreach (var partModule in part.Modules)
-                                        if (partModule.PersistentId == moduleId) // Found the corresponding part with the correct moduleId
+                                        if (partModule.PersistentId == moduleId) // Found a corresponding part with the correct moduleId. Note: there could be multiple parts with this module due to symmetry, so we check them all.
                                         {
                                             var fieldName = axisNode.GetValue("axisName");
                                             foreach (var field in partModule.Fields)
-                                                if (field.name == fieldName)
+                                                if (field.name == fieldName) // Found the axis field in a module in a part being controlled by this KAL.
                                                 {
                                                     axisNode.SetValue("persistentId", part.persistentId.ToString()); // Update the ConfigNode in the ProtoPartModuleSnapshot
-                                                    axisNode.SetValue("partNickName", part.partInfo.title);
+                                                    axisNode.SetValue("partNickName", part.partInfo.title); // Set the nickname to the part title (note: this will override custom nicknames).
                                                     axisNode.SetValue("rowIndex", rowIndex++);
-                                                    var axis = new Expansions.Serenity.ControlledAxis(part, partModule, field as BaseAxisField, kal);
-                                                    axis.Load(axisNode);
-                                                    kal.ControlledAxes.Add(axis);
-                                                    break; // FIXME Check whether we need to apply the above to symmetric parts, or whether the loop will take care of that.
+                                                    var axis = new Expansions.Serenity.ControlledAxis(part, partModule, field as BaseAxisField, kal); // Link the part, module, field and KAL together.
+                                                    axis.Load(axisNode); // Load the new config into the axis.
+                                                    kal.ControlledAxes.Add(axis); // Add the axis to the KAL.
+                                                    break;
                                                 }
                                         }
                             }
-                        }
                     }
-                }
-            }
         }
         #endregion
     }
