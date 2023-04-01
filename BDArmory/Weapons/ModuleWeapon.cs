@@ -2175,13 +2175,13 @@ namespace BDArmory.Weapons
                         {
                             StartCoroutine(IncrementRippleIndex(InitialFireDelay * TimeWarp.CurrentRate));
                             isRippleFiring = true;
-                            if (barrelIndex + 1 > fireTransforms.Length)
+                            if (barrelIndex >= fireTransforms.Length)
                             {
                                 barrelIndex = 0;
                                 //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " reset");
                             }
                         }
-                        if (animIndex + 1 > fireState.Length) animIndex = 0;
+                        if (animIndex >= fireState.Length) animIndex = 0;
                     }
                     else
                     {
@@ -2258,13 +2258,13 @@ namespace BDArmory.Weapons
                             {
                                 StartCoroutine(IncrementRippleIndex(InitialFireDelay * TimeWarp.CurrentRate));
                                 isRippleFiring = true;
-                                if (barrelIndex + 1 > fireTransforms.Length)
+                                if (barrelIndex >= fireTransforms.Length)
                                 {
                                     barrelIndex = 0;
                                     //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " reset");
                                 }
                             }
-                            if (animIndex + 1 > fireState.Length) animIndex = 0;
+                            if (animIndex >= fireState.Length) animIndex = 0;
                         }
                         else
                         {
@@ -2850,13 +2850,13 @@ namespace BDArmory.Weapons
                     {
                         StartCoroutine(IncrementRippleIndex(InitialFireDelay * TimeWarp.CurrentRate));
                         isRippleFiring = true;
-                        if (barrelIndex + 1 > fireTransforms.Length)
+                        if (barrelIndex >= fireTransforms.Length)
                         {
                             barrelIndex = 0;
                             //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " reset");
                         }
                     }
-                    if (animIndex + 1 > fireState.Length) animIndex = 0;
+                    if (animIndex >= fireState.Length) animIndex = 0;
                 }
                 else
                 {
