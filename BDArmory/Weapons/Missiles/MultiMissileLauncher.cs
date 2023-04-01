@@ -43,6 +43,8 @@ namespace BDArmory.Weapons.Missiles
         [KSPField] public string RailNode = "rail"; //name of attachnode for VLS MMLs to set missile loadout
         [KSPField] public float tntMass = 1; //for MissileLauncher GetInfo()
         [KSPField] public bool OverrideDropSettings = false; //for MissileLauncher GetInfo()
+		[KSPField] public bool displayOrdinance = true; //display missile dummies (for rails and the like) or hide them (bomblet dispensers, gun-launched missiles, etc)
+        [KSPField] public bool permitJettison = false; //allow jettisoning of missiles for multimissile launchrails and similar
         AnimationState deployState;
         ModuleMissileRearm missileSpawner = null;
         MissileLauncher missileLauncher = null;
@@ -72,8 +74,11 @@ namespace BDArmory.Weapons.Missiles
                 missileSpawner.AccountForAmmo = false;
                 missileSpawner.ammoCount = launchTransforms.Length;
             }
-
-            missileSpawner.isMultiLauncher = true;
+            if (!permitJettison)
+            {
+                Events["Jettison"].guiActive = false;
+            }
+                missileSpawner.isMultiLauncher = true;
             if (!string.IsNullOrEmpty(deployAnimationName))
             {
                 deployState = GUIUtils.SetUpSingleAnimation(deployAnimationName, part);
@@ -111,6 +116,29 @@ namespace BDArmory.Weapons.Missiles
             GameEvents.onPartDie.Remove(OnPartDie);
         }
 
+        [KSPEvent(guiActive = true, guiActiveEditor = false, active = true, guiName = "#LOC_BDArmory_Jettison")]//Jettison
+        public void Jettison()
+        {
+            for (int m = tubesFired; m < launchTransforms.Length; m++)
+            {
+                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MultiMissileLauncher] jettisoning missile {m}");
+
+                if (!isClusterMissile && (missileSpawner.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE))
+                {
+                    tubesFired = 0;
+                    break;
+                }
+                tubesFired++;
+                missileSpawner.SpawnMissile(launchTransforms[m], offset);               
+                launchTransforms[m].localScale = Vector3.zero;
+            }
+            missileSpawner.ammoCount = 0;
+            part.RemoveModule(missileLauncher);
+            part.RemoveModule(missileSpawner);
+            if (BDArmorySetup.Instance.ActiveWeaponManager != null) BDArmorySetup.Instance.ActiveWeaponManager.UpdateList();
+            part.RemoveModule(this);
+        }
+
         void OnPartDie() { OnPartDie(part); }
 
         void OnPartDie(Part p)
@@ -141,7 +169,7 @@ namespace BDArmory.Weapons.Missiles
                                 if (missile.FindModuleImplementing<MissileLauncher>())
                                 {
                                     subMunitionName = missile.name;
-                                    subMunitionPath = GetMeshurl((UrlDir.UrlConfig)GameDatabase.Instance.root.GetConfig(missile.partInfo.partUrl)); //might be easier to mess around with MeshFilter instead?
+                                    subMunitionPath = GetMeshurl((UrlDir.UrlConfig)GameDatabase.Instance.root.GetConfig(missile.partInfo.partUrl));
                                     PopulateMissileDummies(true);
                                     MissileLauncher MLConfig = missile.FindModuleImplementing<MissileLauncher>();
                                     LoadoutModified = true;
@@ -282,7 +310,6 @@ namespace BDArmory.Weapons.Missiles
             {
                 string launcherName = launchTransform.GetChild(i).name;
                 int launcherIndex = int.Parse(launcherName.Substring(7)) - 1; //by coincidence, this is the same offset as rocket pods, which means the existing rocketlaunchers could potentially be converted over to homing munitions...
-
                 launchTransforms[launcherIndex] = launchTransform.GetChild(i);
             }
             salvoSize = Mathf.Min(salvoSize, launchTransforms.Length);
@@ -293,6 +320,7 @@ namespace BDArmory.Weapons.Missiles
         }
         public void PopulateMissileDummies(bool refresh = false)
         {
+			if (!displayOrdinance) return;
             if (refresh)
             {
                 SetupMissileDummyPool(subMunitionPath);

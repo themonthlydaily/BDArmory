@@ -354,6 +354,7 @@ namespace BDArmory.Weapons.Missiles
         public void AGJettsion(KSPActionParam param)
         {
             Jettison();
+            if (multiLauncher && multiLauncher.permitJettison) multiLauncher.Jettison();
         }
 
         void ParseWeaponClass()
