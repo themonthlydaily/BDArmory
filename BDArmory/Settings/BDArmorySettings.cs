@@ -147,7 +147,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static float DMG_MULTIPLIER = 100f;
         [BDAPersistentSettingsField] public static float BALLISTIC_DMG_FACTOR = 1.55f;
         [BDAPersistentSettingsField] public static float HITPOINT_MULTIPLIER = 3.0f;
-        [BDAPersistentSettingsField] public static float EXP_DMG_MOD_BALLISTIC_NEW = 0.65f;     // HE bullet explosion damage multiplier
+        [BDAPersistentSettingsField] public static float EXP_DMG_MOD_BALLISTIC_NEW = 0.55f;     // HE bullet explosion damage multiplier
         [BDAPersistentSettingsField] public static float EXP_PEN_RESIST_MULT = 2.50f;           // Armor HE penetration resistance multiplier
         [BDAPersistentSettingsField] public static float EXP_DMG_MOD_MISSILE = 6.75f;           // Missile explosion damage multiplier
         [BDAPersistentSettingsField] public static float EXP_DMG_MOD_ROCKET = 1f;               // Rocket explosion damage multiplier (FIXME needs tuning; Note: rockets used Ballistic mod before, but probably ought to be more like missiles)
