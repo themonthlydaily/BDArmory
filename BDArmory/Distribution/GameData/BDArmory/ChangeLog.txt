@@ -1,6 +1,20 @@
 ﻿IMPROVEMENTS / FIXES
+- General:
+	- Restore/wipe functionality to the KAL.
+		- Toggling the "Restore KAL" toggle in the GamePlay section of the settings will restore or wipe the controlled axes from KALs on all loaded vessels.
+		- Vessels spawned via BDA+'s spawning routines will automatically have this applied.
+		- The KALs on all loaded vessels will also be restored/wiped on competition start.
 - AI:
 	- Set the main throttle, pitch, yaw and roll axis groups when setting the flight control state. This allows use of axis groups in BDA+ with these axes.
+- VesselMover:
+	- Add option to immediately place the vessel after spawning.
+	- Adjustments to movement in map mode.
+	- Safer placement-lower.
+- UI:
+	- Auto-switch UI focus to new input text fields in Vessel Mover and Custom Spawn Templates.
+	- Move the "Auto-Disable UI" toggle to the UI section of the settings.
+- Competition:
+	- Add sorting and "scores" for waypoint runs in the Vessel Switcher for waypoints game mode.
 
 v1.5.9.4
 IMPROVEMENTS / FIXES
