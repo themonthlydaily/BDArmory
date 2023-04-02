@@ -594,7 +594,7 @@ namespace BDArmory.Competition.VesselSpawning
                 foreach (var ctrlSrf in VesselModuleRegistry.GetModules<ModuleControlSurface>(vessel))
                 {
                     ctrlSrf.actuatorSpeed = 30;
-                    Debug.Log($"[BDArmory.ActuatorHacks]: Setting {ctrlSrf.name} actuation speed to : {ctrlSrf.actuatorSpeed}");
+                    if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.ActuatorHacks]: Setting {ctrlSrf.name} actuation speed to : {ctrlSrf.actuatorSpeed}");
                 }
             }
             else
