@@ -55,10 +55,21 @@ namespace BDArmory.Weapons.Missiles
         public BDTeam Team = BDTeam.Get("Neutral");
         public void Start()
         {
-            MakeMissileArray();
-            //List<MissileDummy> missileDummies = new List<MissileDummy>();
+            MakeMissileArray();           
+            GameEvents.onEditorShipModified.Add(ShipModified);
+            if (HighLogic.LoadedSceneIsFlight)
+            {
+                GameEvents.onPartDie.Add(OnPartDie);
+            }            
+            StartCoroutine(DelayedStart());
+        }
+
+        IEnumerator DelayedStart()
+        {
+            yield return new WaitForFixedUpdate();
             missileLauncher = part.FindModuleImplementing<MissileLauncher>();
-            missileSpawner = missileLauncher.reloadableRail;
+
+            missileSpawner = part.FindModuleImplementing<ModuleMissileRearm>();
             if (missileSpawner == null) //MultiMissile launchers/cluster missiles need a MMR module for spawning their submunitions, so add one if not present in case cfg not set up properly
             {
                 missileSpawner = (ModuleMissileRearm)part.AddModule("ModuleMissileRearm");
@@ -69,16 +80,63 @@ namespace BDArmory.Weapons.Missiles
                 if (!isClusterMissile) //Clustermissiles replace/generate MMR on launch, other missiles should have it in the .cfg
                     Debug.LogError($"[BDArmory.MultiMissileLauncher] no ModuleMissileRearm on {part.name}. Please fix your .cfg");
             }
+            if (missileLauncher != null) //deal with race condition/'MissileLauncher' loading before 'MultiMissileLauncher' and 'ModuleMissilerearm' by moving all relevant flags and values to a single location
+            {
+                missileLauncher.reloadableRail = missileSpawner;
+                missileLauncher.hasAmmo = true;
+                missileLauncher.multiLauncher = this;
+                missileLauncher.missileName = subMunitionName;
+
+                if (isClusterMissile)
+                {
+                    missileLauncher.DetonationDistance = 750;
+                    missileLauncher.DetonateAtMinimumDistance = false;
+                    missileLauncher.Fields["DetonateAtMinimumDistance"].guiActive = true;
+                    missileLauncher.Fields["DetonateAtMinimumDistance"].guiActiveEditor = true;
+                }
+                if (isMultiLauncher)
+                {
+                    Events["Jettison"].guiActive = false;
+                    if (OverrideDropSettings)
+                    {
+                        missileLauncher.Fields["dropTime"].guiActive = false;
+                        missileLauncher.Fields["dropTime"].guiActiveEditor = false;
+                        missileLauncher.dropTime = 0;
+                        missileLauncher.Fields["decoupleSpeed"].guiActive = false;
+                        missileLauncher.Fields["decoupleSpeed"].guiActiveEditor = false;
+                        missileLauncher.decoupleSpeed = 0;
+                        missileLauncher.Events["decoupleForward"].guiActive = false;
+                        missileLauncher.Events["decoupleForward"].guiActiveEditor = false;
+                        missileLauncher.decoupleForward = true;
+
+                        float bRadius = 0;
+                        if (isMultiLauncher)
+                        {
+                            using (var parts = PartLoader.LoadedPartsList.GetEnumerator())
+                                while (parts.MoveNext())
+                                {
+                                    if (parts.Current.partConfig == null || parts.Current.partPrefab == null) continue;
+                                    if (!parts.Current.partPrefab.partInfo.name.Contains(subMunitionName)) continue;
+                                    var explosivePart = parts.Current.partPrefab.FindModuleImplementing<BDExplosivePart>();
+                                    bRadius = explosivePart != null ? explosivePart.GetBlastRadius() : 0;
+                                }
+                            if (bRadius == 0)
+                            {
+                                Debug.Log("[multiMissileLauncher.GetBlastRadius] needing to use MMR tntmass value!");
+                                bRadius = BlastPhysicsUtils.CalculateBlastRange(missileSpawner.tntmass);
+                            }
+                            missileLauncher.blastRadius = bRadius;
+                        }
+                        else if (isClusterMissile) missileLauncher.blastRadius = 750; //clustermissile det radius hardcoded for now
+                    }
+                }
+            }
             if (isClusterMissile)
             {
                 missileSpawner.AccountForAmmo = false;
                 missileSpawner.ammoCount = launchTransforms.Length;
             }
-            if (!permitJettison)
-            {
-                Events["Jettison"].guiActive = false;
-            }
-                missileSpawner.isMultiLauncher = true;
+            missileSpawner.isMultiLauncher = true;
             if (!string.IsNullOrEmpty(deployAnimationName))
             {
                 deployState = GUIUtils.SetUpSingleAnimation(deployAnimationName, part);
@@ -89,16 +147,10 @@ namespace BDArmory.Weapons.Missiles
                     deployState.enabled = true;
                 }
             }
-            GameEvents.onEditorShipModified.Add(ShipModified);
-            if (HighLogic.LoadedSceneIsFlight)
-            {
-                GameEvents.onPartDie.Add(OnPartDie);
-            }
+            missileSpawner.MissileName = subMunitionName;
+            missileSpawner.UpdateMissileValues();
             if (LoadoutModified)
             {
-                missileSpawner.MissileName = subMunitionName;
-                missileSpawner.UpdateMissileValues();
-
                 using (var parts = PartLoader.LoadedPartsList.GetEnumerator())
                     while (parts.MoveNext())
                     {
@@ -116,28 +168,6 @@ namespace BDArmory.Weapons.Missiles
             GameEvents.onPartDie.Remove(OnPartDie);
         }
 
-        [KSPEvent(guiActive = true, guiActiveEditor = false, active = true, guiName = "#LOC_BDArmory_Jettison")]//Jettison
-        public void Jettison()
-        {
-            for (int m = tubesFired; m < launchTransforms.Length; m++)
-            {
-                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MultiMissileLauncher] jettisoning missile {m}");
-
-                if (!isClusterMissile && (missileSpawner.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE))
-                {
-                    tubesFired = 0;
-                    break;
-                }
-                tubesFired++;
-                missileSpawner.SpawnMissile(launchTransforms[m], offset);               
-                launchTransforms[m].localScale = Vector3.zero;
-            }
-            missileSpawner.ammoCount = 0;
-            part.RemoveModule(missileLauncher);
-            part.RemoveModule(missileSpawner);
-            if (BDArmorySetup.Instance.ActiveWeaponManager != null) BDArmorySetup.Instance.ActiveWeaponManager.UpdateList();
-            part.RemoveModule(this);
-        }
 
         void OnPartDie() { OnPartDie(part); }
 
@@ -234,7 +264,7 @@ namespace BDArmory.Weapons.Missiles
                 dummyScale.z = scale;
             }
             url = string.Format("{0}/{1}", cfgdir.parent.parent.url, mesh);
-            //Debug.Log($"[BDArmory.MultiMissileLauncher] Found model URL of {url}");
+            //Debug.Log($"[BDArmory.MultiMissileLauncher] Found model URL of {url} and scale {dummyScale}");
             return url;
         }
 

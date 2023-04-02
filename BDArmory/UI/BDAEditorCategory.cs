@@ -111,6 +111,7 @@ namespace BDArmory.UI
                             parts.Current.partConfig.AddValue(AutoBDACategoryKey, parts.Current.partConfig.GetValue(BDACategoryKey));
                         else
                         {
+                            if (parts.Current.partPrefab.partInfo.TechRequired == "Unresearchable") continue;
                             ModuleWeapon moduleWeapon;
                             MissileLauncher missileLauncher;
                             if ((moduleWeapon = parts.Current.partPrefab.FindModuleImplementing<ModuleWeapon>()) != null)
