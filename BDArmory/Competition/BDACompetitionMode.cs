@@ -307,6 +307,7 @@ namespace BDArmory.Competition
                     VehiclePhysics.Gravity.Refresh();
                 }
                 RemoveDebrisNow();
+                SpawnUtils.RestoreKALGlobally(BDArmorySettings.RESTORE_KAL);
                 GameEvents.onVesselPartCountChanged.Add(OnVesselModified);
                 GameEvents.onVesselCreate.Add(OnVesselModified);
                 GameEvents.onCrewOnEva.Add(OnCrewOnEVA);
