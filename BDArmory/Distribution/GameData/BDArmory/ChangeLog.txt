@@ -1,6 +1,32 @@
 ﻿IMPROVEMENTS / FIXES
+- General:
+ - Fix AIR-2 Genie manufacturer localization tag.
+ - Add 'RepulsorOverride' bool to ModuleSpaceFriction, to allow Repulsors to be used outside of the SpaceHacks Gamemode (for making repulsor wheels and similar).
 - AI:
 	- Set the main throttle, pitch, yaw and roll axis groups when setting the flight control state. This allows use of axis groups in BDA+ with these axes.
+	- Battledamage is automatically disabled when Autotuning; no more craft setting themselves on fire from fueltank fires.
+- Detectors:
+	-IRST now properly returns data to heatseeking missiles.
+- Weapons:
+	- Gun recoil now properly takes propellant mass into account
+	- Multiple fireanim support for single barrel weapons
+	- Fix impulse for lasers
+	- In light if the increased damage following the HE damage calc fix in 1.5.9.0, the Explosive Damage Multiplier default has changed from 0.65 to 0.55.
+ 	 - FireAngle new default now 1.0 from 1.4
+ 	 - Gun accuracy refactored across the board
+	 - Vulcan Accuracy changed to 0.88
+	 - Vulcan Turret Accuracy changed to 1.02
+	 - GAU-8 & GAU-22 Accuracy changed to 0.6405
+	 - Goalkeeper Accuracy changed to 0.675
+	 - Chaingun Accuracy changed to 0.45
+	 - Sidam Accuracy changed to 0.42
+- Countermeasures:
+ - rcsReductionFactor in ECMJammers can now be set > 1 for making radar reflectors and similar.
+ - Missiles:
+  - Fix Issue that had brokem MultiMissileLauncher parts last update
+  - Add ability to jettison Multi-Missile rails via 'permitJettison = true' in their .cfg
+  - Add 'displayOrdinance' bool for MultiMissileLaunchers for missilepods/bomb dispensers or similar where ordinance does not need to be visible.
+  - Add 'OverrideDropSettings' bool for MultiMissileLaunchers for reloadable rails and similar to fix missile settings getting overwritten on launch.
 
 v1.5.9.4
 IMPROVEMENTS / FIXES
