@@ -703,8 +703,7 @@ namespace BDArmory.UI
 
                 if (BDInputUtils.GetKeyDown(BDInputSettingsFields.TIME_SCALING))
                 {
-                    BDArmorySettings.TIME_OVERRIDE = !BDArmorySettings.TIME_OVERRIDE;
-                    Time.timeScale = BDArmorySettings.TIME_OVERRIDE ? BDArmorySettings.TIME_SCALE : 1f;
+                    OtherUtils.SetTimeOverride(!BDArmorySettings.TIME_OVERRIDE);
                 }
             }
             else if (HighLogic.LoadedSceneIsEditor)
@@ -2376,6 +2375,7 @@ namespace BDArmory.UI
                     { VesselMover.Instance.RemoveToolbarButton(); }
                 }
                 BDArmorySettings.DISPLAY_COMPETITION_STATUS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.DISPLAY_COMPETITION_STATUS, StringUtils.Localize("#LOC_BDArmory_Settings_DisplayCompetitionStatus"));
+                BDArmorySettings.AUTO_DISABLE_UI = GUI.Toggle(SRightRect(line), BDArmorySettings.AUTO_DISABLE_UI, StringUtils.Localize("#LOC_BDArmory_Settings_AutoDisableUI")); // Auto-disable UI
                 if (BDArmorySettings.DISPLAY_COMPETITION_STATUS)
                 {
                     BDArmorySettings.DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI = GUI.Toggle(SLeftRect(++line, 1), BDArmorySettings.DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI, StringUtils.Localize("#LOC_BDArmory_Settings_DisplayCompetitionStatusHiddenUI"));
@@ -2445,6 +2445,31 @@ namespace BDArmory.UI
 #if DEBUG  // Only visible when compiled in Debug configuration.
                     if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
                     {
+                        // if (GUI.Button(SLineRect(++line), "Say hello KAL"))
+                        // {
+                        //     foreach (var kal in FlightGlobals.ActiveVessel.FindPartModulesImplementing<Expansions.Serenity.ModuleRoboticController>())
+                        //     {
+                        //         if (kal == null) continue;
+                        //         Debug.Log($"DEBUG KAL {kal.displayName} found on part {kal.part} ({kal.part.persistentId}), enabled: {kal.controllerEnabled}");
+                        //         Utils.ConfigNodeUtils.PrintConfigNode(kal.snapshot.moduleValues);
+                        //     }
+                        //     foreach (var part in FlightGlobals.ActiveVessel.Parts)
+                        //     {
+                        //         if (part == null) continue;
+                        //         Debug.Log($"DEBUG  Part {part.name} ({part.persistentId})");
+                        //         foreach (var module in part.Modules)
+                        //         {
+                        //             if (module.PersistentId != 0) Debug.Log($"DEBUG     Module {module.name} ({module.PersistentId}, {module.moduleName})");
+                        //             if (module.moduleName == "ModuleRoboticController") foreach (var axis in ((Expansions.Serenity.ModuleRoboticController)module).ControlledAxes) Debug.Log($"DEBUG      KAL controls part {axis.PartPersistentId}, module {axis.Module.moduleName} ({axis.Module.PersistentId}), axisField {axis.AxisField.guiName} ({axis.AxisField.name})");
+                        //         }
+                        //         var kal = part.FindModuleImplementing<Expansions.Serenity.ModuleRoboticController>();
+                        //         if (kal != null)
+                        //         {
+                        //             Debug.Log($"DEBUG KAL found on {part.name} ({part.persistentId}))");
+                        //             foreach (var axis in kal.ControlledAxes) Debug.Log($"DEBUG      KAL controls part {axis.PartPersistentId}, module {axis.Module.moduleName} ({axis.Module.PersistentId})");
+                        //         }
+                        //     }
+                        // }
                         // GUI.Label(SLeftSliderRect(++line), $"#raycasts {debug_numRaycasts}");
                         // debug_numRaycasts = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), debug_numRaycasts, 1, 20));
                         // if (GUI.Button(SLineRect(++line), "Test RaycastCommand")) // The break-even appears to be around 8 raycasts.
@@ -2820,7 +2845,8 @@ namespace BDArmory.UI
                     BDArmorySettings.RESET_HP = GUI.Toggle(SRightRect(line), BDArmorySettings.RESET_HP, StringUtils.Localize("#LOC_BDArmory_Settings_ResetHP"));
                     BDArmorySettings.VESSEL_RELATIVE_BULLET_CHECKS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.VESSEL_RELATIVE_BULLET_CHECKS, StringUtils.Localize("#LOC_BDArmory_Settings_VesselRelativeBulletChecks"));//"Vessel-Relative Bullet Checks"
                     BDArmorySettings.RESET_ARMOUR = GUI.Toggle(SRightRect(line), BDArmorySettings.RESET_ARMOUR, StringUtils.Localize("#LOC_BDArmory_Settings_ResetArmor"));
-                    BDArmorySettings.AUTO_DISABLE_UI = GUI.Toggle(SLeftRect(++line), BDArmorySettings.AUTO_DISABLE_UI, StringUtils.Localize("#LOC_BDArmory_Settings_AutoDisableUI")); // Auto-disable UI
+                    if (BDArmorySettings.RESTORE_KAL != (BDArmorySettings.RESTORE_KAL = GUI.Toggle(SLeftRect(++line), BDArmorySettings.RESTORE_KAL, StringUtils.Localize("#LOC_BDArmory_Settings_RestoreKAL")))) //Restore KAL
+                    { SpawnUtils.RestoreKALGlobally(BDArmorySettings.RESTORE_KAL); }
                     BDArmorySettings.RESET_HULL = GUI.Toggle(SRightRect(line), BDArmorySettings.RESET_HULL, StringUtils.Localize("#LOC_BDArmory_Settings_ResetHull")); //Reset Hull
                     BDArmorySettings.AUTO_LOAD_TO_KSC = GUI.Toggle(SLeftRect(++line), BDArmorySettings.AUTO_LOAD_TO_KSC, StringUtils.Localize("#LOC_BDArmory_Settings_AutoLoadToKSC")); // Auto-Load To KSC
                     BDArmorySettings.GENERATE_CLEAN_SAVE = GUI.Toggle(SRightRect(line), BDArmorySettings.GENERATE_CLEAN_SAVE, StringUtils.Localize("#LOC_BDArmory_Settings_GenerateCleanSave")); // Generate Clean Save
