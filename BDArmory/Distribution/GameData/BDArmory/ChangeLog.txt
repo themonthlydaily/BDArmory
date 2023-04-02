@@ -5,7 +5,9 @@
 		- Vessels spawned via BDA+'s spawning routines will automatically have this applied.
 		- The KALs on all loaded vessels will also be restored/wiped on competition start.
 - AI:
-	- Axis groups: set the main throttle, pitch, yaw and roll axis groups when setting the flight control state, allowing the BDA+ pilot AI to use these axis groups.
+	- Axis groups: set the various axis groups when setting the flight control state, allowing the BDA+ AIs to use these axis groups.
+		- Pilot and VTOL AI set the main throttle, pitch, yaw and roll axis groups.
+		- Surface AI, additionally, sets the wheel steer axis group.
 - VesselMover:
 	- Add option to immediately place the vessel after spawning.
 	- Adjustments to movement in map mode.
