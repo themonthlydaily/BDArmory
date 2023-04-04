@@ -61,7 +61,6 @@ if args.save:
         fd, filename = tempfile.mkstemp(suffix='.png')
     else:
         filename = args.save
-    fig_args = {"dpi": "figure", "bbox_inches": "tight"}
     plt.savefig(filename, dpi='figure', bbox_inches='tight', transparent=args.transparent)
     print(f"Image saved to {filename}")
 else:
