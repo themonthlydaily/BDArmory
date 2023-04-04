@@ -5,6 +5,7 @@ IMPROVEMENTS / FIXES
 		- Toggling the "Restore KAL" toggle in the GamePlay section of the settings will restore or wipe the controlled axes from KALs on all loaded vessels.
 		- Vessels spawned via BDA+'s spawning routines will automatically have this applied.
 		- The KALs on all loaded vessels will also be restored/wiped on competition start.
+	- Update the defaults for a number of BDA+ settings.
 - UI:
 	- Auto-switch UI focus to new input text fields in Vessel Mover and Custom Spawn Templates.
 	- Move the "Auto-Disable UI" toggle to the UI section of the settings.
@@ -22,7 +23,7 @@ IMPROVEMENTS / FIXES
 	- Gun recoil now properly takes propellant mass into account.
 	- Multiple fireanim support for single barrel weapons.
 	- Fix impulse for lasers.
-	- In light of the increased damage following the HE damage calc fix in 1.5.9.0, the Explosive Damage Multiplier default has changed from 0.65 to 0.55.
+	- In light of the increased damage following the HE damage calc fix in 1.5.9.0, the Explosive Damage Multiplier default has changed from 0.65 to 0.55. Note: this needs to be reset by the user.
 		- FireAngle default reduced from 1.4 to 1.0.
 		- Gun accuracy refactored across the board.
 		- Browning accuracy changed to 0.32.
