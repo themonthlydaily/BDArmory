@@ -34,10 +34,11 @@ IMPROVEMENTS / FIXES
 		- Chaingun accuracy changed to 0.45.
 		- Sidam accuracy changed to 0.42.
 - Missiles:
-	- Fix Issue that had brokem MultiMissileLauncher parts last update.
+	- Fix issue that had broken MultiMissileLauncher parts last update.
 	- Add ability to jettison Multi-Missile rails via 'permitJettison = true' in their .cfg.
 	- Add 'displayOrdinance' bool for MultiMissileLaunchers for missilepods/bomb dispensers or similar where ordinance does not need to be visible.
 	- Add 'OverrideDropSettings' bool for MultiMissileLaunchers for reloadable rails and similar to fix missile settings getting overwritten on launch.
+	- Fix issue with detonation distance and heat seekers targeting the engine exhaust plume.
 - GameModes:
 	- Add 'RepulsorOverride' bool to ModuleSpaceFriction, to allow Repulsors to be used outside of the SpaceHacks Gamemode (for making repulsor wheels and similar).
 - Competition:
