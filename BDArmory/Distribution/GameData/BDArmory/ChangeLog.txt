@@ -1,5 +1,7 @@
 ﻿- General:
 	- Restore compatibility with KSP 1.9.1.
+- UI:
+	- Expand "Edit Inputs" scrollview enough to show all the shortcuts.
 - AI:
 	- Don't turn on peace mode when auto-tuning.
 
