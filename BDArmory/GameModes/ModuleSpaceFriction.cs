@@ -196,19 +196,33 @@ namespace BDArmory.GameModes
 
                         Vector3d grav = FlightGlobals.getGeeForceAtPosition(vessel.CoM);
                         var vesselMass = part.vessel.GetTotalMass();
-                        using (var repulsor = repulsors.GetEnumerator())
-                            while (repulsor.MoveNext())
-                            {
-                                if (repulsor.Current == null) continue;
-                                float pointAltitude = BodyUtils.GetRadarAltitudeAtPos(repulsor.Current.transform.position);
-                                if (pointAltitude <= 0 || pointAltitude > 2f * targetAlt) continue;
-                                var factor = Mathf.Clamp(Mathf.Exp(BDArmorySettings.SF_REPULSOR_STRENGTH * (targetAlt - pointAltitude) / targetAlt - (float)vessel.verticalSpeed / targetAlt), 0f, 5f * BDArmorySettings.SF_REPULSOR_STRENGTH); // Decaying exponential balanced at the target altitude with velocity damping.
-                                float repulsorForce = vesselMass * factor / repulsors.Count; // Spread the force between the repulsors.
-                                if (float.IsNaN(factor) || float.IsInfinity(factor)) // This should only happen if targetAlt is 0, which should never happen.
-                                    Debug.LogWarning($"[BDArmory.Spacehacks]: Repulsor Force is NaN or Infinity. TargetAlt: {targetAlt}, point Alt: {pointAltitude}, VesselMass: {vesselMass}");
-                                else
-                                    repulsor.Current.part.Rigidbody.AddForce(-grav * repulsorForce, ForceMode.Force);
-                            }
+                        if (RepulsorOverride)
+                        {
+                            float pointAltitude = BodyUtils.GetRadarAltitudeAtPos(part.transform.position);
+                            if (pointAltitude <= 0 || pointAltitude > 2f * targetAlt) return;
+                            var factor = Mathf.Clamp(Mathf.Exp(BDArmorySettings.SF_REPULSOR_STRENGTH * (targetAlt - pointAltitude) / targetAlt - (float)vessel.verticalSpeed / targetAlt), 0f, 5f * BDArmorySettings.SF_REPULSOR_STRENGTH); // Decaying exponential balanced at the target altitude with velocity damping.
+                            float repulsorForce = vesselMass * factor / repulsors.Count; // Spread the force between the repulsors.
+                            if (float.IsNaN(factor) || float.IsInfinity(factor)) // This should only happen if targetAlt is 0, which should never happen.
+                                Debug.LogWarning($"[BDArmory.Spacehacks]: Repulsor Force is NaN or Infinity. TargetAlt: {targetAlt}, point Alt: {pointAltitude}, VesselMass: {vesselMass}");
+                            else
+                                part.Rigidbody.AddForce(-grav * repulsorForce, ForceMode.Force);
+                        }
+                        else
+                        {
+                            using (var repulsor = repulsors.GetEnumerator())
+                                while (repulsor.MoveNext())
+                                {
+                                    if (repulsor.Current == null) continue;
+                                    float pointAltitude = BodyUtils.GetRadarAltitudeAtPos(repulsor.Current.transform.position);
+                                    if (pointAltitude <= 0 || pointAltitude > 2f * targetAlt) continue;
+                                    var factor = Mathf.Clamp(Mathf.Exp(BDArmorySettings.SF_REPULSOR_STRENGTH * (targetAlt - pointAltitude) / targetAlt - (float)vessel.verticalSpeed / targetAlt), 0f, 5f * BDArmorySettings.SF_REPULSOR_STRENGTH); // Decaying exponential balanced at the target altitude with velocity damping.
+                                    float repulsorForce = vesselMass * factor / repulsors.Count; // Spread the force between the repulsors.
+                                    if (float.IsNaN(factor) || float.IsInfinity(factor)) // This should only happen if targetAlt is 0, which should never happen.
+                                        Debug.LogWarning($"[BDArmory.Spacehacks]: Repulsor Force is NaN or Infinity. TargetAlt: {targetAlt}, point Alt: {pointAltitude}, VesselMass: {vesselMass}");
+                                    else
+                                        repulsor.Current.part.Rigidbody.AddForce(-grav * repulsorForce, ForceMode.Force);
+                                }
+                        }
                     }
                 }
             }

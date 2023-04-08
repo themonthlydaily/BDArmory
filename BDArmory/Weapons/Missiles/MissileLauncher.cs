@@ -898,7 +898,7 @@ namespace BDArmory.Weapons.Missiles
             }
             else
             {
-                if (reloadableRail)
+                if (reloadableRail && !multiLauncher.isClusterMissile || (multiLauncher.isClusterMissile && reloadableRail.maxAmmo > 1))
                 {
                     if (!(reloadableMissile != null)) reloadableMissile = StartCoroutine(FireReloadableMissile());
                     launched = true;
@@ -969,11 +969,6 @@ namespace BDArmory.Weapons.Missiles
             }
             ml.TargetPosition = transform.position + (multiLauncher ? vessel.ReferenceTransform.up * 5000 : transform.forward * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
             ml.MissileLaunch();
-            if (multiLauncher && multiLauncher.isClusterMissile)
-            {
-                ml.reloadableRail.MissileName = multiLauncher.subMunitionName;
-                ml.reloadableRail.UpdateMissileValues();
-            }
             GetMissileCount();
             if (reloadableRail.ammoCount > 0 || BDArmorySettings.INFINITE_ORDINANCE)
             {
@@ -990,7 +985,6 @@ namespace BDArmory.Weapons.Missiles
             HasFired = true;
             try // FIXME Remove this once the fix is sufficiently tested.
             {
-                if (multiLauncher && multiLauncher.isClusterMissile) SetupExplosive(this.part);
                 GameEvents.onPartDie.Add(PartDie);
 
                 if (GetComponentInChildren<KSPParticleEmitter>())
@@ -1034,6 +1028,11 @@ namespace BDArmory.Weapons.Missiles
                 part.explosionPotential = 0; // Minimise the default part explosion FX that sometimes gets offset from the main explosion.
 
                 StartCoroutine(MissileRoutine());
+                if (multiLauncher && multiLauncher.isClusterMissile)
+                {
+                    reloadableRail.MissileName = multiLauncher.subMunitionName;
+                    reloadableRail.UpdateMissileValues();
+                }
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: Missile Launched!");
                 if (BDArmorySettings.CAMERA_SWITCH_INCLUDE_MISSILES && SourceVessel.isActiveVessel) LoadedVesselSwitcher.Instance.ForceSwitchVessel(vessel);
             }
@@ -2222,6 +2221,7 @@ namespace BDArmory.Weapons.Missiles
                                 fairing.Current.AddComponent<DecoupledBooster>().DecoupleBooster(part.rb.velocity, boosterDecoupleSpeed);
                             }
                     }
+                    reloadableRail.MissileName = multiLauncher.subMunitionName;
                     multiLauncher.Team = Team;
                     multiLauncher.fireMissile(true);
                 }
