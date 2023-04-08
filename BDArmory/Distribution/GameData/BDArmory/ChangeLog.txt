@@ -1,4 +1,9 @@
-﻿v1.6.0.0
+﻿- General:
+	- Restore compatibility with KSP 1.9.1.
+- AI:
+	- Don't turn on peace mode when auto-tuning.
+
+v1.6.0.0
 IMPROVEMENTS / FIXES
 - General:
 	- Add restore/wipe functionality to the controlled axes of the KAL.
