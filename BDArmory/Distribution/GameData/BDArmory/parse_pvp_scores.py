@@ -3,10 +3,14 @@
 # Standard library imports
 import argparse
 import json
+import math
 import sys
 import traceback
 from pathlib import Path
 from typing import Union
+
+# Third party imports
+import matplotlib.pyplot as plt
 
 VERSION = "1.2.0"
 
@@ -14,6 +18,7 @@ parser = argparse.ArgumentParser(description="PVP score parser", formatter_class
 parser.add_argument('tournament', type=str, nargs='*', help="Tournament folder to parse.")
 parser.add_argument('-c', '--current-dir', action='store_true', help="Parse the logs in the current directory as if it was a tournament without the folder structure.")
 parser.add_argument('--csv', action='store_true', help="Create a CSV file with the PVP scores for the entire tournament.")
+parser.add_argument('--plot', action='store_true', help="Plot a diagram with of the overall PVP scores.")
 parser.add_argument("--version", action='store_true', help="Show the script version, then exit.")
 args = parser.parse_args()
 
@@ -138,6 +143,31 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
             lines = ['Player,' + ','.join(players) + ',Sum'] + [f'{player},' + ','.join(str(s) for s in score_totals[player].values()) + f",{sum(score_totals[player].values())}" for player in players]
             with open(tournamentDir / "pvp_scores.csv", 'w') as f:
                 f.write('\n'.join(lines))
+        
+        if args.plot:
+            grand_totals = {player: sum(scores.values()) for player, scores in score_totals.items()}
+            players = sorted(grand_totals, key=lambda k: grand_totals[k], reverse=True)
+            L = len(score_totals)
+            nodes = {players[i]:(math.sin(math.pi*2*i/L), math.cos(math.pi*2*i/L)) for i in range(L)}
+            edges = {p0:{p1:(nodes[p0], nodes[p1], score_totals[p0][p1]) for p1 in players} for p0 in players}
+            colourmap = plt.get_cmap('hsv')
+            colours = {players[i]: colourmap(i/L) for i in range(L)}
+            plt.figure(figsize=(16, 10), dpi=200)
+            lines = []
+            for p0 in players:
+                for p1 in players:
+                    if p0==p1:continue
+                    lines.append(([edges[p0][p1][0][0], edges[p0][p1][1][0]], [edges[p0][p1][0][1], edges[p0][p1][1][1]], colours[p0], edges[p0][p1][2])) # x, y, colour, width
+            lines = sorted(lines, key=lambda l:l[3], reverse=True)
+            minWidth = min([line[3] for line in lines])
+            maxWidth = max([line[3] for line in lines])
+            for p in players:
+                plt.plot(nodes[p][0], nodes[p][1], color=colours[p], marker='*', markersize=20)
+            for line in lines:
+                plt.plot(line[0], line[1], color=line[2], linewidth=line[3]*10/(maxWidth-minWidth)+minWidth+2, solid_capstyle='round')
+            plt.legend(players, loc='upper right')
+            plt.axis('equal')
+            plt.show()
 
     except Exception as e:
         print(f"Failed to parse {tournamentDir}. Have you run the tournament parser on it first?")
