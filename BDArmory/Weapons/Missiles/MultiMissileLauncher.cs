@@ -452,7 +452,7 @@ namespace BDArmory.Weapons.Missiles
                 }
                 tubesFired++;
                 launchesThisSalvo++;
-                missileSpawner.SpawnMissile(launchTransforms[m], offset, isClusterMissile ? false: true);
+                missileSpawner.SpawnMissile(launchTransforms[m], offset, !isClusterMissile);
                 MissileLauncher ml = missileSpawner.SpawnedMissile.FindModuleImplementing<MissileLauncher>();
                 yield return new WaitUntilFixed(() => ml.SetupComplete); // Wait until missile fully initialized.
                 var tnt = VesselModuleRegistry.GetModule<BDExplosivePart>(vessel, true);
