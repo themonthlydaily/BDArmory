@@ -8,7 +8,7 @@ import traceback
 from pathlib import Path
 from typing import Union
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 
 parser = argparse.ArgumentParser(description="PVP score parser", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('tournament', type=str, nargs='*', help="Tournament folder to parse.")
@@ -125,13 +125,16 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                         score_vs_opponent = sum(weights[k] * pvp_data[stage_index][heat_index][craft]['individual'][opponent].get(k, 0) for k in weights)
                         pvp_score[stage_index][craft][opponent] = pvp_score[stage_index][craft].get(opponent, 0) + score_vs_opponent + score_vs_all / number_of_opponents
 
+        # Add in a totals over the entire tournament entry.
+        players = list(set().union(*[set(round_data.keys()) for round_index, round_data in pvp_score.items() if round_index.startswith('Round')]))
+        score_totals = {player1: {player2: sum(round_data.get(player1, {}).get(player2, 0) for round_index, round_data in pvp_score.items() if round_index.startswith('Round')) for player2 in players} for player1 in players}  # Combine scores over all rounds
+        players = sorted(players, key=lambda p: sum(score_totals[p].values()), reverse=True)  # Sort by overall rank
+        pvp_score['totals'] = score_totals
+
         with open(tournamentDir / "pvp_scores.json", 'w') as f:
             json.dump(pvp_score, f, indent=2)
 
         if args.csv:
-            players = list(set().union(*[set(round_data.keys()) for round_index, round_data in pvp_score.items() if round_index.startswith('Round')]))
-            score_totals = {player1: {player2: sum(round_data.get(player1, {}).get(player2, 0) for round_index, round_data in pvp_score.items() if round_index.startswith('Round')) for player2 in players} for player1 in players} # Combine scores over all rounds
-            players = sorted(players, key=lambda p: sum(score_totals[p].values()), reverse=True) # Sort by overall rank
             lines = ['Player,' + ','.join(players) + ',Sum'] + [f'{player},' + ','.join(str(s) for s in score_totals[player].values()) + f",{sum(score_totals[player].values())}" for player in players]
             with open(tournamentDir / "pvp_scores.csv", 'w') as f:
                 f.write('\n'.join(lines))
