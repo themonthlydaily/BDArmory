@@ -1,4 +1,5 @@
 ﻿v1.6.0.1
+IMPROVEMENTS / FIXES
 - General:
 	- Restore compatibility with KSP 1.9.1.
 	- Cleaned up some lingering issues with repulsor functionality when used outside of the 'Enable Repulsors' gamemode.
