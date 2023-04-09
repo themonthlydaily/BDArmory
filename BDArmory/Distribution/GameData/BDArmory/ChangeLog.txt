@@ -1,8 +1,9 @@
-﻿- General:
+﻿v1.6.0.1
+- General:
 	- Restore compatibility with KSP 1.9.1.
 	- Cleaned up some lingering issues with repulsor functionality when used outside of the 'Enable Repulsors' gamemode.
 - UI:
-	- Expand "Edit Inputs" scrollview enough to show all the shortcuts.
+	- Expand 'Edit Inputs' scrollview enough to show all the shortcuts.
 - AI:
 	- Don't turn on peace mode when auto-tuning.
 - Gamemodes:
