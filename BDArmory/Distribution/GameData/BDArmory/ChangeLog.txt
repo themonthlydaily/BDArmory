@@ -1,4 +1,8 @@
-﻿v1.6.0.1
+﻿IMPROVEMENTS / FIXES
+- UI:
+	- Add a toggle for aim assist mode (Target = reticle placed at the closest point of approach of the projectile to the target, Aimer = reticle placed at the aiming position).
+
+v1.6.0.1
 IMPROVEMENTS / FIXES
 - General:
 	- Restore compatibility with KSP 1.9.1.
