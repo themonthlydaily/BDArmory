@@ -1,4 +1,5 @@
-﻿IMPROVEMENTS / FIXES
+﻿v1.6.0.2
+IMPROVEMENTS / FIXES
 - UI:
 	- Add a toggle for aim assist mode (Target = reticle placed at the closest point of approach of the projectile to the target, Aimer = reticle placed at the aiming position).
 	- Add localisation for 'Multiple' ammo type.
