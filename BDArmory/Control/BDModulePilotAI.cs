@@ -539,7 +539,7 @@ namespace BDArmory.Control
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ExtendAbortTime", advancedTweakable = true, //Extend Abort Time
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
-            UI_FloatRange(minValue = 5f, maxValue = 30f, stepIncrement = 1f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 1f, maxValue = 30f, stepIncrement = 1f, scene = UI_Scene.All)]
         public float extendAbortTime = 15f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ExtendToggle", advancedTweakable = true,//Extend Toggle
