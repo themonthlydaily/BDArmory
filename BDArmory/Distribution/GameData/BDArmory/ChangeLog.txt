@@ -1,4 +1,7 @@
-﻿v1.6.0.2
+﻿- Vessel Mover:
+	- Abort vessel selection and reset state when closing/hiding the VM window.
+
+v1.6.0.2
 IMPROVEMENTS / FIXES
 - UI:
 	- Add a toggle for aim assist mode (Target = reticle placed at the closest point of approach of the projectile to the target, Aimer = reticle placed at the aiming position).

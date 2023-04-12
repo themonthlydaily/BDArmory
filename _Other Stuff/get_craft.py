@@ -21,36 +21,38 @@ players_url = f"https://conquertheair.com/players"
 manifest_file = Path(tempfile.mkstemp()[1])
 players_file = Path(tempfile.mkstemp()[1])
 
-print("Fetching players and competition manifest...", end='', flush=True)
-subprocess.run(f"{args.curl_command} -s {players_url} -o {players_file}".split())
-subprocess.run(f"{args.curl_command} -s {comp_url} -o {manifest_file}".split())
-print("done.")
-
-with open(players_file, 'r') as f:
-    lines = f.readlines()
-expr = re.compile('players/([0-9]+)">(.*)</a>')
-playerIDs = {}
-for line in lines:
-    m = expr.search(line)
-    if m:
-        playerIDs[int(m.groups()[0])] = m.groups()[1]
-
-with open(manifest_file, 'r') as f:
-    manifest = json.load(f)
-    print(f"Fetching {len(manifest)} craft files...", end='', flush=True)
-    for craft in manifest:
-        craft_name = f"{playerIDs[craft['player_id']]}_{craft['name']}"
-        subprocess.run([args.curl_command, "-s", f"{craft['craft_url']}", "-o", f"{craft_name}.craft"])
-        with open(f"{craft_name}.craft", 'r+') as f:
-            lines = f.read().splitlines()
-            lines[0] = f"ship = {craft_name}"
-            f.seek(0, 0)
-            f.truncate()
-            f.write('\n'.join(lines))
-        print('.', end='', flush=True)
+try:
+    print("Fetching players and competition manifest...", end='', flush=True)
+    subprocess.run(f"{args.curl_command} -s {players_url} -o {players_file}".split())
+    subprocess.run(f"{args.curl_command} -s {comp_url} -o {manifest_file}".split())
     print("done.")
 
-if manifest_file.exists():
-    manifest_file.unlink()
-if players_file.exists():
-    players_file.unlink()
+    with open(players_file, 'r') as f:
+        lines = f.readlines()
+    expr = re.compile('players/([0-9]+)">(.*)</a>')
+    playerIDs = {}
+    for line in lines:
+        m = expr.search(line)
+        if m:
+            playerIDs[int(m.groups()[0])] = m.groups()[1]
+
+    with open(manifest_file, 'r') as f:
+        manifest = json.load(f)
+        print(f"Fetching {len(manifest)} craft files...", end='', flush=True)
+        for craft in manifest:
+            craft_name = f"{playerIDs[craft['player_id']]}_{craft['name']}"
+            subprocess.run([args.curl_command, "-s", f"{craft['craft_url']}", "-o", f"{craft_name}.craft"])
+            with open(f"{craft_name}.craft", 'r+') as f:
+                lines = f.read().splitlines()
+                lines[0] = f"ship = {craft_name}"
+                f.seek(0, 0)
+                f.truncate()
+                f.write('\n'.join(lines))
+            print('.', end='', flush=True)
+        print("done.")
+
+finally:
+    if manifest_file.exists():
+        manifest_file.unlink()
+    if players_file.exists():
+        players_file.unlink()
