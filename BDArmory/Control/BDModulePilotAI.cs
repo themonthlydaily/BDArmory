@@ -567,8 +567,8 @@ namespace BDArmory.Control
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TerrainAvoidanceControlSurfaceDeployTime", advancedTweakable = true, // Control surface deployment time.
             groupName = "pilotAI_Terrain", groupDisplayName = "#LOC_BDArmory_PilotAI_Terrain", groupStartCollapsed = true),
-            UI_FloatRange(minValue = 0f, maxValue = 3f, stepIncrement = 0.1f, scene = UI_Scene.All)]
-        public float controlSurfaceDeploymentTime = 1.5f;
+            UI_FloatRange(minValue = 0f, maxValue = 4f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float controlSurfaceDeploymentTime = 2f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_WaypointTerrainAvoidance", advancedTweakable = true,//Waypoint terrain avoidance.
             groupName = "pilotAI_Terrain", groupDisplayName = "#LOC_BDArmory_PilotAI_Terrain", groupStartCollapsed = true),
@@ -611,7 +611,7 @@ namespace BDArmory.Control
             { nameof(steerKiAdjust), 20f },
             { nameof(steerDamping), 100f },
             { nameof(maxSteer), 1f},
-            { nameof(maxSpeed), (BDArmorySettings.RUNWAY_PROJECT_ROUND == 55) ? 600 : 3000f },
+            { nameof(maxSpeed), (BDArmorySettings.RUNWAY_PROJECT_ROUND == 55) ? 600f : 3000f },
             { nameof(takeOffSpeed), 2000f },
             { nameof(minSpeed), 2000f },
             { nameof(strafingSpeed), 2000f },
@@ -968,8 +968,6 @@ namespace BDArmory.Control
         bool useAB = true;
         bool useBrakes = true;
         bool regainEnergy = false;
-        AxisGroupsModule axisGroupsModule;
-        bool hasAxisGroupsModule = false; // To avoid repeated null checks
 
         //collision detection (for other vessels).
         const int vesselCollisionAvoidanceTickerFreq = 10; // Number of fixedDeltaTime steps between vessel-vessel collision checks.
@@ -1556,11 +1554,6 @@ namespace BDArmory.Control
             SetOnTerrainAvoidanceCriticalAngleChanged();
             SetOnImmelmannTurnAngleChanged();
             SetupAutoTuneSliders();
-            if (HighLogic.LoadedSceneIsFlight)
-            {
-                axisGroupsModule = vessel.FindVesselModuleImplementing<AxisGroupsModule>(); // Look for an axis group module so we can set the axis groups when setting the flight control state.
-                if (axisGroupsModule != null) hasAxisGroupsModule = true;
-            }
             if ((HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor) && storedSettings != null && storedSettings.ContainsKey(HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName))
             {
                 Events["RestoreSettings"].active = true;
@@ -2521,26 +2514,6 @@ namespace BDArmory.Control
                 debugString.AppendLine(String.Format("Pitch: P: {0,7:F4}, I: {1,7:F4}, D: {2,7:F4}", pitchProportional, pitchIntegral, pitchDamping));
                 debugString.AppendLine(String.Format("Yaw: P: {0,7:F4}, I: {1,7:F4}, D: {2,7:F4}", yawProportional, yawIntegral, yawDamping));
                 debugString.AppendLine(String.Format("Roll: P: {0,7:F4}, I: {1,7:F4}, D: {2,7:F4}", rollProportional, rollIntegral, rollDamping));
-            }
-        }
-
-        /// <summary>
-        /// Set the flight control state and also the corresponding axis groups.
-        /// </summary>
-        /// <param name="s">The flight control state</param>
-        /// <param name="pitch">pitch</param>
-        /// <param name="yaw">yaw</param>
-        /// <param name="roll">roll</param>
-        void SetFlightControlState(FlightCtrlState s, float pitch, float yaw, float roll)
-        {
-            s.pitch = pitch;
-            s.yaw = yaw;
-            s.roll = roll;
-            if (hasAxisGroupsModule)
-            {
-                axisGroupsModule.UpdateAxisGroup(KSPAxisGroup.Pitch, pitch);
-                axisGroupsModule.UpdateAxisGroup(KSPAxisGroup.Yaw, yaw);
-                axisGroupsModule.UpdateAxisGroup(KSPAxisGroup.Roll, roll);
             }
         }
 
