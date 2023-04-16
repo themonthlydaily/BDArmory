@@ -15,15 +15,15 @@ namespace BDArmory.Armor
         public bool moveChildParts = true;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorWidth"),//Armor Width
-            UI_FloatRange(minValue = 0.5f, maxValue = 16, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
+            UI_FloatRange(minValue = 0.1f, maxValue = 16, stepIncrement = 0.01f, scene = UI_Scene.Editor)]
         public float Width = 1;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_ArmorWidthR"),//Right Side Width
-            UI_FloatRange(minValue = 0.1f, maxValue = 8, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
+            UI_FloatRange(minValue = 0.1f, maxValue = 8, stepIncrement = 0.01f, scene = UI_Scene.Editor)]
         public float scaleneWidth = 1;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorLength"),//Armor Length
-            UI_FloatRange(minValue = 0.5f, maxValue = 16, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
+            UI_FloatRange(minValue = 0.1f, maxValue = 16, stepIncrement = 0.01f, scene = UI_Scene.Editor)]
         public float Length = 1;
 
         [KSPField]
@@ -38,7 +38,6 @@ namespace BDArmory.Armor
             Fields["scaleneWidth"].guiActiveEditor = scaleneTri;
             UI_FloatRange AWidth = (UI_FloatRange)Fields["Width"].uiControlEditor;
             AWidth.maxValue = scaleneTri ? clamped ? maxScale / 2 : 50 : clamped ? maxScale : 100;
-            AWidth.minValue = scaleneTri ? 0.1f : 0.5f;
 
             if (scaleneTri)
             {

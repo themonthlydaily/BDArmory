@@ -1693,7 +1693,6 @@ namespace BDArmory.Radar
             rData.magnitude = magnitude;
             rData.targetData = contactData;
             rData.pingPosition = UpdatedPingPosition(contactData.position, irst);
-
             displayedIRTargets.Add(rData);
 
             return;
@@ -1886,7 +1885,7 @@ namespace BDArmory.Radar
             else
             {
                 return RadarUtils.WorldToRadarRadial(worldPosition, referenceTransform, RadarDisplayRect,
-                    rIncrements[rangeIndex], irst.directionalFieldOfView / 2);
+                    rIncrements[rangeIndex], irst.directionalFieldOfView / 2, irst.irstRanging);
             }
         }
 
@@ -2239,18 +2238,21 @@ namespace BDArmory.Radar
             for (int i = 0; i < displayedIRTargets.Count; i++)
             {
                 bool hasRadarContact = false;
-                if (displayedTargets.Count > 0) //if Radar enabled, don't display targets that have already been displayed
+                if (displayedIRTargets[i].detectedByIRST.irstRanging)
                 {
-                    for (int r = 0; r < displayedTargets.Count; r++)
+                    if (displayedTargets.Count > 0) //if Radar enabled, don't display targets that have already been displayed
                     {
-                        if (displayedIRTargets[i].targetData.targetInfo == displayedTargets[r].targetData.targetInfo)
+                        for (int r = 0; r < displayedTargets.Count; r++)
                         {
-                            hasRadarContact = true;
-                            break;
+                            if (displayedIRTargets[i].targetData.targetInfo == displayedTargets[r].targetData.targetInfo)
+                            {
+                                hasRadarContact = true;
+                                break;
+                            }
                         }
                     }
                 }
-                if (!hasRadarContact)
+                if (!hasRadarContact) //have !radar contacts be displayed on the rim, since IRSt doesn't do ranging.
                 {
                     float minusAlpha =
                 (Mathf.Clamp01((Time.time - displayedIRTargets[i].targetData.timeAcquired) /
@@ -2274,11 +2276,10 @@ namespace BDArmory.Radar
                     Rect pingRect;
                     if ((displayedIRTargets[i].targetData.targetInfo && displayedIRTargets[i].targetData.targetInfo.isMissile) || displayedIRTargets[i].targetData.Team == null)
                     {
-
                         float mDotSize = (2) / (rangeIndex + 1);
                         if (mDotSize < 1) mDotSize = 1;
                         pingRect = new Rect(pingPosition.x - (mDotSize / 2), pingPosition.y - (mDotSize / 2), mDotSize, mDotSize);
-                        GUI.DrawTexture(pingRect, BDArmorySetup.Instance.redDotTexture, ScaleMode.StretchToFill, true);
+                        GUI.DrawTexture(pingRect, displayedIRTargets[i].detectedByIRST.irstRanging ? BDArmorySetup.Instance.redDotTexture : BDArmorySetup.Instance.irSpikeTexture, ScaleMode.StretchToFill, true);
 
                         GUI.matrix = Matrix4x4.identity;
                     }
@@ -2319,8 +2320,14 @@ namespace BDArmory.Radar
                         float mDotSize = (displayedIRTargets[i].magnitude / 25) / (rangeIndex + 1);
                         if (mDotSize < 1) mDotSize = 1;
                         if (mDotSize > 20) mDotSize = 20;
-                        pingRect = new Rect(pingPosition.x - (mDotSize / 2), pingPosition.y - (mDotSize / 2), mDotSize, mDotSize);
-                        GUI.DrawTexture(pingRect, BDArmorySetup.Instance.redDotTexture, ScaleMode.StretchToFill, true);
+
+                        float currentAngle = 180 + Vector2.Angle(pingPosition, new Vector2((RadarScreenSize * BDArmorySettings.RADAR_WINDOW_SCALE) / 2, (RadarScreenSize * BDArmorySettings.RADAR_WINDOW_SCALE) / 2));
+
+                        GUIUtility.RotateAroundPivot(currentAngle, new Vector2(pingPosition.x, pingPosition.y));
+
+
+                        pingRect = new Rect(pingPosition.x - (mDotSize / 2), pingPosition.y - mDotSize, mDotSize, mDotSize);
+                        GUI.DrawTexture(pingRect, displayedIRTargets[i].detectedByIRST.irstRanging ? BDArmorySetup.Instance.redDotTexture : BDArmorySetup.Instance.irSpikeTexture, ScaleMode.StretchToFill, true);
 
                         GUI.matrix = Matrix4x4.identity;
                     }

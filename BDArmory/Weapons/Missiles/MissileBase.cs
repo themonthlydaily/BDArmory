@@ -1225,10 +1225,11 @@ namespace BDArmory.Weapons.Missiles
                         else
                         {
                             float optimalDistance = (float)(Math.Max(DetonationDistance, relativeSpeed));
-                            var hitCount = Physics.OverlapSphereNonAlloc(warheadType == WarheadTypes.ContinuousRod? vessel.CoM -= VectorUtils.GetUpDirection(TargetPosition) * (GetBlastRadius() > 0 ? (DetonationDistance / 3) : 5) : vessel.CoM, optimalDistance, proximityHitColliders, layerMask);
+                            Vector3 targetPoint = (warheadType == WarheadTypes.ContinuousRod ? vessel.CoM -= VectorUtils.GetUpDirection(TargetPosition) * (GetBlastRadius() > 0 ? (DetonationDistance / 3) : 5) : vessel.CoM);
+                            var hitCount = Physics.OverlapSphereNonAlloc(targetPoint, optimalDistance, proximityHitColliders, layerMask);
                             if (hitCount == proximityHitColliders.Length)
                             {
-                                proximityHitColliders = Physics.OverlapSphere(vessel.CoM, optimalDistance, layerMask);
+                                proximityHitColliders = Physics.OverlapSphere(targetPoint, optimalDistance, layerMask);
                                 hitCount = proximityHitColliders.Length;
                             }
                             using (var hitsEnu = proximityHitColliders.Take(hitCount).GetEnumerator())

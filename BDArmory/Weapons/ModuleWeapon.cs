@@ -3910,7 +3910,7 @@ namespace BDArmory.Weapons
                 {
                     autoFire = false;
                 }
-
+                if (weaponManager.staleTarget && (lastVisualTargetVessel.LandedOrSplashed && vessel.LandedOrSplashed)) autoFire = false; //ground Vee engaging another ground Vee which has ducked out of sight, don't fire
                 // if (eWeaponType != WeaponTypes.Rocket) //guns/lasers
                 // {
                 //     // Vector3 targetDiffVec = finalAimTarget - lastFinalAimTarget;
