@@ -2,6 +2,8 @@
 	- Abort vessel selection and reset state when closing/hiding the VM window.
 - AI:
 	- Lower the minimum extend abort time to 1s.
+- Competition:
+	- Update the tournament parser to compute non-negative scores per round for waypoint races.
 
 v1.6.0.2
 IMPROVEMENTS / FIXES
