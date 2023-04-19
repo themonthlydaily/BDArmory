@@ -441,6 +441,9 @@ namespace BDArmory.Weapons
         public float maxEffectiveDistance = 2500; //used by AI to select appropriate weapon
 
         [KSPField]
+        public float minSafeDistanceDistance = 0; //used by AI to select appropriate weapon
+
+        [KSPField]
         public float bulletMass = 0.3880f; //mass in KG - used for damage and recoil and drag
 
         [KSPField]
@@ -1053,7 +1056,7 @@ namespace BDArmory.Weapons
                 Events["Toggle"].active = false;
                 ParseAPSType(APSType);
             }
-            InitializeEngagementRange(0, maxEffectiveDistance);
+            InitializeEngagementRange(minSafeDistanceDistance, maxEffectiveDistance);
             if (string.IsNullOrEmpty(GetShortName()))
             {
                 shortName = part.partInfo.title;
@@ -4077,7 +4080,7 @@ namespace BDArmory.Weapons
             //if user pulling the trigger || AI controlled and on target if turreted || finish a burstfire weapon's burst
             if (((userFiring || agHoldFiring) && !isAPS) || (autoFire && (!turret || turret.TargetInRange(finalAimTarget, 10, float.MaxValue))) || (BurstFire && RoundsRemaining > 0 && RoundsRemaining < RoundsPerMag))
             {
-                if ((pointingAtSelf || isOverheated || isReloading) || (aiControlled && engageRangeMax < targetDistance))// is weapon within set max range?
+                if ((pointingAtSelf || isOverheated || isReloading) || (aiControlled && (engageRangeMax < targetDistance || engageRangeMin > targetDistance)))// is weapon within set max range?
                 {
                     if (useRippleFire) //old method wouldn't catch non-ripple guns (i.e. Vulcan) trying to fire at targets beyond fire range
                     {
@@ -5593,6 +5596,10 @@ namespace BDArmory.Weapons
                     output.AppendLine($"Electric Charge required per shot: {ECPerShot}");
                 }
                 output.AppendLine($"Max Range: {maxEffectiveDistance} m");
+                if (minSafeDistanceDistance > 0)
+                {
+                    output.AppendLine($"Min Range: {minSafeDistanceDistance} m");
+                }
                 if (weaponType == "ballistic")
                 {
                     for (int i = 0; i < ammoList.Count; i++)
