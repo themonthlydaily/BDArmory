@@ -136,8 +136,8 @@ namespace BDArmory.Competition
                     string pDate = DateTime.UtcNow.ToString("yyyy-MM-dd\nHH:mm:ss") + " UTC";
                     GUI.Label(dateRectShadow, pDate, dateStyleShadow);
                     GUI.Label(dateRect, pDate, dateStyle);
-                    GUI.Label(versionRectShadow, BDArmorySetup.Instance.Version, dateStyleShadow);
-                    GUI.Label(versionRect, BDArmorySetup.Instance.Version, dateStyle);
+                    GUI.Label(versionRectShadow, BDArmorySetup.Version, dateStyleShadow);
+                    GUI.Label(versionRect, BDArmorySetup.Version, dateStyle);
                 }
 
                 // Messages
@@ -312,7 +312,7 @@ namespace BDArmory.Competition
                 GameEvents.onVesselCreate.Add(OnVesselModified);
                 GameEvents.onCrewOnEva.Add(OnCrewOnEVA);
                 if (BDArmorySettings.AUTO_ENABLE_VESSEL_SWITCHING)
-                    LoadedVesselSwitcher.Instance.EnableAutoVesselSwitching(true);
+                    LoadedVesselSwitcher.Instance.EnableAutoVesselSwitching(!hasPinata);
                 competitionStartFailureReason = CompetitionStartFailureReason.None;
                 competitionRoutine = StartCoroutine(DogfightCompetitionModeRoutine(distance, startDespiteFailures));
                 if (BDArmorySettings.COMPETITION_START_NOW_AFTER < 11)
@@ -446,9 +446,16 @@ namespace BDArmory.Competition
                     if (!String.IsNullOrEmpty(BDArmorySettings.PINATA_NAME) && hasPinata)
                     {
                         if (!pilot.vessel.GetName().Contains(BDArmorySettings.PINATA_NAME))
+
                             pilot.weaponManager.SetTeam(BDTeam.Get("PinataPoppers"));
                         else
+                        {
                             pilot.weaponManager.SetTeam(BDTeam.Get("Pinata"));
+                            if (FlightGlobals.ActiveVessel != pilot.vessel)
+                            {
+                                LoadedVesselSwitcher.Instance.ForceSwitchVessel(pilot.vessel);
+                            }
+                        }
                     }
 
                     if (!pilots.TryGetValue(pilot.weaponManager.Team, out List<IBDAIControl> teamPilots))
@@ -2485,7 +2492,8 @@ namespace BDArmory.Competition
                     pinataAlive = false;
                     competitionStatus.Add("Pinata killed by " + Scores.ScoreData[BDArmorySettings.PINATA_NAME].lastPersonWhoDamagedMe + "! Competition is now a Free for all");
                     Scores.RegisterMissileStrike(Scores.ScoreData[BDArmorySettings.PINATA_NAME].lastPersonWhoDamagedMe, BDArmorySettings.PINATA_NAME); //give a missile strike point to indicate the pinata kill on the web API
-
+                    if (BDArmorySettings.AUTO_ENABLE_VESSEL_SWITCHING)
+                        LoadedVesselSwitcher.Instance.EnableAutoVesselSwitching(true);
                     // start kill clock
                     if (!killerGMenabled)
                     {
