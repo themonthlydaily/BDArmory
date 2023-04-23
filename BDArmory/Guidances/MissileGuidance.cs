@@ -254,18 +254,23 @@ namespace BDArmory.Guidances
             float leadTime = 0;
             float targetDistance = Vector3.Distance(targetVessel.transform.position, missile.transform.position);
 
-            Vector3 simMissileVel = 500 * (targetPosition - missile.transform.position).normalized;
+            //Vector3 simMissileVel = 500 * (targetPosition - missile.transform.position).normalized;
 
             MissileLauncher launcher = missile as MissileLauncher;
+            /*
             float optSpeed = 400; //TODO: Add parameter
             if (launcher != null)
             {
-                optSpeed = launcher.optimumAirspeed;
+                optSpeed = launcher.optimumAirspeed; //so it assumes missiles start out immediately possessing all their velocity instead of having to accelerate? That explains alot.
             }
             simMissileVel = optSpeed * (targetPosition - missile.transform.position).normalized;
 
             leadTime = targetDistance / (float)(targetVessel.Velocity() - simMissileVel).magnitude;
             leadTime = Mathf.Clamp(leadTime, 0f, 8f);
+            */
+            float accel = launcher.thrust / missile.part.mass;
+            leadTime = ((float)Math.Sqrt(accel * (accel + (8 * targetDistance))) - accel) / (2 * accel) - (Time.fixedDeltaTime * 1.5f); //quadratic equation for accel to find time from known force and vel
+
             targetPosition = targetPosition + (targetVessel.Velocity() * leadTime);
 
             if (targetVessel && targetDistance < 800)
@@ -274,6 +279,70 @@ namespace BDArmory.Guidances
             }
 
             return targetPosition;
+
+            /* //if should unguided missiles require more accurate firing solution. Test with above inverse quadratic equation for lead time first, as this gets called by both missilefire and the AI, so that's duplicate trajectory sims otherwise
+            float simTime = 0;
+            float maxTime = 5; //past this point missile has either missed, or well underway  under internal guidance
+            float maxDistance = targetDistance;
+            Vector3 pointingDirection = missile.GetForwardTransform();
+            Vector3 simVelocity = missile.vessel.Velocity() + BDKrakensbane.FrameVelocityV3f;
+            Vector3 simCurrPos = missile.transform.position;
+            Vector3 simPrevPos = simCurrPos;
+            Vector3 simStartPos = simCurrPos;
+            Vector3 closestPointOfApproach = simCurrPos;
+            float closestDistanceSqr = float.MaxValue;
+            float simDeltaTime = Time.fixedDeltaTime;
+            // Bootstrap leap-frog
+            var gravity = FlightGlobals.getGeeForceAtPosition(simCurrPos);
+            if (FlightGlobals.RefFrameIsRotating)
+            { simVelocity += 0.5f * simDeltaTime * gravity; }
+            simVelocity += 0.5f * launcher.thrust / missile.part.mass * simDeltaTime * pointingDirection;
+
+            while (true)
+            {
+                if (simTime > launcher.boostTime)
+                {
+                    if (FlightGlobals.RefFrameIsRotating)
+                    { simVelocity += 0.5f * simDeltaTime * gravity; }
+                    simVelocity += 0.5f * launcher.cruiseThrust / missile.part.mass * simDeltaTime * pointingDirection;                   
+                }
+                simTime += simDeltaTime;
+                simPrevPos = simCurrPos;
+                simCurrPos += simVelocity * simDeltaTime;
+
+                if ((simPrevPos - targetPosition).sqrMagnitude < closestDistanceSqr)
+                {
+                    var timeToCPA = AIUtils.ClosestTimeToCPA(targetPosition - simPrevPos, targetVessel.Velocity() - simVelocity, targetVessel.acceleration - gravity, simDeltaTime);
+                    if (timeToCPA < simDeltaTime)
+                        closestPointOfApproach = AIUtils.PredictPosition(simPrevPos, simVelocity, gravity, timeToCPA);
+                    else
+                        closestPointOfApproach = simPrevPos;
+                    closestDistanceSqr = (closestPointOfApproach - targetPosition).sqrMagnitude;
+                }
+                else
+                {
+                    targetPosition = closestPointOfApproach;
+                    break;
+                }
+                if (simTime > maxTime || (simStartPos - simCurrPos).sqrMagnitude > maxDistance * maxDistance)
+                {
+                    targetPosition = simCurrPos;
+                    break;
+                }
+                if (simTime < launcher.cruiseTime)
+                    simVelocity += launcher.thrust / missile.part.mass * simDeltaTime * pointingDirection;
+                else
+                    simVelocity += launcher.cruiseThrust / missile.part.mass * simDeltaTime * pointingDirection;
+                if (FlightGlobals.RefFrameIsRotating)
+                {
+                    gravity = FlightGlobals.getGeeForceAtPosition(simCurrPos);
+                    simVelocity += gravity * simDeltaTime;
+                }
+            }
+            Vector3 pointingPos = missile.transform.position + (pointingDirection * targetDistance);
+            targetPosition = pointingPos - closestPointOfApproach;
+            leadTime = simTime;
+            */
         }
 
         public static Vector3 GetAirToAirFireSolution(MissileBase missile, Vector3 targetPosition, Vector3 targetVelocity)
@@ -281,8 +350,9 @@ namespace BDArmory.Guidances
             float leadTime = 0;
             float targetDistance = Vector3.Distance(targetPosition, missile.transform.position);
 
-            float optSpeed = 400; //TODO: Add parameter
+            //float optSpeed = 400; //TODO: Add parameter
             MissileLauncher launcher = missile as MissileLauncher;
+            /*
             if (launcher != null)
             {
                 optSpeed = launcher.optimumAirspeed;
@@ -291,6 +361,9 @@ namespace BDArmory.Guidances
             Vector3 simMissileVel = optSpeed * (targetPosition - missile.transform.position).normalized;
             leadTime = targetDistance / (targetVelocity - simMissileVel).magnitude;
             leadTime = Mathf.Clamp(leadTime, 0f, 8f);
+            */
+            float accel = launcher.thrust / missile.part.mass;
+            leadTime = ((float)Math.Sqrt(accel * (accel + (8 * targetDistance))) - accel) / (2 * accel) - (Time.fixedDeltaTime * 1.5f); //quadratic equation for accel to find time from known force and vel
 
             targetPosition = targetPosition + (targetVelocity * leadTime);
 

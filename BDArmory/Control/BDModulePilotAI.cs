@@ -2028,7 +2028,7 @@ namespace BDArmory.Control
                         if (missile.TargetingMode == MissileBase.TargetingModes.Heat && !weaponManager.heatTarget.exists)
                         {
                             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Attempting heat lock");
-                            target += v.srf_velocity.normalized * 10;
+                            target += v.srf_velocity.normalized * 10; //TODO this should be based on heater boresight?
                         }
                         else
                         {
