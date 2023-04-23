@@ -1672,6 +1672,7 @@ namespace BDArmory.Control
                     if (underFire) debugString.AppendLine($"Under fire from {(priorGunThreatVessel != null ? priorGunThreatVessel.vesselName : null)}");
                     if (isChaffing) debugString.AppendLine("Chaffing");
                     if (isFlaring) debugString.AppendLine("Flaring");
+                    if (isSmoking) debugString.AppendLine("Dropping Smoke");
                     if (isECMJamming) debugString.AppendLine("ECMJamming");
                     if (isCloaking) debugString.AppendLine("Cloaking");
                 }
@@ -2541,7 +2542,11 @@ namespace BDArmory.Control
 
         IEnumerator WarningSoundRoutine(float distance, MissileBase ml)//give distance parameter
         {
-            if (distance < this.guardRange)
+            bool detectedLaunch = false;
+            if (rwr && (rwr.omniDetection || (!rwr.omniDetection && ml.TargetingMode == MissileBase.TargetingModes.Radar) || irsts.Count > 0)) //omni RWR detection, radar spike from lock, or IR spike from launch
+                detectedLaunch = true;
+
+            if (distance < (detectedLaunch ? this.guardRange : this.guardRange / 3))
             {
                 warningSounding = true;
                 BDArmorySetup.Instance.missileWarningTime = Time.time;
@@ -2553,7 +2558,7 @@ namespace BDArmory.Control
 
                 yield return new WaitForSecondsFixed(waitTime);
 
-                if (ml.vessel && CanSeeTarget(ml.vessel))
+                if (ml.vessel && CanSeeTarget(ml))
                 {
                     BDATargetManager.ReportVessel(ml.vessel, this);
                 }
@@ -2567,6 +2572,7 @@ namespace BDArmory.Control
 
         public bool isChaffing;
         public bool isFlaring;
+        public bool isSmoking;
         public bool isECMJamming;
         public bool isCloaking;
 
@@ -2577,7 +2583,7 @@ namespace BDArmory.Control
 
         public void FireAllCountermeasures(int count)
         {
-            if (!isChaffing && !isFlaring && ThreatClosingTime(incomingMissileVessel) > cmThreshold)
+            if (!isChaffing && !isFlaring && !isSmoking && ThreatClosingTime(incomingMissileVessel) > cmThreshold)
             {
                 StartCoroutine(AllCMRoutine(count));
             }
@@ -2613,6 +2619,14 @@ namespace BDArmory.Control
             {
                 StartCoroutine(FlareRoutine((int)cmRepetition, cmInterval));
                 StartCoroutine(ResetMissileThreatDistanceRoutine());
+            }
+        }
+
+        public void FireSmoke()
+        {
+            if (!isSmoking && ThreatClosingTime(incomingMissileVessel) <= cmThreshold)
+            {
+                StartCoroutine(SmokeRoutine((int)chaffRepetition, chaffInterval));
             }
         }
 
@@ -2700,12 +2714,28 @@ namespace BDArmory.Control
             isFlaring = false;
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} ending flare routine");
         }
+        IEnumerator SmokeRoutine(int repetition, float interval)
+        {
+            isSmoking = true;
+            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} starting flare routine");
+            // yield return new WaitForSecondsFixed(0.2f); // Reaction time delay
+            for (int i = 0; i < repetition; ++i)
+            {
+                DropCM(CMDropper.CountermeasureTypes.Smoke);
+                if (i < repetition - 1) // Don't wait on the last one.
+                    yield return new WaitForSecondsFixed(interval);
+            }
+            yield return new WaitForSecondsFixed(cmWaitTime);
+            isSmoking = false;
+            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} ending flare routine");
+        }
 
         IEnumerator AllCMRoutine(int count)
         {
             // Use this routine for missile threats that are outside of the cmThreshold
             isFlaring = true;
             isChaffing = true;
+            isSmoking = true;
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} starting All CM routine");
             for (int i = 0; i < count; ++i)
             {
@@ -2715,6 +2745,7 @@ namespace BDArmory.Control
             }
             isFlaring = false;
             isChaffing = false;
+            isSmoking = false;
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} ending All CM routine");
         }
 
@@ -5920,10 +5951,15 @@ namespace BDArmory.Control
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        public bool CanSeeTarget(Vessel target)
+        public bool CanSeeTarget(MissileBase target)
         {
             // can we get a visual sight of the target?
-            if ((target.transform.position - transform.position).sqrMagnitude < guardRange * guardRange)
+            float visrange = guardRange;
+            if (BDArmorySettings.VARIABLE_MISSILE_VISIBILITY)
+            {
+                visrange *= target.MissileState == MissileBase.MissileStates.Boost ? 1 : (target.MissileState == MissileBase.MissileStates.Cruise ? 0.75f : 0.33f);
+            }
+            if ((target.transform.position - transform.position).sqrMagnitude < visrange * visrange)
             {
                 if (RadarUtils.TerrainCheck(target.transform.position, transform.position))
                 {
@@ -6370,49 +6406,103 @@ namespace BDArmory.Control
                 incomingThreatPosition = results.incomingMissiles[0].position;
                 incomingThreatVessel = results.incomingMissiles[0].vessel;
                 incomingMissileVessel = results.incomingMissiles[0].vessel;
-                if (rwr && !rwr.rwrEnabled) rwr.EnableRWR();
-                if (rwr && rwr.rwrEnabled && !rwr.displayRWR) rwr.displayRWR = true;
-
-                if (results.foundHeatMissile)
+                if (rwr && rwr.omniDetection)
                 {
-                    StartCoroutine(UnderAttackRoutine());
-
-                    FireFlares();
-                    FireOCM(true);
+                    if (!rwr.rwrEnabled) rwr.EnableRWR(); 
+                    if (rwr.rwrEnabled && !rwr.displayRWR) rwr.displayRWR = true;
                 }
-
+                //radar missiles
                 if (results.foundRadarMissile)
                 {
+                    if (rwr && !rwr.omniDetection)
+                    {
+                        if (!rwr.rwrEnabled) rwr.EnableRWR(); 
+                        if (rwr.rwrEnabled && !rwr.displayRWR) rwr.displayRWR = true;
+                    }
                     StartCoroutine(UnderAttackRoutine());
 
                     FireChaff();
                     FireECM();
                 }
-
+                //laser missiles
                 if (results.foundAGM)
                 {
                     StartCoroutine(UnderAttackRoutine());
 
-                    //do smoke CM here.
+                    FireSmoke();
                     if (targetMissiles && guardTarget == null)
                     {
                         //targetScanTimer = Mathf.Min(targetScanInterval, Time.time - targetScanInterval + 0.5f);
                         targetScanTimer -= targetScanInterval / 2;
                     }
                 }
-
-                if (results.foundAntiRadiationMissile)
+                //passive missiles
+                if (results.foundHeatMissile || results.foundAntiRadiationMissile)
                 {
-                    StartCoroutine(UnderAttackRoutine());
-
-                    // Turn off the radars
-                    using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
-                        while (rd.MoveNext())
+                    if (rwr && rwr.omniDetection)
+                    {
+                        if (results.foundHeatMissile)
                         {
-                            if (rd.Current != null || rd.Current.canLock)
-                                rd.Current.DisableRadar();
+                            FireFlares();
+                            FireOCM(true);
                         }
+                        if (results.foundAntiRadiationMissile)
+                        {
+                            using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
+                                while (rd.MoveNext())
+                                {
+                                    if (rd.Current != null || rd.Current.canLock)
+                                        rd.Current.DisableRadar();
+                                }
+                        }
+                        StartCoroutine(UnderAttackRoutine());
+                    }
+                    else //one passive missile is going to be indistinguishable from another, until it gets close enough to evaluate
+                    {
+                        if (vessel.LandedOrSplashed) //assume antirads against ground targets
+                        {
+                            if (radars.Count > 0)
+                            {
+                                using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
+                                    while (rd.MoveNext())
+                                    {
+                                        if (rd.Current != null || rd.Current.canLock)
+                                            rd.Current.DisableRadar();
+                                    }
+                            }
+                        }
+                        else //likely a heatseeker, but could be an AA HARM...
+                        {
+                            if (incomingMissileDistance <= guardRange * 0.33f) //within ID range?
+                            {
+                                if (results.foundHeatMissile)
+                                {
+                                    FireFlares();
+                                    FireOCM(true);
+                                }
+                                else //it's an Antirad!? Uh-oh, blip radar!
+                                {
+                                    if (radars.Count > 0)
+                                    {
+                                        using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
+                                            while (rd.MoveNext())
+                                            {
+                                                if (rd.Current != null || rd.Current.canLock)
+                                                    rd.Current.DisableRadar();
+                                            }
+                                    }
+                                }
+                            }
+                            else //assume heater
+                            {
+                                FireFlares();
+                                FireOCM(true);
+                            }
+                        }
+                        StartCoroutine(UnderAttackRoutine());
+                    }
                 }
+               
             }
             else
             {
