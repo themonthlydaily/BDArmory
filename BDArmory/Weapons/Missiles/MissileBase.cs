@@ -353,7 +353,7 @@ namespace BDArmory.Weapons.Missiles
         private float _radarFailTimer = 0;
         private float maxRadarFailTime = 5;
         private float lastRWRPing = 0;
-        private bool radarLOALSearching = false;
+        private bool radarLOALSearching = true;
         protected bool checkMiss = false;
         public StringBuilder debugString = new StringBuilder();
 
@@ -702,6 +702,7 @@ namespace BDArmory.Weapons.Missiles
 
             if (radarTarget.exists)
             {
+                radarLOALSearching = false;
                 // locked-on before launch, passive radar guidance or waiting till in active radar range:
                 if (!ActiveRadar && ((radarTarget.predictedPosition - transform.position).sqrMagnitude > (activeRadarRange * activeRadarRange) || angleToTarget > maxOffBoresight * 0.75f))
                 {
@@ -886,7 +887,7 @@ namespace BDArmory.Weapons.Missiles
                     }
                 }
             }
-            else if (radarLOAL && radarLOALSearching)
+            else if (radarLOAL && radarLOALSearching) //add a check for missing radar, so LOAL missisle that have been dumbfired can stil lactivate?
             {
                 // not locked on before launch, trying lock-on after launch:
 

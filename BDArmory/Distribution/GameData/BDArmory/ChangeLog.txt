@@ -6,7 +6,7 @@
 	- Adjust IRST display implementation.
 	- Adds new 'omniDetection' field to RadarWarningReciever (default true). If false, RWR will only detect Radar missiles immediately, some changes to missile detection and CM response.
 	- Adds 'VARIABLE_MISSILE_VISIBILITY (default False) BDA setting for setting visual detection range of missiles based on their boost/cruise/post-thrust state.
-	- Add 'irstRanging' field 9default false) to IRSTs to let them determine range and work like 'heat radar'.
+	- Add 'irstRanging' field (default false) to IRSTs to let them determine range and work like 'heat radar'.
  - CounterMeasures:
 	- Add optional 'cooldownInterval' field for jammers/thermoptic CMs to add a cooldown before they can be used again.
 	- Implements smoke CM triggers, so the AI will actually use these now.
