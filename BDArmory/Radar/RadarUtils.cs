@@ -1579,9 +1579,9 @@ namespace BDArmory.Radar
         }
 
         /// <summary>
-        /// Helper method: map a position onto the radar display (for non-onmi radars)
+        /// Helper method: map a position onto the radar display (for non-omni radars)
         /// </summary>
-        public static Vector2 WorldToRadarRadial(Vector3 worldPosition, Transform referenceTransform, Rect radarRect, float maxDistance, float maxAngle, bool IRST = false)
+        public static Vector2 WorldToRadarRadial(Vector3 worldPosition, Transform referenceTransform, Rect radarRect, float maxDistance, float maxAngle)
         {
             if (referenceTransform == null) return new Vector2();
 
@@ -1592,17 +1592,15 @@ namespace BDArmory.Radar
             if (localPosition.x < 0) angle = -angle;
             float xPos = (radarRect.width / 2) + ((angle / maxAngle) * radarRect.width / 2);
             float yPos = radarRect.height;
-            if (!IRST)
+
+            if (BDArmorySettings.LOGARITHMIC_RADAR_DISPLAY)
             {
-                if (BDArmorySettings.LOGARITHMIC_RADAR_DISPLAY)
-                {
-                    scale = Mathf.Log(localPosition.magnitude + 1) / Mathf.Log(maxDistance + 1);
-                    yPos -= radarRect.height * scale * scale;
-                }
-                else
-                {
-                    yPos -= localPosition.magnitude / scale;
-                }
+                scale = Mathf.Log(localPosition.magnitude + 1) / Mathf.Log(maxDistance + 1);
+                yPos -= radarRect.height * scale * scale;
+            }
+            else
+            {
+                yPos -= localPosition.magnitude / scale;
             }
             Vector2 radarPos = new Vector2(xPos, yPos);
             return radarPos;

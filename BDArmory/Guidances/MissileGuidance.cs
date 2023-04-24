@@ -270,7 +270,7 @@ namespace BDArmory.Guidances
             */
             float accel = launcher.thrust / missile.part.mass;
             leadTime = ((float)Math.Sqrt(accel * (accel + (8 * targetDistance))) - accel) / (2 * accel) - (Time.fixedDeltaTime * 1.5f); //quadratic equation for accel to find time from known force and vel
-
+            leadTime = Mathf.Clamp(leadTime, 0f, 8f);
             targetPosition = targetPosition + (targetVessel.Velocity() * leadTime);
 
             if (targetVessel && targetDistance < 800)
@@ -364,7 +364,7 @@ namespace BDArmory.Guidances
             */
             float accel = launcher.thrust / missile.part.mass;
             leadTime = ((float)Math.Sqrt(accel * (accel + (8 * targetDistance))) - accel) / (2 * accel) - (Time.fixedDeltaTime * 1.5f); //quadratic equation for accel to find time from known force and vel
-
+            leadTime = Mathf.Clamp(leadTime, 0f, 8f);
             targetPosition = targetPosition + (targetVelocity * leadTime);
 
             return targetPosition;

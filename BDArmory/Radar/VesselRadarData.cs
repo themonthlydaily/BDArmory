@@ -942,7 +942,7 @@ namespace BDArmory.Radar
                 }
 
                 // Range Display and control
-                DisplayRange();
+                if (availableRadars.Count > 0 || availableIRSTs[0].irstRanging) DisplayRange(); //don't change dist for non-range capable IRSTs
 
                 //my ship direction icon
                 float directionSize = 16;
@@ -1067,7 +1067,7 @@ namespace BDArmory.Radar
             {
                 GUI.DrawTexture(scanRect, radialBgTexture, ScaleMode.StretchToFill, true);
 
-                DisplayRange();
+                if (availableRadars.Count > 0 || availableIRSTs[0].irstRanging) DisplayRange(); //don't change dist for non-range capable IRSTs
 
                 for (int i = 0; i < rCount; i++)
                 {
@@ -1885,7 +1885,7 @@ namespace BDArmory.Radar
             else
             {
                 return RadarUtils.WorldToRadarRadial(worldPosition, referenceTransform, RadarDisplayRect,
-                    rIncrements[rangeIndex], irst.directionalFieldOfView / 2, irst.irstRanging);
+                    rIncrements[rangeIndex], irst.directionalFieldOfView / 2);
             }
         }
 
@@ -2234,7 +2234,7 @@ namespace BDArmory.Radar
         private void DrawDisplayedIRContacts()
         {
             float lockIconSize = 24 * BDArmorySettings.RADAR_WINDOW_SCALE;
-
+            Vector2 Centerpoint = new Vector2((RadarScreenSize * BDArmorySettings.RADAR_WINDOW_SCALE) / 2, (RadarScreenSize * BDArmorySettings.RADAR_WINDOW_SCALE) / 2);
             for (int i = 0; i < displayedIRTargets.Count; i++)
             {
                 bool hasRadarContact = false;
@@ -2274,15 +2274,34 @@ namespace BDArmory.Radar
                     Vector2 pingPosition = displayedIRTargets[i].pingPosition;
 
                     Rect pingRect;
+
+                    //float vAngle = Vector2.Angle(Vector3.up, pingPosition - Centerpoint);
+                    float vAngle = Vector2.Angle(Vector3.up, Centerpoint - pingPosition);
+                    if (pingPosition.x < Centerpoint.x)
+                    {
+                        vAngle = -vAngle; //FIXME - inverted. Need to Flip (not mirror) angle
+                    }
+
                     if ((displayedIRTargets[i].targetData.targetInfo && displayedIRTargets[i].targetData.targetInfo.isMissile) || displayedIRTargets[i].targetData.Team == null)
                     {
-                        float mDotSize = (2) / (rangeIndex + 1);
+                        float mDotSize = (20) / (omniDisplay ? 1 : rangeIndex + 1);
                         if (mDotSize < 1) mDotSize = 1;
-                        pingRect = new Rect(pingPosition.x - (mDotSize / 2), pingPosition.y - (mDotSize / 2), mDotSize, mDotSize);
-                        GUI.DrawTexture(pingRect, displayedIRTargets[i].detectedByIRST.irstRanging ? BDArmorySetup.Instance.redDotTexture : BDArmorySetup.Instance.irSpikeTexture, ScaleMode.StretchToFill, true);
+
+                        if (omniDisplay)
+                        {
+                            GUIUtility.RotateAroundPivot(vAngle, Centerpoint);
+                            pingRect = new Rect(Centerpoint.x - (mDotSize / 2), Centerpoint.y - (RadarDisplayRect.height / 2), mDotSize, mDotSize);
+                        }
+                        else pingRect = new Rect(pingPosition.x - (mDotSize / 2), pingPosition.y - (mDotSize / 2), mDotSize, mDotSize);
+
+                        Color origGUIColor = GUI.color;
+                        GUI.color = Color.white - new Color(0, 0, 0, minusAlpha);
+                        GUI.DrawTexture(pingRect, omniDisplay ? displayedIRTargets[i].detectedByIRST.irstRanging ? BDArmorySetup.Instance.redDotTexture : BDArmorySetup.Instance.irSpikeTexture : BDArmorySetup.Instance.redDotTexture, ScaleMode.StretchToFill, true);
+                        GUI.color = origGUIColor;
 
                         GUI.matrix = Matrix4x4.identity;
                     }
+                    /*
                     else if (displayedIRTargets[i].detectedByIRST.showDirectionWhileScan &&
                              displayedIRTargets[i].targetData.velocity.sqrMagnitude > 100)
                     {
@@ -2314,20 +2333,25 @@ namespace BDArmory.Radar
                             (displayedIRTargets[i].targetData.altitude / 1000).ToString("0"), distanceStyle);
                         GUI.color = origGUIColor;
                     }
+                    */
                     //draw as dots    
                     else
                     {
-                        float mDotSize = (displayedIRTargets[i].magnitude / 25) / (rangeIndex + 1);
+                        float mDotSize = (displayedIRTargets[i].magnitude / (omniDisplay ? 10 : 25)) / (omniDisplay ? 2 : rangeIndex + 1);
                         if (mDotSize < 1) mDotSize = 1;
-                        if (mDotSize > 20) mDotSize = 20;
+                        if (mDotSize > (omniDisplay ? 80 : 20)) mDotSize = omniDisplay ? 80 : 20;
 
-                        float currentAngle = 180 + Vector2.Angle(pingPosition, new Vector2((RadarScreenSize * BDArmorySettings.RADAR_WINDOW_SCALE) / 2, (RadarScreenSize * BDArmorySettings.RADAR_WINDOW_SCALE) / 2));
+                        if (omniDisplay)
+                        {
+                            GUIUtility.RotateAroundPivot(vAngle, Centerpoint);
+                            pingRect = new Rect(Centerpoint.x - (mDotSize / 2), Centerpoint.y - (RadarDisplayRect.height / 2), mDotSize, mDotSize);
+                        }
+                        else pingRect = new Rect(pingPosition.x - (mDotSize / 2), pingPosition.y - (mDotSize / 2), mDotSize, mDotSize);
 
-                        GUIUtility.RotateAroundPivot(currentAngle, new Vector2(pingPosition.x, pingPosition.y));
-
-
-                        pingRect = new Rect(pingPosition.x - (mDotSize / 2), pingPosition.y - mDotSize, mDotSize, mDotSize);
-                        GUI.DrawTexture(pingRect, displayedIRTargets[i].detectedByIRST.irstRanging ? BDArmorySetup.Instance.redDotTexture : BDArmorySetup.Instance.irSpikeTexture, ScaleMode.StretchToFill, true);
+                        Color origGUIColor = GUI.color;
+                        GUI.color = Color.white - new Color(0, 0, 0, minusAlpha);
+                        GUI.DrawTexture(pingRect, omniDisplay ? displayedIRTargets[i].detectedByIRST.irstRanging ? BDArmorySetup.Instance.redDotTexture : BDArmorySetup.Instance.irSpikeTexture : BDArmorySetup.Instance.redDotTexture, ScaleMode.StretchToFill, true);
+                        GUI.color = origGUIColor;
 
                         GUI.matrix = Matrix4x4.identity;
                     }
@@ -2343,7 +2367,7 @@ namespace BDArmory.Radar
 
         private bool omniDisplay
         {
-            get { return (radarCount > 1 || (radarCount == 1 && availableRadars[0].omnidirectional) || irstCount > 1 || (irstCount == 1 && availableIRSTs[0].omnidirectional)); }
+            get { return (radarCount > 1 || (radarCount == 1 && availableRadars[0].omnidirectional) || irstCount > 1 || (irstCount == 1 && !availableIRSTs[0].irstRanging)); }
         }
 
         private void UpdateInputs()

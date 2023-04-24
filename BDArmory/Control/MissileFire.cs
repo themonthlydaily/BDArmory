@@ -6406,13 +6406,13 @@ namespace BDArmory.Control
                 incomingThreatPosition = results.incomingMissiles[0].position;
                 incomingThreatVessel = results.incomingMissiles[0].vessel;
                 incomingMissileVessel = results.incomingMissiles[0].vessel;
-                if (rwr && rwr.omniDetection)
+                if (rwr && rwr.omniDetection) //enable omniRWRs for all incoming threats
                 {
                     if (!rwr.rwrEnabled) rwr.EnableRWR(); 
                     if (rwr.rwrEnabled && !rwr.displayRWR) rwr.displayRWR = true;
                 }
                 //radar missiles
-                if (results.foundRadarMissile)
+                if (results.foundRadarMissile) //have this require an RWR?
                 {
                     if (rwr && !rwr.omniDetection)
                     {
