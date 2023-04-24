@@ -1,4 +1,31 @@
-﻿v1.6.0.2
+﻿IMPROVEMENTS / FIXES
+ - General:
+	- Fix TweakScale config for Typhoon engine.
+	- Reduce min size, scaling increment for procArmor panels.
+ - Detectors:
+	- Adjust IRST display implementation.
+	- Adds new 'omniDetection' field to RadarWarningReciever (default true). If false, RWR will only detect Radar missiles immediately, some changes to missile detection and CM response.
+	- Adds 'VARIABLE_MISSILE_VISIBILITY (default False) BDA setting for setting visual detection range of missiles based on their boost/cruise/post-thrust state.
+	- Add 'irstRanging' field 9default false) to IRSTs to let them determine range and work like 'heat radar'.
+ - CounterMeasures:
+	- Add optional 'cooldownInterval' field for jammers/thermoptic CMs to add a cooldown before they can be used again.
+	- Implements smoke CM triggers, so the AI will actually use these now.
+- Weapons:
+	- Adds 'minSafeDistanceDistance' field (default 0) to ModuleWeapon, for setting default weapon min ranges; AI will no longer fire if within min range. ADJUST AT OWN RISK.
+	- Fix ground Vees from firing wildly into the dirt if they lose sight of engaged ground target.
+	- Adds LoS check to direct-fire weapons.
+	- Missiles:
+		- Heatseeking missiles no longer home in on engine plume of engines that have turned off their Afterburner.
+		- Fix targeting offset for CR missiles.
+		- Fix NRE with jettisoning Multimissile Launchers.
+		- Adds ModularMissile ground target weapon selection logic.
+		- Give unguided/GPS missiles without coords/Radar missiles sans Radar/Laser missiles without Targeting Pod a dumbfire reticle.
+		- AI can now use Unguided missiles (Targeting Mode = None / Radar/Laser missile without the necessary sensor), if no better option available.
+		- Ai can now attampt to use guided bombs against air targets if engage Air = true and nothing else available.
+ - Competition:
+ 	- Pinata mode now temporarily disables Camera AutoSwitch, switches camera to Pinata until it is destroyed.
+
+v1.6.0.2
 IMPROVEMENTS / FIXES
 - UI:
 	- Add a toggle for aim assist mode (Target = reticle placed at the closest point of approach of the projectile to the target, Aimer = reticle placed at the aiming position).
