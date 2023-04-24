@@ -1814,7 +1814,7 @@ namespace BDArmory.Control
 
                     if (weaponManager)
                     {
-                        if (weaponManager.incomingMissileVessel)
+                        if (weaponManager.incomingMissileVessel)//switch to weaponManager.missileisIncoming?
                         {
                             threatRelativePosition = weaponManager.incomingThreatPosition - vesselTransform.position;
                             if (extending)

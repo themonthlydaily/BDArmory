@@ -1372,9 +1372,8 @@ namespace BDArmory.Radar
 
                     float vesselDistance = (loadedvessels.Current.transform.position - position).sqrMagnitude;
                     //BDATargetManager.ClearRadarReport(loadedvessels.Current, myWpnManager); //reset radar contact status
-
                     if (vesselDistance < maxDistance * maxDistance && Vector3.Angle(vesselProjectedDirection, lookDirection) < fov / 2f) // && Vector3.Angle(loadedvessels.Current.transform.position - position, -myWpnManager.transform.forward) < myWpnManager.guardAngle / 2f) //WM facing direction? that s going to cause issues for any that aren't mounted pointing forward if guardAngle < 360; check combatSeat forward vector
-                    {
+                        {
                         if (TerrainCheck(referenceTransform.position, loadedvessels.Current.transform.position))
                         {
                             continue; //blocked by terrain

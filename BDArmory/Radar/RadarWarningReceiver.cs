@@ -217,7 +217,7 @@ namespace BDArmory.Radar
             if (!omniDetection && !radar) return;
 
             float sqrDist = (part.transform.position - source).sqrMagnitude;
-            if ((weaponManager && weaponManager.guardMode) && (sqrDist > (weaponManager.guardRange * weaponManager.guardRange))) return;
+            //if ((weaponManager && weaponManager.guardMode) && (sqrDist > (weaponManager.guardRange * weaponManager.guardRange))) return; //doesn't this clamp the RWR to visual view range, not radar/RWR range?
             if (sqrDist < BDArmorySettings.MAX_ENGAGEMENT_RANGE * BDArmorySettings.MAX_ENGAGEMENT_RANGE && sqrDist > 10000f && Vector3.Angle(direction, part.transform.position - source) < 15f)
             {
                 StartCoroutine(
@@ -228,8 +228,9 @@ namespace BDArmory.Radar
 
                 if (weaponManager && weaponManager.guardMode)
                 {
-                    weaponManager.FireAllCountermeasures(Random.Range(1, 2)); // Was 2-4, but we don't want to take too long doing this initial dump before other routines kick in
+                    //weaponManager.FireAllCountermeasures(Random.Range(1, 2)); // Was 2-4, but we don't want to take too long doing this initial dump before other routines kick in
                     weaponManager.incomingThreatPosition = source;
+                    weaponManager.missileIsIncoming = true;
                 }
             }
         }
@@ -262,7 +263,8 @@ namespace BDArmory.Radar
                 {
                     if (weaponManager && weaponManager.guardMode)
                     {
-                        weaponManager.FireChaff(); 
+                        weaponManager.FireChaff();
+                        weaponManager.missileIsIncoming = true;
                         // TODO: if torpedo inbound, also fire accoustic decoys (not yet implemented...)
                     }
                 }
