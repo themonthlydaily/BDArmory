@@ -2,6 +2,10 @@
  - General:
 	- Fix TweakScale config for Typhoon engine.
 	- Reduce min size, scaling increment for procArmor panels.
+- Vessel Mover:
+	- Abort vessel selection and reset state when closing/hiding the VM window.
+- AI:
+	- Lower the minimum extend abort time to 1s.
  - Detectors:
 	- Adjust IRST display implementation.
 	- Adds new 'omniDetection' field to RadarWarningReciever (default true). If false, RWR will only detect Radar missiles immediately, some changes to missile detection and CM response.
@@ -22,10 +26,11 @@
 		- Give unguided/GPS missiles without coords/Radar missiles sans Radar/Laser missiles without Targeting Pod a dumbfire reticle.
 		- AI can now use Unguided missiles (Targeting Mode = None / Radar/Laser missile without the necessary sensor), if no better option available.
 		- Ai can now attampt to use guided bombs against air targets if engage Air = true and nothing else available.
- - Competition:
+- Competition:
  	- Pinata mode now temporarily disables Camera AutoSwitch, switches camera to Pinata until it is destroyed.
-
-v1.6.0.2
+  - Update the tournament parser to compute non-negative scores per round for waypoint races.
+  
+  v1.6.0.2
 IMPROVEMENTS / FIXES
 - UI:
 	- Add a toggle for aim assist mode (Target = reticle placed at the closest point of approach of the projectile to the target, Aimer = reticle placed at the aiming position).
