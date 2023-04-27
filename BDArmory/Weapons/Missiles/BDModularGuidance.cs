@@ -5,7 +5,6 @@ using UniLinq;
 using UnityEngine;
 
 using BDArmory.Control;
-using BDArmory.Competition.VesselSpawning;
 using BDArmory.Extensions;
 using BDArmory.Guidances;
 using BDArmory.Radar;
@@ -13,6 +12,7 @@ using BDArmory.Settings;
 using BDArmory.Targeting;
 using BDArmory.UI;
 using BDArmory.Utils;
+using BDArmory.VesselSpawning;
 
 namespace BDArmory.Weapons.Missiles
 {

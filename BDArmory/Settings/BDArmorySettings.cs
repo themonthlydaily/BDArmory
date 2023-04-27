@@ -269,7 +269,6 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static float VESSEL_SPAWN_DISTANCE = 100f;             // Radius of the size of the spawning circle.
         [BDAPersistentSettingsField] public static bool VESSEL_SPAWN_DISTANCE_TOGGLE = true;       // Toggle between scaling factor and absolute distance.
         [BDAPersistentSettingsField] public static bool VESSEL_SPAWN_REASSIGN_TEAMS = true;        // Reassign teams on spawn, overriding teams defined in the SPH.
-        [BDAPersistentSettingsField] public static float VESSEL_SPAWN_EASE_IN_SPEED = 0f;          // Rate to limit "falling" during spawning.
         [BDAPersistentSettingsField] public static int VESSEL_SPAWN_CONCURRENT_VESSELS = 0;        // Maximum number of vessels to spawn in concurrently (continuous spawning mode).
         [BDAPersistentSettingsField] public static int VESSEL_SPAWN_LIVES_PER_VESSEL = 0;          // Maximum number of times to spawn a vessel (continuous spawning mode).
         [BDAPersistentSettingsField] public static float OUT_OF_AMMO_KILL_TIME = -1f;              // Out of ammo kill timer for continuous spawn mode.

@@ -6,11 +6,12 @@ using System.Linq;
 using UnityEngine;
 using KSP.UI.Screens;
 
+using BDArmory.Competition;
 using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
 
-namespace BDArmory.Competition.VesselSpawning
+namespace BDArmory.VesselSpawning
 {
     /// <summary>
     /// Spawn teams of craft in a custom template.
@@ -163,6 +164,9 @@ namespace BDArmory.Competition.VesselSpawning
             }
 
             #region Post-spawning
+            // Revert back to the KSP's proper camera.
+            SpawnUtils.RevertSpawnLocationCamera(true);
+
             // Spawning has succeeded, vessels have been renamed where necessary and vessels are ready. Time to assign teams and any other stuff.
             yield return PostSpawnMainSequence(spawnConfig, false, !startCompetitionAfterSpawning);
             if (spawnFailureReason != SpawnFailureReason.None)
@@ -174,7 +178,6 @@ namespace BDArmory.Competition.VesselSpawning
             }
 
             // Revert the camera and focus on one of the vessels.
-            SpawnUtils.RevertSpawnLocationCamera(true);
             if ((FlightGlobals.ActiveVessel == null || FlightGlobals.ActiveVessel.state == Vessel.State.DEAD) && spawnedVessels.Count > 0)
             {
                 yield return LoadedVesselSwitcher.Instance.SwitchToVesselWhenPossible(spawnedVessels.Take(UnityEngine.Random.Range(1, spawnedVessels.Count)).Last().Value); // Update the camera.
@@ -379,7 +382,6 @@ namespace BDArmory.Competition.VesselSpawning
 
             // Set the locally settable config values.
             customSpawnConfig.altitude = Mathf.Clamp(BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 2f, 10f);
-            customSpawnConfig.easeInSpeed = BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED;
             customSpawnConfig.killEverythingFirst = true;
 
             this.startCompetitionAfterSpawning = startCompetitionAfterSpawning;

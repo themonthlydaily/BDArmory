@@ -1,5 +1,14 @@
-﻿- Vessel Mover:
+﻿- General:
+	- Internal refactor of vessel spawning/moving.
+- UI:
+	- Maintain the camera angle and distance when switching vessels with the Vessel Switcher (page up/down).
+- Vessel Mover:
 	- Abort vessel selection and reset state when closing/hiding the VM window.
+- Vessel Spawning:
+	- Use the better Vessel Mover lowering routines to lower spawned craft to the terrain. 'Ease-in Speed' is now the same as 'Min Lower Speed' in VM.
+	- Fix the black screen caused by an invalid camera target during custom template spawning.
+	- Maintain the camera angle when switching to spawn locations.
+	- Also maintain the camera distance if bringing the current vessel with us when switching to spawn locations.
 - AI:
 	- Lower the minimum extend abort time to 1s.
 - Competition:
