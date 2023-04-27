@@ -3,7 +3,7 @@
 	- Fix TweakScale config for Typhoon engine.
 	- Reduce min size, scaling increment for procArmor panels.
 	- Internal refactor of vessel spawning/moving.
-  - EAS-2 External Combat Seat now has a unique model to help differentiate it from the stock EAS-1.
+  	- EAS-2 External Combat Seat now has a unique model(credit: Eclipse) to help differentiate it from the stock EAS-1. 
 - UI:
 	- Maintain the camera angle and distance when switching vessels with the Vessel Switcher (page up/down).
 - Vessel Mover:
