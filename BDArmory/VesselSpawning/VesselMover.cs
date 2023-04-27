@@ -6,15 +6,14 @@ using System.IO;
 using System.Linq;
 using KSP.UI.Screens;
 
-using BDArmory.Competition.VesselSpawning;
 using BDArmory.Extensions;
 using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
 
-using static BDArmory.Competition.VesselSpawning.CustomTemplateSpawning;
+using static BDArmory.VesselSpawning.CustomTemplateSpawning; // For the CustomCraftBrowserDialog
 
-namespace BDArmory.Competition.VesselMover
+namespace BDArmory.VesselSpawning
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class VesselMover : VesselSpawnerBase
@@ -203,9 +202,9 @@ namespace BDArmory.Competition.VesselMover
 
         #region Moving
         Vector3d geoCoords;
-        bool IsValid(Vessel vessel) => vessel != null && vessel.loaded && !vessel.packed;
-        bool IsMoving(Vessel vessel) => IsValid(vessel) && movingVessels.Contains(vessel);
-        bool IsLowering(Vessel vessel) => IsValid(vessel) && loweringVessels.Contains(vessel);
+        public bool IsValid(Vessel vessel) => vessel != null && vessel.loaded && !vessel.packed;
+        public bool IsMoving(Vessel vessel) => IsValid(vessel) && movingVessels.Contains(vessel);
+        public bool IsLowering(Vessel vessel) => IsValid(vessel) && loweringVessels.Contains(vessel);
         IEnumerator MoveVessel(Vessel vessel)
         {
             if (!IsValid(vessel)) { state = State.None; yield break; }
@@ -434,7 +433,7 @@ namespace BDArmory.Competition.VesselMover
             position -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
         }
 
-        IEnumerator PlaceVessel(Vessel vessel, bool skipMovingCheck = false)
+        public IEnumerator PlaceVessel(Vessel vessel, bool skipMovingCheck = false)
         {
             if (IsLowering(vessel)) yield break; // We're already doing this.
             if (!skipMovingCheck && !IsMoving(vessel)) { state = State.None; yield break; } // The vessel isn't moving, abort.

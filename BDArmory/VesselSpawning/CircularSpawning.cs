@@ -5,10 +5,11 @@ using System.IO;
 using System.Linq;
 using UnityEngine;
 
+using BDArmory.Competition;
 using BDArmory.Settings;
 using BDArmory.UI;
 
-namespace BDArmory.Competition.VesselSpawning
+namespace BDArmory.VesselSpawning
 {
     /// <summary>
     /// Spawning of a group of craft in a ring.
@@ -85,9 +86,9 @@ namespace BDArmory.Competition.VesselSpawning
                 StopCoroutine(spawnAllVesselsOnceCoroutine);
         }
 
-        public void SpawnAllVesselsOnce(int worldIndex, double latitude, double longitude, double altitude = 0, float distance = 10f, bool absDistanceOrFactor = false, float easeInSpeed = 1f, bool killEverythingFirst = true, bool assignTeams = true, int numberOfTeams = 0, List<int> teamCounts = null, List<List<string>> teamsSpecific = null, string spawnFolder = null, List<string> craftFiles = null)
+        public void SpawnAllVesselsOnce(int worldIndex, double latitude, double longitude, double altitude = 0, float distance = 10f, bool absDistanceOrFactor = false, bool killEverythingFirst = true, bool assignTeams = true, int numberOfTeams = 0, List<int> teamCounts = null, List<List<string>> teamsSpecific = null, string spawnFolder = null, List<string> craftFiles = null)
         {
-            SpawnAllVesselsOnce(new CircularSpawnConfig(new SpawnConfig(worldIndex, latitude, longitude, altitude, easeInSpeed, killEverythingFirst, assignTeams, numberOfTeams, teamCounts, teamsSpecific, spawnFolder, craftFiles), distance, absDistanceOrFactor));
+            SpawnAllVesselsOnce(new CircularSpawnConfig(new SpawnConfig(worldIndex, latitude, longitude, altitude, killEverythingFirst, assignTeams, numberOfTeams, teamCounts, teamsSpecific, spawnFolder, craftFiles), distance, absDistanceOrFactor));
         }
 
         public void SpawnAllVesselsOnce(CircularSpawnConfig spawnConfig)
@@ -325,9 +326,9 @@ namespace BDArmory.Competition.VesselSpawning
         public bool vesselsSpawningOnceContinuously = false;
         public Coroutine spawnAllVesselsOnceContinuouslyCoroutine = null;
 
-        public void SpawnAllVesselsOnceContinuously(int worldIndex, double latitude, double longitude, double altitude = 0, float distance = 10f, bool absDistanceOrFactor = false, float easeInSpeed = 1f, bool killEverythingFirst = true, bool assignTeams = true, int numberOfTeams = 0, List<int> teamCounts = null, List<List<string>> teamsSpecific = null, string spawnFolder = null, List<string> craftFiles = null)
+        public void SpawnAllVesselsOnceContinuously(int worldIndex, double latitude, double longitude, double altitude = 0, float distance = 10f, bool absDistanceOrFactor = false, bool killEverythingFirst = true, bool assignTeams = true, int numberOfTeams = 0, List<int> teamCounts = null, List<List<string>> teamsSpecific = null, string spawnFolder = null, List<string> craftFiles = null)
         {
-            SpawnAllVesselsOnceContinuously(new CircularSpawnConfig(new SpawnConfig(worldIndex, latitude, longitude, altitude, easeInSpeed, killEverythingFirst, assignTeams, numberOfTeams, teamCounts, teamsSpecific, spawnFolder, craftFiles), distance, absDistanceOrFactor));
+            SpawnAllVesselsOnceContinuously(new CircularSpawnConfig(new SpawnConfig(worldIndex, latitude, longitude, altitude, killEverythingFirst, assignTeams, numberOfTeams, teamCounts, teamsSpecific, spawnFolder, craftFiles), distance, absDistanceOrFactor));
         }
         public void SpawnAllVesselsOnceContinuously(CircularSpawnConfig spawnConfig)
         {

@@ -5,7 +5,6 @@ using System.Linq;
 using UnityEngine;
 using KSP.Localization;
 
-using BDArmory.Competition.VesselSpawning;
 using BDArmory.Control;
 using BDArmory.Damage;
 using BDArmory.Extensions;
@@ -16,6 +15,7 @@ using BDArmory.Radar;
 using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
+using BDArmory.VesselSpawning;
 using BDArmory.Weapons.Missiles;
 
 namespace BDArmory.Competition
@@ -328,7 +328,7 @@ namespace BDArmory.Competition
                     LoadedVesselSwitcher.Instance.StartVesselTracing();
                 if (BDArmorySettings.TIME_OVERRIDE && BDArmorySettings.TIME_SCALE != 0)
                 { Time.timeScale = BDArmorySettings.TIME_SCALE; }
-                if (BDArmorySettings.VESSEL_MOVER_CLOSE_ON_COMPETITION_START && BDArmorySetup.showVesselMoverGUI) VesselMover.VesselMover.Instance.SetVisible(false);
+                if (BDArmorySettings.VESSEL_MOVER_CLOSE_ON_COMPETITION_START && BDArmorySetup.showVesselMoverGUI) VesselMover.Instance.SetVisible(false);
             }
         }
 

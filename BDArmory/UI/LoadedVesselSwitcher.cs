@@ -7,11 +7,11 @@ using System;
 using UnityEngine;
 
 using BDArmory.Competition;
-using BDArmory.Competition.VesselSpawning;
 using BDArmory.Control;
 using BDArmory.Extensions;
 using BDArmory.Settings;
 using BDArmory.Utils;
+using BDArmory.VesselSpawning;
 using BDArmory.Weapons.Missiles;
 
 namespace BDArmory.UI
@@ -1429,8 +1429,12 @@ namespace BDArmory.UI
                 return;
             lastCameraSwitch = Time.time;
             lastActiveVessel = v;
+            var camHeading = FlightCamera.CamHdg;
+            var camPitch = FlightCamera.CamPitch;
             FlightGlobals.ForceSetActiveVessel(v);
             FlightInputHandler.ResumeVesselCtrlState(v);
+            FlightCamera.CamHdg = camHeading;
+            FlightCamera.CamPitch = camPitch;
         }
 
         public IEnumerator SwitchToVesselWhenPossible(Vessel vessel, float distance = 0)

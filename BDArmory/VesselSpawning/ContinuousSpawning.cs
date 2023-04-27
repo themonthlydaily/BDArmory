@@ -5,12 +5,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
+using BDArmory.Competition;
 using BDArmory.Control;
 using BDArmory.Settings;
 using BDArmory.Utils;
 using BDArmory.UI;
 
-namespace BDArmory.Competition.VesselSpawning
+namespace BDArmory.VesselSpawning
 {
     /// <summary>
     /// Continous spawning in an airborne ring cycling through all the vessels in the spawn folder.
