@@ -1,17 +1,25 @@
 ﻿IMPROVEMENTS / FIXES
- - General:
+- General:
 	- Fix TweakScale config for Typhoon engine.
 	- Reduce min size, scaling increment for procArmor panels.
+	- Internal refactor of vessel spawning/moving.
+- UI:
+	- Maintain the camera angle and distance when switching vessels with the Vessel Switcher (page up/down).
 - Vessel Mover:
 	- Abort vessel selection and reset state when closing/hiding the VM window.
+- Vessel Spawning:
+	- Use the better Vessel Mover lowering routines to lower spawned craft to the terrain. 'Ease-in Speed' is now the same as 'Min Lower Speed' in VM.
+	- Fix the black screen caused by an invalid camera target during custom template spawning.
+	- Maintain the camera angle when switching to spawn locations.
+	- Also maintain the camera distance if bringing the current vessel with us when switching to spawn locations.
 - AI:
 	- Lower the minimum extend abort time to 1s.
- - Detectors:
+- Detectors:
 	- Adjust IRST display implementation.
 	- Adds new 'omniDetection' field to RadarWarningReciever (default true). If false, RWR will only detect Radar missiles immediately, some changes to missile detection and CM response.
 	- Adds 'VARIABLE_MISSILE_VISIBILITY (default False) BDA setting for setting visual detection range of missiles based on their boost/cruise/post-thrust state.
 	- Add 'irstRanging' field (default false) to IRSTs to let them determine range and work like 'heat radar'.
- - CounterMeasures:
+- CounterMeasures:
 	- Add optional 'cooldownInterval' field for jammers/thermoptic CMs to add a cooldown before they can be used again.
 	- Implements smoke CM triggers, so the AI will actually use these now.
 - Weapons:
@@ -27,10 +35,10 @@
 		- AI can now use Unguided missiles (Targeting Mode = None / Radar/Laser missile without the necessary sensor), if no better option available.
 		- Ai can now attampt to use guided bombs against air targets if engage Air = true and nothing else available.
 - Competition:
- 	- Pinata mode now temporarily disables Camera AutoSwitch, switches camera to Pinata until it is destroyed.
-  - Update the tournament parser to compute non-negative scores per round for waypoint races.
+	- Pinata mode now temporarily disables Camera AutoSwitch, switches camera to Pinata until it is destroyed.
+	- Update the tournament parser to compute non-negative scores per round for waypoint races.
   
-  v1.6.0.2
+v1.6.0.2
 IMPROVEMENTS / FIXES
 - UI:
 	- Add a toggle for aim assist mode (Target = reticle placed at the closest point of approach of the projectile to the target, Aimer = reticle placed at the aiming position).

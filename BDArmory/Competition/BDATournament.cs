@@ -6,13 +6,13 @@ using System.Linq;
 using UnityEngine;
 
 using BDArmory.Competition.OrchestrationStrategies;
-using BDArmory.Competition.VesselSpawning;
-using BDArmory.Competition.VesselSpawning.SpawnStrategies;
 using BDArmory.Evolution;
 using BDArmory.GameModes.Waypoints;
 using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
+using BDArmory.VesselSpawning.SpawnStrategies;
+using BDArmory.VesselSpawning;
 
 namespace BDArmory.Competition
 {
@@ -158,7 +158,6 @@ namespace BDArmory.Competition
                                     BDArmorySettings.VESSEL_SPAWN_ALTITUDE_,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
-                                    BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
                                     true, // Kill everything first.
                                     BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS, // Assign teams.
                                     0, // Number of teams.
@@ -191,7 +190,6 @@ namespace BDArmory.Competition
                                 BDArmorySettings.VESSEL_SPAWN_ALTITUDE_,
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
-                                BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
                                 true, // Kill everything first.
                                 BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS, // Assign teams.
                                 0, // Number of teams.
@@ -338,7 +336,6 @@ namespace BDArmory.Competition
                                     BDArmorySettings.VESSEL_SPAWN_ALTITUDE_,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
-                                    BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
                                     true, // Kill everything first.
                                     BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS, // Assign teams.
                                     numberOfTeams, // Number of teams indicator.
@@ -377,7 +374,6 @@ namespace BDArmory.Competition
                                     BDArmorySettings.VESSEL_SPAWN_ALTITUDE_,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
-                                    BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
                                     true, // Kill everything first.
                                     BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS, // Assign teams.
                                     numberOfTeams, // Number of teams indicator.
@@ -461,7 +457,6 @@ namespace BDArmory.Competition
                                         BDArmorySettings.VESSEL_SPAWN_ALTITUDE_,
                                         BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                         BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
-                                        BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
                                         true, // Kill everything first.
                                         BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS, // Assign teams.
                                         numberOfTeams, // Number of teams indicator. (Should be -1 for gauntlets for now.)
@@ -605,7 +600,6 @@ namespace BDArmory.Competition
                             roundConfig.altitude,
                             roundConfig.distance,
                             roundConfig.absDistanceOrFactor,
-                            roundConfig.easeInSpeed,
                             roundConfig.killEverythingFirst,
                             roundConfig.assignTeams,
                             roundConfig.numberOfTeams,

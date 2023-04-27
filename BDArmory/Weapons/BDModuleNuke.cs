@@ -3,7 +3,6 @@ using System.Collections;
 using System.Text;
 using UnityEngine;
 
-using BDArmory.Competition.VesselSpawning;
 using BDArmory.Competition;
 using BDArmory.Control;
 using BDArmory.Damage;
@@ -11,6 +10,7 @@ using BDArmory.Extensions;
 using BDArmory.FX;
 using BDArmory.Settings;
 using BDArmory.Utils;
+using BDArmory.VesselSpawning;
 using BDArmory.Weapons.Missiles;
 
 namespace BDArmory.Weapons

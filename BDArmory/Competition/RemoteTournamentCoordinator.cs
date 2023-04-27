@@ -6,10 +6,10 @@ using UnityEngine;
 
 using BDArmory.Competition.OrchestrationStrategies;
 using BDArmory.Competition.RemoteOrchestration;
-using BDArmory.Competition.VesselSpawning;
-using BDArmory.Competition.VesselSpawning.SpawnStrategies;
 using BDArmory.GameModes.Waypoints;
 using BDArmory.Settings;
+using BDArmory.VesselSpawning.SpawnStrategies;
+using BDArmory.VesselSpawning;
 using static BDArmory.Competition.OrchestrationStrategies.WaypointFollowingStrategy;
 
 namespace BDArmory.Competition
@@ -105,7 +105,6 @@ namespace BDArmory.Competition
                         latitude,
                         longitude,
                         altitude,
-                        BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
                         true,
                         true,
                         0,
