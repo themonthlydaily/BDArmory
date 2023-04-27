@@ -47,7 +47,6 @@ namespace BDArmory.Competition
 
         public static RemoteTournamentCoordinator BuildFromDescriptor(CompetitionModel competitionModel)
         {
-            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55) competitionModel.mode = "path";
             switch (competitionModel.mode)
             {
                 case "ffa":

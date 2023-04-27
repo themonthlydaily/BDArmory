@@ -589,27 +589,29 @@ namespace BDArmory.Competition.VesselMover
         int crewCapacity = -1;
         string vesselNameToSpawn = "";
         CustomCraftBrowserDialog craftBrowser;
+        bool abortCraftSelection = false;
         IEnumerator SpawnVessel()
         {
             state = State.Spawning;
 
             // Open craft selection
             string craftFile = "";
-            bool abort = false;
+            abortCraftSelection = false;
             messageState = Messages.OpeningCraftBrowser;
             if (BDArmorySettings.VESSEL_MOVER_CLASSIC_CRAFT_CHOOSER)
             {
-                var craftBrowser = CraftBrowserDialog.Spawn(EditorFacility.SPH, HighLogic.SaveFolder, (path, loadType) => { craftFile = path; }, () => { abort = true; }, false);
-                while (!abort && string.IsNullOrEmpty(craftFile)) yield return wait;
+                var craftBrowser = CraftBrowserDialog.Spawn(EditorFacility.SPH, HighLogic.SaveFolder, (path, loadType) => { craftFile = path; }, () => { abortCraftSelection = true; }, false);
+                while (!abortCraftSelection && string.IsNullOrEmpty(craftFile)) yield return wait;
+                if (craftBrowser != null) craftBrowser.Dismiss();
                 craftBrowser = null;
             }
             else
             {
-                ShowVesselSelection((path) => { craftFile = path; }, () => { abort = true; });
-                while (!abort && string.IsNullOrEmpty(craftFile)) yield return wait;
+                ShowVesselSelection((path) => { craftFile = path; }, () => { abortCraftSelection = true; });
+                while (!abortCraftSelection && string.IsNullOrEmpty(craftFile)) yield return wait;
             }
             messageState = Messages.None;
-            if (abort || string.IsNullOrEmpty(craftFile)) { state = State.None; yield break; }
+            if (abortCraftSelection || string.IsNullOrEmpty(craftFile)) { state = State.None; yield break; }
             if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselMover]: {craftFile} selected for spawning.");
 
             // Choose crew
@@ -747,7 +749,7 @@ namespace BDArmory.Competition.VesselMover
             Ray ray;
             bool altitudeCorrection = false;
             var currentMainBody = FlightGlobals.currentMainBody;
-            while (true)
+            while (BDArmorySetup.showVesselMoverGUI)
             {
                 if (Input.GetKeyDown(KeyCode.Escape))
                 {
@@ -1068,7 +1070,15 @@ namespace BDArmory.Competition.VesselMover
 
         public void SetVisible(bool visible)
         {
-            if (!visible && craftBrowser != null) craftBrowser = null; // Clean up the craft browser.
+            if (!visible)
+            {
+                if (state == State.Spawning)
+                {
+                    abortCraftSelection = true;
+                    state = State.None;
+                }
+                craftBrowser = null; // Make sure the craft browser is cleaned up.
+            }
             BDArmorySetup.showVesselMoverGUI = visible;
             GUIUtils.SetGUIRectVisible(guiCheckIndex, visible);
             if (button != null)
