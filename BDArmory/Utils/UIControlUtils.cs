@@ -259,14 +259,14 @@ namespace BDArmory.Utils
     /// <summary>
     /// Semi-Logarithmic FloatRange slider.
     /// Gives ranges where the values are of the form: 0.9, 1, 2, ..., 9, 10, 20, ..., 90, 100, 200, ..., 900, 1000, 2000.
-    /// Specify minValue and maxValue. The stepIncrement is automatically calculated.
+    /// Specify minValue, maxValue and sigFig. The stepIncrement is automatically calculated.
     /// Based on the Logarithmic FloatRange slider above.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Property | AttributeTargets.Field)]
     public class UI_FloatSemiLogRange : UI_FloatRange
     {
         private const string UIControlName = "FloatSemiLogRange";
-        public int sigFig = 2;
+        public int sigFig = 2; // 2 sig.fig. gives: ..., 9.8, 9.9, 10, 11, 12, ...
         public UI_FloatSemiLogRange() { }
     }
 
