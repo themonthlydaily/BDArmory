@@ -193,7 +193,7 @@ namespace BDArmory.Utils
         {
             if (float.TryParse(str, out float value))
             {
-                // value = UpdateSlider(value); // Don't round the value when in numeric mode.
+                value = Mathf.Clamp(value, logFloatRange.minValue, logFloatRange.maxValue); // Clamp, but don't round the value when in numeric mode.
                 SetFieldValue(value);
                 UpdateDisplay(value);
             }
@@ -282,6 +282,7 @@ namespace BDArmory.Utils
         private float maxStepSize;
         private bool blockSliderUpdate;
         private bool numericSliders = false;
+        private string fieldFormatString = "G3";
         public GameObject numericContainer;
         public TextMeshProUGUI fieldNameNumeric;
         public TMP_InputField inputField;
@@ -390,6 +391,7 @@ namespace BDArmory.Utils
             semiLogFloatRange.stepIncrement = sliderStepSize;
             fieldName.text = field.guiName;
             fieldNameNumeric.text = field.guiName;
+            fieldFormatString = $"G{semiLogFloatRange.sigFig + 2}"; // Show at most 2 digits beyond the requested sig. fig.
             float value = GetFieldValue();
             value = UpdateSlider(value);
             SetFieldValue(value);
@@ -425,7 +427,7 @@ namespace BDArmory.Utils
             }
             blockSliderUpdate = true;
             lastDisplayedValue = value;
-            fieldValue.text = value.ToString("G3");
+            fieldValue.text = value.ToString(fieldFormatString);
             if (numericSliders)
             { inputField.text = fieldValue.text; }
             else
@@ -448,7 +450,7 @@ namespace BDArmory.Utils
         {
             if (float.TryParse(str, out float value))
             {
-                // value = UpdateSlider(value); // Don't round the value when in numeric mode.
+                value = Mathf.Clamp(value, semiLogFloatRange.minValue, semiLogFloatRange.maxValue); // Clamp, but don't round the value when in numeric mode.
                 SetFieldValue(value);
                 UpdateDisplay(value);
             }
