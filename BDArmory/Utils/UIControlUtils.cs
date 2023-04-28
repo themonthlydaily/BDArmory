@@ -193,7 +193,7 @@ namespace BDArmory.Utils
         {
             if (float.TryParse(str, out float value))
             {
-                value = UpdateSlider(value);
+                value = Mathf.Clamp(value, logFloatRange.minValue, logFloatRange.maxValue); // Clamp, but don't round the value when in numeric mode.
                 SetFieldValue(value);
                 UpdateDisplay(value);
             }
@@ -259,13 +259,14 @@ namespace BDArmory.Utils
     /// <summary>
     /// Semi-Logarithmic FloatRange slider.
     /// Gives ranges where the values are of the form: 0.9, 1, 2, ..., 9, 10, 20, ..., 90, 100, 200, ..., 900, 1000, 2000.
-    /// Specify minValue and maxValue. The stepIncrement is automatically calculated.
+    /// Specify minValue, maxValue and sigFig. The stepIncrement is automatically calculated.
     /// Based on the Logarithmic FloatRange slider above.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Property | AttributeTargets.Field)]
     public class UI_FloatSemiLogRange : UI_FloatRange
     {
         private const string UIControlName = "FloatSemiLogRange";
+        public int sigFig = 2; // 2 sig.fig. gives: ..., 9.8, 9.9, 10, 11, 12, ...
         public UI_FloatSemiLogRange() { }
     }
 
@@ -281,6 +282,7 @@ namespace BDArmory.Utils
         private float maxStepSize;
         private bool blockSliderUpdate;
         private bool numericSliders = false;
+        private string fieldFormatString = "G3";
         public GameObject numericContainer;
         public TextMeshProUGUI fieldNameNumeric;
         public TMP_InputField inputField;
@@ -382,13 +384,14 @@ namespace BDArmory.Utils
             var maxStepSizePower = Mathf.Floor(Mathf.Log10(semiLogFloatRange.maxValue));
             minStepSize = Mathf.Pow(10, minStepSizePower);
             maxStepSize = Mathf.Pow(10, maxStepSizePower);
-            slider.minValue = Mathf.Round(semiLogFloatRange.minValue / minStepSize);
-            slider.maxValue = Mathf.Round(9f * (maxStepSizePower - minStepSizePower) + semiLogFloatRange.maxValue / maxStepSize);
+            sliderStepSize = Mathf.Pow(10, 1 - semiLogFloatRange.sigFig);
+            slider.minValue = BDAMath.RoundToUnit(semiLogFloatRange.minValue / minStepSize, sliderStepSize);
+            slider.maxValue = BDAMath.RoundToUnit(9f * (maxStepSizePower - minStepSizePower) + semiLogFloatRange.maxValue / maxStepSize, sliderStepSize);
             // Debug.Log($"DEBUG min: {semiLogFloatRange.minValue}, max: {semiLogFloatRange.maxValue}, smin: {slider.minValue}, smax: {slider.maxValue}, min step: {minStepSize}, max step: {maxStepSize}");
-            sliderStepSize = 1f;
             semiLogFloatRange.stepIncrement = sliderStepSize;
             fieldName.text = field.guiName;
             fieldNameNumeric.text = field.guiName;
+            fieldFormatString = $"G{semiLogFloatRange.sigFig + 2}"; // Show at most 2 digits beyond the requested sig. fig.
             float value = GetFieldValue();
             value = UpdateSlider(value);
             SetFieldValue(value);
@@ -407,7 +410,7 @@ namespace BDArmory.Utils
         private float UpdateSlider(float value)
         {
             var fromValue = FromSemiLogValue(value);
-            var roundedValue = Mathf.Round(fromValue);
+            var roundedValue = BDAMath.RoundToUnit(fromValue, sliderStepSize);
             var toValue = ToSemiLogValue(roundedValue);
             // Debug.Log($"DEBUG SemiLog: value {value} -> {fromValue} -> {roundedValue} -> {toValue}");
             return toValue;
@@ -419,12 +422,12 @@ namespace BDArmory.Utils
             if (numericSliders != Window.NumericSliders)
             {
                 numericSliders = Window.NumericSliders;
-                slider.gameObject.SetActive(!Window.NumericSliders);
-                numericContainer.SetActive(Window.NumericSliders);
+                slider.gameObject.SetActive(!numericSliders);
+                numericContainer.SetActive(numericSliders);
             }
             blockSliderUpdate = true;
             lastDisplayedValue = value;
-            fieldValue.text = value.ToString("G3");
+            fieldValue.text = value.ToString(fieldFormatString);
             if (numericSliders)
             { inputField.text = fieldValue.text; }
             else
@@ -447,7 +450,7 @@ namespace BDArmory.Utils
         {
             if (float.TryParse(str, out float value))
             {
-                value = UpdateSlider(value);
+                value = Mathf.Clamp(value, semiLogFloatRange.minValue, semiLogFloatRange.maxValue); // Clamp, but don't round the value when in numeric mode.
                 SetFieldValue(value);
                 UpdateDisplay(value);
             }

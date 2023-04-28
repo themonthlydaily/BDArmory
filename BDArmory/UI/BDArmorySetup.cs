@@ -11,14 +11,12 @@ using KSP.UI.Screens;
 
 using BDArmory.Armor;
 using BDArmory.Bullets;
-using BDArmory.Competition;
 using BDArmory.Competition.RemoteOrchestration;
-using BDArmory.Competition.VesselMover;
-using BDArmory.Competition.VesselSpawning;
+using BDArmory.Competition;
 using BDArmory.Control;
 using BDArmory.CounterMeasure;
-using BDArmory.Extensions;
 using BDArmory.Evolution;
+using BDArmory.Extensions;
 using BDArmory.FX;
 using BDArmory.GameModes;
 using BDArmory.Modules;
@@ -26,6 +24,7 @@ using BDArmory.Radar;
 using BDArmory.Settings;
 using BDArmory.Targeting;
 using BDArmory.Utils;
+using BDArmory.VesselSpawning;
 using BDArmory.Weapons;
 
 namespace BDArmory.UI

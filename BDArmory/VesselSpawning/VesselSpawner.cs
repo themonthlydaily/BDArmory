@@ -8,7 +8,7 @@ using BDArmory.Control;
 using BDArmory.Settings;
 using BDArmory.Weapons;
 
-namespace BDArmory.Competition.VesselSpawning
+namespace BDArmory.VesselSpawning
 {
     /// <summary>
     /// A static class for doing the actual spawning of a vessel from a craft file into KSP.
