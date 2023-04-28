@@ -269,7 +269,7 @@ namespace BDArmory.Guidances
             leadTime = Mathf.Clamp(leadTime, 0f, 8f);
             */
             float accel = launcher.thrust / missile.part.mass;
-            leadTime = ((float)Math.Sqrt(accel * (accel + (8 * targetDistance))) - accel) / (2 * accel) - (Time.fixedDeltaTime * 1.5f); //quadratic equation for accel to find time from known force and vel
+            leadTime = ((float)Math.Sqrt(accel * (accel + (8 * targetDistance))) - accel) / (2 * accel); //inverse equation for accel to find time from known force and vel
             leadTime = Mathf.Clamp(leadTime, 0f, 8f);
             targetPosition = targetPosition + (targetVessel.Velocity() * leadTime);
 
@@ -363,10 +363,11 @@ namespace BDArmory.Guidances
             leadTime = Mathf.Clamp(leadTime, 0f, 8f);
             */
             float accel = launcher.thrust / missile.part.mass;
-            leadTime = ((float)Math.Sqrt(accel * (accel + (8 * targetDistance))) - accel) / (2 * accel) - (Time.fixedDeltaTime * 1.5f); //quadratic equation for accel to find time from known force and vel
+            leadTime = ((float)Math.Sqrt(accel * (accel + (8 * targetDistance))) - accel) / (2 * accel); //inverse equation for accel to find time from known force and vel
             leadTime = Mathf.Clamp(leadTime, 0f, 8f);
             targetPosition = targetPosition + (targetVelocity * leadTime);
-
+            //so, to check - a 100kg missile with a 50kn motor would accel 500m/s; a target 3kmm away should take 3s
+            //1s is 500, 2s is 500+500, 3s is 1500, 4s is 2000
             return targetPosition;
         }
 
