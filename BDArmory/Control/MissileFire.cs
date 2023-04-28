@@ -366,6 +366,7 @@ namespace BDArmory.Control
         public List<ModuleRadar> _radars = new List<ModuleRadar>();
         public int MaxradarLocks = 0;
         public VesselRadarData vesselRadarData;
+        public bool _radarsEnabled = false;
 
         public List<ModuleIRST> irsts { get { if (modulesNeedRefreshing) RefreshModules(); return _irsts; } }
         public List<ModuleIRST> _irsts = new List<ModuleIRST>();
@@ -738,6 +739,7 @@ namespace BDArmory.Control
                             if (rd.Current != null || rd.Current.canLock)
                             {
                                 rd.Current.EnableRadar();
+                                _radarsEnabled = true;
                             }
                         }
                 }
@@ -1008,7 +1010,7 @@ namespace BDArmory.Control
 
                             unguidedWeapon = (weaponArray[weaponIndex].GetWeaponClass() == WeaponClasses.Bomb || (weaponArray[weaponIndex].GetWeaponClass() == WeaponClasses.Missile &&
                              (msl.TargetingMode == MissileBase.TargetingModes.None || msl.GuidanceMode == MissileBase.GuidanceModes.None) || (msl.TargetingMode == MissileBase.TargetingModes.Laser && BDATargetManager.ActiveLasers.Count <= 0) 
-                             || (msl.TargetingMode == MissileBase.TargetingModes.Radar && radars.Count <= 0)));
+                             || (msl.TargetingMode == MissileBase.TargetingModes.Radar && _radarsEnabled)));
                             if (msl.launched || msl.HasFired) continue; //return first missile that is ready to fire
                             if (msl.GetEngageRange() != selectedWeaponsEngageRangeMax) continue;
                             sw = weapon.Current;
@@ -1889,7 +1891,7 @@ namespace BDArmory.Control
 
                 if (ml.TargetingMode == MissileBase.TargetingModes.Radar)
                 {
-                    if (vesselRadarData)
+                    if (vesselRadarData) //no check for radar present, but off/out of juice
                     {
                         float BayTriggerTime = -1;
                         if (SetCargoBays())
@@ -4566,7 +4568,7 @@ namespace BDArmory.Control
 
                             if (mlauncher != null)
                             {
-                                if (mlauncher.TargetingMode == MissileBase.TargetingModes.Radar && radars.Count <= 0) continue; //dont select RH missiles when no radar aboard
+                                if (mlauncher.TargetingMode == MissileBase.TargetingModes.Radar && _radarsEnabled) continue; //dont select RH missiles when no radar aboard
                                 if (mlauncher.TargetingMode == MissileBase.TargetingModes.Laser && targetingPods.Count <= 0) continue; //don't select LH missiles when no FLIR aboard
                                 if (mlauncher.reloadableRail != null && (mlauncher.reloadableRail.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE)) continue; //don't select when out of ordinance
                                 candidateDetDist = mlauncher.DetonationDistance;
@@ -4952,7 +4954,7 @@ namespace BDArmory.Control
                                 {
                                     candidateTDPS += candidateDetDist; // weight selection towards misiles with proximity warheads
                                 }
-                                if ((mlauncher.TargetingMode == MissileBase.TargetingModes.Radar && radars.Count > 0) || (mlauncher.TargetingMode == MissileBase.TargetingModes.Laser && targetingPods.Count > 0))
+                                if ((mlauncher.TargetingMode == MissileBase.TargetingModes.Radar && _radarsEnabled) || (mlauncher.TargetingMode == MissileBase.TargetingModes.Laser && targetingPods.Count > 0))
                                 {
                                     if (heat && heatTarget.exists && heatTarget.signalStrength < heatThresh)
                                     {
@@ -5190,7 +5192,7 @@ namespace BDArmory.Control
                             MissileLauncher Bomb = item.Current as MissileLauncher;
                             if (targetWeapon != null && targetWeapon.GetWeaponClass() == WeaponClasses.Missile)
                             {
-                                if (!((Bomb.TargetingMode == MissileBase.TargetingModes.Radar && radars.Count <= 0) || (Bomb.TargetingMode == MissileBase.TargetingModes.Laser && targetingPods.Count <= 0))) continue;
+                                if (!((Bomb.TargetingMode == MissileBase.TargetingModes.Radar && !_radarsEnabled) || (Bomb.TargetingMode == MissileBase.TargetingModes.Laser && targetingPods.Count <= 0))) continue;
                             }
                             if (Bomb.reloadableRail != null && (Bomb.reloadableRail.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE)) continue; //don't select when out of ordinance
                             //if (firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
@@ -5351,7 +5353,7 @@ namespace BDArmory.Control
                                 {
                                     if (!candidateAGM)
                                     {
-                                        if (Missile.TargetingMode == MissileBase.TargetingModes.Radar && radars.Count <= 0) candidateYield *= 0.1f;
+                                        if (Missile.TargetingMode == MissileBase.TargetingModes.Radar && !_radarsEnabled) candidateYield *= 0.1f;
                                         if (targetWeapon != null && targetYield > candidateYield) continue;
                                         targetYield = candidateYield;
                                         targetWeapon = item.Current;
@@ -5398,7 +5400,7 @@ namespace BDArmory.Control
                                 {
                                     if (!candidateAGM)
                                     {
-                                        if (mm.TargetingMode == MissileBase.TargetingModes.Radar && radars.Count <= 0) candidateYield *= 0.1f;
+                                        if (mm.TargetingMode == MissileBase.TargetingModes.Radar && !_radarsEnabled) candidateYield *= 0.1f;
                                         if (targetWeapon != null && targetYield > candidateYield) continue;
                                         targetYield = candidateYield;
                                         targetWeapon = item.Current;
@@ -5455,7 +5457,7 @@ namespace BDArmory.Control
                         if (candidateClass == WeaponClasses.SLW)
                         {
                             MissileLauncher SLW = item.Current as MissileLauncher;
-                            if (SLW.TargetingMode == MissileBase.TargetingModes.Radar && radars.Count <= 0) continue; //dont select RH missiles when no radar aboard
+                            if (SLW.TargetingMode == MissileBase.TargetingModes.Radar && !_radarsEnabled) continue; //dont select RH missiles when no radar aboard
                             if (SLW.TargetingMode == MissileBase.TargetingModes.Laser && targetingPods.Count <= 0) continue; //don't select LH missiles when no FLIR aboard
                             if (SLW.reloadableRail != null && (SLW.reloadableRail.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE)) continue; //don't select when out of ordinance
                             float candidateYield = SLW.GetBlastRadius();
@@ -6332,7 +6334,7 @@ namespace BDArmory.Control
 
                                 if (firedMissiles < maxMissilesOnTarget)
                                 {
-                                    if (CurrentMissile.TargetingMode == MissileBase.TargetingModes.Radar && !CurrentMissile.radarLOAL && MaxradarLocks < multiMissileTgtNum && radars.Count > 0)
+                                    if (CurrentMissile.TargetingMode == MissileBase.TargetingModes.Radar && !CurrentMissile.radarLOAL && MaxradarLocks < multiMissileTgtNum && _radarsEnabled)
                                     {
                                         launchAuthorized = false; //don't fire SARH if radar can't support the needed radar lock
                                         if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: radar lock number exceeded to launch!");
@@ -6468,6 +6470,7 @@ namespace BDArmory.Control
                                     {
                                         if (rd.Current != null || rd.Current.canLock)
                                             rd.Current.DisableRadar();
+                                        _radarsEnabled = false;
                                     }
                             }
                         }
@@ -6489,6 +6492,7 @@ namespace BDArmory.Control
                                             {
                                                 if (rd.Current != null || rd.Current.canLock)
                                                     rd.Current.DisableRadar();
+                                                _radarsEnabled = false;
                                             }
                                     }
                                 }

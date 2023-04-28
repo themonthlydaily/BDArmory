@@ -15,15 +15,15 @@ namespace BDArmory.Armor
         public bool moveChildParts = true;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorWidth"),//Armor Width
-            UI_FloatRange(minValue = 0.1f, maxValue = 16, stepIncrement = 0.01f, scene = UI_Scene.Editor)]
+            UI_FloatSemiLogRange(minValue = 0.1f, maxValue = 16, scene = UI_Scene.Editor)]
         public float Width = 1;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_ArmorWidthR"),//Right Side Width
-            UI_FloatRange(minValue = 0.1f, maxValue = 8, stepIncrement = 0.01f, scene = UI_Scene.Editor)]
+            UI_FloatSemiLogRange(minValue = 0.1f, maxValue = 8, scene = UI_Scene.Editor)]
         public float scaleneWidth = 1;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorLength"),//Armor Length
-            UI_FloatRange(minValue = 0.1f, maxValue = 16, stepIncrement = 0.01f, scene = UI_Scene.Editor)]
+            UI_FloatSemiLogRange(minValue = 0.1f, maxValue = 16, scene = UI_Scene.Editor)]
         public float Length = 1;
 
         [KSPField]
