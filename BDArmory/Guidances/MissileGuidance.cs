@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 
 using BDArmory.Extensions;
@@ -268,8 +268,17 @@ namespace BDArmory.Guidances
             leadTime = targetDistance / (float)(targetVessel.Velocity() - simMissileVel).magnitude;
             leadTime = Mathf.Clamp(leadTime, 0f, 8f);
             */
+            float vel = (float)missile.vessel.Velocity().magnitude;
+            float VelOpt = (launcher != null ? launcher.optimumAirspeed : 1500) + vel;
             float accel = launcher.thrust / missile.part.mass;
-            leadTime = ((float)Math.Sqrt(accel * (accel + (8 * targetDistance))) - accel) / (2 * accel); //inverse equation for accel to find time from known force and vel
+            float deltaVel = (float)targetVessel.Velocity().magnitude - vel;
+            float DeltaOptvel = (float)targetVessel.Velocity().magnitude - VelOpt;
+            float T = (VelOpt - vel) / accel; //time to optimal airspeed
+            float D = deltaVel * T + 1 / 2 * accel * (T * T); //relative distance to optimum airspeed        
+            float d = targetDistance; 
+            leadTime = (-deltaVel - BDAMath.Sqrt((deltaVel * deltaVel) + 2 * accel * d)) / accel;
+            d = deltaVel * leadTime + 1 / 2 * accel * (leadTime * leadTime); //for d < D ⇒ solve quadratic equation for t
+            if (d > D) leadTime = (d - D) / DeltaOptvel + T;
             leadTime = Mathf.Clamp(leadTime, 0f, 8f);
             targetPosition = targetPosition + (targetVessel.Velocity() * leadTime);
 
@@ -362,10 +371,20 @@ namespace BDArmory.Guidances
             leadTime = targetDistance / (targetVelocity - simMissileVel).magnitude;
             leadTime = Mathf.Clamp(leadTime, 0f, 8f);
             */
+            float vel = (float)missile.vessel.Velocity().magnitude;
+            float VelOpt = (launcher != null ? launcher.optimumAirspeed : 1500) + vel; //optimimAirspeed in missile.cfgs is calced from static launch
             float accel = launcher.thrust / missile.part.mass;
-            leadTime = ((float)Math.Sqrt(accel * (accel + (8 * targetDistance))) - accel) / (2 * accel); //inverse equation for accel to find time from known force and vel
+            float deltaVel = targetVelocity.magnitude - vel;
+            float DeltaOptvel = targetVelocity.magnitude - VelOpt;
+            float T = (VelOpt - vel) / accel; //time to optimal airspeed
+            float D = deltaVel * T + 1 / 2 * accel * (T * T); //relative distance to optimum airspeed        
+            float d = targetDistance;
+            leadTime = (-deltaVel - BDAMath.Sqrt((deltaVel * deltaVel) + 2 * accel * d)) / accel; //target further than D, use quadratic equation to get time
+            d = deltaVel * leadTime + 1 / 2 * accel * (leadTime * leadTime);
+            if (d > D) leadTime = (d - D) / DeltaOptvel + T; //target within D, use regular linear equation instad
             leadTime = Mathf.Clamp(leadTime, 0f, 8f);
             targetPosition = targetPosition + (targetVelocity * leadTime);
+
             //so, to check - a 100kg missile with a 50kn motor would accel 500m/s; a target 3kmm away should take 3s
             //1s is 500, 2s is 500+500, 3s is 1500, 4s is 2000
             return targetPosition;
