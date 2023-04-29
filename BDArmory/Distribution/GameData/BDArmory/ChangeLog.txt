@@ -15,6 +15,7 @@
 	- Also maintain the camera distance if bringing the current vessel with us when switching to spawn locations.
 - AI:
 	- Lower the minimum extend abort time to 1s.
+	- Set the main throttle axis group for the VTOL AI and the wheel throttle axis group for ground AI. (pitch, roll, yaw axis groups are already being set.)
 - Detectors:
 	- Adjust IRST display implementation.
 	- Adds new 'omniDetection' field to RadarWarningReciever (default true). If false, RWR will only detect Radar missiles immediately, some changes to missile detection and CM response.
