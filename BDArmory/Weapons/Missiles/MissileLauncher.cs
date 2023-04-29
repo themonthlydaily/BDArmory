@@ -685,10 +685,11 @@ namespace BDArmory.Weapons.Missiles
                 Fields["BallisticAngle"].guiActiveEditor = true;
             }
 
-            if (part.partInfo.title.Contains("Bomb"))
+            if (part.partInfo.title.Contains("Bomb") || weaponClass == WeaponClasses.SLW)
             {
                 Fields["dropTime"].guiActive = false;
                 Fields["dropTime"].guiActiveEditor = false;
+                if (torpedo) dropTime = 999;
             }
             else
             {
@@ -1691,7 +1692,9 @@ namespace BDArmory.Weapons.Missiles
         {
             if (weaponClass == WeaponClasses.SLW && FlightGlobals.getAltitudeAtPos(part.transform.position) > 0)
             {
-                yield return new WaitWhileFixed(() => vessel.Splashed); //don't start torpedo thrust until underwater
+                yield return new WaitUntilFixed(() => vessel == null || vessel.LandedOrSplashed);//don't start torpedo thrust until underwater
+                if (vessel == null || vessel.Landed) Detonate(); //dropping torpedoes over land is just going to turn them into heavy, expensive bombs...
+                dropTime = TimeIndex;
             }
 
             StartBoost();

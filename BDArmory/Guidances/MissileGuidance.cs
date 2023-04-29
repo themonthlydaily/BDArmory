@@ -243,7 +243,12 @@ namespace BDArmory.Guidances
             return true;
         }
 
-
+        /// <summary>
+        /// Air-2-Air fire solution used by the AI for steering, WM checking if a missile can be launched, unguided missiles
+        /// </summary>
+        /// <param name="missile"></param>
+        /// <param name="targetVessel"></param>
+        /// <returns></returns>
         public static Vector3 GetAirToAirFireSolution(MissileBase missile, Vessel targetVessel)
         {
             if (!targetVessel)
@@ -267,19 +272,42 @@ namespace BDArmory.Guidances
 
             leadTime = targetDistance / (float)(targetVessel.Velocity() - simMissileVel).magnitude;
             leadTime = Mathf.Clamp(leadTime, 0f, 8f);
-            */
-            float vel = (float)missile.vessel.Velocity().magnitude;
-            float VelOpt = (launcher != null ? launcher.optimumAirspeed : 1500) + vel;
+            */            
+            Vector3 vel = missile.vessel.Velocity();
+            Vector3 VelOpt = vel + (vel.normalized * (launcher != null ? launcher.optimumAirspeed : 1500));
             float accel = launcher.thrust / missile.part.mass;
-            float deltaVel = (float)targetVessel.Velocity().magnitude - vel;
-            float DeltaOptvel = (float)targetVessel.Velocity().magnitude - VelOpt;
-            float T = (VelOpt - vel) / accel; //time to optimal airspeed
-            float D = deltaVel * T + 1 / 2 * accel * (T * T); //relative distance to optimum airspeed        
-            float d = targetDistance; 
-            leadTime = (-deltaVel - BDAMath.Sqrt((deltaVel * deltaVel) + 2 * accel * d)) / accel;
-            d = deltaVel * leadTime + 1 / 2 * accel * (leadTime * leadTime); //for d < D ⇒ solve quadratic equation for t
-            if (d > D) leadTime = (d - D) / DeltaOptvel + T;
+            Vector3 deltaVel = targetVessel.Velocity() - vel;
+            Vector3 DeltaOptvel = targetVessel.Velocity() - VelOpt;
+            float T = Mathf.Clamp((VelOpt - vel).magnitude / accel, 0, 8); //time to optimal airspeed
+            /*
+            float D = deltaVel.magnitude * T + 1 / 2 * accel * (T * T); //relative distance to optimum airspeed        
+
+            if (targetDistance > D) leadTime = (targetDistance - D) / DeltaOptvel.magnitude + T;
+            else leadTime = (-deltaVel.magnitude - BDAMath.Sqrt((deltaVel.magnitude * deltaVel.magnitude) + 2 * accel * targetDistance)) / accel;
+
+            targetDistance = Vector3.Distance(targetPosition + (targetVessel.Velocity() * leadTime), missile.transform.position);
+            vel = ((targetPosition + (targetVessel.Velocity() * leadTime) - missile.transform.position).normalized * vel.magnitude);
+            deltaVel = targetVessel.Velocity() - vel;
+            VelOpt = vel + (vel.normalized * (launcher != null ? launcher.optimumAirspeed : 1500));
+            DeltaOptvel = targetVessel.Velocity() - VelOpt;
+
+            if (targetDistance > D) leadTime = (targetDistance - D) / DeltaOptvel.magnitude + T;
+            else leadTime = (-deltaVel.magnitude - BDAMath.Sqrt((deltaVel.magnitude * deltaVel.magnitude) + 2 * accel * targetDistance)) / accel;
+
             leadTime = Mathf.Clamp(leadTime, 0f, 8f);
+            */
+
+            Vector3 relPosition = targetPosition - missile.transform.position;
+            Vector3 relAcceleration = targetVessel.acceleration - missile.MissileReferenceTransform.forward * accel;
+            leadTime = AIUtils.ClosestTimeToCPA(relPosition, deltaVel, relAcceleration, T); //missile accelerating, T is greater than our max look time of 8s
+            if (T < 8)//missile has reached max speed, and is now cruising; sim positions ahead based on T and run CPA from there
+            {
+                relPosition = AIUtils.PredictPosition(targetPosition, targetVessel.Velocity(), targetVessel.acceleration, T) -
+                    AIUtils.PredictPosition(missile.transform.position, vel, missile.MissileReferenceTransform.forward * accel, T);
+                relAcceleration = targetVessel.acceleration; // - missile.MissileReferenceTransform.forward * 0; assume missile is holding steady velocity at optimumAirspeed
+                leadTime = AIUtils.ClosestTimeToCPA(relPosition, DeltaOptvel, relAcceleration, 8-T) + T;
+            }
+
             targetPosition = targetPosition + (targetVessel.Velocity() * leadTime);
 
             if (targetVessel && targetDistance < 800)
@@ -353,7 +381,13 @@ namespace BDArmory.Guidances
             leadTime = simTime;
             */
         }
-
+        /// <summary>
+        /// Air-2-Air lead offset calcualtion used for guided missiles
+        /// </summary>
+        /// <param name="missile"></param>
+        /// <param name="targetPosition"></param>
+        /// <param name="targetVelocity"></param>
+        /// <returns></returns>
         public static Vector3 GetAirToAirFireSolution(MissileBase missile, Vector3 targetPosition, Vector3 targetVelocity)
         {
             float leadTime = 0;
@@ -371,22 +405,29 @@ namespace BDArmory.Guidances
             leadTime = targetDistance / (targetVelocity - simMissileVel).magnitude;
             leadTime = Mathf.Clamp(leadTime, 0f, 8f);
             */
-            float vel = (float)missile.vessel.Velocity().magnitude;
-            float VelOpt = (launcher != null ? launcher.optimumAirspeed : 1500) + vel; //optimimAirspeed in missile.cfgs is calced from static launch
+            Vector3 vel = missile.vessel.Velocity();
+            Vector3 VelOpt = vel + (vel.normalized * (launcher != null ? launcher.optimumAirspeed : 1500));
             float accel = launcher.thrust / missile.part.mass;
-            float deltaVel = targetVelocity.magnitude - vel;
-            float DeltaOptvel = targetVelocity.magnitude - VelOpt;
-            float T = (VelOpt - vel) / accel; //time to optimal airspeed
-            float D = deltaVel * T + 1 / 2 * accel * (T * T); //relative distance to optimum airspeed        
-            float d = targetDistance;
-            leadTime = (-deltaVel - BDAMath.Sqrt((deltaVel * deltaVel) + 2 * accel * d)) / accel; //target further than D, use quadratic equation to get time
-            d = deltaVel * leadTime + 1 / 2 * accel * (leadTime * leadTime);
-            if (d > D) leadTime = (d - D) / DeltaOptvel + T; //target within D, use regular linear equation instad
-            leadTime = Mathf.Clamp(leadTime, 0f, 8f);
-            targetPosition = targetPosition + (targetVelocity * leadTime);
+            Vector3 deltaVel = targetVelocity - vel;
+            Vector3 DeltaOptvel = targetVelocity - VelOpt;
+            float T = Mathf.Clamp((VelOpt - vel).magnitude / accel, 0, 8); //time to optimal airspeed
+            float D = deltaVel.magnitude * T + 1 / 2 * accel * (T * T); //relative distance to optimum airspeed        
 
-            //so, to check - a 100kg missile with a 50kn motor would accel 500m/s; a target 3kmm away should take 3s
-            //1s is 500, 2s is 500+500, 3s is 1500, 4s is 2000
+            if (targetDistance > D) leadTime = (targetDistance - D) / DeltaOptvel.magnitude + T;
+            else leadTime = (-deltaVel.magnitude - BDAMath.Sqrt((deltaVel.magnitude * deltaVel.magnitude) + 2 * accel * targetDistance)) / accel;
+
+            targetDistance = Vector3.Distance(targetPosition + (targetVelocity * leadTime), missile.transform.position);
+            vel = ((targetPosition + (targetVelocity * leadTime) - missile.transform.position).normalized * vel.magnitude);
+            deltaVel = targetVelocity - vel;
+            VelOpt = vel + (vel.normalized * (launcher != null ? launcher.optimumAirspeed : 1500));
+            DeltaOptvel = targetVelocity - VelOpt;
+
+            if (targetDistance > D) leadTime = (targetDistance - D) / DeltaOptvel.magnitude + T;
+            else leadTime = (-deltaVel.magnitude - BDAMath.Sqrt((deltaVel.magnitude * deltaVel.magnitude) + 2 * accel * targetDistance)) / accel;
+
+            leadTime = Mathf.Clamp(leadTime, 0f, 8f);
+
+
             return targetPosition;
         }
 
