@@ -2612,6 +2612,10 @@ namespace BDArmory.Weapons.Missiles
                 return TargetingModeTerminal != TargetingModes.None ? "GPS/Terminal" : "GPS";
             }
 
+            if (TargetingMode == TargetingModes.None)
+            {
+                return TargetingModeTerminal != TargetingModes.None ? "Inertial/Terminal" : "Unguided";
+            }
             // default:
             return "Unguided";
         }
@@ -2643,6 +2647,7 @@ namespace BDArmory.Weapons.Missiles
                     else
                         output.AppendLine($"- Lock/Track: {RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS} m^2 @ {activeRadarRange / 1000} km");
                     output.AppendLine($"- LOAL: {radarLOAL}");
+                    if (radarLOAL) output.AppendLine($"  - Max Radar Search Time: {radarTimeout}");
                 }
                 output.AppendLine($"Max Offborsight: {maxOffBoresight}");
                 output.AppendLine($"Locked FOV: {lockedSensorFOV}");
@@ -2671,6 +2676,37 @@ namespace BDArmory.Weapons.Missiles
                         else
                             output.AppendLine($"- Lock/Track: {RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS} m^2 @ {activeRadarRange / 1000} km");
                         output.AppendLine($"- LOAL: {radarLOAL}");
+                        if (radarLOAL) output.AppendLine($"  - Radar Search Time: {radarTimeout}");
+                        output.AppendLine($"Max Offborsight: {maxOffBoresight}");
+                        output.AppendLine($"Locked FOV: {lockedSensorFOV}");
+                    }
+
+                    if (TargetingModeTerminal == TargetingModes.Heat)
+                    {
+                        output.AppendLine($"Uncaged Lock: {uncagedLock}");
+                        output.AppendLine($"Min Heat threshold: {heatThreshold}");
+                        output.AppendLine($"Max Offborsight: {maxOffBoresight}");
+                        output.AppendLine($"Locked FOV: {lockedSensorFOV}");
+                    }
+                }
+            }
+
+            if (TargetingMode == TargetingModes.None)
+            {
+                output.AppendLine($"Terminal Maneuvering: {terminalManeuvering}");
+                if (terminalGuidanceType != "")
+                {
+                    output.AppendLine($"Terminal guidance: {terminalGuidanceType} @ distance: {terminalGuidanceDistance} m");
+
+                    if (TargetingModeTerminal == TargetingModes.Radar)
+                    {
+                        output.AppendLine($"Active Radar Range: {activeRadarRange} m");
+                        if (activeRadarLockTrackCurve.maxTime > 0)
+                            output.AppendLine($"- Lock/Track: {activeRadarLockTrackCurve.Evaluate(activeRadarLockTrackCurve.maxTime)} m^2 @ {activeRadarLockTrackCurve.maxTime} km");
+                        else
+                            output.AppendLine($"- Lock/Track: {RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS} m^2 @ {activeRadarRange / 1000} km");
+                        output.AppendLine($"- LOAL: {radarLOAL}");
+                        if (radarLOAL) output.AppendLine($"  - Radar Search Time: {radarTimeout}");
                         output.AppendLine($"Max Offborsight: {maxOffBoresight}");
                         output.AppendLine($"Locked FOV: {lockedSensorFOV}");
                     }
