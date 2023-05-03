@@ -351,7 +351,8 @@ namespace BDArmory.Weapons.Missiles
         private int snapshotTicker;
         private int locksCount = 0;
         private float _radarFailTimer = 0;
-        private float maxRadarFailTime = 5;
+
+        [KSPField] public float radarTimeout = 5;
         private float lastRWRPing = 0;
         private bool radarLOALSearching = true;
         protected bool checkMiss = false;
@@ -735,7 +736,7 @@ namespace BDArmory.Weapons.Missiles
                         }
                         else
                         {
-                            if (_radarFailTimer > maxRadarFailTime)
+                            if (_radarFailTimer > radarTimeout)
                             {
                                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileBase]: Semi-Active Radar guidance failed. Parent radar lost target.");
                                 radarTarget = TargetSignatureData.noTarget;
@@ -909,14 +910,14 @@ namespace BDArmory.Weapons.Missiles
                 //RadarUtils.UpdateRadarLock(ray, lockedSensorFOV * 3, activeRadarMinThresh * 2, ref scannedTargets, 0.4f, pingRWR, RadarWarningReceiver.RWRThreatTypes.MissileLock, radarSnapshot);
                 RadarUtils.RadarUpdateMissileLock(ray, lockedSensorFOV * 3, ref scannedTargets, 0.4f, this);
 
-                float sqrThresh = 90000f; // 300 * 300;
+                float sqrThresh = targetVessel != null ? 1000000 : 90000f; // 1000 * 1000 : 300 * 300;
 
                 float smallestAngle = 360;
                 TargetSignatureData lockedTarget = TargetSignatureData.noTarget;
-
+                Vector3 soughtTarget = radarTarget.exists? radarTarget.predictedPosition : targetVessel != null ? targetVessel.Vessel.CoM : transform.position + (MissileReferenceTransform.forward * 500);
                 for (int i = 0; i < scannedTargets.Length; i++)
                 {
-                    if (scannedTargets[i].exists && (scannedTargets[i].predictedPosition - radarTarget.predictedPosition).sqrMagnitude < sqrThresh)
+                    if (scannedTargets[i].exists && (scannedTargets[i].predictedPosition - soughtTarget).sqrMagnitude < sqrThresh)
                     {
                         //re-check engagement envelope, only lock appropriate targets
                         if (CheckTargetEngagementEnvelope(scannedTargets[i].targetInfo))
@@ -962,12 +963,12 @@ namespace BDArmory.Weapons.Missiles
                 else
                 {
                     TargetAcquired = true;
-                    TargetPosition = transform.position + (startDirection * 500);
+                    TargetPosition = transform.position + (MissileReferenceTransform.forward * 500);
                     TargetVelocity = Vector3.zero;
                     TargetAcceleration = Vector3.zero;
                     radarLOALSearching = true;
                     _radarFailTimer += Time.fixedDeltaTime;
-                    if (_radarFailTimer > maxRadarFailTime)
+                    if (_radarFailTimer > radarTimeout)
                     {
                         if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileBase]: Active Radar guidance failed. LOAL could not lock a target.");
                         radarTarget = TargetSignatureData.noTarget;

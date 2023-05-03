@@ -34,8 +34,9 @@
 		- Fix NRE with jettisoning Multimissile Launchers.
 		- Adds ModularMissile ground target weapon selection logic.
 		- Give unguided/GPS missiles without coords/Radar missiles sans Radar/Laser missiles without Targeting Pod a dumbfire reticle.
-		- AI can now use Unguided missiles (Targeting Mode = None / Radar/Laser missile without the necessary sensor), if no better option available.
-		- Ai can now attampt to use guided bombs against air targets if engage Air = true and nothing else available.
+		- AI can now use dumbfired missiles (Targeting Mode = None / Radar/Laser missile without the necessary sensor), if no better option available.
+		- Add new 'radarTimeout' field to missile configs to permit dumbfired inertial guidance LOAL radar missiles.
+		- AI can now attampt to use guided bombs against air targets if engage Air = true and nothing else available.
 - Competition:
 	- Pinata mode now temporarily disables Camera AutoSwitch, switches camera to Pinata until it is destroyed.
 	- Update the tournament parser to compute non-negative scores per round for waypoint races.
