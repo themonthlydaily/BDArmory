@@ -1949,7 +1949,7 @@ namespace BDArmory.Control
             }
 
             // Use the nearest time to closest point of approach to check separation instead of iteratively sampling. Should give faster, more accurate results.
-            float timeToCPA = vessel.ClosestTimeToCPA(v, maxTime); // This uses the same kinematics as AIUtils.PredictPosition.
+            float timeToCPA = vessel.TimeToCPA(v, maxTime); // This uses the same kinematics as AIUtils.PredictPosition.
             if (timeToCPA > 0 && timeToCPA < maxTime)
             {
                 Vector3 tPos = AIUtils.PredictPosition(v, timeToCPA);
@@ -1973,7 +1973,7 @@ namespace BDArmory.Control
             Vector3 relVelocity = v.Velocity() - vessel.Velocity();
             Vector3 relPosition = v.transform.position - vessel.transform.position;
             Vector3 relAcceleration = v.acceleration - vessel.acceleration;
-            float timeToCPA = vessel.ClosestTimeToCPA(v, 16f);
+            float timeToCPA = vessel.TimeToCPA(v, 16f);
 
             // Let's try to ram someone!
             if (!ramming)
