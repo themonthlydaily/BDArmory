@@ -354,7 +354,7 @@ namespace BDArmory.Weapons.Missiles
 
         [KSPField] public float radarTimeout = 5;
         private float lastRWRPing = 0;
-        private bool radarLOALSearching = true;
+        private bool radarLOALSearching = false;
         protected bool checkMiss = false;
         public StringBuilder debugString = new StringBuilder();
 
@@ -703,7 +703,6 @@ namespace BDArmory.Weapons.Missiles
 
             if (radarTarget.exists)
             {
-                radarLOALSearching = false;
                 // locked-on before launch, passive radar guidance or waiting till in active radar range:
                 if (!ActiveRadar && ((radarTarget.predictedPosition - transform.position).sqrMagnitude > (activeRadarRange * activeRadarRange) || angleToTarget > maxOffBoresight * 0.75f))
                 {
@@ -910,7 +909,7 @@ namespace BDArmory.Weapons.Missiles
                 //RadarUtils.UpdateRadarLock(ray, lockedSensorFOV * 3, activeRadarMinThresh * 2, ref scannedTargets, 0.4f, pingRWR, RadarWarningReceiver.RWRThreatTypes.MissileLock, radarSnapshot);
                 RadarUtils.RadarUpdateMissileLock(ray, lockedSensorFOV * 3, ref scannedTargets, 0.4f, this);
 
-                float sqrThresh = targetVessel != null ? 1000000 : 90000f; // 1000 * 1000 : 300 * 300;
+                float sqrThresh = targetVessel != null ? 1000000 : 90000f; // 1000 * 1000 : 300 * 300; Expand threshold if no target to search for, grab first available target
 
                 float smallestAngle = 360;
                 TargetSignatureData lockedTarget = TargetSignatureData.noTarget;
@@ -922,6 +921,7 @@ namespace BDArmory.Weapons.Missiles
                         //re-check engagement envelope, only lock appropriate targets
                         if (CheckTargetEngagementEnvelope(scannedTargets[i].targetInfo))
                         {
+                            if (scannedTargets[i].targetInfo.Team == Team) continue;//Don't lock friendlies
                             float angle = Vector3.Angle(scannedTargets[i].predictedPosition - transform.position, GetForwardTransform());
                             if (angle < smallestAngle)
                             {
@@ -930,7 +930,7 @@ namespace BDArmory.Weapons.Missiles
                             }
 
                             ActiveRadar = true;
-                            return;
+                            //return;
                         }
                     }
                 }
@@ -983,7 +983,10 @@ namespace BDArmory.Weapons.Missiles
 
             if (!radarTarget.exists)
             {
-                targetVessel = null;
+                if (radarLOAL)
+                    radarLOALSearching = true;
+                else
+                    targetVessel = null;
             }
         }
 
