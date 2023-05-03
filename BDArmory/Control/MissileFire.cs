@@ -7215,7 +7215,7 @@ namespace BDArmory.Control
                 {
                     if ((prevPos - guardTarget.CoM).sqrMagnitude < closestPosSqr)
                     {
-                        var timeToCPA = AIUtils.ClosestTimeToCPA(guardTarget.CoM - prevPos, guardTarget.Velocity() - simVelocity, guardTarget.acceleration - gravity - dragForce, simDeltaTime);
+                        var timeToCPA = AIUtils.TimeToCPA(guardTarget.CoM - prevPos, guardTarget.Velocity() - simVelocity, guardTarget.acceleration - gravity - dragForce, simDeltaTime);
                         if (timeToCPA < simDeltaTime)
                             closestPos = AIUtils.PredictPosition(prevPos, simVelocity, gravity + dragForce, timeToCPA);
                         else

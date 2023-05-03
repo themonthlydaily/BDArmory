@@ -299,13 +299,13 @@ namespace BDArmory.Guidances
 
             Vector3 relPosition = targetPosition - missile.transform.position;
             Vector3 relAcceleration = targetVessel.acceleration - missile.MissileReferenceTransform.forward * accel;
-            leadTime = AIUtils.ClosestTimeToCPA(relPosition, deltaVel, relAcceleration, T); //missile accelerating, T is greater than our max look time of 8s
+            leadTime = AIUtils.TimeToCPA(relPosition, deltaVel, relAcceleration, T); //missile accelerating, T is greater than our max look time of 8s
             if (T < 8 && leadTime == T)//missile has reached max speed, and is now cruising; sim positions ahead based on T and run CPA from there
             {
                 relPosition = AIUtils.PredictPosition(targetPosition, targetVessel.Velocity(), targetVessel.acceleration, T) -
                     AIUtils.PredictPosition(missile.transform.position, vel, missile.MissileReferenceTransform.forward * accel, T);
                 relAcceleration = targetVessel.acceleration; // - missile.MissileReferenceTransform.forward * 0; assume missile is holding steady velocity at optimumAirspeed
-                leadTime = AIUtils.ClosestTimeToCPA(relPosition, DeltaOptvel, relAcceleration, 8-T) + T;
+                leadTime = AIUtils.TimeToCPA(relPosition, DeltaOptvel, relAcceleration, 8-T) + T;
             }
 
             targetPosition = targetPosition + (targetVessel.Velocity() * leadTime);
