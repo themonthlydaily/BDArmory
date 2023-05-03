@@ -1671,6 +1671,10 @@ namespace BDArmory.Weapons
 
             return status;
         }
+        
+        bool fireConditionCheck => (((userFiring || autoFire  || agHoldFiring) && !isAPS) && (!turret || turret.TargetInRange(finalAimTarget, 10, float.MaxValue))) || (BurstFire && RoundsRemaining > 0 && RoundsRemaining < RoundsPerMag);
+        //if user pulling the trigger || AI controlled and on target if turreted || finish a burstfire weapon's burst
+
         void Update()
         {
             if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && !vessel.packed && vessel.IsControllable)
@@ -1700,8 +1704,7 @@ namespace BDArmory.Weapons
                     userFiring = (((weaponState == WeaponStates.Enabled && BDInputUtils.GetKey(BDInputSettingsFields.WEAP_FIRE_KEY) && !GUIUtils.CheckMouseIsOnGui()) //don't fire if mouse on WM GUI; Issue #348
                             || secondaryFireKeyActive)
                         && (vessel.isActiveVessel || BDArmorySettings.REMOTE_SHOOTING) && !MapView.MapIsEnabled && !aiControlled);
-                    if (!(((userFiring || agHoldFiring) && !isAPS) || (autoFire && //if user pulling the trigger || AI controlled and on target if turreted || finish a burstfire weapon's burst
-                        (!turret || turret.TargetInRange(finalAimTarget, 10, float.MaxValue))) || (BurstFire && RoundsRemaining > 0 && RoundsRemaining < RoundsPerMag)))
+                    if (!fireConditionCheck)
                     {
                         if (spinDownAnimation) spinningDown = true; //this doesn't need to be called every fixed frame and can remain here
                         if (!oneShotSound && wasFiring)             //technically the laser reset stuff could also have remained here
@@ -4075,7 +4078,7 @@ namespace BDArmory.Weapons
         {
             finalFire = false;
             //if user pulling the trigger || AI controlled and on target if turreted || finish a burstfire weapon's burst
-            if (((userFiring || agHoldFiring) && !isAPS) || (autoFire && (!turret || turret.TargetInRange(finalAimTarget, 10, float.MaxValue))) || (BurstFire && RoundsRemaining > 0 && RoundsRemaining < RoundsPerMag))
+            if (fireConditionCheck)
             {
                 if ((pointingAtSelf || isOverheated || isReloading) || (aiControlled && engageRangeMax < targetDistance))// is weapon within set max range?
                 {
