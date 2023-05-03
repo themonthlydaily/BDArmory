@@ -3410,6 +3410,7 @@ namespace BDArmory.Weapons
                     float timeToCPA = BDAMath.Sqrt(bulletRelativePosition.sqrMagnitude / (targetVelocity - (part.rb.velocity + baseBulletVelocity * firingDirection)).sqrMagnitude); // Rough initial estimate.
                     targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, timeToCPA);
                     var count = 0;
+                    // For artillery, TimeToCPA needs to use the furthest time, not the closest.
                     do
                     {
                         lastFiringDirection = firingDirection;
@@ -3419,8 +3420,9 @@ namespace BDArmory.Weapons
                         bulletRelativePosition = targetPosition - firePosition;
                         bulletRelativeVelocity = targetVelocity - bulletEffectiveVelocity;
                         bulletRelativeAcceleration = targetAcceleration - bulletAcceleration;
-                        timeToCPA = AIUtils.ClosestTimeToCPA(bulletRelativePosition, bulletRelativeVelocity, bulletRelativeAcceleration, maxTargetingRange / bulletEffectiveVelocity.magnitude);
+                        timeToCPA = AIUtils.TimeToCPA(bulletRelativePosition, bulletRelativeVelocity, bulletRelativeAcceleration, maxTargetingRange / bulletEffectiveVelocity.magnitude);
                         targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, timeToCPA);
+                        // bulletPredictedPosition = AIUtils.PredictPosition(firePosition, bulletEffectiveVelocity, bulletAcceleration, timeToCPA);
                         bulletDropOffset = -0.5f * bulletAcceleration * timeToCPA * timeToCPA;
                         finalTarget = targetPredictedPosition + bulletDropOffset - part.rb.velocity * timeToCPA;
                         firingDirection = (finalTarget - fireTransforms[0].position).normalized;
@@ -3584,7 +3586,7 @@ namespace BDArmory.Weapons
                             var distanceRemaining = Mathf.Min(maxDistance - (simCurrPos - simStartPos).magnitude, (targetPosition - simCurrPos).magnitude);
                             var timeRemaining = maxTime - simTime;
                             simDeltaTime = Mathf.Clamp(Mathf.Min(distanceRemaining / simVelocity.magnitude, timeRemaining) / 8f, Time.fixedDeltaTime, Time.fixedDeltaTime * BDArmorySettings.BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER); // Take 8 steps for smoother visuals.
-                            var timeToCPA = AIUtils.ClosestTimeToCPA(targetPosition - simCurrPos, targetVelocity - simVelocity, targetAcceleration - gravity, timeRemaining); // For aiming, we want the closest approach to refine our aim.
+                            var timeToCPA = AIUtils.TimeToCPA(targetPosition - simCurrPos, targetVelocity - simVelocity, targetAcceleration - gravity, timeRemaining); // For aiming, we want the closest approach to refine our aim.
                             closestPointOfApproach = AIUtils.PredictPosition(simCurrPos, simVelocity, gravity, timeToCPA);
                             if (!hitDetected) bulletPrediction = closestPointOfApproach;
                             if (BDArmorySettings.AIM_ASSIST && BDArmorySettings.DRAW_AIMERS && !hitDetected)
@@ -3625,7 +3627,7 @@ namespace BDArmory.Weapons
                         // Check for closest approach within the last update.
                         if ((simPrevPos - targetPosition).sqrMagnitude < closestDistanceSqr)
                         {
-                            var timeToCPA = AIUtils.ClosestTimeToCPA(targetPosition - simPrevPos, targetVelocity - simVelocity, targetAcceleration - gravity, simDeltaTime);
+                            var timeToCPA = AIUtils.TimeToCPA(targetPosition - simPrevPos, targetVelocity - simVelocity, targetAcceleration - gravity, simDeltaTime);
                             if (timeToCPA < simDeltaTime)
                                 closestPointOfApproach = AIUtils.PredictPosition(simPrevPos, simVelocity, gravity, timeToCPA);
                             else
@@ -3864,7 +3866,7 @@ namespace BDArmory.Weapons
                         case SimulationStage.Refining: // Perform a more accurate final step for the collision.
                             return BallisticTrajectoryClosestApproachSimulation(lastPosition, velocity - 0.5f * timeStep * gravity, targetPosition, targetVelocity, targetAcceleration, timeStep / 4f, elapsedTime, timeStep > 5f * Time.fixedDeltaTime ? SimulationStage.Refining : SimulationStage.Final);
                         case SimulationStage.Final:
-                            var timeToCPA = AIUtils.ClosestTimeToCPA(lastPosition - lastPredictedTargetPosition, velocity - (predictedTargetPosition - lastPredictedTargetPosition) / timeStep, Vector3.zero, timeStep);
+                            var timeToCPA = AIUtils.TimeToCPA(lastPosition - lastPredictedTargetPosition, velocity - (predictedTargetPosition - lastPredictedTargetPosition) / timeStep, Vector3.zero, timeStep);
                             position = lastPosition + timeToCPA * velocity;
                             // elapsedTime += timeToCPA;
                             // predictedTargetPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, elapsedTime);
@@ -4065,7 +4067,7 @@ namespace BDArmory.Weapons
                     var projectileRelativePosition = friendlyPosition - fireTransform.position;
                     var projectileRelativeVelocity = friendlyVelocity - projectileEffectiveVelocity;
                     var projectileRelativeAcceleration = friendlyAcceleration - projectileAcceleration;
-                    var timeToCPA = AIUtils.ClosestTimeToCPA(projectileRelativePosition, projectileRelativeVelocity, projectileRelativeAcceleration, maxTargetingRange / projectileEffectiveVelocity.magnitude);
+                    var timeToCPA = AIUtils.TimeToCPA(projectileRelativePosition, projectileRelativeVelocity, projectileRelativeAcceleration, maxTargetingRange / projectileEffectiveVelocity.magnitude);
                     if (timeToCPA == 0) continue; // They're behind us.
                     var missDistanceSqr = AIUtils.PredictPosition(projectileRelativePosition, projectileRelativeVelocity, projectileRelativeAcceleration, timeToCPA).sqrMagnitude;
                     var tolerance = friendly.Current.GetRadius() + projectileRelativePosition.magnitude * Mathf.Deg2Rad * maxDeviation; // Use a firing tolerance of 1 and twice the projectile deviation for friendlies.
