@@ -6781,14 +6781,14 @@ namespace BDArmory.Control
                 //if(missile.TargetingMode == MissileBase.TargetingModes.Gps) maxOffBoresight = 45;
 
                 // Check that target is within maxOffBoresight now and in future time fTime
-                launchAuthorized = Vector3.Angle(missile.GetForwardTransform(), target - missile.transform.position) < (unguidedWeapon ? 2 : missile.maxOffBoresight * boresightFactor); // Launch is possible now
+                launchAuthorized = Vector3.Angle(missile.GetForwardTransform(), target - missile.transform.position) < (unguidedWeapon ? 5 : missile.maxOffBoresight * boresightFactor); // Launch is possible now
 
                 if (launchAuthorized)
                 {
                     float fTime = Mathf.Min(missile.dropTime, 2f);
                     Vector3 futurePos = target + (targetV.Velocity() * fTime);
                     Vector3 myFuturePos = vessel.ReferenceTransform.position + (vessel.Velocity() * fTime);
-                    launchAuthorized = launchAuthorized && (Vector3.Angle(vessel.ReferenceTransform.up, futurePos - myFuturePos) < (unguidedWeapon ? 2 : missile.maxOffBoresight * boresightFactor)); // Launch is likely also possible at fTime
+                    launchAuthorized = launchAuthorized && (Vector3.Angle(vessel.ReferenceTransform.up, futurePos - myFuturePos) < (unguidedWeapon ? 5 : missile.maxOffBoresight * boresightFactor)); // Launch is likely also possible at fTime
                 }
             }
 

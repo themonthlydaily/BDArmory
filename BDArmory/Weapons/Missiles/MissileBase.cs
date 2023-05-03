@@ -913,7 +913,7 @@ namespace BDArmory.Weapons.Missiles
 
                 float smallestAngle = 360;
                 TargetSignatureData lockedTarget = TargetSignatureData.noTarget;
-                Vector3 soughtTarget = radarTarget.exists? radarTarget.predictedPosition : targetVessel != null ? targetVessel.Vessel.CoM : transform.position + (MissileReferenceTransform.forward * 500);
+                Vector3 soughtTarget = radarTarget.exists? radarTarget.predictedPosition : targetVessel != null ? targetVessel.Vessel.CoM : transform.position + (startDirection);
                 for (int i = 0; i < scannedTargets.Length; i++)
                 {
                     if (scannedTargets[i].exists && (scannedTargets[i].predictedPosition - soughtTarget).sqrMagnitude < sqrThresh)
@@ -963,7 +963,7 @@ namespace BDArmory.Weapons.Missiles
                 else
                 {
                     TargetAcquired = true;
-                    TargetPosition = transform.position + (MissileReferenceTransform.forward * 500);
+                    TargetPosition = transform.position + (startDirection * 500);
                     TargetVelocity = Vector3.zero;
                     TargetAcceleration = Vector3.zero;
                     radarLOALSearching = true;
