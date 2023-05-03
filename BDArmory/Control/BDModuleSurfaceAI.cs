@@ -412,7 +412,7 @@ namespace BDArmory.Control
                     float shotSpeed = 1000f;
                     if ((weaponManager != null ? weaponManager.selectedWeapon : null) is ModuleWeapon wep)
                         shotSpeed = wep.bulletVelocity;
-                    var timeToCPA = targetVessel.ClosestTimeToCPA(vessel.CoM, vessel.Velocity() + vesselTransform.up * shotSpeed, FlightGlobals.getGeeForceAtPosition(vessel.CoM), MaxEngagementRange / shotSpeed);
+                    var timeToCPA = targetVessel.TimeToCPA(vessel.CoM, vessel.Velocity() + vesselTransform.up * shotSpeed, FlightGlobals.getGeeForceAtPosition(vessel.CoM), MaxEngagementRange / shotSpeed);
                     vecToTarget = targetVessel.PredictPosition(timeToCPA) - vessel.CoM;
 
                     if (SurfaceType == AIUtils.VehicleMovementType.Stationary)
