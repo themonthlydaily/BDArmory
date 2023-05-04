@@ -1674,7 +1674,7 @@ namespace BDArmory.Weapons
 
             return status;
         }
-        
+
         bool fireConditionCheck => ((((userFiring || agHoldFiring) && !isAPS) || autoFire) && (!turret || turret.TargetInRange(finalAimTarget, 10, float.MaxValue))) || (BurstFire && RoundsRemaining > 0 && RoundsRemaining < RoundsPerMag);
         //if user pulling the trigger || AI controlled and on target if turreted || finish a burstfire weapon's burst
 
@@ -3931,7 +3931,7 @@ namespace BDArmory.Weapons
                 {
                     autoFire = false;
                 }
-                if (autoFire && weaponManager.staleTarget && (lastVisualTargetVessel.LandedOrSplashed && vessel.LandedOrSplashed)) autoFire = false; //ground Vee engaging another ground Vee which has ducked out of sight, don't fire
+                if (autoFire && weaponManager.staleTarget && (lastVisualTargetVessel != null && lastVisualTargetVessel.LandedOrSplashed && vessel.LandedOrSplashed)) autoFire = false; //ground Vee engaging another ground Vee which has ducked out of sight, don't fire
 
                 // if (eWeaponType != WeaponTypes.Rocket) //guns/lasers
                 // {
