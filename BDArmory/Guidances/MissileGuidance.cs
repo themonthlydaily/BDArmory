@@ -279,23 +279,6 @@ namespace BDArmory.Guidances
             Vector3 deltaVel = targetVessel.Velocity() - vel;
             Vector3 DeltaOptvel = targetVessel.Velocity() - VelOpt;
             float T = Mathf.Clamp((VelOpt - vel).magnitude / accel, 0, 8); //time to optimal airspeed
-            /*
-            float D = deltaVel.magnitude * T + 1 / 2 * accel * (T * T); //relative distance to optimum airspeed        
-
-            if (targetDistance > D) leadTime = (targetDistance - D) / DeltaOptvel.magnitude + T;
-            else leadTime = (-deltaVel.magnitude - BDAMath.Sqrt((deltaVel.magnitude * deltaVel.magnitude) + 2 * accel * targetDistance)) / accel;
-
-            targetDistance = Vector3.Distance(targetPosition + (targetVessel.Velocity() * leadTime), missile.transform.position);
-            vel = ((targetPosition + (targetVessel.Velocity() * leadTime) - missile.transform.position).normalized * vel.magnitude);
-            deltaVel = targetVessel.Velocity() - vel;
-            VelOpt = vel + (vel.normalized * (launcher != null ? launcher.optimumAirspeed : 1500));
-            DeltaOptvel = targetVessel.Velocity() - VelOpt;
-
-            if (targetDistance > D) leadTime = (targetDistance - D) / DeltaOptvel.magnitude + T;
-            else leadTime = (-deltaVel.magnitude - BDAMath.Sqrt((deltaVel.magnitude * deltaVel.magnitude) + 2 * accel * targetDistance)) / accel;
-
-            leadTime = Mathf.Clamp(leadTime, 0f, 8f);
-            */
 
             Vector3 relPosition = targetPosition - missile.transform.position;
             Vector3 relAcceleration = targetVessel.acceleration - missile.MissileReferenceTransform.forward * accel;
@@ -310,7 +293,7 @@ namespace BDArmory.Guidances
 
             targetPosition = targetPosition + (targetVessel.Velocity() * leadTime);
 
-            if (targetVessel && targetDistance < 800)
+            if (targetVessel && targetDistance < 800) //TODO - investigate if this would throw off aim accuracy
             {
                 targetPosition += (Vector3)targetVessel.acceleration * 0.05f * leadTime * leadTime;
             }
