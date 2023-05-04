@@ -288,7 +288,7 @@ namespace BDArmory.Guidances
                 relPosition = AIUtils.PredictPosition(targetPosition, targetVessel.Velocity(), targetVessel.acceleration, T) -
                     AIUtils.PredictPosition(missile.transform.position, vel, missile.MissileReferenceTransform.forward * accel, T);
                 relAcceleration = targetVessel.acceleration; // - missile.MissileReferenceTransform.forward * 0; assume missile is holding steady velocity at optimumAirspeed
-                leadTime = AIUtils.TimeToCPA(relPosition, DeltaOptvel, relAcceleration, 8-T) + T;
+                leadTime = AIUtils.TimeToCPA(relPosition, DeltaOptvel, relAcceleration, 8 - T) + T;
             }
 
             targetPosition = targetPosition + (targetVessel.Velocity() * leadTime);
@@ -333,7 +333,7 @@ namespace BDArmory.Guidances
                 leadTime = Mathf.Clamp(leadTime, 0f, 8f);
                 leadTimeError += leadTime;
                 leadPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, Vector3.zero, leadTime);
-            } while (Mathf.Abs(leadTimeError) > 1e-3f && ++count < 5);  // At most 5 iterations to converge. Also, 1e-2f may be sufficient.
+            } while (++count < 5 && Mathf.Abs(leadTimeError) > 1e-3f);  // At most 5 iterations to converge. Also, 1e-2f may be sufficient.
             return leadPosition;
         }
 

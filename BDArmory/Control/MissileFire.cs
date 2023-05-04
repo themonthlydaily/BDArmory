@@ -7097,8 +7097,6 @@ namespace BDArmory.Control
             Vector3 prevPos = ml.MissileReferenceTransform.position;
             Vector3 currPos = ml.MissileReferenceTransform.position;
             Vector3 closestPos = ml.MissileReferenceTransform.position;
-            float closestPosSqr = float.MaxValue;
-            //Vector3 simVelocity = vessel.rb_velocity;
             Vector3 simVelocity = vessel.Velocity(); //Issue #92
 
             MissileLauncher launcher = ml as MissileLauncher;
