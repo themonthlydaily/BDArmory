@@ -1672,7 +1672,7 @@ namespace BDArmory.Weapons
             return status;
         }
         
-        bool fireConditionCheck => (((((userFiring || agHoldFiring) && !isAPS) || autoFire) && (!turret || turret.TargetInRange(finalAimTarget, 10, float.MaxValue))) || (BurstFire && RoundsRemaining > 0 && RoundsRemaining < RoundsPerMag);
+        bool fireConditionCheck => ((((userFiring || agHoldFiring) && !isAPS) || autoFire) && (!turret || turret.TargetInRange(finalAimTarget, 10, float.MaxValue))) || (BurstFire && RoundsRemaining > 0 && RoundsRemaining < RoundsPerMag);
         //if user pulling the trigger || AI controlled and on target if turreted || finish a burstfire weapon's burst
 
         void Update()
