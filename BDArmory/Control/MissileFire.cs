@@ -1550,7 +1550,7 @@ namespace BDArmory.Control
                         if ((ml is MissileLauncher && ((MissileLauncher)ml).guidanceActive) || ml is BDModularGuidance)
                         {
                             texture = BDArmorySetup.Instance.largeGreenCircleTexture;
-                            size = 64;
+                            size = 256;
                         }
                         GUIUtils.DrawTextureOnWorldPos(bombAimerPosition, texture, new Vector2(size, size), 0);
                     }
@@ -1646,7 +1646,7 @@ namespace BDArmory.Control
                                 BDArmorySetup.Instance.openGreenSquare, new Vector2(22, 22), 0);
                         }
                     }
-                    else if (missile.TargetingMode == MissileBase.TargetingModes.None)
+                    else if (missile.TargetingMode == MissileBase.TargetingModes.None && selectedWeapon.GetWeaponClass() != WeaponClasses.Bomb)
                     {
                         GUIUtils.DrawTextureOnWorldPos(missile.MissileReferenceTransform.position + (2000 * missile.GetForwardTransform()), BDArmorySetup.Instance.largeGreenCircleTexture, new Vector2(96, 96), 0);
                     }
@@ -2330,72 +2330,60 @@ namespace BDArmory.Control
             var wait = new WaitForFixedUpdate();
 
             while (guardTarget && Time.time - bombStartTime < bombAttemptDuration && weaponIndex > 0 &&
-                  unguidedWeapon && firedMissiles < maxMissilesOnTarget) 
+                 weaponArray[weaponIndex].GetWeaponClass() == WeaponClasses.Bomb && firedMissiles < maxMissilesOnTarget)
             {
-                //if (selectedWeapon.GetWeaponClass() == WeaponClasses.Bomb && guardTarget.LandedOrSplashed)
+                float targetDist = Vector3.Distance(bombAimerPosition, guardTarget.CoM);
+
+                if (targetDist < (radius * 20f) && !hasSetCargoBays)
                 {
-                    float targetDist = Vector3.Distance(bombAimerPosition, guardTarget.CoM);
+                    SetCargoBays();
+                    hasSetCargoBays = true;
+                }
 
-                    if (targetDist < (radius * 20f) && !hasSetCargoBays)
+                if (targetDist > radius
+                    || Vector3.Dot(VectorUtils.GetUpDirection(vessel.CoM), vessel.transform.forward) > 0) // roll check
+                {
+                    if (targetDist < Mathf.Max(radius * 2, 800f) &&
+                        Vector3.Dot(guardTarget.CoM - bombAimerPosition, guardTarget.CoM - transform.position) < 0)
                     {
-                        SetCargoBays();
-                        hasSetCargoBays = true;
+                        pilotAI.RequestExtend("too close to bomb", guardTarget, ignoreCooldown: true); // Extend from target vessel.
+                        break;
                     }
-
-                    if (targetDist > radius
-                        || Vector3.Dot(VectorUtils.GetUpDirection(vessel.CoM), vessel.transform.forward) > 0) // roll check
+                    yield return wait;
+                }
+                else
+                {
+                    if (doProxyCheck)
                     {
-                        if (targetDist < Mathf.Max(radius * 2, 800f) &&
-                            Vector3.Dot(guardTarget.CoM - bombAimerPosition, guardTarget.CoM - transform.position) < 0)
+                        if (targetDist - prevDist > 0)
                         {
-                            pilotAI.RequestExtend("too close to bomb", guardTarget, ignoreCooldown: true); // Extend from target vessel.
-                            break;
-                        }
-                        yield return wait;
-                    }
-                    else
-                    {
-                        if (doProxyCheck)
-                        {
-                            if (targetDist - prevDist > 0)
-                            {
-                                doProxyCheck = false;
-                            }
-                            else
-                            {
-                                prevDist = targetDist;
-                            }
-                        }
-
-                        if (!doProxyCheck)
-                        {
-                            FireCurrentMissile(true);
-                            timeBombReleased = Time.time;
-                            yield return new WaitForSecondsFixed(rippleFire ? 60f / rippleRPM : 0.06f);
-                            if (firedMissiles >= maxMissilesOnTarget)
-                            {
-                                yield return new WaitForSecondsFixed(1f);
-                                if (pilotAI)
-                                {
-                                    pilotAI.RequestExtend("bombs away!", null, radius, guardTarget.CoM, ignoreCooldown: true); // Extend from the place the bomb is expected to fall.
-                                }   //maybe something similar should be adapted for any missiles with nuke warheards...?
-                            }
+                            doProxyCheck = false;
                         }
                         else
                         {
-                            yield return wait;
+                            prevDist = targetDist;
                         }
                     }
-                }
-                /*
-                else
-                {
-                    if (GetLaunchAuthorization(guardTarget, this))
+
+                    if (!doProxyCheck)
                     {
                         FireCurrentMissile(true);
+                        timeBombReleased = Time.time;
+                        yield return new WaitForSecondsFixed(rippleFire ? 60f / rippleRPM : 0.06f);
+                        if (firedMissiles >= maxMissilesOnTarget)
+                        {
+                            yield return new WaitForSecondsFixed(1f);
+                            if (pilotAI)
+                            {
+                                pilotAI.RequestExtend("bombs away!", null, radius, guardTarget.CoM, ignoreCooldown: true); // Extend from the place the bomb is expected to fall.
+                            }   //maybe something similar should be adapted for any missiles with nuke warheards...?
+                        }
+                    }
+                    else
+                    {
+                        yield return wait;
                     }
                 }
-                */
             }
 
             designatedGPSInfo = new GPSTargetInfo();
@@ -5187,13 +5175,9 @@ namespace BDArmory.Control
                             }
                         }
                         //Bombs are good. any of those we can use over rockets?
-                        if (unguidedWeapon && (!vessel.Splashed || (vessel.Splashed && vessel.altitude > currentTarget.Vessel.altitude))) //I guess depth charges would sorta apply here, but those are SLW instead
+                        if (candidateClass == WeaponClasses.Bomb && (!vessel.Splashed || (vessel.Splashed && vessel.altitude > currentTarget.Vessel.altitude))) //I guess depth charges would sorta apply here, but those are SLW instead
                         {
                             MissileLauncher Bomb = item.Current as MissileLauncher;
-                            if (targetWeapon != null && targetWeapon.GetWeaponClass() == WeaponClasses.Missile)
-                            {
-                                if (!((Bomb.TargetingMode == MissileBase.TargetingModes.Radar && (!_radarsEnabled && !Bomb.radarLOAL)) || (Bomb.TargetingMode == MissileBase.TargetingModes.Laser && targetingPods.Count <= 0))) continue;
-                            }
                             if (Bomb.reloadableRail != null && (Bomb.reloadableRail.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE)) continue; //don't select when out of ordinance
                             //if (firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                             // only useful if we are flying
@@ -5291,7 +5275,6 @@ namespace BDArmory.Control
                                 //if (Missile.TargetingMode == MissileBase.TargetingModes.Radar && radars.Count <= 0) continue; //dont select RH missiles when no radar aboard
                                 //if (Missile.TargetingMode == MissileBase.TargetingModes.Laser && targetingPods.Count <= 0) continue; //don't select LH missiles when no FLIR aboard
                                 if (Missile.reloadableRail != null && (Missile.reloadableRail.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE)) continue; //don't select when out of ordinance
-                                if (unguidedWeapon) continue;
                                 if (vessel.Splashed && FlightGlobals.getAltitudeAtPos(item.Current.GetPart().transform.position) < -2) continue;
                                 //if (firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                                 candidateYield = Missile.GetBlastRadius();
@@ -6361,7 +6344,7 @@ namespace BDArmory.Control
                                 // }
                             }
                         }
-                        else if (selectedWeapon != null && unguidedWeapon)
+                        else if (selectedWeapon != null && selectedWeapon.GetWeaponClass() == WeaponClasses.Bomb)
                         {
                             if (!guardFiringMissile)
                             {
@@ -7077,12 +7060,11 @@ namespace BDArmory.Control
             if (selectedWeapon == null)
             {
                 showBombAimer = false;
-                unguidedWeapon = false;
                 return;
             }
             if (!bombPart || selectedWeapon.GetPart() != bombPart)
             {
-                if (unguidedWeapon)
+                if (selectedWeapon.GetWeaponClass() == WeaponClasses.Bomb)
                 {
                     bombPart = selectedWeapon.GetPart();
                 }
@@ -7098,7 +7080,7 @@ namespace BDArmory.Control
                 !MapView.MapIsEnabled &&
                 vessel.isActiveVessel &&
                 selectedWeapon != null &&
-                unguidedWeapon &&
+                selectedWeapon.GetWeaponClass() == WeaponClasses.Bomb &&
                 bombPart != null &&
                 BDArmorySettings.DRAW_AIMERS &&
                 vessel.verticalSpeed < 50 &&
@@ -7106,7 +7088,7 @@ namespace BDArmory.Control
             );
 
             if (!showBombAimer && (!guardMode || weaponIndex <= 0 ||
-                                   !unguidedWeapon)) return;
+                                   selectedWeapon.GetWeaponClass() != WeaponClasses.Bomb)) return;
             MissileBase ml = bombPart.GetComponent<MissileBase>();
 
             float simDeltaTime = 0.1f;
@@ -7197,7 +7179,8 @@ namespace BDArmory.Control
 
                 dragForce = (0.008f * bombPart.mass) * drag * 0.5f * simSpeedSquared * atmDensity * simVelocity.normalized;
                 simVelocity -= (dragForce / bombPart.mass) * simDeltaTime;
-
+                //float lift = 0.5f * atmDensity * simSpeedSquared * launcher.liftArea * BDArmorySettings.GLOBAL_LIFT_MULTIPLIER * MissileGuidance.DefaultLiftCurve.Evaluate(1);
+                //simVelocity += VectorUtils.GetUpDirection(currPos) * lift;
                 Ray ray = new Ray(prevPos, currPos - prevPos);
                 RaycastHit hitInfo;
                 if (Physics.Raycast(ray, out hitInfo, Vector3.Distance(prevPos, currPos), aimerLayerMask))
@@ -7213,19 +7196,11 @@ namespace BDArmory.Control
                 }
                 if (guardTarget)
                 {
-                    if ((prevPos - guardTarget.CoM).sqrMagnitude < closestPosSqr)
+                    float targetDist = Vector3.Distance(currPos, guardTarget.CoM) - guardTarget.GetRadius();
+                    if (targetDist < CurrentMissile.GetBlastRadius())
                     {
-                        var timeToCPA = AIUtils.ClosestTimeToCPA(guardTarget.CoM - prevPos, guardTarget.Velocity() - simVelocity, guardTarget.acceleration - gravity - dragForce, simDeltaTime);
-                        if (timeToCPA < simDeltaTime)
-                            closestPos = AIUtils.PredictPosition(prevPos, simVelocity, gravity + dragForce, timeToCPA);
-                        else
-                            closestPos = prevPos;
-                        closestPosSqr = (closestPos - guardTarget.CoM).sqrMagnitude;
-                    }
-                    else
-                    {
-                        bombAimerPosition = closestPos;
-                        break;
+                        bombAimerPosition = currPos;
+                        simulating = false;
                     }
                 }
                 simTime += simDeltaTime;
