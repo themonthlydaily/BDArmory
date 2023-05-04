@@ -1157,7 +1157,7 @@ namespace BDArmory.FX
                     eFx.warheadType = WarheadTypes.ShapedCharge;
                     //eFx.AngleOfEffect = 10f;
                     //eFx.AngleOfEffect = 5f;
-                    eFx.cosAngleOfEffect = Mathf.Cos(Mathf.Deg2Rad * 2.5f); // cos(2.5 degrees)
+                    eFx.cosAngleOfEffect = Mathf.Cos(Mathf.Deg2Rad * 5f); // cos(5 degrees)
                     eFx.Caliber = caliber > 0 ? caliber * 0.05f : 6f;
 
                     // Hypervelocity jet caliber determined by rule of thumb equation for the caliber based on
