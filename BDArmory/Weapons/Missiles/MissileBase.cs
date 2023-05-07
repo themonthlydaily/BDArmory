@@ -775,7 +775,6 @@ namespace BDArmory.Weapons.Missiles
                 {
                     // active radar with target locked:
                     vrd = null;
-
                     if (angleToTarget > maxOffBoresight)
                     {
                         if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileBase]: Active Radar guidance failed.  Target is out of active seeker gimbal limits.");
@@ -881,6 +880,7 @@ namespace BDArmory.Weapons.Missiles
                             radarTarget = TargetSignatureData.noTarget;
                             targetVessel = null;
                             radarLOALSearching = false;
+                            radarLOAL = false;
                             TargetAcquired = false;
                             ActiveRadar = false;
                         }
@@ -911,7 +911,7 @@ namespace BDArmory.Weapons.Missiles
 
                 float sqrThresh = targetVessel != null ? 1000000 : 90000f; // 1000 * 1000 : 300 * 300; Expand threshold if no target to search for, grab first available target
 
-                float smallestAngle = 360;
+                float smallestAngle = maxOffBoresight;
                 TargetSignatureData lockedTarget = TargetSignatureData.noTarget;
                 Vector3 soughtTarget = radarTarget.exists? radarTarget.predictedPosition : targetVessel != null ? targetVessel.Vessel.CoM : transform.position + (startDirection);
                 for (int i = 0; i < scannedTargets.Length; i++)
@@ -962,6 +962,7 @@ namespace BDArmory.Weapons.Missiles
                 }
                 else
                 {
+                    radarTarget = TargetSignatureData.noTarget;
                     TargetAcquired = true;
                     TargetPosition = transform.position + (startDirection * 500);
                     TargetVelocity = Vector3.zero;
@@ -972,6 +973,7 @@ namespace BDArmory.Weapons.Missiles
                     {
                         if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileBase]: Active Radar guidance failed. LOAL could not lock a target.");
                         radarTarget = TargetSignatureData.noTarget;
+                        radarLOAL = false;
                         targetVessel = null;
                         radarLOALSearching = false;
                         TargetAcquired = false;
@@ -981,7 +983,7 @@ namespace BDArmory.Weapons.Missiles
                 }
             }
 
-            if (!radarTarget.exists)
+            if (!radarTarget.exists && _radarFailTimer < radarTimeout)
             {
                 if (radarLOAL)
                     radarLOALSearching = true;
