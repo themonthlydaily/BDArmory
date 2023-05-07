@@ -394,7 +394,7 @@ namespace BDArmory.Weapons.Missiles
         /// Make corrections for floating origin and Krakensbane adjustments.
         /// This can't simply be in OnFixedUpdate as it needs to be called differently for MissileLauncher (which uses OnFixedUpdate) and BDModularGuidance (which uses FlyByWire which triggers before OnFixedUpdate).
         /// </summary>
-        public void FloatingOriginCorrection()
+        public virtual void FloatingOriginCorrection()
         {
             if (HasFired && !HasExploded)
             {
