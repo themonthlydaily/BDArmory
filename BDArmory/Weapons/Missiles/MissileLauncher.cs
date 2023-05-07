@@ -1026,7 +1026,7 @@ namespace BDArmory.Weapons.Missiles
                 StartCoroutine(DecoupleRoutine());
 
                 vessel.vesselType = VesselType.Probe;
-
+                if (BDArmorySettings.DEBUG_MISSILES) vessel.vesselName = $"{SourceVessel}'s {GetShortName()}";
                 //setting ref transform for navball
                 GameObject refObject = new GameObject();
                 refObject.transform.rotation = Quaternion.LookRotation(-transform.up, transform.forward);
