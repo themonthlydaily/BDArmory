@@ -7129,6 +7129,7 @@ namespace BDArmory.Control
             { simVelocity += 0.5f * simDeltaTime * FlightGlobals.getGeeForceAtPosition(currPos); }
             simVelocity += 0.5f * ordinanceBoost / ordinanceMass * simDeltaTime * pointingDirection;
             bool simulating = true;
+            var simStartTime = Time.realtimeSinceStartup;
             while (simulating)
             {
                 prevPos = currPos;
@@ -7200,6 +7201,12 @@ namespace BDArmory.Control
                         bombAimerPosition = currPos;
                         simulating = false;
                     }
+                }
+                if (Time.realtimeSinceStartup - simStartTime >= 0.1f)
+                {
+                    bombAimerPosition = currPos;
+                    simulating = false;
+                    break;
                 }
                 simTime += simDeltaTime;
                 pointPositions.Add(currPos);
