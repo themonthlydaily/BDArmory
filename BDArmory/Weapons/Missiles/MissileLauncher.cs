@@ -264,6 +264,8 @@ namespace BDArmory.Weapons.Missiles
 
         Transform vesselReferenceTransform;
 
+        Vector3 launchPosition = Vector3.zero;
+
         [KSPField]
         public string boostTransformName = string.Empty;
         List<KSPParticleEmitter> boostEmitters;
@@ -280,7 +282,7 @@ namespace BDArmory.Weapons.Missiles
 
         //ballistic options
         [KSPField]
-        public bool indirect = false;
+        public bool indirect = false; //unused
 
         [KSPField]
         public bool vacuumSteerable = true;
@@ -1003,7 +1005,12 @@ namespace BDArmory.Weapons.Missiles
 
                 //TARGETING
                 startDirection = transform.forward;
-
+                launchPosition = transform.position;
+                if (maxAltitude == 0) // && GuidanceMode != GuidanceModes.Lofted)
+                {
+                    if (targetVessel != null) maxAltitude = (float)Math.Max(vessel.radarAltitude, targetVessel.Vessel.radarAltitude) + 1000;
+                    else maxAltitude = (float)vessel.radarAltitude + 2500;
+                }
                 SetLaserTargeting();
                 SetAntiRadTargeting();
 
@@ -1189,6 +1196,7 @@ namespace BDArmory.Weapons.Missiles
                     {
                         Detonate();
                     }
+                    if (Vector3.Distance(transform.position, launchPosition) > engageRangeMax) Detonate();
                 }
             }
             catch (Exception e)
