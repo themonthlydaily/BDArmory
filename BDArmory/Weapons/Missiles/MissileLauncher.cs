@@ -1244,13 +1244,6 @@ namespace BDArmory.Weapons.Missiles
             }
         }
 
-        public override void FloatingOriginCorrection()
-        {
-            base.FloatingOriginCorrection();
-            if (HasFired && !HasExploded && BDKrakensbane.IsActive)
-                launchPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
-        }
-
         private void CheckMiss()
         {
             float sqrDist = (float)((TargetPosition + (TargetVelocity * Time.fixedDeltaTime)) - (vessel.CoM + (vessel.Velocity() * Time.fixedDeltaTime))).sqrMagnitude;
