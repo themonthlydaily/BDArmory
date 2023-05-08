@@ -38,6 +38,8 @@ IMPROVEMENTS / FIXES
 		- AI can now use dumbfired missiles (Targeting Mode = None / Radar/Laser missile without the necessary sensor), if no better option available.
 		- Add new 'radarTimeout' field to missile configs to permit dumbfired inertial guidance LOAL radar missiles.
 		- AI can now attampt to use guided bombs against air targets if engage Air = true and nothing else available.
+	- Fixed turret manual fire behavior, guns should now no longer fire unless they are correctly aligned with the point of aim.
+	- Fixed explosive erroneous cone-of-effect calculations for standard and shaped charge warheads. Should now function correctly.
 - Competition:
 	- Pinata mode now temporarily disables Camera AutoSwitch, switches camera to Pinata until it is destroyed.
 	- Update the tournament parser to compute non-negative scores per round for waypoint races.
