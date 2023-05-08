@@ -221,7 +221,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool BD_PROPULSION = true;           // Engine thrust reduction, fires
         [BDAPersistentSettingsField] public static float BD_PROP_FLOOR = 20;            // Minimum thrust% damaged engines produce
         [BDAPersistentSettingsField] public static float BD_PROP_FLAMEOUT = 25;         // Remaining HP% engines flameout
-        [BDAPersistentSettingsField] public static bool BD_PART_STRENGTH = true;        // Part strength - breakingForce/Torque - decreases as part takes damage
+        [BDAPersistentSettingsField] public static bool BD_PART_STRENGTH = false;        // Part strength - breakingForce/Torque - decreases as part takes damage
         [BDAPersistentSettingsField] public static float BD_PROP_DAM_RATE = 1;          // Rate multiplier, 0.1-2
         [BDAPersistentSettingsField] public static bool BD_INTAKES = true;              // Can intakes be damaged?
         [BDAPersistentSettingsField] public static bool BD_GIMBALS = true;              // Can gimbals be disabled?
@@ -378,6 +378,7 @@ namespace BDArmory.Settings
 
         // Missile & Countermeasure Settings
         [BDAPersistentSettingsField] public static bool MISSILE_CM_SETTING_TOGGLE = false;
+        [BDAPersistentSettingsField] public static bool VARIABLE_MISSILE_VISIBILITY = false;        //missile visual detection range dependant on boost/cruise/post-thrust state
         [BDAPersistentSettingsField] public static bool ASPECTED_IR_SEEKERS = false;                //IR Missiles will be subject to thermal occlusion mechanic
         [BDAPersistentSettingsField] public static bool DUMB_IR_SEEKERS = false;                  // IR missiles will go after hottest thing they can see
         [BDAPersistentSettingsField] public static float FLARE_FACTOR = 1.6f;                       // Change this to make flares more or less effective, values close to or below 1.0 will cause flares to fail to decoy often

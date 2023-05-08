@@ -23,6 +23,20 @@ namespace BDArmory.Utils
         private const string UIControlName = "FloatLogRange";
         public int steps = 10;
         public UI_FloatLogRange() { }
+
+        /// <summary>
+        /// Update the limits.
+        /// Call this instead of directly setting minValue/maxValue to properly adjust the slider.
+        /// </summary>
+        /// <param name="minValue"></param>
+        /// <param name="maxValue"></param>
+        public void UpdateLimits(float minValue, float maxValue)
+        {
+            this.minValue = minValue;
+            this.maxValue = maxValue;
+            var partActionFieldItem = ((UIPartActionFloatLogRange)this.partActionItem);
+            if (partActionFieldItem != null) partActionFieldItem.UpdateLimits();
+        }
     }
 
     [UI_FloatLogRange]
@@ -132,10 +146,7 @@ namespace BDArmory.Utils
         public override void Setup(UIPartActionWindow window, Part part, PartModule partModule, UI_Scene scene, UI_Control control, BaseField field)
         {
             base.Setup(window, part, partModule, scene, control, field);
-            slider.minValue = Mathf.Log10(logFloatRange.minValue);
-            slider.maxValue = Mathf.Log10(logFloatRange.maxValue);
-            sliderStepSize = (slider.maxValue - slider.minValue) / logFloatRange.steps;
-            logFloatRange.stepIncrement = sliderStepSize;
+            UpdateLimits();
             fieldName.text = field.guiName;
             fieldNameNumeric.text = field.guiName;
             float value = GetFieldValue();
@@ -193,7 +204,7 @@ namespace BDArmory.Utils
         {
             if (float.TryParse(str, out float value))
             {
-                // value = UpdateSlider(value); // Don't round the value when in numeric mode.
+                value = Mathf.Clamp(value, logFloatRange.minValue, logFloatRange.maxValue); // Clamp, but don't round the value when in numeric mode.
                 SetFieldValue(value);
                 UpdateDisplay(value);
             }
@@ -203,6 +214,22 @@ namespace BDArmory.Utils
             float value = GetFieldValue();
             if (value == lastDisplayedValue && numericSliders == Window.NumericSliders) return; // Do nothing if the value hasn't changed or the # hasn't been toggled.
             // fieldName.text = field.guiName; // Label doesn't update.
+            UpdateDisplay(value);
+        }
+
+        /// <summary>
+        /// Update the limits of the slider.
+        /// Call this whenever the min/max values of the underlying field are changed.
+        /// </summary>
+        public void UpdateLimits()
+        {
+            var value = GetFieldValue(); // Store the current value so it doesn't get clamped.
+            blockSliderUpdate = true; // Block the slider from updating while we reset the value.
+            slider.minValue = Mathf.Log10(logFloatRange.minValue);
+            slider.maxValue = Mathf.Log10(logFloatRange.maxValue);
+            sliderStepSize = (slider.maxValue - slider.minValue) / logFloatRange.steps;
+            logFloatRange.stepIncrement = sliderStepSize;
+            SetFieldValue(value); // Restore the unclamped value.
             UpdateDisplay(value);
         }
     }
@@ -268,6 +295,22 @@ namespace BDArmory.Utils
         private const string UIControlName = "FloatSemiLogRange";
         public int sigFig = 2; // 2 sig.fig. gives: ..., 9.8, 9.9, 10, 11, 12, ...
         public UI_FloatSemiLogRange() { }
+
+        /// <summary>
+        /// Update the limits.
+        /// Call this instead of directly setting min/max value or sigFig to properly update the slider.
+        /// </summary>
+        /// <param name="minValue"></param>
+        /// <param name="maxValue"></param>
+        /// <param name="sigFig"></param>
+        public void UpdateLimits(float minValue, float maxValue, int sigFig = 0)
+        {
+            this.minValue = minValue;
+            this.maxValue = maxValue;
+            if (sigFig > 0) this.sigFig = sigFig;
+            var partActionFieldItem = ((UIPartActionFloatSemiLogRange)this.partActionItem);
+            if (partActionFieldItem != null) partActionFieldItem.UpdateLimits();
+        }
     }
 
     [UI_FloatSemiLogRange]
@@ -282,6 +325,7 @@ namespace BDArmory.Utils
         private float maxStepSize;
         private bool blockSliderUpdate;
         private bool numericSliders = false;
+        private string fieldFormatString = "G3";
         public GameObject numericContainer;
         public TextMeshProUGUI fieldNameNumeric;
         public TMP_InputField inputField;
@@ -379,17 +423,10 @@ namespace BDArmory.Utils
         public override void Setup(UIPartActionWindow window, Part part, PartModule partModule, UI_Scene scene, UI_Control control, BaseField field)
         {
             base.Setup(window, part, partModule, scene, control, field);
-            var minStepSizePower = Mathf.Floor(Mathf.Log10(semiLogFloatRange.minValue));
-            var maxStepSizePower = Mathf.Floor(Mathf.Log10(semiLogFloatRange.maxValue));
-            minStepSize = Mathf.Pow(10, minStepSizePower);
-            maxStepSize = Mathf.Pow(10, maxStepSizePower);
-            sliderStepSize = Mathf.Pow(10, 1 - semiLogFloatRange.sigFig);
-            slider.minValue = BDAMath.RoundToUnit(semiLogFloatRange.minValue / minStepSize, sliderStepSize);
-            slider.maxValue = BDAMath.RoundToUnit(9f * (maxStepSizePower - minStepSizePower) + semiLogFloatRange.maxValue / maxStepSize, sliderStepSize);
-            // Debug.Log($"DEBUG min: {semiLogFloatRange.minValue}, max: {semiLogFloatRange.maxValue}, smin: {slider.minValue}, smax: {slider.maxValue}, min step: {minStepSize}, max step: {maxStepSize}");
-            semiLogFloatRange.stepIncrement = sliderStepSize;
+            UpdateLimits();
             fieldName.text = field.guiName;
             fieldNameNumeric.text = field.guiName;
+            fieldFormatString = $"G{semiLogFloatRange.sigFig + 2}"; // Show at most 2 digits beyond the requested sig. fig.
             float value = GetFieldValue();
             value = UpdateSlider(value);
             SetFieldValue(value);
@@ -425,7 +462,7 @@ namespace BDArmory.Utils
             }
             blockSliderUpdate = true;
             lastDisplayedValue = value;
-            fieldValue.text = value.ToString("G3");
+            fieldValue.text = value.ToString(fieldFormatString);
             if (numericSliders)
             { inputField.text = fieldValue.text; }
             else
@@ -448,7 +485,7 @@ namespace BDArmory.Utils
         {
             if (float.TryParse(str, out float value))
             {
-                // value = UpdateSlider(value); // Don't round the value when in numeric mode.
+                value = Mathf.Clamp(value, semiLogFloatRange.minValue, semiLogFloatRange.maxValue); // Clamp, but don't round the value when in numeric mode.
                 SetFieldValue(value);
                 UpdateDisplay(value);
             }
@@ -458,6 +495,22 @@ namespace BDArmory.Utils
             float value = GetFieldValue();
             if (value == lastDisplayedValue && numericSliders == Window.NumericSliders) return; // Do nothing if the value hasn't changed or the # hasn't been toggled.
             // fieldName.text = field.guiName; // Label doesn't update.
+            UpdateDisplay(value);
+        }
+
+        public void UpdateLimits()
+        {
+            var value = GetFieldValue(); // Store the current value so it doesn't get clamped.
+            var minStepSizePower = Mathf.Floor(Mathf.Log10(semiLogFloatRange.minValue));
+            var maxStepSizePower = Mathf.Floor(Mathf.Log10(semiLogFloatRange.maxValue));
+            minStepSize = Mathf.Pow(10, minStepSizePower);
+            maxStepSize = Mathf.Pow(10, maxStepSizePower);
+            blockSliderUpdate = true; // Block the slider from updating while we adjust things (unblocks in UpdateDisplay).
+            sliderStepSize = Mathf.Pow(10, 1 - semiLogFloatRange.sigFig);
+            slider.minValue = BDAMath.RoundToUnit(semiLogFloatRange.minValue / minStepSize, sliderStepSize);
+            slider.maxValue = BDAMath.RoundToUnit(9f * (maxStepSizePower - minStepSizePower) + semiLogFloatRange.maxValue / maxStepSize, sliderStepSize);
+            semiLogFloatRange.stepIncrement = sliderStepSize;
+            SetFieldValue(value); // Restore the unclamped value.
             UpdateDisplay(value);
         }
     }

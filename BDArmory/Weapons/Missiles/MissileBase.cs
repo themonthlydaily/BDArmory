@@ -53,6 +53,11 @@ namespace BDArmory.Weapons.Missiles
 
         public string missileName { get; set; } = "";
 
+        [KSPField(isPersistant = false, guiActive = true, guiName = "Launched from"), UI_Label(scene = UI_Scene.Flight)]
+        public string SourceVesselName;
+        [KSPField(isPersistant = false, guiActive = true, guiName = "Launched at"), UI_Label(scene = UI_Scene.Flight)]
+        public string TargetVesselName;
+
         [KSPField]
         public string missileType = "missile";
 
@@ -266,7 +271,16 @@ namespace BDArmory.Weapons.Missiles
 
         public bool ActiveRadar { get; set; }
 
-        public Vessel SourceVessel { get; set; } = null;
+        public Vessel SourceVessel
+        {
+            get { return _sourceVessel; }
+            set
+            {
+                _sourceVessel = value;
+                SourceVesselName = SourceVessel != null ? SourceVessel.vesselName : "";
+            }
+        }
+        Vessel _sourceVessel = null;
 
         public bool HasExploded { get; set; } = false;
 
@@ -322,7 +336,17 @@ namespace BDArmory.Weapons.Missiles
 
         protected float lockFailTimer = -1;
 
-        public TargetInfo targetVessel;
+        public TargetInfo targetVessel
+        {
+            get { return _targetVessel; }
+            set
+            {
+                _targetVessel = value;
+                if (_targetVessel != null && _targetVessel.Vessel != null)
+                    TargetVesselName = _targetVessel.Vessel.vesselName;
+            }
+        }
+        TargetInfo _targetVessel;
 
         public Transform MissileReferenceTransform;
 
@@ -351,7 +375,8 @@ namespace BDArmory.Weapons.Missiles
         private int snapshotTicker;
         private int locksCount = 0;
         private float _radarFailTimer = 0;
-        private float maxRadarFailTime = 5;
+
+        [KSPField] public float radarTimeout = 5;
         private float lastRWRPing = 0;
         private bool radarLOALSearching = false;
         protected bool checkMiss = false;
@@ -734,7 +759,7 @@ namespace BDArmory.Weapons.Missiles
                         }
                         else
                         {
-                            if (_radarFailTimer > maxRadarFailTime)
+                            if (_radarFailTimer > radarTimeout)
                             {
                                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileBase]: Semi-Active Radar guidance failed. Parent radar lost target.");
                                 radarTarget = TargetSignatureData.noTarget;
@@ -774,7 +799,6 @@ namespace BDArmory.Weapons.Missiles
                 {
                     // active radar with target locked:
                     vrd = null;
-
                     if (angleToTarget > maxOffBoresight)
                     {
                         if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileBase]: Active Radar guidance failed.  Target is out of active seeker gimbal limits.");
@@ -880,13 +904,14 @@ namespace BDArmory.Weapons.Missiles
                             radarTarget = TargetSignatureData.noTarget;
                             targetVessel = null;
                             radarLOALSearching = false;
+                            radarLOAL = false;
                             TargetAcquired = false;
                             ActiveRadar = false;
                         }
                     }
                 }
             }
-            else if (radarLOAL && radarLOALSearching)
+            else if (radarLOAL && radarLOALSearching) //add a check for missing radar, so LOAL missisle that have been dumbfired can stil lactivate?
             {
                 // not locked on before launch, trying lock-on after launch:
 
@@ -908,18 +933,19 @@ namespace BDArmory.Weapons.Missiles
                 //RadarUtils.UpdateRadarLock(ray, lockedSensorFOV * 3, activeRadarMinThresh * 2, ref scannedTargets, 0.4f, pingRWR, RadarWarningReceiver.RWRThreatTypes.MissileLock, radarSnapshot);
                 RadarUtils.RadarUpdateMissileLock(ray, lockedSensorFOV * 3, ref scannedTargets, 0.4f, this);
 
-                float sqrThresh = 90000f; // 300 * 300;
+                float sqrThresh = targetVessel != null ? 1000000 : 90000f; // 1000 * 1000 : 300 * 300; Expand threshold if no target to search for, grab first available target
 
-                float smallestAngle = 360;
+                float smallestAngle = maxOffBoresight;
                 TargetSignatureData lockedTarget = TargetSignatureData.noTarget;
-
+                Vector3 soughtTarget = radarTarget.exists ? radarTarget.predictedPosition : targetVessel != null ? targetVessel.Vessel.CoM : transform.position + (startDirection);
                 for (int i = 0; i < scannedTargets.Length; i++)
                 {
-                    if (scannedTargets[i].exists && (scannedTargets[i].predictedPosition - radarTarget.predictedPosition).sqrMagnitude < sqrThresh)
+                    if (scannedTargets[i].exists && (scannedTargets[i].predictedPosition - soughtTarget).sqrMagnitude < sqrThresh)
                     {
                         //re-check engagement envelope, only lock appropriate targets
                         if (CheckTargetEngagementEnvelope(scannedTargets[i].targetInfo))
                         {
+                            if (scannedTargets[i].targetInfo.Team == Team) continue;//Don't lock friendlies
                             float angle = Vector3.Angle(scannedTargets[i].predictedPosition - transform.position, GetForwardTransform());
                             if (angle < smallestAngle)
                             {
@@ -928,7 +954,7 @@ namespace BDArmory.Weapons.Missiles
                             }
 
                             ActiveRadar = true;
-                            return;
+                            //return;
                         }
                     }
                 }
@@ -960,16 +986,18 @@ namespace BDArmory.Weapons.Missiles
                 }
                 else
                 {
+                    radarTarget = TargetSignatureData.noTarget;
                     TargetAcquired = true;
                     TargetPosition = transform.position + (startDirection * 500);
                     TargetVelocity = Vector3.zero;
                     TargetAcceleration = Vector3.zero;
                     radarLOALSearching = true;
                     _radarFailTimer += Time.fixedDeltaTime;
-                    if (_radarFailTimer > maxRadarFailTime)
+                    if (_radarFailTimer > radarTimeout)
                     {
                         if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileBase]: Active Radar guidance failed. LOAL could not lock a target.");
                         radarTarget = TargetSignatureData.noTarget;
+                        radarLOAL = false;
                         targetVessel = null;
                         radarLOALSearching = false;
                         TargetAcquired = false;
@@ -979,9 +1007,12 @@ namespace BDArmory.Weapons.Missiles
                 }
             }
 
-            if (!radarTarget.exists)
+            if (!radarTarget.exists && _radarFailTimer < radarTimeout)
             {
-                targetVessel = null;
+                if (radarLOAL)
+                    radarLOALSearching = true;
+                else
+                    targetVessel = null;
             }
         }
 
@@ -1151,7 +1182,7 @@ namespace BDArmory.Weapons.Missiles
                         if (!TargetAcquired) return;
                         //if (Vector3.Distance(futureMissilePosition, futureTargetPosition) < GetBlastRadius() * 10)
                         // Replaced old proximity check with proximity check based on either detonation distance or distance traveled per frame
-                        if ((futureMissilePosition - futureTargetPosition).sqrMagnitude < 100 * (relativeSpeed > DetonationDistance ? relativeSpeed*relativeSpeed : DetonationDistance*DetonationDistance))
+                        if ((futureMissilePosition - futureTargetPosition).sqrMagnitude < 100 * (relativeSpeed > DetonationDistance ? relativeSpeed * relativeSpeed : DetonationDistance * DetonationDistance))
                         {
                             //We are now close enough to start checking the detonation distance
                             DetonationDistanceState = DetonationDistanceStates.CheckingProximity;
@@ -1163,7 +1194,7 @@ namespace BDArmory.Weapons.Missiles
                             if (bdModularGuidance == null) return;
 
                             //if (Vector3.Distance(futureMissilePosition, futureTargetPosition) > this.DetonationDistance) return;
-                            if((futureMissilePosition - futureTargetPosition).sqrMagnitude > DetonationDistance * DetonationDistance) return;
+                            if ((futureMissilePosition - futureTargetPosition).sqrMagnitude > DetonationDistance * DetonationDistance) return;
 
                             DetonationDistanceState = DetonationDistanceStates.CheckingProximity;
                         }
@@ -1189,7 +1220,7 @@ namespace BDArmory.Weapons.Missiles
                                 }
                                 if (hitCount > 0)
                                 {
-                                    Array.Sort<RaycastHit>(proximityHits,0,hitCount, RaycastHitComparer.raycastHitComparer);
+                                    Array.Sort<RaycastHit>(proximityHits, 0, hitCount, RaycastHitComparer.raycastHitComparer);
 
                                     using (var hitsEnu = proximityHits.Take(hitCount).GetEnumerator())
                                     {
@@ -1225,10 +1256,11 @@ namespace BDArmory.Weapons.Missiles
                         else
                         {
                             float optimalDistance = (float)(Math.Max(DetonationDistance, relativeSpeed));
-                            var hitCount = Physics.OverlapSphereNonAlloc(warheadType == WarheadTypes.ContinuousRod? vessel.CoM -= VectorUtils.GetUpDirection(TargetPosition) * (GetBlastRadius() > 0 ? (DetonationDistance / 3) : 5) : vessel.CoM, optimalDistance, proximityHitColliders, layerMask);
+                            Vector3 targetPoint = (warheadType == WarheadTypes.ContinuousRod ? vessel.CoM - VectorUtils.GetUpDirection(TargetPosition) * (GetBlastRadius() > 0 ? (DetonationDistance / 3) : 5) : vessel.CoM);
+                            var hitCount = Physics.OverlapSphereNonAlloc(targetPoint, optimalDistance, proximityHitColliders, layerMask);
                             if (hitCount == proximityHitColliders.Length)
                             {
-                                proximityHitColliders = Physics.OverlapSphere(vessel.CoM, optimalDistance, layerMask);
+                                proximityHitColliders = Physics.OverlapSphere(targetPoint, optimalDistance, layerMask);
                                 hitCount = proximityHitColliders.Length;
                             }
                             using (var hitsEnu = proximityHitColliders.Take(hitCount).GetEnumerator())

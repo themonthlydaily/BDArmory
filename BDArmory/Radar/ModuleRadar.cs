@@ -306,10 +306,14 @@ namespace BDArmory.Radar
             radarEnabled = true;
 
             var mf = VesselModuleRegistry.GetMissileFire(vessel, true);
-            if (mf is not null && vesselRadarData is not null) vesselRadarData.weaponManager = mf;
+            if (mf != null && vesselRadarData != null) vesselRadarData.weaponManager = mf;
             UpdateToggleGuiName();
             vesselRadarData.AddRadar(this);
-            if (mf is not null && mf.guardMode) vesselRadarData.LinkAllRadars();
+            if (mf != null)
+            {
+                if (mf.guardMode) vesselRadarData.LinkAllRadars();
+                mf._radarsEnabled = true;
+            }
         }
 
         public void DisableRadar()
@@ -339,6 +343,25 @@ namespace BDArmory.Radar
                 {
                     BDATargetManager.ClearRadarReport(loadedvessels.Current, weaponManager); //reset radar contact status
                 }
+            var mf = VesselModuleRegistry.GetMissileFire(vessel, true);
+            if (mf != null)
+            {
+                if (mf.radars.Count > 1)
+                {
+                    using (List<ModuleRadar>.Enumerator rd = mf.radars.GetEnumerator())
+                        while (rd.MoveNext())
+                        {
+                            if (rd.Current == null) continue;
+                            mf._radarsEnabled = false;
+                            if (rd.Current != this && rd.Current.radarEnabled)
+                            {
+                                mf._radarsEnabled = true;
+                                break;
+                            }
+                        }
+                }
+                else mf._radarsEnabled = false;
+            }
         }
 
         void OnDestroy()

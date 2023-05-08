@@ -15,15 +15,15 @@ namespace BDArmory.Armor
         public bool moveChildParts = true;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorWidth"),//Armor Width
-            UI_FloatRange(minValue = 0.5f, maxValue = 16, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
+            UI_FloatSemiLogRange(minValue = 0.1f, maxValue = 16, scene = UI_Scene.Editor)]
         public float Width = 1;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_ArmorWidthR"),//Right Side Width
-            UI_FloatRange(minValue = 0.1f, maxValue = 8, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
+            UI_FloatSemiLogRange(minValue = 0.1f, maxValue = 8, scene = UI_Scene.Editor)]
         public float scaleneWidth = 1;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorLength"),//Armor Length
-            UI_FloatRange(minValue = 0.5f, maxValue = 16, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
+            UI_FloatSemiLogRange(minValue = 0.1f, maxValue = 16, scene = UI_Scene.Editor)]
         public float Length = 1;
 
         [KSPField]
@@ -36,9 +36,8 @@ namespace BDArmory.Armor
             scaleneTri = !scaleneTri;
 
             Fields["scaleneWidth"].guiActiveEditor = scaleneTri;
-            UI_FloatRange AWidth = (UI_FloatRange)Fields["Width"].uiControlEditor;
-            AWidth.maxValue = scaleneTri ? clamped ? maxScale / 2 : 50 : clamped ? maxScale : 100;
-            AWidth.minValue = scaleneTri ? 0.1f : 0.5f;
+            UI_FloatSemiLogRange AWidth = (UI_FloatSemiLogRange)Fields["Width"].uiControlEditor;
+            AWidth.UpdateLimits(clamped ? 0.1f : 0.01f, scaleneTri ? clamped ? maxScale / 2 : 50 : clamped ? maxScale : 100);
 
             if (scaleneTri)
             {
@@ -67,12 +66,12 @@ namespace BDArmory.Armor
         public void ToggleScaleClampHandler(bool applySym = true)
         {
             clamped = !clamped;
-            UI_FloatRange AWidth = (UI_FloatRange)Fields["Width"].uiControlEditor;
-            AWidth.maxValue = scaleneTri ? clamped ? maxScale / 2 : 50 : clamped ? maxScale : 100;
-            UI_FloatRange ALength = (UI_FloatRange)Fields["Length"].uiControlEditor;
-            ALength.maxValue = clamped ? maxScale : 100;
-            UI_FloatRange SWidth = (UI_FloatRange)Fields["scaleneWidth"].uiControlEditor;
-            SWidth.maxValue = clamped ? maxScale / 2 : 50;
+            UI_FloatSemiLogRange AWidth = (UI_FloatSemiLogRange)Fields["Width"].uiControlEditor;
+            AWidth.UpdateLimits(clamped ? 0.1f : 0.01f, scaleneTri ? clamped ? maxScale / 2 : 50 : clamped ? maxScale : 100);
+            UI_FloatSemiLogRange ALength = (UI_FloatSemiLogRange)Fields["Length"].uiControlEditor;
+            ALength.UpdateLimits(clamped ? 0.1f : 0.01f, clamped ? maxScale : 100);
+            UI_FloatSemiLogRange SWidth = (UI_FloatSemiLogRange)Fields["scaleneWidth"].uiControlEditor;
+            SWidth.UpdateLimits(clamped ? 0.1f : 0.01f, clamped ? maxScale / 2 : 50);
 
             if (!clamped)
             {
@@ -134,9 +133,9 @@ namespace BDArmory.Armor
             {
                 Events["ToggleTriTypeOption"].guiActiveEditor = true;
                 scaleneTransforms = part.FindModelTransforms(ScaleneTransformName);
-                UI_FloatRange SWidth = (UI_FloatRange)Fields["scaleneWidth"].uiControlEditor;
+                UI_FloatSemiLogRange SWidth = (UI_FloatSemiLogRange)Fields["scaleneWidth"].uiControlEditor;
                 SWidth.onFieldChanged = AdjustSWidth;
-                SWidth.maxValue = maxScale / 2;
+                SWidth.UpdateLimits(0.1f, maxScale / 2);
             }
             Fields["scaleneWidth"].guiActiveEditor = false;
             //figure out why the scalene tri toggle option is still visible in the flight scene
@@ -147,12 +146,12 @@ namespace BDArmory.Armor
                 GameEvents.onEditorShipModified.Add(OnEditorShipModifiedEvent);
             }
             UpdateThickness(true);
-            UI_FloatRange AWidth = (UI_FloatRange)Fields["Width"].uiControlEditor;
+            UI_FloatSemiLogRange AWidth = (UI_FloatSemiLogRange)Fields["Width"].uiControlEditor;
             AWidth.onFieldChanged = AdjustWidth;
-            AWidth.maxValue = maxScale;
-            UI_FloatRange ALength = (UI_FloatRange)Fields["Length"].uiControlEditor;
+            AWidth.UpdateLimits(0.1f, maxScale);
+            UI_FloatSemiLogRange ALength = (UI_FloatSemiLogRange)Fields["Length"].uiControlEditor;
             ALength.onFieldChanged = AdjustLength;
-            ALength.maxValue = maxScale;
+            ALength.UpdateLimits(0.1f, maxScale);
             armor = GetComponent<HitpointTracker>();
             UpdateScale(Width, Length, scaleneWidth, false);
             GUIUtils.RefreshAssociatedWindows(part);
@@ -178,15 +177,12 @@ namespace BDArmory.Armor
 
         private void OnDestroy()
         {
-            if (HighLogic.LoadedSceneIsEditor)
-            {
-                GameEvents.onEditorShipModified.Remove(OnEditorShipModifiedEvent);
-            }
+            GameEvents.onEditorShipModified.Remove(OnEditorShipModifiedEvent);
         }
 
         public void AdjustWidth(BaseField field, object obj)
         {
-            Width = Mathf.Clamp(Width, scaleneTri ? 0.1f : 0.5f, scaleneTri ? clamped ? maxScale / 2 : 50 : clamped ? maxScale : 100);
+            Width = Mathf.Clamp(Width, clamped ? 0.1f : 0.01f, scaleneTri ? clamped ? maxScale / 2 : 50 : clamped ? maxScale : 100);
             for (int i = 0; i < armorTransforms.Length; i++)
             {
                 armorTransforms[i].localScale = new Vector3(Width, Length, armorthickness);
@@ -209,7 +205,7 @@ namespace BDArmory.Armor
         }
         public void AdjustSWidth(BaseField field, object obj)
         {
-            scaleneWidth = Mathf.Clamp(scaleneWidth, 0.1f, clamped ? maxScale / 2 : 50);
+            scaleneWidth = Mathf.Clamp(scaleneWidth, clamped ? 0.1f : 0.01f, clamped ? maxScale / 2 : 50);
             for (int i = 0; i < scaleneTransforms.Length; i++)
             {
                 scaleneTransforms[i].localScale = new Vector3(scaleneWidth * 2, Length, armorthickness);
@@ -225,7 +221,7 @@ namespace BDArmory.Armor
         }
         public void AdjustLength(BaseField field, object obj)
         {
-            Length = Mathf.Clamp(Length, 0.5f, clamped ? maxScale : 100);
+            Length = Mathf.Clamp(Length, clamped ? 0.1f : 0.01f, clamped ? maxScale : 100);
             for (int i = 0; i < armorTransforms.Length; i++)
             {
                 armorTransforms[i].localScale = new Vector3(Width, Length, armorthickness);

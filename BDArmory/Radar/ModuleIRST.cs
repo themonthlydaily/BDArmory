@@ -56,6 +56,9 @@ namespace BDArmory.Radar
         public bool canScan = true;                 //irst has detection capabilities
 
         [KSPField]
+        public bool irstRanging = false;            //irst can get ranging info for target distance
+
+        [KSPField]
         public FloatCurve DetectionCurve = new FloatCurve();		//FloatCurve setting default ranging capabilities of the IRST
 
         [KSPField]

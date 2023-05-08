@@ -280,7 +280,7 @@ namespace BDArmory.Weapons.Missiles
 
         //ballistic options
         [KSPField]
-        public bool indirect = false;
+        public bool indirect = false; //unused
 
         [KSPField]
         public bool vacuumSteerable = true;
@@ -596,6 +596,10 @@ namespace BDArmory.Weapons.Missiles
                 {
                     clusterbomb = ((ClusterBomb)partModules.Current).submunitions.Count;
                 }
+                if (partModules.Current.moduleName == "MultiMissileLauncher" && weaponClass == WeaponClasses.Bomb)
+                {
+                    clusterbomb *= ((MultiMissileLauncher)partModules.Current).salvoSize;
+                }
                 if (partModules.Current.moduleName == "ModuleEMP")
                 {
                     warheadType = WarheadTypes.EMP;
@@ -681,10 +685,11 @@ namespace BDArmory.Weapons.Missiles
                 Fields["BallisticAngle"].guiActiveEditor = true;
             }
 
-            if (part.partInfo.title.Contains("Bomb"))
+            if (part.partInfo.title.Contains("Bomb") || weaponClass == WeaponClasses.SLW)
             {
                 Fields["dropTime"].guiActive = false;
                 Fields["dropTime"].guiActiveEditor = false;
+                if (torpedo) dropTime = 999;
             }
             else
             {
@@ -999,6 +1004,11 @@ namespace BDArmory.Weapons.Missiles
                 //TARGETING
                 startDirection = transform.forward;
 
+                if (maxAltitude == 0) // && GuidanceMode != GuidanceModes.Lofted)
+                {
+                    if (targetVessel != null) maxAltitude = (float)Math.Max(vessel.radarAltitude, targetVessel.Vessel.radarAltitude) + 1000;
+                    else maxAltitude = (float)vessel.radarAltitude + 2500;
+                }
                 SetLaserTargeting();
                 SetAntiRadTargeting();
 
@@ -1014,7 +1024,7 @@ namespace BDArmory.Weapons.Missiles
                 StartCoroutine(DecoupleRoutine());
 
                 vessel.vesselType = VesselType.Probe;
-
+                if (BDArmorySettings.DEBUG_MISSILES) vessel.vesselName = $"{SourceVessel}'s {GetShortName()}";
                 //setting ref transform for navball
                 GameObject refObject = new GameObject();
                 refObject.transform.rotation = Quaternion.LookRotation(-transform.up, transform.forward);
@@ -1117,13 +1127,6 @@ namespace BDArmory.Weapons.Missiles
 
             FloatingOriginCorrection();
 
-            if (weaponClass == WeaponClasses.SLW && FlightGlobals.getAltitudeAtPos(part.transform.position) > 0) //#710
-            {
-                float a = (float)FlightGlobals.getGeeForceAtPosition(part.transform.position).magnitude;
-                float d = FlightGlobals.getAltitudeAtPos(part.transform.position);
-                dropTime = ((float)Math.Sqrt(a * (a + (8 * d))) - a) / (2 * a) - (Time.fixedDeltaTime * 1.5f); //quadratic equation for accel to find time from known force and vel
-            }// adjusts droptime to delay the MissileRoutine IEnum so torps won't start boosting until splashdown 
-
             try // FIXME Remove this once the fix is sufficiently tested.
             {
                 debugString.Length = 0;
@@ -1168,7 +1171,7 @@ namespace BDArmory.Weapons.Missiles
                         {
                             if (vessel.altitude > 0)
                             {
-                                part.crashTolerance = waterImpactTolerance;
+                                part.crashTolerance = waterImpactTolerance; // + (float)vessel.horizontalSrfSpeed; ?
                             }
                             else
                             {
@@ -1692,6 +1695,13 @@ namespace BDArmory.Weapons.Missiles
         }
         IEnumerator BoostRoutine()
         {
+            if (weaponClass == WeaponClasses.SLW && FlightGlobals.getAltitudeAtPos(part.transform.position) > 0)
+            {
+                yield return new WaitUntilFixed(() => vessel == null || vessel.LandedOrSplashed);//don't start torpedo thrust until underwater
+                if (vessel == null || vessel.Landed) Detonate(); //dropping torpedoes over land is just going to turn them into heavy, expensive bombs...
+                dropTime = TimeIndex;
+            }
+
             StartBoost();
             var wait = new WaitForFixedUpdate();
             float boostStartTime = Time.time;
@@ -1794,7 +1804,7 @@ namespace BDArmory.Weapons.Missiles
 
             if (!(thrust > 0)) return;
             sfAudioSource.PlayOneShot(SoundUtils.GetAudioClip("BDArmory/Sounds/launch"));
-            RadarWarningReceiver.WarnMissileLaunch(transform.position, transform.forward);
+            RadarWarningReceiver.WarnMissileLaunch(transform.position, transform.forward, TargetingMode == TargetingModes.Radar);
         }
 
         void EndBoost()
@@ -2607,6 +2617,10 @@ namespace BDArmory.Weapons.Missiles
                 return TargetingModeTerminal != TargetingModes.None ? "GPS/Terminal" : "GPS";
             }
 
+            if (TargetingMode == TargetingModes.None)
+            {
+                return TargetingModeTerminal != TargetingModes.None ? "Inertial/Terminal" : "Unguided";
+            }
             // default:
             return "Unguided";
         }
@@ -2638,6 +2652,7 @@ namespace BDArmory.Weapons.Missiles
                     else
                         output.AppendLine($"- Lock/Track: {RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS} m^2 @ {activeRadarRange / 1000} km");
                     output.AppendLine($"- LOAL: {radarLOAL}");
+                    if (radarLOAL) output.AppendLine($"  - Max Radar Search Time: {radarTimeout}");
                 }
                 output.AppendLine($"Max Offborsight: {maxOffBoresight}");
                 output.AppendLine($"Locked FOV: {lockedSensorFOV}");
@@ -2666,6 +2681,37 @@ namespace BDArmory.Weapons.Missiles
                         else
                             output.AppendLine($"- Lock/Track: {RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS} m^2 @ {activeRadarRange / 1000} km");
                         output.AppendLine($"- LOAL: {radarLOAL}");
+                        if (radarLOAL) output.AppendLine($"  - Radar Search Time: {radarTimeout}");
+                        output.AppendLine($"Max Offborsight: {maxOffBoresight}");
+                        output.AppendLine($"Locked FOV: {lockedSensorFOV}");
+                    }
+
+                    if (TargetingModeTerminal == TargetingModes.Heat)
+                    {
+                        output.AppendLine($"Uncaged Lock: {uncagedLock}");
+                        output.AppendLine($"Min Heat threshold: {heatThreshold}");
+                        output.AppendLine($"Max Offborsight: {maxOffBoresight}");
+                        output.AppendLine($"Locked FOV: {lockedSensorFOV}");
+                    }
+                }
+            }
+
+            if (TargetingMode == TargetingModes.None)
+            {
+                output.AppendLine($"Terminal Maneuvering: {terminalManeuvering}");
+                if (terminalGuidanceType != "")
+                {
+                    output.AppendLine($"Terminal guidance: {terminalGuidanceType} @ distance: {terminalGuidanceDistance} m");
+
+                    if (TargetingModeTerminal == TargetingModes.Radar)
+                    {
+                        output.AppendLine($"Active Radar Range: {activeRadarRange} m");
+                        if (activeRadarLockTrackCurve.maxTime > 0)
+                            output.AppendLine($"- Lock/Track: {activeRadarLockTrackCurve.Evaluate(activeRadarLockTrackCurve.maxTime)} m^2 @ {activeRadarLockTrackCurve.maxTime} km");
+                        else
+                            output.AppendLine($"- Lock/Track: {RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS} m^2 @ {activeRadarRange / 1000} km");
+                        output.AppendLine($"- LOAL: {radarLOAL}");
+                        if (radarLOAL) output.AppendLine($"  - Radar Search Time: {radarTimeout}");
                         output.AppendLine($"Max Offborsight: {maxOffBoresight}");
                         output.AppendLine($"Locked FOV: {lockedSensorFOV}");
                     }

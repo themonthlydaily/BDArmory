@@ -1372,9 +1372,8 @@ namespace BDArmory.Radar
 
                     float vesselDistance = (loadedvessels.Current.transform.position - position).sqrMagnitude;
                     //BDATargetManager.ClearRadarReport(loadedvessels.Current, myWpnManager); //reset radar contact status
-
-                    if (vesselDistance < maxDistance * maxDistance && Vector3.Angle(vesselProjectedDirection, lookDirection) < fov / 2f && Vector3.Angle(loadedvessels.Current.transform.position - position, -myWpnManager.transform.forward) < myWpnManager.guardAngle / 2f)
-                    {
+                    if (vesselDistance < maxDistance * maxDistance && Vector3.Angle(vesselProjectedDirection, lookDirection) < fov / 2f) // && Vector3.Angle(loadedvessels.Current.transform.position - position, -myWpnManager.transform.forward) < myWpnManager.guardAngle / 2f) //WM facing direction? that s going to cause issues for any that aren't mounted pointing forward if guardAngle < 360; check combatSeat forward vector
+                        {
                         if (TerrainCheck(referenceTransform.position, loadedvessels.Current.transform.position))
                         {
                             continue; //blocked by terrain
@@ -1391,14 +1390,20 @@ namespace BDArmory.Radar
                                 if (missileBase != null)
                                 {
                                     if (missileBase.SourceVessel == myWpnManager.vessel) continue; // ignore missiles we've fired
-
+                                    if (BDArmorySettings.VARIABLE_MISSILE_VISIBILITY)
+                                    {
+                                        //thrusting missiles at full range, cruising missiles at 3/4ths range, coasting missiles at 1/3rd range?
+                                        //or have be hard cutoffs, e.g. 5km/4km/2.5km, etc?
+                                        float sightDistance = maxDistance * (missileBase.MissileState == MissileBase.MissileStates.Boost ? 1 : (missileBase.MissileState == MissileBase.MissileStates.Cruise ? 0.75f : 0.33f));
+                                        if (vesselDistance > sightDistance * sightDistance) continue; //missile outside of modified visibility range, disregard
+                                    }
                                     if (MissileIsThreat(missileBase, myWpnManager))
                                     {
                                         results.incomingMissiles.Add(new IncomingMissile
                                         {
                                             guidanceType = missileBase.TargetingMode,
                                             distance = Vector3.Distance(missileBase.part.transform.position, myWpnManager.part.transform.position),
-                                            time = AIUtils.ClosestTimeToCPA(missileBase.vessel, myWpnManager.vessel, 16f),
+                                            time = AIUtils.TimeToCPA(missileBase.vessel, myWpnManager.vessel, 16f),
                                             position = missileBase.transform.position,
                                             vessel = missileBase.vessel,
                                             weaponManager = missileBase.SourceVessel != null ? VesselModuleRegistry.GetModule<MissileFire>(missileBase.SourceVessel) : null,
@@ -1573,7 +1578,7 @@ namespace BDArmory.Radar
         }
 
         /// <summary>
-        /// Helper method: map a position onto the radar display (for non-onmi radars)
+        /// Helper method: map a position onto the radar display (for non-omni radars)
         /// </summary>
         public static Vector2 WorldToRadarRadial(Vector3 worldPosition, Transform referenceTransform, Rect radarRect, float maxDistance, float maxAngle)
         {
@@ -1586,6 +1591,7 @@ namespace BDArmory.Radar
             if (localPosition.x < 0) angle = -angle;
             float xPos = (radarRect.width / 2) + ((angle / maxAngle) * radarRect.width / 2);
             float yPos = radarRect.height;
+
             if (BDArmorySettings.LOGARITHMIC_RADAR_DISPLAY)
             {
                 scale = Mathf.Log(localPosition.magnitude + 1) / Mathf.Log(maxDistance + 1);
