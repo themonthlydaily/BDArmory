@@ -251,6 +251,7 @@ namespace BDArmory.VesselSpawning
                     vessel.Landed = false;
                     vessel.Splashed = false;
                     vessel.IgnoreGForces(240);
+                    vessel.IgnoreSpeed(240);
                     position += count * (startingAltitude - safeAlt) / 55f * up;
                     vessel.SetPosition(position);
                     vessel.SetWorldVelocity(Vector3d.zero);
@@ -320,6 +321,7 @@ namespace BDArmory.VesselSpawning
                     if (rotating)
                     {
                         vessel.IgnoreGForces(240);
+                        vessel.IgnoreSpeed(240);
                         var previousLowerBound = lowerBound;
                         vessel.SetRotation(rotation);
                         lowerBound = GetLowerBound(vessel);
@@ -394,6 +396,7 @@ namespace BDArmory.VesselSpawning
                 }
 
                 vessel.IgnoreGForces(240);
+                vessel.IgnoreSpeed(240);
                 vessel.SetPosition(position);
                 vessel.SetWorldVelocity(Vector3d.zero);
                 vessel.SetRotation(rotation); // Reset the rotation to prevent any angular momentum from messing with the orientation.
@@ -496,6 +499,7 @@ namespace BDArmory.VesselSpawning
                 var startTime = Time.time;
                 var stationaryStartTime = startTime;
                 vessel.IgnoreGForces(0);
+                vessel.IgnoreSpeed(0);
                 while (IsLowering(vessel) && Time.time - startTime < 10f && Time.time - stationaryStartTime <= 0.1f) // Damp movement for up to 10s.
                 {
                     // if ((float)vessel.verticalSpeed < -0.1f * BDArmorySettings.VESSEL_MOVER_MIN_LOWER_SPEED)
@@ -1300,7 +1304,6 @@ namespace BDArmory.VesselSpawning
                 if (!notThisFrame && focusKerbalNameField)
                 {
                     GUI.FocusControl("kerbalNameField");
-                    Debug.Log($"DEBUG Focus on kerbal name field");
                     focusKerbalNameField = false;
                 }
                 if (notThisFrame) notThisFrame = false;
