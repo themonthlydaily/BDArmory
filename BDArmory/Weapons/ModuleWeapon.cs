@@ -874,8 +874,11 @@ namespace BDArmory.Weapons
             craftPart.Dispose();
         }
 
-        [KSPField(isPersistant = true)]
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "APS Status")]//Barrage
         public bool isAPS = false;
+
+        [KSPField(isPersistant = true)]
+        public bool dualModeAPS = false;
 
         [KSPField]
         public string APSType = "missile"; //missile/ballistic/omni
@@ -1048,13 +1051,25 @@ namespace BDArmory.Weapons
             ParseWeaponType(weaponType);
 
             // extension for feature_engagementenvelope
+            if (dualModeAPS) isAPS = true;
             if (isAPS)
             {
-                HideEngageOptions();
-                Events["ShowUI"].active = false;
-                Events["HideUI"].active = false;
-                Events["Toggle"].active = false;
+                if (!dualModeAPS)
+                {
+                    HideEngageOptions();
+                    Events["ShowUI"].active = false;
+                    Events["HideUI"].active = false;
+                    Events["Toggle"].active = false;
+                    Fields["priority"].guiActive = false;
+                    Fields["priority"].guiActiveEditor = false;
+                }
                 ParseAPSType(APSType);
+                aiControlled = true;
+            }
+            else
+            {
+                Fields["isAPS"].guiActiveEditor = false;
+                Fields["isAPS"].guiActive = false;
             }
             InitializeEngagementRange(minSafeDistanceDistance, maxEffectiveDistance);
             if (string.IsNullOrEmpty(GetShortName()))
@@ -1074,7 +1089,15 @@ namespace BDArmory.Weapons
 
             if (eWeaponType != WeaponTypes.Laser || (eWeaponType == WeaponTypes.Laser && pulseLaser))
             {
-                baseRPM = float.Parse(ConfigNodeUtils.FindPartModuleConfigNodeValue(part.partInfo.partConfig, "ModuleWeapon", "roundsPerMinute"));
+                try
+                {
+                    baseRPM = float.Parse(ConfigNodeUtils.FindPartModuleConfigNodeValue(part.partInfo.partConfig, "ModuleWeapon", "roundsPerMinute"));
+                }
+                catch
+                {
+					baseRPM = 3000;
+                    Debug.LogError($"[BDArmory.ModuleWeapon] {shortName} missing roundsPerMinute field in .cfg! Fix your .cfg!");
+                }
             }
             else baseRPM = 3000;
 
@@ -1371,6 +1394,11 @@ namespace BDArmory.Weapons
                     }
                 }
                 baseDeviation = maxDeviation; //store original MD value
+
+                if (isAPS)
+                {
+                    EnableWeapon();
+                }
             }
             else if (HighLogic.LoadedSceneIsEditor)
             {
@@ -3159,6 +3187,16 @@ namespace BDArmory.Weapons
         HashSet<WeaponStates> disabledStates = new HashSet<WeaponStates> { WeaponStates.Disabled, WeaponStates.PoweringDown };
         public void DisableWeapon()
         {
+            if (dualModeAPS) isAPS = true;
+            if (isAPS)
+            {
+                if (ammoCount > 0 || !BDArmorySettings.INFINITE_AMMO)
+                {
+                    EnableWeapon();
+                    aiControlled = true;
+                    return;
+                }
+            }
             if (disabledStates.Contains(weaponState))
                 return;
 
@@ -3170,6 +3208,16 @@ namespace BDArmory.Weapons
         HashSet<WeaponStates> standbyStates = new HashSet<WeaponStates> { WeaponStates.Standby, WeaponStates.PoweringUp, WeaponStates.Locked };
         public void StandbyWeapon()
         {
+            if (dualModeAPS) isAPS = true;
+            if (isAPS)
+            {
+                if (ammoCount > 0 || !BDArmorySettings.INFINITE_AMMO)
+                {
+                    EnableWeapon();
+                    aiControlled = true;
+                    return;
+                }
+            }
             if (standbyStates.Contains(weaponState))
                 return;
             if (disabledStates.Contains(weaponState))
@@ -3920,7 +3968,6 @@ namespace BDArmory.Weapons
                             autoFire = false;
                         }
                     }
-
                 }
                 else
                 {
@@ -4742,7 +4789,7 @@ namespace BDArmory.Weapons
             }
         }
 
-        void TrackIncomingProjectile() //this is holding onto initial target for some reason, not properly nulling target somewhere it should be nulled
+        void TrackIncomingProjectile()
         {
             targetAcquired = false;
             slaved = false;
@@ -5793,6 +5840,12 @@ namespace BDArmory.Weapons
             if (crewserved)
             {
                 output.AppendLine($"Crew-served Weapon - Requires onboard Kerbal");
+            }
+            if (isAPS)
+            {
+				output.AppendLine($"Autonomous Point Defense Weapon");
+                output.AppendLine($" - Interception type: {APSType}");
+                if (dualModeAPS) output.AppendLine($" - Dual purpose; can be used offensively");
             }
             return output.ToString();
         }
