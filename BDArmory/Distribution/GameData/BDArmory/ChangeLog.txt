@@ -1,6 +1,18 @@
-﻿v1.6.1.0
+﻿IMPROVEMENTS / FIXES
+ - General:
+	- Fix EMP Hellfire texture URL.
+	- Adds variant texture for ground radars.
+ - Weapons:
+	- APS turrets now function when GuardMode is off to let them work on player-operated craft.
+	- Adds new 'dualModeAPS' field (default false) for APS turrets; if true, they can also be selected and used as standard weapons.
+	- ABL/GoalKeepers/Oerlikon are now configured as dual-mode anti-missile APS.
+	Missiles:
+		- Fix AI not selecting laser missiles.
+		- SARH missiles now properly follow whatever the active locked radar target is.
+
+  v1.6.1.0
 IMPROVEMENTS / FIXES
-- General:
+ - General:
 	- Fix TweakScale config for Typhoon engine.
 	- Reduce min size, scaling increment for procArmor panels.
 	- Internal refactor of vessel spawning/moving.
