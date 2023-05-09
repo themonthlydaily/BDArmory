@@ -1317,7 +1317,7 @@ namespace BDArmory.Weapons.Missiles
                                 debugGuidanceTarget = $"Flare {heatTarget.signalStrength}";
                         }
                         break;
-                    case TargetingModes.Radar:                        
+                    case TargetingModes.Radar:
                         UpdateRadarTarget();
                         if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES)
                         {

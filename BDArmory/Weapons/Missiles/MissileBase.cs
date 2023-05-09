@@ -53,6 +53,11 @@ namespace BDArmory.Weapons.Missiles
 
         public string missileName { get; set; } = "";
 
+        [KSPField(isPersistant = false, guiActive = true, guiName = "Launched from"), UI_Label(scene = UI_Scene.Flight)]
+        public string SourceVesselName;
+        [KSPField(isPersistant = false, guiActive = true, guiName = "Launched at"), UI_Label(scene = UI_Scene.Flight)]
+        public string TargetVesselName;
+
         [KSPField]
         public string missileType = "missile";
 
@@ -266,7 +271,16 @@ namespace BDArmory.Weapons.Missiles
 
         public bool ActiveRadar { get; set; }
 
-        public Vessel SourceVessel { get; set; } = null;
+        public Vessel SourceVessel
+        {
+            get { return _sourceVessel; }
+            set
+            {
+                _sourceVessel = value;
+                SourceVesselName = SourceVessel != null ? SourceVessel.vesselName : "";
+            }
+        }
+        Vessel _sourceVessel = null;
 
         public bool HasExploded { get; set; } = false;
 
@@ -322,7 +336,17 @@ namespace BDArmory.Weapons.Missiles
 
         protected float lockFailTimer = -1;
 
-        public TargetInfo targetVessel;
+        public TargetInfo targetVessel
+        {
+            get { return _targetVessel; }
+            set
+            {
+                _targetVessel = value;
+                if (_targetVessel != null && _targetVessel.Vessel != null)
+                    TargetVesselName = _targetVessel.Vessel.vesselName;
+            }
+        }
+        TargetInfo _targetVessel;
 
         public Transform MissileReferenceTransform;
 
@@ -914,7 +938,7 @@ namespace BDArmory.Weapons.Missiles
 
                 float smallestAngle = maxOffBoresight;
                 TargetSignatureData lockedTarget = TargetSignatureData.noTarget;
-                Vector3 soughtTarget = radarTarget.exists? radarTarget.predictedPosition : targetVessel != null ? targetVessel.Vessel.CoM : transform.position + (startDirection);
+                Vector3 soughtTarget = radarTarget.exists ? radarTarget.predictedPosition : targetVessel != null ? targetVessel.Vessel.CoM : transform.position + (startDirection);
                 for (int i = 0; i < scannedTargets.Length; i++)
                 {
                     if (scannedTargets[i].exists && (scannedTargets[i].predictedPosition - soughtTarget).sqrMagnitude < sqrThresh)
@@ -1160,7 +1184,7 @@ namespace BDArmory.Weapons.Missiles
                         if (!TargetAcquired) return;
                         //if (Vector3.Distance(futureMissilePosition, futureTargetPosition) < GetBlastRadius() * 10)
                         // Replaced old proximity check with proximity check based on either detonation distance or distance traveled per frame
-                        if ((futureMissilePosition - futureTargetPosition).sqrMagnitude < 100 * (relativeSpeed > DetonationDistance ? relativeSpeed*relativeSpeed : DetonationDistance*DetonationDistance))
+                        if ((futureMissilePosition - futureTargetPosition).sqrMagnitude < 100 * (relativeSpeed > DetonationDistance ? relativeSpeed * relativeSpeed : DetonationDistance * DetonationDistance))
                         {
                             //We are now close enough to start checking the detonation distance
                             DetonationDistanceState = DetonationDistanceStates.CheckingProximity;
@@ -1172,7 +1196,7 @@ namespace BDArmory.Weapons.Missiles
                             if (bdModularGuidance == null) return;
 
                             //if (Vector3.Distance(futureMissilePosition, futureTargetPosition) > this.DetonationDistance) return;
-                            if((futureMissilePosition - futureTargetPosition).sqrMagnitude > DetonationDistance * DetonationDistance) return;
+                            if ((futureMissilePosition - futureTargetPosition).sqrMagnitude > DetonationDistance * DetonationDistance) return;
 
                             DetonationDistanceState = DetonationDistanceStates.CheckingProximity;
                         }
@@ -1198,7 +1222,7 @@ namespace BDArmory.Weapons.Missiles
                                 }
                                 if (hitCount > 0)
                                 {
-                                    Array.Sort<RaycastHit>(proximityHits,0,hitCount, RaycastHitComparer.raycastHitComparer);
+                                    Array.Sort<RaycastHit>(proximityHits, 0, hitCount, RaycastHitComparer.raycastHitComparer);
 
                                     using (var hitsEnu = proximityHits.Take(hitCount).GetEnumerator())
                                     {
