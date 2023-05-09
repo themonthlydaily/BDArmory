@@ -4627,7 +4627,6 @@ namespace BDArmory.Control
                                 int candidateCluster = Bomb.clusterbomb;
                                 bool EMP = Bomb.warheadType == MissileBase.WarheadTypes.EMP;
                                 int candidatePriority = Mathf.RoundToInt(Bomb.priority);
-                                double srfSpeed = currentTarget.Vessel.horizontalSrfSpeed;
 
                                 if (EMP && target.isDebilitated) continue;
                                 if (targetWeapon != null && targetWeaponPriority > candidatePriority)
@@ -4637,7 +4636,7 @@ namespace BDArmory.Control
                                 bool candidateUnguided = false;
                                 if (!vessel.LandedOrSplashed)
                                 {
-                                    if (Bomb.GuidanceMode != MissileBase.GuidanceModes.AGMBallistic) //If you're targeting a massive flying sky ruiser or zeppelin, and you have *nothing else*...
+                                    if (Bomb.GuidanceMode != MissileBase.GuidanceModes.AGMBallistic) //If you're targeting a massive flying sky cruiser or zeppelin, and you have *nothing else*...
                                     {
                                         candidateYield /= (candidateCluster * 2); //clusterbombs are altitude fuzed, not proximity
                                         if (targetWeaponPriority < candidatePriority) //use priority bomb
@@ -4733,7 +4732,7 @@ namespace BDArmory.Control
                             {
                                 candidateRPM *= .01f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
                             }
-                            if (Rocket.dualModeAPS) candidateRPM /= 4; //dinincentivise selecting dual mode APS turrets if something else is available to maintain Point Defense umbrella
+                            if (Rocket.dualModeAPS) candidateRPM /= 4; //disincentivise selecting dual mode APS turrets if something else is available to maintain Point Defense umbrella
                             candidateRPM /= 2; //halve rocket RPm to de-weight it against guns/lasers
 
                             if (targetWeaponPriority < candidatePriority) //use priority gun
@@ -4829,7 +4828,7 @@ namespace BDArmory.Control
                                     candidateRPM *= .01f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
                                 }
                             }
-                            if (Gun.dualModeAPS) candidateRPM /= 4; //dinincentivise selecting dual mode APS turrets if something else is available to maintain Point Defense umbrella
+                            if (Gun.dualModeAPS) candidateRPM /= 4; //disincentivise selecting dual mode APS turrets if something else is available to maintain Point Defense umbrella
 
                             if ((targetWeapon != null) && (targetWeapon.GetWeaponClass() == WeaponClasses.Missile) && (targetWeaponTDPS > 0))
                                 continue; //dont replace missiles within their engage range
@@ -4887,7 +4886,7 @@ namespace BDArmory.Control
                             {
                                 candidateRPM *= .00001f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
                             }
-                            if (Laser.dualModeAPS) candidateRPM /= 4; //dinincentivise selecting dual mode APS turrets if something else is available to maintain Point Defense umbrella
+                            if (Laser.dualModeAPS) candidateRPM /= 4; //disincentivise selecting dual mode APS turrets if something else is available to maintain Point Defense umbrella
 
                             if (targetWeaponPriority < candidatePriority) //use priority gun
                             {
@@ -5059,7 +5058,7 @@ namespace BDArmory.Control
                             {
                                 candidateRPM *= .00001f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
                             }
-                            if (Laser.dualModeAPS) candidateRPM /= 4; //dinincentivise selecting dual mode APS turrets if something else is available to maintain Point Defense umbrella
+                            if (Laser.dualModeAPS) candidateRPM /= 4; //disincentivise selecting dual mode APS turrets if something else is available to maintain Point Defense umbrella
 
                             if (targetWeaponPriority < candidatePriority) //use priority gun
                             {
@@ -5120,7 +5119,7 @@ namespace BDArmory.Control
                             {
                                 candidateRPM *= .01f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
                             }
-                            if (Gun.dualModeAPS) candidateRPM /= 4; //dinincentivise selecting dual mode APS turrets if something else is available to maintain Point Defense umbrella
+                            if (Gun.dualModeAPS) candidateRPM /= 4; //disincentivise selecting dual mode APS turrets if something else is available to maintain Point Defense umbrella
 
                             if (targetWeaponPriority < candidatePriority) //use priority gun
                             {
@@ -5551,7 +5550,7 @@ namespace BDArmory.Control
                                 {
                                     candidateRPM *= .00001f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
                                 }
-                                if (Laser.dualModeAPS) candidateRPM /= 4; //dinincentivise selecting dual mode APS turrets if something else is available to maintain Point Defense umbrella
+                                if (Laser.dualModeAPS) candidateRPM /= 4; //disincentivise selecting dual mode APS turrets if something else is available to maintain Point Defense umbrella
 
                                 if (targetWeaponPriority < candidatePriority) //use priority gun
                                 {

@@ -874,7 +874,7 @@ namespace BDArmory.Weapons
             craftPart.Dispose();
         }
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "APS Status")]//Barrage
+        [KSPField(isPersistant = true)]
         public bool isAPS = false;
 
         [KSPField(isPersistant = true)]
@@ -1065,11 +1065,6 @@ namespace BDArmory.Weapons
                 }
                 ParseAPSType(APSType);
                 aiControlled = true;
-            }
-            else
-            {
-                Fields["isAPS"].guiActiveEditor = false;
-                Fields["isAPS"].guiActive = false;
             }
             InitializeEngagementRange(minSafeDistanceDistance, maxEffectiveDistance);
             if (string.IsNullOrEmpty(GetShortName()))
