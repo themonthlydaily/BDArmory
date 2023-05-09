@@ -2877,7 +2877,7 @@ namespace BDArmory.Control
                     {
                         MissileLauncher cm = missile as MissileLauncher;
                         float thrust = cm == null ? 30 : cm.thrust;
-                        float timeToImpact = AIUtils.ClosestTimeToCPA(guardTarget, vessel.CoM, vessel.Velocity(), (thrust / missile.part.mass) * missile.GetForwardTransform(), 16);
+                        float timeToImpact = AIUtils.TimeToCPA(guardTarget, vessel.CoM, vessel.Velocity(), (thrust / missile.part.mass) * missile.GetForwardTransform(), 16);
                         if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: Blast standoff dist: {ml.StandOffDistance}; time2Impact: {timeToImpact}");
                         if (ml.StandOffDistance > 0 && Vector3.Distance(transform.position + (vessel.Velocity() * timeToImpact), currentTarget.position + currentTarget.velocity) > ml.StandOffDistance) //if predicted craft position will be within blast radius when missile arrives, break off
                         {
@@ -6752,7 +6752,7 @@ namespace BDArmory.Control
             float closureTime = 3600f; // Default closure time of one hour
             if (threat) // If we weren't passed a null
             {
-                closureTime = vessel.ClosestTimeToCPA(threat, closureTime);
+                closureTime = vessel.TimeToCPA(threat, closureTime);
             }
             return closureTime;
         }
@@ -7113,8 +7113,6 @@ namespace BDArmory.Control
             Vector3 prevPos = ml.MissileReferenceTransform.position;
             Vector3 currPos = ml.MissileReferenceTransform.position;
             Vector3 closestPos = ml.MissileReferenceTransform.position;
-            float closestPosSqr = float.MaxValue;
-            //Vector3 simVelocity = vessel.rb_velocity;
             Vector3 simVelocity = vessel.Velocity(); //Issue #92
 
             MissileLauncher launcher = ml as MissileLauncher;

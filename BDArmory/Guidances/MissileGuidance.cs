@@ -156,7 +156,7 @@ namespace BDArmory.Guidances
             timeToImpact = (float)(1 / ((targetVelocity - currVel).magnitude / targetDistance));
 
             // Calculate time to CPA to determine target position
-            float timeToCPA = missileVessel.ClosestTimeToCPA(targetPosition, targetVelocity, targetAcceleration, 16f);
+            float timeToCPA = missileVessel.TimeToCPA(targetPosition, targetVelocity, targetAcceleration, 16f);
             timeToImpact = (timeToCPA < 16f) ? timeToCPA : timeToImpact;
             // Ease in velocity from 16s to 8s, ease in acceleration from 8s to 2s using the logistic function to give smooth adjustments to target point.
             float easeAccel = Mathf.Clamp01(1.1f / (1f + Mathf.Exp((timeToCPA - 5f))) - 0.05f);
@@ -172,7 +172,7 @@ namespace BDArmory.Guidances
             Vector3 RotVector = Vector3.Cross(relRange, relVelocity) / Vector3.Dot(relRange, relRange);
             Vector3 RefVector = missileVel.normalized;
             Vector3 normalAccel = -N * relVelocity.magnitude * Vector3.Cross(RefVector, RotVector);
-            timeToGo = missileVessel.ClosestTimeToCPA(targetPosition, targetVelocity, Vector3.zero, 120f);
+            timeToGo = missileVessel.TimeToCPA(targetPosition, targetVelocity, Vector3.zero, 120f);
             return missileVessel.CoM + missileVel * timeToGo + normalAccel * timeToGo * timeToGo;
         }
 
@@ -188,7 +188,7 @@ namespace BDArmory.Guidances
             Vector3 accelBias = Vector3.Cross(relRange.normalized, targetAcceleration);
             accelBias = Vector3.Cross(RefVector, accelBias);
             normalAccel -= 0.5f * N * accelBias;
-            timeToGo = missileVessel.ClosestTimeToCPA(targetPosition, targetVelocity, targetAcceleration, 120f);
+            timeToGo = missileVessel.TimeToCPA(targetPosition, targetVelocity, targetAcceleration, 120f);
             return missileVessel.CoM + missileVel * timeToGo + normalAccel * timeToGo * timeToGo;
         }
         public static float GetLOSRate(Vector3 targetPosition, Vector3 targetVelocity, Vessel missileVessel)
@@ -282,13 +282,13 @@ namespace BDArmory.Guidances
 
             Vector3 relPosition = targetPosition - missile.transform.position;
             Vector3 relAcceleration = targetVessel.acceleration - missile.MissileReferenceTransform.forward * accel;
-            leadTime = AIUtils.ClosestTimeToCPA(relPosition, deltaVel, relAcceleration, T); //missile accelerating, T is greater than our max look time of 8s
+            leadTime = AIUtils.TimeToCPA(relPosition, deltaVel, relAcceleration, T); //missile accelerating, T is greater than our max look time of 8s
             if (T < 8 && leadTime == T)//missile has reached max speed, and is now cruising; sim positions ahead based on T and run CPA from there
             {
                 relPosition = AIUtils.PredictPosition(targetPosition, targetVessel.Velocity(), targetVessel.acceleration, T) -
                     AIUtils.PredictPosition(missile.transform.position, vel, missile.MissileReferenceTransform.forward * accel, T);
                 relAcceleration = targetVessel.acceleration; // - missile.MissileReferenceTransform.forward * 0; assume missile is holding steady velocity at optimumAirspeed
-                leadTime = AIUtils.ClosestTimeToCPA(relPosition, DeltaOptvel, relAcceleration, 8-T) + T;
+                leadTime = AIUtils.TimeToCPA(relPosition, DeltaOptvel, relAcceleration, 8 - T) + T;
             }
 
             targetPosition = targetPosition + (targetVessel.Velocity() * leadTime);
@@ -333,7 +333,7 @@ namespace BDArmory.Guidances
                 leadTime = Mathf.Clamp(leadTime, 0f, 8f);
                 leadTimeError += leadTime;
                 leadPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, Vector3.zero, leadTime);
-            } while (Mathf.Abs(leadTimeError) > 1e-3f && ++count < 5);  // At most 5 iterations to converge. Also, 1e-2f may be sufficient.
+            } while (++count < 5 && Mathf.Abs(leadTimeError) > 1e-3f);  // At most 5 iterations to converge. Also, 1e-2f may be sufficient.
             return leadPosition;
         }
 
