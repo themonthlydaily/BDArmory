@@ -113,7 +113,7 @@ namespace BDArmory.Weapons.Missiles
                 if (isMultiLauncher)
                 {
                     missileLauncher.missileName = subMunitionName;
-                    missileLauncher.Events["Jettison"].guiActive = false;
+                    if(!permitJettison) missileLauncher.Events["Jettison"].guiActive = false;
                     if (OverrideDropSettings)
                     {
                         missileLauncher.Fields["dropTime"].guiActive = false;
