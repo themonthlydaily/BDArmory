@@ -4,6 +4,7 @@
 	- Adds variant texture for ground radars.
 - UI:
 	- Make the adjustable armor 'clamped' and 'triangle type' options persistent and initialised correctly in the PAW.
+	- Adjust formatting of some debug telemetry.
 - Weapons:
 	- APS turrets now function when GuardMode is off to let them work on player-operated craft.
 	- Adds new 'dualModeAPS' field (default false) for APS turrets; if true, they can also be selected and used as standard weapons.
@@ -11,6 +12,8 @@
 	- Missiles:
 		- Fix AI not selecting laser missiles.
 		- SARH missiles now properly follow whatever the active locked radar target is.
+- Competition:
+	- Add some checks for lacking an AI or an airborne AI being landed/splashed to the scoring for being considered as wrecked (MIA).
 
 v1.6.1.0
 IMPROVEMENTS / FIXES
