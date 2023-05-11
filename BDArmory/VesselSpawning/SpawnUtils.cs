@@ -204,6 +204,10 @@ namespace BDArmory.VesselSpawning
         public static void RestoreKAL(Vessel vessel, bool restore = true) => SpawnUtilsInstance.Instance.RestoreKAL(vessel, restore);
         #endregion
 
+        #region Post-Spawn
+        public static void OnVesselReady(Vessel vessel) => SpawnUtilsInstance.Instance.OnVesselReady(vessel);
+        #endregion
+
         #region Vessel Removal
         public static bool removingVessels => SpawnUtilsInstance.Instance.removeVesselsPending > 0;
         public static void RemoveVessel(Vessel vessel) => SpawnUtilsInstance.Instance.RemoveVessel(vessel);
@@ -295,6 +299,23 @@ namespace BDArmory.VesselSpawning
             HackActuatorsOnNewVessels(false);
             SpaceFrictionOnNewVessels(false);
         }
+
+
+        #region Post-Spawn
+        public void OnVesselReady(Vessel vessel) => StartCoroutine(OnVesselReadyCoroutine(vessel));
+        /// <summary>
+        /// Perform adjustments to spawned craft once they're loaded and unpacked.
+        /// </summary>
+        /// <param name="vessel"></param>
+        IEnumerator OnVesselReadyCoroutine(Vessel vessel)
+        {
+            var wait = new WaitForFixedUpdate();
+            while (vessel != null && (!vessel.loaded || vessel.packed)) yield return wait;
+            if (vessel == null) yield break;
+            // EVA Kerbals get their Assigned status reverted to Available for some reason. This fixes that.
+            foreach (var kerbal in VesselModuleRegistry.GetKerbalEVAs(vessel)) foreach (var crew in kerbal.part.protoModuleCrew) crew.rosterStatus = ProtoCrewMember.RosterStatus.Assigned;
+        }
+        #endregion
 
         #region Vessel Removal
         public int removeVesselsPending = 0;

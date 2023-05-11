@@ -88,6 +88,7 @@ namespace BDArmory.VesselSpawning
 
             var vessel = SpawnVessel(newData, out shipFacility, crewData);
             SpawnUtils.RestoreKAL(vessel, BDArmorySettings.RESTORE_KAL);
+            SpawnUtils.OnVesselReady(vessel);
             return vessel;
         }
 
@@ -238,6 +239,7 @@ namespace BDArmory.VesselSpawning
 
                         // Add them to the part
                         part.AddCrewmemberAt(crewMember, part.protoModuleCrew.Count);
+                        crewMember.rosterStatus = ProtoCrewMember.RosterStatus.Assigned;
                         if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselSpawner]: Adding {crewMember.name} to {part.name} on {vesselData.name}");
                     }
                 }

@@ -618,7 +618,6 @@ namespace BDArmory.VesselSpawning
             if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.VesselMover]: {craftFile} selected for spawning.");
 
             // Choose crew
-            KerbalNames.Clear();
             crewCapacity = GetCrewCapacity(craftFile, out vesselNameToSpawn);
             if (BDArmorySettings.VESSEL_MOVER_CHOOSE_CREW)
             { yield return ChooseCrew(); }
@@ -719,6 +718,7 @@ namespace BDArmory.VesselSpawning
         IEnumerator ChooseCrew()
         {
             messageState = Messages.ChoosingCrew;
+            KerbalNames.Clear();
             ShowCrewSelection(new Vector2(Screen.width / 2, Screen.height / 2));
             while (showCrewSelection)
             {
