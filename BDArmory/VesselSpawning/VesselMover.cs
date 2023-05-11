@@ -564,7 +564,7 @@ namespace BDArmory.VesselSpawning
         float SafeAltitude(Vessel vessel, float lowerBound = -1f, Vector3 offset = default) // Get the safe altitude range we can adjust by.
         {
             var altitude = RadarAltitude(vessel);
-            if (BDArmorySettings.VESSEL_MOVER_DONT_WORRY_ABOUT_COLLISIONS) return altitude;
+            if (BDArmorySettings.VESSEL_MOVER_DONT_WORRY_ABOUT_COLLISIONS && state == State.Moving) return altitude;
             var position = vessel.transform.position + offset;
             var up = (position - FlightGlobals.currentMainBody.transform.position).normalized;
             var radius = vessel.GetRadius(up, vessel.GetBounds());

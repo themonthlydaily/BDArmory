@@ -5,6 +5,8 @@
 - UI:
 	- Make the adjustable armor 'clamped' and 'triangle type' options persistent and initialised correctly in the PAW.
 	- Adjust formatting of some debug telemetry.
+- Vessel Mover:
+	- Don't apply "Don't Avoid Collisions" while lowering vessels.
 - Weapons:
 	- APS turrets now function when GuardMode is off to let them work on player-operated craft.
 	- Adds new 'dualModeAPS' field (default false) for APS turrets; if true, they can also be selected and used as standard weapons.
