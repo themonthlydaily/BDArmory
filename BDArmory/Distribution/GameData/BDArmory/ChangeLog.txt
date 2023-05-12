@@ -9,6 +9,8 @@
 	- Don't apply "Don't Avoid Collisions" while lowering vessels.
 - Vessel Spawning:
 	- Re-register EVA Kerbals in spawned vessels as active, since KSP de-registers this for some reason.
+	- Add a default text for the custom template name field.
+	- Automatically add the current custom template to the list if it's not already there when clicking 'save' without requiring clicking 'new' first. (I.e., don't require 'new'→'save' for the initial template.)
 - Weapons:
 	- APS turrets now function when GuardMode is off to let them work on player-operated craft.
 	- Adds new 'dualModeAPS' field (default false) for APS turrets; if true, they can also be selected and used as standard weapons.
