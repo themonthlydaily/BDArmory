@@ -3634,7 +3634,7 @@ namespace BDArmory.Control
             maxLiftAcceleration = Mathf.Clamp(maxLiftAcceleration, bodyGravity, maxAllowedGForce * bodyGravity); //limit it to whichever is smaller, what we can provide or what we can handle. Assume minimum of 1G to avoid extremely high turn radiuses.
 
             turnRadius = dynVelocityMagSqr / maxLiftAcceleration; //radius that we can turn in assuming constant velocity, assuming simple circular motion (this is a terrible assumption, the AI usually turns on afterboosters!)
-            if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Turn Radius: {turnRadius:G3}m (terrain threat range: {turnRadiusTwiddleFactorMax * turnRadius + (float)vessel.srfSpeed * controlSurfaceDeploymentTime:G5}m)");
+            if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Turn Radius: {turnRadius:G4}m (terrain threat range: {turnRadiusTwiddleFactorMax * turnRadius + (float)vessel.srfSpeed * controlSurfaceDeploymentTime:G5}m)");
         }
 
         void CheckFlatSpin()
