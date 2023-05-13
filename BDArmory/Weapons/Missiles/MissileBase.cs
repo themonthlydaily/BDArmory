@@ -249,7 +249,7 @@ namespace BDArmory.Weapons.Missiles
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_LoftVelComp"),//Loft Velocity Compensation (Horizontal)
          UI_FloatRange(minValue = -5.0f, maxValue = 5.0f, stepIncrement = 0.01f, scene = UI_Scene.Editor)]
-        public float LoftVelComp = -1.0f;
+        public float LoftVelComp = -0.5f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_LoftAltComp"), UI_FloatRange(minValue = -2000f, maxValue = 2000f, stepIncrement = 10f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Loft Altitude Compensation
         public float LoftAltComp = 0;
