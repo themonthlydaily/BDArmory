@@ -187,6 +187,71 @@ namespace BDArmory.Weapons.Missiles
                 Fields["SoftAscent"].guiActive = GuidanceMode == GuidanceModes.AGMBallistic;
                 Fields["SoftAscent"].guiActiveEditor = GuidanceMode == GuidanceModes.AGMBallistic;
             }
+
+            if (GuidanceMode != GuidanceModes.AAMLoft)
+            {
+                Fields["LoftMaxAltitude"].guiActive = false;
+                Fields["LoftMaxAltitude"].guiActiveEditor = false;
+                Fields["LoftRangeOverride"].guiActive = false;
+                Fields["LoftRangeOverride"].guiActiveEditor = false;
+                Fields["LoftAltitudeAdvMax"].guiActive = false;
+                Fields["LoftAltitudeAdvMax"].guiActiveEditor = false;
+                Fields["LoftMinAltitude"].guiActive = false;
+                Fields["LoftMinAltitude"].guiActiveEditor = false;
+                Fields["LoftAngle"].guiActive = false;
+                Fields["LoftAngle"].guiActiveEditor = false;
+                Fields["LoftTermAngle"].guiActive = false;
+                Fields["LoftTermAngle"].guiActiveEditor = false;
+                Fields["LoftRangeFac"].guiActive = false;
+                Fields["LoftRangeFac"].guiActiveEditor = false;
+                Fields["LoftVelComp"].guiActive = false;
+                Fields["LoftVelComp"].guiActiveEditor = false;
+                Fields["LoftAltComp"].guiActive = false;
+                Fields["LoftAltComp"].guiActiveEditor = false;
+                Fields["LoftTermRange"].guiActive = false;
+                Fields["LoftTermRange"].guiActiveEditor = false;
+            }
+            else
+            {
+                Fields["LoftMaxAltitude"].guiActive = true;
+                Fields["LoftMaxAltitude"].guiActiveEditor = true;
+                Fields["LoftRangeOverride"].guiActive = true;
+                Fields["LoftRangeOverride"].guiActiveEditor = true;
+                Fields["LoftAltitudeAdvMax"].guiActive = true;
+                Fields["LoftAltitudeAdvMax"].guiActiveEditor = true;
+                Fields["LoftMinAltitude"].guiActive = true;
+                Fields["LoftMinAltitude"].guiActiveEditor = true;
+                Fields["LoftTermRange"].guiActive = true;
+                Fields["LoftTermRange"].guiActiveEditor = true;
+
+                if (!GameSettings.ADVANCED_TWEAKABLES)
+                {
+                    Fields["LoftAngle"].guiActive = false;
+                    Fields["LoftAngle"].guiActiveEditor = false;
+                    Fields["LoftTermAngle"].guiActive = false;
+                    Fields["LoftTermAngle"].guiActiveEditor = false;
+                    Fields["LoftRangeFac"].guiActive = false;
+                    Fields["LoftRangeFac"].guiActiveEditor = false;
+                    Fields["LoftVelComp"].guiActive = false;
+                    Fields["LoftVelComp"].guiActiveEditor = false;
+                    Fields["LoftAltComp"].guiActive = false;
+                    Fields["LoftAltComp"].guiActiveEditor = false;
+                }
+                else
+                {
+                    Fields["LoftAngle"].guiActive = true;
+                    Fields["LoftAngle"].guiActiveEditor = true;
+                    Fields["LoftTermAngle"].guiActive = true;
+                    Fields["LoftTermAngle"].guiActiveEditor = true;
+                    Fields["LoftRangeFac"].guiActive = true;
+                    Fields["LoftRangeFac"].guiActiveEditor = true;
+                    Fields["LoftVelComp"].guiActive = true;
+                    Fields["LoftVelComp"].guiActiveEditor = true;
+                    Fields["LoftAltComp"].guiActive = true;
+                    Fields["LoftAltComp"].guiActiveEditor = true;
+                }
+            }
+
             GUIUtils.RefreshAssociatedWindows(part);
         }
 
