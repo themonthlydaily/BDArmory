@@ -147,6 +147,184 @@ namespace BDArmory.Guidances
             return targetPosition + (targetVelocity * leadTime);
         }
 
+        public static Vector3 GetAirToAirLoftTarget(Vector3 targetPosition, Vector3 targetVelocity,
+            Vector3 targetAcceleration, Vessel missileVessel, float targetAlt, float maxAltitude,
+            float rangeFactor, float altComp, float velComp, float loftAngle, float termAngle,
+            float termDist, ref int loftState, out float timeToImpact, out float targetDistance,
+            float minSpeed = 200)
+        {
+
+            Vector3 velDirection = missileVessel.Velocity().normalized;
+
+            targetDistance = Vector3.Distance(targetPosition, missileVessel.transform.position);
+
+            float currSpeed = Mathf.Max((float)missileVessel.srfSpeed, minSpeed);
+            Vector3 currVel = currSpeed * velDirection;
+
+            //Vector3 Rdir = (targetPosition - missileVessel.transform.position).normalized;
+            //float rDot = Vector3.Dot(targetVelocity - currVel, Rdir);
+
+            float leadTime = (float)(1 / ((targetVelocity - currVel).magnitude / targetDistance));
+            //float leadTime = (targetDistance / rDot);
+
+            timeToImpact = leadTime;
+            leadTime = Mathf.Clamp(leadTime, 0f, 8f);
+
+            // If loft is not terminal
+            if ((targetDistance > termDist) && (loftState < 3))
+            {
+                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: Lofting");
+
+                // Get up direction
+                Vector3 upDirection = VectorUtils.GetUpDirection(missileVessel.CoM);
+
+                // Use the gun aim-assist logic to determine ballistic angle (assuming no drag)
+                Vector3 bulletRelativePosition, bulletRelativeVelocity, bulletAcceleration, bulletRelativeAcceleration, targetPredictedPosition, bulletDropOffset, lastVelDirection, ballisticTarget, targetHorVel, targetCompVel;
+                
+                var firePosition = missileVessel.transform.position + (currSpeed * velDirection) * Time.fixedDeltaTime; // Bullets are initially placed up to 1 frame ahead (iTime). Not offsetting by part vel gives the correct initial placement.
+                bulletRelativePosition = targetPosition - firePosition;
+                float timeToCPA = timeToImpact; // Rough initial estimate.
+                targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, timeToCPA);
+
+                // Velocity Compensation Logic
+                float compMult = Mathf.Clamp(0.5f * (targetDistance - termDist) / termDist, 0f, 1f);
+                Vector3 velDirectionHor = (velDirection - upDirection * Vector3.Dot(velDirection, upDirection)).normalized;
+                targetHorVel = targetVelocity - upDirection * Vector3.Dot(targetVelocity, upDirection); // Get target horizontal velocity (relative to missile frame)
+                float targetAlVelMag = Vector3.Dot(targetHorVel, velDirectionHor); // Get magnitude of velocity aligned with the missile velocity vector (in the horizontal axis)
+                targetAlVelMag *= Mathf.Sign(velComp) * compMult;
+                targetAlVelMag = 0.5f * (targetAlVelMag + Mathf.Abs(targetAlVelMag)); // Set -ve velocity (I.E. towards the missile) to 0 if velComp is +ve, otherwise for -ve
+
+                //targetCompVel = targetVelocity + velComp * targetHorVel.magnitude* targetHorVel.normalized; // Old velComp logic
+                targetCompVel = targetVelocity + velComp * targetAlVelMag * velDirectionHor; // New velComp logic
+
+                var count = 0;
+                do
+                {
+                    lastVelDirection = velDirection;
+                    currVel = currSpeed * velDirection;
+                    firePosition = missileVessel.transform.position + (currSpeed * velDirection) * Time.fixedDeltaTime; // Bullets are initially placed up to 1 frame ahead (iTime).
+                    bulletAcceleration = FlightGlobals.getGeeForceAtPosition((firePosition + targetPredictedPosition) / 2f); // Drag is ignored.
+                    bulletRelativePosition = targetPosition - firePosition + compMult * altComp * upDirection; // Compensate for altitude
+                    bulletRelativeVelocity = targetVelocity - currVel;
+                    bulletRelativeAcceleration = targetAcceleration - bulletAcceleration;
+                    timeToCPA = AIUtils.TimeToCPA(bulletRelativePosition, bulletRelativeVelocity, bulletRelativeAcceleration, timeToImpact*3f);
+                    targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetCompVel, targetAcceleration, timeToCPA);
+                    bulletDropOffset = -0.5f * bulletAcceleration * timeToCPA * timeToCPA;
+                    ballisticTarget = targetPredictedPosition + bulletDropOffset;
+                    velDirection = (ballisticTarget - missileVessel.transform.position).normalized;
+                } while (++count < 10 && Vector3.Angle(lastVelDirection, velDirection) > 1f); // 1° margin of error is sufficient to prevent premature firing (usually)
+
+
+                // Determine horizontal and up components of velocity, calculate the elevation angle
+                float velUp = Vector3.Dot(velDirection, upDirection);
+                float velForwards = (velDirection - upDirection * velUp).magnitude;
+                float angle = Mathf.Atan2(velUp, velForwards);
+
+                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: Loft Angle: " + angle*Mathf.Rad2Deg);
+
+                // Check if termination angle agrees with termAngle
+                if ((angle > -termAngle*Mathf.Deg2Rad) && (loftState < 2))
+                {
+                    // If not yet at termination, simple lead compensation
+                    targetPosition += targetVelocity * leadTime + 0.5f * leadTime * leadTime * targetAcceleration;
+
+                    // Get planar direction to target
+                    Vector3 planarDirectionToTarget = //(velDirection - upDirection * Vector3.Dot(velDirection, upDirection)).normalized;
+                        Vector3.ProjectOnPlane(targetPosition - missileVessel.transform.position, upDirection).normalized;
+
+                    // Altitude clamp based on rangeFactor and maxAlt, cannot be lower than target
+                    float altitudeClamp = Mathf.Clamp(targetAlt + rangeFactor * Vector3.Dot(targetPosition - missileVessel.transform.position,planarDirectionToTarget), targetAlt, maxAltitude);
+
+                    // Old loft climb logic, wanted to limit turn. Didn't work well but leaving it in if I decide to fix it
+                    /*if (missileVessel.altitude < (altitudeClamp - 0.5f))
+                    //gain altitude if launching from stationary
+                    {*/
+                        //currSpeed = (float)missileVessel.Velocity().magnitude;
+
+                        // 5g turn, v^2/r = a, v^2/(dh*(tan(45°/2)sin(45°))) > 5g, v^2/(tan(45°/2)sin(45°)) > 5g * dh, I.E. start turning when you need to pull a 5g turn,
+                        // before that the required gs is lower, inversely proportional
+                        /*if (loftState == 1 || (currSpeed * currSpeed * 0.2928932188134524755991556378951509607151640623115259634116f) >= (5f * (float)PhysicsGlobals.GravitationalAcceleration) * (altitudeClamp - missileVessel.altitude))
+                        {*/
+                            /*
+                            loftState = 1;
+
+                            // Calculate upwards and forwards velocity components
+                            velUp = Vector3.Dot(missileVessel.Velocity(), upDirection);
+                            velForwards = (float)(missileVessel.Velocity() - upDirection * velUp).magnitude;
+
+                            // Derivation of relationship between dh and turn radius
+                            // tan(theta/2) = dh/L, sin(theta) = L/r
+                            // tan(theta/2) = sin(theta)/(1+cos(theta))
+                            float turnR = (float)(altitudeClamp - missileVessel.altitude) * (currSpeed * currSpeed + currSpeed * velForwards) / (velUp * velUp);
+
+                            float accel = Mathf.Clamp(currSpeed * currSpeed / turnR, 0, 5f * (float)PhysicsGlobals.GravitationalAcceleration);
+                            */
+
+                            // Limit climb angle by turnFactor, turnFactor goes negative when above target alt
+                            float turnFactor = (float)(altitudeClamp - missileVessel.altitude) / (4f * (float)missileVessel.srfSpeed);
+                            turnFactor = Mathf.Clamp(turnFactor, -1f, 1f);
+                            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: AAM Loft altitudeClamp: [" + altitudeClamp + "] COS: [" + Mathf.Cos(loftAngle * turnFactor * Mathf.Deg2Rad) + "], SIN: [" + Mathf.Sin(loftAngle * turnFactor * Mathf.Deg2Rad) + "], turnFactor: [" + turnFactor + "].");
+                            return missileVessel.transform.position + 0.5f * (float)missileVessel.srfSpeed * ((Mathf.Cos(loftAngle * turnFactor * Mathf.Deg2Rad) * planarDirectionToTarget) + (Mathf.Sin(loftAngle * turnFactor * Mathf.Deg2Rad) * upDirection));
+
+                            /*
+                            Vector3 newVel = (velForwards * planarDirectionToTarget + velUp * upDirection);
+                            //Vector3 accVec = Vector3.Cross(newVel, Vector3.Cross(upDirection, planarDirectionToTarget));
+                            Vector3 accVec = accel*(Vector3.Dot(newVel, planarDirectionToTarget) * upDirection - Vector3.Dot(newVel, upDirection) * planarDirectionToTarget).normalized;
+
+                            return missileVessel.transform.position + 1.5f * Time.fixedDeltaTime * newVel + 2.25f * Time.fixedDeltaTime * Time.fixedDeltaTime * accVec;
+                            */
+                        /*}
+                        return missileVessel.transform.position + 0.5f * (float)missileVessel.srfSpeed * ((Mathf.Cos(loftAngle * Mathf.Deg2Rad) * planarDirectionToTarget) + (Mathf.Sin(loftAngle * Mathf.Deg2Rad) * upDirection));
+                        */
+                    //}
+
+                    //Debug.Log("[BDArmory.MissileGuidance]: AGM altitudeClamp =" + altitudeClamp);
+                    //Vector3 finalTarget = missileVessel.transform.position + 0.5f * (float)missileVessel.srfSpeed * planarDirectionToTarget + ((altitudeClamp - (float)missileVessel.altitude) * upDirection.normalized);
+
+                    //return finalTarget;
+                }
+                else
+                {
+                    loftState = 2;
+
+                    // Tried to do some kind of pro-nav method. Didn't work well, leaving it just in case I want to fix it.
+                    /*
+                    Vector3 newVel = (float)missileVessel.srfSpeed * velDirection;
+                    Vector3 accVec = (newVel - missileVessel.Velocity());
+                    Vector3 unitVel = missileVessel.Velocity().normalized;
+                    accVec = accVec - unitVel * Vector3.Dot(unitVel, accVec);
+
+                    float accelTime = Mathf.Clamp(timeToImpact, 0f, 4f);
+
+                    accVec = accVec / accelTime;
+
+                    float accel = accVec.magnitude;
+
+                    if (accel > 20f * (float)PhysicsGlobals.GravitationalAcceleration)
+                    {
+                        accel = 20f * (float)PhysicsGlobals.GravitationalAcceleration / accel;
+                    }
+                    else
+                    {
+                        accel = 1f;
+                    }
+
+                    Debug.Log("[BDArmory.MissileGuidance]: Loft: Diving, accel = " + accel);
+                    return missileVessel.transform.position + 1.5f * Time.fixedDeltaTime * missileVessel.Velocity() + 2.25f * Time.fixedDeltaTime * Time.fixedDeltaTime * accVec * accel;
+                    */
+                    return 0.5f * (float)missileVessel.srfSpeed * velDirection;
+                }
+            }
+            else
+            {
+                // If terminal just go straight for target + lead
+                loftState = 3;
+                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: Terminal");
+                return targetPosition + targetVelocity * leadTime + 0.5f * leadTime * leadTime * targetAcceleration;
+                //return targetPosition + targetVelocity * leadTime;
+            }
+        }
+
         public static Vector3 GetAirToAirTargetModular(Vector3 targetPosition, Vector3 targetVelocity, Vector3 targetAcceleration, Vessel missileVessel, out float timeToImpact)
         {
             float targetDistance = Vector3.Distance(targetPosition, missileVessel.CoM);
