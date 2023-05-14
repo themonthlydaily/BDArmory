@@ -1,10 +1,12 @@
 ﻿IMPROVEMENTS / FIXES
 - General:
-	- Fix EMP Hellfire texture URL.
-	- Adds variant texture for ground radars.
+	- Add an action group option to the WM for toggling/setting the 'Free Pivot' setting of all Claw's on a craft.
+	- Tweaks so that asteroids have the proper HP in flight mode.
 - UI:
 	- Make the adjustable armor 'clamped' and 'triangle type' options persistent and initialised correctly in the PAW.
 	- Adjust formatting of some debug telemetry.
+	- Fix EMP Hellfire texture URL.
+	- Adds variant texture for ground radars.
 - Vessel Mover:
 	- Don't apply "Don't Avoid Collisions" while lowering vessels.
 - Vessel Spawning:
