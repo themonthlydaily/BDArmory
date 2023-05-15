@@ -765,14 +765,15 @@ namespace BDArmory.Weapons.Missiles
                     if (vrd)
                     {
                         TargetSignatureData t = TargetSignatureData.noTarget;
-                        List<TargetSignatureData> possibleTargets = vrd.GetLockedTargets();
-                        for (int i = 0; i < possibleTargets.Count; i++)
-                        {
-                            if (possibleTargets[i].vessel == radarTarget.vessel)
-                            {
-                                t = possibleTargets[i];
-                            }
-                        }
+                        //List<TargetSignatureData> possibleTargets = vrd.GetLockedTargets();
+                        //for (int i = 0; i < possibleTargets.Count; i++)
+                        //{
+                        //    if (possibleTargets[i].vessel == radarTarget.vessel) //this means SARh will remain locked to whatever was the initial target, regardless of current radar lock
+                        //    {
+                        //        t = possibleTargets[i];
+                        //    }
+                        //}
+                        if (vrd.locked) t = vrd.lockedTargetData.targetData; //SARH is passive, and guided towards whatever is currently painted by FCS radar
 
                         if (t.exists)
                         {
@@ -1028,7 +1029,6 @@ namespace BDArmory.Weapons.Missiles
                     if (_radarFailTimer > radarTimeout)
                     {
                         if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileBase]: Active Radar guidance failed. LOAL could not lock a target.");
-                        radarTarget = TargetSignatureData.noTarget;
                         radarLOAL = false;
                         targetVessel = null;
                         radarLOALSearching = false;
@@ -1041,7 +1041,9 @@ namespace BDArmory.Weapons.Missiles
 
             if (!radarTarget.exists && _radarFailTimer < radarTimeout)
             {
-                if (radarLOAL)
+                if (vrd)
+                    radarTarget = vrd.lockedTargetData.targetData;
+                else if (radarLOAL)
                     radarLOALSearching = true;
                 else
                     targetVessel = null;

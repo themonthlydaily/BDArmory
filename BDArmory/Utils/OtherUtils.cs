@@ -196,4 +196,6 @@ namespace BDArmory.Utils
         public bool MoveNext() => predicate();
         public virtual void Reset() { }
     }
+
+    public enum Toggle { On, Off, Toggle, NoChange }; // Turn something on, off, toggle it or leave it as it is.
 }
