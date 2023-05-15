@@ -1,6 +1,7 @@
 ﻿IMPROVEMENTS / FIXES
 - General:
-	- Add an action group option to the WM for toggling/setting the 'Free Pivot' setting of all Claw's on a craft.
+	- Add Toggle/Enable/Disable pivot action groups to the Claw variants.
+	- Add an action group option to give unlimited pivot range to the Claw variants.
 	- Tweaks so that asteroids have the proper HP in flight mode.
 - UI:
 	- Make the adjustable armor 'clamped' and 'triangle type' options persistent and initialised correctly in the PAW.
