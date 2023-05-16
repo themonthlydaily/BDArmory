@@ -187,6 +187,7 @@
     <Compile Include="Evolution\WeaponManagerMutation.cs" />
     <Compile Include="Evolution\WeaponManagerNudgeMutation.cs" />
     <Compile Include="Extensions\BodyExtensions.cs" />
+    <Compile Include="Extensions\ClawExtensions.cs" />
     <Compile Include="Extensions\CrewExtensions.cs" />
     <Compile Include="Extensions\PartExtensions.cs" />
     <Compile Include="Extensions\VesselExtensions.cs" />
