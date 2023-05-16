@@ -202,7 +202,7 @@ namespace BDArmory.Guidances
                 {
                     lastVelDirection = velDirection;
                     currVel = currSpeed * velDirection;
-                    firePosition = missileVessel.transform.position;// + (currSpeed * velDirection) * Time.fixedDeltaTime; // Bullets are initially placed up to 1 frame ahead (iTime).
+                    //firePosition = missileVessel.transform.position + (currSpeed * velDirection) * Time.fixedDeltaTime; // Bullets are initially placed up to 1 frame ahead (iTime).
                     bulletAcceleration = FlightGlobals.getGeeForceAtPosition((firePosition + targetPredictedPosition) / 2f); // Drag is ignored.
                     bulletRelativePosition = targetPosition - firePosition + compMult * altComp * upDirection; // Compensate for altitude
                     bulletRelativeVelocity = targetVelocity - currVel;
