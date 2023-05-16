@@ -1,5 +1,6 @@
 ﻿IMPROVEMENTS / FIXES
 - General:
+	- Fix TweakScale config for Typhoon engine (again).
 	- Add Toggle/Enable/Disable pivot action groups to the Claw variants.
 	- Add an action group option to give unlimited pivot range to the Claw variants.
 	- Tweaks so that asteroids have the proper HP in flight mode.
