@@ -1,10 +1,38 @@
-﻿- Weapons:
+IMPROVEMENTS / FIXES
+- Weapons:
 	- Missiles:
 		- Added new loft guidance logic under the homingType "aamloft". Enables longer ranged engagements at high altitude by enabling higher terminal speeds. Added various tuning parameters accessible in the hangar (as well as in part configs) to tweak performance as desired. A more thorough explanation of the guidance law and the tuning parameters is available on the Github wiki.
 
 v1.6.1.0
 IMPROVEMENTS / FIXES
 - General:
+	- Add an action group option to the WM for toggling/setting the 'Free Pivot' setting of all Claw's on a craft.
+	- Tweaks so that asteroids have the proper HP in flight mode.
+- UI:
+	- Make the adjustable armor 'clamped' and 'triangle type' options persistent and initialised correctly in the PAW.
+	- Adjust formatting of some debug telemetry.
+	- Fix EMP Hellfire texture URL.
+	- Adds variant texture for ground radars.
+- Vessel Mover:
+	- Don't apply "Don't Avoid Collisions" while lowering vessels.
+- Vessel Spawning:
+	- Re-register EVA Kerbals in spawned vessels as active, since KSP de-registers this for some reason.
+	- Add a default text for the custom template name field.
+	- Automatically add the current custom template to the list if it's not already there when clicking 'save' without requiring clicking 'new' first. (I.e., don't require 'new'→'save' for the initial template.)
+	- When using "Fill Seats" = "Cockpits or Combat Seat", include the first command seat if neither a cockpit nor combat seat are present.
+- Weapons:
+	- APS turrets now function when GuardMode is off to let them work on player-operated craft.
+	- Adds new 'dualModeAPS' field (default false) for APS turrets; if true, they can also be selected and used as standard weapons.
+	- ABL/GoalKeepers/Oerlikon are now configured as dual-mode anti-missile APS.
+	- Missiles:
+		- Fix AI not selecting laser missiles.
+		- SARH missiles now properly follow whatever the active locked radar target is.
+- Competition:
+	- Add some checks for lacking an AI or an airborne AI being landed/splashed to the scoring for being considered as wrecked (MIA).
+
+v1.6.1.0
+IMPROVEMENTS / FIXES
+ - General:
 	- Fix TweakScale config for Typhoon engine.
 	- Reduce min size, scaling increment for procArmor panels.
 	- Internal refactor of vessel spawning/moving.
