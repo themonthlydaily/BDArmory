@@ -212,7 +212,7 @@ namespace BDArmory.Guidances
                     bulletDropOffset = -0.5f * bulletAcceleration * timeToCPA * timeToCPA;
                     ballisticTarget = targetPredictedPosition + bulletDropOffset;
                     velDirection = (ballisticTarget - missileVessel.transform.position).normalized;
-                } while (++count < 5 && Vector3.Angle(lastVelDirection, velDirection) > 1f); // 1° margin of error is sufficient to prevent premature firing (usually)
+                } while (++count < 10 && Vector3.Angle(lastVelDirection, velDirection) > 1f); // 1° margin of error is sufficient to prevent premature firing (usually)
 
 
                 // Determine horizontal and up components of velocity, calculate the elevation angle
