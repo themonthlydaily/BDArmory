@@ -1516,7 +1516,7 @@ namespace BDArmory.Weapons.Missiles
 
                     finalMaxTorque = Mathf.Clamp((TimeIndex - dropTime) * torqueRampUp, 0, maxTorque); //ramp up torque
 
-                    if ((GuidanceMode == GuidanceModes.AAMLead) || (GuidanceMode == GuidanceModes.APN) || (GuidanceMode == GuidanceModes.PN) || (GuidanceMode == GuidanceModes.AAMLoft))
+                    if ((GuidanceMode == GuidanceModes.AAMLead) || (GuidanceMode == GuidanceModes.APN) || (GuidanceMode == GuidanceModes.PN) || (GuidanceMode == GuidanceModes.AAMLoft) || (GuidanceMode == GuidanceModes.AAMPure))
                     {
                         AAMGuidance();
                     }
@@ -2180,13 +2180,13 @@ namespace BDArmory.Weapons.Missiles
 
                     if (TimeToImpact == float.PositiveInfinity)
                     {
-                        if ((vessel.altitude >= LoftMinAltitude) && ((vessel.altitude - targetAlt <= LoftAltitudeAdvMax) || Vector3.Distance(TargetPosition, vessel.transform.position) > LoftRangeOverride)) loftState = 0;
+                        if ((vessel.altitude >= LoftMinAltitude) && ((vessel.altitude - targetAlt <= LoftAltitudeAdvMax) || (TargetPosition - vessel.transform.position).sqrMagnitude > (LoftRangeOverride * LoftRangeOverride))) loftState = 0;
                         else loftState = 3;
                     }
 
                     aamTarget = MissileGuidance.GetAirToAirLoftTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, targetAlt, LoftMaxAltitude, LoftRangeFac, LoftAltComp, LoftVelComp, LoftAngle, LoftTermAngle, LoftTermRange, ref loftState, out float currTimeToImpact, out float rangeToTarget, optimumAirspeed);
 
-                    float fac = (1 - (rangeToTarget-LoftTermRange) / Mathf.Clamp(LoftTermRange * 4f,5000f,15000f));
+                    float fac = (1 - (rangeToTarget-LoftTermRange) / Mathf.Clamp(LoftTermRange * 4f,5000f,25000f));
 
                     maxAoA = Mathf.Clamp(initMaxAoA * fac, 4f, initMaxAoA);
 
@@ -2205,9 +2205,14 @@ namespace BDArmory.Weapons.Missiles
                         loftTerminal = true;
                     }*/
 
-                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: AAM Loft TTGO: [" + TimeToImpact + "]. Currently State: " + loftState + ".");
+                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: AAM Loft TTGO: [{TimeToImpact:G3}]. Currently State: {loftState}. Fly to: [{aamTarget}]. Target Position: [{TargetPosition}]. Max AoA: [{maxAoA:G3}]");
                 }
-                else // AAM Lead
+                else if (GuidanceMode == GuidanceModes.AAMPure)
+                {
+                    TimeToImpact = Vector3.Distance(TargetPosition, transform.position) / Mathf.Max((float) vessel.srfSpeed, optimumAirspeed);
+                    aamTarget = TargetPosition;
+                }
+                else// AAM Lead
                     aamTarget = MissileGuidance.GetAirToAirTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, out timeToImpact, optimumAirspeed);
 
 
