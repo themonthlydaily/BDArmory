@@ -1,3 +1,4 @@
+IMPROVEMENTS / FIXES
 - Weapons:
 	- Missiles:
 		- Added new loft guidance logic under the homingType "aamloft". Enables longer ranged engagements at high altitude by enabling higher terminal speeds. Added various tuning parameters accessible in the hangar (as well as in part configs) to tweak performance as desired. A more thorough explanation of the guidance law and the tuning parameters is available on the Github wiki.
