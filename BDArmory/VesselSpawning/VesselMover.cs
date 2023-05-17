@@ -281,11 +281,11 @@ namespace BDArmory.VesselSpawning
                         }
                         if (MapView.MapIsEnabled)
                         {
-                            forward = Vector3.ProjectOnPlane(-Math.Sign(vessel.latitude) * (vessel.mainBody.GetWorldSurfacePosition(vessel.latitude - Math.Sign(vessel.latitude), vessel.longitude, vessel.altitude) - vessel.GetWorldPos3D()), up).normalized;
+                            forward = -Math.Sign(vessel.latitude) * (vessel.mainBody.GetWorldSurfacePosition(vessel.latitude - Math.Sign(vessel.latitude), vessel.longitude, vessel.altitude) - vessel.GetWorldPos3D()).ProjectOnPlanePreNormalized(up).normalized;
                         }
                         else
                         {
-                            forward = Vector3.ProjectOnPlane(vessel.transform.position - FlightCamera.fetch.mainCamera.transform.position, up).normalized;
+                            forward = (vessel.transform.position - FlightCamera.fetch.mainCamera.transform.position).ProjectOnPlanePreNormalized(up).normalized;
                         }
                         right = Vector3.Cross(up, forward);
                     }
@@ -813,7 +813,7 @@ namespace BDArmory.VesselSpawning
             var spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitude, longitude, altitude);
             var radialUnitVector = (spawnPoint - FlightGlobals.currentMainBody.transform.position).normalized;
             var north = VectorUtils.GetNorthVector(spawnPoint, FlightGlobals.currentMainBody);
-            var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(initialHeading, radialUnitVector) * north, radialUnitVector).normalized;
+            var direction = (Quaternion.AngleAxis(initialHeading, radialUnitVector) * north).ProjectOnPlanePreNormalized(radialUnitVector).normalized;
             var crew = new List<ProtoCrewMember>();
             if (kerbalNames != null)
             {

@@ -2055,7 +2055,7 @@ namespace BDArmory.Weapons.Missiles
                 Quaternion originalRTrotation = rotationTransform.rotation;
                 transform.rotation = Quaternion.LookRotation(transform.forward, upDirection);
                 rotationTransform.rotation = originalRTrotation;
-                Vector3 lookUpDirection = Vector3.ProjectOnPlane(cruiseTarget - transform.position, transform.forward) * 100;
+                Vector3 lookUpDirection = (cruiseTarget - transform.position).ProjectOnPlanePreNormalized(transform.forward) * 100;
                 lookUpDirection = transform.InverseTransformPoint(lookUpDirection + transform.position);
 
                 lookUpDirection = new Vector3(lookUpDirection.x, 0, 0);

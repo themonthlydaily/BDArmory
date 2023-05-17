@@ -19,9 +19,23 @@ namespace BDArmory.Extensions
         public static Vector3 ProjectOnPlanePreNormalized(this Vector3 vector, Vector3 planeNormal)
         {
             var dot = Vector3.Dot(vector, planeNormal);
-            return new Vector3(vector.x - planeNormal.x * dot,
+            return new Vector3(
+                vector.x - planeNormal.x * dot,
                 vector.y - planeNormal.y * dot,
                 vector.z - planeNormal.z * dot);
+        }
+
+        /// <summary>
+        /// Overload for Vector3d, returns Vector3.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector3 ProjectOnPlanePreNormalized(this Vector3d vector, Vector3 planeNormal)
+        {
+            var dot = Vector3.Dot(vector, planeNormal);
+            return new Vector3(
+                (float)vector.x - planeNormal.x * dot,
+                (float)vector.y - planeNormal.y * dot,
+                (float)vector.z - planeNormal.z * dot);
         }
 
         /// <summary>
@@ -39,9 +53,25 @@ namespace BDArmory.Extensions
             var sqrMag = Vector3.Dot(planeNormal, planeNormal);
             if (sqrMag < Mathf.Epsilon) return vector;
             var dotNorm = Vector3.Dot(vector, planeNormal) / sqrMag;
-            return new Vector3(vector.x - planeNormal.x * dotNorm,
+            return new Vector3(
+                vector.x - planeNormal.x * dotNorm,
                 vector.y - planeNormal.y * dotNorm,
                 vector.z - planeNormal.z * dotNorm);
+        }
+
+        /// <summary>
+        /// Overload for Vector3d, returns Vector3.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector3 ProjectOnPlane(this Vector3d vector, Vector3 planeNormal)
+        {
+            var sqrMag = Vector3.Dot(planeNormal, planeNormal);
+            if (sqrMag < Mathf.Epsilon) return vector;
+            var dotNorm = Vector3.Dot(vector, planeNormal) / sqrMag;
+            return new Vector3(
+                (float)vector.x - planeNormal.x * dotNorm,
+                (float)vector.y - planeNormal.y * dotNorm,
+                (float)vector.z - planeNormal.z * dotNorm);
         }
     }
 }

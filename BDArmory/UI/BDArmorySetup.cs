@@ -4072,7 +4072,8 @@ namespace BDArmory.UI
         }
 
 #if DEBUG
-        static int PROF_N = 100000, PROF_N_pow = 5, PROF_n = 100, PROF_n_pow = 2;
+        // static int PROF_N_pow = 5, PROF_n_pow = 2;
+        static int PROF_N = 100000, PROF_n = 100;
         IEnumerator TestVesselPositionTiming()
         {
             var wait = new WaitForFixedUpdate();
