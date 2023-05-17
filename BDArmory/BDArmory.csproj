@@ -190,6 +190,7 @@
     <Compile Include="Extensions\ClawExtensions.cs" />
     <Compile Include="Extensions\CrewExtensions.cs" />
     <Compile Include="Extensions\PartExtensions.cs" />
+    <Compile Include="Extensions\VectorExtensions.cs" />
     <Compile Include="Extensions\VesselExtensions.cs" />
     <Compile Include="FX\BDAGaplessParticleEmitter.cs" />
     <Compile Include="FX\BDAParticleSelfDestruct.cs" />
