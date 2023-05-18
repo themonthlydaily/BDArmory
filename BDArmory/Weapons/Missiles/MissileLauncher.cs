@@ -2706,8 +2706,6 @@ namespace BDArmory.Weapons.Missiles
             output.AppendLine($"Min Range: {minStaticLaunchRange} m");
             output.AppendLine($"Max Range: {maxStaticLaunchRange} m");
 
-            missileType = missileType.ToLower();
-
             if (useFuel && weaponClass == WeaponClasses.Missile)
             {
                 double dV = Math.Round(GetDeltaV(), 1);
