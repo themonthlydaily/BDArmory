@@ -6,8 +6,11 @@ IMPROVEMENTS / FIXES
 v1.6.1.0
 IMPROVEMENTS / FIXES
 - General:
-	- Add an action group option to the WM for toggling/setting the 'Free Pivot' setting of all Claw's on a craft.
+	- Fix TweakScale config for Typhoon engine (again).
+	- Add Toggle/Enable/Disable pivot action groups to the Claw variants.
+	- Add an action group option to give unlimited pivot range to the Claw variants.
 	- Tweaks so that asteroids have the proper HP in flight mode.
+	- Optimisation of some vector operations.
 - UI:
 	- Make the adjustable armor 'clamped' and 'triangle type' options persistent and initialised correctly in the PAW.
 	- Adjust formatting of some debug telemetry.

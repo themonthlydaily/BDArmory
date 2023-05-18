@@ -51,7 +51,7 @@ namespace BDArmory.Guidances
             out Vector3 finalTarget)
         {
             Vector3 up = VectorUtils.GetUpDirection(missileVessel.transform.position);
-            Vector3 forward = Vector3.ProjectOnPlane(targetPosition - missileVessel.transform.position, up);
+            Vector3 forward = (targetPosition - missileVessel.transform.position).ProjectOnPlanePreNormalized(up);
             float speed = (float)missileVessel.srfSpeed;
             float sqrSpeed = speed * speed;
             float sqrSpeedSqr = sqrSpeed * sqrSpeed;
@@ -84,7 +84,7 @@ namespace BDArmory.Guidances
             float missileSpeed, bool direct, out Vector3 finalTarget)
         {
             Vector3 up = VectorUtils.GetUpDirection(missilePosition);
-            Vector3 forward = Vector3.ProjectOnPlane(targetPosition - missilePosition, up);
+            Vector3 forward = (targetPosition - missilePosition).ProjectOnPlanePreNormalized(up);
             float speed = missileSpeed;
             float sqrSpeed = speed * speed;
             float sqrSpeedSqr = sqrSpeed * sqrSpeed;
@@ -126,7 +126,7 @@ namespace BDArmory.Guidances
             offset += beamVel * 0.5f;
             target += correctionFactor * offset;
 
-            Vector3 velDamp = correctionDamping * Vector3.ProjectOnPlane(currentVelocity - beamVel, beam.direction);
+            Vector3 velDamp = correctionDamping * (currentVelocity - beamVel).ProjectOnPlanePreNormalized(beam.direction);
             target -= velDamp;
 
             return target;
@@ -521,8 +521,7 @@ namespace BDArmory.Guidances
             float distanceSqr =
                 (targetPosition - (missileVessel.transform.position - (currentRadarAlt * upDirection))).sqrMagnitude;
 
-            Vector3 planarDirectionToTarget =
-                Vector3.ProjectOnPlane(targetPosition - missileVessel.transform.position, upDirection).normalized;
+            Vector3 planarDirectionToTarget = (targetPosition - missileVessel.transform.position).ProjectOnPlanePreNormalized(upDirection).normalized;
 
             float error;
 
@@ -556,8 +555,7 @@ namespace BDArmory.Guidances
         public static Vector3 GetTerminalManeuveringTarget(Vector3 targetPosition, Vessel missileVessel, float radarAlt)
         {
             Vector3 upDirection = -FlightGlobals.getGeeForceAtPosition(missileVessel.GetWorldPos3D()).normalized;
-            Vector3 planarVectorToTarget = Vector3.ProjectOnPlane(targetPosition - missileVessel.transform.position,
-                upDirection);
+            Vector3 planarVectorToTarget = (targetPosition - missileVessel.transform.position).ProjectOnPlanePreNormalized(upDirection);
             Vector3 planarDirectionToTarget = planarVectorToTarget.normalized;
             Vector3 crossAxis = Vector3.Cross(planarDirectionToTarget, upDirection).normalized;
             float sinAmplitude = Mathf.Clamp(Vector3.Distance(targetPosition, missileVessel.transform.position) - 850, 0,
@@ -635,7 +633,7 @@ namespace BDArmory.Guidances
             if (AoA > 0)
             {
                 double liftForce = 0.5 * airDensity * airSpeed * airSpeed * liftArea * liftMultiplier * liftCurve.Evaluate(AoA);
-                Vector3 forceDirection = Vector3.ProjectOnPlane(-velocity, ml.transform.forward).normalized;
+                Vector3 forceDirection = -velocity.ProjectOnPlanePreNormalized(ml.transform.forward).normalized;
                 rb.AddForceAtPosition((float)liftForce * forceDirection,
                     ml.transform.TransformPoint(ml.part.CoMOffset + CoL));
             }
@@ -668,16 +666,14 @@ namespace BDArmory.Guidances
                 torqueDirection = ml.transform.InverseTransformDirection(torqueDirection);
 
                 float torque = Mathf.Clamp(targetAngle * steerMult, 0, maxTorque);
-                Vector3 finalTorque = Vector3.ProjectOnPlane(Vector3.Lerp(previousTorque, torqueDirection * torque, 1),
-                    Vector3.forward);
+                Vector3 finalTorque = Vector3.Lerp(previousTorque, torqueDirection * torque, 1).ProjectOnPlanePreNormalized(Vector3.forward);
 
                 rb.AddRelativeTorque(finalTorque);
                 return finalTorque;
             }
             else
             {
-                Vector3 finalTorque = Vector3.ProjectOnPlane(Vector3.Lerp(previousTorque, Vector3.zero, 0.25f),
-                    Vector3.forward);
+                Vector3 finalTorque = Vector3.Lerp(previousTorque, Vector3.zero, 0.25f).ProjectOnPlanePreNormalized(Vector3.forward);
                 rb.AddRelativeTorque(finalTorque);
                 return finalTorque;
             }

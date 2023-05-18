@@ -852,42 +852,6 @@ namespace BDArmory.Control
             }
         }
 
-        [KSPAction("Toggle Claw Free Pivot")]
-        public void AGEnableClawFreePivot(KSPActionParam param)
-        {
-            SetClawsFreePivot(Toggle.Toggle);
-        }
-        [KSPAction("Enable Claw Free Pivot")]
-        public void AGToggleClawFreePivot(KSPActionParam param)
-        {
-            SetClawsFreePivot(Toggle.On);
-        }
-        void SetClawsFreePivot(Toggle state)
-        {
-            foreach (var claw in VesselModuleRegistry.GetModules<ModuleGrappleNode>(vessel))
-            {
-                if (claw == null) continue;
-                if (claw.state != "Grappled") continue;
-                switch (state)
-                {
-                    case Toggle.Toggle:
-                        if (claw.IsLoose())
-                            claw.LockPivot();
-                        else
-                        {
-                            claw.SetLoose();
-                        }
-                        break;
-                    case Toggle.On:
-                        claw.SetLoose();
-                        break;
-                    case Toggle.Off:
-                        claw.LockPivot();
-                        break;
-                }
-            }
-        }
-
         public BDTeam Team
         {
             get
@@ -6948,7 +6912,7 @@ namespace BDArmory.Control
                         }
                 }
             }
-            Vector3 directionYaw = Vector3.ProjectOnPlane(direction, turretTransform.up);
+            Vector3 directionYaw = direction.ProjectOnPlanePreNormalized(turretTransform.up);
 
             float angleYaw = Vector3.Angle(turretTransform.forward, directionYaw);
             float signedAnglePitch = 90 - Vector3.Angle(turretTransform.up, direction);
