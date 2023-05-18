@@ -4375,6 +4375,6 @@ namespace BDArmory.UI
                 vector.y - planeNormal.y * dot,
                 vector.z - planeNormal.z * dot);
         }
-    }
 #endif
+    }
 }
