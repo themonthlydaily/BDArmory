@@ -10,6 +10,7 @@
 	- Adjust formatting of some debug telemetry.
 	- Fix EMP Hellfire texture URL.
 	- Adds variant texture for ground radars.
+	- Add an indent for missile and CM settings.
 - Vessel Mover:
 	- Don't apply "Don't Avoid Collisions" while lowering vessels.
 - Vessel Spawning:
