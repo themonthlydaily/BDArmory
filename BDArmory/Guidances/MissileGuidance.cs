@@ -188,8 +188,8 @@ namespace BDArmory.Guidances
 
                 // Velocity Compensation Logic
                 float compMult = Mathf.Clamp(0.5f * (targetDistance - termDist) / termDist, 0f, 1f);
-                Vector3 velDirectionHor = Vector3.ProjectOnPlane(velDirection, upDirection).normalized; //(velDirection - upDirection * Vector3.Dot(velDirection, upDirection)).normalized;
-                targetHorVel = Vector3.ProjectOnPlane(targetVelocity, upDirection); //targetVelocity - upDirection * Vector3.Dot(targetVelocity, upDirection); // Get target horizontal velocity (relative to missile frame)
+                Vector3 velDirectionHor = (velDirection.ProjectOnPlanePreNormalized(upDirection)).normalized; //(velDirection - upDirection * Vector3.Dot(velDirection, upDirection)).normalized;
+                targetHorVel = targetVelocity.ProjectOnPlanePreNormalized(upDirection); //targetVelocity - upDirection * Vector3.Dot(targetVelocity, upDirection); // Get target horizontal velocity (relative to missile frame)
                 float targetAlVelMag = Vector3.Dot(targetHorVel, velDirectionHor); // Get magnitude of velocity aligned with the missile velocity vector (in the horizontal axis)
                 targetAlVelMag *= Mathf.Sign(velComp) * compMult;
                 targetAlVelMag = Mathf.Max(targetAlVelMag, 0f); //0.5f * (targetAlVelMag + Mathf.Abs(targetAlVelMag)); // Set -ve velocity (I.E. towards the missile) to 0 if velComp is +ve, otherwise for -ve
@@ -230,7 +230,7 @@ namespace BDArmory.Guidances
 
                     // Get planar direction to target
                     Vector3 planarDirectionToTarget = //(velDirection - upDirection * Vector3.Dot(velDirection, upDirection)).normalized;
-                        Vector3.ProjectOnPlane(targetPosition - missileVessel.transform.position, upDirection).normalized;
+                        ((targetPosition - missileVessel.transform.position).ProjectOnPlanePreNormalized(upDirection)).normalized;
 
                     // Altitude clamp based on rangeFactor and maxAlt, cannot be lower than target
                     float altitudeClamp = Mathf.Clamp(targetAlt + rangeFactor * Vector3.Dot(targetPosition - missileVessel.transform.position,planarDirectionToTarget), targetAlt, maxAltitude);
