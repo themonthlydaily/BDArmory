@@ -378,6 +378,7 @@ namespace BDArmory.Settings
 
         // Missile & Countermeasure Settings
         [BDAPersistentSettingsField] public static bool MISSILE_CM_SETTING_TOGGLE = false;
+        [BDAPersistentSettingsField] public static bool MISSILE_FUEL_DEDUCTION = false;
         [BDAPersistentSettingsField] public static bool VARIABLE_MISSILE_VISIBILITY = false;        //missile visual detection range dependant on boost/cruise/post-thrust state
         [BDAPersistentSettingsField] public static bool ASPECTED_IR_SEEKERS = false;                //IR Missiles will be subject to thermal occlusion mechanic
         [BDAPersistentSettingsField] public static bool DUMB_IR_SEEKERS = false;                  // IR missiles will go after hottest thing they can see
