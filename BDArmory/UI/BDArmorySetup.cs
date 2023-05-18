@@ -2890,7 +2890,6 @@ namespace BDArmory.UI
                     BDArmorySettings.MISSILE_CM_SETTING_TOGGLE = GUI.Toggle(SLineRect(++line), BDArmorySettings.MISSILE_CM_SETTING_TOGGLE, StringUtils.Localize("#LOC_BDArmory_Settings_MissileCMToggle"));
                     if (BDArmorySettings.MISSILE_CM_SETTING_TOGGLE)
                     {
-                        BDArmorySettings.MISSILE_FUEL_DEDUCTION = GUI.Toggle(SLineRect(++line), BDArmorySettings.MISSILE_FUEL_DEDUCTION, StringUtils.Localize("#LOC_BDArmory_Settings_MissileFuelDeduction"));
                         BDArmorySettings.ASPECTED_IR_SEEKERS = GUI.Toggle(SLineRect(++line), BDArmorySettings.ASPECTED_IR_SEEKERS, StringUtils.Localize("#LOC_BDArmory_Settings_AspectedIRSeekers"));
                         GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_FlareFactor")}:  ({BDArmorySettings.FLARE_FACTOR})", leftLabel);
                         BDArmorySettings.FLARE_FACTOR = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FLARE_FACTOR, 0f, 3f), 0.05f);
