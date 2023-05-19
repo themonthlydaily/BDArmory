@@ -392,19 +392,29 @@ namespace BDArmory.Weapons.Missiles
             //base.OnStart(state);
 
             initialMass = part.mass;
-            if (boosterMass < 0 || boostTime <= 0)
+            if (useFuel)
             {
-                if (BDArmorySettings.DEBUG_MISSILES && boosterMass < 0) Debug.LogWarning("[BDArmory.MissileBase]:Error Bad Configured Missile");
-                boosterMass = 0;
+                if (boosterMass < 0 || boostTime <= 0)
+                {
+                    if (BDArmorySettings.DEBUG_MISSILES && boosterMass < 0) Debug.LogWarning("[BDArmory.MissileBase]:Error Bad Configured Missile");
+                    boosterMass = 0;
+                }
+                if (boostTime > 0 && boosterMass <= 0) boosterMass = DefaultMass();
+
+                if (sustainerMass < 0 || cruiseTime <= 0)
+                {
+                    if (BDArmorySettings.DEBUG_MISSILES && sustainerMass < 0) Debug.LogWarning("[BDArmory.MissileBase]:Error Bad Configured Missile");
+                    sustainerMass = 0;
+                }
+                if (cruiseTime > 0 && sustainerMass <= 0) sustainerMass = DefaultMass();
+
+                if(boosterMass + sustainerMass > initialMass * 0.9f)
+                {
+                    if (BDArmorySettings.DEBUG_MISSILES && sustainerMass < 0) Debug.LogWarning("[BDArmory.MissileBase]:Error Bad Configured Missile");
+                    boosterMass = Mathf.Clamp(boosterMass, 0, (sustainerMass > 0) ? initialMass * 0.45f : initialMass * 0.9f);
+                    sustainerMass = Mathf.Clamp(sustainerMass, 0, (boosterMass > 0) ? initialMass * 0.45f : initialMass * 0.9f);
+                }
             }
-            else if (useFuel && boostTime > 0 && boosterMass <=0) boosterMass = DefaultMass();
-            
-            
-            if (sustainerMass < 0 || cruiseTime <= 0)
-            {
-                if (BDArmorySettings.DEBUG_MISSILES && sustainerMass < 0) Debug.LogWarning("[BDArmory.MissileBase]:Error Bad Configured Missile");
-                sustainerMass = 0;
-            }else if (useFuel && cruiseTime > 0 && sustainerMass <= 0) sustainerMass = DefaultMass();
 
             if (shortName == string.Empty)
             {
@@ -1731,7 +1741,7 @@ namespace BDArmory.Weapons.Missiles
                 if (vessel == null || vessel.Landed) Detonate(); //dropping torpedoes over land is just going to turn them into heavy, expensive bombs...
                 dropTime = TimeIndex;
             }
-            burnRate = boosterMass > 0 ? (boosterMass / boostTime) * Time.fixedDeltaTime : 0;
+            if(useFuel) burnRate = boosterMass > 0 ? (boosterMass / boostTime) * Time.fixedDeltaTime : 0;
             StartBoost();
             var wait = new WaitForFixedUpdate();
             float boostStartTime = Time.time;
@@ -1781,8 +1791,6 @@ namespace BDArmory.Weapons.Missiles
                 if (useFuel && burnRate > 0 && ordinanceMass < boosterMass)
                 {
                     ordinanceMass -= burnRate;
-                    part.UpdateMass();
-                    part.Update();
                 }
                 if (spoolEngine)
                 {
@@ -1863,8 +1871,6 @@ namespace BDArmory.Weapons.Missiles
             {
                 float deduction = (boosterMass < 0) ? 0 : boosterMass;
                 ordinanceMass = -deduction;
-                part.UpdateMass();
-                part.Update();
             }
 
             if (decoupleBoosters)
@@ -1886,9 +1892,12 @@ namespace BDArmory.Weapons.Missiles
 
         IEnumerator CruiseRoutine()
         {
-            burnRate = (sustainerMass > 0) ? (sustainerMass / cruiseTime) * Time.fixedDeltaTime : 0;
-            ordinanceMass = (boosterMass > 0) ? boosterMass : 0;
-            float massToBurn = (boosterMass > 0) ? boosterMass + sustainerMass : sustainerMass;
+            if (useFuel)
+            {
+                burnRate = (sustainerMass > 0) ? (sustainerMass / cruiseTime) * Time.fixedDeltaTime : 0;
+                ordinanceMass = (boosterMass > 0) ? boosterMass : 0;
+                float massToBurn = (boosterMass > 0) ? boosterMass + sustainerMass : sustainerMass;
+            }
             StartCruise();
             var wait = new WaitForFixedUpdate();
             float cruiseStartTime = Time.time;
@@ -1948,8 +1957,6 @@ namespace BDArmory.Weapons.Missiles
                 if (useFuel && burnRate > 0 && ordinanceMass < massToBurn)
                 {
                     ordinanceMass -= burnRate;
-                    part.UpdateMass();
-                    part.Update();
                 }
 
                 if (spoolEngine)
@@ -2003,8 +2010,6 @@ namespace BDArmory.Weapons.Missiles
                 float deduction = (sustainerMass > 0) ? sustainerMass : 0;
                 if (boosterMass > 0) deduction += boosterMass;
                 ordinanceMass = -deduction;
-                part.UpdateMass();
-                part.Update();
                 
             }
 
