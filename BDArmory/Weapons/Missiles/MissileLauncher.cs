@@ -1788,7 +1788,7 @@ namespace BDArmory.Weapons.Missiles
                     }
 
                 //thrust
-                if (useFuel && burnRate > 0 && ordinanceMass < boosterMass)
+                if (useFuel && burnRate > 0 && -ordinanceMass < boosterMass)
                 {
                     ordinanceMass -= burnRate;
                 }
@@ -1955,7 +1955,7 @@ namespace BDArmory.Weapons.Missiles
                         }
                     }
                 //Thrust
-                if (useFuel && burnRate > 0 && ordinanceMass < massToBurn)
+                if (useFuel && burnRate > 0 && -ordinanceMass < massToBurn)
                 {
                     ordinanceMass -= burnRate;
                 }
