@@ -305,6 +305,7 @@ namespace BDArmory.Weapons.Missiles
 
         private float initialMass;
         private float burnRate;
+        private float burnedMass;
         private float ordinanceMass;
 
         public bool SetupComplete => StartSetupComplete;
@@ -1788,9 +1789,10 @@ namespace BDArmory.Weapons.Missiles
                     }
 
                 //thrust
-                if (useFuel && burnRate > 0 && -ordinanceMass < boosterMass)
+                if (useFuel && burnRate > 0 && burnedMass < boosterMass)
                 {
-                    ordinanceMass -= burnRate;
+                    burnedMass = Mathf.Min(burnedMass + burnRate, burnedMass);
+                    ordinanceMass = burnedMass;
                 }
                 if (spoolEngine)
                 {
@@ -1896,7 +1898,7 @@ namespace BDArmory.Weapons.Missiles
             if (useFuel)
             {
                 burnRate = (sustainerMass > 0) ? (sustainerMass / cruiseTime) * Time.fixedDeltaTime : 0;
-                ordinanceMass = (boosterMass > 0) ? boosterMass : 0;
+                burnedMass = (boosterMass > 0) ? boosterMass : 0;
                 massToBurn = (boosterMass > 0) ? boosterMass + sustainerMass : sustainerMass;
             }
             StartCruise();
@@ -1955,9 +1957,10 @@ namespace BDArmory.Weapons.Missiles
                         }
                     }
                 //Thrust
-                if (useFuel && burnRate > 0 && -ordinanceMass < massToBurn)
+                if (useFuel && burnRate > 0 && burnedMass < massToBurn)
                 {
-                    ordinanceMass -= burnRate;
+                    burnedMass = Mathf.Min(burnedMass + burnRate, massToBurn);
+                    ordinanceMass = -burnedMass;
                 }
 
                 if (spoolEngine)
