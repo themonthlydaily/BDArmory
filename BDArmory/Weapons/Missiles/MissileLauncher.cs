@@ -1892,11 +1892,12 @@ namespace BDArmory.Weapons.Missiles
 
         IEnumerator CruiseRoutine()
         {
+            float massToBurn = 0;
             if (useFuel)
             {
                 burnRate = (sustainerMass > 0) ? (sustainerMass / cruiseTime) * Time.fixedDeltaTime : 0;
                 ordinanceMass = (boosterMass > 0) ? boosterMass : 0;
-                float massToBurn = (boosterMass > 0) ? boosterMass + sustainerMass : sustainerMass;
+                massToBurn = (boosterMass > 0) ? boosterMass + sustainerMass : sustainerMass;
             }
             StartCruise();
             var wait = new WaitForFixedUpdate();
