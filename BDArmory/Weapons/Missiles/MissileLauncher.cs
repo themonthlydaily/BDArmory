@@ -303,7 +303,6 @@ namespace BDArmory.Weapons.Missiles
         public float GetModuleMass(float baseMass, ModifierStagingSituation situation) => ordinanceMass;
         public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.CONSTANTLY;
 
-        private float initialMass;
         private float burnRate;
         private float burnedMass;
         private float ordinanceMass;
@@ -392,28 +391,28 @@ namespace BDArmory.Weapons.Missiles
         {
             //base.OnStart(state);
 
-            initialMass = part.mass;
+            float initialMass = part.mass;
             if (useFuel)
             {
                 if (boosterMass < 0 || boostTime <= 0)
                 {
-                    if (BDArmorySettings.DEBUG_MISSILES && boosterMass < 0) Debug.LogWarning("[BDArmory.MissileBase]:Error Bad Configured Missile");
+                    if (boosterMass < 0) Debug.LogWarning($"[BDArmory.MissileBase]:Error in Configuration, boosterMass: {boosterMass} can't be less than 0, Clamping to 0");
                     boosterMass = 0;
                 }
-                if (boostTime > 0 && boosterMass <= 0) boosterMass = DefaultMass();
+                if (boostTime > 0 && boosterMass <= 0) boosterMass = initialMass * 0.1f;
 
                 if (sustainerMass < 0 || cruiseTime <= 0)
                 {
-                    if (BDArmorySettings.DEBUG_MISSILES && sustainerMass < 0) Debug.LogWarning("[BDArmory.MissileBase]:Error Bad Configured Missile");
+                    if (sustainerMass < 0) Debug.LogWarning($"[BDArmory.MissileBase]:Error in Configuration, sustainerMass: {sustainerMass} can't be less than 0, Clamping to 0");
                     sustainerMass = 0;
                 }
-                if (cruiseTime > 0 && sustainerMass <= 0) sustainerMass = DefaultMass();
+                if (cruiseTime > 0 && sustainerMass <= 0) sustainerMass = initialMass * 0.1f;
 
-                if(boosterMass + sustainerMass > initialMass * 0.9f)
+                if (boosterMass + sustainerMass > initialMass * 0.95f)
                 {
-                    if (BDArmorySettings.DEBUG_MISSILES) Debug.LogWarning("[BDArmory.MissileBase]:Error Bad Configured Missile");
-                    boosterMass = Mathf.Clamp(boosterMass, 0, (sustainerMass > 0) ? initialMass * 0.45f : initialMass * 0.9f);
-                    sustainerMass = Mathf.Clamp(sustainerMass, 0, (boosterMass > 0) ? initialMass * 0.45f : initialMass * 0.9f);
+                    Debug.LogWarning($"[BDArmory.MissileBase]:Error in configuration, boosterMass: {boosterMass} + sustainerMass: {sustainerMass} can't be greater than 95% of missile mass {initialMass}, Clamping to 80% of missile mass");
+                    boosterMass = Mathf.Clamp(boosterMass, 0, (sustainerMass > 0) ? initialMass * 0.4f : initialMass * 0.8f);
+                    sustainerMass = Mathf.Clamp(sustainerMass, 0, (boosterMass > 0) ? initialMass * 0.4f : initialMass * 0.8f);
                 }
             }
 
@@ -1869,11 +1868,8 @@ namespace BDArmory.Weapons.Missiles
                     gEmitter.Current.emit = false;
                 }
             
-            if (useFuel)
-            {
-                float deduction = (boosterMass < 0) ? 0 : boosterMass;
-                ordinanceMass = -deduction;
-            }
+            if (useFuel) ordinanceMass = -boosterMass;
+            
 
             if (decoupleBoosters)
             {
@@ -1897,9 +1893,9 @@ namespace BDArmory.Weapons.Missiles
             float massToBurn = 0;
             if (useFuel)
             {
-                burnRate = (sustainerMass > 0) ? (sustainerMass / cruiseTime) * Time.fixedDeltaTime : 0;
-                burnedMass = (boosterMass > 0) ? boosterMass : 0;
-                massToBurn = (boosterMass > 0) ? boosterMass + sustainerMass : sustainerMass;
+                burnRate = sustainerMass > 0 ? sustainerMass / cruiseTime * Time.fixedDeltaTime : 0;
+                burnedMass = boosterMass;
+                massToBurn = burnedMass + sustainerMass;
             }
             StartCruise();
             var wait = new WaitForFixedUpdate();
@@ -2009,13 +2005,7 @@ namespace BDArmory.Weapons.Missiles
         {
             MissileState = MissileStates.PostThrust;
 
-            if (useFuel)
-            {
-                float deduction = (sustainerMass > 0) ? sustainerMass : 0;
-                if (boosterMass > 0) deduction += boosterMass;
-                ordinanceMass = -deduction;
-                
-            }
+            if (useFuel) ordinanceMass = -(sustainerMass + boosterMass);
 
             using (IEnumerator<Light> light = gameObject.GetComponentsInChildren<Light>().AsEnumerable().GetEnumerator())
                 while (light.MoveNext())
@@ -2927,13 +2917,6 @@ namespace BDArmory.Weapons.Missiles
             deltaV += (specificImpulse * 9.81 * Math.Log(mass / (mass - sustainerMass)));
 
             return deltaV;
-        }
-
-        public float DefaultMass()
-        {
-            float mass = part.mass;
-            mass *= 0.10f;
-            return mass;
         }
     }
 }
