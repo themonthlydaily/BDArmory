@@ -311,7 +311,7 @@ namespace BDArmory.Guidances
                     Debug.Log("[BDArmory.MissileGuidance]: Loft: Diving, accel = " + accel);
                     return missileVessel.transform.position + 1.5f * Time.fixedDeltaTime * missileVessel.Velocity() + 2.25f * Time.fixedDeltaTime * Time.fixedDeltaTime * accVec * accel;
                     */
-                    return (float)missileVessel.srfSpeed * velDirection;
+                    return missileVessel.transform.position + (float)missileVessel.srfSpeed * velDirection;
                 }
             }
             else
