@@ -353,8 +353,12 @@ namespace BDArmory.VesselSpawning
             {
                 if (vessel.vesselType == VesselType.SpaceObject)
                 {
-                    if (BDArmorySettings.ASTEROID_RAIN && AsteroidRain.IsManagedAsteroid(vessel)) yield break; // Don't remove asteroids when we're using them.
-                    if (BDArmorySettings.ASTEROID_FIELD && AsteroidField.IsManagedAsteroid(vessel)) yield break; // Don't remove asteroids when we're using them.
+                    if ((BDArmorySettings.ASTEROID_RAIN && AsteroidRain.IsManagedAsteroid(vessel))
+                        || (BDArmorySettings.ASTEROID_FIELD && AsteroidField.IsManagedAsteroid(vessel))) // Don't remove asteroids when we're using them.
+                    {
+                        --removeVesselsPending;
+                        yield break;
+                    }
                     if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // Comets introduced in 1.11
                         RemoveComet_1_11(vessel);
                 }
