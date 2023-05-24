@@ -1,4 +1,9 @@
-﻿v1.6.1.0
+﻿﻿IMPROVEMENTS / FIXES
+- Weapons:
+	- Missiles:
+		- Add new 'boosterMass' and 'sustainerMass' Fields to missile config that allow missiles to have a Fuel usage that can affect mass when  'useFuel' field is true.
+
+v1.6.1.0
 IMPROVEMENTS / FIXES
 - General:
 	- Fix TweakScale config for Typhoon engine.
@@ -38,7 +43,6 @@ IMPROVEMENTS / FIXES
 		- AI can now use dumbfired missiles (Targeting Mode = None / Radar/Laser missile without the necessary sensor), if no better option available.
 		- Add new 'radarTimeout' field to missile configs to permit dumbfired inertial guidance LOAL radar missiles.
 		- AI can now attampt to use guided bombs against air targets if engage Air = true and nothing else available.
-		- Add new 'boosterMass' and 'sustainerMass' Fields to missile config that allow missiles to have a Fuel usage that can affect mass when  'useFuel' field is true.
 - Competition:
 	- Pinata mode now temporarily disables Camera AutoSwitch, switches camera to Pinata until it is destroyed.
 	- Update the tournament parser to compute non-negative scores per round for waypoint races.
