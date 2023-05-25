@@ -31,9 +31,22 @@ namespace BDArmory.Armor
 
         [KSPEvent(guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_ArmorTriIso", active = true)]//Toggle Tri Type
         public void ToggleTriTypeOption() => ToggleTriTypeOptionHandler();
-        void ToggleTriTypeOptionHandler(bool applySym = true)
+        void ToggleTriTypeOptionHandler(bool applySym = true, Toggle state = Toggle.Toggle)
         {
-            scaleneTri = !scaleneTri;
+            switch (state)
+            {
+                case Toggle.Toggle:
+                    scaleneTri = !scaleneTri;
+                    break;
+                case Toggle.NoChange:
+                    break;
+                case Toggle.Off:
+                    scaleneTri = false;
+                    break;
+                case Toggle.On:
+                    scaleneTri = true;
+                    break;
+            }
 
             Fields["scaleneWidth"].guiActiveEditor = scaleneTri;
             UI_FloatSemiLogRange AWidth = (UI_FloatSemiLogRange)Fields["Width"].uiControlEditor;
@@ -56,16 +69,30 @@ namespace BDArmory.Armor
                     while (sym.MoveNext())
                     {
                         if (sym.Current == null) continue;
-                        sym.Current.FindModuleImplementing<BDAdjustableArmor>().ToggleTriTypeOptionHandler(false);
+                        sym.Current.FindModuleImplementing<BDAdjustableArmor>().ToggleTriTypeOptionHandler(false, state);
                     }
             }
         }
 
         [KSPEvent(active = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_UnclampTuning_disabledText")]//Toggle scale limit
         public void ToggleScaleClamp() => ToggleScaleClampHandler();
-        public void ToggleScaleClampHandler(bool applySym = true)
+        public void ToggleScaleClampHandler(bool applySym = true, Toggle state = Toggle.Toggle)
         {
-            clamped = !clamped;
+            switch (state)
+            {
+                case Toggle.Toggle:
+                    clamped = !clamped;
+                    break;
+                case Toggle.NoChange:
+                    break;
+                case Toggle.Off:
+                    clamped = false;
+                    break;
+                case Toggle.On:
+                    clamped = true;
+                    break;
+            }
+
             UI_FloatSemiLogRange AWidth = (UI_FloatSemiLogRange)Fields["Width"].uiControlEditor;
             AWidth.UpdateLimits(clamped ? 0.1f : 0.01f, scaleneTri ? clamped ? maxScale / 2 : 50 : clamped ? maxScale : 100);
             UI_FloatSemiLogRange ALength = (UI_FloatSemiLogRange)Fields["Length"].uiControlEditor;
@@ -88,10 +115,12 @@ namespace BDArmory.Armor
                     while (sym.MoveNext())
                     {
                         if (sym.Current == null) continue;
-                        sym.Current.FindModuleImplementing<BDAdjustableArmor>().ToggleScaleClampHandler(false);
+                        sym.Current.FindModuleImplementing<BDAdjustableArmor>().ToggleScaleClampHandler(false, state);
                     }
             }
         }
+
+        [KSPField(isPersistant = true)]
         bool clamped = true;
 
         //public bool isCurvedPanel = false;
@@ -135,23 +164,24 @@ namespace BDArmory.Armor
                 scaleneTransforms = part.FindModelTransforms(ScaleneTransformName);
                 UI_FloatSemiLogRange SWidth = (UI_FloatSemiLogRange)Fields["scaleneWidth"].uiControlEditor;
                 SWidth.onFieldChanged = AdjustSWidth;
-                SWidth.UpdateLimits(0.1f, maxScale / 2);
+                // SWidth.UpdateLimits(0.1f, maxScale / 2);
             }
-            Fields["scaleneWidth"].guiActiveEditor = false;
-            //figure out why the scalene tri toggle option is still visible in the flight scene
             if (HighLogic.LoadedSceneIsEditor)
             {
                 ParseStackNodePosition();
                 StartCoroutine(DelayedUpdateStackNode());
                 GameEvents.onEditorShipModified.Add(OnEditorShipModifiedEvent);
+                ToggleTriTypeOptionHandler(state: Toggle.NoChange); // Initialise the UI for the Triangle Type toggle
+                ToggleScaleClampHandler(state: Toggle.NoChange); // Initialise the UI for the Clamped toggle
             }
             UpdateThickness(true);
             UI_FloatSemiLogRange AWidth = (UI_FloatSemiLogRange)Fields["Width"].uiControlEditor;
             AWidth.onFieldChanged = AdjustWidth;
-            AWidth.UpdateLimits(0.1f, maxScale);
+            // AWidth.UpdateLimits(0.1f, maxScale);
             UI_FloatSemiLogRange ALength = (UI_FloatSemiLogRange)Fields["Length"].uiControlEditor;
             ALength.onFieldChanged = AdjustLength;
-            ALength.UpdateLimits(0.1f, maxScale);
+            // ALength.UpdateLimits(0.1f, maxScale);
+
             armor = GetComponent<HitpointTracker>();
             UpdateScale(Width, Length, scaleneWidth, false);
             GUIUtils.RefreshAssociatedWindows(part);
@@ -303,7 +333,7 @@ namespace BDArmory.Armor
                             if (translateChidren) MoveParts(stackNode.Current, stackNode.Current.position - prevPos, stackNode.Current.orientation - prevAngle); //look into making triangle side nodes rotate attachnode based on new angle? AttachNode.Orientation?                            
                         }
                     }
-                    if (stackNode.Current.id == "left" || stackNode.Current.id == "right")
+                    else if (stackNode.Current.id == "left" || stackNode.Current.id == "right")
                     {
                         stackNode.Current.size = Mathf.CeilToInt(Length / 2);
                         stackNode.Current.breakingForce = Length * 100;
@@ -320,7 +350,7 @@ namespace BDArmory.Armor
                             if (translateChidren) MoveParts(stackNode.Current, stackNode.Current.position - prevPos, Vector3.zero);
                         }
                     }
-                    if (stackNode.Current.id == "side")
+                    else if (stackNode.Current.id == "side")
                     {
                         stackNode.Current.size = Mathf.CeilToInt(((Width / 2) + (Length / 2)) / 2);
                         stackNode.Current.orientation = new Vector3(1, 0, -(Width / Length));

@@ -1047,7 +1047,7 @@ namespace BDArmory.Radar
                     if ((loadedvessels.Current.transform.position - position).sqrMagnitude < RADAR_IGNORE_DISTANCE_SQR)
                         continue;
 
-                    Vector3 vesselDirection = Vector3.ProjectOnPlane(loadedvessels.Current.CoM - position, upVector);
+                    Vector3 vesselDirection = (loadedvessels.Current.CoM - position).ProjectOnPlanePreNormalized(upVector);
                     if (Vector3.Angle(vesselDirection, lookDirection) < fov / 2f)
                     {
                         // ignore when blocked by terrain
@@ -1248,7 +1248,7 @@ namespace BDArmory.Radar
                     if ((loadedvessels.Current.transform.position - position).sqrMagnitude < RADAR_IGNORE_DISTANCE_SQR)
                         continue;
 
-                    Vector3 vesselDirection = Vector3.ProjectOnPlane(loadedvessels.Current.CoM - position, upVector);
+                    Vector3 vesselDirection = (loadedvessels.Current.CoM - position).ProjectOnPlanePreNormalized(upVector);
                     float angle = Vector3.Angle(vesselDirection, lookDirection);
                     if (angle < fov / 2f)
                     {
@@ -1367,7 +1367,7 @@ namespace BDArmory.Radar
                     if (loadedvessels.Current == null || !loadedvessels.Current.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(loadedvessels.Current.vesselType)) continue;
                     if (loadedvessels.Current == myWpnManager.vessel) continue; //ignore self
 
-                    Vector3 vesselProjectedDirection = Vector3.ProjectOnPlane(loadedvessels.Current.transform.position - position, upVector);
+                    Vector3 vesselProjectedDirection = (loadedvessels.Current.transform.position - position).ProjectOnPlanePreNormalized(upVector);
                     Vector3 vesselDirection = loadedvessels.Current.transform.position - position;
 
                     float vesselDistance = (loadedvessels.Current.transform.position - position).sqrMagnitude;

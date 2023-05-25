@@ -293,6 +293,8 @@ namespace BDArmory.Weapons.Missiles
         private bool OldInfAmmo = false;
         private bool StartSetupComplete = false;
         public bool SetupComplete => StartSetupComplete;
+        public int loftState = 0;
+        public float initMaxAoA = 0;
         #endregion Variable Declarations
 
         [KSPAction("Fire Missile")]
@@ -391,6 +393,10 @@ namespace BDArmory.Weapons.Missiles
             Fields["maxStaticLaunchRange"].guiActiveEditor = false;
             Fields["minStaticLaunchRange"].guiActive = false;
             Fields["minStaticLaunchRange"].guiActiveEditor = false;
+
+            loftState = 0;
+            TimeToImpact = float.PositiveInfinity;
+            initMaxAoA = maxAoA;
 
             ParseAntiRadTargetTypes();
             // extension for feature_engagementenvelope
@@ -707,6 +713,69 @@ namespace BDArmory.Weapons.Missiles
                 Fields["terminalGuidanceShouldActivate"].guiActiveEditor = false;
             }
 
+            if (GuidanceMode != GuidanceModes.AAMLoft)
+            {
+                Fields["LoftMaxAltitude"].guiActive = false;
+                Fields["LoftMaxAltitude"].guiActiveEditor = false;
+                Fields["LoftRangeOverride"].guiActive = false;
+                Fields["LoftRangeOverride"].guiActiveEditor = false;
+                Fields["LoftAltitudeAdvMax"].guiActive = false;
+                Fields["LoftAltitudeAdvMax"].guiActiveEditor = false;
+                Fields["LoftMinAltitude"].guiActive = false;
+                Fields["LoftMinAltitude"].guiActiveEditor = false;
+                Fields["LoftAngle"].guiActive = false;
+                Fields["LoftAngle"].guiActiveEditor = false;
+                Fields["LoftTermAngle"].guiActive = false;
+                Fields["LoftTermAngle"].guiActiveEditor = false;
+                Fields["LoftRangeFac"].guiActive = false;
+                Fields["LoftRangeFac"].guiActiveEditor = false;
+                Fields["LoftVelComp"].guiActive = false;
+                Fields["LoftVelComp"].guiActiveEditor = false;
+                Fields["LoftAltComp"].guiActive = false;
+                Fields["LoftAltComp"].guiActiveEditor = false;
+                Fields["LoftTermRange"].guiActive = false;
+                Fields["LoftTermRange"].guiActiveEditor = false;
+            }
+            else
+            {
+                Fields["LoftMaxAltitude"].guiActive = true;
+                Fields["LoftMaxAltitude"].guiActiveEditor = true;
+                Fields["LoftRangeOverride"].guiActive = true;
+                Fields["LoftRangeOverride"].guiActiveEditor = true;
+                Fields["LoftAltitudeAdvMax"].guiActive = true;
+                Fields["LoftAltitudeAdvMax"].guiActiveEditor = true;
+                Fields["LoftMinAltitude"].guiActive = true;
+                Fields["LoftMinAltitude"].guiActiveEditor = true;
+                Fields["LoftTermRange"].guiActive = true;
+                Fields["LoftTermRange"].guiActiveEditor = true;
+
+                if (!GameSettings.ADVANCED_TWEAKABLES)
+                {
+                    Fields["LoftAngle"].guiActive = false;
+                    Fields["LoftAngle"].guiActiveEditor = false;
+                    Fields["LoftTermAngle"].guiActive = false;
+                    Fields["LoftTermAngle"].guiActiveEditor = false;
+                    Fields["LoftRangeFac"].guiActive = false;
+                    Fields["LoftRangeFac"].guiActiveEditor = false;
+                    Fields["LoftVelComp"].guiActive = false;
+                    Fields["LoftVelComp"].guiActiveEditor = false;
+                    Fields["LoftAltComp"].guiActive = false;
+                    Fields["LoftAltComp"].guiActiveEditor = false;
+                } else
+                {
+                    Fields["LoftAngle"].guiActive = true;
+                    Fields["LoftAngle"].guiActiveEditor = true;
+                    Fields["LoftTermAngle"].guiActive = true;
+                    Fields["LoftTermAngle"].guiActiveEditor = true;
+                    Fields["LoftRangeFac"].guiActive = true;
+                    Fields["LoftRangeFac"].guiActiveEditor = true;
+                    Fields["LoftVelComp"].guiActive = true;
+                    Fields["LoftVelComp"].guiActiveEditor = true;
+                    Fields["LoftAltComp"].guiActive = true;
+                    Fields["LoftAltComp"].guiActiveEditor = true;
+                }
+            }
+
             // fill lockedSensorFOVBias with default values if not set by part config:
             if ((TargetingMode == TargetingModes.Heat || TargetingModeTerminal == TargetingModes.Heat) && heatThreshold > 0 && lockedSensorFOVBias.minTime == float.MaxValue)
             {
@@ -959,6 +1028,22 @@ namespace BDArmory.Weapons.Missiles
                 ml.CruiseAltitude = CruiseAltitude;
                 ml.CruiseSpeed = CruiseSpeed;
                 ml.CruisePredictionTime = CruisePredictionTime;
+            }
+            if (GuidanceMode == GuidanceModes.AAMLoft)
+            {
+                ml.LoftMaxAltitude = LoftMaxAltitude;
+                ml.LoftRangeOverride = LoftRangeOverride;
+                ml.LoftAltitudeAdvMax = LoftAltitudeAdvMax;
+                ml.LoftMinAltitude = LoftMinAltitude;
+                ml.LoftAngle = LoftAngle;
+                ml.LoftTermAngle = LoftTermAngle;
+                ml.LoftRangeFac = LoftRangeFac;
+                ml.LoftVelComp = LoftVelComp;
+                ml.LoftAltComp = LoftAltComp;
+                ml.LoftTermRange = LoftTermRange;
+                ml.loftState = 0;
+                ml.TimeToImpact = float.PositiveInfinity;
+                ml.initMaxAoA = maxAoA;
             }
             ml.decoupleForward = decoupleForward;
             ml.decoupleSpeed = decoupleSpeed;
@@ -1431,7 +1516,7 @@ namespace BDArmory.Weapons.Missiles
 
                     finalMaxTorque = Mathf.Clamp((TimeIndex - dropTime) * torqueRampUp, 0, maxTorque); //ramp up torque
 
-                    if ((GuidanceMode == GuidanceModes.AAMLead) || (GuidanceMode == GuidanceModes.APN) || (GuidanceMode == GuidanceModes.PN))
+                    if ((GuidanceMode == GuidanceModes.AAMLead) || (GuidanceMode == GuidanceModes.APN) || (GuidanceMode == GuidanceModes.PN) || (GuidanceMode == GuidanceModes.AAMLoft) || (GuidanceMode == GuidanceModes.AAMPure))
                     {
                         AAMGuidance();
                     }
@@ -2055,7 +2140,7 @@ namespace BDArmory.Weapons.Missiles
                 Quaternion originalRTrotation = rotationTransform.rotation;
                 transform.rotation = Quaternion.LookRotation(transform.forward, upDirection);
                 rotationTransform.rotation = originalRTrotation;
-                Vector3 lookUpDirection = Vector3.ProjectOnPlane(cruiseTarget - transform.position, transform.forward) * 100;
+                Vector3 lookUpDirection = (cruiseTarget - transform.position).ProjectOnPlanePreNormalized(transform.forward) * 100;
                 lookUpDirection = transform.InverseTransformPoint(lookUpDirection + transform.position);
 
                 lookUpDirection = new Vector3(lookUpDirection.x, 0, 0);
@@ -2089,7 +2174,45 @@ namespace BDArmory.Weapons.Missiles
                     aamTarget = MissileGuidance.GetAPNTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, pronavGain, out timeToImpact);
                 else if (GuidanceMode == GuidanceModes.PN) // Pro-Nav
                     aamTarget = MissileGuidance.GetPNTarget(TargetPosition, TargetVelocity, vessel, pronavGain, out timeToImpact);
-                else // AAM Lead
+                else if (GuidanceMode == GuidanceModes.AAMLoft)
+                {
+                    float targetAlt = FlightGlobals.getAltitudeAtPos(TargetPosition);
+
+                    if (TimeToImpact == float.PositiveInfinity)
+                    {
+                        if (!vessel.InVacuum() && (vessel.altitude >= LoftMinAltitude) && ((vessel.altitude - targetAlt <= LoftAltitudeAdvMax) || (TargetPosition - vessel.transform.position).sqrMagnitude > (LoftRangeOverride * LoftRangeOverride))) loftState = 0;
+                        else loftState = 3;
+                    }
+
+                    aamTarget = MissileGuidance.GetAirToAirLoftTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, targetAlt, LoftMaxAltitude, LoftRangeFac, LoftAltComp, LoftVelComp, LoftAngle, LoftTermAngle, LoftTermRange, ref loftState, out float currTimeToImpact, out float rangeToTarget, optimumAirspeed);
+
+                    float fac = (1 - (rangeToTarget-LoftTermRange) / Mathf.Clamp(LoftTermRange * 4f,5000f,25000f));
+
+                    maxAoA = Mathf.Clamp(initMaxAoA * fac, 4f, initMaxAoA);
+
+                    TimeToImpact = currTimeToImpact;
+
+                    /*if (prevTimeToImpact - TimeToImpact < -0.1)
+                    {
+                        loftTerminal = true;
+                    }*/
+
+                    //if (prevTimeToImpact != float.PositiveInfinity && (TimeToImpact - prevTimeToImpact) > 0) loftTimeToGoGain += (TimeToImpact - prevTimeToImpact);
+
+                    /*if (loftTimeToGoGain > LoftThreshold && !loftTerminal)
+                    {
+                        maxAoA *= 4;
+                        loftTerminal = true;
+                    }*/
+
+                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: AAM Loft TTGO: [{TimeToImpact:G3}]. Currently State: {loftState}. Fly to: [{aamTarget}]. Target Position: [{TargetPosition}]. Max AoA: [{maxAoA:G3}]");
+                }
+                else if (GuidanceMode == GuidanceModes.AAMPure)
+                {
+                    TimeToImpact = Vector3.Distance(TargetPosition, transform.position) / Mathf.Max((float) vessel.srfSpeed, optimumAirspeed);
+                    aamTarget = TargetPosition;
+                }
+                else// AAM Lead
                     aamTarget = MissileGuidance.GetAirToAirTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, out timeToImpact, optimumAirspeed);
 
 
@@ -2458,7 +2581,9 @@ namespace BDArmory.Weapons.Missiles
                 case "aampure":
                     GuidanceMode = GuidanceModes.AAMPure;
                     break;
-
+                case "aamloft":
+                    GuidanceMode = GuidanceModes.AAMLoft;
+                    break;
                 case "agm":
                     GuidanceMode = GuidanceModes.AGM;
                     break;

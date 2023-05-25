@@ -660,7 +660,7 @@ namespace BDArmory.UI
                         float lift1area = wing1.deflectionLiftCoeff * Vector3.Project(wing1.transform.forward, Vector3.up).sqrMagnitude; // Only return vertically oriented lift components
                         float lift1rad = BDAMath.Sqrt(lift1area / Mathf.PI);
                         Vector3 col1Pos = wing1.part.partTransform.TransformPoint(wing1.part.CoLOffset);
-                        Vector3 col1PosProj = Vector3.ProjectOnPlane(col1Pos, Vector3.up);
+                        Vector3 col1PosProj = col1Pos.ProjectOnPlanePreNormalized(Vector3.up);
                         liftStackedAllEval += lift1area; // Add up total lift areas
 
                         using (List<Part>.Enumerator parts2 = EditorLogic.fetch.ship.Parts.GetEnumerator())
@@ -676,7 +676,7 @@ namespace BDArmory.UI
                                     float lift2area = wing2.deflectionLiftCoeff * Vector3.Project(wing2.transform.forward, Vector3.up).sqrMagnitude; // Only return vertically oriented lift components
                                     float lift2rad = BDAMath.Sqrt(lift2area / Mathf.PI);
                                     Vector3 col2Pos = wing2.part.partTransform.TransformPoint(wing2.part.CoLOffset);
-                                    Vector3 col2PosProj = Vector3.ProjectOnPlane(col2Pos, Vector3.up);
+                                    Vector3 col2PosProj = col2Pos.ProjectOnPlanePreNormalized(Vector3.up);
 
                                     float d = Vector3.Distance(col1PosProj, col2PosProj);
                                     float R = lift1rad;

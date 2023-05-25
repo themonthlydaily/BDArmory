@@ -4370,8 +4370,8 @@ namespace BDArmory.Weapons
             {
                 Rect angleRect = new Rect(guiPos.x, guiPos.y, 100, 200);
 
-                Vector3 pitchVector = (5 * Vector3.ProjectOnPlane(fireTransforms[0].forward, refRight));
-                Vector3 yawVector = (5 * Vector3.ProjectOnPlane(fireTransforms[0].forward, refUp));
+                Vector3 pitchVector = (5 * fireTransforms[0].forward.ProjectOnPlanePreNormalized(refRight));
+                Vector3 yawVector = (5 * fireTransforms[0].forward.ProjectOnPlanePreNormalized(refUp));
 
                 GUIUtils.DrawLineBetweenWorldPositions(fireTransforms[0].position + pitchVector, fwdPos, 3,
                     Color.white);
@@ -5019,7 +5019,7 @@ namespace BDArmory.Weapons
             // Floating objects need vertical smoothing.
             float altitude = (float)FlightGlobals.currentMainBody.GetAltitude(position);
             if (altitude < 12 && altitude > -10)
-                acceleration = Vector3.ProjectOnPlane(acceleration, VectorUtils.GetUpDirection(position));
+                acceleration = acceleration.ProjectOnPlanePreNormalized(VectorUtils.GetUpDirection(position));
 
             var distance = Vector3.Distance(position, part.transform.position);
             var alpha = Mathf.Max(1f - BDAMath.Sqrt(distance) / 512f, 0.1f);

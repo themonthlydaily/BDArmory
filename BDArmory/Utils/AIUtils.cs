@@ -1,5 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System;
 using UnityEngine;
 
 using BDArmory.Control;
@@ -17,6 +18,7 @@ namespace BDArmory.Utils
         /// <param name="v">vessel to be extrapolated</param>
         /// <param name="time">after this time</param>
         /// <returns>Vector3 extrapolated position</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 PredictPosition(this Vessel v, float time)
         {
             Vector3 pos = v.CoM;
@@ -25,6 +27,7 @@ namespace BDArmory.Utils
             return pos;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 PredictPosition(Vector3 position, Vector3 velocity, Vector3 acceleration, float time)
         {
             return position + time * velocity + 0.5f * time * time * acceleration;

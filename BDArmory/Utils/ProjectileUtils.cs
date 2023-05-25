@@ -133,7 +133,7 @@ namespace BDArmory.Utils
         {
             if (materialsBlacklist == null)
             {
-                materialsBlacklist = new HashSet<string> { "bdPilotAI", "bdShipAI", "missileController", "bdammGuidanceModule" };
+                materialsBlacklist = new HashSet<string> { "bdPilotAI", "bdShipAI", "missileController", "bdammGuidanceModule", "PotatoRoid" };
 
                 var fileNode = ConfigNode.Load(settingsConfigURL);
                 if (fileNode.HasNode("MaterialsBlacklist"))

@@ -1,6 +1,4 @@
 ### Bugs
-- VM spawning with specific kerbal in combat seat sometimes doesn't spawn kerbal. - SoS 
-    - If the kerbal was in the list then it ought to have been available to be spawned in the craft.
 - Time override sometimes gets enabled in competitions when it probably shouldn't.
 - Auto-tuning with numeric input fields enabled in the AI GUI won't let the values change
 - Ordering of fields in AI PAW - P keeps ending up at the bottom
@@ -33,6 +31,9 @@
 - Memory for AI state so that it can resume once finished extending/evading instead of just scanning for new targets.
 - KerbalSafety - why are some kerbals not registering/deploying chutes
 - Tag mode should disable team icons to get colours right
+- Improve the VTOL AI:
+    - Terrain avoidance
+    - Other logic from the pilot AI.
 
 - BDAVesselMover
     - Camera behaviour is weird if the mouse is over various windows, also when CameraTools is enabled above 100km — both are likely related to krakensbane
