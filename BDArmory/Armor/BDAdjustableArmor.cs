@@ -164,7 +164,7 @@ namespace BDArmory.Armor
                 scaleneTransforms = part.FindModelTransforms(ScaleneTransformName);
                 UI_FloatSemiLogRange SWidth = (UI_FloatSemiLogRange)Fields["scaleneWidth"].uiControlEditor;
                 SWidth.onFieldChanged = AdjustSWidth;
-                SWidth.UpdateLimits(0.1f, maxScale / 2);
+                // SWidth.UpdateLimits(0.1f, maxScale / 2);
             }
             if (HighLogic.LoadedSceneIsEditor)
             {
@@ -175,6 +175,13 @@ namespace BDArmory.Armor
                 ToggleScaleClampHandler(state: Toggle.NoChange); // Initialise the UI for the Clamped toggle
             }
             UpdateThickness(true);
+            UI_FloatSemiLogRange AWidth = (UI_FloatSemiLogRange)Fields["Width"].uiControlEditor;
+            AWidth.onFieldChanged = AdjustWidth;
+            // AWidth.UpdateLimits(0.1f, maxScale);
+            UI_FloatSemiLogRange ALength = (UI_FloatSemiLogRange)Fields["Length"].uiControlEditor;
+            ALength.onFieldChanged = AdjustLength;
+            // ALength.UpdateLimits(0.1f, maxScale);
+
             armor = GetComponent<HitpointTracker>();
             UpdateScale(Width, Length, scaleneWidth, false);
             GUIUtils.RefreshAssociatedWindows(part);
@@ -326,7 +333,7 @@ namespace BDArmory.Armor
                             if (translateChidren) MoveParts(stackNode.Current, stackNode.Current.position - prevPos, stackNode.Current.orientation - prevAngle); //look into making triangle side nodes rotate attachnode based on new angle? AttachNode.Orientation?                            
                         }
                     }
-                    if (stackNode.Current.id == "left" || stackNode.Current.id == "right")
+                    else if (stackNode.Current.id == "left" || stackNode.Current.id == "right")
                     {
                         stackNode.Current.size = Mathf.CeilToInt(Length / 2);
                         stackNode.Current.breakingForce = Length * 100;
@@ -343,7 +350,7 @@ namespace BDArmory.Armor
                             if (translateChidren) MoveParts(stackNode.Current, stackNode.Current.position - prevPos, Vector3.zero);
                         }
                     }
-                    if (stackNode.Current.id == "side")
+                    else if (stackNode.Current.id == "side")
                     {
                         stackNode.Current.size = Mathf.CeilToInt(((Width / 2) + (Length / 2)) / 2);
                         stackNode.Current.orientation = new Vector3(1, 0, -(Width / Length));
