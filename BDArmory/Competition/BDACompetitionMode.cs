@@ -653,7 +653,7 @@ namespace BDArmory.Competition
                 while (leader.MoveNext())
                     center += leader.Current.vessel.CoM;
             center /= leaders.Count;
-            Vector3 startDirection = Vector3.ProjectOnPlane(leaders[0].vessel.CoM - center, VectorUtils.GetUpDirection(center)).normalized;
+            Vector3 startDirection = (leaders[0].vessel.CoM - center).ProjectOnPlanePreNormalized(VectorUtils.GetUpDirection(center)).normalized;
             startDirection *= (distance + 2 * 2000) / 2 / Mathf.Sin(Mathf.PI / leaders.Count); // 2000 is the orbiting radius of each team.
             Quaternion directionStep = Quaternion.AngleAxis(360f / leaders.Count, VectorUtils.GetUpDirection(center));
 

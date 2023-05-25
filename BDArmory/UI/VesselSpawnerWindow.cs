@@ -720,7 +720,7 @@ namespace BDArmory.UI
                 {
                     line += 0.25f;
                     var spawnTemplate = CustomTemplateSpawning.Instance.customSpawnConfig;
-                    spawnTemplate.name = GUI.TextField(SQuarterRect(++line, 0, 2), spawnTemplate.name); // Writing in the text field updates the name of the current template.
+                    spawnTemplate.name = GUIUtils.TextField(spawnTemplate.name, "Specify a name then save the template.", rect:SQuarterRect(++line, 0, 2)); // Writing in the text field updates the name of the current template.
                     if (GUI.Button(SQuarterRect(line, 2), StringUtils.Localize("#LOC_BDArmory_Generic_Load"), BDArmorySetup.BDGuiSkin.button))
                     {
                         CustomTemplateSpawning.Instance.ShowTemplateSelection(Event.current.mousePosition + BDArmorySetup.WindowRectVesselSpawner.position);

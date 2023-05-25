@@ -327,7 +327,7 @@ namespace BDArmory.Damage
             {
                 HullTypeNum = HullInfo.materials.FindIndex(t => t.name == hullType) + 1;
             }
-            if (SelectedArmorType == "Legacy Armor") 
+            if (SelectedArmorType == "Legacy Armor")
                 ArmorTypeNum = ArmorInfo.armors.FindIndex(t => t.name == "None");
             else
                 ArmorTypeNum = ArmorInfo.armors.FindIndex(t => t.name == SelectedArmorType) + 1;
@@ -526,6 +526,17 @@ namespace BDArmory.Damage
         {
             yield return new WaitForFixedUpdate();
             if (part == null) yield break;
+            if (part.GetComponent<ModuleAsteroid>())
+            {
+                var tic = Time.time;
+                yield return new WaitUntilFixed(() => part == null || part.mass > 0 || Time.time - tic > 5); // Give it 5s to get the part info.
+                if (part != null)
+                {
+                    partMass = part.mass;
+                    calcPartSize(); // Re-calculate the size.
+                    SetupPrefab(); // Re-setup the prefab.
+                }
+            }
             if (part.partInfo != null && part.partInfo.partPrefab != null) partMass = part.partInfo.partPrefab.mass;
             _updateMass = true;
             _armorModified = true;

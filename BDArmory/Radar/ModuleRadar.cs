@@ -6,6 +6,7 @@ using UnityEngine;
 using KSP.Localization;
 
 using BDArmory.Control;
+using BDArmory.Extensions;
 using BDArmory.Settings;
 using BDArmory.Targeting;
 using BDArmory.UI;
@@ -616,8 +617,7 @@ namespace BDArmory.Radar
                         direction = Quaternion.AngleAxis(currentAngle, referenceTransform.up) * referenceTransform.forward;
                     }
 
-                    Vector3 localDirection =
-                        Vector3.ProjectOnPlane(rotationTransform.parent.InverseTransformDirection(direction), Vector3.up);
+                    Vector3 localDirection = rotationTransform.parent.InverseTransformDirection(direction).ProjectOnPlanePreNormalized(Vector3.up);
                     if (localDirection != Vector3.zero)
                     {
                         rotationTransform.localRotation = Quaternion.Lerp(rotationTransform.localRotation,
@@ -668,9 +668,7 @@ namespace BDArmory.Radar
 
                 if (locked)
                 {
-                    float targetAngle = VectorUtils.SignedAngle(referenceTransform.forward,
-                        Vector3.ProjectOnPlane(lockedTarget.position - referenceTransform.position,
-                            referenceTransform.up), referenceTransform.right);
+                    float targetAngle = VectorUtils.SignedAngle(referenceTransform.forward, (lockedTarget.position - referenceTransform.position).ProjectOnPlanePreNormalized(referenceTransform.up), referenceTransform.right);
                     leftLimit = Mathf.Clamp(targetAngle - (multiLockFOV / 2), -directionalFieldOfView / 2,
                         directionalFieldOfView / 2);
                     rightLimit = Mathf.Clamp(targetAngle + (multiLockFOV / 2), -directionalFieldOfView / 2,
@@ -720,8 +718,7 @@ namespace BDArmory.Radar
                 return false;
             }
 
-            Vector3 targetPlanarDirection = Vector3.ProjectOnPlane(position - referenceTransform.position,
-                referenceTransform.up);
+            Vector3 targetPlanarDirection = (position - referenceTransform.position).ProjectOnPlanePreNormalized(referenceTransform.up);
             float angle = Vector3.Angle(targetPlanarDirection, referenceTransform.forward);
             if (referenceTransform.InverseTransformPoint(position).x < 0)
             {
@@ -740,9 +737,7 @@ namespace BDArmory.Radar
 
                     if (!locked && !omnidirectional)
                     {
-                        float targetAngle = VectorUtils.SignedAngle(referenceTransform.forward,
-                            Vector3.ProjectOnPlane(attemptedLocks[i].position - referenceTransform.position,
-                                referenceTransform.up), referenceTransform.right);
+                        float targetAngle = VectorUtils.SignedAngle(referenceTransform.forward, (attemptedLocks[i].position - referenceTransform.position).ProjectOnPlanePreNormalized(referenceTransform.up), referenceTransform.right);
                         currentAngle = targetAngle;
                     }
                     lockedTargets.Add(attemptedLocks[i]);
@@ -787,7 +782,7 @@ namespace BDArmory.Radar
         {
             TargetSignatureData lockedTarget = lockedTargets[index];
 
-            Vector3 targetPlanarDirection = Vector3.ProjectOnPlane(lockedTarget.predictedPosition - referenceTransform.position, referenceTransform.up);
+            Vector3 targetPlanarDirection = (lockedTarget.predictedPosition - referenceTransform.position).ProjectOnPlanePreNormalized(referenceTransform.up);
             float lookAngle = Vector3.Angle(targetPlanarDirection, referenceTransform.forward);
             if (referenceTransform.InverseTransformPoint(lockedTarget.predictedPosition).x < 0)
             {

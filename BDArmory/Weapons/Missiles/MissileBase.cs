@@ -225,6 +225,38 @@ namespace BDArmory.Weapons.Missiles
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CruisePredictionTime"), UI_FloatRange(minValue = 1f, maxValue = 15f, stepIncrement = 1f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Cruise prediction time
         public float CruisePredictionTime = 5;
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_LoftMaxAltitude"), UI_FloatRange(minValue = 5000f, maxValue = 30000f, stepIncrement = 100f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Loft Max Altitude
+        public float LoftMaxAltitude = 16000;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_LoftRangeOverride"), UI_FloatRange(minValue = 500f, maxValue = 25000f, stepIncrement = 100f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Loft Altitude Difference
+        public float LoftRangeOverride = 15000;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_LoftAltitudeAdvMax"), UI_FloatRange(minValue = 500f, maxValue = 5000f, stepIncrement = 100f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Loft Maximum Altitude Advantage
+        public float LoftAltitudeAdvMax = 3000;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_LoftMinAltitude"), UI_FloatRange(minValue = 0f, maxValue = 10000f, stepIncrement = 100f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Loft Maximum Altitude Advantage
+        public float LoftMinAltitude = 6000;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_LoftAngle"), UI_FloatRange(minValue = 0f, maxValue = 90f, stepIncrement = 0.5f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Loft Angle
+        public float LoftAngle = 45;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_LoftTermAngle"), UI_FloatRange(minValue = 0f, maxValue = 90f, stepIncrement = 0.5f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Loft Termination Angle
+        public float LoftTermAngle = 20;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_LoftRangeFac"),//Loft Range Factor
+         UI_FloatRange(minValue = 0.1f, maxValue = 5.0f, stepIncrement = 0.01f, scene = UI_Scene.Editor)]
+        public float LoftRangeFac = 0.5f;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_LoftVelComp"),//Loft Velocity Compensation (Horizontal)
+         UI_FloatRange(minValue = -2.0f, maxValue = 2.0f, stepIncrement = 0.01f, scene = UI_Scene.Editor)]
+        public float LoftVelComp = -0.5f;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_LoftAltComp"), UI_FloatRange(minValue = -2000f, maxValue = 2000f, stepIncrement = 10f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Loft Altitude Compensation
+        public float LoftAltComp = 0;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_LoftTermRange"), UI_FloatRange(minValue = 500f, maxValue = 20000f, stepIncrement = 100f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Loft Altitude Difference
+        public float LoftTermRange = 3000;
+
         [KSPField]
         public float missileRadarCrossSection = RadarUtils.RCS_MISSILES;            // radar cross section of this missile for detection purposes
 
@@ -238,7 +270,7 @@ namespace BDArmory.Weapons.Missiles
 
         public DetonationDistanceStates DetonationDistanceState { get; set; } = DetonationDistanceStates.NotSafe;
 
-        public enum GuidanceModes { None, AAMLead, AAMPure, AGM, AGMBallistic, Cruise, STS, Bomb, RCS, BeamRiding, SLW, PN, APN }
+        public enum GuidanceModes { None, AAMLead, AAMPure, AGM, AGMBallistic, Cruise, STS, Bomb, RCS, BeamRiding, SLW, PN, APN, AAMLoft }
 
         public GuidanceModes GuidanceMode;
 
@@ -733,14 +765,15 @@ namespace BDArmory.Weapons.Missiles
                     if (vrd)
                     {
                         TargetSignatureData t = TargetSignatureData.noTarget;
-                        List<TargetSignatureData> possibleTargets = vrd.GetLockedTargets();
-                        for (int i = 0; i < possibleTargets.Count; i++)
-                        {
-                            if (possibleTargets[i].vessel == radarTarget.vessel)
-                            {
-                                t = possibleTargets[i];
-                            }
-                        }
+                        //List<TargetSignatureData> possibleTargets = vrd.GetLockedTargets();
+                        //for (int i = 0; i < possibleTargets.Count; i++)
+                        //{
+                        //    if (possibleTargets[i].vessel == radarTarget.vessel) //this means SARh will remain locked to whatever was the initial target, regardless of current radar lock
+                        //    {
+                        //        t = possibleTargets[i];
+                        //    }
+                        //}
+                        if (vrd.locked) t = vrd.lockedTargetData.targetData; //SARH is passive, and guided towards whatever is currently painted by FCS radar
 
                         if (t.exists)
                         {
@@ -996,7 +1029,6 @@ namespace BDArmory.Weapons.Missiles
                     if (_radarFailTimer > radarTimeout)
                     {
                         if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileBase]: Active Radar guidance failed. LOAL could not lock a target.");
-                        radarTarget = TargetSignatureData.noTarget;
                         radarLOAL = false;
                         targetVessel = null;
                         radarLOALSearching = false;
@@ -1009,7 +1041,9 @@ namespace BDArmory.Weapons.Missiles
 
             if (!radarTarget.exists && _radarFailTimer < radarTimeout)
             {
-                if (radarLOAL)
+                if (vrd)
+                    radarTarget = vrd.lockedTargetData.targetData;
+                else if (radarLOAL)
                     radarLOALSearching = true;
                 else
                     targetVessel = null;
@@ -1316,7 +1350,7 @@ namespace BDArmory.Weapons.Missiles
         {
             if (this.DetonationDistance == -1)
             {
-                if (GuidanceMode == GuidanceModes.AAMLead || GuidanceMode == GuidanceModes.AAMPure || GuidanceMode == GuidanceModes.PN || GuidanceMode == GuidanceModes.APN)
+                if (GuidanceMode == GuidanceModes.AAMLead || GuidanceMode == GuidanceModes.AAMPure || GuidanceMode == GuidanceModes.PN || GuidanceMode == GuidanceModes.APN || GuidanceMode == GuidanceModes.AAMLoft)
                 {
                     DetonationDistance = GetBlastRadius() * 0.25f;
                 }

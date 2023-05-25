@@ -7,6 +7,7 @@ using UnityEngine;
 using KSP.UI.Screens;
 
 using BDArmory.Competition;
+using BDArmory.Extensions;
 using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
@@ -142,7 +143,7 @@ namespace BDArmory.VesselSpawning
                 vesselSpawnConfigs.Add(new VesselSpawnConfig(
                     customVesselSpawnConfig.craftURL,
                     vesselSpawnPoint,
-                    Vector3.ProjectOnPlane(Quaternion.AngleAxis(customVesselSpawnConfig.heading, radialUnitVector) * refDirection, radialUnitVector).normalized,
+                    (Quaternion.AngleAxis(customVesselSpawnConfig.heading, radialUnitVector) * refDirection).ProjectOnPlanePreNormalized(radialUnitVector).normalized,
                     (float)spawnConfig.altitude,
                     0,
                     false,
@@ -244,6 +245,7 @@ namespace BDArmory.VesselSpawning
         /// </summary>
         public void SaveTemplate()
         {
+            if (LoadedVesselSwitcher.Instance.WeaponManagers.Count == 0) return; // Safe-guard, don't save over an existing template when the slots are empty. 
             var geoCoords = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Select(wm => wm.vessel.transform.position).Aggregate(Vector3.zero, (l, r) => l + r) / LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Count()); // Set the central spawn location at the centroid of the craft.
             customSpawnConfig.worldIndex = BDArmorySettings.VESSEL_SPAWN_WORLDINDEX;
             customSpawnConfig.latitude = geoCoords.x;
@@ -268,6 +270,7 @@ namespace BDArmory.VesselSpawning
                 customSpawnConfig.customVesselSpawnConfigs.Add(teamConfigs);
                 ++teamCount;
             }
+            if (!customSpawnConfigs.Contains(customSpawnConfig)) customSpawnConfigs.Add(customSpawnConfig); // Add the template if it isn't already there.
             CustomSpawnTemplateField.Save();
             PopulateEntriesFromLVS(); // Populate the slots to show the layout.
         }
@@ -277,7 +280,7 @@ namespace BDArmory.VesselSpawning
         /// Vessel positions, rotations and teams are saved.
         /// </summary>
         /// <param name="templateName"></param>
-        public CustomSpawnConfig NewTemplate()
+        public CustomSpawnConfig NewTemplate(string templateName="")
         {
             // Remove any invalid or unnamed entries.
             customSpawnConfigs = customSpawnConfigs.Where(config => !string.IsNullOrEmpty(config.name) && config.customVesselSpawnConfigs.Count > 0).ToList();
@@ -285,7 +288,7 @@ namespace BDArmory.VesselSpawning
             // Then make a new one.
             var geoCoords = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Select(wm => wm.vessel.transform.position).Aggregate(Vector3.zero, (l, r) => l + r) / LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Count()); // Set the central spawn location at the centroid of the craft.
             customSpawnConfig = new CustomSpawnConfig(
-                "",
+                templateName,
                 new SpawnConfig(
                     worldIndex: BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
                     latitude: geoCoords.x,

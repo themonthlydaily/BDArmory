@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System;
 using System.IO;
 using System.Collections;
@@ -778,7 +779,7 @@ namespace BDArmory.UI
                             ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser)
                         {
                             ModuleWeapon mw = ActiveWeaponManager.selectedWeapon.GetPart().FindModuleImplementing<ModuleWeapon>();
-                            if (mw != null && mw.weaponState == ModuleWeapon.WeaponStates.Enabled && mw.maxPitch > 1 && !mw.slaved && !mw.aiControlled)
+                            if (mw != null && mw.weaponState == ModuleWeapon.WeaponStates.Enabled && mw.maxPitch > 1 && !mw.slaved && !mw.GPSTarget && !mw.aiControlled)
                             {
                                 //Screen.showCursor = false;
                                 Cursor.visible = false;
@@ -2458,6 +2459,19 @@ namespace BDArmory.UI
 #if DEBUG  // Only visible when compiled in Debug configuration.
                     if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
                     {
+                        // GUI.Label(SLeftSliderRect(++line), $"Outer loops N ({PROF_N}):");
+                        // if (PROF_N_pow != (PROF_N_pow = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), PROF_N_pow, 0, 8))))
+                        // {
+                        //     PROF_N = Mathf.RoundToInt(Mathf.Pow(10, PROF_N_pow));
+                        // }
+                        // GUI.Label(SLeftSliderRect(++line), $"Inner loops n ({PROF_n}):");
+                        // if (PROF_n_pow != (PROF_n_pow = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), PROF_n_pow, 0, 6))))
+                        // {
+                        //     PROF_n = Mathf.RoundToInt(Mathf.Pow(10, PROF_n_pow));
+                        // }
+
+                        // if (GUI.Button(SLineRect(++line), "Test ProjectOnPlane and PredictPosition"))
+                        //     TestProjectOnPlaneAndPredictPosition();
                         // if (GUI.Button(SLineRect(++line), "Say hello KAL"))
                         // {
                         //     foreach (var kal in FlightGlobals.ActiveVessel.FindPartModulesImplementing<Expansions.Serenity.ModuleRoboticController>())
@@ -2890,17 +2904,17 @@ namespace BDArmory.UI
                     BDArmorySettings.MISSILE_CM_SETTING_TOGGLE = GUI.Toggle(SLineRect(++line), BDArmorySettings.MISSILE_CM_SETTING_TOGGLE, StringUtils.Localize("#LOC_BDArmory_Settings_MissileCMToggle"));
                     if (BDArmorySettings.MISSILE_CM_SETTING_TOGGLE)
                     {
-                        BDArmorySettings.ASPECTED_IR_SEEKERS = GUI.Toggle(SLineRect(++line), BDArmorySettings.ASPECTED_IR_SEEKERS, StringUtils.Localize("#LOC_BDArmory_Settings_AspectedIRSeekers"));
-                        GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_FlareFactor")}:  ({BDArmorySettings.FLARE_FACTOR})", leftLabel);
+                        BDArmorySettings.ASPECTED_IR_SEEKERS = GUI.Toggle(SLineRect(++line, 1), BDArmorySettings.ASPECTED_IR_SEEKERS, StringUtils.Localize("#LOC_BDArmory_Settings_AspectedIRSeekers"));
+                        GUI.Label(SLeftSliderRect(++line, 1), $"{StringUtils.Localize("#LOC_BDArmory_Settings_FlareFactor")}:  ({BDArmorySettings.FLARE_FACTOR})", leftLabel);
                         BDArmorySettings.FLARE_FACTOR = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FLARE_FACTOR, 0f, 3f), 0.05f);
 
-                        GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_ChaffFactor")}:  ({BDArmorySettings.CHAFF_FACTOR})", leftLabel);
+                        GUI.Label(SLeftSliderRect(++line, 1), $"{StringUtils.Localize("#LOC_BDArmory_Settings_ChaffFactor")}:  ({BDArmorySettings.CHAFF_FACTOR})", leftLabel);
                         BDArmorySettings.CHAFF_FACTOR = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.CHAFF_FACTOR, 0f, 3f), 0.05f);
 
-                        GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_SmokeDeflectionFactor")}:  ({BDArmorySettings.SMOKE_DEFLECTION_FACTOR})", leftLabel);
+                        GUI.Label(SLeftSliderRect(++line, 1), $"{StringUtils.Localize("#LOC_BDArmory_Settings_SmokeDeflectionFactor")}:  ({BDArmorySettings.SMOKE_DEFLECTION_FACTOR})", leftLabel);
                         BDArmorySettings.SMOKE_DEFLECTION_FACTOR = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.SMOKE_DEFLECTION_FACTOR, 0f, 40f), 0.5f);
 
-                        GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_APSThreshold")}:  ({BDArmorySettings.APS_THRESHOLD})", leftLabel);
+                        GUI.Label(SLeftSliderRect(++line, 1), $"{StringUtils.Localize("#LOC_BDArmory_Settings_APSThreshold")}:  ({BDArmorySettings.APS_THRESHOLD})", leftLabel);
                         BDArmorySettings.APS_THRESHOLD = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.APS_THRESHOLD, 1f, 356f));
                     }
                 }
@@ -4058,6 +4072,8 @@ namespace BDArmory.UI
         }
 
 #if DEBUG
+        // static int PROF_N_pow = 5, PROF_n_pow = 2;
+        static int PROF_N = 100000, PROF_n = 100;
         IEnumerator TestVesselPositionTiming()
         {
             var wait = new WaitForFixedUpdate();
@@ -4256,6 +4272,108 @@ namespace BDArmory.UI
                 clip = SoundUtils.GetAudioClip("BDArmory/Sounds/deployClick");
             dt = Time.realtimeSinceStartup - tic;
             Debug.Log($"DEBUG GetAudioClip took {dt / N:G3}s");
+        }
+
+        public static void TestProjectOnPlaneAndPredictPosition()
+        {
+            var watch = new System.Diagnostics.Stopwatch();
+            float µsResolution = 1e6f / System.Diagnostics.Stopwatch.Frequency;
+            Debug.Log($"DEBUG Clock resolution: {µsResolution}µs, {PROF_N} outer loops, {PROF_n} inner loops");
+            Vessel vessel = FlightGlobals.ActiveVessel;
+            Vector3 p = vessel.CoM, v = vessel.srf_velocity, a = vessel.acceleration;
+            Vector3 result = default;
+            float time = 5f;
+            var upNormal = VectorUtils.GetUpDirection(p);
+
+            var func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { result = AIUtils.PredictPosition(p, v, a, time); } };
+            Debug.Log($"DEBUG AIUtils.PredictPosition(p, v, a, time) took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {(Vector3d)result}");
+
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { result = PredictPositionNoInline(p, v, a, time); } };
+            Debug.Log($"DEBUG PredictPositionNoInline(p, v, a, time) took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {(Vector3d)result}");
+
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { result = p + time * v + 0.5f * time * time * a; } };
+            Debug.Log($"DEBUG p + time * v + 0.5f * time * time * a took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {(Vector3d)result}");
+
+            func = [MethodImpl(MethodImplOptions.NoInlining)] () => { for (int i = 0; i < PROF_n; ++i) { result = p + time * v + 0.5f * time * time * a; } };
+            Debug.Log($"DEBUG p + time * v + 0.5f * time * time * a no-inlining took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {(Vector3d)result}");
+
+            watch.Reset(); watch.Start();
+            for (int i = 0; i < PROF_N * PROF_n; ++i) { result = p + time * v + 0.5f * time * time * a; }
+            watch.Stop();
+            Debug.Log($"DEBUG fully inlined took {watch.ElapsedTicks * µsResolution / PROF_N / PROF_n:G3}µs to give {(Vector3d)result}");
+
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { result = Vector3.ProjectOnPlane(v, upNormal); } };
+            Debug.Log($"DEBUG Vector3.ProjectOnPlane(v, upNormal) took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {(Vector3d)result}");
+
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { result = v.ProjectOnPlane(upNormal); } };
+            Debug.Log($"DEBUG v.ProjectOnPlane(upNormal) took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {(Vector3d)result}");
+
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { result = ProjectOnPlaneOpt(v, upNormal); } };
+            Debug.Log($"DEBUG ProjectOnPlaneOpt(v, upNormal) took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {(Vector3d)result}");
+
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { result = v.ProjectOnPlanePreNormalized(upNormal); } };
+            Debug.Log($"DEBUG v.ProjectOnPlanePreNormalized(upNormal) took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {(Vector3d)result}");
+
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { result = ProjectOnPlanePreNorm(v, upNormal); } };
+            Debug.Log($"DEBUG ProjectOnPlanePreNorm(v, upNormal) took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {(Vector3d)result}");
+
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { result = ProjectOnPlanePreNormNoInline(v, upNormal); } };
+            Debug.Log($"DEBUG ProjectOnPlanePreNormNoInline(v, upNormal) took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {(Vector3d)result}");
+
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { result = v - upNormal * Vector3.Dot(v, upNormal); } };
+            Debug.Log($"DEBUG v - upNormal * Vector3.Dot(v, upNormal) took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {(Vector3d)result}");
+
+            watch.Reset(); watch.Start();
+            for (int i = 0; i < PROF_N * PROF_n; ++i) { result = v - upNormal * Vector3.Dot(v, upNormal); }
+            watch.Stop();
+            Debug.Log($"DEBUG fully inlined took {watch.ElapsedTicks * µsResolution / PROF_N / PROF_n:G3}µs to give {(Vector3d)result}");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static float ProfileFunc(Action func, int N)
+        {
+            var watch = new System.Diagnostics.Stopwatch();
+            float µsResolution = 1e6f / System.Diagnostics.Stopwatch.Frequency;
+            func(); // Warm-up
+            watch.Start();
+            for (int i = 0; i < N; ++i) func();
+            watch.Stop();
+            return watch.ElapsedTicks * µsResolution / N;
+        }
+
+        public static Vector3 PredictPositionNoInline(Vector3 position, Vector3 velocity, Vector3 acceleration, float time)
+        {
+            return position + time * velocity + 0.5f * time * time * acceleration;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector3 ProjectOnPlaneOpt(Vector3 vector, Vector3 planeNormal)
+        {
+            float sqrMag = Vector3.Dot(planeNormal, planeNormal);
+            if (sqrMag < Mathf.Epsilon)
+                return vector;
+            else
+            {
+                var dotNorm = Vector3.Dot(vector, planeNormal) / sqrMag;
+                return new Vector3(vector.x - planeNormal.x * dotNorm,
+                    vector.y - planeNormal.y * dotNorm,
+                    vector.z - planeNormal.z * dotNorm);
+            }
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector3 ProjectOnPlanePreNorm(Vector3 vector, Vector3 planeNormal)
+        {
+            var dot = Vector3.Dot(vector, planeNormal);
+            return new Vector3(vector.x - planeNormal.x * dot,
+                vector.y - planeNormal.y * dot,
+                vector.z - planeNormal.z * dot);
+        }
+        public static Vector3 ProjectOnPlanePreNormNoInline(Vector3 vector, Vector3 planeNormal)
+        {
+            var dot = Vector3.Dot(vector, planeNormal);
+            return new Vector3(vector.x - planeNormal.x * dot,
+                vector.y - planeNormal.y * dot,
+                vector.z - planeNormal.z * dot);
         }
 #endif
     }

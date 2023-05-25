@@ -596,6 +596,7 @@ namespace BDArmory.Competition
                 if (vessel == null || !vessel.loaded || vessel.packed || VesselModuleRegistry.ignoredVesselTypes.Contains(vessel.vesselType))
                     continue;
                 var mf = VesselModuleRegistry.GetModule<MissileFire>(vessel);
+                var ai = VesselModuleRegistry.GetIBDAIControl(vessel);
                 double HP = 0;
                 double WreckFactor = 0;
                 if (mf != null)
@@ -610,10 +611,18 @@ namespace BDArmory.Competition
                     {
                         WreckFactor += (100 - HP) / 100; //the less plane remaining, the greater the chance it's a wreck
                     }
+                    if (ai == null)
+                    {
+                        WreckFactor += 0.5f; // It's brain-dead.
+                    }
+                    else if (vessel.LandedOrSplashed && (ai as BDModulePilotAI != null || ai as BDModuleVTOLAI != null))
+                    {
+                        WreckFactor += 0.5f; // It's a plane / helicopter that's now on the ground.
+                    }
                     if (vessel.verticalSpeed < -30) //falling out of the sky? Could be an intact plane diving to default alt, could be a cockpit
                     {
                         WreckFactor += 0.5f;
-                        var AI = VesselModuleRegistry.GetBDModulePilotAI(vessel, true);
+                        var AI = ai as BDModulePilotAI;
                         if (AI == null || vessel.radarAltitude < AI.defaultAltitude) //craft is uncontrollably diving, not returning from high alt to cruising alt
                         {
                             WreckFactor += 0.5f;

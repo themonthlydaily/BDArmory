@@ -113,7 +113,7 @@ namespace BDArmory.Weapons.Missiles
                 if (isMultiLauncher)
                 {
                     missileLauncher.missileName = subMunitionName;
-                    missileLauncher.Events["Jettison"].guiActive = false;
+                    if(!permitJettison) missileLauncher.Events["Jettison"].guiActive = false;
                     if (OverrideDropSettings)
                     {
                         missileLauncher.Fields["dropTime"].guiActive = false;
@@ -490,6 +490,22 @@ namespace BDArmory.Weapons.Missiles
                     ml.CruiseAltitude = missileLauncher.CruiseAltitude;
                     ml.CruiseSpeed = missileLauncher.CruiseSpeed;
                     ml.CruisePredictionTime = missileLauncher.CruisePredictionTime;
+                }
+                if (missileLauncher.GuidanceMode == GuidanceModes.AAMLoft)
+                {
+                    ml.LoftMaxAltitude = missileLauncher.LoftMaxAltitude;
+                    ml.LoftRangeOverride = missileLauncher.LoftRangeOverride;
+                    ml.LoftAltitudeAdvMax = missileLauncher.LoftAltitudeAdvMax;
+                    ml.LoftMinAltitude = missileLauncher.LoftMinAltitude;
+                    ml.LoftAngle = missileLauncher.LoftAngle;
+                    ml.LoftTermAngle = missileLauncher.LoftTermAngle;
+                    ml.LoftRangeFac = missileLauncher.LoftRangeFac;
+                    ml.LoftVelComp = missileLauncher.LoftVelComp;
+                    ml.LoftAltComp = missileLauncher.LoftAltComp;
+                    ml.LoftTermRange = missileLauncher.LoftTermRange;
+                    ml.loftState = 0;
+                    ml.TimeToImpact = float.PositiveInfinity;
+                    ml.initMaxAoA = missileLauncher.maxAoA;
                 }
                 //ml.decoupleSpeed = 5;
                 if (missileLauncher.GuidanceMode == GuidanceModes.AGM)

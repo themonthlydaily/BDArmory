@@ -877,6 +877,9 @@ namespace BDArmory.Weapons
         [KSPField(isPersistant = true)]
         public bool isAPS = false;
 
+        [KSPField(isPersistant = true)]
+        public bool dualModeAPS = false;
+
         [KSPField]
         public string APSType = "missile"; //missile/ballistic/omni
 
@@ -1048,13 +1051,20 @@ namespace BDArmory.Weapons
             ParseWeaponType(weaponType);
 
             // extension for feature_engagementenvelope
+            if (dualModeAPS) isAPS = true;
             if (isAPS)
             {
-                HideEngageOptions();
-                Events["ShowUI"].active = false;
-                Events["HideUI"].active = false;
-                Events["Toggle"].active = false;
+                if (!dualModeAPS)
+                {
+                    HideEngageOptions();
+                    Events["ShowUI"].active = false;
+                    Events["HideUI"].active = false;
+                    Events["Toggle"].active = false;
+                    Fields["priority"].guiActive = false;
+                    Fields["priority"].guiActiveEditor = false;
+                }
                 ParseAPSType(APSType);
+                aiControlled = true;
             }
             InitializeEngagementRange(minSafeDistanceDistance, maxEffectiveDistance);
             if (string.IsNullOrEmpty(GetShortName()))
@@ -1074,7 +1084,15 @@ namespace BDArmory.Weapons
 
             if (eWeaponType != WeaponTypes.Laser || (eWeaponType == WeaponTypes.Laser && pulseLaser))
             {
-                baseRPM = float.Parse(ConfigNodeUtils.FindPartModuleConfigNodeValue(part.partInfo.partConfig, "ModuleWeapon", "roundsPerMinute"));
+                try
+                {
+                    baseRPM = float.Parse(ConfigNodeUtils.FindPartModuleConfigNodeValue(part.partInfo.partConfig, "ModuleWeapon", "roundsPerMinute"));
+                }
+                catch
+                {
+					baseRPM = 3000;
+                    Debug.LogError($"[BDArmory.ModuleWeapon] {shortName} missing roundsPerMinute field in .cfg! Fix your .cfg!");
+                }
             }
             else baseRPM = 3000;
 
@@ -1371,6 +1389,11 @@ namespace BDArmory.Weapons
                     }
                 }
                 baseDeviation = maxDeviation; //store original MD value
+
+                if (isAPS)
+                {
+                    EnableWeapon();
+                }
             }
             else if (HighLogic.LoadedSceneIsEditor)
             {
@@ -3162,6 +3185,16 @@ namespace BDArmory.Weapons
         HashSet<WeaponStates> disabledStates = new HashSet<WeaponStates> { WeaponStates.Disabled, WeaponStates.PoweringDown };
         public void DisableWeapon()
         {
+            if (dualModeAPS) isAPS = true;
+            if (isAPS)
+            {
+                if (ammoCount > 0 || !BDArmorySettings.INFINITE_AMMO)
+                {
+                    EnableWeapon();
+                    aiControlled = true;
+                    return;
+                }
+            }
             if (disabledStates.Contains(weaponState))
                 return;
 
@@ -3173,6 +3206,16 @@ namespace BDArmory.Weapons
         HashSet<WeaponStates> standbyStates = new HashSet<WeaponStates> { WeaponStates.Standby, WeaponStates.PoweringUp, WeaponStates.Locked };
         public void StandbyWeapon()
         {
+            if (dualModeAPS) isAPS = true;
+            if (isAPS)
+            {
+                if (ammoCount > 0 || !BDArmorySettings.INFINITE_AMMO)
+                {
+                    EnableWeapon();
+                    aiControlled = true;
+                    return;
+                }
+            }
             if (standbyStates.Contains(weaponState))
                 return;
             if (disabledStates.Contains(weaponState))
@@ -3925,7 +3968,6 @@ namespace BDArmory.Weapons
                             autoFire = false;
                         }
                     }
-
                 }
                 else
                 {
@@ -4328,8 +4370,8 @@ namespace BDArmory.Weapons
             {
                 Rect angleRect = new Rect(guiPos.x, guiPos.y, 100, 200);
 
-                Vector3 pitchVector = (5 * Vector3.ProjectOnPlane(fireTransforms[0].forward, refRight));
-                Vector3 yawVector = (5 * Vector3.ProjectOnPlane(fireTransforms[0].forward, refUp));
+                Vector3 pitchVector = (5 * fireTransforms[0].forward.ProjectOnPlanePreNormalized(refRight));
+                Vector3 yawVector = (5 * fireTransforms[0].forward.ProjectOnPlanePreNormalized(refUp));
 
                 GUIUtils.DrawLineBetweenWorldPositions(fireTransforms[0].position + pitchVector, fwdPos, 3,
                     Color.white);
@@ -4747,7 +4789,7 @@ namespace BDArmory.Weapons
             }
         }
 
-        void TrackIncomingProjectile() //this is holding onto initial target for some reason, not properly nulling target somewhere it should be nulled
+        void TrackIncomingProjectile()
         {
             targetAcquired = false;
             slaved = false;
@@ -4977,7 +5019,7 @@ namespace BDArmory.Weapons
             // Floating objects need vertical smoothing.
             float altitude = (float)FlightGlobals.currentMainBody.GetAltitude(position);
             if (altitude < 12 && altitude > -10)
-                acceleration = Vector3.ProjectOnPlane(acceleration, VectorUtils.GetUpDirection(position));
+                acceleration = acceleration.ProjectOnPlanePreNormalized(VectorUtils.GetUpDirection(position));
 
             var distance = Vector3.Distance(position, part.transform.position);
             var alpha = Mathf.Max(1f - BDAMath.Sqrt(distance) / 512f, 0.1f);
@@ -5798,6 +5840,12 @@ namespace BDArmory.Weapons
             if (crewserved)
             {
                 output.AppendLine($"Crew-served Weapon - Requires onboard Kerbal");
+            }
+            if (isAPS)
+            {
+				output.AppendLine($"Autonomous Point Defense Weapon");
+                output.AppendLine($" - Interception type: {APSType}");
+                if (dualModeAPS) output.AppendLine($" - Dual purpose; can be used offensively");
             }
             return output.ToString();
         }
