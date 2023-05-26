@@ -398,23 +398,34 @@ namespace BDArmory.Weapons.Missiles
             {
                 if (boosterFuelMass < 0 || boostTime <= 0)
                 {
-                    if (boosterFuelMass < 0) Debug.LogWarning($"[BDArmory.MissileBase]:Error in Configuration, boosterFuelMass: {boosterFuelMass} can't be less than 0, Clamping to 0");
+                    if (boosterFuelMass < 0) Debug.LogWarning($"[BDArmory.MissileBase]:Error in Configuration, boosterFuelMass: {boosterFuelMass} can't be less than 0, reverting to Default Value");
                     boosterFuelMass = 0;
                 }
-                else if (boostTime > 0 && boosterFuelMass <= 0) boosterFuelMass = initialMass * 0.1f;
 
                 if (cruiseFuelMass < 0 || cruiseTime <= 0)
                 {
-                    if (cruiseFuelMass < 0) Debug.LogWarning($"[BDArmory.MissileBase]:Error in Configuration, cruiseFuelMass: {cruiseFuelMass} can't be less than 0, Clamping to 0");
+                    if (cruiseFuelMass < 0) Debug.LogWarning($"[BDArmory.MissileBase]:Error in Configuration, cruiseFuelMass: {cruiseFuelMass} can't be less than 0, reverting to Default Value");
                     cruiseFuelMass = 0;
                 }
-                else if (cruiseTime > 0 && cruiseFuelMass <= 0) cruiseFuelMass = initialMass * 0.1f;
-
+                
                 if (boosterFuelMass + cruiseFuelMass > initialMass * 0.95f)
                 {
                     Debug.LogWarning($"[BDArmory.MissileBase]:Error in configuration, boosterFuelMass: {boosterFuelMass} + cruiseFuelMass: {cruiseFuelMass} can't be greater than 95% of missile mass {initialMass}, Clamping to 80% of missile mass");
-                    boosterFuelMass = Mathf.Clamp(boosterFuelMass, 0, (cruiseFuelMass > 0) ? initialMass * 0.4f : initialMass * 0.8f);
-                    cruiseFuelMass = Mathf.Clamp(cruiseFuelMass, 0, (boosterFuelMass > 0) ? initialMass * 0.4f : initialMass * 0.8f);
+                    if(boosterFuelMass > 0)
+                    {
+                        if(cruiseFuelMass > 0)
+                        {
+                            boosterFuelMass = Mathf.Clamp(boosterFuelMass, 0, initialMass * 0.4f);
+                            cruiseFuelMass = Mathf.Clamp(cruiseFuelMass, 0, initialMass * 0.4f);
+                        }
+                        else boosterFuelMass = Mathf.Clamp(boosterFuelMass, 0, initialMass * 0.8f);
+                    }
+                    else cruiseFuelMass = Mathf.Clamp(cruiseFuelMass, 0, initialMass * 0.8f);
+                }
+                else
+                {
+                    if (boostTime > 0 && boosterFuelMass <= 0) boosterFuelMass = initialMass * 0.1f;
+                    if (cruiseTime > 0 && cruiseFuelMass <= 0) cruiseFuelMass = initialMass * 0.1f;
                 }
             }
 
