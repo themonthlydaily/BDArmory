@@ -302,6 +302,7 @@ namespace BDArmory.Weapons.Missiles
 
         private bool OldInfAmmo = false;
         private bool StartSetupComplete = false;
+
         //Fuel Burn Variables
         public float GetModuleMass(float baseMass, ModifierStagingSituation situation) => ordinanceMass;
         public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.CONSTANTLY;
@@ -395,27 +396,27 @@ namespace BDArmory.Weapons.Missiles
         {
             //base.OnStart(state);
 
-            float initialMass = part.mass;
             if (useFuel)
             {
+                float initialMass = part.mass;
                 if (boosterFuelMass < 0 || boostTime <= 0)
                 {
-                    if (boosterFuelMass < 0) Debug.LogWarning($"[BDArmory.MissileBase]:Error in Configuration, boosterFuelMass: {boosterFuelMass} can't be less than 0, reverting to Default Value");
+                    if (boosterFuelMass < 0) Debug.LogWarning($"[BDArmory.MissileLauncher]: Error in configuration of {part.name}, boosterFuelMass: {boosterFuelMass} can't be less than 0, reverting to default value.");
                     boosterFuelMass = 0;
                 }
 
                 if (cruiseFuelMass < 0 || cruiseTime <= 0)
                 {
-                    if (cruiseFuelMass < 0) Debug.LogWarning($"[BDArmory.MissileBase]:Error in Configuration, cruiseFuelMass: {cruiseFuelMass} can't be less than 0, reverting to Default Value");
+                    if (cruiseFuelMass < 0) Debug.LogWarning($"[BDArmory.MissileLauncher]: Error in configuration of {part.name}, cruiseFuelMass: {cruiseFuelMass} can't be less than 0, reverting to default value.");
                     cruiseFuelMass = 0;
                 }
-                
+
                 if (boosterFuelMass + cruiseFuelMass > initialMass * 0.95f)
                 {
-                    Debug.LogWarning($"[BDArmory.MissileBase]:Error in configuration, boosterFuelMass: {boosterFuelMass} + cruiseFuelMass: {cruiseFuelMass} can't be greater than 95% of missile mass {initialMass}, Clamping to 80% of missile mass");
-                    if(boosterFuelMass > 0)
+                    Debug.LogWarning($"[BDArmory.MissileLauncher]: Error in configuration of {part.name}, boosterFuelMass: {boosterFuelMass} + cruiseFuelMass: {cruiseFuelMass} can't be greater than 95% of the missile mass {initialMass}, clamping to 80% of the missile mass.");
+                    if (boosterFuelMass > 0)
                     {
-                        if(cruiseFuelMass > 0)
+                        if (cruiseFuelMass > 0)
                         {
                             boosterFuelMass = Mathf.Clamp(boosterFuelMass, 0, initialMass * 0.4f);
                             cruiseFuelMass = Mathf.Clamp(cruiseFuelMass, 0, initialMass * 0.4f);
@@ -814,7 +815,8 @@ namespace BDArmory.Weapons.Missiles
                     Fields["LoftVelComp"].guiActiveEditor = false;
                     Fields["LoftAltComp"].guiActive = false;
                     Fields["LoftAltComp"].guiActiveEditor = false;
-                } else
+                }
+                else
                 {
                     Fields["LoftAngle"].guiActive = true;
                     Fields["LoftAngle"].guiActiveEditor = true;
@@ -1839,7 +1841,7 @@ namespace BDArmory.Weapons.Missiles
                 if (vessel == null || vessel.Landed) Detonate(); //dropping torpedoes over land is just going to turn them into heavy, expensive bombs...
                 dropTime = TimeIndex;
             }
-            if(useFuel) burnRate = boostTime > 0 ? (boosterFuelMass / boostTime) * Time.fixedDeltaTime : 0;
+            if (useFuel) burnRate = boostTime > 0 ? boosterMass / boostTime * Time.fixedDeltaTime : 0;
             StartBoost();
             var wait = new WaitForFixedUpdate();
             float boostStartTime = Time.time;
@@ -1886,9 +1888,9 @@ namespace BDArmory.Weapons.Missiles
                     }
 
                 //thrust
-                if (useFuel && burnRate > 0 && -ordinanceMass < boosterFuelMass)
+                if (useFuel && burnRate > 0 && ordinanceMass > -boosterFuelMass)
                 {
-                    ordinanceMass = -Mathf.Min(-ordinanceMass + burnRate, boosterFuelMass);
+                    ordinanceMass = Mathf.Max(ordinanceMass - burnRate, -boosterFuelMass);
                 }
 
                 if (spoolEngine)
@@ -1965,9 +1967,8 @@ namespace BDArmory.Weapons.Missiles
                     if (gEmitter.Current == null) continue;
                     gEmitter.Current.emit = false;
                 }
-            
+
             if (useFuel) ordinanceMass = -boosterFuelMass;
-            
 
             if (decoupleBoosters)
             {
@@ -2050,9 +2051,9 @@ namespace BDArmory.Weapons.Missiles
                         }
                     }
                 //Thrust
-                if (useFuel && burnRate > 0 && -ordinanceMass < massToBurn)
+                if (useFuel && burnRate > 0 && ordinanceMass > -massToBurn)
                 {
-                    ordinanceMass = -Mathf.Min(-ordinanceMass + burnRate, massToBurn);
+                    ordinanceMass = Mathf.Max(ordinanceMass - burnRate, -massToBurn);
                 }
 
                 if (spoolEngine)
@@ -2260,7 +2261,7 @@ namespace BDArmory.Weapons.Missiles
 
                     aamTarget = MissileGuidance.GetAirToAirLoftTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, targetAlt, LoftMaxAltitude, LoftRangeFac, LoftAltComp, LoftVelComp, LoftAngle, LoftTermAngle, LoftTermRange, ref loftState, out float currTimeToImpact, out float rangeToTarget, optimumAirspeed);
 
-                    float fac = (1 - (rangeToTarget-LoftTermRange) / Mathf.Clamp(LoftTermRange * 4f,5000f,25000f));
+                    float fac = (1 - (rangeToTarget - LoftTermRange) / Mathf.Clamp(LoftTermRange * 4f, 5000f, 25000f));
 
                     maxAoA = Mathf.Clamp(initMaxAoA * fac, 4f, initMaxAoA);
 
@@ -2283,7 +2284,7 @@ namespace BDArmory.Weapons.Missiles
                 }
                 else if (GuidanceMode == GuidanceModes.AAMPure)
                 {
-                    TimeToImpact = Vector3.Distance(TargetPosition, transform.position) / Mathf.Max((float) vessel.srfSpeed, optimumAirspeed);
+                    TimeToImpact = Vector3.Distance(TargetPosition, transform.position) / Mathf.Max((float)vessel.srfSpeed, optimumAirspeed);
                     aamTarget = TargetPosition;
                 }
                 else// AAM Lead
