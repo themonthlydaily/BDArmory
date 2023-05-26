@@ -1,7 +1,7 @@
 ﻿﻿IMPROVEMENTS / FIXES
 - Weapons:
 	- Missiles:
-		- Add new 'boosterMass' and 'sustainerMass' Fields to missile config that allow missiles to have a Fuel usage that can affect mass when  'useFuel' field is true.
+		- Add new 'boosterFuelMass' and 'cruiseFuelMass' Fields to missile config that allow missiles to have a Fuel usage that can affect mass when the new field 'useFuel' is true.
 
 v1.6.1.0
 IMPROVEMENTS / FIXES
