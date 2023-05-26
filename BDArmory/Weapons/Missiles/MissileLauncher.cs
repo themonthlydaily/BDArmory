@@ -1841,7 +1841,7 @@ namespace BDArmory.Weapons.Missiles
                 if (vessel == null || vessel.Landed) Detonate(); //dropping torpedoes over land is just going to turn them into heavy, expensive bombs...
                 dropTime = TimeIndex;
             }
-            if (useFuel) burnRate = boostTime > 0 ? boosterMass / boostTime * Time.fixedDeltaTime : 0;
+            if (useFuel) burnRate = boostTime > 0 ? boosterFuelMass / boostTime * Time.fixedDeltaTime : 0;
             StartBoost();
             var wait = new WaitForFixedUpdate();
             float boostStartTime = Time.time;
