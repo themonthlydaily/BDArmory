@@ -209,7 +209,7 @@ namespace BDArmory.VesselSpawning
                         position = spawnPoint + spawnDistance * direction;
                         ++spawnedVesselCount;
                     }
-                    if (spawnDistance > BDArmorySettings.COMPETITION_DISTANCE / 2f / Mathf.Sin(Mathf.PI / spawnedVesselCount)) direction *= -1f; //have vessels spawning further than comp dist spawn pointing inwards instead of outwards
+                    if (spawnDistance > BDArmorySettings.COMPETITION_DISTANCE / 2f / Mathf.Sin(Mathf.PI / spawnConfig.craftFiles.Count)) direction *= -1f; //have vessels spawning further than comp dist spawn pointing inwards instead of outwards
                     vesselSpawnConfigs.Add(new VesselSpawnConfig(craftUrl, position, direction, (float)spawnConfig.altitude, -80f, spawnAirborne));
                 }
             }
