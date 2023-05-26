@@ -304,11 +304,11 @@ namespace BDArmory.Weapons.Missiles
         private bool StartSetupComplete = false;
 
         //Fuel Burn Variables
-        public float GetModuleMass(float baseMass, ModifierStagingSituation situation) => ordinanceMass;
+        public float GetModuleMass(float baseMass, ModifierStagingSituation situation) => -burnedFuelMass;
         public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.CONSTANTLY;
 
         private float burnRate = 0;
-        private float ordinanceMass = 0;
+        private float burnedFuelMass = 0;
 
         public bool SetupComplete => StartSetupComplete;
         public int loftState = 0;
@@ -1888,9 +1888,9 @@ namespace BDArmory.Weapons.Missiles
                     }
 
                 //thrust
-                if (useFuel && burnRate > 0 && ordinanceMass > -boosterFuelMass)
+                if (useFuel && burnRate > 0 && burnedFuelMass < boosterFuelMass)
                 {
-                    ordinanceMass = Mathf.Max(ordinanceMass - burnRate, -boosterFuelMass);
+                    burnedFuelMass = Mathf.Min(burnedFuelMass + burnRate, boosterFuelMass);
                 }
 
                 if (spoolEngine)
@@ -1968,7 +1968,7 @@ namespace BDArmory.Weapons.Missiles
                     gEmitter.Current.emit = false;
                 }
 
-            if (useFuel) ordinanceMass = -boosterFuelMass;
+            if (useFuel) burnedFuelMass = boosterFuelMass;
 
             if (decoupleBoosters)
             {
@@ -2051,9 +2051,9 @@ namespace BDArmory.Weapons.Missiles
                         }
                     }
                 //Thrust
-                if (useFuel && burnRate > 0 && ordinanceMass > -massToBurn)
+                if (useFuel && burnRate > 0 && burnedFuelMass < massToBurn)
                 {
-                    ordinanceMass = Mathf.Max(ordinanceMass - burnRate, -massToBurn);
+                    burnedFuelMass = Mathf.Min(burnedFuelMass + burnRate, massToBurn);
                 }
 
                 if (spoolEngine)
@@ -2102,7 +2102,7 @@ namespace BDArmory.Weapons.Missiles
         {
             MissileState = MissileStates.PostThrust;
 
-            if (useFuel) ordinanceMass = -(cruiseFuelMass + boosterFuelMass);
+            if (useFuel) burnedFuelMass = cruiseFuelMass + boosterFuelMass;
 
             using (IEnumerator<Light> light = gameObject.GetComponentsInChildren<Light>().AsEnumerable().GetEnumerator())
                 while (light.MoveNext())
