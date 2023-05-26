@@ -411,9 +411,9 @@ namespace BDArmory.Weapons.Missiles
                 if (boosterFuelMass + cruiseFuelMass > initialMass * 0.95f)
                 {
                     Debug.LogWarning($"[BDArmory.MissileBase]:Error in configuration, boosterFuelMass: {boosterFuelMass} + cruiseFuelMass: {cruiseFuelMass} can't be greater than 95% of missile mass {initialMass}, Clamping to 80% of missile mass");
-                    if(boosterFuelMass > 0)
+                    if(boosterFuelMass > 0 || boostTime > 0)
                     {
-                        if(cruiseFuelMass > 0)
+                        if(cruiseFuelMass > 0 || cruiseTime > 0)
                         {
                             boosterFuelMass = Mathf.Clamp(boosterFuelMass, 0, initialMass * 0.4f);
                             cruiseFuelMass = Mathf.Clamp(cruiseFuelMass, 0, initialMass * 0.4f);
