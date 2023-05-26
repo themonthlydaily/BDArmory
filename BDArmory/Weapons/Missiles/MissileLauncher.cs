@@ -401,14 +401,14 @@ namespace BDArmory.Weapons.Missiles
                     if (boosterFuelMass < 0) Debug.LogWarning($"[BDArmory.MissileBase]:Error in Configuration, boosterFuelMass: {boosterFuelMass} can't be less than 0, Clamping to 0");
                     boosterFuelMass = 0;
                 }
-                if (boostTime > 0 && boosterFuelMass <= 0) boosterFuelMass = initialMass * 0.1f;
+                else if (boostTime > 0 && boosterFuelMass <= 0) boosterFuelMass = initialMass * 0.1f;
 
                 if (cruiseFuelMass < 0 || cruiseTime <= 0)
                 {
                     if (cruiseFuelMass < 0) Debug.LogWarning($"[BDArmory.MissileBase]:Error in Configuration, cruiseFuelMass: {cruiseFuelMass} can't be less than 0, Clamping to 0");
                     cruiseFuelMass = 0;
                 }
-                if (cruiseTime > 0 && cruiseFuelMass <= 0) cruiseFuelMass = initialMass * 0.1f;
+                else if (cruiseTime > 0 && cruiseFuelMass <= 0) cruiseFuelMass = initialMass * 0.1f;
 
                 if (boosterFuelMass + cruiseFuelMass > initialMass * 0.95f)
                 {
