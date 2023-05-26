@@ -28,7 +28,7 @@
 		- SARH missiles now properly follow whatever the active locked radar target is.
 		- Added new loft guidance logic under the homingType "aamloft". Enables longer ranged engagements at high altitude by enabling higher terminal speeds. Added various tuning parameters accessible in the hangar (as well as in part configs) to tweak performance as desired. A more thorough explanation of the guidance law and the tuning parameters is available on the Github wiki.
 		- Implemented missing pure pursuit guidance ("aampure").
-		- Add new 'boosterMass' and 'sustainerMass' Fields to missile config that allow missiles to have a Fuel usage that can affect mass when  'useFuel' field is true.
+		- Add new 'boosterFuelMass' and 'cruiseFuelMass' Fields to missile config that allow missiles to have a Fuel usage that can affect mass when the new field 'useFuel' is true.
 - Competition:
 	- Add some checks for lacking an AI or an airborne AI being landed/splashed to the scoring for being considered as wrecked (MIA).
 
