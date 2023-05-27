@@ -41,6 +41,7 @@ IMPROVEMENTS / FIXES
 		- Add new 'boosterFuelMass' and 'cruiseFuelMass' fields to missile config that allow missiles to have a fuel usage that can affect mass when the new field 'useFuel' is true.
 - Competition:
 	- Add some checks for lacking an AI or an airborne AI being landed/splashed to the scoring for being considered as wrecked (MIA).
+	- Add competition messages about vessels colliding with asteroids.
 - RWP:
 	- Use the current planetary body, not Kerbin for remote orchestration.
 
