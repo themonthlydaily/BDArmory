@@ -199,9 +199,7 @@ namespace BDArmory.Guidances
                 targetAlVelMag *= Mathf.Sign(velComp) * compMult;
                 targetAlVelMag = Mathf.Max(targetAlVelMag, 0f); //0.5f * (targetAlVelMag + Mathf.Abs(targetAlVelMag)); // Set -ve velocity (I.E. towards the missile) to 0 if velComp is +ve, otherwise for -ve
 
-                float targetVertVelMag = Vector3.Dot(targetVelocity, upDirection);
-                targetVertVelMag *= Mathf.Sign(vertVelComp) * compMult;
-                targetVertVelMag = Mathf.Max(targetVertVelMag, 0f);
+                float targetVertVelMag = Mathf.Max(0f, Mathf.Sign(vertVelComp) * compMult * Vector3.Dot(targetVelocity, upDirection));
 
                 //targetCompVel = targetVelocity + velComp * targetHorVel.magnitude* targetHorVel.normalized; // Old velComp logic
                 //targetCompVel = targetVelocity + velComp * targetAlVelMag * velDirectionHor; // New velComp logic
@@ -218,7 +216,7 @@ namespace BDArmory.Guidances
                     bulletRelativePosition = targetPosition - firePosition; // Compensate for altitude
                     bulletRelativeVelocity = targetVelocity - currVel;
                     bulletRelativeAcceleration = targetAcceleration - bulletAcceleration;
-                    timeToCPA = AIUtils.TimeToCPA(bulletRelativePosition, bulletRelativeVelocity, bulletRelativeAcceleration, timeToImpact*3f);
+                    timeToCPA = AIUtils.TimeToCPA(bulletRelativePosition, bulletRelativeVelocity, bulletRelativeAcceleration, timeToImpact * 3f);
                     targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetCompVel, targetAcceleration, timeToCPA);
                     bulletDropOffset = -0.5f * bulletAcceleration * timeToCPA * timeToCPA;
                     ballisticTarget = targetPredictedPosition + bulletDropOffset;
@@ -231,10 +229,10 @@ namespace BDArmory.Guidances
                 float velForwards = (velDirection - upDirection * velUp).magnitude;
                 float angle = Mathf.Atan2(velUp, velForwards);
 
-                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileGuidance]: Loft Angle: [{(angle*Mathf.Rad2Deg):G3}]");
+                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileGuidance]: Loft Angle: [{(angle * Mathf.Rad2Deg):G3}]");
 
                 // Check if termination angle agrees with termAngle
-                if ((angle > -termAngle*Mathf.Deg2Rad) && (loftState < 2))
+                if ((angle > -termAngle * Mathf.Deg2Rad) && (loftState < 2))
                 {
                     // If not yet at termination, simple lead compensation
                     targetPosition += targetVelocity * leadTime + 0.5f * leadTime * leadTime * targetAcceleration;
@@ -244,49 +242,49 @@ namespace BDArmory.Guidances
                         ((targetPosition - missileVessel.transform.position).ProjectOnPlanePreNormalized(upDirection)).normalized;
 
                     // Altitude clamp based on rangeFactor and maxAlt, cannot be lower than target
-                    float altitudeClamp = Mathf.Clamp(targetAlt + rangeFactor * Vector3.Dot(targetPosition - missileVessel.transform.position,planarDirectionToTarget), targetAlt, Mathf.Max(maxAltitude,targetAlt));
+                    float altitudeClamp = Mathf.Clamp(targetAlt + rangeFactor * Vector3.Dot(targetPosition - missileVessel.transform.position, planarDirectionToTarget), targetAlt, Mathf.Max(maxAltitude, targetAlt));
 
                     // Old loft climb logic, wanted to limit turn. Didn't work well but leaving it in if I decide to fix it
                     /*if (missileVessel.altitude < (altitudeClamp - 0.5f))
                     //gain altitude if launching from stationary
                     {*/
-                        //currSpeed = (float)missileVessel.Velocity().magnitude;
+                    //currSpeed = (float)missileVessel.Velocity().magnitude;
 
-                        // 5g turn, v^2/r = a, v^2/(dh*(tan(45°/2)sin(45°))) > 5g, v^2/(tan(45°/2)sin(45°)) > 5g * dh, I.E. start turning when you need to pull a 5g turn,
-                        // before that the required gs is lower, inversely proportional
-                        /*if (loftState == 1 || (currSpeed * currSpeed * 0.2928932188134524755991556378951509607151640623115259634116f) >= (5f * (float)PhysicsGlobals.GravitationalAcceleration) * (altitudeClamp - missileVessel.altitude))
-                        {*/
-                            /*
-                            loftState = 1;
+                    // 5g turn, v^2/r = a, v^2/(dh*(tan(45°/2)sin(45°))) > 5g, v^2/(tan(45°/2)sin(45°)) > 5g * dh, I.E. start turning when you need to pull a 5g turn,
+                    // before that the required gs is lower, inversely proportional
+                    /*if (loftState == 1 || (currSpeed * currSpeed * 0.2928932188134524755991556378951509607151640623115259634116f) >= (5f * (float)PhysicsGlobals.GravitationalAcceleration) * (altitudeClamp - missileVessel.altitude))
+                    {*/
+                    /*
+                    loftState = 1;
 
-                            // Calculate upwards and forwards velocity components
-                            velUp = Vector3.Dot(missileVessel.Velocity(), upDirection);
-                            velForwards = (float)(missileVessel.Velocity() - upDirection * velUp).magnitude;
+                    // Calculate upwards and forwards velocity components
+                    velUp = Vector3.Dot(missileVessel.Velocity(), upDirection);
+                    velForwards = (float)(missileVessel.Velocity() - upDirection * velUp).magnitude;
 
-                            // Derivation of relationship between dh and turn radius
-                            // tan(theta/2) = dh/L, sin(theta) = L/r
-                            // tan(theta/2) = sin(theta)/(1+cos(theta))
-                            float turnR = (float)(altitudeClamp - missileVessel.altitude) * (currSpeed * currSpeed + currSpeed * velForwards) / (velUp * velUp);
+                    // Derivation of relationship between dh and turn radius
+                    // tan(theta/2) = dh/L, sin(theta) = L/r
+                    // tan(theta/2) = sin(theta)/(1+cos(theta))
+                    float turnR = (float)(altitudeClamp - missileVessel.altitude) * (currSpeed * currSpeed + currSpeed * velForwards) / (velUp * velUp);
 
-                            float accel = Mathf.Clamp(currSpeed * currSpeed / turnR, 0, 5f * (float)PhysicsGlobals.GravitationalAcceleration);
-                            */
+                    float accel = Mathf.Clamp(currSpeed * currSpeed / turnR, 0, 5f * (float)PhysicsGlobals.GravitationalAcceleration);
+                    */
 
-                            // Limit climb angle by turnFactor, turnFactor goes negative when above target alt
-                            float turnFactor = (float)(altitudeClamp - missileVessel.altitude) / (4f * (float)missileVessel.srfSpeed);
-                            turnFactor = Mathf.Clamp(turnFactor, -1f, 1f);
-                            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileGuidance]: AAM Loft altitudeClamp: [{altitudeClamp:G6}] COS: [{Mathf.Cos(loftAngle * turnFactor * Mathf.Deg2Rad):G3}], SIN: [{Mathf.Sin(loftAngle * turnFactor * Mathf.Deg2Rad):G3}], turnFactor: [{turnFactor:G3}].");
-                            return missileVessel.transform.position + (float)missileVessel.srfSpeed * ((Mathf.Cos(loftAngle * turnFactor * Mathf.Deg2Rad) * planarDirectionToTarget) + (Mathf.Sin(loftAngle * turnFactor * Mathf.Deg2Rad) * upDirection));
+                    // Limit climb angle by turnFactor, turnFactor goes negative when above target alt
+                    float turnFactor = (float)(altitudeClamp - missileVessel.altitude) / (4f * (float)missileVessel.srfSpeed);
+                    turnFactor = Mathf.Clamp(turnFactor, -1f, 1f);
+                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileGuidance]: AAM Loft altitudeClamp: [{altitudeClamp:G6}] COS: [{Mathf.Cos(loftAngle * turnFactor * Mathf.Deg2Rad):G3}], SIN: [{Mathf.Sin(loftAngle * turnFactor * Mathf.Deg2Rad):G3}], turnFactor: [{turnFactor:G3}].");
+                    return missileVessel.transform.position + (float)missileVessel.srfSpeed * ((Mathf.Cos(loftAngle * turnFactor * Mathf.Deg2Rad) * planarDirectionToTarget) + (Mathf.Sin(loftAngle * turnFactor * Mathf.Deg2Rad) * upDirection));
 
-                            /*
-                            Vector3 newVel = (velForwards * planarDirectionToTarget + velUp * upDirection);
-                            //Vector3 accVec = Vector3.Cross(newVel, Vector3.Cross(upDirection, planarDirectionToTarget));
-                            Vector3 accVec = accel*(Vector3.Dot(newVel, planarDirectionToTarget) * upDirection - Vector3.Dot(newVel, upDirection) * planarDirectionToTarget).normalized;
+                    /*
+                    Vector3 newVel = (velForwards * planarDirectionToTarget + velUp * upDirection);
+                    //Vector3 accVec = Vector3.Cross(newVel, Vector3.Cross(upDirection, planarDirectionToTarget));
+                    Vector3 accVec = accel*(Vector3.Dot(newVel, planarDirectionToTarget) * upDirection - Vector3.Dot(newVel, upDirection) * planarDirectionToTarget).normalized;
 
-                            return missileVessel.transform.position + 1.5f * Time.fixedDeltaTime * newVel + 2.25f * Time.fixedDeltaTime * Time.fixedDeltaTime * accVec;
-                            */
-                        /*}
-                        return missileVessel.transform.position + 0.5f * (float)missileVessel.srfSpeed * ((Mathf.Cos(loftAngle * Mathf.Deg2Rad) * planarDirectionToTarget) + (Mathf.Sin(loftAngle * Mathf.Deg2Rad) * upDirection));
-                        */
+                    return missileVessel.transform.position + 1.5f * Time.fixedDeltaTime * newVel + 2.25f * Time.fixedDeltaTime * Time.fixedDeltaTime * accVec;
+                    */
+                    /*}
+                    return missileVessel.transform.position + 0.5f * (float)missileVessel.srfSpeed * ((Mathf.Cos(loftAngle * Mathf.Deg2Rad) * planarDirectionToTarget) + (Mathf.Sin(loftAngle * Mathf.Deg2Rad) * upDirection));
+                    */
                     //}
 
                     //Vector3 finalTarget = missileVessel.transform.position + 0.5f * (float)missileVessel.srfSpeed * planarDirectionToTarget + ((altitudeClamp - (float)missileVessel.altitude) * upDirection.normalized);
@@ -460,7 +458,7 @@ namespace BDArmory.Guidances
 
             leadTime = targetDistance / (float)(targetVessel.Velocity() - simMissileVel).magnitude;
             leadTime = Mathf.Clamp(leadTime, 0f, 8f);
-            */            
+            */
             Vector3 vel = missile.vessel.Velocity();
             Vector3 VelOpt = vel.normalized * (launcher != null ? launcher.optimumAirspeed : 1500);
             float accel = launcher.thrust / missile.part.mass;
@@ -486,7 +484,7 @@ namespace BDArmory.Guidances
                 targetPosition += (Vector3)targetVessel.acceleration * 0.05f * leadTime * leadTime;
             }
 
-            return targetPosition;           
+            return targetPosition;
         }
         /// <summary>
         /// Air-2-Air lead offset calcualtion used for guided missiles
