@@ -244,7 +244,7 @@ namespace BDArmory.Guidances
                         ((targetPosition - missileVessel.transform.position).ProjectOnPlanePreNormalized(upDirection)).normalized;
 
                     // Altitude clamp based on rangeFactor and maxAlt, cannot be lower than target
-                    float altitudeClamp = Mathf.Clamp(targetAlt + rangeFactor * Vector3.Dot(targetPosition - missileVessel.transform.position,planarDirectionToTarget), targetAlt, maxAltitude);
+                    float altitudeClamp = Mathf.Clamp(targetAlt + rangeFactor * Vector3.Dot(targetPosition - missileVessel.transform.position,planarDirectionToTarget), targetAlt, Mathf.Max(maxAltitude,targetAlt));
 
                     // Old loft climb logic, wanted to limit turn. Didn't work well but leaving it in if I decide to fix it
                     /*if (missileVessel.altitude < (altitudeClamp - 0.5f))
