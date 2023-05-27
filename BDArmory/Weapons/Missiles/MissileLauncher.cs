@@ -785,8 +785,10 @@ namespace BDArmory.Weapons.Missiles
                 Fields["LoftRangeFac"].guiActiveEditor = false;
                 Fields["LoftVelComp"].guiActive = false;
                 Fields["LoftVelComp"].guiActiveEditor = false;
-                Fields["LoftAltComp"].guiActive = false;
-                Fields["LoftAltComp"].guiActiveEditor = false;
+                Fields["LoftVertVelComp"].guiActive = false;
+                Fields["LoftVertVelComp"].guiActiveEditor = false;
+                //Fields["LoftAltComp"].guiActive = false;
+                //Fields["LoftAltComp"].guiActiveEditor = false;
                 Fields["LoftTermRange"].guiActive = false;
                 Fields["LoftTermRange"].guiActiveEditor = false;
             }
@@ -813,8 +815,10 @@ namespace BDArmory.Weapons.Missiles
                     Fields["LoftRangeFac"].guiActiveEditor = false;
                     Fields["LoftVelComp"].guiActive = false;
                     Fields["LoftVelComp"].guiActiveEditor = false;
-                    Fields["LoftAltComp"].guiActive = false;
-                    Fields["LoftAltComp"].guiActiveEditor = false;
+                    Fields["LoftVertVelComp"].guiActive = false;
+                    Fields["LoftVertVelComp"].guiActiveEditor = false;
+                    //Fields["LoftAltComp"].guiActive = false;
+                    //Fields["LoftAltComp"].guiActiveEditor = false;
                 }
                 else
                 {
@@ -826,8 +830,10 @@ namespace BDArmory.Weapons.Missiles
                     Fields["LoftRangeFac"].guiActiveEditor = true;
                     Fields["LoftVelComp"].guiActive = true;
                     Fields["LoftVelComp"].guiActiveEditor = true;
-                    Fields["LoftAltComp"].guiActive = true;
-                    Fields["LoftAltComp"].guiActiveEditor = true;
+                    Fields["LoftVertVelComp"].guiActive = true;
+                    Fields["LoftVertVelComp"].guiActiveEditor = true;
+                    //Fields["LoftAltComp"].guiActive = true;
+                    //Fields["LoftAltComp"].guiActiveEditor = true;
                 }
             }
 
@@ -1094,7 +1100,8 @@ namespace BDArmory.Weapons.Missiles
                 ml.LoftTermAngle = LoftTermAngle;
                 ml.LoftRangeFac = LoftRangeFac;
                 ml.LoftVelComp = LoftVelComp;
-                ml.LoftAltComp = LoftAltComp;
+                ml.LoftVertVelComp = LoftVertVelComp;
+                //ml.LoftAltComp = LoftAltComp;
                 ml.LoftTermRange = LoftTermRange;
                 ml.loftState = 0;
                 ml.TimeToImpact = float.PositiveInfinity;
@@ -2259,7 +2266,8 @@ namespace BDArmory.Weapons.Missiles
                         else loftState = 3;
                     }
 
-                    aamTarget = MissileGuidance.GetAirToAirLoftTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, targetAlt, LoftMaxAltitude, LoftRangeFac, LoftAltComp, LoftVelComp, LoftAngle, LoftTermAngle, LoftTermRange, ref loftState, out float currTimeToImpact, out float rangeToTarget, optimumAirspeed);
+                    //aamTarget = MissileGuidance.GetAirToAirLoftTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, targetAlt, LoftMaxAltitude, LoftRangeFac, LoftAltComp, LoftVelComp, LoftAngle, LoftTermAngle, LoftTermRange, ref loftState, out float currTimeToImpact, out float rangeToTarget, optimumAirspeed);
+                    aamTarget = MissileGuidance.GetAirToAirLoftTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, targetAlt, LoftMaxAltitude, LoftRangeFac, LoftVertVelComp, LoftVelComp, LoftAngle, LoftTermAngle, LoftTermRange, ref loftState, out float currTimeToImpact, out float rangeToTarget, optimumAirspeed);
 
                     float fac = (1 - (rangeToTarget - LoftTermRange) / Mathf.Clamp(LoftTermRange * 4f, 5000f, 25000f));
 

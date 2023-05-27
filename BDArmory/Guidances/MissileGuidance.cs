@@ -147,9 +147,14 @@ namespace BDArmory.Guidances
             return targetPosition + (targetVelocity * leadTime);
         }
 
-        public static Vector3 GetAirToAirLoftTarget(Vector3 targetPosition, Vector3 targetVelocity,
+        /*public static Vector3 GetAirToAirLoftTarget(Vector3 targetPosition, Vector3 targetVelocity,
             Vector3 targetAcceleration, Vessel missileVessel, float targetAlt, float maxAltitude,
             float rangeFactor, float altComp, float velComp, float loftAngle, float termAngle,
+            float termDist, ref int loftState, out float timeToImpact, out float targetDistance,
+            float minSpeed = 200)*/
+        public static Vector3 GetAirToAirLoftTarget(Vector3 targetPosition, Vector3 targetVelocity,
+            Vector3 targetAcceleration, Vessel missileVessel, float targetAlt, float maxAltitude,
+            float rangeFactor, float vertVelComp, float velComp, float loftAngle, float termAngle,
             float termDist, ref int loftState, out float timeToImpact, out float targetDistance,
             float minSpeed = 200)
         {
@@ -194,8 +199,13 @@ namespace BDArmory.Guidances
                 targetAlVelMag *= Mathf.Sign(velComp) * compMult;
                 targetAlVelMag = Mathf.Max(targetAlVelMag, 0f); //0.5f * (targetAlVelMag + Mathf.Abs(targetAlVelMag)); // Set -ve velocity (I.E. towards the missile) to 0 if velComp is +ve, otherwise for -ve
 
+                float targetVertVelMag = Vector3.Dot(targetVelocity, upDirection);
+                targetVertVelMag *= Mathf.Sign(vertVelComp) * compMult;
+                targetVertVelMag = Mathf.Max(targetVertVelMag, 0f);
+
                 //targetCompVel = targetVelocity + velComp * targetHorVel.magnitude* targetHorVel.normalized; // Old velComp logic
-                targetCompVel = targetVelocity + velComp * targetAlVelMag * velDirectionHor; // New velComp logic
+                //targetCompVel = targetVelocity + velComp * targetAlVelMag * velDirectionHor; // New velComp logic
+                targetCompVel = targetVelocity + velComp * targetAlVelMag * velDirectionHor + vertVelComp * targetVertVelMag * upDirection; // New velComp logic
 
                 var count = 0;
                 do
@@ -204,7 +214,8 @@ namespace BDArmory.Guidances
                     currVel = currSpeed * velDirection;
                     //firePosition = missileVessel.transform.position + (currSpeed * velDirection) * Time.fixedDeltaTime; // Bullets are initially placed up to 1 frame ahead (iTime).
                     bulletAcceleration = FlightGlobals.getGeeForceAtPosition((firePosition + targetPredictedPosition) / 2f); // Drag is ignored.
-                    bulletRelativePosition = targetPosition - firePosition + compMult * altComp * upDirection; // Compensate for altitude
+                    //bulletRelativePosition = targetPosition - firePosition + compMult * altComp * upDirection; // Compensate for altitude
+                    bulletRelativePosition = targetPosition - firePosition; // Compensate for altitude
                     bulletRelativeVelocity = targetVelocity - currVel;
                     bulletRelativeAcceleration = targetAcceleration - bulletAcceleration;
                     timeToCPA = AIUtils.TimeToCPA(bulletRelativePosition, bulletRelativeVelocity, bulletRelativeAcceleration, timeToImpact*3f);

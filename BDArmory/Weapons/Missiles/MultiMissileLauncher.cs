@@ -501,7 +501,8 @@ namespace BDArmory.Weapons.Missiles
                     ml.LoftTermAngle = missileLauncher.LoftTermAngle;
                     ml.LoftRangeFac = missileLauncher.LoftRangeFac;
                     ml.LoftVelComp = missileLauncher.LoftVelComp;
-                    ml.LoftAltComp = missileLauncher.LoftAltComp;
+                    ml.LoftVertVelComp = missileLauncher.LoftVertVelComp;
+                    //ml.LoftAltComp = missileLauncher.LoftAltComp;
                     ml.LoftTermRange = missileLauncher.LoftTermRange;
                     ml.loftState = 0;
                     ml.TimeToImpact = float.PositiveInfinity;
