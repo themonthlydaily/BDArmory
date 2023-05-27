@@ -3121,6 +3121,7 @@ namespace BDArmory.Competition
                     if (!hitVessel) // We didn't hit another vessel, maybe it crashed and died.
                     {
                         if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode]: Ram logging: {vesselName} hit {data.other}.");
+                        rammingInformation[vesselName].partCount = vessel.parts.Count; // Update the vessel part count.
                         foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys)
                         {
                             rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollision = false; // Set potential collisions to false.
