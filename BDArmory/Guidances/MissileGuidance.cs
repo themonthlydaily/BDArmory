@@ -184,10 +184,10 @@ namespace BDArmory.Guidances
                 Vector3 upDirection = VectorUtils.GetUpDirection(missileVessel.CoM);
 
                 // Use the gun aim-assist logic to determine ballistic angle (assuming no drag)
-                Vector3 bulletRelativePosition, bulletRelativeVelocity, bulletAcceleration, bulletRelativeAcceleration, targetPredictedPosition, bulletDropOffset, lastVelDirection, ballisticTarget, targetHorVel, targetCompVel;
+                Vector3 missileRelativePosition, missileRelativeVelocity, missileAcceleration, missileRelativeAcceleration, targetPredictedPosition, missileDropOffset, lastVelDirection, ballisticTarget, targetHorVel, targetCompVel;
 
                 var firePosition = missileVessel.transform.position; //+ (currSpeed * velDirection) * Time.fixedDeltaTime; // Bullets are initially placed up to 1 frame ahead (iTime). Not offsetting by part vel gives the correct initial placement.
-                bulletRelativePosition = targetPosition - firePosition;
+                missileRelativePosition = targetPosition - firePosition;
                 float timeToCPA = timeToImpact; // Rough initial estimate.
                 targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, timeToCPA);
 
@@ -211,15 +211,15 @@ namespace BDArmory.Guidances
                     lastVelDirection = velDirection;
                     currVel = currSpeed * velDirection;
                     //firePosition = missileVessel.transform.position + (currSpeed * velDirection) * Time.fixedDeltaTime; // Bullets are initially placed up to 1 frame ahead (iTime).
-                    bulletAcceleration = FlightGlobals.getGeeForceAtPosition((firePosition + targetPredictedPosition) / 2f); // Drag is ignored.
+                    missileAcceleration = FlightGlobals.getGeeForceAtPosition((firePosition + targetPredictedPosition) / 2f); // Drag is ignored.
                     //bulletRelativePosition = targetPosition - firePosition + compMult * altComp * upDirection; // Compensate for altitude
-                    bulletRelativePosition = targetPosition - firePosition; // Compensate for altitude
-                    bulletRelativeVelocity = targetVelocity - currVel;
-                    bulletRelativeAcceleration = targetAcceleration - bulletAcceleration;
-                    timeToCPA = AIUtils.TimeToCPA(bulletRelativePosition, bulletRelativeVelocity, bulletRelativeAcceleration, timeToImpact * 3f);
+                    missileRelativePosition = targetPosition - firePosition; // Compensate for altitude
+                    missileRelativeVelocity = targetVelocity - currVel;
+                    missileRelativeAcceleration = targetAcceleration - missileAcceleration;
+                    timeToCPA = AIUtils.TimeToCPA(missileRelativePosition, missileRelativeVelocity, missileRelativeAcceleration, timeToImpact * 3f);
                     targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetCompVel, targetAcceleration, timeToCPA);
-                    bulletDropOffset = -0.5f * bulletAcceleration * timeToCPA * timeToCPA;
-                    ballisticTarget = targetPredictedPosition + bulletDropOffset;
+                    missileDropOffset = -0.5f * missileAcceleration * timeToCPA * timeToCPA;
+                    ballisticTarget = targetPredictedPosition + missileDropOffset;
                     velDirection = (ballisticTarget - missileVessel.transform.position).normalized;
                 } while (++count < 10 && Vector3.Angle(lastVelDirection, velDirection) > 1f); // 1° margin of error is sufficient to prevent premature firing (usually)
 
@@ -320,6 +320,16 @@ namespace BDArmory.Guidances
                     Debug.Log("[BDArmory.MissileGuidance]: Loft: Diving, accel = " + accel);
                     return missileVessel.transform.position + 1.5f * Time.fixedDeltaTime * missileVessel.Velocity() + 2.25f * Time.fixedDeltaTime * Time.fixedDeltaTime * accVec * accel;
                     */
+
+                    float velUpComponent = Vector3.Dot(velDirection, upDirection);
+
+                    if (velUpComponent > 0f)
+                    {
+                        return missileVessel.transform.position + (float)missileVessel.srfSpeed * new Vector3(velDirection.x - upDirection.x * velUpComponent,
+                            velDirection.y - upDirection.y * velUpComponent,
+                            velDirection.z - upDirection.z * velUpComponent) + Mathf.Max(targetAlt - (float)missileVessel.altitude, 0f) * upDirection;
+                    }
+
                     return missileVessel.transform.position + (float)missileVessel.srfSpeed * velDirection;
                 }
             }
