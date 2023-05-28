@@ -220,7 +220,8 @@ namespace BDArmory.UI
         {
             weaponManagers.Clear();
 
-            if (FlightGlobals.Vessels == null) return;
+            try { if (FlightGlobals.Vessels == null) return; } // Sometimes this gets called multiple times when exiting KSP due to something repeatedly calling DestroyImmediate on a vessel!
+            catch { return; }
             using (var v = FlightGlobals.Vessels.GetEnumerator())
                 while (v.MoveNext())
                 {
