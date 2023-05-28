@@ -367,7 +367,7 @@ namespace BDArmory.Competition.RemoteOrchestration
                 record.roc_parts_in = ComputeTotalRocketPartsIn(playerName);
                 record.roc_dmg_out = ComputeTotalRocketDamageOut(playerName);
                 record.roc_dmg_in = ComputeTotalRocketDamageIn(playerName);
-                // record.ast_parts_in = ComputeTotalAsteroidPartsIn(playerName);
+                record.ast_parts_in = ComputeTotalAsteroidPartsIn(playerName);
                 record.wins = ComputeWins(playerName);
                 record.kills = ComputeTotalKills(playerName);
                 record.deaths = ComputeTotalDeaths(playerName);
