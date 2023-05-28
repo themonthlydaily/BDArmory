@@ -131,7 +131,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
         print("")
     tournamentData = {}
     tournamentMetadata = {}
-    m = re.search('Tournament (\d+)', str(tournamentDir))
+    m = re.search('Tournament (\\d+)', str(tournamentDir))
     if m is not None and len(m.groups()) > 0:
         tournamentMetadata['ID'] = m.groups()[0]
     tournamentMetadata['rounds'] = len([roundDir for roundDir in tournamentDir.iterdir() if roundDir.is_dir() and roundDir.name.startswith('Round')])
@@ -481,6 +481,8 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                     for round in range(len(scores))
                 ] for craft, scores in per_round_summary.items()
             }
+        else:
+            per_round_scores = {}  # Silence Pylance warnings.
 
         if not args.quiet:  # Write results to console
             strings = []
