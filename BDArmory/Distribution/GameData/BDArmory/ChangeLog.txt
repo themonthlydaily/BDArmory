@@ -1,4 +1,9 @@
-﻿v1.6.2.0
+﻿IMPROVEMENTS / FIXES
+- Weapons:
+	- Missiles:
+		- New 'canRelock' Field (Default: true) that sets if the Radar Missile on SARH guidance can acquire a new lock different the original target it was launched
+
+v1.6.2.0
 IMPROVEMENTS / FIXES
 - General:
 	- Fix TweakScale config for Typhoon engine (again).
