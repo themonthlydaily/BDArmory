@@ -612,6 +612,9 @@ namespace BDArmory.UI
                             case DamageFrom.Ramming:
                                 deadVesselString.Append($") RAMMED BY {BDACompetitionMode.Instance.Scores.ScoreData[player].lastPersonWhoDamagedMe}");
                                 break;
+                            case DamageFrom.Asteroids:
+                                deadVesselString.Append($") FLEW INTO AN ASTEROID!");
+                                break;
                             case DamageFrom.Incompetence:
                                 deadVesselString.Append(") CRASHED AND BURNED!");
                                 break;
