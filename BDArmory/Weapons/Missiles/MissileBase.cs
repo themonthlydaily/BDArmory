@@ -261,8 +261,8 @@ namespace BDArmory.Weapons.Missiles
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_LoftTermRange"), UI_FloatRange(minValue = 500f, maxValue = 20000f, stepIncrement = 100f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Loft Altitude Difference
         public float LoftTermRange = 3000;
 
-        [KSPField]
-        public bool LoftUseAPN = false;
+        //[KSPField]
+        //public bool LoftUseAPN = false;
 
         [KSPField]
         public float missileRadarCrossSection = RadarUtils.RCS_MISSILES;            // radar cross section of this missile for detection purposes
@@ -303,6 +303,8 @@ namespace BDArmory.Weapons.Missiles
         public TargetingModes TargetingMode { get; set; }
 
         public TargetingModes TargetingModeTerminal { get; set; }
+
+        public GuidanceModes LoftGuidanceModeTerminal { get; set; }
 
         public float TimeToImpact { get; set; }
 

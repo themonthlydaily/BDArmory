@@ -333,6 +333,22 @@ namespace BDArmory.Weapons.Missiles
                 missileLauncher.shortName = MLConfig.shortName;
                 missileLauncher.blastRadius = -1;
                 missileLauncher.blastRadius = MLConfig.blastRadius;
+                missileLauncher.LoftMaxAltitude = MLConfig.LoftMaxAltitude;
+                missileLauncher.LoftRangeOverride = MLConfig.LoftRangeOverride;
+                missileLauncher.LoftAltitudeAdvMax = MLConfig.LoftAltitudeAdvMax;
+                missileLauncher.LoftMinAltitude = MLConfig.LoftMinAltitude;
+                missileLauncher.LoftAngle = MLConfig.LoftAngle;
+                missileLauncher.LoftTermAngle = MLConfig.LoftTermAngle;
+                missileLauncher.LoftRangeFac = MLConfig.LoftRangeFac;
+                missileLauncher.LoftVelComp = MLConfig.LoftVelComp;
+                missileLauncher.LoftVertVelComp = MLConfig.LoftVertVelComp;
+                //missileLauncher.LoftAltComp = LoftAltComp;
+                missileLauncher.LoftTermRange = MLConfig.LoftTermRange;
+                missileLauncher.LoftGuidanceModeTerminal = MLConfig.LoftGuidanceModeTerminal;
+                missileLauncher.pronavGain = MLConfig.pronavGain;
+                missileLauncher.loftState = 0;
+                missileLauncher.TimeToImpact = float.PositiveInfinity;
+                missileLauncher.initMaxAoA = MLConfig.maxAoA;
             }
             missileLauncher.GetBlastRadius();
             GUIUtils.RefreshAssociatedWindows(missileLauncher.part);
@@ -504,10 +520,14 @@ namespace BDArmory.Weapons.Missiles
                     ml.LoftVertVelComp = missileLauncher.LoftVertVelComp;
                     //ml.LoftAltComp = missileLauncher.LoftAltComp;
                     ml.LoftTermRange = missileLauncher.LoftTermRange;
+                    ml.LoftGuidanceModeTerminal = missileLauncher.LoftGuidanceModeTerminal;
+                    ml.pronavGain = missileLauncher.pronavGain;
                     ml.loftState = 0;
                     ml.TimeToImpact = float.PositiveInfinity;
                     ml.initMaxAoA = missileLauncher.maxAoA;
                 }
+                if (missileLauncher.GuidanceMode == GuidanceModes.APN || missileLauncher.GuidanceMode == GuidanceModes.PN)
+                    ml.pronavGain = missileLauncher.pronavGain;
                 //ml.decoupleSpeed = 5;
                 if (missileLauncher.GuidanceMode == GuidanceModes.AGM)
                     ml.maxAltitude = missileLauncher.maxAltitude;

@@ -295,6 +295,10 @@ namespace BDArmory.Weapons.Missiles
         [KSPField]
         public bool vacuumSteerable = true;
 
+        // Loft Options
+        [KSPField]
+        public string LoftHomingType = "pronav";
+
         public GPSTargetInfo designatedGPSInfo;
 
         float[] rcsFiredTimes;
@@ -1103,10 +1107,14 @@ namespace BDArmory.Weapons.Missiles
                 ml.LoftVertVelComp = LoftVertVelComp;
                 //ml.LoftAltComp = LoftAltComp;
                 ml.LoftTermRange = LoftTermRange;
+                ml.LoftGuidanceModeTerminal = LoftGuidanceModeTerminal;
+                ml.pronavGain = pronavGain;
                 ml.loftState = 0;
                 ml.TimeToImpact = float.PositiveInfinity;
                 ml.initMaxAoA = maxAoA;
             }
+            if (GuidanceMode == GuidanceModes.APN || GuidanceMode == GuidanceModes.PN)
+                ml.pronavGain = pronavGain;
             ml.decoupleForward = decoupleForward;
             ml.decoupleSpeed = decoupleSpeed;
             if (GuidanceMode == GuidanceModes.AGM)
@@ -2267,7 +2275,7 @@ namespace BDArmory.Weapons.Missiles
                     }
 
                     //aamTarget = MissileGuidance.GetAirToAirLoftTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, targetAlt, LoftMaxAltitude, LoftRangeFac, LoftAltComp, LoftVelComp, LoftAngle, LoftTermAngle, LoftTermRange, ref loftState, out float currTimeToImpact, out float rangeToTarget, optimumAirspeed);
-                    aamTarget = MissileGuidance.GetAirToAirLoftTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, targetAlt, LoftMaxAltitude, LoftRangeFac, LoftVertVelComp, LoftVelComp, LoftAngle, LoftTermAngle, LoftTermRange, ref loftState, out float currTimeToImpact, out float rangeToTarget, LoftUseAPN, pronavGain, optimumAirspeed);
+                    aamTarget = MissileGuidance.GetAirToAirLoftTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, targetAlt, LoftMaxAltitude, LoftRangeFac, LoftVertVelComp, LoftVelComp, LoftAngle, LoftTermAngle, LoftTermRange, ref loftState, out float currTimeToImpact, out float rangeToTarget, LoftGuidanceModeTerminal, pronavGain, optimumAirspeed);
 
                     float fac = (1 - (rangeToTarget - LoftTermRange) / Mathf.Clamp(LoftTermRange * 4f, 5000f, 25000f));
 
@@ -2765,6 +2773,27 @@ namespace BDArmory.Weapons.Missiles
                     TargetingModeTerminal = TargetingModes.None;
                     break;
             }
+
+            LoftHomingType = LoftHomingType.ToLower();
+            switch (LoftHomingType)
+            {
+                case "aam":
+                    LoftGuidanceModeTerminal = GuidanceModes.AAMLead;
+                    break;
+                case "aamlead":
+                    LoftGuidanceModeTerminal = GuidanceModes.AAMLead;
+                    break;
+                case "pronav":
+                    LoftGuidanceModeTerminal = GuidanceModes.PN;
+                    break;
+                case "augpronav":
+                    LoftGuidanceModeTerminal = GuidanceModes.APN;
+                    break;
+                default:
+                    LoftGuidanceModeTerminal = GuidanceModes.PN;
+                    break;
+            }
+
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: parsing guidance and homing complete on {GetPartName()}");
         }
 
@@ -2876,7 +2905,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 output.AppendLine($"Uncaged Lock: {uncagedLock}");
                 output.AppendLine($"Min Heat threshold: {heatThreshold}");
-                output.AppendLine($"Max Offborsight: {maxOffBoresight}");
+                output.AppendLine($"Max Offboresight: {maxOffBoresight}");
                 output.AppendLine($"Locked FOV: {lockedSensorFOV}");
             }
 
@@ -2969,6 +2998,8 @@ namespace BDArmory.Weapons.Missiles
                     output.AppendLine($"- Blast radius: {Math.Round(BlastPhysicsUtils.CalculateBlastRange(tntMass), 2)} m");
                     output.AppendLine($"- tnt Mass: {tntMass} kg");
                     output.AppendLine($"- {((BDExplosivePart)partModules.Current).warheadReportingName} warhead");
+                    if (((BDExplosivePart)partModules.Current).warheadType == "shapedcharge")
+                        output.AppendLine($"- Penetration: {ProjectileUtils.CalculatePenetration(((BDExplosivePart)partModules.Current).caliber > 0 ? ((BDExplosivePart)partModules.Current).caliber * 0.05f : 6f * 0.05f, 5000f, ((BDExplosivePart)partModules.Current).tntMass * 0.0555f, ((BDExplosivePart)partModules.Current).apMod, 940, 0.00000094776185184f, 0.6560606203f, 1.201909309f, 1.777919321f):F2} mm");
                 }
                 if (partModules.Current.moduleName == "ModuleEMP")
                 {

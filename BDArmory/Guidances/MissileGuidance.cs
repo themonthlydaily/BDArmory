@@ -156,7 +156,7 @@ namespace BDArmory.Guidances
             Vector3 targetAcceleration, Vessel missileVessel, float targetAlt, float maxAltitude,
             float rangeFactor, float vertVelComp, float velComp, float loftAngle, float termAngle,
             float termDist, ref int loftState, out float timeToImpact, out float targetDistance,
-            bool LoftUseAPN, float N, float minSpeed = 200)
+            MissileBase.GuidanceModes LoftGuidanceModeTerminal, float N, float minSpeed = 200)
         {
 
             Vector3 velDirection = missileVessel.srf_vel_direction; //missileVessel.Velocity().normalized;
@@ -346,9 +346,16 @@ namespace BDArmory.Guidances
                 loftState = 3;
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileGuidance]: Terminal");
 
-                if (LoftUseAPN && (targetDistance < termDist))
+                if (targetDistance < termDist)
                 {
-                    return GetAPNTarget(targetPosition, targetVelocity, targetAcceleration, missileVessel, N, out timeToImpact);
+                    if (LoftGuidanceModeTerminal == MissileBase.GuidanceModes.APN)
+                        return GetAPNTarget(targetPosition, targetVelocity, targetAcceleration, missileVessel, N, out timeToImpact);
+                    else if (LoftGuidanceModeTerminal == MissileBase.GuidanceModes.PN)
+                        return GetPNTarget(targetPosition, targetVelocity, missileVessel, N, out timeToImpact);
+                    else if (LoftGuidanceModeTerminal == MissileBase.GuidanceModes.AAMPure)
+                        return targetPosition;
+                    else
+                        return AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, leadTime + TimeWarp.fixedDeltaTime);
                 }
                 else
                 {
