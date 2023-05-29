@@ -2,6 +2,11 @@
 - Vessel Spawning:
 	- Adjust intra-team spacing to scale better with distance.
 	- Fix the inward/outward facing direction when spawning teams and use the same facing direction for all members of a team.
+- Weapons:
+	- Missiles:
+		- Further improvements to loft guidance, added a new field "LoftHomingType" which allows for selection of terminal homing logic. "aam"/"aamlead", "aampure", "pronav" and "augpronav" are currently supported. Both pronav options allow for user defined gains using "pronavGain". Recommended values of ~1-7.
+		- Fixed MultiMissileLauncher behavior with loft guidance, as well as pronav/augpronav.
+	- Added (or corrected) penetration value for shaped charges to missile/gun/rocket partmenu infocards.
 
 v1.6.2.0
 IMPROVEMENTS / FIXES
