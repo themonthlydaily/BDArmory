@@ -1,15 +1,23 @@
 ﻿IMPROVEMENTS / FIXES
+- Vessel Spawning:
+	- Adjust intra-team spacing to scale better with distance.
+	- Fix the inward/outward facing direction when spawning teams and use the same facing direction for all members of a team.
+
+v1.6.2.0
+IMPROVEMENTS / FIXES
 - General:
 	- Fix TweakScale config for Typhoon engine (again).
 	- Add Toggle/Enable/Disable pivot action groups to the Claw variants.
 	- Add an action group option to give unlimited pivot range to the Claw variants.
 	- Tweaks so that asteroids have the proper HP in flight mode.
 	- Optimisation of some vector operations.
-- UI:
+	- Adds variant texture for ground radars.
+	- Fix SIDAM texture variants for standard brown or greyscale.
+- Armor:
 	- Make the adjustable armor 'clamped' and 'triangle type' options persistent and initialised correctly in the PAW.
+- UI:
 	- Adjust formatting of some debug telemetry.
 	- Fix EMP Hellfire texture URL.
-	- Adds variant texture for ground radars.
 	- Add an indent for missile and CM settings.
 - Vessel Mover:
 	- Don't apply "Don't Avoid Collisions" while lowering vessels.
@@ -18,6 +26,10 @@
 	- Add a default text for the custom template name field.
 	- Automatically add the current custom template to the list if it's not already there when clicking 'save' without requiring clicking 'new' first. (I.e., don't require 'new'→'save' for the initial template.)
 	- When using "Fill Seats" = "Cockpits or Combat Seat", include the first command seat if neither a cockpit nor combat seat are present.
+	- Fix an issue with the spawning routine hanging when using asteroids game modes.
+	- Fix the inward/outward spawn orientation for circular spawning.
+- Detectors:
+	- Adds a new dish-only AWACS radar variant.
 - Weapons:
 	- APS turrets now function when GuardMode is off to let them work on player-operated craft.
 	- Adds new 'dualModeAPS' field (default false) for APS turrets; if true, they can also be selected and used as standard weapons.
@@ -26,10 +38,17 @@
 	- Missiles:
 		- Fix AI not selecting laser missiles.
 		- SARH missiles now properly follow whatever the active locked radar target is.
-		- Added new loft guidance logic under the homingType "aamloft". Enables longer ranged engagements at high altitude by enabling higher terminal speeds. Added various tuning parameters accessible in the hangar (as well as in part configs) to tweak performance as desired. A more thorough explanation of the guidance law and the tuning parameters is available on the Github wiki.
+		- Added new loft guidance logic under the homingType "aamloft".
+			- Enables longer ranged engagements at high altitude by enabling higher terminal speeds.
+			- Added various tuning parameters accessible in the hangar (as well as in part configs) to tweak performance as desired.
+			- A more thorough explanation of the guidance law and the tuning parameters is available on the Github wiki https://github.com/BrettRyland/BDArmory/wiki/1.2.5-Missile-configuration#3-loft-guidance-missiles.
 		- Implemented missing pure pursuit guidance ("aampure").
+		- Add new 'boosterFuelMass' and 'cruiseFuelMass' fields to missile config that allow missiles to have a fuel usage that can affect mass when the new field 'useFuel' is true.
 - Competition:
 	- Add some checks for lacking an AI or an airborne AI being landed/splashed to the scoring for being considered as wrecked (MIA).
+	- Add competition messages about vessels colliding with asteroids.
+- RWP:
+	- Use the current planetary body, not Kerbin for remote orchestration.
 
 v1.6.1.0
 IMPROVEMENTS / FIXES

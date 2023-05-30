@@ -9,6 +9,7 @@ using BDArmory.Competition;
 using BDArmory.Extensions;
 using BDArmory.Settings;
 using BDArmory.UI;
+using BDArmory.Utils;
 
 namespace BDArmory.VesselSpawning
 {
@@ -209,7 +210,7 @@ namespace BDArmory.VesselSpawning
                         position = spawnPoint + spawnDistance * direction;
                         ++spawnedVesselCount;
                     }
-                    if (spawnDistance > BDArmorySettings.COMPETITION_DISTANCE / 2f / Mathf.Sin(Mathf.PI / spawnedVesselCount)) direction *= -1f; //have vessels spawning further than comp dist spawn pointing inwards instead of outwards
+                    if (spawnDistance > BDArmorySettings.COMPETITION_DISTANCE / 2f / Mathf.Sin(Mathf.PI / spawnConfig.craftFiles.Count)) direction *= -1f; //have vessels spawning further than comp dist spawn pointing inwards instead of outwards
                     vesselSpawnConfigs.Add(new VesselSpawnConfig(craftUrl, position, direction, (float)spawnConfig.altitude, -80f, spawnAirborne));
                 }
             }
@@ -225,16 +226,15 @@ namespace BDArmory.VesselSpawning
                     var teamDirection = (Quaternion.AngleAxis(teamHeading, radialUnitVector) * refDirection).ProjectOnPlanePreNormalized(radialUnitVector).normalized;
                     teamSpawnPosition = spawnPoint + spawnDistance * teamDirection;
                     int teamSpawnCount = 0;
+                    float intraTeamSeparation = Mathf.Min(20f * Mathf.Log10(spawnDistance), 4f * BDAMath.Sqrt(spawnDistance));
+                    var spreadDirection = Vector3.Cross(radialUnitVector, teamDirection);
+                    var facingDirection = (spawnDistance > BDArmorySettings.COMPETITION_DISTANCE / 2f / Mathf.Sin(Mathf.PI / spawnConfig.teamsSpecific.Count)) ? -teamDirection : teamDirection; // Spawn facing inwards if competition distance is closer than spawning distance.
 
                     foreach (var craftUrl in team)
                     {
                         // Figure out spawn point and orientation
-                        var heading = 360f / team.Count * (teamSpawnCount - (team.Count - 1) / 2f) / team.Count;
-                        var direction = (Quaternion.AngleAxis(teamHeading + heading, radialUnitVector) * refDirection).ProjectOnPlanePreNormalized(radialUnitVector).normalized; // Local position
-                        Vector3 position = teamSpawnPosition + spawnDistance / 4f * direction; // Spawn in clusters around the team spawn points.
-                        direction = (Quaternion.AngleAxis(teamHeading + heading / 8f, radialUnitVector) * refDirection).ProjectOnPlanePreNormalized(radialUnitVector).normalized; // Facing direction
-                        if (spawnDistance * 1.25f > BDArmorySettings.COMPETITION_DISTANCE / 2f / Mathf.Sin(Mathf.PI / spawnedVesselCount)) direction *= -1f;
-                        vesselSpawnConfigs.Add(new VesselSpawnConfig(craftUrl, position, direction, (float)spawnConfig.altitude, -80f, spawnAirborne));
+                        var position = teamSpawnPosition + intraTeamSeparation * (teamSpawnCount - (team.Count - 1) / 2) * spreadDirection;
+                        vesselSpawnConfigs.Add(new VesselSpawnConfig(craftUrl, position, facingDirection, (float)spawnConfig.altitude, -80f, spawnAirborne));
                         ++spawnedVesselCount;
                         ++teamSpawnCount;
                     }

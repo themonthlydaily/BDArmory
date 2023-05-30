@@ -206,8 +206,10 @@ namespace BDArmory.Weapons.Missiles
                 Fields["LoftRangeFac"].guiActiveEditor = false;
                 Fields["LoftVelComp"].guiActive = false;
                 Fields["LoftVelComp"].guiActiveEditor = false;
-                Fields["LoftAltComp"].guiActive = false;
-                Fields["LoftAltComp"].guiActiveEditor = false;
+                Fields["LoftVertVelComp"].guiActive = false;
+                Fields["LoftVertVelComp"].guiActiveEditor = false;
+                //Fields["LoftAltComp"].guiActive = false;
+                //Fields["LoftAltComp"].guiActiveEditor = false;
                 Fields["LoftTermRange"].guiActive = false;
                 Fields["LoftTermRange"].guiActiveEditor = false;
             }
@@ -234,8 +236,10 @@ namespace BDArmory.Weapons.Missiles
                     Fields["LoftRangeFac"].guiActiveEditor = false;
                     Fields["LoftVelComp"].guiActive = false;
                     Fields["LoftVelComp"].guiActiveEditor = false;
-                    Fields["LoftAltComp"].guiActive = false;
-                    Fields["LoftAltComp"].guiActiveEditor = false;
+                    Fields["LoftVertVelComp"].guiActive = false;
+                    Fields["LoftVertVelComp"].guiActiveEditor = false;
+                    //Fields["LoftAltComp"].guiActive = false;
+                    //Fields["LoftAltComp"].guiActiveEditor = false;
                 }
                 else
                 {
@@ -247,8 +251,10 @@ namespace BDArmory.Weapons.Missiles
                     Fields["LoftRangeFac"].guiActiveEditor = true;
                     Fields["LoftVelComp"].guiActive = true;
                     Fields["LoftVelComp"].guiActiveEditor = true;
-                    Fields["LoftAltComp"].guiActive = true;
-                    Fields["LoftAltComp"].guiActiveEditor = true;
+                    Fields["LoftVertVelComp"].guiActive = true;
+                    Fields["LoftVertVelComp"].guiActiveEditor = true;
+                    //Fields["LoftAltComp"].guiActive = true;
+                    //Fields["LoftAltComp"].guiActiveEditor = true;
                 }
             }
 
