@@ -1,7 +1,7 @@
 ﻿IMPROVEMENTS / FIXES
 - Weapons:
 	- Missiles:
-		- New 'canRelock' Field (Default: true) that sets if the Radar Missile on SARH guidance can acquire a new lock different the original target it was launched
+		- New 'canRelock' Field (Default: true), sets if SARH Radar-guided Missiles will re-lock onto the active radar target if the original radar lock is lost.
 
 v1.6.2.0
 IMPROVEMENTS / FIXES
