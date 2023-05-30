@@ -5681,10 +5681,7 @@ namespace BDArmory.Weapons
                             output.AppendLine($"Cannister Round");
                             output.AppendLine($" - Submunition count: {binfo.subProjectileCount}");
                         }
-                        if (binfo.explosive == "shaped")
-                            output.AppendLine($"Estimated Penetration: {ProjectileUtils.CalculatePenetration(binfo.caliber > 0 ? binfo.caliber * 0.05f : 6f, 5000f, binfo.tntMass * 0.0555f, binfo.apBulletMod, 940, 0.00000094776185184f, 0.6560606203f, 1.201909309f, 1.777919321f):F2} mm");
-                        else
-                            output.AppendLine($"Estimated Penetration: {ProjectileUtils.CalculatePenetration(binfo.caliber, binfo.bulletVelocity, binfo.bulletMass, binfo.apBulletMod, 940, 8.45001135e-07f, 0.656060636f, 1.20190930f, 1.77791929f):F2} mm");
+                        output.AppendLine($"Estimated Penetration: {ProjectileUtils.CalculatePenetration(binfo.caliber, binfo.bulletVelocity, binfo.bulletMass, binfo.apBulletMod, 940, 8.45001135e-07f, 0.656060636f, 1.20190930f, 1.77791929f):F2} mm");
                         if ((binfo.tntMass > 0) && !binfo.nuclear)
                         {
                             output.AppendLine($"Blast:");
@@ -5700,6 +5697,9 @@ namespace BDArmory.Weapons
                             {
                                 output.AppendLine($"Air detonation: False");
                             }
+
+                            if (binfo.explosive.ToLower() == "shaped")
+                                output.AppendLine($"Shaped Charge Penetration: {ProjectileUtils.CalculatePenetration(binfo.caliber > 0 ? binfo.caliber * 0.05f : 6f, 5000f, binfo.tntMass * 0.0555f, binfo.apBulletMod, 940, 0.00000094776185184f, 0.6560606203f, 1.201909309f, 1.777919321f):F2} mm");
                         }
                         if (binfo.nuclear)
                         {

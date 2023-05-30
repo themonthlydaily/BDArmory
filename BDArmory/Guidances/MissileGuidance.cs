@@ -147,18 +147,12 @@ namespace BDArmory.Guidances
             return targetPosition + (targetVelocity * leadTime);
         }
 
-        /*public static Vector3 GetAirToAirLoftTarget(Vector3 targetPosition, Vector3 targetVelocity,
-            Vector3 targetAcceleration, Vessel missileVessel, float targetAlt, float maxAltitude,
-            float rangeFactor, float altComp, float velComp, float loftAngle, float termAngle,
-            float termDist, ref int loftState, out float timeToImpact, out float targetDistance,
-            float minSpeed = 200)*/
         public static Vector3 GetAirToAirLoftTarget(Vector3 targetPosition, Vector3 targetVelocity,
             Vector3 targetAcceleration, Vessel missileVessel, float targetAlt, float maxAltitude,
             float rangeFactor, float vertVelComp, float velComp, float loftAngle, float termAngle,
             float termDist, ref int loftState, out float timeToImpact, out float targetDistance,
-            MissileBase.GuidanceModes LoftGuidanceModeTerminal, float N, float minSpeed = 200)
+            MissileBase.GuidanceModes homingModeTerminal, float N, float minSpeed = 200)
         {
-
             Vector3 velDirection = missileVessel.srf_vel_direction; //missileVessel.Velocity().normalized;
 
             targetDistance = Vector3.Distance(targetPosition, missileVessel.transform.position);
@@ -348,11 +342,11 @@ namespace BDArmory.Guidances
 
                 if (targetDistance < termDist)
                 {
-                    if (LoftGuidanceModeTerminal == MissileBase.GuidanceModes.APN)
+                    if (homingModeTerminal == MissileBase.GuidanceModes.APN)
                         return GetAPNTarget(targetPosition, targetVelocity, targetAcceleration, missileVessel, N, out timeToImpact);
-                    else if (LoftGuidanceModeTerminal == MissileBase.GuidanceModes.PN)
+                    else if (homingModeTerminal == MissileBase.GuidanceModes.PN)
                         return GetPNTarget(targetPosition, targetVelocity, missileVessel, N, out timeToImpact);
-                    else if (LoftGuidanceModeTerminal == MissileBase.GuidanceModes.AAMPure)
+                    else if (homingModeTerminal == MissileBase.GuidanceModes.AAMPure)
                         return targetPosition;
                     else
                         return AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, leadTime + TimeWarp.fixedDeltaTime);
@@ -362,6 +356,40 @@ namespace BDArmory.Guidances
                     return AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, leadTime + TimeWarp.fixedDeltaTime); //targetPosition + targetVelocity * leadTime + 0.5f * leadTime * leadTime * targetAcceleration;
                     //return targetPosition + targetVelocity * leadTime;
                 }
+            }
+        }
+
+        public static Vector3 GetAirToAirHybridTarget(Vector3 targetPosition, Vector3 targetVelocity,
+            Vector3 targetAcceleration, Vessel missileVessel, float termDist, out float timeToImpact,
+            MissileBase.GuidanceModes homingModeTerminal, float N, float minSpeed = 200)
+        {
+            Vector3 velDirection = missileVessel.srf_vel_direction; //missileVessel.Velocity().normalized;
+
+            float targetDistance = Vector3.Distance(targetPosition, missileVessel.transform.position);
+
+            float currSpeed = Mathf.Max((float)missileVessel.srfSpeed, minSpeed);
+            Vector3 currVel = currSpeed * velDirection;
+
+            float leadTime = (float)(1 / ((targetVelocity - currVel).magnitude / targetDistance));
+
+            timeToImpact = leadTime;
+            leadTime = Mathf.Clamp(leadTime, 0f, 8f);
+
+            if (targetDistance < termDist)
+            {
+                if (homingModeTerminal == MissileBase.GuidanceModes.APN)
+                    return GetAPNTarget(targetPosition, targetVelocity, targetAcceleration, missileVessel, N, out timeToImpact);
+                else if (homingModeTerminal == MissileBase.GuidanceModes.PN)
+                    return GetPNTarget(targetPosition, targetVelocity, missileVessel, N, out timeToImpact);
+                else if (homingModeTerminal == MissileBase.GuidanceModes.AAMPure)
+                    return targetPosition;
+                else
+                    return AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, leadTime + TimeWarp.fixedDeltaTime);
+            }
+            else
+            {
+                return AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, leadTime + TimeWarp.fixedDeltaTime); //targetPosition + targetVelocity * leadTime + 0.5f * leadTime * leadTime * targetAcceleration;
+                                                                                                                                        //return targetPosition + targetVelocity * leadTime;
             }
         }
 
