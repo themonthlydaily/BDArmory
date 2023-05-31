@@ -1,4 +1,6 @@
 ﻿IMPROVEMENTS / FIXES
+- General:
+	- Archive the defunct KSPedia files, reducing the size of the BDArmory zip file by around 24MB.
 - Vessel Spawning:
 	- Adjust intra-team spacing to scale better with distance.
 	- Fix the inward/outward facing direction when spawning teams and use the same facing direction for all members of a team.
