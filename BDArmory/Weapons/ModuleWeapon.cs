@@ -1090,7 +1090,7 @@ namespace BDArmory.Weapons
                 }
                 catch
                 {
-					baseRPM = 3000;
+                    baseRPM = 3000;
                     Debug.LogError($"[BDArmory.ModuleWeapon] {shortName} missing roundsPerMinute field in .cfg! Fix your .cfg!");
                 }
             }
@@ -3397,7 +3397,7 @@ namespace BDArmory.Weapons
                             {
                                 targetPosition = hit.point;
                             }
-                            if (p != null)
+                            if (p != null && p.rb != null && p.vessel != null)
                             {
                                 targetVelocity = p.rb.velocity;
                                 targetAcceleration = p.vessel.acceleration;
@@ -5848,7 +5848,7 @@ namespace BDArmory.Weapons
             }
             if (isAPS)
             {
-				output.AppendLine($"Autonomous Point Defense Weapon");
+                output.AppendLine($"Autonomous Point Defense Weapon");
                 output.AppendLine($" - Interception type: {APSType}");
                 if (dualModeAPS) output.AppendLine($" - Dual purpose; can be used offensively");
             }
