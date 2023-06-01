@@ -1,6 +1,8 @@
 ﻿IMPROVEMENTS / FIXES
 - General:
 	- Archive the defunct KSPedia files, reducing the size of the BDArmory zip file by around 24MB.
+- UI:
+	- Add a button for resetting the scroll-zoom rate to 1 when "Debug Other" is enabled.
 - AI:
 	- Smoothly vary the roll target during gain alt behaviour from the surface normal to vertical to avoid clipping wings into terrain when taking off on uneven terrain.
 - Vessel Spawning:
