@@ -4915,7 +4915,7 @@ namespace BDArmory.Weapons
                     if (tgtRocket != null)
                     {
                         targetVelocity = tgtRocket.currentVelocity;
-						targetPosition = tgtRocket.currPosition;
+                        targetPosition = tgtRocket.currPosition;
                         targetRadius = 0.25f;
                     }
                     if (visualTargetPart != null)
@@ -5085,7 +5085,7 @@ namespace BDArmory.Weapons
                 yield return new WaitWhileFixed(() => deployState.normalizedTime < 1); //wait for animation here
                 deployState.normalizedTime = 1;
                 deployState.speed = 0;
-				deployState.enabled = false;
+                deployState.enabled = false;
             }
             if (!calledByReload)
             {

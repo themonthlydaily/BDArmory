@@ -23,7 +23,7 @@ namespace BDArmory.Damage
         private bool disabled = false; //prevent further EMP buildup while rebooting
         public bool bricked = false; //He's dead, jeb
         private float rebootTimer = 15;
-		private bool initialAIState = false; //if for whatever reason players are manually firing EMPs at targets with AI/WM disabled, don't enable them when vessel reboots
+        private bool initialAIState = false; //if for whatever reason players are manually firing EMPs at targets with AI/WM disabled, don't enable them when vessel reboots
         private bool initialWMState = false;
 
         private void EnableVessel()
@@ -48,7 +48,7 @@ namespace BDArmory.Damage
                     if (weapon.isAPS)
                         weapon.EnableWeapon(); //reactivate APS 
                     else
-                         weapon.DisableWeapon(); //reset WeaponState
+                        weapon.DisableWeapon(); //reset WeaponState
                 }
                 if (command != null)
                 {
@@ -134,13 +134,13 @@ namespace BDArmory.Damage
             {
                 bricked = true; //if so brick the craft
                 var message = vessel.vesselName + " is bricked!";
-                if (BDArmorySettings.DEBUG_DAMAGE)  Debug.Log("[BDArmory.ModuleDrainEC]: " + message);
+                if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ModuleDrainEC]: " + message);
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
             }
             if (EMPDamage <= 0 && disabled && !bricked) //reset craft
             {
                 var message = "Rebooting " + vessel.vesselName;
-                if (BDArmorySettings.DEBUG_DAMAGE)  Debug.Log("[BDArmory.ModuleDrainEC]: " + message);
+                if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ModuleDrainEC]: " + message);
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
                 EnableVessel();
             }
