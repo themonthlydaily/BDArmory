@@ -9,6 +9,7 @@
 - AI:
 	- Smoothly vary the roll target during gain alt behaviour from the surface normal to vertical to avoid clipping wings into terrain when taking off on uneven terrain.
 - Weapons:
+	- Added (or corrected) penetration value for shaped charges to missile/gun/rocket part-menu infocards.
 	- Missiles:
 		- New 'canRelock' field (default: true), sets if SARH radar-guided missiles will re-lock onto the active radar target if the original radar lock is lost.
 		- Further improvements to loft guidance, added a new field "terminalHomingType" which allows for selection of terminal homing logic.
@@ -17,7 +18,6 @@
 			- IMPORTANT: "LoftTermRange" has been renamed to "terminalHomingRange"!
 		- Fixed MultiMissileLauncher behavior with loft guidance, as well as pronav/augpronav.
 		- Added new "aamhybrid" homingType, uses lead guidance until "terminalHomingRange" is reached, then it will switch to "terminalHomingType", with the same options as loft guidance.
-	- Added (or corrected) penetration value for shaped charges to missile/gun/rocket part-menu infocards.
 
 v1.6.2.0
 IMPROVEMENTS / FIXES
