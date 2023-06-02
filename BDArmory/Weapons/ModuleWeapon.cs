@@ -129,7 +129,6 @@ namespace BDArmory.Weapons
         private int AmmoID;
         private int ECID;
         //AI
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "AI controlled")]
         public bool aiControlled = false;
         public bool autoFire;
         public float autoFireLength = 0;
@@ -875,10 +874,8 @@ namespace BDArmory.Weapons
             craftPart.Dispose();
         }
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "isAPS")]
         public bool isAPS = false;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "isDualMode APS")]
         public bool dualModeAPS = false;
 
         [KSPField]
