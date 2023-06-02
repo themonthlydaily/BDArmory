@@ -1089,7 +1089,7 @@ namespace BDArmory.Weapons
                 }
                 catch
                 {
-					baseRPM = 3000;
+                    baseRPM = 3000;
                     Debug.LogError($"[BDArmory.ModuleWeapon] {shortName} missing roundsPerMinute field in .cfg! Fix your .cfg!");
                 }
             }
@@ -5720,6 +5720,9 @@ namespace BDArmory.Weapons
                             {
                                 output.AppendLine($"Air detonation: False");
                             }
+
+                            if (binfo.explosive.ToLower() == "shaped")
+                                output.AppendLine($"Shaped Charge Penetration: {ProjectileUtils.CalculatePenetration(binfo.caliber > 0 ? binfo.caliber * 0.05f : 6f, 5000f, binfo.tntMass * 0.0555f, binfo.apBulletMod, 940, 0.00000094776185184f, 0.6560606203f, 1.201909309f, 1.777919321f):F2} mm");
                         }
                         if (binfo.nuclear)
                         {
@@ -5779,6 +5782,8 @@ namespace BDArmory.Weapons
                             output.AppendLine($"- tnt mass:  {Math.Round((rinfo.tntMass), 3)} kg");
                             output.AppendLine($"- radius:  {Math.Round(BlastPhysicsUtils.CalculateBlastRange(rinfo.tntMass), 2)} m");
                             output.AppendLine($"Proximity Fuzed: {rinfo.flak}");
+                            if (rinfo.shaped)
+                                output.AppendLine($"Estimated Penetration: {ProjectileUtils.CalculatePenetration(rinfo.caliber > 0 ? rinfo.caliber * 0.05f : 6f, 5000f, rinfo.tntMass * 0.0555f, rinfo.apMod, 940, 0.00000094776185184f, 0.6560606203f, 1.201909309f, 1.777919321f):F2} mm");
                         }
                         if (rinfo.nuclear)
                         {
@@ -5866,7 +5871,7 @@ namespace BDArmory.Weapons
             }
             if (isAPS)
             {
-				output.AppendLine($"Autonomous Point Defense Weapon");
+                output.AppendLine($"Autonomous Point Defense Weapon");
                 output.AppendLine($" - Interception type: {APSType}");
                 if (dualModeAPS) output.AppendLine($" - Dual purpose; can be used offensively");
             }

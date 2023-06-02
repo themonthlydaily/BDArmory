@@ -142,6 +142,9 @@ namespace BDArmory.Weapons.Missiles
         [KSPField]
         public bool radarLOAL = false;
 
+        [KSPField]
+        public bool canRelock = true;
+
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_DropTime"),//Drop Time
             UI_FloatRange(minValue = 0f, maxValue = 5f, stepIncrement = 0.5f, scene = UI_Scene.Editor)]
         public float dropTime = 0.5f;
@@ -258,11 +261,11 @@ namespace BDArmory.Weapons.Missiles
         //[KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_LoftAltComp"), UI_FloatRange(minValue = -2000f, maxValue = 2000f, stepIncrement = 10f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Loft Altitude Compensation
         //public float LoftAltComp = 0;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_LoftTermRange"), UI_FloatRange(minValue = 500f, maxValue = 20000f, stepIncrement = 100f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Loft Altitude Difference
-        public float LoftTermRange = 3000;
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_terminalHomingRange"), UI_FloatRange(minValue = 500f, maxValue = 20000f, stepIncrement = 100f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Terminal Homing Range
+        public float terminalHomingRange = 3000;
 
-        [KSPField]
-        public bool LoftUseAPN = false;
+        //[KSPField]
+        //public bool LoftUseAPN = false;
 
         [KSPField]
         public float missileRadarCrossSection = RadarUtils.RCS_MISSILES;            // radar cross section of this missile for detection purposes
@@ -277,7 +280,7 @@ namespace BDArmory.Weapons.Missiles
 
         public DetonationDistanceStates DetonationDistanceState { get; set; } = DetonationDistanceStates.NotSafe;
 
-        public enum GuidanceModes { None, AAMLead, AAMPure, AGM, AGMBallistic, Cruise, STS, Bomb, RCS, BeamRiding, SLW, PN, APN, AAMLoft }
+        public enum GuidanceModes { None, AAMLead, AAMPure, AGM, AGMBallistic, Cruise, STS, Bomb, RCS, BeamRiding, SLW, PN, APN, AAMLoft, AAMHybrid }
 
         public GuidanceModes GuidanceMode;
 
@@ -303,6 +306,8 @@ namespace BDArmory.Weapons.Missiles
         public TargetingModes TargetingMode { get; set; }
 
         public TargetingModes TargetingModeTerminal { get; set; }
+
+        public GuidanceModes homingModeTerminal { get; set; }
 
         public float TimeToImpact { get; set; }
 
@@ -418,6 +423,7 @@ namespace BDArmory.Weapons.Missiles
         [KSPField] public float radarTimeout = 5;
         private float lastRWRPing = 0;
         private bool radarLOALSearching = false;
+        private bool hasLostLock = false;
         protected bool checkMiss = false;
         public StringBuilder debugString = new StringBuilder();
 
@@ -772,19 +778,25 @@ namespace BDArmory.Weapons.Missiles
                     if (vrd)
                     {
                         TargetSignatureData t = TargetSignatureData.noTarget;
-                        //List<TargetSignatureData> possibleTargets = vrd.GetLockedTargets();
-                        //for (int i = 0; i < possibleTargets.Count; i++)
-                        //{
-                        //    if (possibleTargets[i].vessel == radarTarget.vessel) //this means SARh will remain locked to whatever was the initial target, regardless of current radar lock
-                        //    {
-                        //        t = possibleTargets[i];
-                        //    }
-                        //}
-                        if (vrd.locked) t = vrd.lockedTargetData.targetData; //SARH is passive, and guided towards whatever is currently painted by FCS radar
-
+                        if (canRelock && hasLostLock)
+                        {
+                            if (vrd.locked) t = vrd.lockedTargetData.targetData; //SARH is passive, and guided towards whatever is currently painted by FCS radar
+                        }
+                        else
+                        {
+                            List<TargetSignatureData> possibleTargets = vrd.GetLockedTargets();
+                            for (int i = 0; i < possibleTargets.Count; i++)
+                            {
+                                if (possibleTargets[i].vessel == radarTarget.vessel) //this means SARh will remain locked to whatever was the initial target, regardless of current radar lock
+                                {
+                                    t = possibleTargets[i];
+                                }
+                            }
+                        }
                         if (t.exists)
                         {
                             TargetAcquired = true;
+                            hasLostLock = false;
                             radarTarget = t;
                             if (weaponClass == WeaponClasses.SLW)
                             {
@@ -811,6 +823,7 @@ namespace BDArmory.Weapons.Missiles
                                 if (_radarFailTimer == 0)
                                 {
                                     if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileBase]: Semi-Active Radar guidance failed - waiting for data");
+                                    hasLostLock = true;
                                 }
                                 _radarFailTimer += Time.fixedDeltaTime;
                                 radarTarget.timeAcquired = Time.time;
@@ -1357,7 +1370,7 @@ namespace BDArmory.Weapons.Missiles
         {
             if (this.DetonationDistance == -1)
             {
-                if (GuidanceMode == GuidanceModes.AAMLead || GuidanceMode == GuidanceModes.AAMPure || GuidanceMode == GuidanceModes.PN || GuidanceMode == GuidanceModes.APN || GuidanceMode == GuidanceModes.AAMLoft)
+                if (GuidanceMode == GuidanceModes.AAMLead || GuidanceMode == GuidanceModes.AAMPure || GuidanceMode == GuidanceModes.PN || GuidanceMode == GuidanceModes.APN || GuidanceMode == GuidanceModes.AAMLoft || GuidanceMode == GuidanceModes.AAMHybrid)
                 {
                     DetonationDistance = GetBlastRadius() * 0.25f;
                 }
