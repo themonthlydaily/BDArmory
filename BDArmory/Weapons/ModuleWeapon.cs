@@ -4806,7 +4806,6 @@ namespace BDArmory.Weapons
             targetAcquired = false;
             slaved = false;
             atprAcquired = false;
-            targetPosition = fireTransforms[0].forward * engageRangeMax; //Ensure targetPosition is not null or 0 by the time code reaches Aim(), in case of no incoming projectile, since no target vessel to be continuously tracked.
             lastTargetAcquisitionType = targetAcquisitionType;
             closestTarget = Vector3.zero;
             if (Time.time - lastGoodTargetTime > Mathf.Max(roundsPerMinute / 60f, weaponManager.targetScanInterval))
@@ -5100,6 +5099,7 @@ namespace BDArmory.Weapons
             if (isAPS && (ammoCount > 0 || !BDArmorySettings.INFINITE_AMMO))
             {
                 aiControlled = true;
+                targetPosition = fireTransforms[0].forward * engageRangeMax; //Ensure targetPosition is not null or 0 by the time code reaches Aim(), in case of no incoming projectile, since no target vessel to be continuously tracked.
             }
         }
         IEnumerator ShutdownRoutine(bool calledByReload = false)
