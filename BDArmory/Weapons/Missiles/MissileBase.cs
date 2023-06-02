@@ -673,11 +673,7 @@ namespace BDArmory.Weapons.Missiles
                 }
                 else
                 {
-                    TargetAcquired = false;
-                    if (FlightGlobals.ready)
-                    {
-                        lockFailTimer += Time.fixedDeltaTime;
-                    }
+                    lockFailTimer += Time.fixedDeltaTime;
                 }
 
                 // Update predicted values based on target information
