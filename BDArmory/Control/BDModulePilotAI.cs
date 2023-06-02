@@ -727,6 +727,11 @@ namespace BDArmory.Control
             var fields = typeof(BDModulePilotAI).GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
             foreach (var field in fields)
             {
+                if (field.FieldType == typeof(PIDAutoTuning) || field.FieldType == typeof(Vessel)) // Skip fields that are references to other objects that ought to revert to null.
+                {
+                    if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: Skipping {field.Name} of type {field.FieldType} as it's a reference type.");
+                    continue;
+                }
                 storedSettings[vesselName].Add(new System.Tuple<string, object>(field.Name, field.GetValue(this)));
             }
             Events["RestoreSettings"].active = true;
@@ -1571,10 +1576,14 @@ namespace BDArmory.Control
         protected override void OnDestroy()
         {
             GameEvents.onVesselPartCountChanged.Remove(UpdateTerrainAlertDetectionRadius);
-            if (autoTune && pidAutoTuning is not null) // If we were auto-tuning, revert to the best values and store them.
+            if (autoTune)
+            {
+                if (pidAutoTuning is not null) // If we were auto-tuning, revert to the best values and store them.
             {
                 pidAutoTuning.RevertPIDValues();
                 StoreSettings(pidAutoTuning.vesselName);
+            }
+                OtherUtils.SetTimeOverride(false); // Make sure we disable the Time Override if we were auto-tuning.
             }
             base.OnDestroy();
         }
