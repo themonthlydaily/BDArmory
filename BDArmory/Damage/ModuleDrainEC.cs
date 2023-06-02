@@ -45,13 +45,10 @@ namespace BDArmory.Damage
                 var weapon = p.FindModuleImplementing<ModuleWeapon>();
                 if (weapon != null)
                 {
-                    //weapon.weaponState = ModuleWeapon.WeaponStates.Disabled; //allow weapons to be used again
-                    weapon.DisableWeapon();
                     if (weapon.isAPS)
-                    {
-                        //weapon.weaponState = ModuleWeapon.WeaponStates.Enabled; //allow weapons to be used again
-                        weapon.EnableWeapon();
-                    }
+                        weapon.EnableWeapon(); //reactivate APS 
+                    else
+                         weapon.DisableWeapon(); //reset WeaponState
                 }
                 if (command != null)
                 {

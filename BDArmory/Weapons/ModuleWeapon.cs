@@ -129,6 +129,7 @@ namespace BDArmory.Weapons
         private int AmmoID;
         private int ECID;
         //AI
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "AI controlled")]
         public bool aiControlled = false;
         public bool autoFire;
         public float autoFireLength = 0;
@@ -874,10 +875,10 @@ namespace BDArmory.Weapons
             craftPart.Dispose();
         }
 
-        [KSPField(isPersistant = true)]
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "isAPS")]
         public bool isAPS = false;
 
-        [KSPField(isPersistant = true)]
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "isDualMode APS")]
         public bool dualModeAPS = false;
 
         [KSPField]
@@ -1064,7 +1065,6 @@ namespace BDArmory.Weapons
                     Fields["priority"].guiActiveEditor = false;
                 }
                 ParseAPSType(APSType);
-                aiControlled = true;
             }
             InitializeEngagementRange(minSafeDistanceDistance, maxEffectiveDistance);
             if (string.IsNullOrEmpty(GetShortName()))
@@ -1389,11 +1389,6 @@ namespace BDArmory.Weapons
                     }
                 }
                 baseDeviation = maxDeviation; //store original MD value
-
-                if (isAPS)
-                {
-                    EnableWeapon();
-                }
             }
             else if (HighLogic.LoadedSceneIsEditor)
             {
@@ -1575,6 +1570,25 @@ namespace BDArmory.Weapons
             if (HighLogic.LoadedSceneIsFlight)
             { TimingManager.FixedUpdateAdd(TimingManager.TimingStage.FashionablyLate, AimAndFire); }
             CustomFireKey = new BDInputInfo(customFireKey, "Custom Fire");
+
+            if (HighLogic.LoadedSceneIsFlight)
+            {
+                if (isAPS)
+                {
+                    Debug.Log("[APS Debug] Enabling APS on Start");
+                    EnableWeapon();
+                }
+            }
+
+            if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 59)
+            {
+                if (WeaponName == "bahaTurret")
+                {
+                    maxEffectiveDistance = 1000;
+                    InitializeEngagementRange(minSafeDistanceDistance, 1000);
+                    engageRangeMax = 1000;
+                }
+            }
         }
 
         void OnDestroy()
@@ -1923,7 +1937,7 @@ namespace BDArmory.Weapons
 
             if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DEBUG_WEAPONS && (weaponState == WeaponStates.Enabled || weaponState == WeaponStates.EnabledForSecondaryFiring) && vessel && !vessel.packed && !MapView.MapIsEnabled)
             {
-                GUIUtils.MarkPosition(debugTargetPosition, transform, Color.cyan);
+                GUIUtils.MarkPosition(debugTargetPosition, transform, Color.grey); //lets not have two MarkPositions use the same color...
                 GUIUtils.DrawLineBetweenWorldPositions(debugTargetPosition, debugTargetPosition + debugRelVelAdj, 2, Color.green);
                 GUIUtils.DrawLineBetweenWorldPositions(debugTargetPosition + debugRelVelAdj, debugTargetPosition + debugRelVelAdj + debugAccAdj, 2, Color.magenta);
                 GUIUtils.DrawLineBetweenWorldPositions(debugTargetPosition + debugRelVelAdj + debugAccAdj, debugTargetPosition + debugRelVelAdj + debugAccAdj + debugGravAdj, 2, Color.yellow);
@@ -3190,7 +3204,7 @@ namespace BDArmory.Weapons
             {
                 if (ammoCount > 0 || !BDArmorySettings.INFINITE_AMMO)
                 {
-                    EnableWeapon();
+                    //EnableWeapon();
                     aiControlled = true;
                     return;
                 }
@@ -3211,7 +3225,7 @@ namespace BDArmory.Weapons
             {
                 if (ammoCount > 0 || !BDArmorySettings.INFINITE_AMMO)
                 {
-                    EnableWeapon();
+                    //EnableWeapon();
                     aiControlled = true;
                     return;
                 }
@@ -3397,7 +3411,7 @@ namespace BDArmory.Weapons
                             {
                                 targetPosition = hit.point;
                             }
-                            if (p != null)
+                            if (p != null && p.rb != null && p.vessel != null)
                             {
                                 targetVelocity = p.rb.velocity;
                                 targetAcceleration = p.vessel.acceleration;
@@ -4794,6 +4808,7 @@ namespace BDArmory.Weapons
             targetAcquired = false;
             slaved = false;
             atprAcquired = false;
+            targetPosition = fireTransforms[0].forward * engageRangeMax; //Ensure targetPosition is not null or 0 by the time code reaches Aim(), in case of no incoming projectile, since no target vessel to be continuously tracked.
             lastTargetAcquisitionType = targetAcquisitionType;
             closestTarget = Vector3.zero;
             if (Time.time - lastGoodTargetTime > Mathf.Max(roundsPerMinute / 60f, weaponManager.targetScanInterval))
@@ -4893,23 +4908,28 @@ namespace BDArmory.Weapons
                 }
                 if (tgtShell != null || tgtRocket != null || visualTargetPart != null)
                 {
+                    visualTargetVessel = null;
                     if (tgtShell != null)
                     {
                         targetVelocity = tgtShell.currentVelocity;
                         targetPosition = tgtShell.currPosition;
+                        targetRadius = 0.25f;
                     }
                     if (tgtRocket != null)
                     {
                         targetVelocity = tgtRocket.currentVelocity;
-                        targetPosition = tgtRocket.currPosition;
+						targetPosition = tgtRocket.currPosition;
+                        targetRadius = 0.25f;
                     }
                     if (visualTargetPart != null)
                     {
                         targetVelocity = visualTargetPart.vessel.rb_velocity;
                         targetPosition = visualTargetPart.transform.position;
+                        visualTargetVessel = visualTargetPart.vessel;
+                        TargetInfo currentTarget = visualTargetVessel.gameObject.GetComponent<TargetInfo>();
+                        targetRadius = visualTargetVessel.GetRadius(fireTransforms[0].forward, currentTarget.bounds);
                     }
                     //targetVelocity -= BDKrakensbane.FrameVelocity;
-                    targetRadius = 1;
 
                     targetAcceleration = visualTargetPart != null && visualTargetPart.vessel != null ? (Vector3)visualTargetPart.vessel.acceleration : Vector3.zero;
                     targetAcquired = true;
@@ -4921,7 +4941,8 @@ namespace BDArmory.Weapons
                 }
                 else
                 {
-                    //if (turret) turret.ReturnTurret(); //reset turret if no target
+                    if (turret) turret.ReturnTurret(); //reset turret if no target
+                    visualTargetVessel = null;
                 }
             }
         }
@@ -5062,12 +5083,14 @@ namespace BDArmory.Weapons
             }
             if (hasDeployAnim && deployState)
             {
+                Debug.Log("[APS Debug] Found deploy Anim, playing...");
                 deployState.enabled = true;
                 deployState.speed = 1;
                 yield return new WaitWhileFixed(() => deployState.normalizedTime < 1); //wait for animation here
                 deployState.normalizedTime = 1;
                 deployState.speed = 0;
-                deployState.enabled = false;
+				deployState.enabled = false;
+                Debug.Log("[APS Debug] deployAnim complete");
             }
             if (!calledByReload)
             {
@@ -5078,6 +5101,11 @@ namespace BDArmory.Weapons
             }
             UpdateGUIWeaponState();
             BDArmorySetup.Instance.UpdateCursorState();
+            if (isAPS && (ammoCount > 0 || !BDArmorySettings.INFINITE_AMMO))
+            {
+                aiControlled = true;
+                Debug.Log("[APS Debug] Setting aiControlled");
+            }
         }
         IEnumerator ShutdownRoutine(bool calledByReload = false)
         {
