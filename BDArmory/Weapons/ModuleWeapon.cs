@@ -874,8 +874,10 @@ namespace BDArmory.Weapons
             craftPart.Dispose();
         }
 
+        [KSPField(isPersistant = true)]
         public bool isAPS = false;
 
+        [KSPField(isPersistant = true)]
         public bool dualModeAPS = false;
 
         [KSPField]
