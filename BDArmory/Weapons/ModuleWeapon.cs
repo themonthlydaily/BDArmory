@@ -1575,7 +1575,6 @@ namespace BDArmory.Weapons
             {
                 if (isAPS)
                 {
-                    Debug.Log("[APS Debug] Enabling APS on Start");
                     EnableWeapon();
                 }
             }
@@ -5083,14 +5082,12 @@ namespace BDArmory.Weapons
             }
             if (hasDeployAnim && deployState)
             {
-                Debug.Log("[APS Debug] Found deploy Anim, playing...");
                 deployState.enabled = true;
                 deployState.speed = 1;
                 yield return new WaitWhileFixed(() => deployState.normalizedTime < 1); //wait for animation here
                 deployState.normalizedTime = 1;
                 deployState.speed = 0;
 				deployState.enabled = false;
-                Debug.Log("[APS Debug] deployAnim complete");
             }
             if (!calledByReload)
             {
@@ -5104,7 +5101,6 @@ namespace BDArmory.Weapons
             if (isAPS && (ammoCount > 0 || !BDArmorySettings.INFINITE_AMMO))
             {
                 aiControlled = true;
-                Debug.Log("[APS Debug] Setting aiControlled");
             }
         }
         IEnumerator ShutdownRoutine(bool calledByReload = false)
