@@ -11,7 +11,7 @@
 - Weapons:
 	- Missiles:
 		- New 'canRelock' field (default: true), sets if SARH radar-guided missiles will re-lock onto the active radar target if the original radar lock is lost.
-    - Further improvements to loft guidance, added a new field "terminalHomingType" which allows for selection of terminal homing logic. "aam"/"aamlead", "aampure", "pronav" and "augpronav" are currently supported. Both pronav options allow for user defined gains using "pronavGain". Recommended values of ~1-7.
+    		- Further improvements to loft guidance, added a new field "terminalHomingType" which allows for selection of terminal homing logic. "aam"/"aamlead", "aampure", "pronav" and "augpronav" are currently supported. Both pronav options allow for user defined gains using "pronavGain". Recommended values of ~1-7.
 			- IMPORTANT: "LoftTermRange" has been renamed to "terminalHomingRange"!
 		- Fixed MultiMissileLauncher behavior with loft guidance, as well as pronav/augpronav.
 		- Added new "aamhybrid" homingType, uses lead guidance until "terminalHomingRange" is reached, then it will switch to "terminalHomingType", with the same options as loft guidance.
