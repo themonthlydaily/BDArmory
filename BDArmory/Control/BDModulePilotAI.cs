@@ -121,13 +121,11 @@ namespace BDArmory.Control
         Vector3 upDirection = Vector3.up;
 
         #region Pilot AI Settings GUI
-
         #region PID
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_SteerFactor", //Steer Factor
             groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0.1f, maxValue = 20f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float steerMult = 14f;
-        //make a combat steer mult and idle steer mult
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_SteerKi", //Steer Ki
             groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
@@ -1506,6 +1504,13 @@ namespace BDArmory.Control
             dirtyPAW_PID = false;
             fixFieldOrderingRunning = false;
         }
+
+        void PAWFirstOpened(UIPartActionWindow paw, Part p) // Fix the ordering of fields when the PAW is first opened. This is required since KSP messes up the field ordering if the first KSPField is in a collapsed group.
+        {
+            if (p != part) return;
+            dirtyPAW_PID = true;
+            GameEvents.onPartActionUIShown.Remove(PAWFirstOpened);
+        }
         #endregion
 
         protected override void Start()
@@ -1574,10 +1579,12 @@ namespace BDArmory.Control
                     Events["RestoreControlSurfaceSettings"].active = true;
                 }
             }
+            GameEvents.onPartActionUIShown.Add(PAWFirstOpened);
         }
 
         protected override void OnDestroy()
         {
+            GameEvents.onPartActionUIShown.Remove(PAWFirstOpened);
             GameEvents.onVesselPartCountChanged.Remove(UpdateTerrainAlertDetectionRadius);
             if (autoTune)
             {
