@@ -1165,6 +1165,10 @@ namespace BDArmory.Control
             DampingFactor.guiActiveEditor = dynamicSteerDamping && !CustomDynamicAxisFields;
 
             // 3-axis dynamic damping
+            var CustomDynamicAxisToggleField = Fields["CustomDynamicAxisFields"];
+            CustomDynamicAxisToggleField.guiActive = dynamicSteerDamping;
+            CustomDynamicAxisToggleField.guiActiveEditor = dynamicSteerDamping;
+
             var DynamicPitchLabel = Fields["PitchLabel"];
             var DynamicDampingPitch = Fields["dynamicDampingPitch"];
             var DynamicDampingPitchMaxField = Fields["DynamicDampingPitchMax"];
