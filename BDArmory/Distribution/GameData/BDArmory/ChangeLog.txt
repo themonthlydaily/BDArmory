@@ -15,6 +15,7 @@
 	- Fix the PID field ordering when the PAW is first opened.
 - Weapons:
 	- Added (or corrected) penetration value for shaped charges to missile/gun/rocket part-menu infocards.
+	- Add an option when setting weapon groups to apply the group name to that weapon, symmetric weapons, all weapons of that type, all weapons of that class or applying to all guns/rockets/lasers.
 	- Missiles:
 		- New 'canRelock' field (default: true), sets if SARH radar-guided missiles will re-lock onto the active radar target if the original radar lock is lost.
 		- Further improvements to loft guidance, added a new field "terminalHomingType" which allows for selection of terminal homing logic.
