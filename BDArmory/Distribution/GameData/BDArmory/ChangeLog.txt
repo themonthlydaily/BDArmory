@@ -13,6 +13,7 @@
 	- Hide the 3-axis dynamic damping button when dynamic damping is disabled.
 	- Move the dynamic damping toggles to before the sliders to stop them from jumping around when toggled.
 	- Fix the PID field ordering when the PAW is first opened.
+	- Fixed guard mode behavior with radarLOAL = false missiles when Max Missile Targets > Max Radar Locks on fire control radar.
 - Weapons:
 	- Added (or corrected) penetration value for shaped charges to missile/gun/rocket part-menu infocards.
 	- Missiles:
@@ -23,6 +24,7 @@
 			- IMPORTANT: "LoftTermRange" has been renamed to "terminalHomingRange"!
 		- Fixed MultiMissileLauncher behavior with loft guidance, as well as pronav/augpronav.
 		- Added new "aamhybrid" homingType, uses lead guidance until "terminalHomingRange" is reached, then it will switch to "terminalHomingType", with the same options as loft guidance.
+		- Fixed bug in heat seeker detonation behavior which caused some missiles to not detonate when they should.
 
 v1.6.2.0
 IMPROVEMENTS / FIXES
