@@ -140,7 +140,10 @@ namespace BDArmory.Weapons.Missiles
         public bool isTimed = false;
 
         [KSPField]
-        public bool radarLOAL = false;
+        public bool radarLOAL = false;                              //if true, radar missile will acquire and lock onto a target after launch, using the missile's onboard radar
+
+        [KSPField]
+        public bool canRelock = true;                               //if true, if a FCS radar guiding a SARH missile loses lock, the missile will be switched to the active radar lock instead of going inactive from target loss.
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_DropTime"),//Drop Time
             UI_FloatRange(minValue = 0f, maxValue = 5f, stepIncrement = 0.5f, scene = UI_Scene.Editor)]
@@ -418,6 +421,7 @@ namespace BDArmory.Weapons.Missiles
         [KSPField] public float radarTimeout = 5;
         private float lastRWRPing = 0;
         private bool radarLOALSearching = false;
+        private bool hasLostLock = false;
         protected bool checkMiss = false;
         public StringBuilder debugString = new StringBuilder();
 
@@ -768,20 +772,26 @@ namespace BDArmory.Weapons.Missiles
                     if (vrd)
                     {
                         TargetSignatureData t = TargetSignatureData.noTarget;
-                        //List<TargetSignatureData> possibleTargets = vrd.GetLockedTargets();
-                        //for (int i = 0; i < possibleTargets.Count; i++)
-                        //{
-                        //    if (possibleTargets[i].vessel == radarTarget.vessel) //this means SARh will remain locked to whatever was the initial target, regardless of current radar lock
-                        //    {
-                        //        t = possibleTargets[i];
-                        //    }
-                        //}
-                        if (vrd.locked) t = vrd.lockedTargetData.targetData; //SARH is passive, and guided towards whatever is currently painted by FCS radar
-
+                        if (canRelock && hasLostLock)
+                        {
+                            if (vrd.locked) t = vrd.lockedTargetData.targetData; //SARH is passive, and guided towards whatever is currently painted by FCS radar
+                        }
+                        else
+                        {
+                            List<TargetSignatureData> possibleTargets = vrd.GetLockedTargets();
+                            for (int i = 0; i < possibleTargets.Count; i++)
+                            {
+                                if (possibleTargets[i].vessel == radarTarget.vessel) //this means SARh will remain locked to whatever was the initial target, regardless of current radar lock
+                                {
+                                    t = possibleTargets[i];
+                                }
+                            }
+                        }
                         if (t.exists)
                         {
                             TargetAcquired = true;
                             radarTarget = t;
+                            hasLostLock = false;
                             if (weaponClass == WeaponClasses.SLW)
                             {
                                 TargetPosition = radarTarget.predictedPosition;
@@ -807,6 +817,7 @@ namespace BDArmory.Weapons.Missiles
                                 if (_radarFailTimer == 0)
                                 {
                                     if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileBase]: Semi-Active Radar guidance failed - waiting for data");
+                                    hasLostLock = true;
                                 }
                                 _radarFailTimer += Time.fixedDeltaTime;
                                 radarTarget.timeAcquired = Time.time;
@@ -831,7 +842,7 @@ namespace BDArmory.Weapons.Missiles
                         return;
                     }
                 }
-                else
+                else //onboard radar is on, or off but in range
                 {
                     // active radar with target locked:
                     vrd = null;
@@ -947,7 +958,7 @@ namespace BDArmory.Weapons.Missiles
                     }
                 }
             }
-            else if (radarLOAL && radarLOALSearching) //add a check for missing radar, so LOAL missisle that have been dumbfired can stil lactivate?
+            else if (radarLOAL && radarLOALSearching) //add a check for missing radar, so LOAL missiles that have been dumbfired can still activate?
             {
                 // not locked on before launch, trying lock-on after launch:
 

@@ -6150,7 +6150,15 @@ namespace BDArmory.Control
             {
                 if (vesselRadarData && vesselRadarData.locked)//&& radar && radar.lockedTarget.exists)
                 {
-                    ml.radarTarget = vesselRadarData.lockedTargetData.targetData;
+                    List<TargetSignatureData> possibleTargets = vesselRadarData.GetLockedTargets();
+                    for (int i = 0; i < possibleTargets.Count; i++)
+                    {
+                        if (possibleTargets[i].vessel == guardTarget)
+                        {
+                            ml.radarTarget = possibleTargets[i];
+                        }
+                    }
+                    //ml.radarTarget = vesselRadarData.lockedTargetData.targetData;
                     ml.vrd = vesselRadarData;
                     vesselRadarData.LastMissile = ml;
                     if (BDArmorySettings.DEBUG_MISSILES)
