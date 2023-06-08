@@ -441,7 +441,7 @@ namespace BDArmory.Weapons
         public float maxEffectiveDistance = 2500; //used by AI to select appropriate weapon
 
         [KSPField]
-        public float minSafeDistanceDistance = 0; //used by AI to select appropriate weapon
+        public float minSafeDistance = 0; //used by AI to select appropriate weapon
 
         [KSPField]
         public float bulletMass = 0.3880f; //mass in KG - used for damage and recoil and drag
@@ -1065,7 +1065,7 @@ namespace BDArmory.Weapons
                 }
                 ParseAPSType(APSType);
             }
-            InitializeEngagementRange(minSafeDistanceDistance, maxEffectiveDistance);
+            InitializeEngagementRange(minSafeDistance, maxEffectiveDistance);
             if (string.IsNullOrEmpty(GetShortName()))
             {
                 shortName = part.partInfo.title;
@@ -1583,7 +1583,7 @@ namespace BDArmory.Weapons
                 if (WeaponName == "bahaTurret")
                 {
                     maxEffectiveDistance = 1000;
-                    InitializeEngagementRange(minSafeDistanceDistance, 1000);
+                    InitializeEngagementRange(minSafeDistance, 1000);
                     engageRangeMax = 1000;
                 }
             }
@@ -5676,9 +5676,9 @@ namespace BDArmory.Weapons
                     output.AppendLine($"Electric Charge required per shot: {ECPerShot}");
                 }
                 output.AppendLine($"Max Range: {maxEffectiveDistance} m");
-                if (minSafeDistanceDistance > 0)
+                if (minSafeDistance > 0)
                 {
-                    output.AppendLine($"Min Range: {minSafeDistanceDistance} m");
+                    output.AppendLine($"Min Range: {minSafeDistance} m");
                 }
                 if (weaponType == "ballistic")
                 {
