@@ -129,7 +129,7 @@ namespace BDArmory.Utils
         }
 
         /// <summary>
-        /// Generate a Vector3 with elements from an approximately normal distribution.
+        /// Generate a Vector3 with elements from an approximately normal distribution (mean: 0, std.dev: 1).
         /// </summary>
         /// <returns></returns>
         public static Vector3 GaussianVector3()
