@@ -3085,7 +3085,8 @@ namespace BDArmory.Control
                         if (engageableWeapon.GetEngageAirTargets()) weaponTypesAir.Add(weapon.Current);
                         if (engageableWeapon.GetEngageMissileTargets())
                         {
-                            weaponTypesMissile.Add(weapon.Current); targetMissiles = true;
+                            weaponTypesMissile.Add(weapon.Current); 
+                            targetMissiles = true;
                         }
                         if (engageableWeapon.GetEngageGroundTargets()) weaponTypesGround.Add(weapon.Current);
                         if (engageableWeapon.GetEngageSLWTargets()) weaponTypesSLW.Add(weapon.Current);
@@ -6155,7 +6156,7 @@ namespace BDArmory.Control
                     {
                         if (possibleTargets[i].vessel == guardTarget)
                         {
-                            ml.radarTarget = possibleTargets[i];
+                            ml.radarTarget = possibleTargets[i]; //send correct targetlock if firing multiple SARH missiles
                         }
                     }
                     //ml.radarTarget = vesselRadarData.lockedTargetData.targetData;

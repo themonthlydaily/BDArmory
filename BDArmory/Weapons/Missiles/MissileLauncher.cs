@@ -436,6 +436,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 shortName = part.partInfo.title;
             }
+            if (BDArmorySettings.DEBUG_MISSILES) shortName = $"{SourceVessel.GetName()}'s {GetShortName()}";
             gaplessEmitters = new List<BDAGaplessParticleEmitter>();
             pEmitters = new List<KSPParticleEmitter>();
             boostEmitters = new List<KSPParticleEmitter>();
@@ -1170,8 +1171,7 @@ namespace BDArmory.Weapons.Missiles
                 AddTargetInfoToVessel();
                 StartCoroutine(DecoupleRoutine());
 
-                vessel.vesselType = VesselType.Probe;
-                if (BDArmorySettings.DEBUG_MISSILES) vessel.vesselName = $"{SourceVessel}'s {GetShortName()}";
+                vessel.vesselType = VesselType.Probe;                
                 //setting ref transform for navball
                 GameObject refObject = new GameObject();
                 refObject.transform.rotation = Quaternion.LookRotation(-transform.up, transform.forward);
