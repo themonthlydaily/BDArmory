@@ -1089,7 +1089,7 @@ namespace BDArmory.Weapons
                 }
                 catch
                 {
-					baseRPM = 3000;
+                    baseRPM = 3000;
                     Debug.LogError($"[BDArmory.ModuleWeapon] {shortName} missing roundsPerMinute field in .cfg! Fix your .cfg!");
                 }
             }
@@ -4915,7 +4915,7 @@ namespace BDArmory.Weapons
                     if (tgtRocket != null)
                     {
                         targetVelocity = tgtRocket.currentVelocity;
-						targetPosition = tgtRocket.currPosition;
+                        targetPosition = tgtRocket.currPosition;
                         targetRadius = 0.25f;
                     }
                     if (visualTargetPart != null)
@@ -5085,7 +5085,7 @@ namespace BDArmory.Weapons
                 yield return new WaitWhileFixed(() => deployState.normalizedTime < 1); //wait for animation here
                 deployState.normalizedTime = 1;
                 deployState.speed = 0;
-				deployState.enabled = false;
+                deployState.enabled = false;
             }
             if (!calledByReload)
             {
@@ -5720,6 +5720,9 @@ namespace BDArmory.Weapons
                             {
                                 output.AppendLine($"Air detonation: False");
                             }
+
+                            if (binfo.explosive.ToLower() == "shaped")
+                                output.AppendLine($"Shaped Charge Penetration: {ProjectileUtils.CalculatePenetration(binfo.caliber > 0 ? binfo.caliber * 0.05f : 6f, 5000f, binfo.tntMass * 0.0555f, binfo.apBulletMod, 940, 0.00000094776185184f, 0.6560606203f, 1.201909309f, 1.777919321f):F2} mm");
                         }
                         if (binfo.nuclear)
                         {
@@ -5779,6 +5782,8 @@ namespace BDArmory.Weapons
                             output.AppendLine($"- tnt mass:  {Math.Round((rinfo.tntMass), 3)} kg");
                             output.AppendLine($"- radius:  {Math.Round(BlastPhysicsUtils.CalculateBlastRange(rinfo.tntMass), 2)} m");
                             output.AppendLine($"Proximity Fuzed: {rinfo.flak}");
+                            if (rinfo.shaped)
+                                output.AppendLine($"Estimated Penetration: {ProjectileUtils.CalculatePenetration(rinfo.caliber > 0 ? rinfo.caliber * 0.05f : 6f, 5000f, rinfo.tntMass * 0.0555f, rinfo.apMod, 940, 0.00000094776185184f, 0.6560606203f, 1.201909309f, 1.777919321f):F2} mm");
                         }
                         if (rinfo.nuclear)
                         {
@@ -5866,7 +5871,7 @@ namespace BDArmory.Weapons
             }
             if (isAPS)
             {
-				output.AppendLine($"Autonomous Point Defense Weapon");
+                output.AppendLine($"Autonomous Point Defense Weapon");
                 output.AppendLine($" - Interception type: {APSType}");
                 if (dualModeAPS) output.AppendLine($" - Dual purpose; can be used offensively");
             }
@@ -5914,6 +5919,7 @@ namespace BDArmory.Weapons
             {
                 instance.WPNmodule.WeaponDisplayName = instance.WPNmodule.shortName;
                 instance.WPNmodule = null;
+                instance.applyWeaponGroupTo = null;
                 instance.UpdateGUIState();
             }
             EditorLogic editor = EditorLogic.fetch;
@@ -5928,6 +5934,8 @@ namespace BDArmory.Weapons
                 instance.WPNmodule = WPNmodule;
                 instance.UpdateGUIState();
             }
+            instance.applyWeaponGroupTo = new string[] { "this weapon", "symmetric weapons", $"all {WPNmodule.part.partInfo.title}s", $"all {WPNmodule.GetWeaponClass()}s", "all Guns/Rockets/Lasers" };
+            instance._applyWeaponGroupTo = instance.applyWeaponGroupTo[instance._applyWeaponGroupToIndex];
         }
 
         private void UpdateGUIState()
@@ -6038,6 +6046,9 @@ namespace BDArmory.Weapons
             guiWindowRect = GUILayout.Window(GUIUtility.GetControlID(FocusType.Passive), guiWindowRect, GUIWindow, "Weapon Group GUI", Styles.styleEditorPanel);
         }
 
+        string[] applyWeaponGroupTo;
+        string _applyWeaponGroupTo;
+        int _applyWeaponGroupToIndex = 0;
         public void GUIWindow(int windowID)
         {
             InitializeStyles();
@@ -6055,11 +6066,65 @@ namespace BDArmory.Weapons
             {
                 string newName = string.IsNullOrEmpty(txtName.Trim()) ? WPNmodule.OriginalShortName : txtName.Trim();
 
-                WPNmodule.WeaponDisplayName = newName;
-                WPNmodule.shortName = newName;
+                switch (_applyWeaponGroupToIndex)
+                {
+                    case 0:
+                        WPNmodule.WeaponDisplayName = newName;
+                        WPNmodule.shortName = newName;
+                        break;
+                    case 1: // symmetric parts
+                        WPNmodule.WeaponDisplayName = newName;
+                        WPNmodule.shortName = newName;
+                        foreach (Part p in WPNmodule.part.symmetryCounterparts)
+                        {
+                            var wpn = p.GetComponent<ModuleWeapon>();
+                            if (wpn == null) continue;
+                            wpn.WeaponDisplayName = newName;
+                            wpn.shortName = newName;
+                        }
+                        break;
+                    case 2: // all weapons of the same type
+                        foreach (Part p in EditorLogic.fetch.ship.parts)
+                        {
+                            if (p.name == WPNmodule.part.name)
+                            {
+                                var wpn = p.GetComponent<ModuleWeapon>();
+                                if (wpn == null) continue;
+                                wpn.WeaponDisplayName = newName;
+                                wpn.shortName = newName;
+                            }
+                        }
+                        break;
+                    case 3: // all weapons of the same class
+                        var wpnClass = WPNmodule.GetWeaponClass();
+                        foreach (Part p in EditorLogic.fetch.ship.parts)
+                        {
+                            var wpn = p.GetComponent<ModuleWeapon>();
+                            if (wpn == null) continue;
+                            if (wpn.GetWeaponClass() != wpnClass) continue;
+                            wpn.WeaponDisplayName = newName;
+                            wpn.shortName = newName;
+                        }
+                        break;
+                    case 4: // all guns/rockets/lasers
+                        var gunsRocketsLasers = new HashSet<WeaponClasses> { WeaponClasses.Gun, WeaponClasses.Rocket, WeaponClasses.DefenseLaser };
+                        foreach (Part p in EditorLogic.fetch.ship.parts)
+                        {
+                            var wpn = p.GetComponent<ModuleWeapon>();
+                            if (wpn == null) continue;
+                            if (!gunsRocketsLasers.Contains(wpn.GetWeaponClass())) continue;
+                            wpn.WeaponDisplayName = newName;
+                            wpn.shortName = newName;
+                        }
+                        break;
+                }
                 instance.WPNmodule.HideUI();
             }
 
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"Apply to {_applyWeaponGroupTo}");
+            if (_applyWeaponGroupToIndex != (_applyWeaponGroupToIndex = Mathf.RoundToInt(GUILayout.HorizontalSlider(_applyWeaponGroupToIndex, 0, 4, GUILayout.Width(150))))) _applyWeaponGroupTo = applyWeaponGroupTo[_applyWeaponGroupToIndex];
             GUILayout.EndHorizontal();
 
             scrollPos = GUILayout.BeginScrollView(scrollPos);
