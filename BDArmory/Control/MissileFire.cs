@@ -2698,7 +2698,7 @@ namespace BDArmory.Control
         IEnumerator SmokeRoutine(int repetition, float interval)
         {
             isSmoking = true;
-            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} starting flare routine");
+            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} starting smoke routine");
             // yield return new WaitForSecondsFixed(0.2f); // Reaction time delay
             for (int i = 0; i < repetition; ++i)
             {
@@ -2708,7 +2708,7 @@ namespace BDArmory.Control
             }
             yield return new WaitForSecondsFixed(cmWaitTime);
             isSmoking = false;
-            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} ending flare routine");
+            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} ending smoke routine");
         }
 
         IEnumerator AllCMRoutine(int count)
