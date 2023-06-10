@@ -5704,7 +5704,7 @@ namespace BDArmory.Weapons
                             output.AppendLine($"Cannister Round");
                             output.AppendLine($" - Submunition count: {binfo.subProjectileCount}");
                         }
-                        output.AppendLine($"Estimated Penetration: {ProjectileUtils.CalculatePenetration(binfo.caliber, binfo.bulletVelocity, binfo.bulletMass, binfo.apBulletMod, 940, 8.45001135e-07f, 0.656060636f, 1.20190930f, 1.77791929f):F2} mm");
+                        output.AppendLine($"Estimated Penetration: {ProjectileUtils.CalculatePenetration(binfo.caliber, binfo.bulletVelocity, binfo.bulletMass, binfo.apBulletMod, 940, 0.00000094776185184f, 0.656060636f, 1.20190930f, 1.77791929f):F2} mm");
                         if ((binfo.tntMass > 0) && !binfo.nuclear)
                         {
                             output.AppendLine($"Blast:");

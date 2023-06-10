@@ -2296,7 +2296,8 @@ namespace BDArmory.Weapons.Missiles
 
                     if (TimeToImpact == float.PositiveInfinity)
                     {
-                        if (!vessel.InVacuum() && (vessel.altitude >= LoftMinAltitude) && ((vessel.altitude - targetAlt <= LoftAltitudeAdvMax) || (TargetPosition - vessel.transform.position).sqrMagnitude > (LoftRangeOverride * LoftRangeOverride))) loftState = 0;
+                        // If the missile is not in a vaccuum, is above LoftMinAltitude and is either is at a lower altitude than targetAlt + LoftAltitudeAdvMax, further than LoftRangeOverride, or has an angle to target below the climb angle (in this case, since it's angle from the vertical the check is if it's > 90f - LoftAngle), then loft. Conditions given in order of complexity
+                        if (!vessel.InVacuum() && (vessel.altitude >= LoftMinAltitude) && ((vessel.altitude - targetAlt <= LoftAltitudeAdvMax) || (TargetPosition - vessel.transform.position).sqrMagnitude > (LoftRangeOverride * LoftRangeOverride) || Vector3.Angle(TargetPosition - vessel.transform.position, VectorUtils.GetUpDirection(vessel.CoM)) > (90f - LoftAngle))) loftState = 0;
                         else loftState = 3;
                     }
 
@@ -2308,19 +2309,6 @@ namespace BDArmory.Weapons.Missiles
                     maxAoA = Mathf.Clamp(initMaxAoA * fac, 4f, initMaxAoA);
 
                     TimeToImpact = currTimeToImpact;
-
-                    /*if (prevTimeToImpact - TimeToImpact < -0.1)
-                    {
-                        loftTerminal = true;
-                    }*/
-
-                    //if (prevTimeToImpact != float.PositiveInfinity && (TimeToImpact - prevTimeToImpact) > 0) loftTimeToGoGain += (TimeToImpact - prevTimeToImpact);
-
-                    /*if (loftTimeToGoGain > LoftThreshold && !loftTerminal)
-                    {
-                        maxAoA *= 4;
-                        loftTerminal = true;
-                    }*/
 
                     if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: AAM Loft TTGO: [{TimeToImpact:G3}]. Currently State: {loftState}. Fly to: [{aamTarget}]. Target Position: [{TargetPosition}]. Max AoA: [{maxAoA:G3}]");
                 }
@@ -2347,7 +2335,7 @@ namespace BDArmory.Weapons.Missiles
                 if (proxyDetonate && !DetonateAtMinimumDistance && ((TargetPosition + (TargetVelocity * Time.fixedDeltaTime)) - (transform.position)).sqrMagnitude < distThreshold * distThreshold)
                 {
                     //part.Destroy(); //^look into how this interacts with MissileBase.DetonationState
-                    // - if the missile is still within the notSafe status, the missile will delete itself, else, the checkProximity state of DetpnationState would trigger before the missile reaches the 1/2 blastradius.
+                    // - if the missile is still within the notSafe status, the missile will delete itself, else, the checkProximity state of DetonationState would trigger before the missile reaches the 1/2 blastradius.
                     // would only trigger if someone set the detonation distance override to something smallerthan 1/2 blst radius, for some reason
                     Detonate();
                 }
