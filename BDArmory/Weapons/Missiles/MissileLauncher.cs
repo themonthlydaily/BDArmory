@@ -2296,7 +2296,7 @@ namespace BDArmory.Weapons.Missiles
 
                     if (TimeToImpact == float.PositiveInfinity)
                     {
-                        // If the missile is not in a vaccuum, is above LoftMinAltitude and is either is at a lower altitude than targetAlt + LoftAltitudeAdvMax, further than LoftRangeOverride, or has an angle to target below the climb angle (in this case, since it's angle from the vertical the check is if it's > 90f - LoftAngle), then loft. Conditions given in order of complexity
+                        // If the missile is not in a vaccuum, is above LoftMinAltitude and has an angle to target below the climb angle (or 90 - climb angle if climb angle > 45) (in this case, since it's angle from the vertical the check is if it's > 90f - LoftAngle) and is either is at a lower altitude than targetAlt + LoftAltitudeAdvMax or further than LoftRangeOverride, then loft.
                         if (!vessel.InVacuum() && (vessel.altitude >= LoftMinAltitude) && Vector3.Angle(TargetPosition - vessel.transform.position, VectorUtils.GetUpDirection(vessel.CoM)) > Mathf.Min(LoftAngle, 90f - LoftAngle) && ((vessel.altitude - targetAlt <= LoftAltitudeAdvMax) || (TargetPosition - vessel.transform.position).sqrMagnitude > (LoftRangeOverride * LoftRangeOverride))) loftState = 0;
                         else loftState = 3;
                     }
