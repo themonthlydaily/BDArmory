@@ -563,7 +563,7 @@ namespace BDArmory.Control
         public float terrainAvoidanceCriticalAngle = 135f;
         float terrainAvoidanceCriticalCosAngle = -0.5f;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TerrainAvoidanceControlSurfaceDeployTime", advancedTweakable = true, // Control surface deployment time.
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TerrainAvoidanceVesselReactionTime", advancedTweakable = true, // Vessel reaction time.
             groupName = "pilotAI_Terrain", groupDisplayName = "#LOC_BDArmory_PilotAI_Terrain", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 4f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float controlSurfaceDeploymentTime = 2f;
@@ -632,6 +632,7 @@ namespace BDArmory.Control
             { nameof(vesselStandoffDistance), 5000f },
             { nameof(turnRadiusTwiddleFactorMin), 10f},
             { nameof(turnRadiusTwiddleFactorMax), 10f},
+            { nameof(controlSurfaceDeploymentTime), 10f },
             { nameof(controlSurfaceLag), 1f},
             { nameof(DynamicDampingMin), 100f },
             { nameof(DynamicDampingMax), 100f },

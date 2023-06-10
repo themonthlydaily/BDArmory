@@ -7,6 +7,9 @@
 ### TODO (smaller items and specific requests / higher priority)
 - Fix bugs
 
+- Wiki entries
+    - Auto-Tuning
+
 - ? Add an action group trigger to the WM based on the current target being an enemy vessel within a custom distance. - Make it a collapsable section of custom triggers to include other conditions later.
 - Artillery aiming support
 - Lift stacking improvements with logical wing segments
