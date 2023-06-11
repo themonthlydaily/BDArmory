@@ -6157,15 +6157,18 @@ namespace BDArmory.Control
             {
                 if (vesselRadarData && vesselRadarData.locked)//&& radar && radar.lockedTarget.exists)
                 {
-                    List<TargetSignatureData> possibleTargets = vesselRadarData.GetLockedTargets();
-                    for (int i = 0; i < possibleTargets.Count; i++)
+                    if (guardTarget != null)
                     {
-                        if (possibleTargets[i].vessel == guardTarget)
+                        List<TargetSignatureData> possibleTargets = vesselRadarData.GetLockedTargets();
+                        for (int i = 0; i < possibleTargets.Count; i++)
                         {
-                            ml.radarTarget = possibleTargets[i]; //send correct targetlock if firing multiple SARH missiles
+                            if (possibleTargets[i].vessel == guardTarget)
+                            {
+                                ml.radarTarget = possibleTargets[i]; //send correct targetlock if firing multiple SARH missiles
+                            }
                         }
                     }
-                    //ml.radarTarget = vesselRadarData.lockedTargetData.targetData;
+                    else ml.radarTarget = vesselRadarData.lockedTargetData.targetData;
                     ml.vrd = vesselRadarData;
                     vesselRadarData.LastMissile = ml;
                     if (BDArmorySettings.DEBUG_MISSILES)
