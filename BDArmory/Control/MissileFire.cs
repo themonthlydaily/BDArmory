@@ -4456,6 +4456,7 @@ namespace BDArmory.Control
                             float candidateYTraverse = Gun.yawRange;
                             float candidatePTraverse = Gun.maxPitch;
                             float candidateMinrange = Gun.engageRangeMin;
+                            float candidateMaxRange = Gun.engageRangeMax;
                             bool candidatePFuzed = Gun.eFuzeType == ModuleWeapon.FuzeTypes.Proximity || Gun.eFuzeType == ModuleWeapon.FuzeTypes.Flak;
                             bool candidateVTFuzed = Gun.eFuzeType == ModuleWeapon.FuzeTypes.Timed || Gun.eFuzeType == ModuleWeapon.FuzeTypes.Flak;
                             float Cannistershot = Gun.ProjectileCount;
@@ -4479,7 +4480,7 @@ namespace BDArmory.Control
                             {
                                 candidateRPM *= (1 + ((Cannistershot / 2) / 100)); // weight selection towards cluster ammo based on submunition count
                             }
-                            if (candidateMinrange > distance)
+                            if (candidateMinrange > distance || distance > candidateMaxRange)
                             {
                                 candidateRPM *= .01f; //if within min range, massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
                             }
@@ -4500,7 +4501,7 @@ namespace BDArmory.Control
                             float candidateYTraverse = Rocket.yawRange;
                             float candidatePTraverse = Rocket.maxPitch;
                             float candidateMinrange = Rocket.engageRangeMin;
-
+                            float candidateMaxRange = Rocket.engageRangeMax;
                             Transform fireTransform = Rocket.fireTransforms[0];
 
                             if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0)) continue;
@@ -4522,7 +4523,7 @@ namespace BDArmory.Control
                             {
                                 candidateRPM *= 0.01f; //negatively weight against contact-fuze rockets
                             }
-                            if (candidateMinrange > distance)
+                            if (candidateMinrange > distance || distance > candidateMaxRange)
                             {
                                 candidateRPM *= .01f; //if within min range, massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
                             }
@@ -4691,6 +4692,7 @@ namespace BDArmory.Control
                             int candidatePriority = Mathf.RoundToInt(Rocket.priority);
                             float candidateYTraverse = Rocket.yawRange;
                             float candidatePTraverse = Rocket.maxPitch;
+                            float candidateMaxRange = Rocket.engageRangeMax;
                             float candidateMinrange = Rocket.engageRangeMin;
                             Transform fireTransform = Rocket.fireTransforms[0];
 
@@ -4732,7 +4734,7 @@ namespace BDArmory.Control
                             {
                                 candidateRPM *= .01f; //if outside firing angle, massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
                             }
-                            if (candidateMinrange > distance)
+                            if (candidateMinrange > distance || distance > candidateMaxRange)
                             {
                                 candidateRPM *= .01f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
                             }
@@ -4772,6 +4774,7 @@ namespace BDArmory.Control
                             bool candidateVTFuzed = Gun.eFuzeType == ModuleWeapon.FuzeTypes.Timed || Gun.eFuzeType == ModuleWeapon.FuzeTypes.Flak;
                             float Cannistershot = Gun.ProjectileCount;
                             float candidateMinrange = Gun.engageRangeMin;
+                            float candidateMaxRange = Gun.engageRangeMax;
                             int candidatePriority = Mathf.RoundToInt(Gun.priority);
                             float candidateRadius = currentTarget.Vessel.GetRadius(Gun.fireTransforms[0].forward, target.bounds);
                             float candidateCaliber = Gun.caliber;
@@ -4803,7 +4806,7 @@ namespace BDArmory.Control
                                 {
                                     candidateCaliber *= .01f; //if outside firing angle, massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
                                 }
-                                if (candidateMinrange > distance)
+                                if (candidateMinrange > distance || distance > candidateMaxRange)
                                 {
                                     candidateCaliber *= .01f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
                                 }
@@ -4827,7 +4830,7 @@ namespace BDArmory.Control
                                 {
                                     candidateRPM *= .01f; //if outside firing angle, massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
                                 }
-                                if (candidateMinrange > distance)
+                                if (candidateMinrange > distance || distance > candidateMaxRange)
                                 {
                                     candidateRPM *= .01f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
                                 }
@@ -4862,6 +4865,7 @@ namespace BDArmory.Control
                             bool candidateGimbal = Laser.turret;
                             float candidateTraverse = Laser.yawRange;
                             float candidateMinrange = Laser.engageRangeMin;
+                            float candidateMaxRange = Laser.engageRangeMax;
                             int candidatePriority = Mathf.RoundToInt(Laser.priority);
                             bool electrolaser = Laser.electroLaser;
                             bool pulseLaser = Laser.pulseLaser;
@@ -4886,7 +4890,7 @@ namespace BDArmory.Control
                             {
                                 candidateRPM *= 1.5f; // weight selection towards turreted lasers
                             }
-                            if (candidateMinrange > distance)
+                            if (candidateMinrange > distance || distance > candidateMaxRange)
                             {
                                 candidateRPM *= .00001f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
                             }
@@ -5029,6 +5033,7 @@ namespace BDArmory.Control
                             bool candidateGimbal = Laser.turret;
                             float candidateTraverse = Laser.yawRange;
                             float candidateMinrange = Laser.engageRangeMin;
+                            float candidateMaxRange = Laser.engageRangeMax;
                             int candidatePriority = Mathf.RoundToInt(Laser.priority);
                             bool electrolaser = Laser.electroLaser;
                             bool pulseLaser = Laser.pulseLaser;
@@ -5058,7 +5063,7 @@ namespace BDArmory.Control
                             {
                                 candidateRPM *= 1.5f; // weight selection towards lasers that can do blast damage
                             }
-                            if (candidateMinrange > distance)
+                            if (candidateMinrange > distance || distance > candidateMaxRange)
                             {
                                 candidateRPM *= .00001f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
                             }
@@ -5093,6 +5098,7 @@ namespace BDArmory.Control
                             int candidatePriority = Mathf.RoundToInt(Gun.priority);
                             bool candidateGimbal = Gun.turret;
                             float candidateMinrange = Gun.engageRangeMin;
+                            float candidateMaxRange = Gun.engageRangeMax;
                             float candidateTraverse = Gun.yawRange * Gun.maxPitch;
                             float candidateRadius = currentTarget.Vessel.GetRadius(Gun.fireTransforms[0].forward, target.bounds);
                             float candidateCaliber = Gun.caliber;
@@ -5119,7 +5125,7 @@ namespace BDArmory.Control
                             {
                                 candidateRPM *= 1.5f; // weight selection towards turrets
                             }
-                            if (candidateMinrange > distance)
+                            if (candidateMinrange > distance || distance > candidateMaxRange)
                             {
                                 candidateRPM *= .01f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
                             }
@@ -5550,7 +5556,7 @@ namespace BDArmory.Control
                                 {
                                     candidateRPM *= 1.5f; // weight selection towards turreted lasers
                                 }
-                                if (candidateMinrange > distance)
+                                if (candidateMinrange > distance || distance > candidateMaxrange / 10)
                                 {
                                     candidateRPM *= .00001f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
                                 }
@@ -5635,7 +5641,8 @@ namespace BDArmory.Control
             if (!engageableWeapon.engageEnabled) return true;
             //if (distanceToTarget < engageableWeapon.GetEngagementRangeMin()) return false; //covered in weapon select logic
             //if (distanceToTarget > engageableWeapon.GetEngagementRangeMax()) return false;
-            if (distanceToTarget > (engageableWeapon.GetEngagementRangeMax() * 1.2f)) return false; //have Ai begin to preemptively lead target, instead of frantically doing so after weapon in range
+            //if (distanceToTarget > (engageableWeapon.GetEngagementRangeMax() * 1.2f)) return false; //have Ai begin to preemptively lead target, instead of frantically doing so after weapon in range
+            if (distanceToTarget > (engageableWeapon.GetEngagementRangeMax() + (vessel.Velocity().magnitude * 2))) return false; //have AI preemptively begin to lead 2s out from max weapon range
 
             switch (weaponCandidate.GetWeaponClass())
             {
