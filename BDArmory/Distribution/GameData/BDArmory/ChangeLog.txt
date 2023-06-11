@@ -4,6 +4,7 @@
 - UI:
 	- Add a button for resetting the scroll-zoom rate to 1 when "Debug Other" is enabled.
 	- Lock input to the numeric field when inputting values in custom log and semi-log sliders.
+	- Don't apply slider rounding when setting up log and semi-log sliders.
 - Vessel Spawning:
 	- Adjust intra-team spacing to scale better with distance.
 	- Fix the inward/outward facing direction when spawning teams and use the same facing direction for all members of a team.

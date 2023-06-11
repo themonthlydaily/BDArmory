@@ -150,7 +150,6 @@ namespace BDArmory.Utils
             fieldName.text = field.guiName;
             fieldNameNumeric.text = field.guiName;
             float value = GetFieldValue();
-            value = UpdateSlider(value);
             SetFieldValue(value);
             UpdateDisplay(value);
             // Debug.Log($"DEBUG value is {value} with limits {logFloatRange.minValue}—{logFloatRange.maxValue}");
@@ -445,7 +444,6 @@ namespace BDArmory.Utils
             fieldNameNumeric.text = field.guiName;
             fieldFormatString = $"G{semiLogFloatRange.sigFig + 2}"; // Show at most 2 digits beyond the requested sig. fig.
             float value = GetFieldValue();
-            value = UpdateSlider(value);
             SetFieldValue(value);
             UpdateDisplay(value);
             // Debug.Log($"DEBUG value is {value} with limits {semiLogFloatRange.minValue}—{semiLogFloatRange.maxValue}");
