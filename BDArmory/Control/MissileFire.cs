@@ -1466,7 +1466,7 @@ namespace BDArmory.Control
             if (currentTarget != null && missilesAway.ContainsKey(currentTarget)) //change to previous target?
             {
                 missilesAway.TryGetValue(currentTarget, out int missiles);
-                firedMissiles = missiles;
+				firedMissiles = missiles;
             }
             else
             {
@@ -1897,8 +1897,8 @@ namespace BDArmory.Control
                         {
                             if (vesselRadarData.locked)
                             {
-                                vesselRadarData.SwitchActiveLockedTarget(guardTarget);
-                                yield return wait;
+                                vesselRadarData.SwitchActiveLockedTarget(guardTarget); //FIXME - this will cause issues if reviously fired a SARH with a single lock radar, then trying to fire another radar missile when MMPT > 1; wait until SARH hits?
+                                yield return wait; //see about weighting SARH missiles lower when maxMissilesPerTgt > 1 and max supported radar locks is < than MMPT?
                             }
                             //vesselRadarData.TryLockTarget(guardTarget.transform.position+(guardTarget.rb_velocity*Time.fixedDeltaTime));
                             vesselRadarData.TryLockTarget(guardTarget);
@@ -3901,9 +3901,9 @@ namespace BDArmory.Control
                 using (List<ModuleRadar>.Enumerator rd = _radars.GetEnumerator())
                     while (rd.MoveNext())
                     {
-                        if (rd.Current != null || rd.Current.canLock)
+                        if (rd.Current != null && rd.Current.canLock)
                         {
-                            if (rd.Current.maxLocks > MaxradarLocks) MaxradarLocks = rd.Current.maxLocks;
+                            if (rd.Current.maxLocks > 0) MaxradarLocks += rd.Current.maxLocks;
                         }
                     }
             }
@@ -5946,7 +5946,6 @@ namespace BDArmory.Control
                 }
                 return false; //target long gone
             }
-            staleTarget = true;
             return false;
         }
 
@@ -6343,7 +6342,7 @@ namespace BDArmory.Control
 
                                 if (firedMissiles < maxMissilesOnTarget)
                                 {
-                                    if (CurrentMissile.TargetingMode == MissileBase.TargetingModes.Radar && _radarsEnabled && !CurrentMissile.radarLOAL && MaxradarLocks <= vesselRadarData.GetLockedTargets().Count)
+                                    if (CurrentMissile.TargetingMode == MissileBase.TargetingModes.Radar && _radarsEnabled && !CurrentMissile.radarLOAL && MaxradarLocks < vesselRadarData.GetLockedTargets().Count)
                                     {
                                         launchAuthorized = false; //don't fire SARH if radar can't support the needed radar lock
                                         if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: radar lock number exceeded to launch!");

@@ -1379,8 +1379,6 @@ namespace BDArmory.Radar
                             continue; //blocked by terrain
                         }
 
-                        BDATargetManager.ReportVessel(loadedvessels.Current, myWpnManager);
-
                         TargetInfo tInfo;
                         if ((tInfo = loadedvessels.Current.gameObject.GetComponent<TargetInfo>()))
                         {
@@ -1433,6 +1431,7 @@ namespace BDArmory.Radar
                             }
                             else
                             {
+                                if (vesselDistance > myWpnManager.guardRange * myWpnManager.guardRange) continue;
                                 using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(loadedvessels.Current).GetEnumerator())
                                     while (weapon.MoveNext())
                                     {
@@ -1455,6 +1454,7 @@ namespace BDArmory.Radar
                                     }
                             }
                         }
+                        BDATargetManager.ReportVessel(loadedvessels.Current, myWpnManager);
                     }
                 }
             // Sort incoming missiles by time

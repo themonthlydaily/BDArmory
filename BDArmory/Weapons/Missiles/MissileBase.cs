@@ -145,9 +145,6 @@ namespace BDArmory.Weapons.Missiles
         [KSPField]
         public bool canRelock = true;                               //if true, if a FCS radar guiding a SARH missile loses lock, the missile will be switched to the active radar lock instead of going inactive from target loss.
 
-        [KSPField]
-        public bool canRelock = true;
-
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_DropTime"),//Drop Time
             UI_FloatRange(minValue = 0f, maxValue = 5f, stepIncrement = 0.5f, scene = UI_Scene.Editor)]
         public float dropTime = 0.5f;
@@ -884,6 +881,7 @@ namespace BDArmory.Weapons.Missiles
                         if (radarLOAL && radarLOALSearching && !radarSnapshot)
                         {
                             //only scan on snapshot interval
+                            TargetAcquired = true;
                         }
                         else
                         {
@@ -1059,14 +1057,26 @@ namespace BDArmory.Weapons.Missiles
                 }
             }
 
-            if (!radarTarget.exists && _radarFailTimer < radarTimeout)
+            if (!radarTarget.exists)
             {
-                if (vrd)
-                    radarTarget = vrd.lockedTargetData.targetData;
-                else if (radarLOAL)
-                    radarLOALSearching = true;
+                if (_radarFailTimer < radarTimeout)
+                {
+                    if (vrd)
+                        radarTarget = vrd.lockedTargetData.targetData;
+                    else if (radarLOAL)
+                        radarLOALSearching = true;
+                    else
+                    {
+                        targetVessel = null;
+                        if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileBase]: No assigned radar target. Awaiting timeout.... ");
+                    }
+                }
                 else
+                {
                     targetVessel = null;
+                    TargetAcquired = false;
+                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileBase]: No radar target. Active Radar guidance timed out. ");
+                }
             }
         }
 

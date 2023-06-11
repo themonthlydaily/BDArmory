@@ -1680,9 +1680,9 @@ namespace BDArmory.Control
                 if (targetStalenessTimer >= 50) //add some error to the predicted position every second
                 {
                     Vector3 staleTargetPosition = new Vector3();
-                    staleTargetPosition.x = UnityEngine.Random.Range(0f, (float)staleTargetVelocity.magnitude / 2);
-                    staleTargetPosition.y = UnityEngine.Random.Range(0f, (float)staleTargetVelocity.magnitude / 2);
-                    staleTargetPosition.z = UnityEngine.Random.Range((float)staleTargetVelocity.magnitude * 0.75f, (float)staleTargetVelocity.magnitude * 1.25f);
+                    staleTargetPosition.x = UnityEngine.Random.Range(-(float)staleTargetVelocity.magnitude / 2, (float)staleTargetVelocity.magnitude / 2);
+                    staleTargetPosition.y = UnityEngine.Random.Range(-(float)staleTargetVelocity.magnitude / 2, (float)staleTargetVelocity.magnitude / 2);
+                    staleTargetPosition.z = UnityEngine.Random.Range(-(float)staleTargetVelocity.magnitude * 0.25f, (float)staleTargetVelocity.magnitude * 0.25f);
                     targetStalenessTimer = 0;
                 }
             }

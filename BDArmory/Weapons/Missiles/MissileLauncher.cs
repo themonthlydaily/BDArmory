@@ -1246,7 +1246,7 @@ namespace BDArmory.Weapons.Missiles
             part.partTransform.localScale = origScale;
             reloadTimer = 0;
             gauge.UpdateReloadMeter(1);
-            part.crashTolerance = 5;
+            if (!multiLauncher) part.crashTolerance = 5;
             if (!inCargoBay) part.ShieldedFromAirstream = false;
             if (deployableRail) deployableRail.UpdateChildrenPos();
             if (rotaryRail) rotaryRail.UpdateMissilePositions();
