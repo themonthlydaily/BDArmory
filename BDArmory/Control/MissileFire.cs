@@ -1901,7 +1901,10 @@ namespace BDArmory.Control
                                 yield return wait; //see about weighting SARH missiles lower when maxMissilesPerTgt > 1 and max supported radar locks is < than MMPT?
                             }
                             //vesselRadarData.TryLockTarget(guardTarget.transform.position+(guardTarget.rb_velocity*Time.fixedDeltaTime));
-                            vesselRadarData.TryLockTarget(guardTarget);
+                            else
+                            {
+                                vesselRadarData.TryLockTarget(guardTarget);
+                            }
                             yield return new WaitForSecondsFixed(0.25f);
                         }
 
@@ -5863,7 +5866,10 @@ namespace BDArmory.Control
                         }
                         else
                         {
-                            vesselRadarData.UnlockCurrentTarget();
+                            if (PreviousMissile.ActiveRadar) //previous missile has gone active, don't need that lock anymore
+                            {
+                                vesselRadarData.UnlockSelectedTarget(PreviousMissile.targetVessel.Vessel);
+                            }
                             vesselRadarData.TryLockTarget(guardTarget);
                         }
                     }

@@ -1853,6 +1853,17 @@ namespace BDArmory.Radar
             ModuleRadar rad = displayedTargets[lockedTargetIndexes[activeLockedTargetIndex]].detectedByRadar;
             rad.UnlockTargetAt(rad.currentLockIndex);
         }
+        public void UnlockSelectedTarget(Vessel vessel)
+        {
+            if (!locked) return;
+
+            var vesselIndex = displayedTargets.FindIndex(t => t.vessel == vessel);
+            if (vesselIndex != -1)
+            {
+                ModuleRadar rad = displayedTargets[lockedTargetIndexes[vesselIndex]].detectedByRadar;
+                rad.UnlockTargetAt(rad.currentLockIndex);
+            }
+        }
 
         private void CleanDisplayedContacts()
         {
