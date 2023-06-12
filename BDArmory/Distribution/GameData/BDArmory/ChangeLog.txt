@@ -27,7 +27,7 @@
 			- Both pronav options allow for user defined gains using "pronavGain" (recommended values of ~1-7).
 			- IMPORTANT: "LoftTermRange" has been renamed to "terminalHomingRange"!
 		- Fixed MultiMissileLauncher behavior with loft guidance, as well as pronav/augpronav.
-		- Added new "aamhybrid" homingType, uses lead guidance until "terminalHomingRange" is reached, then it will switch to "terminalHomingType", with the same options as loft guidance.
+		- Added new missile field "terminalHoming", when true the missile uses its original homingType until "terminalHomingRange" is reached, then it will switch to "terminalHomingType".
 		- Fixed bug in heat seeker detonation behavior which caused some missiles to not detonate when they should.
 
 v1.6.2.0
