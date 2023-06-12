@@ -3020,7 +3020,7 @@ namespace BDArmory.Weapons.Missiles
                     output.AppendLine($"- tnt Mass: {tntMass} kg");
                     output.AppendLine($"- {((BDExplosivePart)partModules.Current).warheadReportingName} warhead");
                     if (((BDExplosivePart)partModules.Current).warheadType == "shapedcharge")
-                        output.AppendLine($"- Penetration: {ProjectileUtils.CalculatePenetration(((BDExplosivePart)partModules.Current).caliber > 0 ? ((BDExplosivePart)partModules.Current).caliber * 0.05f : 6f * 0.05f, 5000f, ((BDExplosivePart)partModules.Current).tntMass * 0.0555f, ((BDExplosivePart)partModules.Current).apMod, 940, 0.00000094776185184f, 0.6560606203f, 1.201909309f, 1.777919321f):F2} mm");
+                        output.AppendLine($"- Penetration: {ProjectileUtils.CalculatePenetration(((BDExplosivePart)partModules.Current).caliber > 0 ? ((BDExplosivePart)partModules.Current).caliber * 0.05f : 6f * 0.05f, 5000f, ((BDExplosivePart)partModules.Current).tntMass * 0.0555f, ((BDExplosivePart)partModules.Current).apMod):F2} mm");
                 }
                 if (partModules.Current.moduleName == "ModuleEMP")
                 {
