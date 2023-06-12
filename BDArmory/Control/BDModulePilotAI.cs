@@ -1677,12 +1677,15 @@ namespace BDArmory.Control
             if (weaponManager && weaponManager.guardMode && weaponManager.staleTarget)
             {
                 targetStalenessTimer += Time.fixedDeltaTime;
-                if (targetStalenessTimer >= 50) //add some error to the predicted position every second
+                if (targetStalenessTimer >= 1) //add some error to the predicted position every second
                 {
-                    Vector3 staleTargetPosition = new Vector3();
+                    /*
+                    staleTargetPosition = new Vector3();
                     staleTargetPosition.x = UnityEngine.Random.Range(-(float)staleTargetVelocity.magnitude / 2, (float)staleTargetVelocity.magnitude / 2);
                     staleTargetPosition.y = UnityEngine.Random.Range(-(float)staleTargetVelocity.magnitude / 2, (float)staleTargetVelocity.magnitude / 2);
-                    staleTargetPosition.z = UnityEngine.Random.Range(-(float)staleTargetVelocity.magnitude * 0.25f, (float)staleTargetVelocity.magnitude * 0.25f);
+					staleTargetPosition.z = UnityEngine.Random.Range(-(float)staleTargetVelocity.magnitude / 2, (float)staleTargetVelocity.magnitude / 2);
+                    */
+                    staleTargetPosition += staleTargetVelocity.magnitude / 2f * VectorUtils.GaussianVector3();
                     targetStalenessTimer = 0;
                 }
             }
@@ -2153,7 +2156,7 @@ namespace BDArmory.Control
                 if (weaponManager.staleTarget) //lost track of target, but know it's in general area, simulate location estimate precision decay over time
                 {
                     if (staleTargetVelocity == Vector3.zero) staleTargetVelocity = v.Velocity(); //if lost target, follow last known velocity vector
-                    target += (staleTargetVelocity * weaponManager.detectedTargetTimeout) + (staleTargetPosition * weaponManager.detectedTargetTimeout);
+                    target += staleTargetVelocity + staleTargetPosition * weaponManager.detectedTargetTimeout;
                 }
             }
 

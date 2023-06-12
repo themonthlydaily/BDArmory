@@ -3901,6 +3901,7 @@ namespace BDArmory.Control
                 }
                 rad.Dispose();
                 */
+                MaxradarLocks = 0;
                 using (List<ModuleRadar>.Enumerator rd = _radars.GetEnumerator())
                     while (rd.MoveNext())
                     {
@@ -5645,7 +5646,7 @@ namespace BDArmory.Control
             //if (distanceToTarget < engageableWeapon.GetEngagementRangeMin()) return false; //covered in weapon select logic
             //if (distanceToTarget > engageableWeapon.GetEngagementRangeMax()) return false;
             //if (distanceToTarget > (engageableWeapon.GetEngagementRangeMax() * 1.2f)) return false; //have Ai begin to preemptively lead target, instead of frantically doing so after weapon in range
-            if (distanceToTarget > (engageableWeapon.GetEngagementRangeMax() + (vessel.Velocity().magnitude * 2))) return false; //have AI preemptively begin to lead 2s out from max weapon range
+            if (distanceToTarget > (engageableWeapon.GetEngagementRangeMax() + (float)vessel.speed * 2)) return false; //have AI preemptively begin to lead 2s out from max weapon range
 
             switch (weaponCandidate.GetWeaponClass())
             {
