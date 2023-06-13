@@ -1551,6 +1551,24 @@ namespace BDArmory.Control
                 Fields["postStallAoA"].guiActiveEditor = false;
                 Fields["postStallAoA"].guiActive = false;
             }
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 60)
+            {
+                minAltitude = Mathf.Max(minAltitude, 750);
+                UI_FloatRange minAlt = (UI_FloatRange)Fields["minAltitude"].uiControlFlight;
+                minAlt.minValue = 750;
+                defaultAltitude = BDArmorySettings.VESSEL_SPAWN_ALTITUDE;
+                Fields["defaultAltitude"].guiActiveEditor = false;
+                Fields["defaultAltitude"].guiActive = false;
+                maxAllowedAoA = 2.5f;
+                postStallAoA = 5;
+                maxSpeed = Mathf.Max(250, maxSpeed);
+                UI_FloatRange spd = (UI_FloatRange)Fields["maxSpeed"].uiControlFlight;
+                spd.maxValue = 250;
+                Fields["postStallAoA"].guiActiveEditor = false;
+                Fields["postStallAoA"].guiActive = false;
+                Fields["maxAllowedAoA"].guiActiveEditor = false;
+                Fields["maxAllowedAoA"].guiActive = false;
+            }
             SetupSliderResolution();
             SetSliderPairClamps("turnRadiusTwiddleFactorMin", "turnRadiusTwiddleFactorMax");
             // SetSliderClamps("DynamicDampingMin", "DynamicDampingMax");
@@ -2156,7 +2174,7 @@ namespace BDArmory.Control
                 if (weaponManager.staleTarget) //lost track of target, but know it's in general area, simulate location estimate precision decay over time
                 {
                     if (staleTargetVelocity == Vector3.zero) staleTargetVelocity = v.Velocity(); //if lost target, follow last known velocity vector
-                    target += staleTargetVelocity + staleTargetPosition * weaponManager.detectedTargetTimeout;
+                    target += staleTargetPosition + staleTargetVelocity * weaponManager.detectedTargetTimeout;
                 }
             }
 

@@ -568,53 +568,73 @@ namespace BDArmory.Competition
 
                     using (List<Part>.Enumerator part = pilot.vessel.Parts.GetEnumerator())
                         while (part.MoveNext())
-                            while (part.MoveNext())
+                        {
+                            if (part.Current.GetComponent<ModuleReactionWheel>() != null)
                             {
-                                if (part.Current.GetComponent<ModuleReactionWheel>() != null)
+                                ModuleReactionWheel SAS;
+                                SAS = part.Current.GetComponent<ModuleReactionWheel>();
+                                if (part.Current.CrewCapacity == 0 || BDArmorySettings.RUNWAY_PROJECT_ROUND == 60)
                                 {
-                                    ModuleReactionWheel SAS;
-                                    SAS = part.Current.GetComponent<ModuleReactionWheel>();
-                                    if (part.Current.CrewCapacity == 0)
+                                    torqueQuantity += ((SAS.PitchTorque + SAS.RollTorque + SAS.YawTorque) / 3) * (SAS.authorityLimiter / 100);
+                                    if (torqueQuantity > (BDArmorySettings.RUNWAY_PROJECT_ROUND == 60 ? 10 : BDArmorySettings.MAX_SAS_TORQUE))
                                     {
-                                        torqueQuantity += ((SAS.PitchTorque + SAS.RollTorque + SAS.YawTorque) / 3) * (SAS.authorityLimiter / 100);
-                                        if (torqueQuantity > BDArmorySettings.MAX_SAS_TORQUE)
-                                        {
-                                            float excessTorque = torqueQuantity - BDArmorySettings.MAX_SAS_TORQUE;
-                                            SAS.authorityLimiter = 100 - Mathf.Clamp(((excessTorque / ((SAS.PitchTorque + SAS.RollTorque + SAS.YawTorque) / 3)) * 100), 0, 100);
-                                        }
-                                    }
-                                }
-                                if (part.Current.GetComponent<ModuleCommand>() != null)
-                                {
-                                    ModuleCommand MC;
-                                    MC = part.Current.GetComponent<ModuleCommand>();
-                                    if (part.Current.CrewCapacity == 0 && MC.minimumCrew == 0) //Drone core, nuke it
-                                        part.Current.RemoveModule(MC);
-                                }
-                                if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 59)
-                                {
-                                    if (part.Current.GetComponent<ModuleWeapon>() != null)
-                                    {
-                                        ModuleWeapon gun;
-                                        gun = part.Current.GetComponent<ModuleWeapon>();
-                                        if (gun.isAPS) APSquantity++;
-                                        if (APSquantity > 4)
-                                        {
-                                            part.Current.RemoveModule(gun);
-                                            IEnumerator<PartResource> resource = part.Current.Resources.GetEnumerator();
-                                            while (resource.MoveNext())
-                                            {
-                                                if (resource.Current == null) continue;
-                                                if (resource.Current.flowState)
-                                                {
-                                                    resource.Current.flowState = false;
-                                                }
-                                            }
-                                            resource.Dispose();
-                                        }
+                                        float excessTorque = torqueQuantity - (BDArmorySettings.RUNWAY_PROJECT_ROUND == 60 ? 10 : BDArmorySettings.MAX_SAS_TORQUE);
+                                        SAS.authorityLimiter = 100 - Mathf.Clamp(((excessTorque / ((SAS.PitchTorque + SAS.RollTorque + SAS.YawTorque) / 3)) * 100), 0, 100);
                                     }
                                 }
                             }
+                            if (part.Current.GetComponent<ModuleCommand>() != null)
+                            {
+                                ModuleCommand MC;
+                                MC = part.Current.GetComponent<ModuleCommand>();
+                                if (part.Current.CrewCapacity == 0 && MC.minimumCrew == 0) //Drone core, nuke it
+                                    part.Current.RemoveModule(MC);
+                            }
+                            if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 59)
+                            {
+                                if (part.Current.GetComponent<ModuleWeapon>() != null)
+                                {
+                                    ModuleWeapon gun;
+                                    gun = part.Current.GetComponent<ModuleWeapon>();
+                                    if (gun.isAPS) APSquantity++;
+                                    if (APSquantity > 4)
+                                    {
+                                        part.Current.RemoveModule(gun);
+                                        IEnumerator<PartResource> resource = part.Current.Resources.GetEnumerator();
+                                        while (resource.MoveNext())
+                                        {
+                                            if (resource.Current == null) continue;
+                                            if (resource.Current.flowState)
+                                            {
+                                                resource.Current.flowState = false;
+                                            }
+                                        }
+                                        resource.Dispose();
+                                    }
+                                }
+                            }
+                        }
+                    if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 60)
+                    {
+                        var nuke = pilot.vessel.rootPart.FindModuleImplementing<BDModuleNuke>();
+                        if (nuke == null)
+                        {
+                            nuke = (BDModuleNuke)pilot.vessel.rootPart.AddModule("BDModuleNuke");
+                            nuke.engineCore = true;
+                            nuke.meltDownDuration = 15;
+                            if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMOde]: Adding Nuke Module to " + pilot.vessel.GetName());
+                        }
+                        BDModulePilotAI pilotAI = VesselModuleRegistry.GetModule<BDModulePilotAI>(pilot.vessel);
+                        if (pilotAI != null)
+                        {
+                            pilotAI.minAltitude = Mathf.Max(pilotAI.minAltitude, 750);
+                            pilotAI.defaultAltitude = BDArmorySettings.VESSEL_SPAWN_ALTITUDE;
+                            pilotAI.maxAllowedAoA = 2.5f;
+                            pilotAI.postStallAoA = 5;
+                            pilotAI.maxSpeed = Mathf.Max(250, pilotAI.maxSpeed);
+                            if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMOde]: Setting SpaceMode Ai settings on " + pilot.vessel.GetName());
+                        }
+                    }
                 }
             }
 

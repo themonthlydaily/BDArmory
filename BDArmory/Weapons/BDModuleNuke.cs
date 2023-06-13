@@ -66,6 +66,7 @@ namespace BDArmory.Weapons
         public float meltDownDuration = 2.5f;
 
         private int FuelID;
+        private int MPID;
         private bool hasDetonated = false;
         private bool goingCritical = false;
         public string Sourcevessel;
@@ -93,6 +94,9 @@ namespace BDArmory.Weapons
                     FuelID = PartResourceLibrary.Instance.GetDefinition("LiquidFuel").id;
                     vessel.GetConnectedResourceTotals(FuelID, out double fuelCurrent, out double fuelMax);
                     fuelleft = fuelCurrent;
+                    FuelID = PartResourceLibrary.Instance.GetDefinition("MonoPropellant").id;
+                    vessel.GetConnectedResourceTotals(MPID, out double mpCurrent, out double mpMax);
+                    fuelleft += mpCurrent;
                     var engine = part.FindModuleImplementing<ModuleEngines>();
                     if (engine != null)
                     {
@@ -125,7 +129,8 @@ namespace BDArmory.Weapons
                     if (engineCore)
                     {
                         vessel.GetConnectedResourceTotals(FuelID, out double fuelCurrent, out double fuelMax);
-                        fuelleft = fuelCurrent;
+                        vessel.GetConnectedResourceTotals(MPID, out double mpCurrent, out double mpMax);
+                        fuelleft = fuelCurrent + mpCurrent;
                         if (fuelleft <= 0)
                         {
                             if (!hasDetonated && !goingCritical)

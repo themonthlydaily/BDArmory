@@ -994,6 +994,7 @@ namespace BDArmory.Damage
                                             if (HighLogic.LoadedSceneIsEditor) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
                                         }
                                     }
+                                    if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 60) hitpoints = Mathf.Min(500, hitpoints);
                                 }
                             }
                             if (hitpoints < 0) //sanity checks

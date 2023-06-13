@@ -1370,9 +1370,9 @@ namespace BDArmory.Radar
                     Vector3 vesselProjectedDirection = (loadedvessels.Current.transform.position - position).ProjectOnPlanePreNormalized(upVector);
                     Vector3 vesselDirection = loadedvessels.Current.transform.position - position;
 
-                    float vesselDistance = (loadedvessels.Current.transform.position - position).sqrMagnitude;
+                    float vesselDistanceSqr = (loadedvessels.Current.transform.position - position).sqrMagnitude;
                     //BDATargetManager.ClearRadarReport(loadedvessels.Current, myWpnManager); //reset radar contact status
-                    if (vesselDistance < maxDistance * maxDistance && Vector3.Angle(vesselProjectedDirection, lookDirection) < fov / 2f) // && Vector3.Angle(loadedvessels.Current.transform.position - position, -myWpnManager.transform.forward) < myWpnManager.guardAngle / 2f) //WM facing direction? that s going to cause issues for any that aren't mounted pointing forward if guardAngle < 360; check combatSeat forward vector
+                    if (vesselDistanceSqr < maxDistance * maxDistance && Vector3.Angle(vesselProjectedDirection, lookDirection) < fov / 2f) // && Vector3.Angle(loadedvessels.Current.transform.position - position, -myWpnManager.transform.forward) < myWpnManager.guardAngle / 2f) //WM facing direction? that s going to cause issues for any that aren't mounted pointing forward if guardAngle < 360; check combatSeat forward vector
                         {
                         if (TerrainCheck(referenceTransform.position, loadedvessels.Current.transform.position))
                         {
@@ -1393,7 +1393,7 @@ namespace BDArmory.Radar
                                         //thrusting missiles at full range, cruising missiles at 3/4ths range, coasting missiles at 1/3rd range?
                                         //or have be hard cutoffs, e.g. 5km/4km/2.5km, etc?
                                         float sightDistance = maxDistance * (missileBase.MissileState == MissileBase.MissileStates.Boost ? 1 : (missileBase.MissileState == MissileBase.MissileStates.Cruise ? 0.75f : 0.33f));
-                                        if (vesselDistance > sightDistance * sightDistance) continue; //missile outside of modified visibility range, disregard
+                                        if (vesselDistanceSqr > sightDistance * sightDistance) continue; //missile outside of modified visibility range, disregard
                                     }
                                     if (MissileIsThreat(missileBase, myWpnManager))
                                     {
@@ -1431,7 +1431,7 @@ namespace BDArmory.Radar
                             }
                             else
                             {
-                                if (vesselDistance > myWpnManager.guardRange * myWpnManager.guardRange) continue;
+                                if (vesselDistanceSqr > myWpnManager.guardRange * myWpnManager.guardRange) continue;
                                 using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(loadedvessels.Current).GetEnumerator())
                                     while (weapon.MoveNext())
                                     {
