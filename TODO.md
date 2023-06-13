@@ -7,8 +7,26 @@
 ### TODO (smaller items and specific requests / higher priority)
 - Fix bugs
 
+- Tournaments
+    - Add in-built score and ranked tournaments.
+    - Add pop-up for entering score weights in the vessel switcher and sort by score instead of just hits. Right click sorting button should toggle this pop-up
+    - This would allow for ranked tournaments and other tournament styles
+    - Add a randomised vs ranked toggle for heat generation.
+        - ranked => dynamic round allocation instead of pre-determined.
+        - In ranked mode the deficit should be distributed amongst the top ranked heats.
+
 - Wiki entries
     - Auto-Tuning
+
+- Ilya_G requests:
+    - Omni-radars to include a radiation pattern so that they don't see well along the dipole axis.
+    - Switchable ammo types in-the-field for large gun types
+        - include a significant delay when doing so (e.g., 2-5x the reload time for reconfiguring them)
+        - would require manual intervention, unless some good way for the AI to decide to switch ammo is added
+    - Seismic charges - needs Concodroid's model.
+    - Difficulty settings for the AI
+        - Makes it easier for human vs AI combat.
+        - Adds "measurement" noise to the target's position, velocity and acceleration
 
 - ? Add an action group trigger to the WM based on the current target being an enemy vessel within a custom distance. - Make it a collapsable section of custom triggers to include other conditions later.
 - Artillery aiming support
@@ -55,12 +73,6 @@
     - Use a spline between current position and velocity, waypoint and next waypoint 
 - Add BDA's FlyToPosition as the first flight controller in MouseAimFlight via reflection.
 - Tournaments
-    - Add in-built score and ranked tournaments.
-    - Add pop-up for entering score weights in the vessel switcher and sort by score instead of just hits. Right click sorting button should toggle this pop-up
-    - This would allow for ranked tournaments and other tournament styles
-    - Add a randomised vs ranked toggle for heat generation.
-        - ranked => dynamic round allocation instead of pre-determined.
-        - In ranked mode the deficit should be distributed amongst the top ranked heats.
     - Boss fight tournament mode
 - Record starting conditions for bullets, position every 1000m and time and position of first impact in vessel traces. Also, bullet type. This should be sufficient for approximate curves in blender and colours, etc. can be found from the configs.
 - Add a max morgue capacity and recycle kerbals once it's full. Regen the main 4 and discard the others? Would need special handling for custom kerbals.

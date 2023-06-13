@@ -336,7 +336,8 @@ namespace BDArmory.Settings
 
         // Tournament settings
         [BDAPersistentSettingsField] public static bool SHOW_TOURNAMENT_OPTIONS = false;           // Show tournament options.
-        [BDAPersistentSettingsField] public static int TOURNAMENT_STYLE = 0;                       // Tournament Style (Random, N-choose-K, etc.)
+        [BDAPersistentSettingsField] public static int TOURNAMENT_STYLE = 0;                       // Tournament Style (Random, N-choose-K, Gauntlet, etc.)
+        [BDAPersistentSettingsField] public static int TOURNAMENT_ROUND_TYPE = 0;                  // Tournament Style (Shuffled, Ranked, etc.)
         [BDAPersistentSettingsField] public static float TOURNAMENT_DELAY_BETWEEN_HEATS = 5;      // Delay between heats
         [BDAPersistentSettingsField] public static int TOURNAMENT_ROUNDS = 1;                      // Rounds
         [BDAPersistentSettingsField] public static int TOURNAMENT_ROUNDS_CUSTOM = 1000;            // Custom number of rounds at right end of slider.
