@@ -94,7 +94,7 @@ namespace BDArmory.Weapons
                     FuelID = PartResourceLibrary.Instance.GetDefinition("LiquidFuel").id;
                     vessel.GetConnectedResourceTotals(FuelID, out double fuelCurrent, out double fuelMax);
                     fuelleft = fuelCurrent;
-                    FuelID = PartResourceLibrary.Instance.GetDefinition("MonoPropellant").id;
+                    MPID = PartResourceLibrary.Instance.GetDefinition("MonoPropellant").id;
                     vessel.GetConnectedResourceTotals(MPID, out double mpCurrent, out double mpMax);
                     fuelleft += mpCurrent;
                     var engine = part.FindModuleImplementing<ModuleEngines>();
@@ -129,13 +129,14 @@ namespace BDArmory.Weapons
                     if (engineCore)
                     {
                         vessel.GetConnectedResourceTotals(FuelID, out double fuelCurrent, out double fuelMax);
+                        fuelleft = fuelCurrent;
                         vessel.GetConnectedResourceTotals(MPID, out double mpCurrent, out double mpMax);
-                        fuelleft = fuelCurrent + mpCurrent;
+                        fuelleft += mpCurrent;
                         if (fuelleft <= 0)
                         {
                             if (!hasDetonated && !goingCritical)
                             {
-                                if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.RWPS3R2NukeModule]: nerva on " + Sourcevessel + " is out of fuel.");
+                                if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.RWPS3R2NukeModule]: nerva on " + (String.IsNullOrEmpty(Sourcevessel)? Sourcevessel : part.vessel.GetName()) + " is out of fuel.");
                                 StartCoroutine(DelayedDetonation(meltDownDuration)); //bingo fuel, detonate
                             }
                         }

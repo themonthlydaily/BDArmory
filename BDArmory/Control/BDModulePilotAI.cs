@@ -1561,7 +1561,7 @@ namespace BDArmory.Control
                 Fields["defaultAltitude"].guiActive = false;
                 maxAllowedAoA = 2.5f;
                 postStallAoA = 5;
-                maxSpeed = Mathf.Max(250, maxSpeed);
+                maxSpeed = Mathf.Min(250, maxSpeed);
                 UI_FloatRange spd = (UI_FloatRange)Fields["maxSpeed"].uiControlFlight;
                 spd.maxValue = 250;
                 Fields["postStallAoA"].guiActiveEditor = false;
