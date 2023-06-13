@@ -1685,7 +1685,7 @@ namespace BDArmory.Control
                     staleTargetPosition.y = UnityEngine.Random.Range(-(float)staleTargetVelocity.magnitude / 2, (float)staleTargetVelocity.magnitude / 2);
 					staleTargetPosition.z = UnityEngine.Random.Range(-(float)staleTargetVelocity.magnitude / 2, (float)staleTargetVelocity.magnitude / 2);
                     */
-                    staleTargetPosition += staleTargetVelocity.magnitude / 2f * VectorUtils.GaussianVector3();
+                    staleTargetPosition = UnityEngine.Random.insideUnitSphere * staleTargetVelocity.magnitude / 2;
                     targetStalenessTimer = 0;
                 }
             }
