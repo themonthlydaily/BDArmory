@@ -1085,7 +1085,12 @@ namespace BDArmory.Weapons.Missiles
             reloadableRail.SpawnMissile(MissileReferenceTransform);
             MissileLauncher ml = reloadableRail.SpawnedMissile.FindModuleImplementing<MissileLauncher>();
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: Spawning missile {reloadableRail.SpawnedMissile.name}; type: {ml.homingType}/{ml.targetingType}");
-            yield return new WaitUntilFixed(() => ml.SetupComplete); // Wait until missile fully initialized.
+            yield return new WaitUntilFixed(() => ml == null || ml.SetupComplete); // Wait until missile fully initialized.
+            if (ml == null)
+            {
+                Debug.LogWarning($"[BDArmory.MissileLauncher]: Error while spawning missile with {part.name}, MissileLauncher was null!");
+                yield break; // Probably should log a warning about the MissileLauncher being `null`.
+            }
 
             ml.launched = true;
             GetMissileCount();
