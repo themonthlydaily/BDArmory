@@ -1089,7 +1089,7 @@ namespace BDArmory.Weapons.Missiles
             if (ml == null)
             {
                 Debug.LogWarning($"[BDArmory.MissileLauncher]: Error while spawning missile with {part.name}, MissileLauncher was null!");
-                yield break; // Probably should log a warning about the MissileLauncher being `null`.
+                yield break;
             }
 
             ml.launched = true;
