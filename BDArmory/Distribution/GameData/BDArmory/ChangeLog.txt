@@ -19,6 +19,7 @@
 	- Fixed guard mode behavior with radarLOAL = false missiles when Max Missile Targets > Max Radar Locks on fire control radar.
 - Weapons:
 	- Added (or corrected) penetration value for shaped charges to missile/gun/rocket part-menu infocards.
+	- Fixed armor penetration calculation for display in the part-menu infocards.
 	- Add an option when setting weapon groups to apply the group name to that weapon, symmetric weapons, all weapons of that type, all weapons of that class or applying to all guns/rockets/lasers.
 	- Missiles:
 		- New 'canRelock' field (default: true), sets if SARH radar-guided missiles will re-lock onto the active radar target if the original radar lock is lost.
