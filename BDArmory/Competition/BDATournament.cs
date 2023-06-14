@@ -58,7 +58,7 @@ namespace BDArmory.Competition
     public class TournamentScores
     {
         Dictionary<string, string> playersToFileNames = new Dictionary<string, string>(); // Match players with craft filenames for extending ranks rounds.
-        Dictionary<string, float> scores = new Dictionary<string, float>(); // The current scores for the tournament.
+        public Dictionary<string, float> scores = new Dictionary<string, float>(); // The current scores for the tournament.
         Dictionary<string, List<ScoringData>> scoreDetails = new Dictionary<string, List<ScoringData>>(); // Scores per player per round. Rounds players weren't involved in contain default ScoringData entries.
         List<CompetitionOutcome> competitionOutcomes = new List<CompetitionOutcome>();
         public Dictionary<string, float> weights = new Dictionary<string, float> {
@@ -118,10 +118,10 @@ namespace BDArmory.Competition
         /// <returns></returns>
         public bool AddPlayer(string player, string fileName, int currentRound = 0)
         {
+            if (playersToFileNames.ContainsKey(player)) return false; // They're already there.
+            if (!File.Exists(fileName)) { Debug.LogWarning($"[BDArmory.BDATournament]: {fileName} does not exist for {player}."); return false; }
             if (currentRound < 0) { Debug.LogWarning($"[BDArmory.BDATournament]: Invalid round {currentRound}, setting to 0."); currentRound = 0; }
             if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDATournament]: Adding {player} with file {fileName} in round {currentRound}");
-            if (playersToFileNames.ContainsKey(player)) { Debug.LogWarning($"[BDArmory.BDATournament]: {player} is already in the tournament."); return false; }
-            if (!File.Exists(fileName)) { Debug.LogWarning($"[BDArmory.BDATournament]: {fileName} does not exist for {player}."); return false; }
             playersToFileNames.Add(player, fileName);
             scoreDetails.Add(player, Enumerable.Range(0, currentRound).Select(i => new ScoringData()).ToList());
             scores.Add(player, 0f);
@@ -174,9 +174,10 @@ namespace BDArmory.Competition
         {
             scores.Clear();
             foreach (var player in scoreDetails.Keys) scores[player] = ComputeScore(player);
-            Debug.Log($"DEBUG Scores: {string.Join(",", scores.Select(s => $"{s.Key}:{s.Value}"))}");
+            if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDATournament]: Tournament scores: {string.Join(", ", scores.Select(s => $"{s.Key}: {s.Value}"))}");
         }
 
+        HashSet<AliveState> cleanKills = new HashSet<AliveState> { AliveState.CleanKill, AliveState.HeadShot, AliveState.KillSteal };
         /// <summary>
         /// Compute the score for a player.
         /// </summary>
@@ -185,45 +186,47 @@ namespace BDArmory.Competition
         public float ComputeScore(string player)
         {
             if (!scoreDetails.ContainsKey(player)) return 0;
-            float score = 0;
             var scoreData = scoreDetails[player];
-            // Wins
-            // 'wins': len([1 for round in tournamentData.values() for heat in round.values() if heat['result']['result'] == "Win" and craft in next(iter(heat['result']['teams'].values())).split(", ")]),
-            // score += weights["Wins"] * ();
-
-            return score;
-        }
-
-        /// <summary>
-        /// Set the score of players.
-        /// 
-        /// For loading a partially run tournament state.
-        /// Add the players to the tournament scores first.
-        /// </summary>
-        /// <param name="newScores">The scores to set.</param>
-        public void SetScores(Dictionary<string, float> newScores)
-        {
-            Debug.Log($"DEBUG Scores: {(newScores == null ? "null" : string.Join(", ", newScores.Select(kvp => $"{kvp.Key}:{kvp.Value}")))}");
-            if (newScores == null) return;
-            foreach (var player in newScores.Keys)
-            {
-                if (!scores.ContainsKey(player))
-                {
-                    Debug.LogWarning($"[BDArmory.BDATournament]: Unable to set score for player ({player}) not registered as being in the tournament.");
-                    continue;
-                }
-                scores[player] = newScores[player];
-            }
-        }
-
-        /// <summary>
-        /// Get a copy of the current scores.
-        /// Note: Get these between rounds for meaningful values to display.
-        /// </summary>
-        /// <returns>The current scores.</returns>
-        public Dictionary<string, float> GetScores()
-        {
-            return scores.ToDictionary(kvp => kvp.Key, kvp => kvp.Value); // Return a copy so that they can't modify the local scores.
+            var shotsFired = scoreData.Sum(sd => sd.shotsFired);
+            var rocketsFired = scoreData.Sum(sd => sd.rocketsFired);
+            Dictionary<string, float> playerScore = new Dictionary<string, float>{
+                {"Wins", competitionOutcomes.Count(comp => comp.competitionResult == CompetitionResult.Win && comp.survivingTeams.Any(team => team.Contains(player)))},
+                {"Survived", scoreData.Count(sd => sd.survivalState == SurvivalState.Alive)},
+                {"MIA", scoreData.Count(sd => sd.survivalState == SurvivalState.MIA)},
+                {"Deaths", scoreData.Count(sd => sd.survivalState == SurvivalState.Dead)},
+                {"Death Order", scoreData.Sum(sd => sd.deathOrder > -1 ? sd.deathOrder / (float)sd.numberOfCompetitors : 1f)},
+                {"Death Time", (float)scoreData.Sum(sd => sd.deathTime > -1 ? sd.deathTime : sd.compDuration)},
+                {"Clean Kills", scoreDetails.Where(details => details.Key != player).Sum(details => details.Value.Count(sd => cleanKills.Contains(sd.aliveState) && sd.gmKillReason == GMKillReason.None && sd.lastPersonWhoDamagedMe == player))},
+                {"Assists", scoreDetails.Where(details => details.Key != player).Sum(details => details.Value.Count(sd => sd.aliveState == AliveState.AssistedKill && ((sd.hitCounts.ContainsKey(player) && sd.hitCounts[player] > 0) || (sd.rocketStrikeCounts.ContainsKey(player) && sd.rocketStrikeCounts[player] > 0) || (sd.missileHitCounts.ContainsKey(player) && sd.missileHitCounts[player] > 0) || (sd.rammingPartLossCounts.ContainsKey(player) && sd.rammingPartLossCounts[player] > 0))))},
+                {"Hits", scoreData.Sum(sd => sd.hits)},
+                {"Hits Taken", scoreData.Sum(sd => sd.hitCounts.Values.Sum())},
+                {"Bullet Damage", scoreDetails.Where(details => details.Key != player).Sum(details => details.Value.Sum(sd => sd.damageFromGuns.ContainsKey(player) ? sd.damageFromGuns[player] : 0f))},
+                {"Bullet Damage Taken", scoreData.Sum(sd => sd.damageFromGuns.Values.Sum())},
+                {"Rocket Hits", scoreData.Sum(sd => sd.rocketStrikes)},
+                {"Rocket Hits Taken", scoreData.Sum(sd => sd.rocketStrikeCounts.Values.Sum())},
+                {"Rocket Parts Hit", scoreData.Sum(sd => sd.totalDamagedPartsDueToRockets)},
+                {"Rocket Parts Hit Taken", scoreData.Sum(sd => sd.rocketPartDamageCounts.Values.Sum())},
+                {"Rocket Damage", scoreDetails.Where(details => details.Key != player).Sum(details => details.Value.Sum(sd => sd.damageFromRockets.ContainsKey(player) ? sd.damageFromRockets[player] : 0f))},
+                {"Rocket Damage Taken", scoreData.Sum(sd => sd.damageFromRockets.Values.Sum())},
+                {"Missile Hits", scoreDetails.Where(details => details.Key != player).Sum(details => details.Value.Sum(sd => sd.missileHitCounts.ContainsKey(player) ? sd.missileHitCounts[player] : 0))},
+                {"Missile Hits Taken", scoreData.Sum(sd => sd.missileHitCounts.Values.Sum())},
+                {"Missile Parts Hit", scoreData.Sum(sd => sd.totalDamagedPartsDueToMissiles)},
+                {"Missile Parts Hit Taken", scoreData.Sum(sd => sd.missilePartDamageCounts.Values.Sum())},
+                {"Missile Damage", scoreDetails.Where(details => details.Key != player).Sum(details => details.Value.Sum(sd => sd.damageFromMissiles.ContainsKey(player) ? sd.damageFromMissiles[player] : 0f))},
+                {"Missile Damage Taken", scoreData.Sum(sd => sd.damageFromMissiles.Values.Sum())},
+                {"RamScore", scoreData.Sum(sd => sd.totalDamagedPartsDueToRamming)},
+                {"RamScore Taken", scoreData.Sum(sd => sd.rammingPartLossCounts.Values.Sum())},
+                {"Battle Damage", scoreDetails.Where(details => details.Key != player).Sum(details => details.Value.Sum(sd => sd.battleDamageFrom.ContainsKey(player) ? sd.battleDamageFrom[player] : 0f))},
+                {"Parts Lost To Asteroids", scoreData.Sum(sd => sd.partsLostToAsteroids)},
+                {"HP Remaining", (float)scoreData.Sum(sd => sd.remainingHP)},
+                {"Accuracy", (shotsFired > 0 ? scoreData.Sum(sd => sd.hits) / (float)shotsFired : 0f)},
+                {"Rocket Accuracy", (rocketsFired > 0 ? scoreData.Sum(sd => sd.rocketStrikes) / (float)rocketsFired : 0f)},
+                {"Waypoint Count", scoreData.Sum(sd => sd.waypointsReached.Count)},
+                {"Waypoint Time", scoreData.Sum(sd => sd.totalWPTime)},
+                {"Waypoint Deviation", scoreData.Sum(sd => sd.totalWPDeviation)}
+            };
+            if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDATournament]: Score components for {player}: {string.Join(", ", playerScore.Select(kvp => $"{kvp.Key}: {kvp.Value}"))}");
+            return weights.Sum(kvp => kvp.Value * playerScore[kvp.Key]);
         }
 
         #region Serialization
@@ -248,16 +251,19 @@ namespace BDArmory.Competition
             Reset();
             ConfigureScoreWeights(Enumerable.Range(0, _weightKeys.Count).ToDictionary(i => _weightKeys[i], i => _weightValues[i]));
             for (int i = 0; i < _players.Count; ++i) AddPlayer(_players[i], _files[i]);
-            var tmp = Enumerable.Range(0, _players.Count).ToDictionary(i => _players[i], i => JsonUtility.FromJson<SerializedScoreDataList>(_scores[i]));
-            scoreDetails = tmp.ToDictionary(kvp => kvp.Key, kvp =>
+            try
             {
-                if (kvp.Value == null)
+                scoreDetails = Enumerable.Range(0, _players.Count).ToDictionary(i => _players[i], i => JsonUtility.FromJson<SerializedScoreDataList>(_scores[i])).ToDictionary(kvp => kvp.Key, kvp =>
                 {
-                    Debug.LogError($"[BDArmory.BDATournament]: Failed to deserialize List<ScoreData>.");
-                    return new List<ScoringData>();
-                }
-                return kvp.Value.Deserialize();
-            });
+                    if (kvp.Value == null)
+                    {
+                        Debug.LogError($"[BDArmory.BDATournament]: Failed to deserialize List<ScoreData>.");
+                        return new List<ScoringData>();
+                    }
+                    return kvp.Value.Deserialize();
+                });
+            }
+            catch (Exception e) { Debug.LogError($"[BDArmory.BDATournament]: Failed to deserialize tournament scores: {e.Message}\n{e.StackTrace}"); }
             try
             {
                 competitionOutcomes = _results.Select(r => JsonUtility.FromJson<CompetitionOutcome>(r).PostDeserialize()).ToList();
@@ -987,6 +993,7 @@ namespace BDArmory.Competition
                     scores = JsonUtility.FromJson<TournamentScores>(_scores);
                     if (scores != null) scores.PostDeserialization();
                     else scores = new TournamentScores();
+                    scores.ComputeScores();
                 }
                 catch (Exception e_scores) { Debug.LogError($"[BDArmory.BDATournament]: Failed to deserialize the tournament scores: {e_scores.Message}\n{e_scores.StackTrace}"); }
                 try
@@ -1344,21 +1351,21 @@ namespace BDArmory.Competition
                         }
                     }
                 }
-                tournamentState.scores.ComputeScores();
                 if (!firstRun)
                 {
+                    tournamentState.scores.ComputeScores();
                     message = "All heats in round " + roundIndex + " have been run.";
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
                     Debug.Log("[BDArmory.BDATournament]: " + message);
                     if (BDArmorySettings.WAYPOINTS_MODE || (BDArmorySettings.RUNWAY_PROJECT && (BDArmorySettings.RUNWAY_PROJECT_ROUND == 50 || BDArmorySettings.RUNWAY_PROJECT_ROUND == 55)))
                     {
                         /* commented out until this is made functional
-						foreach (var tracer in WaypointFollowingStrategy.Ghosts) //clear and reset vessel ghosts each new Round
-						{
-							tracer.gameObject.SetActive(false);
-						}
-						WaypointFollowingStrategy.Ghosts.Clear();
-						*/
+                        foreach (var tracer in WaypointFollowingStrategy.Ghosts) //clear and reset vessel ghosts each new Round
+                        {
+                            tracer.gameObject.SetActive(false);
+                        }
+                        WaypointFollowingStrategy.Ghosts.Clear();
+                        */
                     }
                     if (heatsRemaining > 0)
                     {

@@ -686,8 +686,13 @@ namespace BDArmory.Competition
                     }
                 }
             }
-            // Set survival state
-            foreach (var player in Players) ScoreData[player].survivalState = alive.Contains(player) ? SurvivalState.Alive : ScoreData[player].deathOrder > -1 ? SurvivalState.Dead : SurvivalState.MIA;
+            // Set survival state and various heat stats.
+            foreach (var player in Players)
+            {
+                ScoreData[player].survivalState = alive.Contains(player) ? SurvivalState.Alive : ScoreData[player].deathOrder > -1 ? SurvivalState.Dead : SurvivalState.MIA;
+                ScoreData[player].numberOfCompetitors = Players.Count;
+                ScoreData[player].compDuration = BDArmorySettings.COMPETITION_DURATION * 60d;
+            }
 
             // General result. (Note: uses hand-coded JSON to make parsing easier in python.)     
             if (survivingTeamNames.Count == 0)
@@ -918,6 +923,8 @@ namespace BDArmory.Competition
         public AliveState aliveState = AliveState.Alive; // Current state of the vessel.
         public SurvivalState survivalState = SurvivalState.Alive; // State of the vessel at the end of the tournament.
         public string team; // The vessel's team.
+        public int numberOfCompetitors;
+        public double compDuration;
 
         #region Guns
         public int hits; // Number of hits this vessel landed.
@@ -1016,7 +1023,10 @@ namespace BDArmory.Competition
             {
                 // General
                 aliveState = aliveState,
+                survivalState = survivalState,
                 team = team,
+                numberOfCompetitors = numberOfCompetitors,
+                compDuration = compDuration,
                 // Guns
                 hits = hits,
                 PinataHits = PinataHits,

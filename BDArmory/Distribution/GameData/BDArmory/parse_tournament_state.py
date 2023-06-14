@@ -70,7 +70,7 @@ if not args.re_encode:  # Decode the tournament.state to pure JSON and optionall
     state["scores"] = _scores
 
     with open(json_file, "w") as f:
-        json.dump(state, f)
+        json.dump(state, f, indent=2)
 
     if args.print:
         print(json.dumps(state, indent=2))
