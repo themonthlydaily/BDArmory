@@ -140,10 +140,10 @@ namespace BDArmory.Weapons.Missiles
         public bool isTimed = false;
 
         [KSPField]
-        public bool radarLOAL = false;
+        public bool radarLOAL = false;                              //if true, radar missile will acquire and lock onto a target after launch, using the missile's onboard radar
 
         [KSPField]
-        public bool canRelock = true;
+        public bool canRelock = true;                               //if true, if a FCS radar guiding a SARH missile loses lock, the missile will be switched to the active radar lock instead of going inactive from target loss.
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_DropTime"),//Drop Time
             UI_FloatRange(minValue = 0f, maxValue = 5f, stepIncrement = 0.5f, scene = UI_Scene.Editor)]
@@ -796,6 +796,7 @@ namespace BDArmory.Weapons.Missiles
                             TargetAcquired = true;
                             hasLostLock = false;
                             radarTarget = t;
+                            hasLostLock = false;
                             if (weaponClass == WeaponClasses.SLW)
                             {
                                 TargetPosition = radarTarget.predictedPosition;
@@ -846,7 +847,7 @@ namespace BDArmory.Weapons.Missiles
                         return;
                     }
                 }
-                else
+                else //onboard radar is on, or off but in range
                 {
                     // active radar with target locked:
                     vrd = null;
@@ -882,6 +883,7 @@ namespace BDArmory.Weapons.Missiles
                         if (radarLOAL && radarLOALSearching && !radarSnapshot)
                         {
                             //only scan on snapshot interval
+                            TargetAcquired = true;
                         }
                         else
                         {
@@ -962,7 +964,7 @@ namespace BDArmory.Weapons.Missiles
                     }
                 }
             }
-            else if (radarLOAL && radarLOALSearching) //add a check for missing radar, so LOAL missisle that have been dumbfired can stil lactivate?
+            else if (radarLOAL && radarLOALSearching) //add a check for missing radar, so LOAL missiles that have been dumbfired can still activate?
             {
                 // not locked on before launch, trying lock-on after launch:
 
@@ -1057,14 +1059,26 @@ namespace BDArmory.Weapons.Missiles
                 }
             }
 
-            if (!radarTarget.exists && _radarFailTimer < radarTimeout)
+            if (!radarTarget.exists)
             {
-                if (vrd)
-                    radarTarget = vrd.lockedTargetData.targetData;
-                else if (radarLOAL)
-                    radarLOALSearching = true;
+                if (_radarFailTimer < radarTimeout)
+                {
+                    if (vrd)
+                        radarTarget = vrd.lockedTargetData.targetData;
+                    else if (radarLOAL)
+                        radarLOALSearching = true;
+                    else
+                    {
+                        targetVessel = null;
+                        if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileBase]: No assigned radar target. Awaiting timeout.... ");
+                    }
+                }
                 else
+                {
                     targetVessel = null;
+                    TargetAcquired = false;
+                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileBase]: No radar target. Active Radar guidance timed out. ");
+                }
             }
         }
 
