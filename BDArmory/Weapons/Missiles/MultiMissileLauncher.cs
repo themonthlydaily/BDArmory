@@ -312,6 +312,10 @@ namespace BDArmory.Weapons.Missiles
             missileLauncher.loftState = 0;
             missileLauncher.TimeToImpact = float.PositiveInfinity;
             missileLauncher.initMaxAoA = MLConfig.maxAoA;
+            missileLauncher.homingModeTerminal = MLConfig.homingModeTerminal;
+            missileLauncher.pronavGain = MLConfig.pronavGain;
+            missileLauncher.terminalHoming = MLConfig.terminalHoming;
+            missileLauncher.terminalHomingActive = false;
 
             if (configurableSettings)
             {
@@ -363,8 +367,6 @@ namespace BDArmory.Weapons.Missiles
                 missileLauncher.LoftVertVelComp = MLConfig.LoftVertVelComp;
                 //missileLauncher.LoftAltComp = LoftAltComp;
                 missileLauncher.terminalHomingRange = MLConfig.terminalHomingRange;
-                missileLauncher.homingModeTerminal = MLConfig.homingModeTerminal;
-                missileLauncher.pronavGain = MLConfig.pronavGain;
             }
             missileLauncher.GetBlastRadius();
             GUIUtils.RefreshAssociatedWindows(missileLauncher.part);
@@ -544,14 +546,54 @@ namespace BDArmory.Weapons.Missiles
                     ml.TimeToImpact = float.PositiveInfinity;
                     ml.initMaxAoA = missileLauncher.maxAoA;
                 }
-                if (missileLauncher.GuidanceMode == GuidanceModes.AAMHybrid)
+                /*if (missileLauncher.GuidanceMode == GuidanceModes.AAMHybrid)
                 {
                     ml.pronavGain = missileLauncher.pronavGain;
                     ml.terminalHomingRange = missileLauncher.terminalHomingRange;
                     ml.homingModeTerminal = missileLauncher.homingModeTerminal;
-                }
+                }*/
                 if (missileLauncher.GuidanceMode == GuidanceModes.APN || missileLauncher.GuidanceMode == GuidanceModes.PN)
                     ml.pronavGain = missileLauncher.pronavGain;
+
+                ml.terminalHoming = missileLauncher.terminalHoming;
+                if (missileLauncher.terminalHoming)
+                {
+                    if (missileLauncher.homingModeTerminal == GuidanceModes.AGMBallistic)
+                    {
+                        ml.BallisticOverShootFactor = missileLauncher.BallisticOverShootFactor; //are some of these null, and causeing this to quit? 
+                        ml.BallisticAngle = missileLauncher.BallisticAngle;
+                    }
+                    if (missileLauncher.homingModeTerminal == GuidanceModes.Cruise)
+                    {
+                        ml.CruiseAltitude = missileLauncher.CruiseAltitude;
+                        ml.CruiseSpeed = missileLauncher.CruiseSpeed;
+                        ml.CruisePredictionTime = missileLauncher.CruisePredictionTime;
+                    }
+                    if (missileLauncher.homingModeTerminal == GuidanceModes.AAMLoft)
+                    {
+                        ml.LoftMaxAltitude = missileLauncher.LoftMaxAltitude;
+                        ml.LoftRangeOverride = missileLauncher.LoftRangeOverride;
+                        ml.LoftAltitudeAdvMax = missileLauncher.LoftAltitudeAdvMax;
+                        ml.LoftMinAltitude = missileLauncher.LoftMinAltitude;
+                        ml.LoftAngle = missileLauncher.LoftAngle;
+                        ml.LoftTermAngle = missileLauncher.LoftTermAngle;
+                        ml.LoftRangeFac = missileLauncher.LoftRangeFac;
+                        ml.LoftVelComp = missileLauncher.LoftVelComp;
+                        ml.LoftVertVelComp = missileLauncher.LoftVertVelComp;
+                        //ml.LoftAltComp = missileLauncher.LoftAltComp;
+                        ml.pronavGain = missileLauncher.pronavGain;
+                        ml.loftState = 0;
+                        ml.TimeToImpact = float.PositiveInfinity;
+                        ml.initMaxAoA = missileLauncher.maxAoA;
+                    }
+                    if (missileLauncher.homingModeTerminal == GuidanceModes.APN || missileLauncher.homingModeTerminal == GuidanceModes.PN)
+                        ml.pronavGain = missileLauncher.pronavGain;
+
+                    ml.terminalHomingRange = missileLauncher.terminalHomingRange;
+                    ml.homingModeTerminal = missileLauncher.homingModeTerminal;
+                    ml.terminalHomingActive = false;
+                }
+
                 //ml.decoupleSpeed = 5;
                 if (missileLauncher.GuidanceMode == GuidanceModes.AGM)
                     ml.maxAltitude = missileLauncher.maxAltitude;
