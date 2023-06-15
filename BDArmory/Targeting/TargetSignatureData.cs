@@ -1,12 +1,12 @@
 using System;
-using System.Collections.Generic;
-using BDArmory.Core;
-using BDArmory.Core.Extension;
-using BDArmory.CounterMeasure;
-using BDArmory.Misc;
-using BDArmory.Modules;
-using BDArmory.Radar;
 using UnityEngine;
+
+using BDArmory.Competition;
+using BDArmory.CounterMeasure;
+using BDArmory.Extensions;
+using BDArmory.Radar;
+using BDArmory.Settings;
+using BDArmory.Utils;
 
 namespace BDArmory.Targeting
 {
@@ -24,6 +24,7 @@ namespace BDArmory.Targeting
         public VesselECMJInfo vesselJammer;
         public ModuleRadar lockedByRadar;
         public Vessel vessel;
+        public Part IRSource;
         bool orbital;
         Orbit orbit;
 
@@ -35,7 +36,7 @@ namespace BDArmory.Targeting
                 timeAcquired == other.timeAcquired;
         }
 
-        public TargetSignatureData(Vessel v, float _signalStrength)
+        public TargetSignatureData(Vessel v, float _signalStrength, Part heatpart = null)
         {
             orbital = v.InOrbit();
             orbit = v.orbit;
@@ -43,8 +44,8 @@ namespace BDArmory.Targeting
             timeAcquired = Time.time;
             vessel = v;
             velocity = v.Velocity();
-
-            geoPos = VectorUtils.WorldPositionToGeoCoords(v.CoM, v.mainBody);
+            IRSource = heatpart;
+            geoPos = VectorUtils.WorldPositionToGeoCoords(IRSource != null ? IRSource.transform.position : v.CoM, v.mainBody);
             acceleration = v.acceleration_immediate;
             exists = true;
 
@@ -92,6 +93,7 @@ namespace BDArmory.Targeting
             orbit = null;
             lockedByRadar = null;
             vessel = null;
+            IRSource = null;
         }
 
         public TargetSignatureData(Vector3 _velocity, Vector3 _position, Vector3 _acceleration, bool _exists, float _signalStrength)
@@ -110,6 +112,7 @@ namespace BDArmory.Targeting
             orbit = null;
             lockedByRadar = null;
             vessel = null;
+            IRSource = null;
         }
 
         public Vector3 position
@@ -132,30 +135,40 @@ namespace BDArmory.Targeting
             }
         }
 
-        public Vector3 predictedPositionWithChaffFactor
+        public Vector3 predictedPositionWithChaffFactor(float chaffEffectivity = 1f)
         {
-            get
+            // get chaff factor of vessel and calculate decoy distortion caused by chaff echos
+            float decoyFactor = 0f;
+            Vector3 posDistortion = Vector3.zero;
+
+            if (vessel != null)
             {
-                // get chaff factor of vessel and calculate decoy distortion caused by chaff echos
-                float decoyFactor = 0f;
-                Vector3 posDistortion = Vector3.zero;
+                // chaff check
+                decoyFactor = (1f - RadarUtils.GetVesselChaffFactor(vessel));
 
-                if (vessel != null)
+                if (decoyFactor > 0f)
                 {
-                    // chaff check
-                    decoyFactor = (1f - RadarUtils.GetVesselChaffFactor(vessel));
+                    // With ecm on better chaff effectiveness due to jammer strength
+                    VesselECMJInfo vesseljammer = vessel.gameObject.GetComponent<VesselECMJInfo>();
 
-                    if (decoyFactor > 0f)
-                    {
-                        // with ecm on better chaff effectiveness due to higher modifiedSignature
-                        // higher speed -> missile decoyed further "behind" where the chaff drops (also means that for head-on engagements chaff is most like less effective!)
-                        posDistortion = (vessel.GetSrfVelocity() * -1f * Mathf.Clamp(decoyFactor * decoyFactor, 0f, 0.5f)) + (UnityEngine.Random.insideUnitSphere * UnityEngine.Random.Range(targetInfo.radarModifiedSignature, targetInfo.radarModifiedSignature * targetInfo.radarModifiedSignature) * decoyFactor);
-                        posDistortion *= Mathf.Max(BDArmorySettings.CHAFF_FACTOR, 0f);
-                    }
+                    // Jamming biases position distortion further to rear, depending on ratio of jamming strength and radarModifiedSignature
+                    float jammingFactor = vesseljammer is null ? 0 : decoyFactor * Mathf.Clamp01(vesseljammer.jammerStrength / 100f / Mathf.Max(targetInfo.radarModifiedSignature, 0.1f));
+
+                    // Random radius of distortion, 16-256m
+                    float distortionFactor = decoyFactor * UnityEngine.Random.Range(16f, 256f);
+
+                    // Convert Float jammingFactor position bias and signatureFactor scaling to Vector3 position
+                    Vector3 signatureDistortion = distortionFactor * (vessel.GetSrfVelocity().normalized * -1f * jammingFactor + UnityEngine.Random.insideUnitSphere);
+
+                    // Higher speed -> missile decoyed further "behind" where the chaff drops (also means that chaff is least effective for head-on engagements)
+                    posDistortion = (vessel.GetSrfVelocity() * -1f * Mathf.Clamp(decoyFactor * decoyFactor, 0f, 0.5f)) + signatureDistortion;
+
+                    // Apply effects from global settings and individual missile chaffEffectivity
+                    posDistortion *= Mathf.Max(BDArmorySettings.CHAFF_FACTOR, 0f) * chaffEffectivity;
                 }
-
-                return position + (velocity * age) + posDistortion;
             }
+
+            return position + (velocity * age) + posDistortion;
         }
 
         public float altitude

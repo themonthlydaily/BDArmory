@@ -1,6 +1,8 @@
 ﻿using System.Collections;
-using BDArmory.UI;
 using UnityEngine;
+
+using BDArmory.UI;
+using BDArmory.Utils;
 
 namespace BDArmory.Modules
 {
@@ -42,10 +44,8 @@ namespace BDArmory.Modules
 
         IEnumerator SetupRoutine()
         {
-            while (vessel.packed)
-            {
-                yield return null;
-            }
+            yield return new WaitWhile(() => vessel is not null && (vessel.packed || !vessel.loaded));
+            yield return new WaitForFixedUpdate();
             SetupJoints();
         }
 
@@ -86,7 +86,7 @@ namespace BDArmory.Modules
             {
                 for (int i = 0; i < localAnchors.Length; i++)
                 {
-                    BDGUIUtils.DrawTextureOnWorldPos(parentTransform.TransformPoint(localAnchors[i]),
+                    GUIUtils.DrawTextureOnWorldPos(parentTransform.TransformPoint(localAnchors[i]),
                         BDArmorySetup.Instance.greenDotTexture, new Vector2(6, 6), 0);
                 }
             }

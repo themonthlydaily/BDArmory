@@ -1,5 +1,7 @@
-using BDArmory.UI;
 using UnityEngine;
+
+using BDArmory.Settings;
+using BDArmory.UI;
 
 namespace BDArmory.FX
 {
@@ -53,6 +55,8 @@ namespace BDArmory.FX
 
         void FixedUpdate()
         {
+            if (!BDArmorySettings.GAPLESS_PARTICLE_EMITTERS) return;
+
             if (!part && !rb)
             {
                 internalVelocity = (transform.position - lastPos) / Time.fixedDeltaTime;
@@ -98,6 +102,8 @@ namespace BDArmory.FX
 
         public void EmitParticles()
         {
+            if (!BDArmorySettings.GAPLESS_PARTICLE_EMITTERS) return;
+
             Vector3 originalLocalPosition = gameObject.transform.localPosition;
             Vector3 originalPosition = gameObject.transform.position;
             Vector3 startPosition = gameObject.transform.position + (velocity * Time.fixedDeltaTime);

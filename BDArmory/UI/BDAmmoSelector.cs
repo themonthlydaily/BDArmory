@@ -1,13 +1,12 @@
-using System.Collections;
-using BDArmory.Core;
-using BDArmory.Misc;
-using BDArmory.Modules;
-using UnityEngine;
 using KSP.Localization;
 using System.Collections.Generic;
-using static UnityEngine.GUILayout;
-using BDArmory.Bullets;
 using System;
+using UnityEngine;
+using static UnityEngine.GUILayout;
+
+using BDArmory.Bullets;
+using BDArmory.Utils;
+using BDArmory.Weapons;
 
 namespace BDArmory.UI
 {
@@ -41,7 +40,7 @@ namespace BDArmory.UI
         public List<string> BList = new List<string>();
         public List<string> ammoDesc = new List<string>();
         private BulletInfo bulletInfo;
-        public string guiAmmoTypeString = Localizer.Format("#LOC_BDArmory_Ammo_Slug");
+        public string guiAmmoTypeString = StringUtils.Localize("#LOC_BDArmory_Ammo_Slug");
 
         GUIStyle labelStyle;
         GUIStyle titleStyle;
@@ -69,7 +68,7 @@ namespace BDArmory.UI
             GUIstring = String.Empty;
             countString = String.Empty;
             lastGUIstring = String.Empty;
-            roundCounter = 1;
+            roundCounter = 0;
             if (weapon.ammoBelt != "def")
             {
                 beltString = weapon.ammoBelt;
@@ -80,8 +79,8 @@ namespace BDArmory.UI
                     if (BList[i] != lastGUIstring)
                     {
                         GUIstring += countString.ToString();
-                        GUIstring += binfo.DisplayName;
-                        lastGUIstring = binfo.DisplayName;
+                        GUIstring += (string.IsNullOrEmpty(binfo.DisplayName) ? binfo.name : binfo.DisplayName);
+                        lastGUIstring = (string.IsNullOrEmpty(binfo.DisplayName) ? binfo.name : binfo.DisplayName);
                         roundCounter = 1;
                         countString = "; ";
                     }
@@ -100,43 +99,47 @@ namespace BDArmory.UI
                 guiAmmoTypeString = "";
                 if (bulletInfo.subProjectileCount >= 2)
                 {
-                    guiAmmoTypeString = Localizer.Format("#LOC_BDArmory_Ammo_Shot") + " ";
+                    guiAmmoTypeString = StringUtils.Localize("#LOC_BDArmory_Ammo_Shot") + " ";
                 }
                 if (bulletInfo.apBulletMod >= 1.1)
                 {
-                    guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_AP") + " ";
+                    guiAmmoTypeString += StringUtils.Localize("#LOC_BDArmory_Ammo_AP") + " ";
                 }
                 if (bulletInfo.apBulletMod < 1.1 && bulletInfo.apBulletMod > 0.8f)
                 {
-                    guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_SAP") + " ";
+                    guiAmmoTypeString += StringUtils.Localize("#LOC_BDArmory_Ammo_SAP") + " ";
                 }
                 if (bulletInfo.nuclear)
                 {
-                    guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Nuclear") + " ";
+                    guiAmmoTypeString += StringUtils.Localize("#LOC_BDArmory_Ammo_Nuclear") + " ";
                 }
-                if (bulletInfo.explosive && !bulletInfo.nuclear)
+                if (bulletInfo.tntMass > 0 && !bulletInfo.nuclear)
                 {
                     if (bulletInfo.fuzeType.ToLower() == "flak" || bulletInfo.fuzeType.ToLower() == "proximity")
                     {
-                        guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Flak") + " ";
+                        guiAmmoTypeString += StringUtils.Localize("#LOC_BDArmory_Ammo_Flak") + " ";
                     }
-                    guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Explosive") + " ";
+                    else if (bulletInfo.explosive.ToLower() == "Shaped")
+                    {
+                        guiAmmoTypeString += StringUtils.Localize("#LOC_BDArmory_Ammo_Shaped") + " ";
+                    }
+                    guiAmmoTypeString += StringUtils.Localize("#LOC_BDArmory_Ammo_Explosive") + " ";
                 }
                 if (bulletInfo.incendiary)
                 {
-                    guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Incendiary") + " ";
+                    guiAmmoTypeString += StringUtils.Localize("#LOC_BDArmory_Ammo_Incendiary") + " ";
                 }
                 if (bulletInfo.EMP && !bulletInfo.nuclear)
                 {
-                    guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_EMP") + " ";
+                    guiAmmoTypeString += StringUtils.Localize("#LOC_BDArmory_Ammo_EMP") + " ";
                 }
                 if (bulletInfo.beehive)
                 {
-                    guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Beehive") + " ";
+                    guiAmmoTypeString += StringUtils.Localize("#LOC_BDArmory_Ammo_Beehive") + " ";
                 }
-                if (!bulletInfo.explosive && bulletInfo.apBulletMod <= 0.8)
+                if (bulletInfo.tntMass <= 0 && bulletInfo.apBulletMod <= 0.8)
                 {
-                    guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Slug");
+                    guiAmmoTypeString += StringUtils.Localize("#LOC_BDArmory_Ammo_Slug");
                 }
                 ammoDesc.Add(guiAmmoTypeString);
             }
@@ -172,7 +175,7 @@ namespace BDArmory.UI
             }
             if (open)
             {
-                windowRect = GUI.Window(this.GetInstanceID(), windowRect, AmmoSelectorWindow, "", BDArmorySetup.BDGuiSkin.window);
+				windowRect = GUI.Window(GUIUtility.GetControlID(FocusType.Passive), windowRect, AmmoSelectorWindow, "", BDArmorySetup.BDGuiSkin.window);
             }
             PreventClickThrough();
         }
@@ -180,7 +183,7 @@ namespace BDArmory.UI
         {
             float line = 0.5f;
             string labelString = GUIstring.ToString() + countString.ToString();
-            GUI.Label(new Rect(margin, 0.5f * buttonHeight, width - 2 * margin, buttonHeight), Localizer.Format("#LOC_BDArmory_Ammo_Setup"), titleStyle);
+            GUI.Label(new Rect(margin, 0.5f * buttonHeight, width - 2 * margin, buttonHeight), StringUtils.Localize("#LOC_BDArmory_Ammo_Setup"), titleStyle);
             if (GUI.Button(new Rect(width - 18, 2, 16, 16), "X"))
             {
                 open = false;
@@ -190,9 +193,9 @@ namespace BDArmory.UI
                 lastGUIstring = String.Empty;
             }
             line++;
-            GUI.Label(new Rect(margin, line * buttonHeight, width - 2 * margin, buttonHeight), Localizer.Format("#LOC_BDArmory_Ammo_Weapon") + " " + selectedWeapon.GetShortName(), labelStyle);
+            GUI.Label(new Rect(margin, line * buttonHeight, width - 2 * margin, buttonHeight), StringUtils.Localize("#LOC_BDArmory_Ammo_Weapon") + " " + selectedWeapon.GetShortName(), labelStyle);
             line++;
-            GUI.Label(new Rect(margin, line * buttonHeight, width - 2 * margin, buttonHeight), Localizer.Format("#LOC_BDArmory_Ammo_Belt"), labelStyle);
+            GUI.Label(new Rect(margin, line * buttonHeight, width - 2 * margin, buttonHeight), StringUtils.Localize("#LOC_BDArmory_Ammo_Belt"), labelStyle);
             line += 1.2f;
             labelLines = Mathf.Clamp(Mathf.CeilToInt(labelString.Length / 50), 1, 4);
             BeginArea(new Rect(margin, line * buttonHeight, width - 2 * margin, labelLines * buttonHeight));
@@ -233,7 +236,7 @@ namespace BDArmory.UI
                     ammolines += 1.1f;
                 }
             }
-            if (GUI.Button(new Rect(margin * 5, (line + labelLines + ammolines) * buttonHeight, (width - (10 * margin)) / 2, buttonHeight), Localizer.Format("#LOC_BDArmory_reset")))
+            if (GUI.Button(new Rect(margin * 5, (line + labelLines + ammolines) * buttonHeight, (width - (10 * margin)) / 2, buttonHeight), StringUtils.Localize("#LOC_BDArmory_reset")))
             {
                 beltString = String.Empty;
                 GUIstring = String.Empty;
@@ -242,7 +245,7 @@ namespace BDArmory.UI
                 labelLines = 1;
                 roundCounter = 1;
             }
-            if (GUI.Button(new Rect(((margin * 5) + ((width - (10 * margin)) / 2)), (line + labelLines + ammolines) * buttonHeight, (width - (10 * margin)) / 2, buttonHeight), Localizer.Format("#LOC_BDArmory_save")))
+            if (GUI.Button(new Rect(((margin * 5) + ((width - (10 * margin)) / 2)), (line + labelLines + ammolines) * buttonHeight, (width - (10 * margin)) / 2, buttonHeight), StringUtils.Localize("#LOC_BDArmory_save")))
             {
                 save = true;
                 open = false;
@@ -251,7 +254,7 @@ namespace BDArmory.UI
             height = Mathf.Lerp(height, (line + labelLines + ammolines) * buttonHeight, 0.15f);
             windowRect.height = height;
             GUI.DragWindow();
-            BDGUIUtils.RepositionWindow(ref windowRect);
+            GUIUtils.RepositionWindow(ref windowRect);
         }
 
         private void Awake()

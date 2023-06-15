@@ -2,12 +2,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
+
 using BDArmory.Competition.OrchestrationStrategies;
 using BDArmory.Competition.RemoteOrchestration;
-using BDArmory.Competition.SpawnStrategies;
-using BDArmory.Competition.VesselSpawning;
-using BDArmory.Core;
-using UnityEngine;
+using BDArmory.GameModes.Waypoints;
+using BDArmory.Settings;
+using BDArmory.VesselSpawning.SpawnStrategies;
+using BDArmory.VesselSpawning;
 using static BDArmory.Competition.OrchestrationStrategies.WaypointFollowingStrategy;
 
 namespace BDArmory.Competition
@@ -16,9 +18,9 @@ namespace BDArmory.Competition
     {
         private SpawnStrategy spawnStrategy;
         private OrchestrationStrategy orchestrator;
-        private VesselSpawner vesselSpawner;
+        private VesselSpawnerBase vesselSpawner;
 
-        public RemoteTournamentCoordinator(SpawnStrategy spawner, OrchestrationStrategy orchestrator, VesselSpawner vesselSpawner)
+        public RemoteTournamentCoordinator(SpawnStrategy spawner, OrchestrationStrategy orchestrator, VesselSpawnerBase vesselSpawner)
         {
             this.spawnStrategy = spawner;
             this.orchestrator = orchestrator;
@@ -33,7 +35,7 @@ namespace BDArmory.Competition
             // first, spawn vessels
             yield return spawnStrategy.Spawn(vesselSpawner);
 
-            if( !spawnStrategy.DidComplete() )
+            if (!spawnStrategy.DidComplete())
             {
                 Debug.Log("[BDArmory.BDAScoreService] TournamentCoordinator spawn failed");
                 yield break;
@@ -45,12 +47,12 @@ namespace BDArmory.Competition
 
         public static RemoteTournamentCoordinator BuildFromDescriptor(CompetitionModel competitionModel)
         {
-            switch(competitionModel.mode)
+            switch (competitionModel.mode)
             {
                 case "ffa":
                     return BuildFFA();
                 case "path":
-                    return BuildShortCanyonWaypoint();
+                    return BuildWaypoint();
                 case "chase":
                     return BuildChase();
             }
@@ -66,8 +68,9 @@ namespace BDArmory.Competition
             var activeVesselIds = scoreClient.activeVessels.ToList();
             var craftUrls = activeVesselModels.Select(e => e.craft_url);
             // TODO: need coords from descriptor, or fallback to local settings
-            var kerbin = FlightGlobals.GetBodyByName("Kerbin");
-            var bodyIndex = FlightGlobals.GetBodyIndex(kerbin);
+            // var kerbin = FlightGlobals.GetBodyByName("Kerbin");
+            // var bodyIndex = FlightGlobals.GetBodyIndex(kerbin);
+            var bodyIndex = BDArmorySettings.VESSEL_SPAWN_WORLDINDEX;
             var latitude = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x;
             var longitude = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y;
             var altitude = BDArmorySettings.VESSEL_SPAWN_ALTITUDE;
@@ -78,7 +81,7 @@ namespace BDArmory.Competition
             return new RemoteTournamentCoordinator(spawnStrategy, orchestrationStrategy, vesselSpawner);
         }
 
-        private static RemoteTournamentCoordinator BuildShortCanyonWaypoint()
+        private static RemoteTournamentCoordinator BuildWaypoint()
         {
             var scoreService = BDAScoreService.Instance;
             var scoreClient = scoreService.client;
@@ -89,55 +92,39 @@ namespace BDArmory.Competition
             // TODO: need coords from descriptor, or fallback to local settings
             //var latitude = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x;
             //var longitude = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y;
-            var worldIndex = 1;
-            var latitude = 27.97f;
-            var longitude = -39.35f;
+            var worldIndex = WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].worldIndex;
+            var latitude = WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].spawnPoint.x;
+            var longitude = WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].spawnPoint.y;
             var altitude = BDArmorySettings.VESSEL_SPAWN_ALTITUDE;
             var spawnRadius = BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR;
             // var spawnStrategy = new PointSpawnStrategy(craftUrl, latitude, longitude, 2*altitude, 315.0f);
+            Debug.Log("[BDArmory.RemoteTournamentCoordinator] Creating Spawn Strategy - WorldIndex: " + worldIndex + "; course name: " + WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].name);
             var spawnStrategy = new SpawnConfigStrategy(
-                new SpawnConfig(
-                    worldIndex,
-                    latitude,
-                    longitude,
-                    altitude,
+                new CircularSpawnConfig(
+                    new SpawnConfig(
+                        worldIndex,
+                        latitude,
+                        longitude,
+                        altitude,
+                        true,
+                        true,
+                        0,
+                        null,
+                        null,
+                        "",
+                        activeVesselModels.Select(m => vesselSource.GetLocalPath(m.id)).ToList()
+                    ),
                     spawnRadius,
-                    BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
-                    BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
-                    true,
-                    true,
-                    0,
-                    null,
-                    null,
-                    "",
-                    activeVesselModels.Select(m => vesselSource.GetLocalPath(m.id)).ToList()
+                    BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE
                 )
             );
-            // kerbin-canyon2
-            // 28.33,-39.11
-            // 28.83,-38.06
-            // 29.54,-38.68
-            // 30.15,-38.6
-            // 30.83,-38.87
-            // 30.73,-39.6
-            // 30.9,-40.23
-            // 30.83,-41.26
-            var waypoints = new List<Waypoint> {
-                new Waypoint(28.33f, -39.11f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                new Waypoint(28.83f, -38.06f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                new Waypoint(29.54f, -38.68f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                new Waypoint(30.15f, -38.6f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                new Waypoint(30.83f, -38.87f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                new Waypoint(30.73f, -39.6f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                new Waypoint(30.9f, -40.23f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-                new Waypoint(30.83f, -41.26f, BDArmorySettings.WAYPOINTS_ALTITUDE),
-            };
+            var waypoints = WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].waypoints;
             var orchestrationStrategy = new WaypointFollowingStrategy(waypoints);
             // var vesselSpawner = SingleVesselSpawning.Instance;
             var vesselSpawner = CircularSpawning.Instance; // The CircularSpawning spawner handles single-vessel spawning using the SpawnConfig strategy and the SingleVesselSpawning spawner is not ready yet.
             return new RemoteTournamentCoordinator(spawnStrategy, orchestrationStrategy, vesselSpawner);
         }
-
+        /*
         private static RemoteTournamentCoordinator BuildLongCanyonWaypoint()
         {
             var scoreService = BDAScoreService.Instance;
@@ -195,7 +182,7 @@ namespace BDArmory.Competition
             var vesselSpawner = SingleVesselSpawning.Instance;
             return new RemoteTournamentCoordinator(spawnStrategy, orchestrationStrategy, vesselSpawner);
         }
-
+        */
         private static RemoteTournamentCoordinator BuildGauntletCanyonWaypoint()
         {
             var scoreService = BDAScoreService.Instance;
@@ -243,7 +230,7 @@ namespace BDArmory.Competition
 
             List<SpawnStrategy> strategies = new List<SpawnStrategy>();
 
-            if( npcCraftUrl != null )
+            if (npcCraftUrl != null)
             {
                 // turret locations (all spawned at 0m)
                 // 29.861150,-38.608205,0
@@ -278,16 +265,7 @@ namespace BDArmory.Competition
             strategies.Add(playerStrategy);
 
 
-            var waypoints = new List<Waypoint> {
-                new Waypoint(28.33f, -39.11f, altitude),
-                new Waypoint(28.83f, -38.06f, altitude),
-                new Waypoint(29.54f, -38.68f, altitude),
-                new Waypoint(30.15f, -38.6f, altitude),
-                new Waypoint(30.83f, -38.87f, altitude),
-                new Waypoint(30.73f, -39.6f, altitude),
-                new Waypoint(30.9f, -40.23f, altitude),
-                new Waypoint(30.83f, -41.26f, altitude),
-            };
+            var waypoints = WaypointCourses.CourseLocations[0].waypoints; //Canyon Waypoint course
             var orchestrationStrategy = new WaypointFollowingStrategy(waypoints);
             var listStrategy = new ListSpawnStrategy(strategies);
             var vesselSpawner = SingleVesselSpawning.Instance;
