@@ -659,6 +659,9 @@ namespace BDArmory.Weapons
         public string bulletTexturePath = "BDArmory/Textures/bullet";
 
         [KSPField]
+        public string smokeTexturePath; // = "BDArmory/Textures/tracerSmoke";
+
+        [KSPField]
         public string laserTexturePath = "BDArmory/Textures/laser";
 
         public List<string> laserTexList;
@@ -2069,7 +2072,7 @@ namespace BDArmory.Weapons
                                     pBullet.sourceVessel = vessel;
                                     pBullet.team = weaponManager.Team.Name;
                                     pBullet.bulletTexturePath = bulletTexturePath;
-
+                                    pBullet.smokeTexturePath = smokeTexturePath;
                                     pBullet.projectileColor = projectileColorC;
                                     pBullet.startColor = startColorC;
                                     pBullet.fadeColor = fadeColor;
@@ -2080,17 +2083,21 @@ namespace BDArmory.Weapons
                                         pBullet.tracerStartWidth = tracerStartWidth;
                                         pBullet.tracerEndWidth = tracerEndWidth;
                                         pBullet.tracerLength = tracerLength;
+                                        pBullet.tracerLuminance = tracerLuminance;
                                     }
                                     else
                                     {
                                         pBullet.tracerStartWidth = nonTracerWidth;
                                         pBullet.tracerEndWidth = nonTracerWidth;
-                                        pBullet.startColor.a *= 0.5f;
-                                        pBullet.projectileColor.a *= 0.5f;
-                                        pBullet.tracerLength = tracerLength * 0.4f;
+                                        pBullet.projectileColor = Color.grey;
+                                        pBullet.startColor = Color.grey;
+                                        pBullet.startColor.a *= 0.25f;
+                                        pBullet.projectileColor.a *= 0.25f;
+                                        pBullet.projectileColor.a *= 0.25f;
+                                        pBullet.tracerLength = tracerLength * 0.1f;
+                                        pBullet.tracerLuminance = -1;
                                     }
                                     pBullet.tracerDeltaFactor = tracerDeltaFactor;
-                                    pBullet.tracerLuminance = tracerLuminance;
                                     pBullet.bulletDrop = bulletDrop;
 
                                     if (bulletInfo.tntMass > 0 || bulletInfo.beehive)
@@ -2504,7 +2511,7 @@ namespace BDArmory.Weapons
                                                     damage = initialDamage * TimeWarp.fixedDeltaTime;
                                                 }
                                             }
-                                            p.ReduceArmor(damage / 10000); //really should be tied into diffuisvity, density, and SafeUseTemp - lasers would need to melt/ablate material away; needs to be in cm^3. Review later
+                                            p.ReduceArmor(damage); //really should be tied into diffuisvity, density, and SafeUseTemp - lasers would need to melt/ablate material away; needs to be in cm^3. Review later
                                             p.AddDamage(damage);
                                             if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Damage Applied to {p.name} on {p.vessel.GetName()}: {damage}");
                                             if (pulseLaser) BattleDamageHandler.CheckDamageFX(p, caliber, 1 + (damage / initialDamage), HEpulses, false, part.vessel.GetName(), hit, false, false); //beams will proc BD once every scoreAccumulatorTick
