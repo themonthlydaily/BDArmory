@@ -12,6 +12,7 @@ using BDArmory.Settings;
 using BDArmory.Utils;
 using BDArmory.VesselSpawning;
 using BDArmory.Weapons.Missiles;
+using System.Collections.Generic;
 
 namespace BDArmory.Weapons
 {
@@ -67,6 +68,9 @@ namespace BDArmory.Weapons
 
         private int FuelID;
         private int MPID;
+        private int XeID;
+        bool usesMono = false;
+        bool usesXe = false;
         private bool hasDetonated = false;
         private bool goingCritical = false;
         public string Sourcevessel;
@@ -92,14 +96,14 @@ namespace BDArmory.Weapons
                 if (engineCore)
                 {
                     FuelID = PartResourceLibrary.Instance.GetDefinition("LiquidFuel").id;
-                    Debug.Log($"[BDArmory.BDModuleNuke]: Resource definition for LiquidFuel is" + FuelID);
                     vessel.GetConnectedResourceTotals(FuelID, out double fuelCurrent, out double fuelMax);
                     fuelleft = fuelCurrent;
-                    Debug.Log($"[BDArmory.BDModuleNuke]: Found {fuelMax} LF on {part.vessel.GetName()}");
                     MPID = PartResourceLibrary.Instance.GetDefinition("MonoPropellant").id;
                     vessel.GetConnectedResourceTotals(MPID, out double mpCurrent, out double mpMax);
                     fuelleft += mpCurrent;
-                    Debug.Log($"[BDArmory.BDModuleNuke]: Found {mpMax} MP on {part.vessel.GetName()}");
+                    XeID = PartResourceLibrary.Instance.GetDefinition("Xenon").id;
+                    vessel.GetConnectedResourceTotals(XeID, out double xeCurrent, out double xeMax);
+                    fuelleft += xeCurrent;
                     var engine = part.FindModuleImplementing<ModuleEngines>();
                     if (engine != null)
                     {
@@ -115,6 +119,29 @@ namespace BDArmory.Weapons
                     Fields["fuelleft"].guiActiveEditor = false;
                 }
                 Sourcevessel = part.vessel.GetName();
+
+                var engines = VesselModuleRegistry.GetModules<ModuleEngines>(vessel);
+                if (engines != null)
+                {
+                    using (List<ModuleEngines>.Enumerator fuelType = engines.GetEnumerator())
+                    {
+                        while (fuelType.MoveNext())
+                        {
+                            if (fuelType.Current == null) continue;
+                            foreach (Propellant prop in fuelType.Current.propellants)
+                            {
+                                if (prop.name == "MonoPropellant")
+                                {
+                                    Debug.Log("[S5R10 DEBUG] MP Engine Found on " + part.vessel.GetName());
+                                    usesMono = true;
+                                }
+                            }
+                            if (fuelType.Current.engineType == EngineType.Electric) usesXe = true;
+                        }
+                    }
+                }
+                var RCS = VesselModuleRegistry.GetModules<ModuleRCS>(vessel);
+                if (RCS != null) usesMono = true;
 
                 if (engineCore) part.OnJustAboutToBeDestroyed += Detonate;
                 GameEvents.onVesselPartCountChanged.Add(CheckAttached);
@@ -132,14 +159,28 @@ namespace BDArmory.Weapons
                     {
                         vessel.GetConnectedResourceTotals(FuelID, out double fuelCurrent, out double fuelMax);
                         fuelleft = fuelCurrent;
-                        vessel.GetConnectedResourceTotals(MPID, out double mpCurrent, out double mpMax);
-                        fuelleft += mpCurrent;
+                        if (usesMono)
+                        {
+                            vessel.GetConnectedResourceTotals(MPID, out double mpCurrent, out double mpMax);
+                            fuelleft += mpCurrent;
+                        }
+                        if (usesXe)
+                        {
+                            vessel.GetConnectedResourceTotals(XeID, out double xeCurrent, out double xeMax);
+                            fuelleft += xeCurrent;
+                        }
                         if (fuelleft <= 0)
                         {
                             if (!hasDetonated && !goingCritical)
                             {
-                                if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.RWPS3R2NukeModule]: nerva on " + (String.IsNullOrEmpty(Sourcevessel)? Sourcevessel : part.vessel.GetName()) + " is out of fuel.");
+                                if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.RWPS3R2NukeModule]: nerva on " + (String.IsNullOrEmpty(Sourcevessel) ? Sourcevessel : part.vessel.GetName()) + " is out of fuel.");
                                 StartCoroutine(DelayedDetonation(meltDownDuration)); //bingo fuel, detonate
+
+                                if (BDACompetitionMode.Instance.competitionIsActive)
+                                {
+                                    string msg = $"{vessel.GetName()} is out of fuel!";
+                                    BDACompetitionMode.Instance.competitionStatus.Add(msg);
+                                }
                             }
                         }
                         var engine = part.FindModuleImplementing<ModuleEngines>();

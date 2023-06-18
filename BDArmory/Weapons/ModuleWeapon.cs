@@ -2089,13 +2089,16 @@ namespace BDArmory.Weapons
                                     {
                                         pBullet.tracerStartWidth = nonTracerWidth;
                                         pBullet.tracerEndWidth = nonTracerWidth;
-                                        pBullet.projectileColor = Color.grey;
-                                        pBullet.startColor = Color.grey;
                                         pBullet.startColor.a *= 0.25f;
                                         pBullet.projectileColor.a *= 0.25f;
                                         pBullet.projectileColor.a *= 0.25f;
-                                        pBullet.tracerLength = tracerLength * 0.1f;
-                                        pBullet.tracerLuminance = -1;
+                                        if (!string.IsNullOrEmpty(smokeTexturePath))
+                                        {
+                                            pBullet.projectileColor = Color.grey;
+                                            pBullet.startColor = Color.grey;
+                                            pBullet.tracerLength = 0;
+                                            pBullet.tracerLuminance = -1;
+                                        }
                                     }
                                     pBullet.tracerDeltaFactor = tracerDeltaFactor;
                                     pBullet.bulletDrop = bulletDrop;

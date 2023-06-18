@@ -274,27 +274,29 @@ namespace BDArmory.Bullets
                 randomWidthScale = UnityEngine.Random.Range(0.5f, 1f);
                 gameObject.layer = 15;
             }
-            smokeColor.r = 0.75f;
-            smokeColor.g = 0.75f;
-            smokeColor.b = 0.75f;
+            smokeColor.r = 0.85f;
+            smokeColor.g = 0.85f;
+            smokeColor.b = 0.85f;
             smokeColor.a = 0.75f;
             bulletTrail[0].material.mainTexture = GameDatabase.Instance.GetTexture(bulletTexturePath, false);
             bulletTrail[0].material.SetColor("_TintColor", currentColor);
             bulletTrail[0].material.SetFloat("_Lum", (tracerLuminance > 0? tracerLuminance : 0.25f));
-            if (!string.IsNullOrEmpty(smokeTexturePath))
-            {
+            //if (!string.IsNullOrEmpty(smokeTexturePath))
+            //{
                 bulletTrail[1].material.mainTexture = GameDatabase.Instance.GetTexture(smokeTexturePath, false);
                 bulletTrail[1].material.SetColor("_TintColor", smokeColor);
                 bulletTrail[1].material.SetFloat("_Lum", 0.5f);
                 bulletTrail[1].textureMode = LineTextureMode.Tile;
-                bulletTrail[1].material.SetTextureScale("_MainTex", new Vector2(0.1f, 1));
+                bulletTrail[1].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                bulletTrail[1].receiveShadows = false;
                 bulletTrail[1].enabled = (tracerLuminance > 0);
-            }
-            else
-            {
-                bulletTrail[1].material.mainTexture = GameDatabase.Instance.GetTexture("BDArmory/Textures/tracerSmoke", false);
-                bulletTrail[1].enabled = false;
-            }
+            //}
+            //else
+            //{
+            //    bulletTrail[1].material.mainTexture = GameDatabase.Instance.GetTexture("BDArmory/Textures/tracerSmoke", false);
+            //    bulletTrail[1].textureMode = LineTextureMode.Tile;
+            //    bulletTrail[1].enabled = false;
+            //}
 
             tracerStartWidth *= 2f;
             tracerEndWidth *= 2f;
@@ -1695,7 +1697,7 @@ namespace BDArmory.Bullets
             bulletTrail[0].startWidth = tracerStartWidth * factor * randomWidthScale;
             bulletTrail[0].endWidth = tracerEndWidth * factor * randomWidthScale;
 
-            bulletTrail[1].startWidth = (0.04f) * factor * 0.5f;
+            bulletTrail[1].startWidth = (0.025f) * factor * 0.5f;
             bulletTrail[1].endWidth = (0.01f) * factor * 0.5f;
         }
 
@@ -1726,7 +1728,7 @@ namespace BDArmory.Bullets
             }
             linePositions[1] = transform.position;
             smokePositions[0] = startPosition;
-            smokePositions[bulletTrail[1].positionCount-1] = transform.position;
+            smokePositions[1] = transform.position;
             //if (Vector3.Distance(startPosition, transform.position) > 1000) smokePositions[0] = transform.position - ((currentVelocity - FlightGlobals.ActiveVessel.Velocity()).normalized * 1000);
             bulletTrail[0].SetPositions(linePositions);
             bulletTrail[1].SetPositions(smokePositions);
@@ -1790,12 +1792,7 @@ namespace BDArmory.Bullets
             currentVelocity = Vector3.RotateTowards(currentVelocity, randomDirection,
                 UnityEngine.Random.Range(0f, 5f) * Mathf.Deg2Rad, 0);
             MoveBullet((1f - fractionOfDistance) * period);
-            if (tracerLuminance > 0)
-            {
-                bulletTrail[1].positionCount += 1;
-                smokePositions = new Vector3[bulletTrail[1].positionCount];
-                smokePositions[bulletTrail[1].positionCount - 2] = hit.point;
-            }
+            bulletTrail[1].enabled = false;
         }
 
         private float GetExplosivePower()
