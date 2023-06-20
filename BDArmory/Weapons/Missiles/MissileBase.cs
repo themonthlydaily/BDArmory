@@ -36,6 +36,12 @@ namespace BDArmory.Weapons.Missiles
             return weaponClass;
         }
 
+        ModuleWeapon weap = null;
+        public ModuleWeapon GetWeaponModule()
+        {
+            return weap;
+        }
+
         public string GetMissileType()
         {
             return missileType;

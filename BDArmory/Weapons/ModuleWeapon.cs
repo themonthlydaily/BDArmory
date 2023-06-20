@@ -284,7 +284,10 @@ namespace BDArmory.Weapons
                 return WeaponClasses.DefenseLaser;
             }
         }
-
+        public ModuleWeapon GetWeaponModule()
+        {
+            return this;
+        }
         public Part GetPart()
         {
             return part;
@@ -659,7 +662,7 @@ namespace BDArmory.Weapons
         public string bulletTexturePath = "BDArmory/Textures/bullet";
 
         [KSPField]
-        public string smokeTexturePath; // = "BDArmory/Textures/tracerSmoke";
+        public string smokeTexturePath = ""; // = "BDArmory/Textures/tracerSmoke";
 
         [KSPField]
         public string laserTexturePath = "BDArmory/Textures/laser";
@@ -2072,7 +2075,6 @@ namespace BDArmory.Weapons
                                     pBullet.sourceVessel = vessel;
                                     pBullet.team = weaponManager.Team.Name;
                                     pBullet.bulletTexturePath = bulletTexturePath;
-                                    pBullet.smokeTexturePath = smokeTexturePath;
                                     pBullet.projectileColor = projectileColorC;
                                     pBullet.startColor = startColorC;
                                     pBullet.fadeColor = fadeColor;
@@ -2084,21 +2086,22 @@ namespace BDArmory.Weapons
                                         pBullet.tracerEndWidth = tracerEndWidth;
                                         pBullet.tracerLength = tracerLength;
                                         pBullet.tracerLuminance = tracerLuminance;
+                                        if (!string.IsNullOrEmpty(smokeTexturePath)) pBullet.smokeTexturePath = smokeTexturePath;
                                     }
                                     else
                                     {
                                         pBullet.tracerStartWidth = nonTracerWidth;
                                         pBullet.tracerEndWidth = nonTracerWidth;
-                                        pBullet.startColor.a *= 0.25f;
-                                        pBullet.projectileColor.a *= 0.25f;
-                                        pBullet.projectileColor.a *= 0.25f;
                                         if (!string.IsNullOrEmpty(smokeTexturePath))
                                         {
                                             pBullet.projectileColor = Color.grey;
                                             pBullet.startColor = Color.grey;
                                             pBullet.tracerLength = 0;
                                             pBullet.tracerLuminance = -1;
+                                            pBullet.projectileColor.a *= 0.5f;
                                         }
+                                        pBullet.startColor.a *= 0.5f;
+                                        pBullet.projectileColor.a *= 0.5f;
                                     }
                                     pBullet.tracerDeltaFactor = tracerDeltaFactor;
                                     pBullet.bulletDrop = bulletDrop;

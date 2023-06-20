@@ -21,8 +21,8 @@ namespace BDArmory.Weapons
         [KSPField(isPersistant = true, guiActive = true, guiName = "WARNING: Reactor Safeties:", guiActiveEditor = false), UI_Label(affectSymCounterparts = UI_Scene.All, scene = UI_Scene.All)]//Weapon Name
         public string status = "OFFLINE";
 
-        [KSPField(isPersistant = true, guiActive = true, guiName = "Coolant Remaining", guiActiveEditor = false), UI_Label(scene = UI_Scene.All)]
-        public double fuelleft = 0;
+        //[KSPField(isPersistant = true, guiActive = true, guiName = "Coolant Remaining", guiActiveEditor = false), UI_Label(scene = UI_Scene.All)]
+        //public double fuelleft = 0;
 
         public static string defaultflashModelPath = "BDArmory/Models/explosion/nuke/nukeFlash";
         [KSPField]
@@ -64,13 +64,13 @@ namespace BDArmory.Weapons
         public bool engineCore = false;
 
         [KSPField(isPersistant = true)]
+        public bool fuelCheck = false;
+
+        [KSPField(isPersistant = true)]
         public float meltDownDuration = 2.5f;
 
-        private int FuelID;
-        private int MPID;
-        private int XeID;
-        bool usesMono = false;
-        bool usesXe = false;
+        int engineCount = 1;
+
         private bool hasDetonated = false;
         private bool goingCritical = false;
         public string Sourcevessel;
@@ -88,60 +88,47 @@ namespace BDArmory.Weapons
                 return missile;
             }
         }
-
+        ModuleEngines thisEngine;
+        public ModuleEngines engineCoreEngine
+        {
+            get
+            {
+                if (thisEngine) return thisEngine;
+                thisEngine = part.FindModuleImplementing<ModuleEngines>();
+                return thisEngine;
+            }
+        }
         public void Start()
         {
             if (HighLogic.LoadedSceneIsFlight)
             {
                 if (engineCore)
                 {
-                    FuelID = PartResourceLibrary.Instance.GetDefinition("LiquidFuel").id;
-                    vessel.GetConnectedResourceTotals(FuelID, out double fuelCurrent, out double fuelMax);
-                    fuelleft = fuelCurrent;
-                    MPID = PartResourceLibrary.Instance.GetDefinition("MonoPropellant").id;
-                    vessel.GetConnectedResourceTotals(MPID, out double mpCurrent, out double mpMax);
-                    fuelleft += mpCurrent;
-                    XeID = PartResourceLibrary.Instance.GetDefinition("Xenon").id;
-                    vessel.GetConnectedResourceTotals(XeID, out double xeCurrent, out double xeMax);
-                    fuelleft += xeCurrent;
-                    var engine = part.FindModuleImplementing<ModuleEngines>();
-                    if (engine != null)
+                    engineCount = 1;
+                    if (part.vessel.rootPart != null)
                     {
-                        engine.allowShutdown = false;
+                        if (part == part.vessel.rootPart)
+                        {
+                            engineCount = VesselModuleRegistry.GetModuleCount<ModuleEngines>(vessel);
+                        }
                     }
-                    part.force_activate();
+                    else
+                    {
+                        if (engineCoreEngine != null)
+                        {
+                            engineCoreEngine.allowShutdown = false;
+                        }
+                        part.force_activate();
+                    }
                 }
                 else
                 {
-                    Fields["status"].guiActive = false;
+                    //Fields["status"].guiActive = false;
                     Fields["fuelleft"].guiActive = false;
-                    Fields["status"].guiActiveEditor = false;
+                    //Fields["status"].guiActiveEditor = false;
                     Fields["fuelleft"].guiActiveEditor = false;
                 }
                 Sourcevessel = part.vessel.GetName();
-
-                var engines = VesselModuleRegistry.GetModules<ModuleEngines>(vessel);
-                if (engines != null)
-                {
-                    using (List<ModuleEngines>.Enumerator fuelType = engines.GetEnumerator())
-                    {
-                        while (fuelType.MoveNext())
-                        {
-                            if (fuelType.Current == null) continue;
-                            foreach (Propellant prop in fuelType.Current.propellants)
-                            {
-                                if (prop.name == "MonoPropellant")
-                                {
-                                    Debug.Log("[S5R10 DEBUG] MP Engine Found on " + part.vessel.GetName());
-                                    usesMono = true;
-                                }
-                            }
-                            if (fuelType.Current.engineType == EngineType.Electric) usesXe = true;
-                        }
-                    }
-                }
-                var RCS = VesselModuleRegistry.GetModules<ModuleRCS>(vessel);
-                if (RCS != null) usesMono = true;
 
                 if (engineCore) part.OnJustAboutToBeDestroyed += Detonate;
                 GameEvents.onVesselPartCountChanged.Add(CheckAttached);
@@ -155,50 +142,36 @@ namespace BDArmory.Weapons
             {
                 if (BDACompetitionMode.Instance.competitionIsActive) //only begin checking engine state after comp start
                 {
-                    if (engineCore)
+                    if (engineCore && (!goingCritical && !hasDetonated))
                     {
-                        vessel.GetConnectedResourceTotals(FuelID, out double fuelCurrent, out double fuelMax);
-                        fuelleft = fuelCurrent;
-                        if (usesMono)
+                        int engineOut = 0;
+                        if (part.vessel.rootPart == part)
                         {
-                            vessel.GetConnectedResourceTotals(MPID, out double mpCurrent, out double mpMax);
-                            fuelleft += mpCurrent;
-                        }
-                        if (usesXe)
-                        {
-                            vessel.GetConnectedResourceTotals(XeID, out double xeCurrent, out double xeMax);
-                            fuelleft += xeCurrent;
-                        }
-                        if (fuelleft <= 0)
-                        {
-                            if (!hasDetonated && !goingCritical)
+                            if (engineCount > 0)
                             {
-                                if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.RWPS3R2NukeModule]: nerva on " + (String.IsNullOrEmpty(Sourcevessel) ? Sourcevessel : part.vessel.GetName()) + " is out of fuel.");
-                                StartCoroutine(DelayedDetonation(meltDownDuration)); //bingo fuel, detonate
-
-                                if (BDACompetitionMode.Instance.competitionIsActive)
+                                foreach (var e in VesselModuleRegistry.GetModules<ModuleEngines>(vessel))
                                 {
-                                    string msg = $"{vessel.GetName()} is out of fuel!";
-                                    BDACompetitionMode.Instance.competitionStatus.Add(msg);
+                                    if (e == null || e.flameout || e.vessel != part.vessel || e.thrustPercentage <=0) engineOut++;
                                 }
                             }
                         }
-                        var engine = part.FindModuleImplementing<ModuleEngines>();
-                        if (engine != null)
+                        else
                         {
-                            if (!engine.isEnabled || !engine.EngineIgnited) //so this is getting tripped by multimode engines toggling from wet/dry
+                            if (engineCoreEngine == null)
                             {
-                                if (!hasDetonated)
+                                if (engineCoreEngine.vessel.GetName() != Sourcevessel || engineCoreEngine.flameout)
+                                {
+                                    engineCount = 1;
+                                }
+
+                                if (!engineCoreEngine.isEnabled || !engineCoreEngine.EngineIgnited) //this is getting tripped by multimode engines toggling from wet/dry
                                 {
                                     if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.RWPS3R2NukeModule]: nerva on " + Sourcevessel + " is Off, detonating");
                                     Detonate(); //nuke engine off after comp start, detonate.
                                 }
-                            }
-                            if (engine.thrustPercentage < 100)
-                            {
-                                if (part.Modules.GetModule<HitpointTracker>().Hitpoints == part.Modules.GetModule<HitpointTracker>().GetMaxHitpoints())
+                                if (engineCoreEngine.thrustPercentage < 100)
                                 {
-                                    if (!hasDetonated)
+                                    if (part.Modules.GetModule<HitpointTracker>().Hitpoints == part.Modules.GetModule<HitpointTracker>().GetMaxHitpoints())
                                     {
                                         if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.RWPS3R2NukeModule]: nerva on " + Sourcevessel + " is manually thrust limited, detonating");
                                         Detonate(); //nuke engine off after comp start, detonate.
@@ -206,6 +179,16 @@ namespace BDArmory.Weapons
                                 }
                             }
                         }
+
+                        if (engineOut == engineCount)
+                        {
+                            if (!hasDetonated && !goingCritical)
+                            {
+                                if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.RWPS3R2NukeModule]: nerva on " + (String.IsNullOrEmpty(Sourcevessel) ? Sourcevessel : part.vessel.GetName()) + " is out of fuel.");
+                                StartCoroutine(DelayedDetonation(meltDownDuration)); //bingo fuel, detonate
+
+                            }
+                        }                      
                     }
                 }
             }
@@ -227,7 +210,31 @@ namespace BDArmory.Weapons
         {
             if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.RWPS3R2NukeModule]: Nuclear engine on " + Sourcevessel + " going critical in " + delay.ToString("0.0") + "s.");
             goingCritical = true;
-            yield return new WaitForSecondsFixed(delay);
+            yield return new WaitForSecondsFixed(0.5f);
+            if (part.vessel.rootPart == part) //double check to ensure vessel is legitimately out of fuel, and not from poorly timed drop tanks/ions running out of Ec but not Xe, etc
+            {
+                int engineOut = 0;
+                if (engineCount > 0)
+                {
+                    foreach (var e in VesselModuleRegistry.GetModules<ModuleEngines>(vessel))
+                    {
+                        if (e == null || e.flameout || e.vessel != part.vessel || e.thrustPercentage <= 0) engineOut++;
+                    }
+                }
+                if (engineOut != engineCount) //oops, we do still have working engines; abort!
+                {
+                    goingCritical = false;
+                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.BDModuleNuke]: engines on " + Sourcevessel + " still have fuel, aborting detonation");
+                    StopCoroutine(DelayedDetonation(delay));
+                }
+                if (BDACompetitionMode.Instance.competitionIsActive)
+                {
+                    string msg = $"{vessel.GetName()} is out of fuel!";
+                    BDACompetitionMode.Instance.competitionStatus.Add(msg);
+                }
+            }
+            yield return new WaitForSecondsFixed(delay-0.5f);
+
             if (!hasDetonated && part != null) Detonate();
         }
 

@@ -280,23 +280,22 @@ namespace BDArmory.Bullets
             smokeColor.a = 0.75f;
             bulletTrail[0].material.mainTexture = GameDatabase.Instance.GetTexture(bulletTexturePath, false);
             bulletTrail[0].material.SetColor("_TintColor", currentColor);
-            bulletTrail[0].material.SetFloat("_Lum", (tracerLuminance > 0? tracerLuminance : 0.25f));
-            //if (!string.IsNullOrEmpty(smokeTexturePath))
-            //{
+            bulletTrail[0].material.SetFloat("_Lum", (tracerLuminance > 0? tracerLuminance : 0.5f));
+            if (!string.IsNullOrEmpty(smokeTexturePath))
+            {
                 bulletTrail[1].material.mainTexture = GameDatabase.Instance.GetTexture(smokeTexturePath, false);
                 bulletTrail[1].material.SetColor("_TintColor", smokeColor);
                 bulletTrail[1].material.SetFloat("_Lum", 0.5f);
                 bulletTrail[1].textureMode = LineTextureMode.Tile;
+                bulletTrail[1].material.SetTextureScale("_MainTex", new Vector2(0.1f, 1));
                 bulletTrail[1].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 bulletTrail[1].receiveShadows = false;
-                bulletTrail[1].enabled = (tracerLuminance > 0);
-            //}
-            //else
-            //{
-            //    bulletTrail[1].material.mainTexture = GameDatabase.Instance.GetTexture("BDArmory/Textures/tracerSmoke", false);
-            //    bulletTrail[1].textureMode = LineTextureMode.Tile;
-            //    bulletTrail[1].enabled = false;
-            //}
+                bulletTrail[1].enabled = true;
+            }
+            else
+            {
+                bulletTrail[1].enabled = false;
+            }
 
             tracerStartWidth *= 2f;
             tracerEndWidth *= 2f;
@@ -335,6 +334,7 @@ namespace BDArmory.Bullets
             isAPSprojectile = false;
             tgtRocket = null;
             tgtShell = null;
+            smokeTexturePath = "";
         }
 
         void OnDestroy()
@@ -382,14 +382,14 @@ namespace BDArmory.Bullets
             if (fadeColor)
             {
                 FadeColor();
-                bulletTrail[0].material.SetColor("_TintColor", currentColor * (tracerLuminance > 0 ? tracerLuminance : 0.25f));
+                bulletTrail[0].material.SetColor("_TintColor", currentColor * (tracerLuminance > 0 ? tracerLuminance : 0.5f));
             }
             if (tracerLuminance > 1)
             {
-                float fade = Mathf.Lerp(0.75f, 0.05f, 0.005f);
+                float fade = Mathf.Lerp(0.75f, 0.05f, 0.01f);
                 smokeColor.a = fade;
                 bulletTrail[1].material.SetColor("_TintColor", smokeColor);
-                bulletTrail[1].enabled = (fade >= 0.05f);
+                if (fade <= 0.05f) bulletTrail[1].enabled = false;
             }
             SetTracerPosition();
 

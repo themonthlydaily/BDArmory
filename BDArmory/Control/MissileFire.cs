@@ -429,13 +429,15 @@ namespace BDArmory.Control
         public MissileBase CurrentMissile;
         public MissileBase PreviousMissile;
 
+        ModuleWeapon cGun;
+
         public ModuleWeapon currentGun
         {
             get
             {
                 if (selectedWeapon != null && (selectedWeapon.GetWeaponClass() == WeaponClasses.Gun || selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket || selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser))
                 {
-                    return selectedWeapon.GetPart().FindModuleImplementing<ModuleWeapon>();
+                    return selectedWeapon.GetWeaponModule();
                 }
                 else
                 {
@@ -443,14 +445,13 @@ namespace BDArmory.Control
                 }
             }
         }
-
         public ModuleWeapon previousGun
         {
             get
             {
                 if (previousSelectedWeapon != null && (previousSelectedWeapon.GetWeaponClass() == WeaponClasses.Gun || previousSelectedWeapon.GetWeaponClass() == WeaponClasses.Rocket || previousSelectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser))
                 {
-                    return previousSelectedWeapon.GetPart().FindModuleImplementing<ModuleWeapon>();
+                    return previousSelectedWeapon.GetWeaponModule();
                 }
                 else
                 {
@@ -989,7 +990,7 @@ namespace BDArmory.Control
                         if (weapon.Current.GetShortName() != selectedWeaponString) continue;
                         if (weapon.Current.GetWeaponClass() == WeaponClasses.Gun || weapon.Current.GetWeaponClass() == WeaponClasses.Rocket || weapon.Current.GetWeaponClass() == WeaponClasses.DefenseLaser)
                         {
-                            var gun = weapon.Current.GetPart().FindModuleImplementing<ModuleWeapon>();
+                            var gun = weapon.Current.GetWeaponModule();
                             sw = weapon.Current; //check against salvofiring turrets - if all guns overheat at the same time, turrets get stuck in standby mode
                             if (gun.isReloading || gun.isOverheated || gun.pointingAtSelf || !(gun.ammoCount > 0 || BDArmorySettings.INFINITE_AMMO)) continue; //instead of returning the first weapon in a weapon group, return the first weapon in a group that actually can fire
                             //no check for if all weapons in the group are reloading/overheated...
@@ -3051,20 +3052,17 @@ namespace BDArmory.Control
                     {
                         if (!gunRippleIndex.ContainsKey(weapon.Current.GetPartName())) //I think the empty rocketpod? contine might have been tripping up the ripple dict and not adding the hydra
                             gunRippleIndex.Add(weapon.Current.GetPartName(), 0);
-                    }
-                    //dont add empty rocket pods
-                    if (weapon.Current.GetWeaponClass() == WeaponClasses.Rocket &&
-                        (weapon.Current.GetPart().FindModuleImplementing<ModuleWeapon>().rocketPod && !weapon.Current.GetPart().FindModuleImplementing<ModuleWeapon>().externalAmmo) &&
-                        weapon.Current.GetPart().FindModuleImplementing<ModuleWeapon>().GetRocketResource().amount < 1
-                        && !BDArmorySettings.INFINITE_AMMO)
-                    {
-                        continue;
-                    }
-                    //dont add APS
-                    if ((weapon.Current.GetWeaponClass() == WeaponClasses.Gun || weapon.Current.GetWeaponClass() == WeaponClasses.Rocket || weapon.Current.GetWeaponClass() == WeaponClasses.DefenseLaser) &&
-                        (weapon.Current.GetPart().FindModuleImplementing<ModuleWeapon>().isAPS && !weapon.Current.GetPart().FindModuleImplementing<ModuleWeapon>().dualModeAPS))
-                    {
-                        continue;
+                        var gun = weapon.Current.GetWeaponModule();
+                        //dont add empty rocket pods
+                        if ((gun.rocketPod && !gun.externalAmmo) && gun.GetRocketResource().amount < 1 && !BDArmorySettings.INFINITE_AMMO)
+                        {
+                            continue;
+                        }
+                        //dont add APS
+                        if (gun.isAPS && !gun.dualModeAPS)
+                        {
+                            continue;
+                        }
                     }
                     if (!alreadyAdded)
                     {
