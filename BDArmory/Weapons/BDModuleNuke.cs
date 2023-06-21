@@ -69,8 +69,6 @@ namespace BDArmory.Weapons
         [KSPField(isPersistant = true)]
         public float meltDownDuration = 2.5f;
 
-        int engineCount = 1;
-
         private bool hasDetonated = false;
         private bool goingCritical = false;
         public string Sourcevessel;
@@ -104,15 +102,7 @@ namespace BDArmory.Weapons
             {
                 if (engineCore)
                 {
-                    engineCount = 1;
-                    if (part.vessel.rootPart != null)
-                    {
-                        if (part == part.vessel.rootPart)
-                        {
-                            engineCount = VesselModuleRegistry.GetModuleCount<ModuleEngines>(vessel);
-                        }
-                    }
-                    else
+                    if (part.vessel.rootPart != part)
                     {
                         if (engineCoreEngine != null)
                         {
@@ -144,24 +134,26 @@ namespace BDArmory.Weapons
                 {
                     if (engineCore && (!goingCritical && !hasDetonated))
                     {
-                        int engineOut = 0;
+                        bool engineOut = true;
                         if (part.vessel.rootPart == part)
                         {
-                            if (engineCount > 0)
+                            foreach (var e in VesselModuleRegistry.GetModules<ModuleEngines>(vessel))
                             {
-                                foreach (var e in VesselModuleRegistry.GetModules<ModuleEngines>(vessel))
+                                if (e != null && !e.flameout && e.vessel == part.vessel && e.thrustPercentage > 0)
                                 {
-                                    if (e == null || e.flameout || e.vessel != part.vessel || e.thrustPercentage <= 0) engineOut++;
+                                    engineOut = false; //we have a functioning engine, hold off on detonation
+                                    break;
                                 }
                             }
                         }
                         else
                         {
-                            if (engineCoreEngine == null)
+                            engineOut = false;
+                            if (engineCoreEngine != null)
                             {
                                 if (engineCoreEngine.vessel.GetName() != Sourcevessel || engineCoreEngine.flameout)
                                 {
-                                    engineCount = 1;
+                                    engineOut = true;
                                 }
 
                                 if (!engineCoreEngine.isEnabled || !engineCoreEngine.EngineIgnited) //this is getting tripped by multimode engines toggling from wet/dry
@@ -174,13 +166,13 @@ namespace BDArmory.Weapons
                                     if (part.Modules.GetModule<HitpointTracker>().Hitpoints == part.Modules.GetModule<HitpointTracker>().GetMaxHitpoints())
                                     {
                                         if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.RWPS3R2NukeModule]: nerva on " + Sourcevessel + " is manually thrust limited, detonating");
-                                        Detonate(); //nuke engine off after comp start, detonate.
+                                        Detonate(); //nuke engine throttle limit modified after comp start and it wasn't battle damage, detonate.
                                     }
                                 }
                             }
                         }
 
-                        if (engineOut == engineCount)
+                        if (engineOut)
                         {
                             if (!hasDetonated && !goingCritical)
                             {
@@ -213,15 +205,18 @@ namespace BDArmory.Weapons
             yield return new WaitForSecondsFixed(0.5f);
             if (part.vessel.rootPart == part) //double check to ensure vessel is legitimately out of fuel, and not from poorly timed drop tanks/ions running out of Ec but not Xe, etc
             {
-                int engineOut = 0;
-                if (engineCount > 0)
+                bool engineOut = true;
                 {
                     foreach (var e in VesselModuleRegistry.GetModules<ModuleEngines>(vessel))
                     {
-                        if (e == null || e.flameout || e.vessel != part.vessel || e.thrustPercentage <= 0) engineOut++;
+                        if (e != null && !e.flameout && e.vessel == part.vessel && e.thrustPercentage > 0)
+                        {
+                            engineOut = false; //we have a functioning engine, hold off on detonation
+                            break;
+                        }
                     }
                 }
-                if (engineOut != engineCount) //oops, we do still have working engines; abort!
+                if (!engineOut) //oops, we do still have working engines; abort!
                 {
                     goingCritical = false;
                     if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.BDModuleNuke]: engines on " + Sourcevessel + " still have fuel, aborting detonation");
