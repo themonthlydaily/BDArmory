@@ -652,7 +652,9 @@ namespace BDArmory.Control
             { nameof(dynamicSteerDampingYawFactor), 100f },
             { nameof(DynamicDampingRollMin), 100f },
             { nameof(DynamicDampingRollMax), 100f },
-            { nameof(dynamicSteerDampingRollFactor), 100f }
+            { nameof(dynamicSteerDampingRollFactor), 100f },
+            { nameof(autoTuningAltitude), 100000f },
+            { nameof(autoTuningSpeed), 3000f }
         };
         Dictionary<string, float> altMinValues = new Dictionary<string, float> {
             { nameof(extendAngleAirToAir), -90f },

@@ -1276,7 +1276,7 @@ namespace BDArmory.UI
                                     ++autoTuneLines;
                                 }
 
-                                if (!NumFieldsEnabled) ActivePilot.autoTuningAltitude = BDAMath.RoundToUnit(GUI.HorizontalSlider(SettingSliderRect(leftIndent, pidLines + autoTuneLines, contentWidth), ActivePilot.autoTuningAltitude, 50f, 5000f), 50f);
+                                if (!NumFieldsEnabled) ActivePilot.autoTuningAltitude = BDAMath.RoundToUnit(GUI.HorizontalSlider(SettingSliderRect(leftIndent, pidLines + autoTuneLines, contentWidth), ActivePilot.autoTuningAltitude, 50f, ActivePilot.UpToEleven ? 100000f : 5000f), 50f);
                                 else
                                 {
                                     inputFields["autoTuningAltitude"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + autoTuneLines, contentWidth), inputFields["autoTuningAltitude"].possibleValue, 6, inputFieldStyle));
@@ -1288,7 +1288,7 @@ namespace BDArmory.UI
                                     GUI.Label(ContextLabelRect(leftIndent, pidLines + autoTuneLines++), StringUtils.Localize("#LOC_BDArmory_AIWindow_PIDAutoTuningAltitudeContext"), Label);
                                 }
 
-                                if (!NumFieldsEnabled) ActivePilot.autoTuningSpeed = BDAMath.RoundToUnit(GUI.HorizontalSlider(SettingSliderRect(leftIndent, pidLines + autoTuneLines, contentWidth), ActivePilot.autoTuningSpeed, 50f, 800f), 5f);
+                                if (!NumFieldsEnabled) ActivePilot.autoTuningSpeed = BDAMath.RoundToUnit(GUI.HorizontalSlider(SettingSliderRect(leftIndent, pidLines + autoTuneLines, contentWidth), ActivePilot.autoTuningSpeed, 50f, ActivePilot.UpToEleven ? 3000f : 800f), 5f);
                                 else
                                 {
                                     inputFields["autoTuningSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + autoTuneLines, contentWidth), inputFields["autoTuningSpeed"].possibleValue, 6, inputFieldStyle));
