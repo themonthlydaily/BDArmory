@@ -1,4 +1,6 @@
 ﻿IMPROVEMENTS / FIXES
+- General:
+	- Make ammo consumption respect staging and priority order.
 - AI:
 	- Make the autotuning re-centering distance customisable.
 	- Add unclamped max values for auto-tuning speed and altitude.
