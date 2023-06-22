@@ -576,7 +576,7 @@ namespace BDArmory.Weapons
         public bool descendingOrder = true;
         public float thrustDeviation = 0.10f;
         [KSPField] public bool rocketPod = true; //is the RL a rocketpod, or a gyrojet gun?
-        [KSPField] public bool externalAmmo = false; //used for rocketlaunchers that are Gyrojet guns drawing from ammoboxes instead of internals 
+        [KSPField] public bool externalAmmo = true; // weapon is supplied by external ammo boxes isntead of internal supplly (e.g. guns vs rocket pods)
         Transform[] rockets;
         double rocketsMax;
         private RocketInfo rocketInfo;
@@ -1179,6 +1179,15 @@ namespace BDArmory.Weapons
             }
             if (eWeaponType == WeaponTypes.Rocket)
             {
+                try
+                {
+                    externalAmmo = bool.Parse(ConfigNodeUtils.FindPartModuleConfigNodeValue(part.partInfo.partConfig, "ModuleWeapon", "externalAmmo"));
+                }
+                catch
+                {
+                    externalAmmo = false;
+                    Debug.LogError($"[BDArmory.ModuleWeapon] {shortName} missing externalAmmo field in .cfg! Fix your .cfg!");
+                }
                 if (rocketPod && externalAmmo)
                 {
                     BeltFed = false;
@@ -3001,9 +3010,21 @@ namespace BDArmory.Weapons
                 }
                 //else return true; //this is causing weapons thath have ECPerShot + standard ammo (railguns, etc) to not consume ammo, only EC
             }
-            if (part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot) > 0)
+
+
+            if (externalAmmo)
             {
-                return true;
+                if (part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot, ResourceFlowMode.STAGE_PRIORITY_FLOW_BALANCE) > 0)
+                {
+                    return true;
+                }
+            }
+            else //for guns with internal ammo supplies and no external, only draw from the weapon part
+            {
+                if (part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot, ResourceFlowMode.NO_FLOW) > 0)
+                {
+                    return true;
+                }
             }
             StartCoroutine(IncrementRippleIndex(useRippleFire ? InitialFireDelay * TimeWarp.CurrentRate : 0)); //if out of ammo (howitzers, say, or other weapon with internal ammo, move on to next weapon; maybe it still has ammo
             isRippleFiring = true;
