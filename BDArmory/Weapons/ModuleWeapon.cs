@@ -3010,8 +3010,6 @@ namespace BDArmory.Weapons
                 }
                 //else return true; //this is causing weapons thath have ECPerShot + standard ammo (railguns, etc) to not consume ammo, only EC
             }
-
-
             if (externalAmmo)
             {
                 if (part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot, ResourceFlowMode.STAGE_PRIORITY_FLOW_BALANCE) > 0)
