@@ -24,9 +24,15 @@
         - include a significant delay when doing so (e.g., 2-5x the reload time for reconfiguring them)
         - would require manual intervention, unless some good way for the AI to decide to switch ammo is added
     - Seismic charges - needs Concodroid's model.
-    - Difficulty settings for the AI
+    - Difficulty settings possibilities:
         - Makes it easier for human vs AI combat.
         - Adds "measurement" noise to the target's position, velocity and acceleration
+        - AI lacking acceleration info for targeting.
+        - Precision reduction option in aiming guns/guiding missiles.
+        - Laser turrets will still be deadly accurate (increasing maxDeviation would amount to the same thing as targeting jitter).
+        - Add noise (fn of game time, not proper random) to targeting info.
+        - Multiply pos, vel, acc by 1+sin(t)/X for X=10, 100, etc. to simulate sampling noise. t doesn't need to be game time, but something related to the vessel (e.g., speed + time)
+    - Multiple ammo types used per shot for weapons (other than just EC).
 
 - ? Add an action group trigger to the WM based on the current target being an enemy vessel within a custom distance. - Make it a collapsable section of custom triggers to include other conditions later.
 - Artillery aiming support
