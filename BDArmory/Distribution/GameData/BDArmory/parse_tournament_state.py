@@ -76,7 +76,7 @@ if not args.re_encode:  # Decode the tournament.state to pure JSON and optionall
         print(json.dumps(state, indent=2))
 
 else:  # Re-encode the tournament.json to a tournament.state file
-    raise NotImplementedError("JSON -> state conversion not yet implemented.")
+    raise NotImplementedError("JSON -> state conversion not yet implemented. Please be patient.")
     with open(json_file, "r") as f:
         state = json.load(f)
 

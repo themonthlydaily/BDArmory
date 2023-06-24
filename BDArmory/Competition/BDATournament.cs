@@ -229,6 +229,8 @@ namespace BDArmory.Competition
             return weights.Sum(kvp => kvp.Value * playerScore[kvp.Key]);
         }
 
+        public List<string> GetRankedCraftFiles() => scores.OrderByDescending(kvp => kvp.Value).Select(kvp => playersToFileNames[kvp.Key]).ToList(); // Get the craft files in descending order of the currently computed scores.
+
         #region Serialization
         [SerializeField] List<string> _weightKeys;
         [SerializeField] List<float> _weightValues;
@@ -483,7 +485,15 @@ namespace BDArmory.Competition
             savegame = HighLogic.SaveFolder;
             tournamentType = TournamentType.FFA;
             this.tournamentStyle = tournamentStyle;
+            if (tournamentStyle != TournamentStyle.RNG && tournamentRoundType == TournamentRoundType.Ranked)
+            {
+                message = "Ranked tournament mode is invalid for non-RNG style tournaments.";
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
+                Debug.Log($"[BDArmory.BDATournament]: " + message);
+                return false;
+            }
             this.tournamentRoundType = tournamentRoundType;
+            numberOfRounds = tournamentRoundType == TournamentRoundType.Ranked ? 1 : numberOfRounds; // Ranked tournaments generate a single Shuffled round, then just go until the current number of rounds slider +1 is satisfied.
             this.numberOfRounds = numberOfRounds;
             this.vesselsPerHeat = vesselsPerHeat;
             var abs_folder = Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", folder);
@@ -518,7 +528,7 @@ namespace BDArmory.Competition
             {
                 case TournamentStyle.RNG: // RNG
                     {
-                        message = $"Generating {numberOfRounds} randomised rounds for tournament {tournamentID} for {vesselCount} vessels in AutoSpawn{(folder == "" ? "" : "/" + folder)}, each with {vesselsPerHeat} vessels per heat.";
+                        message = $"Generating {numberOfRounds} randomised rounds for {(tournamentRoundType == TournamentRoundType.Ranked ? "ranked " : "")}tournament {tournamentID} for {vesselCount} vessels in AutoSpawn{(folder == "" ? "" : "/" + folder)}, each with up to {vesselsPerHeat} vessels per heat.";
                         Debug.Log("[BDArmory.BDATournament]: " + message);
                         BDACompetitionMode.Instance.competitionStatus.Add(message);
                         for (int roundIndex = 0; roundIndex < numberOfRounds; ++roundIndex)
@@ -556,7 +566,7 @@ namespace BDArmory.Competition
                 case TournamentStyle.nCk: // N-choose-K
                     {
                         var nCr = N_Choose_K(vesselCount, vesselsPerHeat);
-                        message = $"Generating a round-robin style tournament for {vesselCount} vessels in AutoSpawn{(folder == "" ? "" : "/" + folder)} with {vesselsPerHeat} vessels per heat and {numberOfRounds} rounds. This requires {numberOfRounds * nCr} heats.";
+                        message = $"Generating a round-robin style tournament for {vesselCount} vessels in AutoSpawn{(folder == "" ? "" : "/" + folder)} with up to {vesselsPerHeat} vessels per heat and {numberOfRounds} rounds. This requires {numberOfRounds * nCr} heats.";
                         Debug.Log($"[BDArmory.BDATournament]: " + message);
                         BDACompetitionMode.Instance.competitionStatus.Add(message);
                         // Generate all combinations of vessels for a round.
@@ -616,7 +626,15 @@ namespace BDArmory.Competition
             savegame = HighLogic.SaveFolder;
             tournamentType = TournamentType.Teams;
             this.tournamentStyle = tournamentStyle;
+            if (tournamentStyle != TournamentStyle.RNG && tournamentRoundType == TournamentRoundType.Ranked)
+            {
+                message = "Ranked tournament mode is invalid for non-RNG style tournaments.";
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
+                Debug.Log($"[BDArmory.BDATournament]: " + message);
+                return false;
+            }
             this.tournamentRoundType = tournamentRoundType;
+            numberOfRounds = tournamentRoundType == TournamentRoundType.Ranked ? 1 : numberOfRounds; // Ranked tournaments generate a single Shuffled round, then just go until the current number of rounds slider +1 is satisfied.
             var absFolder = Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", folder);
             if (!Directory.Exists(absFolder))
             {
@@ -820,8 +838,8 @@ namespace BDArmory.Competition
                         #region Tournament generation
                         var nCr = N_Choose_K(teamCount, teamsPerHeat) * N_Choose_K(opponentTeamCount, BDArmorySettings.TOURNAMENT_OPPONENT_TEAMS_PER_HEAT);
                         message = $"Generating a gauntlet style tournament for {teamCount} teams in AutoSpawn{(folder == "" ? "" : "/" + folder)} and {opponentTeamCount} opponent teams in {opponentFolder} with {BDArmorySettings.TOURNAMENT_OPPONENT_TEAMS_PER_HEAT} teams per heat and {numberOfRounds} rounds. This requires {numberOfRounds * nCr} heats.";
-                        Debug.Log($"[BDArmory.BDATournament]: " + message);
                         BDACompetitionMode.Instance.competitionStatus.Add(message);
+                        Debug.Log($"[BDArmory.BDATournament]: " + message);
                         // Generate all combinations of teams for a round.
                         var combinations = Combinations(teamCount, teamsPerHeat);
                         var opponentCombinations = Combinations(opponentTeamCount, BDArmorySettings.TOURNAMENT_OPPONENT_TEAMS_PER_HEAT);
@@ -867,8 +885,58 @@ namespace BDArmory.Competition
             return true;
         }
 
-        public bool GenerateRankedRound(List<Vessel> vessels)
-        { return true; }
+        /// <summary>
+        /// Generate a new ranked round for the tournament based on the current scores.
+        /// Note: The scores should be computed before calling this.
+        /// </summary>
+        /// <returns>true on success, false otherwise</returns>
+        public bool GenerateRankedRound()
+        {
+            if (rounds == null || rounds.Values.First() == null || rounds.Values.First().Values.First() == null)
+            {
+                Debug.LogWarning($"[BDArmory.BDATournament]: The initial round hasn't been set up yet. Unable to extend ranked rounds.");
+                return false;
+            }
+            int roundIndex = rounds.Count;
+            message = $"Generating ranked round {roundIndex} for tournament {tournamentID}.";
+            BDACompetitionMode.Instance.competitionStatus.Add(message);
+            Debug.Log($"[BDArmory.BDATournament]: {message}");
+            var craftFiles = scores.GetRankedCraftFiles();
+            int vesselsPerHeat = this.vesselsPerHeat; // Convert from the flag to the correct number per heat.
+            vesselCount = craftFiles.Count;
+            int fullHeatCount;
+            switch (vesselsPerHeat)
+            {
+                case -1: // Auto
+                    var autoVesselsPerHeat = OptimiseVesselsPerHeat(craftFiles.Count);
+                    vesselsPerHeat = autoVesselsPerHeat.Item1;
+                    fullHeatCount = Mathf.CeilToInt(craftFiles.Count / vesselsPerHeat) - autoVesselsPerHeat.Item2;
+                    break;
+                case 0: // Unlimited (all vessels in one heat).
+                    vesselsPerHeat = craftFiles.Count;
+                    fullHeatCount = 1;
+                    break;
+                default:
+                    vesselsPerHeat = Mathf.Clamp(vesselsPerHeat, 1, craftFiles.Count);
+                    fullHeatCount = craftFiles.Count / vesselsPerHeat;
+                    break;
+            }
+            int vesselsThisHeat = vesselsPerHeat;
+            int count = 0;
+            List<string> selectedFiles = craftFiles.Take(vesselsThisHeat).ToList();
+            var circularSpawnConfigTemplate = rounds.Values.First().Values.First();
+            rounds.Add(roundIndex, new Dictionary<int, CircularSpawnConfig>()); // Extend the rounds by 1.
+            int heatIndex = 0;
+            while (selectedFiles.Count > 0)
+            {
+                circularSpawnConfigTemplate.craftFiles = selectedFiles; // Set the craft file list to the currently selected ones.
+                rounds[roundIndex].Add(rounds[roundIndex].Count, new CircularSpawnConfig(circularSpawnConfigTemplate)); // Add a copy of the template to the heats.
+                count += vesselsThisHeat;
+                vesselsThisHeat = heatIndex++ < fullHeatCount ? vesselsPerHeat : vesselsPerHeat - 1; // Take one less for the remaining heats to distribute the deficit of craft files.
+                selectedFiles = craftFiles.Skip(count).Take(vesselsThisHeat).ToList();
+            }
+            return true;
+        }
 
         List<List<string>> SelectTeamCraft(List<int> selectedTeams, int vesselsPerTeam, bool opponentQueue = false)
         {
@@ -1166,9 +1234,9 @@ namespace BDArmory.Competition
                 teamsPerHeat = tournamentState.teamsPerHeat;
                 vesselsPerTeam = tournamentState.vesselsPerTeam;
                 fullTeams = tournamentState.fullTeams;
-                numberOfRounds = tournamentState.rounds.Count;
+                numberOfRounds = tournamentState.tournamentRoundType == TournamentRoundType.Ranked ? BDArmorySettings.TOURNAMENT_ROUNDS + 1 : tournamentState.rounds.Count;
                 numberOfHeats = numberOfRounds > 0 ? tournamentState.rounds[0].Count : 0;
-                heatsRemaining = tournamentState.rounds.Select(r => r.Value.Count).Sum() - tournamentState.completed.Select(c => c.Value.Count).Sum();
+                heatsRemaining = tournamentState.rounds.Select(r => r.Value.Count).Sum() - tournamentState.completed.Select(c => c.Value.Count).Sum() + (tournamentState.tournamentRoundType == TournamentRoundType.Ranked ? (BDArmorySettings.TOURNAMENT_ROUNDS + 1 - tournamentState.rounds.Count) * tournamentState.rounds.First().Value.Count : 0);
             }
             else
                 message = "Failed to load tournament state.";
@@ -1209,7 +1277,7 @@ namespace BDArmory.Competition
         {
             if (tournamentState != null && tournamentState.rounds != null)
             {
-                heatsRemaining = tournamentState.rounds.Select(r => r.Value.Count).Sum() - tournamentState.completed.Select(c => c.Value.Count).Sum();
+                heatsRemaining = tournamentState.rounds.Select(r => r.Value.Count).Sum() - tournamentState.completed.Select(c => c.Value.Count).Sum() + (tournamentState.tournamentRoundType == TournamentRoundType.Ranked ? (BDArmorySettings.TOURNAMENT_ROUNDS + 1 - tournamentState.rounds.Count) * tournamentState.rounds.First().Value.Count : 0);
                 if (heatsRemaining > 0 && heatsRemaining < numberOfRounds * numberOfHeats) // Started, but incomplete tournament.
                 {
                     SaveTournamentState(BDArmorySettings.TOURNAMENT_BACKUPS);
@@ -1233,9 +1301,9 @@ namespace BDArmory.Competition
             this.teamsPerHeat = tournamentState.teamsPerHeat;
             this.vesselsPerTeam = tournamentState.vesselsPerTeam;
             fullTeams = tournamentState.fullTeams;
-            numberOfRounds = tournamentState.rounds.Count;
+            numberOfRounds = tournamentState.tournamentRoundType == TournamentRoundType.Ranked ? BDArmorySettings.TOURNAMENT_ROUNDS + 1 : tournamentState.rounds.Count;
             numberOfHeats = numberOfRounds > 0 ? tournamentState.rounds[0].Count : 0;
-            heatsRemaining = tournamentState.rounds.Select(r => r.Value.Count).Sum() - tournamentState.completed.Select(c => c.Value.Count).Sum();
+            heatsRemaining = tournamentState.rounds.Select(r => r.Value.Count).Sum() - tournamentState.completed.Select(c => c.Value.Count).Sum() + (tournamentState.tournamentRoundType == TournamentRoundType.Ranked ? (BDArmorySettings.TOURNAMENT_ROUNDS + 1 - tournamentState.rounds.Count) * tournamentState.rounds.First().Value.Count : 0);
             tournamentStatus = heatsRemaining > 0 ? TournamentStatus.Stopped : TournamentStatus.Completed;
             tournamentState.scores.Reset();
             SaveTournamentState();
@@ -1267,7 +1335,8 @@ namespace BDArmory.Competition
         {
             bool firstRun = true; // Whether a heat has been run yet (particularly for loading partway through a tournament).
             yield return new WaitForFixedUpdate();
-            foreach (var roundIndex in tournamentState.rounds.Keys)
+            int roundIndex = -1;
+            while (++roundIndex < tournamentState.rounds.Count) // tournamentState.rounds can change during the loop, so we can't just use an iterator now.
             {
                 currentRound = roundIndex;
                 foreach (var heatIndex in tournamentState.rounds[roundIndex].Keys)
@@ -1335,7 +1404,7 @@ namespace BDArmory.Competition
                     tournamentState.completed[roundIndex].Add(heatIndex);
                     tournamentState.scores.AddHeatScores(BDACompetitionMode.Instance.Scores); // Note: this is done after LogResults is called.
                     SaveTournamentState();
-                    heatsRemaining = tournamentState.rounds.Select(r => r.Value.Count).Sum() - tournamentState.completed.Select(c => c.Value.Count).Sum();
+                    heatsRemaining = tournamentState.rounds.Select(r => r.Value.Count).Sum() - tournamentState.completed.Select(c => c.Value.Count).Sum() + (tournamentState.tournamentRoundType == TournamentRoundType.Ranked ? (BDArmorySettings.TOURNAMENT_ROUNDS - roundIndex) * tournamentState.rounds.First().Value.Count : 0);
 
                     if (TournamentAutoResume.Instance != null && TournamentAutoResume.Instance.CheckMemoryUsage()) yield break;
 
@@ -1366,6 +1435,11 @@ namespace BDArmory.Competition
                         }
                         WaypointFollowingStrategy.Ghosts.Clear();
                         */
+                    }
+                    if (tournamentState.tournamentRoundType == TournamentRoundType.Ranked && roundIndex < BDArmorySettings.TOURNAMENT_ROUNDS) // Generate the next ranked round.
+                    {
+                        tournamentState.GenerateRankedRound();
+                        heatsRemaining = (BDArmorySettings.TOURNAMENT_ROUNDS - roundIndex) * tournamentState.rounds.First().Value.Count;
                     }
                     if (heatsRemaining > 0)
                     {
