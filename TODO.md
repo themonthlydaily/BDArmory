@@ -1,4 +1,5 @@
 ### Bugs
+- RemoveAllVessels can sometimes get stuck if the Kraken breaks the view frustrum due to SoI changes. Add a timeout and warning, possibly also an option to auto-quit if it breaks.
 - Auto-tuning with numeric input fields enabled in the AI GUI won't let the values change
 - Changing the slider resolution sometimes triggers clamping of unclamped values
 - HP of asteroids in the SPH is wrong.
