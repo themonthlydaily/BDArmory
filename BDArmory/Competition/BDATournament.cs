@@ -1212,7 +1212,7 @@ namespace BDArmory.Competition
                 heatsRemaining = tournamentState.rounds.Select(r => r.Value.Count).Sum() - tournamentState.completed.Select(c => c.Value.Count).Sum();
                 if (heatsRemaining > 0 && heatsRemaining < numberOfRounds * numberOfHeats) // Started, but incomplete tournament.
                 {
-                    SaveTournamentState(true);
+                    SaveTournamentState(BDArmorySettings.TOURNAMENT_BACKUPS);
                 }
             }
             if (stateFile != "") this.stateFile = stateFile;

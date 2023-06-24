@@ -6,6 +6,8 @@
 	- Add unclamped max values for auto-tuning speed and altitude.
 - Vessel Spawning:
 	- Disable gravity easing when using 'Warp Here' above 10m altitude.
+- Competition:
+	- Make the saving of backup tournaments optional (hidden setting TOURNAMENT_BACKUPS in settings.cfg).
 
 v1.6.3.0
 IMPROVEMENTS / FIXES
