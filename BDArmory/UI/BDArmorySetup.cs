@@ -37,7 +37,7 @@ namespace BDArmory.UI
         public static bool SMART_GUARDS = true;
         public static bool showTargets = true;
 
-        //=======Window position settings Git Issue #13
+        //=======Window position settings
         [BDAWindowSettingsField] public static Rect WindowRectToolbar;
         [BDAWindowSettingsField] public static Rect WindowRectGps;
         [BDAWindowSettingsField] public static Rect WindowRectSettings;
@@ -52,6 +52,7 @@ namespace BDArmory.UI
         [BDAWindowSettingsField] public static Rect WindowRectVesselSpawner;
         [BDAWindowSettingsField] public static Rect WindowRectVesselMover;
         [BDAWindowSettingsField] public static Rect WindowRectAI;
+        [BDAWindowSettingsField] public static Rect WindowRectScores;
 
         //reflection field lists
         static FieldInfo[] iFs;
@@ -694,6 +695,7 @@ namespace BDArmory.UI
             GUIUtils.RepositionWindow(ref WindowRectWingCommander);
             GUIUtils.RepositionWindow(ref WindowRectTargetingCam);
             GUIUtils.RepositionWindow(ref WindowRectAI);
+            GUIUtils.RepositionWindow(ref WindowRectScores);
         }
 
         void Update()

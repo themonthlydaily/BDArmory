@@ -897,10 +897,7 @@ namespace BDArmory.Radar
                 }
             }
 
-            if (Event.current.type == EventType.MouseUp && resizingWindow)
-            {
-                resizingWindow = false;
-            }
+            if (resizingWindow && Event.current.type == EventType.MouseUp) { resizingWindow = false; }
             const string windowTitle = "Radar";
             BDArmorySetup.WindowRectRadar = GUI.Window(524141, BDArmorySetup.WindowRectRadar, WindowRadar, windowTitle, GUI.skin.window);
             GUIUtils.UseMouseEventInRect(BDArmorySetup.WindowRectRadar);
@@ -2243,7 +2240,7 @@ namespace BDArmory.Radar
                     }
                 }
             }
-            
+
         }
 
         private void DrawDisplayedIRContacts()

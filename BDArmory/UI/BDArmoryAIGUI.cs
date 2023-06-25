@@ -591,7 +591,7 @@ namespace BDArmory.UI
             if (!windowBDAAIGUIEnabled || (!HighLogic.LoadedSceneIsFlight && !HighLogic.LoadedSceneIsEditor)) return;
             if (!stylesConfigured) ConfigureStyles();
             if (HighLogic.LoadedSceneIsFlight) BDArmorySetup.SetGUIOpacity();
-            if (Event.current.type == EventType.MouseUp && resizingWindow) { resizingWindow = false; }
+            if (resizingWindow && Event.current.type == EventType.MouseUp) { resizingWindow = false; }
             BDArmorySetup.WindowRectAI = GUI.Window(GUIUtility.GetControlID(FocusType.Passive), BDArmorySetup.WindowRectAI, WindowRectAI, "", BDArmorySetup.BDGuiSkin.window);//"BDA Weapon Manager"
             if (HighLogic.LoadedSceneIsFlight) BDArmorySetup.SetGUIOpacity(false);
             GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectAI);

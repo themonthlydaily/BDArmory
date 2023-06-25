@@ -59,9 +59,10 @@ namespace BDArmory.Competition
     {
         Dictionary<string, string> playersToFileNames = new Dictionary<string, string>(); // Match players with craft filenames for extending ranks rounds.
         public Dictionary<string, float> scores = new Dictionary<string, float>(); // The current scores for the tournament.
+        public float lastUpdated = 0;
         Dictionary<string, List<ScoringData>> scoreDetails = new Dictionary<string, List<ScoringData>>(); // Scores per player per round. Rounds players weren't involved in contain default ScoringData entries.
         List<CompetitionOutcome> competitionOutcomes = new List<CompetitionOutcome>();
-        public Dictionary<string, float> weights = new Dictionary<string, float> {
+        public static Dictionary<string, float> weights = new Dictionary<string, float> {
             {"Wins",                    1f},
             {"Survived",                0f},
             {"MIA",                     0f},
@@ -107,6 +108,7 @@ namespace BDArmory.Competition
             scoreDetails.Clear();
             scores.Clear();
             competitionOutcomes.Clear();
+            lastUpdated = Time.time;
         }
 
         /// <summary>
@@ -133,7 +135,7 @@ namespace BDArmory.Competition
         /// Only valid weights in the newWeights dictionary are updated.
         /// </summary>
         /// <param name="newWeights">A dictionary of weights to update.</param>
-        public void ConfigureScoreWeights(Dictionary<string, float> newWeights)
+        public static void ConfigureScoreWeights(Dictionary<string, float> newWeights)
         {
             if (newWeights == null) return;
             foreach (var key in newWeights.Keys)
@@ -174,6 +176,7 @@ namespace BDArmory.Competition
         {
             scores.Clear();
             foreach (var player in scoreDetails.Keys) scores[player] = ComputeScore(player);
+            lastUpdated = Time.time;
             if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDATournament]: Tournament scores: {string.Join(", ", scores.Select(s => $"{s.Key}: {s.Value}"))}");
         }
 
@@ -1663,6 +1666,24 @@ namespace BDArmory.Competition
             if (enable) { KSP.UI.UIMasterController.Instance.ShowUI(); GameEvents.onShowUI.Fire(); }
             else { KSP.UI.UIMasterController.Instance.HideUI(); GameEvents.onHideUI.Fire(); }
         }
+
+        List<KeyValuePair<string, float>> rankedScores = new List<KeyValuePair<string, float>>();
+        float lastUpdatedRankedScores = 0;
+        public List<KeyValuePair<string, float>> GetRankedScores // Get a list of the scores in ranked order.
+        {
+            get
+            {
+                if (tournamentState.scores.lastUpdated > lastUpdatedRankedScores)
+                {
+                    rankedScores = tournamentState.scores.scores.OrderByDescending(kvp => kvp.Value).Select(kvp => new KeyValuePair<string, float>(kvp.Key, kvp.Value)).ToList();
+                    lastUpdatedRankedScores = tournamentState.scores.lastUpdated;
+                    if (ScoreWindow.Instance != null) ScoreWindow.Instance.ResetWindowSize();
+                }
+                return rankedScores;
+            }
+        }
+
+        public void RecomputeScores() => tournamentState.scores.ComputeScores();
     }
 
     /// <summary>
