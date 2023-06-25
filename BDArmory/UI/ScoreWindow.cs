@@ -17,6 +17,7 @@ namespace BDArmory.UI
         public static ScoreWindow Instance;
         public bool _ready = false;
 
+        int _buttonSize = 24;
         static int _guiCheckIndexScores = -1;
         Vector2 windowSize = new Vector2(200, 100);
         bool resizingWindow = false;
@@ -67,9 +68,27 @@ namespace BDArmory.UI
             leftLabel.alignment = TextAnchor.MiddleLeft;
             leftLabel.normal.textColor = Color.white;
             leftLabel.wordWrap = true;
+            leftLabel.fontSize = BDArmorySettings.SCORES_FONT_SIZE;
             rightLabel = new GUIStyle(leftLabel);
             rightLabel.alignment = TextAnchor.MiddleRight;
             rightLabel.wordWrap = false;
+        }
+
+        void AdjustFontSize(bool up)
+        {
+            if (up) ++BDArmorySettings.SCORES_FONT_SIZE;
+            else --BDArmorySettings.SCORES_FONT_SIZE;
+            if (up)
+            {
+                leftLabel.fontSize = BDArmorySettings.SCORES_FONT_SIZE;
+                rightLabel.fontSize = BDArmorySettings.SCORES_FONT_SIZE;
+            }
+            else
+            {
+                leftLabel.fontSize = BDArmorySettings.SCORES_FONT_SIZE;
+                rightLabel.fontSize = BDArmorySettings.SCORES_FONT_SIZE;
+            }
+            ResetWindowSize();
         }
 
         private void OnGUI()
@@ -119,10 +138,12 @@ namespace BDArmory.UI
 
         private void WindowScores(int id)
         {
-            if (GUI.Button(new Rect(0, 0, 24, 24), "UI", BDArmorySettings.SCORES_PERSIST_UI ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)) { BDArmorySettings.SCORES_PERSIST_UI = !BDArmorySettings.SCORES_PERSIST_UI; }
-            GUI.DragWindow(new Rect(24, 0, windowSize.x - 24 * 3, 24));
-            if (GUI.Button(new Rect(windowSize.x - 48, 0, 24, 24), "W", weightsVisible ? BDArmorySetup.SelectedButtonStyle : BDArmorySetup.ButtonStyle)) SetWeightsVisible(!weightsVisible);
-            if (GUI.Button(new Rect(windowSize.x - 24, 0, 24, 24), " X", BDArmorySetup.CloseButtonStyle)) SetVisible(false);
+            if (GUI.Button(new Rect(0, 0, _buttonSize, _buttonSize), "UI", BDArmorySettings.SCORES_PERSIST_UI ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)) { BDArmorySettings.SCORES_PERSIST_UI = !BDArmorySettings.SCORES_PERSIST_UI; }
+            if (GUI.Button(new Rect(_buttonSize, 0, _buttonSize, _buttonSize), "-", BDArmorySetup.BDGuiSkin.button)) AdjustFontSize(false);
+            if (GUI.Button(new Rect(2 * _buttonSize, 0, _buttonSize, _buttonSize), "+", BDArmorySetup.BDGuiSkin.button)) AdjustFontSize(true);
+            GUI.DragWindow(new Rect(3 * _buttonSize, 0, windowSize.x - _buttonSize * 5, _buttonSize));
+            if (GUI.Button(new Rect(windowSize.x - 2 * _buttonSize, 0, _buttonSize, _buttonSize), "W", weightsVisible ? BDArmorySetup.SelectedButtonStyle : BDArmorySetup.ButtonStyle)) SetWeightsVisible(!weightsVisible);
+            if (GUI.Button(new Rect(windowSize.x - _buttonSize, 0, _buttonSize, _buttonSize), " X", BDArmorySetup.CloseButtonStyle)) SetVisible(false);
 
             GUILayout.BeginVertical(GUI.skin.box, GUILayout.ExpandHeight(autoResizingWindow));
             if (!autoResizingWindow) scoreScrollPos = GUILayout.BeginScrollView(scoreScrollPos);
@@ -206,8 +227,8 @@ namespace BDArmory.UI
         }
         void WindowWeights(int id)
         {
-            GUI.DragWindow(new Rect(0, 0, weightsWindowRect.width - 24, 24));
-            if (GUI.Button(new Rect(weightsWindowRect.width - 24, 0, 24, 24), " X", BDArmorySetup.CloseButtonStyle)) SetWeightsVisible(false);
+            GUI.DragWindow(new Rect(0, 0, weightsWindowRect.width - _buttonSize, _buttonSize));
+            if (GUI.Button(new Rect(weightsWindowRect.width - _buttonSize, 0, _buttonSize, _buttonSize), " X", BDArmorySetup.CloseButtonStyle)) SetWeightsVisible(false);
             GUILayout.BeginVertical(GUILayout.ExpandHeight(true), GUILayout.ExpandWidth(true));
             weightsScrollPos = GUILayout.BeginScrollView(weightsScrollPos, GUI.skin.box);
             var now = Time.time;

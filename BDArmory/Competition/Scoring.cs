@@ -44,6 +44,7 @@ namespace BDArmory.Competition
             ScoreData = vessels.ToDictionary(v => v.vesselName, v => new ScoringData());
             foreach (var vessel in vessels)
             {
+                ScoreData[vessel.vesselName].competitionID = BDACompetitionMode.Instance.CompetitionID;
                 ScoreData[vessel.vesselName].team = VesselModuleRegistry.GetMissileFire(vessel, true).Team.Name;
             }
             deathCount = 0;
@@ -62,6 +63,7 @@ namespace BDArmory.Competition
             if (ScoreData.ContainsKey(vessel.vesselName)) return false; // They're already there.
             if (BDACompetitionMode.Instance.IsValidVessel(vessel) != BDACompetitionMode.InvalidVesselReason.None) return false; // Invalid vessel.
             ScoreData[vessel.vesselName] = new ScoringData();
+            ScoreData[vessel.vesselName].competitionID = BDACompetitionMode.Instance.CompetitionID;
             ScoreData[vessel.vesselName].team = VesselModuleRegistry.GetMissileFire(vessel, true).Team.Name;
             ScoreData[vessel.vesselName].lastFiredTime = Planetarium.GetUniversalTime();
             ScoreData[vessel.vesselName].previousPartCount = vessel.parts.Count();
@@ -920,6 +922,7 @@ namespace BDArmory.Competition
     [Serializable]
     public class ScoringData
     {
+        public int competitionID;
         public AliveState aliveState = AliveState.Alive; // Current state of the vessel.
         public SurvivalState survivalState = SurvivalState.Alive; // State of the vessel at the end of the tournament.
         public string team; // The vessel's team.
@@ -1022,6 +1025,7 @@ namespace BDArmory.Competition
             return new ScoringData
             {
                 // General
+                competitionID = competitionID,
                 aliveState = aliveState,
                 survivalState = survivalState,
                 team = team,
