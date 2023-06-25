@@ -232,7 +232,10 @@ namespace BDArmory.Competition
             return weights.Sum(kvp => kvp.Value * playerScore[kvp.Key]);
         }
 
-        public List<string> GetRankedCraftFiles() => scores.OrderByDescending(kvp => kvp.Value).Select(kvp => playersToFileNames[kvp.Key]).ToList(); // Get the craft files in descending order of the currently computed scores.
+        /// <summary>
+        /// Get the craft files in ascending order of the currently computed scores.
+        /// </summary>
+        public List<string> GetRankedCraftFiles() => scores.OrderBy(kvp => kvp.Value).Select(kvp => playersToFileNames[kvp.Key]).ToList();
 
         #region Serialization
         [SerializeField] List<string> _weightKeys;
