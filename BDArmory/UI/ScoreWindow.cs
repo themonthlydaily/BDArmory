@@ -147,10 +147,12 @@ namespace BDArmory.UI
 
             GUILayout.BeginVertical(GUI.skin.box, GUILayout.ExpandHeight(autoResizingWindow));
             if (!autoResizingWindow) scoreScrollPos = GUILayout.BeginScrollView(scoreScrollPos);
+            int rank = 0;
             using (var scoreField = BDATournament.Instance.GetRankedScores.GetEnumerator())
                 while (scoreField.MoveNext())
                 {
                     GUILayout.BeginHorizontal();
+                    GUILayout.Label($"{++rank,3:D}", leftLabel, GUILayout.Width(BDArmorySettings.SCORES_FONT_SIZE * 2));
                     GUILayout.Label(scoreField.Current.Key, leftLabel);
                     GUILayout.Label($"{scoreField.Current.Value,7:F3}", rightLabel);
                     GUILayout.EndHorizontal();
