@@ -197,7 +197,7 @@ namespace BDArmory.UI
         {
             if (autoResizingWindow)
             {
-                BDArmorySetup.WindowRectScores.height = 0;
+                BDArmorySetup.WindowRectScores.height = 50; // Don't reset completely to 0 as that then covers half the title.
             }
         }
         #endregion
