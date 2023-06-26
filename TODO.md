@@ -8,14 +8,6 @@
 ### TODO (smaller items and specific requests / higher priority)
 - Fix bugs
 
-- Tournaments
-    - Add in-built score and ranked tournaments.
-    - Add pop-up for entering score weights in the vessel switcher and sort by score instead of just hits. Right click sorting button should toggle this pop-up
-    - This would allow for ranked tournaments and other tournament styles
-    - Add a randomised vs ranked toggle for heat generation.
-        - ranked => dynamic round allocation instead of pre-determined.
-        - In ranked mode the deficit should be distributed amongst the top ranked heats.
-
 - Wiki entries
     - Auto-Tuning
 
