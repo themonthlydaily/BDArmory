@@ -639,6 +639,13 @@ namespace BDArmory.Competition
                 Debug.Log($"[BDArmory.BDATournament]: " + message);
                 return false;
             }
+            if (tournamentRoundType == TournamentRoundType.Ranked)
+            {
+                message = "Ranked tournament mode for teams tournaments is not yet fully implemented.";
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
+                Debug.Log($"[BDArmory.BDATournament]: " + message);
+                return false;
+            }
             this.tournamentRoundType = tournamentRoundType;
             numberOfRounds = tournamentRoundType == TournamentRoundType.Ranked ? 1 : numberOfRounds; // Ranked tournaments generate a single Shuffled round, then just go until the current number of rounds slider +1 is satisfied.
             var absFolder = Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", folder);
