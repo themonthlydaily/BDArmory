@@ -5867,7 +5867,7 @@ namespace BDArmory.Control
                         }
                         else
                         {
-                            if (PreviousMissile.ActiveRadar) //previous missile has gone active, don't need that lock anymore
+                            if (PreviousMissile != null && PreviousMissile.ActiveRadar && PreviousMissile.targetVessel != null) //previous missile has gone active, don't need that lock anymore
                             {
                                 vesselRadarData.UnlockSelectedTarget(PreviousMissile.targetVessel.Vessel);
                             }
