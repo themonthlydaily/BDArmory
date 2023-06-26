@@ -1,4 +1,13 @@
-﻿v1.6.3.0
+﻿IMPROVEMENTS / FIXES
+- General:
+	- Make ammo consumption respect staging and priority order.
+- AI:
+	- Make the autotuning re-centering distance customisable.
+	- Add unclamped max values for auto-tuning speed and altitude.
+- Vessel Spawning:
+	- Disable gravity easing when using 'Warp Here' above 10m altitude.
+
+v1.6.3.0
 IMPROVEMENTS / FIXES
 - General:
 	- Archive the defunct KSPedia files, reducing the size of the BDArmory zip file by around 24MB.

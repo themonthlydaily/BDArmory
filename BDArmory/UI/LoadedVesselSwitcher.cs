@@ -1112,6 +1112,8 @@ namespace BDArmory.UI
                 }
             }
 
+            if (ModIntegration.MouseAimFlight.IsMouseAimActive) return; // Don't switch while MouseAimFlight is active.
+
             if (timeSinceLastCheck > minCameraCheckInterval)
             {
                 lastCameraCheck = now;
