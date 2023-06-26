@@ -1856,11 +1856,10 @@ namespace BDArmory.Radar
         public void UnlockSelectedTarget(Vessel vessel)
         {
             if (!locked) return;
-
             var vesselIndex = displayedTargets.FindIndex(t => t.vessel == vessel);
             if (vesselIndex != -1)
             {
-                ModuleRadar rad = displayedTargets[lockedTargetIndexes[vesselIndex]].detectedByRadar;
+                ModuleRadar rad = displayedTargets[vesselIndex].detectedByRadar;
                 rad.UnlockTargetAt(rad.currentLockIndex);
             }
         }

@@ -150,13 +150,15 @@ namespace BDArmory.Utils
             fieldName.text = field.guiName;
             fieldNameNumeric.text = field.guiName;
             float value = GetFieldValue();
-            value = UpdateSlider(value);
             SetFieldValue(value);
             UpdateDisplay(value);
             // Debug.Log($"DEBUG value is {value} with limits {logFloatRange.minValue}—{logFloatRange.maxValue}");
             // Debug.Log($"DEBUG slider has value {slider.value} with limits {slider.minValue}—{slider.maxValue}");
             slider.onValueChanged.AddListener(OnValueChanged);
+            inputField.onValueChanged.AddListener(OnNumericValueChanged);
             inputField.onSubmit.AddListener(OnNumericSubmitted);
+            inputField.onSelect.AddListener(OnNumericSelected);
+            inputField.onDeselect.AddListener(OnNumericDeselected);
         }
 
         private float GetFieldValue()
@@ -209,6 +211,20 @@ namespace BDArmory.Utils
                 UpdateDisplay(value);
             }
         }
+        void OnNumericValueChanged(string str)
+        {
+            if (inputField.wasCanceled) OnNumericSubmitted(str);
+        }
+        void OnNumericSelected(string str)
+        {
+            AddInputFieldLock(str);
+        }
+        void OnNumericDeselected(string str)
+        {
+            OnNumericSubmitted(str);
+            RemoveInputfieldLock();
+        }
+
         public override void UpdateItem()
         {
             float value = GetFieldValue();
@@ -426,15 +442,17 @@ namespace BDArmory.Utils
             UpdateLimits();
             fieldName.text = field.guiName;
             fieldNameNumeric.text = field.guiName;
-            fieldFormatString = $"G{semiLogFloatRange.sigFig + 2}"; // Show at most 2 digits beyond the requested sig. fig.
+            fieldFormatString = $"G{Mathf.Max(semiLogFloatRange.sigFig + 2, Mathf.CeilToInt(Mathf.Log10(semiLogFloatRange.maxValue)) + 1)}"; // Show at most 2 digits beyond the requested sig. fig. or enough for the largest number.
             float value = GetFieldValue();
-            value = UpdateSlider(value);
             SetFieldValue(value);
             UpdateDisplay(value);
             // Debug.Log($"DEBUG value is {value} with limits {semiLogFloatRange.minValue}—{semiLogFloatRange.maxValue}");
             // Debug.Log($"DEBUG slider has value {slider.value} with limits {slider.minValue}—{slider.maxValue}");
             slider.onValueChanged.AddListener(OnValueChanged);
+            inputField.onValueChanged.AddListener(OnNumericValueChanged);
             inputField.onSubmit.AddListener(OnNumericSubmitted);
+            inputField.onSelect.AddListener(OnNumericSelected);
+            inputField.onDeselect.AddListener(OnNumericDeselected);
         }
 
         private float GetFieldValue()
@@ -490,6 +508,20 @@ namespace BDArmory.Utils
                 UpdateDisplay(value);
             }
         }
+        void OnNumericValueChanged(string str)
+        {
+            if (inputField.wasCanceled) OnNumericSubmitted(str);
+        }
+        void OnNumericSelected(string str)
+        {
+            AddInputFieldLock(str);
+        }
+        void OnNumericDeselected(string str)
+        {
+            OnNumericSubmitted(str);
+            RemoveInputfieldLock();
+        }
+
         public override void UpdateItem()
         {
             float value = GetFieldValue();
