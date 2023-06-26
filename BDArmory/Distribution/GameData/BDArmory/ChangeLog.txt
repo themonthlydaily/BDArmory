@@ -1,6 +1,7 @@
 ﻿IMPROVEMENTS / FIXES
 - General:
 	- Make ammo consumption respect staging and priority order.
+	- Don't auto-switch vessels when MouseAimFlight is active.
 - AI:
 	- Make the autotuning re-centering distance customisable.
 	- Add unclamped max values for auto-tuning speed and altitude.
@@ -20,6 +21,9 @@
 		- Scores update after each round (not heat) in a ranked tournament.
 	- The tournament.state file uses a new format (recursively encoded JSON due to Unity's limited JSON functionality), contains a lot more information and isn't compatible with older tournament.state files.
 	- Fix a minor bug in the tournament log parsing script where wins weren't always being counted for the score.
+	- Make the saving of backup tournaments optional (hidden setting in settings.cfg).
+- RWP:
+	- S5R10 special settings.
 
 v1.6.3.0
 IMPROVEMENTS / FIXES
