@@ -4,6 +4,7 @@
 - AI:
 	- Make the autotuning re-centering distance customisable.
 	- Add unclamped max values for auto-tuning speed and altitude.
+	- Prevent weapon selection from choosing weapons when target is closer than the weapon's minSafeDistance.
 - Vessel Spawning:
 	- Disable gravity easing when using 'Warp Here' above 10m altitude.
 
