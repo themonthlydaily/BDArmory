@@ -1466,7 +1466,7 @@ namespace BDArmory.Control
             if (currentTarget != null && missilesAway.ContainsKey(currentTarget)) //change to previous target?
             {
                 missilesAway.TryGetValue(currentTarget, out int missiles);
-				firedMissiles = missiles;
+                firedMissiles = missiles;
             }
             else
             {
@@ -3088,7 +3088,7 @@ namespace BDArmory.Control
                         if (engageableWeapon.GetEngageAirTargets()) weaponTypesAir.Add(weapon.Current);
                         if (engageableWeapon.GetEngageMissileTargets())
                         {
-                            weaponTypesMissile.Add(weapon.Current); 
+                            weaponTypesMissile.Add(weapon.Current);
                             targetMissiles = true;
                         }
                         if (engageableWeapon.GetEngageGroundTargets()) weaponTypesGround.Add(weapon.Current);
@@ -5687,7 +5687,7 @@ namespace BDArmory.Control
                         if (distanceToTarget < gun.minSafeDistance) return false;
 
                         // check yaw range of turret
-                            ModuleTurret turret = gun.turret;
+                        ModuleTurret turret = gun.turret;
                         float gimbalTolerance = vessel.LandedOrSplashed ? 0 : 15;
                         if (turret != null)
                             if (!TargetInTurretRange(turret, gimbalTolerance, null, gun))
