@@ -27,6 +27,10 @@
         - Multiply pos, vel, acc by 1+sin(t)/X for X=10, 100, etc. to simulate sampling noise. t doesn't need to be game time, but something related to the vessel (e.g., speed + time)
     - Multiple ammo types used per shot for weapons (other than just EC).
 
+- Ranked tournament mode
+    - Add support for teams FFA
+    - Add support for converting tournament.json to tournament.state
+
 - ? Add an action group trigger to the WM based on the current target being an enemy vessel within a custom distance. - Make it a collapsable section of custom triggers to include other conditions later.
 - Artillery aiming support
 - Lift stacking improvements with logical wing segments
