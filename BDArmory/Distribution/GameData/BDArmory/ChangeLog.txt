@@ -12,7 +12,8 @@
 	- Make the saving of backup tournaments optional (hidden setting TOURNAMENT_BACKUPS in settings.cfg).
 	- Added a ranked tournament mode.
 		- Ranked tournaments begin with a single shuffled round (craft assigned to heats randomly), then continues to generate ranked rounds (craft assigned to heats based on their current rank) until the number of ranked rounds run matches or exceeds the rounds slider (which can be adjusted during a tournament).
-		- Ranked tournaments currently only work for FFA style tournaments without teams. (Teams will come later. nCr and gauntlet style tournaments aren't supported.)
+		- Ranked tournaments only work for FFA style tournaments. nCr and gauntlet style tournaments aren't supported.
+		- For teams tournaments, the combined score for the teams is used for the ranking.
 		- Enable the score window via the "Sc" button on the Vessel Switcher window.
 		- Use the "UI" button to keep the window visible even when the rest of the UI is disabled (F2).
 		- Use the "±" buttons to adjust the font size.
