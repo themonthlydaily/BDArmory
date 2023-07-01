@@ -24,6 +24,8 @@
 		- A script (parse_tournament_state.py) can convert the tournament.state file to proper JSON (tournament.json), but can not convert it back yet.
 	- Fix a minor bug in the tournament log parsing script where wins weren't always being counted for the score.
 	- Make the saving of backup tournaments optional (hidden setting in settings.cfg).
+- Detectors
+	- Add settings toggle ASPECTED_RCS that enables real-time RCS evaluation based on the target aircraft's azimuth and elevation relative to the radar evaluating it. Enable from the BDA settings menu under Missile & CM settings: "Real-Time Aspected RCS."
 - RWP:
 	- S5R10 special settings.
 
