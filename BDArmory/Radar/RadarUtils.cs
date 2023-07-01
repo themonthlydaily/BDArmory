@@ -364,7 +364,7 @@ namespace BDArmory.Radar
                 signatureAtAspect = rcs1;
 
             // Take weighted average of signature at aspect and overall signature to prevent non-stealthy craft from being overly stealthy in a single aspect, but also reduce impact of non-ideal aspects
-            signatureAtAspect = signatureAtAspect * (1 - BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_FACTOR) + ti.radarBaseSignature * BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_FACTOR;
+            signatureAtAspect = signatureAtAspect * (1 - BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT) + ti.radarBaseSignature * BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT;
 
             // Incorporate any signature modification
             signatureAtAspect *= ti.radarModifiedSignature / ti.radarBaseSignature;
