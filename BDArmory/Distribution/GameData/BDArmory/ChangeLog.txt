@@ -28,7 +28,7 @@
 	- Fix a minor bug in the tournament log parsing script where wins weren't always being counted for the score.
 	- Make the saving of backup tournaments optional (hidden setting in settings.cfg).
 - Detectors
-	- Add settings toggle ASPECTED_RCS that enables real-time RCS evaluation based on the target aircraft's azimuth and elevation relative to the radar evaluating it. Enable from the BDA settings menu under Missile & CM settings: "Real-Time Aspected RCS." The real-time aspected RCS is dependent on a weighted averaged against overall craft RCS, so lower overall craft RCS will lead to better aspected RCS. Overall craft RCS weighting in this average is dependent on ASPECTED_RCS_OVERALL_RCS_WEIGHT = 0.25 in the settings.cfg file.
+	- Add settings toggle ASPECTED_RCS that enables real-time RCS evaluation based on the target aircraft's azimuth and elevation relative to the radar evaluating it. Enable from the BDA settings menu under Missile & CM settings: "Real-Time Aspected RCS." The real-time aspected RCS is dependent on a weighted average against overall craft RCS, so lower overall craft RCS will lead to better aspected RCS. Overall craft RCS weighting in this average is dependent on ASPECTED_RCS_OVERALL_RCS_WEIGHT = 0.25 in the settings.cfg file. Final aspected RCS will be = (1-ASPECTED_RCS_OVERALL_RCS_WEIGHT) * [Aspected RCS] + ASPECTED_RCS_OVERALL_RCS_WEIGHT * [Overall RCS].
 - RWP:
 	- S5R10 special settings.
 
