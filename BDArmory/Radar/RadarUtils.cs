@@ -139,96 +139,97 @@ namespace BDArmory.Radar
             { 157.5f, 0f},
             { 168.75f, 0f},
             { 5.625f, 8.42105f},
-            { 16.875f, 8.42105f},
-            { 28.125f, 8.42105f},
-            { 39.375f, 8.42105f},
-            { 50.625f, 8.42105f},
-            { 61.875f, 8.42105f},
-            { 73.125f, 8.42105f},
-            { 84.375f, 8.42105f},
-            { 95.625f, 8.42105f},
-            { 106.875f, 8.42105f},
-            { 118.125f, 8.42105f},
-            { 129.375f, 8.42105f},
-            { 140.625f, 8.42105f},
-            { 151.875f, 8.42105f},
-            { 163.125f, 8.42105f},
-            { 174.375f, 8.42105f},
-            { 0f, 18.94737f},
-            { 22.5f, 18.94737f},
-            { 45f, 18.94737f},
-            { 67.5f, 18.94737f},
-            { 90f, 18.94737f},
-            { 112.5f, 18.94737f},
-            { 135f, 18.94737f},
-            { 157.5f, 18.94737f},
-            { 180f, 18.94737f},
-            { 11.25f, 31.57895f},
-            { 33.75f, 31.57895f},
-            { 56.25f, 31.57895f},
-            { 78.75f, 31.57895f},
-            { 101.25f, 31.57895f},
-            { 123.75f, 31.57895f},
-            { 146.25f, 31.57895f},
-            { 168.75f, 31.57895f},
-            { 0f, 47.36842f},
-            { 45f, 47.36842f},
-            { 90f, 47.36842f},
-            { 135f, 47.36842f},
-            { 180f, 47.36842f},
-            { 22.5f, 66.31579f},
-            { 67.5f, 66.31579f},
-            { 112.5f, 66.31579f},
-            { 157.5f, 66.31579f},
-            { 0f, 90f},
-            { 90f, 90f},
-            { 180f, 90f},
             { 5.625f, -8.42105f},
+            { 16.875f, 8.42105f},
             { 16.875f, -8.42105f},
+            { 28.125f, 8.42105f},
             { 28.125f, -8.42105f},
+            { 39.375f, 8.42105f},
             { 39.375f, -8.42105f},
+            { 50.625f, 8.42105f},
             { 50.625f, -8.42105f},
+            { 61.875f, 8.42105f},
             { 61.875f, -8.42105f},
+            { 73.125f, 8.42105f},
             { 73.125f, -8.42105f},
+            { 84.375f, 8.42105f},
             { 84.375f, -8.42105f},
+            { 95.625f, 8.42105f},
             { 95.625f, -8.42105f},
+            { 106.875f, 8.42105f},
             { 106.875f, -8.42105f},
+            { 118.125f, 8.42105f},
             { 118.125f, -8.42105f},
+            { 129.375f, 8.42105f},
             { 129.375f, -8.42105f},
+            { 140.625f, 8.42105f},
             { 140.625f, -8.42105f},
+            { 151.875f, 8.42105f},
             { 151.875f, -8.42105f},
+            { 163.125f, 8.42105f},
             { 163.125f, -8.42105f},
+            { 174.375f, 8.42105f},
             { 174.375f, -8.42105f},
+            { 0f, 18.94737f},
             { 0f, -18.94737f},
+            { 22.5f, 18.94737f},
             { 22.5f, -18.94737f},
+            { 45f, 18.94737f},
             { 45f, -18.94737f},
+            { 67.5f, 18.94737f},
             { 67.5f, -18.94737f},
+            { 90f, 18.94737f},
             { 90f, -18.94737f},
+            { 112.5f, 18.94737f},
             { 112.5f, -18.94737f},
+            { 135f, 18.94737f},
             { 135f, -18.94737f},
+            { 157.5f, 18.94737f},
             { 157.5f, -18.94737f},
+            { 180f, 18.94737f},
             { 180f, -18.94737f},
+            { 11.25f, 31.57895f},
             { 11.25f, -31.57895f},
+            { 33.75f, 31.57895f},
             { 33.75f, -31.57895f},
+            { 56.25f, 31.57895f},
             { 56.25f, -31.57895f},
+            { 78.75f, 31.57895f},
             { 78.75f, -31.57895f},
+            { 101.25f, 31.57895f},
             { 101.25f, -31.57895f},
+            { 123.75f, 31.57895f},
             { 123.75f, -31.57895f},
+            { 146.25f, 31.57895f},
             { 146.25f, -31.57895f},
+            { 168.75f, 31.57895f},
             { 168.75f, -31.57895f},
+            { 0f, 47.36842f},
             { 0f, -47.36842f},
+            { 45f, 47.36842f},
             { 45f, -47.36842f},
+            { 90f, 47.36842f},
             { 90f, -47.36842f},
+            { 135f, 47.36842f},
             { 135f, -47.36842f},
+            { 180f, 47.36842f},
             { 180f, -47.36842f},
+            { 22.5f, 66.31579f},
             { 22.5f, -66.31579f},
+            { 67.5f, 66.31579f},
             { 67.5f, -66.31579f},
+            { 112.5f, 66.31579f},
             { 112.5f, -66.31579f},
+            { 157.5f, 66.31579f},
             { 157.5f, -66.31579f},
+            { 0f, 90f},
             { 0f, -90f},
+            { 90f, 90f},
             { 90f, -90f},
+            { 180f, 90f},
             { 180f, -90f},
         };
+        private static int numAspectsForOverallRTEval = 83; // Use the first N rows of rcsAspectsRealTime for evaluating overall craft RCS
         public static float[,] editorRCSAspects = new float[3, 3]; // Worst three aspects
         static double[] rcsValues;
         static Color32[] pixels;
@@ -361,6 +362,9 @@ namespace BDArmory.Radar
                 signatureAtAspect = w1 * rcs1 + w2 * rcs2 + w3 * rcs3;
             else
                 signatureAtAspect = rcs1;
+
+            // Take weighted average of signature at aspect and overall signature to prevent non-stealthy craft from being overly stealthy in a single aspect, but also reduce impact of non-ideal aspects
+            signatureAtAspect = signatureAtAspect * (1 - BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_FACTOR) + ti.radarBaseSignature * BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_FACTOR;
 
             // Incorporate any signature modification
             signatureAtAspect *= ti.radarModifiedSignature / ti.radarBaseSignature;
@@ -548,7 +552,10 @@ namespace BDArmory.Radar
             float rcsVariable = 0f;
             if (editorRCSAspects is null) editorRCSAspects = new float[3, 3];
             Array.Clear(editorRCSAspects, 0, 9);
-            if (rcsValues is null) rcsValues = new double[numAspects];
+            if (rcsValues is null)
+                rcsValues = new double[numAspects];
+            else
+                Array.Resize(ref rcsValues, numAspects);
             Array.Clear(rcsValues, 0, numAspects);
             Vector3 aspect;
 
@@ -627,8 +634,13 @@ namespace BDArmory.Radar
                 }
             }
 
+            // If dynamic aspects RCS is enabled, use a subset of the evaluated RCS values for the total RCS calc
+            if (BDArmorySettings.ASPECTED_RCS)
+                Array.Resize(ref rcsValues, numAspectsForOverallRTEval);
+
             // Use third quartile for the total RCS (gives better results than average)
             rcsTotal = (float)Quartile(rcsValues, 3);
+
 
             // If we are in the editor, render the three highest RCS aspects
             if (inEditorZoom)
