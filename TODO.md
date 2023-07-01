@@ -28,7 +28,6 @@
     - Multiple ammo types used per shot for weapons (other than just EC).
 
 - Ranked tournament mode
-    - Add support for teams FFA
     - Add support for converting tournament.json to tournament.state
 
 - ? Add an action group trigger to the WM based on the current target being an enemy vessel within a custom distance. - Make it a collapsable section of custom triggers to include other conditions later.
@@ -38,6 +37,10 @@
 - Add a Panic Button to the AI that triggers an action group, triggered by:
     - Being in a flat spin for X seconds while below min altitude and less than Y seconds from impact.
     - Being stalled for X seconds while below min altitude and less than Y seconds from impact. — define "stalled"
+    - Entering evasion.
+
+- Smart part that can trigger an action group when one of the specified parts gets below X% HP.
+    - Would have to work similarly to the KAL to remember which parts it should affect/monitor.
 
 - Gauntlet mode doesn't properly randomise teams/spawning? - check
 - Fix the piñata spawning logic - spawn the piñata(s) separately after circular spawning has occured.
