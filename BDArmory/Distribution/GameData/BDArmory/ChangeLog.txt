@@ -8,6 +8,8 @@
 	- Prevent weapon selection from choosing weapons when target is closer than the weapon's minSafeDistance.
 - Vessel Spawning:
 	- Disable gravity easing when using 'Warp Here' above 10m altitude.
+- Weapons:
+	- Fix various NREs related to missiles and multi-missile launchers.
 - Competition:
 	- Make the saving of backup tournaments optional (hidden setting TOURNAMENT_BACKUPS in settings.cfg).
 	- Added a ranked tournament mode.
