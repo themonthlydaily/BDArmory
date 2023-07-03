@@ -2,6 +2,7 @@
 - General:
 	- Make ammo consumption respect staging and priority order unless "externalAmmo = false" in the weapon config.
 	- Don't auto-switch vessels when MouseAimFlight is active.
+	- Fixed an issue where modules on a vessel re-entering the PRE range weren't being updated in the VesselModuleRegistry.
 - AI:
 	- Make the autotuning re-centering distance customisable.
 	- Add unclamped max values for auto-tuning speed and altitude.
