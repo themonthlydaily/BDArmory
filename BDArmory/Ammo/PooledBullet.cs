@@ -112,6 +112,7 @@ namespace BDArmory.Bullets
         public float maxAirDetonationRange = 3500f;
         float randomWidthScale = 1;
         LineRenderer[] bulletTrail;
+        float timeAlive = 0;
         public float timeToLiveUntil;
         Light lightFlash;
         bool wasInitiated;
@@ -156,7 +157,7 @@ namespace BDArmory.Bullets
         static List<RaycastHit> allHits;
         static Dictionary<Vessel, float> rayLength;
         private Vector3[] linePositions = new Vector3[2];
-        private Vector3[] smokePositions = new Vector3[2];
+        private Vector3[] smokePositions = new Vector3[5];
 
         private List<Part> partsHit = new List<Part>();
 
@@ -257,7 +258,7 @@ namespace BDArmory.Bullets
             if (!wasInitiated)
             {
                 bulletTrail[0].positionCount = linePositions.Length;
-                bulletTrail[1].positionCount = linePositions.Length;
+                bulletTrail[1].positionCount = smokePositions.Length;
             }
             // Note: call SetTracerPosition() after enabling the bullet and making adjustments to it's position.
 
@@ -278,6 +279,7 @@ namespace BDArmory.Bullets
             smokeColor.g = 0.85f;
             smokeColor.b = 0.85f;
             smokeColor.a = 0.75f;
+            timeAlive = 0;
             bulletTrail[0].material.mainTexture = GameDatabase.Instance.GetTexture(bulletTexturePath, false);
             bulletTrail[0].material.SetColor("_TintColor", currentColor);
             bulletTrail[0].material.SetFloat("_Lum", (tracerLuminance > 0? tracerLuminance : 0.5f));
@@ -386,11 +388,13 @@ namespace BDArmory.Bullets
             }
             if (tracerLuminance > 1)
             {
-                float fade = Mathf.Lerp(0.75f, 0.05f, 0.01f);
+                float fade = Mathf.Lerp(0.75f, 0.05f, 0.07f);
                 smokeColor.a = fade;
                 bulletTrail[1].material.SetColor("_TintColor", smokeColor);
+                bulletTrail[1].material.SetTextureOffset("_MainTex", new Vector2(-timeAlive / 3, 0));
                 if (fade <= 0.05f) bulletTrail[1].enabled = false;
             }
+            timeAlive += Time.fixedDeltaTime;
             SetTracerPosition();
 
             if (Time.time > timeToLiveUntil) //kill bullet when TTL ends
@@ -1728,7 +1732,25 @@ namespace BDArmory.Bullets
             }
             linePositions[1] = transform.position;
             smokePositions[0] = startPosition;
-            smokePositions[1] = transform.position;
+            for (int i = 0; i < smokePositions.Length - 1; i++)
+            {
+                if (timeAlive < i)
+                {
+                    smokePositions[i] = transform.position;
+                }
+            }
+            if (timeAlive > smokePositions.Length)
+            {
+                //smokePositions[0] = smokePositions[1];
+                startPosition = smokePositions[1]; //Start position isn't used for anything else, so modifying shouldn't be an issue. Vestigial value from some deprecated legacy function?
+                for (int i = 0; i < smokePositions.Length - 1; i++)
+                {
+                    smokePositions[i] = smokePositions[i + 1];
+                    //have it so each sec interval after timeAlive > smokePositions.length, have smokePositions[i] = smokePosition[i+1]if i < = smokePosition.length - 1;
+                }
+                timeAlive -= 1;
+            }            
+            smokePositions[4] = transform.position;
             //if (Vector3.Distance(startPosition, transform.position) > 1000) smokePositions[0] = transform.position - ((currentVelocity - FlightGlobals.ActiveVessel.Velocity()).normalized * 1000);
             bulletTrail[0].SetPositions(linePositions);
             bulletTrail[1].SetPositions(smokePositions);

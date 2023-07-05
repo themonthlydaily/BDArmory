@@ -193,16 +193,6 @@ namespace BDArmory.GameModes
                                 p.Current.Rigidbody.AddForce(FlightGlobals.getGeeForceAtPosition(p.Current.transform.position), ForceMode.Acceleration);
                             }
                     }
-                    else //out of control/engineless craft get hurtled into the ground
-                    {
-                        for (int i = 0; i < part.vessel.Parts.Count; i++)
-                        {
-                            if (part.vessel.parts[i].PhysicsSignificance != 1)
-                            {
-                                part.vessel.Parts[i].Rigidbody.AddForce(FlightGlobals.getGeeForceAtPosition(part.vessel.Parts[i].transform.position), ForceMode.Acceleration);
-                            }
-                        }
-                    }
                 }
             }
             if (this.part.vessel.situation != Vessel.Situations.ORBITING || this.part.vessel.situation != Vessel.Situations.DOCKED || this.part.vessel.situation != Vessel.Situations.ESCAPING || this.part.vessel.situation != Vessel.Situations.PRELAUNCH)

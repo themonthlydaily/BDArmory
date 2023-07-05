@@ -443,7 +443,6 @@ namespace BDArmory.Weapons.Missiles
             {
                 shortName = part.partInfo.title;
             }
-            if (BDArmorySettings.DEBUG_MISSILES) shortName = $"{SourceVessel.GetName()}'s {GetShortName()}";
             gaplessEmitters = new List<BDAGaplessParticleEmitter>();
             pEmitters = new List<KSPParticleEmitter>();
             boostEmitters = new List<KSPParticleEmitter>();
@@ -1047,8 +1046,11 @@ namespace BDArmory.Weapons.Missiles
 
             var wpm = VesselModuleRegistry.GetMissileFire(SourceVessel != null ? SourceVessel : vessel, true);
             if (wpm != null) Team = wpm.Team;
-            if (SourceVessel == null) SourceVessel = vessel;
-
+            if (SourceVessel == null)
+            {
+                SourceVessel = vessel;
+                if (BDArmorySettings.DEBUG_MISSILES) shortName = $"{SourceVessel.GetDisplayName()}'s {GetShortName()}";
+            }
             if (multiLauncher && multiLauncher.isMultiLauncher)
             {
                 //multiLauncher.rippleRPM = wpm.rippleRPM;               

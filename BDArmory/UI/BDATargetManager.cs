@@ -305,7 +305,7 @@ namespace BDArmory.UI
                             }
                         }
                         IRPart = closestPart;
-                        if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[IRSTdebugging] closest heatsource found: " + closestPart.name + ", heat: " + (float)(closestPart.thermalInternalFluxPrevious + closestPart.skinTemperature));
+                        if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[BDArmory.BDATargetManager] closest heatsource found: " + closestPart.name + ", heat: " + (float)(closestPart.thermalInternalFluxPrevious + closestPart.skinTemperature));
                     }
                     if (closestPart != null)
                     {
@@ -349,7 +349,7 @@ namespace BDArmory.UI
                 heatScore *= vesselcamo.thermalReductionFactor;
                 heatScore = Mathf.Max(heatScore, occludedPlumeHeatScore); //Fancy heatsinks/thermoptic camo isn't going to magically cool the engine plume
             }
-            if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[IRSTdebugging] final heatScore: " + heatScore);
+            if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[BDArmory.BDATargetManager] final heatScore: " + heatScore);
             return new Tuple<float, Part>(heatScore, IRPart);
         }
 
