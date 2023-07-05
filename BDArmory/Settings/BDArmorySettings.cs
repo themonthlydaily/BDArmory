@@ -210,6 +210,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool NO_ENGINES = false;
         [BDAPersistentSettingsField] public static bool WAYPOINTS_MODE = false;         // Waypoint section of Vessel Spawner Window.
         [BDAPersistentSettingsField] public static string PINATA_NAME = "Pinata";
+        [BDAPersistentSettingsField] public static int NPC_COUNT = 0;
 
         //Battle Damage settings
         [BDAPersistentSettingsField] public static bool BATTLEDAMAGE_TOGGLE = false;    // Main battle damage toggle.

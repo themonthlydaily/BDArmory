@@ -432,6 +432,9 @@ namespace BDArmory.UI
             // Ensure AutoSpawn folder exists.
             if (!Directory.Exists(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn")))
             { Directory.CreateDirectory(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn")); }
+            // Ensure AutoSpawn/NPC folder exists.
+            if (!Directory.Exists(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", "NPC")))
+            { Directory.CreateDirectory(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", "NPC")); }
             // Ensure GameData/Custom/Flags folder exists.
             if (!Directory.Exists(Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "Custom", "Flags")))
             { Directory.CreateDirectory(Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "Custom", "Flags")); }
