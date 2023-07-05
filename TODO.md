@@ -13,6 +13,7 @@
 
 - Ranked tournament mode
 	- Add support for converting tournament.json to tournament.state
+	- Add support for NPCs.
 - Vessel Spawner
 	- Add option to select craft from subfolders of the SPH/VAB.
 
@@ -45,6 +46,7 @@
 	- Multiple ammo types used per shot for weapons (other than just EC).
 
 - Fix the piñata spawning logic - spawn the piñata(s) separately after circular spawning has occured.
+- Add VTOL AI to the AI GUI.
 - Motherships branch
 - Inertial correction to pitch, roll, yaw errors for PID calcuations. Rotate the vessel reference transform first, computing debugPos2 from the top 
 - Preallocate the explosion merge buffer and reuse it.
@@ -52,7 +54,6 @@
 - Fix the AIGUI slider limits and increments for the variable precision slider in the PAW
 - Low altitude AI setting should be aware of killer GM low altitude.
 - Adjust explosions to maintain velocity or not based on atmospheric density.
-- Add VTOL AI to the AI GUI.
 - Proper 3-axis PID sliders + single PID with axis weighting
 - Memory for AI state so that it can resume once finished extending/evading instead of just scanning for new targets.
 - KerbalSafety - why are some kerbals not registering/deploying chutes

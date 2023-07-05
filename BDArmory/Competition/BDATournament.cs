@@ -462,6 +462,7 @@ namespace BDArmory.Competition
         public int vesselsPerTeam;
         public bool fullTeams;
         public int vesselsPerHeat;
+        public int npcsPerHeat;
         public int numberOfRounds;
         public TournamentType tournamentType = TournamentType.FFA;
         public TournamentStyle tournamentStyle = TournamentStyle.RNG;
@@ -487,7 +488,7 @@ namespace BDArmory.Competition
         /// <param name="tournamentRoundType"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
-        public bool GenerateFFATournament(string folder, int numberOfRounds, int vesselsPerHeat, TournamentStyle tournamentStyle, TournamentRoundType tournamentRoundType)
+        public bool GenerateFFATournament(string folder, int numberOfRounds, int vesselsPerHeat, int npcsPerHeat, TournamentStyle tournamentStyle, TournamentRoundType tournamentRoundType)
         {
             folder ??= ""; // Sanitise null strings.
             tournamentID = (uint)DateTime.UtcNow.Subtract(new DateTime(2020, 1, 1)).TotalSeconds;
@@ -515,11 +516,15 @@ namespace BDArmory.Competition
             }
             craftFiles = Directory.GetFiles(abs_folder, "*.craft").ToList();
             vesselCount = craftFiles.Count;
+            var npc_folder = Path.Combine(abs_folder, "NPCs");
+            var npcs = Directory.GetFiles(npc_folder, "*.craft").ToList();
+            npcsPerHeat = Mathf.Min(Mathf.Min(npcsPerHeat, craftFiles.Count - 1), npcs.Count); // No duplicate NPCs, at least one non-NPC.
+            this.npcsPerHeat = npcsPerHeat;
             int fullHeatCount;
             switch (vesselsPerHeat)
             {
                 case -1: // Auto
-                    var autoVesselsPerHeat = OptimiseVesselsPerHeat(craftFiles.Count);
+                    var autoVesselsPerHeat = OptimiseVesselsPerHeat(craftFiles.Count, npcsPerHeat);
                     vesselsPerHeat = autoVesselsPerHeat.Item1;
                     fullHeatCount = Mathf.CeilToInt(craftFiles.Count / vesselsPerHeat) - autoVesselsPerHeat.Item2;
                     break;
@@ -528,7 +533,7 @@ namespace BDArmory.Competition
                     fullHeatCount = 1;
                     break;
                 default:
-                    vesselsPerHeat = Mathf.Clamp(vesselsPerHeat, 1, craftFiles.Count);
+                    vesselsPerHeat = Mathf.Clamp(Mathf.Max(1, vesselsPerHeat - npcsPerHeat), 1, craftFiles.Count);
                     fullHeatCount = craftFiles.Count / vesselsPerHeat;
                     break;
             }
@@ -546,6 +551,11 @@ namespace BDArmory.Competition
                             int vesselsThisHeat = vesselsPerHeat;
                             int count = 0;
                             List<string> selectedFiles = craftFiles.Take(vesselsThisHeat).ToList();
+                            if (npcsPerHeat > 0) // Add in some NPCs.
+                            {
+                                npcs.Shuffle();
+                                selectedFiles.AddRange(npcs.Take(npcsPerHeat));
+                            }
                             rounds.Add(rounds.Count, new Dictionary<int, CircularSpawnConfig>());
                             int heatIndex = 0;
                             while (selectedFiles.Count > 0)
@@ -568,6 +578,11 @@ namespace BDArmory.Competition
                                 count += vesselsThisHeat;
                                 vesselsThisHeat = heatIndex++ < fullHeatCount ? vesselsPerHeat : vesselsPerHeat - 1; // Take one less for the remaining heats to distribute the deficit of craft files.
                                 selectedFiles = craftFiles.Skip(count).Take(vesselsThisHeat).ToList();
+                                if (npcsPerHeat > 0) // Add in some NPCs.
+                                {
+                                    npcs.Shuffle();
+                                    selectedFiles.AddRange(npcs.Take(npcsPerHeat));
+                                }
                             }
                         }
                         break;
@@ -921,7 +936,7 @@ namespace BDArmory.Competition
                         switch (vesselsPerHeat)
                         {
                             case -1: // Auto
-                                var autoVesselsPerHeat = OptimiseVesselsPerHeat(craftFiles.Count);
+                                var autoVesselsPerHeat = OptimiseVesselsPerHeat(craftFiles.Count, npcsPerHeat);
                                 vesselsPerHeat = autoVesselsPerHeat.Item1;
                                 fullHeatCount = Mathf.CeilToInt(craftFiles.Count / vesselsPerHeat) - autoVesselsPerHeat.Item2;
                                 break;
@@ -1028,18 +1043,18 @@ namespace BDArmory.Competition
             return selectedCraft;
         }
 
-        Tuple<int, int> OptimiseVesselsPerHeat(int count)
+        Tuple<int, int> OptimiseVesselsPerHeat(int count, int extras)
         {
             if (BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y < BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x) BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y = BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x;
             var options = count > BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y && count < 2 * BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x - 1 ?
                 Enumerable.Range(BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y / 2, BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y - BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y / 2 + 1).Reverse().ToList() // Tweak the range when just over the upper limit to give more balanced heats.
-                : Enumerable.Range(BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x, BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y - BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x + 1).Reverse().ToList();
+                : Enumerable.Range(BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x - extras, BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y - BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x + 1 - extras).Reverse().ToList();
             foreach (var val in options)
             {
                 if (count % val == 0)
                     return new Tuple<int, int>(val, 0);
             }
-            var result = OptimiseVesselsPerHeat(count + 1);
+            var result = OptimiseVesselsPerHeat(count + 1, extras);
             return new Tuple<int, int>(result.Item1, result.Item2 + 1);
         }
 
@@ -1323,7 +1338,7 @@ namespace BDArmory.Competition
         /// <param name="tournamentStyle">The tournament style: RNG, N-choose-K, etc.</param>
         /// <param name="tournamentType">The tournament type: FFA, Teams, RankedFFA, RankedTeams, etc.</param>
         /// <param name="stateFile">The tournament statefile to use (if different from the usual one).</param>
-        public void SetupTournament(string folder, int rounds, int vesselsPerHeat = 0, int teamsPerHeat = 0, int vesselsPerTeam = 0, int numberOfTeams = 0, TournamentStyle tournamentStyle = TournamentStyle.RNG, TournamentRoundType tournamentRoundType = TournamentRoundType.Shuffled, string stateFile = "")
+        public void SetupTournament(string folder, int rounds, int vesselsPerHeat = 0, int npcsPerHeat = 0, int teamsPerHeat = 0, int vesselsPerTeam = 0, int numberOfTeams = 0, TournamentStyle tournamentStyle = TournamentStyle.RNG, TournamentRoundType tournamentRoundType = TournamentRoundType.Shuffled, string stateFile = "")
         {
             if (tournamentState != null && tournamentState.rounds != null)
             {
@@ -1338,7 +1353,7 @@ namespace BDArmory.Competition
             tournamentState = new TournamentState();
             if (numberOfTeams == 0) // FFA
             {
-                if (!tournamentState.GenerateFFATournament(folder, rounds, vesselsPerHeat, tournamentStyle, tournamentRoundType)) return;
+                if (!tournamentState.GenerateFFATournament(folder, rounds, vesselsPerHeat, npcsPerHeat, tournamentStyle, tournamentRoundType)) return;
             }
             else // Folders or random teams
             {
@@ -1854,6 +1869,7 @@ namespace BDArmory.Competition
                         BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION,
                         BDArmorySettings.TOURNAMENT_ROUNDS,
                         BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT,
+                        BDArmorySettings.TOURNAMENT_NPCS_PER_HEAT,
                         BDArmorySettings.TOURNAMENT_TEAMS_PER_HEAT,
                         BDArmorySettings.TOURNAMENT_VESSELS_PER_TEAM,
                         BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS,

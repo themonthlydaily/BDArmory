@@ -351,6 +351,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static int TOURNAMENT_ROUNDS_CUSTOM = 1000;            // Custom number of rounds at right end of slider.
         [BDAPersistentSettingsField] public static int TOURNAMENT_VESSELS_PER_HEAT = -1;           // Vessels Per Heat (Auto)
         [BDAPersistentSettingsField] public static Vector2Int TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE = new Vector2Int(6, 10); // Automatic vessels per heat selection (inclusive range).
+        [BDAPersistentSettingsField] public static int TOURNAMENT_NPCS_PER_HEAT = 0;               // NPCs Per Heat
         [BDAPersistentSettingsField] public static int TOURNAMENT_TEAMS_PER_HEAT = 2;              // Teams Per Heat
         [BDAPersistentSettingsField] public static int TOURNAMENT_OPPONENT_TEAMS_PER_HEAT = 1;     // Opponent Teams Per Heat (for gauntlets)
         [BDAPersistentSettingsField] public static int TOURNAMENT_VESSELS_PER_TEAM = 2;            // Vessels Per Team
