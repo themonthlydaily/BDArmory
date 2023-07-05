@@ -21,6 +21,8 @@ namespace BDArmory.WeaponMounts
 
         ModuleTurret turret;
 
+        public MultiMissileLauncher missilepod;
+
         [KSPField(guiActive = true, guiName = "#LOC_BDArmory_TurretEnabled")] public bool turretEnabled;//Turret Enabled
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MissileTurretFireFOV"),
@@ -285,7 +287,7 @@ namespace BDArmory.WeaponMounts
             {
                 hasReturned = false;
 
-                if (missileCount == 0)
+                if ((!missilepod && missileCount == 0) || (missilepod && missilepod.missileSpawner.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE))
                 {
                     DisableTurret();
                     return;

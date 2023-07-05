@@ -85,16 +85,16 @@ UI_FloatRange(minValue = 1f, maxValue = 4, stepIncrement = 1f, scene = UI_Scene.
         {
             if (part.parent)
             {
-
+                /*
                 if (part.parent.FindModuleImplementing<MissileTurret>()) //turrets work... sorta. Missiles are reloading where they should be, but there's some massive force being imparted on the turret every launch
                 {// test UpdateMissileChildren fix used for rotary rails?
                     ammoCount = 1;
                     Fields["ammoCount"].guiActiveEditor = false;
                 }
                 else
-                {
+                {*/
                     Fields["ammoCount"].guiActiveEditor = true;
-                }
+                //}
 
             }
         }

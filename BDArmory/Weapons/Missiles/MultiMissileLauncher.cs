@@ -5,6 +5,7 @@ using BDArmory.Settings;
 using BDArmory.Targeting;
 using BDArmory.UI;
 using BDArmory.Utils;
+using BDArmory.WeaponMounts;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -49,13 +50,16 @@ namespace BDArmory.Weapons.Missiles
 		[KSPField] public bool displayOrdinance = true; //display missile dummies (for rails and the like) or hide them (bomblet dispensers, gun-launched missiles, etc)
         [KSPField] public bool permitJettison = false; //allow jettisoning of missiles for multimissile launchrails and similar
         AnimationState deployState;
-        ModuleMissileRearm missileSpawner = null;
+        public ModuleMissileRearm missileSpawner = null;
         MissileLauncher missileLauncher = null;
         MissileFire wpm = null;
         private int tubesFired = 0;
         [KSPField(isPersistant = true)]
         private bool LoadoutModified = false;
         public BDTeam Team = BDTeam.Get("Neutral");
+
+        public MissileTurret turret;
+
         public void Start()
         {
             MakeMissileArray();           
@@ -74,6 +78,13 @@ namespace BDArmory.Weapons.Missiles
                     deployState.enabled = true;
                 }
             }
+            MissileTurret mt = part.FindModuleImplementing<MissileTurret>();
+            if (mt != null)
+            {
+                turret = mt;
+                turret.missilepod = this;
+            }
+
             StartCoroutine(DelayedStart());
         }
 
@@ -122,7 +133,7 @@ namespace BDArmory.Weapons.Missiles
                         Fields["loadedMissileName"].guiActiveEditor = true;
                     }
                     missileLauncher.missileName = subMunitionName;
-                    if (!permitJettison) missileLauncher.Events["Jettison"].guiActive = false;
+                    if (!permitJettison || turret) missileLauncher.Events["Jettison"].guiActive = false;
                     if (OverrideDropSettings)
                     {
                         missileLauncher.Fields["dropTime"].guiActive = false;
@@ -161,6 +172,7 @@ namespace BDArmory.Weapons.Missiles
                         missileLauncher.DetonationDistance = 0f;
                     }
                 }
+
                 GUIUtils.RefreshAssociatedWindows(part);
             }
             missileSpawner.UpdateMissileValues();
