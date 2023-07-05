@@ -177,6 +177,7 @@ namespace BDArmory.VesselSpawning
             bool PinataMode = false;
 
             int NPC_Count = 0;
+            NPCList.Clear();
             if (BDArmorySettings.NPC_COUNT > 0)
             {
                 var NPCFolder = Path.Combine(AutoSpawnPath, "NPC");
@@ -209,6 +210,7 @@ namespace BDArmory.VesselSpawning
                         if (!String.IsNullOrEmpty(BDArmorySettings.PINATA_NAME) && craftUrl.Contains(BDArmorySettings.PINATA_NAME)) PinataMode = true; //have separate Pinata and NPC support to allow both simultaneously?
                         spawnConfig.craftFiles.Add(craftUrl);
                         NPC_Count++;
+                        NPCList.Add(craftUrl);
                     }
                 }
                 if (!Directory.Exists(NPCFolder))

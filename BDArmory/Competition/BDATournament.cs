@@ -121,6 +121,11 @@ namespace BDArmory.Competition
         public bool AddPlayer(string player, string fileName, int currentRound = 0)
         {
             if (playersToFileNames.ContainsKey(player)) return false; // They're already there.
+            if (CircularSpawning.Instance.NPCList.Contains(fileName))
+            {
+                Debug.Log($"[BDArmory.BDATournament]: Culling NPC {fileName} from scores.");
+                return false;
+            }
             if (!File.Exists(fileName)) { Debug.LogWarning($"[BDArmory.BDATournament]: {fileName} does not exist for {player}."); return false; }
             if (currentRound < 0) { Debug.LogWarning($"[BDArmory.BDATournament]: Invalid round {currentRound}, setting to 0."); currentRound = 0; }
             if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDATournament]: Adding {player} with file {fileName} in round {currentRound}");
@@ -1511,7 +1516,9 @@ namespace BDArmory.Competition
             competitionStarted = true;
             // Register all the active vessels as part of the tournament.
             foreach (var kvp in CircularSpawning.Instance.GetSpawnedVesselURLs())
-                tournamentState.scores.AddPlayer(kvp.Key, kvp.Value, roundIndex);
+            {
+                if (!CircularSpawning.Instance.NPCList.Contains(kvp.Value)) tournamentState.scores.AddPlayer(kvp.Key, kvp.Value, roundIndex);
+            }
             yield return new WaitWhile(() => TournamentCoordinator.Instance.IsRunning);
         }
 
@@ -1568,7 +1575,9 @@ namespace BDArmory.Competition
             competitionStarted = true;
             // Register all the active vessels as part of the tournament.
             foreach (var kvp in CircularSpawning.Instance.GetSpawnedVesselURLs())
-                tournamentState.scores.AddPlayer(kvp.Key, kvp.Value, roundIndex);
+            {
+                if (!CircularSpawning.Instance.NPCList.Contains(kvp.Value)) tournamentState.scores.AddPlayer(kvp.Key, kvp.Value, roundIndex);
+            }
             // Wait for the competition to finish.
             while (BDACompetitionMode.Instance.competitionIsActive)
                 yield return new WaitForSeconds(1);
