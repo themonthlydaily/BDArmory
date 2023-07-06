@@ -1471,7 +1471,7 @@ namespace BDArmory.Control
             if (currentTarget != null && missilesAway.ContainsKey(currentTarget)) //change to previous target?
             {
                 missilesAway.TryGetValue(currentTarget, out int missiles);
-				firedMissiles = missiles;
+                firedMissiles = missiles;
             }
             else
             {
@@ -3189,7 +3189,7 @@ namespace BDArmory.Control
                         if (engageableWeapon.GetEngageAirTargets()) weaponTypesAir.Add(weapon.Current);
                         if (engageableWeapon.GetEngageMissileTargets())
                         {
-                            weaponTypesMissile.Add(weapon.Current); 
+                            weaponTypesMissile.Add(weapon.Current);
                             targetMissiles = true;
                         }
                         if (engageableWeapon.GetEngageGroundTargets()) weaponTypesGround.Add(weapon.Current);
@@ -5754,6 +5754,7 @@ namespace BDArmory.Control
                 case WeaponClasses.DefenseLaser:
                     {
                         ModuleWeapon laser = (ModuleWeapon)weaponCandidate;
+                        if (distanceToTarget < laser.minSafeDistance) return false;
 
                         // check yaw range of turret
                         ModuleTurret turret = laser.turret;
@@ -5784,6 +5785,7 @@ namespace BDArmory.Control
                 case WeaponClasses.Gun:
                     {
                         ModuleWeapon gun = (ModuleWeapon)weaponCandidate;
+                        if (distanceToTarget < gun.minSafeDistance) return false;
 
                         // check yaw range of turret
                         ModuleTurret turret = gun.turret;
@@ -5880,6 +5882,7 @@ namespace BDArmory.Control
                 case WeaponClasses.Rocket:
                     {
                         ModuleWeapon rocket = (ModuleWeapon)weaponCandidate;
+                        if (distanceToTarget < rocket.minSafeDistance) return false;
 
                         // check yaw range of turret
                         ModuleTurret turret = rocket.turret;
@@ -5968,7 +5971,7 @@ namespace BDArmory.Control
                         }
                         else
                         {
-                            if (PreviousMissile != null && PreviousMissile.ActiveRadar && PreviousMissile.targetVessel != null) //previous missile has gone active, don't need that lock anymore
+                            if (PreviousMissile != null && PreviousMissile.ActiveRadar && PreviousMissile.targetVessel != null && PreviousMissile.targetVessel.Vessel != null) //previous missile has gone active, don't need that lock anymore
                             {
                                 vesselRadarData.UnlockSelectedTarget(PreviousMissile.targetVessel.Vessel);
                             }

@@ -1602,6 +1602,18 @@ namespace BDArmory.Weapons
                     engageRangeMax = 1000;
                 }
             }
+            if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 60)
+            {
+                if (WeaponName == "bahaChemLaser")
+                {
+                    if (turret != null)
+                    {
+                        turret.minPitch = -0.1f;
+                        turret.maxPitch = 0.1f;
+                        turret.yawRange = 0.2f;
+                    }
+                }
+            }
         }
 
         void OnDestroy()
