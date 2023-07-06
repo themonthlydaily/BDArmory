@@ -135,6 +135,7 @@
     <Compile Include="Ammo\RocketInfo.cs" />
     <Compile Include="Armor\ArmorInfo.cs" />
     <Compile Include="Armor\BDAdjustableArmor.cs" />
+    <Compile Include="Armor\BDAProceduralArmor.cs" />
     <Compile Include="Armor\HullInfo.cs" />
     <Compile Include="Armor\ModuleReactiveArmor.cs" />
     <Compile Include="Competition\BDACompetitionMode.cs" />

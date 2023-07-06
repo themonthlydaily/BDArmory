@@ -663,6 +663,10 @@ namespace BDArmory.Control
         #endregion
 
         #region Countermeasure Settings
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvadeThreshold", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Evade time threshold
+    UI_FloatRange(minValue = 1f, maxValue = 60f, stepIncrement = 0.5f, scene = UI_Scene.All)]
+        public float evadeThreshold = 5f; // Works well
+
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMThreshold", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Countermeasure dispensing time threshold
             UI_FloatRange(minValue = 1f, maxValue = 60f, stepIncrement = 0.5f, scene = UI_Scene.All)]
         public float cmThreshold = 5f; // Works well
@@ -2627,7 +2631,7 @@ namespace BDArmory.Control
         IEnumerator WarningSoundRoutine(float distance, MissileBase ml)//give distance parameter
         {
             bool detectedLaunch = false;
-            if (rwr && (rwr.omniDetection || (!rwr.omniDetection && ml.TargetingMode == MissileBase.TargetingModes.Radar) || irsts.Count > 0)) //omni RWR detection, radar spike from lock, or IR spike from launch
+            if (rwr && (rwr.omniDetection || (!rwr.omniDetection && ml.TargetingMode == MissileBase.TargetingModes.Radar && ml.ActiveRadar) || irsts.Count > 0)) //omni RWR detection, radar spike from lock, or IR spike from launch
                 detectedLaunch = true;
 
             if (distance < (detectedLaunch ? this.guardRange : this.guardRange / 3))
@@ -6512,10 +6516,17 @@ namespace BDArmory.Control
 
         void UpdateGuardViewScan()
         {
-            results = RadarUtils.GuardScanInDirection(this, transform, guardAngle, rwr.omniDetection ? Mathf.Max(guardRange, 50000) : Mathf.Min(guardRange, 50000));
+            results = RadarUtils.GuardScanInDirection(this, transform, guardAngle, guardRange, rwr);
             incomingThreatVessel = null;
-
-            if (results.foundMissile && (results.incomingMissiles[0].distance < guardRange || results.incomingMissiles[0].time < cmThreshold)) //RWR detects things beyond visual range, allow reaction to detected high-velocity missiles where waiting till visrange would leave very little time to react
+            if (results.foundMissile)
+            {
+                if (rwr && (rwr.omniDetection || results.foundRadarMissile)) //enable omniRWRs for all incoming threats. Moving this here as RWRs would be detecting missiles before they reached danger close
+                {
+                    if (!rwr.rwrEnabled) rwr.EnableRWR();
+                    if (rwr.rwrEnabled && !rwr.displayRWR) rwr.displayRWR = true;
+                }
+            }
+            if (results.foundMissile && (results.incomingMissiles[0].distance < guardRange || results.incomingMissiles[0].time < Mathf.Max(cmThreshold, evadeThreshold))) //RWR detects things beyond visual range, allow reaction to detected high-velocity missiles where waiting till visrange would leave very little time to react
             {
                 if (BDArmorySettings.DEBUG_AI && (!missileIsIncoming || results.incomingMissiles[0].distance < 1000f))
                 {
@@ -6530,19 +6541,11 @@ namespace BDArmory.Control
                 incomingThreatPosition = results.incomingMissiles[0].position;
                 incomingThreatVessel = results.incomingMissiles[0].vessel;
                 incomingMissileVessel = results.incomingMissiles[0].vessel;
-                if (rwr && rwr.omniDetection) //enable omniRWRs for all incoming threats
-                {
-                    if (!rwr.rwrEnabled) rwr.EnableRWR();
-                    if (rwr.rwrEnabled && !rwr.displayRWR) rwr.displayRWR = true;
-                }
                 //radar missiles
+
                 if (results.foundRadarMissile) //have this require an RWR?
                 {
-                    if (rwr && !rwr.omniDetection)
-                    {
-                        if (!rwr.rwrEnabled) rwr.EnableRWR();
-                        if (rwr.rwrEnabled && !rwr.displayRWR) rwr.displayRWR = true;
-                    }
+                    //if (!rwr && incomingMissileDistance <= guardRange * 0.33f) //within ID range?
                     StartCoroutine(UnderAttackRoutine());
 
                     FireChaff();

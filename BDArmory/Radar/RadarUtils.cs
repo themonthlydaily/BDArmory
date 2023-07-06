@@ -1331,7 +1331,7 @@ namespace BDArmory.Radar
         /// Scans for targets in direction with field of view.
         /// (Visual Target acquisition)
         /// </summary>
-        public static ViewScanResults GuardScanInDirection(MissileFire myWpnManager, Transform referenceTransform, float fov, float maxDistance)
+        public static ViewScanResults GuardScanInDirection(MissileFire myWpnManager, Transform referenceTransform, float fov, float maxViewDistance, RadarWarningReceiver RWR = null)
         {
             fov *= 1.1f;
             var results = new ViewScanResults
@@ -1360,7 +1360,7 @@ namespace BDArmory.Radar
             Vector3 lookDirection = -forwardVector;
             var pilotAI = VesselModuleRegistry.GetBDModulePilotAI(myWpnManager.vessel, true);
             var ignoreMyTargetTargetingMe = pilotAI != null && pilotAI.evasionIgnoreMyTargetTargetingMe;
-
+            float maxRWRDistance = RWR != null ? RWR.rwrDisplayRange : maxViewDistance;
             using (var loadedvessels = BDATargetManager.LoadedVessels.GetEnumerator())
                 while (loadedvessels.MoveNext())
                 {
@@ -1369,10 +1369,9 @@ namespace BDArmory.Radar
 
                     Vector3 vesselProjectedDirection = (loadedvessels.Current.transform.position - position).ProjectOnPlanePreNormalized(upVector);
                     Vector3 vesselDirection = loadedvessels.Current.transform.position - position;
-
                     float vesselDistanceSqr = (loadedvessels.Current.transform.position - position).sqrMagnitude;
                     //BDATargetManager.ClearRadarReport(loadedvessels.Current, myWpnManager); //reset radar contact status
-                    if (vesselDistanceSqr < maxDistance * maxDistance && Vector3.Angle(vesselProjectedDirection, lookDirection) < fov / 2f) // && Vector3.Angle(loadedvessels.Current.transform.position - position, -myWpnManager.transform.forward) < myWpnManager.guardAngle / 2f) //WM facing direction? that s going to cause issues for any that aren't mounted pointing forward if guardAngle < 360; check combatSeat forward vector
+                    if (vesselDistanceSqr < maxRWRDistance * maxRWRDistance && Vector3.Angle(vesselProjectedDirection, lookDirection) < fov / 2f) // && Vector3.Angle(loadedvessels.Current.transform.position - position, -myWpnManager.transform.forward) < myWpnManager.guardAngle / 2f) //WM facing direction? that s going to cause issues for any that aren't mounted pointing forward if guardAngle < 360; check combatSeat forward vector
                         {
                         if (TerrainCheck(referenceTransform.position, loadedvessels.Current.transform.position))
                         {
@@ -1388,13 +1387,24 @@ namespace BDArmory.Radar
                                 if (missileBase != null)
                                 {
                                     if (missileBase.SourceVessel == myWpnManager.vessel) continue; // ignore missiles we've fired
-                                    if (BDArmorySettings.VARIABLE_MISSILE_VISIBILITY)
+                                    float sightDistance = maxViewDistance;
+                                    if (RWR != null)
                                     {
-                                        //thrusting missiles at full range, cruising missiles at 3/4ths range, coasting missiles at 1/3rd range?
-                                        //or have be hard cutoffs, e.g. 5km/4km/2.5km, etc?
-                                        float sightDistance = maxDistance * (missileBase.MissileState == MissileBase.MissileStates.Boost ? 1 : (missileBase.MissileState == MissileBase.MissileStates.Cruise ? 0.75f : 0.33f));
-                                        if (vesselDistanceSqr > sightDistance * sightDistance) continue; //missile outside of modified visibility range, disregard
+                                        if (RWR.omniDetection || (!RWR.omniDetection && missileBase.TargetingMode == MissileBase.TargetingModes.Radar && missileBase.ActiveRadar)) //omniRWR or active radar missile
+                                        {
+                                            sightDistance = maxRWRDistance; //missile tracked by RWR
+                                        }
+                                        else  //non-omniRWR and non-radar missile
+                                        {
+                                            if (BDArmorySettings.VARIABLE_MISSILE_VISIBILITY) //missiles tracked visually
+                                            {
+                                                //thrusting missiles at full range, cruising missiles at 3/4ths range, coasting missiles at 1/3rd range?
+                                                //or have be hard cutoffs, e.g. 5km/4km/2.5km, etc?
+                                                sightDistance = maxViewDistance * (missileBase.MissileState == MissileBase.MissileStates.Boost ? 1 : (missileBase.MissileState == MissileBase.MissileStates.Cruise ? 0.75f : 0.33f));
+                                            }
+                                        }
                                     }
+                                    if (vesselDistanceSqr > sightDistance * sightDistance) continue; //missile outside of modified visibility range, disregard
                                     if (MissileIsThreat(missileBase, myWpnManager))
                                     {
                                         results.incomingMissiles.Add(new IncomingMissile
@@ -1491,7 +1501,7 @@ namespace BDArmory.Radar
                 return (missile.HasFired && missile.MissileState > MissileBase.MissileStates.Drop && approaching &&
                             (
                                 (missile.TargetPosition - (mf.vessel.CoM + (mf.vessel.Velocity() * Time.fixedDeltaTime))).sqrMagnitude < missileBlastRadiusSqr || // Target position is within blast radius of missile.
-                                mf.vessel.PredictClosestApproachSqrSeparation(missile.vessel, mf.cmThreshold) < missileBlastRadiusSqr || // Closest approach is within blast radius of missile. 
+                                mf.vessel.PredictClosestApproachSqrSeparation(missile.vessel, Mathf.Max(mf.cmThreshold, mf.evadeThreshold)) < missileBlastRadiusSqr || // Closest approach is within blast radius of missile. 
                                 withinRadarFOV // We are within radar FOV of missile boresight.
                             ));
             }
@@ -1517,7 +1527,7 @@ namespace BDArmory.Radar
                         return (missile.HasFired && missile.TimeIndex > 1f && approaching &&
                                     (
                                         (missile.TargetPosition - (wms.vessel.CoM + (wms.vessel.Velocity() * Time.fixedDeltaTime))).sqrMagnitude < missileBlastRadiusSqr || // Target position is within blast radius of missile.
-                                        wms.vessel.PredictClosestApproachSqrSeparation(missile.vessel, wms.cmThreshold) < missileBlastRadiusSqr || // Closest approach is within blast radius of missile. 
+                                        wms.vessel.PredictClosestApproachSqrSeparation(missile.vessel, Mathf.Max(wms.evadeThreshold, wms.cmThreshold)) < missileBlastRadiusSqr || // Closest approach is within blast radius of missile. 
                                         withinRadarFOV // We are within radar FOV of missile boresight.
                                     ));
                     }

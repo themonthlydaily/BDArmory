@@ -123,6 +123,8 @@ namespace BDArmory.CounterMeasure
             float rcsrTotal = 1;
             float rcsrCount = 0;
 
+            float rcsOverride = -1;
+
             List<ModuleECMJammer>.Enumerator jammer = jammers.GetEnumerator();
             while (jammer.MoveNext())
             {
@@ -141,6 +143,7 @@ namespace BDArmory.CounterMeasure
                 {
                     rcsrTotal *= jammer.Current.rcsReductionFactor;
                     rcsrCount++;
+                    if (rcsOverride < jammer.Current.rcsOverride) rcsOverride = jammer.Current.rcsOverride;
                 }
             }
             jammer.Dispose();
@@ -158,6 +161,7 @@ namespace BDArmory.CounterMeasure
             }
 			
             ti = RadarUtils.GetVesselRadarSignature(vessel);
+            if (rcsOverride > 0) ti.radarBaseSignature = rcsOverride;
             ti.radarRCSReducedSignature = ti.radarBaseSignature;
             ti.radarModifiedSignature = ti.radarBaseSignature;
             ti.radarLockbreakFactor = 1;

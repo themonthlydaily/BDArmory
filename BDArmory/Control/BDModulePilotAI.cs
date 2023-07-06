@@ -1855,7 +1855,7 @@ namespace BDArmory.Control
             }
             if (weaponManager != null)
             {
-                if (weaponManager.incomingMissileTime <= weaponManager.cmThreshold)
+                if (weaponManager.incomingMissileTime <= weaponManager.evadeThreshold)
                 {
                     threatRating = -1f; // Allow entering evasion code if we're under missile fire
                     minimumEvasionTime = 0f; //  Trying to evade missile threats when they don't exist will result in NREs
@@ -2980,7 +2980,7 @@ namespace BDArmory.Control
                     AdjustThrottle(targetSpeed, false, useAB);
                 }
 
-                if (weaponManager.incomingMissileVessel != null && (weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= weaponManager.cmThreshold)) // Missile evasion
+                if (weaponManager.incomingMissileVessel != null && (weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= weaponManager.evadeThreshold)) // Missile evasion
                 {
                     if ((weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= 1.5f) && (!weaponManager.isChaffing)) // Missile is about to impact, pull a hard turn
                     {
