@@ -28,6 +28,11 @@
 		- A script (parse_tournament_state.py) can convert the tournament.state file to proper JSON (tournament.json), but can not convert it back yet.
 	- Fix a minor bug in the tournament log parsing script where wins weren't always being counted for the score.
 	- Make the saving of backup tournaments optional (hidden setting in settings.cfg).
+	- Add NPC support for FFA-RNG tournaments (both ranked and non-ranked).
+		- To use NPCs, create a "NPCs" folder in the folder for the tournament (e.g., "AutoSpawn/MyTourney/NPCs"), add the NPC files to this folder, then set the "NPCs Per Heat" slider to the desired number of NPCs.
+		- NPC files will be reused as necessary to provide the appropriate number of randomly selected NPCs each heat.
+		- When generating heats, the number of NPCs is taken into account for the total number of vessels per heat (e.g., 8 vessels per heat with 2 NPCs per heat would give 6 players + 2 NPCs in each heat).
+		- The "Tournament Scores" window will only show the scores for non-NPCs.
 - Detectors
 	- Add settings toggle ASPECTED_RCS that enables real-time RCS evaluation based on the target aircraft's azimuth and elevation relative to the radar evaluating it.
 		- Enable from the BDA settings menu under Missile & CM settings: "Real-Time Aspected RCS."

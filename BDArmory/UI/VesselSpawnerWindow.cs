@@ -642,6 +642,9 @@ namespace BDArmory.UI
                     {
                         GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_TournamentVesselsPerHeat")}:  ({(BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT > 0 ? BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT.ToString() : (BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT == -1 ? "Auto" : "Inf"))})", leftLabel); // Vessels Per Heat
                         BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT, -1f, 20f));
+
+                        GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_TournamentNPCsPerHeat")}:  ({BDArmorySettings.TOURNAMENT_NPCS_PER_HEAT})", leftLabel); // NPCs Per Heat
+                        BDArmorySettings.TOURNAMENT_NPCS_PER_HEAT = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.TOURNAMENT_NPCS_PER_HEAT, 0f, 10f));
                     }
                     else // Teams
                     {

@@ -60,6 +60,7 @@ namespace BDArmory.Competition
         Dictionary<string, string> playersToFileNames = new Dictionary<string, string>(); // Match players with craft filenames for extending ranks rounds.
         public Dictionary<string, float> scores = new Dictionary<string, float>(); // The current scores for the tournament.
         public float lastUpdated = 0;
+        HashSet<string> npcs = new HashSet<string>();
         Dictionary<string, List<ScoringData>> scoreDetails = new Dictionary<string, List<ScoringData>>(); // Scores per player per round. Rounds players weren't involved in contain default ScoringData entries.
         List<CompetitionOutcome> competitionOutcomes = new List<CompetitionOutcome>();
         public static Dictionary<string, float> weights = new Dictionary<string, float> {
@@ -108,6 +109,7 @@ namespace BDArmory.Competition
             scoreDetails.Clear();
             scores.Clear();
             competitionOutcomes.Clear();
+            npcs.Clear();
             lastUpdated = Time.time;
         }
 
@@ -118,7 +120,7 @@ namespace BDArmory.Competition
         /// <param name="fileName">The craft file belonging to the player (required for generating ranked rounds).</param>
         /// <param name="currentRound">The current round (fills previous rounds with empty score data).</param>
         /// <returns></returns>
-        public bool AddPlayer(string player, string fileName, int currentRound = 0)
+        public bool AddPlayer(string player, string fileName, int currentRound = 0, bool npc = false)
         {
             if (playersToFileNames.ContainsKey(player)) return false; // They're already there.
             if (!File.Exists(fileName)) { Debug.LogWarning($"[BDArmory.BDATournament]: {fileName} does not exist for {player}."); return false; }
@@ -126,7 +128,7 @@ namespace BDArmory.Competition
             if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDATournament]: Adding {player} with file {fileName} in round {currentRound}");
             playersToFileNames.Add(player, fileName);
             scoreDetails.Add(player, Enumerable.Range(0, currentRound).Select(i => new ScoringData()).ToList());
-            scores.Add(player, 0f);
+            if (npc) npcs.Add(player);
             return true;
         }
 
@@ -175,7 +177,11 @@ namespace BDArmory.Competition
         public void ComputeScores()
         {
             scores.Clear();
-            foreach (var player in scoreDetails.Keys) scores[player] = ComputeScore(player);
+            foreach (var player in scoreDetails.Keys)
+            {
+                if (npcs.Contains(player)) continue; // Ignore NPCs for overall score totals.
+                scores[player] = ComputeScore(player);
+            }
             lastUpdated = Time.time;
             if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDATournament]: Tournament scores: {string.Join(", ", scores.Select(s => $"{s.Key}: {s.Value}"))}");
         }
@@ -234,6 +240,7 @@ namespace BDArmory.Competition
 
         /// <summary>
         /// Get the craft files in ascending order of the currently computed scores.
+        /// Note: this ignores NPCs since they're not included in the overall scoring.
         /// </summary>
         public List<string> GetRankedCraftFiles() => scores.OrderBy(kvp => kvp.Value).Select(kvp => playersToFileNames[kvp.Key]).ToList();
         public List<int> GetRankedTeams(List<List<string>> teamFiles)
@@ -248,6 +255,7 @@ namespace BDArmory.Competition
         [SerializeField] List<string> _weightKeys;
         [SerializeField] List<float> _weightValues;
         [SerializeField] List<string> _players;
+        [SerializeField] List<string> _npcs;
         [SerializeField] List<string> _scores;
         [SerializeField] List<string> _files;
         [SerializeField] List<string> _results;
@@ -255,7 +263,8 @@ namespace BDArmory.Competition
         {
             _weightKeys = weights.Keys.ToList();
             _weightValues = _weightKeys.Select(k => weights[k]).ToList();
-            _players = scores.Keys.ToList();
+            _players = scoreDetails.Keys.ToList();
+            _npcs = npcs.ToList();
             _scores = _players.Select(p => JsonUtility.ToJson(new SerializedScoreDataList { players = _players }.Serialize(p, scoreDetails[p]))).ToList();
             _files = _players.Select(p => playersToFileNames[p]).ToList();
             _results = competitionOutcomes.Select(r => JsonUtility.ToJson(r.PreSerialize())).ToList();
@@ -265,7 +274,8 @@ namespace BDArmory.Competition
         {
             Reset();
             ConfigureScoreWeights(Enumerable.Range(0, _weightKeys.Count).ToDictionary(i => _weightKeys[i], i => _weightValues[i]));
-            for (int i = 0; i < _players.Count; ++i) AddPlayer(_players[i], _files[i]);
+            npcs = _npcs != null ? _npcs.ToHashSet() : new HashSet<string>();
+            for (int i = 0; i < _players.Count; ++i) AddPlayer(_players[i], _files[i], 0, npcs.Contains(_files[i]));
             try
             {
                 scoreDetails = Enumerable.Range(0, _players.Count).ToDictionary(i => _players[i], i => JsonUtility.FromJson<SerializedScoreDataList>(_scores[i])).ToDictionary(kvp => kvp.Key, kvp =>
@@ -462,8 +472,9 @@ namespace BDArmory.Competition
         public int vesselsPerTeam;
         public bool fullTeams;
         public int vesselsPerHeat;
-        public int npcsPerHeat;
         public int numberOfRounds;
+        public int npcsPerHeat;
+        public List<string> npcFiles;
         public TournamentType tournamentType = TournamentType.FFA;
         public TournamentStyle tournamentStyle = TournamentStyle.RNG;
         public TournamentRoundType tournamentRoundType = TournamentRoundType.Shuffled;
@@ -517,8 +528,14 @@ namespace BDArmory.Competition
             craftFiles = Directory.GetFiles(abs_folder, "*.craft").ToList();
             vesselCount = craftFiles.Count;
             var npc_folder = Path.Combine(abs_folder, "NPCs");
-            var npcs = Directory.GetFiles(npc_folder, "*.craft").ToList();
-            npcsPerHeat = Mathf.Min(Mathf.Min(npcsPerHeat, craftFiles.Count - 1), npcs.Count); // No duplicate NPCs, at least one non-NPC.
+            npcFiles = Directory.Exists(npc_folder) ? Directory.GetFiles(npc_folder, "*.craft").ToList() : new List<string>();
+            if (npcsPerHeat > 0 && npcFiles.Count == 0)
+            {
+                message = $"{npcsPerHeat} NPCs requested, but none exist in {Path.Combine("AutoSpawn", folder, "NPCs")}";
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
+                Debug.Log($"[BDArmory.BDATournament]: {message}");
+                return false;
+            }
             this.npcsPerHeat = npcsPerHeat;
             int fullHeatCount;
             switch (vesselsPerHeat)
@@ -542,7 +559,7 @@ namespace BDArmory.Competition
             {
                 case TournamentStyle.RNG: // RNG
                     {
-                        message = $"Generating {numberOfRounds} randomised rounds for {(tournamentRoundType == TournamentRoundType.Ranked ? "ranked " : "")}tournament {tournamentID} for {vesselCount} vessels in AutoSpawn{(folder == "" ? "" : "/" + folder)}, each with up to {vesselsPerHeat} vessels per heat.";
+                        message = $"Generating {numberOfRounds} randomised rounds for {(tournamentRoundType == TournamentRoundType.Ranked ? "ranked " : "")}tournament {tournamentID} for {vesselCount} vessels in AutoSpawn{(folder == "" ? "" : "/" + folder)}, each with up to {vesselsPerHeat} vessels per heat{(npcsPerHeat > 0 ? $" and {npcsPerHeat} NPCs per heat" : "")}.";
                         Debug.Log("[BDArmory.BDATournament]: " + message);
                         BDACompetitionMode.Instance.competitionStatus.Add(message);
                         for (int roundIndex = 0; roundIndex < numberOfRounds; ++roundIndex)
@@ -551,15 +568,15 @@ namespace BDArmory.Competition
                             int vesselsThisHeat = vesselsPerHeat;
                             int count = 0;
                             List<string> selectedFiles = craftFiles.Take(vesselsThisHeat).ToList();
-                            if (npcsPerHeat > 0) // Add in some NPCs.
-                            {
-                                npcs.Shuffle();
-                                selectedFiles.AddRange(npcs.Take(npcsPerHeat));
-                            }
                             rounds.Add(rounds.Count, new Dictionary<int, CircularSpawnConfig>());
                             int heatIndex = 0;
                             while (selectedFiles.Count > 0)
                             {
+                                if (npcsPerHeat > 0) // Add in some NPCs.
+                                {
+                                    npcFiles.Shuffle();
+                                    selectedFiles.AddRange(Enumerable.Repeat(npcFiles, Mathf.CeilToInt((float)npcsPerHeat / (float)npcFiles.Count)).SelectMany(x => x).Take(npcsPerHeat)); // Repeat the shuffled npcFiles list enough times, then take the required number.
+                                }
                                 rounds[roundIndex].Add(rounds[roundIndex].Count, new CircularSpawnConfig(
                                     BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
@@ -578,11 +595,6 @@ namespace BDArmory.Competition
                                 count += vesselsThisHeat;
                                 vesselsThisHeat = heatIndex++ < fullHeatCount ? vesselsPerHeat : vesselsPerHeat - 1; // Take one less for the remaining heats to distribute the deficit of craft files.
                                 selectedFiles = craftFiles.Skip(count).Take(vesselsThisHeat).ToList();
-                                if (npcsPerHeat > 0) // Add in some NPCs.
-                                {
-                                    npcs.Shuffle();
-                                    selectedFiles.AddRange(npcs.Take(npcsPerHeat));
-                                }
                             }
                         }
                         break;
@@ -929,7 +941,7 @@ namespace BDArmory.Competition
             {
                 case TournamentType.FFA:
                     {
-                        var craftFiles = scores.GetRankedCraftFiles();
+                        var craftFiles = scores.GetRankedCraftFiles(); // NPCs are already filtered out from the overall scoring.
                         int vesselsPerHeat = this.vesselsPerHeat; // Convert from the flag to the correct number per heat.
                         vesselCount = craftFiles.Count;
                         int fullHeatCount;
@@ -945,7 +957,7 @@ namespace BDArmory.Competition
                                 fullHeatCount = 1;
                                 break;
                             default:
-                                vesselsPerHeat = Mathf.Clamp(vesselsPerHeat, 1, craftFiles.Count);
+                                vesselsPerHeat = Mathf.Clamp(Mathf.Max(1, vesselsPerHeat - npcsPerHeat), 1, craftFiles.Count);
                                 fullHeatCount = craftFiles.Count / vesselsPerHeat;
                                 break;
                         }
@@ -957,6 +969,11 @@ namespace BDArmory.Competition
                         int heatIndex = 0;
                         while (selectedFiles.Count > 0)
                         {
+                            if (npcsPerHeat > 0) // Add in some NPCs.
+                            {
+                                npcFiles.Shuffle();
+                                selectedFiles.AddRange(Enumerable.Repeat(npcFiles, Mathf.CeilToInt((float)npcsPerHeat / (float)npcFiles.Count)).SelectMany(x => x).Take(npcsPerHeat));
+                            }
                             circularSpawnConfigTemplate.craftFiles = selectedFiles; // Set the craft file list to the currently selected ones.
                             rounds[roundIndex].Add(rounds[roundIndex].Count, new CircularSpawnConfig(circularSpawnConfigTemplate)); // Add a copy of the template to the heats.
                             count += vesselsThisHeat;
@@ -1046,9 +1063,10 @@ namespace BDArmory.Competition
         Tuple<int, int> OptimiseVesselsPerHeat(int count, int extras)
         {
             if (BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y < BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x) BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y = BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x;
-            var options = count > BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y && count < 2 * BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x - 1 ?
-                Enumerable.Range(BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y / 2, BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y - BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y / 2 + 1).Reverse().ToList() // Tweak the range when just over the upper limit to give more balanced heats.
-                : Enumerable.Range(BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x - extras, BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y - BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x + 1 - extras).Reverse().ToList();
+            var limits = new Vector2Int(Math.Max(1, BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x - extras), Math.Max(1, BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y - extras));
+            var options = count > limits.y && count < 2 * limits.x - 1 ?
+                Enumerable.Range(limits.y / 2, limits.y - limits.y / 2 + 1).Reverse().ToList() // Tweak the range when just over the upper limit to give more balanced heats.
+                : Enumerable.Range(limits.x, limits.y - limits.x + 1).Reverse().ToList();
             foreach (var val in options)
             {
                 if (count % val == 0)
@@ -1111,6 +1129,8 @@ namespace BDArmory.Competition
                 tournamentType = data.tournamentType;
                 tournamentStyle = data.tournamentStyle;
                 tournamentRoundType = data.tournamentRoundType;
+                npcsPerHeat = data.npcsPerHeat;
+                npcFiles = data.npcFiles.ToList();
                 _heats = data._heats;
                 rounds = new Dictionary<int, Dictionary<int, CircularSpawnConfig>>();
                 completed = new Dictionary<int, HashSet<int>>();
@@ -1563,7 +1583,7 @@ namespace BDArmory.Competition
             competitionStarted = true;
             // Register all the active vessels as part of the tournament.
             foreach (var kvp in CircularSpawning.Instance.GetSpawnedVesselURLs())
-                tournamentState.scores.AddPlayer(kvp.Key, kvp.Value, roundIndex);
+                tournamentState.scores.AddPlayer(kvp.Key, kvp.Value, roundIndex, tournamentState.npcFiles.Contains(kvp.Value));
             yield return new WaitWhile(() => TournamentCoordinator.Instance.IsRunning);
         }
 
@@ -1620,7 +1640,7 @@ namespace BDArmory.Competition
             competitionStarted = true;
             // Register all the active vessels as part of the tournament.
             foreach (var kvp in CircularSpawning.Instance.GetSpawnedVesselURLs())
-                tournamentState.scores.AddPlayer(kvp.Key, kvp.Value, roundIndex);
+                tournamentState.scores.AddPlayer(kvp.Key, kvp.Value, roundIndex, tournamentState.npcFiles.Contains(kvp.Value));
             // Wait for the competition to finish.
             while (BDACompetitionMode.Instance.competitionIsActive)
                 yield return new WaitForSeconds(1);

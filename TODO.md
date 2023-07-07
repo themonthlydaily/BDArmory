@@ -13,7 +13,6 @@
 
 - Ranked tournament mode
 	- Add support for converting tournament.json to tournament.state
-	- Add support for NPCs.
 - Vessel Spawner
 	- Add option to select craft from subfolders of the SPH/VAB.
 
@@ -48,6 +47,7 @@
 - Fix the piñata spawning logic - spawn the piñata(s) separately after circular spawning has occured.
 - Add VTOL AI to the AI GUI.
 - Motherships branch
+- Figure out why bullet hole decals are frequently offset behind the craft. - krakensbane or flightintegrator at time of decal attachment?
 - Inertial correction to pitch, roll, yaw errors for PID calcuations. Rotate the vessel reference transform first, computing debugPos2 from the top 
 - Preallocate the explosion merge buffer and reuse it.
 - If re-assign teams is disabled, custom spawn templates should use the team name of the first vessel in each team as the team name.
