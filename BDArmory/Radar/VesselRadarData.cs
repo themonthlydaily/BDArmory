@@ -1854,7 +1854,7 @@ namespace BDArmory.Radar
         {
             if (!locked) return;
             var vesselIndex = displayedTargets.FindIndex(t => t.vessel == vessel);
-            if (vesselIndex != -1) // FIXME These shouldn't be necessary and are likely from a bug!
+            if (vesselIndex != -1)
             {
                 ModuleRadar rad = displayedTargets[vesselIndex].detectedByRadar;
                 rad.UnlockTargetAt(rad.currentLockIndex);
