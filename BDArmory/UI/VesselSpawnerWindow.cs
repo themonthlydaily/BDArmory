@@ -251,7 +251,6 @@ namespace BDArmory.UI
                     BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS,
                     (TournamentStyle)BDArmorySettings.TOURNAMENT_STYLE,
                     (TournamentRoundType)BDArmorySettings.TOURNAMENT_ROUND_TYPE
-                    //BDArmorySettings.NPC_Count // May break compat with older tourneys
                 );
             if (BDInputUtils.GetKeyDown(BDInputSettingsFields.TOURNAMENT_RUN))
                 BDATournament.Instance.RunTournament();
@@ -639,9 +638,6 @@ namespace BDArmory.UI
                     value = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), value, 1f, 37f));
                     BDArmorySettings.TOURNAMENT_ROUNDS = value <= 20 ? value : value <= 36 ? (value - 16) * 5 : BDArmorySettings.TOURNAMENT_ROUNDS_CUSTOM;
 
-                    GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_NPC_Count")}: ({BDArmorySettings.NPC_COUNT})", leftLabel); // Delay between heats
-                    BDArmorySettings.NPC_COUNT = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.NPC_COUNT, 0f, 10));
-                    //Add window for setting pinata name/ NPC team?
                     if (BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS == 0) // FFA
                     {
                         GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_TournamentVesselsPerHeat")}:  ({(BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT > 0 ? BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT.ToString() : (BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT == -1 ? "Auto" : "Inf"))})", leftLabel); // Vessels Per Heat

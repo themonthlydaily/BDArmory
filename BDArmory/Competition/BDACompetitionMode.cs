@@ -417,7 +417,7 @@ namespace BDArmory.Competition
             killerGMenabled = false;
             FX.BulletHitFX.CleanPartsOnFireInfo();
             Scores.ConfigurePlayers(GetAllPilots().Select(p => p.vessel).ToList()); // Get the competitors.
-            if (BDArmorySettings.RUNWAY_PROJECT && !String.IsNullOrEmpty(BDArmorySettings.PINATA_NAME) && Scores.Players.Contains(BDArmorySettings.PINATA_NAME)) { hasPinata = true; pinataAlive = false; } else { hasPinata = false; pinataAlive = false; } // Piñata.
+            if (!String.IsNullOrEmpty(BDArmorySettings.PINATA_NAME) && Scores.Players.Contains(BDArmorySettings.PINATA_NAME)) { hasPinata = true; pinataAlive = false; } else { hasPinata = false; pinataAlive = false; } // Piñata.
             if (SpawnUtils.originalTeams.Count == 0) SpawnUtils.SaveTeams(); // If the vessels weren't spawned in with Vessel Spawner, save the current teams.
             if (LoadedVesselSwitcher.Instance is not null) LoadedVesselSwitcher.Instance.ResetDeadVessels();
             dragLimiting.Clear();
@@ -2216,7 +2216,7 @@ namespace BDArmory.Competition
                 if (VesselModuleRegistry.ignoredVesselTypes.Contains(vessel.vesselType)) continue;  // Debris handled by DebrisDelayedCleanUp, others are ignored.
                 if (nonCompetitorsToRemove.Contains(vessel)) continue; // Already scheduled for removal.
                 bool activePilot = false;
-                if (BDArmorySettings.RUNWAY_PROJECT && vessel.GetName() == BDArmorySettings.PINATA_NAME)
+                if (vessel.GetName() == BDArmorySettings.PINATA_NAME)
                 {
                     activePilot = true;
                 }
@@ -2428,7 +2428,9 @@ namespace BDArmory.Competition
                     if ((vessel.vesselType != VesselType.Debris) && !vesselName.EndsWith("Debris")) // && !vesselName.EndsWith("Plane") && !vesselName.EndsWith("Probe"))
                     {
                         // vessel is still alive
-                        alive.Add(vesselName);
+                        if (vesselName.Contains(BDArmorySettings.PINATA_NAME)) alive.Add(BDArmorySettings.PINATA_NAME);
+                        else
+                            alive.Add(vesselName);
                         deadOrAliveString += " *" + vesselName + "* ";
                         numberOfCompetitiveVessels++;
                     }
@@ -2620,7 +2622,7 @@ namespace BDArmory.Competition
             string aliveString = string.Join(",", alive.ToArray());
             previousNumberCompetitive = numberOfCompetitiveVessels;
             // if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "] STILLALIVE: " + aliveString); // This just fills the logs needlessly.
-            if (BDArmorySettings.RUNWAY_PROJECT && hasPinata && !String.IsNullOrEmpty(BDArmorySettings.PINATA_NAME))
+            if (hasPinata && !String.IsNullOrEmpty(BDArmorySettings.PINATA_NAME))
             {
                 // If we find a vessel named "Pinata" that's a special case object
                 // this should probably be configurable.
@@ -2633,7 +2635,7 @@ namespace BDArmory.Competition
                 else if (pinataAlive && !alive.Contains(BDArmorySettings.PINATA_NAME))
                 {
                     // switch everyone onto separate teams when the Pinata Dies
-                    LoadedVesselSwitcher.Instance.MassTeamSwitch(true);
+                    LoadedVesselSwitcher.Instance.MassTeamSwitch(BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS == 0, BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS != 0); //need to have thischeck for team FFA
                     pinataAlive = false;
                     competitionStatus.Add("Pinata killed by " + Scores.ScoreData[BDArmorySettings.PINATA_NAME].lastPersonWhoDamagedMe + "! Competition is now a Free for all");
                     Scores.RegisterMissileStrike(Scores.ScoreData[BDArmorySettings.PINATA_NAME].lastPersonWhoDamagedMe, BDArmorySettings.PINATA_NAME); //give a missile strike point to indicate the pinata kill on the web API
@@ -2654,7 +2656,7 @@ namespace BDArmory.Competition
                 // check everyone who's no longer alive
                 if (!alive.Contains(player))
                 {
-                    if (BDArmorySettings.RUNWAY_PROJECT && player == BDArmorySettings.PINATA_NAME) continue;
+                    if (player == BDArmorySettings.PINATA_NAME) continue;
                     if (Scores.ScoreData[player].aliveState == AliveState.Alive)
                     {
                         var timeOfDeath = now;

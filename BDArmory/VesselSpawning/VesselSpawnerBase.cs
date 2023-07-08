@@ -969,7 +969,6 @@ namespace BDArmory.VesselSpawning
         }
 
         public Dictionary<string, string> GetSpawnedVesselURLs() => spawnedVesselURLs.ToDictionary(kvp => kvp.Key, kvp => kvp.Value); // Return a copy.
-        public List<string> NPCList = new List<string>();
         #endregion
         #endregion
     }
