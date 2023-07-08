@@ -183,7 +183,11 @@ namespace BDArmory.Competition
                 scores[player] = ComputeScore(player);
             }
             lastUpdated = Time.time;
-            if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDATournament]: Tournament scores: {string.Join(", ", scores.Select(s => $"{s.Key}: {s.Value}"))}");
+            if (BDArmorySettings.DEBUG_COMPETITION)
+            {
+                Debug.Log($"[BDArmory.BDATournament]: Tournament scores: {string.Join(", ", scores.Select(s => $"{s.Key}: {s.Value}"))}");
+                Debug.Log($"[BDArmory.BDATournament]: NPC scores: {string.Join(", ", npcs.Select(npc => $"{npc}: {ComputeScore(npc)}"))}");
+            }
         }
 
         HashSet<AliveState> cleanKills = new HashSet<AliveState> { AliveState.CleanKill, AliveState.HeadShot, AliveState.KillSteal };
