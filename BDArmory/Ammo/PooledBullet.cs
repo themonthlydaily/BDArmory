@@ -1701,8 +1701,8 @@ namespace BDArmory.Bullets
             bulletTrail[0].startWidth = tracerStartWidth * factor * randomWidthScale;
             bulletTrail[0].endWidth = tracerEndWidth * factor * randomWidthScale;
 
-            bulletTrail[1].startWidth = (0.025f) * factor * 0.5f;
-            bulletTrail[1].endWidth = (0.01f) * factor * 0.5f;
+            bulletTrail[1].startWidth = (tracerStartWidth/2) * factor * 0.5f;
+            bulletTrail[1].endWidth = (tracerEndWidth/2) * factor * 0.5f;
         }
 
         public void KillBullet()

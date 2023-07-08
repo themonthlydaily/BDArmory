@@ -176,51 +176,9 @@ namespace BDArmory.VesselSpawning
             var spawnAirborne = spawnConfig.altitude > 10;
             bool PinataMode = false;
 
-            int NPC_Count = 0;
-            NPCList.Clear();
-            if (BDArmorySettings.NPC_COUNT > 0)
+            foreach (var craftUrl in spawnConfig.craftFiles)
             {
-                var NPCFolder = Path.Combine(AutoSpawnPath, "NPC");
-                if (Directory.Exists(NPCFolder))
-                {
-                    List<string> NPCs = Directory.GetFiles(NPCFolder).Where(f => f.EndsWith(".craft")).ToList();
-                    if (NPCs.Count == 0)
-                    {
-                        LogMessage("Vessel spawning: found no NPC files in " + Path.Combine(AutoSpawnPath, "NPC"));
-                        vesselsSpawning = false;
-                        spawnFailureReason = SpawnFailureReason.NoCraft;
-                        SpawnUtils.RevertSpawnLocationCamera(true, true);
-                        yield break;
-                    }
-                    if (NPCs.Count > BDArmorySettings.NPC_COUNT)
-                    {
-                        NPCs.Shuffle();
-                        NPCs.RemoveRange(BDArmorySettings.NPC_COUNT, NPCs.Count - BDArmorySettings.NPC_COUNT);
-                    }
-                    if (NPCs.Count < BDArmorySettings.NPC_COUNT)
-                    {
-                        while (NPCs.Count < BDArmorySettings.NPC_COUNT)
-                        {
-                            NPCs.Add(NPCs[0]);
-                            NPCs.Shuffle();
-                        }
-                    }
-                    foreach (var craftUrl in NPCs) //Add in NPCs to spawn list
-                    {
-                        if (!String.IsNullOrEmpty(BDArmorySettings.PINATA_NAME) && craftUrl.Contains(BDArmorySettings.PINATA_NAME)) PinataMode = true; //have separate Pinata and NPC support to allow both simultaneously?
-                        spawnConfig.craftFiles.Add(craftUrl);
-                        NPC_Count++;
-                        NPCList.Add(craftUrl);
-                    }
-                }
-                if (!Directory.Exists(NPCFolder))
-                {
-                    LogMessage($"NPC spawn directory doesn't exist!");
-                    vesselsSpawning = false;
-                    spawnFailureReason = SpawnFailureReason.NoCraft;
-                    SpawnUtils.RevertSpawnLocationCamera(true, true);
-                    yield break;
-                }
+                if (!String.IsNullOrEmpty(BDArmorySettings.PINATA_NAME) && craftUrl.Contains(BDArmorySettings.PINATA_NAME)) PinataMode = true;
             }
             var spawnDistance = spawnConfig.craftFiles.Count > 1 ? (spawnConfig.absDistanceOrFactor ? spawnConfig.distance : (spawnConfig.distance + spawnConfig.distance * (spawnConfig.craftFiles.Count - (PinataMode ? 1 : 0)))) : 0f; // If it's a single craft, spawn it at the spawn point.
 
