@@ -474,7 +474,7 @@ namespace BDArmory.Competition
         public int vesselsPerHeat;
         public int numberOfRounds;
         public int npcsPerHeat;
-        public List<string> npcFiles;
+        public List<string> npcFiles = new List<string>();
         public TournamentType tournamentType = TournamentType.FFA;
         public TournamentStyle tournamentStyle = TournamentStyle.RNG;
         public TournamentRoundType tournamentRoundType = TournamentRoundType.Shuffled;
@@ -733,6 +733,7 @@ namespace BDArmory.Competition
                 }
             }
             vesselCount = craftFiles.Count;
+            npcFiles.Clear(); // NPCs aren't supported in teams tournaments yet.
             if (teamFiles.Count < (tournamentStyle != TournamentStyle.Gauntlet ? 2 : 1))
             {
                 message = $"Insufficient {(numberOfTeams != 1 ? "craft files" : "folders")} in '{Path.Combine("AutoSpawn", folder)}' to generate a tournament.";
