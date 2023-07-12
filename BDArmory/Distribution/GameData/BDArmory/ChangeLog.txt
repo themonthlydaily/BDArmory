@@ -4,6 +4,7 @@
 	- Don't auto-switch vessels when MouseAimFlight is active.
 	- Fixed an issue where modules on a vessel re-entering the PRE range weren't being updated in the VesselModuleRegistry.
 	- Fix an issue with chaff vessel modules summoning the Kraken on undocking.
+	- Fix an NRE related to jammers enabling.
 - AI:
 	- Make the autotuning re-centering distance customisable.
 	- Add unclamped max values for auto-tuning speed and altitude.
@@ -12,6 +13,8 @@
 	- Disable gravity easing when using 'Warp Here' above 10m altitude.
 - Weapons:
 	- Fix various NREs related to missiles and multi-missile launchers.
+	- Fix missiles fired from same source vessel causing each other to explode when they cross within proximity detonation distance.
+	- Add flareEffectivity = 1 in missile configs. Modifies how the missile targeting is affected by flares, 1 is fully affected (normal behavior), lower values mean less affected (0 is ignores flares), higher values means more affected.
 - Competition:
 	- Make the saving of backup tournaments optional (hidden setting TOURNAMENT_BACKUPS in settings.cfg).
 	- Added a ranked tournament mode.

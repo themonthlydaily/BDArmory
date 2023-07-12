@@ -96,6 +96,9 @@ namespace BDArmory.CounterMeasure
 
         public void AddJammer(ModuleECMJammer jammer)
         {
+            if (jammers is null)
+                Start();
+
             if (!jammers.Contains(jammer))
             {
                 jammers.Add(jammer);

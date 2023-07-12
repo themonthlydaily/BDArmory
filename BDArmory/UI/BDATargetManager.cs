@@ -550,6 +550,7 @@ namespace BDArmory.UI
             if (priorHeatScore > 0) // Flares can only decoy if we already had a target
             {
                 flareData = GetFlareTarget(ray, scanRadius, highpassThreshold, lockedSensorFOVBias, lockedSensorVelocityBias, priorHeatTarget);
+                flareData.signalStrength *= missileVessel.GetComponent<MissileBase>().flareEffectivity;
                 flareSuccess = ((!flareData.Equals(TargetSignatureData.noTarget)) && (flareData.signalStrength > highpassThreshold));
             }
 
