@@ -6,11 +6,13 @@ using System.Linq;
 using UnityEngine;
 using KSP.UI.Screens;
 
+using BDArmory.Competition;
+using BDArmory.Extensions;
 using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
 
-namespace BDArmory.Competition.VesselSpawning
+namespace BDArmory.VesselSpawning
 {
     /// <summary>
     /// Spawn teams of craft in a custom template.
@@ -141,7 +143,7 @@ namespace BDArmory.Competition.VesselSpawning
                 vesselSpawnConfigs.Add(new VesselSpawnConfig(
                     customVesselSpawnConfig.craftURL,
                     vesselSpawnPoint,
-                    Vector3.ProjectOnPlane(Quaternion.AngleAxis(customVesselSpawnConfig.heading, radialUnitVector) * refDirection, radialUnitVector).normalized,
+                    (Quaternion.AngleAxis(customVesselSpawnConfig.heading, radialUnitVector) * refDirection).ProjectOnPlanePreNormalized(radialUnitVector).normalized,
                     (float)spawnConfig.altitude,
                     0,
                     false,
@@ -163,6 +165,9 @@ namespace BDArmory.Competition.VesselSpawning
             }
 
             #region Post-spawning
+            // Revert back to the KSP's proper camera.
+            SpawnUtils.RevertSpawnLocationCamera(true);
+
             // Spawning has succeeded, vessels have been renamed where necessary and vessels are ready. Time to assign teams and any other stuff.
             yield return PostSpawnMainSequence(spawnConfig, false, !startCompetitionAfterSpawning);
             if (spawnFailureReason != SpawnFailureReason.None)
@@ -174,7 +179,6 @@ namespace BDArmory.Competition.VesselSpawning
             }
 
             // Revert the camera and focus on one of the vessels.
-            SpawnUtils.RevertSpawnLocationCamera(true);
             if ((FlightGlobals.ActiveVessel == null || FlightGlobals.ActiveVessel.state == Vessel.State.DEAD) && spawnedVessels.Count > 0)
             {
                 yield return LoadedVesselSwitcher.Instance.SwitchToVesselWhenPossible(spawnedVessels.Take(UnityEngine.Random.Range(1, spawnedVessels.Count)).Last().Value); // Update the camera.
@@ -241,6 +245,7 @@ namespace BDArmory.Competition.VesselSpawning
         /// </summary>
         public void SaveTemplate()
         {
+            if (LoadedVesselSwitcher.Instance.WeaponManagers.Count == 0) return; // Safe-guard, don't save over an existing template when the slots are empty. 
             var geoCoords = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Select(wm => wm.vessel.transform.position).Aggregate(Vector3.zero, (l, r) => l + r) / LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Count()); // Set the central spawn location at the centroid of the craft.
             customSpawnConfig.worldIndex = BDArmorySettings.VESSEL_SPAWN_WORLDINDEX;
             customSpawnConfig.latitude = geoCoords.x;
@@ -265,6 +270,7 @@ namespace BDArmory.Competition.VesselSpawning
                 customSpawnConfig.customVesselSpawnConfigs.Add(teamConfigs);
                 ++teamCount;
             }
+            if (!customSpawnConfigs.Contains(customSpawnConfig)) customSpawnConfigs.Add(customSpawnConfig); // Add the template if it isn't already there.
             CustomSpawnTemplateField.Save();
             PopulateEntriesFromLVS(); // Populate the slots to show the layout.
         }
@@ -274,7 +280,7 @@ namespace BDArmory.Competition.VesselSpawning
         /// Vessel positions, rotations and teams are saved.
         /// </summary>
         /// <param name="templateName"></param>
-        public CustomSpawnConfig NewTemplate()
+        public CustomSpawnConfig NewTemplate(string templateName="")
         {
             // Remove any invalid or unnamed entries.
             customSpawnConfigs = customSpawnConfigs.Where(config => !string.IsNullOrEmpty(config.name) && config.customVesselSpawnConfigs.Count > 0).ToList();
@@ -282,7 +288,7 @@ namespace BDArmory.Competition.VesselSpawning
             // Then make a new one.
             var geoCoords = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Select(wm => wm.vessel.transform.position).Aggregate(Vector3.zero, (l, r) => l + r) / LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Count()); // Set the central spawn location at the centroid of the craft.
             customSpawnConfig = new CustomSpawnConfig(
-                "",
+                templateName,
                 new SpawnConfig(
                     worldIndex: BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
                     latitude: geoCoords.x,
@@ -379,7 +385,6 @@ namespace BDArmory.Competition.VesselSpawning
 
             // Set the locally settable config values.
             customSpawnConfig.altitude = Mathf.Clamp(BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 2f, 10f);
-            customSpawnConfig.easeInSpeed = BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED;
             customSpawnConfig.killEverythingFirst = true;
 
             this.startCompetitionAfterSpawning = startCompetitionAfterSpawning;
@@ -494,6 +499,7 @@ namespace BDArmory.Competition.VesselSpawning
         Rect vesselSelectionWindowRect = new Rect(0, 0, 600, 800);
         Vector2 vesselSelectionScrollPos = default;
         string selectionFilter = "";
+        bool focusFilterField = false;
 
         CustomCraftBrowserDialog craftBrowser;
         public string ShipName(string craft) => (!string.IsNullOrEmpty(craft) && CustomCraftBrowserDialog.shipNames.TryGetValue(craft, out string shipName)) ? shipName : "";
@@ -520,6 +526,7 @@ namespace BDArmory.Competition.VesselSpawning
             }
             vesselSelectionWindowRect.position = position + new Vector2(-vesselSelectionWindowRect.width - 120, -vesselSelectionWindowRect.height / 2); // Centred and slightly offset to allow clicking the same spot.
             showVesselSelection = true;
+            focusFilterField = true; // Focus the filter text field.
             bringVesselSelectionToFront = true;
             GUIUtils.SetGUIRectVisible(_vesselGUICheckIndex, true);
         }
@@ -541,7 +548,12 @@ namespace BDArmory.Competition.VesselSpawning
         {
             GUI.DragWindow(new Rect(0, 0, vesselSelectionWindowRect.width, 20));
             GUILayout.BeginVertical();
-            selectionFilter = GUIUtils.TextField(selectionFilter, " Filter");
+            selectionFilter = GUIUtils.TextField(selectionFilter, " Filter", "CSTFilterField");
+            if (focusFilterField)
+            {
+                GUI.FocusControl("CSTFilterField");
+                focusFilterField = false;
+            }
             vesselSelectionScrollPos = GUILayout.BeginScrollView(vesselSelectionScrollPos, GUI.skin.box, GUILayout.Width(vesselSelectionWindowRect.width - 15), GUILayout.MaxHeight(vesselSelectionWindowRect.height - 60));
             using (var vessels = craftBrowser.craftList.GetEnumerator())
                 while (vessels.MoveNext())
@@ -634,7 +646,7 @@ namespace BDArmory.Competition.VesselSpawning
                         craftList[craft].SaveToMetaFile(craftMeta);
                     }
                 }
-                crewCounts = craftList.ToDictionary(kvp => kvp.Key, kvp=> kvp.Value.partNames.Where(p => SpawnUtils.PartCrewCounts.ContainsKey(p)).Sum(p => SpawnUtils.PartCrewCounts[p]));
+                crewCounts = craftList.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.partNames.Where(p => SpawnUtils.PartCrewCounts.ContainsKey(p)).Sum(p => SpawnUtils.PartCrewCounts[p]));
                 vesselButtonStyle.stretchHeight = true;
                 vesselButtonStyle.fontSize = 20;
                 vesselInfoStyle.fontSize = 12;

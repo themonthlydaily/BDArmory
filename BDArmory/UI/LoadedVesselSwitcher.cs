@@ -7,11 +7,11 @@ using System;
 using UnityEngine;
 
 using BDArmory.Competition;
-using BDArmory.Competition.VesselSpawning;
 using BDArmory.Control;
 using BDArmory.Extensions;
 using BDArmory.Settings;
 using BDArmory.Utils;
+using BDArmory.VesselSpawning;
 using BDArmory.Weapons.Missiles;
 
 namespace BDArmory.UI
@@ -220,7 +220,8 @@ namespace BDArmory.UI
         {
             weaponManagers.Clear();
 
-            if (FlightGlobals.Vessels == null) return;
+            try { if (FlightGlobals.Vessels == null) return; } // Sometimes this gets called multiple times when exiting KSP due to something repeatedly calling DestroyImmediate on a vessel!
+            catch { return; }
             using (var v = FlightGlobals.Vessels.GetEnumerator())
                 while (v.MoveNext())
                 {
@@ -334,12 +335,19 @@ namespace BDArmory.UI
         Dictionary<string, string> deadVesselStrings = new Dictionary<string, string>(); // Cache dead vessel strings (they could potentially change during a competition, so we'll reset them at the end of competitions).
         StringBuilder deadVesselString = new StringBuilder();
 
+        float WaypointRank(string player)
+        {
+            if (!BDACompetitionMode.Instance.Scores.ScoreData.ContainsKey(player)) return 0f;
+            var score = BDACompetitionMode.Instance.Scores.ScoreData[player];
+            return (float)score.waypointsReached.Count - 0.001f * score.totalWPTime; // Rank in the VS based primarily on #waypoints passed and secondly on time.
+        }
+
         private void WindowVesselSwitcher(int id)
         {
             int numButtons = 11;
             int numButtonsOnLeft = 5;
             GUI.DragWindow(new Rect(numButtonsOnLeft * _buttonHeight + _margin, 0f, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - numButtons * _buttonHeight - 3f * _margin, _titleHeight));
-            GUI.Label(new Rect(BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - (numButtons - numButtonsOnLeft) * _buttonHeight - _margin - 70f, 4f, 70f, _titleHeight - 4f), BDArmorySetup.Instance.Version);
+            GUI.Label(new Rect(BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - (numButtons - numButtonsOnLeft) * _buttonHeight - _margin - 70f, 4f, 70f, _titleHeight - 4f), BDArmorySetup.Version);
             if (GUI.Button(new Rect(0f * _buttonHeight + _margin, 4f, _buttonHeight, _buttonHeight), "><", BDArmorySetup.BDGuiSkin.button)) // Don't get so small that the buttons get hidden.
             {
                 BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH -= 50f;
@@ -475,6 +483,24 @@ namespace BDArmory.UI
                         height += _buttonHeight + _buttonGap;
                     }
                 }
+                else if (BDArmorySettings.WAYPOINTS_MODE)
+                {
+                    var orderedWMs = weaponManagers.SelectMany(tm => tm.Value, (tm, weaponManager) => new Tuple<string, MissileFire>(tm.Key, weaponManager)).Where(t => t.Item2 != null && t.Item2.vessel != null).ToList(); // Use a local copy.
+                    orderedWMs.Sort((mf1, mf2) => WaypointRank(mf2.Item2.vessel.vesselName).CompareTo(WaypointRank(mf1.Item2.vessel.vesselName)));
+                    foreach (var weaponManagerPair in orderedWMs)
+                    {
+                        if (weaponManagerPair.Item1 == null) continue;
+                        try
+                        {
+                            AddVesselSwitcherWindowEntry(weaponManagerPair.Item2, weaponManagerPair.Item1, height, vesselButtonWidth);
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogError($"[BDArmory.LoadedVesselSwitcher]: AddVesselSwitcherWindowEntry threw an exception trying to add {weaponManagerPair.Item2.vessel.vesselName} on team {weaponManagerPair.Item1} to the list: {e.Message}");
+                        }
+                        height += _buttonHeight + _buttonGap;
+                    }
+                }
                 else // Sorting of teams by hit counts.
                 {
                     var orderedTeamManagers = weaponManagers.Select(tm => new Tuple<string, List<MissileFire>>(tm.Key, tm.Value)).ToList();
@@ -586,6 +612,9 @@ namespace BDArmory.UI
                                 break;
                             case DamageFrom.Ramming:
                                 deadVesselString.Append($") RAMMED BY {BDACompetitionMode.Instance.Scores.ScoreData[player].lastPersonWhoDamagedMe}");
+                                break;
+                            case DamageFrom.Asteroids:
+                                deadVesselString.Append($") FLEW INTO AN ASTEROID!");
                                 break;
                             case DamageFrom.Incompetence:
                                 deadVesselString.Append(") CRASHED AND BURNED!");
@@ -713,13 +742,23 @@ namespace BDArmory.UI
             // if (BDArmorySettings.TAG_MODE)
             //     postStatus += ", " + (ContinuousSpawning.Instance.vesselsSpawningContinuously ? currentTagTime.ToString("0.0") : currentTagScore.ToString("0.0"));
             // postStatus += ")";
-            VSEntryString.Append($" ({currentScore}");
-            if (currentRocketScore > 0) VSEntryString.Append($", {currentRocketScore} rkt");
-            if (currentMissileScore > 0) VSEntryString.Append($", {currentMissileScore} mis");
-            if (currentRamScore > 0) VSEntryString.Append($", {currentRamScore} ram");
-            if (BDArmorySettings.TAG_MODE)
-                VSEntryString.Append($", {(ContinuousSpawning.Instance.vesselsSpawningContinuously ? currentTagTime : currentTagScore):0.0} tag");
-            VSEntryString.Append(")");
+            if (BDArmorySettings.WAYPOINTS_MODE)
+            {
+                if (scoreData != null) // This probably won't work if running waypoints in continuous spawning mode, but that probably doesn't work anyway!
+                {
+                    VSEntryString.Append($"  ({scoreData.waypointsReached.Count:0}, {scoreData.totalWPTime:0.0}s, {scoreData.totalWPDeviation:0.00}m), ");
+                }
+            }
+            else
+            {
+                VSEntryString.Append($" ({currentScore}");
+                if (currentRocketScore > 0) VSEntryString.Append($", {currentRocketScore} rkt");
+                if (currentMissileScore > 0) VSEntryString.Append($", {currentMissileScore} mis");
+                if (currentRamScore > 0) VSEntryString.Append($", {currentRamScore} ram");
+                if (BDArmorySettings.TAG_MODE)
+                    VSEntryString.Append($", {(ContinuousSpawning.Instance.vesselsSpawningContinuously ? currentTagTime : currentTagScore):0.0} tag");
+                VSEntryString.Append(")");
+            }
 
             if (wm.AI != null && wm.AI.currentStatus != null)
             {
@@ -1394,8 +1433,12 @@ namespace BDArmory.UI
                 return;
             lastCameraSwitch = Time.time;
             lastActiveVessel = v;
+            var camHeading = FlightCamera.CamHdg;
+            var camPitch = FlightCamera.CamPitch;
             FlightGlobals.ForceSetActiveVessel(v);
             FlightInputHandler.ResumeVesselCtrlState(v);
+            FlightCamera.CamHdg = camHeading;
+            FlightCamera.CamPitch = camPitch;
         }
 
         public IEnumerator SwitchToVesselWhenPossible(Vessel vessel, float distance = 0)

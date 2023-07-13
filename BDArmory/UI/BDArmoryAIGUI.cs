@@ -1,4 +1,3 @@
-using KSP.Localization;
 using KSP.UI.Screens;
 using System.Collections.Generic;
 using System.Collections;
@@ -7,7 +6,6 @@ using UnityEngine;
 using static UnityEngine.GUILayout;
 
 using BDArmory.Control;
-using BDArmory.Modules;
 using BDArmory.Settings;
 using BDArmory.Utils;
 
@@ -342,7 +340,7 @@ namespace BDArmory.UI
                         { "autoTuningAltitude", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.autoTuningAltitude, 50, 5000) },
                         { "autoTuningSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.autoTuningSpeed, 50, 800) },
 
-                        { "defaultAltitude", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.defaultAltitude, 100, 15000) },
+                        { "defaultAltitude", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.defaultAltitude, 50, 15000) },
                         { "minAltitude", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.minAltitude, 25, 6000) },
                         { "maxAltitude", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAltitude, 100, 15000) },
 
@@ -388,7 +386,7 @@ namespace BDArmory.UI
                         { "turnRadiusTwiddleFactorMin", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.turnRadiusTwiddleFactorMin, 0.1, 5) },
                         { "turnRadiusTwiddleFactorMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.turnRadiusTwiddleFactorMax, 0.1, 5) },
                         { "terrainAvoidanceCriticalAngle", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.terrainAvoidanceCriticalAngle, 90f, 180f) },
-                        { "controlSurfaceDeploymentTime", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.controlSurfaceDeploymentTime, 0f, 2f) },
+                        { "controlSurfaceDeploymentTime", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.controlSurfaceDeploymentTime, 0f, 4f) },
                         { "waypointTerrainAvoidance", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.waypointTerrainAvoidance, 0, 1) },
 
                         { "controlSurfaceLag", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.controlSurfaceLag, 0, 0.2) },
@@ -462,6 +460,8 @@ namespace BDArmory.UI
 
                     inputFields["turnRadiusTwiddleFactorMin"].maxValue = ActivePilot.UpToEleven ? 10 : 5;
                     inputFields["turnRadiusTwiddleFactorMax"].maxValue = ActivePilot.UpToEleven ? 10 : 5;
+                    inputFields["controlSurfaceDeploymentTime"].maxValue = ActivePilot.UpToEleven ? 10 : 4;
+
                     inputFields["controlSurfaceLag"].maxValue = ActivePilot.UpToEleven ? 1 : 0.2f;
                 }
             }
@@ -1225,7 +1225,6 @@ namespace BDArmory.UI
                             if (ActivePilot.AutoTune != GUI.Toggle(ToggleButtonRect(leftIndent, pidLines, contentWidth), ActivePilot.AutoTune, StringUtils.Localize("#LOC_BDArmory_PIDAutoTune"), ActivePilot.AutoTune ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
                             {
                                 ActivePilot.AutoTune = !ActivePilot.AutoTune; // Only actually toggle it when needed as the setter does extra stuff.
-                                BDArmorySettings.PEACE_MODE = ActivePilot.AutoTune;
                             }
                             pidLines += 1.25f;
                             if (ActivePilot.AutoTune) // Auto-tuning
@@ -2130,10 +2129,10 @@ namespace BDArmory.UI
                             #endregion
 
                             #region Terrain Avoidance Control Surface Deployment Time
-                            GUI.Label(SettinglabelRect(leftIndent, ++gndLines), $"{StringUtils.Localize("#LOC_BDArmory_AIWindow_TerrainAvoidanceControlSurfaceDeploymentTime")}: {ActivePilot.controlSurfaceDeploymentTime:0.0}", Label);
+                            GUI.Label(SettinglabelRect(leftIndent, ++gndLines), $"{StringUtils.Localize("#LOC_BDArmory_AIWindow_TerrainAvoidanceVesselReactionTime")}: {ActivePilot.controlSurfaceDeploymentTime:0.0}", Label);
                             if (!NumFieldsEnabled)
                             {
-                                ActivePilot.controlSurfaceDeploymentTime = GUI.HorizontalSlider(SettingSliderRect(leftIndent, gndLines, contentWidth), ActivePilot.controlSurfaceDeploymentTime, 0f, 2f);
+                                ActivePilot.controlSurfaceDeploymentTime = GUI.HorizontalSlider(SettingSliderRect(leftIndent, gndLines, contentWidth), ActivePilot.controlSurfaceDeploymentTime, 0f, 4f);
                                 ActivePilot.controlSurfaceDeploymentTime = BDAMath.RoundToUnit(ActivePilot.controlSurfaceDeploymentTime, 0.1f);
                             }
                             else
@@ -2143,7 +2142,7 @@ namespace BDArmory.UI
                             }
                             if (contextTipsEnabled)
                             {
-                                GUI.Label(ContextLabelRect(leftIndent, ++gndLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_TerrainAvoidanceControlSurfaceDeploymentTimeContext"), contextLabel);
+                                GUI.Label(ContextLabelRect(leftIndent, ++gndLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_TerrainAvoidanceVesselReactionTimeContext"), contextLabel);
                             }
                             #endregion
 

@@ -6,10 +6,10 @@ using UnityEngine;
 
 using BDArmory.Competition.OrchestrationStrategies;
 using BDArmory.Competition.RemoteOrchestration;
-using BDArmory.Competition.VesselSpawning;
-using BDArmory.Competition.VesselSpawning.SpawnStrategies;
 using BDArmory.GameModes.Waypoints;
 using BDArmory.Settings;
+using BDArmory.VesselSpawning.SpawnStrategies;
+using BDArmory.VesselSpawning;
 using static BDArmory.Competition.OrchestrationStrategies.WaypointFollowingStrategy;
 
 namespace BDArmory.Competition
@@ -68,8 +68,9 @@ namespace BDArmory.Competition
             var activeVesselIds = scoreClient.activeVessels.ToList();
             var craftUrls = activeVesselModels.Select(e => e.craft_url);
             // TODO: need coords from descriptor, or fallback to local settings
-            var kerbin = FlightGlobals.GetBodyByName("Kerbin");
-            var bodyIndex = FlightGlobals.GetBodyIndex(kerbin);
+            // var kerbin = FlightGlobals.GetBodyByName("Kerbin");
+            // var bodyIndex = FlightGlobals.GetBodyIndex(kerbin);
+            var bodyIndex = BDArmorySettings.VESSEL_SPAWN_WORLDINDEX;
             var latitude = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x;
             var longitude = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y;
             var altitude = BDArmorySettings.VESSEL_SPAWN_ALTITUDE;
@@ -105,7 +106,6 @@ namespace BDArmory.Competition
                         latitude,
                         longitude,
                         altitude,
-                        BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
                         true,
                         true,
                         0,

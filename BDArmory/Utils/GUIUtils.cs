@@ -229,7 +229,7 @@ namespace BDArmory.Utils
             string[] strings = color.Split(","[0]);
             for (int i = 0; i < 4; i++)
             {
-                outputColor[i] = Single.Parse(strings[i]) / 255;
+                outputColor[i] = Mathf.Clamp01(Single.Parse(strings[i]) / 255);
             }
 
             return outputColor;
@@ -276,7 +276,7 @@ namespace BDArmory.Utils
 
             if (!BDInputSettingsFields.WEAP_FIRE_KEY.inputString.Contains("mouse")) return false;
 
-            if (ModIntegration.MouseAimFlight.IsMouseAimActive()) return false;
+            if (ModIntegration.MouseAimFlight.IsMouseAimActive) return false;
 
             return GUIUtilsInstance.fetch.mouseIsOnGUI;
         }
@@ -423,21 +423,36 @@ namespace BDArmory.Utils
                 GameSettings.AXIS_MOUSEWHEEL.primary.scale = originalScrollRate;
             scrollZoomEnabled = true;
         }
+        /// <summary>
+        /// Reset the scroll rate to 1.
+        /// </summary>
+        public static void ResetScrollRate()
+        {
+            EndDisableScrollZoom();
+            originalScrollRate = 1;
+            GameSettings.AXIS_MOUSEWHEEL.primary.scale = originalScrollRate;
+            _originalScrollRateSet = true;
+            scrollZoomEnabled = true;
+        }
 
         /// <summary>
         /// GUILayout TextField with a grey placeholder string.
         /// </summary>
-        /// <param name="text"></param>
-        /// <param name="placeholder"></param>
-        /// <returns></returns>
-        public static string TextField(string text, string placeholder)
+        /// <param name="text">The current text.</param>
+        /// <param name="placeholder">A placeholder text for when 'text' is empty.</param>
+        /// <param name="fieldName">An internal name for the field so it can be reference with, for example, GUI.FocusControl.</param>
+        /// <param name="rect">If specified, then GUI.TextField is used with the specified Rect, otherwise a GUILayout is used.</param>
+        /// <returns>The current text.</returns>
+        public static string TextField(string text, string placeholder, string fieldName = null, Rect rect = default)
         {
-            var newText = GUILayout.TextField(text);
+            bool isGUILayout = rect == default;
+            if (fieldName != null) GUI.SetNextControlName(fieldName);
+            var newText = isGUILayout ? GUILayout.TextField(text) : GUI.TextField(rect, text);
             if (String.IsNullOrEmpty(text))
             {
                 var guiColor = GUI.color;
                 GUI.color = Color.grey;
-                GUI.Label(GUILayoutUtility.GetLastRect(), placeholder);
+                GUI.Label(isGUILayout ? GUILayoutUtility.GetLastRect() : rect, placeholder);
                 GUI.color = guiColor;
             }
             return newText;
