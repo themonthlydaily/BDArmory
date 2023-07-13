@@ -15,6 +15,8 @@
 	- Add support for converting tournament.json to tournament.state
 - Vessel Spawner
 	- Add option to select craft from subfolders of the SPH/VAB.
+- Auto-tuning
+	- Automatically enable the pilot if it's not enabled and drop the plane from +1000m to get going if it isn't already.
 
 - Requests from #tea
 	- ? Add an action group trigger to the WM based on the current target being an enemy vessel within a custom distance. - Make it a collapsable section of custom triggers to include other conditions later.
