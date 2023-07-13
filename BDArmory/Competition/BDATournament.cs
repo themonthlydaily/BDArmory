@@ -269,7 +269,7 @@ namespace BDArmory.Competition
             _weightValues = _weightKeys.Select(k => weights[k]).ToList();
             _players = scoreDetails.Keys.ToList();
             _npcs = npcs.ToList();
-            _scores = _players.Select(p => JsonUtility.ToJson(new SerializedScoreDataList { players = _players }.Serialize(p, scoreDetails[p]))).ToList();
+            _scores = _players.Select(p => JsonUtility.ToJson(new SerializedScoreDataList().Serialize(p, scoreDetails[p], _players))).ToList();
             _files = _players.Select(p => playersToFileNames[p]).ToList();
             _results = competitionOutcomes.Select(r => JsonUtility.ToJson(r.PreSerialize())).ToList();
             return this;
@@ -289,7 +289,7 @@ namespace BDArmory.Competition
                         Debug.LogError($"[BDArmory.BDATournament]: Failed to deserialize List<ScoreData>.");
                         return new List<ScoringData>();
                     }
-                    return kvp.Value.Deserialize();
+                    return kvp.Value.Deserialize(_players);
                 });
             }
             catch (Exception e) { Debug.LogError($"[BDArmory.BDATournament]: Failed to deserialize tournament scores: {e.Message}\n{e.StackTrace}"); }
@@ -303,15 +303,14 @@ namespace BDArmory.Competition
         [Serializable]
         class SerializedScoreDataList
         {
-            [NonSerialized] public List<string> players;
             [SerializeField] List<string> serializedScoreData;
 
-            public SerializedScoreDataList Serialize(string player, List<ScoringData> scoreDetails)
+            public SerializedScoreDataList Serialize(string player, List<ScoringData> scoreDetails, List<string> players)
             {
                 serializedScoreData = scoreDetails.Select(sd => JsonUtility.ToJson(new SerializedScoreData().Serialize(sd, players))).ToList();
                 return this;
             }
-            public List<ScoringData> Deserialize()
+            public List<ScoringData> Deserialize(List<string> players)
             {
                 var ssdl = serializedScoreData.Select(ssd => JsonUtility.FromJson<SerializedScoreData>(ssd)).ToList();
                 List<ScoringData> sdl = new List<ScoringData>();
@@ -324,7 +323,7 @@ namespace BDArmory.Competition
                     }
                     else
                     {
-                        sdl.Add(ssd.Deserialize());
+                        sdl.Add(ssd.Deserialize(players));
                     }
                 }
                 return sdl;
@@ -339,7 +338,6 @@ namespace BDArmory.Competition
         class SerializedScoreData
         {
             public string scoreData; // Easily serialisable fields.
-            public List<string> players; // All the players.
             public List<int> hitCounts;
             public List<float> damageFromGuns;
             public List<float> damageFromRockets;
@@ -361,7 +359,6 @@ namespace BDArmory.Competition
             public SerializedScoreData Serialize(ScoringData scores, List<string> players)
             {
                 scoreData = JsonUtility.ToJson(scores);
-                this.players = players.ToList();
                 hitCounts = new List<int>();
                 damageFromGuns = new List<float>();
                 damageFromRockets = new List<float>();
@@ -393,8 +390,9 @@ namespace BDArmory.Competition
             /// <summary>
             /// Deserialize SerializedScoreData after loading from JSON.
             /// </summary>
+            /// <param name="players">The players that were originally used to serialize the score data.</param>
             /// <returns>The ScoringData for a player.</returns>
-            public ScoringData Deserialize()
+            public ScoringData Deserialize(List<string> players)
             {
                 var scores = JsonUtility.FromJson<ScoringData>(scoreData);
                 scores.hitCounts = new Dictionary<string, int>();

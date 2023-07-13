@@ -29,7 +29,7 @@
 		- Right click the drag handle to switch to auto-adjusting height.
 		- Scores update after each round (not heat) in a ranked tournament.
 	- The tournament.state file uses a new format (recursively encoded JSON due to Unity's limited JSON functionality), contains a lot more information and isn't compatible with older tournament.state files.
-		- A script (parse_tournament_state.py) can convert the tournament.state file to proper JSON (tournament.json), but can not convert it back yet.
+		- A script (parse_tournament_state.py) can convert the tournament.state file to proper JSON (tournament.json) and back again for ease of editing.
 	- Fix a minor bug in the tournament log parsing script where wins weren't always being counted for the score.
 	- Make the saving of backup tournaments optional (hidden setting in settings.cfg).
 	- Add NPC support for FFA-RNG tournaments (both ranked and non-ranked).
