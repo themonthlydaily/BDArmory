@@ -1166,7 +1166,6 @@ namespace BDArmory.Control
                 UpdateList();
                 if (weaponArray.Length > 0) selectedWeapon = weaponArray[weaponIndex];
                 //selectedWeaponString = GetWeaponName(selectedWeapon);
-
                 cameraTransform = part.FindModelTransform("BDARPMCameraTransform");
 
                 part.force_activate();
@@ -3238,7 +3237,6 @@ namespace BDArmory.Control
         private void PrepareWeapons()
         {
             if (vessel == null) return;
-
             weaponIndex = Mathf.Clamp(weaponIndex, 0, weaponArray.Length - 1);
             if (selectedWeapon == null || selectedWeapon.GetPart() == null || (selectedWeapon.GetPart().vessel != null && selectedWeapon.GetPart().vessel != vessel) ||
                 GetWeaponName(selectedWeapon) != GetWeaponName(weaponArray[weaponIndex]))
@@ -3267,13 +3265,11 @@ namespace BDArmory.Control
             {
                 selectedWeapon = aMl;
             }
-
             MissileBase rMl = GetRotaryReadyMissile();
             if (rMl)
             {
                 selectedWeapon = rMl;
             }
-
             UpdateSelectedWeaponState();
         }
 
@@ -3314,7 +3310,6 @@ namespace BDArmory.Control
             {
                 CurrentMissile = null;
             }
-
             //selectedWeapon = weaponArray[weaponIndex];
 
             //bomb stuff
@@ -3703,15 +3698,22 @@ namespace BDArmory.Control
                 {
                     if (mt.Current == null) continue;
                     if (!mt.Current.isActiveAndEnabled) continue;
-                    if (weaponIndex > 0 && cm && (mt.Current.ContainsMissileOfType(cm) && (!mt.Current.activeMissileOnly || cm.missileTurret == mt.Current)) || cm.multiLauncher.turret == mt.Current)
+                    if (weaponIndex > 0 && cm)
                     {
-                        mt.Current.EnableTurret();
+                        if (mt.Current.ContainsMissileOfType(cm) && (!mt.Current.activeMissileOnly || cm.missileTurret == mt.Current))
+                        {
+                            mt.Current.EnableTurret();
+                        }
                     }
                     else
                     {
                         mt.Current.DisableTurret();
                     }
                 }
+            if (weaponIndex > 0 && cm && cm.multiLauncher && cm.multiLauncher.turret)
+            {
+                cm.multiLauncher.turret.EnableTurret();
+            }
         }
         void SetDeployableRails()
         {

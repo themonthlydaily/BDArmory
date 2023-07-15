@@ -78,12 +78,6 @@ namespace BDArmory.Weapons.Missiles
                     deployState.enabled = true;
                 }
             }
-            MissileTurret mt = part.FindModuleImplementing<MissileTurret>();
-            if (mt != null)
-            {
-                turret = mt;
-                turret.missilepod = this;
-            }
 
             StartCoroutine(DelayedStart());
         }
@@ -93,6 +87,8 @@ namespace BDArmory.Weapons.Missiles
             yield return new WaitForFixedUpdate();
             missileLauncher = part.FindModuleImplementing<MissileLauncher>();
             missileSpawner = part.FindModuleImplementing<ModuleMissileRearm>();
+            turret = part.FindModuleImplementing<MissileTurret>();
+            if (turret != null) turret.missilepod = missileLauncher;
             if (missileSpawner == null) //MultiMissile launchers/cluster missiles need a MMR module for spawning their submunitions, so add one if not present in case cfg not set up properly
             {
                 missileSpawner = (ModuleMissileRearm)part.AddModule("ModuleMissileRearm");
@@ -133,7 +129,7 @@ namespace BDArmory.Weapons.Missiles
                         Fields["loadedMissileName"].guiActiveEditor = true;
                     }
                     missileLauncher.missileName = subMunitionName;
-                    if (!permitJettison || turret) missileLauncher.Events["Jettison"].guiActive = false;
+                    if (!permitJettison) missileLauncher.Events["Jettison"].guiActive = false;
                     if (OverrideDropSettings)
                     {
                         missileLauncher.Fields["dropTime"].guiActive = false;

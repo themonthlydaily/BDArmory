@@ -662,7 +662,7 @@ namespace BDArmory.Weapons
         public string bulletTexturePath = "BDArmory/Textures/bullet";
 
         [KSPField]
-        public string smokeTexturePath = ""; // = "BDArmory/Textures/tracerSmoke";
+        public string smokeTexturePath = ""; //"BDArmory/Textures/tracerSmoke";
 
         [KSPField]
         public string laserTexturePath = "BDArmory/Textures/laser";
@@ -1091,7 +1091,7 @@ namespace BDArmory.Weapons
             {
                 try
                 {
-                    baseRPM = float.Parse(ConfigNodeUtils.FindPartModuleConfigNodeValue(part.partInfo.partConfig, "ModuleWeapon", "roundsPerMinute"));
+                    baseRPM = float.Parse(ConfigNodeUtils.FindPartModuleConfigNodeValue(part.partInfo.partConfig, "ModuleWeapon", "roundsPerMinute", "fireTransformName", fireTransformName)); //if multiple moduleWeapons, make sure this grabs the right one unsing fireTransformname as an ID
                 }
                 catch
                 {

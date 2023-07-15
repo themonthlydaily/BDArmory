@@ -1,16 +1,32 @@
 ﻿IMPROVEMENTS / FIXES
+
 - General:
 	- Make ammo consumption respect staging and priority order unless "externalAmmo = false" in the weapon config.
 	- Don't auto-switch vessels when MouseAimFlight is active.
 	- Fixed an issue where modules on a vessel re-entering the PRE range weren't being updated in the VesselModuleRegistry.
+	- Fix a number of issues with Pwing+FAR HP calc.
+	- PWing Thickness-based Mass+HP now takes PWing Edges into account if PWing Edge Lift enabled.
+	- Fix armored cockpit mass resetting on load.
+	- Add search tags to all BDA parts.
 - AI:
 	- Make the autotuning re-centering distance customisable.
 	- Add unclamped max values for auto-tuning speed and altitude.
 	- Prevent weapon selection from choosing weapons when target is closer than the weapon's minSafeDistance.
+	- Fix AI potentially seeing beyond viewrange.
+	- Increase preemptive lead distance AI will begin leading target before entering engagement range.
+	- AI will now switch off of Afterburner if AB is out of fuel (for Rapiers/other LF/non-air AB-mode engines).
 - Vessel Spawning:
 	- Disable gravity easing when using 'Warp Here' above 10m altitude.
 - Weapons:
 	- Fix various NREs related to missiles and multi-missile launchers.
+	- Adds optional tracer smoke.
+		- new 'smokeTexturePath' setting for ModuleWeapon to set custom smoke trail FX, leave blank for default bullet FX
+	- Properly support weapons with multiple ModuleWeapon modules.
+	- Add turret support for Multimissile Launchers.
+	-Turret integration with ModuleMultiLauncher for MML style Hydra Turrets, etc.
+-Countermeasures:
+ - Add rcsOverride field to ModuleECMJammer to enable setting craft RCS to a set value.
+ - Split CM time into missile evade time and CM deploy time to allow setting a craft to begin evading, then deploy CM, etc.
 - Competition:
 	- Make the saving of backup tournaments optional (hidden setting TOURNAMENT_BACKUPS in settings.cfg).
 	- Added a ranked tournament mode.
@@ -39,6 +55,8 @@
 		- The real-time aspected RCS is dependent on a weighted average against overall craft RCS, so lower overall craft RCS will lead to better aspected RCS.
 		- Overall craft RCS weighting in this average is dependent on ASPECTED_RCS_OVERALL_RCS_WEIGHT = 0.25 in the settings.cfg file.
 		- Final aspected RCS will be = (1-ASPECTED_RCS_OVERALL_RCS_WEIGHT) * [Aspected RCS] + ASPECTED_RCS_OVERALL_RCS_WEIGHT * [Overall RCS].
+	- RWRs now activate when they first detect a missile instead of when missile enters visual range.
+	- RWRs now track active Radar missiles regardless of missile visibility if VARBALE_MISSILE_VISIBILITY is enabled.
 - RWP:
 	- S5R10 special settings.
 
