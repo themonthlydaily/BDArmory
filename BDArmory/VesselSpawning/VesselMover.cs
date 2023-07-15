@@ -591,6 +591,7 @@ namespace BDArmory.VesselSpawning
         string vesselNameToSpawn = "";
         CustomCraftBrowserDialog craftBrowser;
         bool abortCraftSelection = false;
+        bool resizingSelectionWindow = false;
         IEnumerator SpawnVessel()
         {
             state = State.Spawning;
@@ -854,6 +855,7 @@ namespace BDArmory.VesselSpawning
             if (!(ready && BDArmorySetup.GAME_UI_ENABLED && HighLogic.LoadedSceneIsFlight))
                 return;
 
+            if (resizingSelectionWindow && Event.current.type == EventType.MouseUp) { resizingSelectionWindow = false; }
             if (BDArmorySetup.showVesselMoverGUI)
             {
                 BDArmorySetup.SetGUIOpacity();
@@ -867,9 +869,9 @@ namespace BDArmory.VesselSpawning
                 );
                 if (showVesselSelection)
                 {
-                    vesselSelectionWindowRect = GUILayout.Window(
+                    BDArmorySetup.WindowRectVesselMoverVesselSelection = GUILayout.Window(
                         GUIUtility.GetControlID(FocusType.Passive),
-                        vesselSelectionWindowRect,
+                        BDArmorySetup.WindowRectVesselMoverVesselSelection,
                         VesselSelectionWindow,
                         StringUtils.Localize("#LOC_BDArmory_VesselMover_VesselSelection"),
                         BDArmorySetup.BDGuiSkin.window
@@ -1094,7 +1096,6 @@ namespace BDArmory.VesselSpawning
         #region Vessel Selection
         internal static int _vesselGUICheckIndex = -1;
         bool showVesselSelection = false;
-        Rect vesselSelectionWindowRect = new Rect(0, 0, 600, 800);
         Vector2 vesselSelectionScrollPos = default;
         float selectionTimer = 0;
         string selectedVesselURL = "";
@@ -1111,7 +1112,6 @@ namespace BDArmory.VesselSpawning
             }
             craftBrowser.selectFileCallback = selectedCallback;
             craftBrowser.cancelledCallback = cancelledCallback;
-            vesselSelectionWindowRect.position = new Vector2((Screen.width - vesselSelectionWindowRect.width) / 2, (Screen.height - vesselSelectionWindowRect.height) / 2);
             selectedVesselURL = "";
             showVesselSelection = true;
             focusFilterField = true;
@@ -1128,7 +1128,7 @@ namespace BDArmory.VesselSpawning
 
         public void VesselSelectionWindow(int windowID)
         {
-            GUI.DragWindow(new Rect(0, 0, vesselSelectionWindowRect.width, 20));
+            GUI.DragWindow(new Rect(0, 0, BDArmorySetup.WindowRectVesselMoverVesselSelection.width, 20));
             GUILayout.BeginVertical();
             selectionFilter = GUIUtils.TextField(selectionFilter, " Filter", "VMFilterField");
             if (focusFilterField)
@@ -1136,7 +1136,7 @@ namespace BDArmory.VesselSpawning
                 GUI.FocusControl("VMFilterField");
                 focusFilterField = false;
             }
-            vesselSelectionScrollPos = GUILayout.BeginScrollView(vesselSelectionScrollPos, GUI.skin.box, GUILayout.Width(vesselSelectionWindowRect.width - 15), GUILayout.MaxHeight(vesselSelectionWindowRect.height - 60));
+            vesselSelectionScrollPos = GUILayout.BeginScrollView(vesselSelectionScrollPos, GUI.skin.box, GUILayout.Width(BDArmorySetup.WindowRectVesselMoverVesselSelection.width - 15), GUILayout.MaxHeight(BDArmorySetup.WindowRectVesselMoverVesselSelection.height - 60));
             if (folderSelectionMode)
             {
                 GUILayout.BeginHorizontal();
@@ -1145,7 +1145,7 @@ namespace BDArmory.VesselSpawning
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
                 GUILayout.Label(CustomCraftBrowserDialog.displayFolder, CustomCraftBrowserDialog.LabelStyle, GUILayout.Height(50), GUILayout.ExpandWidth(true));
-                if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_Generic_Select"), CustomCraftBrowserDialog.ButtonStyle, GUILayout.Height(50), GUILayout.MaxWidth(vesselSelectionWindowRect.width / 3))) folderSelectionMode = false;
+                if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_Generic_Select"), CustomCraftBrowserDialog.ButtonStyle, GUILayout.Height(50), GUILayout.MaxWidth(BDArmorySetup.WindowRectVesselMoverVesselSelection.width / 3))) folderSelectionMode = false;
                 GUILayout.EndHorizontal();
                 using (var folder = craftBrowser.subfolders.GetEnumerator())
                     while (folder.MoveNext())
@@ -1170,7 +1170,7 @@ namespace BDArmory.VesselSpawning
                             if (!vesselInfo.shipName.ToLower().Contains(selectionFilter.ToLower())) continue;
                         }
                         GUILayout.BeginHorizontal(); // Vessel buttons
-                        if (GUILayout.Button($"{vesselInfo.shipName}", selectedVesselURL == vesselURL ? CustomCraftBrowserDialog.SelectedButtonStyle : CustomCraftBrowserDialog.ButtonStyle, GUILayout.MaxHeight(60), GUILayout.MaxWidth(vesselSelectionWindowRect.width - 190)))
+                        if (GUILayout.Button($"{vesselInfo.shipName}", selectedVesselURL == vesselURL ? CustomCraftBrowserDialog.SelectedButtonStyle : CustomCraftBrowserDialog.ButtonStyle, GUILayout.MaxHeight(60), GUILayout.MaxWidth(BDArmorySetup.WindowRectVesselMoverVesselSelection.width - 190)))
                         {
                             if (Time.realtimeSinceStartup - selectionTimer < 0.5f)
                             {
@@ -1198,19 +1198,30 @@ namespace BDArmory.VesselSpawning
                 if (craftBrowser.cancelledCallback != null) craftBrowser.cancelledCallback();
                 HideVesselSelection();
             }
-            if (GUILayout.Button(folderSelectionMode ? StringUtils.Localize("#LOC_BDArmory_CraftBrowser_Craft") : StringUtils.Localize("#LOC_BDArmory_CraftBrowser_Folder"), folderSelectionMode ? BDArmorySetup.SelectedButtonStyle : BDArmorySetup.ButtonStyle, GUILayout.Width(vesselSelectionWindowRect.width / 6)))
+            if (GUILayout.Button(folderSelectionMode ? StringUtils.Localize("#LOC_BDArmory_CraftBrowser_Craft") : StringUtils.Localize("#LOC_BDArmory_CraftBrowser_Folder"), folderSelectionMode ? BDArmorySetup.SelectedButtonStyle : BDArmorySetup.ButtonStyle, GUILayout.Width(BDArmorySetup.WindowRectVesselMoverVesselSelection.width / 6)))
             {
                 folderSelectionMode = !folderSelectionMode;
             }
-            if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_CraftBrowser_Refresh"), BDArmorySetup.ButtonStyle, GUILayout.Width(vesselSelectionWindowRect.width / 6)))
+            if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_CraftBrowser_Refresh"), BDArmorySetup.ButtonStyle, GUILayout.Width(BDArmorySetup.WindowRectVesselMoverVesselSelection.width / 6)))
             {
                 craftBrowser.UpdateList();
             }
+
+            #region Resizing
+            var resizeRect = new Rect(BDArmorySetup.WindowRectVesselMoverVesselSelection.width - 16, BDArmorySetup.WindowRectVesselMoverVesselSelection.height - 16, 16, 16);
+            GUI.DrawTexture(resizeRect, GUIUtils.resizeTexture, ScaleMode.StretchToFill, true);
+            if (Event.current.type == EventType.MouseDown && resizeRect.Contains(Event.current.mousePosition))
+            {
+                resizingSelectionWindow = true;
+            }
+            if (resizingSelectionWindow && Event.current.type == EventType.Repaint)
+            { BDArmorySetup.WindowRectVesselMoverVesselSelection.size += Mouse.delta; }
+            #endregion
             GUILayout.EndHorizontal();
             GUILayout.EndVertical();
-            GUIUtils.RepositionWindow(ref vesselSelectionWindowRect);
-            GUIUtils.UpdateGUIRect(vesselSelectionWindowRect, _vesselGUICheckIndex);
-            GUIUtils.UseMouseEventInRect(vesselSelectionWindowRect);
+            GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectVesselMoverVesselSelection);
+            GUIUtils.UpdateGUIRect(BDArmorySetup.WindowRectVesselMoverVesselSelection, _vesselGUICheckIndex);
+            GUIUtils.UseMouseEventInRect(BDArmorySetup.WindowRectVesselMoverVesselSelection);
         }
 
         #endregion
@@ -1473,7 +1484,7 @@ namespace BDArmory.VesselSpawning
         public Action cancelledCallback = null;
         public static Dictionary<string, string> shipNames = new Dictionary<string, string>(); // craftURLs to ship names.
         public static GUIStyle ButtonStyle = new GUIStyle(BDArmorySetup.ButtonStyle);
-        public static GUIStyle SelectedButtonStyle = new GUIStyle(BDArmorySetup.ButtonStyle);
+        public static GUIStyle SelectedButtonStyle = new GUIStyle(BDArmorySetup.SelectedButtonStyle);
         public static GUIStyle InfoStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.label);
         public static GUIStyle LabelStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.label);
         public void UpdateList()
@@ -1544,7 +1555,7 @@ namespace BDArmory.VesselSpawning
             displayFolder = currentFolder.Substring(baseFolder.Length - facility.ToString().Length);
             UpdateList();
         }
-    
+
         public void CheckCurrent()
         {
             if (_currentFolder != currentFolder) ChangeFolder(facility, currentFolder); // Another instance changed the current folder, so switch to match it.

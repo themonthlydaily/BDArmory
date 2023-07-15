@@ -12,7 +12,8 @@
 - Vessel Spawning:
 	- Disable gravity easing when using 'Warp Here' above 10m altitude.
 - Vessel Mover:
-	- Add support for browsing craft in subfolders of the SPH and VAB.
+	- Add support for browsing craft in subfolders of the SPH and VAB (also in the custom spawn templates).
+	- Allow resizing the vessel selection window and remember its position.
 - Weapons:
 	- Fix various NREs related to missiles and multi-missile launchers.
 	- Fix missiles fired from same source vessel causing each other to explode when they cross within proximity detonation distance.
