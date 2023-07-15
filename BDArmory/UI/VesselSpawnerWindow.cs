@@ -655,7 +655,6 @@ namespace BDArmory.UI
                         BDArmorySettings.TOURNAMENT_VESSELS_PER_TEAM = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.TOURNAMENT_VESSELS_PER_TEAM, 1f, 8f));
 
                         BDArmorySettings.TOURNAMENT_FULL_TEAMS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.TOURNAMENT_FULL_TEAMS, StringUtils.Localize("#LOC_BDArmory_Settings_TournamentFullTeams"));  // Re-use craft to fill teams
-                        BDArmorySettings.TOURNAMENT_NPCS_PER_HEAT = 0;
                     }
 
                     if (BDArmorySettings.TOURNAMENT_STYLE == 2) // Gauntlet settings
