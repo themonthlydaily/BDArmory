@@ -25,8 +25,9 @@
 	- Add turret support for Multimissile Launchers.
 	-Turret integration with ModuleMultiLauncher for MML style Hydra Turrets, etc.
 -Countermeasures:
- - Add rcsOverride field to ModuleECMJammer to enable setting craft RCS to a set value.
- - Split CM time into missile evade time and CM deploy time to allow setting a craft to begin evading, then deploy CM, etc.
+	- Add rcsOverride field to ModuleECMJammer to enable setting craft RCS to a set value.
+	- Split CM time into missile evade time and CM deploy time to allow setting a craft to begin evading, then deploy CM, etc.
+	- Fix an issue with chaff vessel modules summoning the Kraken on undocking.
 - Competition:
 	- Make the saving of backup tournaments optional (hidden setting TOURNAMENT_BACKUPS in settings.cfg).
 	- Added a ranked tournament mode.
