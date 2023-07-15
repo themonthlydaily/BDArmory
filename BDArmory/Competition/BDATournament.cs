@@ -132,6 +132,7 @@ namespace BDArmory.Competition
             return true;
         }
 
+        public bool IsNPC(string player) => npcs.Contains(player);
         /// <summary>
         /// Update score weights.
         /// Only valid weights in the newWeights dictionary are updated.
@@ -179,7 +180,7 @@ namespace BDArmory.Competition
             scores.Clear();
             foreach (var player in scoreDetails.Keys)
             {
-                if (npcs.Contains(player)) continue; // Ignore NPCs for overall score totals.
+                if (IsNPC(player)) continue; // Ignore NPCs for overall score totals.
                 scores[player] = ComputeScore(player);
             }
             lastUpdated = Time.time;
