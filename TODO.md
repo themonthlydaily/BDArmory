@@ -42,6 +42,8 @@
 - Auto-tuning
 	- Automatically enable the pilot if it's not enabled and drop the plane from +1000m to get going if it isn't already.
 - Fix the piñata spawning logic - spawn the piñata(s) separately after circular spawning has occured.
+- Add NPC and piñata support for single competitions as well (currently they're only supported in tournaments)
+	- Add "role" option in the VM for specifying PC, NPC, piñata, etc.
 - Add VTOL AI to the AI GUI.
 - Motherships branch
 - Figure out why bullet hole decals are frequently offset behind the craft. - krakensbane or flightintegrator at time of decal attachment?
