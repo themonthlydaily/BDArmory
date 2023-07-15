@@ -2428,9 +2428,7 @@ namespace BDArmory.Competition
                     if ((vessel.vesselType != VesselType.Debris) && !vesselName.EndsWith("Debris")) // && !vesselName.EndsWith("Plane") && !vesselName.EndsWith("Probe"))
                     {
                         // vessel is still alive
-                        if (vesselName.Contains(BDArmorySettings.PINATA_NAME)) alive.Add(BDArmorySettings.PINATA_NAME);
-                        else
-                            alive.Add(vesselName);
+                        alive.Add(vesselName);
                         deadOrAliveString += " *" + vesselName + "* ";
                         numberOfCompetitiveVessels++;
                     }
@@ -2635,7 +2633,7 @@ namespace BDArmory.Competition
                 else if (pinataAlive && !alive.Contains(BDArmorySettings.PINATA_NAME))
                 {
                     // switch everyone onto separate teams when the Pinata Dies
-                    LoadedVesselSwitcher.Instance.MassTeamSwitch(BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS == 0, BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS != 0); //need to have thischeck for team FFA
+                    LoadedVesselSwitcher.Instance.MassTeamSwitch(true);
                     pinataAlive = false;
                     competitionStatus.Add("Pinata killed by " + Scores.ScoreData[BDArmorySettings.PINATA_NAME].lastPersonWhoDamagedMe + "! Competition is now a Free for all");
                     Scores.RegisterMissileStrike(Scores.ScoreData[BDArmorySettings.PINATA_NAME].lastPersonWhoDamagedMe, BDArmorySettings.PINATA_NAME); //give a missile strike point to indicate the pinata kill on the web API

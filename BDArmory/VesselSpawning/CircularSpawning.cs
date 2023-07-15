@@ -174,54 +174,14 @@ namespace BDArmory.VesselSpawning
             if (BDArmorySettings.VESSEL_SPAWN_RANDOM_ORDER) spawnConfig.craftFiles.Shuffle(); // Randomise the spawn order.
             int spawnedVesselCount = 0; // Reset our spawned vessel count.
             var spawnAirborne = spawnConfig.altitude > 10;
-            int pinataCount = 0;
-
-            if (BDArmorySettings.TOURNAMENT_NPCS_PER_HEAT > 0)
+            bool PinataMode = false;
+            foreach (var craftUrl in spawnConfig.craftFiles)
             {
-                var NPCFolder = Path.Combine(AutoSpawnPath, BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION, "NPCs");
-                if (Directory.Exists(NPCFolder)) //sanity checks for starting paused tourneys with the autospawn folder deleted between sessions
-                {
-                    List<string> NPCs = Directory.GetFiles(NPCFolder).Where(f => f.EndsWith(".craft")).ToList();
-                    if (NPCs.Count == 0)
-                    {
-                        LogMessage("Vessel spawning: found no NPC files in " + NPCFolder);
-                        vesselsSpawning = false;
-                        spawnFailureReason = SpawnFailureReason.NoCraft;
-                        SpawnUtils.RevertSpawnLocationCamera(true, true);
-                        yield break;
-                    }
-                    /* 
-                    if (NPCs.Count > BDArmorySettings.TOURNAMENT_NPCS_PER_HEAT)
-                    {
-                        NPCs.Shuffle();
-                        NPCs.RemoveRange(BDArmorySettings.TOURNAMENT_NPCS_PER_HEAT, NPCs.Count - BDArmorySettings.TOURNAMENT_NPCS_PER_HEAT);
-                    }
-                    if (NPCs.Count < BDArmorySettings.TOURNAMENT_NPCS_PER_HEAT)
-                    {
-                        while (NPCs.Count < BDArmorySettings.TOURNAMENT_NPCS_PER_HEAT)
-                        {
-                            NPCs.Add(NPCs[0]);
-                            NPCs.Shuffle();
-                        }
-                    }
-                    */
-                    foreach (var craftUrl in spawnConfig.craftFiles)
-                    {
-                        if (!String.IsNullOrEmpty(BDArmorySettings.PINATA_NAME) && craftUrl.Contains(BDArmorySettings.PINATA_NAME)) pinataCount++; //have separate Pinata and NPC support to allow both simultaneously?
-                    }
-                }
-                if (!Directory.Exists(NPCFolder))
-                {
-                    LogMessage($"NPC spawn directory doesn't exist!");
-                    vesselsSpawning = false;
-                    spawnFailureReason = SpawnFailureReason.NoCraft;
-                    SpawnUtils.RevertSpawnLocationCamera(true, true);
-                    yield break;
-                }
+                if (!String.IsNullOrEmpty(BDArmorySettings.PINATA_NAME) && craftUrl.Contains(BDArmorySettings.PINATA_NAME)) PinataMode = true;
             }
-            var spawnDistance = spawnConfig.craftFiles.Count > 1 ? (spawnConfig.absDistanceOrFactor ? spawnConfig.distance : (spawnConfig.distance + spawnConfig.distance * (spawnConfig.craftFiles.Count))) : 0f; // If it's a single craft, spawn it at the spawn point.
+            var spawnDistance = spawnConfig.craftFiles.Count > 1 ? (spawnConfig.absDistanceOrFactor ? spawnConfig.distance : (spawnConfig.distance + spawnConfig.distance * (spawnConfig.craftFiles.Count - (PinataMode ? 1 : 0)))) : 0f; // If it's a single craft, spawn it at the spawn point.
 
-            LogMessage("Spawning " + (spawnConfig.craftFiles.Count - BDArmorySettings.TOURNAMENT_NPCS_PER_HEAT) + " vessels " + (BDArmorySettings.TOURNAMENT_NPCS_PER_HEAT > 0 ? ("and " + BDArmorySettings.TOURNAMENT_NPCS_PER_HEAT + " NPC") : "") + " at an altitude of " + spawnConfig.altitude.ToString("G0") + "m" + (spawnConfig.craftFiles.Count > 8 ? ", this may take some time..." : "."));
+            LogMessage("Spawning " + (spawnConfig.craftFiles.Count - (PinataMode ? 1 : 0)) + " vessels at an altitude of " + spawnConfig.altitude.ToString("G0") + "m" + (spawnConfig.craftFiles.Count > 8 ? ", this may take some time..." : "."));
             #endregion
 
             yield return AcquireSpawnPoint(spawnConfig, 2f * spawnDistance, spawnAirborne);
@@ -242,14 +202,14 @@ namespace BDArmory.VesselSpawning
                 foreach (var craftUrl in spawnConfig.craftFiles)
                 {
                     // Figure out spawn point and orientation
-                    if (craftUrl.Contains(BDArmorySettings.PINATA_NAME)) continue;
-                    var heading = 360f * spawnedVesselCount / spawnConfig.craftFiles.Count - pinataCount;
+                    var heading = 360f * spawnedVesselCount / spawnConfig.craftFiles.Count - (PinataMode ? 1 : 0);
                     var direction = (Quaternion.AngleAxis(heading, radialUnitVector) * refDirection).ProjectOnPlanePreNormalized(radialUnitVector).normalized;
                     Vector3 position = spawnPoint;
-
-                    position = spawnPoint + spawnDistance * direction;
-                    ++spawnedVesselCount;
-
+                    if (!PinataMode || (PinataMode && !craftUrl.Contains(BDArmorySettings.PINATA_NAME)))//leave pinata craft at center
+                    {
+                        position = spawnPoint + spawnDistance * direction;
+                        ++spawnedVesselCount;
+                    }
                     if (spawnDistance > BDArmorySettings.COMPETITION_DISTANCE / 2f / Mathf.Sin(Mathf.PI / spawnConfig.craftFiles.Count)) direction *= -1f; //have vessels spawning further than comp dist spawn pointing inwards instead of outwards
                     vesselSpawnConfigs.Add(new VesselSpawnConfig(craftUrl, position, direction, (float)spawnConfig.altitude, -80f, spawnAirborne));
                 }
@@ -272,34 +232,13 @@ namespace BDArmory.VesselSpawning
 
                     foreach (var craftUrl in team)
                     {
-                        // Figure out spawn point and orientation (staggered similarly to formation and slightly spread depending on how closely starting to each other).
-                        ++teamSpawnCount;
-                        var position = teamSpawnPosition
-                            + intraTeamSeparation * (teamSpawnCount % 2 == 1 ? -teamSpawnCount / 2 : teamSpawnCount / 2) * spreadDirection
-                            + intraTeamSeparation / 3f * (team.Count / 2 - teamSpawnCount / 2) * facingDirection;
-                        var individualFacingDirection = Quaternion.AngleAxis((teamSpawnCount % 2 == 1 ? -teamSpawnCount / 2 : teamSpawnCount / 2) * 200f / (20f + intraTeamSeparation), radialUnitVector) * facingDirection;
-                        vesselSpawnConfigs.Add(new VesselSpawnConfig(craftUrl, position, individualFacingDirection, (float)spawnConfig.altitude, -80f, spawnAirborne));
+                        // Figure out spawn point and orientation
+                        var position = teamSpawnPosition + intraTeamSeparation * (teamSpawnCount - (team.Count - 1) / 2) * spreadDirection;
+                        vesselSpawnConfigs.Add(new VesselSpawnConfig(craftUrl, position, facingDirection, (float)spawnConfig.altitude, -80f, spawnAirborne));
                         ++spawnedVesselCount;
+                        ++teamSpawnCount;
                     }
                     ++spawnedTeamCount;
-                }
-            }
-            if (pinataCount > 0)
-            {
-                spawnedVesselCount = 0; //all participant vessels spawned, so reset to count pinatas
-                foreach (var craftUrl in spawnConfig.craftFiles)
-                {
-                    // Figure out spawn point and orientation
-                    if (craftUrl.Contains(BDArmorySettings.PINATA_NAME))
-                    {
-                        var heading = 360f * spawnedVesselCount / pinataCount;
-                        var direction = (Quaternion.AngleAxis(heading, radialUnitVector) * refDirection).ProjectOnPlanePreNormalized(radialUnitVector).normalized;
-                        Vector3 position = spawnPoint;
-                        //spawn multiple Pinatas with slight offset to prevent on-spanw telefragging
-                        position = spawnPoint + 100 * direction;
-                        ++spawnedVesselCount;
-                        vesselSpawnConfigs.Add(new VesselSpawnConfig(craftUrl, position, direction, (float)spawnConfig.altitude, -80f, spawnAirborne));
-                    }
                 }
             }
             #endregion
