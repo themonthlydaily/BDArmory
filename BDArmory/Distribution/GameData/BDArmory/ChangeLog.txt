@@ -17,6 +17,9 @@
 	- AI will now switch off of Afterburner if AB is out of fuel (for Rapiers/other LF/non-air AB-mode engines).
 - Vessel Spawning:
 	- Disable gravity easing when using 'Warp Here' above 10m altitude.
+- Vessel Mover:
+	- Add support for browsing craft in subfolders of the SPH and VAB (also in the custom spawn templates).
+	- Allow resizing the vessel selection window and remember its position.
 - Weapons:
 	- Fix various NREs related to missiles and multi-missile launchers.
 	- Adds optional tracer smoke.
@@ -24,10 +27,13 @@
 	- Properly support weapons with multiple ModuleWeapon modules.
 	- Add turret support for Multimissile Launchers.
 	-Turret integration with ModuleMultiLauncher for MML style Hydra Turrets, etc.
+	- Fix missiles fired from same source vessel causing each other to explode when they cross within proximity detonation distance.
+	- Add flareEffectivity = 1 in missile configs. Modifies how the missile targeting is affected by flares, 1 is fully affected (normal behavior), lower values mean less affected (0 is ignores flares), higher values means more affected.
 -Countermeasures:
 	- Add rcsOverride field to ModuleECMJammer to enable setting craft RCS to a set value.
 	- Split CM time into missile evade time and CM deploy time to allow setting a craft to begin evading, then deploy CM, etc.
 	- Fix an issue with chaff vessel modules summoning the Kraken on undocking.
+	- Fix an NRE related to jammers enabling.
 - Competition:
 	- Make the saving of backup tournaments optional (hidden setting TOURNAMENT_BACKUPS in settings.cfg).
 	- Added a ranked tournament mode.
@@ -42,11 +48,11 @@
 		- Right click the drag handle to switch to auto-adjusting height.
 		- Scores update after each round (not heat) in a ranked tournament.
 	- The tournament.state file uses a new format (recursively encoded JSON due to Unity's limited JSON functionality), contains a lot more information and isn't compatible with older tournament.state files.
-		- A script (parse_tournament_state.py) can convert the tournament.state file to proper JSON (tournament.json), but can not convert it back yet.
+		- A script (parse_tournament_state.py) can convert the tournament.state file to proper JSON (tournament.json) and back again for ease of editing.
 	- Fix a minor bug in the tournament log parsing script where wins weren't always being counted for the score.
 	- Make the saving of backup tournaments optional (hidden setting in settings.cfg).
 	- Add NPC support for FFA-RNG tournaments (both ranked and non-ranked).
-		- To use NPCs, create a "NPCs" folder in the folder for the tournament (e.g., "AutoSpawn/MyTourney/NPCs"), add the NPC files to this folder, then set the "NPCs Per Heat" slider to the desired number of NPCs.
+		- To use NPCs, create a "NPCs" folder in the folder for the tournament (e.g., "AutoSpawn/MyTournament/NPCs"), add the NPC files to this folder, then set the "NPCs Per Heat" slider to the desired number of NPCs.
 		- NPC files will be reused as necessary to provide the appropriate number of randomly selected NPCs each heat.
 		- When generating heats, the number of NPCs is taken into account for the total number of vessels per heat (e.g., 8 vessels per heat with 2 NPCs per heat would give 6 players + 2 NPCs in each heat).
 		- The "Tournament Scores" window will only show the scores for non-NPCs.
