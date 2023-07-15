@@ -510,6 +510,7 @@ namespace BDArmory.Weapons.Missiles
                 {
                     ml.shortName = missileLauncher.GetShortName() + " Missile";
                 }
+                if (BDArmorySettings.DEBUG_MISSILES) ml.shortName = $"{ml.SourceVessel.GetDisplayName()}'s {missileLauncher.GetShortName()} Missile";
                 ml.vessel.vesselName = ml.GetShortName();
                 ml.TimeFired = Time.time;
                 if (!isClusterMissile)

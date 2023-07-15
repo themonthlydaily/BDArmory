@@ -1049,7 +1049,7 @@ namespace BDArmory.Weapons.Missiles
             if (SourceVessel == null)
             {
                 SourceVessel = vessel;
-                if (BDArmorySettings.DEBUG_MISSILES) shortName = $"{SourceVessel.GetDisplayName()}'s {GetShortName()}";
+                if (BDArmorySettings.DEBUG_MISSILES && !multiLauncher) shortName = $"{SourceVessel.GetDisplayName()}'s {GetShortName()}";
             }
             if (multiLauncher && multiLauncher.isMultiLauncher)
             {
@@ -1103,6 +1103,7 @@ namespace BDArmory.Weapons.Missiles
             ml.GuidanceMode = GuidanceMode;
             //wpm.SendTargetDataToMissile(ml);
             ml.TimeFired = Time.time;
+            if (BDArmorySettings.DEBUG_MISSILES) shortName = $"{SourceVessel.GetDisplayName()}'s {GetShortName()}";
             ml.vessel.vesselName = GetShortName();
             ml.DetonationDistance = DetonationDistance;
             ml.DetonateAtMinimumDistance = DetonateAtMinimumDistance;
