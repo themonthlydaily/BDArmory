@@ -429,8 +429,6 @@ namespace BDArmory.Control
         public MissileBase CurrentMissile;
         public MissileBase PreviousMissile;
 
-        ModuleWeapon cGun;
-
         public ModuleWeapon currentGun
         {
             get
@@ -1943,7 +1941,7 @@ namespace BDArmory.Control
                                     yield return new WaitForFixedUpdate();
                                 }
                             }
-                            if (guardTarget && ml && mlauncher.multiLauncher.turret && vesselRadarData.locked)
+                            if (guardTarget && ml && mlauncher.multiLauncher && mlauncher.multiLauncher.turret && vesselRadarData.locked)
                             {
                                 vesselRadarData.SlaveTurrets();
                                 float turretStartTime = Time.time;
@@ -2012,7 +2010,7 @@ namespace BDArmory.Control
                                 mlauncher.missileTurret.slavedTargetPosition = guardTarget.CoM;
                                 mlauncher.missileTurret.SlavedAim();
                             }
-                            if (mlauncher.multiLauncher.turret)
+                            if (mlauncher.multiLauncher && mlauncher.multiLauncher.turret)
                             {
                                 mlauncher.multiLauncher.turret.slaved = true;
                                 mlauncher.multiLauncher.turret.slavedTargetPosition = guardTarget.CoM;
@@ -2073,7 +2071,7 @@ namespace BDArmory.Control
                                 yield return new WaitForFixedUpdate();
                             }
                         }
-                        if (ml && mlauncher.multiLauncher.turret && heatTarget.exists)
+                        if (ml && mlauncher.multiLauncher && mlauncher.multiLauncher.turret && heatTarget.exists)
                         {
                             float turretStartTime = attemptStartTime;
                             while (heatTarget.exists && Time.time - turretStartTime < Mathf.Max(targetScanInterval / 2f, 2))
@@ -2137,7 +2135,7 @@ namespace BDArmory.Control
                                 yield return new WaitForFixedUpdate();
                             }
                         }
-                        if (ml && mlauncher.multiLauncher.turret)
+                        if (ml && mlauncher.multiLauncher && mlauncher.multiLauncher.turret)
                         {
                             float turretStartTime = Time.time;
                             while (Time.time - turretStartTime < Mathf.Max(targetScanInterval / 2f, 2))
@@ -2193,7 +2191,7 @@ namespace BDArmory.Control
                                 mlauncher.missileTurret.slavedTargetPosition = guardTarget.CoM;
                                 mlauncher.missileTurret.SlavedAim();
                             }
-                            if (mlauncher.multiLauncher.turret)
+                            if (mlauncher.multiLauncher && mlauncher.multiLauncher.turret)
                             {
                                 mlauncher.multiLauncher.turret.slaved = true;
                                 mlauncher.multiLauncher.turret.slavedTargetPosition = guardTarget.CoM;
@@ -2223,7 +2221,7 @@ namespace BDArmory.Control
                                 yield return new WaitForFixedUpdate();
                             }
                         }
-                        if (ml && mlauncher.multiLauncher.turret && antiRadTargetAcquired)
+                        if (ml && mlauncher.multiLauncher && mlauncher.multiLauncher.turret && antiRadTargetAcquired)
                         {
                             float turretStartTime = attemptStartTime;
                             while (antiRadTargetAcquired && Time.time - turretStartTime < Mathf.Max(targetScanInterval / 2f, 2))
@@ -2307,7 +2305,7 @@ namespace BDArmory.Control
                                 yield return new WaitForFixedUpdate();
                             }
                         }
-                        if (guardTarget && ml && mlauncher.multiLauncher.turret && laserPointDetected)
+                        if (guardTarget && ml && mlauncher.multiLauncher && mlauncher.multiLauncher.turret && laserPointDetected)
                         {
                             //foundCam.SlaveTurrets();
                             float turretStartTime = attemptStartTime;
@@ -6460,7 +6458,7 @@ namespace BDArmory.Control
 
                                 // Check that launch is possible before entering GuardMissileRoutine, or that missile is on a turret
                                 MissileLauncher ml = CurrentMissile as MissileLauncher;
-                                launchAuthorized = launchAuthorized && (GetLaunchAuthorization(guardTarget, this) || (ml is not null && (ml.missileTurret || ml.multiLauncher.turret)));
+                                launchAuthorized = launchAuthorized && (GetLaunchAuthorization(guardTarget, this) || (ml is not null && (ml.missileTurret || (ml.multiLauncher && ml.multiLauncher.turret))));
 
 
                                 if (BDArmorySettings.DEBUG_MISSILES)
