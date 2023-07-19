@@ -1,4 +1,5 @@
-﻿IMPROVEMENTS / FIXES
+﻿v1.6.4.0
+IMPROVEMENTS / FIXES
 - General:
 	- Make ammo consumption respect staging and priority order unless "externalAmmo = false" in the weapon config.
 	- Don't auto-switch vessels when MouseAimFlight is active.
@@ -24,11 +25,10 @@
 	- Adds optional tracer smoke.
 		- new 'smokeTexturePath' setting for ModuleWeapon to set custom smoke trail FX, leave blank for default bullet FX
 	- Properly support weapons with multiple ModuleWeapon modules.
-	- Add turret support for Multimissile Launchers.
 	- Turret integration with ModuleMultiLauncher for MML style Hydra Turrets, etc.
 	- Fix missiles fired from same source vessel causing each other to explode when they cross within proximity detonation distance.
 	- Add flareEffectivity = 1 in missile configs. Modifies how the missile targeting is affected by flares, 1 is fully affected (normal behavior), lower values mean less affected (0 is ignores flares), higher values means more affected.
--Countermeasures:
+- Countermeasures:
 	- Add rcsOverride field to ModuleECMJammer to enable setting craft RCS to a set value.
 	- Split CM time into missile evade time and CM deploy time to allow setting a craft to begin evading, then deploy CM, etc.
 	- Fix an issue with chaff vessel modules summoning the Kraken on undocking.

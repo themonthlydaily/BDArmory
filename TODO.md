@@ -41,6 +41,8 @@
 
 - Auto-tuning
 	- Automatically enable the pilot if it's not enabled and drop the plane from +1000m to get going if it isn't already.
+- Reset things that the RWP slider changes when switching away from the rounds.
+	- RWP really shouldn't be setting the sliders, but should instead provide overrides for when accessing those values.
 - Fix the piñata spawning logic - spawn the piñata(s) separately after circular spawning has occured.
 - Add NPC and piñata support for single competitions as well (currently they're only supported in tournaments)
 	- Add "role" option in the VM for specifying PC, NPC, piñata, etc.
