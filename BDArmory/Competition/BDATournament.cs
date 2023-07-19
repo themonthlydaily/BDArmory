@@ -57,7 +57,8 @@ namespace BDArmory.Competition
     [Serializable]
     public class TournamentScores
     {
-        Dictionary<string, string> playersToFileNames = new Dictionary<string, string>(); // Match players with craft filenames for extending ranks rounds.
+        public Dictionary<string, string> playersToFileNames = new Dictionary<string, string>(); // Match players with craft filenames for extending ranks rounds.
+        public Dictionary<string, string> playersToTeamNames = new Dictionary<string, string>(); // Match the players with team names (for teams competitions).
         public Dictionary<string, float> scores = new Dictionary<string, float>(); // The current scores for the tournament.
         public float lastUpdated = 0;
         HashSet<string> npcs = new HashSet<string>();
@@ -106,6 +107,7 @@ namespace BDArmory.Competition
         public void Reset()
         {
             playersToFileNames.Clear();
+            playersToTeamNames.Clear();
             scoreDetails.Clear();
             scores.Clear();
             competitionOutcomes.Clear();
@@ -240,6 +242,13 @@ namespace BDArmory.Competition
                 {"Waypoint Deviation", scoreData.Sum(sd => sd.totalWPDeviation)}
             };
             if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDATournament]: Score components for {player}: {string.Join(", ", playerScore.Select(kvp => $"{kvp.Key}: {kvp.Value}"))}");
+            if (scoreData.Count > 0)
+            {
+                var teamName = scoreData.First().team;
+                if (scoreData.All(sd => sd.team == teamName)) // If the team is consistent, populate the team names dictionary.
+                    playersToTeamNames[player] = teamName;
+            }
+            else playersToTeamNames[player] = "";
             return weights.Sum(kvp => kvp.Value * playerScore[kvp.Key]);
         }
 
@@ -1017,6 +1026,11 @@ namespace BDArmory.Competition
 
         List<List<string>> SelectTeamCraft(List<int> selectedTeams, int vesselsPerTeam, bool fullTeams, bool opponentQueue = false)
         {
+            if (vesselsPerTeam == 0) // Each team consist of all the craft in the team.
+            {
+                return selectedTeams.Select(index => (opponentQueue ? opponentTeamFiles : teamFiles)[index].ToList()).ToList();
+            }
+
             // Get the right spawn queues and file lists.
             var spawnQueues = opponentQueue ? opponentTeamSpawnQueues : teamSpawnQueues;
             var teams = opponentQueue ? opponentTeamFiles : teamFiles;
@@ -1768,6 +1782,25 @@ namespace BDArmory.Competition
                 return rankedScores;
             }
         }
+
+        List<KeyValuePair<string, float>> rankedTeamScores = new List<KeyValuePair<string, float>>();
+        float lastUpdatedRankedTeamScores = 0;
+        public List<KeyValuePair<string, float>> GetRankedTeamScores
+        {
+            get
+            {
+                if (tournamentState.scores.lastUpdated > lastUpdatedRankedTeamScores)
+                {
+                    // Get the unique teams, then make a dictionary with team names as keys and the sum of scores as values and sort them by the scores.
+                    rankedTeamScores = tournamentState.scores.playersToTeamNames.Values.ToHashSet().ToDictionary(teamName => teamName, teamName => tournamentState.scores.scores.Where(kvp => tournamentState.scores.playersToTeamNames[kvp.Key] == teamName).Sum(kvp => kvp.Value)).OrderByDescending(kvp => kvp.Value).ToList();
+                    lastUpdatedRankedTeamScores = tournamentState.scores.lastUpdated;
+                    if (ScoreWindow.Instance != null) ScoreWindow.Instance.ResetWindowSize();
+                }
+                return rankedTeamScores;
+            }
+        }
+
+        public Tuple<int, int, int, int> GetTournamentProgress() => new Tuple<int, int, int, int>(currentRound, numberOfRounds, currentHeat, numberOfHeats);
 
         public void RecomputeScores() => tournamentState.scores.ComputeScores();
     }

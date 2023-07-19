@@ -1,5 +1,5 @@
-﻿IMPROVEMENTS / FIXES
-
+﻿v1.6.4.0
+IMPROVEMENTS / FIXES
 - General:
 	- Make ammo consumption respect staging and priority order unless "externalAmmo = false" in the weapon config.
 	- Don't auto-switch vessels when MouseAimFlight is active.
@@ -25,11 +25,10 @@
 	- Adds optional tracer smoke.
 		- new 'smokeTexturePath' setting for ModuleWeapon to set custom smoke trail FX, leave blank for default bullet FX
 	- Properly support weapons with multiple ModuleWeapon modules.
-	- Add turret support for Multimissile Launchers.
-	-Turret integration with ModuleMultiLauncher for MML style Hydra Turrets, etc.
+	- Turret integration with ModuleMultiLauncher for MML style Hydra Turrets, etc.
 	- Fix missiles fired from same source vessel causing each other to explode when they cross within proximity detonation distance.
 	- Add flareEffectivity = 1 in missile configs. Modifies how the missile targeting is affected by flares, 1 is fully affected (normal behavior), lower values mean less affected (0 is ignores flares), higher values means more affected.
--Countermeasures:
+- Countermeasures:
 	- Add rcsOverride field to ModuleECMJammer to enable setting craft RCS to a set value.
 	- Split CM time into missile evade time and CM deploy time to allow setting a craft to begin evading, then deploy CM, etc.
 	- Fix an issue with chaff vessel modules summoning the Kraken on undocking.
@@ -44,6 +43,7 @@
 		- Use the "UI" button to keep the window visible even when the rest of the UI is disabled (F2).
 		- Use the "±" buttons to adjust the font size.
 		- Use the "W" button to adjust the score weights.
+		- Use the "T" button to switch between individual and team scores for teams competitions.
 		- Left click and drag the drag handle to resize the window.
 		- Right click the drag handle to switch to auto-adjusting height.
 		- Scores update after each round (not heat) in a ranked tournament.
@@ -56,6 +56,7 @@
 		- NPC files will be reused as necessary to provide the appropriate number of randomly selected NPCs each heat.
 		- When generating heats, the number of NPCs is taken into account for the total number of vessels per heat (e.g., 8 vessels per heat with 2 NPCs per heat would give 6 players + 2 NPCs in each heat).
 		- The "Tournament Scores" window will only show the scores for non-NPCs.
+	- Add an "auto" setting for the "Vessels Per Team Per Heat" in teams tournaments where the teams will simply be all the craft files in each team's folder.
 - Detectors
 	- Add settings toggle ASPECTED_RCS that enables real-time RCS evaluation based on the target aircraft's azimuth and elevation relative to the radar evaluating it.
 		- Enable from the BDA settings menu under Missile & CM settings: "Real-Time Aspected RCS."
@@ -63,7 +64,7 @@
 		- Overall craft RCS weighting in this average is dependent on ASPECTED_RCS_OVERALL_RCS_WEIGHT = 0.25 in the settings.cfg file.
 		- Final aspected RCS will be = (1-ASPECTED_RCS_OVERALL_RCS_WEIGHT) * [Aspected RCS] + ASPECTED_RCS_OVERALL_RCS_WEIGHT * [Overall RCS].
 	- RWRs now activate when they first detect a missile instead of when missile enters visual range.
-	- RWRs now track active Radar missiles regardless of missile visibility if VARBALE_MISSILE_VISIBILITY is enabled.
+	- RWRs now track active Radar missiles regardless of missile visibility if VARIABLE_MISSILE_VISIBILITY is enabled.
 - RWP:
 	- S5R10 special settings.
 
