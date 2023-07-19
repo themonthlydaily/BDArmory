@@ -1876,11 +1876,11 @@ namespace BDArmory.Weapons.Missiles
                     yield break;
                 }
 
-            StartCoroutine(DeployAnimRoutine());
+            if (deployStates != null) StartCoroutine(DeployAnimRoutine());
             yield return new WaitForSecondsFixed(dropTime);
             yield return StartCoroutine(BoostRoutine());
 
-            StartCoroutine(FlightAnimRoutine());
+            if (animStates != null) StartCoroutine(FlightAnimRoutine());
             yield return new WaitForSecondsFixed(cruiseDelay);
             yield return StartCoroutine(CruiseRoutine());
         }
