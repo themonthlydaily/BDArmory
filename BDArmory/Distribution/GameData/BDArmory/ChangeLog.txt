@@ -1,5 +1,4 @@
 ﻿IMPROVEMENTS / FIXES
-
 - General:
 	- Make ammo consumption respect staging and priority order unless "externalAmmo = false" in the weapon config.
 	- Don't auto-switch vessels when MouseAimFlight is active.
@@ -26,7 +25,7 @@
 		- new 'smokeTexturePath' setting for ModuleWeapon to set custom smoke trail FX, leave blank for default bullet FX
 	- Properly support weapons with multiple ModuleWeapon modules.
 	- Add turret support for Multimissile Launchers.
-	-Turret integration with ModuleMultiLauncher for MML style Hydra Turrets, etc.
+	- Turret integration with ModuleMultiLauncher for MML style Hydra Turrets, etc.
 	- Fix missiles fired from same source vessel causing each other to explode when they cross within proximity detonation distance.
 	- Add flareEffectivity = 1 in missile configs. Modifies how the missile targeting is affected by flares, 1 is fully affected (normal behavior), lower values mean less affected (0 is ignores flares), higher values means more affected.
 -Countermeasures:
@@ -65,7 +64,7 @@
 		- Overall craft RCS weighting in this average is dependent on ASPECTED_RCS_OVERALL_RCS_WEIGHT = 0.25 in the settings.cfg file.
 		- Final aspected RCS will be = (1-ASPECTED_RCS_OVERALL_RCS_WEIGHT) * [Aspected RCS] + ASPECTED_RCS_OVERALL_RCS_WEIGHT * [Overall RCS].
 	- RWRs now activate when they first detect a missile instead of when missile enters visual range.
-	- RWRs now track active Radar missiles regardless of missile visibility if VARBALE_MISSILE_VISIBILITY is enabled.
+	- RWRs now track active Radar missiles regardless of missile visibility if VARIABLE_MISSILE_VISIBILITY is enabled.
 - RWP:
 	- S5R10 special settings.
 
