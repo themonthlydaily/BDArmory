@@ -200,12 +200,13 @@ namespace BDArmory.Utils
 
         IEnumerator UpdateValueCoroutine()
         {
+            var wait = new WaitForFixedUpdate();
             coroutineRunning = true;
             while (Time.time - lastUpdated < BDArmorySettings.NUMERIC_INPUT_DELAY)
-                yield return new WaitForFixedUpdate();
+                yield return wait;
             tryParseCurrentValue();
             coroutineRunning = false;
-            yield return new WaitForFixedUpdate();
+            yield return wait;
         }
 
         void tryParseCurrentValue()
