@@ -5,6 +5,10 @@
 		- Toggling the numeric fields or closing the windows will reset the field to the most recently successfully parsed value.
 		- The text will still be updated if the parsed value becomes clamped within the limits of the field.
 	- Make the delay for the "read and interpret" logic of numeric input fields customisable (default 0.5s).
+- Detectors:
+	- Fix Conformal Decals throwing off RCS calculation in editor (SPH/VAB).
+	- Add for/aft/side/top/bot RCS readout to the On-Screen Telem debug option when ASPECTED_RCS is enabled.
+
 
 v1.6.4.0
 IMPROVEMENTS / FIXES
