@@ -168,10 +168,7 @@ namespace BDArmory.UI
 
             GUI.Label(new Rect(10, 40, 200, 20), $"Az {RadarUtils.editorRCSAspects[0, 0].ToString("0")}, El {RadarUtils.editorRCSAspects[0, 1].ToString("0")}", BDArmorySetup.BDGuiSkin.box);
             GUI.Label(new Rect(220, 40, 200, 20), $"Az {RadarUtils.editorRCSAspects[1, 0].ToString("0")}, El {RadarUtils.editorRCSAspects[1, 1].ToString("0")}", BDArmorySetup.BDGuiSkin.box);
-            if (!Settings.BDArmorySettings.ASPECTED_RCS)
-                GUI.Label(new Rect(430, 40, 200, 20), $"Az {RadarUtils.editorRCSAspects[2, 0].ToString("0")}, El {RadarUtils.editorRCSAspects[2, 1].ToString("0")}", BDArmorySetup.BDGuiSkin.box);
-            else
-                GUI.Label(new Rect(430, 40, 200, 20), $"Az (x: 0 - 180), El (y: -90 - 90)", BDArmorySetup.BDGuiSkin.box);
+            GUI.Label(new Rect(430, 40, 200, 20), $"Az {RadarUtils.editorRCSAspects[2, 0].ToString("0")}, El {RadarUtils.editorRCSAspects[2, 1].ToString("0")}", BDArmorySetup.BDGuiSkin.box);
 
             if (takeSnapshot)
                 takeRadarSnapshot();
@@ -187,10 +184,8 @@ namespace BDArmory.UI
 
             GUI.Label(new Rect(10, 275, 200, 20), string.Format("{0:0.00}", editorUIRCS0) + " m^2", BDArmorySetup.BDGuiSkin.label);
             GUI.Label(new Rect(220, 275, 200, 20), string.Format("{0:0.00}", editorUIRCS1) + " m^2", BDArmorySetup.BDGuiSkin.label);
-            if (!Settings.BDArmorySettings.ASPECTED_RCS)
-                GUI.Label(new Rect(430, 275, 200, 20), string.Format("{0:0.00}", editorUIRCS2) + " m^2", BDArmorySetup.BDGuiSkin.label);
-            else
-                GUI.Label(new Rect(430, 275, 200, 20), $"Grn: {RadarUtils.minRCSHeatmap.ToString("0.0")}, Yel: {RadarUtils.rcsTotal.ToString("0.0")}, Red: {RadarUtils.maxRCSHeatmap.ToString("0.0")}", BDArmorySetup.BDGuiSkin.label);
+            GUI.Label(new Rect(430, 275, 200, 20), string.Format("{0:0.00}", editorUIRCS2) + " m^2", BDArmorySetup.BDGuiSkin.label);
+            
 
             GUIStyle style = BDArmorySetup.BDGuiSkin.label;
             style.fontStyle = FontStyle.Bold;

@@ -659,23 +659,23 @@ namespace BDArmory.Radar
                 }
             }
 
-            // If dynamic aspects RCS is enabled, save heatmap values and use a subset of the evaluated RCS values for the total RCS calc
+            /* If dynamic aspects RCS is enabled, save heatmap values and use a subset of the evaluated RCS values for the total RCS calc
             if (BDArmorySettings.ASPECTED_RCS)
             {
                 minRCSHeatmap = (float)Percentile(rcsValues, 10d);
                 maxRCSHeatmap = (float)Percentile(rcsValues, 90d);
                 Array.Resize(ref rcsValues, numAspectsForOverallRTEval);
-            }
+            }*/
 
             // Use third quartile for the total RCS (gives better results than average)
             rcsTotal = (float)Percentile(rcsValues, 75d);
 
-            // Rescale min/max RCS with new overall RCS
+            /* Rescale min/max RCS with new overall RCS
             if (BDArmorySettings.ASPECTED_RCS)
             {
                 minRCSHeatmap = (1 - BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT) * minRCSHeatmap + BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT * rcsTotal;
                 maxRCSHeatmap = (1 - BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT) * maxRCSHeatmap + BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT * rcsTotal;
-            }
+            }*/
 
             // If we are in the editor, render the three highest RCS aspects
             if (inEditorZoom)
@@ -691,10 +691,13 @@ namespace BDArmory.Radar
                 // Render three highest aspects
                 RenderSinglePass(t, inEditorZoom, aspect1, vesselbounds, radarDistance, radarFOV, rcsRendering1, drawTexture1);
                 RenderSinglePass(t, inEditorZoom, aspect2, vesselbounds, radarDistance, radarFOV, rcsRendering2, drawTexture2);
-                if (!BDArmorySettings.ASPECTED_RCS)
+                RenderSinglePass(t, inEditorZoom, aspect3, vesselbounds, radarDistance, radarFOV, rcsRendering3, drawTexture3);
+                
+                /*if (!BDArmorySettings.ASPECTED_RCS)
                     RenderSinglePass(t, inEditorZoom, aspect3, vesselbounds, radarDistance, radarFOV, rcsRendering3, drawTexture3);
                 else
-                    RCSHeatMap(rcsMatrix, drawTexture3); // Put heat-map in place of 3rd view
+                    RCSHeatMap(rcsMatrix, drawTexture3); // Put heat-map in place of 3rd view */
+                
             }
             else
             {
@@ -805,6 +808,7 @@ namespace BDArmory.Radar
             }
         }
 
+        // Currently unused
         public static void RCSHeatMap(float[,] rcsMatrix, Texture2D rcsMap)
         {
             float az;
