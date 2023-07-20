@@ -1792,7 +1792,11 @@ namespace BDArmory.Competition
                 if (tournamentState.scores.lastUpdated > lastUpdatedRankedTeamScores)
                 {
                     // Get the unique teams, then make a dictionary with team names as keys and the sum of scores as values and sort them by the scores.
-                    rankedTeamScores = tournamentState.scores.playersToTeamNames.Values.ToHashSet().ToDictionary(teamName => teamName, teamName => tournamentState.scores.scores.Where(kvp => tournamentState.scores.playersToTeamNames[kvp.Key] == teamName).Sum(kvp => kvp.Value)).OrderByDescending(kvp => kvp.Value).ToList();
+                    var teamNames = tournamentState.scores.playersToTeamNames.Values.ToHashSet();
+                    var teamScores = teamNames.ToDictionary(
+                        teamName => teamName,
+                        teamName => tournamentState.scores.scores.Where(kvp => tournamentState.scores.playersToTeamNames.ContainsKey(kvp.Key) && tournamentState.scores.playersToTeamNames[kvp.Key] == teamName).Sum(kvp => kvp.Value));
+                    rankedTeamScores = teamScores.OrderByDescending(kvp => kvp.Value).ToList();
                     lastUpdatedRankedTeamScores = tournamentState.scores.lastUpdated;
                     if (ScoreWindow.Instance != null) ScoreWindow.Instance.ResetWindowSize();
                 }
