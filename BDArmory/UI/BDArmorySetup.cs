@@ -185,7 +185,7 @@ namespace BDArmory.UI
         GUIStyle waterMarkStyle;
         GUIStyle redErrorStyle;
         GUIStyle redErrorShadowStyle;
-        GUIStyle inputFieldStyle;
+        GUIStyle textFieldStyle;
         bool stylesConfigured = false;
 
         public SortedList<string, BDTeam> Teams = new SortedList<string, BDTeam>
@@ -631,8 +631,8 @@ namespace BDArmory.UI
             redErrorShadowStyle = new GUIStyle(redErrorStyle);
             redErrorShadowStyle.normal.textColor = new Color(0, 0, 0, 0.75f);
 
-            inputFieldStyle = new GUIStyle(GUI.skin.textField);
-            inputFieldStyle.alignment = TextAnchor.UpperRight;
+            textFieldStyle = new GUIStyle(GUI.skin.textField);
+            textFieldStyle.alignment = TextAnchor.MiddleRight;
 
             stylesConfigured = true;
         }
@@ -1229,9 +1229,10 @@ namespace BDArmory.UI
                             }
                             else
                             {
-                                textNumFields["rippleRPM"].tryParseValue(GUI.TextField(new Rect(leftIndent + (contentWidth / 2) + 2, contentTop + (line * entryHeight) + 6.5f, (contentWidth / 2) - 2, entryHeight),
-                                    textNumFields["rippleRPM"].possibleValue, 4, inputFieldStyle));
-                                ActiveWeaponManager.rippleRPM = (float)textNumFields["rippleRPM"].currentValue;
+                                var field = textNumFields["rippleRPM"];
+                                field.tryParseValue(GUI.TextField(new Rect(leftIndent + (contentWidth / 2) + 2, contentTop + (line * entryHeight) + 6.5f, (contentWidth / 2) - 2, entryHeight),
+                                    field.possibleValue, 4, field.style));
+                                ActiveWeaponManager.rippleRPM = (float)field.currentValue;
                             }
                         }
                         rippleHeight = Mathf.Lerp(rippleHeight, 1.25f, 0.15f);
@@ -1346,8 +1347,9 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        textNumFields["targetScanInterval"].tryParseValue(GUI.TextField(InputFieldRect(guardLines, guardLabelWidth), textNumFields["targetScanInterval"].possibleValue, 4, inputFieldStyle));
-                        ActiveWeaponManager.targetScanInterval = (float)textNumFields["targetScanInterval"].currentValue;
+                        var field = textNumFields["targetScanInterval"];
+                        field.tryParseValue(GUI.TextField(InputFieldRect(guardLines, guardLabelWidth), field.possibleValue, 4, field.style));
+                        ActiveWeaponManager.targetScanInterval = (float)field.currentValue;
                     }
 
                     string burstLabel = StringUtils.Localize("#LOC_BDArmory_WMWindow_BurstLength");//"Burst Length"
@@ -1359,8 +1361,9 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        textNumFields["fireBurstLength"].tryParseValue(GUI.TextField(InputFieldRect(guardLines, guardLabelWidth), textNumFields["fireBurstLength"].possibleValue, 4, inputFieldStyle));
-                        ActiveWeaponManager.fireBurstLength = (float)textNumFields["fireBurstLength"].currentValue;
+                        var field = textNumFields["fireBurstLength"];
+                        field.tryParseValue(GUI.TextField(InputFieldRect(guardLines, guardLabelWidth), field.possibleValue, 4, field.style));
+                        ActiveWeaponManager.fireBurstLength = (float)field.currentValue;
                     }
 
                     // extension for feature_engagementenvelope: set the firing accuracy tolarance
@@ -1374,8 +1377,9 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        textNumFields["AutoFireCosAngleAdjustment"].tryParseValue(GUI.TextField(InputFieldRect(guardLines, guardLabelWidth), textNumFields["AutoFireCosAngleAdjustment"].possibleValue, 4, inputFieldStyle));
-                        ActiveWeaponManager.AutoFireCosAngleAdjustment = (float)textNumFields["AutoFireCosAngleAdjustment"].currentValue;
+                        var field = textNumFields["AutoFireCosAngleAdjustment"];
+                        field.tryParseValue(GUI.TextField(InputFieldRect(guardLines, guardLabelWidth), field.possibleValue, 4, field.style));
+                        ActiveWeaponManager.AutoFireCosAngleAdjustment = (float)field.currentValue;
                     }
                     if (ActiveWeaponManager.AutoFireCosAngleAdjustment != oldAutoFireCosAngleAdjustment)
                         ActiveWeaponManager.OnAFCAAUpdated(null, null);
@@ -1389,8 +1393,9 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        textNumFields["guardAngle"].tryParseValue(GUI.TextField(InputFieldRect(guardLines, guardLabelWidth), textNumFields["guardAngle"].possibleValue, 4, inputFieldStyle));
-                        ActiveWeaponManager.guardAngle = (float)textNumFields["guardAngle"].currentValue;
+                        var field = textNumFields["guardAngle"];
+                        field.tryParseValue(GUI.TextField(InputFieldRect(guardLines, guardLabelWidth), field.possibleValue, 4, field.style));
+                        ActiveWeaponManager.guardAngle = (float)field.currentValue;
                     }
 
                     GUI.Label(LabelRect(++guardLines, guardLabelWidth), StringUtils.Localize("#LOC_BDArmory_WMWindow_VisualRange"), leftLabel);//"Visual Range"
@@ -1401,8 +1406,9 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        textNumFields["guardRange"].tryParseValue(GUI.TextField(InputFieldRect(guardLines, guardLabelWidth), textNumFields["guardRange"].possibleValue, 8, inputFieldStyle));
-                        ActiveWeaponManager.guardRange = (float)textNumFields["guardRange"].currentValue;
+                        var field = textNumFields["guardRange"];
+                        field.tryParseValue(GUI.TextField(InputFieldRect(guardLines, guardLabelWidth), field.possibleValue, 8, field.style));
+                        ActiveWeaponManager.guardRange = (float)field.currentValue;
                     }
 
                     GUI.Label(LabelRect(++guardLines, guardLabelWidth), StringUtils.Localize("#LOC_BDArmory_WMWindow_GunsRange"), leftLabel);//"Guns Range"
@@ -1413,8 +1419,9 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        textNumFields["gunRange"].tryParseValue(GUI.TextField(InputFieldRect(guardLines, guardLabelWidth), textNumFields["gunRange"].possibleValue, 8, inputFieldStyle));
-                        ActiveWeaponManager.gunRange = (float)textNumFields["gunRange"].currentValue;
+                        var field = textNumFields["gunRange"];
+                        field.tryParseValue(GUI.TextField(InputFieldRect(guardLines, guardLabelWidth), field.possibleValue, 8, field.style));
+                        ActiveWeaponManager.gunRange = (float)field.currentValue;
                     }
 
                     GUI.Label(LabelRect(++guardLines, guardLabelWidth), StringUtils.Localize("#LOC_BDArmory_WMWindow_MultiTargetNum"), leftLabel);//"Max Turret targets "
@@ -1425,8 +1432,9 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        textNumFields["multiTargetNum"].tryParseValue(GUI.TextField(InputFieldRect(guardLines, guardLabelWidth), textNumFields["multiTargetNum"].possibleValue, 2, inputFieldStyle));
-                        ActiveWeaponManager.multiTargetNum = (float)textNumFields["multiTargetNum"].currentValue;
+                        var field = textNumFields["multiTargetNum"];
+                        field.tryParseValue(GUI.TextField(InputFieldRect(guardLines, guardLabelWidth), field.possibleValue, 2, field.style));
+                        ActiveWeaponManager.multiTargetNum = (float)field.currentValue;
                     }
 
                     GUI.Label(LabelRect(++guardLines, guardLabelWidth), StringUtils.Localize("#LOC_BDArmory_WMWindow_MultiMissileNum"), leftLabel);//"Max Turret targets "
@@ -1437,8 +1445,9 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        textNumFields["multiMissileTgtNum"].tryParseValue(GUI.TextField(InputFieldRect(guardLines, guardLabelWidth), textNumFields["multiMissileTgtNum"].possibleValue, 2, inputFieldStyle));
-                        ActiveWeaponManager.multiMissileTgtNum = (float)textNumFields["multiMissileTgtNum"].currentValue;
+                        var field = textNumFields["multiMissileTgtNum"];
+                        field.tryParseValue(GUI.TextField(InputFieldRect(guardLines, guardLabelWidth), field.possibleValue, 2, field.style));
+                        ActiveWeaponManager.multiMissileTgtNum = (float)field.currentValue;
                     }
 
                     GUI.Label(LabelRect(++guardLines, guardLabelWidth), StringUtils.Localize("#LOC_BDArmory_WMWindow_MissilesTgt"), leftLabel);//"Missiles/Tgt"
@@ -1449,8 +1458,9 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        textNumFields["maxMissilesOnTarget"].tryParseValue(GUI.TextField(InputFieldRect(guardLines, guardLabelWidth), textNumFields["maxMissilesOnTarget"].possibleValue, 2, inputFieldStyle));
-                        ActiveWeaponManager.maxMissilesOnTarget = (float)textNumFields["maxMissilesOnTarget"].currentValue;
+                        var field = textNumFields["maxMissilesOnTarget"];
+                        field.tryParseValue(GUI.TextField(InputFieldRect(guardLines, guardLabelWidth), field.possibleValue, 2, field.style));
+                        ActiveWeaponManager.maxMissilesOnTarget = (float)field.currentValue;
                     }
 
                     showTargetOptions = GUI.Toggle(ButtonRect(++guardLines), showTargetOptions, StringUtils.Localize("#LOC_BDArmory_Settings_Adv_Targeting"), showTargetOptions ? BDGuiSkin.box : BDGuiSkin.button);//"Advanced Targeting"
@@ -1625,8 +1635,9 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        textNumFields["targetBias"].tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), textNumFields["targetBias"].possibleValue, 4, inputFieldStyle));
-                        ActiveWeaponManager.targetBias = (float)textNumFields["targetBias"].currentValue;
+                        var field = textNumFields["targetBias"];
+                        field.tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), field.possibleValue, 4, field.style));
+                        ActiveWeaponManager.targetBias = (float)field.currentValue;
                     }
 
                     GUI.Label(LabelRect(++priorityLines, priorityLabelWidth), StringUtils.Localize("#LOC_BDArmory_WMWindow_targetProximity"), leftLabel); //target proximity"
@@ -1637,8 +1648,9 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        textNumFields["targetWeightRange"].tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), textNumFields["targetWeightRange"].possibleValue, 4, inputFieldStyle));
-                        ActiveWeaponManager.targetWeightRange = (float)textNumFields["targetWeightRange"].currentValue;
+                        var field = textNumFields["targetWeightRange"];
+                        field.tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), field.possibleValue, 4, field.style));
+                        ActiveWeaponManager.targetWeightRange = (float)field.currentValue;
                     }
 
                     GUI.Label(LabelRect(++priorityLines, priorityLabelWidth), StringUtils.Localize("#LOC_BDArmory_WMWindow_targetPreference"), leftLabel); //target Air preference"
@@ -1649,8 +1661,9 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        textNumFields["targetWeightAirPreference"].tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), textNumFields["targetWeightAirPreference"].possibleValue, 4, inputFieldStyle));
-                        ActiveWeaponManager.targetWeightAirPreference = (float)textNumFields["targetWeightAirPreference"].currentValue;
+                        var field = textNumFields["targetWeightAirPreference"];
+                        field.tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), field.possibleValue, 4, field.style));
+                        ActiveWeaponManager.targetWeightAirPreference = (float)field.currentValue;
                     }
 
                     GUI.Label(LabelRect(++priorityLines, priorityLabelWidth), StringUtils.Localize("#LOC_BDArmory_WMWindow_targetAngletoTarget"), leftLabel); //target angle"
@@ -1661,8 +1674,9 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        textNumFields["targetWeightATA"].tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), textNumFields["targetWeightATA"].possibleValue, 4, inputFieldStyle));
-                        ActiveWeaponManager.targetWeightATA = (float)textNumFields["targetWeightATA"].currentValue;
+                        var field = textNumFields["targetWeightATA"];
+                        field.tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), field.possibleValue, 4, field.style));
+                        ActiveWeaponManager.targetWeightATA = (float)field.currentValue;
                     }
 
                     GUI.Label(LabelRect(++priorityLines, priorityLabelWidth), StringUtils.Localize("#LOC_BDArmory_WMWindow_targetAngleDist"), leftLabel); //Angle over Distance"
@@ -1673,8 +1687,9 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        textNumFields["targetWeightAoD"].tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), textNumFields["targetWeightAoD"].possibleValue, 4, inputFieldStyle));
-                        ActiveWeaponManager.targetWeightAoD = (float)textNumFields["targetWeightAoD"].currentValue;
+                        var field = textNumFields["targetWeightAoD"];
+                        field.tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), field.possibleValue, 4, field.style));
+                        ActiveWeaponManager.targetWeightAoD = (float)field.currentValue;
                     }
 
                     GUI.Label(LabelRect(++priorityLines, priorityLabelWidth), StringUtils.Localize("#LOC_BDArmory_WMWindow_targetAccel"), leftLabel); //target accel"
@@ -1685,8 +1700,9 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        textNumFields["targetWeightAccel"].tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), textNumFields["targetWeightAccel"].possibleValue, 4, inputFieldStyle));
-                        ActiveWeaponManager.targetWeightAccel = (float)textNumFields["targetWeightAccel"].currentValue;
+                        var field = textNumFields["targetWeightAccel"];
+                        field.tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), field.possibleValue, 4, field.style));
+                        ActiveWeaponManager.targetWeightAccel = (float)field.currentValue;
                     }
 
                     GUI.Label(LabelRect(++priorityLines, priorityLabelWidth), StringUtils.Localize("#LOC_BDArmory_WMWindow_targetClosingTime"), leftLabel); //target closing time"
@@ -1697,8 +1713,9 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        textNumFields["targetWeightClosureTime"].tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), textNumFields["targetWeightClosureTime"].possibleValue, 4, inputFieldStyle));
-                        ActiveWeaponManager.targetWeightClosureTime = (float)textNumFields["targetWeightClosureTime"].currentValue;
+                        var field = textNumFields["targetWeightClosureTime"];
+                        field.tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), field.possibleValue, 4, field.style));
+                        ActiveWeaponManager.targetWeightClosureTime = (float)field.currentValue;
                     }
 
                     GUI.Label(LabelRect(++priorityLines, priorityLabelWidth), StringUtils.Localize("#LOC_BDArmory_WMWindow_targetgunNumber"), leftLabel); //target weapon num."
@@ -1709,8 +1726,9 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        textNumFields["targetWeightWeaponNumber"].tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), textNumFields["targetWeightWeaponNumber"].possibleValue, 4, inputFieldStyle));
-                        ActiveWeaponManager.targetWeightWeaponNumber = (float)textNumFields["targetWeightWeaponNumber"].currentValue;
+                        var field = textNumFields["targetWeightWeaponNumber"];
+                        field.tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), field.possibleValue, 4, field.style));
+                        ActiveWeaponManager.targetWeightWeaponNumber = (float)field.currentValue;
                     }
 
                     GUI.Label(LabelRect(++priorityLines, priorityLabelWidth), StringUtils.Localize("#LOC_BDArmory_WMWindow_targetMass"), leftLabel); //target mass"
@@ -1721,8 +1739,9 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        textNumFields["targetWeightMass"].tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), textNumFields["targetWeightMass"].possibleValue, 4, inputFieldStyle));
-                        ActiveWeaponManager.targetWeightMass = (float)textNumFields["targetWeightMass"].currentValue;
+                        var field = textNumFields["targetWeightMass"];
+                        field.tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), field.possibleValue, 4, field.style));
+                        ActiveWeaponManager.targetWeightMass = (float)field.currentValue;
                     }
 
                     GUI.Label(LabelRect(++priorityLines, priorityLabelWidth), StringUtils.Localize("#LOC_BDArmory_TargetPriority_TargetDmg"), leftLabel); //target Damage"
@@ -1733,8 +1752,9 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        textNumFields["targetWeightDamage"].tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), textNumFields["targetWeightDamage"].possibleValue, 4, inputFieldStyle));
-                        ActiveWeaponManager.targetWeightDamage = (float)textNumFields["targetWeightDamage"].currentValue;
+                        var field = textNumFields["targetWeightDamage"];
+                        field.tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), field.possibleValue, 4, field.style));
+                        ActiveWeaponManager.targetWeightDamage = (float)field.currentValue;
                     }
 
                     GUI.Label(LabelRect(++priorityLines, priorityLabelWidth), StringUtils.Localize("#LOC_BDArmory_WMWindow_targetAllies"), leftLabel); //target mass"
@@ -1745,8 +1765,9 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        textNumFields["targetWeightFriendliesEngaging"].tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), textNumFields["targetWeightFriendliesEngaging"].possibleValue, 4, inputFieldStyle));
-                        ActiveWeaponManager.targetWeightFriendliesEngaging = (float)textNumFields["targetWeightFriendliesEngaging"].currentValue;
+                        var field = textNumFields["targetWeightFriendliesEngaging"];
+                        field.tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), field.possibleValue, 4, field.style));
+                        ActiveWeaponManager.targetWeightFriendliesEngaging = (float)field.currentValue;
                     }
 
                     GUI.Label(LabelRect(++priorityLines, priorityLabelWidth), StringUtils.Localize("#LOC_BDArmory_WMWindow_targetThreat"), leftLabel); //target proximity"
@@ -1757,8 +1778,9 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        textNumFields["targetWeightThreat"].tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), textNumFields["targetWeightThreat"].possibleValue, 4, inputFieldStyle));
-                        ActiveWeaponManager.targetWeightThreat = (float)textNumFields["targetWeightThreat"].currentValue;
+                        var field = textNumFields["targetWeightThreat"];
+                        field.tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), field.possibleValue, 4, field.style));
+                        ActiveWeaponManager.targetWeightThreat = (float)field.currentValue;
                     }
 
                     GUI.Label(LabelRect(++priorityLines, priorityLabelWidth), StringUtils.Localize("#LOC_BDArmory_WMWindow_defendTeammate"), leftLabel); //defend teammate"
@@ -1769,8 +1791,9 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        textNumFields["targetWeightProtectTeammate"].tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), textNumFields["targetWeightProtectTeammate"].possibleValue, 4, inputFieldStyle));
-                        ActiveWeaponManager.targetWeightProtectTeammate = (float)textNumFields["targetWeightProtectTeammate"].currentValue;
+                        var field = textNumFields["targetWeightProtectTeammate"];
+                        field.tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), field.possibleValue, 4, field.style));
+                        ActiveWeaponManager.targetWeightProtectTeammate = (float)field.currentValue;
                     }
 
                     GUI.Label(LabelRect(++priorityLines, priorityLabelWidth), StringUtils.Localize("#LOC_BDArmory_WMWindow_defendVIP"), leftLabel); //target proximity"
@@ -1781,8 +1804,9 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        textNumFields["targetWeightProtectVIP"].tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), textNumFields["targetWeightProtectVIP"].possibleValue, 4, inputFieldStyle));
-                        ActiveWeaponManager.targetWeightProtectVIP = (float)textNumFields["targetWeightProtectVIP"].currentValue;
+                        var field = textNumFields["targetWeightProtectVIP"];
+                        field.tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), field.possibleValue, 4, field.style));
+                        ActiveWeaponManager.targetWeightProtectVIP = (float)field.currentValue;
                     }
 
                     GUI.Label(LabelRect(++priorityLines, priorityLabelWidth), StringUtils.Localize("#LOC_BDArmory_WMWindow_targetVIP"), leftLabel); //target proximity"
@@ -1793,8 +1817,9 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        textNumFields["targetWeightAttackVIP"].tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), textNumFields["targetWeightAttackVIP"].possibleValue, 4, inputFieldStyle));
-                        ActiveWeaponManager.targetWeightAttackVIP = (float)textNumFields["targetWeightAttackVIP"].currentValue;
+                        var field = textNumFields["targetWeightAttackVIP"];
+                        field.tryParseValue(GUI.TextField(InputFieldRect(priorityLines, priorityLabelWidth), field.possibleValue, 4, field.style));
+                        ActiveWeaponManager.targetWeightAttackVIP = (float)field.currentValue;
                     }
 
                     priorityLines += 1.1f;
@@ -2150,7 +2175,7 @@ namespace BDArmory.UI
                                 }
 
                                 newGPSName = GUI.TextField(
-                                  new Rect(0, gpsEntryCount * gpsEntryHeight, nameWidth, gpsEntryHeight), newGPSName, 12, inputFieldStyle);
+                                  new Rect(0, gpsEntryCount * gpsEntryHeight, nameWidth, gpsEntryHeight), newGPSName, 12, textFieldStyle);
                                 GUI.color = origColor;
                             }
                         }
@@ -2422,6 +2447,11 @@ namespace BDArmory.UI
                     { // GUI background opacity
                         GUI.Label(SLeftSliderRect(++line), StringUtils.Localize("#LOC_BDArmory_Settings_GUIBackgroundOpacity") + $" ({BDArmorySettings.GUI_OPACITY.ToString("F2")})", leftLabel);
                         BDArmorySettings.GUI_OPACITY = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.GUI_OPACITY, 0f, 1f), 0.05f);
+                    }
+
+                    { // Numeric Input config
+                        BDArmorySettings.NUMERIC_INPUT_SELF_UPDATE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.NUMERIC_INPUT_SELF_UPDATE, $"{StringUtils.Localize("#LOC_BDArmory_Settings_NumericInputSelfUpdate")}: {BDArmorySettings.NUMERIC_INPUT_DELAY:0.0}s"); // Numeric Input Self Update
+                        BDArmorySettings.NUMERIC_INPUT_DELAY = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.NUMERIC_INPUT_DELAY, 0.1f, 2f), 0.1f);
                     }
 
                     if (GUI.Button(SLineRect(++line, 1, true), (BDArmorySettings.DEBUG_SETTINGS_TOGGLE ? "Disable " : "Enable ") + StringUtils.Localize("#LOC_BDArmory_Settings_DebugSettingsToggle")))//Enable/Disable Debugging.
@@ -3363,7 +3393,7 @@ namespace BDArmory.UI
                             BDArmorySettings.SF_DRAGMULT = 30;
                         }
                         // if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 46) BDArmorySettings.NO_ENGINES = true;
-                        if (CheatCodeGUI != (CheatCodeGUI = GUI.TextField(SLeftRect(++line, 1, true), CheatCodeGUI, inputFieldStyle))) //if we need super-secret stuff
+                        if (CheatCodeGUI != (CheatCodeGUI = GUI.TextField(SLeftRect(++line, 1, true), CheatCodeGUI, textFieldStyle))) //if we need super-secret stuff
                         {
                             if (CheatCodeGUI == "ZombieMode")
                             {
@@ -3409,7 +3439,7 @@ namespace BDArmory.UI
                         if (BDArmorySettings.ENABLE_HOS)
                         {
                             GUI.Label(SLeftRect(++line), StringUtils.Localize("--Hall Of Shame Enabled--"));//"Competition Distance"
-                            HoSString = GUI.TextField(SLeftRect(++line, 1, true), HoSString, inputFieldStyle);
+                            HoSString = GUI.TextField(SLeftRect(++line, 1, true), HoSString, textFieldStyle);
                             if (!string.IsNullOrEmpty(HoSString))
                             {
                                 enteredHoS = GUI.Toggle(SRightRect(line), enteredHoS, StringUtils.Localize("Enter to Hall of Shame"));
@@ -3447,7 +3477,7 @@ namespace BDArmory.UI
                             BDArmorySettings.HOS_THRUST = (GUI.HorizontalSlider(SRightSliderRect(line), (float)Math.Round(BDArmorySettings.HOS_THRUST, 1), 0, 200));
                             BDArmorySettings.HOS_SAS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.HOS_SAS, "Remove Reaction Wheels");
                             GUI.Label(SLeftRect(++line), StringUtils.Localize("--Shame badge--"));
-                            HoSTag = GUI.TextField(SLeftRect(++line, 1, true), HoSTag, inputFieldStyle);
+                            HoSTag = GUI.TextField(SLeftRect(++line, 1, true), HoSTag, textFieldStyle);
                             BDArmorySettings.HOS_BADGE = HoSTag;
                         }
                         else
@@ -3679,9 +3709,9 @@ namespace BDArmory.UI
 
                 GUI.Label(SLeftRect(++line), StringUtils.Localize("#LOC_BDArmory_Settings_CompetitionIntraTeamSeparation")); // Intra-team separation.
                 var intraTeamSepRect = SRightRect(line, 1, true);
-                compIntraTeamSeparationBase = GUI.TextField(new Rect(intraTeamSepRect.x, intraTeamSepRect.y, intraTeamSepRect.width / 4 + 2, intraTeamSepRect.height), compIntraTeamSeparationBase, 6, inputFieldStyle);
+                compIntraTeamSeparationBase = GUI.TextField(new Rect(intraTeamSepRect.x, intraTeamSepRect.y, intraTeamSepRect.width / 4 + 2, intraTeamSepRect.height), compIntraTeamSeparationBase, 6, textFieldStyle);
                 GUI.Label(new Rect(intraTeamSepRect.x + intraTeamSepRect.width / 4 + 2, intraTeamSepRect.y, 15, intraTeamSepRect.height), " + ");
-                compIntraTeamSeparationPerMember = GUI.TextField(new Rect(intraTeamSepRect.x + intraTeamSepRect.width / 4 + 17, intraTeamSepRect.y, intraTeamSepRect.width / 4 + 2, intraTeamSepRect.height), compIntraTeamSeparationPerMember, 6, inputFieldStyle);
+                compIntraTeamSeparationPerMember = GUI.TextField(new Rect(intraTeamSepRect.x + intraTeamSepRect.width / 4 + 17, intraTeamSepRect.y, intraTeamSepRect.width / 4 + 2, intraTeamSepRect.height), compIntraTeamSeparationPerMember, 6, textFieldStyle);
                 GUI.Label(new Rect(intraTeamSepRect.x + intraTeamSepRect.width / 2 + 25, intraTeamSepRect.y, intraTeamSepRect.width / 2 - 25, intraTeamSepRect.height), StringUtils.Localize("#LOC_BDArmory_Settings_CompetitionIntraTeamSeparationPerMember"));
                 if (Single.TryParse(compIntraTeamSeparationBase, out float cIntraBase) && BDArmorySettings.COMPETITION_INTRA_TEAM_SEPARATION_BASE != cIntraBase)
                 {
@@ -3695,7 +3725,7 @@ namespace BDArmory.UI
                 }
 
                 GUI.Label(SLeftRect(++line), StringUtils.Localize("#LOC_BDArmory_Settings_CompetitionDistance"));//"Competition Distance"
-                compDistGui = GUI.TextField(SRightRect(line, 1, true), compDistGui, inputFieldStyle);
+                compDistGui = GUI.TextField(SRightRect(line, 1, true), compDistGui, textFieldStyle);
                 if (Single.TryParse(compDistGui, out float cDist) && BDArmorySettings.COMPETITION_DISTANCE != cDist)
                 {
                     cDist = Mathf.Round(cDist); BDArmorySettings.COMPETITION_DISTANCE = cDist;
@@ -3756,7 +3786,7 @@ namespace BDArmory.UI
                     if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                     {
                         GUI.Label(SLeftRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_CompetitionID")}: ", leftLabel); // Competition hash.
-                        BDArmorySettings.COMPETITION_HASH = GUI.TextField(SRightRect(line, 1, true), BDArmorySettings.COMPETITION_HASH, inputFieldStyle);
+                        BDArmorySettings.COMPETITION_HASH = GUI.TextField(SRightRect(line, 1, true), BDArmorySettings.COMPETITION_HASH, textFieldStyle);
                         GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_RemoteInterheatDelay")}: ({BDArmorySettings.REMOTE_INTERHEAT_DELAY}s)", leftLabel); // Inter-heat delay
                         BDArmorySettings.REMOTE_INTERHEAT_DELAY = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.REMOTE_INTERHEAT_DELAY, 1f, 30f));
                     }

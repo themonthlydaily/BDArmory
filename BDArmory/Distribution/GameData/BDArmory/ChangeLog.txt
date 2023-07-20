@@ -1,4 +1,12 @@
-﻿v1.6.4.0
+﻿IMPROVEMENTS / FIXES
+- UI:
+	- Add an option for disabling the self-updating of the text in numeric input fields.
+		- When the value fails to parse (after the delay) the text will turn red.
+		- Toggling the numeric fields or closing the windows will reset the field to the most recently successfully parsed value.
+		- The text will still be updated if the parsed value becomes clamped within the limits of the field.
+	- Make the delay for the "read and interpret" logic of numeric input fields customisable (default 0.5s).
+
+v1.6.4.0
 IMPROVEMENTS / FIXES
 - General:
 	- Make ammo consumption respect staging and priority order unless "externalAmmo = false" in the weapon config.
