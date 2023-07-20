@@ -148,7 +148,8 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool PWING_THICKNESS_AFFECT_MASS_HP = false;  //pWing thickness contributes to its mass calc instead of a static LiftArea derived value
         [BDAPersistentSettingsField] public static float MAX_PWING_LIFT = 4.54f;                //Clamp pWing lift to this amount
         [BDAPersistentSettingsField] public static float MAX_SAS_TORQUE = 30;                   //Clamp vessel total non-cockpit torque to this
-        [BDAPersistentSettingsField] public static float NUMERIC_INPUT_DELAY = 0.5f;                   // Time before last input for "read and interpret" logic of NumericInputField.
+        [BDAPersistentSettingsField] public static bool NUMERIC_INPUT_SELF_UPDATE = true;             // Automatically update the display string in NumericInputField after attempting to parse the value.
+        [BDAPersistentSettingsField] public static float NUMERIC_INPUT_DELAY = 0.5f;                  // Time before last input for "read and interpret" logic of NumericInputField.
         #endregion
 
         #region Physics constants

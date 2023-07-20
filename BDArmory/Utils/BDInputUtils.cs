@@ -170,20 +170,41 @@ namespace BDArmory.Utils
 
     /// <summary>
     /// A class for more easily inputting numeric values in TextFields.
-    /// There's a 0.5s delay after the last keystroke before attempting to interpret the string as a double.
+    /// There's a configurable delay after the last keystroke before attempting to interpret the string as a double. Default: 0.5s.
     /// Explicit cast to lower precision types may be needed when assigning the current value.
     /// </summary>
     public class NumericInputField : MonoBehaviour
     {
-        public NumericInputField Initialise(double l, double v, double minV = double.MinValue, double maxV = double.MaxValue) { lastUpdated = l; currentValue = v; minValue = minV; maxValue = maxV; return this; }
+        public static GUIStyle InputFieldStyle;
+        public static GUIStyle InputFieldBadStyle;
+        static void ConfigureStyles()
+        {
+            InputFieldStyle = new GUIStyle(GUI.skin.textField);
+            InputFieldStyle.alignment = TextAnchor.MiddleRight;
+            InputFieldBadStyle = new GUIStyle(InputFieldStyle);
+            InputFieldBadStyle.normal.textColor = Color.red;
+            InputFieldBadStyle.focused.textColor = Color.red;
+        }
+
+        public NumericInputField Initialise(double l, double v, double minV = double.MinValue, double maxV = double.MaxValue)
+        { lastUpdated = l; currentValue = v; minValue = minV; maxValue = maxV; return this; }
         public double lastUpdated;
         public string possibleValue = string.Empty;
         private double _value;
-        public double currentValue { get { return _value; } set { _value = value; possibleValue = _value.ToString("G6"); } }
+        public double currentValue
+        {
+            get { return _value; }
+            set
+            {
+                _value = value;
+                if (string.IsNullOrEmpty(possibleValue)) possibleValue = _value.ToString("G6");
+            }
+        }
         public double minValue;
         public double maxValue;
         private bool coroutineRunning = false;
         private Coroutine coroutine;
+        public bool valid = true;
 
         public void tryParseValue(string v)
         {
@@ -202,32 +223,53 @@ namespace BDArmory.Utils
         {
             var wait = new WaitForFixedUpdate();
             coroutineRunning = true;
+            valid = true; // Flag the value as valid until we've tried parsing it.
             while (Time.time - lastUpdated < BDArmorySettings.NUMERIC_INPUT_DELAY)
                 yield return wait;
-            tryParseCurrentValue();
+            tryParseCurrentValue(BDArmorySettings.NUMERIC_INPUT_SELF_UPDATE);
             coroutineRunning = false;
             yield return wait;
         }
 
-        void tryParseCurrentValue()
+        void tryParseCurrentValue(bool updatePossible = false)
         {
             double newValue;
             if (double.TryParse(possibleValue, out newValue))
             {
                 currentValue = Math.Min(Math.Max(newValue, minValue), Math.Max(maxValue, currentValue)); // Clamp the new value between the min and max, but not if it's been set higher with the unclamped tuning option. This still allows reducing the value while still above the clamp limit.
+                if (newValue != currentValue) // The value got clamped.
+                    possibleValue = currentValue.ToString("G6");
                 lastUpdated = Time.time;
+                valid = true;
             }
-            possibleValue = currentValue.ToString("G6");
+            else
+            {
+                valid = false;
+            }
+            if (updatePossible)
+            {
+                possibleValue = currentValue.ToString("G6");
+                valid = true;
+            }
         }
 
         // Parse the current possible value immediately.
         public void tryParseValueNow()
         {
-            tryParseCurrentValue();
+            tryParseCurrentValue(true);
             if (coroutineRunning)
             {
                 StopCoroutine(coroutine);
                 coroutineRunning = false;
+            }
+        }
+
+        public GUIStyle style
+        {
+            get
+            {
+                if (InputFieldStyle == null || InputFieldBadStyle == null) ConfigureStyles();
+                return valid ? InputFieldStyle : InputFieldBadStyle;
             }
         }
     }

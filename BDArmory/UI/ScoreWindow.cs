@@ -31,7 +31,6 @@ namespace BDArmory.UI
         bool stylesConfigured = false;
         GUIStyle leftLabel;
         GUIStyle rightLabel;
-        GUIStyle inputFieldStyle;
         #endregion
 
         private void Awake()
@@ -63,8 +62,6 @@ namespace BDArmory.UI
         void ConfigureStyles()
         {
             stylesConfigured = true;
-            inputFieldStyle = new GUIStyle(GUI.skin.textField);
-            inputFieldStyle.alignment = TextAnchor.MiddleRight;
             leftLabel = new GUIStyle();
             leftLabel.alignment = TextAnchor.MiddleLeft;
             leftLabel.normal.textColor = Color.white;
@@ -242,7 +239,7 @@ namespace BDArmory.UI
             {
                 GUILayout.BeginHorizontal();
                 GUILayout.Label(weight.Key);
-                weight.Value.tryParseValue(GUILayout.TextField(weight.Value.possibleValue, 10, inputFieldStyle, GUILayout.Width(80)));
+                weight.Value.tryParseValue(GUILayout.TextField(weight.Value.possibleValue, 10, weight.Value.style, GUILayout.Width(80)));
                 if (TournamentScores.weights[weight.Key] != (float)weight.Value.currentValue)
                 {
                     TournamentScores.weights[weight.Key] = (float)weight.Value.currentValue;
