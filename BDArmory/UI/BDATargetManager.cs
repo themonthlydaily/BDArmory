@@ -622,15 +622,29 @@ namespace BDArmory.UI
                     }
                 }
 
+            Vector3 forward = FlightGlobals.ActiveVessel.vesselTransform.position + 100f * FlightGlobals.ActiveVessel.vesselTransform.up;
+            Vector3 aft = FlightGlobals.ActiveVessel.vesselTransform.position - 100f * FlightGlobals.ActiveVessel.vesselTransform.up;
+            Vector3 side = FlightGlobals.ActiveVessel.vesselTransform.position + 100f * FlightGlobals.ActiveVessel.vesselTransform.right;
+            Vector3 top = FlightGlobals.ActiveVessel.vesselTransform.position - 100f * FlightGlobals.ActiveVessel.vesselTransform.forward;
+            Vector3 bottom = FlightGlobals.ActiveVessel.vesselTransform.position + 100f * FlightGlobals.ActiveVessel.vesselTransform.forward;
+
+
             debugString.Append(Environment.NewLine);
             debugString.AppendLine($"Base Heat Signature: {GetVesselHeatSignature(FlightGlobals.ActiveVessel, Vector3.zero):#####}, For/Aft: " +
-                GetVesselHeatSignature(FlightGlobals.ActiveVessel, FlightGlobals.ActiveVessel.vesselTransform.position + 100f * FlightGlobals.ActiveVessel.vesselTransform.up).Item1.ToString("0") + "/" +
-                GetVesselHeatSignature(FlightGlobals.ActiveVessel, FlightGlobals.ActiveVessel.vesselTransform.position - 100f * FlightGlobals.ActiveVessel.vesselTransform.up).Item1.ToString("0") + ", Side: " +
-                GetVesselHeatSignature(FlightGlobals.ActiveVessel, FlightGlobals.ActiveVessel.vesselTransform.position + 100f * FlightGlobals.ActiveVessel.vesselTransform.right).Item1.ToString("0") + ", Top/Bot: " +
-                GetVesselHeatSignature(FlightGlobals.ActiveVessel, FlightGlobals.ActiveVessel.vesselTransform.position - 100f * FlightGlobals.ActiveVessel.vesselTransform.forward).Item1.ToString("0") + "/" +
-                GetVesselHeatSignature(FlightGlobals.ActiveVessel, FlightGlobals.ActiveVessel.vesselTransform.position + 100f * FlightGlobals.ActiveVessel.vesselTransform.forward).Item1.ToString("0"));
+                GetVesselHeatSignature(FlightGlobals.ActiveVessel, forward).Item1.ToString("0") + "/" +
+                GetVesselHeatSignature(FlightGlobals.ActiveVessel, aft).Item1.ToString("0") + ", Side: " +
+                GetVesselHeatSignature(FlightGlobals.ActiveVessel, side).Item1.ToString("0") + ", Top/Bot: " +
+                GetVesselHeatSignature(FlightGlobals.ActiveVessel, top).Item1.ToString("0") + "/" +
+                GetVesselHeatSignature(FlightGlobals.ActiveVessel, bottom).Item1.ToString("0"));
             var radarSig = RadarUtils.GetVesselRadarSignature(FlightGlobals.ActiveVessel);
-            debugString.AppendLine($"Radar Signature: " + radarSig.radarModifiedSignature);
+            string aspectedText = "";
+            if (BDArmorySettings.ASPECTED_RCS)
+            {
+                aspectedText += ", For/Aft: " + RadarUtils.GetVesselRadarSignatureAtAspect(radarSig, forward).ToString("0.00") + "/" + RadarUtils.GetVesselRadarSignatureAtAspect(radarSig, aft).ToString("0.00");
+                aspectedText += ", Side: " + RadarUtils.GetVesselRadarSignatureAtAspect(radarSig, side).ToString("0.00");
+                aspectedText += ", Top/Bot: " + RadarUtils.GetVesselRadarSignatureAtAspect(radarSig, top).ToString("0.00") + "/" + RadarUtils.GetVesselRadarSignatureAtAspect(radarSig, bottom).ToString("0.00");
+            }
+            debugString.AppendLine($"Radar Signature: " + radarSig.radarModifiedSignature.ToString("0.00") + aspectedText);
             debugString.AppendLine($"Chaff multiplier: " + RadarUtils.GetVesselChaffFactor(FlightGlobals.ActiveVessel).ToString("0.0"));
 
             var ecmjInfo = FlightGlobals.ActiveVessel.gameObject.GetComponent<VesselECMJInfo>();

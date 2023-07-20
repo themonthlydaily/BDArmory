@@ -20,6 +20,9 @@ namespace BDArmory.Radar
         private static bool rcsSetupCompleted = false;
         private static int radarResolution = 128;
 
+        private static bool hasCheckedForConformalDecals = false;
+        private static bool hasConformalDecals = false;
+
         private static RenderTexture rcsRenderingVariable;
         private static RenderTexture rcsRendering1;
         private static RenderTexture rcsRendering2;
@@ -549,6 +552,10 @@ namespace BDArmory.Radar
                 return ti;
             }
 
+            // If in editor, turn off rendering of conformal decals
+            if (!HighLogic.LoadedSceneIsFlight && CheckForConformalDecals())
+                SetConformalDecalRendering(false);
+
             float rcsVariable = 0f;
             if (editorRCSAspects is null) editorRCSAspects = new float[3, 3];
             Array.Clear(editorRCSAspects, 0, 9);
@@ -680,6 +687,10 @@ namespace BDArmory.Radar
                 }
             }
 
+            // If in editor, turn back on rendering of conformal decals
+            if (!HighLogic.LoadedSceneIsFlight && CheckForConformalDecals())
+                SetConformalDecalRendering(true);
+
             if (BDArmorySettings.DEBUG_RADAR)
             {
                 Debug.Log($"[BDArmory.RadarUtils]: - Vessel all-aspect rcs is: rcsTotal: {rcsTotal}");
@@ -692,6 +703,43 @@ namespace BDArmory.Radar
             }
 
             return ti;
+        }
+
+        public static bool CheckForConformalDecals()
+        {
+            if (hasCheckedForConformalDecals) return hasConformalDecals;
+            hasCheckedForConformalDecals = true;
+            foreach (var assy in AssemblyLoader.loadedAssemblies)
+            {
+                if (assy.assembly.FullName.StartsWith("ConformalDecals"))
+                {
+                    hasConformalDecals = true;
+                    if (BDArmorySettings.DEBUG_RADAR) Debug.Log($"[BDArmory.RadarUtils]: Found Conformal Decals Assembly: {assy.assembly.FullName}");
+                }
+            }
+            return hasConformalDecals;
+        }
+
+        public static void SetConformalDecalRendering(bool renderEnabled)
+        {
+            if (!hasConformalDecals) return;
+
+            using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator())
+                while (parts.MoveNext())
+                {
+                    foreach (var module in parts.Current.Modules)
+                    {
+                        if ((module.moduleName == "ModuleConformalDecal") || (module.moduleName == "ModuleConformalFlag") || (module.moduleName == "ModuleConformalText"))
+                        {
+                            if (BDArmorySettings.DEBUG_RADAR) Debug.Log($"[BDArmory.RadarUtils]: Found {module.moduleName} for {parts.Current.name}.");
+                            foreach (var r in parts.Current.GetComponentsInChildren<Renderer>())
+                            {
+                                r.enabled = renderEnabled;
+                                if (BDArmorySettings.DEBUG_RADAR) Debug.Log($"[BDArmory.RadarUtils]: Set rendering for {parts.Current.name} to {renderEnabled}.");
+                            }
+                        }
+                    }
+                }
         }
 
         // Used to calculate third quartile for RCS dataset
