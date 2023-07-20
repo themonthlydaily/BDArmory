@@ -232,6 +232,10 @@ namespace BDArmory.Radar
             { 180f, 90f},
             { 180f, -90f},
         };
+
+        public static float minRCSHeatmap = float.MaxValue;
+        public static float maxRCSHeatmap = 0f;
+
         private static int numAspectsForOverallRTEval = 83; // Use the first N rows of rcsAspectsRealTime for evaluating overall craft RCS
         public static float[,] editorRCSAspects = new float[3, 3]; // Worst three aspects
         static double[] rcsValues;
@@ -271,9 +275,6 @@ namespace BDArmory.Radar
         {
             if (ti.radarSignatureMatrix is null)
                 return ti.radarBaseSignature;
-            
-            float signatureAtAspect;
-            float[,] rcsMatrix = ti.radarSignatureMatrix;
 
             Vector3 directionOfRadar = radarPosition - ti.Vessel.ReferenceTransform.position;
             Vector3 azComponent = Vector3.ProjectOnPlane(directionOfRadar, ti.Vessel.ReferenceTransform.forward);
@@ -282,6 +283,21 @@ namespace BDArmory.Radar
             float azAngle = Mathf.Abs(Vector3.SignedAngle(ti.Vessel.ReferenceTransform.up, azComponent, ti.Vessel.ReferenceTransform.forward));
             float elAngle = Vector3.SignedAngle(ti.Vessel.ReferenceTransform.up, elComponent, -ti.Vessel.ReferenceTransform.right);
 
+            float signatureAtAspect = RCSMatrixEval(ti.radarSignatureMatrix, ti.radarBaseSignature, azAngle, elAngle);
+
+            // Incorporate any signature modification
+            signatureAtAspect *= ti.radarModifiedSignature / ti.radarBaseSignature;
+
+            if (BDArmorySettings.DEBUG_RADAR)
+                Debug.Log("[BDArmory.RadarUtils]: " + ti.Vessel.vesselName + " signature of " + signatureAtAspect.ToString("0.00") + "m^2 at az/el " + azAngle.ToString("0.0") + "/" + elAngle.ToString("0.0") + " deg.");
+
+            return signatureAtAspect;
+        }
+
+        private static float RCSMatrixEval(float[,] rcsMatrix, float overallRCS, float azAngle, float elAngle)
+        {
+            float rcs;
+            
             if (elAngle > 90f)
                 elAngle = 180f - elAngle;
             else if (elAngle < -90f)
@@ -307,7 +323,7 @@ namespace BDArmory.Radar
             float rcs2 = 0f;
             float rcs3 = 0f;
 
-            for (int i = 0; i < rcsMatrix.GetLength(0) ; i++)
+            for (int i = 0; i < rcsMatrix.GetLength(0); i++)
             {
                 float sqrDist = (rcsMatrix[i, 0] - azAngle) * (rcsMatrix[i, 0] - azAngle) + (rcsMatrix[i, 1] - elAngle) * (rcsMatrix[i, 1] - elAngle);
 
@@ -362,20 +378,14 @@ namespace BDArmory.Radar
             w3 = 1 - w1 - w2;
 
             if ((w1 > 0) && (w2 > 0) && (w3 > 0)) // If point is inside triangle, weights will all be positive, if not inside triangle use nearest neighbor
-                signatureAtAspect = w1 * rcs1 + w2 * rcs2 + w3 * rcs3;
+                rcs = w1 * rcs1 + w2 * rcs2 + w3 * rcs3;
             else
-                signatureAtAspect = rcs1;
+                rcs = rcs1;
 
-            // Take weighted average of signature at aspect and overall signature to prevent non-stealthy craft from being overly stealthy in a single aspect, but also reduce impact of non-ideal aspects
-            signatureAtAspect = signatureAtAspect * (1 - BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT) + ti.radarBaseSignature * BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT;
+            // Compute weighted average for aspect
+            rcs = (1 - BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT) * rcs + BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT * overallRCS;
 
-            // Incorporate any signature modification
-            signatureAtAspect *= ti.radarModifiedSignature / ti.radarBaseSignature;
-
-            if (BDArmorySettings.DEBUG_RADAR)
-                Debug.Log("[BDArmory.RadarUtils]: " + ti.Vessel.vesselName + " signature of " + signatureAtAspect.ToString("0.00") + "m^2 at az/el " + azAngle.ToString("0.0") + "/" + elAngle.ToString("0.0") + " deg.");
-
-            return signatureAtAspect;
+            return rcs;
         }
 
         /// <summary>
@@ -490,6 +500,8 @@ namespace BDArmory.Radar
             const float radarFOV = 2.0f;
             Vector3 presentationPosition = -t.forward * radarDistance;
             rcsTotal = 0;
+            minRCSHeatmap = float.MaxValue;
+            maxRCSHeatmap = 0f;
 
             SetupResources();
 
@@ -589,7 +601,8 @@ namespace BDArmory.Radar
 
                 // normalize rcs value, so that a sphere with cross section of 1 m^2 gives a return of 1 m^2:
                 rcsVariable /= RCS_NORMALIZATION_FACTOR;
-                rcsValues[i] = (double)rcsVariable;
+                rcsValues[i] = rcsVariable;
+                minRCSHeatmap = Mathf.Min(minRCSHeatmap, (float)rcsValues[i]);
 
                 // Add values to RCS Matrix for real-time evaluation
                 rcsMatrix[i, 0] = rcsAspects[i, 0];
@@ -599,7 +612,7 @@ namespace BDArmory.Radar
                 // Remember worst three RCS aspects to display in editor
                 if (inEditorZoom)
                 {
-                    if ((!BDArmorySettings.ASPECTED_RCS) || (BDArmorySettings.ASPECTED_RCS && i <= 2)) // Use worst aspects by default, for aspected RCS use first three evaluated aspects
+                    if (!BDArmorySettings.ASPECTED_RCS) // Use worst aspects by default
                     {
                         if (rcsVariable > editorRCSAspects[0, 2])
                         {
@@ -632,22 +645,37 @@ namespace BDArmory.Radar
                             editorRCSAspects[2, 2] = rcsVariable;
                         }
                     }
+                    else if (BDArmorySettings.ASPECTED_RCS && i <= 2) // For aspected RCS use first three evaluated aspects
+                    {
+                        editorRCSAspects[i, 0] = rcsAspects[i, 0];
+                        editorRCSAspects[i, 1] = rcsAspects[i, 1];
+                        editorRCSAspects[i, 2] = rcsVariable;
+                    }
                 }
 
                 if (BDArmorySettings.DEBUG_RADAR)
                 {
-                    // Debug.Log($"[BDArmory.RadarUtils]: RCS Aspect Vector for (az/el) {rcsAspects[i, 0]}/{rcsAspects[i, 1]}  is: " + aspect.ToString());
                     Debug.Log($"[BDArmory.RadarUtils]: - Vessel rcs for (az/el) is: {rcsAspects[i, 0]}/{rcsAspects[i, 1]} = rcsVariable: {rcsVariable}");
                 }
             }
 
-            // If dynamic aspects RCS is enabled, use a subset of the evaluated RCS values for the total RCS calc
+            // If dynamic aspects RCS is enabled, save heatmap values and use a subset of the evaluated RCS values for the total RCS calc
             if (BDArmorySettings.ASPECTED_RCS)
+            {
+                minRCSHeatmap = (float)Percentile(rcsValues, 10d);
+                maxRCSHeatmap = (float)Percentile(rcsValues, 90d);
                 Array.Resize(ref rcsValues, numAspectsForOverallRTEval);
+            }
 
             // Use third quartile for the total RCS (gives better results than average)
-            rcsTotal = (float)Quartile(rcsValues, 3);
+            rcsTotal = (float)Percentile(rcsValues, 75d);
 
+            // Rescale min/max RCS with new overall RCS
+            if (BDArmorySettings.ASPECTED_RCS)
+            {
+                minRCSHeatmap = (1 - BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT) * minRCSHeatmap + BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT * rcsTotal;
+                maxRCSHeatmap = (1 - BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT) * maxRCSHeatmap + BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT * rcsTotal;
+            }
 
             // If we are in the editor, render the three highest RCS aspects
             if (inEditorZoom)
@@ -663,7 +691,10 @@ namespace BDArmory.Radar
                 // Render three highest aspects
                 RenderSinglePass(t, inEditorZoom, aspect1, vesselbounds, radarDistance, radarFOV, rcsRendering1, drawTexture1);
                 RenderSinglePass(t, inEditorZoom, aspect2, vesselbounds, radarDistance, radarFOV, rcsRendering2, drawTexture2);
-                RenderSinglePass(t, inEditorZoom, aspect3, vesselbounds, radarDistance, radarFOV, rcsRendering3, drawTexture3);
+                if (!BDArmorySettings.ASPECTED_RCS)
+                    RenderSinglePass(t, inEditorZoom, aspect3, vesselbounds, radarDistance, radarFOV, rcsRendering3, drawTexture3);
+                else
+                    RCSHeatMap(rcsMatrix, drawTexture3); // Put heat-map in place of 3rd view
             }
             else
             {
@@ -742,36 +773,10 @@ namespace BDArmory.Radar
                 }
         }
 
-        // Used to calculate third quartile for RCS dataset
-        internal static double Quartile(double[] array, int nth_quartile)
+        // Used to calculate percentiles for RCS dataset
+        internal static double Percentile(double[] array, double dblPercentage = 0)
         {
             System.Array.Sort(array);
-            double dblPercentage = 0;
-
-            switch (nth_quartile)
-            {
-                case 0:
-                    dblPercentage = 0; //Smallest value in the data set
-                    break;
-                case 1:
-                    dblPercentage = 25; //First quartile (25th percentile)
-                    break;
-                case 2:
-                    dblPercentage = 50; //Second quartile (50th percentile)
-                    break;
-
-                case 3:
-                    dblPercentage = 75; //Third quartile (75th percentile)
-                    break;
-
-                case 4:
-                    dblPercentage = 100; //Largest value in the data set
-                    break;
-                default:
-                    dblPercentage = 0;
-                    break;
-            }
-
 
             if (dblPercentage >= 100.0d) return array[array.Length - 1];
 
@@ -800,14 +805,40 @@ namespace BDArmory.Radar
             }
         }
 
-        /// <summary>
-        /// Internal method: do the actual radar snapshot rendering from 3 sides and store it in a vesseltargetinfo attached to the vessel
-        ///
-        /// Note: Transform t is passed separatedly (instead of using v.transform), as the method need to be called from the editor
-        ///         and there we dont have a VESSEL, only a SHIPCONSTRUCT, so the EditorRcSWindow passes the transform separately.
-        /// </summary>
-        /// <param name="inEditorZoom">when true, we try to make the rendered vessel fill the rendertexture completely, for a better detailed view. This does skew the computed cross section, so it is only for a good visual in editor!</param>
-        public static float RenderVesselRadarSnapshotLegacy(Vessel v, Transform t, bool inEditorZoom = false)
+        public static void RCSHeatMap(float[,] rcsMatrix, Texture2D rcsMap)
+        {
+            float az;
+            float el;
+            float rcs;
+            Color rcsColor;
+
+            //Detect edges on slice and write to output
+            for (int x = 0; x < radarResolution; x++)
+            {
+                az = (float)x / (radarResolution - 1) * 180f;
+                for (int y = 0; y < radarResolution; y++)
+                {
+                    el = (float)y / (radarResolution - 1) * 180f - 90f;
+                    rcs = RCSMatrixEval(rcsMatrix, rcsTotal, az, el);
+                    rcs = Mathf.Clamp(rcs, minRCSHeatmap, maxRCSHeatmap);
+                    if (rcs <= rcsTotal)
+                        rcsColor = Color.HSVToRGB((0.5f * (rcsTotal - rcs) / (rcsTotal - minRCSHeatmap) + 0.5f) / 3f, 1, 1);
+                    else
+                        rcsColor = Color.HSVToRGB((0.5f - (0.5f / (maxRCSHeatmap - rcsTotal) * (rcs - rcsTotal))) / 3, 1, 1);
+                    rcsMap.SetPixel(x, y, rcsColor);
+                }
+            }
+            rcsMap.Apply();
+        }
+
+            /// <summary>
+            /// Internal method: do the actual radar snapshot rendering from 3 sides and store it in a vesseltargetinfo attached to the vessel
+            ///
+            /// Note: Transform t is passed separatedly (instead of using v.transform), as the method need to be called from the editor
+            ///         and there we dont have a VESSEL, only a SHIPCONSTRUCT, so the EditorRcSWindow passes the transform separately.
+            /// </summary>
+            /// <param name="inEditorZoom">when true, we try to make the rendered vessel fill the rendertexture completely, for a better detailed view. This does skew the computed cross section, so it is only for a good visual in editor!</param>
+            public static float RenderVesselRadarSnapshotLegacy(Vessel v, Transform t, bool inEditorZoom = false)
         {
             const float radarDistance = 1000f;
             const float radarFOV = 2.0f;

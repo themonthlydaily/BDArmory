@@ -2918,6 +2918,11 @@ namespace BDArmory.UI
                     if (BDArmorySettings.MISSILE_CM_SETTING_TOGGLE)
                     {
                         BDArmorySettings.ASPECTED_RCS = GUI.Toggle(SLineRect(++line, 1), BDArmorySettings.ASPECTED_RCS, StringUtils.Localize("#LOC_BDArmory_Settings_AspectedRCS"));
+                        if (BDArmorySettings.ASPECTED_RCS)
+                        {
+                            GUI.Label(SLeftSliderRect(++line, 1), $"{StringUtils.Localize("#LOC_BDArmory_Settings_AspectedRCSOverallRCSWeight")}:  ({BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT})", leftLabel);
+                            BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT, 0f, 1f), 0.05f);
+                        }
 
                         GUI.Label(SLeftSliderRect(++line, 1), $"{StringUtils.Localize("#LOC_BDArmory_Settings_FlareFactor")}:  ({BDArmorySettings.FLARE_FACTOR})", leftLabel);
                         BDArmorySettings.ASPECTED_IR_SEEKERS = GUI.Toggle(SLineRect(++line, 1), BDArmorySettings.ASPECTED_IR_SEEKERS, StringUtils.Localize("#LOC_BDArmory_Settings_AspectedIRSeekers"));
