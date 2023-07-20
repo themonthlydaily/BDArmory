@@ -8,6 +8,7 @@
 - Detectors:
 	- Fix Conformal Decals throwing off RCS calculation in editor (SPH/VAB).
 	- Add for/aft/side/top/bot RCS readout to the On-Screen Telem debug option when ASPECTED_RCS is enabled.
+	- Add slider for ASPECTED_RCS_OVERALL_RCS_WEIGHT to the BDA Settings menu.
 
 
 v1.6.4.0
