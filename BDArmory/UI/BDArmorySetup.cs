@@ -3024,6 +3024,9 @@ namespace BDArmory.UI
                     if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch.ship is not null) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
                 }
 
+                GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_NumericInputDelay")}:  {BDArmorySettings.NUMERIC_INPUT_DELAY:0.0}s", leftLabel); // Numeric Input Delay
+                BDArmorySettings.NUMERIC_INPUT_DELAY = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.NUMERIC_INPUT_DELAY, 0.1f, 2f), 0.1f);
+
                 line += 0.5f;
             }
 

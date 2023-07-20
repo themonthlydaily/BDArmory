@@ -189,7 +189,7 @@ namespace BDArmory.Utils
         {
             if (v != possibleValue)
             {
-                lastUpdated = !string.IsNullOrEmpty(v) ? Time.time : Time.time + 0.5; // Give the empty string an extra 0.5s.
+                lastUpdated = !string.IsNullOrEmpty(v) ? Time.time : Time.time + BDArmorySettings.NUMERIC_INPUT_DELAY; // Give the empty string an extra delay.
                 possibleValue = v;
                 if (!coroutineRunning)
                 {
@@ -201,7 +201,7 @@ namespace BDArmory.Utils
         IEnumerator UpdateValueCoroutine()
         {
             coroutineRunning = true;
-            while (Time.time - lastUpdated < 0.5)
+            while (Time.time - lastUpdated < BDArmorySettings.NUMERIC_INPUT_DELAY)
                 yield return new WaitForFixedUpdate();
             tryParseCurrentValue();
             coroutineRunning = false;

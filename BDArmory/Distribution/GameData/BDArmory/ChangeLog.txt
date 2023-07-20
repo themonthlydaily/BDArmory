@@ -1,4 +1,8 @@
-﻿v1.6.4.0
+﻿IMPROVEMENTS / FIXES
+- UI:
+	- Make the delay for the "read and interpret" logic of numeric input fields customisable (default 0.5s).
+
+v1.6.4.0
 IMPROVEMENTS / FIXES
 - General:
 	- Make ammo consumption respect staging and priority order unless "externalAmmo = false" in the weapon config.
