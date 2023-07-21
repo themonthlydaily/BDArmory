@@ -279,8 +279,8 @@ namespace BDArmory.Competition
             _weightValues = _weightKeys.Select(k => weights[k]).ToList();
             _players = scoreDetails.Keys.ToList();
             _npcs = npcs.ToList();
-            _scores = _players.Select(p => JsonUtility.ToJson(new SerializedScoreDataList().Serialize(p, scoreDetails[p], _players))).ToList();
-            _files = _players.Select(p => playersToFileNames[p]).ToList();
+            _scores = _players.Where(p => scoreDetails.ContainsKey(p)).Select(p => JsonUtility.ToJson(new SerializedScoreDataList().Serialize(p, scoreDetails[p], _players))).ToList();
+            _files = _players.Where(p => playersToFileNames.ContainsKey(p)).Select(p => playersToFileNames[p]).ToList(); // If the craft file has been removed, try to cope without it.
             _results = competitionOutcomes.Select(r => JsonUtility.ToJson(r.PreSerialize())).ToList();
             return this;
         }
