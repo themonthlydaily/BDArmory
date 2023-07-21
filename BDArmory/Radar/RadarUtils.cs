@@ -22,6 +22,7 @@ namespace BDArmory.Radar
 
         private static bool hasCheckedForConformalDecals = false;
         private static bool hasConformalDecals = false;
+        private static bool hangarHiddenExternally = false;
 
         private static RenderTexture rcsRenderingVariable;
         private static RenderTexture rcsRendering1;
@@ -568,6 +569,10 @@ namespace BDArmory.Radar
             if (!HighLogic.LoadedSceneIsFlight && CheckForConformalDecals())
                 SetConformalDecalRendering(false);
 
+            // If in editor, turn off rendering hangar
+            if (!HighLogic.LoadedSceneIsFlight)
+                SetHangarRender(false);
+
             float rcsVariable = 0f;
             if (editorRCSAspects is null) editorRCSAspects = new float[3, 3];
             Array.Clear(editorRCSAspects, 0, 9);
@@ -692,12 +697,12 @@ namespace BDArmory.Radar
                 RenderSinglePass(t, inEditorZoom, aspect1, vesselbounds, radarDistance, radarFOV, rcsRendering1, drawTexture1);
                 RenderSinglePass(t, inEditorZoom, aspect2, vesselbounds, radarDistance, radarFOV, rcsRendering2, drawTexture2);
                 RenderSinglePass(t, inEditorZoom, aspect3, vesselbounds, radarDistance, radarFOV, rcsRendering3, drawTexture3);
-                
+
                 /*if (!BDArmorySettings.ASPECTED_RCS)
                     RenderSinglePass(t, inEditorZoom, aspect3, vesselbounds, radarDistance, radarFOV, rcsRendering3, drawTexture3);
                 else
                     RCSHeatMap(rcsMatrix, drawTexture3); // Put heat-map in place of 3rd view */
-                
+
             }
             else
             {
@@ -724,6 +729,10 @@ namespace BDArmory.Radar
             // If in editor, turn back on rendering of conformal decals
             if (!HighLogic.LoadedSceneIsFlight && CheckForConformalDecals())
                 SetConformalDecalRendering(true);
+
+            // If in editor, turn back on rendering of hangar
+            if (!HighLogic.LoadedSceneIsFlight)
+                SetHangarRender(true);
 
             if (BDArmorySettings.DEBUG_RADAR)
             {
@@ -774,6 +783,98 @@ namespace BDArmory.Radar
                         }
                     }
                 }
+        }
+
+        // Code to hide/show SPH/VAB during RCS render to prevent the hangar itself from affecting RCS calculation, code modified from HangarExtender
+        private static void SetHangarRender(bool renderEnabled)
+        {
+            if (!renderEnabled)
+                hangarHiddenExternally = false; 
+            else if (renderEnabled && hangarHiddenExternally)
+                return;
+            
+            string[] rcsNames = { "vabscenery", "sphscenery", "vablvl1", "vablvl2", "vablvl3", "vabmodern", "sphlvl1", "sphlvl2", "sphlvl3", "sphmodern", "vabcrew", "sphcrew" };
+            List<Transform> rootNodes = new List<Transform>();
+
+            foreach (Transform t in UnityEngine.Object.FindObjectsOfType<Transform>())
+            {
+                Transform newTransform = t.root;
+                while (newTransform.parent != null)
+                {
+                    newTransform = newTransform.parent;
+                }
+                if (!rootNodes.Contains(newTransform))
+                {
+                    rootNodes.Add(newTransform);
+                }
+            }
+
+            // Check for hidden hangars if we are setting rendering to false
+            if (!renderEnabled)
+            {
+                foreach (Transform t in rootNodes)
+                {
+                    foreach (string s in rcsNames)
+                    {
+                        if (string.Equals(t.name.ToLower(), s))
+                        {
+                            List<SkinnedMeshRenderer> skinRenderers = new List<SkinnedMeshRenderer>();
+                            t.transform.GetComponentsInChildren<SkinnedMeshRenderer>(skinRenderers);
+                            foreach (SkinnedMeshRenderer r in skinRenderers)
+                            {
+                                if (!renderEnabled) // If turning rendering off, check if it is already off
+                                    hangarHiddenExternally = hangarHiddenExternally || !r.enabled;
+
+                                if (hangarHiddenExternally) return;
+                            }
+                            List<MeshRenderer> renderers = new List<MeshRenderer>();
+                            t.transform.GetComponentsInChildren<MeshRenderer>(renderers);
+                            foreach (MeshRenderer r in renderers)
+                            {
+                                if (!renderEnabled) // If turning rendering off, check if it is already off
+                                    hangarHiddenExternally = hangarHiddenExternally || !r.enabled;
+
+                                if (hangarHiddenExternally) return;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Set rendering
+            foreach (Transform t in rootNodes)
+            {
+                foreach (string s in rcsNames)
+                {
+                    if (string.Equals(t.name.ToLower(), s))
+                    {
+                        List<SkinnedMeshRenderer> skinRenderers = new List<SkinnedMeshRenderer>();
+                        t.transform.GetComponentsInChildren<SkinnedMeshRenderer>(skinRenderers);
+                        foreach (SkinnedMeshRenderer r in skinRenderers)
+                        {
+                            if (!renderEnabled) // If turning rendering off, check if it is already off
+                                hangarHiddenExternally = hangarHiddenExternally || !r.enabled;
+
+                            if (hangarHiddenExternally)
+                                return;
+                            else
+                                r.enabled = renderEnabled;
+                        }
+                        List<MeshRenderer> renderers = new List<MeshRenderer>();
+                        t.transform.GetComponentsInChildren<MeshRenderer>(renderers);
+                        foreach (MeshRenderer r in renderers)
+                        {
+                            if (!renderEnabled)
+                                hangarHiddenExternally = hangarHiddenExternally || !r.enabled;
+
+                            if (hangarHiddenExternally)
+                                return;
+                            else
+                                r.enabled = renderEnabled;
+                        }
+                    }
+                }
+            }
         }
 
         // Used to calculate percentiles for RCS dataset
