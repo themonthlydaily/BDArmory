@@ -47,6 +47,7 @@ namespace BDArmory.UI
 
             // Score weight fields
             scoreWeights = TournamentScores.weights.ToDictionary(kvp => kvp.Key, kvp => gameObject.AddComponent<NumericInputField>().Initialise(0, kvp.Value));
+            showTeamScores = BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS != 0;
         }
 
         private IEnumerator WaitForBdaSettings()
