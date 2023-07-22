@@ -1529,6 +1529,7 @@ namespace BDArmory.Competition
                     message = "All heats in round " + roundIndex + " have been run.";
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
                     Debug.Log("[BDArmory.BDATournament]: " + message);
+                    if (tournamentState.tournamentType == TournamentType.Teams) LogTeamScores();
                     if (BDArmorySettings.WAYPOINTS_MODE || (BDArmorySettings.RUNWAY_PROJECT && (BDArmorySettings.RUNWAY_PROJECT_ROUND == 50 || BDArmorySettings.RUNWAY_PROJECT_ROUND == 55)))
                     {
                         /* commented out until this is made functional
@@ -1569,7 +1570,6 @@ namespace BDArmory.Competition
             BDACompetitionMode.Instance.competitionStatus.Add(message);
             Debug.Log("[BDArmory.BDATournament]: " + message);
             tournamentStatus = TournamentStatus.Completed;
-            if (tournamentState.tournamentType == TournamentType.Teams) LogTeamScores();
             if (BDArmorySettings.AUTO_DISABLE_UI) SetGameUI(true);
             var partialStatePath = Path.ChangeExtension(Path.Combine(Path.GetDirectoryName(TournamentState.defaultStateFile), "Unfinished Tournaments", Path.GetFileName(stateFile)), $".state-{tournamentID}");
             if (File.Exists(partialStatePath)) File.Delete(partialStatePath); // Remove the now completed tournament state file.
@@ -1808,9 +1808,11 @@ namespace BDArmory.Competition
         void LogTeamScores()
         {
             var teamScores = GetRankedTeamScores;
+            if (teamScores.Count == 0) return;
             var logsFolder = Path.GetFullPath(Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "BDArmory", "Logs"));
             var fileName = Path.Combine(logsFolder, $"Tournament {BDATournament.Instance.tournamentID}", "team scores.log");
-            var lines = teamScores.Select((kvp, rank) => $"{rank + 1,3:D} - {kvp.Key}: {kvp.Value,7:F3}").ToList();
+            var maxTeamNameLength = teamScores.Max(kvp => kvp.Key.Length);
+            var lines = teamScores.Select((kvp, rank) => $"{rank + 1,3:D} - {kvp.Key} {new string(' ', maxTeamNameLength - kvp.Key.Length)}{kvp.Value,8:F3}").ToList();
             File.WriteAllLines(fileName, lines);
         }
 
