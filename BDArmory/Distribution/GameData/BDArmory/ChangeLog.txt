@@ -13,6 +13,7 @@
 - Competition:
 	- Fix a bug in the score window for teams competitions.
 	- Automatically enable the teams score toggle in the score window if the "Teams" slider in the vessel spawner window is set to teams mode on start-up.
+	- Dump a "team scores.log" file to the Tournament folder for teams tournaments on completion.
 
 v1.6.4.0
 IMPROVEMENTS / FIXES

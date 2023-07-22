@@ -1569,6 +1569,7 @@ namespace BDArmory.Competition
             BDACompetitionMode.Instance.competitionStatus.Add(message);
             Debug.Log("[BDArmory.BDATournament]: " + message);
             tournamentStatus = TournamentStatus.Completed;
+            if (tournamentState.tournamentType == TournamentType.Teams) LogTeamScores();
             if (BDArmorySettings.AUTO_DISABLE_UI) SetGameUI(true);
             var partialStatePath = Path.ChangeExtension(Path.Combine(Path.GetDirectoryName(TournamentState.defaultStateFile), "Unfinished Tournaments", Path.GetFileName(stateFile)), $".state-{tournamentID}");
             if (File.Exists(partialStatePath)) File.Delete(partialStatePath); // Remove the now completed tournament state file.
@@ -1802,6 +1803,15 @@ namespace BDArmory.Competition
                 }
                 return rankedTeamScores;
             }
+        }
+
+        void LogTeamScores()
+        {
+            var teamScores = GetRankedTeamScores;
+            var logsFolder = Path.GetFullPath(Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "BDArmory", "Logs"));
+            var fileName = Path.Combine(logsFolder, $"Tournament {BDATournament.Instance.tournamentID}", "team scores.log");
+            var lines = teamScores.Select((kvp, rank) => $"{rank + 1,3:D} - {kvp.Key}: {kvp.Value,7:F3}").ToList();
+            File.WriteAllLines(fileName, lines);
         }
 
         public Tuple<int, int, int, int> GetTournamentProgress() => new Tuple<int, int, int, int>(currentRound, numberOfRounds, currentHeat, numberOfHeats);
