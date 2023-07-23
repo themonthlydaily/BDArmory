@@ -1,4 +1,5 @@
-﻿IMPROVEMENTS / FIXES
+﻿v1.6.4.1
+IMPROVEMENTS / FIXES
 - UI:
 	- Add an option for disabling the self-updating of the text in numeric input fields.
 		- When the value fails to parse (after the delay) the text will turn red.
