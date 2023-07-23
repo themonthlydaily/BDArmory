@@ -43,23 +43,32 @@ namespace BDArmory.CounterMeasure
         }
         void Start()
         {
-            vessel = GetComponent<Vessel>();
-            if (!vessel)
+            if (!Setup())
             {
-                Debug.Log("[BDArmory.VesselECMJInfo]: VesselECMJInfo was added to an object with no vessel component");
                 Destroy(this);
                 return;
             }
-            jammers = new List<ModuleECMJammer>();
             vessel.OnJustAboutToBeDestroyed += AboutToBeDestroyed;
             GameEvents.onVesselCreate.Add(OnVesselCreate);
             GameEvents.onPartJointBreak.Add(OnPartJointBreak);
             GameEvents.onPartDie.Add(OnPartDie);
         }
 
+        bool Setup()
+        {
+            if (!vessel) vessel = GetComponent<Vessel>();
+            if (!vessel)
+            {
+                Debug.Log("[BDArmory.VesselECMJInfo]: VesselECMJInfo was added to an object with no vessel component");
+                return false;
+            }
+            if (jammers is null) jammers = new List<ModuleECMJammer>();
+            return true;
+        }
+
         void OnDestroy()
         {
-            if (vessel is not null) vessel.OnJustAboutToBeDestroyed -= AboutToBeDestroyed;
+            if (vessel) vessel.OnJustAboutToBeDestroyed -= AboutToBeDestroyed;
             GameEvents.onVesselCreate.Remove(OnVesselCreate);
             GameEvents.onPartJointBreak.Remove(OnPartJointBreak);
             GameEvents.onPartDie.Remove(OnPartDie);
@@ -77,8 +86,11 @@ namespace BDArmory.CounterMeasure
 
         public void AddJammer(ModuleECMJammer jammer)
         {
-            if (jammers is null)
-                Start();
+            if (jammers is null && !Setup())
+            {
+                Destroy(this);
+                return;
+            }
 
             if (!jammers.Contains(jammer))
             {
