@@ -279,8 +279,8 @@ namespace BDArmory.Competition
             _weightValues = _weightKeys.Select(k => weights[k]).ToList();
             _players = scoreDetails.Keys.ToList();
             _npcs = npcs.ToList();
-            _scores = _players.Select(p => JsonUtility.ToJson(new SerializedScoreDataList().Serialize(p, scoreDetails[p], _players))).ToList();
-            _files = _players.Select(p => playersToFileNames[p]).ToList();
+            _scores = _players.Where(p => scoreDetails.ContainsKey(p)).Select(p => JsonUtility.ToJson(new SerializedScoreDataList().Serialize(p, scoreDetails[p], _players))).ToList();
+            _files = _players.Where(p => playersToFileNames.ContainsKey(p)).Select(p => playersToFileNames[p]).ToList(); // If the craft file has been removed, try to cope without it.
             _results = competitionOutcomes.Select(r => JsonUtility.ToJson(r.PreSerialize())).ToList();
             return this;
         }
@@ -1529,6 +1529,7 @@ namespace BDArmory.Competition
                     message = "All heats in round " + roundIndex + " have been run.";
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
                     Debug.Log("[BDArmory.BDATournament]: " + message);
+                    if (tournamentState.tournamentType == TournamentType.Teams) LogTeamScores();
                     if (BDArmorySettings.WAYPOINTS_MODE || (BDArmorySettings.RUNWAY_PROJECT && (BDArmorySettings.RUNWAY_PROJECT_ROUND == 50 || BDArmorySettings.RUNWAY_PROJECT_ROUND == 55)))
                     {
                         /* commented out until this is made functional
@@ -1802,6 +1803,17 @@ namespace BDArmory.Competition
                 }
                 return rankedTeamScores;
             }
+        }
+
+        void LogTeamScores()
+        {
+            var teamScores = GetRankedTeamScores;
+            if (teamScores.Count == 0) return;
+            var logsFolder = Path.GetFullPath(Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "BDArmory", "Logs"));
+            var fileName = Path.Combine(logsFolder, $"Tournament {BDATournament.Instance.tournamentID}", "team scores.log");
+            var maxTeamNameLength = teamScores.Max(kvp => kvp.Key.Length);
+            var lines = teamScores.Select((kvp, rank) => $"{rank + 1,3:D} - {kvp.Key} {new string(' ', maxTeamNameLength - kvp.Key.Length)}{kvp.Value,8:F3}").ToList();
+            File.WriteAllLines(fileName, lines);
         }
 
         public Tuple<int, int, int, int> GetTournamentProgress() => new Tuple<int, int, int, int>(currentRound, numberOfRounds, currentHeat, numberOfHeats);

@@ -531,6 +531,17 @@ namespace BDArmory.VesselSpawning
             messageState = Messages.None;
         }
 
+        public void PickUpAndDrop(Vessel vessel, float altitude) { StartCoroutine(PickUpAndDropCoroutine(vessel, altitude)); }
+        public IEnumerator PickUpAndDropCoroutine(Vessel vessel, float altitude)
+        {
+            StartCoroutine(MoveVessel(vessel)); // Pick it up.
+            yield return new WaitForSecondsFixed(0.25f); // Wait a quarter-sec (the initial pick-up should only take 0.2s).
+            DropVessel(vessel); // Drop it.
+            vessel.SetPosition(vessel.transform.position + (altitude - (float)vessel.radarAltitude) * (vessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized);
+            vessel.IgnoreGForces(1);
+            vessel.IgnoreSpeed(1);
+        }
+
         /// <summary>
         /// Get the vertical distance (non-negative) from the vessel transform position to the lowest point.
         /// </summary>
