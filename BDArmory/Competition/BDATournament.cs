@@ -1810,9 +1810,10 @@ namespace BDArmory.Competition
             var teamScores = GetRankedTeamScores;
             if (teamScores.Count == 0) return;
             var logsFolder = Path.GetFullPath(Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "BDArmory", "Logs"));
-            var fileName = Path.Combine(logsFolder, $"Tournament {BDATournament.Instance.tournamentID}", "team scores.log");
+            var fileName = Path.Combine(logsFolder, $"Tournament {tournamentID}", "team scores.log");
             var maxTeamNameLength = teamScores.Max(kvp => kvp.Key.Length);
             var lines = teamScores.Select((kvp, rank) => $"{rank + 1,3:D} - {kvp.Key} {new string(' ', maxTeamNameLength - kvp.Key.Length)}{kvp.Value,8:F3}").ToList();
+            lines.Insert(0, $"Tournament {tournamentID}, round {currentRound + 1} / {numberOfRounds}");
             File.WriteAllLines(fileName, lines);
         }
 
