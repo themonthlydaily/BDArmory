@@ -39,8 +39,6 @@
 		- Multiply pos, vel, acc by 1+sin(t)/X for X=10, 100, etc. to simulate sampling noise. t doesn't need to be game time, but something related to the vessel (e.g., speed + time)
 	- Multiple ammo types used per shot for weapons (other than just EC).
 
-- Auto-tuning
-	- Automatically enable the pilot if it's not enabled and drop the plane from +1000m to get going if it isn't already.
 - Reset things that the RWP slider changes when switching away from the rounds.
 	- RWP really shouldn't be setting the sliders, but should instead provide overrides for when accessing those values.
 - Fix the piñata spawning logic - spawn the piñata(s) separately after circular spawning has occured.
