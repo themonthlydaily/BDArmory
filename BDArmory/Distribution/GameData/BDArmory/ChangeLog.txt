@@ -12,6 +12,7 @@
 	- Hide scenery during RCS calculation in editor (SPH/VAB) to prevent scenery from affecting calculation.
 	- Add for/aft/side/top/bot RCS readout to the On-Screen Telem debug option when ASPECTED_RCS is enabled.
 	- Add slider for ASPECTED_RCS_OVERALL_RCS_WEIGHT to the BDA Settings menu.
+	- Fix exceptions caused by ECM jammers.
 - Competition:
 	- Fix a bug in the score window for teams competitions.
 	- Automatically enable the teams score toggle in the score window if the "Teams" slider in the vessel spawner window is set to teams mode on start-up.
