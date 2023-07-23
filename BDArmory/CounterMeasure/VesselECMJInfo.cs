@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-using BDArmory.Modules;
 using BDArmory.Utils;
 using BDArmory.Targeting;
 using BDArmory.Radar;
@@ -15,6 +14,7 @@ namespace BDArmory.CounterMeasure
         public Vessel vessel;
         private TargetInfo ti;
         bool jEnabled;
+        bool cleaningRequired = false;
 
         public bool jammerEnabled
         {
@@ -59,7 +59,7 @@ namespace BDArmory.CounterMeasure
 
         void OnDestroy()
         {
-            vessel.OnJustAboutToBeDestroyed -= AboutToBeDestroyed;
+            if (vessel is not null) vessel.OnJustAboutToBeDestroyed -= AboutToBeDestroyed;
             GameEvents.onVesselCreate.Remove(OnVesselCreate);
             GameEvents.onPartJointBreak.Remove(OnPartJointBreak);
             GameEvents.onPartDie.Remove(OnPartDie);
@@ -70,29 +70,10 @@ namespace BDArmory.CounterMeasure
             Destroy(this);
         }
 
-        void OnPartDie(Part p = null)
-        {
-            if (gameObject.activeInHierarchy)
-            {
-                StartCoroutine(DelayedCleanJammerListRoutine());
-            }
-        }
-
-        void OnVesselCreate(Vessel v)
-        {
-            if (gameObject.activeInHierarchy)
-            {
-                StartCoroutine(DelayedCleanJammerListRoutine());
-            }
-        }
-
-        void OnPartJointBreak(PartJoint j, float breakForce)
-        {
-            if (gameObject.activeInHierarchy)
-            {
-                StartCoroutine(DelayedCleanJammerListRoutine());
-            }
-        }
+        void OnPartDie() => OnPartDie(null);
+        void OnPartDie(Part p) => cleaningRequired = true;
+        void OnVesselCreate(Vessel v) => cleaningRequired = true;
+        void OnPartJointBreak(PartJoint j, float breakForce) => cleaningRequired = true;
 
         public void AddJammer(ModuleECMJammer jammer)
         {
@@ -167,7 +148,7 @@ namespace BDArmory.CounterMeasure
             {
                 rcsr = 1;
             }
-			
+
             ti = RadarUtils.GetVesselRadarSignature(vessel);
             if (rcsOverride > 0) ti.radarBaseSignature = rcsOverride;
             ti.radarRCSReducedSignature = ti.radarBaseSignature;
@@ -205,10 +186,15 @@ namespace BDArmory.CounterMeasure
                         }
                     }
             }
+            if (cleaningRequired)
+            {
+                StartCoroutine(DelayedCleanJammerListRoutine());
+                cleaningRequired = false; // Set it false here instead of in CleanJammerList to allow it to be triggered on consecutive frames.
+            }
         }
         public void DelayedCleanJammerList()
         {
-            StartCoroutine(DelayedCleanJammerListRoutine());
+            cleaningRequired = true;
         }
 
         IEnumerator DelayedCleanJammerListRoutine()
