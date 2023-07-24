@@ -165,6 +165,7 @@ namespace BDArmory.UI
         double dependencyLastCheckTime = 0;
 
         //gui styles
+        GUIStyle settingsTitleStyle;
         GUIStyle centerLabel;
         GUIStyle centerLabelRed;
         GUIStyle centerLabelOrange;
@@ -557,6 +558,11 @@ namespace BDArmory.UI
             centerLabel.alignment = TextAnchor.UpperCenter;
             centerLabel.normal.textColor = Color.white;
 
+            settingsTitleStyle = new GUIStyle(centerLabel);
+            settingsTitleStyle.alignment = TextAnchor.MiddleCenter;
+            settingsTitleStyle.fontSize = 16;
+            settingsTitleStyle.fontStyle = FontStyle.Bold;
+
             centerLabelRed = new GUIStyle();
             centerLabelRed.alignment = TextAnchor.UpperCenter;
             centerLabelRed.normal.textColor = Color.red;
@@ -903,7 +909,7 @@ namespace BDArmory.UI
             if (!stylesConfigured) ConfigureStyles();
             if (windowSettingsEnabled)
             {
-                WindowRectSettings = GUI.Window(129419, WindowRectSettings, WindowSettings, GUIContent.none);
+                WindowRectSettings = GUI.Window(129419, WindowRectSettings, WindowSettings, GUIContent.none, settingsTitleStyle);
             }
 
             if (drawCursor)
@@ -2342,8 +2348,9 @@ namespace BDArmory.UI
         void WindowSettings(int windowID)
         {
             float line = 0.25f; // Top internal margin.
-            GUI.Box(new Rect(0, 0, settingsWidth, settingsHeight), StringUtils.Localize("#LOC_BDArmory_Settings_Title"));//"BDArmory Settings"
-            if (GUI.Button(new Rect(settingsWidth - 18, 2, 16, 16), "X"))
+            GUI.Box(new Rect(0, 0, settingsWidth, settingsHeight), GUIContent.none);
+            GUI.Label(new Rect(0, 2, settingsWidth, 22), $"{StringUtils.Localize("#LOC_BDArmory_Settings_Title")}   {Version}", settingsTitleStyle);//"BDArmory Settings"
+            if (GUI.Button(new Rect(settingsWidth - 24, 2, 22, 22), "X"))
             {
                 windowSettingsEnabled = false;
             }
