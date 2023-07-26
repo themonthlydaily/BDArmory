@@ -1813,11 +1813,11 @@ namespace BDArmory.Competition
             var fileName = Path.Combine(logsFolder, $"Tournament {tournamentID}", "team scores.log");
             var maxTeamNameLength = teamScores.Max(kvp => kvp.Key.Length);
             var lines = teamScores.Select((kvp, rank) => $"{rank + 1,3:D} - {kvp.Key} {new string(' ', maxTeamNameLength - kvp.Key.Length)}{kvp.Value,8:F3}").ToList();
-            lines.Insert(0, $"Tournament {tournamentID}, round {currentRound + 1} / {numberOfRounds}");
+            lines.Insert(0, $"Tournament {tournamentID}, round {currentRound + 1} / {(tournamentState.tournamentRoundType == TournamentRoundType.Ranked ? BDArmorySettings.TOURNAMENT_ROUNDS : numberOfRounds)}");
             File.WriteAllLines(fileName, lines);
         }
 
-        public Tuple<int, int, int, int> GetTournamentProgress() => new Tuple<int, int, int, int>(currentRound, numberOfRounds, currentHeat, numberOfHeats);
+        public Tuple<int, int, int, int> GetTournamentProgress() => new Tuple<int, int, int, int>(currentRound, tournamentState.tournamentRoundType == TournamentRoundType.Ranked ? BDArmorySettings.TOURNAMENT_ROUNDS : numberOfRounds, currentHeat, numberOfHeats);
 
         public void RecomputeScores() => tournamentState.scores.ComputeScores();
     }
