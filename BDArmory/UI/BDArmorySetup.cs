@@ -872,6 +872,7 @@ namespace BDArmory.UI
                 }
                 BDAPersistentSettingsField.Load();
                 BDInputSettingsFields.LoadSettings();
+                SanitiseSettings();
                 BDArmorySettings.ready = true;
             }
             catch (NullReferenceException e)
@@ -901,6 +902,11 @@ namespace BDArmory.UI
             }
         }
 
+        static void SanitiseSettings()
+        {
+            BDArmorySettings.PROC_ARMOR_ALT_LIMITS.y = Mathf.Min(BDArmorySettings.PROC_ARMOR_ALT_LIMITS.y, 1e5f); // Anything over this pretty much breaks KSP.
+            BDArmorySettings.PROC_ARMOR_ALT_LIMITS.x = Mathf.Clamp(BDArmorySettings.PROC_ARMOR_ALT_LIMITS.x, BDArmorySettings.PROC_ARMOR_ALT_LIMITS.y * 1e-8f, BDArmorySettings.PROC_ARMOR_ALT_LIMITS.y); // More than 8 orders of magnitude breaks the mesh collider engine.
+        }
         #region GUI
 
         void OnGUI()
