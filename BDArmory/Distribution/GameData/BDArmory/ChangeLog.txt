@@ -1,6 +1,11 @@
 ﻿IMPROVEMENTS / FIXES
 - UI:
 	- Fix numeric input fields not updating when they should.
+- Armor:
+	- Allow changing the unclamped min/max dimensions for proc armor in the settings.cfg (PROC_ARMOR_ALT_LIMITS).
+- Competition:
+	- Adjust round progress strings in tournaments: ranked => 0→N, shuffled => 1→N.
+	- Report total number of rounds for ranked tournaments properly.
 
 v1.6.4.1
 IMPROVEMENTS / FIXES
