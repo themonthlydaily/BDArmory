@@ -35,7 +35,7 @@ UI_FloatRange(minValue = 1f, maxValue = 4, stepIncrement = 1f, scene = UI_Scene.
         [KSPField] public float reloadTime = 5f;
         [KSPField] public bool AccountForAmmo = true;
         [KSPField] public float maxAmmo = 20;
-        public float tntmass = 1;
+        //public float tntmass = 1;
         AvailablePart missilePart;
         public Part SpawnedMissile;
         public void SpawnMissile(Transform MissileTransform, float offset = 0, bool deductAmmo = true)
@@ -122,14 +122,10 @@ UI_FloatRange(minValue = 1f, maxValue = 4, stepIncrement = 1f, scene = UI_Scene.
             if (missilePart == null)
             {
                 Debug.LogWarning($"[BDArmory.ModuleMissileRearm]: Failed to find missile part on {part.partInfo.name}");
-                tntmass = 0;
                 missileCost = 0;
                 missileMass = 0;
                 yield break;
             }
-            var explosivePart = missilePart.partPrefab.FindModuleImplementing<BDExplosivePart>();
-            if (explosivePart != null) tntmass = explosivePart.tntMass;
-            else tntmass = 0;
             if (AccountForAmmo)
             {
                 missileCost = missilePart.partPrefab.partInfo.cost;

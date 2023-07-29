@@ -636,7 +636,12 @@ namespace BDArmory.Weapons.Missiles
                     KillRCS();
                 }
                 SetupAudio();
-
+                var missileSpawner = part.FindModuleImplementing<ModuleMissileRearm>();
+                if (missileSpawner != null)
+                {
+                    reloadableRail = missileSpawner;
+                    hasAmmo = true;
+                }
             }
 
             SetFields();
@@ -1030,6 +1035,11 @@ namespace BDArmory.Weapons.Missiles
                         blastRadius = part.FindModuleImplementing<BDExplosivePart>().GetBlastRadius();
                         return blastRadius;
                     }
+                    else if (part.FindModuleImplementing<MultiMissileLauncher>() != null)
+                    {
+                        blastRadius = BlastPhysicsUtils.CalculateBlastRange(part.FindModuleImplementing<MultiMissileLauncher>().tntMass);
+                        return blastRadius;
+                    }
                     else
                     {
                         blastRadius = 150;
@@ -1061,7 +1071,7 @@ namespace BDArmory.Weapons.Missiles
             }
             else
             {
-                if (reloadableRail && (multiLauncher && !multiLauncher.isClusterMissile) || ((multiLauncher && multiLauncher.isClusterMissile) && reloadableRail.maxAmmo > 1))
+                if (reloadableRail && (reloadableRail.ammoCount >= 1 || BDArmorySettings.INFINITE_ORDINANCE) && (!multiLauncher || multiLauncher && !multiLauncher.isClusterMissile))
                 {
                     if (reloadableMissile == null) reloadableMissile = StartCoroutine(FireReloadableMissile());
                     launched = true;
