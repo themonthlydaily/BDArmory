@@ -11,7 +11,7 @@ namespace BDArmory.CounterMeasure
 
         [KSPField] public float rcsReductionFactor = 0.75f;
 
-        [KSPField] public float rcsOverride = 10;
+        [KSPField] public float rcsOverride = -1;
 
         [KSPField] public double resourceDrain = 5;
 
