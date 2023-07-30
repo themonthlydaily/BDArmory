@@ -10,6 +10,7 @@ using BDArmory.Competition;
 using BDArmory.Extensions;
 using BDArmory.Guidances;
 using BDArmory.Settings;
+using BDArmory.VesselSpawning;
 using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.Weapons;
@@ -4650,6 +4651,21 @@ namespace BDArmory.Control
             if (!HighLogic.LoadedSceneIsFlight) return;
             startCoords = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(AI.vessel.transform.position);
             startCoords.z = (float)FlightGlobals.currentMainBody.TerrainAltitude(startCoords.x, startCoords.y) + AI.autoTuningAltitude;
+
+            // Move the vessel to the start position and make sure the AI and engines are active.
+            if (AI.vessel.LandedOrSplashed)
+            {
+                AI.vessel.Landed = false;
+                AI.vessel.Splashed = false;
+                VesselMover.Instance.PickUpAndDrop(AI.vessel, AI.autoTuningAltitude);
+            }
+            else
+            {
+                AI.vessel.SetPosition(FlightGlobals.currentMainBody.GetWorldSurfacePosition(startCoords.x, startCoords.y, startCoords.z));
+            }
+            if (SpawnUtils.CountActiveEngines(AI.vessel) == 0) SpawnUtils.ActivateAllEngines(AI.vessel);
+            AI.ActivatePilot();
+            recentering = true;
         }
     }
 }

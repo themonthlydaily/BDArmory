@@ -1,4 +1,35 @@
-﻿v1.6.4.0
+﻿IMPROVEMENTS / FIXES
+- UI:
+	- Fix numeric input fields not updating when they should.
+- Armor:
+	- Allow changing the unclamped min/max dimensions for proc armor in the settings.cfg (PROC_ARMOR_ALT_LIMITS).
+- Competition:
+	- Adjust round progress strings in tournaments: ranked => 0→N, shuffled => 1→N.
+	- Report total number of rounds for ranked tournaments properly.
+
+v1.6.4.1
+IMPROVEMENTS / FIXES
+- UI:
+	- Add an option for disabling the self-updating of the text in numeric input fields.
+		- When the value fails to parse (after the delay) the text will turn red.
+		- Toggling the numeric fields or closing the windows will reset the field to the most recently successfully parsed value.
+		- The text will still be updated if the parsed value becomes clamped within the limits of the field.
+	- Make the delay for the "read and interpret" logic of numeric input fields customisable (default 0.5s).
+- AI:
+	- Some QoL improvements for auto-tuning: automatically enable AI and engines and move the craft to the autotuning altitude.
+- Detectors:
+	- Fix Conformal Decals throwing off RCS calculation in editor (SPH/VAB).
+	- Hide scenery during RCS calculation in editor (SPH/VAB) to prevent scenery from affecting calculation.
+	- Add for/aft/side/top/bot RCS readout to the On-Screen Telem debug option when ASPECTED_RCS is enabled.
+	- Add slider for ASPECTED_RCS_OVERALL_RCS_WEIGHT to the BDA Settings menu.
+- Countermeasures:
+	- Fix exceptions caused by ECM jammers.
+- Competition:
+	- Fix a bug in the score window for teams competitions.
+	- Automatically enable the teams score toggle in the score window if the "Teams" slider in the vessel spawner window is set to teams mode on start-up.
+	- Dump a "team scores.log" file to the Tournament folder for teams tournaments after each round.
+
+v1.6.4.0
 IMPROVEMENTS / FIXES
 - General:
 	- Make ammo consumption respect staging and priority order unless "externalAmmo = false" in the weapon config.

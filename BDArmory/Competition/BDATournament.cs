@@ -279,8 +279,8 @@ namespace BDArmory.Competition
             _weightValues = _weightKeys.Select(k => weights[k]).ToList();
             _players = scoreDetails.Keys.ToList();
             _npcs = npcs.ToList();
-            _scores = _players.Select(p => JsonUtility.ToJson(new SerializedScoreDataList().Serialize(p, scoreDetails[p], _players))).ToList();
-            _files = _players.Select(p => playersToFileNames[p]).ToList();
+            _scores = _players.Where(p => scoreDetails.ContainsKey(p)).Select(p => JsonUtility.ToJson(new SerializedScoreDataList().Serialize(p, scoreDetails[p], _players))).ToList();
+            _files = _players.Where(p => playersToFileNames.ContainsKey(p)).Select(p => playersToFileNames[p]).ToList(); // If the craft file has been removed, try to cope without it.
             _results = competitionOutcomes.Select(r => JsonUtility.ToJson(r.PreSerialize())).ToList();
             return this;
         }
@@ -1529,6 +1529,7 @@ namespace BDArmory.Competition
                     message = "All heats in round " + roundIndex + " have been run.";
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
                     Debug.Log("[BDArmory.BDATournament]: " + message);
+                    if (tournamentState.tournamentType == TournamentType.Teams) LogTeamScores();
                     if (BDArmorySettings.WAYPOINTS_MODE || (BDArmorySettings.RUNWAY_PROJECT && (BDArmorySettings.RUNWAY_PROJECT_ROUND == 50 || BDArmorySettings.RUNWAY_PROJECT_ROUND == 55)))
                     {
                         /* commented out until this is made functional
@@ -1792,7 +1793,11 @@ namespace BDArmory.Competition
                 if (tournamentState.scores.lastUpdated > lastUpdatedRankedTeamScores)
                 {
                     // Get the unique teams, then make a dictionary with team names as keys and the sum of scores as values and sort them by the scores.
-                    rankedTeamScores = tournamentState.scores.playersToTeamNames.Values.ToHashSet().ToDictionary(teamName => teamName, teamName => tournamentState.scores.scores.Where(kvp => tournamentState.scores.playersToTeamNames[kvp.Key] == teamName).Sum(kvp => kvp.Value)).OrderByDescending(kvp => kvp.Value).ToList();
+                    var teamNames = tournamentState.scores.playersToTeamNames.Values.ToHashSet();
+                    var teamScores = teamNames.ToDictionary(
+                        teamName => teamName,
+                        teamName => tournamentState.scores.scores.Where(kvp => tournamentState.scores.playersToTeamNames.ContainsKey(kvp.Key) && tournamentState.scores.playersToTeamNames[kvp.Key] == teamName).Sum(kvp => kvp.Value));
+                    rankedTeamScores = teamScores.OrderByDescending(kvp => kvp.Value).ToList();
                     lastUpdatedRankedTeamScores = tournamentState.scores.lastUpdated;
                     if (ScoreWindow.Instance != null) ScoreWindow.Instance.ResetWindowSize();
                 }
@@ -1800,7 +1805,28 @@ namespace BDArmory.Competition
             }
         }
 
-        public Tuple<int, int, int, int> GetTournamentProgress() => new Tuple<int, int, int, int>(currentRound, numberOfRounds, currentHeat, numberOfHeats);
+        void LogTeamScores()
+        {
+            var teamScores = GetRankedTeamScores;
+            if (teamScores.Count == 0) return;
+            var logsFolder = Path.GetFullPath(Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "BDArmory", "Logs"));
+            var fileName = Path.Combine(logsFolder, $"Tournament {tournamentID}", "team scores.log");
+            var maxTeamNameLength = teamScores.Max(kvp => kvp.Key.Length);
+            var lines = teamScores.Select((kvp, rank) => $"{rank + 1,3:D} - {kvp.Key} {new string(' ', maxTeamNameLength - kvp.Key.Length)}{kvp.Value,8:F3}").ToList();
+            if (tournamentState.tournamentRoundType == TournamentRoundType.Ranked)
+                lines.Insert(0, $"Tournament {tournamentID}, round {currentRound} / {BDArmorySettings.TOURNAMENT_ROUNDS}");  // Round 0 is the initial shuffled round.
+            else
+                lines.Insert(0, $"Tournament {tournamentID}, round {currentRound + 1} / {numberOfRounds}"); // For non-ranked rounds, start counting at 1.
+            File.WriteAllLines(fileName, lines);
+        }
+
+        public Tuple<int, int, int, int> GetTournamentProgress()
+        {
+            if (tournamentState.tournamentRoundType == TournamentRoundType.Ranked)
+                return new Tuple<int, int, int, int>(currentRound, BDArmorySettings.TOURNAMENT_ROUNDS, currentHeat + 1, numberOfHeats); // Round 0 is the initial shuffled round.
+            else
+                return new Tuple<int, int, int, int>(currentRound + 1, numberOfRounds, currentHeat + 1, numberOfHeats); // For non-ranked rounds, start counting at 1.
+        }
 
         public void RecomputeScores() => tournamentState.scores.ComputeScores();
     }
