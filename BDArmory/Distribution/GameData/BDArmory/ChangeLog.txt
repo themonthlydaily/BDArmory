@@ -1,6 +1,8 @@
 ﻿IMPROVEMENTS / FIXES
 - UI:
 	- Fix numeric input fields not updating when they should.
+- AI:
+	- Add a toggle to the pilot AI to disable ramming ground targets.
 - Armor:
 	- Allow changing the unclamped min/max dimensions for proc armor in the settings.cfg (PROC_ARMOR_ALT_LIMITS).
 - Competition:
