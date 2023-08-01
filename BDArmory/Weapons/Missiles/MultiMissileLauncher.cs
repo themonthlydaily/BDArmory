@@ -146,8 +146,8 @@ namespace BDArmory.Weapons.Missiles
                         missileLauncher.Fields["decoupleSpeed"].guiActive = false;
                         missileLauncher.Fields["decoupleSpeed"].guiActiveEditor = false;
                         missileLauncher.decoupleSpeed = 10;
-                        missileLauncher.Events["decoupleForward"].guiActive = false;
-                        missileLauncher.Events["decoupleForward"].guiActiveEditor = false;
+                        missileLauncher.Fields["decoupleForward"].guiActive = false;
+                        missileLauncher.Fields["decoupleForward"].guiActiveEditor = false;
                         missileLauncher.decoupleForward = true;
                     }
                     float bRadius = 0;
@@ -511,6 +511,11 @@ namespace BDArmory.Weapons.Missiles
                 launchesThisSalvo++;
                 missileSpawner.SpawnMissile(launchTransforms[m], offset, !isClusterMissile);
                 MissileLauncher ml = missileSpawner.SpawnedMissile.FindModuleImplementing<MissileLauncher>();
+                if (ml == null)
+                {
+                    Debug.LogWarning($"[BDArmory.MissileLauncher]: Missile {part.name} destroyed/missing during initialization!");
+                    yield break;
+                }
                 yield return new WaitUntilFixed(() => ml.SetupComplete); // Wait until missile fully initialized.
                 var tnt = VesselModuleRegistry.GetModule<BDExplosivePart>(vessel, true);
                 if (tnt != null)
@@ -768,6 +773,11 @@ namespace BDArmory.Weapons.Missiles
                 }
                 ml.launched = true;
                 ml.TargetPosition = vessel.ReferenceTransform.position + (vessel.ReferenceTransform.up * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
+                if (ml == null)
+                {
+                    //Debug.LogWarning($"[BDArmory.MultiMissileLauncher]: Missile {part.name} destroyed during initialization, MissileLauncher now null!");
+                    yield break;
+                }
                 ml.MissileLaunch();
                 launchTransforms[m].localScale = Vector3.zero;
             }

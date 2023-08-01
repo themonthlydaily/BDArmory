@@ -1106,7 +1106,6 @@ namespace BDArmory.Weapons.Missiles
             }
 
             ml.launched = true;
-            GetMissileCount();
             var wpm = VesselModuleRegistry.GetMissileFire(SourceVessel, true);
             BDATargetManager.FiredMissiles.Add(ml);
             ml.SourceVessel = SourceVessel;
@@ -1210,6 +1209,11 @@ namespace BDArmory.Weapons.Missiles
                 wpm.heatTarget = TargetSignatureData.noTarget;
             }
             ml.TargetPosition = transform.position + (multiLauncher ? vessel.ReferenceTransform.up * 5000 : transform.forward * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
+            if (ml == null)
+            {
+                //Debug.LogWarning($"[BDArmory.MissileLauncher]: Missile {part.name} destroyed during initialization, MissileLauncher now null!");
+                yield break;
+            }
             ml.MissileLaunch();
             GetMissileCount();
             if (reloadableRail.ammoCount > 0 || BDArmorySettings.INFINITE_ORDINANCE)
