@@ -31,7 +31,6 @@ namespace BDArmory.UI
         bool stylesConfigured = false;
         GUIStyle leftLabel;
         GUIStyle rightLabel;
-        GUIStyle inputFieldStyle;
         #endregion
 
         private void Awake()
@@ -48,6 +47,7 @@ namespace BDArmory.UI
 
             // Score weight fields
             scoreWeights = TournamentScores.weights.ToDictionary(kvp => kvp.Key, kvp => gameObject.AddComponent<NumericInputField>().Initialise(0, kvp.Value));
+            showTeamScores = BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS != 0;
         }
 
         private IEnumerator WaitForBdaSettings()
@@ -63,8 +63,6 @@ namespace BDArmory.UI
         void ConfigureStyles()
         {
             stylesConfigured = true;
-            inputFieldStyle = new GUIStyle(GUI.skin.textField);
-            inputFieldStyle.alignment = TextAnchor.MiddleRight;
             leftLabel = new GUIStyle();
             leftLabel.alignment = TextAnchor.MiddleLeft;
             leftLabel.normal.textColor = Color.white;
@@ -149,7 +147,7 @@ namespace BDArmory.UI
 
             GUILayout.BeginVertical(GUI.skin.box, GUILayout.ExpandHeight(autoResizingWindow));
             var progress = BDATournament.Instance.GetTournamentProgress();
-            GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_BDAScores_Round")} {progress.Item1 + 1} / {progress.Item2}, {StringUtils.Localize("#LOC_BDArmory_BDAScores_Heat")} {progress.Item3 + 1} / {progress.Item4}", leftLabel);
+            GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_BDAScores_Round")} {progress.Item1} / {progress.Item2}, {StringUtils.Localize("#LOC_BDArmory_BDAScores_Heat")} {progress.Item3} / {progress.Item4}", leftLabel);
             if (!autoResizingWindow) scoreScrollPos = GUILayout.BeginScrollView(scoreScrollPos);
             int rank = 0;
             using (var scoreField = showTeamScores ? BDATournament.Instance.GetRankedTeamScores.GetEnumerator() : BDATournament.Instance.GetRankedScores.GetEnumerator())
@@ -242,7 +240,7 @@ namespace BDArmory.UI
             {
                 GUILayout.BeginHorizontal();
                 GUILayout.Label(weight.Key);
-                weight.Value.tryParseValue(GUILayout.TextField(weight.Value.possibleValue, 10, inputFieldStyle, GUILayout.Width(80)));
+                weight.Value.tryParseValue(GUILayout.TextField(weight.Value.possibleValue, 10, weight.Value.style, GUILayout.Width(80)));
                 if (TournamentScores.weights[weight.Key] != (float)weight.Value.currentValue)
                 {
                     TournamentScores.weights[weight.Key] = (float)weight.Value.currentValue;
