@@ -201,7 +201,7 @@ namespace BDArmory.FX
                 {
                     case ExplosionSourceType.Missile:
                         var explosivePart = ExplosivePart ? ExplosivePart.FindModuleImplementing<BDExplosivePart>() : null; //isn't this already set in the explosion setup?
-                        sourceVesselName = explosivePart ? explosivePart.sourcevessel.GetName() : SourceVesselName;
+                        sourceVesselName = explosivePart ? explosivePart.SourceVesselName : SourceVesselName;
                         break;
                     default: // Everything else.
                         sourceVesselName = SourceVesselName;
