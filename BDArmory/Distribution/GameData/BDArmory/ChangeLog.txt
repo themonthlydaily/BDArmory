@@ -15,6 +15,7 @@
 		- Fix MML "TNT Mass Equivalent = -0.0018726" PAW label.
 		- Fixed Missiles with ModuleMissileRearm improperly launching.
 		- Fixed MMLs resetting detonation distance.
+		- Missile/bomb fratricide prevention now also checks the source vessel name to allow explosives to be destroyed by explosives of the same type from another vessel.
 - Competition:
 	- Adjust round progress strings in tournaments: ranked => 0→N, shuffled => 1→N.
 	- Report total number of rounds for ranked tournaments properly.
