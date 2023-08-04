@@ -41,8 +41,6 @@
 	- Multiple ammo types used per shot for weapons (other than just EC).
 
 - PilotAI improvements:
-	- make a toggle for the min alt to be a hard limit
-	- increase the rate of climb at lower speeds and take into consideration the plane's TWR (it's currently based purely on speed (atan2(clamp(v*0.215,5,100),100)), not TWR and maxes out at a 45° climb at 465m/s)
 	- include more altitude gaining behaviour in the various modes that it's allowed to be in while below min alt (if not using the hard limit)
 	- improve the terrain avoidance exit behaviour somehow to disallow diving for a period after avoiding terrain
 	- completely disable performing inverted loops when below min altitude instead of relying on terrain avoidance calculations to decide if there's enough altitude to pull it off
