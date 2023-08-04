@@ -318,7 +318,7 @@ namespace BDArmory.FX
                         if (partHit != null)
                         {
                             if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
-                            if (ExplosivePart != null && partHit.name == ExplosivePart.name) continue; //don't fratricide fellow missiles/bombs in a launched salvo when the first detonates
+                            if (ExplosivePart != null && partHit.name == ExplosivePart.name && sourceVesselName != null && sourceVesselName == ExplosivePart.GetComponent<Weapons.Missiles.MissileBase>().SourceVesselName) continue; //don't fratricide fellow missiles/bombs in a launched salvo when the first detonates
                             if (partHit.mass > 0 && !explosionEventsPartsAdded.Contains(partHit))
                             {   
                                 var damaged = ProcessPartEvent(partHit, Vector3.Distance(hitCollidersEnu.Current.ClosestPoint(Position), Position), sourceVesselName, explosionEventsPreProcessing, explosionEventsPartsAdded);

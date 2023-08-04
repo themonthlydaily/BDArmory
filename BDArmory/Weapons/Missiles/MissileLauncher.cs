@@ -1059,7 +1059,7 @@ namespace BDArmory.Weapons.Missiles
             if (SourceVessel == null)
             {
                 SourceVessel = vessel;
-                if (BDArmorySettings.DEBUG_MISSILES && !multiLauncher) shortName = $"{SourceVessel.GetDisplayName()}'s {GetShortName()}";
+                if (BDArmorySettings.DEBUG_MISSILES && !multiLauncher) shortName = $"{SourceVessel.GetName()}'s {GetShortName()}";
             }
             if (multiLauncher && multiLauncher.isMultiLauncher)
             {
@@ -1112,7 +1112,7 @@ namespace BDArmory.Weapons.Missiles
             ml.GuidanceMode = GuidanceMode;
             //wpm.SendTargetDataToMissile(ml);
             ml.TimeFired = Time.time;
-            if (BDArmorySettings.DEBUG_MISSILES) shortName = $"{SourceVessel.GetDisplayName()}'s {GetShortName()}";
+            if (BDArmorySettings.DEBUG_MISSILES) shortName = $"{SourceVessel.GetName()}'s {GetShortName()}";
             ml.vessel.vesselName = GetShortName();
             ml.DetonationDistance = DetonationDistance;
             ml.DetonateAtMinimumDistance = DetonateAtMinimumDistance;
@@ -1552,7 +1552,7 @@ namespace BDArmory.Weapons.Missiles
                         if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES)
                         {
                             if (heatTarget.vessel)
-                                debugGuidanceTarget = $"{heatTarget.vessel.GetDisplayName()} {heatTarget.signalStrength}";
+                                debugGuidanceTarget = $"{heatTarget.vessel.GetName()} {heatTarget.signalStrength}";
                             else if (heatTarget.signalStrength > 0)
                                 debugGuidanceTarget = $"Flare {heatTarget.signalStrength}";
                         }
@@ -1562,7 +1562,7 @@ namespace BDArmory.Weapons.Missiles
                         if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES)
                         {
                             if (radarTarget.vessel)
-                                debugGuidanceTarget = $"{radarTarget.vessel.GetDisplayName()} {radarTarget.signalStrength}";
+                                debugGuidanceTarget = $"{radarTarget.vessel.GetName()} {radarTarget.signalStrength}";
                             else if (radarTarget.signalStrength > 0)
                                 debugGuidanceTarget = $"Chaff {radarTarget.signalStrength}";
                         }

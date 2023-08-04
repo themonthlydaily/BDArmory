@@ -493,10 +493,12 @@ namespace BDArmory.Weapons.Missiles
                 deployState.enabled = false;
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MultiMissileLauncher] deploy anim complete");
             }
+            if (missileSpawner is null) yield break; // Died while waiting.
             for (int m = tubesFired; m < launchTransforms.Length; m++)
             {
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MultiMissileLauncher] starting ripple launch on tube {m}, ripple delay: {timeGap:F3}");
                 yield return new WaitForSecondsFixed(timeGap);
+                if (missileSpawner is null) yield break; // Died while waiting.
                 if (launchesThisSalvo >= salvoSize) //catch if launcher is trying to launch more missiles than it has
                 {
                     //if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MultiMissileLauncher] oops! firing more missiles than tubes or ammo");
@@ -511,12 +513,8 @@ namespace BDArmory.Weapons.Missiles
                 launchesThisSalvo++;
                 missileSpawner.SpawnMissile(launchTransforms[m], offset, !isClusterMissile);
                 MissileLauncher ml = missileSpawner.SpawnedMissile.FindModuleImplementing<MissileLauncher>();
-                if (ml == null)
-                {
-                    Debug.LogWarning($"[BDArmory.MissileLauncher]: Missile {part.name} destroyed/missing during initialization!");
-                    yield break;
-                }
-                yield return new WaitUntilFixed(() => ml.SetupComplete); // Wait until missile fully initialized.
+                yield return new WaitUntilFixed(() => ml is null || ml.SetupComplete); // Wait until missile fully initialized.
+                if (ml is null) continue; // The missile died for some reason, try the next tube.
                 var tnt = VesselModuleRegistry.GetModule<BDExplosivePart>(vessel, true);
                 if (tnt != null)
                 {
@@ -529,7 +527,7 @@ namespace BDArmory.Weapons.Missiles
                 {
                     ml.shortName = missileLauncher.GetShortName() + " Missile";
                 }
-                if (BDArmorySettings.DEBUG_MISSILES) ml.shortName = $"{ml.SourceVessel.GetDisplayName()}'s {missileLauncher.GetShortName()} Missile";
+                if (BDArmorySettings.DEBUG_MISSILES) ml.shortName = $"{ml.SourceVessel.GetName()}'s {missileLauncher.GetShortName()} Missile";
                 ml.vessel.vesselName = ml.GetShortName();
                 ml.TimeFired = Time.time;
                 if (!isClusterMissile)
@@ -792,6 +790,7 @@ namespace BDArmory.Weapons.Missiles
                 deployState.speed = 0;
                 deployState.enabled = false;
             }
+            if (missileLauncher is null) yield break;
             if (tubesFired >= launchTransforms.Length) //add a timer for reloading a partially emptied MML if it hasn't been used for a while?
             {
                 if (!isClusterMissile && (BDArmorySettings.INFINITE_ORDINANCE || missileSpawner.ammoCount >= salvoSize))
@@ -817,6 +816,7 @@ namespace BDArmory.Weapons.Missiles
                     {
                         missileLauncher.heatTimer = launcherCooldown;
                         yield return new WaitForSecondsFixed(launcherCooldown);
+                        if (missileLauncher is null) yield break;
                         missileLauncher.launched = false;
                         missileLauncher.heatTimer = -1;
                     }

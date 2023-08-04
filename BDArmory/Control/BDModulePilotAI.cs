@@ -711,7 +711,7 @@ namespace BDArmory.Control
         void StoreSettings(string vesselName)
         {
             if (vesselName is null)
-                vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName;
+                vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetName() : EditorLogic.fetch.ship.shipName;
             if (storedSettings == null)
             {
                 storedSettings = new Dictionary<string, List<System.Tuple<string, object>>>();
@@ -747,7 +747,7 @@ namespace BDArmory.Control
         [KSPEvent(advancedTweakable = false, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_RestoreSettings", active = false)]//Restore Settings
         public void RestoreSettings()
         {
-            var vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName;
+            var vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetName() : EditorLogic.fetch.ship.shipName;
             if (storedSettings == null || !storedSettings.ContainsKey(vesselName) || storedSettings[vesselName] == null || storedSettings[vesselName].Count == 0)
             {
                 Debug.Log("[BDArmory.BDModulePilotAI]: No stored settings found for vessel " + vesselName + ".");
@@ -769,7 +769,7 @@ namespace BDArmory.Control
         [KSPEvent(advancedTweakable = false, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_StoreControlSurfaceSettings", active = true)]//Store Control Surfaces
         public void StoreControlSurfaceSettings()
         {
-            var vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName;
+            var vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetName() : EditorLogic.fetch.ship.shipName;
             if (storedControlSurfaceSettings == null)
             {
                 storedControlSurfaceSettings = new Dictionary<string, Dictionary<uint, List<Tuple<string, object>>>>();
@@ -807,7 +807,7 @@ namespace BDArmory.Control
         void StoreFARControlSurfaceSettings()
         {
             if (!FerramAerospace.hasFARControllableSurface) return;
-            var vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName;
+            var vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetName() : EditorLogic.fetch.ship.shipName;
             if (storedFARControlSurfaceSettings == null)
             {
                 storedFARControlSurfaceSettings = new Dictionary<string, Dictionary<uint, List<Tuple<string, object>>>>();
@@ -849,7 +849,7 @@ namespace BDArmory.Control
         public void RestoreControlSurfaceSettings()
         {
             RestoreFARControlSurfaceSettings();
-            var vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName;
+            var vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetName() : EditorLogic.fetch.ship.shipName;
             if (storedControlSurfaceSettings == null || !storedControlSurfaceSettings.ContainsKey(vesselName) || storedControlSurfaceSettings[vesselName] == null || storedControlSurfaceSettings[vesselName].Count == 0)
             {
                 return;
@@ -871,7 +871,7 @@ namespace BDArmory.Control
         void RestoreFARControlSurfaceSettings()
         {
             if (!FerramAerospace.hasFARControllableSurface) return;
-            var vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName;
+            var vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetName() : EditorLogic.fetch.ship.shipName;
             if (storedFARControlSurfaceSettings == null || !storedFARControlSurfaceSettings.ContainsKey(vesselName) || storedFARControlSurfaceSettings[vesselName] == null || storedFARControlSurfaceSettings[vesselName].Count == 0)
             {
                 return;
@@ -1609,13 +1609,13 @@ namespace BDArmory.Control
             SetOnImmelmannTurnAngleChanged();
             SetOnAutoTuningRecenteringDistanceChanged();
             SetupAutoTuneSliders();
-            if ((HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor) && storedSettings != null && storedSettings.ContainsKey(HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName))
+            if ((HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor) && storedSettings != null && storedSettings.ContainsKey(HighLogic.LoadedSceneIsFlight ? vessel.GetName() : EditorLogic.fetch.ship.shipName))
             {
                 Events["RestoreSettings"].active = true;
             }
             if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor)
             {
-                var vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName;
+                var vesselName = HighLogic.LoadedSceneIsFlight ? vessel.GetName() : EditorLogic.fetch.ship.shipName;
                 if ((storedControlSurfaceSettings != null && storedControlSurfaceSettings.ContainsKey(vesselName)) || (storedFARControlSurfaceSettings != null && storedFARControlSurfaceSettings.ContainsKey(vesselName)))
                 {
                     Events["RestoreControlSurfaceSettings"].active = true;
@@ -4448,7 +4448,7 @@ namespace BDArmory.Control
         public void ResetGradient()
         {
             if (!HighLogic.LoadedSceneIsFlight) return;
-            vesselName = AI.vessel.GetDisplayName();
+            vesselName = AI.vessel.GetName();
             fieldNames = new List<string> { "base" };
             fields = new Dictionary<string, BaseField>();
             fixedFields = new HashSet<string>();
