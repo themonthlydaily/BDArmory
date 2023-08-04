@@ -4,6 +4,9 @@
 	- New Team Icons toolbar icon for easier identification.
 - AI:
 	- Add a toggle to the pilot AI to disable ramming ground targets.
+	- Add a toggle to the pilot AI for treating the min altitude as a hard limit.
+	- Include the TWR of a vessel when determining the gain altitude slope, allowing much higher slopes.
+	- Prevent inverted loops when below min altitude and improve the inverted loop threshold calculation.
 - Armor:
 	- Allow changing the unclamped min/max dimensions for proc armor in the settings.cfg (PROC_ARMOR_ALT_LIMITS).
 - Weapons:
@@ -15,6 +18,7 @@
 		- Fix MML "TNT Mass Equivalent = -0.0018726" PAW label.
 		- Fixed Missiles with ModuleMissileRearm improperly launching.
 		- Fixed MMLs resetting detonation distance.
+		- Missile/bomb fratricide prevention now also checks the source vessel name to allow explosives to be destroyed by explosives of the same type from another vessel.
 - Competition:
 	- Adjust round progress strings in tournaments: ranked => 0→N, shuffled => 1→N.
 	- Report total number of rounds for ranked tournaments properly.

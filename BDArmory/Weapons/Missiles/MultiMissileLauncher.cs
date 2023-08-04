@@ -518,7 +518,11 @@ namespace BDArmory.Weapons.Missiles
                 }
                 MissileLauncher ml = missileSpawner.SpawnedMissile.FindModuleImplementing<MissileLauncher>();
                 yield return new WaitUntilFixed(() => ml is null || ml.SetupComplete); // Wait until missile fully initialized.
-                if (ml is null) continue; // The missile died for some reason, try the next tube.
+                if (ml is null || ml.gameObject is null || !ml.gameObject.activeInHierarchy)
+                {
+                    if (ml is not null) Destroy(ml); // The gameObject is gone, make sure the module goes too.
+                    continue; // The missile died for some reason, try the next tube.
+                }
                 var tnt = VesselModuleRegistry.GetModule<BDExplosivePart>(vessel, true);
                 if (tnt != null)
                 {
