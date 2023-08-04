@@ -2498,7 +2498,7 @@ namespace BDArmory.Control
             {
                 if (belowMinAltitude) // Never do inverted loops below min altitude.
                 { requiresLowAltitudeRollTargetCorrection = true; }
-                else if (vessel.verticalSpeed < 0) // Heading downwards. FIXME, if not heading downwards, assume heading horizontal for the calculations
+                else // Otherwise, check the turning circle.
                 {
                     // The following calculates the altitude required to turn in the direction of the rollTarget based on the current velocity and turn radius.
                     // The setup is a circle in the plane of the rollTarget, which is tilted by angle phi from vertical, with the vessel at the point subtending an angle theta as measured from the top of the circle.
@@ -2507,10 +2507,10 @@ namespace BDArmory.Control
                     if (m.magnitude < 0.1f) m = upDirection; // In case n and upDirection are colinear.
                     var a = Vector3.Dot(n, upDirection); // sin(phi) = dot(n,up)
                     var b = BDAMath.Sqrt(1f - a * a); // cos(phi) = sqrt(1-sin(phi)^2)
-                    var r = turnRadiusTwiddleFactorMax * turnRadius + 0.5f * (float)vessel.srfSpeed * controlSurfaceDeploymentTime; // Worst-case radius of turning circle. (We use the max and 1/2 ctrl srf deploy time to avoid triggering terrain avoidance since we're inverted even though the plane ought to be able to manage the turn with the min.)
+                    var r = turnRadiusTwiddleFactorMax * turnRadius; // Worst-case radius of turning circle.
 
                     var h = r * (1 + Vector3.Dot(m, vessel.srf_vel_direction)) * b; // Required altitude: h = r * (1+cos(theta)) * cos(phi).
-                    if (vessel.radarAltitude < h) // Too low for this manoeuvre.
+                    if (vessel.radarAltitude + Vector3.Dot(vessel.srf_velocity, upDirection) * controlSurfaceDeploymentTime < h) // Too low for this manoeuvre.
                     {
                         requiresLowAltitudeRollTargetCorrection = true; // For simplicity, we'll apply the correction after the projections have occurred.
                     }
