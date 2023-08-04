@@ -43,7 +43,6 @@
 - PilotAI improvements:
 	- include more altitude gaining behaviour in the various modes that it's allowed to be in while below min alt (if not using the hard limit)
 	- improve the terrain avoidance exit behaviour somehow to disallow diving for a period after avoiding terrain
-	- completely disable performing inverted loops when below min altitude instead of relying on terrain avoidance calculations to decide if there's enough altitude to pull it off
 - Reset things that the RWP slider changes when switching away from the rounds.
 	- RWP really shouldn't be setting the sliders, but should instead provide overrides for when accessing those values.
 - Fix the piñata spawning logic - spawn the piñata(s) separately after circular spawning has occured.
