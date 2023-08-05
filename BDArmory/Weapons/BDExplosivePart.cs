@@ -14,18 +14,14 @@ namespace BDArmory.Weapons
     public class BDExplosivePart : PartModule
     {
         float distanceFromStart = 500;
-        [KSPField(isPersistant = false)]
-        public string SourceVesselName;
+
         public Vessel sourcevessel
         {
             get { return _sourceVessel; }
-            set
-            {
-                _sourceVessel = value;
-                SourceVesselName = sourcevessel != null ? sourcevessel.vesselName : "";
-            }
+            set { _sourceVessel = value; SourceVesselName = _sourceVessel != null ? _sourceVessel.vesselName : null; }
         }
-        Vessel _sourceVessel = null;
+        Vessel _sourceVessel;
+        public string SourceVesselName { get; private set; }
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_TNTMass"),//TNT mass equivalent
         UI_Label(affectSymCounterparts = UI_Scene.All, controlEnabled = true, scene = UI_Scene.All)]
@@ -450,7 +446,7 @@ namespace BDArmory.Weapons
                     if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
                     if (partHit.vessel == vessel || partHit.vessel == sourcevessel) continue;
                     if (partHit.vessel.vesselType == VesselType.Debris) continue;
-                    if (sourcevessel != null && partHit.vessel.vesselName.Contains(SourceVesselName)) continue;
+                    if (!string.IsNullOrEmpty(SourceVesselName) && partHit.vessel.vesselName.Contains(SourceVesselName)) continue;
                     var weaponManager = VesselModuleRegistry.GetModule<MissileFire>(partHit.vessel);
                     if (IFF_On && (weaponManager == null || weaponManager.teamString == IFFID)) continue;
                     if (detonateAtMinimumDistance)
@@ -462,7 +458,7 @@ namespace BDArmory.Weapons
                             return detonate = false;
                         }
                     }
-                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.BDExplosivePart]: Proxifuze triggered by " + partHit.partName + " from " + partHit.vessel.vesselName);
+                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.BDExplosivePart]: Proxifuze triggered by {partHit.partName} from {partHit.vessel.vesselName}");
                     return detonate = true;
                 }
             }

@@ -50,7 +50,7 @@ namespace BDArmory.Weapons.Missiles
         [KSPField] public string RailNode = "rail"; //name of attachnode for VLS MMLs to set missile loadout
         [KSPField] public float tntMass = 1; //for MissileLauncher GetInfo()
         [KSPField] public bool OverrideDropSettings = false; //allow setting eject speed/dir
-		[KSPField] public bool displayOrdinance = true; //display missile dummies (for rails and the like) or hide them (bomblet dispensers, gun-launched missiles, etc)
+        [KSPField] public bool displayOrdinance = true; //display missile dummies (for rails and the like) or hide them (bomblet dispensers, gun-launched missiles, etc)
         [KSPField] public bool permitJettison = false; //allow jettisoning of missiles for multimissile launchrails and similar
         AnimationState deployState;
         public ModuleMissileRearm missileSpawner = null;
@@ -65,7 +65,7 @@ namespace BDArmory.Weapons.Missiles
 
         public void Start()
         {
-            MakeMissileArray();           
+            MakeMissileArray();
             GameEvents.onEditorShipModified.Add(ShipModified);
             if (HighLogic.LoadedSceneIsFlight)
             {
@@ -511,10 +511,18 @@ namespace BDArmory.Weapons.Missiles
                 }
                 tubesFired++;
                 launchesThisSalvo++;
-                missileSpawner.SpawnMissile(launchTransforms[m], offset, !isClusterMissile);
+                if (!missileSpawner.SpawnMissile(launchTransforms[m], offset, !isClusterMissile))
+                {
+                    if (BDArmorySettings.DEBUG_MISSILES) Debug.LogWarning($"[BDArmory.MissileLauncher]: Failed to spawn a missile in {missileSpawner} on {vessel.vesselName}");
+                    continue;
+                }
                 MissileLauncher ml = missileSpawner.SpawnedMissile.FindModuleImplementing<MissileLauncher>();
                 yield return new WaitUntilFixed(() => ml is null || ml.SetupComplete); // Wait until missile fully initialized.
-                if (ml is null) continue; // The missile died for some reason, try the next tube.
+                if (ml is null || ml.gameObject is null || !ml.gameObject.activeInHierarchy)
+                {
+                    if (ml is not null) Destroy(ml); // The gameObject is gone, make sure the module goes too.
+                    continue; // The missile died for some reason, try the next tube.
+                }
                 var tnt = VesselModuleRegistry.GetModule<BDExplosivePart>(vessel, true);
                 if (tnt != null)
                 {

@@ -4192,7 +4192,7 @@ namespace BDArmory.Control
                 }
                 else if (!BDArmorySettings.DISABLE_RAMMING)
                 {
-                    if (!HasWeaponsAndAmmo() && pilotAI != null && pilotAI.allowRamming)
+                    if (!HasWeaponsAndAmmo() && pilotAI != null && pilotAI.allowRamming && !(!pilotAI.allowRammingGroundTargets && potentialTarget.Vessel.LandedOrSplashed))
                     {
                         if (BDArmorySettings.DEBUG_AI)
                         {

@@ -1095,12 +1095,17 @@ namespace BDArmory.Weapons.Missiles
             part.partTransform.localScale = Vector3.zero;
             part.ShieldedFromAirstream = true;
             part.crashTolerance = 100;
-            reloadableRail.SpawnMissile(MissileReferenceTransform);
+            if (!reloadableRail.SpawnMissile(MissileReferenceTransform))
+            {
+                if (BDArmorySettings.DEBUG_MISSILES) Debug.LogWarning($"[BDArmory.MissileLauncher]: Failed to spawn a missile in {reloadableRail} on {vessel.vesselName}");
+                yield break;
+            }
             MissileLauncher ml = reloadableRail.SpawnedMissile.FindModuleImplementing<MissileLauncher>();
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: Spawning missile {reloadableRail.SpawnedMissile.name}; type: {ml.homingType}/{ml.targetingType}");
             yield return new WaitUntilFixed(() => ml == null || ml.SetupComplete); // Wait until missile fully initialized.
-            if (ml == null)
+            if (ml is null || ml.gameObject is null || !ml.gameObject.activeInHierarchy)
             {
+                if (ml is not null) Destroy(ml); // The gameObject is gone, make sure the module goes too.
                 Debug.LogWarning($"[BDArmory.MissileLauncher]: Error while spawning missile with {part.name}, MissileLauncher was null!");
                 yield break;
             }
@@ -1228,6 +1233,7 @@ namespace BDArmory.Weapons.Missiles
         }
         public void MissileLaunch()
         {
+            // if (gameObject is null || !gameObject.activeInHierarchy) { Debug.LogError($"[BDArmory.MissileLauncher]: Trying to fire non-existent missile {missileName} {(reloadableRail != null ? " (reloadable)" : "")} on {SourceVesselName} at {TargetVesselName}!"); return; }
             HasFired = true;
             try // FIXME Remove this once the fix is sufficiently tested.
             {
