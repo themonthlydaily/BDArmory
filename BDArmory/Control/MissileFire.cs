@@ -6445,7 +6445,8 @@ namespace BDArmory.Control
                                 bool pilotAuthorized = true;
                                 //(!pilotAI || pilotAI.GetLaunchAuthorization(guardTarget, this));
 
-                                float targetAngle = Vector3.Angle(-transform.forward, guardTarget.transform.position - transform.position) //is this Wm transform..?
+                                //float targetAngle = Vector3.Angle(-transform.forward, guardTarget.transform.position - transform.position);
+                                float targetAngle = Vector3.Angle(CurrentMissile.MissileReferenceTransform.forward, guardTarget.transform.position - transform.position);
                                 float targetDistance = Vector3.Distance(currentTarget.position, transform.position);
                                 MissileLaunchParams dlz = MissileLaunchParams.GetDynamicLaunchParams(CurrentMissile, guardTarget.Velocity(), guardTarget.CoM, 1, (CurrentMissile.TargetingMode == MissileBase.TargetingModes.Laser
                                     && BDATargetManager.ActiveLasers.Count <= 0 || CurrentMissile.TargetingMode == MissileBase.TargetingModes.Radar && !_radarsEnabled && !CurrentMissile.radarLOAL));
