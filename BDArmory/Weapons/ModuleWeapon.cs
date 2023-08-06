@@ -4864,6 +4864,7 @@ namespace BDArmory.Weapons
             {
                 //if (tgtShell == null && tgtRocket == null && MissileTgt == null)
                 {
+                    var localVelocity = vessel.Velocity();
                     if (eAPSType == APSTypes.Ballistic || eAPSType == APSTypes.Omni)
                     {
                         if (BDATargetManager.FiredBullets.Count > 0)
@@ -4873,7 +4874,10 @@ namespace BDArmory.Weapons
                                 {
                                     if (target.Current == null) continue;
                                     if (target.Current.team == weaponManager.team) continue;
-                                    float threatDirectionFactor = Vector3.Dot((transform.position - target.Current.transform.position).normalized, target.Current.currentVelocity.normalized);
+                                    float threatDirectionFactor = Vector3.Dot(
+                                        (transform.position - target.Current.transform.position).normalized, 
+                                        (target.Current.currentVelocity - localVelocity).normalized
+                                    );
                                     if (threatDirectionFactor < 0.95) continue; //if incoming round is heading this way 
                                     if ((target.Current.currPosition - fireTransforms[0].position).sqrMagnitude < (maxTargetingRange * 2) * (maxTargetingRange * 2))
                                     {
@@ -4907,7 +4911,10 @@ namespace BDArmory.Weapons
                                 {
                                     if (target.Current == null) continue;
                                     if (target.Current.team == weaponManager.team) continue;
-                                    float threatDirectionFactor = Vector3.Dot((transform.position - target.Current.transform.position).normalized, target.Current.currentVelocity.normalized);
+                                    float threatDirectionFactor = Vector3.Dot(
+                                        (transform.position - target.Current.transform.position).normalized,
+                                        (target.Current.currentVelocity - localVelocity).normalized
+                                    );
                                     if (threatDirectionFactor < 0.95) continue; //if incoming round is heading this way 
                                     if ((target.Current.transform.position - fireTransforms[0].position).sqrMagnitude < (maxTargetingRange * 2) * (maxTargetingRange * 2))
                                     {
