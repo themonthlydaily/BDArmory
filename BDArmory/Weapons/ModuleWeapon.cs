@@ -3244,7 +3244,7 @@ namespace BDArmory.Weapons
             if (dualModeAPS) isAPS = true;
             if (isAPS)
             {
-                if (ammoCount > 0 || !BDArmorySettings.INFINITE_AMMO)
+                if (ammoCount > 0 || BDArmorySettings.INFINITE_AMMO)
                 {
                     //EnableWeapon();
                     aiControlled = true;
@@ -3265,7 +3265,7 @@ namespace BDArmory.Weapons
             if (dualModeAPS) isAPS = true;
             if (isAPS)
             {
-                if (ammoCount > 0 || !BDArmorySettings.INFINITE_AMMO)
+                if (ammoCount > 0 || BDArmorySettings.INFINITE_AMMO)
                 {
                     //EnableWeapon();
                     aiControlled = true;
@@ -5140,7 +5140,7 @@ namespace BDArmory.Weapons
             }
             UpdateGUIWeaponState();
             BDArmorySetup.Instance.UpdateCursorState();
-            if (isAPS && (ammoCount > 0 || !BDArmorySettings.INFINITE_AMMO))
+            if (isAPS && (ammoCount > 0 || BDArmorySettings.INFINITE_AMMO))
             {
                 aiControlled = true;
                 targetPosition = fireTransforms[0].forward * engageRangeMax; //Ensure targetPosition is not null or 0 by the time code reaches Aim(), in case of no incoming projectile, since no target vessel to be continuously tracked.
