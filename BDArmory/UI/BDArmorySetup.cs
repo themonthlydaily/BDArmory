@@ -4365,7 +4365,7 @@ namespace BDArmory.UI
             var func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { dot = Vector3.Dot(v1.normalized, v2.normalized); } };
             Debug.Log($"DEBUG Dot(v1.norm, v2.norm) took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {dot}");
             dot = 0;
-            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { dot = v1.DotNorm(v2); } };
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { dot = v1.DotNormalized(v2); } };
             Debug.Log($"DEBUG v1.DotNorm(v2) took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {dot}");
         }
 

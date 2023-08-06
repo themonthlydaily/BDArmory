@@ -77,14 +77,14 @@ namespace BDArmory.Extensions
         }
 
         /// <summary>
-        /// A (>2x) faster Vector3.Dot(v1.normalized, v2.normalized) by only performing a single sqrt and division.
+        /// A (2x) faster Vector3.Dot(v1.normalized, v2.normalized) by only performing a single sqrt and division.
         /// The vectors do not need normalising beforehand.
         /// </summary>
         /// <param name="v1">A vector</param>
         /// <param name="v2">Another vector</param>
         /// <returns>The dot product between the normalised vectors.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float DotNorm(this Vector3 v1, Vector3 v2)
+        public static float DotNormalized(this Vector3 v1, Vector3 v2)
         {
             var normalisationFactor = BDAMath.Sqrt(v1.sqrMagnitude * v2.sqrMagnitude);
             return normalisationFactor > 0 ? Vector3.Dot(v1, v2) / normalisationFactor : 0;
