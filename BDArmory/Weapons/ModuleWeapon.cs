@@ -4129,7 +4129,11 @@ namespace BDArmory.Weapons
             }
             if (isAPS)
             {
-                float threatDirectionFactor = Vector3.Dot(fireTransforms[0].position, targetPosition.normalized);
+                float threatDirectionFactor = Vector3.Dot(
+                    (targetPosition - fireTransforms[0].position).normalized,
+                    -(targetVelocity - part.rb.velocity).normalized
+                );
+
                 if (threatDirectionFactor < 0.9f) autoFire = false; ;   //within 28 degrees in front, else ignore, target likely not on intercept vector
             }
         }
