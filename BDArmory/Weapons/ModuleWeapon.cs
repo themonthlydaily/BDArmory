@@ -4127,9 +4127,9 @@ namespace BDArmory.Weapons
                     }
                 }
             }
-            if (isAPS) {
+            if (isAPS)
+            {
                 float threatDirectionFactor = (fireTransforms[0].position - targetPosition).DotNormalized(targetVelocity - part.rb.velocity);
-
                 if (threatDirectionFactor < 0.9f) autoFire = false; ;   //within 28 degrees in front, else ignore, target likely not on intercept vector
             }
         }
@@ -4870,8 +4870,7 @@ namespace BDArmory.Weapons
                                 {
                                     if (target.Current == null) continue;
                                     if (target.Current.team == weaponManager.team) continue;
-                                    float threatDirectionFactor = (transform.position - target.Current.transform.position)
-                                        .DotNormalized(target.Current.currentVelocity - localVelocity);
+                                    float threatDirectionFactor = (transform.position - target.Current.transform.position).DotNormalized(target.Current.currentVelocity - localVelocity);
                                     if (threatDirectionFactor < 0.95) continue; //if incoming round is heading this way 
                                     if ((target.Current.currPosition - fireTransforms[0].position).sqrMagnitude < (maxTargetingRange * 2) * (maxTargetingRange * 2))
                                     {
@@ -4905,8 +4904,7 @@ namespace BDArmory.Weapons
                                 {
                                     if (target.Current == null) continue;
                                     if (target.Current.team == weaponManager.team) continue;
-                                    float threatDirectionFactor = (transform.position - target.Current.transform.position)
-                                        .DotNormalized(target.Current.currentVelocity - localVelocity);
+                                    float threatDirectionFactor = (transform.position - target.Current.transform.position).DotNormalized(target.Current.currentVelocity - localVelocity);
                                     if (threatDirectionFactor < 0.95) continue; //if incoming round is heading this way 
                                     if ((target.Current.transform.position - fireTransforms[0].position).sqrMagnitude < (maxTargetingRange * 2) * (maxTargetingRange * 2))
                                     {
