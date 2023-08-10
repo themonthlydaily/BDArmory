@@ -6221,30 +6221,19 @@ namespace BDArmory.Control
 
         public void SendTargetDataToMissile(MissileBase ml, bool clearHeat = true)
         { //TODO BDModularGuidance: implement all targetings on base
+            bool dumbfire = false;
+            bool validTarget = false;
             if (ml.TargetingMode == MissileBase.TargetingModes.Laser)
             {
                 if (laserPointDetected)
                 {
                     ml.lockedCamera = foundCam;
-                    if (BDArmorySettings.DEBUG_MISSILES)
-                        Debug.Log("[BDArmory.MissileData]: Sending targetInfo to laser Missile...");
-                    if (guardMode && guardTarget != null && ((foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude < 10 * 10))
-                    {
-                        ml.targetVessel = guardTarget.gameObject ? guardTarget.gameObject.GetComponent<TargetInfo>() : null;
-                        if (BDArmorySettings.DEBUG_MISSILES)
-                            Debug.Log($"[BDArmory.MissileData]: targetInfo sent for {ml.targetVessel.Vessel.GetName()}");
-                    }
+                    if ((foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude < 10 * 10) validTarget = true;
                 }
                 else
                 {
-                    if (BDArmorySettings.DEBUG_MISSILES)
-                        Debug.Log("[BDArmory.MissileData]: Sending targetInfo to dumbfire laser Missile...");
-                    if (guardMode && guardTarget != null)
-                    {
-                        ml.targetVessel = guardTarget.gameObject ? guardTarget.gameObject.GetComponent<TargetInfo>() : null;
-                        if (BDArmorySettings.DEBUG_MISSILES)
-                            Debug.Log($"[BDArmory.MissileData]: targetInfo sent for {ml.targetVessel.Vessel.GetName()}");
-                    }
+                    dumbfire = true;
+                    validTarget = true;
                 }
             }
             else if (ml.TargetingMode == MissileBase.TargetingModes.Gps)
@@ -6253,26 +6242,16 @@ namespace BDArmory.Control
                 {
                     ml.targetGPSCoords = designatedGPSCoords;
                     ml.TargetAcquired = true;
-                    if (BDArmorySettings.DEBUG_MISSILES)
-                        Debug.Log("[BDArmory.MissileData]: Sending targetInfo to GPS Missile...");
-                    if (guardMode && guardTarget != null && GPSDistanceCheck())
-                    {
-                        ml.targetVessel = guardTarget.gameObject ? guardTarget.gameObject.GetComponent<TargetInfo>() : null;
-                        if (BDArmorySettings.DEBUG_MISSILES)
-                            Debug.Log($"[BDArmory.MissileData]: targetInfo sent for {ml.targetVessel.Vessel.GetName()}");
-                    }
+                    if (GPSDistanceCheck()) validTarget = true;
                 }
             }
             else if (ml.TargetingMode == MissileBase.TargetingModes.Heat && heatTarget.exists)
             {
                 ml.heatTarget = heatTarget;
                 if (clearHeat) heatTarget = TargetSignatureData.noTarget;
-                if (BDArmorySettings.DEBUG_MISSILES)
-                    Debug.Log("[BDArmory.MissileData]: Sending targetInfo to heat Missile...");
+
                 var heatTgtVessel = ml.heatTarget.vessel.gameObject;
                 if (heatTgtVessel) ml.targetVessel = heatTgtVessel.GetComponent<TargetInfo>();
-                if (BDArmorySettings.DEBUG_MISSILES)
-                    Debug.Log($"[BDArmory.MissileData]: targetInfo sent for {ml.targetVessel.Vessel.GetName()}");
             }
             else if (ml.TargetingMode == MissileBase.TargetingModes.Radar)
             {
@@ -6292,62 +6271,39 @@ namespace BDArmory.Control
                     else ml.radarTarget = vesselRadarData.lockedTargetData.targetData;
                     ml.vrd = vesselRadarData;
                     vesselRadarData.LastMissile = ml;
-                    if (BDArmorySettings.DEBUG_MISSILES)
-                        Debug.Log("[BDArmory.MissileData]: Sending targetInfo to radar Missile...");
+
                     var radarTgtvessel = vesselRadarData.lockedTargetData.targetData.vessel.gameObject;
                     if (radarTgtvessel) ml.targetVessel = radarTgtvessel.GetComponent<TargetInfo>();
-                    if (BDArmorySettings.DEBUG_MISSILES)
-                        Debug.Log($"[BDArmory.MissileData]: targetInfo sent for {ml.targetVessel.Vessel.GetName()}");
                 }
                 else
                 {
-                    if (BDArmorySettings.DEBUG_MISSILES)
-                        Debug.Log("[BDArmory.MissileData]: Sending targetInfo to dumbfire radar Missile...");
-                    if (guardMode && guardTarget != null)
-                    {
-                        ml.targetVessel = guardTarget.gameObject ? guardTarget.gameObject.GetComponent<TargetInfo>() : null;
-                        if (BDArmorySettings.DEBUG_MISSILES)
-                            Debug.Log($"[BDArmory.MissileData]: targetInfo sent for {ml.targetVessel.Vessel.GetName()}");
-                    }
+                    dumbfire = true;
+                    validTarget = true;
                 }
             }
             else if (ml.TargetingMode == MissileBase.TargetingModes.AntiRad && antiRadTargetAcquired && antiRadiationTarget != Vector3.zero)
             {
                 ml.TargetAcquired = true;
-                ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(antiRadiationTarget,
-                        vessel.mainBody);
-                if (BDArmorySettings.DEBUG_MISSILES)
-                    Debug.Log("[BDArmory.MissileData]: Sending targetInfo to Antirad Missile...");
-                if (guardMode && guardTarget != null && AntiRadDistanceCheck())
-                {
-                    ml.targetVessel = guardTarget.gameObject ? guardTarget.gameObject.GetComponent<TargetInfo>() : null;
-                    if (BDArmorySettings.DEBUG_MISSILES)
-                        Debug.Log($"[BDArmory.MissileData]: targetInfo sent for {ml.targetVessel.Vessel.GetName()}");
-                }
+                ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(antiRadiationTarget, vessel.mainBody);
+
+                if (AntiRadDistanceCheck()) validTarget = true;
             }
             else if (ml.GetWeaponClass() == WeaponClasses.Bomb)
             {
-                if (BDArmorySettings.DEBUG_MISSILES)
-                    Debug.Log("[BDArmory.MissileData]: Sending targetInfo to bomb...");
                 //if (guardMode && ((bombAimerPosition - guardTarget.CoM).sqrMagnitude < ml.GetBlastRadius()))
-                if (guardMode && guardTarget != null)
-                {
-                    ml.targetVessel = guardTarget.gameObject ? guardTarget.gameObject.GetComponent<TargetInfo>() : null;
-                    if (BDArmorySettings.DEBUG_MISSILES)
-                        Debug.Log($"[BDArmory.MissileData]: targetInfo sent for {ml.targetVessel.Vessel.GetName()}");
-                }
+                validTarget = true;
             }
-            //ml.targetVessel = currentTarget;
-            if (currentTarget != null)
+            if (validTarget && guardMode && guardTarget != null)
             {
-                if (BDArmorySettings.DEBUG_MISSILES)
-                    Debug.Log($"[BDArmory.MissileData]: firing missile at {currentTarget.Vessel.GetName()}");
+                ml.targetVessel = guardTarget.gameObject ? guardTarget.gameObject.GetComponent<TargetInfo>() : null;
             }
-            else
+            if (BDArmorySettings.DEBUG_MISSILES)
             {
-                if (BDArmorySettings.DEBUG_MISSILES)
-                    Debug.Log("[BDArmory.MissileData]: firing missile null target");
+                Debug.Log($"[BDArmory.MissileData]: Sending targetInfo to {(dumbfire ? "dumbfire" : "")}{Enum.GetName(typeof(MissileBase.TargetingModes), ml.TargetingMode)} Missile...");
+                if (ml.targetVessel != null) Debug.Log($"[BDArmory.MissileData]: targetInfo sent for {ml.targetVessel.Vessel.GetName()}");
             }
+            if (BDArmorySettings.DEBUG_MISSILES)
+                Debug.Log($"[BDArmory.MissileData]: firing missile at {(currentTarget != null ? currentTarget.Vessel.GetName() : "null target")}");
         }
 
         #endregion Targeting
