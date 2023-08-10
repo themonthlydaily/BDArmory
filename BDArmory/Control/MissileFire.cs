@@ -978,6 +978,14 @@ namespace BDArmory.Control
         [KSPField(isPersistant = false, guiActive = true, guiName = "#LOC_BDArmory_Weapon")]//Weapon
         public string selectedWeaponString = "None";
 
+        [KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MissilesRange")]//Toggle DLZ
+        public void ToggleDLZ()
+        {
+            BDArmorySettings.USE_DLZ_LAUNCH_RANGE = !BDArmorySettings.USE_DLZ_LAUNCH_RANGE;
+            Events["ToggleDLZ"].guiName = $" {StringUtils.Localize("#LOC_BDArmory_MissilesRange")}: {(BDArmorySettings.USE_DLZ_LAUNCH_RANGE ? StringUtils.Localize("#LOC_BDArmory_true") : StringUtils.Localize("#LOC_BDArmory_false"))}";//"Use Dynamic Launch Range: True/False
+            GUIUtils.RefreshAssociatedWindows(part);
+        }
+
         IBDWeapon sw;
 
         public IBDWeapon selectedWeapon
@@ -6220,7 +6228,7 @@ namespace BDArmory.Control
                     ml.lockedCamera = foundCam;
                     if (BDArmorySettings.DEBUG_MISSILES)
                         Debug.Log("[BDArmory.MissileData]: Sending targetInfo to laser Missile...");
-                    if (guardMode && ((foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude < 10 * 10))
+                    if (guardMode && guardTarget != null && ((foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude < 10 * 10))
                     {
                         ml.targetVessel = guardTarget.gameObject ? guardTarget.gameObject.GetComponent<TargetInfo>() : null;
                         if (BDArmorySettings.DEBUG_MISSILES)
@@ -6247,7 +6255,7 @@ namespace BDArmory.Control
                     ml.TargetAcquired = true;
                     if (BDArmorySettings.DEBUG_MISSILES)
                         Debug.Log("[BDArmory.MissileData]: Sending targetInfo to GPS Missile...");
-                    if (guardMode && GPSDistanceCheck())
+                    if (guardMode && guardTarget != null && GPSDistanceCheck())
                     {
                         ml.targetVessel = guardTarget.gameObject ? guardTarget.gameObject.GetComponent<TargetInfo>() : null;
                         if (BDArmorySettings.DEBUG_MISSILES)
@@ -6258,14 +6266,11 @@ namespace BDArmory.Control
             else if (ml.TargetingMode == MissileBase.TargetingModes.Heat && heatTarget.exists)
             {
                 ml.heatTarget = heatTarget;
-                MissileLauncher mml = ml as MissileLauncher;
-                if (BDArmorySettings.DEBUG_MISSILES)
-                    Debug.Log("[BDArmory.MissileData]: Missile multi-launcher or reloadable rail found...");
                 if (clearHeat) heatTarget = TargetSignatureData.noTarget;
                 if (BDArmorySettings.DEBUG_MISSILES)
                     Debug.Log("[BDArmory.MissileData]: Sending targetInfo to heat Missile...");
-                var heatTgtVessel = ml.heatTarget.vessel.gameObject.GetComponent<TargetInfo>();
-                if (heatTgtVessel) ml.targetVessel = heatTgtVessel;
+                var heatTgtVessel = ml.heatTarget.vessel.gameObject;
+                if (heatTgtVessel) ml.targetVessel = heatTgtVessel.GetComponent<TargetInfo>();
                 if (BDArmorySettings.DEBUG_MISSILES)
                     Debug.Log($"[BDArmory.MissileData]: targetInfo sent for {ml.targetVessel.Vessel.GetName()}");
             }
@@ -6289,8 +6294,8 @@ namespace BDArmory.Control
                     vesselRadarData.LastMissile = ml;
                     if (BDArmorySettings.DEBUG_MISSILES)
                         Debug.Log("[BDArmory.MissileData]: Sending targetInfo to radar Missile...");
-                    var radarTgtvessel = vesselRadarData.lockedTargetData.targetData.vessel.gameObject.GetComponent<TargetInfo>();
-                    if (radarTgtvessel) ml.targetVessel = radarTgtvessel;
+                    var radarTgtvessel = vesselRadarData.lockedTargetData.targetData.vessel.gameObject;
+                    if (radarTgtvessel) ml.targetVessel = radarTgtvessel.GetComponent<TargetInfo>();
                     if (BDArmorySettings.DEBUG_MISSILES)
                         Debug.Log($"[BDArmory.MissileData]: targetInfo sent for {ml.targetVessel.Vessel.GetName()}");
                 }
@@ -6313,7 +6318,7 @@ namespace BDArmory.Control
                         vessel.mainBody);
                 if (BDArmorySettings.DEBUG_MISSILES)
                     Debug.Log("[BDArmory.MissileData]: Sending targetInfo to Antirad Missile...");
-                if (guardMode && AntiRadDistanceCheck())
+                if (guardMode && guardTarget != null && AntiRadDistanceCheck())
                 {
                     ml.targetVessel = guardTarget.gameObject ? guardTarget.gameObject.GetComponent<TargetInfo>() : null;
                     if (BDArmorySettings.DEBUG_MISSILES)

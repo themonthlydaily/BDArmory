@@ -779,11 +779,6 @@ namespace BDArmory.Weapons.Missiles
                 }
                 ml.launched = true;
                 ml.TargetPosition = vessel.ReferenceTransform.position + (vessel.ReferenceTransform.up * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
-                if (ml == null)
-                {
-                    //Debug.LogWarning($"[BDArmory.MultiMissileLauncher]: Missile {part.name} destroyed during initialization, MissileLauncher now null!");
-                    yield break;
-                }
                 ml.MissileLaunch();
                 launchTransforms[m].localScale = Vector3.zero;
             }

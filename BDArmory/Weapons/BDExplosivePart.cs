@@ -362,12 +362,12 @@ namespace BDArmory.Weapons
 
                     ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, caliber, part, sourcevessel != null ? SourceVesselName : null, sourceWeapon != null ? sourceWeapon.GetShortName() : null, direction, -1, false, warheadType == "standard" ? part.mass : 0, -1, 1, warheadType, null, apMod);
                     if (BDArmorySettings.DEBUG_MISSILES)
-                        Debug.Log("[BDArmory.BDExplosivePart]: " + part + " (" + (uint)(part.GetInstanceID()) + ") from " + (sourcevessel != null ? SourceVesselName : null) + " detonating with a " + warheadType + " warhead");
+                        Debug.Log($"[BDArmory.BDExplosivePart]: {part} ({(uint)(part.GetInstanceID())}) from {SourceVesselName} detonating with a {warheadType} warhead");
                     part.explode();
                 }
                 else
                     if (BDArmorySettings.DEBUG_MISSILES)
-                        Debug.Log("[BDArmory.BDExplosivePart]: " + part + " (" + (uint)(part.GetInstanceID()) + ") from " + (sourcevessel != null ? SourceVesselName : null) + " explosive fuse failed!");
+                        Debug.Log($"[BDArmory.BDExplosivePart]: {part} ({(uint)(part.GetInstanceID())}) from {SourceVesselName} explosive fuse failed!");
             }
         }
 
@@ -386,15 +386,15 @@ namespace BDArmory.Weapons
                     direction = warheadType == "standard" ? default : part.partTransform.forward;
                     var sourceWeapon = part.FindModuleImplementing<EngageableWeapon>();
                     if (BDArmorySettings.DEBUG_MISSILES)
-                        Debug.Log("[BDArmory.BDExplosivePart]: " + part + " (" + (uint)(part.GetInstanceID()) + ") from " + (sourcevessel != null ? SourceVesselName : null) + " detonating with a " + warheadType + " warhead");
-                    ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, caliber, part, sourcevessel != null ? SourceVesselName : null, sourceWeapon != null ? sourceWeapon.GetShortName() : null, direction, -1, false, warheadType == "standard" ? part.mass : 0, -1, 1, warheadType, null, apMod);
+                        Debug.Log($"[BDArmory.BDExplosivePart]: {part} ({(uint)(part.GetInstanceID())}) from {SourceVesselName} detonating with a {warheadType} warhead");
+                    ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, caliber, part, SourceVesselName, sourceWeapon != null ? sourceWeapon.GetShortName() : null, direction, -1, false, warheadType == "standard" ? part.mass : 0, -1, 1, warheadType, null, apMod);
 
                     part.Destroy();
                     part.explode();
                 }
                 else
                     if (BDArmorySettings.DEBUG_MISSILES)
-                        Debug.Log("[BDArmory.BDExplosivePart]: " + part + " (" + (uint)(part.GetInstanceID()) + ") from " + (sourcevessel != null ? SourceVesselName : null) + " explosive fuse failed!");
+                        Debug.Log($"[BDArmory.BDExplosivePart]: {part} ({(uint)(part.GetInstanceID())}) from {SourceVesselName} explosive fuse failed!");
             }
         }
 
