@@ -978,6 +978,7 @@ namespace BDArmory.Control
         [KSPField(isPersistant = false, guiActive = true, guiName = "#LOC_BDArmory_Weapon")]//Weapon
         public string selectedWeaponString = "None";
 
+        /* //global toggle moved to BDASetup; decide if we need a per-WM toggle instead later for selective usage of DLZ
         [KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MissilesRange")]//Toggle DLZ
         public void ToggleDLZ()
         {
@@ -985,7 +986,7 @@ namespace BDArmory.Control
             Events["ToggleDLZ"].guiName = $" {StringUtils.Localize("#LOC_BDArmory_MissilesRange")}: {(BDArmorySettings.USE_DLZ_LAUNCH_RANGE ? StringUtils.Localize("#LOC_BDArmory_true") : StringUtils.Localize("#LOC_BDArmory_false"))}";//"Use Dynamic Launch Range: True/False
             GUIUtils.RefreshAssociatedWindows(part);
         }
-
+        */
         IBDWeapon sw;
 
         public IBDWeapon selectedWeapon
@@ -5759,7 +5760,7 @@ namespace BDArmory.Control
             //take target vel into account? //if you're going 250m/s, that's only an extra 500m to the maxRange; if the enemy is closing towards you at 250m/s, that's 250m addition
             //Max 1.5x engagement, or engagementRange + vel*4?
             //min 2x engagement, or engagement + 2000m?
-            if (weaponCandidate.GetWeaponClass() != WeaponClasses.Missile) 
+            if (!BDArmorySettings.USE_DLZ_LAUNCH_RANGE || (BDArmorySettings.USE_DLZ_LAUNCH_RANGE && weaponCandidate.GetWeaponClass() != WeaponClasses.Missile))
                 if (distanceToTarget > (Mathf.Min(engageableWeapon.GetEngagementRangeMax() * 2, engageableWeapon.GetEngagementRangeMax() + Mathf.Max(1000, (float)vessel.speed * 2)))) return false; //have AI preemptively begin to lead 2s out from max weapon range
             switch (weaponCandidate.GetWeaponClass())
             {

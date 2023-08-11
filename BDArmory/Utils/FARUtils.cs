@@ -216,10 +216,10 @@ namespace BDArmory.Utils
                         int edgeLeadingType = Mathf.RoundToInt((float)PWType.GetField("sharedEdgeTypeLeading", BindingFlags.Public | BindingFlags.Instance).GetValue(module));
                         int edgeTrailingType = Mathf.RoundToInt((float)PWType.GetField("sharedEdgeTypeTrailing", BindingFlags.Public | BindingFlags.Instance).GetValue(module));
                         float edgeWidth = ((edgeLeadingType >= 2 ? 
-                            (((float)PWType.GetField("sharedEdgeWidthLeadingTip", BindingFlags.Public | BindingFlags.Instance).GetValue(module) +
-                        (float)PWType.GetField("sharedEdgeWidthLeadingRoot", BindingFlags.Public | BindingFlags.Instance).GetValue(module)) / 2) : 0)     
-                        + (edgeTrailingType >= 2 ? (((float)PWType.GetField("sharedEdgeWidthTrailingTip", BindingFlags.Public | BindingFlags.Instance).GetValue(module) +
-                        (float)PWType.GetField("sharedEdgeWidthTrailingRoot", BindingFlags.Public | BindingFlags.Instance).GetValue(module)) / 2) : 0));
+                            ((float)PWType.GetField("sharedEdgeWidthLeadingTip", BindingFlags.Public | BindingFlags.Instance).GetValue(module) +
+                        (float)PWType.GetField("sharedEdgeWidthLeadingRoot", BindingFlags.Public | BindingFlags.Instance).GetValue(module)) : 0)     
+                        + (edgeTrailingType >= 2 ? ((float)PWType.GetField("sharedEdgeWidthTrailingTip", BindingFlags.Public | BindingFlags.Instance).GetValue(module) +
+                        (float)PWType.GetField("sharedEdgeWidthTrailingRoot", BindingFlags.Public | BindingFlags.Instance).GetValue(module)) : 0));
                         float thickness = 0.36f;
                         float adjustedThickness = 0.36f;
                         if (BDArmorySettings.RUNWAY_PROJECT || BDArmorySettings.PWING_THICKNESS_AFFECT_MASS_HP)
@@ -239,7 +239,7 @@ namespace BDArmory.Utils
                         //float thickness = 0.36f;
 
 
-                        float liftCoeff = (length * ((width + edgeWidth)/ 2f)) / 3.52f;
+                        float liftCoeff = (length * ((width + edgeWidth) / 2)) / 3.52f;
                         float aeroVolume = (0.786f * length * (width + edgeWidth) * adjustedThickness) / 4f; //original .7 was based on errorneous 2x4 wingboard dimensions; stock reference wing area is 1.875x3.75m
                         if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FARUtils]: Found volume of {aeroVolume} for {part.name}.");
 
@@ -259,7 +259,7 @@ namespace BDArmory.Utils
                         if (part.name.Contains("B9.Aero.Wing.Procedural.Panel") || !isAeroSrf) //if Josue's noLift PWings PR never gets folded in, here's an alternative using an MM'ed PWing structural panel part
                         {
                             PWType.GetField("stockLiftCoefficient", BindingFlags.Public | BindingFlags.Instance).SetValue(module, 0f); //adjust PWing GUI lift readout
-                            PWType.GetField("aeroUIMass", BindingFlags.Public | BindingFlags.Instance).SetValue(module, (((length * ((width + edgeWidth) / 2f)) / 3.52f) / 12.5f) * (Mathf.Max(0.3f, adjustedThickness * 2.78f))); //Struct panels lighter than wings, clamp mass for panels thinner than 0.05m
+                            PWType.GetField("aeroUIMass", BindingFlags.Public | BindingFlags.Instance).SetValue(module, (((length * ((width + edgeWidth) / 2)) / 3.52f) / 12.5f) * (Mathf.Max(0.3f, adjustedThickness * 2.78f))); //Struct panels lighter than wings, clamp mass for panels thinner than 0.05m
                             if (!FerramAerospace.CheckForFAR()) part.FindModuleImplementing<ModuleLiftingSurface>().deflectionLiftCoeff = 0;
                             else
                             {
