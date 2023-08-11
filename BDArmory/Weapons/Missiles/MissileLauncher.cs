@@ -1071,7 +1071,7 @@ namespace BDArmory.Weapons.Missiles
             }
             else
             {
-                if (reloadableRail && (reloadableRail.ammoCount >= 1 || BDArmorySettings.INFINITE_ORDINANCE) && (!multiLauncher || multiLauncher && !multiLauncher.isClusterMissile))
+                if (reloadableRail && (reloadableRail.ammoCount >= 1 || BDArmorySettings.INFINITE_ORDINANCE))
                 {
                     if (reloadableMissile == null) reloadableMissile = StartCoroutine(FireReloadableMissile());
                     launched = true;
