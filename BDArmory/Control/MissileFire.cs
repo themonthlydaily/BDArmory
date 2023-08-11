@@ -6882,7 +6882,7 @@ namespace BDArmory.Control
                     float fTime = Mathf.Min(missile.dropTime, 2f);
                     Vector3 futurePos = target + (targetV.Velocity() * fTime);
                     Vector3 myFuturePos = vessel.ReferenceTransform.position + (vessel.Velocity() * fTime);
-                    launchAuthorized = launchAuthorized && (Vector3.Angle(vessel.ReferenceTransform.up, futurePos - myFuturePos) < (unguidedWeapon ? 5 : missile.maxOffBoresight * boresightFactor)); // Launch is likely also possible at fTime
+                    launchAuthorized = launchAuthorized && (Vector3.Angle(missile.GetForwardTransform(), futurePos - myFuturePos) < (unguidedWeapon ? 5 : missile.maxOffBoresight * boresightFactor)); // Launch is likely also possible at fTime
                 }
             }
 
