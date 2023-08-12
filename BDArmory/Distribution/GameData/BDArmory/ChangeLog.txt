@@ -6,6 +6,7 @@
 	- Add a toggle to the pilot AI to disable ramming ground targets.
 	- Add a toggle to the pilot AI for treating the min altitude as a hard limit.
 	- Include the TWR of a vessel when determining the gain altitude slope, allowing much higher slopes.
+	- Include a climb rate at half the take-off climb rate while evading below min altitude.
 	- Prevent inverted loops when below min altitude and improve the inverted loop threshold calculation.
 - Armor:
 	- Allow changing the unclamped min/max dimensions for proc armor in the settings.cfg (PROC_ARMOR_ALT_LIMITS).
