@@ -3504,24 +3504,49 @@ namespace BDArmory.Control
 
                 // Check for collisions with other vessels.
                 bool vesselCollision = false;
-                VesselType collisionVesselType = VesselType.Plane;
+                VesselType collisionVesselType = VesselType.Unknown; // Start as not debris.
+                float collisionTargetLargestSize = -1f;
                 collisionAvoidDirection = vessel.srf_vel_direction;
-                using (var vs = BDATargetManager.LoadedVessels.GetEnumerator()) // Note: we can't ignore some vessel types here as we also need to avoid debris, etc.
+                // First pass, only consider valid vessels.
+                using (var vs = BDATargetManager.LoadedVessels.GetEnumerator())
                     while (vs.MoveNext())
                     {
                         if (vs.Current == null) continue;
+                        if (vs.Current.vesselType == VesselType.Debris) continue; // Ignore debris on the first pass.
                         if (vs.Current == vessel || vs.Current.Landed) continue;
-                        if (!PredictCollisionWithVessel(vs.Current, vesselCollisionAvoidanceLookAheadPeriod, out collisionAvoidDirection)) continue;
+                        if (!PredictCollisionWithVessel(vs.Current, vesselCollisionAvoidanceLookAheadPeriod, out Vector3 collisionAvoidDir)) continue;
                         if (!VesselModuleRegistry.ignoredVesselTypes.Contains(vs.Current.vesselType))
                         {
                             var ibdaiControl = VesselModuleRegistry.GetModule<IBDAIControl>(vs.Current);
                             if (ibdaiControl != null && ibdaiControl.currentCommand == PilotCommands.Follow && ibdaiControl.commandLeader != null && ibdaiControl.commandLeader.vessel == vessel) continue;
                         }
+                        var collisionTargetSize = vs.Current.vesselSize.sqrMagnitude; // We're only interested in sorting by size, which is much faster than sorting by mass.
+                        if (collisionVesselType == vs.Current.vesselType && collisionTargetSize < collisionTargetLargestSize) continue; // Avoid the largest object.
                         vesselCollision = true;
-                        collisionVesselType = vs.Current.vesselType;
                         currentlyAvoidedVessel = vs.Current;
-                        break; // Early exit on first detected vessel collision. Chances of multiple vessel collisions are low.
+                        collisionAvoidDirection = collisionAvoidDir;
+                        collisionVesselType = vs.Current.vesselType;
+                        collisionTargetLargestSize = collisionTargetSize;
                     }
+                // Second pass, only consider debris.
+                if (!vesselCollision)
+                {
+                    using var vs = BDATargetManager.LoadedVessels.GetEnumerator();
+                    while (vs.MoveNext())
+                    {
+                        if (vs.Current == null) continue;
+                        if (vs.Current.vesselType != VesselType.Debris) continue; // Only consider debris on the second pass.
+                        if (vs.Current == vessel || vs.Current.Landed) continue;
+                        if (!PredictCollisionWithVessel(vs.Current, vesselCollisionAvoidanceLookAheadPeriod, out Vector3 collisionAvoidDir)) continue;
+                        var collisionTargetSize = vs.Current.vesselSize.sqrMagnitude;
+                        if (collisionTargetSize < collisionTargetLargestSize) continue; // Avoid the largest debris object.
+                        vesselCollision = true;
+                        currentlyAvoidedVessel = vs.Current;
+                        collisionAvoidDirection = collisionAvoidDir;
+                        collisionVesselType = vs.Current.vesselType;
+                        collisionTargetLargestSize = collisionTargetSize;
+                    }
+                }
                 if (vesselCollision)
                 {
                     FlyAvoidVessel(s);
@@ -3998,6 +4023,7 @@ namespace BDArmory.Control
             return true;
         }
 
+        // Legacy collision avoidance code.
         bool DetectCollision(Vector3 direction, out Vector3 badDirection)
         {
             badDirection = Vector3.zero;
@@ -4006,8 +4032,7 @@ namespace BDArmory.Control
             direction = direction.normalized;
             Ray ray = new Ray(vesselTransform.position + (50 * vesselTransform.up), direction);
             float distance = Mathf.Clamp((float)vessel.srfSpeed * 4f, 125f, 2500);
-            RaycastHit hit;
-            if (!Physics.SphereCast(ray, 10, out hit, distance, (int)LayerMasks.Scenery)) return false;
+            if (!Physics.SphereCast(ray, 10, out RaycastHit hit, distance, (int)LayerMasks.Scenery)) return false;
             Rigidbody otherRb = hit.collider.attachedRigidbody;
             if (otherRb)
             {
