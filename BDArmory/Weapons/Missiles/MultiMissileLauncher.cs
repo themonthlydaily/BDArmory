@@ -207,6 +207,7 @@ namespace BDArmory.Weapons.Missiles
             GameEvents.onPartDie.Remove(OnPartDie);
         }
 
+
         void OnPartDie() { OnPartDie(part); }
 
         void OnPartDie(Part p)
@@ -218,10 +219,6 @@ namespace BDArmory.Weapons.Missiles
                     existingDummy.Deactivate();
                 }
             }
-        }
-         public Vector3 GetLaunchTransform()
-        {
-            return launchTransforms[0].forward;
         }
 
         public void ShipModified(ShipConstruct data)
