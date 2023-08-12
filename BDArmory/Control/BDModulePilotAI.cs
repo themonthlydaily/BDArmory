@@ -20,128 +20,6 @@ namespace BDArmory.Control
 {
     public class BDModulePilotAI : BDGenericAIBase, IBDAIControl
     {
-        public enum SteerModes
-        { NormalFlight, Aiming }
-
-        SteerModes steerMode = SteerModes.NormalFlight;
-
-        enum StatusMode { Free, Orbiting, Engaging, Evading, Extending, TerrainAvoidance, CollisionAvoidance, RammingSpeed, TakingOff, GainingAltitude, Custom }
-        StatusMode currentStatusMode = StatusMode.Free;
-        StatusMode lastStatusMode = StatusMode.Free;
-
-        protected override void SetStatus(string status)
-        {
-            base.SetStatus(status);
-            if (status.StartsWith("Free")) currentStatusMode = StatusMode.Free;
-            else if (status.StartsWith("Engaging")) currentStatusMode = StatusMode.Engaging;
-            else if (status.StartsWith("Evading")) currentStatusMode = StatusMode.Evading;
-            else if (status.StartsWith("Orbiting")) currentStatusMode = StatusMode.Orbiting;
-            else if (status.StartsWith("Extending")) currentStatusMode = StatusMode.Extending;
-            else if (status.StartsWith("Ramming")) currentStatusMode = StatusMode.RammingSpeed;
-            else if (status.StartsWith("Taking off")) currentStatusMode = StatusMode.TakingOff;
-            else if (status.StartsWith("Gain Alt")) currentStatusMode = StatusMode.GainingAltitude;
-            else if (status.StartsWith("Terrain")) currentStatusMode = StatusMode.TerrainAvoidance;
-            else if (status.StartsWith("AvoidCollision")) currentStatusMode = StatusMode.CollisionAvoidance;
-            else if (status.StartsWith("Engaging")) currentStatusMode = StatusMode.Engaging;
-            else currentStatusMode = StatusMode.Custom;
-        }
-
-        public float FlatSpin = 0; // 0 is not in FlatSpin, -1 is clockwise spin, 1 is counter-clockwise spin (set up this way instead of bool to allow future implementation for asymmetric thrust)
-        float flatSpinStartTime = float.MaxValue;
-        bool isPSM = false; // Is the plane doing post-stall manoeuvering? Note: this isn't really being used for anything other than debugging at the moment.
-
-        bool extending;
-        bool extendParametersSet = false;
-        float extendDistance;
-        float lastExtendDistanceSqr = 0;
-        bool extendHorizontally = true; // Measure the extendDistance horizonally (for A2G) or not (for A2A).
-        float desiredMinAltitude;
-        public string extendingReason = "";
-        public Vessel extendTarget = null;
-
-        bool requestedExtend;
-        Vector3 requestedExtendTpos;
-        float extendRequestMinDistance = 0;
-        MissileBase extendForMissile = null;
-        float extendAbortTimer = 0;
-
-        public bool IsExtending
-        {
-            get { return extending || requestedExtend; }
-        }
-
-        bool evading = false;
-        bool wasEvading = false;
-        public bool IsEvading => evading;
-
-        public void StopExtending(string reason, bool cooldown = false)
-        {
-            if (!extending) return;
-            extending = false;
-            requestedExtend = false;
-            extendingReason = "";
-            extendTarget = null;
-            extendRequestMinDistance = 0;
-            extendAbortTimer = cooldown ? -5f : 0f;
-            lastExtendDistanceSqr = 0;
-            extendForMissile = null;
-            if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: {Time.time:F3} {vessel.vesselName} stopped extending due to {reason}.");
-        }
-
-        /// <summary>
-        ///  Request extending away from a target position or vessel.
-        ///  If a vessel is specified, it overrides the specified position.
-        /// </summary>
-        /// <param name="reason">Reason for extending</param>
-        /// <param name="target">The target to extend from</param>
-        /// <param name="minDistance">The minimum distance to extend for</param>
-        /// <param name="tPosition">The position to extend from if the target is null</param>
-        /// <param name="missile">The missile to fire if extending to fire a missile</param>
-        /// <param name="ignoreCooldown">Override the cooldown period</param>
-        public void RequestExtend(string reason = "requested", Vessel target = null, float minDistance = 0, Vector3 tPosition = default, MissileBase missile = null, bool ignoreCooldown = false)
-        {
-            if (ignoreCooldown) extendAbortTimer = 0f; // Disable the cooldown.
-            else if (extendAbortTimer < 0) return; // Ignore request while in cooldown.
-            requestedExtend = true;
-            extendTarget = target;
-            extendRequestMinDistance = minDistance;
-            requestedExtendTpos = extendTarget != null ? target.CoM : tPosition;
-            extendForMissile = missile;
-            extendingReason = reason;
-        }
-        public void DebugExtending() // Debug being stuck in extending (enable DEBUG_AI, then click the "Debug Extending" button)
-        {
-            if (!extending) return;
-            var extendVector = extendHorizontally ? (vessel.transform.position - lastTargetPosition).ProjectOnPlanePreNormalized(upDirection) : vessel.transform.position - lastTargetPosition;
-            var message = $"{vessel.vesselName} is extending due to: {extendingReason}, extendTarget: {extendTarget}, distance: {extendVector.magnitude}m of {extendDistance}m {(extendHorizontally ? "horizontally" : "total")}";
-            BDACompetitionMode.Instance.competitionStatus.Add(message);
-            Debug.Log($"DEBUG EXTENDING {message}");
-        }
-
-        public override bool CanEngage()
-        {
-            return !vessel.LandedOrSplashed;
-        }
-
-        GameObject vobj;
-
-        Transform velocityTransform
-        {
-            get
-            {
-                if (!vobj)
-                {
-                    vobj = new GameObject("velObject");
-                    vobj.transform.position = vessel.ReferenceTransform.position;
-                    vobj.transform.parent = vessel.ReferenceTransform;
-                }
-
-                return vobj.transform;
-            }
-        }
-
-        Vector3 upDirection = Vector3.up;
-
         #region Pilot AI Settings GUI
         #region PID
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_SteerFactor", //Steer Factor
@@ -933,8 +811,53 @@ namespace BDArmory.Control
 
         #region AI Internal Parameters
         bool toEleven = false;
-        bool maxAltitudeEnabled = false;
+        Vector3 upDirection = Vector3.up;
 
+        #region Status / Steer Mode
+        enum StatusMode { Free, Orbiting, Engaging, Evading, Extending, TerrainAvoidance, CollisionAvoidance, RammingSpeed, TakingOff, GainingAltitude, Custom }
+        StatusMode currentStatusMode = StatusMode.Free;
+        StatusMode lastStatusMode = StatusMode.Free;
+        protected override void SetStatus(string status)
+        {
+            base.SetStatus(status);
+            if (status.StartsWith("Free")) currentStatusMode = StatusMode.Free;
+            else if (status.StartsWith("Engaging")) currentStatusMode = StatusMode.Engaging;
+            else if (status.StartsWith("Evading")) currentStatusMode = StatusMode.Evading;
+            else if (status.StartsWith("Orbiting")) currentStatusMode = StatusMode.Orbiting;
+            else if (status.StartsWith("Extending")) currentStatusMode = StatusMode.Extending;
+            else if (status.StartsWith("Ramming")) currentStatusMode = StatusMode.RammingSpeed;
+            else if (status.StartsWith("Taking off")) currentStatusMode = StatusMode.TakingOff;
+            else if (status.StartsWith("Gain Alt")) currentStatusMode = StatusMode.GainingAltitude;
+            else if (status.StartsWith("Terrain")) currentStatusMode = StatusMode.TerrainAvoidance;
+            else if (status.StartsWith("AvoidCollision")) currentStatusMode = StatusMode.CollisionAvoidance;
+            else if (status.StartsWith("Engaging")) currentStatusMode = StatusMode.Engaging;
+            else currentStatusMode = StatusMode.Custom;
+        }
+
+        public enum SteerModes
+        { NormalFlight, Aiming }
+        SteerModes steerMode = SteerModes.NormalFlight;
+        #endregion
+
+        #region PID Internals
+        //Controller Integral
+        Vector3 directionIntegral;
+        float pitchIntegral;
+        float yawIntegral;
+        float rollIntegral;
+
+        //Dynamic Steer Damping
+        private bool dynamicDamping = false;
+        private bool CustomDynamicAxisField = false;
+        public float dynSteerDampingValue;
+        public float dynSteerDampingPitchValue;
+        public float dynSteerDampingYawValue;
+        public float dynSteerDampingRollValue;
+
+        bool dirtyPAW_PID = false; // Flag for when the PID part of the PAW needs fixing.
+        #endregion
+
+        #region Manoeuvrability and G-loading
         //manueuverability and g loading data
         // float maxDynPresGRecorded;
         float dynDynPresGRecorded = 1f; // Start at reasonable non-zero value.
@@ -968,12 +891,6 @@ namespace BDArmory.Control
         float lastSinAoA;
         float lastPitchInput;
 
-        //Controller Integral
-        Vector3 directionIntegral;
-        float pitchIntegral;
-        float yawIntegral;
-        float rollIntegral;
-
         //instantaneous turn radius and possible acceleration from lift
         //properties can be used so that other AI modules can read this for future maneuverability comparisons between craft
         float turnRadius;
@@ -992,33 +909,113 @@ namespace BDArmory.Control
             get { return maxLiftAcceleration; }
             private set { maxLiftAcceleration = value; }
         }
+        #endregion
+
+        #region Ramming / Extending / Evading
+        // Ramming
+        public bool ramming = false; // Whether or not we're currently trying to ram someone.
+
+        // Extending
+        bool extending;
+        bool extendParametersSet = false;
+        float extendDistance;
+        float lastExtendDistanceSqr = 0;
+        bool extendHorizontally = true; // Measure the extendDistance horizonally (for A2G) or not (for A2A).
+        float extendDesiredMinAltitude;
+        public string extendingReason = "";
+        public Vessel extendTarget = null;
+        Vector3 lastExtendTargetPosition;
+
+        bool requestedExtend;
+        Vector3 requestedExtendTpos;
+        float extendRequestMinDistance = 0;
+        MissileBase extendForMissile = null;
+        float extendAbortTimer = 0;
+
+        public bool IsExtending
+        {
+            get { return extending || requestedExtend; }
+        }
+
+        public void StopExtending(string reason, bool cooldown = false)
+        {
+            if (!extending) return;
+            extending = false;
+            requestedExtend = false;
+            extendingReason = "";
+            extendTarget = null;
+            extendRequestMinDistance = 0;
+            extendAbortTimer = cooldown ? -5f : 0f;
+            lastExtendDistanceSqr = 0;
+            extendForMissile = null;
+            if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: {Time.time:F3} {vessel.vesselName} stopped extending due to {reason}.");
+        }
+
+        /// <summary>
+        ///  Request extending away from a target position or vessel.
+        ///  If a vessel is specified, it overrides the specified position.
+        /// </summary>
+        /// <param name="reason">Reason for extending</param>
+        /// <param name="target">The target to extend from</param>
+        /// <param name="minDistance">The minimum distance to extend for</param>
+        /// <param name="tPosition">The position to extend from if the target is null</param>
+        /// <param name="missile">The missile to fire if extending to fire a missile</param>
+        /// <param name="ignoreCooldown">Override the cooldown period</param>
+        public void RequestExtend(string reason = "requested", Vessel target = null, float minDistance = 0, Vector3 tPosition = default, MissileBase missile = null, bool ignoreCooldown = false)
+        {
+            if (ignoreCooldown) extendAbortTimer = 0f; // Disable the cooldown.
+            else if (extendAbortTimer < 0) return; // Ignore request while in cooldown.
+            requestedExtend = true;
+            extendTarget = target;
+            extendRequestMinDistance = minDistance;
+            requestedExtendTpos = extendTarget != null ? target.CoM : tPosition;
+            extendForMissile = missile;
+            extendingReason = reason;
+        }
+        public void DebugExtending() // Debug being stuck in extending (enable DEBUG_AI, then click the "Debug Extending" button)
+        {
+            if (!extending) return;
+            var extendVector = extendHorizontally ? (vessel.transform.position - lastExtendTargetPosition).ProjectOnPlanePreNormalized(upDirection) : vessel.transform.position - lastExtendTargetPosition;
+            var message = $"{vessel.vesselName} is extending due to: {extendingReason}, extendTarget: {extendTarget}, distance: {extendVector.magnitude}m of {extendDistance}m {(extendHorizontally ? "horizontally" : "total")}";
+            BDACompetitionMode.Instance.competitionStatus.Add(message);
+            Debug.Log($"DEBUG EXTENDING {message}");
+        }
+
+        // Evading
+        bool evading = false;
+        bool wasEvading = false;
+        public bool IsEvading => evading;
 
         float turningTimer;
         float evasiveTimer;
         float threatRating;
-        // List<Vector3> waypoints = null;
-        // int activeWaypointIndex = -1;
-        Vector3 lastTargetPosition;
+        #endregion
 
-        LineRenderer lr;
-        Vector3 flyingToPosition;
-        Vector3 rollTarget;
-#if DEBUG
-        Vector3 debugSquigglySquidDirection;
-#endif
-        Vector3 angVelRollTarget;
-
-        //speed controller
+        #region Speed Controller / Steering / Altitude
         bool useAB = true;
         bool useBrakes = true;
         bool regainEnergy = false;
 
+        float finalMaxSteer = 1;
+
+        bool maxAltitudeEnabled = false;
+        #endregion
+
+        #region Flat-spin / PSM Detection
+        public float FlatSpin = 0; // 0 is not in FlatSpin, -1 is clockwise spin, 1 is counter-clockwise spin (set up this way instead of bool to allow future implementation for asymmetric thrust)
+        float flatSpinStartTime = float.MaxValue;
+        bool isPSM = false; // Is the plane doing post-stall manoeuvering? Note: this isn't really being used for anything other than debugging at the moment.
+        #endregion
+
+        #region Collision Detection (between vessels)
         //collision detection (for other vessels).
         const int vesselCollisionAvoidanceTickerFreq = 10; // Number of fixedDeltaTime steps between vessel-vessel collision checks.
         int collisionDetectionTicker = 0;
         Vector3 collisionAvoidDirection;
         public Vessel currentlyAvoidedVessel;
+        #endregion
 
+        #region Terrain Avoidance
         // Terrain avoidance and below minimum altitude globals.
         int terrainAlertTicker = 0; // A ticker to reduce the frequency of terrain alert checks.
         bool belowMinAltitude; // True when below minAltitude or avoiding terrain.
@@ -1037,28 +1034,47 @@ namespace BDArmory.Control
         Vector3 relativeVelocityDownDirection; // Down relative to current velocity and upDirection.
         Vector3 terrainAlertDebugPos, terrainAlertDebugDir; // Debug vector3's for drawing lines.
         Color terrainAlertNormalColour = Color.green; // Color of terrain alert normal indicator.
-        List<Ray> terrainAlertDebugRays = new List<Ray>(); // Adjusted normals of terrain alerts used to get the final terrain alert normal.
+        readonly List<Ray> terrainAlertDebugRays = new(); // Adjusted normals of terrain alerts used to get the final terrain alert normal.
+        #endregion
 
-        // Ramming
-        public bool ramming = false; // Whether or not we're currently trying to ram someone.
+        #region Debug Lines
+        LineRenderer lr;
+        Vector3 flyingToPosition;
+        Vector3 rollTarget;
+#if DEBUG
+        Vector3 debugSquigglySquidDirection;
+#endif
+        Vector3 angVelRollTarget;
+        #endregion
 
-        //Dynamic Steer Damping
-        private bool dynamicDamping = false;
-        private bool CustomDynamicAxisField = false;
-        public float dynSteerDampingValue;
-        public float dynSteerDampingPitchValue;
-        public float dynSteerDampingYawValue;
-        public float dynSteerDampingRollValue;
-
-        //wing command
+        #region Wing Command
         bool useRollHint;
         private Vector3d debugFollowPosition;
 
         double commandSpeed;
         Vector3d commandHeading;
+        #endregion
 
-        float finalMaxSteer = 1;
-        bool dirtyPAW_PID = false; // Flag for when the PID part of the PAW needs fixing.
+        GameObject vobj;
+        Transform velocityTransform
+        {
+            get
+            {
+                if (!vobj)
+                {
+                    vobj = new GameObject("velObject");
+                    vobj.transform.position = vessel.ReferenceTransform.position;
+                    vobj.transform.parent = vessel.ReferenceTransform;
+                }
+
+                return vobj.transform;
+            }
+        }
+
+        public override bool CanEngage()
+        {
+            return !vessel.LandedOrSplashed;
+        }
         #endregion
 
         #region RMB info in editor
@@ -1746,7 +1762,7 @@ namespace BDArmory.Control
             if (!HighLogic.LoadedSceneIsFlight) return;
             if (BDKrakensbane.IsActive)
             {
-                if (lastTargetPosition != null) lastTargetPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                if (lastExtendTargetPosition != null) lastExtendTargetPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
             }
             if (weaponManager && weaponManager.guardMode && weaponManager.staleTarget)
             {
@@ -2024,7 +2040,7 @@ namespace BDArmory.Control
                 weaponManager.ForceScan();
                 evasiveTimer = 0;
                 SetStatus("Extending");
-                FlyExtend(s, lastTargetPosition);
+                FlyExtend(s, lastExtendTargetPosition);
                 return;
             }
         }
@@ -2658,7 +2674,7 @@ namespace BDArmory.Control
                 if (CheckRequestedExtendDistance())
                 {
                     extending = true;
-                    lastTargetPosition = requestedExtendTpos;
+                    lastExtendTargetPosition = requestedExtendTpos;
                 }
             }
             if (checkType == ExtendChecks.RequestsOnly) return extending;
@@ -2666,7 +2682,7 @@ namespace BDArmory.Control
             {
                 if (extendTarget != null) // Update the last known target position.
                 {
-                    lastTargetPosition = extendTarget.CoM;
+                    lastExtendTargetPosition = extendTarget.CoM;
                     if (extendForMissile != null) // If extending to fire a missile, update the extend distance for the dynamic launch range.
                     {
                         float boresightFactor = (vessel.LandedOrSplashed || extendTarget.LandedOrSplashed || extendForMissile.uncagedLock) ? 0.75f : 0.35f;
@@ -2682,7 +2698,7 @@ namespace BDArmory.Control
             if (extending && weaponManager.CurrentMissile && weaponManager.CurrentMissile.GetWeaponClass() == WeaponClasses.Bomb) // Run away from the bomb!
             {
                 extendDistance = extendRequestMinDistance; //4500; //what, are we running from nukes? blast radius * 1.5 should be sufficient
-                desiredMinAltitude = defaultAltitude;
+                extendDesiredMinAltitude = defaultAltitude;
                 extendParametersSet = true;
                 if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: {Time.time:F3} {vessel.vesselName} is extending due to dropping a bomb!");
                 return true;
@@ -2702,21 +2718,21 @@ namespace BDArmory.Control
                 {
                     // extendDistance = Mathf.Clamp(weaponManager.guardRange - 1800, 500, 4000) * extendMult; // General extending distance.
                     extendDistance = extendDistanceAirToGroundGuns;
-                    desiredMinAltitude = minAltitude + 0.5f * extendDistance; // Desired minimum altitude after extending. (30° attack vector plus min alt.)
+                    extendDesiredMinAltitude = minAltitude + 0.5f * extendDistance; // Desired minimum altitude after extending. (30° attack vector plus min alt.)
                 }
                 else
                 {
                     // extendDistance = Mathf.Clamp(weaponManager.guardRange - 1800, 2500, 4000);
                     // desiredMinAltitude = (float)vessel.radarAltitude + (defaultAltitude - (float)vessel.radarAltitude) * extendMult; // Desired minimum altitude after extending.
                     extendDistance = extendDistanceAirToGround;
-                    desiredMinAltitude = defaultAltitude; // Desired minimum altitude after extending.
+                    extendDesiredMinAltitude = defaultAltitude; // Desired minimum altitude after extending.
                 }
                 float srfDist = (GetSurfacePosition(targetVessel.transform.position) - GetSurfacePosition(vessel.transform.position)).sqrMagnitude;
                 if (srfDist < extendDistance * extendDistance && Vector3.Angle(vesselTransform.up, targetVessel.transform.position - vessel.transform.position) > 45)
                 {
                     extending = true;
                     extendingReason = "Surface target";
-                    lastTargetPosition = targetVessel.transform.position;
+                    lastExtendTargetPosition = targetVessel.transform.position;
                     extendTarget = targetVessel;
                     extendParametersSet = true;
                     if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: {Time.time:F3} {vessel.vesselName} is extending due to a ground target.");
@@ -2730,7 +2746,7 @@ namespace BDArmory.Control
             {
                 extendDistance = Mathf.Max(extendDistanceAirToAir, extendRequestMinDistance);
                 extendHorizontally = false;
-                desiredMinAltitude = Mathf.Max((float)vessel.radarAltitude + _extendAngleAirToAir * extendDistance, minAltitude);
+                extendDesiredMinAltitude = Mathf.Max((float)vessel.radarAltitude + _extendAngleAirToAir * extendDistance, minAltitude);
                 extendParametersSet = true;
                 if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: {Time.time:F3} {vessel.vesselName} is extending due to an air target ({extendingReason}).");
                 return true;
@@ -2786,7 +2802,7 @@ namespace BDArmory.Control
                 Vector3 targetDirection = extendVector.normalized * extendDistance;
                 Vector3 target = vessel.transform.position + targetDirection; // Target extend position horizontally.
                 target += upDirection * (Mathf.Min(defaultAltitude, BodyUtils.GetRadarAltitudeAtPos(vesselTransform.position)) - BodyUtils.GetRadarAltitudeAtPos(target)); // Adjust for terrain changes at target extend position.
-                target = FlightPosition(target, desiredMinAltitude); // Further adjustments for speed, situation, etc. and desired minimum altitude after extending.
+                target = FlightPosition(target, extendDesiredMinAltitude); // Further adjustments for speed, situation, etc. and desired minimum altitude after extending.
                 if (regainEnergy)
                 {
                     RegainEnergy(s, target - vesselTransform.position);
