@@ -2591,8 +2591,13 @@ namespace BDArmory.Weapons.Missiles
 
         public override Vector3 GetForwardTransform()
         {
-            if (multiLauncher && multiLauncher.overrideReferenceTransform)
-                return vessel.ReferenceTransform.up;
+            if (multiLauncher)
+            {
+                if (multiLauncher.overrideReferenceTransform)
+                    return vessel.ReferenceTransform.up;
+                else
+                    return multiLauncher.GetLaunchTransform();
+            }
             else
                 return MissileReferenceTransform.forward;
         }
