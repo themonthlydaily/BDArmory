@@ -589,7 +589,7 @@ namespace BDArmory.Control
                     altMaxValues[s.Current] = tempValue;
                     // change the value back to what it is now after fixed update, because changing the max value will clamp it down
                     // using reflection here, don't look at me like that, this does not run often
-                    StartCoroutine(setVar(s.Current, (float)typeof(BDModulePilotAI).GetField(s.Current).GetValue(this)));
+                    StartCoroutine(SetVar(s.Current, (float)typeof(BDModulePilotAI).GetField(s.Current).GetValue(this)));
                 }
             using (var s = altMinValues.Keys.ToList().GetEnumerator())
                 while (s.MoveNext())
@@ -601,7 +601,7 @@ namespace BDArmory.Control
                     altMinValues[s.Current] = tempValue;
                     // change the value back to what it is now after fixed update, because changing the min value will clamp it down
                     // using reflection here, don't look at me like that, this does not run often
-                    StartCoroutine(setVar(s.Current, (float)typeof(BDModulePilotAI).GetField(s.Current).GetValue(this)));
+                    StartCoroutine(SetVar(s.Current, (float)typeof(BDModulePilotAI).GetField(s.Current).GetValue(this)));
                 }
             toEleven = upToEleven;
             OnAutoTuneOptionsChanged(null, null); // Reset auto-tuning again (including the gradient) so that the correct PID limits are used.
@@ -925,6 +925,7 @@ namespace BDArmory.Control
         public string extendingReason = "";
         public Vessel extendTarget = null;
         Vector3 lastExtendTargetPosition;
+        float turningTimer;
 
         bool requestedExtend;
         Vector3 requestedExtendTpos;
@@ -986,9 +987,9 @@ namespace BDArmory.Control
         bool wasEvading = false;
         public bool IsEvading => evading;
 
-        float turningTimer;
         float evasiveTimer;
         float threatRating;
+        Vector3 threatRelativePosition;
         #endregion
 
         #region Speed Controller / Steering / Altitude
@@ -996,9 +997,15 @@ namespace BDArmory.Control
         bool useBrakes = true;
         bool regainEnergy = false;
 
+        bool maxAltitudeEnabled = false;
+
+        Vector3 prevTargetDir;
+        bool useVelRollTarget;
         float finalMaxSteer = 1;
 
-        bool maxAltitudeEnabled = false;
+        float targetStalenessTimer = 0;
+        Vector3 staleTargetPosition = Vector3.zero;
+        Vector3 staleTargetVelocity = Vector3.zero;
         #endregion
 
         #region Flat-spin / PSM Detection
@@ -1035,10 +1042,12 @@ namespace BDArmory.Control
         Vector3 terrainAlertDebugPos, terrainAlertDebugDir; // Debug vector3's for drawing lines.
         Color terrainAlertNormalColour = Color.green; // Color of terrain alert normal indicator.
         readonly List<Ray> terrainAlertDebugRays = new(); // Adjusted normals of terrain alerts used to get the final terrain alert normal.
+        RaycastHit[] terrainAvoidanceHits = new RaycastHit[10];
         #endregion
 
         #region Debug Lines
         LineRenderer lr;
+        Vector3 debugPos;
         Vector3 flyingToPosition;
         Vector3 rollTarget;
 #if DEBUG
@@ -1750,12 +1759,12 @@ namespace BDArmory.Control
             if (dirtyPAW_PID) StartCoroutine(FixFieldOrdering("pilotAI_PID"));
         }
 
-        IEnumerator setVar(string name, float value)
+        IEnumerator SetVar(string name, float value)
         {
             yield return new WaitForFixedUpdate();
             typeof(BDModulePilotAI).GetField(name).SetValue(this, value);
         }
-        float targetStalenessTimer = 0;
+
         void FixedUpdate()
         {
             //floating origin and velocity offloading corrections
@@ -2113,8 +2122,6 @@ namespace BDArmory.Control
             return true;
         }
 
-        Vector3 staleTargetPosition = Vector3.zero;
-        Vector3 staleTargetVelocity = Vector3.zero;
         void FlyToTargetVessel(FlightCtrlState s, Vessel v)
         {
             Vector3 target = AIUtils.PredictPosition(v, TimeWarp.fixedDeltaTime);//v.CoM;
@@ -2355,10 +2362,6 @@ namespace BDArmory.Control
 
             return Mathf.Clamp01(limiter);
         }
-
-        Vector3 prevTargetDir;
-        Vector3 debugPos;
-        bool useVelRollTarget;
 
         void FlyToPosition(FlightCtrlState s, Vector3 targetPosition, bool overrideThrottle = false)
         {
@@ -3003,8 +3006,6 @@ namespace BDArmory.Control
             speedController.forceAfterburnerIfMaxThrottle = vessel.srfSpeed < ABOverrideThreshold;
         }
 
-        Vector3 threatRelativePosition;
-
         void Evasive(FlightCtrlState s)
         {
             if (s == null) return;
@@ -3295,7 +3296,6 @@ namespace BDArmory.Control
             terrainAlertDetectionRadius = Mathf.Min(2f * vessel.GetRadius(), minAltitude); // Don't go above the min altitude so we're not triggering terrain avoidance while cruising at min alt.
         }
 
-        RaycastHit[] terrainAvoidanceHits = new RaycastHit[10];
         bool FlyAvoidTerrain(FlightCtrlState s) // Check for terrain ahead.
         {
             if (initialTakeOff) return false; // Don't do anything during the initial take-off.
