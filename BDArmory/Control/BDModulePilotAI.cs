@@ -1807,7 +1807,7 @@ namespace BDArmory.Control
             if ((float)vessel.radarAltitude < minAltitude)
             { belowMinAltitude = true; }
 
-            if (gainAltInhibited && (!belowMinAltitude || !(currentStatusMode == StatusMode.Engaging || currentStatusMode ==StatusMode.Evading || currentStatusMode == StatusMode.RammingSpeed || currentStatusMode == StatusMode.GainingAltitude)))
+            if (gainAltInhibited && (!belowMinAltitude || !(currentStatusMode == StatusMode.Engaging || currentStatusMode == StatusMode.Evading || currentStatusMode == StatusMode.RammingSpeed || currentStatusMode == StatusMode.GainingAltitude)))
             { // Allow switching between "Engaging", "Evading", "Ramming speed!" and "Gain Alt." while below minimum altitude without disabling the gain altitude inhibitor.
                 gainAltInhibited = false;
                 if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDModulePilotAI]: " + vessel.vesselName + " is no longer inhibiting gain alt");
@@ -3164,12 +3164,16 @@ namespace BDArmory.Control
                         else
                             breakTarget += -150 * vessel.upAxis;   //dive a bit to escape
 
-                        float breakTargetVerticalComponent = Vector3.Dot(breakTarget, upDirection);
-                        if (belowMinAltitude && breakTargetVerticalComponent < 0) // If we're below minimum altitude, enforce the evade direction to gain altitude.
+                        if (belowMinAltitude)
                         {
-                            breakTarget += -2f * breakTargetVerticalComponent * upDirection;
-                            float rise = 0.5f * Mathf.Max(5f, (float)vessel.srfSpeed * 0.25f) * Mathf.Max(speedController.TWR, 1f); // Add some climb like in TakeOff to get back above min altitude.
+                            float rise = 0.5f * Mathf.Max(5f, (float)vessel.srfSpeed * 0.25f) * Mathf.Max(speedController.TWR, 1f); // Add some climb like in TakeOff (at half the rate) to get back above min altitude.
                             breakTarget += rise * upDirection;
+
+                            float breakTargetVerticalComponent = Vector3.Dot(breakTarget, upDirection);
+                            if (breakTargetVerticalComponent < 0) // If we're below minimum altitude, enforce the evade direction to gain altitude.
+                            {
+                                breakTarget += -2f * breakTargetVerticalComponent * upDirection;
+                            }
                         }
                     }
 
