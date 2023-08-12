@@ -2,6 +2,7 @@
 - UI:
 	- Fix numeric input fields not updating when they should.
 	- New Team Icons toolbar icon for easier identification.
+	- Add colour coding to the number of parts in the vessel selection windows.
 - AI:
 	- Add a toggle to the pilot AI to disable ramming ground targets.
 	- Add a toggle to the pilot AI for treating the min altitude as a hard limit.
