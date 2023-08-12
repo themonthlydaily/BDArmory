@@ -25,6 +25,27 @@ namespace BDArmory.Control
 
         SteerModes steerMode = SteerModes.NormalFlight;
 
+        enum StatusMode { Free, Orbiting, Engaging, Evading, Extending, TerrainAvoidance, CollisionAvoidance, RammingSpeed, TakingOff, GainingAltitude, Custom }
+        StatusMode currentStatusMode = StatusMode.Free;
+        StatusMode lastStatusMode = StatusMode.Free;
+
+        protected override void SetStatus(string status)
+        {
+            base.SetStatus(status);
+            if (status.StartsWith("Free")) currentStatusMode = StatusMode.Free;
+            else if (status.StartsWith("Engaging")) currentStatusMode = StatusMode.Engaging;
+            else if (status.StartsWith("Evading")) currentStatusMode = StatusMode.Evading;
+            else if (status.StartsWith("Orbiting")) currentStatusMode = StatusMode.Orbiting;
+            else if (status.StartsWith("Extending")) currentStatusMode = StatusMode.Extending;
+            else if (status.StartsWith("Ramming")) currentStatusMode = StatusMode.RammingSpeed;
+            else if (status.StartsWith("Taking off")) currentStatusMode = StatusMode.TakingOff;
+            else if (status.StartsWith("Gain Alt")) currentStatusMode = StatusMode.GainingAltitude;
+            else if (status.StartsWith("Terrain")) currentStatusMode = StatusMode.TerrainAvoidance;
+            else if (status.StartsWith("AvoidCollision")) currentStatusMode = StatusMode.CollisionAvoidance;
+            else if (status.StartsWith("Engaging")) currentStatusMode = StatusMode.Engaging;
+            else currentStatusMode = StatusMode.Custom;
+        }
+
         public float FlatSpin = 0; // 0 is not in FlatSpin, -1 is clockwise spin, 1 is counter-clockwise spin (set up this way instead of bool to allow future implementation for asymmetric thrust)
         float flatSpinStartTime = float.MaxValue;
         bool isPSM = false; // Is the plane doing post-stall manoeuvering? Note: this isn't really being used for anything other than debugging at the moment.
@@ -1037,7 +1058,6 @@ namespace BDArmory.Control
         Vector3d commandHeading;
 
         float finalMaxSteer = 1;
-        string lastStatus = "Free";
         bool dirtyPAW_PID = false; // Flag for when the PID part of the PAW needs fixing.
         #endregion
 
@@ -1787,13 +1807,13 @@ namespace BDArmory.Control
             if ((float)vessel.radarAltitude < minAltitude)
             { belowMinAltitude = true; }
 
-            if (gainAltInhibited && (!belowMinAltitude || !(currentStatus == "Engaging" || currentStatus == "Evading" || currentStatus == "Ramming speed!" || currentStatus.StartsWith("Gain Alt"))))
+            if (gainAltInhibited && (!belowMinAltitude || !(currentStatusMode == StatusMode.Engaging || currentStatusMode ==StatusMode.Evading || currentStatusMode == StatusMode.RammingSpeed || currentStatusMode == StatusMode.GainingAltitude)))
             { // Allow switching between "Engaging", "Evading", "Ramming speed!" and "Gain Alt." while below minimum altitude without disabling the gain altitude inhibitor.
                 gainAltInhibited = false;
                 if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDModulePilotAI]: " + vessel.vesselName + " is no longer inhibiting gain alt");
             }
 
-            if (!hardMinAltitude && !gainAltInhibited && belowMinAltitude && (currentStatus == "Engaging" || currentStatus == "Evading" || currentStatus == "Ramming speed!") && vessel.atmDensity > 0.1f)
+            if (!hardMinAltitude && !gainAltInhibited && belowMinAltitude && (currentStatusMode == StatusMode.Engaging || currentStatusMode == StatusMode.Evading || currentStatusMode == StatusMode.RammingSpeed) && vessel.atmDensity > 0.1f)
             { // Vessel went below minimum altitude while "Engaging", "Evading" or "Ramming speed!", enable the gain altitude inhibitor.
                 gainAltInhibited = true;
                 if (BDArmorySettings.DEBUG_AI) Debug.Log("[BDArmory.BDModulePilotAI]: " + vessel.vesselName + " was " + currentStatus + " and went below min altitude, inhibiting gain alt.");
@@ -1843,11 +1863,11 @@ namespace BDArmory.Control
 
             if (BDArmorySettings.DEBUG_AI)
             {
-                if (lastStatus != currentStatus && !(lastStatus.StartsWith("Gain Alt.") && currentStatus.StartsWith("Gain Alt.")) && !(lastStatus.StartsWith("Terrain") && currentStatus.StartsWith("Terrain")) && !(lastStatus.StartsWith("Waypoint") && currentStatus.StartsWith("Waypoint")))
+                if (lastStatusMode != currentStatusMode)
                 {
-                    Debug.Log("[BDArmory.BDModulePilotAI]: Status of " + vessel.vesselName + " changed from " + lastStatus + " to " + currentStatus);
+                    Debug.Log("[BDArmory.BDModulePilotAI]: Status of " + vessel.vesselName + " changed from " + lastStatusMode + " to " + currentStatus);
                 }
-                lastStatus = currentStatus;
+                lastStatusMode = currentStatusMode;
             }
         }
 
@@ -3148,6 +3168,8 @@ namespace BDArmory.Control
                         if (belowMinAltitude && breakTargetVerticalComponent < 0) // If we're below minimum altitude, enforce the evade direction to gain altitude.
                         {
                             breakTarget += -2f * breakTargetVerticalComponent * upDirection;
+                            float rise = 0.5f * Mathf.Max(5f, (float)vessel.srfSpeed * 0.25f) * Mathf.Max(speedController.TWR, 1f); // Add some climb like in TakeOff to get back above min altitude.
+                            breakTarget += rise * upDirection;
                         }
                     }
 
