@@ -725,6 +725,7 @@ namespace BDArmory.Control
                     {
                         if (weapon.Current == null) continue;
                         weapon.Current.aiControlled = true;
+                        if (weapon.Current.isAPS) weapon.Current.EnableWeapon();
                     }
                 if (radars.Count > 0)
                 {
