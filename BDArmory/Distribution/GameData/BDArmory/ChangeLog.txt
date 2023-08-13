@@ -1,4 +1,5 @@
-﻿IMPROVEMENTS / FIXES
+﻿v1.6.5.0
+IMPROVEMENTS / FIXES
 - General: 
 	- Fix Pwing HP error with Pwing edges not contributing as much HP as they should.
 - UI:
@@ -24,7 +25,6 @@
 	- Anti-Missile weapons can now shoot down missiles in Paintball mode.
 	- Missiles:
 		- Add option (in Show Missile and Countermeasure Settings) to allow missiles to be fired from their full dynamic launch range instead of static launch range. 
-		- Fix missiles with a reload module launching incorrectly.
 		- Add trigger range setting for cluster missile submunition launch.
 		- Fix MultiMissilelaunchers resetting detonation Distance.
 		- Fix MML "TNT Mass Equivalent = -0.0018726" PAW label.
