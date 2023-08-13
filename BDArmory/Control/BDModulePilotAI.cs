@@ -998,6 +998,11 @@ namespace BDArmory.Control
         bool regainEnergy = false;
 
         bool maxAltitudeEnabled = false;
+        bool initialTakeOff = true; // False after the initial take-off.
+        bool belowMinAltitude; // True when below minAltitude or avoiding terrain.
+        bool gainAltInhibited = false; // Inhibit gain altitude to minimum altitude when chasing or evading someone as long as we're pointing upwards.
+        bool gainingAlt = false, wasGainingAlt = false; // Flags for tracking when we're gaining altitude.
+        Vector3 gainAltSmoothedForwardPoint = default; // Smoothing for the terrain adjustments of gaining altitude.
 
         Vector3 prevTargetDir;
         bool useVelRollTarget;
@@ -1025,12 +1030,7 @@ namespace BDArmory.Control
         #region Terrain Avoidance
         // Terrain avoidance and below minimum altitude globals.
         int terrainAlertTicker = 0; // A ticker to reduce the frequency of terrain alert checks.
-        bool belowMinAltitude; // True when below minAltitude or avoiding terrain.
-        bool gainAltInhibited = false; // Inhibit gain altitude to minimum altitude when chasing or evading someone as long as we're pointing upwards.
-        bool gainingAlt = false, wasGainingAlt = false; // Flags for tracking when we're gaining altitude.
-        Vector3 gainAltSmoothedForwardPoint = default; // Smoothing for the terrain adjustments of gaining altitude.
         bool avoidingTerrain = false; // True when avoiding terrain.
-        bool initialTakeOff = true; // False after the initial take-off.
         float terrainAlertDetectionRadius = 30.0f; // Sphere radius that the vessel occupies. Should cover most vessels. FIXME This could be based on the vessel's maximum width/height.
         float terrainAlertThreatRange; // The distance to the terrain to consider (based on turn radius).
         float terrainAlertThreshold; // The current threshold for triggering terrain avoidance based on various factors.

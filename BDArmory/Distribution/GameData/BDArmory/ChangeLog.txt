@@ -1,5 +1,5 @@
 ﻿IMPROVEMENTS / FIXES
--General: 
+- General: 
 	- Fix Pwing HP error with Pwing edges not contributing as much HP as they should.
 - UI:
 	- Fix numeric input fields not updating when they should.
