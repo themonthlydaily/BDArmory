@@ -19,14 +19,14 @@
 	- Fix APS weapons not activating when Guardmode enabled, if they aren't already active.
 	- Anti-Missile weapons can now shoot down missiles in Paintball mode.
 	- Missiles:
-		- Add option (in Show Missile and COuntermeasure Settings) to allow missiles to be fired from their full Dynamic launch range instead of static launch range. 
+		- Add option (in Show Missile and Countermeasure Settings) to allow missiles to be fired from their full dynamic launch range instead of static launch range. 
 		- Fix missiles with a reload module launching incorrectly.
 		- Add trigger range setting for cluster missile submunition launch.
 		- Fix MultiMissilelaunchers resetting detonation Distance.
 		- Fix MML "TNT Mass Equivalent = -0.0018726" PAW label.
 		- Fixed Missiles with ModuleMissileRearm improperly launching.
 		- Fixed MMLs resetting detonation distance.
-		- Multi Missile launchers now check clearance based on tube orientation regardless of overrideReferenceTransform setting
+		- Multi Missile launchers now check clearance based on tube orientation regardless of overrideReferenceTransform setting.
 		- Missile/bomb fratricide prevention now also checks the source vessel name to allow explosives to be destroyed by explosives of the same type from another vessel.
 		- Fix NRE from SARH missiles fired without a lock.
 		- Missiles now properly calculate offboresight angle from missile orientation, not vessel prograde.
