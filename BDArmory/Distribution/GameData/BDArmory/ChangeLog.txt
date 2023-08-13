@@ -12,6 +12,10 @@
 	- Include a climb rate at half the take-off climb rate while evading below min altitude.
 	- Prevent inverted loops when below min altitude and improve the inverted loop threshold calculation.
 	- Improve vessel collision avoidance by prioritising non-debris and by prioritising potential collisions by size.
+	- Add a "post-avoidance cool-down" slider to the pilot AI to increase pitch away from terrain for a short period after avoiding terrain.
+	- Add a Manoeuvering steer mode similar to NormalFlight steer mode, but with Aiming mode's roll behaviour.
+		- Switch a number of inappropriate uses of Aiming steer mode to Manoeuvering mode.
+	- Add a green debug line for showing the pitch target direction the AI is aiming for (which is not necessarily the same as the position the AI is told to go to).
 - Armor:
 	- Allow changing the unclamped min/max dimensions for proc armor in the settings.cfg (PROC_ARMOR_ALT_LIMITS).
 - Weapons:
