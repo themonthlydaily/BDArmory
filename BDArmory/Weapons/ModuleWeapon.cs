@@ -4314,7 +4314,7 @@ namespace BDArmory.Weapons
             }
             if (targetAcquired)
             {
-                smoothTargetKinematics(targetPosition, targetVelocity, targetAcceleration, lastTargetAcquisitionType != targetAcquisitionType || (targetAcquisitionType == TargetAcquisitionType.Visual && lastVisualTargetVessel != visualTargetVessel));
+                SmoothTargetKinematics(targetPosition, targetVelocity, targetAcceleration, lastTargetAcquisitionType != targetAcquisitionType || (targetAcquisitionType == TargetAcquisitionType.Visual && lastVisualTargetVessel != visualTargetVessel));
             }
 
             RunTrajectorySimulation();
@@ -5077,7 +5077,7 @@ namespace BDArmory.Weapons
         /// <param name="velocity"></param>
         /// <param name="acceleration"></param>
         /// <param name="reset"></param>
-        void smoothTargetKinematics(Vector3 position, Vector3 velocity, Vector3 acceleration, bool reset = false)
+        void SmoothTargetKinematics(Vector3 position, Vector3 velocity, Vector3 acceleration, bool reset = false)
         {
             // Floating objects need vertical smoothing.
             float altitude = (float)FlightGlobals.currentMainBody.GetAltitude(position);
@@ -5085,7 +5085,7 @@ namespace BDArmory.Weapons
                 acceleration = acceleration.ProjectOnPlanePreNormalized(VectorUtils.GetUpDirection(position));
 
             var distance = Vector3.Distance(position, part.transform.position);
-            var alpha = Mathf.Max(1f - BDAMath.Sqrt(distance) / 512f, 0.1f);
+            var alpha = Mathf.Max(1f - BDAMath.Sqrt(distance) / 256f, 0.1f);
             var beta = alpha * alpha;
             if (!reset)
             {
