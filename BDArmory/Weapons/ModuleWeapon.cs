@@ -3377,6 +3377,9 @@ namespace BDArmory.Weapons
         #endregion Audio
 
         #region Targeting
+        [KSPField(advancedTweakable = true, isPersistant = false, guiActive = true, guiActiveEditor = true, guiName = "correction factor"),
+            UI_FloatRange(minValue = -2, maxValue = 4, stepIncrement = 1, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
+        public float correctionFactor = 2;
         void Aim()
         {
             //AI control
@@ -3530,12 +3533,14 @@ namespace BDArmory.Weapons
                         firingDirection = (finalTarget - fireTransforms[0].position).normalized;
                     } while (++count < 10 && Vector3.Angle(lastFiringDirection, firingDirection) > 1f); // 1° margin of error is sufficient to prevent premature firing (usually)
                     targetDistance = Vector3.Distance(finalTarget, firePosition);
-                    if (bulletDrop && timeToCPA * bulletAcceleration.magnitude > 100f) // The above calculation becomes inaccurate for distances over approximately 10km (on Kerbin) due to surface curvature (varying gravity direction), so we try to narrow it down with a simulation.
+                    if (bulletDrop && timeToCPA * bulletAcceleration.magnitude > 100f || (BDKrakensbane.IsActive && BDKrakensbane.FrameVelocityV3f.sqrMagnitude > 1e6f)) // The above calculation becomes inaccurate for distances over approximately 10km (on Kerbin) due to surface curvature (varying gravity direction), so we try to narrow it down with a simulation.
                     {
                         var simulatedCPA = BallisticTrajectoryClosestApproachSimulation(firePosition, bulletEffectiveVelocity, targetPosition, targetVelocity, targetAcceleration, BDArmorySettings.BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER * Time.fixedDeltaTime);
                         var correction = simulatedCPA - AIUtils.PredictPosition(firePosition, bulletEffectiveVelocity, bulletAcceleration, timeToCPA);
-                        correction += 2f * (part.rb.velocity - targetVelocity) * Time.fixedDeltaTime; // Not entirely sure why this correction is needed, but it is.
+                        correction += correctionFactor * (part.rb.velocity - targetVelocity) * Time.fixedDeltaTime; // Not entirely sure why this correction is needed, but it is.
                         finalTarget -= correction;
+                        Debug.Log($"DEBUG target: {finalTarget}, correction: {simulatedCPA - AIUtils.PredictPosition(firePosition, bulletEffectiveVelocity, bulletAcceleration, timeToCPA)}, Δt: {timeToCPA}, Δx: {bulletRelativePosition.magnitude}, Δv: {bulletRelativeVelocity.magnitude}, Δa: {bulletRelativeAcceleration.magnitude}");
+
                         if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DEBUG_WEAPONS)
                         {
                             debugCorrection = correction;
