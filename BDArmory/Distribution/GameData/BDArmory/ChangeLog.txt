@@ -1,4 +1,14 @@
 ﻿IMPROVEMENTS / FIXES
+-Radar:
+	-Add new radarTransformName field to ModuleRadar to allow setting custom radar direction/setting multiple radars to a part using custom radar models.
+-Weapons:
+	-Missiles:
+		-Add new guidanceDelay field to allow setting a delay between missile launch and missile beginning to maneuver toards a target.
+		-Dynamic Launch Range now uses missile EngageRange max instead of static launch range
+		-Improved launch behavior for missiles set to be fired at very short range.
+
+v1.6.5.0
+IMPROVEMENTS / FIXES
 -General: 
 	- Fix Pwing HP error with Pwing edges not contributing as much HP as they should.
 - UI:
