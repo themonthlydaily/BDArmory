@@ -398,6 +398,7 @@ namespace BDArmory.VesselSpawning
                 vessel.IgnoreSpeed(240);
                 vessel.SetPosition(position);
                 vessel.SetWorldVelocity(Vector3d.zero);
+                vessel.acceleration = Vector3d.zero;
                 vessel.SetRotation(rotation); // Reset the rotation to prevent any angular momentum from messing with the orientation.
                 yield return wait;
                 KrakensbaneCorrection(ref position);
@@ -1507,7 +1508,7 @@ namespace BDArmory.VesselSpawning
     internal class CustomCraftBrowserDialog
     {
         // Keep some of these as static so that they're remembered between instances of showing the dialog.
-        public static EditorFacility facility = EditorFacility.SPH;
+        public static EditorFacility facility = EditorFacility.None;
         static string profile = HighLogic.SaveFolder;
         static string baseFolder;
         public static string displayFolder;
@@ -1566,6 +1567,10 @@ namespace BDArmory.VesselSpawning
 
         public void ChangeFolder(EditorFacility facility, string subfolder = null)
         {
+            if (facility == EditorFacility.None) // Very first time used, default to the VAB if the current vessel was launched from there or fall back to the SPH.
+            {
+                facility = FlightDriver.LaunchSiteName == "LaunchPad" ? EditorFacility.VAB : EditorFacility.SPH;
+            }
             if (facility != CustomCraftBrowserDialog.facility)
             {
                 subfolder = null; // Revert to the base folder when changing facilities.
