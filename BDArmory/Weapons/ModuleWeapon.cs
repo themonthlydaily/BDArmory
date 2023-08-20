@@ -154,6 +154,7 @@ namespace BDArmory.Weapons
         public Vector3 targetPosition;
         public Vector3 targetVelocity;  // local frame velocity
         public Vector3 targetAcceleration; // local frame
+        public bool targetIsLandedOrSplashed = false; // Used in the targeting simulations to know whether to separate gravity from other acceleration.
         private Vector3 targetVelocityS1;
         private Vector3 targetVelocityS2;
         private Vector3 targetAccelerationS1;
@@ -851,7 +852,7 @@ namespace BDArmory.Weapons
         public bool atprAcquired;
         int aptrTicker;
 
-        public float timeFired;
+        public float timeFired; // Note: this is technically off by Time.fixedDeltaTime, but since all comparisons are made against Time.time instead of Time.time + Time.fixedDeltaTime, we can skip adding the constant.
         public float initialFireDelay = 0; //used to ripple fire multiple weapons of this type
         float InitialFireDelay => weaponManager.barrageStagger > 0 ? initialFireDelay * weaponManager.barrageStagger : initialFireDelay;
 
@@ -2287,7 +2288,7 @@ namespace BDArmory.Weapons
             if (timeGap <= weaponManager.targetScanInterval)
                 return true;
             else
-                return (Time.time - timeFired >= timeGap - weaponManager.targetScanInterval);
+                return Time.time - timeFired >= timeGap - weaponManager.targetScanInterval;
         }
         #endregion Guns
         //lasers
@@ -3436,6 +3437,7 @@ namespace BDArmory.Weapons
                     manualAiming = true;
                     targetVelocity = -BDKrakensbane.FrameVelocityV3f; // Stationary targets are being moved opposite to the Krakensbane frame velocity.
                     targetAcceleration = Vector3.zero;
+                    targetIsLandedOrSplashed = false;
                     if (yawRange > 0 || maxPitch - minPitch > 0)
                     {
                         //MouseControl
@@ -3460,6 +3462,7 @@ namespace BDArmory.Weapons
                             {
                                 targetVelocity = p.rb.velocity;
                                 targetAcceleration = p.vessel.acceleration;
+                                targetIsLandedOrSplashed = p.vessel.LandedOrSplashed;
                             }
                         }
                         else
@@ -3471,12 +3474,14 @@ namespace BDArmory.Weapons
                                     targetPosition = ray.origin + ray.direction * Vector3.Distance(visualTargetPart.transform.position, ray.origin);
                                     targetVelocity = visualTargetPart.rb.velocity;
                                     targetAcceleration = visualTargetPart.vessel.acceleration;
+                                    targetIsLandedOrSplashed = visualTargetPart.vessel.LandedOrSplashed;
                                 }
                                 else
                                 {
                                     targetPosition = ray.origin + ray.direction * Vector3.Distance(visualTargetVessel.transform.position, ray.origin);
                                     targetVelocity = visualTargetVessel.rb_velocity;
                                     targetAcceleration = visualTargetVessel.acceleration;
+                                    targetIsLandedOrSplashed = visualTargetVessel.LandedOrSplashed;
                                 }
                             }
                             else
@@ -3510,7 +3515,7 @@ namespace BDArmory.Weapons
                     if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DEBUG_WEAPONS) debugCorrection = Vector3.zero;
                     Vector3 bulletRelativePosition, bulletEffectiveVelocity, bulletRelativeVelocity, bulletAcceleration, bulletRelativeAcceleration, targetPredictedPosition, bulletDropOffset, firingDirection, lastFiringDirection;
                     firingDirection = fireTransforms[0].forward;
-                    var firePosition = fireTransforms[0].position + (baseBulletVelocity * firingDirection) * Time.fixedDeltaTime; // Bullets are initially placed up to 1 frame ahead (iTime). Not offsetting by part vel gives the correct initial placement.
+                    var firePosition = fireTransforms[0].position + baseBulletVelocity * firingDirection * Time.fixedDeltaTime; // Bullets are initially placed up to 1 frame ahead (iTime). Not offsetting by part vel gives the correct initial placement.
                     bulletRelativePosition = targetPosition - firePosition;
                     float timeToCPA = BDAMath.Sqrt(bulletRelativePosition.sqrMagnitude / (targetVelocity - (part.rb.velocity + baseBulletVelocity * firingDirection)).sqrMagnitude); // Rough initial estimate.
                     targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, timeToCPA);
@@ -4318,7 +4323,7 @@ namespace BDArmory.Weapons
             }
             if (targetAcquired)
             {
-                SmoothTargetKinematics(targetPosition, targetVelocity, targetAcceleration, lastTargetAcquisitionType != targetAcquisitionType || (targetAcquisitionType == TargetAcquisitionType.Visual && lastVisualTargetVessel != visualTargetVessel));
+                SmoothTargetKinematics(targetPosition, targetVelocity, targetAcceleration, targetIsLandedOrSplashed, lastTargetAcquisitionType != targetAcquisitionType || (targetAcquisitionType == TargetAcquisitionType.Visual && lastVisualTargetVessel != visualTargetVessel));
             }
 
             RunTrajectorySimulation();
@@ -4742,6 +4747,7 @@ namespace BDArmory.Weapons
                     }
                     targetVelocity = visualTargetVessel.rb_velocity;
                     targetAcceleration = visualTargetVessel.acceleration;
+                    targetIsLandedOrSplashed = visualTargetVessel.LandedOrSplashed;
                     targetAcquired = true;
                     targetAcquisitionType = TargetAcquisitionType.Visual;
                     return;
@@ -4755,9 +4761,16 @@ namespace BDArmory.Weapons
                     targetVelocity = weaponManager.slavedTarget.vessel != null ? weaponManager.slavedTarget.vessel.rb_velocity : (weaponManager.slavedVelocity - BDKrakensbane.FrameVelocityV3f);
                     //targetAcceleration = weaponManager.slavedTarget.vessel != null ? weaponManager.slavedTarget.vessel.acceleration : weaponManager.slavedAcceleration;
                     //CS0172 Type of conditional expression cannot be determined because 'Vector3' and 'Vector3' implicitly convert to one another
-                    if (weaponManager.slavedTarget.vessel != null) targetAcceleration = weaponManager.slavedTarget.vessel.acceleration;
+                    if (weaponManager.slavedTarget.vessel != null)
+                    {
+                        targetAcceleration = weaponManager.slavedTarget.vessel.acceleration;
+                        targetIsLandedOrSplashed = weaponManager.slavedTarget.vessel.LandedOrSplashed;
+                    }
                     else
+                    {
                         targetAcceleration = weaponManager.slavedAcceleration;
+                        targetIsLandedOrSplashed = false;
+                    }
                     targetAcquired = true;
                     targetAcquisitionType = TargetAcquisitionType.Slaved;
                     return;
@@ -4770,11 +4783,13 @@ namespace BDArmory.Weapons
                     targetPosition = targetData.predictedPosition;
                     targetRadius = 35f;
                     targetAcceleration = targetData.acceleration;
+                    targetIsLandedOrSplashed = false;
                     if (targetData.vessel)
                     {
                         targetVelocity = targetData.vessel != null ? targetData.vessel.rb_velocity : targetVelocity;
                         targetPosition = targetData.vessel.CoM;
                         targetAcceleration = targetData.vessel.acceleration;
+                        targetIsLandedOrSplashed = targetData.vessel.LandedOrSplashed;
                         targetRadius = targetData.vessel.GetRadius();
                     }
                     targetAcquired = true;
@@ -4791,6 +4806,7 @@ namespace BDArmory.Weapons
                     targetPosition = weaponManager.designatedGPSInfo.worldPos;
                     targetRadius = 35f;
                     targetAcceleration = Vector3d.zero;
+                    targetIsLandedOrSplashed = true;
                     targetAcquired = true;
                     targetAcquisitionType = TargetAcquisitionType.GPS;
                     return;
@@ -4836,6 +4852,7 @@ namespace BDArmory.Weapons
                         targetPosition = tgt.CoM;
                         targetVelocity = tgt.rb_velocity;
                         targetAcceleration = tgt.acceleration;
+                        targetIsLandedOrSplashed = tgt.LandedOrSplashed;
                     }
                     targetAcquisitionType = TargetAcquisitionType.AutoProxy;
                     return;
@@ -4846,6 +4863,7 @@ namespace BDArmory.Weapons
             {
                 targetVelocity = Vector3.zero;
                 targetAcceleration = Vector3.zero;
+                targetIsLandedOrSplashed = false;
             }
         }
 
@@ -4977,7 +4995,16 @@ namespace BDArmory.Weapons
                     }
                     //targetVelocity -= BDKrakensbane.FrameVelocity;
 
-                    targetAcceleration = visualTargetPart != null && visualTargetPart.vessel != null ? (Vector3)visualTargetPart.vessel.acceleration : Vector3.zero;
+                    if (visualTargetPart != null && visualTargetPart.vessel != null)
+                    {
+                        targetAcceleration = (Vector3)visualTargetPart.vessel.acceleration;
+                        targetIsLandedOrSplashed = visualTargetPart.vessel.LandedOrSplashed;
+                    }
+                    else
+                    {
+                        targetAcceleration = Vector3.zero;
+                        targetIsLandedOrSplashed = false;
+                    }
                     targetAcquired = true;
                     targetAcquisitionType = TargetAcquisitionType.Radar;
                     if (weaponManager.slavingTurrets && turret) slaved = true;
@@ -5081,7 +5108,7 @@ namespace BDArmory.Weapons
         /// <param name="velocity"></param>
         /// <param name="acceleration"></param>
         /// <param name="reset"></param>
-        void SmoothTargetKinematics(Vector3 position, Vector3 velocity, Vector3 acceleration, bool reset = false)
+        void SmoothTargetKinematics(Vector3 position, Vector3 velocity, Vector3 acceleration, bool landedOrSplashed, bool reset = false)
         {
             // Floating objects need vertical smoothing.
             float altitude = (float)FlightGlobals.currentMainBody.GetAltitude(position);
@@ -5089,7 +5116,7 @@ namespace BDArmory.Weapons
                 acceleration = acceleration.ProjectOnPlanePreNormalized(VectorUtils.GetUpDirection(position));
 
             var distance = Vector3.Distance(position, part.transform.position);
-            var alpha = Mathf.Max(1f - BDAMath.Sqrt(distance) / 256f, 0.1f);
+            var alpha = Mathf.Max(1f - BDAMath.Sqrt(distance) / (landedOrSplashed ? 256f : 512f), 0.1f); // Landed targets have various "corrections" that cause significant noise in their acceleration values.
             var beta = alpha * alpha;
             if (!reset)
             {
