@@ -3638,10 +3638,9 @@ namespace BDArmory.Weapons
                     {
                         Vector3 simCurrPos = fireTransform.position + (baseBulletVelocity * fireTransform.forward) * Time.fixedDeltaTime; // Bullets are initially placed up to 1 frame ahead (iTime).
                         var simDeltaTime = Mathf.Clamp(Mathf.Min(maxTargetingRange, Mathf.Max(targetDistance, origTargetDistance)) / simVelocity.magnitude / 2f, Time.fixedDeltaTime, Time.fixedDeltaTime * BDArmorySettings.BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER); // With leap-frog, we can use a higher time-step and still get better accuracy than forward Euler (what was used before). Always take at least 2 steps though.
-                        var timeOfFlight = BallisticTrajectorySimulation(ref simCurrPos, simVelocity, Mathf.Min(maxTargetingRange, (simCurrPos - targetPosition).magnitude), maxTargetingRange / baseBulletVelocity, simDeltaTime, FlightGlobals.getAltitudeAtPos(targetPosition) < 0);
+                        BallisticTrajectorySimulation(ref simCurrPos, simVelocity, Mathf.Min(maxTargetingRange, (simCurrPos - targetPosition).magnitude), maxTargetingRange / baseBulletVelocity / Vector3.Dot((targetPosition - simCurrPos).normalized, fireTransform.forward), simDeltaTime, FlightGlobals.getAltitudeAtPos(targetPosition) < 0);
                         bulletPrediction = simCurrPos;
                     }
-                    Vector3 pointingPos = fireTransform.position + (fireTransform.forward * targetDistance);
                 }
                 else if (eWeaponType == WeaponTypes.Rocket)
                 {
@@ -3836,10 +3835,10 @@ namespace BDArmory.Weapons
                 ray.origin = position;
                 ray.direction = velocity;
                 var deltaPosition = timeStep * velocity;
-                var deltaDistance = deltaPosition.magnitude;
+                var deltaDistance = Vector3.Dot(deltaPosition, (position - startPosition).normalized);
                 var elapsedDistance = (startPosition - position).magnitude;
                 var altitude = FlightGlobals.getAltitudeAtPos(position + deltaPosition);
-                if ((Physics.Raycast(ray, out hit, deltaDistance, layerMask1) && (hit.collider != null && hit.collider.gameObject != null && hit.collider.gameObject.GetComponentInParent<Part>() != part)) // Ignore the part firing the projectile.
+                if ((Physics.Raycast(ray, out hit, deltaPosition.magnitude, layerMask1) && (hit.collider != null && hit.collider.gameObject != null && hit.collider.gameObject.GetComponentInParent<Part>() != part)) // Ignore the part firing the projectile.
                     || (!ignoreWater && altitude < 0) // Underwater
                     || (stage == SimulationStage.Normal && elapsedTime + timeStep > maxTime) // Out of time
                     || (stage == SimulationStage.Normal && maxDistance - elapsedDistance < deltaDistance)) // Out of distance
@@ -3896,7 +3895,7 @@ namespace BDArmory.Weapons
                     }
                     break;
                 }
-                if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DRAW_AIMERS && stage != SimulationStage.Final)
+                if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DRAW_AIMERS)
                     trajectoryPoints.Add(position);
                 position += deltaPosition;
                 gravity = (Vector3)FlightGlobals.getGeeForceAtPosition(position);
