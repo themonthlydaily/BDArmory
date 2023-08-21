@@ -1,4 +1,16 @@
-﻿v1.6.5.0
+﻿IMPROVEMENTS / FIXES
+- AI / WM:
+	- Fix the cubic solver giving invalid results for nearly degenerate cubics (used in aiming).
+	- Fix the debug line trajectories not showing the final part of the trajectory.
+- Vessel Mover:
+	- Make the vessel selection more resilient to corrupted vessel files/loadmeta.
+	- Default the vessel selection window to using the VAB if the initial vessel is spawned through the launchpad.
+- Weapons:
+	- Missiles:
+		- Fix some NREs when manually firing missiles.
+
+
+v1.6.5.0
 IMPROVEMENTS / FIXES
 - General: 
 	- Fix Pwing HP error with Pwing edges not contributing as much HP as they should.
