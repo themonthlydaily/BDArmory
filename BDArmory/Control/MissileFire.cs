@@ -473,7 +473,7 @@ namespace BDArmory.Control
                     if (weaponCandidate == null || !recentlyFiringWeaponClasses.Contains(weaponCandidate.GetWeaponClass())) continue;
                     var weapon = (ModuleWeapon)weaponCandidate;
                     if (weapon == null) continue;
-                    if (Time.time - weapon.timeFired < BDArmorySettings.CAMERA_SWITCH_FREQUENCY / 2f) return true; // Fired a gun recently.
+                    if (weapon.timeSinceFired < BDArmorySettings.CAMERA_SWITCH_FREQUENCY / 2f) return true; // Fired a gun recently.
                 }
                 return false;
             }

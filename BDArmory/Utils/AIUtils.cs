@@ -89,9 +89,13 @@ namespace BDArmory.Utils
             float C = Vector3.Dot(relVelocity, relVelocity) + Vector3.Dot(relPosition, relAcceleration);
             float D = Vector3.Dot(relPosition, relVelocity);
             float tolerance = 1e-7f; // Tolerance in comparisons.
-            if (A == 0) // Not actually a cubic. Relative acceleration is zero, so return the much simpler linear timeToCPA.
+            float toleranceSqr = tolerance * tolerance;
+            if (A < toleranceSqr) // Not actually a cubic. Relative acceleration is practically zero, so return the much simpler linear timeToCPA.
             {
-                return Mathf.Clamp(-Vector3.Dot(relPosition, relVelocity) / relVelocity.sqrMagnitude, 0f, maxTime);
+                if (relVelocity.sqrMagnitude > toleranceSqr)
+                    return Mathf.Clamp(-Vector3.Dot(relPosition, relVelocity) / relVelocity.sqrMagnitude, 0f, maxTime);
+                else
+                    return 0; // The objects are static, so they're not going to get any closer.
             }
             float D0 = B * B - 3f * A * C;
             float D1 = 2 * B * B * B - 9f * A * B * C + 27f * A * A * D;
