@@ -22,8 +22,8 @@ namespace BDArmory.Utils
         public static Vector3 PredictPosition(this Vessel v, float time)
         {
             Vector3 pos = v.CoM;
-            pos += v.Velocity() * time;
-            pos += 0.5f * v.acceleration_immediate * time * time;
+            pos +=  time * v.Velocity();
+            pos += 0.5f * time * time * v.acceleration_immediate;
             return pos;
         }
 
@@ -135,7 +135,7 @@ namespace BDArmory.Utils
                                 break;
                             case CPAType.Closest:
                                 t = Mathf.Clamp(t, 0, maxTime);
-                                var distSqr = (relPosition + relVelocity * t + relAcceleration * t * t / 2f).sqrMagnitude;
+                                var distSqr = (relPosition + t * relVelocity + t * t / 2f * relAcceleration).sqrMagnitude;
                                 if (distSqr < distanceSqr)
                                 {
                                     distanceSqr = distSqr;
@@ -171,7 +171,7 @@ namespace BDArmory.Utils
                         case CPAType.Closest:
                             t0 = Mathf.Clamp(t0, 0, maxTime);
                             t1 = Mathf.Clamp(t1, 0, maxTime);
-                            time = ((relPosition + relVelocity * t0 + relAcceleration * t0 * t0 / 2f).sqrMagnitude < (relPosition + relVelocity * t1 + relAcceleration * t1 * t1 / 2f).sqrMagnitude) ? t0 : t1;
+                            time = ((relPosition + t0 * relVelocity + t0 * t0 / 2f * relAcceleration).sqrMagnitude < (relPosition +  t1 * relVelocity + t1 * t1 / 2f * relAcceleration).sqrMagnitude) ? t0 : t1;
                             break;
                     }
                     return Mathf.Clamp(time, 0, maxTime);
