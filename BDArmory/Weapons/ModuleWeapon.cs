@@ -5104,6 +5104,7 @@ namespace BDArmory.Weapons
         /// <summary>
         /// Apply Brown's double exponential smoothing to the target velocity and acceleration values to smooth out noise.
         /// The smoothing factor depends on the distance to the target.
+        /// The smoothed velocity components are corrected for the Krakensbane velocity frame and may suffer loss of precision at extreme speeds.
         /// </summary>
         /// <param name="position"></param>
         /// <param name="velocity"></param>
@@ -5119,11 +5120,12 @@ namespace BDArmory.Weapons
             var distance = Vector3.Distance(position, part.transform.position);
             var alpha = Mathf.Max(1f - BDAMath.Sqrt(distance) / (landedOrSplashed ? 256f : 512f), 0.1f); // Landed targets have various "corrections" that cause significant noise in their acceleration values.
             var beta = alpha * alpha;
+            velocity += BDKrakensbane.FrameVelocityV3f; // To smooth the velocity, we need to use a consistent reference frame
             if (!reset)
             {
                 targetVelocityS1 = alpha * velocity + (1f - alpha) * targetVelocityS1;
                 targetVelocityS2 = alpha * targetVelocityS1 + (1f - alpha) * targetVelocityS2;
-                targetVelocity = 2f * targetVelocityS1 - targetVelocityS2;
+                targetVelocity = 2f * targetVelocityS1 - targetVelocityS2 - BDKrakensbane.FrameVelocityV3f; // Re-add the Krakensbane velocity to get the smoothed velocity in the current velocity frame.
                 targetAccelerationS1 = beta * acceleration + (1f - beta) * targetAccelerationS1;
                 targetAccelerationS2 = beta * targetAccelerationS1 + (1f - beta) * targetAccelerationS2;
                 targetAcceleration = 2f * targetAccelerationS1 - targetAccelerationS2;
@@ -5132,7 +5134,7 @@ namespace BDArmory.Weapons
             {
                 targetVelocityS1 = velocity;
                 targetVelocityS2 = velocity;
-                targetVelocity = velocity;
+                targetVelocity = velocity - BDKrakensbane.FrameVelocityV3f;
                 targetAccelerationS1 = acceleration;
                 targetAccelerationS2 = acceleration;
                 targetAcceleration = acceleration;
