@@ -1,4 +1,6 @@
 ﻿IMPROVEMENTS / FIXES
+- UI:
+	- Add Japanese localization files thanks to user Taka005.
 - AI / WM:
 	- Fix the cubic solver giving invalid results for nearly degenerate cubics (used in aiming).
 	- Fix the debug line trajectories not showing the final part of the trajectory.
