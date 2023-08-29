@@ -681,7 +681,7 @@ namespace BDArmory.Weapons.Missiles
                 }
                 if (partModules.Current.moduleName == "MultiMissileLauncher" && weaponClass == WeaponClasses.Bomb)
                 {
-                    clusterbomb *= ((MultiMissileLauncher)partModules.Current).salvoSize;
+                    clusterbomb *= (int)((MultiMissileLauncher)partModules.Current).salvoSize;
                 }
                 if (partModules.Current.moduleName == "ModuleEMP")
                 {
@@ -772,7 +772,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 Fields["dropTime"].guiActive = false;
                 Fields["dropTime"].guiActiveEditor = false;
-                if (torpedo) dropTime = 999;
+                if (torpedo) dropTime = 0;
             }
             else
             {
@@ -1950,7 +1950,6 @@ namespace BDArmory.Weapons.Missiles
             {
                 yield return new WaitUntilFixed(() => vessel == null || vessel.LandedOrSplashed);//don't start torpedo thrust until underwater
                 if (vessel == null || vessel.Landed) Detonate(); //dropping torpedoes over land is just going to turn them into heavy, expensive bombs...
-                dropTime = TimeIndex;
             }
             if (useFuel) burnRate = boostTime > 0 ? boosterFuelMass / boostTime * Time.fixedDeltaTime : 0;
             StartBoost();
@@ -2560,7 +2559,7 @@ namespace BDArmory.Weapons.Missiles
                 {
                     Vector3 position = transform.position;//+rigidbody.velocity*Time.fixedDeltaTime;
 
-                    ExplosionFx.CreateExplosion(position, blastPower, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, SourceVessel.vesselName, GetShortName(), default(Vector3), -1, false, part.mass * 1000);
+                    ExplosionFx.CreateExplosion(position, blastPower, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, SourceVessel.vesselName, Team.Name, GetShortName(), default(Vector3), -1, false, part.mass * 1000);
                 }
                 if (part != null && !FuseFailed)
                 {

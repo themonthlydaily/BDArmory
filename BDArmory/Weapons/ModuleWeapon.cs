@@ -5019,7 +5019,7 @@ namespace BDArmory.Weapons
                     if (shell.tntMass > 0)
                     {
                         shell.hasDetonated = true;
-                        ExplosionFx.CreateExplosion(shell.transform.position, shell.tntMass, shell.explModelPath, shell.explSoundPath, ExplosionSourceType.Bullet, shell.caliber, null, shell.sourceVesselName, null, default, -1, false, shell.bulletMass, -1, 1);
+                        ExplosionFx.CreateExplosion(shell.transform.position, shell.tntMass, shell.explModelPath, shell.explSoundPath, ExplosionSourceType.Bullet, shell.caliber, null, shell.sourceVesselName, null, null, default, -1, false, shell.bulletMass, -1, 1);
                         shell.KillBullet();
                         tgtShell = null;
                         if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log("[BDArmory.ModuleWeapon] Detonated Incoming Projectile!");
@@ -5057,7 +5057,7 @@ namespace BDArmory.Weapons
                     if (rocket.tntMass > 0)
                     {
                         rocket.hasDetonated = true;
-                        ExplosionFx.CreateExplosion(rocket.transform.position, rocket.tntMass, rocket.explModelPath, rocket.explSoundPath, ExplosionSourceType.Rocket, rocket.caliber, null, rocket.sourceVesselName, null, default, -1, false, rocket.rocketMass * 1000, -1, 1);
+                        ExplosionFx.CreateExplosion(rocket.transform.position, rocket.tntMass, rocket.explModelPath, rocket.explSoundPath, ExplosionSourceType.Rocket, rocket.caliber, null, rocket.sourceVesselName, null, null, default, -1, false, rocket.rocketMass * 1000, -1, 1);
                     }
                     rocket.gameObject.SetActive(false);
                     tgtRocket = null;

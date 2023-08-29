@@ -8,6 +8,7 @@ using BDArmory.FX;
 using BDArmory.Settings;
 using BDArmory.Utils;
 using BDArmory.Weapons.Missiles;
+using BDArmory.Competition;
 
 namespace BDArmory.Weapons
 {
@@ -15,13 +16,20 @@ namespace BDArmory.Weapons
     {
         float distanceFromStart = 500;
 
+        public BDTeam sourceteam
+        {
+            get { return _sourceteam; }
+            set { _sourceteam = value; SourceVesselTeam = _sourceteam != null ? _sourceteam.Name : null; }
+        }
+        BDTeam _sourceteam;
+
         public Vessel sourcevessel
         {
-            get { return _sourceVessel; }
-            set { _sourceVessel = value; SourceVesselName = _sourceVessel != null ? _sourceVessel.vesselName : null; }
+            get { return _sourcevessel; }
+            set { _sourcevessel = value; }
         }
-        Vessel _sourceVessel;
-        public string SourceVesselName { get; private set; }
+        Vessel _sourcevessel = null;
+        public string SourceVesselTeam { get; private set; }
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_TNTMass"),//TNT mass equivalent
         UI_Label(affectSymCounterparts = UI_Scene.All, controlEnabled = true, scene = UI_Scene.All)]
@@ -164,7 +172,11 @@ namespace BDArmory.Weapons
                 part.force_activate();
                 sourcevessel = vessel;
                 var MF = VesselModuleRegistry.GetModule<MissileFire>(vessel, true);
-                if (MF != null) sourcevessel = MF.vessel; // grab the vessel the Weapon manager is on at start
+                if (MF != null)
+                {
+                    sourcevessel = MF.vessel;
+                    sourceteam = MF.Team; // grab the vessel the Weapon manager is on at start
+                }
             }
             if (part.FindModuleImplementing<MissileLauncher>() == null)
             {
@@ -360,14 +372,14 @@ namespace BDArmory.Weapons
                                                                                                   // could also do warheadType == "standard" ? default: part.partTransform.forward, as this simplifies the isAngleAllowed check in ExplosionFX, but at the cost of standard heads always being 360deg blasts (but we don't have limited angle balsts for missiels at present anyway, so not a bit deal RN)
                     var sourceWeapon = part.FindModuleImplementing<EngageableWeapon>();
 
-                    ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, caliber, part, SourceVesselName, sourceWeapon != null ? sourceWeapon.GetShortName() : null, direction, -1, false, warheadType == "standard" ? part.mass : 0, -1, 1, warheadType, null, apMod);
+                    ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, caliber, part, sourcevessel.GetName(), SourceVesselTeam, sourceWeapon != null ? sourceWeapon.GetShortName() : null, direction, -1, false, warheadType == "standard" ? part.mass : 0, -1, 1, warheadType, null, apMod);
                     if (BDArmorySettings.DEBUG_MISSILES)
-                        Debug.Log($"[BDArmory.BDExplosivePart]: {part} ({(uint)(part.GetInstanceID())}) from {SourceVesselName} detonating with a {warheadType} warhead");
+                        Debug.Log($"[BDArmory.BDExplosivePart]: {part} ({(uint)(part.GetInstanceID())}) from {sourcevessel.GetName()} detonating with a {warheadType} warhead");
                     part.explode();
                 }
                 else
                     if (BDArmorySettings.DEBUG_MISSILES)
-                        Debug.Log($"[BDArmory.BDExplosivePart]: {part} ({(uint)(part.GetInstanceID())}) from {SourceVesselName} explosive fuse failed!");
+                        Debug.Log($"[BDArmory.BDExplosivePart]: {part} ({(uint)(part.GetInstanceID())}) from {sourcevessel.GetName()} explosive fuse failed!");
             }
         }
 
@@ -386,15 +398,15 @@ namespace BDArmory.Weapons
                     direction = warheadType == "standard" ? default : part.partTransform.forward;
                     var sourceWeapon = part.FindModuleImplementing<EngageableWeapon>();
                     if (BDArmorySettings.DEBUG_MISSILES)
-                        Debug.Log($"[BDArmory.BDExplosivePart]: {part} ({(uint)(part.GetInstanceID())}) from {SourceVesselName} detonating with a {warheadType} warhead");
-                    ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, caliber, part, SourceVesselName, sourceWeapon != null ? sourceWeapon.GetShortName() : null, direction, -1, false, warheadType == "standard" ? part.mass : 0, -1, 1, warheadType, null, apMod);
+                        Debug.Log($"[BDArmory.BDExplosivePart]: {part} ({(uint)(part.GetInstanceID())}) from {sourcevessel.GetName()} detonating with a {warheadType} warhead");
+                    ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, caliber, part, sourcevessel.GetName(), SourceVesselTeam, sourceWeapon != null ? sourceWeapon.GetShortName() : null, direction, -1, false, warheadType == "standard" ? part.mass : 0, -1, 1, warheadType, null, apMod);
 
                     part.Destroy();
                     part.explode();
                 }
                 else
                     if (BDArmorySettings.DEBUG_MISSILES)
-                        Debug.Log($"[BDArmory.BDExplosivePart]: {part} ({(uint)(part.GetInstanceID())}) from {SourceVesselName} explosive fuse failed!");
+                        Debug.Log($"[BDArmory.BDExplosivePart]: {part} ({(uint)(part.GetInstanceID())}) from {sourcevessel.GetName()} explosive fuse failed!");
             }
         }
 
@@ -446,7 +458,7 @@ namespace BDArmory.Weapons
                     if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
                     if (partHit.vessel == vessel || partHit.vessel == sourcevessel) continue;
                     if (partHit.vessel.vesselType == VesselType.Debris) continue;
-                    if (!string.IsNullOrEmpty(SourceVesselName) && partHit.vessel.vesselName.Contains(SourceVesselName)) continue;
+                    if (!string.IsNullOrEmpty(sourcevessel.GetName()) && partHit.vessel.vesselName.Contains(sourcevessel.GetName())) continue;
                     var weaponManager = VesselModuleRegistry.GetModule<MissileFire>(partHit.vessel);
                     if (IFF_On && (weaponManager == null || weaponManager.teamString == IFFID)) continue;
                     if (detonateAtMinimumDistance)
