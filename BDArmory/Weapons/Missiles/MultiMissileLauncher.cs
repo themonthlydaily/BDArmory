@@ -38,7 +38,9 @@ namespace BDArmory.Weapons.Missiles
         [KSPField(isPersistant = true)] public string subMunitionName; //name of missile in .cfg - e.g. "bahaAim120"
         [KSPField(isPersistant = true)] public string subMunitionPath; //model path for missile
         [KSPField] public string launchTransformName; //name of transform launcTransforms are parented to - see Rocketlauncher transform hierarchy
-        [KSPField] public int salvoSize = 1; //leave blank to have salvoSize = launchTransforms.count
+        //[KSPField] public int salvoSize = 1; //leave blank to have salvoSize = launchTransforms.count
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_WMWindow_rippleText2"), UI_FloatRange(minValue = 1, maxValue = 10, stepIncrement = 1, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Salvo
+        public float salvoSize = 1;
         [KSPField] public bool isClusterMissile = false; //cluster submunitions deployed instead of standard detonation? Fold this into warHeadType?
         [KSPField] public bool isMultiLauncher = false; //is this a pod or launcher holding multiple missiles that fire in a salvo?
         [KSPField] public bool useSymCounterpart = false; //have symmetrically placed parts fire along with this part as part of salvo? Requires isMultMissileLauncher = true;
@@ -47,6 +49,7 @@ namespace BDArmory.Weapons.Missiles
         [KSPField] public float launcherCooldown = 0; //additional delay after firing before launcher can fire next salvo
         [KSPField] public float offset = 0; //add an offset to missile spawn position?
         [KSPField] public string deployAnimationName;
+        [KSPField] public float deploySpeed = 1; //animation speed
         [KSPField] public string RailNode = "rail"; //name of attachnode for VLS MMLs to set missile loadout
         [KSPField] public float tntMass = 1; //for MissileLauncher GetInfo()
         [KSPField] public bool OverrideDropSettings = false; //allow setting eject speed/dir
@@ -81,7 +84,8 @@ namespace BDArmory.Weapons.Missiles
                     deployState.enabled = true;
                 }
             }
-
+            UI_FloatRange salvo = (UI_FloatRange)Fields["salvoSize"].uiControlEditor;
+            salvo.maxValue = launchTransforms.Length;
             StartCoroutine(DelayedStart());
         }
 
@@ -413,7 +417,7 @@ namespace BDArmory.Weapons.Missiles
                 int launcherIndex = int.Parse(launcherName.Substring(7)) - 1; //by coincidence, this is the same offset as rocket pods, which means the existing rocketlaunchers could potentially be converted over to homing munitions...
                 launchTransforms[launcherIndex] = launchTransform.GetChild(i);
             }
-            salvoSize = Mathf.Min(salvoSize, launchTransforms.Length);
+            salvoSize = Mathf.Min((int)salvoSize, launchTransforms.Length);
             if (subMunitionPath != "")
             {
                 PopulateMissileDummies(true);
@@ -491,7 +495,7 @@ namespace BDArmory.Weapons.Missiles
             if (deployState != null)
             {
                 deployState.enabled = true;
-                deployState.speed = 1;
+                deployState.speed = deploySpeed;
                 yield return new WaitWhileFixed(() => deployState.normalizedTime < 1); //wait for animation here
                 deployState.normalizedTime = 1;
                 deployState.speed = 0;
@@ -504,7 +508,7 @@ namespace BDArmory.Weapons.Missiles
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MultiMissileLauncher] starting ripple launch on tube {m}, ripple delay: {timeGap:F3}");
                 yield return new WaitForSecondsFixed(timeGap);
                 if (missileSpawner is null) yield break; // Died while waiting.
-                if (launchesThisSalvo >= salvoSize) //catch if launcher is trying to launch more missiles than it has
+                if (launchesThisSalvo >= (int)salvoSize) //catch if launcher is trying to launch more missiles than it has
                 {
                     //if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MultiMissileLauncher] oops! firing more missiles than tubes or ammo");
                     break;
@@ -792,7 +796,7 @@ namespace BDArmory.Weapons.Missiles
             if (deployState != null)
             {
                 deployState.enabled = true;
-                deployState.speed = -1;
+                deployState.speed = -deploySpeed;
                 yield return new WaitWhileFixed(() => deployState.normalizedTime > 0);
                 deployState.normalizedTime = 0;
                 deployState.speed = 0;
@@ -801,7 +805,7 @@ namespace BDArmory.Weapons.Missiles
             if (missileLauncher is null) yield break;
             if (tubesFired >= launchTransforms.Length) //add a timer for reloading a partially emptied MML if it hasn't been used for a while?
             {
-                if (!isClusterMissile && (BDArmorySettings.INFINITE_ORDINANCE || missileSpawner.ammoCount >= salvoSize))
+                if (!isClusterMissile && (BDArmorySettings.INFINITE_ORDINANCE || missileSpawner.ammoCount >= (int)salvoSize))
                     if (!(missileLauncher.reloadRoutine != null))
                     {
                         missileLauncher.reloadRoutine = StartCoroutine(missileLauncher.MissileReload());
@@ -818,7 +822,7 @@ namespace BDArmory.Weapons.Missiles
             }
             else
             {
-                if (salvoSize < launchTransforms.Length && missileLauncher.reloadRoutine == null && (BDArmorySettings.INFINITE_ORDINANCE || missileSpawner.ammoCount > 0))
+                if ((int)salvoSize < launchTransforms.Length && missileLauncher.reloadRoutine == null && (BDArmorySettings.INFINITE_ORDINANCE || missileSpawner.ammoCount > 0))
                 {
                     if (launcherCooldown > 0)
                     {
@@ -863,7 +867,6 @@ namespace BDArmory.Weapons.Missiles
             output.AppendLine($"Multi Missile Launcher:");
             output.AppendLine($"- Salvo Size: {salvoSize}");
             output.AppendLine($"- Cooldown: {launcherCooldown} s");
-            output.AppendLine($"- Salvo Size: {salvoSize}");
             output.AppendLine($" - Warhead:");
             AvailablePart missilePart = null;
             using (var parts = PartLoader.LoadedPartsList.GetEnumerator())
