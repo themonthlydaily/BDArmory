@@ -1,4 +1,6 @@
 ﻿IMPROVEMENTS / FIXES
+-General:
+	- Procedural Wing max armor thickness now based on mean thickness of the wing.
 -Radar:
 	- Add new radarTransformName field to ModuleRadar to allow setting custom radar direction/setting multiple radars to a part using custom radar models.
 - AI / WM:
@@ -10,9 +12,13 @@
 - Weapons:
 	- Missiles:
 		- Fix some NREs when manually firing missiles.
-    - Add new guidanceDelay field to allow setting a delay between missile launch and missile beginning to maneuver toards a target.
+		- Add new guidanceDelay field to allow setting a delay between missile launch and missile beginning to maneuver toards a target.
 		- Dynamic Launch Range now uses missile EngageRange max instead of static launch range
 		- Improved launch behavior for missiles set to be fired at very short range.
+		- Add LineOfSight check when firing missiles.
+		- Fix torpedoes not working.
+		- Missile/Bomb fratricide prevention now based on team instead of sourcevessel.
+		- Add Salvo size slider to MultiMissile Launchers
 
 v1.6.5.0
 IMPROVEMENTS / FIXES
