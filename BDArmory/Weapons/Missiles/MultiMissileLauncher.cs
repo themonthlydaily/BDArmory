@@ -39,8 +39,9 @@ namespace BDArmory.Weapons.Missiles
         [KSPField(isPersistant = true)] public string subMunitionPath; //model path for missile
         [KSPField] public string launchTransformName; //name of transform launcTransforms are parented to - see Rocketlauncher transform hierarchy
         //[KSPField] public int salvoSize = 1; //leave blank to have salvoSize = launchTransforms.count
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_WMWindow_rippleText2"), UI_FloatRange(minValue = 1, maxValue = 10, stepIncrement = 1, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Salvo
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_WMWindow_rippleText2"), UI_FloatRange(minValue = 1, maxValue = 10, stepIncrement = 1, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Salvo
         public float salvoSize = 1;
+        [KSPField] public bool setSalvoSize = false; //allow player to edit salvo size
         [KSPField] public bool isClusterMissile = false; //cluster submunitions deployed instead of standard detonation? Fold this into warHeadType?
         [KSPField] public bool isMultiLauncher = false; //is this a pod or launcher holding multiple missiles that fire in a salvo?
         [KSPField] public bool useSymCounterpart = false; //have symmetrically placed parts fire along with this part as part of salvo? Requires isMultMissileLauncher = true;
@@ -138,6 +139,8 @@ namespace BDArmory.Weapons.Missiles
                     Fields["clusterMissileTriggerDist"].guiActive = false;
                     Fields["clusterMissileTriggerDist"].guiActiveEditor = false;
                 }
+                Fields["salvoSize"].guiActive = setSalvoSize;
+                Fields["salvoSize"].guiActiveEditor = setSalvoSize;
                 if (isMultiLauncher)
                 {
                     if (string.IsNullOrEmpty(subMunitionName))
