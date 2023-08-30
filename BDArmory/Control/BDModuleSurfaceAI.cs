@@ -11,6 +11,8 @@ using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.Weapons;
 using BDArmory.Weapons.Missiles;
+using TMPro;
+using static BDArmory.Control.BDModulePilotAI;
 
 namespace BDArmory.Control
 {
@@ -24,6 +26,7 @@ namespace BDArmory.Control
 
         Vector3 targetDirection;
         float targetVelocity; // the velocity the ship should target, not the velocity of its target
+        float altIntegral = 0;
         bool aimingMode = false;
 
         int collisionDetectionTicker = 0;
@@ -38,6 +41,8 @@ namespace BDArmory.Control
         AIUtils.TraversabilityMatrix pathingMatrix;
         List<Vector3> pathingWaypoints = new List<Vector3>();
         bool leftPath = false;
+
+        bool doExtend = false;
 
         protected override Vector3d assignedPositionGeo
         {
@@ -57,7 +62,7 @@ namespace BDArmory.Control
 
         //settings
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_VehicleType"),//Vehicle type
-            UI_ChooseOption(options = new string[4] { "Stationary", "Land", "Water", "Amphibious" })]
+            UI_ChooseOption(options = new string[5] { "Stationary", "Land", "Water", "Amphibious", "Submarine" })]
         public string SurfaceTypeName = "Land";
 
         public AIUtils.VehicleMovementType SurfaceType
@@ -67,6 +72,10 @@ namespace BDArmory.Control
             UI_FloatRange(minValue = 1f, maxValue = 30f, stepIncrement = 1f, scene = UI_Scene.All)]
         public float MaxSlopeAngle = 10f;
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CombatAltitude"), //Combat Alt.
+            UI_FloatRange(minValue = -1000, maxValue = -25, stepIncrement = 25, scene = UI_Scene.All)]
+        public float CombatAltitude = -150;
+        private float oldCombatAltitude = -150;
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CruiseSpeed"),//Cruise speed
             UI_FloatRange(minValue = 5f, maxValue = 60f, stepIncrement = 1f, scene = UI_Scene.All)]
         public float CruiseSpeed = 20;
@@ -258,6 +267,14 @@ namespace BDArmory.Control
                 Fields[fieldName].guiActive = fieldEnabled;
                 Fields[fieldName].guiActiveEditor = fieldEnabled;
             }
+            Fields["CombatAltitude"].guiActive = (SurfaceType == AIUtils.VehicleMovementType.Submarine);
+            Fields["CombatAltitude"].guiActiveEditor = (SurfaceType == AIUtils.VehicleMovementType.Submarine);
+            if (SurfaceType != AIUtils.VehicleMovementType.Submarine)
+            {
+                oldCombatAltitude = CombatAltitude;
+                CombatAltitude = 1;
+            }
+            else CombatAltitude = oldCombatAltitude;
             this.part.RefreshAssociatedWindows();
             if (BDArmoryAIGUI.Instance != null)
             {
@@ -628,6 +645,9 @@ namespace BDArmory.Control
             speedController.useBrakes = motorControl.preventNegativeZeroPoint = speedController.debugThrust > 0;
         }
 
+        Vector3 directionIntegral;
+        float pitchIntegral = 0;
+
         void AttitudeControl(FlightCtrlState s)
         {
             const float terrainOffset = 5;
@@ -652,17 +672,85 @@ namespace BDArmory.Control
             float pitchError = 0;
             if (SurfaceType != AIUtils.VehicleMovementType.Stationary)
             {
-                Vector3 baseForward = vessel.transform.up * terrainOffset;
-                float basePitch = Mathf.Atan2(
-                    AIUtils.GetTerrainAltitude(vessel.CoM + baseForward, vessel.mainBody, false)
-                    - AIUtils.GetTerrainAltitude(vessel.CoM - baseForward, vessel.mainBody, false),
-                    terrainOffset * 2) * Mathf.Rad2Deg;
-                float pitchAngle = basePitch + TargetPitch * Mathf.Clamp01((float)vessel.horizontalSrfSpeed / CruiseSpeed);
-                if (aimingMode)
-                    pitchAngle = VectorUtils.SignedAngle(vesselTransform.up, targetDirection.ProjectOnPlanePreNormalized(vesselTransform.right), -vesselTransform.forward);
-                if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) DebugLine($"terrain fw slope: {basePitch}, target pitch: {pitchAngle}");
-                float pitch = 90 - Vector3.Angle(vesselTransform.up, upDir);
-                pitchError = pitchAngle - pitch;
+                if (SurfaceType == AIUtils.VehicleMovementType.Submarine)
+                {
+                    float targetAlt = CombatAltitude;
+                        if (weaponManager != null)
+                        {
+                        switch (weaponManager.selectedWeapon.GetWeaponClass())
+                        {
+                            case WeaponClasses.Missile:
+                                {
+                                    targetAlt = -10; //come to periscope depth for missile launch
+                                    break;
+                                }
+                            case WeaponClasses.Gun:
+                                {
+                                    if (weaponManager.currentTarget.isSplashed || ((weaponManager.currentTarget.isFlying || weaponManager.currentTarget.Vessel.situation == Vessel.Situations.LANDED) && weaponManager.currentGun.turret))
+                                    {
+                                        if (Vector3.Distance(vessel.CoM, targetVessel.CoM) > weaponManager.selectedWeapon.GetEngageRange())
+                                            targetAlt = 10; //come to periscope depth in preparation for surface attack when in range
+                                        else
+                                            targetAlt = 0;//in range, surface to engage with deck guns
+                                    }
+                                    break;
+                                }
+                            case WeaponClasses.Rocket:
+                            case WeaponClasses.DefenseLaser:
+                                {
+                                    if (weaponManager.currentTarget.Vessel.situation == Vessel.Situations.LANDED || weaponManager.currentTarget.isFlying && weaponManager.currentGun.turret)
+                                    {
+                                        if (Vector3.Distance(vessel.CoM, targetVessel.CoM) > weaponManager.selectedWeapon.GetEngageRange())
+                                            targetAlt = 10; //come to periscope depth in preparation for surface attack when in range
+                                        else
+                                            targetAlt = 0; //surface to engage with turrets
+                                    }
+                                    if (weaponManager.currentTarget.isSplashed)
+                                    {
+                                        if (!doExtend)
+                                        {
+                                            if (targetVessel.altitude < CombatAltitude / 4 && Vector3.Distance(vessel.CoM, targetVessel.CoM) > 200)
+                                            {
+                                                targetAlt = (float)targetVessel.altitude; //engaging enemy sub or ship, but break off when too close
+                                            }
+                                            else
+                                                doExtend = true;
+                                        }
+                                        else
+                                        {
+                                            if (vessel.altitude < CombatAltitude + 5 || Vector3.Distance(vessel.CoM, targetVessel.CoM) > 1000) doExtend = false;
+                                        }
+                                    }
+                                    break;
+                                }
+                            default:
+                                break;
+                        }
+                    }
+                    float pitchAngle = -MaxSlopeAngle * (1 - ((float)vessel.altitude / targetAlt)); //may result in not reaching target depth, depending on how neutrally buoyant the sub is. Clamp to maxSlopeAngle if Dist(vessel.altitude, targetAlt) > combatAlt * 0.25 or similar?
+                    float pitch = 90 - Vector3.Angle(vesselTransform.up, upDir);
+
+                    pitchError = pitchAngle - pitch;
+                    if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) DebugLine($"Target Alt: {targetAlt.ToString("F3")}: PitchAngle: {pitchAngle.ToString("F3")}, Pitch: {pitch.ToString("F3")}, PitchError: {pitchError.ToString("F3")}");
+
+                    directionIntegral = (directionIntegral + (pitchError * -vesselTransform.forward + yawError * vesselTransform.right) * Time.deltaTime).ProjectOnPlanePreNormalized(vesselTransform.up);
+                    if (directionIntegral.sqrMagnitude > 1f) directionIntegral = directionIntegral.normalized;
+                    pitchIntegral = 0.4f * Vector3.Dot(directionIntegral, -vesselTransform.forward);
+                }
+                else
+                {
+                    Vector3 baseForward = vessel.transform.up * terrainOffset;
+                    float basePitch = Mathf.Atan2(
+                        AIUtils.GetTerrainAltitude(vessel.CoM + baseForward, vessel.mainBody, false)
+                        - AIUtils.GetTerrainAltitude(vessel.CoM - baseForward, vessel.mainBody, false),
+                        terrainOffset * 2) * Mathf.Rad2Deg;
+                    float pitchAngle = basePitch + TargetPitch * Mathf.Clamp01((float)vessel.horizontalSrfSpeed / CruiseSpeed);
+                    if (aimingMode)
+                        pitchAngle = VectorUtils.SignedAngle(vesselTransform.up, targetDirection.ProjectOnPlanePreNormalized(vesselTransform.right), -vesselTransform.forward);
+                    if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) DebugLine($"terrain fw slope: {basePitch}, target pitch: {pitchAngle}");
+                    float pitch = 90 - Vector3.Angle(vesselTransform.up, upDir);
+                    pitchError = pitchAngle - pitch;
+                }
             }
             else
             {
@@ -692,7 +780,7 @@ namespace BDArmory.Control
 
             Vector3 localAngVel = vessel.angularVelocity;
             SetFlightControlState(s,
-                ((aimingMode ? 0.02f : 0.015f) * steerMult * pitchError) - (steerDamping * -localAngVel.x), // pitch
+                ((aimingMode ? 0.02f : 0.015f) * steerMult * pitchError) + pitchIntegral - (steerDamping * -localAngVel.x), // pitch
                 (((aimingMode ? 0.007f : 0.005f) * steerMult * yawError) - (steerDamping * 0.2f * -localAngVel.z)) * driftMult, // yaw
                 steerMult * 0.006f * rollError - 0.4f * steerDamping * -localAngVel.y, // roll
                 -(((aimingMode ? 0.005f : 0.003f) * steerMult * yawError) - (steerDamping * 0.1f * -localAngVel.z)) // wheel steer
@@ -722,7 +810,7 @@ namespace BDArmory.Control
             {
                 return true;
             }
-            else if (vessel.Splashed && (SurfaceType & AIUtils.VehicleMovementType.Water) == 0)
+            else if (vessel.Splashed && (SurfaceType & AIUtils.VehicleMovementType.Water) == 0 || (SurfaceType & AIUtils.VehicleMovementType.Submarine) == 0)
             {
                 if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) DebugLine(vessel.vesselName + " cannot engage: boat not in water");
             }

@@ -731,7 +731,7 @@ namespace BDArmory.Control
                     using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
                         while (rd.MoveNext())
                         {
-                            if (rd.Current != null || rd.Current.canLock)
+                            if (rd.Current != null && rd.Current.canLock)
                             {
                                 rd.Current.EnableRadar();
                                 _radarsEnabled = true;
@@ -1980,6 +1980,8 @@ namespace BDArmory.Control
                                 yield return wait;
 
                                 // if (ml && guardTarget && vesselRadarData.locked && (!AIMightDirectFire() || GetLaunchAuthorization(guardTarget, this)))
+                                //no check if only non-locking scanning radars on craft
+                                //if (ml && guardTarget && ((vesselRadarData.locked && vesselRadarData.lockedTargetData.vessel == guardTarget) || ml.radarLOAL) && GetLaunchAuthorization(guardTarget, this)) //allow lock on after launch missiles to fire of target scanned by not locked?
                                 if (ml && guardTarget && vesselRadarData.locked && vesselRadarData.lockedTargetData.vessel == guardTarget && GetLaunchAuthorization(guardTarget, this))
                                 {
                                     if (BDArmorySettings.DEBUG_MISSILES)
@@ -4542,6 +4544,7 @@ namespace BDArmory.Control
             int targetWeaponPriority = -1;
             bool candidateAGM = false;
             bool candidateAntiRad = false;
+            var surfaceAI = VesselModuleRegistry.GetModule<BDModuleSurfaceAI>(vessel); // Get the surface AI if the vessel has one.
             if (target.isMissile)
             {
                 // iterate over weaponTypesMissile and pick suitable one based on engagementRange (and dynamic launch zone for missiles)
@@ -4692,7 +4695,7 @@ namespace BDArmory.Control
                                 candidatePriority = Mathf.RoundToInt(mlauncher.priority);
 
                                 if (EMP) continue;
-                                if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue;
+                                if (vessel.Splashed && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 10) continue; //we aren't going to surface in time (and are under no threat from the missile while underwater0 so don't baother
                                 if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                     continue; //keep higher priority weapon
                                 if (candidateDetDist + candidateAccel > targetWeaponTDPS)
@@ -4710,7 +4713,7 @@ namespace BDArmory.Control
                                 candidateAccel = 1;
                                 candidatePriority = Mathf.RoundToInt(mm.priority);
 
-                                if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue;
+                                if (vessel.Splashed && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 5) continue;
                                 if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                     continue; //keep higher priority weapon
                                 if (candidateDetDist + candidateAccel > targetWeaponTDPS)
@@ -4826,8 +4829,8 @@ namespace BDArmory.Control
                             float candidateMaxRange = Rocket.engageRangeMax;
                             float candidateMinrange = Rocket.engageRangeMin;
                             Transform fireTransform = Rocket.fireTransforms[0];
-
-                            if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0)) continue;
+                            if (vessel.situation == Vessel.Situations.LANDED || vessel.situation == Vessel.Situations.SPLASHED && candidatePTraverse <= 0) continue; //ot going to hit a flier with fixed guns
+                            if ((!surfaceAI || surfaceAI.CombatAltitude > 0) && vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0)) continue; //new ModuleWeapon depth check for sub-mounted rockets
 
                             Vector3 aimDirection = fireTransform.forward;
                             float targetCosAngle = Rocket.FiringSolutionVector != null ? Vector3.Dot(aimDirection, (Vector3)Rocket.FiringSolutionVector) : Vector3.Dot(aimDirection, (vessel.vesselTransform.position - fireTransform.position).normalized);
@@ -4914,8 +4917,8 @@ namespace BDArmory.Control
                                 candidateRPM = BDArmorySettings.FIRE_RATE_OVERRIDE;
                             }
                             Transform fireTransform = Gun.fireTransforms[0];
-
-                            if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0)) continue;
+                            if ((vessel.situation == Vessel.Situations.LANDED || vessel.situation == Vessel.Situations.SPLASHED) && !candidateGimbal) continue; //not going to hit fliers with fixed guns
+                            if ((!surfaceAI || surfaceAI.CombatAltitude > 0) && vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0)) continue; //don't select guns on sinking ships, but allow gun selection on subs
 
                             Vector3 aimDirection = fireTransform.forward;
                             float targetCosAngle = Gun.FiringSolutionVector != null ? Vector3.Dot(aimDirection, (Vector3)Gun.FiringSolutionVector) : Vector3.Dot(aimDirection, (vessel.vesselTransform.position - fireTransform.position).normalized);
@@ -5004,7 +5007,8 @@ namespace BDArmory.Control
 
                             Transform fireTransform = Laser.fireTransforms[0];
 
-                            if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0)) continue;
+                            if ((vessel.situation == Vessel.Situations.LANDED || vessel.situation == Vessel.Situations.SPLASHED) && !candidateGimbal) continue; //not going to hit fliers with fixed lasers
+                            if ((!surfaceAI || surfaceAI.CombatAltitude > 0) && vessel.Splashed && BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0) continue;
                             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                             {
                                 candidateRPM = BDArmorySettings.FIRE_RATE_OVERRIDE;
@@ -5064,7 +5068,7 @@ namespace BDArmory.Control
                                 bool radar = mlauncher.TargetingMode == MissileBase.TargetingModes.Radar;
                                 float heatThresh = mlauncher.heatThreshold;
                                 if (EMP && target.isDebilitated) continue;
-                                if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue;
+                                if ((!surfaceAI || surfaceAI.CombatAltitude > 0) && vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 10)) continue; //allow submarine-mounted missiles; new launch depth check in launchAuth 
                                 if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                     continue; //keep higher priority weapon
 
@@ -5100,7 +5104,7 @@ namespace BDArmory.Control
                                 //candidateTurning = ((MissileLauncher)item.Current).maxTurnRateDPS; //for anti-aircraft, prioritize detonation dist and turn capability
                                 candidatePriority = Mathf.RoundToInt(mm.priority);
 
-                                if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue;
+                                if ((!surfaceAI || surfaceAI.CombatAltitude > 0) && vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue;
                                 if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                     continue; //keep higher priority weapon
 
@@ -5173,7 +5177,8 @@ namespace BDArmory.Control
 
                             Transform fireTransform = Laser.fireTransforms[0];
 
-                            if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0)) continue;
+                            if ((!surfaceAI || surfaceAI.CombatAltitude > 0) && vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0)) continue; //new ModuleWeapon depth check for sub-mounted rockets
+
                             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                             {
                                 candidateRPM = BDArmorySettings.FIRE_RATE_OVERRIDE;
@@ -5237,7 +5242,7 @@ namespace BDArmory.Control
 
                             if (BDArmorySettings.BULLET_WATER_DRAG)
                             {
-                                if (vessel.Splashed && FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0) continue;
+                                if ((!surfaceAI || surfaceAI.CombatAltitude > 0) && vessel.Splashed && FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0) continue; 
                                 if (candidateCaliber < 75 && FlightGlobals.getAltitudeAtPos(target.position) + target.Vessel.GetRadius() < 0) continue; //vessel completely submerged, and not using rounds big enough to survive water impact
                             }
                             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
@@ -5288,7 +5293,7 @@ namespace BDArmory.Control
                             int candidateRanking = Mathf.RoundToInt(Rocket.priority);
                             Transform fireTransform = Rocket.fireTransforms[0];
 
-                            if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(fireTransform.position) < -0))
+                            if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0))
                             {
                                 if (distance > 100 * CandidateEndurance) continue;
                             }
@@ -5415,7 +5420,7 @@ namespace BDArmory.Control
                                 //if (Missile.TargetingMode == MissileBase.TargetingModes.Radar && radars.Count <= 0) continue; //dont select RH missiles when no radar aboard
                                 //if (Missile.TargetingMode == MissileBase.TargetingModes.Laser && targetingPods.Count <= 0) continue; //don't select LH missiles when no FLIR aboard
                                 if (Missile.reloadableRail != null && (Missile.reloadableRail.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE)) continue; //don't select when out of ordinance
-                                if (vessel.Splashed && FlightGlobals.getAltitudeAtPos(item.Current.GetPart().transform.position) < -2) continue;
+                                if ((!surfaceAI || surfaceAI.CombatAltitude > 0) && vessel.Splashed && FlightGlobals.getAltitudeAtPos(item.Current.GetPart().transform.position) < -10) continue;
                                 //if (firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                                 candidateYield = Missile.GetBlastRadius();
                                 bool EMP = Missile.warheadType == MissileBase.WarheadTypes.EMP;
@@ -5492,7 +5497,7 @@ namespace BDArmory.Control
                                 //candidateTurning = ((MissileLauncher)item.Current).maxTurnRateDPS; //for anti-aircraft, prioritize detonation dist and turn capability
                                 candidatePriority = Mathf.RoundToInt(mm.priority);
 
-                                if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mm.transform.position) < 0)) continue;
+                                if ((!surfaceAI || surfaceAI.CombatAltitude > 0) && vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mm.transform.position) < -10)) continue;
                                 if (targetWeapon != null && targetWeaponPriority > candidatePriority) continue; //keep higher priority weapon
                                 if (srfSpeed < 1) // set higher than 0 in case of physics jitteriness
                                 {
@@ -5547,18 +5552,13 @@ namespace BDArmory.Control
                             int candidatePriority = Mathf.RoundToInt(SLW.priority);
 
                             if (EMP && target.isDebilitated) continue;
-
                             // not sure on the desired selection priority algorithm, so placeholder By Yield for now
-                            float droptime = SLW.dropTime;
 
-                            if (droptime > 0 || vessel.LandedOrSplashed) //make sure it's an airdropped torpedo if flying
-                            {
-                                if (targetYield > candidateYield) continue;
-                                if (distance < candidateYield) continue;
-                                targetYield = candidateYield;
-                                targetWeapon = item.Current;
-                                targetWeaponPriority = candidatePriority;
-                            }
+                            if (targetYield > candidateYield) continue;
+                            if (distance < candidateYield) continue;
+                            targetYield = candidateYield;
+                            targetWeapon = item.Current;
+                            targetWeaponPriority = candidatePriority;
                         }
                     }
                 //hmm.. no MMG targeting logic for ground attack? something to add in later
@@ -5576,7 +5576,6 @@ namespace BDArmory.Control
                         if (!CheckEngagementEnvelope(item.Current, distance)) continue;
 
                         WeaponClasses candidateClass = item.Current.GetWeaponClass();
-
                         if (candidateClass == WeaponClasses.SLW)
                         {
                             MissileLauncher SLW = item.Current as MissileLauncher;
@@ -5589,7 +5588,6 @@ namespace BDArmory.Control
 
                             if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                 continue; //keep higher priority weapon
-
                             if (EMP && target.isDebilitated) continue;
 
                             if (!vessel.Splashed || (vessel.Splashed && vessel.altitude > currentTarget.Vessel.altitude)) //if surfaced or sumberged, but above target, try depthcharges
@@ -5632,7 +5630,7 @@ namespace BDArmory.Control
 
                                 if (targetWeaponPriority < candidateRanking) //use priority gun
                                 {
-                                    if (distance < candidateRocketPower) continue;// don't drop bombs when within blast radius
+                                    if (distance < candidateRocketPower) continue;// don't fire rockets when within blast radius
                                     targetWeapon = item.Current;
                                     targetRocketPower = candidateRocketPower;
                                     targetWeaponPriority = candidateRanking;
@@ -5946,7 +5944,7 @@ namespace BDArmory.Control
                             using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
                                 while (rd.MoveNext())
                                 {
-                                    if (rd.Current != null || rd.Current.canLock)
+                                    if (rd.Current != null && rd.Current.canLock)
                                         rd.Current.EnableRadar();
                                 }
                         return true;
@@ -6441,6 +6439,11 @@ namespace BDArmory.Control
                                 bool pilotAuthorized = true;
                                 //(!pilotAI || pilotAI.GetLaunchAuthorization(guardTarget, this));
 
+                                if (RadarUtils.TerrainCheck(guardTarget.CoM, CurrentMissile.transform.position)) //vessel behind terrain
+                                {
+                                    launchAuthorized = false;
+                                }
+                                if (selectedWeapon.GetWeaponClass() == WeaponClasses.Missile && vessel.Splashed && vessel.altitude < 10) launchAuthorized = false; //submarine below launch depth
                                 //float targetAngle = Vector3.Angle(-transform.forward, guardTarget.transform.position - transform.position);
                                 float targetAngle = Vector3.Angle(CurrentMissile.MissileReferenceTransform.forward, guardTarget.transform.position - transform.position);
                                 float targetDistance = Vector3.Distance(currentTarget.position, transform.position);
@@ -6910,7 +6913,7 @@ namespace BDArmory.Control
 
                 // Check that target is within maxOffBoresight now and in future time fTime
                 launchAuthorized = Vector3.Angle(missile.GetForwardTransform(), target - missile.transform.position) < (unguidedWeapon ? 5 : missile.maxOffBoresight * boresightFactor); // Launch is possible now
-
+                Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} final boresight check {(launchAuthorized ? "passed" : "failed")}.");
                 if (launchAuthorized)
                 {
                     float fTime = Mathf.Min(missile.dropTime, 2f);

@@ -6,6 +6,8 @@
 - AI / WM:
 	- Fix the cubic solver giving invalid results for nearly degenerate cubics (used in aiming).
 	- Fix the debug line trajectories not showing the final part of the trajectory.
+	- Add Submarine AI option to Surface Driver AI.
+	- Various weapon selection logic tweaks to support sensible weapon selection/use when submerged and firing on non-submerged targets.
 - Vessel Mover:
 	- Make the vessel selection more resilient to corrupted vessel files/loadmeta.
 	- Default the vessel selection window to using the VAB if the initial vessel is spawned through the launchpad.

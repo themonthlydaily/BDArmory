@@ -4006,8 +4006,10 @@ namespace BDArmory.Weapons
                 Vector3 aimDirection = fireTransform.forward;
                 targetCosAngle = Vector3.Dot(aimDirection, targetRelPos.normalized);
                 var maxAutoFireCosAngle2 = targetAdjustedMaxCosAngle;
-
                 safeToFire = CheckForFriendlies(fireTransform);
+                if (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(fireTransforms[0].position) < 0 && !visualTargetVessel.IsUnderwater())
+                    safeToFire = false; //don't fire guns underwater 
+
                 if (safeToFire)
                 {
                     if (eWeaponType == WeaponTypes.Ballistic || eWeaponType == WeaponTypes.Laser)
