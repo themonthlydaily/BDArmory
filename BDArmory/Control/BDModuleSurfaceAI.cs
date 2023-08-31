@@ -675,8 +675,8 @@ namespace BDArmory.Control
                 if (SurfaceType == AIUtils.VehicleMovementType.Submarine)
                 {
                     float targetAlt = CombatAltitude;
-                        if (weaponManager != null)
-                        {
+                    if (weaponManager != null && weaponManager.selectedWeapon != null)
+                    {
                         switch (weaponManager.selectedWeapon.GetWeaponClass())
                         {
                             case WeaponClasses.Missile:
@@ -688,10 +688,10 @@ namespace BDArmory.Control
                                 {
                                     if (weaponManager.currentTarget.isSplashed || ((weaponManager.currentTarget.isFlying || weaponManager.currentTarget.Vessel.situation == Vessel.Situations.LANDED) && weaponManager.currentGun.turret))
                                     {
-                                        if (Vector3.Distance(vessel.CoM, targetVessel.CoM) > weaponManager.selectedWeapon.GetEngageRange())
+                                        if (Vector3.Distance(vessel.CoM, weaponManager.currentTarget.Vessel.CoM) > weaponManager.selectedWeapon.GetEngageRange())
                                             targetAlt = 10; //come to periscope depth in preparation for surface attack when in range
                                         else
-                                            targetAlt = 0;//in range, surface to engage with deck guns
+                                            targetAlt = -1;//in range, surface to engage with deck guns
                                     }
                                     break;
                                 }
@@ -700,34 +700,36 @@ namespace BDArmory.Control
                                 {
                                     if (weaponManager.currentTarget.Vessel.situation == Vessel.Situations.LANDED || weaponManager.currentTarget.isFlying && weaponManager.currentGun.turret)
                                     {
-                                        if (Vector3.Distance(vessel.CoM, targetVessel.CoM) > weaponManager.selectedWeapon.GetEngageRange())
+                                        if (Vector3.Distance(vessel.CoM, weaponManager.currentTarget.Vessel.CoM) > weaponManager.selectedWeapon.GetEngageRange())
                                             targetAlt = 10; //come to periscope depth in preparation for surface attack when in range
                                         else
-                                            targetAlt = 0; //surface to engage with turrets
+                                            targetAlt = -1; //surface to engage with turrets
                                     }
                                     if (weaponManager.currentTarget.isSplashed)
                                     {
                                         if (!doExtend)
                                         {
-                                            if (targetVessel.altitude < CombatAltitude / 4 && Vector3.Distance(vessel.CoM, targetVessel.CoM) > 200)
+                                            if (weaponManager.currentTarget.Vessel.altitude < CombatAltitude / 4 && Vector3.Distance(vessel.CoM, weaponManager.currentTarget.Vessel.CoM) > 200)
                                             {
-                                                targetAlt = (float)targetVessel.altitude; //engaging enemy sub or ship, but break off when too close
+                                                targetAlt = (float)weaponManager.currentTarget.Vessel.altitude; //engaging enemy sub or ship, but break off when too close
                                             }
                                             else
                                                 doExtend = true;
                                         }
                                         else
                                         {
-                                            if (vessel.altitude < CombatAltitude + 5 || Vector3.Distance(vessel.CoM, targetVessel.CoM) > 1000) doExtend = false;
+                                            if (vessel.altitude < (CombatAltitude *.66f) || Vector3.Distance(vessel.CoM, weaponManager.currentTarget.Vessel.CoM) > 1000) doExtend = false;
                                         }
                                     }
                                     break;
                                 }
-                            default:
+                            default: //SLW
                                 break;
                         }
                     }
-                    float pitchAngle = -MaxSlopeAngle * (1 - ((float)vessel.altitude / targetAlt)); //may result in not reaching target depth, depending on how neutrally buoyant the sub is. Clamp to maxSlopeAngle if Dist(vessel.altitude, targetAlt) > combatAlt * 0.25 or similar?
+                    float pitchAngle = 0;
+                    if ((float)vessel.altitude > targetAlt) pitchAngle = -MaxSlopeAngle * (1 - ((float)vessel.altitude / targetAlt)); //may result in not reaching target depth, depending on how neutrally buoyant the sub is. Clamp to maxSlopeAngle if Dist(vessel.altitude, targetAlt) > combatAlt * 0.25 or similar?
+                    else pitchAngle = MaxSlopeAngle * (1 - (targetAlt / (float)vessel.altitude));
                     float pitch = 90 - Vector3.Angle(vesselTransform.up, upDir);
 
                     pitchError = pitchAngle - pitch;
@@ -780,7 +782,7 @@ namespace BDArmory.Control
 
             Vector3 localAngVel = vessel.angularVelocity;
             SetFlightControlState(s,
-                ((aimingMode ? 0.02f : 0.015f) * steerMult * pitchError) + pitchIntegral - (steerDamping * -localAngVel.x), // pitch
+                Mathf.Clamp(((aimingMode ? 0.02f : 0.015f) * steerMult * pitchError) + pitchIntegral - (steerDamping * -localAngVel.x), -2, 2), // pitch
                 (((aimingMode ? 0.007f : 0.005f) * steerMult * yawError) - (steerDamping * 0.2f * -localAngVel.z)) * driftMult, // yaw
                 steerMult * 0.006f * rollError - 0.4f * steerDamping * -localAngVel.y, // roll
                 -(((aimingMode ? 0.005f : 0.003f) * steerMult * yawError) - (steerDamping * 0.1f * -localAngVel.z)) // wheel steer
