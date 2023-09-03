@@ -16,19 +16,13 @@ namespace BDArmory.Weapons
     {
         float distanceFromStart = 500;
 
-        public BDTeam sourceteam
-        {
-            get { return _sourceteam; }
-            set { _sourceteam = value; SourceVesselTeam = _sourceteam != null ? _sourceteam.Name : null; }
-        }
-        BDTeam _sourceteam;
-
         public Vessel sourcevessel
         {
-            get { return _sourcevessel; }
-            set { _sourcevessel = value; }
+            get { return _sourceVessel; }
+            set { _sourceVessel = value; SourceVesselName = _sourceVessel != null ? _sourceVessel.vesselName : null; }
         }
-        Vessel _sourcevessel = null;
+        Vessel _sourceVessel;
+        public string SourceVesselName { get; private set; }
         public string SourceVesselTeam { get; private set; }
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_TNTMass"),//TNT mass equivalent
@@ -171,12 +165,6 @@ namespace BDArmory.Weapons
                 part.OnJustAboutToBeDestroyed += DetonateIfPossible;
                 part.force_activate();
                 sourcevessel = vessel;
-                var MF = VesselModuleRegistry.GetModule<MissileFire>(vessel, true);
-                if (MF != null)
-                {
-                    sourcevessel = MF.vessel;
-                    sourceteam = MF.Team; // grab the vessel the Weapon manager is on at start
-                }
             }
             if (part.FindModuleImplementing<MissileLauncher>() == null)
             {
@@ -358,6 +346,12 @@ namespace BDArmory.Weapons
         public void DetonateIfPossible()
         {
             if (!HighLogic.LoadedSceneIsFlight || part == null) return;
+            var MF = VesselModuleRegistry.GetModule<MissileFire>(vessel, true);
+            if (MF != null)
+            {
+                sourcevessel = MF.vessel;
+                SourceVesselTeam = MF.Team.Name; // grab the vessel the Weapon manager is on at start
+            }
             if (!hasDetonated && Armed)
             {
                 hasDetonated = true;
