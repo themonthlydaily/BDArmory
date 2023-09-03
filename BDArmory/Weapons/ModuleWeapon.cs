@@ -2272,6 +2272,10 @@ namespace BDArmory.Weapons
                         //need to know what next weapon in ripple sequence is, and have firedelay be set to whatever it's RPM is, not this weapon's or a generic average
                     }
                 }
+                if (isAPS && (tgtShell != null || tgtRocket != null))
+                {
+                    StartCoroutine(KillIncomingProjectile(tgtShell, tgtRocket));
+                }
             }
             else
             {
@@ -2945,6 +2949,10 @@ namespace BDArmory.Weapons
                         StartCoroutine(IncrementRippleIndex(InitialFireDelay * TimeWarp.CurrentRate));
                         isRippleFiring = true;
                     }
+                }
+                if (isAPS && (tgtShell != null || tgtRocket != null))
+                {
+                    StartCoroutine(KillIncomingProjectile(tgtShell, tgtRocket));
                 }
             }
         }
@@ -4380,17 +4388,9 @@ namespace BDArmory.Weapons
                                 break;
                             case WeaponTypes.Ballistic:
                                 Fire();
-                                if (isAPS && (tgtShell != null || tgtRocket != null))
-                                {
-                                    StartCoroutine(KillIncomingProjectile(tgtShell, tgtRocket));
-                                }
                                 break;
                             case WeaponTypes.Rocket:
                                 FireRocket();
-                                if (isAPS && (tgtShell != null || tgtRocket != null))
-                                {
-                                    StartCoroutine(KillIncomingProjectile(tgtShell, tgtRocket));
-                                }
                                 break;
                         }
                     }
@@ -4996,7 +4996,7 @@ namespace BDArmory.Weapons
             //So, uh, this is fine for simgle shot APS; what about conventional CIWS type AMS using rotary cannon for dakka vs accuracy?
             //should include a check for non-explosive rounds merely getting knocked off course instead of exploded.
             //should this be shell size dependant? I.e. sure, an APS can knock a sabot offcourse with a 60mm interceptor; what about that same 60mm shot vs a 155mm arty shell? or a 208mm naval gun?
-            //really only an issue in case of AP APS (e.g. flechette APS for anti-missile work) vs AP shell; HE APS rounds should be able to destroy inncoming proj
+            //really only an issue in case of AP APS (e.g. flechette APS for anti-missile work) vs AP shell; HE APS rounds should be able to destroy incoming proj
             if (shell != null || rocket != null)
             {
                 delayTime = -1;
