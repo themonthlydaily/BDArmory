@@ -1017,6 +1017,7 @@ namespace BDArmory.Competition
             if (VesselModuleRegistry.ignoredVesselTypes.Contains(vessel.vesselType)) return;
             if (!BDArmorySettings.AUTONOMOUS_COMBAT_SEATS) CheckForAutonomousCombatSeat(vessel);
             if (BDArmorySettings.DESTROY_UNCONTROLLED_WMS) CheckForUncontrolledVessel(vessel);
+            if (BDArmorySettings.COMPETITION_GM_KILL_WEAPON || BDArmorySettings.COMPETITION_GM_KILL_ENGINE || (BDArmorySettings.COMPETITION_GM_KILL_HP > 0)) CheckForGMCulling(vessel);
         }
 
         HashSet<VesselType> validVesselTypes = new HashSet<VesselType> { VesselType.Plane, VesselType.Ship };
@@ -1091,6 +1092,37 @@ namespace BDArmory.Competition
                 StartCoroutine(DelayedExplodeWMs(vessel, 2f, UncontrolledReason.Bricked)); // Vessel fried by EMP, destroy its weapon manager in 2s.
             }
         }
+        void CheckForGMCulling(Vessel vessel)
+        {
+            if (vessel == null || vessel.vesselName == null) return;
+            if (BDArmorySettings.COMPETITION_GM_KILL_ENGINE)
+            {
+                if (VesselModuleRegistry.GetModuleCount<ModuleEngines>(vessel) == 0)
+                {
+                    StartCoroutine(DelayedExplodeWMs(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, UncontrolledReason.Bricked));
+                    competitionStatus.Add(vessel.vesselName + " lost all engines. Terminated by GM.");
+                }
+            }
+            if (BDArmorySettings.COMPETITION_GM_KILL_WEAPON)
+            {
+                if (VesselModuleRegistry.GetModuleCount<IBDWeapon>(vessel) == 0)
+                {
+                    StartCoroutine(DelayedExplodeWMs(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, UncontrolledReason.Bricked));
+                    competitionStatus.Add(vessel.vesselName + " lost all weapons. Terminated by GM.");
+                }
+            }
+            if (BDArmorySettings.COMPETITION_GM_KILL_HP > 0)
+            {
+                var mf = VesselModuleRegistry.GetModule<MissileFire>(vessel);
+                if (mf != null)
+                    if (mf.currentHP < BDArmorySettings.COMPETITION_GM_KILL_HP)
+                {
+                    StartCoroutine(DelayedExplodeWMs(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, UncontrolledReason.Bricked));
+                    competitionStatus.Add(vessel.vesselName + " crippled. Terminated by GM.");
+                }
+            }
+        }
+
 
         enum UncontrolledReason { Uncontrolled, Bricked };
         HashSet<Vessel> explodingWM = new HashSet<Vessel>();
