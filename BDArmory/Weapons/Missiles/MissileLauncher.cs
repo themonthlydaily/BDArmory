@@ -1822,12 +1822,7 @@ namespace BDArmory.Weapons.Missiles
                         {
                             radarTarget = lockedTarget;
                             TargetAcquired = true;
-                            if (weaponClass == WeaponClasses.SLW)
-                            {
-                                TargetPosition = radarTarget.predictedPosition;
-                            }
-                            else
-                                TargetPosition = radarTarget.predictedPositionWithChaffFactor(chaffEffectivity);
+                            TargetPosition = radarTarget.predictedPositionWithChaffFactor(chaffEffectivity);
                             TargetVelocity = radarTarget.velocity;
                             TargetAcceleration = radarTarget.acceleration;
                             targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(TargetPosition, vessel.mainBody);
@@ -2945,19 +2940,19 @@ namespace BDArmory.Weapons.Missiles
             //torpedo: determine subtype
             if (missileType.ToLower() == "torpedo")
             {
-                if ((TargetingMode == TargetingModes.Radar) && (activeRadarRange > 0))
+                if (TargetingMode == TargetingModes.Radar && activeRadarRange > 0)
                     return "Active Sonar";
 
-                if ((TargetingMode == TargetingModes.Radar) && (activeRadarRange <= 0))
-                    return "Passive Sonar";
-
-                if ((TargetingMode == TargetingModes.Laser) || (TargetingMode == TargetingModes.Gps))
+                if (TargetingMode == TargetingModes.Laser || TargetingMode == TargetingModes.Gps)
                     return "Optical/wireguided";
 
-                if ((TargetingMode == TargetingModes.Heat))
-                    return "Heat guided";
+                if (TargetingMode == TargetingModes.Heat)
+                {
+                    if (activeRadarRange <= 0) return "Passive Sonar";
+                    else return "Heat guided";
+                }
 
-                if ((TargetingMode == TargetingModes.None))
+                if (TargetingMode == TargetingModes.None)
                     return "Unguided";
             }
 
