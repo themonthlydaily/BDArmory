@@ -589,6 +589,221 @@ namespace BDArmory.UI
             return seekerBias;
         }
 
+        public static float GetVesselAcousticSignature(Vessel v, TargetInfo ti, Vector3 sensorPosition = default(Vector3)) //not bothering with thermocline modelling at this time
+        {
+            float noiseScore = 0f;
+            float minNoise = float.MaxValue;
+            Part NoisePart = null;
+            hottestPart.Clear();
+            if (!v.Splashed) return 0;
+            using (var engines = VesselModuleRegistry.GetModules<ModuleEngines>(v).GetEnumerator())
+                while (engines.MoveNext())
+                {
+                    if (engines.Current == null || !engines.Current.EngineIgnited) continue;
+                    float thisScore = engines.Current.GetCurrentThrust() / 10; //pumps, fuel flow, cavitation, noise from ICE/turbine/etc.
+                    noiseScore = Mathf.Max(noiseScore, thisScore);
+                    minNoise = Mathf.Min(minNoise, thisScore);
+                    if (thisScore == noiseScore) NoisePart = engines.Current.part;
+                }
+            using (var pump = VesselModuleRegistry.GetModules<ModuleActiveRadiator>(v).GetEnumerator())
+                while (pump.MoveNext())
+                {
+                    if (pump.Current == null || !pump.Current.isActiveAndEnabled) continue;
+                    float thisScore = (float)pump.Current.maxEnergyTransfer / 1000; //pumps, coolant gurgling, etc
+                    noiseScore = Mathf.Max(noiseScore, thisScore);
+                    minNoise = Mathf.Min(minNoise, thisScore);
+                    if (thisScore == noiseScore) NoisePart = pump.Current.part;
+                }
+            //any other noise-making modules it would be sensible to add?
+            if (sensorPosition != default(Vector3)) //Audio source found; now lets determine how much of the craft is occluding it
+            {
+                using (List<Part>.Enumerator part = v.Parts.GetEnumerator())
+                    while (part.MoveNext())
+                    {
+                        if (!part.Current) continue;
+                        float thisScore = (float)(part.Current.thermalInternalFluxPrevious + part.Current.skinTemperature);
+
+                        if (thisScore < noiseScore * 1.05f && thisScore > noiseScore * 0.95f)
+                        {
+                            hottestPart.Add(part.Current);
+                        }
+                    }
+                Part closestPart = null;
+                Transform thrustTransform = null;
+                float distance = 9999999;
+                if (hottestPart.Count > 0)
+                {
+                    RaycastHit[] hits = new RaycastHit[10];
+                    using (List<Part>.Enumerator part = hottestPart.GetEnumerator()) //might be multiple 'hottest' parts (multi-engine ship, etc), find the one closest to the sensor
+                    {
+                        while (part.MoveNext())
+                        {
+                            if (!part.Current) continue;
+                            float thisdistance = Vector3.Distance(part.Current.transform.position, sensorPosition);
+                            if (distance > thisdistance)
+                            {
+                                distance = thisdistance;
+                                closestPart = part.Current;
+                            }
+                        }
+                        NoisePart = closestPart;
+                    }
+                    if (closestPart != null)
+                    {
+                            if (ti.targetEngineList.Contains(closestPart))
+                            {
+                                string transformName = (closestPart.GetComponent<ModuleEnginesFX>()) ? closestPart.GetComponent<ModuleEnginesFX>().thrustVectorTransformName : "thrustTransform";
+                                thrustTransform = closestPart.FindModelTransform(transformName);
+                            }
+                        // Set thrustTransform as noise source position for engines
+                        Vector3 NoisePosition = thrustTransform ? thrustTransform.position : closestPart.transform.position;
+                        Ray partRay = new Ray(NoisePosition, sensorPosition - NoisePosition); //trace from source to sensor
+
+                        // First evaluate occluded heat score, then if the closestPart is a non-prop engine, evaluate the plume temperature
+                        float occludedPartScore = GetOccludedHeatScore(v, closestPart, NoisePosition, noiseScore, partRay, hits, distance, thrustTransform);
+
+                        noiseScore = occludedPartScore;
+                    }
+                }
+                noiseScore += (ti.radarBaseSignature / 10f) * (float)((v.speed * (v.speed / 15f))); //the bigger something is, or the faster it's moving through the water, the larger the acoustic sig
+                VesselECMJInfo jammer = v.gameObject.GetComponent<VesselECMJInfo>();
+                if (jammer != null)
+                {
+                    noiseScore += jammer.jammerStrength / 2; //acoustic spam to overload sensor/obsfucate exact position, while effective against *Active* sonar, is going make you light up like a christmas tree on Passive soanr
+                }
+                using (var sonar = VesselModuleRegistry.GetModules<ModuleRadar>(v).GetEnumerator())
+                    while (sonar.MoveNext())
+                    {
+                        if (sonar.Current == null || !sonar.Current.radarEnabled || sonar.Current.sonarType != 1) continue;
+                        float ping = Vector3.Distance(sonar.Current.transform.position, sensorPosition);
+                        if (ping < sonar.Current.radarMaxDistanceDetect * 2)
+                            noiseScore += 1000 - ((ping / (sonar.Current.radarMaxDistanceDetect * 2)) * 1000); //more return from closer enemy active sonar
+                        break;
+                    }
+            }
+            if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[BDArmory.BDATargetManager] final noiseScore: " + noiseScore);
+            return noiseScore;
+        }
+
+        public static TargetSignatureData GetAcousticTarget(Vessel sourceVessel, Vessel missileVessel, Ray ray, TargetSignatureData priorNoiseTarget, float scanRadius, float highpassThreshold, FloatCurve lockedSensorFOVBias, FloatCurve lockedSensorVelocityBias, MissileFire mf = null, TargetInfo desiredTarget = null)
+        {
+            TargetSignatureData finalData = TargetSignatureData.noTarget;
+            float finalScore = 0;
+            float priorNoiseScore = priorNoiseTarget.signalStrength;
+            foreach (Vessel vessel in LoadedVessels)
+            {
+                if (vessel == null)
+                    continue;
+                if (!vessel || !vessel.loaded)
+                    continue;
+                if (vessel == sourceVessel || vessel == missileVessel)
+                    continue;
+                if (vessel.vesselType == VesselType.Debris)
+                    continue;
+                if (mf != null && mf.guardMode && (desiredTarget == null || desiredTarget.Vessel != vessel)) 
+                    continue;
+
+                TargetInfo tInfo = vessel.gameObject.GetComponent<TargetInfo>();
+
+                if (tInfo == null)
+                {
+                    var WM = VesselModuleRegistry.GetMissileFire(vessel, true);
+                    if (WM != null)
+                    {
+                        tInfo = vessel.gameObject.AddComponent<TargetInfo>();
+                    }
+                    else
+                        return finalData; 
+                }
+
+                // Abort if target is friendly.
+                if (mf != null)
+                {
+                    if (mf.Team.IsFriendly(tInfo.Team))
+                        continue;
+                }
+
+                // Abort if target is a missile that we've shot
+                if (tInfo.isMissile)
+                {
+                    if (tInfo.MissileBaseModule.SourceVessel == sourceVessel)
+                        continue;
+                }
+
+                float angle = Vector3.Angle(vessel.CoM - ray.origin, ray.direction);
+
+                if ((angle < scanRadius)) 
+                {
+                    if (RadarUtils.TerrainCheck(ray.origin, vessel.transform.position))
+                        continue;
+
+                    float score = GetVesselAcousticSignature(vessel, tInfo, missileVessel.CoM);
+                    score *= (1400 * 1400) / Mathf.Max((vessel.CoM - ray.origin).sqrMagnitude, 90000); // Clamp below 300m
+
+                    // Add bias targets closer to center of seeker FOV, only once missile seeker can see target
+                    if ((priorNoiseScore > 0f) && (angle < scanRadius))
+                        score *= GetSeekerBias(angle, Vector3.Angle(vessel.Velocity(), priorNoiseTarget.velocity), lockedSensorFOVBias, lockedSensorVelocityBias);
+
+                    score *= Mathf.Clamp(Vector3.Angle(vessel.transform.position - ray.origin, -VectorUtils.GetUpDirection(ray.origin)) / 90, 0.5f, 1.5f);
+
+                    if ((finalScore > 0f) && (score > 0f) && (priorNoiseScore > 0)) // If we were passed a target noise score, look for the most similar non-zero noise score after picking a target
+                    {
+                        if (Mathf.Abs(score - priorNoiseScore) < Mathf.Abs(finalScore - priorNoiseScore))
+                        {
+                            finalScore = score;
+                            finalData = new TargetSignatureData(vessel, score);
+                        }
+                    }
+                    else // Otherwise, pick the highest noise score
+                    {
+                        if (score > finalScore)
+                        {
+                            finalScore = score;
+                            finalData = new TargetSignatureData(vessel, score);
+                        }
+                    }
+                    Debug.Log($"[AcousticTorp DEBUG] audioscore of {vessel.GetName()} is {score}");
+                }
+            }
+
+            // see if there are audio spoofers decoying us:
+            bool flareSuccess = false;
+            TargetSignatureData flareData = TargetSignatureData.noTarget;
+            if (priorNoiseScore > 0) // Acoustic decoys can only decoy if we already had a target
+            {
+                flareData = GetFlareTarget(ray, scanRadius, highpassThreshold, lockedSensorFOVBias, lockedSensorVelocityBias, priorNoiseTarget);
+                flareData.signalStrength *= missileVessel.GetComponent<MissileBase>().flareEffectivity;
+                flareSuccess = ((!flareData.Equals(TargetSignatureData.noTarget)) && (flareData.signalStrength > highpassThreshold));
+            }
+
+
+            // No targets above highpassThreshold
+            if (finalScore < highpassThreshold)
+            {
+                finalData = TargetSignatureData.noTarget;
+
+                if (flareSuccess) // return matching acoustic spoofer
+                    return flareData;
+                else //else return the target:
+                    return finalData;
+            }
+
+            // See if an acoustic spoof decoy is closer in score to priornoiseScore than finalScore
+            if (priorNoiseScore > 0)
+                flareSuccess = (Mathf.Abs(flareData.signalStrength - priorNoiseScore) < Mathf.Abs(finalScore - priorNoiseScore)) && flareSuccess;
+            else if (BDArmorySettings.DUMB_IR_SEEKERS) //convert to a missile .cfg option for earlier-gen IR missiles?
+                flareSuccess = (flareData.signalStrength > finalScore) && flareSuccess;
+            else
+                flareSuccess = false;
+
+            if (flareSuccess) // return matching flare
+                return flareData;
+            else //else return the target:
+                return finalData;
+        }
+
+
+
         void UpdateDebugLabels()
         {
             debugString.Length = 0;
@@ -630,6 +845,7 @@ namespace BDArmory.UI
 
 
             debugString.Append(Environment.NewLine);
+            debugString.AppendLine($"Base Acoustic Signature: {GetVesselAcousticSignature(FlightGlobals.ActiveVessel, FlightGlobals.ActiveVessel.gameObject.GetComponent<TargetInfo>(), Vector3.zero):####}");
             debugString.AppendLine($"Base Heat Signature: {GetVesselHeatSignature(FlightGlobals.ActiveVessel, Vector3.zero):#####}, For/Aft: " +
                 GetVesselHeatSignature(FlightGlobals.ActiveVessel, forward).Item1.ToString("0") + "/" +
                 GetVesselHeatSignature(FlightGlobals.ActiveVessel, aft).Item1.ToString("0") + ", Side: " +

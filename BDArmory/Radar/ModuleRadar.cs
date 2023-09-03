@@ -100,6 +100,8 @@ namespace BDArmory.Radar
         [KSPField]
         public float radarGroundClutterFactor = 0.25f; //Factor defining how effective the radar is for look-down, compensating for ground clutter (0=ineffective, 1=fully effective)
                                                        //default to 0.25, so all cross sections of landed/splashed/submerged vessels are reduced to 1/4th, as these vessel usually a quite large
+        [KSPField]
+        public int sonarType = 0; //0 = Radar; 1 == Active Sonar; 2 == Passive Sonar
 
         #endregion Radar Capabilities
 
@@ -423,7 +425,10 @@ namespace BDArmory.Radar
                 if (rwrType == RadarWarningReceiver.RWRThreatTypes.Sonar)
                     signalPersistTimeForRwr = RadarUtils.ACTIVE_MISSILE_PING_PERISTS_TIME;
                 else
+                {
                     signalPersistTimeForRwr = signalPersistTime / 2;
+                    sonarType = 0;
+                }
 
                 if (rotationTransformName != string.Empty)
                 {
@@ -551,7 +556,7 @@ namespace BDArmory.Radar
                             Scan();
                         }
                     }
-                    else if (boresightScan)
+                    else if (boresightScan && rwrThreatType != 6)
                     {
                         BoresightScan();
                     }
@@ -1143,6 +1148,11 @@ namespace BDArmory.Radar
                     output.AppendLine(StringUtils.Localize("#autoLOC_bda_1000033", radarLockTrackCurve.Evaluate(radarMaxDistanceLockTrack), radarMaxDistanceLockTrack));
                 else
                     output.AppendLine(StringUtils.Localize("#autoLOC_bda_1000034"));
+
+                if (sonarType == 1)
+                    output.AppendLine(StringUtils.Localize("Active Sonar"));
+                if (sonarType == 2)
+                    output.AppendLine(StringUtils.Localize("Passive Sonar"));
                 output.AppendLine(StringUtils.Localize("#autoLOC_bda_1000035", radarGroundClutterFactor));
             }
 

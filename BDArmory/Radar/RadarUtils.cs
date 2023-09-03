@@ -1387,6 +1387,7 @@ namespace BDArmory.Radar
                             signature = (BDArmorySettings.ASPECTED_RCS) ? GetVesselRadarSignatureAtAspect(ti, ray.origin) : ti.radarModifiedSignature;
                             // no ground clutter modifier for missiles
                             signature *= ti.radarLockbreakFactor;    //multiply lockbreak factor from active ecm
+
                         }                                                                 //do not multiply chaff factor here
                         signature *= GetStandoffJammingModifier(missile.vessel, missile.Team, ray.origin, loadedvessels.Current, signature);
 
@@ -1451,11 +1452,14 @@ namespace BDArmory.Radar
             Vector3 lookDirection = Quaternion.AngleAxis(directionAngle, upVector) * forwardVector;
             int dataIndex = 0;
             bool hasLocked = false;
-
+            float selfNoise = 0;
             // guard clauses
             if (!myWpnManager || !myWpnManager.vessel || !radar)
                 return false;
-
+            if (radar.sonarType == 2)
+            {
+                selfNoise = BDATargetManager.GetVesselAcousticSignature(radar.vessel, GetVesselRadarSignature(radar.vessel), radar.referenceTransform.position) / 2;
+            }
             using (var loadedvessels = BDATargetManager.LoadedVessels.GetEnumerator())
                 while (loadedvessels.MoveNext())
                 {
@@ -1476,15 +1480,21 @@ namespace BDArmory.Radar
 
                         // get vessel's radar signature
                         TargetInfo ti = GetVesselRadarSignature(loadedvessels.Current);
-                        float signature = (BDArmorySettings.ASPECTED_RCS) ? GetVesselRadarSignatureAtAspect(ti, position) : ti.radarModifiedSignature;
+                        float signature = 1;
+                        if (radar.sonarType != 2)    //radar or active soanr
+                        {
+                            signature = (BDArmorySettings.ASPECTED_RCS) ? GetVesselRadarSignatureAtAspect(ti, position) : ti.radarModifiedSignature;
+                            signature *= GetRadarGroundClutterModifier(radar.radarGroundClutterFactor, referenceTransform, position, loadedvessels.Current.CoM, ti);
+                        }
+                        else //passive sonar
+                            signature = BDATargetManager.GetVesselAcousticSignature(loadedvessels.Current, ti, radar.referenceTransform.position) - selfNoise;
                         //do not multiply chaff factor here
-                        signature *= GetRadarGroundClutterModifier(radar.radarGroundClutterFactor, referenceTransform, position, loadedvessels.Current.CoM, ti);
 
                         // evaluate range
                         float distance = (loadedvessels.Current.CoM - position).magnitude / 1000f;                                      //TODO: Performance! better if we could switch to sqrMagnitude...
 
                         BDATargetManager.ClearRadarReport(loadedvessels.Current, myWpnManager);
-                        if (modeTryLock)    // LOCK/TRACK TARGET:
+                        if (modeTryLock && radar.sonarType != 2)    // LOCK/TRACK TARGET:
                         {
                             //evaluate if we can lock/track such a signature at that range
                             if (distance > radar.radarMinDistanceLockTrack && distance < radar.radarMaxDistanceLockTrack)
@@ -1541,10 +1551,12 @@ namespace BDArmory.Radar
                                 // report scanned targets only
                                 radar.ReceiveContactData(new TargetSignatureData(loadedvessels.Current, signature), false);
                             }
-
-                            //  our radar ping can be received at a higher range than we can detect, according to RWR range ping factor:
-                            if (distance < radar.radarMaxDistanceDetect * RWR_PING_RANGE_FACTOR)
-                                RadarWarningReceiver.PingRWR(loadedvessels.Current, position, radar.rwrType, radar.signalPersistTimeForRwr);
+                            if (radar.sonarType != 2)
+                            {
+                                //  our radar ping can be received at a higher range than we can detect, according to RWR range ping factor:
+                                if (distance < radar.radarMaxDistanceDetect * RWR_PING_RANGE_FACTOR)
+                                    RadarWarningReceiver.PingRWR(loadedvessels.Current, position, radar.rwrType, radar.signalPersistTimeForRwr);
+                            }
                         }
                     }
                 }
@@ -1851,6 +1863,7 @@ namespace BDArmory.Radar
                                                 results.foundAntiRadiationMissile = true; //admittedly, combining the two would result in launching flares at ARMs and turning off radar when having incoming heaters...
                                                 break;
                                         }
+                                        if (missileBase.GetWeaponClass() == WeaponClasses.SLW) results.foundTorpedo = true;
                                     }
                                 }
                                 else
