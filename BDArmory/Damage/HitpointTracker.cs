@@ -11,7 +11,6 @@ using BDArmory.Extensions;
 using BDArmory.Modules;
 using BDArmory.Settings;
 using BDArmory.Utils;
-using UnityEngine.UIElements;
 
 namespace BDArmory.Damage
 {
@@ -1422,6 +1421,8 @@ namespace BDArmory.Damage
                 Fields["armorCost"].guiActiveEditor = true;
                 Fields["armorMass"].guiActiveEditor = true;
                 UI_FloatRange armorFieldEditor = (UI_FloatRange)Fields["Armor"].uiControlEditor;
+                if (isProcWing)
+                    maxSupportedArmor = ProceduralWing.getPwingThickness(part);
                 if (armorFieldEditor.maxValue != maxSupportedArmor)
                 {
                     armorReset = false;
