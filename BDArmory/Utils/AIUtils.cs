@@ -257,7 +257,7 @@ namespace BDArmory.Utils
             Land = 1,
             Water = 2,
             Amphibious = Land | Water,
-            Submarine = Water,
+            Submarine = 4,
         }
 
         /// <summary>

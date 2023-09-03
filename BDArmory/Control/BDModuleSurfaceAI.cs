@@ -11,8 +11,7 @@ using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.Weapons;
 using BDArmory.Weapons.Missiles;
-using TMPro;
-using static BDArmory.Control.BDModulePilotAI;
+using BDArmory.GameModes;
 
 namespace BDArmory.Control
 {
@@ -26,7 +25,6 @@ namespace BDArmory.Control
 
         Vector3 targetDirection;
         float targetVelocity; // the velocity the ship should target, not the velocity of its target
-        float altIntegral = 0;
         bool aimingMode = false;
 
         int collisionDetectionTicker = 0;
@@ -65,6 +63,8 @@ namespace BDArmory.Control
             UI_ChooseOption(options = new string[5] { "Stationary", "Land", "Water", "Amphibious", "Submarine" })]
         public string SurfaceTypeName = "Land";
 
+        bool isHovercraft = false;
+
         public AIUtils.VehicleMovementType SurfaceType
             => (AIUtils.VehicleMovementType)Enum.Parse(typeof(AIUtils.VehicleMovementType), SurfaceTypeName);
 
@@ -73,9 +73,9 @@ namespace BDArmory.Control
         public float MaxSlopeAngle = 10f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CombatAltitude"), //Combat Alt.
-            UI_FloatRange(minValue = -1000, maxValue = -25, stepIncrement = 25, scene = UI_Scene.All)]
-        public float CombatAltitude = -150;
-        private float oldCombatAltitude = -150;
+            UI_FloatRange(minValue = -200, maxValue = -15, stepIncrement = 5, scene = UI_Scene.All)]
+        public float CombatAltitude = -75;
+
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CruiseSpeed"),//Cruise speed
             UI_FloatRange(minValue = 5f, maxValue = 60f, stepIncrement = 1f, scene = UI_Scene.All)]
         public float CruiseSpeed = 20;
@@ -221,6 +221,7 @@ namespace BDArmory.Control
             extendingTarget = null;
             bypassTarget = null;
             collisionDetectionTicker = 6;
+            if (VesselModuleRegistry.GetModules<ModuleSpaceFriction>(vessel).Count > 0) isHovercraft = true;
         }
 
         public override void DeactivatePilot()
@@ -269,12 +270,6 @@ namespace BDArmory.Control
             }
             Fields["CombatAltitude"].guiActive = (SurfaceType == AIUtils.VehicleMovementType.Submarine);
             Fields["CombatAltitude"].guiActiveEditor = (SurfaceType == AIUtils.VehicleMovementType.Submarine);
-            if (SurfaceType != AIUtils.VehicleMovementType.Submarine)
-            {
-                oldCombatAltitude = CombatAltitude;
-                CombatAltitude = 1;
-            }
-            else CombatAltitude = oldCombatAltitude;
             this.part.RefreshAssociatedWindows();
             if (BDArmoryAIGUI.Instance != null)
             {
@@ -582,7 +577,10 @@ namespace BDArmory.Control
             // if weaponManager thinks we're under fire, do the evasive dance
             if (SurfaceType != AIUtils.VehicleMovementType.Stationary && (weaponManager.underFire || weaponManager.missileIsIncoming))
             {
-                targetVelocity = MaxSpeed;
+                if (weaponManager.isDecoying) //incoming passive sonar torpedo, reduce craft noise
+                    targetVelocity = CruiseSpeed / 2;
+                else
+                    targetVelocity = MaxSpeed;
                 if (weaponManager.underFire || weaponManager.incomingMissileDistance < 2500)
                 {
                     if (Mathf.Abs(weaveAdjustment) + Time.deltaTime * weaveFactor > weaveLimit) weaveDirection *= -1;
@@ -602,7 +600,7 @@ namespace BDArmory.Control
 
         bool PanicModes()
         {
-            if (!vessel.LandedOrSplashed && !BDArmorySettings.SF_REPULSOR)
+            if (!vessel.LandedOrSplashed && !isHovercraft)
             {
                 targetVelocity = 0;
                 targetDirection = vessel.srf_velocity.ProjectOnPlanePreNormalized(upDir);
@@ -621,6 +619,12 @@ namespace BDArmory.Control
             {
                 targetVelocity = 0;
                 SetStatus("Floating");
+                return true;
+            }
+            else if (vessel.IsUnderwater() && (SurfaceType & AIUtils.VehicleMovementType.Submarine) == 0)
+            {
+                targetVelocity = 0;
+                SetStatus("Sunk");
                 return true;
             }
             return false;
@@ -812,7 +816,7 @@ namespace BDArmory.Control
             {
                 return true;
             }
-            else if (vessel.Splashed && (SurfaceType & AIUtils.VehicleMovementType.Water) == 0 || (SurfaceType & AIUtils.VehicleMovementType.Submarine) == 0)
+            else if (vessel.Splashed && ((SurfaceType & AIUtils.VehicleMovementType.Water) == 0 || (SurfaceType & AIUtils.VehicleMovementType.Submarine) == 0))
             {
                 if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) DebugLine(vessel.vesselName + " cannot engage: boat not in water");
             }
@@ -820,7 +824,7 @@ namespace BDArmory.Control
             {
                 if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) DebugLine(vessel.vesselName + " cannot engage: vehicle not on land");
             }
-            else if (!vessel.LandedOrSplashed)
+            else if (!vessel.LandedOrSplashed && !isHovercraft)
             {
                 if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) DebugLine(vessel.vesselName + " cannot engage: vessel not on surface");
             }
@@ -839,7 +843,7 @@ namespace BDArmory.Control
             => !BroadsideAttack &&
             (((target != null ? target.Splashed : false) && (SurfaceType & AIUtils.VehicleMovementType.Water) != 0) //boat targeting boat
             || ((target != null ? target.Landed : false) && (SurfaceType & AIUtils.VehicleMovementType.Land) != 0) //vee targeting vee
-            || (((target != null && !target.LandedOrSplashed) && (SurfaceType & AIUtils.VehicleMovementType.Amphibious) != 0) && BDArmorySettings.SPACE_HACKS)) //repulsorcraft targeting repulsorcraft
+            || (((target != null && !target.LandedOrSplashed) && (SurfaceType & AIUtils.VehicleMovementType.Amphibious) != 0) && isHovercraft)) //repulsorcraft targeting repulsorcraft
             ; //valid if can traverse the same medium and using bow fire
 
         /// <returns>null if no collision, dodge vector if one detected</returns>
