@@ -617,15 +617,24 @@ namespace BDArmory.UI
             //any other noise-making modules it would be sensible to add?
             if (sensorPosition != default(Vector3)) //Audio source found; now lets determine how much of the craft is occluding it
             {
-                using (List<Part>.Enumerator part = v.Parts.GetEnumerator())
-                    while (part.MoveNext())
+                using (var engines = VesselModuleRegistry.GetModules<ModuleEngines>(v).GetEnumerator())
+                    while (engines.MoveNext())
                     {
-                        if (!part.Current) continue;
-                        float thisScore = (float)(part.Current.thermalInternalFluxPrevious + part.Current.skinTemperature);
-
+                        if (engines.Current == null || !engines.Current.EngineIgnited || engines.Current.part == null) continue;
+                        float thisScore = engines.Current.GetCurrentThrust() / 10; //pumps, fuel flow, cavitation, noise from ICE/turbine/etc.
                         if (thisScore < noiseScore * 1.05f && thisScore > noiseScore * 0.95f)
                         {
-                            hottestPart.Add(part.Current);
+                            hottestPart.Add(engines.Current.part);
+                        }
+                    }
+                using (var pump = VesselModuleRegistry.GetModules<ModuleActiveRadiator>(v).GetEnumerator())
+                    while (pump.MoveNext())
+                    {
+                        if (pump.Current == null || !pump.Current.isActiveAndEnabled || pump.Current.part == null) continue;
+                        float thisScore = (float)pump.Current.maxEnergyTransfer / 1000; //pumps, coolant gurgling, etc
+                        if (thisScore < noiseScore * 1.05f && thisScore > noiseScore * 0.95f)
+                        {
+                            hottestPart.Add(pump.Current.part);
                         }
                     }
                 Part closestPart = null;
@@ -650,11 +659,11 @@ namespace BDArmory.UI
                     }
                     if (closestPart != null)
                     {
-                            if (ti.targetEngineList.Contains(closestPart))
-                            {
-                                string transformName = (closestPart.GetComponent<ModuleEnginesFX>()) ? closestPart.GetComponent<ModuleEnginesFX>().thrustVectorTransformName : "thrustTransform";
-                                thrustTransform = closestPart.FindModelTransform(transformName);
-                            }
+                        if (ti.targetEngineList.Contains(closestPart))
+                        {
+                            string transformName = (closestPart.GetComponent<ModuleEnginesFX>()) ? closestPart.GetComponent<ModuleEnginesFX>().thrustVectorTransformName : "thrustTransform";
+                            thrustTransform = closestPart.FindModelTransform(transformName);
+                        }
                         // Set thrustTransform as noise source position for engines
                         Vector3 NoisePosition = thrustTransform ? thrustTransform.position : closestPart.transform.position;
                         Ray partRay = new Ray(NoisePosition, sensorPosition - NoisePosition); //trace from source to sensor
@@ -665,7 +674,6 @@ namespace BDArmory.UI
                         noiseScore = occludedPartScore;
                     }
                 }
-                noiseScore += (ti.radarBaseSignature / 10f) * (float)((v.speed * (v.speed / 15f))); //the bigger something is, or the faster it's moving through the water, the larger the acoustic sig
                 VesselECMJInfo jammer = v.gameObject.GetComponent<VesselECMJInfo>();
                 if (jammer != null)
                 {
@@ -677,10 +685,15 @@ namespace BDArmory.UI
                         if (sonar.Current == null || !sonar.Current.radarEnabled || sonar.Current.sonarType != 1) continue;
                         float ping = Vector3.Distance(sonar.Current.transform.position, sensorPosition) / 1000;
                         if (ping < sonar.Current.radarMaxDistanceDetect * 2)
-                            noiseScore += 1000 - ((ping / (sonar.Current.radarMaxDistanceDetect * 2)) * 1000); //more return from closer enemy active sonar
+                        {
+                            float sonarMalus = 1000 - ((ping / (sonar.Current.radarMaxDistanceDetect * 2)) * 1000); //more return from closer enemy active sonar
+                            noiseScore += sonarMalus;
+                            if (BDArmorySettings.DEBUG_RADAR) Debug.Log($"[BDArmory.BDATargetManager] {v.vesselName}'s active sonar contributing {noiseScore.ToString("0.0")} to noiseScore");
+                        }
                         break;
                     }
             }
+            noiseScore += (ti.radarBaseSignature / 10f) * (float)((v.speed * (v.speed / 15f))); //the bigger something is, or the faster it's moving through the water, the larger the acoustic sig
             if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[BDArmory.BDATargetManager] final noiseScore: " + noiseScore);
             return noiseScore;
         }
