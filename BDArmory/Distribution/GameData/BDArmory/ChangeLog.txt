@@ -6,25 +6,28 @@
 - AI / WM:
 	- Fix the cubic solver giving invalid results for nearly degenerate cubics (used in aiming).
 	- Fix the debug line trajectories not showing the final part of the trajectory.
-	- Add Submarine AI option to Surface Driver AI.
+	- Add experimental Submarine AI option to Surface Driver AI.
 	- Various weapon selection logic tweaks to support sensible weapon selection/use when submerged and firing on non-submerged targets.
+- UI:
+	- Add Japanese localization files thanks to user Taka005.
 - Vessel Mover:
 	- Make the vessel selection more resilient to corrupted vessel files/loadmeta.
 	- Default the vessel selection window to using the VAB if the initial vessel is spawned through the launchpad.
 - Weapons:
 	- Missiles:
 		- Fix some NREs when manually firing missiles.
-		- Add new guidanceDelay field to allow setting a delay between missile launch and missile beginning to maneuver toards a target.
+    - Add new guidanceDelay field to allow setting a delay between missile launch and missile beginning to maneuver towards a target.
 		- Dynamic Launch Range now uses missile EngageRange max instead of static launch range
 		- Improved launch behavior for missiles set to be fired at very short range.
 		- Add LineOfSight check when firing missiles.
 		- Fix torpedoes not working.
 		- Missile/Bomb fratricide prevention now based on team instead of sourcevessel.
-		- Add Salvo size slider to MultiMissile Launchers
+		- Add Salvo size slider to MultiMissile Launchers, enabled via the new MultiMissileLauncher .cfg 'setSalvoSize' bool.
+    - Add new MultiMissileLauncher 'deploySpeed' field to set deploy animation duration.
 
 v1.6.5.0
 IMPROVEMENTS / FIXES
--General: 
+- General: 
 	- Fix Pwing HP error with Pwing edges not contributing as much HP as they should.
 - UI:
 	- Fix numeric input fields not updating when they should.
