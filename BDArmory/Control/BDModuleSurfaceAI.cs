@@ -600,7 +600,7 @@ namespace BDArmory.Control
 
         bool PanicModes()
         {
-            if (!vessel.LandedOrSplashed && !isHovercraft)
+            if (!vessel.LandedOrSplashed && (!isHovercraft || isHovercraft && vessel.altitude < MaxSlopeAngle * 3))
             {
                 targetVelocity = 0;
                 targetDirection = vessel.srf_velocity.ProjectOnPlanePreNormalized(upDir);
@@ -818,11 +818,11 @@ namespace BDArmory.Control
             }
             else if (vessel.Splashed && ((SurfaceType & AIUtils.VehicleMovementType.Water) == 0 || (SurfaceType & AIUtils.VehicleMovementType.Submarine) == 0))
             {
-                if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) DebugLine(vessel.vesselName + " cannot engage: boat not in water");
+                if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) DebugLine(vessel.vesselName + " cannot engage: land vehicle in water");
             }
             else if (vessel.Landed && (SurfaceType & AIUtils.VehicleMovementType.Land) == 0)
             {
-                if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) DebugLine(vessel.vesselName + " cannot engage: vehicle not on land");
+                if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) DebugLine(vessel.vesselName + " cannot engage: water vehicle on land");
             }
             else if (!vessel.LandedOrSplashed && !isHovercraft)
             {

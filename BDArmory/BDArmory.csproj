@@ -160,6 +160,7 @@
     <Compile Include="Control\ModuleWingCommander.cs" />
     <Compile Include="CounterMeasure\CMChaff.cs" />
     <Compile Include="CounterMeasure\CMDropper.cs" />
+    <Compile Include="CounterMeasure\CMDecoy.cs" />
     <Compile Include="CounterMeasure\CMFlare.cs" />
     <Compile Include="CounterMeasure\CMSmoke.cs" />
     <Compile Include="CounterMeasure\ModuleCloakingDevice.cs" />
@@ -948,5 +949,8 @@
   <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent />
   </PropertyGroup>
 </Project>

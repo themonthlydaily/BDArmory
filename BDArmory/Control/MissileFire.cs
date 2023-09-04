@@ -5090,7 +5090,7 @@ namespace BDArmory.Control
                                 bool radar = mlauncher.TargetingMode == MissileBase.TargetingModes.Radar;
                                 float heatThresh = mlauncher.heatThreshold;
                                 if (EMP && target.isDebilitated) continue;
-                                if ((!surfaceAI || surfaceAI.SurfaceType != AIUtils.VehicleMovementType.Submarine) && vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 10)) continue; //allow submarine-mounted missiles; new launch depth check in launchAuth 
+                                if (vessel.Splashed && (!surfaceAI || surfaceAI.SurfaceType != AIUtils.VehicleMovementType.Submarine) && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 10)) continue; //allow submarine-mounted missiles; new launch depth check in launchAuth 
                                 if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                     continue; //keep higher priority weapon
 
@@ -5442,7 +5442,7 @@ namespace BDArmory.Control
                                 //if (Missile.TargetingMode == MissileBase.TargetingModes.Radar && radars.Count <= 0) continue; //dont select RH missiles when no radar aboard
                                 //if (Missile.TargetingMode == MissileBase.TargetingModes.Laser && targetingPods.Count <= 0) continue; //don't select LH missiles when no FLIR aboard
                                 if (Missile.reloadableRail != null && (Missile.reloadableRail.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE)) continue; //don't select when out of ordinance
-                                if ((!surfaceAI || surfaceAI.SurfaceType != AIUtils.VehicleMovementType.Submarine) && vessel.Splashed && FlightGlobals.getAltitudeAtPos(item.Current.GetPart().transform.position) < -10) continue;
+                                if (vessel.Splashed && (!surfaceAI || surfaceAI.SurfaceType != AIUtils.VehicleMovementType.Submarine) && FlightGlobals.getAltitudeAtPos(item.Current.GetPart().transform.position) < -10) continue;
                                 //if (firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                                 candidateYield = Missile.GetBlastRadius();
                                 bool EMP = Missile.warheadType == MissileBase.WarheadTypes.EMP;
@@ -5932,11 +5932,11 @@ namespace BDArmory.Control
                         // lock radar if needed
                         if (ml.TargetingMode == MissileBase.TargetingModes.Radar)
                         {
-                            if (results.foundAntiRadiationMissile || (results.foundTorpedo && results.foundHeatMissile)) return false; // Don't try to fire radar missiles while we have an incoming anti-rad missile or passive sonar torp
+                            if (results.foundAntiRadiationMissile) return false; // Don't try to fire radar missiles while we have an incoming anti-rad missile
                             using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
                                 while (rd.MoveNext())
                                 {
-                                    if (rd.Current != null || rd.Current.canLock)
+                                    if (rd.Current != null && rd.Current.canLock && rd.Current.sonarType == 0)
                                     {
                                         rd.Current.EnableRadar();
                                     }
@@ -6021,7 +6021,7 @@ namespace BDArmory.Control
                             using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
                                 while (rd.MoveNext())
                                 {
-                                    if (rd.Current != null && rd.Current.canLock)
+                                    if (rd.Current != null && rd.Current.sonarType != 0)
                                         rd.Current.EnableRadar();
                                 }
                             return true;
@@ -6277,14 +6277,21 @@ namespace BDArmory.Control
 
                 if (vesselRadarData) // && !CurrentMissile.IndependantSeeker) //missile with independantSeeker can't get targetdata from radar/IRST
                 {
-                    if (vesselRadarData.irstCount > 0)
+                    if (CurrentMissile.GuidanceMode != MissileBase.GuidanceModes.SLW)
                     {
-                        heatTarget = vesselRadarData.activeIRTarget(); //point seeker at active target's IR return
+                        if (vesselRadarData.irstCount > 0)
+                        {
+                            heatTarget = vesselRadarData.activeIRTarget(); //point seeker at active target's IR return
+                        }
+                        else
+                        {
+                            if (vesselRadarData.locked) //uncaged radar lock
+                                heatTarget = vesselRadarData.lockedTargetData.targetData;
+                        }
                     }
                     else
                     {
-                        if (vesselRadarData.locked) //uncaged radar lock
-                            heatTarget = vesselRadarData.lockedTargetData.targetData;
+                        heatTarget = vesselRadarData.detectedRadarTarget(); //get initial direction for passive sonar torps from passive/non-locking sonar return
                     }
                 }
                 Vector3 direction =

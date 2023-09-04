@@ -675,7 +675,7 @@ namespace BDArmory.UI
                     while (sonar.MoveNext())
                     {
                         if (sonar.Current == null || !sonar.Current.radarEnabled || sonar.Current.sonarType != 1) continue;
-                        float ping = Vector3.Distance(sonar.Current.transform.position, sensorPosition);
+                        float ping = Vector3.Distance(sonar.Current.transform.position, sensorPosition) / 1000;
                         if (ping < sonar.Current.radarMaxDistanceDetect * 2)
                             noiseScore += 1000 - ((ping / (sonar.Current.radarMaxDistanceDetect * 2)) * 1000); //more return from closer enemy active sonar
                         break;
@@ -845,7 +845,7 @@ namespace BDArmory.UI
 
 
             debugString.Append(Environment.NewLine);
-            debugString.AppendLine($"Base Acoustic Signature: {GetVesselAcousticSignature(FlightGlobals.ActiveVessel, FlightGlobals.ActiveVessel.gameObject.GetComponent<TargetInfo>(), Vector3.zero):####}");
+            debugString.AppendLine($"Base Acoustic Signature: {GetVesselAcousticSignature(FlightGlobals.ActiveVessel, FlightGlobals.ActiveVessel.gameObject.GetComponent<TargetInfo>(), Vector3.zero).ToString("0.00")}");
             debugString.AppendLine($"Base Heat Signature: {GetVesselHeatSignature(FlightGlobals.ActiveVessel, Vector3.zero):#####}, For/Aft: " +
                 GetVesselHeatSignature(FlightGlobals.ActiveVessel, forward).Item1.ToString("0") + "/" +
                 GetVesselHeatSignature(FlightGlobals.ActiveVessel, aft).Item1.ToString("0") + ", Side: " +
