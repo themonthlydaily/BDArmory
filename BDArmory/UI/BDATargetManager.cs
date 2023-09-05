@@ -594,49 +594,75 @@ namespace BDArmory.UI
             float noiseScore = 1f;
             float minNoise = float.MaxValue;
             Part NoisePart = null;
+            bool hasEngines = false;
+            bool hasPumps = false;
             hottestPart.Clear();
             if (!v.Splashed) return 0;
-            using (var engines = VesselModuleRegistry.GetModules<ModuleEngines>(v).GetEnumerator())
-                while (engines.MoveNext())
+            var engineModules = VesselModuleRegistry.GetModules<ModuleEngines>(v);
+            if (engineModules != null)
+            {
+                if (engineModules.Count > 0)
                 {
-                    if (engines.Current == null || !engines.Current.EngineIgnited) continue;
-                    float thisScore = engines.Current.GetCurrentThrust() / 10; //pumps, fuel flow, cavitation, noise from ICE/turbine/etc.
-                    noiseScore = Mathf.Max(noiseScore, thisScore);
-                    minNoise = Mathf.Min(minNoise, thisScore);
-                    if (thisScore == noiseScore) NoisePart = engines.Current.part;
+                    hasEngines = true;
+                    using (var engines = engineModules.GetEnumerator())
+                        while (engines.MoveNext())
+                        {
+                            if (engines.Current == null) continue;
+                            if (!engines.Current.EngineIgnited) continue;
+                            float thisScore = engines.Current.GetCurrentThrust() / 10; //pumps, fuel flow, cavitation, noise from ICE/turbine/etc.
+                            noiseScore = Mathf.Max(noiseScore, thisScore);
+                            minNoise = Mathf.Min(minNoise, thisScore);
+                            if (thisScore == noiseScore) NoisePart = engines.Current.part;
+                        }
                 }
-            using (var pump = VesselModuleRegistry.GetModules<ModuleActiveRadiator>(v).GetEnumerator())
-                while (pump.MoveNext())
+            }
+                var pumpModules = VesselModuleRegistry.GetModules<ModuleActiveRadiator>(v);
+                if (pumpModules != null)
                 {
-                    if (pump.Current == null || !pump.Current.isActiveAndEnabled) continue;
-                    float thisScore = (float)pump.Current.maxEnergyTransfer / 1000; //pumps, coolant gurgling, etc
-                    noiseScore = Mathf.Max(noiseScore, thisScore);
-                    minNoise = Mathf.Min(minNoise, thisScore);
-                    if (thisScore == noiseScore) NoisePart = pump.Current.part;
+                    if (pumpModules.Count > 0)
+                    {
+                        hasPumps = true;
+                        using (var pump = pumpModules.GetEnumerator())
+                            while (pump.MoveNext())
+                            {
+                                if (pump.Current == null) continue;
+                                if (!pump.Current.isActiveAndEnabled) continue;
+                                float thisScore = (float)pump.Current.maxEnergyTransfer / 1000; //pumps, coolant gurgling, etc
+                                noiseScore = Mathf.Max(noiseScore, thisScore);
+                                minNoise = Mathf.Min(minNoise, thisScore);
+                                if (thisScore == noiseScore) NoisePart = pump.Current.part;
+                            }
+                    }
                 }
             //any other noise-making modules it would be sensible to add?
             if (sensorPosition != default(Vector3)) //Audio source found; now lets determine how much of the craft is occluding it
             {
-                using (var engines = VesselModuleRegistry.GetModules<ModuleEngines>(v).GetEnumerator())
-                    while (engines.MoveNext())
-                    {
-                        if (engines.Current == null || !engines.Current.EngineIgnited) continue;
-                        float thisScore = engines.Current.GetCurrentThrust() / 10; //pumps, fuel flow, cavitation, noise from ICE/turbine/etc.
-                        if (thisScore < noiseScore * 1.05f && thisScore > noiseScore * 0.95f)
+                if (hasEngines)
+                {
+                    using (var engines = VesselModuleRegistry.GetModules<ModuleEngines>(v).GetEnumerator())
+                        while (engines.MoveNext())
                         {
-                            hottestPart.Add(engines.Current.part);
+                            if (engines.Current == null || !engines.Current.EngineIgnited) continue;
+                            float thisScore = engines.Current.GetCurrentThrust() / 10; //pumps, fuel flow, cavitation, noise from ICE/turbine/etc.
+                            if (thisScore < noiseScore * 1.05f && thisScore > noiseScore * 0.95f)
+                            {
+                                hottestPart.Add(engines.Current.part);
+                            }
                         }
-                    }
-                using (var pump = VesselModuleRegistry.GetModules<ModuleActiveRadiator>(v).GetEnumerator())
-                    while (pump.MoveNext())
-                    {
-                        if (pump.Current == null || !pump.Current.isActiveAndEnabled) continue;
-                        float thisScore = (float)pump.Current.maxEnergyTransfer / 1000; //pumps, coolant gurgling, etc
-                        if (thisScore < noiseScore * 1.05f && thisScore > noiseScore * 0.95f)
+                }
+                if (hasPumps)
+                {
+                    using (var pump = VesselModuleRegistry.GetModules<ModuleActiveRadiator>(v).GetEnumerator())
+                        while (pump.MoveNext())
                         {
-                            hottestPart.Add(pump.Current.part);
+                            if (pump.Current == null || !pump.Current.isActiveAndEnabled) continue;
+                            float thisScore = (float)pump.Current.maxEnergyTransfer / 1000; //pumps, coolant gurgling, etc
+                            if (thisScore < noiseScore * 1.05f && thisScore > noiseScore * 0.95f)
+                            {
+                                hottestPart.Add(pump.Current.part);
+                            }
                         }
-                    }
+                }
                 Part closestPart = null;
                 Transform thrustTransform = null;
                 float distance = 9999999;

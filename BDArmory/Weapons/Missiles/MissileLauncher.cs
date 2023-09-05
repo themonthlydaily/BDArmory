@@ -2479,7 +2479,7 @@ namespace BDArmory.Weapons.Missiles
                 DoAero(SLWTarget);
             }
 
-            if (SLWTarget.y > 0f) SLWTarget.y = getSWLWOffset;
+            if (SLWTarget.y > 0f) SLWTarget.y = getSWLWOffset; //shouldn't this be *before* the DoAero() to send the torp towards the target position?
 
             CheckMiss();
 
