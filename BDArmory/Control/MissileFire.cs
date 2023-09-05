@@ -5936,7 +5936,7 @@ namespace BDArmory.Control
                             using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
                                 while (rd.MoveNext())
                                 {
-                                    if (rd.Current != null && rd.Current.canLock && rd.Current.sonarType == 0)
+                                    if (rd.Current != null && rd.Current.canLock && rd.Current.sonarMode == ModuleRadar.SonarModes.None)
                                     {
                                         rd.Current.EnableRadar();
                                     }
@@ -6021,7 +6021,7 @@ namespace BDArmory.Control
                             using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
                                 while (rd.MoveNext())
                                 {
-                                    if (rd.Current != null && rd.Current.sonarType != 0)
+                                    if (rd.Current != null && rd.Current.sonarMode != ModuleRadar.SonarModes.None)
                                         rd.Current.EnableRadar();
                                 }
                             return true;
@@ -6746,7 +6746,7 @@ namespace BDArmory.Control
                                     using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
                                         while (rd.MoveNext())
                                         {
-                                            if (rd.Current != null && rd.Current.sonarType == 1) //kill active sonar
+                                            if (rd.Current != null && rd.Current.sonarMode == ModuleRadar.SonarModes.Active) //kill active sonar
                                                 rd.Current.DisableRadar();
                                             _radarsEnabled = false;
                                         }

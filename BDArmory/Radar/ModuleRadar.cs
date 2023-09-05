@@ -103,6 +103,14 @@ namespace BDArmory.Radar
         [KSPField]
         public int sonarType = 0; //0 = Radar; 1 == Active Sonar; 2 == Passive Sonar
 
+        public enum SonarModes
+        {
+            None = 0,
+            Active = 1,
+            passive = 2
+        }
+        public SonarModes sonarMode = SonarModes.None;
+
         #endregion Radar Capabilities
 
         #region Persisted State in flight
@@ -422,12 +430,13 @@ namespace BDArmory.Radar
                     : directionalFieldOfView / (scanRotationSpeed + 5);
 
                 rwrType = (RadarWarningReceiver.RWRThreatTypes)rwrThreatType;
+                sonarMode = (SonarModes)sonarType;
                 if (rwrType == RadarWarningReceiver.RWRThreatTypes.Sonar)
                     signalPersistTimeForRwr = RadarUtils.ACTIVE_MISSILE_PING_PERISTS_TIME;
                 else
                 {
                     signalPersistTimeForRwr = signalPersistTime / 2;
-                    sonarType = 0;
+                    sonarMode = SonarModes.None;
                 }
 
                 if (rotationTransformName != string.Empty)
@@ -1150,9 +1159,9 @@ namespace BDArmory.Radar
                     output.AppendLine(StringUtils.Localize("#autoLOC_bda_1000034"));
 
                 if (sonarType == 1)
-                    output.AppendLine(StringUtils.Localize("Active Sonar"));
+                    output.AppendLine(StringUtils.Localize("#autoLOC_bda_1000039"));
                 if (sonarType == 2)
-                    output.AppendLine(StringUtils.Localize("Passive Sonar"));
+                    output.AppendLine(StringUtils.Localize("#autoLOC_bda_1000040"));
                 output.AppendLine(StringUtils.Localize("#autoLOC_bda_1000035", radarGroundClutterFactor));
             }
 

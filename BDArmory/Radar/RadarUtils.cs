@@ -1456,7 +1456,7 @@ namespace BDArmory.Radar
             // guard clauses
             if (!myWpnManager || !myWpnManager.vessel || !radar)
                 return false;
-            if (radar.sonarType == 2)
+            if (radar.sonarMode == ModuleRadar.SonarModes.passive)
             {
                 selfNoise = BDATargetManager.GetVesselAcousticSignature(radar.vessel, GetVesselRadarSignature(radar.vessel), radar.referenceTransform.position) / 2;
             }
@@ -1481,7 +1481,7 @@ namespace BDArmory.Radar
                         // get vessel's radar signature
                         TargetInfo ti = GetVesselRadarSignature(loadedvessels.Current);
                         float signature = 1;
-                        if (radar.sonarType != 2)    //radar or active soanr
+                        if (radar.sonarMode != ModuleRadar.SonarModes.passive)    //radar or active soanr
                         {
                             signature = (BDArmorySettings.ASPECTED_RCS) ? GetVesselRadarSignatureAtAspect(ti, position) : ti.radarModifiedSignature;
                             signature *= GetRadarGroundClutterModifier(radar.radarGroundClutterFactor, referenceTransform, position, loadedvessels.Current.CoM, ti);
@@ -1494,7 +1494,7 @@ namespace BDArmory.Radar
                         float distance = (loadedvessels.Current.CoM - position).magnitude / 1000f;                                      //TODO: Performance! better if we could switch to sqrMagnitude...
 
                         BDATargetManager.ClearRadarReport(loadedvessels.Current, myWpnManager);
-                        if (modeTryLock && radar.sonarType != 2)    // LOCK/TRACK TARGET:
+                        if (modeTryLock && radar.sonarMode != ModuleRadar.SonarModes.passive)    // LOCK/TRACK TARGET:
                         {
                             //evaluate if we can lock/track such a signature at that range
                             if (distance > radar.radarMinDistanceLockTrack && distance < radar.radarMaxDistanceLockTrack)
@@ -1551,7 +1551,7 @@ namespace BDArmory.Radar
                                 // report scanned targets only
                                 radar.ReceiveContactData(new TargetSignatureData(loadedvessels.Current, signature), false);
                             }
-                            if (radar.sonarType != 2)
+                            if (radar.sonarMode != ModuleRadar.SonarModes.passive)
                             {
                                 //  our radar ping can be received at a higher range than we can detect, according to RWR range ping factor:
                                 if (distance < radar.radarMaxDistanceDetect * RWR_PING_RANGE_FACTOR)

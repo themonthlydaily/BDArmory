@@ -23,6 +23,13 @@ namespace BDArmory.Weapons
         }
         Vessel _sourceVessel;
         public string SourceVesselName { get; private set; }
+
+        public BDTeam sourcevesselTeam
+        {
+            get { return _sourceVesselTeam; }
+            set { _sourceVesselTeam = value; SourceVesselTeam = _sourceVesselTeam != null ? _sourceVesselTeam.Name : null; }
+        }
+        BDTeam _sourceVesselTeam;
         public string SourceVesselTeam { get; private set; }
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_TNTMass"),//TNT mass equivalent
@@ -165,6 +172,13 @@ namespace BDArmory.Weapons
                 part.OnJustAboutToBeDestroyed += DetonateIfPossible;
                 part.force_activate();
                 sourcevessel = vessel;
+                if (part == null) return;
+                var MF = VesselModuleRegistry.GetModule<MissileFire>(vessel, true);
+                if (MF != null)
+                {
+                    sourcevessel = MF.vessel;
+                    sourcevesselTeam = MF.Team; // grab the vessel the Weapon manager is on at start
+                }
             }
             if (part.FindModuleImplementing<MissileLauncher>() == null)
             {
@@ -345,13 +359,6 @@ namespace BDArmory.Weapons
 
         public void DetonateIfPossible()
         {
-            if (!HighLogic.LoadedSceneIsFlight || part == null) return;
-            var MF = VesselModuleRegistry.GetModule<MissileFire>(vessel, true);
-            if (MF != null)
-            {
-                sourcevessel = MF.vessel;
-                SourceVesselTeam = MF.Team.Name; // grab the vessel the Weapon manager is on at start
-            }
             if (!hasDetonated && Armed)
             {
                 hasDetonated = true;

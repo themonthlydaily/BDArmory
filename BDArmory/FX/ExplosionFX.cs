@@ -308,7 +308,7 @@ namespace BDArmory.FX
                             if (ExplosivePart != null && partHit.name == ExplosivePart.name)
                             {
                                 var partHitExplosivePart = partHit.GetComponent<BDExplosivePart>();
-                                if (partHitExplosivePart != null && SourceVesselTeam == partHitExplosivePart.SourceVesselTeam) continue; //don't fratricide fellow missiles/bombs in a launched salvo when the first detonates
+                                if (partHitExplosivePart != null && SourceVesselTeam == partHitExplosivePart.SourceVesselTeam && !string.IsNullOrEmpty(SourceVesselTeam)) continue; //don't fratricide fellow missiles/bombs in a launched salvo when the first detonates
                             }
                             if (partHit.mass > 0 && !explosionEventsPartsAdded.Contains(partHit))
                             {

@@ -591,7 +591,7 @@ namespace BDArmory.UI
 
         public static float GetVesselAcousticSignature(Vessel v, TargetInfo ti, Vector3 sensorPosition = default(Vector3)) //not bothering with thermocline modelling at this time
         {
-            float noiseScore = 0f;
+            float noiseScore = 1f;
             float minNoise = float.MaxValue;
             Part NoisePart = null;
             hottestPart.Clear();
@@ -620,7 +620,7 @@ namespace BDArmory.UI
                 using (var engines = VesselModuleRegistry.GetModules<ModuleEngines>(v).GetEnumerator())
                     while (engines.MoveNext())
                     {
-                        if (engines.Current == null || !engines.Current.EngineIgnited || engines.Current.part == null) continue;
+                        if (engines.Current == null || !engines.Current.EngineIgnited) continue;
                         float thisScore = engines.Current.GetCurrentThrust() / 10; //pumps, fuel flow, cavitation, noise from ICE/turbine/etc.
                         if (thisScore < noiseScore * 1.05f && thisScore > noiseScore * 0.95f)
                         {
@@ -630,7 +630,7 @@ namespace BDArmory.UI
                 using (var pump = VesselModuleRegistry.GetModules<ModuleActiveRadiator>(v).GetEnumerator())
                     while (pump.MoveNext())
                     {
-                        if (pump.Current == null || !pump.Current.isActiveAndEnabled || pump.Current.part == null) continue;
+                        if (pump.Current == null || !pump.Current.isActiveAndEnabled) continue;
                         float thisScore = (float)pump.Current.maxEnergyTransfer / 1000; //pumps, coolant gurgling, etc
                         if (thisScore < noiseScore * 1.05f && thisScore > noiseScore * 0.95f)
                         {
@@ -682,7 +682,7 @@ namespace BDArmory.UI
                 using (var sonar = VesselModuleRegistry.GetModules<ModuleRadar>(v).GetEnumerator())
                     while (sonar.MoveNext())
                     {
-                        if (sonar.Current == null || !sonar.Current.radarEnabled || sonar.Current.sonarType != 1) continue;
+                        if (sonar.Current == null || !sonar.Current.radarEnabled || sonar.Current.sonarMode != ModuleRadar.SonarModes.Active) continue;
                         float ping = Vector3.Distance(sonar.Current.transform.position, sensorPosition) / 1000;
                         if (ping < sonar.Current.radarMaxDistanceDetect * 2)
                         {

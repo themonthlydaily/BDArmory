@@ -600,7 +600,7 @@ namespace BDArmory.Control
 
         bool PanicModes()
         {
-            if (!vessel.LandedOrSplashed && (!isHovercraft || isHovercraft && vessel.altitude < MaxSlopeAngle * 3))
+            if (!vessel.LandedOrSplashed && (!isHovercraft || isHovercraft && vessel.radarAltitude > MaxSlopeAngle * 3)) //FIXME - unlink hoverAlt from maxSlope, else low hover alt may prevent navigating steeper terrain
             {
                 targetVelocity = 0;
                 targetDirection = vessel.srf_velocity.ProjectOnPlanePreNormalized(upDir);
@@ -841,8 +841,8 @@ namespace BDArmory.Control
 
         public override bool IsValidFixedWeaponTarget(Vessel target)
             => !BroadsideAttack &&
-            (((target != null ? target.Splashed : false) && (SurfaceType & AIUtils.VehicleMovementType.Water) != 0) //boat targeting boat
-            || ((target != null ? target.Landed : false) && (SurfaceType & AIUtils.VehicleMovementType.Land) != 0) //vee targeting vee
+            (((target != null && target.Splashed) && (SurfaceType & AIUtils.VehicleMovementType.Water) != 0) //boat targeting boat
+            || ((target != null && target.Landed) && (SurfaceType & AIUtils.VehicleMovementType.Land) != 0) //vee targeting vee
             || (((target != null && !target.LandedOrSplashed) && (SurfaceType & AIUtils.VehicleMovementType.Amphibious) != 0) && isHovercraft)) //repulsorcraft targeting repulsorcraft
             ; //valid if can traverse the same medium and using bow fire
 
