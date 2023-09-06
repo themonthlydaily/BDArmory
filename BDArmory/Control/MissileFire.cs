@@ -731,9 +731,9 @@ namespace BDArmory.Control
                     using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
                         while (rd.MoveNext())
                         {
-                            if (rd.Current != null && rd.Current.canLock)
+                            if (rd.Current != null && rd.Current.canLock) //should we have something to activate scanning radars as well?
                             {
-                                rd.Current.EnableRadar();
+                                rd.Current.EnableRadar(); 
                                 _radarsEnabled = true;
                             }
                         }
@@ -2042,9 +2042,10 @@ namespace BDArmory.Control
 
                                 yield return new WaitForFixedUpdate();
                             }
-
-                            //try uncaged IR lock with radar
-                            if (guardTarget && !heatTarget.exists && vesselRadarData && vesselRadarData.radarCount > 0)
+                            if (BDArmorySettings.DEBUG_MISSILES)
+                                Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName}'s {CurrentMissile.GetShortName()} has heatTarget: {heatTarget.exists}");
+                                //try uncaged IR lock with radar
+                                if (guardTarget && !heatTarget.exists && vesselRadarData && vesselRadarData.radarCount > 0)
                             {
                                 if (!vesselRadarData.locked ||
                                     (vesselRadarData.lockedTargetData.targetData.predictedPosition -
@@ -2060,7 +2061,8 @@ namespace BDArmory.Control
                                 heatTarget = vesselRadarData.activeIRTarget();
                                 yield return new WaitForSecondsFixed(Mathf.Min(1, (targetScanInterval * 0.25f)));
                             }
-
+                            if (BDArmorySettings.DEBUG_MISSILES)
+                                Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName}'s heatTarget locked");
                             // if (AIMightDirectFire() && ml && heatTarget.exists)
                             // {
                             //     float LAstartTime = Time.time;
@@ -5612,6 +5614,7 @@ namespace BDArmory.Control
                         {
                             //if (firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                             MissileLauncher SLW = item.Current as MissileLauncher;
+                            if (item.Current.GetMissileType().ToLower() == "depthcharge") continue; // don't use depth charges against surface ships
                             if (SLW.reloadableRail != null && (SLW.reloadableRail.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE)) continue; //don't select when out of ordinance
                             float candidateYield = SLW.GetBlastRadius();
                             bool EMP = SLW.warheadType == MissileBase.WarheadTypes.EMP;
@@ -5619,20 +5622,42 @@ namespace BDArmory.Control
 
                             if (EMP && target.isDebilitated) continue;
                             // not sure on the desired selection priority algorithm, so placeholder By Yield for now
-                            if (distance < candidateYield) continue;
-                            if (targetWeaponPriority < candidatePriority) //use priority gun
+
+                            if (SLW.TargetingMode == MissileBase.TargetingModes.Heat && SLW.activeRadarRange < 0 && (rwr && rwr.rwrEnabled)) //we have passive acoustic homing? see if anything has active sonar
                             {
-                                targetWeapon = item.Current;
-                                targetYield = candidateYield;
-                                targetWeaponPriority = candidatePriority;
+                                for (int i = 0; i < rwr.pingsData.Length; i++)
+                                {
+                                    if (rwr.pingsData[i].signalStrength == 6) //Sonar
+                                    {
+                                        if ((rwr.pingWorldPositions[i] - guardTarget.CoM).sqrMagnitude < 20 * 20) //is current target a hostile radar source?
+                                        {
+                                            candidateYield *= 2; // Prioritize PAH Torps for hostile sonar sources
+                                            break;
+                                        }
+                                    }
+                                }
                             }
-                            else //if equal priority, use standard weighting
+
+                            if (distance < ((EngageableWeapon)item.Current).engageRangeMin || firedMissiles >= maxMissilesOnTarget)
+                            candidateYield *= -1f; // if within min range, negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
+
+                            if ((!vessel.LandedOrSplashed) || ((distance > gunRange) && (vessel.LandedOrSplashed))) // If we're not airborne, we want to prioritize guns
                             {
-                                if (targetYield < candidateYield)
+                                if ((distance <= gunRange || distance < candidateYield || candidateYield < 1) && targetWeapon != null) continue; //torp are within min range/can't lock, don't replace existing gun if in gun range
+                                if (targetWeaponPriority < candidatePriority) //use priority gun
                                 {
                                     targetWeapon = item.Current;
                                     targetYield = candidateYield;
                                     targetWeaponPriority = candidatePriority;
+                                }
+                                else //if equal priority, use standard weighting
+                                {
+                                    if (targetYield < candidateYield)
+                                    {
+                                        targetWeapon = item.Current;
+                                        targetYield = candidateYield;
+                                        targetWeaponPriority = candidatePriority;
+                                    }
                                 }
                             }
                         }
@@ -5659,8 +5684,13 @@ namespace BDArmory.Control
                             if (SLW.TargetingMode == MissileBase.TargetingModes.Laser && targetingPods.Count <= 0) continue; //don't select LH missiles when no FLIR aboard
                             if (SLW.reloadableRail != null && (SLW.reloadableRail.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE)) continue; //don't select when out of ordinance
                             float candidateYield = SLW.GetBlastRadius();
+                            float candidateTDPS = 0f;
                             bool EMP = SLW.warheadType == MissileBase.WarheadTypes.EMP;
+                            bool heat = SLW.TargetingMode == MissileBase.TargetingModes.Heat;
+                            bool radar = SLW.TargetingMode == MissileBase.TargetingModes.Radar;
+                            float heatThresh = SLW.heatThreshold;
                             int candidatePriority = Mathf.RoundToInt(SLW.priority);
+                            float candidateTurning = SLW.maxTurnRateDPS;
 
                             if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                 continue; //keep higher priority weapon
@@ -5678,11 +5708,65 @@ namespace BDArmory.Control
                             }
 
                             if (item.Current.GetMissileType().ToLower() != "torpedo") continue;
+
                             if (distance < candidateYield) continue; //don't use explosives within their blast radius
                                                                      //if(firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
-                            targetWeapon = item.Current;
-                            targetWeaponPriority = candidatePriority;
-                            break;
+                            if (SLW.TargetingMode == MissileBase.TargetingModes.Heat && SLW.activeRadarRange < 0 && (rwr && rwr.rwrEnabled)) //we have passive acoustic homing? see if anything has active sonar
+                            {
+                                for (int i = 0; i < rwr.pingsData.Length; i++)
+                                {
+                                    if (rwr.pingsData[i].signalStrength == 6) //Sonar
+                                    {
+                                        if ((rwr.pingWorldPositions[i] - guardTarget.CoM).sqrMagnitude < 20 * 20) //is current target a hostile radar source?
+                                        {
+                                            candidateYield *= 2; // Prioritize PAH Torps for hostile sonar sources
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (candidateTurning > targetWeaponTDPS)
+                            {
+                                candidateTDPS = candidateTurning; // weight selection towards more maneuverable missiles
+                            }
+                            //if (candidateDetDist > 0)
+                            //{
+                            //    candidateTDPS += candidateDetDist; // weight selection towards misiles with proximity warheads
+                            //}
+                            if (heat && heatTarget.exists && heatTarget.signalStrength < heatThresh)
+                            {
+                                candidateTDPS *= 0.001f; //Heatseeker, but IR sig is below missile threshold, skip to something else unless nutohine else available
+                            }
+                            if (radar)
+                            {
+                                if ((!_radarsEnabled || (vesselRadarData != null && !vesselRadarData.locked)) && !SLW.radarLOAL)
+                                {
+                                    candidateTDPS *= 0.001f; //no radar lock, skip to something else unless nothing else available
+                                }
+                            }
+                            if (distance < ((EngageableWeapon)item.Current).engageRangeMin || firedMissiles >= maxMissilesOnTarget)
+                                candidateYield *= -1f; // if within min range, negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
+
+                            if ((!vessel.Splashed) || ((distance > gunRange) && (vessel.LandedOrSplashed))) // If we're not airborne, we want to prioritize guns
+                            {
+                                if ((distance <= 500 || distance < candidateYield || candidateYield < 1) && targetWeapon != null) continue; //torp are within min range/can't lock, don't replace existing gun if in gun range
+                                if (targetWeaponPriority < candidatePriority) //use priority gun
+                                {
+                                    targetWeapon = item.Current;
+                                    targetYield = candidateYield;
+                                    targetWeaponPriority = candidatePriority;
+                                }
+                                else //if equal priority, use standard weighting
+                                {
+                                    if (targetYield < candidateYield)
+                                    {
+                                        targetWeapon = item.Current;
+                                        targetYield = candidateYield;
+                                        targetWeaponPriority = candidatePriority;
+                                    }
+                                }
+                            }
                             //MMG torpedo support... ?
                         }
                         if (candidateClass == WeaponClasses.Rocket)
@@ -5697,7 +5781,7 @@ namespace BDArmory.Control
                             {
                                 if (BDArmorySettings.BULLET_WATER_DRAG)
                                 {
-                                    if ((distance > 100 * CandidateEndurance)) continue;
+                                    if ((distance > 500 * CandidateEndurance)) continue;
                                 }
                                 if (targetWeaponPriority > candidateRanking)
                                     continue; //don't select a lower priority weapon over a higher priority one
@@ -6021,7 +6105,7 @@ namespace BDArmory.Control
                             using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
                                 while (rd.MoveNext())
                                 {
-                                    if (rd.Current != null && rd.Current.sonarMode != ModuleRadar.SonarModes.None)
+                                    if (rd.Current != null && rd.Current.sonarMode == ModuleRadar.SonarModes.Active)
                                         rd.Current.EnableRadar();
                                 }
                             return true;

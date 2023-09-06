@@ -436,7 +436,6 @@ namespace BDArmory.Radar
                 else
                 {
                     signalPersistTimeForRwr = signalPersistTime / 2;
-                    sonarMode = SonarModes.None;
                 }
 
                 if (rotationTransformName != string.Empty)
@@ -565,7 +564,7 @@ namespace BDArmory.Radar
                             Scan();
                         }
                     }
-                    else if (boresightScan && rwrThreatType != 6)
+                    else if (boresightScan)
                     {
                         BoresightScan();
                     }

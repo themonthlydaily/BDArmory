@@ -589,51 +589,46 @@ namespace BDArmory.UI
             return seekerBias;
         }
 
-        public static float GetVesselAcousticSignature(Vessel v, TargetInfo ti, Vector3 sensorPosition = default(Vector3)) //not bothering with thermocline modelling at this time
+        public static float GetVesselAcousticSignature(Vessel v, Vector3 sensorPosition = default(Vector3)) //not bothering with thermocline modelling at this time
         {
             float noiseScore = 1f;
             float minNoise = float.MaxValue;
             Part NoisePart = null;
             bool hasEngines = false;
             bool hasPumps = false;
+            TargetInfo ti = RadarUtils.GetVesselRadarSignature(v);
             hottestPart.Clear();
             if (!v.Splashed) return 0;
             var engineModules = VesselModuleRegistry.GetModules<ModuleEngines>(v);
-            if (engineModules != null)
+            if (engineModules.Count > 0)
             {
-                if (engineModules.Count > 0)
-                {
-                    hasEngines = true;
-                    using (var engines = engineModules.GetEnumerator())
-                        while (engines.MoveNext())
-                        {
-                            if (engines.Current == null) continue;
-                            if (!engines.Current.EngineIgnited) continue;
-                            float thisScore = engines.Current.GetCurrentThrust() / 10; //pumps, fuel flow, cavitation, noise from ICE/turbine/etc.
-                            noiseScore = Mathf.Max(noiseScore, thisScore);
-                            minNoise = Mathf.Min(minNoise, thisScore);
-                            if (thisScore == noiseScore) NoisePart = engines.Current.part;
-                        }
-                }
-            }
-                var pumpModules = VesselModuleRegistry.GetModules<ModuleActiveRadiator>(v);
-                if (pumpModules != null)
-                {
-                    if (pumpModules.Count > 0)
+                hasEngines = true;
+                using (var engines = engineModules.GetEnumerator())
+                    while (engines.MoveNext())
                     {
-                        hasPumps = true;
-                        using (var pump = pumpModules.GetEnumerator())
-                            while (pump.MoveNext())
-                            {
-                                if (pump.Current == null) continue;
-                                if (!pump.Current.isActiveAndEnabled) continue;
-                                float thisScore = (float)pump.Current.maxEnergyTransfer / 1000; //pumps, coolant gurgling, etc
-                                noiseScore = Mathf.Max(noiseScore, thisScore);
-                                minNoise = Mathf.Min(minNoise, thisScore);
-                                if (thisScore == noiseScore) NoisePart = pump.Current.part;
-                            }
+                        if (engines.Current == null) continue;
+                        if (!engines.Current.EngineIgnited) continue;
+                        float thisScore = engines.Current.GetCurrentThrust() / 10; //pumps, fuel flow, cavitation, noise from ICE/turbine/etc.
+                        noiseScore = Mathf.Max(noiseScore, thisScore);
+                        minNoise = Mathf.Min(minNoise, thisScore);
+                        if (thisScore == noiseScore) NoisePart = engines.Current.part;
                     }
-                }
+            }
+            var pumpModules = VesselModuleRegistry.GetModules<ModuleActiveRadiator>(v);
+            if (pumpModules.Count > 0)
+            {
+                hasPumps = true;
+                using (var pump = pumpModules.GetEnumerator())
+                    while (pump.MoveNext())
+                    {
+                        if (pump.Current == null) continue;
+                        if (!pump.Current.isActiveAndEnabled) continue;
+                        float thisScore = (float)pump.Current.maxEnergyTransfer / 1000; //pumps, coolant gurgling, etc
+                        noiseScore = Mathf.Max(noiseScore, thisScore);
+                        minNoise = Mathf.Min(minNoise, thisScore);
+                        if (thisScore == noiseScore) NoisePart = pump.Current.part;
+                    }
+            }
             //any other noise-making modules it would be sensible to add?
             if (sensorPosition != default(Vector3)) //Audio source found; now lets determine how much of the craft is occluding it
             {
@@ -720,7 +715,7 @@ namespace BDArmory.UI
                     }
             }
             noiseScore += (ti.radarBaseSignature / 10f) * (float)((v.speed * (v.speed / 15f))); //the bigger something is, or the faster it's moving through the water, the larger the acoustic sig
-            if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[BDArmory.BDATargetManager] final noiseScore: " + noiseScore);
+            if (BDArmorySettings.DEBUG_RADAR) Debug.Log($"[BDArmory.BDATargetManager] final noiseScore for {v.vesselName}: " + noiseScore);
             return noiseScore;
         }
 
@@ -776,7 +771,7 @@ namespace BDArmory.UI
                     if (RadarUtils.TerrainCheck(ray.origin, vessel.transform.position))
                         continue;
 
-                    float score = GetVesselAcousticSignature(vessel, tInfo, missileVessel.CoM);
+                    float score = GetVesselAcousticSignature(vessel, missileVessel.CoM);
                     score *= (1400 * 1400) / Mathf.Max((vessel.CoM - ray.origin).sqrMagnitude, 90000); // Clamp below 300m
 
                     // Add bias targets closer to center of seeker FOV, only once missile seeker can see target
@@ -884,7 +879,7 @@ namespace BDArmory.UI
 
 
             debugString.Append(Environment.NewLine);
-            debugString.AppendLine($"Base Acoustic Signature: {GetVesselAcousticSignature(FlightGlobals.ActiveVessel, FlightGlobals.ActiveVessel.gameObject.GetComponent<TargetInfo>(), Vector3.zero).ToString("0.00")}");
+            debugString.AppendLine($"Base Acoustic Signature: {GetVesselAcousticSignature(FlightGlobals.ActiveVessel).ToString("0.00")}");
             debugString.AppendLine($"Base Heat Signature: {GetVesselHeatSignature(FlightGlobals.ActiveVessel, Vector3.zero):#####}, For/Aft: " +
                 GetVesselHeatSignature(FlightGlobals.ActiveVessel, forward).Item1.ToString("0") + "/" +
                 GetVesselHeatSignature(FlightGlobals.ActiveVessel, aft).Item1.ToString("0") + ", Side: " +

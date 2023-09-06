@@ -2473,13 +2473,12 @@ namespace BDArmory.Weapons.Missiles
             {
                 SLWTarget = transform.position + (20 * vessel.Velocity().normalized);
             }
+            if (SLWTarget.y > 0f) SLWTarget.y = getSWLWOffset; 
 
             if (TimeIndex > dropTime + 0.25f)
             {
                 DoAero(SLWTarget);
             }
-
-            if (SLWTarget.y > 0f) SLWTarget.y = getSWLWOffset; //shouldn't this be *before* the DoAero() to send the torp towards the target position?
 
             CheckMiss();
 
@@ -2538,6 +2537,7 @@ namespace BDArmory.Weapons.Missiles
                 if (warheadType == WarheadTypes.Standard || warheadType == WarheadTypes.ContinuousRod)
                 {
                     var tnt = part.FindModuleImplementing<BDExplosivePart>();
+                    tnt.Team = Team;
                     tnt.sourcevessel = SourceVessel;
                     tnt.DetonateIfPossible();
                     FuseFailed = tnt.fuseFailed;

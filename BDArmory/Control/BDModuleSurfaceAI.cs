@@ -731,6 +731,7 @@ namespace BDArmory.Control
                                 break;
                         }
                     }
+                    //look into some sort of crash dive routine if under fire from enemies dropping depthcharges/air-dropped torps?
                     float pitchAngle = 0;
                     if ((float)vessel.altitude > targetAlt) pitchAngle = -MaxSlopeAngle * (1 - ((float)vessel.altitude / targetAlt)); //may result in not reaching target depth, depending on how neutrally buoyant the sub is. Clamp to maxSlopeAngle if Dist(vessel.altitude, targetAlt) > combatAlt * 0.25 or similar?
                     else pitchAngle = MaxSlopeAngle * (1 - (targetAlt / (float)vessel.altitude));
