@@ -326,13 +326,13 @@ namespace BDArmory.UI
                         Ray partRay = new Ray(heatSourcePosition, sensorPosition - heatSourcePosition); //trace from heatsource to IR sensor
 
                         // First evaluate occluded heat score, then if the closestPart is a non-prop engine, evaluate the plume temperature
-                        float occludedPartHeatScore = GetOccludedHeatScore(v, closestPart, heatSourcePosition, heatScore, partRay, hits, distance, thrustTransform, false, propEngine, frontAspectModifier);
+                        float occludedPartHeatScore = GetOccludedSensorScore(v, closestPart, heatSourcePosition, heatScore, partRay, hits, distance, thrustTransform, false, propEngine, frontAspectModifier);
                         if (thrustTransform && !propEngine)
                         {
                             // For plume, evaluate at 3m behind engine thrustTransform at 72% engine heat (based on DC-9 plume measurements)  
                             if (afterburner) heatSourcePosition = thrustTransform.position + thrustTransform.forward.normalized * 3f;
                             partRay = new Ray(heatSourcePosition, sensorPosition - heatSourcePosition); //trace from heatsource to IR sensor
-                            occludedPlumeHeatScore = GetOccludedHeatScore(v, closestPart, heatSourcePosition, 0.72f * heatScore, partRay, hits, distance, thrustTransform, true, propEngine, frontAspectModifier);
+                            occludedPlumeHeatScore = GetOccludedSensorScore(v, closestPart, heatSourcePosition, 0.72f * heatScore, partRay, hits, distance, thrustTransform, true, propEngine, frontAspectModifier);
                             heatScore = Mathf.Max(occludedPartHeatScore, occludedPlumeHeatScore); // 
                         }
                         else
@@ -353,7 +353,7 @@ namespace BDArmory.UI
             return new Tuple<float, Part>(heatScore, IRPart);
         }
 
-        static float GetOccludedHeatScore(Vessel v, Part closestPart, Vector3 heatSourcePosition, float heatScore, Ray partRay, RaycastHit[] hits, float distance, Transform thrustTransform = null, bool enginePlume = false, bool propEngine = false, float frontAspectModifier = 1f)
+        static float GetOccludedSensorScore(Vessel v, Part closestPart, Vector3 heatSourcePosition, float heatScore, Ray partRay, RaycastHit[] hits, float distance, Transform thrustTransform = null, bool enginePlume = false, bool propEngine = false, float frontAspectModifier = 1f, bool occludeHeat = true)
         {
             var layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels);
 
@@ -379,7 +379,7 @@ namespace BDArmory.UI
                     DebugCount++;
                     float sqrSpacing = (heatSourcePosition - partHit.transform.position).sqrMagnitude;
                     OcclusionFactor += partHit.mass * (1 - Mathf.Clamp01(sqrSpacing / SpacingConstant)); // occlusions from heavy parts close to the heatsource matter most
-                    lastHeatscore = (float)(partHit.thermalInternalFluxPrevious + partHit.skinTemperature);
+                    if (occludeHeat) lastHeatscore = (float)(partHit.thermalInternalFluxPrevious + partHit.skinTemperature);
                 }
             // Factor in occlusion from engines if they are the heat source, ignoring engine self-occlusion for prop engines or within ~50 deg cone of engine exhaust
             if (thrustTransform && !propEngine && (Vector3.Dot(thrustTransform.transform.forward, partRay.direction.normalized) < 0.65f))
@@ -592,7 +592,6 @@ namespace BDArmory.UI
         public static float GetVesselAcousticSignature(Vessel v, Vector3 sensorPosition = default(Vector3)) //not bothering with thermocline modelling at this time
         {
             float noiseScore = 1f;
-            float minNoise = float.MaxValue;
             Part NoisePart = null;
             bool hasEngines = false;
             bool hasPumps = false;
@@ -610,8 +609,6 @@ namespace BDArmory.UI
                         if (!engines.Current.EngineIgnited) continue;
                         float thisScore = engines.Current.GetCurrentThrust() / 10; //pumps, fuel flow, cavitation, noise from ICE/turbine/etc.
                         noiseScore = Mathf.Max(noiseScore, thisScore);
-                        minNoise = Mathf.Min(minNoise, thisScore);
-                        if (thisScore == noiseScore) NoisePart = engines.Current.part;
                     }
             }
             var pumpModules = VesselModuleRegistry.GetModules<ModuleActiveRadiator>(v);
@@ -625,8 +622,6 @@ namespace BDArmory.UI
                         if (!pump.Current.isActiveAndEnabled) continue;
                         float thisScore = (float)pump.Current.maxEnergyTransfer / 1000; //pumps, coolant gurgling, etc
                         noiseScore = Mathf.Max(noiseScore, thisScore);
-                        minNoise = Mathf.Min(minNoise, thisScore);
-                        if (thisScore == noiseScore) NoisePart = pump.Current.part;
                     }
             }
             //any other noise-making modules it would be sensible to add?
@@ -690,9 +685,11 @@ namespace BDArmory.UI
                         Ray partRay = new Ray(NoisePosition, sensorPosition - NoisePosition); //trace from source to sensor
 
                         // First evaluate occluded heat score, then if the closestPart is a non-prop engine, evaluate the plume temperature
-                        float occludedPartScore = GetOccludedHeatScore(v, closestPart, NoisePosition, noiseScore, partRay, hits, distance, thrustTransform);
+                        float occludedPartScore = GetOccludedSensorScore(v, closestPart, NoisePosition, noiseScore, partRay, hits, distance, thrustTransform,false, false, 1, false);
 
                         noiseScore = occludedPartScore;
+                        if (BDArmorySettings.DEBUG_RADAR) Debug.Log($"[BDArmory.BDATargetManager] {v.vesselName}'s noiseScore post occlusion: {noiseScore.ToString("0.0")}");
+
                     }
                 }
                 VesselECMJInfo jammer = v.gameObject.GetComponent<VesselECMJInfo>();
@@ -709,12 +706,12 @@ namespace BDArmory.UI
                         {
                             float sonarMalus = 1000 - ((ping / (sonar.Current.radarMaxDistanceDetect * 2)) * 1000); //more return from closer enemy active sonar
                             noiseScore += sonarMalus;
-                            if (BDArmorySettings.DEBUG_RADAR) Debug.Log($"[BDArmory.BDATargetManager] {v.vesselName}'s active sonar contributing {noiseScore.ToString("0.0")} to noiseScore");
+                            if (BDArmorySettings.DEBUG_RADAR) Debug.Log($"[BDArmory.BDATargetManager] {v.vesselName}'s active sonar contributing {sonarMalus.ToString("0.0")} to noiseScore");
                         }
                         break;
                     }
             }
-            noiseScore += (ti.radarBaseSignature / 10f) * (float)((v.speed * (v.speed / 15f))); //the bigger something is, or the faster it's moving through the water, the larger the acoustic sig
+            noiseScore += (ti.radarBaseSignature / 10f) * (float)(v.speed * (v.speed / 15f)); //the bigger something is, or the faster it's moving through the water, the larger the acoustic sig
             if (BDArmorySettings.DEBUG_RADAR) Debug.Log($"[BDArmory.BDATargetManager] final noiseScore for {v.vesselName}: " + noiseScore);
             return noiseScore;
         }

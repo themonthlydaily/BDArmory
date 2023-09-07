@@ -12,8 +12,7 @@ using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.Weapons;
 using BDArmory.Weapons.Missiles;
-using UnityEngine.UIElements;
-using System.Net;
+
 
 namespace BDArmory.Radar
 {

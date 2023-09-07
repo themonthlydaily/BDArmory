@@ -15,6 +15,7 @@ using BDArmory.Targeting;
 using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.WeaponMounts;
+using UnityEngine.UIElements;
 
 namespace BDArmory.Weapons.Missiles
 {
@@ -2473,8 +2474,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 SLWTarget = transform.position + (20 * vessel.Velocity().normalized);
             }
-            if (SLWTarget.y > 0f) SLWTarget.y = getSWLWOffset; 
-
+            if (FlightGlobals.getAltitudeAtPos(SLWTarget) > 0) SLWTarget -= (MissileGuidance.GetRaycastRadarAltitude(SLWTarget) * VectorUtils.GetUpDirection(vessel.transform.position));
             if (TimeIndex > dropTime + 0.25f)
             {
                 DoAero(SLWTarget);
