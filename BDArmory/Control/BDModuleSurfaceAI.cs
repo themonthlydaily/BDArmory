@@ -730,6 +730,7 @@ namespace BDArmory.Control
                             default: //SLW
                                 break;
                         }
+                        //if (weaponManager.missileIsIncoming && !weaponManager.incomingMissileVessel.LandedOrSplashed && targetAlt > -10) targetAlt = -10; //this might make subs too hard to kill?
                     }
                     //look into some sort of crash dive routine if under fire from enemies dropping depthcharges/air-dropped torps?
                     float pitchAngle = 0;

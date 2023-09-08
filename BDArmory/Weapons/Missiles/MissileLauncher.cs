@@ -978,6 +978,7 @@ namespace BDArmory.Weapons.Missiles
 
         void OnDestroy()
         {
+            //Debug.Log("{TorpDebug] torpedo crash tolerance: " + part.crashTolerance);
             DetachExhaustPrefabs();
             KillRCS();
             if (upRCS) EffectBehaviour.RemoveParticleEmitter(upRCS);
@@ -1411,7 +1412,7 @@ namespace BDArmory.Weapons.Missiles
                     {
                         if (torpedo)
                         {
-                            if (vessel.altitude > 0)
+                            if (vessel.altitude >= -2) //0 was causing airdropped torps to set to 1 crashtolerance, then immediately explode the next frame during splashdown
                             {
                                 part.crashTolerance = waterImpactTolerance; // + (float)vessel.horizontalSrfSpeed; ?
                             }
@@ -2474,7 +2475,9 @@ namespace BDArmory.Weapons.Missiles
             {
                 SLWTarget = transform.position + (20 * vessel.Velocity().normalized);
             }
+            TargetPosition -= VectorUtils.GetUpDirection(TargetPosition) * 5;
             if (FlightGlobals.getAltitudeAtPos(SLWTarget) > 0) SLWTarget -= (MissileGuidance.GetRaycastRadarAltitude(SLWTarget) * VectorUtils.GetUpDirection(vessel.transform.position));
+            //allow inverse contRod-style target offset for srf targets for 'under-the-keel' proximity detonation? or at least not having the torps have a target alt of 0 (and thus be vulnerable to surface PD?)
             if (TimeIndex > dropTime + 0.25f)
             {
                 DoAero(SLWTarget);

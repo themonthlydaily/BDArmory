@@ -5643,9 +5643,11 @@ namespace BDArmory.Control
                             if (distance < ((EngageableWeapon)item.Current).engageRangeMin || firedMissiles >= maxMissilesOnTarget)
                             candidateYield *= -1f; // if within min range, negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
 
-                            if ((!vessel.LandedOrSplashed) || ((distance > gunRange) && (vessel.LandedOrSplashed))) // If we're not airborne, we want to prioritize guns
+                            //if ((!vessel.LandedOrSplashed) || ((distance > gunRange) && (vessel.LandedOrSplashed))) 
                             {
-                                if ((distance <= gunRange || distance < candidateYield || candidateYield < 1) && targetWeapon != null) continue; //torp are within min range/can't lock, don't replace existing gun if in gun range
+                                //if ((distance <= gunRange || distance < candidateYield || candidateYield < 1) && targetWeapon != null) continue; //torp are within min range/can't lock, don't replace existing gun if in gun range
+                                if ((distance < candidateYield || candidateYield < 1) && targetWeapon != null) continue; //torp are within min range/can't lock, use something else; else, prioritize SLW, as those are the best option
+
                                 if (targetWeaponPriority < candidatePriority) //use priority gun
                                 {
                                     targetWeapon = item.Current;
@@ -7115,9 +7117,10 @@ namespace BDArmory.Control
             if (missile != null && targetV != null)
             {
                 Vector3 target = targetV.transform.position;
-                if (!targetV.LandedOrSplashed)
+                //if (!targetV.LandedOrSplashed) //no leading for moving surface targets? two use condtions come to mind - leading torps and unguided AtG missiles. Latter can use A2AFS, torps slightly complicated in that there's a ~2.5s drop time where theyr'e moving at parent speed
+                if (targetV.speed > 1) //target is moving
                 {
-                    target = MissileGuidance.GetAirToAirFireSolution(missile, targetV);
+                    target = MissileGuidance.GetAirToAirFireSolution(missile, targetV); 
                 }
 
                 float boresightFactor = (mf.vessel.LandedOrSplashed || targetV.LandedOrSplashed || missile.uncagedLock) ? 0.75f : 0.35f; // Allow launch at close to maxOffBoresight for ground targets or missiles with allAspect = true
@@ -7126,7 +7129,7 @@ namespace BDArmory.Control
 
                 // Check that target is within maxOffBoresight now and in future time fTime
                 launchAuthorized = Vector3.Angle(missile.GetForwardTransform(), target - missile.transform.position) < (unguidedWeapon ? 5 : missile.maxOffBoresight * boresightFactor); // Launch is possible now
-                Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} final boresight check {(launchAuthorized ? "passed" : "failed")}.");
+                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} final boresight check {(launchAuthorized ? "passed" : "failed")}.");
                 if (launchAuthorized)
                 {
                     float fTime = Mathf.Min(missile.dropTime, 2f);

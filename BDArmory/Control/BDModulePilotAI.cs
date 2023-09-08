@@ -2183,20 +2183,41 @@ namespace BDArmory.Control
                             float bombingAlt = weaponManager.currentTarget.Vessel.LandedOrSplashed ? (missile.GetWeaponClass() == WeaponClasses.SLW ? 10 : //drop to the deck for torpedo run
                                     Mathf.Max(defaultAltitude - 500f, minAltitude)) : //else commence level bombing
                                     missile.GetBlastRadius() * 2; //else target flying; get close for bombing airships to try and ensure hits
-                            if (weaponManager.missilesAway[weaponManager.currentTarget] >= weaponManager.maxMissilesOnTarget) bombingAlt = Mathf.Max(defaultAltitude - 500f, minAltitude);
+                            //TODO - look into interaction with terrainAvoid if using hardcoded 10m alt value? Or just rely on people putting in sensible values into the AI?
+                            if (weaponManager.firedMissiles >= weaponManager.maxMissilesOnTarget) bombingAlt = Mathf.Max(defaultAltitude - 500f, minAltitude); //have craft break off as soon as torps away so AI doesn't continue to fly towards enemy guns
                             if (angleToTarget < 45f)
                             {
-                                target = target + (bombingAlt * upDirection);//look into leading target for moving vees/ships? would need CPA for getting a closing time, then feed that into PredictPosition
+                                steerMode = SteerModes.Aiming; //steer to aim
+                                if (missile.GetWeaponClass() == WeaponClasses.SLW)
+                                {
+                                     target = MissileGuidance.GetAirToAirFireSolution(missile, v); //technically not taking ~2.5s drop time (assuming 50m alt launch) into account, which will result in being a couple hundred meters off. NBD for guided torps, but unguided ones will ahve issues with targets moving eprpendicular to vessel
+                                }
+                                else
+                                {
+                                    float timeToCPA = vessel.TimeToCPA(v, 20); //20s should be more than enough time, unless puttering around at sub-250m/s vel with max 5km extendDistA2G
+                                    if (timeToCPA > 0 && timeToCPA < 20)
+                                    {
+                                        target = AIUtils.PredictPosition(v, timeToCPA);//lead moving ground target to properly line up bombing run; bombs fire solution already plotted in missileFire, torps more or less hit top speed instantly, so simplified fire solution can be used
+                                    }
+                                }
+                                target = target + (bombingAlt * upDirection);
                                 Vector3 adjustedVesselPos = GetTerrainSurfacePosition(vesselTransform.position) + (bombingAlt * upDirection);
                                 //Vector3 tDir = (target - (vesselTransform.position - (VectorUtils.GetUpDirection(vessel.CoM) * ((float)vessel.radarAltitude + bombingAlt)))).normalized;
                                 Vector3 tDir = (target - adjustedVesselPos).normalized;
                                 tDir = (1000 * tDir) - (vessel.Velocity().normalized * 600);
                                 target = adjustedVesselPos + tDir;
-                                //have craft rbeak off as soon as bombs away so AI doesn't continue to fly towards enemy guns
                             }
                             else
                             {
                                 target = target + (bombingAlt * upDirection); 
+                            }
+                            if (missile.GetWeaponClass() == WeaponClasses.SLW)
+                            {
+                                if (distanceToTarget < missile.engageRangeMax + relativeVelocity) // Distance until starting to strafe plus 1s for changing speed.
+                                {
+                                    if (weaponManager.firedMissiles < weaponManager.maxMissilesOnTarget)
+                                        strafingDistance = Mathf.Max(0f, distanceToTarget - missile.engageRangeMax); //slow to strafing speed so torps survive hitting the water
+                                }
                             }
                             //dive bomb routine for when starting at high alt?
                         }
