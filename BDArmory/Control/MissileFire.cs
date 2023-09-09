@@ -6389,9 +6389,7 @@ namespace BDArmory.Control
                     heatTarget.predictedPosition - CurrentMissile.MissileReferenceTransform.position
                     : CurrentMissile.GetForwardTransform();
                 // remove AI target check/move to a missile .cfg option to allow older gen heaters?
-                if (CurrentMissile.GuidanceMode != MissileBase.GuidanceModes.SLW || CurrentMissile.GuidanceMode == MissileBase.GuidanceModes.SLW && CurrentMissile.activeRadarRange > 0)
-                    heatTarget = BDATargetManager.GetHeatTarget(vessel, vessel, new Ray(CurrentMissile.MissileReferenceTransform.position + (50 * CurrentMissile.GetForwardTransform()), direction), TargetSignatureData.noTarget, scanRadius, CurrentMissile.heatThreshold, CurrentMissile.frontAspectHeatModifier, CurrentMissile.uncagedLock, CurrentMissile.lockedSensorFOVBias, CurrentMissile.lockedSensorVelocityBias, this, guardMode ? currentTarget : null);
-                else heatTarget = BDATargetManager.GetAcousticTarget(vessel, vessel, new Ray(CurrentMissile.MissileReferenceTransform.position + (50 * CurrentMissile.GetForwardTransform()), direction), TargetSignatureData.noTarget, scanRadius, CurrentMissile.heatThreshold, CurrentMissile.lockedSensorFOVBias, CurrentMissile.lockedSensorVelocityBias, this, guardMode ? currentTarget : null);
+                heatTarget = BDATargetManager.GetHeatTarget(vessel, vessel, new Ray(CurrentMissile.MissileReferenceTransform.position + (50 * CurrentMissile.GetForwardTransform()), direction), TargetSignatureData.noTarget, scanRadius, CurrentMissile.heatThreshold, CurrentMissile.frontAspectHeatModifier, CurrentMissile.uncagedLock, CurrentMissile.lockedSensorFOVBias, CurrentMissile.lockedSensorVelocityBias, this, guardMode ? currentTarget : null);
             }
         }
 
@@ -6826,20 +6824,28 @@ namespace BDArmory.Control
                 {
                     if (results.foundHeatMissile) //standin for passive acoustic homing
                     {
-                        if ((rwr && rwr.omniDetection) || (incomingMissileDistance <= Mathf.Min(guardRange * 0.33f, 2500))) //within ID range?
+                        if (rwr && rwr.omniDetection)
                         {
-                            if (radars.Count > 0)
-                            {
-                                using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
-                                    while (rd.MoveNext())
-                                    {
-                                        if (rd.Current != null && rd.Current.sonarMode == ModuleRadar.SonarModes.Active) //kill active sonar
-                                            rd.Current.DisableRadar();
-                                    }
-                                _radarsEnabled = false;
-                            }
                             FireDecoys();
                             StartCoroutine(UnderAttackRoutine());
+                        }
+                        else
+                        {
+                            if (incomingMissileDistance <= Mathf.Min(guardRange * 0.33f, 2500)) //within ID range?
+                            {
+                                if (radars.Count > 0)
+                                {
+                                    using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
+                                        while (rd.MoveNext())
+                                        {
+                                            if (rd.Current != null && rd.Current.sonarMode == ModuleRadar.SonarModes.Active) //kill active sonar
+                                                rd.Current.DisableRadar();
+                                        }
+                                    _radarsEnabled = false;
+                                }
+                                FireDecoys();
+                                StartCoroutine(UnderAttackRoutine());
+                            }
                         }
                     }
                     if (results.foundRadarMissile) //standin for active sonar

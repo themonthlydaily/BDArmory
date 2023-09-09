@@ -25,7 +25,7 @@ namespace BDArmory.CounterMeasure
         public Vector3 velocity;
 
         public float acousticSig;
-        public float audio;
+        float audio;
         //float minAudio;
         //float startAudio;
 
@@ -79,8 +79,6 @@ namespace BDArmory.CounterMeasure
                 }
             startTime = Time.time;
 
-            BDArmorySetup.Decoys.Add(this);
-
             upDirection = VectorUtils.GetUpDirection(transform.position);
 
             this.transform.localScale = Vector3.one;
@@ -133,7 +131,6 @@ namespace BDArmory.CounterMeasure
             {
                 alive = false;
                 transform.localScale = Vector3.zero;
-                BDArmorySetup.Decoys.Remove(this);
                 using (var pe = pEmitters.GetEnumerator())
                     while (pe.MoveNext())
                     {
