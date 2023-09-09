@@ -157,6 +157,7 @@ namespace BDArmory.UI
         float physRangeTimer;
 
         public static List<CMFlare> Flares = new List<CMFlare>();
+        public static List<CMDecoy> Decoys = new List<CMDecoy>();
 
         public List<string> mutators = new List<string>();
         bool[] mutators_selected;
