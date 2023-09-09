@@ -442,6 +442,50 @@ namespace BDArmory.UI
             return flareTarget;
         }
 
+        public static TargetSignatureData GetDecoyTarget(Ray ray, float scanRadius, float highpassThreshold, FloatCurve lockedSensorFOVBias, FloatCurve lockedSensorVelocityBias, TargetSignatureData noiseTarget)
+        {
+            TargetSignatureData decoyTarget = TargetSignatureData.noTarget;
+            float AcousticSignature = noiseTarget.signalStrength;
+            float bestScore = 0f;
+
+            using (List<CMDecoy>.Enumerator decoy = BDArmorySetup.Decoys.GetEnumerator())
+                while (decoy.MoveNext())
+                {
+                    if (!decoy.Current) continue;
+
+                    float angle = Vector3.Angle(decoy.Current.transform.position - ray.origin, ray.direction);
+                    if (angle < scanRadius)
+                    {
+                        float score = decoy.Current.acousticSig * Mathf.Clamp01(15 / angle); // Reduce score on anything outside 15 deg of look ray
+
+                        // Add bias targets closer to center of seeker FOV
+                        score *= GetSeekerBias(angle, Vector3.Angle(decoy.Current.velocity, noiseTarget.velocity), lockedSensorFOVBias, lockedSensorVelocityBias);
+
+                        score *= (1400 * 1400) / Mathf.Clamp((decoy.Current.transform.position - ray.origin).sqrMagnitude, 90000, 36000000);
+                        score *= Mathf.Clamp(Vector3.Angle(decoy.Current.transform.position - ray.origin, -VectorUtils.GetUpDirection(ray.origin)) / 90, 0.5f, 1.5f);
+
+                        if (BDArmorySettings.DUMB_IR_SEEKERS) // Pick the hottest flare hotter than heatSignature
+                        {
+                            if ((score > AcousticSignature) && (score > bestScore))
+                            {
+                                decoyTarget = new TargetSignatureData(decoy.Current, score);
+                                bestScore = score;
+                            }
+                        }
+                        else
+                        {
+                            if ((score > 0f) && (Mathf.Abs(score - AcousticSignature) < Mathf.Abs(bestScore - AcousticSignature))) // Pick the closest flare to target
+                            {
+                                decoyTarget = new TargetSignatureData(decoy.Current, score);
+                                bestScore = score;
+                            }
+                        }
+                    }
+                }
+
+            return decoyTarget;
+        }
+
         public static TargetSignatureData GetHeatTarget(Vessel sourceVessel, Vessel missileVessel, Ray ray, TargetSignatureData priorHeatTarget, float scanRadius, float highpassThreshold, float frontAspectHeatModifier, bool uncagedLock, FloatCurve lockedSensorFOVBias, FloatCurve lockedSensorVelocityBias, MissileFire mf = null, TargetInfo desiredTarget = null)
         {
             float minMass = 0.05f;  //otherwise the RAMs have trouble shooting down incoming missiles
@@ -774,7 +818,7 @@ namespace BDArmory.UI
                     // Add bias targets closer to center of seeker FOV, only once missile seeker can see target
                     if ((priorNoiseScore > 0f) && (angle < scanRadius))
                         score *= GetSeekerBias(angle, Vector3.Angle(vessel.Velocity(), priorNoiseTarget.velocity), lockedSensorFOVBias, lockedSensorVelocityBias);
-
+                    //not messing about with thermocline at this time. 
                     score *= Mathf.Clamp(Vector3.Angle(vessel.transform.position - ray.origin, -VectorUtils.GetUpDirection(ray.origin)) / 90, 0.5f, 1.5f);
 
                     if ((finalScore > 0f) && (score > 0f) && (priorNoiseScore > 0)) // If we were passed a target noise score, look for the most similar non-zero noise score after picking a target
