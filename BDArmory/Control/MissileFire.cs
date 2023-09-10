@@ -2401,6 +2401,9 @@ namespace BDArmory.Control
             float bombStartTime = Time.time;
             float bombAttemptDuration = Mathf.Max(targetScanInterval, 12f);
             float radius = CurrentMissile.GetBlastRadius() * Mathf.Min((1 + (maxMissilesOnTarget / 2f)), 1.5f);
+            MissileLauncher cm = CurrentMissile as MissileLauncher;
+            if (cm.multiLauncher && cm.multiLauncher.salvoSize > 1) radius += (((cm.multiLauncher.salvoSize / 4) * (60 / cm.multiLauncher.rippleRPM)) + cm.multiLauncher.deploySpeed) * (float)vessel.horizontalSrfSpeed; //add an offset for bomblet dispensers, etc, to have them start deploying before target to carpet bomb
+            radius = Mathf.Min(radius, 150f);
             if ((CurrentMissile.TargetingMode == MissileBase.TargetingModes.Gps && (designatedGPSInfo.worldPos - guardTarget.CoM).sqrMagnitude > CurrentMissile.GetBlastRadius() * CurrentMissile.GetBlastRadius())
                 || (CurrentMissile.TargetingMode == MissileBase.TargetingModes.Laser && (!laserPointDetected || (foundCam && (foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude > CurrentMissile.GetBlastRadius() * CurrentMissile.GetBlastRadius()))))
             {
@@ -2468,15 +2471,11 @@ namespace BDArmory.Control
                     leadTarget = AIUtils.PredictPosition(guardTarget, timeToCPA);//lead moving ground target to properly line up bombing run; bombs fire solution already plotted in missileFire, torps more or less hit top speed instantly, so simplified fire solution can be used
                 }
                 float targetDist = Vector3.Distance(bombAimerPosition, leadTarget);
-                MissileLauncher cm = CurrentMissile as MissileLauncher;
-                if (cm.multiLauncher && cm.multiLauncher.salvoSize > 1) radius += (((cm.multiLauncher.salvoSize / 4) * (60 / cm.multiLauncher.rippleRPM)) + cm.multiLauncher.deploySpeed) * (float)vessel.horizontalSrfSpeed; //add an offset for bomblet dispensers, etc, to have them start deploying before target to carpet bomb
-                radius = Mathf.Max(radius, 150f);
                 if (targetDist < (radius * 20f) && !hasSetCargoBays)
                 {
                     SetCargoBays();
                     hasSetCargoBays = true;
                 }
-
                 if (targetDist > radius
                     || Vector3.Dot(VectorUtils.GetUpDirection(vessel.CoM), vessel.transform.forward) > 0) // roll check
                 {
@@ -7499,7 +7498,7 @@ namespace BDArmory.Control
 
             bombAimerPosition = Vector3.zero;
             int aimerLayerMask = (int)(LayerMasks.Scenery | LayerMasks.EVA); // Why EVA?
-            float ordinanceMass = launcher.part.mass;
+            float ordinanceMass = launcher.part.partInfo.partPrefab.mass;
             float ordinanceThrust = launcher.cruiseThrust;
             float ordinanceBoost = launcher.thrust;
             float thrustTime = launcher.cruiseTime + launcher.boostTime;
@@ -7555,14 +7554,8 @@ namespace BDArmory.Control
                     drag = ml.vessel.parts.Sum(x => x.dragScalar);
                 }
 
-                dragForce = (0.008f * bombPart.mass) * drag * 0.5f * simSpeedSquared * atmDensity * simVelocity.normalized;
-                simVelocity -= (dragForce / bombPart.mass) * simDeltaTime; 
-                //account lift + additional drag from AoA in DoAero
-                double liftForce = 0.5 * atmDensity * simVelocity.magnitude * simVelocity.magnitude * launcher.liftArea * BDArmorySettings.GLOBAL_LIFT_MULTIPLIER * 1.5f;
-                Vector3 forceDirection = -simVelocity.ProjectOnPlanePreNormalized(simVelocity.normalized).normalized;
-                simVelocity += (float)(liftForce / bombPart.mass) * forceDirection;
-                double SimDrag = 0.5 * atmDensity * simVelocity.magnitude * simVelocity.magnitude * launcher.liftArea * BDArmorySettings.GLOBAL_DRAG_MULTIPLIER * 0.0022f;
-                simVelocity += (float)SimDrag * -simVelocity.normalized;
+                dragForce = (0.008f * ordinanceMass) * drag * 0.5f * simSpeedSquared * atmDensity * simVelocity.normalized;
+                simVelocity -= (dragForce / ordinanceMass) * simDeltaTime; 
 
                 //float lift = 0.5f * atmDensity * simSpeedSquared * launcher.liftArea * BDArmorySettings.GLOBAL_LIFT_MULTIPLIER * MissileGuidance.DefaultLiftCurve.Evaluate(1);
                 //simVelocity += VectorUtils.GetUpDirection(currPos) * lift;
