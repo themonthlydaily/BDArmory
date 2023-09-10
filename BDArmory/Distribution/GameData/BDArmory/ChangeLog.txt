@@ -1,6 +1,7 @@
 ﻿IMPROVEMENTS / FIXES
 -General:
 	- Procedural Wing max armor thickness now based on mean thickness of the wing.
+	- Adds new Acoustic Decoy CM dropper.
 -Radar:
 	- Add new radarTransformName field to ModuleRadar/new irstTransformName field to ModuleIRST to allow setting custom radar direction/setting multiple radars to a part using custom radar models.
 	- Add new sonarType field to Radar for setting up Active or passive sonars.
@@ -12,7 +13,6 @@
 	- Add torpedo bombing logic to pilot AI.
 	- AI will now lead moving ground targets when bombing.
 	- AI will start dropping bombs from reloadable rails/bomblet dispensers early for proper carpet bombing instead of dropping them behind a target.
-
 - UI:
 	- Add Japanese localization files thanks to user Taka005.
 - Competition:
@@ -26,7 +26,7 @@
 	- Missiles:
 		- Fix some NREs when manually firing missiles.
 		- Add new guidanceDelay field to allow setting a delay between missile launch and missile beginning to maneuver towards a target.
-		- Dynamic Launch Range now uses missile EngageRange max instead of static launch range
+		- Dynamic Launch Range now uses missile EngageRange max instead of static launch range.
 		- Improved launch behavior for missiles set to be fired at very short range.
 		- Add LineOfSight check when firing missiles.
 		- Fix torpedoes not working.

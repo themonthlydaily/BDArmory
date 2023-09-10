@@ -18,6 +18,7 @@ using BDArmory.Utils;
 using BDArmory.WeaponMounts;
 using BDArmory.Weapons.Missiles;
 using BDArmory.Weapons;
+using static UnityEngine.GraphicsBuffer;
 
 namespace BDArmory.Control
 {
@@ -2045,22 +2046,25 @@ namespace BDArmory.Control
                             }
                             if (BDArmorySettings.DEBUG_MISSILES)
                                 Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName}'s {CurrentMissile.GetShortName()} has heatTarget: {heatTarget.exists}");
-                                //try uncaged IR lock with radar
-                                if (guardTarget && !heatTarget.exists && vesselRadarData && vesselRadarData.radarCount > 0)
+                            //try uncaged IR lock with radar
+                            if (ml.activeRadarRange > 0) //defaults to 6k for non-radar missiles, using negative value for differentiating passive acoustic vs heater
                             {
-                                if (!vesselRadarData.locked ||
-                                    (vesselRadarData.lockedTargetData.targetData.predictedPosition -
-                                     guardTarget.transform.position).sqrMagnitude > 40 * 40)
+                                if (guardTarget && !heatTarget.exists && vesselRadarData && vesselRadarData.radarCount > 0)
                                 {
-                                    //vesselRadarData.TryLockTarget(guardTarget.transform.position);
-                                    vesselRadarData.TryLockTarget(guardTarget);
+                                    if (!vesselRadarData.locked ||
+                                        (vesselRadarData.lockedTargetData.targetData.predictedPosition -
+                                         guardTarget.transform.position).sqrMagnitude > 40 * 40)
+                                    {
+                                        //vesselRadarData.TryLockTarget(guardTarget.transform.position);
+                                        vesselRadarData.TryLockTarget(guardTarget);
+                                        yield return new WaitForSecondsFixed(Mathf.Min(1, (targetScanInterval * 0.25f)));
+                                    }
+                                }
+                                if (guardTarget && !heatTarget.exists && vesselRadarData && vesselRadarData.irstCount > 0)
+                                {
+                                    heatTarget = vesselRadarData.activeIRTarget();
                                     yield return new WaitForSecondsFixed(Mathf.Min(1, (targetScanInterval * 0.25f)));
                                 }
-                            }
-                            if (guardTarget && !heatTarget.exists && vesselRadarData && vesselRadarData.irstCount > 0)
-                            {
-                                heatTarget = vesselRadarData.activeIRTarget();
-                                yield return new WaitForSecondsFixed(Mathf.Min(1, (targetScanInterval * 0.25f)));
                             }
                             if (BDArmorySettings.DEBUG_MISSILES)
                                 Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName}'s heatTarget locked");
@@ -2452,15 +2456,21 @@ namespace BDArmory.Control
             bool doProxyCheck = true;
 
             float prevDist = 2 * radius;
-            radius = Mathf.Max(radius, 50f);
             var wait = new WaitForFixedUpdate();
 
             while (guardTarget && Time.time - bombStartTime < bombAttemptDuration && weaponIndex > 0 &&
                  weaponArray[weaponIndex].GetWeaponClass() == WeaponClasses.Bomb && firedMissiles < maxMissilesOnTarget)
             {
-                float targetDist = Vector3.Distance(bombAimerPosition, guardTarget.CoM);
+                Vector3 leadTarget = Vector3.zero;
+                float timeToCPA = vessel.TimeToCPA(guardTarget, 60); 
+                if (timeToCPA > 0 && timeToCPA < 60)
+                {
+                    leadTarget = AIUtils.PredictPosition(guardTarget, timeToCPA);//lead moving ground target to properly line up bombing run; bombs fire solution already plotted in missileFire, torps more or less hit top speed instantly, so simplified fire solution can be used
+                }
+                float targetDist = Vector3.Distance(bombAimerPosition, leadTarget);
                 MissileLauncher cm = CurrentMissile as MissileLauncher;
-                if (cm.multiLauncher) radius += ((((cm.multiLauncher.salvoSize / 4) * (60 / cm.multiLauncher.rippleRPM) + cm.multiLauncher.deploySpeed) * (float)vessel.horizontalSrfSpeed)); //add an offset for bomblet dispensers, etc, to have them start deploying before target to carpet bomb
+                if (cm.multiLauncher && cm.multiLauncher.salvoSize > 1) radius += (((cm.multiLauncher.salvoSize / 4) * (60 / cm.multiLauncher.rippleRPM)) + cm.multiLauncher.deploySpeed) * (float)vessel.horizontalSrfSpeed; //add an offset for bomblet dispensers, etc, to have them start deploying before target to carpet bomb
+                radius = Mathf.Max(radius, 150f);
                 if (targetDist < (radius * 20f) && !hasSetCargoBays)
                 {
                     SetCargoBays();
@@ -6379,7 +6389,7 @@ namespace BDArmory.Control
                                 heatTarget = vesselRadarData.lockedTargetData.targetData;
                         }
                     }
-                    else //active soanr torps
+                    else //active sonar torps
                     {
                         heatTarget = vesselRadarData.detectedRadarTarget(); //get initial direction for passive sonar torps from passive/non-locking sonar return
                     }
@@ -6493,6 +6503,12 @@ namespace BDArmory.Control
 
                             if (AntiRadDistanceCheck()) validTarget = true;
                         }
+                        break;
+                    }
+                case MissileBase.TargetingModes.None:
+                    {
+                        ml.TargetAcquired = true;
+                        validTarget = true;
                         break;
                     }
                 default:
@@ -6824,7 +6840,7 @@ namespace BDArmory.Control
                 }
                 else
                 {
-                    if (results.foundHeatMissile) //standin for passive acoustic homing
+                    if (results.foundHeatMissile) //standin for passive acoustic homing. Will ahve to expand this if facing *actual* heat-seeking torpedoes
                     {
                         if ((rwr && rwr.omniDetection) || (incomingMissileDistance <= Mathf.Min(guardRange * 0.33f, 2500))) //within ID range?
                         {
@@ -7540,7 +7556,14 @@ namespace BDArmory.Control
                 }
 
                 dragForce = (0.008f * bombPart.mass) * drag * 0.5f * simSpeedSquared * atmDensity * simVelocity.normalized;
-                simVelocity -= (dragForce / bombPart.mass) * simDeltaTime;
+                simVelocity -= (dragForce / bombPart.mass) * simDeltaTime; 
+                //account lift + additional drag from AoA in DoAero
+                double liftForce = 0.5 * atmDensity * simVelocity.magnitude * simVelocity.magnitude * launcher.liftArea * BDArmorySettings.GLOBAL_LIFT_MULTIPLIER * 1.5f;
+                Vector3 forceDirection = -simVelocity.ProjectOnPlanePreNormalized(simVelocity.normalized).normalized;
+                simVelocity += (float)(liftForce / bombPart.mass) * forceDirection;
+                double SimDrag = 0.5 * atmDensity * simVelocity.magnitude * simVelocity.magnitude * launcher.liftArea * BDArmorySettings.GLOBAL_DRAG_MULTIPLIER * 0.0022f;
+                simVelocity += (float)SimDrag * -simVelocity.normalized;
+
                 //float lift = 0.5f * atmDensity * simSpeedSquared * launcher.liftArea * BDArmorySettings.GLOBAL_LIFT_MULTIPLIER * MissileGuidance.DefaultLiftCurve.Evaluate(1);
                 //simVelocity += VectorUtils.GetUpDirection(currPos) * lift;
                 Ray ray = new Ray(prevPos, currPos - prevPos);

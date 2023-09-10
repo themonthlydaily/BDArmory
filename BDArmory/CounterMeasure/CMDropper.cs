@@ -72,8 +72,9 @@ namespace BDArmory.CounterMeasure
 
                 case CountermeasureTypes.Smoke:
                     return PopSmoke();
+
                 case CountermeasureTypes.Decoy:
-                    return launchDecoy();
+                    return LaunchDecoy();
             }
             return false;
         }
@@ -336,7 +337,7 @@ namespace BDArmory.CounterMeasure
             smokeCMObject.SetActive(false);
         }
 
-        bool launchDecoy()
+        bool LaunchDecoy()
         {
             PartResource cmResource = GetCMResource();
             if (cmResource == null || !(cmResource.amount >= 1)) return false;

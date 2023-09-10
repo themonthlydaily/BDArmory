@@ -677,7 +677,7 @@ namespace BDArmory.UI
                         while (engines.MoveNext())
                         {
                             if (engines.Current == null || !engines.Current.EngineIgnited) continue;
-                            float thisScore = engines.Current.GetCurrentThrust() / 10; //pumps, fuel flow, cavitation, noise from ICE/turbine/etc.
+                            float thisScore = engines.Current.GetCurrentThrust() / 5; //pumps, fuel flow, cavitation, noise from ICE/turbine/etc.
                             if (thisScore < noiseScore * 1.05f && thisScore > noiseScore * 0.95f)
                             {
                                 hottestPart.Add(engines.Current.part);
@@ -690,7 +690,7 @@ namespace BDArmory.UI
                         while (pump.MoveNext())
                         {
                             if (pump.Current == null || !pump.Current.isActiveAndEnabled) continue;
-                            float thisScore = (float)pump.Current.maxEnergyTransfer / 1000; //pumps, coolant gurgling, etc
+                            float thisScore = (float)pump.Current.maxEnergyTransfer / 500; //pumps, coolant gurgling, etc
                             if (thisScore < noiseScore * 1.05f && thisScore > noiseScore * 0.95f)
                             {
                                 hottestPart.Add(pump.Current.part);
@@ -765,6 +765,7 @@ namespace BDArmory.UI
             TargetSignatureData finalData = TargetSignatureData.noTarget;
             float finalScore = 0;
             float priorNoiseScore = priorNoiseTarget.signalStrength;
+            //if (!sourceVessel.Splashed) return finalData; //technically this should be uncommented, but a hack to allow air-dropped passive acoustic torps
             foreach (Vessel vessel in LoadedVessels)
             {
                 if (vessel == null)
@@ -772,6 +773,8 @@ namespace BDArmory.UI
                 if (!vessel || !vessel.loaded)
                     continue;
                 if (vessel == sourceVessel || vessel == missileVessel)
+                    continue;
+                if (!vessel.Splashed)
                     continue;
                 if (vessel.vesselType == VesselType.Debris)
                     continue;
@@ -813,7 +816,7 @@ namespace BDArmory.UI
                         continue;
 
                     float score = GetVesselAcousticSignature(vessel, missileVessel.CoM);
-                    score *= (1400 * 1400) / Mathf.Max((vessel.CoM - ray.origin).sqrMagnitude, 90000); // Clamp below 300m
+                    score *= (1400 * 1400) / Mathf.Max((vessel.CoM - ray.origin).sqrMagnitude, 90000); // Clamp below 300m //TODO value scaling may need tweaking
 
                     // Add bias targets closer to center of seeker FOV, only once missile seeker can see target
                     if ((priorNoiseScore > 0f) && (angle < scanRadius))
@@ -837,18 +840,17 @@ namespace BDArmory.UI
                             finalData = new TargetSignatureData(vessel, score);
                         }
                     }
-                    Debug.Log($"[AcousticTorp DEBUG] audioscore of {vessel.GetName()} is {score}");
                 }
             }
 
             // see if there are audio spoofers decoying us:
-            bool flareSuccess = false;
-            TargetSignatureData flareData = TargetSignatureData.noTarget;
+            bool decoySuccess = false;
+            TargetSignatureData decoyData = TargetSignatureData.noTarget;
             if (priorNoiseScore > 0) // Acoustic decoys can only decoy if we already had a target
             {
-                flareData = GetFlareTarget(ray, scanRadius, highpassThreshold, lockedSensorFOVBias, lockedSensorVelocityBias, priorNoiseTarget);
-                flareData.signalStrength *= missileVessel.GetComponent<MissileBase>().flareEffectivity;
-                flareSuccess = ((!flareData.Equals(TargetSignatureData.noTarget)) && (flareData.signalStrength > highpassThreshold));
+                decoyData = GetDecoyTarget(ray, scanRadius, highpassThreshold, lockedSensorFOVBias, lockedSensorVelocityBias, priorNoiseTarget);
+                decoyData.signalStrength *= missileVessel.GetComponent<MissileBase>().flareEffectivity;
+                decoySuccess = ((!decoyData.Equals(TargetSignatureData.noTarget)) && (decoyData.signalStrength > highpassThreshold));
             }
 
 
@@ -857,22 +859,22 @@ namespace BDArmory.UI
             {
                 finalData = TargetSignatureData.noTarget;
 
-                if (flareSuccess) // return matching acoustic spoofer
-                    return flareData;
+                if (decoySuccess) // return matching acoustic spoofer
+                    return decoyData;
                 else //else return the target:
                     return finalData;
             }
 
             // See if an acoustic spoof decoy is closer in score to priornoiseScore than finalScore
             if (priorNoiseScore > 0)
-                flareSuccess = (Mathf.Abs(flareData.signalStrength - priorNoiseScore) < Mathf.Abs(finalScore - priorNoiseScore)) && flareSuccess;
+                decoySuccess = (Mathf.Abs(decoyData.signalStrength - priorNoiseScore) < Mathf.Abs(finalScore - priorNoiseScore)) && decoySuccess;
             else if (BDArmorySettings.DUMB_IR_SEEKERS) //convert to a missile .cfg option for earlier-gen IR missiles?
-                flareSuccess = (flareData.signalStrength > finalScore) && flareSuccess;
+                decoySuccess = (decoyData.signalStrength > finalScore) && decoySuccess;
             else
-                flareSuccess = false;
+                decoySuccess = false;
 
-            if (flareSuccess) // return matching flare
-                return flareData;
+            if (decoySuccess) // return matching flare
+                return decoyData;
             else //else return the target:
                 return finalData;
         }

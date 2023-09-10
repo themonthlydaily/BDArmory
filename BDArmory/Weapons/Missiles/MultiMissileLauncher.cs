@@ -1,5 +1,6 @@
 ﻿using BDArmory.Competition;
 using BDArmory.Control;
+using BDArmory.Modules;
 using BDArmory.Radar;
 using BDArmory.Settings;
 using BDArmory.Targeting;
@@ -65,11 +66,33 @@ namespace BDArmory.Weapons.Missiles
         private bool LoadoutModified = false;
         public BDTeam Team = BDTeam.Get("Neutral");
 
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorWidth"),// Length
+    UI_FloatRange(minValue = 0.5f, maxValue = 2, stepIncrement = 0.1f, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
+        public float Scale = 1;
+
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorLength"),// Length
+    UI_FloatRange(minValue = 0.5f, maxValue = 2, stepIncrement = 0.1f, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
+        public float Length = 1;
+
+        [KSPField]
+        public float scaleMax = 2;
+
+        [KSPField]
+        public string lengthTransformName;
+        Transform LengthTransform;
+
+        [KSPField]
+        public string scaleTransformName;
+        Transform ScaleTransform;
+        public bool externallyCalled = false;
+
+
         public MissileTurret turret;
 
         public void Start()
         {
             MakeMissileArray();
+
             GameEvents.onEditorShipModified.Add(ShipModified);
             if (HighLogic.LoadedSceneIsFlight)
             {
@@ -85,8 +108,6 @@ namespace BDArmory.Weapons.Missiles
                     deployState.enabled = true;
                 }
             }
-            UI_FloatRange salvo = (UI_FloatRange)Fields["salvoSize"].uiControlEditor;
-            salvo.maxValue = launchTransforms.Length;
             StartCoroutine(DelayedStart());
         }
 
@@ -207,6 +228,83 @@ namespace BDArmory.Weapons.Missiles
                         break;
                     }
             }
+            if (String.IsNullOrEmpty(scaleTransformName))
+            {
+                Fields["Scale"].guiActiveEditor = false;
+            }
+            else
+            { 
+                ScaleTransform = part.FindModelTransform(scaleTransformName);
+                UI_FloatRange AWidth = (UI_FloatRange)Fields["Scale"].uiControlEditor;
+                AWidth.maxValue = scaleMax;
+                if (Scale > scaleMax) Scale = scaleMax;
+                AWidth.onFieldChanged = updateScale;
+                updateScale(null, null);
+            }
+            if (String.IsNullOrEmpty(lengthTransformName))
+            {
+                Fields["Length"].guiActiveEditor = false;
+            }
+            else
+            {
+                LengthTransform = part.FindModelTransform(lengthTransformName);
+                UI_FloatRange ALength = (UI_FloatRange)Fields["Length"].uiControlEditor;
+                ALength.maxValue = scaleMax;
+                if (Length > scaleMax) Length = scaleMax;
+                ALength.onFieldChanged = updateLength;
+                if (!ScaleTransform) updateLength(null, null);
+            }
+        }
+
+        public void updateScale(BaseField field, object obj)
+        {
+            if (externallyCalled) return;
+            ScaleTransform.localScale = new Vector3(Scale, Scale, Scale);
+            List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator();
+            while (sym.MoveNext())
+            {
+                if (sym.Current == null) continue;
+                var mml = sym.Current.FindModuleImplementing<MultiMissileLauncher>();
+                if (mml == null) continue;
+                mml.externallyCalled = true;
+                mml.UpdateLengthAndScale(Scale, Length);
+            }
+            sym.Dispose();
+            if (LengthTransform) updateLength(null, null);
+            else UpdateDummies();
+        }
+        public void updateLength(BaseField field, object obj)
+        {
+            if (externallyCalled) return;
+            LengthTransform.localScale = new Vector3(1, 1, (1 / Scale) * Length);
+            List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator();
+            while (sym.MoveNext())
+            {
+                if (sym.Current == null) continue;
+                var mml = sym.Current.FindModuleImplementing<MultiMissileLauncher>();
+                if (mml == null) continue;
+                mml.externallyCalled = true;
+                mml.UpdateLengthAndScale(Scale, Length);
+            }
+            sym.Dispose();
+            UpdateDummies();
+        }
+
+        public void UpdateLengthAndScale(float scale, float length)
+        {
+            if (ScaleTransform != null)
+            ScaleTransform.localScale = new Vector3(scale, scale, scale);
+            if (LengthTransform != null)
+            LengthTransform.localScale = new Vector3(1, 1, (1 / scale) * length);
+            externallyCalled = false;
+            UpdateDummies();
+        }
+        public void UpdateDummies()
+        {
+            for (int i = 0; i < launchTransforms.Length; i++)
+            {
+                launchTransforms[i].localScale = new Vector3((1 / Scale), (1 / Scale), (1 / Length));
+            }
         }
         private void OnDestroy()
         {
@@ -259,6 +357,25 @@ namespace BDArmory.Weapons.Missiles
                                     tntMass = explosivePart != null ? explosivePart.tntMass : 0;
                                     missileLauncher.blastRadius = BlastPhysicsUtils.CalculateBlastRange(tntMass);
                                     EditorLogic.DeletePart(missile);
+                                    List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator();
+                                    while (sym.MoveNext())
+                                    {
+                                        if (sym.Current == null) continue;
+                                        var mml = sym.Current.FindModuleImplementing<MultiMissileLauncher>();
+                                        if (mml == null) continue;
+                                        mml.subMunitionName = subMunitionName;
+                                        mml.subMunitionPath = subMunitionPath;
+                                        mml.PopulateMissileDummies(true);
+                                        mml.LoadoutModified = true;
+                                        if (mml.missileSpawner)
+                                        {
+                                            mml.missileSpawner.MissileName = subMunitionName;
+                                            mml.missileSpawner.UpdateMissileValues();
+                                        }
+                                        mml.UpdateFields(MLConfig, true);
+                                        mml.missileLauncher.blastRadius = BlastPhysicsUtils.CalculateBlastRange(tntMass);
+                                    }
+                                    sym.Dispose();
                                 }
                             }
                         }
@@ -425,6 +542,8 @@ namespace BDArmory.Weapons.Missiles
             {
                 PopulateMissileDummies(true);
             }
+            UI_FloatRange salvo = (UI_FloatRange)Fields["salvoSize"].uiControlEditor;
+            salvo.maxValue = launchTransforms.Length;
         }
         public void PopulateMissileDummies(bool refresh = false)
         {
@@ -523,6 +642,7 @@ namespace BDArmory.Weapons.Missiles
                 }
                 tubesFired++;
                 launchesThisSalvo++;
+                launchTransforms[m].localScale = Vector3.zero;
                 if (!missileSpawner.SpawnMissile(launchTransforms[m], offset, !isClusterMissile))
                 {
                     if (BDArmorySettings.DEBUG_MISSILES) Debug.LogWarning($"[BDArmory.MissileLauncher]: Failed to spawn a missile in {missileSpawner} on {vessel.vesselName}");
@@ -792,7 +912,6 @@ namespace BDArmory.Weapons.Missiles
                 ml.launched = true;
                 ml.TargetPosition = vessel.ReferenceTransform.position + (vessel.ReferenceTransform.up * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
                 ml.MissileLaunch();
-                launchTransforms[m].localScale = Vector3.zero;
             }
             wpm.heatTarget = TargetSignatureData.noTarget;
             missileLauncher.launched = true;

@@ -2179,6 +2179,15 @@ namespace BDArmory.Control
                         }
                         else
                         {
+                            if (missile.GetWeaponClass() == WeaponClasses.SLW)
+                            {
+                                if (distanceToTarget < missile.engageRangeMax + relativeVelocity) // Distance until starting to strafe plus 1s for changing speed.
+                                {
+                                    if (weaponManager.firedMissiles < weaponManager.maxMissilesOnTarget)
+                                        strafingDistance = Mathf.Max(0f, distanceToTarget - missile.engageRangeMax); //slow to strafing speed so torps survive hitting the water
+                                }
+                                target = GetSurfacePosition(target); //set submerged targets to surface for future bombingAlt vectoring
+                            }
                             float bombingAlt = weaponManager.currentTarget.Vessel.LandedOrSplashed ? (missile.GetWeaponClass() == WeaponClasses.SLW ? 10 : //drop to the deck for torpedo run
                                     Mathf.Max(defaultAltitude - 500f, minAltitude)) : //else commence level bombing
                                     missile.GetBlastRadius() * 2; //else target flying; get close for bombing airships to try and ensure hits
@@ -2189,14 +2198,14 @@ namespace BDArmory.Control
                                 steerMode = SteerModes.Aiming; //steer to aim
                                 if (missile.GetWeaponClass() == WeaponClasses.SLW)
                                 {
-                                     target = MissileGuidance.GetAirToAirFireSolution(missile, v); //technically not taking ~2.5s drop time (assuming 50m alt launch) into account, which will result in being a couple hundred meters off. NBD for guided torps, but unguided ones will ahve issues with targets moving eprpendicular to vessel
+                                     target = MissileGuidance.GetAirToAirFireSolution(missile, v) + (vessel.Velocity() * 2.5f); //adding 2.5 to take ~2.5sec (if dropped from 50m) drop time into account where torps will still be moving vessel speed.
                                 }
                                 else
                                 {
                                     float timeToCPA = vessel.TimeToCPA(v, 20); //20s should be more than enough time, unless puttering around at sub-250m/s vel with max 5km extendDistA2G
                                     if (timeToCPA > 0 && timeToCPA < 20)
                                     {
-                                        target = AIUtils.PredictPosition(v, timeToCPA);//lead moving ground target to properly line up bombing run; bombs fire solution already plotted in missileFire, torps more or less hit top speed instantly, so simplified fire solution can be used
+                                        target = AIUtils.PredictPosition(v, timeToCPA);//lead moving ground target to properly line up bombing run
                                     }
                                 }
                                 target = target + (bombingAlt * upDirection);
@@ -2209,14 +2218,6 @@ namespace BDArmory.Control
                             else
                             {
                                 target = target + (bombingAlt * upDirection); 
-                            }
-                            if (missile.GetWeaponClass() == WeaponClasses.SLW)
-                            {
-                                if (distanceToTarget < missile.engageRangeMax + relativeVelocity) // Distance until starting to strafe plus 1s for changing speed.
-                                {
-                                    if (weaponManager.firedMissiles < weaponManager.maxMissilesOnTarget)
-                                        strafingDistance = Mathf.Max(0f, distanceToTarget - missile.engageRangeMax); //slow to strafing speed so torps survive hitting the water
-                                }
                             }
                             //dive bomb routine for when starting at high alt?
                         }
