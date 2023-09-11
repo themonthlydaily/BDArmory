@@ -617,7 +617,7 @@ namespace BDArmory.Weapons.Missiles
             if (deployState != null)
             {
                 deployState.enabled = true;
-                deployState.speed = deploySpeed;
+                deployState.speed = deployState.length * ((1/deployState.length) * deploySpeed);
                 yield return new WaitWhileFixed(() => deployState.normalizedTime < 1); //wait for animation here
                 deployState.normalizedTime = 1;
                 deployState.speed = 0;
@@ -918,7 +918,7 @@ namespace BDArmory.Weapons.Missiles
             if (deployState != null)
             {
                 deployState.enabled = true;
-                deployState.speed = -deploySpeed;
+                deployState.speed = -deployState.length * ((1 / deployState.length) * deploySpeed);
                 yield return new WaitWhileFixed(() => deployState.normalizedTime > 0);
                 deployState.normalizedTime = 0;
                 deployState.speed = 0;

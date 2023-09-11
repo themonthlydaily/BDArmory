@@ -19,6 +19,8 @@
 	- Add new GM Kill conditions for planes that have lost engines/weapons/set percentage of their parts.
 - Countermeasures:
 	- Add Acoustic Decoy CM support via 'countermeasureType = decoy'.
+	- APS point defense target acquisition and assignment logic rewritten, APS will now semi-intelligently identify and distribute targets among guns in the PD network.
+	- APS weapons now respect Fire Interval and Burst Length settings.
 - Vessel Mover:
 	- Make the vessel selection more resilient to corrupted vessel files/loadmeta.
 	- Default the vessel selection window to using the VAB if the initial vessel is spawned through the launchpad.
@@ -37,6 +39,7 @@
 		- Add intrinsic scaling option to MultiMissileLauncher for missile pods and the like.
 		- Fix issue with air-dropped torpedoes exploding on impact with the water despite being within their waterImpactTolearance.
 		- Fix torpedo behavior if trying to target something with a CoM above water level
+		- Tweaked weapon lead aim calcs for guns firing beehive shells, Oerlikon should hit more often now.
 
 v1.6.5.0
 IMPROVEMENTS / FIXES

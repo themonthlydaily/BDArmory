@@ -1555,6 +1555,31 @@ namespace BDArmory.UI
             return finalTarget;
         }
 
+        public static TargetInfo GetClosestMissileThreat(MissileFire mf)
+        {
+            TargetInfo finalTarget = null;
+            using (List<TargetInfo>.Enumerator target = TargetList(mf.Team).GetEnumerator())
+                while (target.MoveNext())
+                {
+                    if (target.Current == null) continue;
+                    if (mf.PDMslTgts.Contains(target.Current)) continue;
+                    if (target.Current && target.Current.Vessel && target.Current.isMissile && mf.CanSeeTarget(target.Current))
+                    {
+                        if (RadarUtils.MissileIsThreat(target.Current.MissileBaseModule, mf, false))
+                        {
+                            //if (target.Current.NumFriendliesEngaging(mf.Team) >= 0) continue;
+                            if (finalTarget == null || target.Current.IsCloser(finalTarget, mf))
+                            {
+                                finalTarget = target.Current;
+                            }
+                        }
+                    }
+                }
+            return finalTarget;
+        }
+
+
+
         //checks to see if a friendly is too close to the gun trajectory to fire them // Replaced by ModuleWeapon.CheckForFriendlies()
         public static bool CheckSafeToFireGuns(MissileFire weaponManager, Vector3 aimDirection, float safeDistance, float cosUnsafeAngle)
         {

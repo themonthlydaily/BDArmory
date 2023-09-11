@@ -19,6 +19,8 @@ using BDArmory.WeaponMounts;
 using BDArmory.Weapons.Missiles;
 using BDArmory.Weapons;
 using static UnityEngine.GraphicsBuffer;
+using static BDArmory.Weapons.ModuleWeapon;
+using BDArmory.Bullets;
 
 namespace BDArmory.Control
 {
@@ -335,11 +337,15 @@ namespace BDArmory.Control
 
         //guard mode vars
         float targetScanTimer;
+        float PDScanTimer;
         Vessel guardTarget;
         public TargetInfo currentTarget;
         public int engagedTargets = 0;
         public List<TargetInfo> targetsAssigned; //secondary targets list
         public List<TargetInfo> missilesAssigned; //secondary missile targets list
+        public List<TargetInfo> PDMslTgts; //pointDefense/APS targets list
+        public List<PooledBullet> PDBulletTgts; //pointDefense/APS targets list
+        public List<PooledRocket> PDRktTgts; //pointDefense/APS targets list
         TargetInfo overrideTarget; //used for setting target next guard scan for stuff like assisting teammates
         float overrideTimer;
 
@@ -714,6 +720,7 @@ namespace BDArmory.Control
                         weapon.Current.visualTargetPart = null;
                         weapon.Current.autoFire = false;
                         if (!weapon.Current.isAPS) weapon.Current.aiControlled = false;
+                        if (weapon.Current.dualModeAPS) weapon.Current.isAPS = true;
                     }
                 weaponIndex = 0;
                 selectedWeapon = null;
@@ -1507,6 +1514,11 @@ namespace BDArmory.Control
             {
                 targetScanTimer = -100;
             }
+            if (Time.time - PDScanTimer > targetScanInterval)
+            {
+                PointDefenseTurretFiring();
+                PDScanTimer = Time.time;
+            }
             BombAimer();
         }
 
@@ -1807,18 +1819,19 @@ namespace BDArmory.Control
                 {
                     if (targetingPods.Count > 0)
                     {
+                        float scaledDistance = Mathf.Max(20f, 0.004f * (float)guardTarget.srfSpeed * (float)guardTarget.srfSpeed);
                         using (List<ModuleTargetingCamera>.Enumerator tgp = targetingPods.GetEnumerator())
                             while (tgp.MoveNext())
                             {
                                 if (tgp.Current == null) continue;
                                 if (!tgp.Current.enabled || (tgp.Current.cameraEnabled && tgp.Current.groundStabilized &&
-                                                             !((tgp.Current.groundTargetPosition - guardTarget.transform.position).sqrMagnitude > 20 * 20))) continue;
+                                                             !((tgp.Current.groundTargetPosition - guardTarget.transform.position).sqrMagnitude > scaledDistance))) continue;                                
                                 tgp.Current.EnableCamera();
                                 yield return StartCoroutine(tgp.Current.PointToPositionRoutine(guardTarget.CoM));
                                 //yield return StartCoroutine(tgp.Current.PointToPositionRoutine(TargetInfo.TargetCOMDispersion(guardTarget)));
                                 if (!tgp.Current) continue;
                                 if (tgp.Current.groundStabilized && guardTarget &&
-                                    (tgp.Current.groundTargetPosition - guardTarget.transform.position).sqrMagnitude < 20 * 20)
+                                    (tgp.Current.groundTargetPosition - guardTarget.transform.position).sqrMagnitude < scaledDistance)
                                 {
                                     tgp.Current.slaveTurrets = true;
                                     StartGuardTurretFiring();
@@ -2358,14 +2371,14 @@ namespace BDArmory.Control
                             }
                             yield return wait;
 
-                            if (ml && laserPointDetected && foundCam && (foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude < 10 * 10)
+                            if (ml && laserPointDetected && foundCam && (foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude < Mathf.Max(10, 0.015f * (float)guardTarget.srfSpeed * (float)guardTarget.srfSpeed))
                             {
                                 FireCurrentMissile(true);
                                 //StartCoroutine(MissileAwayRoutine(ml));
                             }
                             else
                             {
-                                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: Laser Target Error");
+                                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: Laser Target Error: laserdot:{laserPointDetected}, cam:{foundCam}, pointingatTgt:{(foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude < Mathf.Max(10, 0.015f * (float)guardTarget.srfSpeed * (float)guardTarget.srfSpeed)}");
                             }
                             break;
                         }
@@ -4369,7 +4382,21 @@ namespace BDArmory.Control
         void SmartFindSecondaryTargets()
         {
             //Debug.Log("[BDArmory.MTD]: Finding 2nd targets");
+            using (List<TargetInfo>.Enumerator secTgt = targetsAssigned.GetEnumerator())
+                while (secTgt.MoveNext())
+                {
+                    if (secTgt.Current == null) continue;
+                    if (secTgt.Current == currentTarget) continue;
+                    secTgt.Current.Disengage(this);
+                }
             targetsAssigned.Clear();
+            using (List<TargetInfo>.Enumerator mslTgt = missilesAssigned.GetEnumerator())
+                while (mslTgt.MoveNext())
+                {
+                    if (mslTgt.Current == null) continue;
+                    if (mslTgt.Current == currentTarget) continue;
+                    mslTgt.Current.Disengage(this);
+                }
             missilesAssigned.Clear();
             if (!currentTarget.isMissile)
             {
@@ -5990,7 +6017,7 @@ namespace BDArmory.Control
                         ModuleTurret turret = gun.turret;
                         float gimbalTolerance = vessel.LandedOrSplashed ? 0 : 15;
                         if (turret != null)
-                            if (!TargetInTurretRange(turret, gimbalTolerance, null, gun))
+                            if (!TargetInTurretRange(turret, gimbalTolerance, default, gun))
                                 return false;
 
                         // check overheat, reloading, ability to fire soon
@@ -6088,7 +6115,7 @@ namespace BDArmory.Control
                         ModuleTurret turret = rocket.turret;
                         float gimbalTolerance = vessel.LandedOrSplashed ? 0 : 15;
                         if (turret != null)
-                            if (!TargetInTurretRange(turret, gimbalTolerance, null, rocket))
+                            if (!TargetInTurretRange(turret, gimbalTolerance, default, rocket))
                                 return false;
                         if (rocket.isOverheated)
                             return false;
@@ -6969,9 +6996,10 @@ namespace BDArmory.Control
                                     (weapon.Current.engageGround && targetsAssigned[TurretID].isLandedOrSurfaceSplashed) ||
                                     (weapon.Current.engageSLW && targetsAssigned[TurretID].isUnderwater)) //check engagement envelope
                                 {
-                                    if (TargetInTurretRange(weapon.Current.turret, 7, targetsAssigned[TurretID].Vessel, weapon.Current))
+                                    if (TargetInTurretRange(weapon.Current.turret, 7, targetsAssigned[TurretID].Vessel.CoM, weapon.Current))
                                     {
                                         weapon.Current.visualTargetVessel = targetsAssigned[TurretID].Vessel; // if target within turret fire zone, assign
+                                        targetsAssigned[TurretID].Engage(this);
                                     }
                                     else //else try remaining targets
                                     {
@@ -6979,9 +7007,10 @@ namespace BDArmory.Control
                                             while (item.MoveNext())
                                             {
                                                 if (item.Current.Vessel == null) continue;
-                                                if (TargetInTurretRange(weapon.Current.turret, 7, item.Current.Vessel, weapon.Current))
+                                                if (TargetInTurretRange(weapon.Current.turret, 7, item.Current.Vessel.CoM, weapon.Current))
                                                 {
                                                     weapon.Current.visualTargetVessel = item.Current.Vessel;
+                                                    item.Current.Engage(this);
                                                     break;
                                                 }
                                             }
@@ -6997,9 +7026,10 @@ namespace BDArmory.Control
                             {
                                 if (weapon.Current.engageMissile)
                                 {
-                                    if (TargetInTurretRange(weapon.Current.turret, 7, missilesAssigned[MissileID].Vessel, weapon.Current))
+                                    if (TargetInTurretRange(weapon.Current.turret, 7, missilesAssigned[MissileID].Vessel.CoM, weapon.Current))
                                     {
                                         weapon.Current.visualTargetVessel = missilesAssigned[MissileID].Vessel; // if target within turret fire zone, assign
+                                        missilesAssigned[MissileID].Engage(this);
                                     }
                                     else //assigned target outside turret arc, try the other targets on the list
                                     {
@@ -7007,9 +7037,10 @@ namespace BDArmory.Control
                                             while (item.MoveNext())
                                             {
                                                 if (item.Current.Vessel == null) continue;
-                                                if (TargetInTurretRange(weapon.Current.turret, 7, item.Current.Vessel, weapon.Current))
+                                                if (TargetInTurretRange(weapon.Current.turret, 7, item.Current.Vessel.CoM, weapon.Current))
                                                 {
                                                     weapon.Current.visualTargetVessel = item.Current.Vessel;
+                                                    item.Current.Engage(this);
                                                     break;
                                                 }
                                             }
@@ -7053,7 +7084,210 @@ namespace BDArmory.Control
                     weapon.Current.autoFireLength = (fireBurstLength < 0.01f) ? targetScanInterval / 2f : fireBurstLength;
                 }
         }
+        public void PointDefenseTurretFiring()
+        {
+            int TurretID = 0;
+            int ballisticTurretID = 0;
+            int rocketTurretID = 0;
+            PDMslTgts.Clear();
+            PDBulletTgts.Clear();
+            PDRktTgts.Clear();
+            int APScount = 0;
+            TargetInfo interceptiontarget = null;
+            Vector3 closestTarget = Vector3.zero;
+            using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
+                while (weapon.MoveNext())
+                {
+                    if (weapon.Current == null) continue;
+                    if (weapon.Current.isAPS || weapon.Current.dualModeAPS)
+                    {
+                        APScount++;
+                        if (weapon.Current.ammoCount <= 0 && !BDArmorySettings.INFINITE_AMMO) continue;
+                        weapon.Current.visualTargetVessel = null;
+                        weapon.Current.visualTargetPart = null;
+                        weapon.Current.tgtShell = null;
+                        weapon.Current.tgtRocket = null;
+                        if (weapon.Current.eAPSType == ModuleWeapon.APSTypes.Missile || weapon.Current.eAPSType == ModuleWeapon.APSTypes.Omni)
+                        {
+                            interceptiontarget = BDATargetManager.GetClosestMissileThreat(this);
+                            if (interceptiontarget != null) PDMslTgts.Add(interceptiontarget);
 
+                            using (List<PooledRocket>.Enumerator target = BDATargetManager.FiredRockets.GetEnumerator())
+                                while (target.MoveNext())
+                                {
+                                    if (target.Current == null) continue;
+                                    if (target.Current.team == team) continue;
+                                    if (PDRktTgts.Contains(target.Current)) continue;
+                                    float threatDirectionFactor = (transform.position - target.Current.transform.position).DotNormalized(target.Current.currentVelocity - vessel.Velocity());
+                                    if (threatDirectionFactor < 0.95) continue; //if incoming round is heading this way 
+                                    if ((target.Current.currPosition - weapon.Current.fireTransforms[0].position).sqrMagnitude < (weapon.Current.maxTargetingRange * 2) * (weapon.Current.maxTargetingRange * 2))
+                                    {
+                                        if (RadarUtils.TerrainCheck(target.Current.transform.position, transform.position))
+                                        {
+                                            continue;
+                                        }
+                                        else
+                                        {
+                                            if ((closestTarget == Vector3.zero || (target.Current.transform.position - weapon.Current.fireTransforms[0].position).sqrMagnitude < (closestTarget - weapon.Current.fireTransforms[0].position).sqrMagnitude))
+                                            {
+
+                                                closestTarget = target.Current.currPosition;
+                                                PDRktTgts.Add(target.Current);
+                                            }
+                                        }
+                                    }
+                                }
+                        }
+                        if (weapon.Current.eAPSType == ModuleWeapon.APSTypes.Ballistic || weapon.Current.eAPSType == ModuleWeapon.APSTypes.Omni)
+                        {
+                            using (List<PooledBullet>.Enumerator target = BDATargetManager.FiredBullets.GetEnumerator())
+                                while (target.MoveNext())
+                                {
+                                    if (target.Current == null) continue;
+                                    if (target.Current.team == team) continue;
+                                    if (PDBulletTgts.Contains(target.Current)) continue;
+                                    float threatDirectionFactor = (transform.position - target.Current.transform.position).DotNormalized(target.Current.currentVelocity - vessel.Velocity());
+                                    if (threatDirectionFactor < 0.95) continue; //if incoming round is heading this way 
+                                    if ((target.Current.currPosition - weapon.Current.fireTransforms[0].position).sqrMagnitude < (weapon.Current.maxTargetingRange * 2) * (weapon.Current.maxTargetingRange * 2))
+                                    {
+                                        if (RadarUtils.TerrainCheck(target.Current.transform.position, transform.position))
+                                        {
+                                            continue;
+                                        }
+                                        else
+                                        {
+                                            if ((closestTarget == Vector3.zero || (target.Current.transform.position - weapon.Current.fireTransforms[0].position).sqrMagnitude < (closestTarget - weapon.Current.fireTransforms[0].position).sqrMagnitude))
+                                            {
+
+                                                closestTarget = target.Current.currPosition;
+                                                PDBulletTgts.Add(target.Current);
+                                            }
+                                        }
+                                    }
+                                }
+                        }
+                    }
+                }
+            if (APScount <=0)
+            {
+                PDScanTimer = -100;
+                return;
+            }
+            using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
+                while (weapon.MoveNext())
+                {
+                    if (ballisticTurretID > PDBulletTgts.Count - 1) ballisticTurretID = 0;
+                    if (weapon.Current.eAPSType == ModuleWeapon.APSTypes.Ballistic || weapon.Current.eAPSType == ModuleWeapon.APSTypes.Omni)
+                    {
+                        if (PDBulletTgts.Count > 0)
+                        {
+                            if (PDBulletTgts[ballisticTurretID] != null && Vector3.Distance(PDBulletTgts[ballisticTurretID].transform.position, weapon.Current.fireTransforms[0].position) > weapon.Current.engageRangeMax * 1.25f) ballisticTurretID = 0; //reset cycle so out of range guns engage closer targets
+                            if (PDBulletTgts[ballisticTurretID] != null) //second check in case of turretID reset
+                            {
+                                if (TargetInTurretRange(weapon.Current.turret, 7, PDBulletTgts[ballisticTurretID].transform.position, weapon.Current))
+                                {
+                                    weapon.Current.tgtShell = PDBulletTgts[ballisticTurretID]; // if target within turret fire zone, assign
+                                }
+                                else //else try remaining targets
+                                {
+                                    using (List<PooledBullet>.Enumerator item = PDBulletTgts.GetEnumerator())
+                                        while (item.MoveNext())
+                                        {
+                                            if (item.Current == null) continue;
+                                            if (TargetInTurretRange(weapon.Current.turret, 7, item.Current.transform.position, weapon.Current))
+                                            {
+                                                weapon.Current.tgtShell = item.Current;
+                                                break;
+                                            }
+                                        }
+                                }
+                                ballisticTurretID++;
+                            }
+                        }
+                        else weapon.Current.tgtShell = null;
+                    }
+                    if (rocketTurretID > PDRktTgts.Count - 1) rocketTurretID = 0;
+                    if (weapon.Current.eAPSType == ModuleWeapon.APSTypes.Missile || weapon.Current.eAPSType == ModuleWeapon.APSTypes.Omni)
+                    {
+                        if (PDRktTgts.Count > 0)
+                        {
+                            if (PDRktTgts[rocketTurretID] != null && Vector3.Distance(PDRktTgts[rocketTurretID].transform.position, weapon.Current.fireTransforms[0].position) > weapon.Current.engageRangeMax * 1.25f) rocketTurretID = 0; //reset cycle so out of range guns engage closer targets
+                            if (PDRktTgts[rocketTurretID] != null)
+                            {
+                                bool viableTarget = true;
+                                if (BDArmorySettings.BULLET_WATER_DRAG && weapon.Current.eWeaponType == WeaponTypes.Ballistic && FlightGlobals.getAltitudeAtPos(PDRktTgts[rocketTurretID].transform.position) < 0) viableTarget = false;
+                                if (viableTarget && TargetInTurretRange(weapon.Current.turret, 7, PDRktTgts[rocketTurretID].transform.position, weapon.Current))
+                                {
+                                    weapon.Current.tgtRocket = PDRktTgts[rocketTurretID]; // if target within turret fire zone, assign
+                                    weapon.Current.tgtShell = null;
+                                }
+                                else //else try remaining targets
+                                {
+                                    using (List<PooledRocket>.Enumerator item = PDRktTgts.GetEnumerator())
+                                        while (item.MoveNext())
+                                        {
+                                            if (item.Current == null) continue;
+                                            if (!viableTarget) continue;
+                                            if (TargetInTurretRange(weapon.Current.turret, 7, item.Current.transform.position, weapon.Current))
+                                            {
+                                                weapon.Current.tgtRocket = item.Current;
+                                                weapon.Current.tgtShell = null;
+                                                break;
+                                            }
+                                        }
+                                }
+                                rocketTurretID++;
+                            }
+                        }
+                        else weapon.Current.tgtRocket = null;
+                        if (TurretID > PDMslTgts.Count - 1) TurretID = 0;
+                        if (PDMslTgts.Count > 0)
+                        {
+                            if (PDMslTgts[TurretID].Vessel != null && Vector3.Distance(PDMslTgts[TurretID].transform.position, weapon.Current.fireTransforms[0].position) > weapon.Current.engageRangeMax * 1.25f) TurretID = 0; //reset cycle so out of range guns engage closer targets
+                            if (PDMslTgts[TurretID].Vessel != null)
+                            {
+                                bool viableTarget = true;
+                                if (BDArmorySettings.BULLET_WATER_DRAG && weapon.Current.eWeaponType == WeaponTypes.Ballistic && PDMslTgts[TurretID].Vessel.Splashed) viableTarget = false;
+
+                                if (viableTarget && TargetInTurretRange(weapon.Current.turret, 7, PDMslTgts[TurretID].Vessel.CoM, weapon.Current))
+                                {
+                                    weapon.Current.visualTargetVessel = PDMslTgts[TurretID].Vessel; // if target within turret fire zone, assign
+                                    weapon.Current.visualTargetPart = weapon.Current.visualTargetVessel.rootPart;
+                                    weapon.Current.tgtShell = null;
+                                    weapon.Current.tgtRocket = null;
+                                }
+                                else //else try remaining targets
+                                {
+                                    using (List<TargetInfo>.Enumerator item = PDMslTgts.GetEnumerator())
+                                        while (item.MoveNext())
+                                        {
+                                            if (item.Current.Vessel == null) continue;
+                                            if (!viableTarget) continue;
+                                            if (TargetInTurretRange(weapon.Current.turret, 7, item.Current.Vessel.CoM, weapon.Current))
+                                            {
+                                                weapon.Current.visualTargetVessel = item.Current.Vessel;
+                                                weapon.Current.visualTargetPart = weapon.Current.visualTargetVessel.rootPart;
+                                                weapon.Current.tgtShell = null;
+                                                weapon.Current.tgtRocket = null;
+                                                break;
+                                            }
+                                        }
+                                }
+                                TurretID++;
+                            }
+                        }
+                        else weapon.Current.visualTargetPart = null;
+                        //look into decoupling EngageTargetMissile from standard missile firing behavior, and have it so any missile with engageMissileTarget = true will instead work similar to APS and 
+                        //get autolaunched at an incoming missile? 
+                        //  - Issue with that is radar missile interceptors will still need target locks, and if the setTarget is now only setting Air/Srf/SLW targets and not missile...
+                        //  - Simple - have it be If there's a free radar lock, try to lock/interceptor is a heater/radar LOAL missile, launch, else, welp
+                        //So... have a list of incoming missile targets (10...? total count of engageMissiles = true missiles?), if incomingMslTgt.Count > 0, find first valid missile, and launch?
+                    }
+                    //Debug.Log($"[BDArmory.MissileFire]: {weapon.Current.shortName} assigned shell:{(weapon.Current.tgtShell != null ? "true" : "false")}; rocket: {(weapon.Current.tgtRocket != null ? "true" : "false")}; missile:{(weapon.Current.visualTargetVessel.vesselName)}");
+                    weapon.Current.autoFireTimer = Time.time;
+                    weapon.Current.autoFireLength = (fireBurstLength < 0.01f) ? targetScanInterval / 2f : fireBurstLength;
+                }
+        }
         public void SetOverrideTarget(TargetInfo target)
         {
             overrideTarget = target;
@@ -7186,7 +7420,7 @@ namespace BDArmory.Control
                     if (weapon.Current == null) continue;
                     if (weapon.Current.GetShortName() != selectedWeapon.GetShortName()) continue;
                     float gimbalTolerance = vessel.LandedOrSplashed ? 0 : 15;
-                    if (((AI != null && AI.pilotEnabled && AI.CanEngage()) || (TargetInTurretRange(weapon.Current.turret, gimbalTolerance, null, weapon.Current))) && weapon.Current.maxEffectiveDistance >= finalDistance)
+                    if (((AI != null && AI.pilotEnabled && AI.CanEngage()) || (TargetInTurretRange(weapon.Current.turret, gimbalTolerance, default, weapon.Current))) && weapon.Current.maxEffectiveDistance >= finalDistance)
                     {
                         if (weapon.Current.isOverheated)
                         {
@@ -7235,7 +7469,7 @@ namespace BDArmory.Control
             return 2;
         }
 
-        bool TargetInTurretRange(ModuleTurret turret, float tolerance, Vessel gTarget = null, ModuleWeapon weapon = null)
+        bool TargetInTurretRange(ModuleTurret turret, float tolerance, Vector3 gTarget = default(Vector3), ModuleWeapon weapon = null)
         {
             if (!turret)
             {
@@ -7250,10 +7484,10 @@ namespace BDArmory.Control
                 }
                 return false;
             }
-            if (gTarget == null) gTarget = guardTarget;
+            if (gTarget == default) gTarget = guardTarget.CoM;
 
             Transform turretTransform = turret.yawTransform.parent;
-            Vector3 direction = gTarget.transform.position - turretTransform.position;
+            Vector3 direction = gTarget - turretTransform.position;
             if (weapon != null && weapon.bulletDrop) // Account for bullet drop (rough approximation not accounting for target movement).
             {
                 switch (weapon.GetWeaponClass())
@@ -7555,7 +7789,7 @@ namespace BDArmory.Control
                 }
 
                 dragForce = (0.008f * ordinanceMass) * drag * 0.5f * simSpeedSquared * atmDensity * simVelocity.normalized;
-                simVelocity -= (dragForce / ordinanceMass) * simDeltaTime; 
+                simVelocity -= (dragForce / ordinanceMass) * simDeltaTime; //something here isn't quite simulating bomb ttrajectory, the actual bomb is hitting someways behind the predicted impact point
 
                 //float lift = 0.5f * atmDensity * simSpeedSquared * launcher.liftArea * BDArmorySettings.GLOBAL_LIFT_MULTIPLIER * MissileGuidance.DefaultLiftCurve.Evaluate(1);
                 //simVelocity += VectorUtils.GetUpDirection(currPos) * lift;

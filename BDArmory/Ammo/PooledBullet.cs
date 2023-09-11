@@ -1429,7 +1429,7 @@ namespace BDArmory.Bullets
                 pBullet.transform.position = currPosition;
 
                 pBullet.caliber = subMunitionType.caliber;
-                pBullet.bulletVelocity = subMunitionType.bulletVelocity;
+                pBullet.bulletVelocity = GetDragAdjustedVelocity().magnitude + subMunitionType.bulletVelocity;
                 pBullet.bulletMass = subMunitionType.bulletMass;
                 pBullet.incendiary = subMunitionType.incendiary;
                 pBullet.apBulletMod = subMunitionType.apBulletMod;
@@ -1437,8 +1437,8 @@ namespace BDArmory.Bullets
                 pBullet.ballisticCoefficient = subMunitionType.bulletMass / (((Mathf.PI * 0.25f * subMunitionType.caliber * subMunitionType.caliber) / 1000000f) * 0.295f);
                 pBullet.timeElapsedSinceCurrentSpeedWasAdjusted = 0;
                 pBullet.timeToLiveUntil = 2000 / bulletVelocity * 1.1f + Time.time;
-                Vector3 firedVelocity = VectorUtils.GaussianDirectionDeviation(currentVelocity.normalized, subMunitionType.subProjectileDispersion > 0 ? subMunitionType.subProjectileDispersion : (subMunitionType.subProjectileCount / BDAMath.Sqrt((currentVelocity * dragVelocityFactor).magnitude / 100))) * subMunitionType.bulletVelocity; //more subprojectiles = wider spread, higher base velocity = tighter spread
-                pBullet.currentVelocity = GetDragAdjustedVelocity() + firedVelocity; // currentVelocity is already the real velocity w/o offloading
+                Vector3 firedVelocity = VectorUtils.GaussianDirectionDeviation(currentVelocity.normalized, subMunitionType.subProjectileDispersion > 0 ? subMunitionType.subProjectileDispersion : (subMunitionType.subProjectileCount / BDAMath.Sqrt(GetDragAdjustedVelocity().magnitude / 100))) * (GetDragAdjustedVelocity().magnitude + subMunitionType.bulletVelocity); //more subprojectiles = wider spread, higher base velocity = tighter spread
+                pBullet.currentVelocity = firedVelocity; //if submunitions have additional vel, would need modifications to ModuleWeapon's CPA calcs to offset targetPos by -targetVel * (submunitionVelocity / proximityDetonationdist)
                 pBullet.sourceWeapon = sourceWeapon;
                 pBullet.sourceVessel = sourceVessel;
                 pBullet.team = team;

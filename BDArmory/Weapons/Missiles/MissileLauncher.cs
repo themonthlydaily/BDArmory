@@ -1285,6 +1285,12 @@ namespace BDArmory.Weapons.Missiles
                     reloadableRail.MissileName = multiLauncher.subMunitionName;
                     reloadableRail.UpdateMissileValues();
                 }
+                var tnt = part.FindModuleImplementing<BDExplosivePart>();
+                if (tnt)
+                {
+                    tnt.Team = Team;
+                    tnt.sourcevessel = SourceVessel;
+                }
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: Missile Launched!");
                 if (BDArmorySettings.CAMERA_SWITCH_INCLUDE_MISSILES && SourceVessel.isActiveVessel) LoadedVesselSwitcher.Instance.ForceSwitchVessel(vessel);
             }
@@ -2539,8 +2545,6 @@ namespace BDArmory.Weapons.Missiles
                 if (warheadType == WarheadTypes.Standard || warheadType == WarheadTypes.ContinuousRod)
                 {
                     var tnt = part.FindModuleImplementing<BDExplosivePart>();
-                    tnt.Team = Team;
-                    tnt.sourcevessel = SourceVessel;
                     tnt.DetonateIfPossible();
                     FuseFailed = tnt.fuseFailed;
                     guidanceActive = false;
