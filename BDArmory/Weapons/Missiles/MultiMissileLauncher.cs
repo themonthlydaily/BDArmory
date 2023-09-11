@@ -252,7 +252,7 @@ namespace BDArmory.Weapons.Missiles
                 ALength.maxValue = scaleMax;
                 if (Length > scaleMax) Length = scaleMax;
                 ALength.onFieldChanged = updateLength;
-                if (!ScaleTransform) updateLength(null, null);
+                updateLength(null, null);
             }
         }
 
@@ -303,7 +303,7 @@ namespace BDArmory.Weapons.Missiles
         {
             for (int i = 0; i < launchTransforms.Length; i++)
             {
-                launchTransforms[i].localScale = new Vector3((1 / Scale), (1 / Scale), (1 / Length));
+                launchTransforms[i].localScale = new Vector3((1 / Scale), (1 / Scale), (1 / (Length != 1 ? Length : Scale)));
             }
         }
         private void OnDestroy()
