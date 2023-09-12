@@ -5613,13 +5613,13 @@ namespace BDArmory.Weapons
                 }
                 if (pulseLaser)
                 {
-                    output.AppendLine($"Rounds Per Minute: {baseRPM * (fireTransforms?.Length ?? 1)}");
+                    output.AppendLine($"Rounds Per Minute: {roundsPerMinute * (fireTransforms?.Length ?? 1)}");
                     if (SpoolUpTime > 0) output.AppendLine($"Weapon requires {SpoolUpTime} seconds to come to max RPM");
                     if (HEpulses)
                     {
                         output.AppendLine($"Blast:");
-                        output.AppendLine($"- tnt mass:  {Math.Round((laserDamage / 30000), 2)} kg");
-                        output.AppendLine($"- radius:  {Math.Round(BlastPhysicsUtils.CalculateBlastRange(laserDamage / 30000), 2)} m");
+                        output.AppendLine($"- tnt mass:  {Math.Round((laserDamage / 1000), 2)} kg");
+                        output.AppendLine($"- radius:  {Math.Round(BlastPhysicsUtils.CalculateBlastRange(laserDamage / 1000), 2)} m");
                     }
                 }
 
