@@ -2644,6 +2644,18 @@ namespace BDArmory.Competition
                                     vesselsToKill.Add(mf.vessel);
                                 }
                             }
+                            else
+                            {
+                                var surfaceAI = VesselModuleRegistry.GetModule<BDModuleSurfaceAI>(vessel);
+                                if ((surfaceAI.SurfaceType == AIUtils.VehicleMovementType.Land && vessel.Splashed) || ((surfaceAI.SurfaceType == AIUtils.VehicleMovementType.Water || surfaceAI.SurfaceType == AIUtils.VehicleMovementType.Submarine) && vessel.Landed))
+                                {
+                                    KillTimer[vesselName] = (int)(now - vData.landedKillTimer);
+                                    if (now - vData.landedKillTimer > BDArmorySettings.COMPETITION_KILL_TIMER)
+                                    {
+                                        vesselsToKill.Add(mf.vessel);
+                                    }
+                                }
+                            }
                         }
                         if (vData.AltitudeKillTimer > 0 && BDArmorySettings.COMPETITION_KILL_TIMER > 0)
                         {
