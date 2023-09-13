@@ -38,6 +38,7 @@ namespace BDArmory.Weapons.Missiles
         Transform[] launchTransforms;
         [KSPField(isPersistant = true)] public string subMunitionName; //name of missile in .cfg - e.g. "bahaAim120"
         [KSPField(isPersistant = true)] public string subMunitionPath; //model path for missile
+        public float missileMass;
         [KSPField] public string launchTransformName; //name of transform launcTransforms are parented to - see Rocketlauncher transform hierarchy
         //[KSPField] public int salvoSize = 1; //leave blank to have salvoSize = launchTransforms.count
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_WMWindow_rippleText2"), UI_FloatRange(minValue = 1, maxValue = 10, stepIncrement = 1, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Salvo
@@ -91,6 +92,26 @@ namespace BDArmory.Weapons.Missiles
 
         public MissileTurret turret;
 
+        public bool toggleBay = true;
+        [KSPEvent(guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_ToggleAnimation", active = true)]//Disable Engage Options
+        public void ToggleBay()
+        {
+            toggleBay = !toggleBay;
+
+            if (toggleBay == false)
+            {
+                Events["ToggleBay"].guiName = StringUtils.Localize("#autoLOC_502069");//"Open"
+            }
+            else
+            {
+                Events["ToggleBay"].guiName = StringUtils.Localize("#autoLOC_502051");//""Close"
+            }
+            if (deployState != null)
+            {
+                deployState.normalizedTime = HighLogic.LoadedSceneIsFlight ? 0 : toggleBay ? 1 : 0;
+            }
+        }
+
         public void Start()
         {
             MakeMissileArray();
@@ -105,10 +126,11 @@ namespace BDArmory.Weapons.Missiles
             }
             if (!string.IsNullOrEmpty(deployAnimationName))
             {
+                Events["ToggleBay"].guiActiveEditor = true;
                 deployState = GUIUtils.SetUpSingleAnimation(deployAnimationName, part);
                 if (deployState != null)
                 {
-                    deployState.normalizedTime = HighLogic.LoadedSceneIsFlight ? 0 : 1;
+                    deployState.normalizedTime = HighLogic.LoadedSceneIsFlight ? 0 : toggleBay ? 1 : 0;
                     deployState.speed = 0;
                     deployState.enabled = true;
                 }
@@ -318,12 +340,15 @@ namespace BDArmory.Weapons.Missiles
         public void UpdateLengthAndScale(float scale, float length, float offset)
         {
             if (ScaleTransform != null)
-            ScaleTransform.localScale = new Vector3(scale, scale, scale);
+                ScaleTransform.localScale = new Vector3(scale, scale, scale);
             if (LengthTransform != null)
-            LengthTransform.localScale = new Vector3(1, 1, (1 / scale) * length);
-            for (int i = 0; i < launchTransforms.Length; i++)
+                LengthTransform.localScale = new Vector3(1, 1, (1 / scale) * length);
+            if (!String.IsNullOrEmpty(lengthTransformName))
             {
-                launchTransforms[i].localPosition = new Vector3(launchTransforms[i].localPosition.x, launchTransforms[i].localPosition.y, attachOffset * Mathf.Max(Scale, Length));
+                for (int i = 0; i < launchTransforms.Length; i++)
+                {
+                    launchTransforms[i].localPosition = new Vector3(launchTransforms[i].localPosition.x, launchTransforms[i].localPosition.y, attachOffset * Mathf.Max(Scale, Length));
+                }
             }
             PopulateMissileDummies();
         }
@@ -377,6 +402,7 @@ namespace BDArmory.Weapons.Missiles
                                     var explosivePart = missile.FindModuleImplementing<BDExplosivePart>();
                                     tntMass = explosivePart != null ? explosivePart.tntMass : 0;
                                     missileLauncher.blastRadius = BlastPhysicsUtils.CalculateBlastRange(tntMass);
+                                    missileMass = missile.partInfo.partPrefab.mass;
                                     EditorLogic.DeletePart(missile);
                                     List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator();
                                     while (sym.MoveNext())
@@ -937,8 +963,10 @@ namespace BDArmory.Weapons.Missiles
             }
             wpm.heatTarget = TargetSignatureData.noTarget;
             missileLauncher.launched = true;
+
             if (deployState != null)
             {
+                yield return new WaitForSecondsFixed(0.5f); //wait for missile to clear bay
                 deployState.enabled = true;
                 deployState.speed = -((1 / deployState.length) * deploySpeed);
                 yield return new WaitWhileFixed(() => deployState.normalizedTime > 0);

@@ -505,6 +505,10 @@ namespace BDArmory.Control
 
         #region KSPFields,events,actions
 
+        //[KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "BombPredictFudgeFactor"),//Firing Interval
+    //UI_FloatRange(minValue = -2, maxValue = 2f, stepIncrement = 0.001f, scene = UI_Scene.All)]
+        public float bombPredictionFudgeFactor = -2;
+
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FiringInterval"),//Firing Interval
             UI_FloatRange(minValue = 0.5f, maxValue = 60f, stepIncrement = 0.5f, scene = UI_Scene.All)]
         public float targetScanInterval = 1;
@@ -7710,7 +7714,6 @@ namespace BDArmory.Control
             Vector3 currPos = ml.MissileReferenceTransform.position;
             Vector3 closestPos = ml.MissileReferenceTransform.position;
             Vector3 simVelocity = vessel.Velocity(); //Issue #92
-
             MissileLauncher launcher = ml as MissileLauncher;
             if (launcher != null)
             {
@@ -7732,7 +7735,7 @@ namespace BDArmory.Control
 
             bombAimerPosition = Vector3.zero;
             int aimerLayerMask = (int)(LayerMasks.Scenery | LayerMasks.EVA); // Why EVA?
-            float ordinanceMass = launcher.part.partInfo.partPrefab.mass;
+            float ordinanceMass = launcher.multiLauncher ? launcher.multiLauncher.missileMass : launcher.part.partInfo.partPrefab.mass; 
             float ordinanceThrust = launcher.cruiseThrust;
             float ordinanceBoost = launcher.thrust;
             float thrustTime = launcher.cruiseTime + launcher.boostTime;
@@ -7771,7 +7774,6 @@ namespace BDArmory.Control
                 }
 
                 float simSpeedSquared = simVelocity.sqrMagnitude;
-
                 launcher = ml as MissileLauncher;
                 float drag = 0;
                 if (launcher != null)
@@ -7788,11 +7790,11 @@ namespace BDArmory.Control
                     drag = ml.vessel.parts.Sum(x => x.dragScalar);
                 }
 
-                dragForce = (0.008f * ordinanceMass) * drag * 0.5f * simSpeedSquared * atmDensity * simVelocity.normalized;
+                dragForce = (0.008f * ordinanceMass) * drag * 0.5f * simSpeedSquared * atmDensity * bombPredictionFudgeFactor * simVelocity.normalized;
                 simVelocity -= (dragForce / ordinanceMass) * simDeltaTime; //something here isn't quite simulating bomb ttrajectory, the actual bomb is hitting someways behind the predicted impact point
 
-                //float lift = 0.5f * atmDensity * simSpeedSquared * launcher.liftArea * BDArmorySettings.GLOBAL_LIFT_MULTIPLIER * MissileGuidance.DefaultLiftCurve.Evaluate(1);
-                //simVelocity += VectorUtils.GetUpDirection(currPos) * lift;
+                //float lift = 0.5f * atmDensity * simSpeedSquared * launcher.liftArea * BDArmorySettings.GLOBAL_LIFT_MULTIPLIER * MissileGuidance.DefaultLiftCurve.Evaluate(2);
+                //simVelocity += -simVelocity.ProjectOnPlanePreNormalized(ml.transform.forward).normalized * lift;
                 Ray ray = new Ray(prevPos, currPos - prevPos);
                 RaycastHit hitInfo;
                 if (Physics.Raycast(ray, out hitInfo, Vector3.Distance(prevPos, currPos), aimerLayerMask))
