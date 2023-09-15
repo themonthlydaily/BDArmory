@@ -18,8 +18,6 @@ using BDArmory.Utils;
 using BDArmory.WeaponMounts;
 using BDArmory.Weapons.Missiles;
 using BDArmory.Weapons;
-using static UnityEngine.GraphicsBuffer;
-using static BDArmory.Weapons.ModuleWeapon;
 using BDArmory.Bullets;
 
 namespace BDArmory.Control
@@ -1823,7 +1821,7 @@ namespace BDArmory.Control
                 {
                     if (targetingPods.Count > 0)
                     {
-                        float scaledDistance = Mathf.Max(20f, 0.004f * (float)guardTarget.srfSpeed * (float)guardTarget.srfSpeed);
+                        float scaledDistance = Mathf.Max(400f, 0.004f * (float)guardTarget.srfSpeed * (float)guardTarget.srfSpeed);
                         using (List<ModuleTargetingCamera>.Enumerator tgp = targetingPods.GetEnumerator())
                             while (tgp.MoveNext())
                             {
@@ -2375,7 +2373,7 @@ namespace BDArmory.Control
                             }
                             yield return wait;
 
-                            if (ml && laserPointDetected && foundCam && (foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude < Mathf.Max(10, 0.015f * (float)guardTarget.srfSpeed * (float)guardTarget.srfSpeed))
+                            if (ml && laserPointDetected && foundCam && (foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude < Mathf.Max(400, 0.04f * (float)guardTarget.srfSpeed * (float)guardTarget.srfSpeed))
                             {
                                 FireCurrentMissile(true);
                                 //StartCoroutine(MissileAwayRoutine(ml));
@@ -7219,7 +7217,7 @@ namespace BDArmory.Control
                             if (PDRktTgts[rocketTurretID] != null)
                             {
                                 bool viableTarget = true;
-                                if (BDArmorySettings.BULLET_WATER_DRAG && weapon.Current.eWeaponType == WeaponTypes.Ballistic && FlightGlobals.getAltitudeAtPos(PDRktTgts[rocketTurretID].transform.position) < 0) viableTarget = false;
+                                if (BDArmorySettings.BULLET_WATER_DRAG && weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Ballistic && FlightGlobals.getAltitudeAtPos(PDRktTgts[rocketTurretID].transform.position) < 0) viableTarget = false;
                                 if (viableTarget && TargetInTurretRange(weapon.Current.turret, 7, PDRktTgts[rocketTurretID].transform.position, weapon.Current))
                                 {
                                     weapon.Current.tgtRocket = PDRktTgts[rocketTurretID]; // if target within turret fire zone, assign
@@ -7251,7 +7249,7 @@ namespace BDArmory.Control
                             if (PDMslTgts[TurretID].Vessel != null)
                             {
                                 bool viableTarget = true;
-                                if (BDArmorySettings.BULLET_WATER_DRAG && weapon.Current.eWeaponType == WeaponTypes.Ballistic && PDMslTgts[TurretID].Vessel.Splashed) viableTarget = false;
+                                if (BDArmorySettings.BULLET_WATER_DRAG && weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Ballistic && PDMslTgts[TurretID].Vessel.Splashed) viableTarget = false;
 
                                 if (viableTarget && TargetInTurretRange(weapon.Current.turret, 7, PDMslTgts[TurretID].Vessel.CoM, weapon.Current))
                                 {

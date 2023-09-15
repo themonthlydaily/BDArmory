@@ -1276,7 +1276,7 @@ namespace BDArmory.Weapons.Missiles
                 vesselReferenceTransform = refObject.transform;
                 DetonationDistanceState = DetonationDistanceStates.NotSafe;
                 MissileState = MissileStates.Drop;
-                part.crashTolerance = 9999; //to combat stresses of launch, missle generate a lot of G Force
+                part.crashTolerance = torpedo ? waterImpactTolerance : 9999; //to combat stresses of launch, missle generate a lot of G Force
                 part.explosionPotential = 0; // Minimise the default part explosion FX that sometimes gets offset from the main explosion.
 
                 StartCoroutine(MissileRoutine());
@@ -1412,24 +1412,6 @@ namespace BDArmory.Weapons.Missiles
                     else
                     {
                         audioSource.dopplerLevel = 1f;
-                    }
-                    if (TimeIndex > 0.5f)
-                    {
-                        if (torpedo)
-                        {
-                            if (vessel.altitude >= -2) //0 was causing airdropped torps to set to 1 crashtolerance, then immediately explode the next frame during splashdown
-                            {
-                                part.crashTolerance = waterImpactTolerance; // + (float)vessel.horizontalSrfSpeed; ?
-                            }
-                            else
-                            {
-                                part.crashTolerance = 1;
-                            }
-                        }
-                        else
-                        {
-                            part.crashTolerance = 1;
-                        }
                     }
 
                     UpdateThrustForces();
@@ -1946,6 +1928,11 @@ namespace BDArmory.Weapons.Missiles
                     }
             }
         }
+        IEnumerator updateCrashTolerance()
+        {
+            yield return new WaitForSecondsFixed(0.5f); //wait until halfsec after boost motor fires, then set crashTolerance to 1. Torpes have already waited until splashdown before this is called.
+            part.crashTolerance = 1;
+        }
         IEnumerator BoostRoutine()
         {
             if (weaponClass == WeaponClasses.SLW && FlightGlobals.getAltitudeAtPos(part.transform.position) > 0)
@@ -1955,6 +1942,7 @@ namespace BDArmory.Weapons.Missiles
             }
             if (useFuel) burnRate = boostTime > 0 ? boosterFuelMass / boostTime * Time.fixedDeltaTime : 0;
             StartBoost();
+            StartCoroutine(updateCrashTolerance());
             var wait = new WaitForFixedUpdate();
             float boostStartTime = Time.time;
             while (Time.time - boostStartTime < boostTime)

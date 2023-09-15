@@ -1,6 +1,5 @@
 ﻿using BDArmory.Competition;
 using BDArmory.Control;
-using BDArmory.Modules;
 using BDArmory.Radar;
 using BDArmory.Settings;
 using BDArmory.Targeting;
@@ -10,9 +9,7 @@ using BDArmory.WeaponMounts;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 using static BDArmory.Weapons.Missiles.MissileBase;
 
@@ -290,33 +287,31 @@ namespace BDArmory.Weapons.Missiles
         public void updateScale(BaseField field, object obj)
         {
             ScaleTransform.localScale = new Vector3(Scale, Scale, Scale);
-            List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator();
-            while (sym.MoveNext())
-            {
-                if (sym.Current == null) continue;
-                var mml = sym.Current.FindModuleImplementing<MultiMissileLauncher>();
-                if (mml == null) continue;
-                mml.Scale = Scale;
-                mml.UpdateLengthAndScale(Scale, Length, attachOffset);
-            }
-            sym.Dispose();
+            using (List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator())
+                while (sym.MoveNext())
+                {
+                    if (sym.Current == null) continue;
+                    var mml = sym.Current.FindModuleImplementing<MultiMissileLauncher>();
+                    if (mml == null) continue;
+                    mml.Scale = Scale;
+                    mml.UpdateLengthAndScale(Scale, Length, attachOffset);
+                }
             if (LengthTransform) updateLength(null, null);
             else PopulateMissileDummies();
         }
         public void updateLength(BaseField field, object obj)
         {
             LengthTransform.localScale = new Vector3(1, 1, (1 / Scale) * Length);
-            List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator();
-            while (sym.MoveNext())
-            {
-                if (sym.Current == null) continue;
-                var mml = sym.Current.FindModuleImplementing<MultiMissileLauncher>();
-                if (mml == null) continue;
-                mml.Length = Length;
-                mml.UpdateLengthAndScale(Scale, Length, attachOffset);
+            using (List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator())
+                while (sym.MoveNext())
+                {
+                    if (sym.Current == null) continue;
+                    var mml = sym.Current.FindModuleImplementing<MultiMissileLauncher>();
+                    if (mml == null) continue;
+                    mml.Length = Length;
+                    mml.UpdateLengthAndScale(Scale, Length, attachOffset);
 
-            }
-            sym.Dispose();
+                }
             PopulateMissileDummies();
         }
         public void updateOffset(BaseField field, object obj)
@@ -326,16 +321,15 @@ namespace BDArmory.Weapons.Missiles
                 launchTransforms[i].localPosition = new Vector3(launchTransforms[i].localPosition.x, launchTransforms[i].localPosition.y, attachOffset * Mathf.Max(Scale, Length));
             }
             PopulateMissileDummies(true);
-            List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator();
-            while (sym.MoveNext())
-            {
-                if (sym.Current == null) continue;
-                var mml = sym.Current.FindModuleImplementing<MultiMissileLauncher>();
-                if (mml == null) continue;
-                mml.attachOffset = attachOffset;
-                mml.UpdateLengthAndScale(Scale, Length, attachOffset);
-            }
-            sym.Dispose();
+            using (List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator())
+                while (sym.MoveNext())
+                {
+                    if (sym.Current == null) continue;
+                    var mml = sym.Current.FindModuleImplementing<MultiMissileLauncher>();
+                    if (mml == null) continue;
+                    mml.attachOffset = attachOffset;
+                    mml.UpdateLengthAndScale(Scale, Length, attachOffset);
+                }
         }
         public void UpdateLengthAndScale(float scale, float length, float offset)
         {
@@ -404,25 +398,24 @@ namespace BDArmory.Weapons.Missiles
                                     missileLauncher.blastRadius = BlastPhysicsUtils.CalculateBlastRange(tntMass);
                                     missileMass = missile.partInfo.partPrefab.mass;
                                     EditorLogic.DeletePart(missile);
-                                    List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator();
-                                    while (sym.MoveNext())
-                                    {
-                                        if (sym.Current == null) continue;
-                                        var mml = sym.Current.FindModuleImplementing<MultiMissileLauncher>();
-                                        if (mml == null) continue;
-                                        mml.subMunitionName = subMunitionName;
-                                        mml.subMunitionPath = subMunitionPath;
-                                        mml.PopulateMissileDummies(true);
-                                        mml.LoadoutModified = true;
-                                        if (mml.missileSpawner)
+                                    using (List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator())
+                                        while (sym.MoveNext())
                                         {
-                                            mml.missileSpawner.MissileName = subMunitionName;
-                                            mml.missileSpawner.UpdateMissileValues();
+                                            if (sym.Current == null) continue;
+                                            var mml = sym.Current.FindModuleImplementing<MultiMissileLauncher>();
+                                            if (mml == null) continue;
+                                            mml.subMunitionName = subMunitionName;
+                                            mml.subMunitionPath = subMunitionPath;
+                                            mml.PopulateMissileDummies(true);
+                                            mml.LoadoutModified = true;
+                                            if (mml.missileSpawner)
+                                            {
+                                                mml.missileSpawner.MissileName = subMunitionName;
+                                                mml.missileSpawner.UpdateMissileValues();
+                                            }
+                                            mml.UpdateFields(MLConfig, true);
+                                            mml.missileLauncher.blastRadius = BlastPhysicsUtils.CalculateBlastRange(tntMass);
                                         }
-                                        mml.UpdateFields(MLConfig, true);
-                                        mml.missileLauncher.blastRadius = BlastPhysicsUtils.CalculateBlastRange(tntMass);
-                                    }
-                                    sym.Dispose();
                                 }
                             }
                         }
@@ -608,9 +601,9 @@ namespace BDArmory.Weapons.Missiles
                 {
                     if (missileSpawner.ammoCount > i || isClusterMissile)
                     {
-                        if (launchTransforms[i].localScale != new Vector3((1 / Scale), (1 / Scale), (((1 / Scale) * (1 / Length)) * Scale))); 
-                        launchTransforms[i].localScale = new Vector3((1 / Scale), (1 / Scale), (((1 / Scale) * (1 / Length)) * Scale));
-                    }
+                        if (launchTransforms[i].localScale != new Vector3(1 / Scale, 1 / Scale, 1 / Length))
+                        launchTransforms[i].localScale = new Vector3(1 / Scale, 1 / Scale, 1 / Length);
+        }
                     tubesFired = 0;
                 }
                 else
@@ -665,7 +658,7 @@ namespace BDArmory.Weapons.Missiles
             if (deployState != null)
             {
                 deployState.enabled = true;
-                deployState.speed = ((1/deployState.length) * deploySpeed);
+                deployState.speed = deploySpeed / deployState.length;
                 yield return new WaitWhileFixed(() => deployState.normalizedTime < 1); //wait for animation here
                 deployState.normalizedTime = 1;
                 deployState.speed = 0;
@@ -968,7 +961,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 yield return new WaitForSecondsFixed(0.5f); //wait for missile to clear bay
                 deployState.enabled = true;
-                deployState.speed = -((1 / deployState.length) * deploySpeed);
+                deployState.speed = -deploySpeed / deployState.length;
                 yield return new WaitWhileFixed(() => deployState.normalizedTime > 0);
                 deployState.normalizedTime = 0;
                 deployState.speed = 0;
