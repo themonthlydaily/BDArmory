@@ -503,10 +503,6 @@ namespace BDArmory.Control
 
         #region KSPFields,events,actions
 
-        //[KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "BombPredictFudgeFactor"),//Firing Interval
-    //UI_FloatRange(minValue = -2, maxValue = 2f, stepIncrement = 0.001f, scene = UI_Scene.All)]
-        public float bombPredictionFudgeFactor = -2;
-
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FiringInterval"),//Firing Interval
             UI_FloatRange(minValue = 0.5f, maxValue = 60f, stepIncrement = 0.5f, scene = UI_Scene.All)]
         public float targetScanInterval = 1;
@@ -7711,7 +7707,7 @@ namespace BDArmory.Control
             Vector3 prevPos = ml.MissileReferenceTransform.position;
             Vector3 currPos = ml.MissileReferenceTransform.position;
             Vector3 closestPos = ml.MissileReferenceTransform.position;
-            Vector3 simVelocity = vessel.Velocity(); //Issue #92
+            Vector3 simVelocity = bombPart.rb.velocity + BDKrakensbane.FrameVelocityV3f;
             MissileLauncher launcher = ml as MissileLauncher;
             if (launcher != null)
             {
@@ -7728,9 +7724,6 @@ namespace BDArmory.Control
             List<Vector3> pointPositions = new List<Vector3>();
             pointPositions.Add(currPos);
 
-            prevPos = ml.MissileReferenceTransform.position;
-            currPos = ml.MissileReferenceTransform.position;
-
             bombAimerPosition = Vector3.zero;
             int aimerLayerMask = (int)(LayerMasks.Scenery | LayerMasks.EVA); // Why EVA?
             float ordinanceMass = launcher.multiLauncher ? launcher.multiLauncher.missileMass : launcher.part.partInfo.partPrefab.mass; 
@@ -7739,39 +7732,25 @@ namespace BDArmory.Control
             float thrustTime = launcher.cruiseTime + launcher.boostTime;
             Vector3 pointingDirection = launcher.MissileReferenceTransform.forward;
             if (FlightGlobals.RefFrameIsRotating)
-            { simVelocity += 0.5f * simDeltaTime * FlightGlobals.getGeeForceAtPosition(currPos); }
+                simVelocity += 0.5f * simDeltaTime * FlightGlobals.getGeeForceAtPosition(currPos);
             simVelocity += 0.5f * ordinanceBoost / ordinanceMass * simDeltaTime * pointingDirection;
             bool simulating = true;
             var simStartTime = Time.realtimeSinceStartup;
             while (simulating)
             {
-                prevPos = currPos;
-                currPos += simVelocity * simDeltaTime;
+                pointingDirection = simVelocity.normalized;
                 Vector3d gravity = FlightGlobals.getGeeForceAtPosition(currPos);
                 float atmDensity =
                     (float)
                     FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(currPos),
                         FlightGlobals.getExternalTemperature(), FlightGlobals.currentMainBody);
-
-                if (FlightGlobals.RefFrameIsRotating)
-                { simVelocity += 0.5f * simDeltaTime * gravity; }
-                if (simTime <= thrustTime)
-                {
-                    if (simTime < launcher.boostTime)
-                    {
-                        simVelocity += ordinanceBoost / ordinanceMass * simDeltaTime * pointingDirection;
-                    }
-                    else
-                    {
-                        simVelocity += ordinanceThrust / ordinanceMass * simDeltaTime * pointingDirection;
-                    }
-                    if (FlightGlobals.RefFrameIsRotating)
-                    {
-                        simVelocity += gravity * simDeltaTime;
-                    }
-                }
-
                 float simSpeedSquared = simVelocity.sqrMagnitude;
+
+                if (simTime > thrustTime)
+                {
+                    if (FlightGlobals.RefFrameIsRotating)
+                        simVelocity -= 0.5f * simDeltaTime * gravity;
+                }
                 launcher = ml as MissileLauncher;
                 float drag = 0;
                 if (launcher != null)
@@ -7788,11 +7767,15 @@ namespace BDArmory.Control
                     drag = ml.vessel.parts.Sum(x => x.dragScalar);
                 }
 
-                dragForce = (0.008f * ordinanceMass) * drag * 0.5f * simSpeedSquared * atmDensity * bombPredictionFudgeFactor * simVelocity.normalized;
+                dragForce = (0.008f * ordinanceMass) * drag * 0.5f * simSpeedSquared * atmDensity * simVelocity.normalized;
                 simVelocity -= (dragForce / ordinanceMass) * simDeltaTime; //something here isn't quite simulating bomb ttrajectory, the actual bomb is hitting someways behind the predicted impact point
 
                 //float lift = 0.5f * atmDensity * simSpeedSquared * launcher.liftArea * BDArmorySettings.GLOBAL_LIFT_MULTIPLIER * MissileGuidance.DefaultLiftCurve.Evaluate(2);
                 //simVelocity += -simVelocity.ProjectOnPlanePreNormalized(ml.transform.forward).normalized * lift;
+                simTime += simDeltaTime;
+                prevPos = currPos;
+                currPos += simVelocity * simDeltaTime;
+
                 Ray ray = new Ray(prevPos, currPos - prevPos);
                 RaycastHit hitInfo;
                 if (Physics.Raycast(ray, out hitInfo, Vector3.Distance(prevPos, currPos), aimerLayerMask))
@@ -7821,7 +7804,22 @@ namespace BDArmory.Control
                     simulating = false;
                     break;
                 }
-                simTime += simDeltaTime;
+                if (thrustTime > 0 && simTime <= thrustTime)
+                {
+                    if (simTime < launcher.boostTime)
+                    {
+                        simVelocity += ordinanceBoost / ordinanceMass * simDeltaTime * pointingDirection;
+                    }
+                    else
+                    {
+                        simVelocity += ordinanceThrust / ordinanceMass * simDeltaTime * pointingDirection;
+                    }
+                    if (FlightGlobals.RefFrameIsRotating)
+                    {
+                        simVelocity += gravity * simDeltaTime;
+                    }
+                }
+
                 pointPositions.Add(currPos);
             }
 
