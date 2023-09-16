@@ -41,6 +41,7 @@
 		- Fix issue with air-dropped torpedoes exploding on impact with the water despite being within their waterImpactTolearance.
 		- Fix torpedo behavior if trying to target something with a CoM above water level
 		- Tweaked weapon lead aim calcs for guns firing beehive shells, Oerlikon should hit more often now.
+		- MultiMissileLaunchers can now support GPS guided missiles launching at multiple simultaneous targets. 
 
 v1.6.5.0
 IMPROVEMENTS / FIXES
