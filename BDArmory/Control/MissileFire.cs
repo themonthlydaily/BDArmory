@@ -7767,8 +7767,8 @@ namespace BDArmory.Control
                     drag = ml.vessel.parts.Sum(x => x.dragScalar);
                 }
 
-                dragForce = (0.008f * ordinanceMass) * drag * 0.5f * simSpeedSquared * atmDensity * simVelocity.normalized;
-                simVelocity -= (dragForce / ordinanceMass) * simDeltaTime; //something here isn't quite simulating bomb ttrajectory, the actual bomb is hitting someways behind the predicted impact point
+                dragForce = (0.008f * ordinanceMass) * drag * 0.5f * simSpeedSquared * atmDensity * pointingDirection;
+                simVelocity -= (dragForce / ordinanceMass) * simDeltaTime;
 
                 //float lift = 0.5f * atmDensity * simSpeedSquared * launcher.liftArea * BDArmorySettings.GLOBAL_LIFT_MULTIPLIER * MissileGuidance.DefaultLiftCurve.Evaluate(2);
                 //simVelocity += -simVelocity.ProjectOnPlanePreNormalized(ml.transform.forward).normalized * lift;

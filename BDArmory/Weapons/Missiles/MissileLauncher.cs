@@ -1273,7 +1273,7 @@ namespace BDArmory.Weapons.Missiles
                 vesselReferenceTransform = refObject.transform;
                 DetonationDistanceState = DetonationDistanceStates.NotSafe;
                 MissileState = MissileStates.Drop;
-                part.crashTolerance = torpedo ? waterImpactTolerance : 9999; //to combat stresses of launch, missle generate a lot of G Force
+                part.crashTolerance = torpedo ? waterImpactTolerance : 9999; //to combat stresses of launch, missiles generate a lot of G Force
                 part.explosionPotential = 0; // Minimise the default part explosion FX that sometimes gets offset from the main explosion.
 
                 StartCoroutine(MissileRoutine());

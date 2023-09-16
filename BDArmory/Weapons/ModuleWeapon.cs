@@ -167,7 +167,6 @@ namespace BDArmory.Weapons
         public PooledRocket tgtRocket = null;
         Vector3 closestTarget = Vector3.zero;
         Vector3 tgtVelocity = Vector3.zero;
-        TargetInfo MissileTgt = null;
 
         private int targetID = 0;
         bool targetAcquired;
