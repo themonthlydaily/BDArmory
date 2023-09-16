@@ -162,9 +162,6 @@ namespace BDArmory.Weapons.Missiles
         Transform rotationTransform;
 
         [KSPField]
-        public bool terminalManeuvering = false;
-
-        [KSPField]
         public string terminalGuidanceType = "";
 
         [KSPField]
@@ -3043,7 +3040,7 @@ namespace BDArmory.Weapons.Missiles
 
             if (TargetingMode == TargetingModes.Gps)
             {
-                output.AppendLine($"Terminal Maneuvering: {terminalManeuvering}");
+                output.AppendLine($"Terminal Maneuvering: {terminalGuidanceShouldActivate}");
                 if (terminalGuidanceType != "")
                 {
                     output.AppendLine($"Terminal guidance: {terminalGuidanceType} @ distance: {terminalGuidanceDistance} m");
@@ -3073,7 +3070,7 @@ namespace BDArmory.Weapons.Missiles
 
             if (TargetingMode == TargetingModes.None)
             {
-                output.AppendLine($"Terminal Maneuvering: {terminalManeuvering}");
+                output.AppendLine($"Terminal Maneuvering: {terminalGuidanceShouldActivate}");
                 if (terminalGuidanceType != "")
                 {
                     output.AppendLine($"Terminal guidance: {terminalGuidanceType} @ distance: {terminalGuidanceDistance} m");

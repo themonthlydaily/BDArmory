@@ -497,7 +497,7 @@ namespace BDArmory.Weapons.Missiles
             missileLauncher.optimumAirspeed = MLConfig.optimumAirspeed;
             missileLauncher.maxTurnRateDPS = MLConfig.maxTurnRateDPS;
             missileLauncher.proxyDetonate = MLConfig.proxyDetonate;
-            missileLauncher.terminalManeuvering = MLConfig.terminalManeuvering;
+            missileLauncher.terminalGuidanceShouldActivate = MLConfig.terminalGuidanceShouldActivate;
             missileLauncher.terminalGuidanceType = MLConfig.terminalGuidanceType;
             missileLauncher.torpedo = MLConfig.torpedo;
             missileLauncher.loftState = 0;
@@ -539,7 +539,6 @@ namespace BDArmory.Weapons.Missiles
                 missileLauncher.clearanceRadius = MLConfig.clearanceRadius;
                 missileLauncher.clearanceLength = MLConfig.clearanceLength;
                 missileLauncher.maxAltitude = MLConfig.maxAltitude;
-                missileLauncher.terminalGuidanceShouldActivate = MLConfig.terminalGuidanceShouldActivate;
                 missileLauncher.engageAir = MLConfig.engageAir;
                 missileLauncher.engageGround = MLConfig.engageGround;
                 missileLauncher.engageMissile = MLConfig.engageMissile;
@@ -806,7 +805,7 @@ namespace BDArmory.Weapons.Missiles
                     ml.maxAltitude = missileLauncher.maxAltitude;
                 ml.terminalGuidanceShouldActivate = missileLauncher.terminalGuidanceShouldActivate;
                 //if (isClusterMissile) ml.multiLauncher.overrideReferenceTransform = true;
-                if (ml.TargetingMode == MissileBase.TargetingModes.Heat || ml.TargetingMode == MissileBase.TargetingModes.Radar)
+                if (ml.TargetingMode == MissileBase.TargetingModes.Heat || ml.TargetingMode == MissileBase.TargetingModes.Radar || ml.TargetingMode == MissileBase.TargetingModes.Gps)
                 {
                     if (wpm.multiMissileTgtNum >= 2 && wpm != null)
                     {
@@ -848,6 +847,10 @@ namespace BDArmory.Weapons.Missiles
                                             }
                                         }
                                     }
+                                    if (ml.TargetingMode == MissileBase.TargetingModes.Gps) 
+                                    {
+                                        ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(wpm.targetsAssigned[TargetID].Vessel.CoM, vessel.mainBody);
+                                    }
                                     ml.targetVessel = wpm.targetsAssigned[TargetID];
                                     if (BDArmorySettings.DEBUG_MISSILES)
                                         Debug.Log($"[BDArmory.MultiMissileLauncher] Assigning target {TargetID}: {wpm.targetsAssigned[TargetID].Vessel.GetName()}; total possible targets {wpm.targetsAssigned.Count}");
@@ -877,7 +880,7 @@ namespace BDArmory.Weapons.Missiles
 
                                                 for (int i = 0; i < scannedTargets.Length; i++)
                                                 {
-                                                    if (scannedTargets[i].exists && scannedTargets[i].vessel == wpm.targetsAssigned[TargetID].Vessel)
+                                                    if (scannedTargets[i].exists && scannedTargets[i].vessel == wpm.targetsAssigned[t].Vessel)
                                                     {
                                                         if (BDArmorySettings.DEBUG_MISSILES)
                                                             Debug.Log($"[BDArmory.MultiMissileLauncher] Found Radar target");
@@ -885,6 +888,10 @@ namespace BDArmory.Weapons.Missiles
                                                         break;
                                                     }
                                                 }
+                                            }
+                                            if (ml.TargetingMode == MissileBase.TargetingModes.Gps)
+                                            {
+                                                ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(wpm.targetsAssigned[t].Vessel.CoM, vessel.mainBody);
                                             }
                                             ml.targetVessel = wpm.targetsAssigned[t];
                                             if (BDArmorySettings.DEBUG_MISSILES)
@@ -916,7 +923,7 @@ namespace BDArmory.Weapons.Missiles
 
                                                         for (int i = 0; i < scannedTargets.Length; i++)
                                                         {
-                                                            if (scannedTargets[i].exists && scannedTargets[i].vessel == wpm.targetsAssigned[TargetID].Vessel)
+                                                            if (scannedTargets[i].exists && scannedTargets[i].vessel == item.Current.Vessel)
                                                             {
                                                                 if (BDArmorySettings.DEBUG_MISSILES)
                                                                     Debug.Log($"[BDArmory.MultiMissileLauncher] Found Radar target");
@@ -924,6 +931,10 @@ namespace BDArmory.Weapons.Missiles
                                                                 break;
                                                             }
                                                         }
+                                                    }
+                                                    if (ml.TargetingMode == MissileBase.TargetingModes.Gps)
+                                                    {
+                                                        ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(item.Current.Vessel.CoM, vessel.mainBody);
                                                     }
                                                     ml.targetVessel = item.Current;
                                                     if (BDArmorySettings.DEBUG_MISSILES)
