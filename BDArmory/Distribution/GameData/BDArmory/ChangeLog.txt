@@ -18,10 +18,16 @@
 	- Add Japanese localization files thanks to user Taka005.
 - Competition:
 	- Add new GM Kill conditions for planes that have lost engines/weapons/set percentage of their parts and LandedKillTimer conditions for surface AIs that have found themselves in water/water AIs that have beached themselves/sunk.
+	- Don't auto-resume tournaments when custom spawn templates are selected.
 - Countermeasures:
 	- Add Acoustic Decoy CM support via 'countermeasureType = decoy'.
 	- APS point defense target acquisition and assignment logic rewritten, APS will now semi-intelligently identify and distribute targets among guns in the PD network.
 	- APS weapons now respect Fire Interval and Burst Length settings.
+- Vessel Spawning:
+	- Allow using custom spawn templates for airborne spawning too (with altitude >10m).
+	- Add option to immediately set airborne-spawned vessels (with a pilot AI) to their idle speeds.
+	- Tweaks to initial focussed vessel after circular spawning.
+	- Always perform vessel validity checks and wait for WMs to appear in the Vessel Switcher during post-spawning even when not immediately starting a competition.
 - Vessel Mover:
 	- Make the vessel selection more resilient to corrupted vessel files/loadmeta.
 	- Default the vessel selection window to using the VAB if the initial vessel is spawned through the launchpad.
