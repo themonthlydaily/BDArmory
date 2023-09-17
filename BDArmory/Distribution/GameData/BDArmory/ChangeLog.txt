@@ -1,4 +1,5 @@
-﻿IMPROVEMENTS / FIXES
+﻿v1.6.6.0
+IMPROVEMENTS / FIXES
 - General:
 	- Procedural Wing max armor thickness now based on mean thickness of the wing.
 	- Adds new Acoustic Decoy CM dropper.
