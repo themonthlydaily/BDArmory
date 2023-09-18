@@ -17,13 +17,15 @@ namespace BDArmory.CounterMeasure
         public static ObjectPool chaffPool;
         public static ObjectPool smokePool;
         public static ObjectPool decoyPool;
+        public static ObjectPool bubblePool;
 
         public enum CountermeasureTypes
         {
             Flare = 1 << 0,
             Chaff = 1 << 1,
             Smoke = 1 << 2,
-            Decoy = 1 << 3
+            Decoy = 1 << 3,
+            Bubbles = 1 << 4
         }
 
         public CountermeasureTypes cmType = CountermeasureTypes.Flare;
@@ -75,6 +77,9 @@ namespace BDArmory.CounterMeasure
 
                 case CountermeasureTypes.Decoy:
                     return LaunchDecoy();
+
+                case CountermeasureTypes.Bubbles:
+                    return DropBubbles();
             }
             return false;
         }
@@ -193,6 +198,10 @@ namespace BDArmory.CounterMeasure
                 case "decoy":
                     cmType = CountermeasureTypes.Decoy;
                     break;
+
+                case "bubble":
+                    cmType = CountermeasureTypes.Bubbles;
+                    break;
             }
         }
 
@@ -245,6 +254,16 @@ namespace BDArmory.CounterMeasure
                         SetupDecoyPool();
                     }
                     resourceName = "CMDecoy";
+                    break;
+
+                case "bubble":
+                    cmType = CountermeasureTypes.Bubbles;
+                    cmSound = SoundUtils.GetAudioClip("BDArmory/Sounds/smokeEject");
+                    resourceName = "CMSBT";
+                    if (!bubblePool)
+                    {
+                        SetupBubblePool();
+                    }
                     break;
             }
         }
@@ -361,6 +380,49 @@ namespace BDArmory.CounterMeasure
             return true;
         }
 
+        bool DropBubbles()
+        {
+            PartResource smokeResource = GetCMResource();
+            if (smokeResource.amount >= 1)
+            {
+                smokeResource.amount--;
+                audioSource.pitch = UnityEngine.Random.Range(0.9f, 1.1f);
+                audioSource.PlayOneShot(cmSound);
+
+                StartCoroutine(BubbleRoutine());
+
+                FireParticleEffects();
+                return true;
+            }
+            return false;
+        }
+
+        IEnumerator BubbleRoutine()
+        {
+            yield return new WaitForSecondsFixed(0.2f);
+            GameObject bubbleCMObject = decoyPool.GetPooledObject();
+            CMBubble smoke = bubbleCMObject.GetComponent<CMBubble>();
+            smoke.velocity = part.rb.velocity + (ejectVelocity * transform.up) +
+                             (UnityEngine.Random.Range(-3f, 3f) * transform.forward) +
+                             (UnityEngine.Random.Range(-3f, 3f) * transform.right);
+            bubbleCMObject.SetActive(true);
+            bubbleCMObject.transform.position = ejectTransform.position + (10 * ejectTransform.forward);
+            float longestLife = 0;
+            using (IEnumerator<KSPParticleEmitter> emitter = bubbleCMObject.GetComponentsInChildren<KSPParticleEmitter>().Cast<KSPParticleEmitter>().GetEnumerator())
+                while (emitter.MoveNext())
+                {
+                    if (emitter.Current == null) continue;
+                    EffectBehaviour.AddParticleEmitter(emitter.Current);
+                    emitter.Current.Emit();
+                    if (emitter.Current.maxEnergy > longestLife) longestLife = emitter.Current.maxEnergy;
+                }
+
+            audioSource.PlayOneShot(smokePoofSound);
+            yield return new WaitForSecondsFixed(longestLife);
+            bubbleCMObject.SetActive(false);
+        }
+
+
         void SetupFlarePool()
         {
             GameObject cm = GameDatabase.Instance.GetModel("BDArmory/Models/CMFlare/model");
@@ -391,6 +453,14 @@ namespace BDArmory.CounterMeasure
             cm.SetActive(false);
             cm.AddComponent<CMDecoy>();
             decoyPool = ObjectPool.CreateObjectPool(cm, 10, true, true);
+        }
+
+        void SetupBubblePool()
+        {
+            GameObject cm = GameDatabase.Instance.GetModel("BDArmory/Models/CMSmoke/cmSmokeModel");
+            cm.SetActive(false);
+            cm.AddComponent<CMBubble>();
+            bubblePool = ObjectPool.CreateObjectPool(cm, 10, true, true);
         }
 
         // RMB info in editor

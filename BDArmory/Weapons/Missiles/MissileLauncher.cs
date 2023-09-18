@@ -785,6 +785,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 Fields["terminalGuidanceShouldActivate"].guiActive = false;
                 Fields["terminalGuidanceShouldActivate"].guiActiveEditor = false;
+                terminalGuidanceShouldActivate = false;
             }
 
             if (GuidanceMode != GuidanceModes.AAMLoft)
@@ -1927,8 +1928,10 @@ namespace BDArmory.Weapons.Missiles
         }
         IEnumerator updateCrashTolerance()
         {
-            yield return new WaitForSecondsFixed(0.5f); //wait until halfsec after boost motor fires, then set crashTolerance to 1. Torpes have already waited until splashdown before this is called.
+            yield return new WaitForSecondsFixed(0.5f); //wait half sec after boost motor fires, then set crashTolerance to 1. Torps have already waited until splashdown before this is called.
             part.crashTolerance = 1;
+            var missileCOL = part.collider;
+            if (missileCOL) missileCOL.enabled = true;
         }
         IEnumerator BoostRoutine()
         {

@@ -737,9 +737,9 @@ namespace BDArmory.Control
                     using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
                         while (rd.MoveNext())
                         {
-                            if (rd.Current != null || rd.Current.canLock) 
+                            if (rd.Current != null || rd.Current.canLock)
                             {
-                                rd.Current.EnableRadar(); 
+                                rd.Current.EnableRadar();
                             }
                             _radarsEnabled = true;
                         }
@@ -1823,7 +1823,7 @@ namespace BDArmory.Control
                             {
                                 if (tgp.Current == null) continue;
                                 if (!tgp.Current.enabled || (tgp.Current.cameraEnabled && tgp.Current.groundStabilized &&
-                                                             !((tgp.Current.groundTargetPosition - guardTarget.transform.position).sqrMagnitude > scaledDistance))) continue;                                
+                                                             !((tgp.Current.groundTargetPosition - guardTarget.transform.position).sqrMagnitude > scaledDistance))) continue;
                                 tgp.Current.EnableCamera();
                                 yield return StartCoroutine(tgp.Current.PointToPositionRoutine(guardTarget.CoM));
                                 //yield return StartCoroutine(tgp.Current.PointToPositionRoutine(TargetInfo.TargetCOMDispersion(guardTarget)));
@@ -2198,7 +2198,7 @@ namespace BDArmory.Control
                             yield return wait;
                             if (BDArmorySettings.DEBUG_MISSILES)
                             {
-                                Debug.Log("[BDArmory.MissileFire]: {vessel.vesselName} firing GPS missile at {designatedGPSInfo.worldPos}");
+                                Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} firing GPS missile at {designatedGPSInfo.worldPos}");
                             }
                             FireCurrentMissile(true);
                             //if (FireCurrentMissile(true))
@@ -2476,7 +2476,7 @@ namespace BDArmory.Control
                  weaponArray[weaponIndex].GetWeaponClass() == WeaponClasses.Bomb && firedMissiles < maxMissilesOnTarget)
             {
                 Vector3 leadTarget = Vector3.zero;
-                float timeToCPA = vessel.TimeToCPA(guardTarget, 60); 
+                float timeToCPA = vessel.TimeToCPA(guardTarget, 60);
                 if (timeToCPA > 0 && timeToCPA < 60)
                 {
                     leadTarget = AIUtils.PredictPosition(guardTarget, timeToCPA);//lead moving ground target to properly line up bombing run; bombs fire solution already plotted in missileFire, torps more or less hit top speed instantly, so simplified fire solution can be used
@@ -2711,6 +2711,7 @@ namespace BDArmory.Control
         public bool isFlaring;
         public bool isSmoking;
         public bool isDecoying;
+        public bool isBubbling;
         public bool isECMJamming;
         public bool isCloaking;
 
@@ -2773,6 +2774,14 @@ namespace BDArmory.Control
             if (!isDecoying && ThreatClosingTime(incomingMissileVessel) <= cmThreshold)
             {
                 StartCoroutine(DecoyRoutine((int)cmRepetition, cmInterval));
+            }
+        }
+
+        public void FireBubbles()
+        {
+            if (!isBubbling && ThreatClosingTime(incomingMissileVessel) <= cmThreshold)
+            {
+                StartCoroutine(BubbleRoutine((int)cmRepetition, cmInterval));
             }
         }
 
@@ -2889,6 +2898,21 @@ namespace BDArmory.Control
             yield return new WaitForSecondsFixed(cmWaitTime);
             isDecoying = false;
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} ending decoy routine");
+        }
+        IEnumerator BubbleRoutine(int repetition, float interval)
+        {
+            isBubbling = true;
+            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} starting bubblescreen routine");
+            // yield return new WaitForSecondsFixed(0.2f); // Reaction time delay
+            for (int i = 0; i < repetition; ++i)
+            {
+                DropCM(CMDropper.CountermeasureTypes.Bubbles);
+                if (i < repetition - 1) // Don't wait on the last one.
+                    yield return new WaitForSecondsFixed(interval);
+            }
+            yield return new WaitForSecondsFixed(cmWaitTime);
+            isBubbling = false;
+            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} ending bubble routine");
         }
         IEnumerator AllCMRoutine(int count)
         {
@@ -5302,7 +5326,7 @@ namespace BDArmory.Control
 
                             if (BDArmorySettings.BULLET_WATER_DRAG)
                             {
-                                if ((!surfaceAI || surfaceAI.SurfaceType != AIUtils.VehicleMovementType.Submarine) && vessel.Splashed && FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0) continue; 
+                                if ((!surfaceAI || surfaceAI.SurfaceType != AIUtils.VehicleMovementType.Submarine) && vessel.Splashed && FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0) continue;
                                 if (candidateCaliber < 75 && FlightGlobals.getAltitudeAtPos(target.position) + target.Vessel.GetRadius() < 0) continue; //vessel completely submerged, and not using rounds big enough to survive water impact
                             }
                             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
@@ -5675,7 +5699,7 @@ namespace BDArmory.Control
                             }
 
                             if (distance < ((EngageableWeapon)item.Current).engageRangeMin || firedMissiles >= maxMissilesOnTarget)
-                            candidateYield *= -1f; // if within min range, negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
+                                candidateYield *= -1f; // if within min range, negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
 
                             //if ((!vessel.LandedOrSplashed) || ((distance > gunRange) && (vessel.LandedOrSplashed))) 
                             {
@@ -6299,7 +6323,7 @@ namespace BDArmory.Control
         }
 
         /// <summary>
-        /// Override for legacy targeting only! Remove when removing legcy mode!
+        /// Check to see if an incoming missile is visible bsed on guardRange and missile state
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
@@ -6657,15 +6681,18 @@ namespace BDArmory.Control
                                 bool pilotAuthorized = true;
                                 //(!pilotAI || pilotAI.GetLaunchAuthorization(guardTarget, this));
 
-                                if (RadarUtils.TerrainCheck(guardTarget.CoM, CurrentMissile.transform.position)) //vessel behind terrain
-                                {
-                                    launchAuthorized = false;
-                                }
                                 if (selectedWeapon.GetWeaponClass() == WeaponClasses.Missile && vessel.Splashed && vessel.altitude < 10) launchAuthorized = false; //submarine below launch depth
-                                if (selectedWeapon.GetWeaponClass() == WeaponClasses.SLW && !vessel.LandedOrSplashed && pilotAI && vessel.altitude > 50) launchAuthorized = false; //don't torpedo bomb from high up, the torp's won't survive water impact; 
+                                if (selectedWeapon.GetWeaponClass() == WeaponClasses.SLW && !vessel.LandedOrSplashed && pilotAI && vessel.altitude > 50) launchAuthorized = false; //don't torpedo bomb from high up, the torp's won't survive water impact
                                 //float targetAngle = Vector3.Angle(-transform.forward, guardTarget.transform.position - transform.position);
                                 float targetAngle = Vector3.Angle(CurrentMissile.MissileReferenceTransform.forward, guardTarget.transform.position - transform.position);
                                 float targetDistance = Vector3.Distance(currentTarget.position, transform.position);
+                                if (!(vessel.Splashed && guardTarget.Splashed))
+                                {
+                                    if (RadarUtils.TerrainCheck(guardTarget.CoM, CurrentMissile.transform.position)) //vessel behind terrain. exception for ships where curvature of Kerbin comes into play
+                                    {
+                                        launchAuthorized = false;
+                                    }
+                                }
                                 MissileLaunchParams dlz = MissileLaunchParams.GetDynamicLaunchParams(CurrentMissile, guardTarget.Velocity(), guardTarget.CoM, 1, (CurrentMissile.TargetingMode == MissileBase.TargetingModes.Laser
                                     && BDATargetManager.ActiveLasers.Count <= 0 || CurrentMissile.TargetingMode == MissileBase.TargetingModes.Radar && !_radarsEnabled && !CurrentMissile.radarLOAL));
 
@@ -6886,7 +6913,7 @@ namespace BDArmory.Control
                     {
                         StartCoroutine(UnderAttackRoutine());
 
-                        FireChaff();
+                        FireBubbles();
                         FireECM();
                     }
                 }
@@ -7166,7 +7193,7 @@ namespace BDArmory.Control
                         }
                     }
                 }
-            if (APScount <=0)
+            if (APScount <= 0)
             {
                 PDScanTimer = -100;
                 return;
@@ -7249,8 +7276,7 @@ namespace BDArmory.Control
 
                                 if (viableTarget && TargetInTurretRange(weapon.Current.turret, 7, PDMslTgts[TurretID].Vessel.CoM, weapon.Current))
                                 {
-                                    weapon.Current.visualTargetVessel = PDMslTgts[TurretID].Vessel; // if target within turret fire zone, assign
-                                    weapon.Current.visualTargetPart = weapon.Current.visualTargetVessel.rootPart;
+                                    weapon.Current.visualTargetPart = weapon.Current.visualTargetVessel.rootPart;  // if target within turret fire zone, assign
                                     weapon.Current.tgtShell = null;
                                     weapon.Current.tgtRocket = null;
                                 }
@@ -7263,7 +7289,6 @@ namespace BDArmory.Control
                                             if (!viableTarget) continue;
                                             if (TargetInTurretRange(weapon.Current.turret, 7, item.Current.Vessel.CoM, weapon.Current))
                                             {
-                                                weapon.Current.visualTargetVessel = item.Current.Vessel;
                                                 weapon.Current.visualTargetPart = weapon.Current.visualTargetVessel.rootPart;
                                                 weapon.Current.tgtShell = null;
                                                 weapon.Current.tgtRocket = null;
@@ -7361,7 +7386,7 @@ namespace BDArmory.Control
                 //if (!targetV.LandedOrSplashed) //no leading for moving surface targets? two use condtions come to mind - leading torps and unguided AtG missiles. Latter can use A2AFS, torps slightly complicated in that there's a ~2.5s drop time where theyr'e moving at parent speed
                 if (targetV.speed > 1) //target is moving
                 {
-                    target = MissileGuidance.GetAirToAirFireSolution(missile, targetV); 
+                    target = MissileGuidance.GetAirToAirFireSolution(missile, targetV);
                 }
 
                 float boresightFactor = (mf.vessel.LandedOrSplashed || targetV.LandedOrSplashed || missile.uncagedLock) ? 0.75f : 0.35f; // Allow launch at close to maxOffBoresight for ground targets or missiles with allAspect = true
@@ -7726,7 +7751,7 @@ namespace BDArmory.Control
 
             bombAimerPosition = Vector3.zero;
             int aimerLayerMask = (int)(LayerMasks.Scenery | LayerMasks.EVA); // Why EVA?
-            float ordinanceMass = launcher.multiLauncher ? launcher.multiLauncher.missileMass : launcher.part.partInfo.partPrefab.mass; 
+            float ordinanceMass = launcher.multiLauncher ? launcher.multiLauncher.missileMass : launcher.part.partInfo.partPrefab.mass;
             float ordinanceThrust = launcher.cruiseThrust;
             float ordinanceBoost = launcher.thrust;
             float thrustTime = launcher.cruiseTime + launcher.boostTime;

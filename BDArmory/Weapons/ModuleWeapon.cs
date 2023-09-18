@@ -1060,6 +1060,7 @@ namespace BDArmory.Weapons
             if (dualModeAPS) isAPS = true;
             if (isAPS)
             {
+                engageMissile = false; //missiles targeted separately from base WM targeting logic, having this is unnecessary and can cause problems with radar slaving
                 if (!dualModeAPS)
                 {
                     HideEngageOptions();
@@ -4747,15 +4748,21 @@ namespace BDArmory.Weapons
 
                 if (weaponManager.slavingTurrets && turret)
                 {
+                    if (weaponManager.slavedTarget.vessel == null)
+                    {
+                        targetAcquired = false;
+                        targetAcquisitionType = TargetAcquisitionType.None;
+                        targetVelocity = Vector3.zero;
+                        targetAcceleration = Vector3.zero;
+                        return;
+                    }
                     slaved = true;
-                    targetRadius = weaponManager.slavedTarget.vessel != null ? weaponManager.slavedTarget.vessel.GetRadius() : 35f;
+                    targetRadius = weaponManager.slavedTarget.vessel.GetRadius();
                     targetPosition = weaponManager.slavedPosition;
-                    targetVelocity = weaponManager.slavedTarget.vessel != null ? weaponManager.slavedTarget.vessel.rb_velocity : (weaponManager.slavedVelocity - BDKrakensbane.FrameVelocityV3f);
+                    targetVelocity = weaponManager.slavedTarget.vessel.rb_velocity;
                     //targetAcceleration = weaponManager.slavedTarget.vessel != null ? weaponManager.slavedTarget.vessel.acceleration : weaponManager.slavedAcceleration;
                     //CS0172 Type of conditional expression cannot be determined because 'Vector3' and 'Vector3' implicitly convert to one another
-                    if (weaponManager.slavedTarget.vessel != null) targetAcceleration = weaponManager.slavedTarget.vessel.acceleration;
-                    else
-                        targetAcceleration = weaponManager.slavedAcceleration;
+                    targetAcceleration = weaponManager.slavedTarget.vessel.acceleration;
                     targetAcquired = true;
                     targetAcquisitionType = TargetAcquisitionType.Slaved;
                     return;
@@ -4850,7 +4857,6 @@ namespace BDArmory.Weapons
         bool TrackIncomingProjectile()
         {
             targetAcquired = false;
-            slaved = false;
             atprAcquired = false;
             lastTargetAcquisitionType = targetAcquisitionType;
             closestTarget = Vector3.zero;
@@ -4888,7 +4894,7 @@ namespace BDArmory.Weapons
                     targetAcceleration = visualTargetPart != null && visualTargetPart.vessel != null ? (Vector3)visualTargetPart.vessel.acceleration : Vector3.zero;
                     targetAcquired = true;
                     targetAcquisitionType = TargetAcquisitionType.Radar;
-                    if (weaponManager.slavingTurrets && turret) slaved = true;
+                    if (weaponManager.slavingTurrets && turret) slaved = false;
                     //Debug.Log("[APS DEBUG] tgtVelocity: " + tgtVelocity + "; tgtPosition: " + targetPosition + "; tgtAccel: " + targetAcceleration);
                     //Debug.Log("[APS DEBUG] Lead Offset: " + fixedLeadOffset + ", FinalAimTgt: " + finalAimTarget + ", tgt CosAngle " + targetCosAngle + ", wpn CosAngle " + targetAdjustedMaxCosAngle + ", Wpn Autofire: " + autoFire);
                     return true;

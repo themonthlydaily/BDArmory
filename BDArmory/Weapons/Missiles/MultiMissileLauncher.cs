@@ -1,5 +1,6 @@
 ﻿using BDArmory.Competition;
 using BDArmory.Control;
+using BDArmory.Extensions;
 using BDArmory.Radar;
 using BDArmory.Settings;
 using BDArmory.Targeting;
@@ -683,11 +684,14 @@ namespace BDArmory.Weapons.Missiles
                 tubesFired++;
                 launchesThisSalvo++;
                 launchTransforms[m].localScale = Vector3.zero;
-                if (!missileSpawner.SpawnMissile(launchTransforms[m], (offset * Scale), !isClusterMissile))
+                if (!missileSpawner.SpawnMissile(launchTransforms[m], (offset * Length), !isClusterMissile))
                 {
                     if (BDArmorySettings.DEBUG_MISSILES) Debug.LogWarning($"[BDArmory.MissileLauncher]: Failed to spawn a missile in {missileSpawner} on {vessel.vesselName}");
                     continue;
                 }
+                var missileCOL = missileSpawner.SpawnedMissile.collider;
+                if (missileCOL) missileCOL.enabled = false;
+                missileSpawner.SpawnedMissile.rb.velocity = vessel.Velocity(); //inherit parent velocity
                 MissileLauncher ml = missileSpawner.SpawnedMissile.FindModuleImplementing<MissileLauncher>();
                 yield return new WaitUntilFixed(() => ml is null || ml.SetupComplete); // Wait until missile fully initialized.
                 if (ml is null || ml.gameObject is null || !ml.gameObject.activeInHierarchy)

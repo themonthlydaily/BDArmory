@@ -467,7 +467,15 @@ namespace BDArmory.Radar
 
             return chaffFactor;
         }
+        /// <summary>
+        /// Get the degree vessel's sonar return degraded by bubble screens between sonar and target, similar to lockBreakFactor
+        /// </summary>
+        public static float GetVesselBubbleFactor(Vector3 sensorPos, Vessel v)
+        {
+            float Factor = CMBubble.RaycastBubblescreen(new Ray(sensorPos, v.CoM - sensorPos));
 
+            return Factor;
+        }
         /// <summary>
         /// Get a vessel ecm jamming area (in m) where radar display garbling occurs
         /// </summary>
@@ -1307,6 +1315,7 @@ namespace BDArmory.Radar
                             signature = (BDArmorySettings.ASPECTED_RCS) ? GetVesselRadarSignatureAtAspect(ti, ray.origin) : ti.radarModifiedSignature;
                             signature *= GetRadarGroundClutterModifier(radar.radarGroundClutterFactor, radar.referenceTransform, ray.origin, loadedvessels.Current.CoM, ti);
                             signature *= GetStandoffJammingModifier(radar.vessel, radar.weaponManager.Team, ray.origin, loadedvessels.Current, signature);
+                            if (radar.vessel.Splashed && loadedvessels.Current.Splashed) signature *= GetVesselBubbleFactor(radar.transform.position, loadedvessels.Current);
                         }
                         else
                         {
@@ -1403,7 +1412,7 @@ namespace BDArmory.Radar
 
                         }                                                                 //do not multiply chaff factor here
                         signature *= GetStandoffJammingModifier(missile.vessel, missile.Team, ray.origin, loadedvessels.Current, signature);
-
+                        if (missile.GetWeaponClass() == WeaponClasses.SLW) signature *= GetVesselBubbleFactor(missile.transform.position, loadedvessels.Current);
                         // evaluate range
                         float distance = (loadedvessels.Current.CoM - ray.origin).magnitude;
                         //TODO: Performance! better if we could switch to sqrMagnitude...
@@ -1499,6 +1508,7 @@ namespace BDArmory.Radar
                         {
                             signature = (BDArmorySettings.ASPECTED_RCS) ? GetVesselRadarSignatureAtAspect(ti, position) : ti.radarModifiedSignature;
                             signature *= GetRadarGroundClutterModifier(radar.radarGroundClutterFactor, referenceTransform, position, loadedvessels.Current.CoM, ti);
+                            if (radar.vessel.Splashed && loadedvessels.Current.Splashed) signature *= GetVesselBubbleFactor(radar.transform.position, loadedvessels.Current);
                         }
                         else //passive sonar
                             signature = BDATargetManager.GetVesselAcousticSignature(loadedvessels.Current, radar.referenceTransform.position) - selfNoise;
@@ -1636,6 +1646,7 @@ namespace BDArmory.Radar
                 signature *= GetRadarGroundClutterModifier(radar.radarGroundClutterFactor, radar.referenceTransform, ray.origin, lockedVessel.CoM, ti);
                 signature *= ti.radarLockbreakFactor;    //multiply lockbreak factor from active ecm
                 if (radar.weaponManager is not null) signature *= GetStandoffJammingModifier(radar.vessel, radar.weaponManager.Team, ray.origin, lockedVessel, signature);
+                if (radar.vessel.Splashed && lockedVessel.Splashed) signature *= GetVesselBubbleFactor(radar.transform.position, lockedVessel);
                 //do not multiply chaff factor here
 
                 // evaluate range
@@ -1825,7 +1836,6 @@ namespace BDArmory.Radar
                         {
                             continue; //blocked by terrain
                         }
-
                         TargetInfo tInfo;
                         if ((tInfo = loadedvessels.Current.gameObject.GetComponent<TargetInfo>()))
                         {
@@ -2012,7 +2022,6 @@ namespace BDArmory.Radar
             {
                 return Physics.Linecast(start, end, (int)LayerMasks.Scenery);
             }
-
             return false;
         }
 
