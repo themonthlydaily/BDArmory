@@ -457,7 +457,7 @@ namespace BDArmory.CounterMeasure
 
         void SetupBubblePool()
         {
-            GameObject cm = GameDatabase.Instance.GetModel("BDArmory/Models/CMSmoke/cmSmokeModel");
+            GameObject cm = GameDatabase.Instance.GetModel("BDArmory/Models/CMBubble/cmSmokeModel");
             cm.SetActive(false);
             cm.AddComponent<CMBubble>();
             bubblePool = ObjectPool.CreateObjectPool(cm, 10, true, true);
