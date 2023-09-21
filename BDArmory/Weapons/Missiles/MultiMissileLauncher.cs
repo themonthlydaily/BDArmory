@@ -854,8 +854,10 @@ namespace BDArmory.Weapons.Missiles
                                     if (ml.TargetingMode == MissileBase.TargetingModes.Gps) 
                                     {
                                         ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(wpm.targetsAssigned[TargetID].Vessel.CoM, vessel.mainBody);
+
                                     }
                                     ml.targetVessel = wpm.targetsAssigned[TargetID];
+                                    ml.TargetAcquired = true;
                                     if (BDArmorySettings.DEBUG_MISSILES)
                                         Debug.Log($"[BDArmory.MultiMissileLauncher] Assigning target {TargetID}: {wpm.targetsAssigned[TargetID].Vessel.GetName()}; total possible targets {wpm.targetsAssigned.Count}");
                                 }

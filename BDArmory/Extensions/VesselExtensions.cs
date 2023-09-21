@@ -27,7 +27,7 @@ namespace BDArmory.Extensions
         public static bool IsUnderwater(this Vessel v)
         {
             if (!v) return false;
-            return v.altitude < -10; //some boats sit slightly underwater, this is only for submersibles
+            return v.altitude < -20; //some boats sit slightly underwater, this is only for submersibles
         }
 
         /// <summary>

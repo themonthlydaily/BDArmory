@@ -6260,6 +6260,7 @@ namespace BDArmory.Control
             //extend to allow teamamtes provide vision? Could count scouted tarets as stale to prevent precise targeting, but at least let AI know something is out there
 
             // can we get a visual sight of the target?
+            if (target == null || target.Vessel == null) return false;
             VesselCloakInfo vesselcamo = target.Vessel.gameObject.GetComponent<VesselCloakInfo>();
             float viewModifier = 1;
             if (vesselcamo && vesselcamo.cloakEnabled)
@@ -6686,7 +6687,7 @@ namespace BDArmory.Control
 
                                 if (selectedWeapon.GetWeaponClass() == WeaponClasses.Missile && vessel.Splashed && vessel.altitude < -10)
                                 {
-                                    Debug.Log("{BDArmory.MissileFire] missile below launch depth");
+                                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("{BDArmory.MissileFire] missile below launch depth");
                                     launchAuthorized = false; //submarine below launch depth
                                 }
                                 if (selectedWeapon.GetWeaponClass() == WeaponClasses.SLW && !vessel.LandedOrSplashed && pilotAI && vessel.altitude > 50) launchAuthorized = false; //don't torpedo bomb from high up, the torp's won't survive water impact
@@ -6698,7 +6699,7 @@ namespace BDArmory.Control
                                     if (RadarUtils.TerrainCheck(guardTarget.CoM, CurrentMissile.transform.position)) //vessel behind terrain. exception for ships where curvature of Kerbin comes into play
                                     {
                                         launchAuthorized = false;
-                                        Debug.Log("{BDArmory.MissileFire] target behind terrain");
+                                        if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("{BDArmory.MissileFire] target behind terrain");
                                     }
                                 }
                                 MissileLaunchParams dlz = MissileLaunchParams.GetDynamicLaunchParams(CurrentMissile, guardTarget.Velocity(), guardTarget.CoM, 1, (CurrentMissile.TargetingMode == MissileBase.TargetingModes.Laser
@@ -7281,10 +7282,9 @@ namespace BDArmory.Control
                             {
                                 bool viableTarget = true;
                                 if (BDArmorySettings.BULLET_WATER_DRAG && weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Ballistic && PDMslTgts[TurretID].Vessel.Splashed) viableTarget = false;
-
                                 if (viableTarget && TargetInTurretRange(weapon.Current.turret, 7, PDMslTgts[TurretID].Vessel.CoM, weapon.Current))
                                 {
-                                    weapon.Current.visualTargetPart = weapon.Current.visualTargetVessel.rootPart;  // if target within turret fire zone, assign
+                                    weapon.Current.visualTargetPart = PDMslTgts[TurretID].Vessel.rootPart;  // if target within turret fire zone, assign
                                     weapon.Current.tgtShell = null;
                                     weapon.Current.tgtRocket = null;
                                 }
@@ -7297,7 +7297,7 @@ namespace BDArmory.Control
                                             if (!viableTarget) continue;
                                             if (TargetInTurretRange(weapon.Current.turret, 7, item.Current.Vessel.CoM, weapon.Current))
                                             {
-                                                weapon.Current.visualTargetPart = weapon.Current.visualTargetVessel.rootPart;
+                                                weapon.Current.visualTargetPart = item.Current.Vessel.rootPart;
                                                 weapon.Current.tgtShell = null;
                                                 weapon.Current.tgtRocket = null;
                                                 break;
@@ -7307,7 +7307,13 @@ namespace BDArmory.Control
                                 TurretID++;
                             }
                         }
-                        else weapon.Current.visualTargetPart = null;
+                        else
+                        {
+                            weapon.Current.visualTargetPart = null;
+                            weapon.Current.visualTargetVessel = null;
+                            weapon.Current.tgtShell = null;
+                            weapon.Current.tgtRocket = null;
+                        }
                         //look into decoupling EngageTargetMissile from standard missile firing behavior, and have it so any missile with engageMissileTarget = true will instead work similar to APS and 
                         //get autolaunched at an incoming missile? 
                         //  - Issue with that is radar missile interceptors will still need target locks, and if the setTarget is now only setting Air/Srf/SLW targets and not missile...

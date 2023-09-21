@@ -4748,21 +4748,15 @@ namespace BDArmory.Weapons
 
                 if (weaponManager.slavingTurrets && turret)
                 {
-                    if (weaponManager.slavedTarget.vessel == null)
-                    {
-                        targetAcquired = false;
-                        targetAcquisitionType = TargetAcquisitionType.None;
-                        targetVelocity = Vector3.zero;
-                        targetAcceleration = Vector3.zero;
-                        return;
-                    }
                     slaved = true;
-                    targetRadius = weaponManager.slavedTarget.vessel.GetRadius();
+                    targetRadius = weaponManager.slavedTarget.vessel != null ? weaponManager.slavedTarget.vessel.GetRadius() : 35f;
                     targetPosition = weaponManager.slavedPosition;
-                    targetVelocity = weaponManager.slavedTarget.vessel.rb_velocity;
+                    targetVelocity = weaponManager.slavedTarget.vessel != null ? weaponManager.slavedTarget.vessel.rb_velocity : (weaponManager.slavedVelocity - BDKrakensbane.FrameVelocityV3f);
                     //targetAcceleration = weaponManager.slavedTarget.vessel != null ? weaponManager.slavedTarget.vessel.acceleration : weaponManager.slavedAcceleration;
                     //CS0172 Type of conditional expression cannot be determined because 'Vector3' and 'Vector3' implicitly convert to one another
-                    targetAcceleration = weaponManager.slavedTarget.vessel.acceleration;
+                    if (weaponManager.slavedTarget.vessel != null) targetAcceleration = weaponManager.slavedTarget.vessel.acceleration;
+                    else
+                        targetAcceleration = weaponManager.slavedAcceleration;
                     targetAcquired = true;
                     targetAcquisitionType = TargetAcquisitionType.Slaved;
                     return;
@@ -4858,6 +4852,7 @@ namespace BDArmory.Weapons
         {
             targetAcquired = false;
             atprAcquired = false;
+            slaved = false;
             lastTargetAcquisitionType = targetAcquisitionType;
             closestTarget = Vector3.zero;
             if (Time.time - lastGoodTargetTime > Mathf.Max(roundsPerMinute / 60f, weaponManager.targetScanInterval))

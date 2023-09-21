@@ -1832,19 +1832,15 @@ namespace BDArmory.Radar
                     //BDATargetManager.ClearRadarReport(loadedvessels.Current, myWpnManager); //reset radar contact status
                     if (vesselDistanceSqr < maxRWRDistance * maxRWRDistance && Vector3.Angle(vesselProjectedDirection, lookDirection) < fov / 2f) // && Vector3.Angle(loadedvessels.Current.transform.position - position, -myWpnManager.transform.forward) < myWpnManager.guardAngle / 2f) //WM facing direction? that s going to cause issues for any that aren't mounted pointing forward if guardAngle < 360; check combatSeat forward vector
                     {
-                        //if (TerrainCheck(referenceTransform.position, loadedvessels.Current.transform.position))
-                        //{
-                        //    continue; //blocked by terrain
-                        //}
+                        if (TerrainCheck(referenceTransform.position, loadedvessels.Current.transform.position))
+                        {
+                            continue; //blocked by terrain
+                        }
                         TargetInfo tInfo;
                         if ((tInfo = loadedvessels.Current.gameObject.GetComponent<TargetInfo>()))
                         {
                             if (tInfo.isMissile)
                             {
-                                if (TerrainCheck(referenceTransform.position, loadedvessels.Current.transform.position))
-                                {
-                                    continue; //blocked by terrain
-                                }
                                 MissileBase missileBase = tInfo.MissileBaseModule;
                                 if (missileBase != null)
                                 {
@@ -1904,8 +1900,18 @@ namespace BDArmory.Radar
                             }
                             else
                             {
-                                //if (vesselDistanceSqr > myWpnManager.guardRange * myWpnManager.guardRange) continue;
-                                if (!myWpnManager.CanSeeTarget(tInfo)) continue; //Target blocked byterrain/cloaked/underwater/out of sightrange
+                                VesselCloakInfo vesselcamo;
+                                float viewModifier = 1;
+                                if (vesselcamo = loadedvessels.Current.gameObject.GetComponent<VesselCloakInfo>())
+                                {
+                                    if (vesselcamo.cloakEnabled) viewModifier = vesselcamo.opticalReductionFactor;
+                                }
+                                //Can the target be seen?
+                                float visDistance = myWpnManager.guardRange;
+                                if (BDArmorySettings.UNDERWATER_VISION && (myWpnManager.vessel.IsUnderwater() || loadedvessels.Current.IsUnderwater())) visDistance = 100;
+                                visDistance *= viewModifier;
+
+                                if (vesselDistanceSqr > visDistance * visDistance) continue;
                                 using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(loadedvessels.Current).GetEnumerator())
                                     while (weapon.MoveNext())
                                     {
