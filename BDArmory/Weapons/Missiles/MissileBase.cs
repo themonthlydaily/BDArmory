@@ -593,7 +593,7 @@ namespace BDArmory.Weapons.Missiles
             else
             {
                 gpsTargetCoords_ = targetGPSCoords;
-                if (targetVessel && HasFired && (gpsUpdates >= 0f) && VesselModuleRegistry.GetMissileFire(SourceVessel).CanSeeTarget(targetVessel))
+                if (targetVessel && HasFired && (gpsUpdates >= 0f) && VesselModuleRegistry.GetMissileFire(SourceVessel).CanSeeTarget(targetVessel, false))
                 {
                     if (gpsUpdates == 0) // Constant updates
                     {

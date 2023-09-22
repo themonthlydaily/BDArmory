@@ -900,6 +900,7 @@ namespace BDArmory.Weapons.Missiles
                                                 ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(wpm.targetsAssigned[t].Vessel.CoM, vessel.mainBody);
                                             }
                                             ml.targetVessel = wpm.targetsAssigned[t];
+                                            ml.TargetAcquired = true;
                                             if (BDArmorySettings.DEBUG_MISSILES)
                                                 Debug.Log($"[BDArmory.MultiMissileLauncher] Assigning backup target (targetID {TargetID}) {wpm.targetsAssigned[t].Vessel.GetName()}");
                                         }
@@ -943,6 +944,7 @@ namespace BDArmory.Weapons.Missiles
                                                         ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(item.Current.Vessel.CoM, vessel.mainBody);
                                                     }
                                                     ml.targetVessel = item.Current;
+                                                    ml.TargetAcquired = true;
                                                     if (BDArmorySettings.DEBUG_MISSILES)
                                                         Debug.Log($"[BDArmory.MultiMissileLauncher] original target out of sensor range; engaging {item.Current.Vessel.GetName()}");
                                                     break;
@@ -956,7 +958,16 @@ namespace BDArmory.Weapons.Missiles
                     }
                     else
                     {
-                        if (wpm != null) wpm.SendTargetDataToMissile(ml, false);
+                        if (wpm != null)
+                        {
+                            if (ml.TargetingMode == MissileBase.TargetingModes.Gps) //missileFire's GPS coords were snapshotted before anim delay (if any); refresh coords to target's current position post delay
+                            {
+                                ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(wpm.currentTarget.Vessel.CoM, vessel.mainBody);
+                                ml.targetVessel = wpm.currentTarget;
+                                ml.TargetAcquired = true;
+                            }
+                            else wpm.SendTargetDataToMissile(ml, false);
+                        }
                     }
                 }
                 else
