@@ -4780,7 +4780,7 @@ namespace BDArmory.Control
                                 candidatePriority = Mathf.RoundToInt(mlauncher.priority);
 
                                 if (EMP) continue;
-                                if (vessel.Splashed && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 10) continue; //we aren't going to surface in time (and are under no threat from the missile while underwater0 so don't baother
+                                if (vessel.Splashed && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < -10) continue; //we aren't going to surface in time (and are under no threat from the missile while underwater0 so don't baother
                                 if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                     continue; //keep higher priority weapon
                                 if (candidateDetDist + candidateAccel > targetWeaponTDPS)
@@ -4798,7 +4798,7 @@ namespace BDArmory.Control
                                 candidateAccel = 1;
                                 candidatePriority = Mathf.RoundToInt(mm.priority);
 
-                                if (vessel.Splashed && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 5) continue;
+                                if (vessel.Splashed && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < -5) continue;
                                 if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                     continue; //keep higher priority weapon
                                 if (candidateDetDist + candidateAccel > targetWeaponTDPS)
@@ -5152,7 +5152,7 @@ namespace BDArmory.Control
                                 bool radar = mlauncher.TargetingMode == MissileBase.TargetingModes.Radar;
                                 float heatThresh = mlauncher.heatThreshold;
                                 if (EMP && target.isDebilitated) continue;
-                                if (vessel.Splashed && (!surfaceAI || surfaceAI.SurfaceType != AIUtils.VehicleMovementType.Submarine) && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 10)) continue; //allow submarine-mounted missiles; new launch depth check in launchAuth 
+                                if (vessel.Splashed && (!surfaceAI || surfaceAI.SurfaceType != AIUtils.VehicleMovementType.Submarine) && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < -10)) continue; //allow submarine-mounted missiles; new launch depth check in launchAuth 
                                 if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                     continue; //keep higher priority weapon
 
