@@ -854,7 +854,6 @@ namespace BDArmory.Weapons.Missiles
                                     if (ml.TargetingMode == MissileBase.TargetingModes.Gps) 
                                     {
                                         ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(wpm.targetsAssigned[TargetID].Vessel.CoM, vessel.mainBody);
-
                                     }
                                     ml.targetVessel = wpm.targetsAssigned[TargetID];
                                     ml.TargetAcquired = true;
@@ -962,9 +961,14 @@ namespace BDArmory.Weapons.Missiles
                         {
                             if (ml.TargetingMode == MissileBase.TargetingModes.Gps) //missileFire's GPS coords were snapshotted before anim delay (if any); refresh coords to target's current position post delay
                             {
-                                ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(wpm.currentTarget.Vessel.CoM, vessel.mainBody);
-                                ml.targetVessel = wpm.currentTarget;
-                                ml.TargetAcquired = true;
+                                Vector3d designatedGPScoords = Vector3.zero;
+                                if (wpm.currentTarget) designatedGPScoords = VectorUtils.WorldPositionToGeoCoords(wpm.currentTarget.Vessel.CoM, vessel.mainBody);
+                                if (designatedGPScoords != Vector3d.zero)
+                                {
+                                    ml.targetGPSCoords = designatedGPScoords;
+                                    ml.targetVessel = wpm.currentTarget;
+                                    ml.TargetAcquired = true;
+                                }
                             }
                             else wpm.SendTargetDataToMissile(ml, false);
                         }
