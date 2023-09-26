@@ -19,7 +19,7 @@ namespace BDArmory.WeaponMounts
 
         [KSPField] public int turretID = 0;
 
-        ModuleTurret turret;
+        public ModuleTurret turret;
 
         public MissileLauncher missilepod;
 
