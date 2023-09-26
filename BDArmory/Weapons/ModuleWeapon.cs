@@ -4140,7 +4140,7 @@ namespace BDArmory.Weapons
             if (isAPS)
             {
                 float threatDirectionFactor = (fireTransforms[0].position - targetPosition).DotNormalized(targetVelocity - part.rb.velocity);
-                if (threatDirectionFactor < 0.9f) autoFire = false; ;   //within 28 degrees in front, else ignore, target likely not on intercept vector
+                if (threatDirectionFactor < 0.9f) autoFire = false;   //within 28 degrees in front, else ignore, target likely not on intercept vector
             }
         }
 
@@ -4898,6 +4898,9 @@ namespace BDArmory.Weapons
                 {
                     if (turret) turret.ReturnTurret(); //reset turret if no target
                     visualTargetVessel = null;
+                    visualTargetPart = null;
+                    tgtShell = null;
+                    tgtRocket = null;
                 }
             }
             return false;
