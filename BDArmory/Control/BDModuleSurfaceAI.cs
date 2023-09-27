@@ -679,7 +679,7 @@ namespace BDArmory.Control
                 if (SurfaceType == AIUtils.VehicleMovementType.Submarine)
                 {
                     float targetAlt = CombatAltitude;
-                    if (weaponManager != null && weaponManager.selectedWeapon != null)
+                    if (weaponManager != null && weaponManager.currentTarget != null && weaponManager.selectedWeapon != null)
                     {
                         switch (weaponManager.selectedWeapon.GetWeaponClass())
                         {
@@ -722,7 +722,7 @@ namespace BDArmory.Control
                                         }
                                         else
                                         {
-                                            if (vessel.altitude < (CombatAltitude *.66f) || Vector3.Distance(vessel.CoM, weaponManager.currentTarget.Vessel.CoM) > 1000) doExtend = false;
+                                            if (vessel.altitude < (CombatAltitude * .66f) || Vector3.Distance(vessel.CoM, weaponManager.currentTarget.Vessel.CoM) > 1000) doExtend = false;
                                         }
                                     }
                                     break;
