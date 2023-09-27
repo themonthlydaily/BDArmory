@@ -832,7 +832,7 @@ namespace BDArmory.Weapons.Missiles
                                 missileRegistry = true;
                             }
 
-                            if (targetsAssigned.Count > 0 && targetsAssigned[TargetID].Vessel != null)
+                            if (targetsAssigned.Count > 0 && targetsAssigned[TargetID] != null && targetsAssigned[TargetID].Vessel != null)
                             {
                                 if ((ml.engageAir && targetsAssigned[TargetID].isFlying) ||
                                     (ml.engageGround && targetsAssigned[TargetID].isLandedOrSurfaceSplashed) ||
@@ -878,6 +878,7 @@ namespace BDArmory.Weapons.Missiles
                                     {
                                         for (int t = TargetID; t < targetsAssigned.Count; t++)
                                         {
+                                            if (targetsAssigned[t] == null) continue;
                                             if ((ml.engageAir && !targetsAssigned[t].isFlying) ||
                                                 (ml.engageGround && !targetsAssigned[t].isLandedOrSurfaceSplashed) ||
                                                 (ml.engageSLW && !targetsAssigned[t].isUnderwater) ||
