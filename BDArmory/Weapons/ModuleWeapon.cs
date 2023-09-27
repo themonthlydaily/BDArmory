@@ -4882,7 +4882,7 @@ namespace BDArmory.Weapons
                         targetPosition = visualTargetPart.transform.position;
                         visualTargetVessel = visualTargetPart.vessel;
                         TargetInfo currentTarget = visualTargetVessel.gameObject.GetComponent<TargetInfo>();
-                        targetRadius = visualTargetVessel.GetRadius(fireTransforms[0].forward, currentTarget.bounds);
+                        targetRadius = currentTarget != null ? visualTargetVessel.GetRadius(fireTransforms[0].forward, currentTarget.bounds) : 0;
                     }
                     //targetVelocity -= BDKrakensbane.FrameVelocity;
 
