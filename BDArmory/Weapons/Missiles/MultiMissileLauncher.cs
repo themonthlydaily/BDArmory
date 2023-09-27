@@ -658,7 +658,7 @@ namespace BDArmory.Weapons.Missiles
             int TargetID = 0;
             bool missileRegistry = false;
             //missileSpawner.MissileName = subMunitionName;
-            if (wpm != null && wpm.multiMissileTgtNum >= 2 || (missileLauncher.engageMissile && wpm.PDMslTgts.Count > 0))
+            if (wpm != null && (wpm.multiMissileTgtNum >= 2 || (missileLauncher.engageMissile && wpm.PDMslTgts.Count > 0)))
             {
                 targetsAssigned.Clear();
                 if (missileLauncher.engageMissile && wpm.PDMslTgts.Count > 0) targetsAssigned.AddRange(wpm.PDMslTgts);
