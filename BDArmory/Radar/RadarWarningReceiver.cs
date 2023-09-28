@@ -344,7 +344,8 @@ namespace BDArmory.Radar
                         audioSource.Play();
                         audioSourceRepeatDelay = audioSourceRepeatDelayTime;    //set a min repeat delay to prevent too much audi pinging
                         break;
-
+                    case RWRThreatTypes.None:
+                        break;
                     default:
                         if (!audioSource.isPlaying)
                         {

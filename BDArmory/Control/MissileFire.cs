@@ -7274,9 +7274,9 @@ namespace BDArmory.Control
                                     interceptorsAway = missiles;
                                     Debug.Log($"[PD Missile Debug] Missiles aready fired against this target {interceptorsAway}");
                                 }
-                                if (viableTarget && turreted ? TargetInTurretRange(missile.missileTurret.turret, 7, PDMslTgts[MissileID].Vessel.CoM) : GetLaunchAuthorization(PDMslTgts[MissileID].Vessel, this, currMissile))
+                                if (interceptorsAway < maxMissilesOnTarget)
                                 {
-                                    if (interceptorsAway < maxMissilesOnTarget)
+                                    if (viableTarget && turreted ? TargetInTurretRange(missile.missileTurret.turret, 7, PDMslTgts[MissileID].Vessel.CoM) : GetLaunchAuthorization(PDMslTgts[MissileID].Vessel, this, currMissile))
                                     {
                                         if (!guardFiringMissile)
                                         {
@@ -7296,10 +7296,9 @@ namespace BDArmory.Control
                                         while (item.MoveNext())
                                         {
                                             if (item.Current.Vessel == null) continue;
-                                            if (!viableTarget) continue;
-                                            if (viableTarget && turreted ? TargetInTurretRange(missile.missileTurret.turret, 7, item.Current.Vessel.CoM) : GetLaunchAuthorization(item.Current.Vessel, this, currMissile))
+                                            if (interceptorsAway < maxMissilesOnTarget)
                                             {
-                                                if (interceptorsAway < maxMissilesOnTarget)
+                                                if (viableTarget && turreted ? TargetInTurretRange(missile.missileTurret.turret, 7, item.Current.Vessel.CoM) : GetLaunchAuthorization(item.Current.Vessel, this, currMissile))
                                                 {
                                                     if (!guardFiringMissile)
                                                     {

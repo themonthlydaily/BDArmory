@@ -285,6 +285,8 @@ namespace BDArmory.Weapons.Missiles
                 UI_FloatRange AOffset = (UI_FloatRange)Fields["attachOffset"].uiControlEditor;
                 AOffset.onFieldChanged = updateOffset;
             }
+            else Fields["attachOffset"].guiActiveEditor = false;
+
             UpdateLengthAndScale(Scale, Length, attachOffset);
         }
 
@@ -658,9 +660,9 @@ namespace BDArmory.Weapons.Missiles
             int TargetID = 0;
             bool missileRegistry = false;
             //missileSpawner.MissileName = subMunitionName;
+            targetsAssigned.Clear();
             if (wpm != null && (wpm.multiMissileTgtNum >= 2 || (missileLauncher.engageMissile && wpm.PDMslTgts.Count > 0)))
             {
-                targetsAssigned.Clear();
                 if (missileLauncher.engageMissile && wpm.PDMslTgts.Count > 0) targetsAssigned.AddRange(wpm.PDMslTgts);
                 else if (wpm.targetsAssigned.Count > 0) targetsAssigned.AddRange(wpm.targetsAssigned);
                 Debug.Log($"[BDArmory.MultiMissileLauncherDebug]: Num of targets: {targetsAssigned.Count}");
