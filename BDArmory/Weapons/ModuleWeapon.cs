@@ -1060,6 +1060,7 @@ namespace BDArmory.Weapons
             if (dualModeAPS) isAPS = true;
             if (isAPS)
             {
+                engageMissile = false; //missiles targeted separately from base WM targeting logic, having this is unnecessary and can cause problems with radar slaving
                 if (!dualModeAPS)
                 {
                     HideEngageOptions();
@@ -4139,7 +4140,7 @@ namespace BDArmory.Weapons
             if (isAPS)
             {
                 float threatDirectionFactor = (fireTransforms[0].position - targetPosition).DotNormalized(targetVelocity - part.rb.velocity);
-                if (threatDirectionFactor < 0.9f) autoFire = false; ;   //within 28 degrees in front, else ignore, target likely not on intercept vector
+                if (threatDirectionFactor < 0.9f) autoFire = false;   //within 28 degrees in front, else ignore, target likely not on intercept vector
             }
         }
 
@@ -4850,8 +4851,8 @@ namespace BDArmory.Weapons
         bool TrackIncomingProjectile()
         {
             targetAcquired = false;
-            slaved = false;
             atprAcquired = false;
+            slaved = false;
             lastTargetAcquisitionType = targetAcquisitionType;
             closestTarget = Vector3.zero;
             if (Time.time - lastGoodTargetTime > Mathf.Max(roundsPerMinute / 60f, weaponManager.targetScanInterval))
@@ -4881,14 +4882,14 @@ namespace BDArmory.Weapons
                         targetPosition = visualTargetPart.transform.position;
                         visualTargetVessel = visualTargetPart.vessel;
                         TargetInfo currentTarget = visualTargetVessel.gameObject.GetComponent<TargetInfo>();
-                        targetRadius = visualTargetVessel.GetRadius(fireTransforms[0].forward, currentTarget.bounds);
+                        targetRadius = currentTarget != null ? visualTargetVessel.GetRadius(fireTransforms[0].forward, currentTarget.bounds) : 0;
                     }
                     //targetVelocity -= BDKrakensbane.FrameVelocity;
 
                     targetAcceleration = visualTargetPart != null && visualTargetPart.vessel != null ? (Vector3)visualTargetPart.vessel.acceleration : Vector3.zero;
                     targetAcquired = true;
                     targetAcquisitionType = TargetAcquisitionType.Radar;
-                    if (weaponManager.slavingTurrets && turret) slaved = true;
+                    if (weaponManager.slavingTurrets && turret) slaved = false;
                     //Debug.Log("[APS DEBUG] tgtVelocity: " + tgtVelocity + "; tgtPosition: " + targetPosition + "; tgtAccel: " + targetAcceleration);
                     //Debug.Log("[APS DEBUG] Lead Offset: " + fixedLeadOffset + ", FinalAimTgt: " + finalAimTarget + ", tgt CosAngle " + targetCosAngle + ", wpn CosAngle " + targetAdjustedMaxCosAngle + ", Wpn Autofire: " + autoFire);
                     return true;
@@ -4897,6 +4898,9 @@ namespace BDArmory.Weapons
                 {
                     if (turret) turret.ReturnTurret(); //reset turret if no target
                     visualTargetVessel = null;
+                    visualTargetPart = null;
+                    tgtShell = null;
+                    tgtRocket = null;
                 }
             }
             return false;

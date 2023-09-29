@@ -158,6 +158,7 @@
     <Compile Include="Control\IBDAIControl.cs" />
     <Compile Include="Control\MissileFire.cs" />
     <Compile Include="Control\ModuleWingCommander.cs" />
+    <Compile Include="CounterMeasure\CMBubble.cs" />
     <Compile Include="CounterMeasure\CMChaff.cs" />
     <Compile Include="CounterMeasure\CMDropper.cs" />
     <Compile Include="CounterMeasure\CMDecoy.cs" />

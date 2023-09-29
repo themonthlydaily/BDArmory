@@ -785,6 +785,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 Fields["terminalGuidanceShouldActivate"].guiActive = false;
                 Fields["terminalGuidanceShouldActivate"].guiActiveEditor = false;
+                terminalGuidanceShouldActivate = false;
             }
 
             if (GuidanceMode != GuidanceModes.AAMLoft)
@@ -1419,6 +1420,7 @@ namespace BDArmory.Weapons.Missiles
                     //Timed detonation
                     if (isTimed && TimeIndex > detonationTime)
                     {
+                        if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher] missile timed out; self-destructing!");
                         Detonate();
                     }
                 }
@@ -1578,7 +1580,8 @@ namespace BDArmory.Weapons.Missiles
                     default:
                         if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES)
                         {
-                            debugGuidanceTarget = "none";
+                            TargetPosition = transform.position + (startDirection * 500);
+                            debugGuidanceTarget = TargetPosition.ToString();
                         }
                         break;
                 }
@@ -1927,8 +1930,10 @@ namespace BDArmory.Weapons.Missiles
         }
         IEnumerator updateCrashTolerance()
         {
-            yield return new WaitForSecondsFixed(0.5f); //wait until halfsec after boost motor fires, then set crashTolerance to 1. Torpes have already waited until splashdown before this is called.
+            yield return new WaitForSecondsFixed(0.5f); //wait half sec after boost motor fires, then set crashTolerance to 1. Torps have already waited until splashdown before this is called.
             part.crashTolerance = 1;
+            var missileCOL = part.collider;
+            if (missileCOL) missileCOL.enabled = true;
         }
         IEnumerator BoostRoutine()
         {
@@ -2394,6 +2399,7 @@ namespace BDArmory.Weapons.Missiles
                     //part.Destroy(); //^look into how this interacts with MissileBase.DetonationState
                     // - if the missile is still within the notSafe status, the missile will delete itself, else, the checkProximity state of DetonationState would trigger before the missile reaches the 1/2 blastradius.
                     // would only trigger if someone set the detonation distance override to something smallerthan 1/2 blst radius, for some reason
+                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher] ProxiDetonate triggered");
                     Detonate();
                 }
             }

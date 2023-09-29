@@ -593,21 +593,25 @@ namespace BDArmory.Weapons.Missiles
             else
             {
                 gpsTargetCoords_ = targetGPSCoords;
-                if (targetVessel && HasFired && (gpsUpdates >= 0f) && VesselModuleRegistry.GetMissileFire(SourceVessel).CanSeeTarget(targetVessel))
+                if (targetVessel && HasFired && (gpsUpdates >= 0f))
                 {
-                    if (gpsUpdates == 0) // Constant updates
+                    var weaponManager = VesselModuleRegistry.GetMissileFire(SourceVessel);
+                    if (weaponManager != null && weaponManager.CanSeeTarget(targetVessel, false))
                     {
-                        gpsTargetCoords_ = VectorUtils.WorldPositionToGeoCoords(targetVessel.Vessel.CoM, targetVessel.Vessel.mainBody);
-                        targetGPSCoords = gpsTargetCoords_;
-                    }
-                    else // Update every gpsUpdates seconds
-                    {
-                        float updateCount = TimeIndex / gpsUpdates;
-                        if (updateCount > gpsUpdateCounter)
+                        if (gpsUpdates == 0) // Constant updates
                         {
-                            gpsUpdateCounter++;
                             gpsTargetCoords_ = VectorUtils.WorldPositionToGeoCoords(targetVessel.Vessel.CoM, targetVessel.Vessel.mainBody);
                             targetGPSCoords = gpsTargetCoords_;
+                        }
+                        else // Update every gpsUpdates seconds
+                        {
+                            float updateCount = TimeIndex / gpsUpdates;
+                            if (updateCount > gpsUpdateCounter)
+                            {
+                                gpsUpdateCounter++;
+                                gpsTargetCoords_ = VectorUtils.WorldPositionToGeoCoords(targetVessel.Vessel.CoM, targetVessel.Vessel.mainBody);
+                                targetGPSCoords = gpsTargetCoords_;
+                            }
                         }
                     }
                 }
@@ -843,7 +847,7 @@ namespace BDArmory.Weapons.Missiles
                                 //if (weaponClass == WeaponClasses.SLW)
                                 //    TargetPosition = radarTarget.predictedPosition;
                                 //else
-                                    TargetPosition = radarTarget.predictedPositionWithChaffFactor(chaffEffectivity);
+                                TargetPosition = radarTarget.predictedPositionWithChaffFactor(chaffEffectivity);
                                 TargetVelocity = radarTarget.velocity;
                                 TargetAcceleration = Vector3.zero;
                                 TargetAcquired = true;
@@ -911,7 +915,7 @@ namespace BDArmory.Weapons.Missiles
                                         //if (weaponClass == WeaponClasses.SLW)
                                         //    TargetPosition = radarTarget.predictedPosition + (radarTarget.velocity * Time.fixedDeltaTime);
                                         //else
-                                            TargetPosition = radarTarget.predictedPositionWithChaffFactor(chaffEffectivity) + (radarTarget.velocity * Time.fixedDeltaTime);
+                                        TargetPosition = radarTarget.predictedPositionWithChaffFactor(chaffEffectivity) + (radarTarget.velocity * Time.fixedDeltaTime);
 
                                         TargetVelocity = radarTarget.velocity;
                                         TargetAcceleration = radarTarget.acceleration;
@@ -951,7 +955,7 @@ namespace BDArmory.Weapons.Missiles
                             //if (weaponClass == WeaponClasses.SLW)
                             //    TargetPosition = radarTarget.predictedPosition + (radarTarget.velocity * Time.fixedDeltaTime);
                             //else
-                                TargetPosition = radarTarget.predictedPositionWithChaffFactor(chaffEffectivity) + (radarTarget.velocity * Time.fixedDeltaTime);
+                            TargetPosition = radarTarget.predictedPositionWithChaffFactor(chaffEffectivity) + (radarTarget.velocity * Time.fixedDeltaTime);
 
                             TargetVelocity = radarTarget.velocity;
                             TargetAcceleration = Vector3.zero;
@@ -1027,7 +1031,7 @@ namespace BDArmory.Weapons.Missiles
                     //if (weaponClass == WeaponClasses.SLW)
                     //    TargetPosition = radarTarget.predictedPosition + (radarTarget.velocity * Time.fixedDeltaTime);
                     //else
-                        TargetPosition = radarTarget.predictedPositionWithChaffFactor(chaffEffectivity) + (radarTarget.velocity * Time.fixedDeltaTime);
+                    TargetPosition = radarTarget.predictedPositionWithChaffFactor(chaffEffectivity) + (radarTarget.velocity * Time.fixedDeltaTime);
                     TargetVelocity = radarTarget.velocity;
                     TargetAcceleration = radarTarget.acceleration;
 
@@ -1388,7 +1392,7 @@ namespace BDArmory.Weapons.Missiles
         {
             if (this.DetonationDistance == -1)
             {
-                if (GuidanceMode == GuidanceModes.AAMLead || GuidanceMode == GuidanceModes.AAMPure || GuidanceMode == GuidanceModes.PN || GuidanceMode == GuidanceModes.APN || GuidanceMode == GuidanceModes.AAMLoft )//|| GuidanceMode == GuidanceModes.AAMHybrid)
+                if (GuidanceMode == GuidanceModes.AAMLead || GuidanceMode == GuidanceModes.AAMPure || GuidanceMode == GuidanceModes.PN || GuidanceMode == GuidanceModes.APN || GuidanceMode == GuidanceModes.AAMLoft)//|| GuidanceMode == GuidanceModes.AAMHybrid)
                 {
                     DetonationDistance = GetBlastRadius() * 0.25f;
                 }
