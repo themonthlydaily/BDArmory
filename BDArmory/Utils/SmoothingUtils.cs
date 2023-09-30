@@ -73,9 +73,8 @@ namespace BDArmory.Utils
         /// <param name="beta">Smoothing factor.</param>
         public SmoothingV3(float beta, Vector3 initialValue = default, float rate = 0)
         {
-            this.alpha = 1f - beta;
-            this.beta = beta;
             this.rate = rate > 0 ? rate : Time.fixedDeltaTime;
+            AdjustSmoothingFactor(beta);
             Reset(initialValue);
         }
 
@@ -89,6 +88,12 @@ namespace BDArmory.Utils
         {
             S1 = initialValue;
             S2 = initialValue;
+        }
+
+        public void AdjustSmoothingFactor(float beta)
+        {
+            this.alpha = 1f - beta;
+            this.beta = beta;
         }
 
         /// <summary>

@@ -1617,7 +1617,14 @@ namespace BDArmory.Weapons
                 }
             }
 
-            smoothedRelativeFinalTarget = new SmoothingV3(Mathf.Exp(Mathf.Log(0.5f) * Time.fixedDeltaTime * 10f)); // half-life of 0.1s
+            smoothedRelativeFinalTarget = new SmoothingV3(Mathf.Exp(Mathf.Log(0.5f) * Time.fixedDeltaTime * 50f)); // half-life of 1 frame. This seems good. More than 5 frames (0.1s) seems too slow.
+            UI_FloatRange smoothedRelativeFinalTargetField = (UI_FloatRange)Fields["smoothedRelativeFinalTargetFactor"].uiControlFlight;
+            smoothedRelativeFinalTargetField.onFieldChanged = (BaseField field, object obj) =>
+            {
+                var beta = Mathf.Exp(Mathf.Log(0.5f) * Time.fixedDeltaTime * smoothedRelativeFinalTargetFactor);
+                smoothedRelativeFinalTarget.AdjustSmoothingFactor(beta);
+                Debug.Log($"DEBUG Smoothing beta is now {beta}, half-life is now {1f / smoothedRelativeFinalTargetFactor:G3}s");
+            };
         }
 
         void OnDestroy()
@@ -3383,6 +3390,8 @@ namespace BDArmory.Weapons
         [KSPField(isPersistant = false, guiActiveEditor = true, guiActive = true, guiName = "Use Analytic Solution"), UI_Toggle(enabledText = "On", disabledText = "Off")] bool useAnalyticAiming = true; // FIXME Manual toggle for performing the long-range correction for debugging purposes.
         [KSPField(isPersistant = false, guiActiveEditor = true, guiActive = true, guiName = "Numeric Integrator"), UI_Toggle(enabledText = "Leap-frog", disabledText = "Semi-implicit Euler")] bool useLeapFrogForTarget = true; // FIXME Which numeric integrator to use. SI-Euler seems significantly off, maybe an incorrect initial value?
         [KSPField(isPersistant = false, guiActiveEditor = true, guiActive = true, guiName = "Wait For Frame"), UI_Toggle(enabledText = "On", disabledText = "Off")] bool waitForFrame = true; // FIXME Force iTime to be Time.fixedDeltaTime so we don't have to deal with that just yet
+        [KSPField(isPersistant = false, guiActive = true, guiActiveEditor = true, guiName = "Final Target Smoothing Factor"), UI_FloatRange(minValue = 1, maxValue = 50, stepIncrement = 1, scene = UI_Scene.All)] float smoothedRelativeFinalTargetFactor = 50; // Half-life is 1/smoothedRelativeFinalTargetFactor, so 50 is 1 frame, 10 is 0.1s, etc.
+
         void Aim()
         {
             //AI control
@@ -3543,7 +3552,7 @@ namespace BDArmory.Weapons
                     */
                     Vector3 bulletInitialPosition, relativePosition, bulletEffectiveVelocity, relativeVelocity, bulletAcceleration, relativeAcceleration, targetPredictedPosition, bulletDropOffset;
                     float timeToCPA;
-                    Vector3 firingDirection = fireTransforms[0].forward, lastFiringDirection;
+                    Vector3 firingDirection, lastFiringDirection;
                     var iTime = Time.fixedDeltaTime; // FIXME use a more accurate value for this as it can give up to 1 frame's worth of inaccuracy.
                     var firePosition = AIUtils.PredictPosition(fireTransforms[0].position, smoothedPartVelocity, vessel.acceleration_immediate, Time.fixedDeltaTime); // Position of the end of the barrel at the start of the next frame.
 
@@ -3630,17 +3639,19 @@ namespace BDArmory.Weapons
                         correction += finalTarget;
 
                         if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE) Debug.Log($"DEBUG t: {timeToCPA} (δ: {timeToCPA - AIUtils.TimeToCPA(targetPosition - bulletInitialPosition, targetVelocity - bulletEffectiveVelocity, targetAcceleration - bulletAcceleration, maxTargetingRange / bulletEffectiveVelocity.magnitude)}, Ω: {finalStep}), Δt2CPA: {timeToCPA - lastTimeToCPA}, Δx: {(targetPosition - bulletInitialPosition).magnitude}, Δv: {(targetVelocity - bulletEffectiveVelocity).magnitude}, Δa: {(targetAcceleration - bulletAcceleration).magnitude}, bulletDrop: {bulletDropOffset.magnitude}, supported: {supported}, steps: {steps}, initial error: {(simTargetCPA - simBulletCPA).magnitude} (δ: {(simTargetCPA - simBulletCPA - AIUtils.PredictPosition(targetPosition - bulletInitialPosition, targetVelocity - bulletEffectiveVelocity, targetAcceleration - bulletAcceleration, timeToCPA)).magnitude}), correction: {correction.magnitude}, off-target: {Vector3.Dot(firingDirection, fireTransforms[0].forward)} vs {initialOffTarget} ({Mathf.Acos(Mathf.Clamp01(initialOffTarget)) * Mathf.Rad2Deg}°)");
-
-                        // FIXME Despite giving almost the same timeToCPA and error, analytic aiming is much more accurate. It is using the modified firing direction to do so, so we should do the same here and fix whatever was causing the inaccuracy for situation 1.
                     }
                     if (lastTimeToCPA >= 0)
                     {
                         deltaTimeToCPA = timeToCPA - lastTimeToCPA;
                         smoothedRelativeFinalTarget.Update(finalTarget - fireTransforms[0].position);
-                        if (Mathf.Abs(deltaTimeToCPA) > 10f){}
+                        if (Mathf.Abs(deltaTimeToCPA) > 10f)
+                        {
+                            // FIXME Debug why the t2CPA jumps in some places — is this just changing roots of the cubic or something else.
+                        }
                     }
                     else
                     {
+                        deltaTimeToCPA = 0;
                         smoothedRelativeFinalTarget.Reset(finalTarget);
                     }
                     lastTimeToCPA = timeToCPA;
@@ -5173,9 +5184,9 @@ namespace BDArmory.Weapons
             var distance = Vector3.Distance(position, part.transform.position);
             var alpha = Mathf.Max(1f - BDAMath.Sqrt(distance) / (landedOrSplashed ? 256f : 512f), 0.1f); // Landed targets have various "corrections" that cause significant noise in their acceleration values.
             var beta = alpha * alpha;
-            velocity += BDKrakensbane.FrameVelocityV3f; // To smooth the velocity, we need to use a consistent reference frame
             if (!reset)
             {
+                velocity += BDKrakensbane.FrameVelocityV3f; // To smooth the velocity, we need to use a consistent reference frame
                 targetVelocityS1 = alpha * velocity + (1f - alpha) * targetVelocityS1;
                 targetVelocityS2 = alpha * targetVelocityS1 + (1f - alpha) * targetVelocityS2;
                 targetVelocity = 2f * targetVelocityS1 - targetVelocityS2 - BDKrakensbane.FrameVelocityV3f; // Re-add the Krakensbane velocity to get the smoothed velocity in the current velocity frame.
@@ -5188,17 +5199,16 @@ namespace BDArmory.Weapons
             }
             else
             {
-                targetVelocityS1 = velocity;
-                targetVelocityS2 = velocity;
-                targetVelocity = velocity - BDKrakensbane.FrameVelocityV3f;
+                targetVelocityS1 = velocity + BDKrakensbane.FrameVelocityV3f;
+                targetVelocityS2 = velocity + BDKrakensbane.FrameVelocityV3f;
+                targetVelocity = velocity;
                 targetAccelerationS1 = acceleration;
                 targetAccelerationS2 = acceleration;
                 targetAcceleration = acceleration;
+                smoothedPartVelocityS1 = part.rb.velocity + BDKrakensbane.FrameVelocityV3f;
+                smoothedPartVelocityS2 = part.rb.velocity + BDKrakensbane.FrameVelocityV3f;
                 smoothedPartVelocity = part.rb.velocity;
-                smoothedPartVelocityS1 = smoothedPartVelocity;
-                smoothedPartVelocityS2 = smoothedPartVelocity;
                 lastTimeToCPA = -1;
-                deltaTimeToCPA = 0;
             }
         }
 
