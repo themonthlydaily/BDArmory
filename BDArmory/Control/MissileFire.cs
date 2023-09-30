@@ -3040,7 +3040,7 @@ namespace BDArmory.Control
             if (missile is MissileBase)
             {
                 MissileBase ml = missile;
-                if (checkClearance && (!CheckBombClearance(ml) || (ml is MissileLauncher && ((MissileLauncher)ml).rotaryRail && !((MissileLauncher)ml).rotaryRail.readyMissile == ml)) || ml.launched)
+                if (checkClearance && (!CheckBombClearance(ml) || (ml is MissileLauncher && ((MissileLauncher)ml).rotaryRail && !((MissileLauncher)ml).rotaryRail.readyMissile == ml) || ml.launched))
                 {
                     using (var otherMissile = VesselModuleRegistry.GetModules<MissileBase>(vessel).GetEnumerator())
                         while (otherMissile.MoveNext())
@@ -3052,7 +3052,7 @@ namespace BDArmory.Control
                             if (otherMissile.Current.launched) continue;
                             CurrentMissile = otherMissile.Current;
                             selectedWeapon = otherMissile.Current;
-                            FireCurrentMissile(missile, false);
+                            FireCurrentMissile(otherMissile.Current, false);
                             return true;
                         }
                     CurrentMissile = ml;
@@ -7217,6 +7217,7 @@ namespace BDArmory.Control
                         }
                     }
                 }
+            /*
             using (var missile = VesselModuleRegistry.GetModules<MissileLauncher>(vessel).GetEnumerator())
             {
                 while (missile.MoveNext())
@@ -7229,11 +7230,13 @@ namespace BDArmory.Control
                     if (interceptiontarget != null) PDMslTgts.Add(interceptiontarget);
                 }
             }
+            */
             if (APScount + missileCount <= 0)
             {
                 PDScanTimer = -100;
                 return;
             }
+            /*
             if (guardMode)
             {
                 using (List<IBDWeapon>.Enumerator weapon = weaponTypesMissile.GetEnumerator()) //have guardMode requirement?
@@ -7315,6 +7318,7 @@ namespace BDArmory.Control
                         }
                     }
             }
+            */
             using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                 while (weapon.MoveNext())
                 {
