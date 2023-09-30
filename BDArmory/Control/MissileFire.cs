@@ -4127,6 +4127,14 @@ namespace BDArmory.Control
                             if (rd.Current.maxLocks > 0) MaxradarLocks += rd.Current.maxLocks;
                         }
                     }
+                using (List<ModuleRadar>.Enumerator rd = _radars.GetEnumerator()) //now refresh lock array size with new maxradarLock value
+                    while (rd.MoveNext())
+                    {
+                        if (rd.Current != null && rd.Current.canLock)
+                        {
+                            rd.Current.RefreshLockArray();
+                        }
+                    }
             }
             _irsts = VesselModuleRegistry.GetModules<ModuleIRST>(vessel);
             _jammers = VesselModuleRegistry.GetModules<ModuleECMJammer>(vessel);

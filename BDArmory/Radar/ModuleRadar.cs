@@ -444,7 +444,7 @@ namespace BDArmory.Radar
                 }
                 radarTransform = radarTransformName != string.Empty ? part.FindModelTransform(radarTransformName) : part.transform;
 
-                attemptedLocks = new TargetSignatureData[3];
+                attemptedLocks = new TargetSignatureData[maxLocks];
                 TargetSignatureData.ResetTSDArray(ref attemptedLocks);
                 lockedTargets = new List<TargetSignatureData>();
 
@@ -716,6 +716,7 @@ namespace BDArmory.Radar
 
         public bool TryLockTarget(Vector3 position, Vessel targetVessel = null)
         {
+            //need a way to see what companion radars on the craft have already locked, so multiple radars aren't stacking locks on the same couple target craft? Or is updating attemptedLocks to missileFire.maxradarLocks enough?
             if (!canLock)
             {
                 return false;
@@ -950,6 +951,12 @@ namespace BDArmory.Radar
                     return;
                 }
             }
+        }
+
+        public void RefreshLockArray()
+        {
+            attemptedLocks = new TargetSignatureData[wpmr.MaxradarLocks];
+            TargetSignatureData.ResetTSDArray(ref attemptedLocks);
         }
 
         void SlaveTurrets()
