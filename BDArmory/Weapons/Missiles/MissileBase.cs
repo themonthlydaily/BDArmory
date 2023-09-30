@@ -795,7 +795,11 @@ namespace BDArmory.Weapons.Missiles
                         TargetSignatureData t = TargetSignatureData.noTarget;
                         if (canRelock && hasLostLock)
                         {
-                            if (vrd.locked) t = vrd.lockedTargetData.targetData; //SARH is passive, and guided towards whatever is currently painted by FCS radar
+                            if (vrd.locked)
+                            {
+                                t = vrd.lockedTargetData.targetData; //SARH is passive, and guided towards whatever is currently painted by FCS radar
+                                //Debug.Log($"[MML RADAR DEBUG] missile switched target to {t.vessel.GetName()}");
+                            }
                         }
                         else
                         {
@@ -813,7 +817,6 @@ namespace BDArmory.Weapons.Missiles
                             TargetAcquired = true;
                             hasLostLock = false;
                             radarTarget = t;
-                            hasLostLock = false;
                             //if (weaponClass == WeaponClasses.SLW) //Radar/Active Sonar guidance would be vulnerable to chaff/various acoustic CMs that function basically like chaff, so commenting this out
                             //{
                             //    TargetPosition = radarTarget.predictedPosition;
@@ -838,7 +841,8 @@ namespace BDArmory.Weapons.Missiles
                             {
                                 if (_radarFailTimer == 0)
                                 {
-                                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileBase]: Semi-Active Radar guidance failed - waiting for data");
+                                    if (BDArmorySettings.DEBUG_MISSILES) 
+                                        Debug.Log("[BDArmory.MissileBase]: Semi-Active Radar guidance failed - waiting for data");
                                     hasLostLock = true;
                                 }
                                 _radarFailTimer += Time.fixedDeltaTime;
@@ -1042,7 +1046,8 @@ namespace BDArmory.Weapons.Missiles
                         else
                             RadarWarningReceiver.PingRWR(new Ray(transform.position, radarTarget.predictedPosition - transform.position), lockedSensorFOV, RadarWarningReceiver.RWRThreatTypes.MissileLaunch, 2f);
 
-                        if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileBase]: Pitbull! Radar missileBase has gone active.  Radar sig strength: {radarTarget.signalStrength:0.0}");
+                        //if (BDArmorySettings.DEBUG_MISSILES) 
+                            Debug.Log($"[BDArmory.MissileBase]: Pitbull! Radar missileBase has gone active.  Radar sig strength: {radarTarget.signalStrength:0.0}");
                     }
                     return;
                 }
@@ -1073,7 +1078,22 @@ namespace BDArmory.Weapons.Missiles
                 if (_radarFailTimer < radarTimeout)
                 {
                     if (vrd && vrd.locked)
-                        radarTarget = vrd.lockedTargetData.targetData;
+                    {
+                        TargetSignatureData lockedTarget = vrd.lockedTargetData.targetData;
+                        if (targetVessel != null)
+                        {
+                            List<TargetSignatureData> possibleTargets = vrd.GetLockedTargets();
+                            for (int i = 0; i < possibleTargets.Count; i++)
+                            {
+                                if (possibleTargets[i].vessel == targetVessel)
+                                {
+                                    lockedTarget = possibleTargets[i];
+                                    break;
+                                }
+                            }
+                        }
+                        radarTarget = lockedTarget;
+                    }
                     else if (radarLOAL)
                         radarLOALSearching = true;
                     else
