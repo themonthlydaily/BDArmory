@@ -3610,7 +3610,7 @@ namespace BDArmory.Weapons
                     {
                         // Note: we can't base this on the firing direction from the analytic solution as the single step is not enough to converge sufficiently accurately from the analytic solution to the correct solution.
                         // Instead, we must rely on the convergence over time (which is very quick unless near the limits of the weapon).
-                        // This is correct for situations 1 and 2.
+                        // This is correct for situations 1 and 2. (At least, from the target's perspective. Needs to be checked more from the shooter's perspective.)
                         // However, there seems to be some inconsistencies between the analytic and numeric solutions when the CPA distance is non-zero (t<0 or t>max) or when the solver switches between roots of the cubic.
                         // Also, the numeric solution is giving strangely discrete values initially.
 
