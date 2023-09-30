@@ -660,9 +660,9 @@ namespace BDArmory.Weapons.Missiles
             int TargetID = 0;
             bool missileRegistry = true;
             //missileSpawner.MissileName = subMunitionName;
-            if (wpm.targetsAssigned.Count > 0) targetsAssigned.Clear();
             if (wpm != null)
             {
+                if (wpm.targetsAssigned.Count > 0) targetsAssigned.Clear();
                 /* //uncomment when missileInterception working
                 if (wpm.multiMissileTgtNum >= 2 || (missileLauncher.engageMissile && wpm.PDMslTgts.Count > 0))
                 {
@@ -676,7 +676,7 @@ namespace BDArmory.Weapons.Missiles
                 if (wpm.multiMissileTgtNum >= 2 && wpm.targetsAssigned.Count > 0)
                     targetsAssigned.AddRange(wpm.targetsAssigned);
                 //////////////////////////////////////////////
-                Debug.Log($"[BDArmory.MultiMissileLauncherDebug]: Num of targets: {targetsAssigned.Count - 1}");
+                //Debug.Log($"[BDArmory.MultiMissileLauncherDebug]: Num of targets: {targetsAssigned.Count - 1}");
                 if (targetsAssigned.Count < 1)
                     if (wpm.currentTarget != null) targetsAssigned.Add(wpm.currentTarget);
             }
@@ -844,27 +844,27 @@ namespace BDArmory.Weapons.Missiles
                             {// and each MMl will be independantly working off the same targets list, iterating over the same first couple targets
                                 if (wpm.missilesAway.ContainsKey(targetsAssigned[t]))
                                 {
-                                    Debug.Log($"[MML Targeting Debug] target {t} {targetsAssigned[t].Vessel.GetName()} already has {wpm.missilesAway[targetsAssigned[t]]}/{wpm.maxMissilesOnTarget} fired on it...");
+                                    //Debug.Log($"[MML Targeting Debug] target {t} {targetsAssigned[t].Vessel.GetName()} already has {wpm.missilesAway[targetsAssigned[t]]}/{wpm.maxMissilesOnTarget} fired on it...");
                                     if (wpm.missilesAway[targetsAssigned[t]] < wpm.maxMissilesOnTarget)
                                     {
                                         TargetID = t; //so go through and advance the target list start point based on who's already been fully engaged
-                                        Debug.Log($"[MML Targeting Debug] advancing targetID to {TargetID}: {targetsAssigned[TargetID].Vessel.GetName()}");
+                                        //Debug.Log($"[MML Targeting Debug] advancing targetID to {TargetID}: {targetsAssigned[TargetID].Vessel.GetName()}");
                                         break;
                                     }
                                 }
                                 else
                                 {
                                     TargetID = t;
-                                    Debug.Log($"[MML Targeting Debug] setting targetID to {TargetID}: {targetsAssigned[TargetID].Vessel.GetName()}");
+                                    //Debug.Log($"[MML Targeting Debug] setting targetID to {TargetID}: {targetsAssigned[TargetID].Vessel.GetName()}");
                                     break;
                                 }
                             }
-                            Debug.Log($"[MML Targeting Debug] TargetID is {TargetID} of {Mathf.Min((targetsAssigned.Count), wpm.multiMissileTgtNum)}");
+                            //Debug.Log($"[MML Targeting Debug] TargetID is {TargetID} of {Mathf.Min((targetsAssigned.Count), wpm.multiMissileTgtNum)}");
                             if (TargetID > Mathf.Min((targetsAssigned.Count), wpm.multiMissileTgtNum))
                             {
                                 TargetID = 0; //if more missiles than targets, loop target list
                                 missileRegistry = false;
-                                Debug.Log($"[MML Targeting Debug] Reached end of target list, cycling");
+                                //Debug.Log($"[MML Targeting Debug] Reached end of target list, cycling");
                             }
                             if (targetsAssigned.Count > 0 && targetsAssigned[TargetID] != null && targetsAssigned[TargetID].Vessel != null)
                             {
@@ -889,7 +889,7 @@ namespace BDArmory.Weapons.Missiles
                                     }
                                     ml.targetVessel = targetsAssigned[TargetID];
                                     ml.TargetAcquired = true;
-                                    //if (BDArmorySettings.DEBUG_MISSILES)
+                                    if (BDArmorySettings.DEBUG_MISSILES)
                                         Debug.Log($"[BDArmory.MultiMissileLauncher] Assigning target {TargetID}: {targetsAssigned[TargetID].Vessel.GetName()}; total possible targets {targetsAssigned.Count - 1}");
                                 }
                                 else //else try remaining targets on the list. 
@@ -1049,17 +1049,19 @@ namespace BDArmory.Weapons.Missiles
             if (wpm.vesselRadarData && wpm.vesselRadarData.locked) //if we have existing radar locks, use thsoe
             {
                 List<TargetSignatureData> possibleTargets = wpm.vesselRadarData.GetLockedTargets();
+                TargetSignatureData lockedTarget = TargetSignatureData.noTarget;
                 for (int i = 0; i < possibleTargets.Count; i++)
                 {
                     if (possibleTargets[i].vessel == targetV)
                     {
-                        ml.radarTarget = possibleTargets[i]; //send correct targetlock if firing multiple SARH missiles
+                        lockedTarget = possibleTargets[i]; //send correct targetlock if firing multiple SARH missiles
                         foundTarget = true;
-                        //if (BDArmorySettings.DEBUG_MISSILES)
+                        if (BDArmorySettings.DEBUG_MISSILES)
                             Debug.Log($"[BDArmory.MultiMissileLauncher] Found locked Radar target {targetV.GetName()}");
                         break;
                     }
                 }
+                ml.radarTarget = lockedTarget;
             }
             if (!foundTarget)
             {
@@ -1073,12 +1075,13 @@ namespace BDArmory.Weapons.Missiles
                     {
                         if (scannedTargets[i].exists && scannedTargets[i].vessel == targetV)
                         {
+                            lockedTarget = scannedTargets[i];
                             if (BDArmorySettings.DEBUG_MISSILES)
                                 Debug.Log($"[BDArmory.MultiMissileLauncher] Found Radar target {targetV.GetName()}");
-                            ml.radarTarget = scannedTargets[i];
                             break;
                         }
                     }
+                    ml.radarTarget = lockedTarget;
                     if (BDArmorySettings.DEBUG_MISSILES)
                     {
                         if (!ml.radarTarget.exists)
@@ -1087,9 +1090,14 @@ namespace BDArmory.Weapons.Missiles
                 }
                 else
                 {
-                    if (ml.radarLOAL) ml.TargetPosition = targetV.CoM; //set initial target position to fly towards if LOAL instead of straight from launcher
+                    if (ml.radarLOAL)
+                    {
+                        ml.TargetPosition = targetV.CoM; //set initial target position to fly towards if LOAL instead of straight from launcher
+                        ml.radarTarget = TargetSignatureData.noTarget;
+                    }
                 }
             }
+            //Debug.Log($"[BDArmory.MultiMissileLauncher] {targetV.GetName()}; assigned radar target {(ml.radarTarget.exists ? ml.radarTarget.vessel.GetName() : "null")}");
         }
 
         public void SetupMissileDummyPool(string modelpath)
