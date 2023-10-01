@@ -955,11 +955,11 @@ namespace BDArmory.Radar
 
         public void RefreshLockArray()
         {
-			if (wpmr != null)
-			{
-            attemptedLocks = new TargetSignatureData[wpmr.MaxradarLocks];
-            TargetSignatureData.ResetTSDArray(ref attemptedLocks);
-			}
+            if (wpmr != null)
+            {
+                attemptedLocks = new TargetSignatureData[wpmr.MaxradarLocks];
+                TargetSignatureData.ResetTSDArray(ref attemptedLocks);
+            }
         }
 
         void SlaveTurrets()
