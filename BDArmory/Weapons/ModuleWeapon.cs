@@ -4021,11 +4021,9 @@ namespace BDArmory.Weapons
                 if (safeToFire)
                 {
                     if (eWeaponType == WeaponTypes.Ballistic || eWeaponType == WeaponTypes.Laser)
-                    {
                         autoFire = (targetCosAngle >= targetAdjustedMaxCosAngle);
-                    }
                     else // Rockets
-                    { autoFire = (targetCosAngle >= targetAdjustedMaxCosAngle) && ((finalAimTarget - fireTransform.position).sqrMagnitude > (blastRadius * blastRadius) * 2); }
+                        autoFire = (targetCosAngle >= targetAdjustedMaxCosAngle) && ((finalAimTarget - fireTransform.position).sqrMagnitude > (blastRadius * blastRadius) * 2);
 
                     if (autoFire && Vector3.Angle(targetPosition - fireTransform.position, aimDirection) < 5) //check LoS for direct-fire weapons
                     {
@@ -4853,6 +4851,7 @@ namespace BDArmory.Weapons
             targetAcquired = false;
             atprAcquired = false;
             slaved = false;
+            radarTarget = false;
             lastTargetAcquisitionType = targetAcquisitionType;
             closestTarget = Vector3.zero;
             if (Time.time - lastGoodTargetTime > Mathf.Max(roundsPerMinute / 60f, weaponManager.targetScanInterval))
@@ -4888,10 +4887,13 @@ namespace BDArmory.Weapons
 
                     targetAcceleration = visualTargetPart != null && visualTargetPart.vessel != null ? (Vector3)visualTargetPart.vessel.acceleration : Vector3.zero;
                     targetAcquired = true;
-                    targetAcquisitionType = TargetAcquisitionType.Radar;
+                    targetAcquisitionType = TargetAcquisitionType.Visual;
                     if (weaponManager.slavingTurrets && turret) slaved = false;
-                    //Debug.Log("[APS DEBUG] tgtVelocity: " + tgtVelocity + "; tgtPosition: " + targetPosition + "; tgtAccel: " + targetAcceleration);
-                    //Debug.Log("[APS DEBUG] Lead Offset: " + fixedLeadOffset + ", FinalAimTgt: " + finalAimTarget + ", tgt CosAngle " + targetCosAngle + ", wpn CosAngle " + targetAdjustedMaxCosAngle + ", Wpn Autofire: " + autoFire);
+                    if (BDArmorySettings.DEBUG_WEAPONS)
+                    {
+                        Debug.Log("[APS DEBUG] tgtVelocity: " + tgtVelocity + "; tgtPosition: " + targetPosition + "; tgtAccel: " + targetAcceleration);
+                        Debug.Log($"[APS DEBUG - {(this.vessel != null ? vessel.GetName() : "null")}] Lead Offset: {fixedLeadOffset}, FinalAimTgt: {finalAimTarget}, tgt CosAngle {targetCosAngle}, wpn CosAngle {targetAdjustedMaxCosAngle}, Wpn Autofire: {autoFire}");
+                    }
                     return true;
                 }
                 else
