@@ -4498,17 +4498,18 @@ namespace BDArmory.Control
             {
                 TargetInfo potentialTarget = null;
                 //============VESSEL THREATS============
-                if (!vessel.LandedOrSplashed)
+
+                //then engage the closest enemy
+                potentialTarget = BDATargetManager.GetHighestPriorityTarget(this);
+                if (potentialTarget)
                 {
-                    //then engage the closest enemy
-                    potentialTarget = BDATargetManager.GetHighestPriorityTarget(this);
-                    if (potentialTarget)
-                    {
-                        targetsAssigned.Add(potentialTarget);
-                        targetsTried.Add(potentialTarget);
-                        if (BDArmorySettings.DEBUG_AI)
-                            Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} targeting priority target {potentialTarget.Vessel.GetName()} as a secondary target");
-                    }
+                    targetsAssigned.Add(potentialTarget);
+                    targetsTried.Add(potentialTarget);
+                    if (BDArmorySettings.DEBUG_AI)
+                        Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} targeting priority target {potentialTarget.Vessel.GetName()} as secondary target {i}");
+                }
+                else
+                {
                     potentialTarget = BDATargetManager.GetClosestTarget(this);
                     if (BDArmorySettings.DEFAULT_FFA_TARGETING)
                     {
@@ -4519,18 +4520,26 @@ namespace BDArmory.Control
                         targetsAssigned.Add(potentialTarget);
                         targetsTried.Add(potentialTarget);
                         if (BDArmorySettings.DEBUG_AI)
-                            Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} targeting bias target {potentialTarget.Vessel.GetName()} as a secondary target");
+                            Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} targeting bias target {potentialTarget.Vessel.GetName()} as secondary target {i}");
+                    }
+                    else
+                    {
+                        using (List<TargetInfo>.Enumerator target = BDATargetManager.TargetList(Team).GetEnumerator())
+                            while (target.MoveNext())
+                            {
+                                if (target.Current == null) continue;
+                                if (target.Current.weaponManager == null) continue;
+                                if (target.Current && target.Current.Vessel && CanSeeTarget(target.Current) && !targetsTried.Contains(target.Current))
+                                {
+                                    targetsAssigned.Add(target.Current);
+                                    targetsTried.Add(target.Current);
+                                    if (BDArmorySettings.DEBUG_AI)
+                                        Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} targeting first remaining target {target.Current.Vessel.GetName()} as secondary target {i}");
+                                    break;
+                                }
+                            }
                     }
                 }
-                using (List<TargetInfo>.Enumerator finalTargets = BDATargetManager.GetAllTargetsExcluding(targetsTried, this).GetEnumerator())
-                    while (finalTargets.MoveNext())
-                    {
-                        if (finalTargets.Current == null) continue;
-                        targetsAssigned.Add(finalTargets.Current);
-                        targetsTried.Add(finalTargets.Current);
-                        if (BDArmorySettings.DEBUG_AI)
-                            Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} targeting remaining target {finalTargets.Current.Vessel.GetName()} as a secondary target");
-                    }
             }
             if (targetsAssigned.Count + missilesAssigned.Count == 0)
             {
@@ -6228,6 +6237,21 @@ namespace BDArmory.Control
                 if (multiTargetNum > 1 || multiMissileTgtNum > 1)
                 {
                     SmartFindSecondaryTargets();
+                    using (List<TargetInfo>.Enumerator secTgt = targetsAssigned.GetEnumerator())
+                        while (secTgt.MoveNext())
+                        {
+                            if (secTgt.Current == null) continue;
+                            if (secTgt.Current == currentTarget) continue;
+                            secTgt.Current.Engage(this);
+                        }
+                    targetsAssigned.Clear();
+                    using (List<TargetInfo>.Enumerator mslTgt = missilesAssigned.GetEnumerator())
+                        while (mslTgt.MoveNext())
+                        {
+                            if (mslTgt.Current == null) continue;
+                            if (mslTgt.Current == currentTarget) continue;
+                            mslTgt.Current.Engage(this);
+                        }
                 }
                 MissileBase ml = CurrentMissile;
                 MissileBase pMl = PreviousMissile;
@@ -7030,6 +7054,7 @@ namespace BDArmory.Control
             if (selectedWeapon == null) return;
             int TurretID = 0;
             int MissileID = 0;
+            List<TargetInfo> firedTargets = new List<TargetInfo>();
             using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                 while (weapon.MoveNext())
                 {
@@ -7053,29 +7078,30 @@ namespace BDArmory.Control
                             }
                             if (targetsAssigned.Count > 0 && targetsAssigned[TurretID].Vessel != null)
                             {
-                                if ((weapon.Current.engageAir && targetsAssigned[TurretID].isFlying) ||
+                                if (((weapon.Current.engageAir && targetsAssigned[TurretID].isFlying) ||
                                     (weapon.Current.engageGround && targetsAssigned[TurretID].isLandedOrSurfaceSplashed) ||
                                     (weapon.Current.engageSLW && targetsAssigned[TurretID].isUnderwater)) //check engagement envelope
+                                    && TargetInTurretRange(weapon.Current.turret, 7, targetsAssigned[TurretID].Vessel.CoM, weapon.Current))
                                 {
-                                    if (TargetInTurretRange(weapon.Current.turret, 7, targetsAssigned[TurretID].Vessel.CoM, weapon.Current))
-                                    {
-                                        weapon.Current.visualTargetVessel = targetsAssigned[TurretID].Vessel; // if target within turret fire zone, assign
-                                        targetsAssigned[TurretID].Engage(this);
-                                    }
-                                    else //else try remaining targets
-                                    {
-                                        using (List<TargetInfo>.Enumerator item = targetsAssigned.GetEnumerator())
-                                            while (item.MoveNext())
+                                    weapon.Current.visualTargetVessel = targetsAssigned[TurretID].Vessel; // if target within turret fire zone, assign
+                                    firedTargets.Add(targetsAssigned[TurretID]);
+                                }
+                                else //else try remaining targets
+                                {
+                                    using (List<TargetInfo>.Enumerator item = targetsAssigned.GetEnumerator())
+                                        while (item.MoveNext())
+                                        {
+                                            if (item.Current.Vessel == null) continue;
+                                            if ((weapon.Current.engageAir && !item.Current.isFlying) ||
+                                            (weapon.Current.engageGround && !item.Current.isLandedOrSurfaceSplashed) ||
+                                            (weapon.Current.engageSLW && !item.Current.isUnderwater)) continue;
+                                            if (TargetInTurretRange(weapon.Current.turret, 7, item.Current.Vessel.CoM, weapon.Current))
                                             {
-                                                if (item.Current.Vessel == null) continue;
-                                                if (TargetInTurretRange(weapon.Current.turret, 7, item.Current.Vessel.CoM, weapon.Current))
-                                                {
-                                                    weapon.Current.visualTargetVessel = item.Current.Vessel;
-                                                    item.Current.Engage(this);
-                                                    break;
-                                                }
+                                                weapon.Current.visualTargetVessel = item.Current.Vessel;
+                                                firedTargets.Add(item.Current);
+                                                break;
                                             }
-                                    }
+                                        }
                                 }
                                 TurretID++;
                             }
@@ -7090,7 +7116,7 @@ namespace BDArmory.Control
                                     if (TargetInTurretRange(weapon.Current.turret, 7, missilesAssigned[MissileID].Vessel.CoM, weapon.Current))
                                     {
                                         weapon.Current.visualTargetVessel = missilesAssigned[MissileID].Vessel; // if target within turret fire zone, assign
-                                        missilesAssigned[MissileID].Engage(this);
+                                        firedTargets.Add(missilesAssigned[MissileID]);
                                     }
                                     else //assigned target outside turret arc, try the other targets on the list
                                     {
@@ -7101,7 +7127,7 @@ namespace BDArmory.Control
                                                 if (TargetInTurretRange(weapon.Current.turret, 7, item.Current.Vessel.CoM, weapon.Current))
                                                 {
                                                     weapon.Current.visualTargetVessel = item.Current.Vessel;
-                                                    item.Current.Engage(this);
+                                                    firedTargets.Add(item.Current);
                                                     break;
                                                 }
                                             }
@@ -7123,6 +7149,18 @@ namespace BDArmory.Control
                         //Debug.Log("[BDArmory.MTD]: non-turret, assigned " + guardTarget.name);
                     }
                     weapon.Current.targetCOM = targetCoM;
+                    using (List<TargetInfo>.Enumerator Tgt = targetsAssigned.GetEnumerator())
+                        while(Tgt.MoveNext())
+                        {
+                            if (!firedTargets.Contains(Tgt.Current)) 
+                                Tgt.Current.Disengage(this);
+                        }
+                    using (List<TargetInfo>.Enumerator Tgt = missilesAssigned.GetEnumerator())
+                        while (Tgt.MoveNext())
+                        {
+                            if (!firedTargets.Contains(Tgt.Current))
+                                Tgt.Current.Disengage(this);
+                        }
                     if (targetCoM)
                     {
                         weapon.Current.targetCockpits = false;
@@ -7443,18 +7481,15 @@ namespace BDArmory.Control
                             weapon.Current.tgtShell = null;
                             weapon.Current.tgtRocket = null;
                         }
-                        //look into decoupling EngageTargetMissile from standard missile firing behavior, and have it so any missile with engageMissileTarget = true will instead work similar to APS and 
-                        //get autolaunched at an incoming missile? 
-                        //  - Issue with that is radar missile interceptors will still need target locks, and if the setTarget is now only setting Air/Srf/SLW targets and not missile...
-                        //  - Simple - have it be If there's a free radar lock, try to lock/interceptor is a heater/radar LOAL missile, launch, else, welp
-                        //So... have a list of incoming missile targets (10...? total count of engageMissiles = true missiles?), if incomingMslTgt.Count > 0, find first valid missile, and launch?
-						//Need - extend the PDMslTgts list acquisition for interceptormissiles and/or APS; if validMissiles > 0, assign target then do guardMissileRoutine. Will have to modify to use 
-						// input value instead of global currentTarget. What aim checks are needed? Turrets already handled in guardMissileRoutine
                     }
-                    //Debug.Log($"[BDArmory.MissileFire]: {weapon.Current.shortName} assigned shell:{(weapon.Current.tgtShell != null ? "true" : "false")}; rocket: {(weapon.Current.tgtRocket != null ? "true" : "false")}; missile:{(weapon.Current.visualTargetVessel.vesselName)}");
+                    if (BDArmorySettings.DEBUG_WEAPONS) 
+                        Debug.Log($"[BDArmory.MissileFire - {(this.vessel != null ? vessel.GetName() : "null")}]: {weapon.Current.shortName} assigned shell:{(weapon.Current.tgtShell != null ? "true" : "false")}; rocket: {(weapon.Current.tgtRocket != null ? "true" : "false")}; missile:{(weapon.Current.visualTargetVessel != null ? weapon.Current.visualTargetVessel.vesselName : "null")}");
+                            
                     weapon.Current.autoFireTimer = Time.time;
                     weapon.Current.autoFireLength = (fireBurstLength < 0.01f) ? targetScanInterval / 2f : fireBurstLength;
                 }
+            if (BDArmorySettings.DEBUG_WEAPONS)
+                Debug.Log($"[BDArmory.MissileFire] Current targeted missiles for {(this.vessel != null ? vessel.GetName() : "null")}: {PDMslTgts.Count}");
         }
         public void SetOverrideTarget(TargetInfo target)
         {

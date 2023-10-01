@@ -659,6 +659,7 @@ namespace BDArmory.Weapons.Missiles
             float timeGap = (60 / rippleRPM) * TimeWarp.CurrentRate;
             int TargetID = 0;
             bool missileRegistry = true;
+            List<TargetInfo> firedTargets = new List<TargetInfo>();
             //missileSpawner.MissileName = subMunitionName;
             if (wpm != null)
             {
@@ -889,7 +890,7 @@ namespace BDArmory.Weapons.Missiles
                                     }
                                     ml.targetVessel = targetsAssigned[TargetID];
                                     ml.TargetAcquired = true;
-                                    targetsAssigned[TargetID].Engage(wpm);
+                                    firedTargets.Add(targetsAssigned[TargetID]);
                                     if (BDArmorySettings.DEBUG_MISSILES)
                                         Debug.Log($"[BDArmory.MultiMissileLauncher] Assigning target {TargetID}: {targetsAssigned[TargetID].Vessel.GetName()}; total possible targets {targetsAssigned.Count - 1}");
                                 }
@@ -920,7 +921,7 @@ namespace BDArmory.Weapons.Missiles
                                             }
                                             ml.targetVessel = targetsAssigned[t];
                                             ml.TargetAcquired = true;
-                                            targetsAssigned[t].Engage(wpm);
+                                            firedTargets.Add(targetsAssigned[t]);
                                             if (BDArmorySettings.DEBUG_MISSILES)
                                                 Debug.Log($"[BDArmory.MultiMissileLauncher] Assigning backup target (targetID {TargetID}) {targetsAssigned[t].Vessel.GetName()}");
                                         }
@@ -933,6 +934,10 @@ namespace BDArmory.Weapons.Missiles
                                             while (item.MoveNext())
                                             {
                                                 if (item.Current.Vessel == null) continue;
+                                                if ((ml.engageAir && !item.Current.isFlying) ||
+                                                    (ml.engageGround && !item.Current.isLandedOrSurfaceSplashed) ||
+                                                    (ml.engageSLW && !item.Current.isUnderwater) ||
+                                                    (ml.engageMissile && !item.Current.isMissile)) continue; //check engagement envelope
                                                 if (Vector3.Angle(item.Current.position - missileLauncher.MissileReferenceTransform.position, missileLauncher.GetForwardTransform()) < missileLauncher.maxOffBoresight) //is the target more-or-less in front of the missile(launcher)?
                                                 {
                                                     if (ml.TargetingMode == MissileBase.TargetingModes.Heat)
@@ -950,7 +955,7 @@ namespace BDArmory.Weapons.Missiles
                                                     }
                                                     ml.targetVessel = item.Current;
                                                     ml.TargetAcquired = true;
-                                                    item.Current.Engage(wpm);
+                                                    firedTargets.Add(item.Current);
                                                     if (BDArmorySettings.DEBUG_MISSILES)
                                                         Debug.Log($"[BDArmory.MultiMissileLauncher] original target out of sensor range; engaging {item.Current.Vessel.GetName()}");
                                                     break;
@@ -993,7 +998,12 @@ namespace BDArmory.Weapons.Missiles
                 wpm.heatTarget = TargetSignatureData.noTarget;
             }
             missileLauncher.launched = true;
-
+            using (List<TargetInfo>.Enumerator Tgt = targetsAssigned.GetEnumerator())
+                while (Tgt.MoveNext())
+                {
+                    if (!firedTargets.Contains(Tgt.Current))
+                        Tgt.Current.Disengage(wpm);
+                }
             if (deployState != null)
             {
                 yield return new WaitForSecondsFixed(0.5f); //wait for missile to clear bay
