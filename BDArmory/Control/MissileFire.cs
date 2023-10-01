@@ -2398,16 +2398,24 @@ namespace BDArmory.Control
                 }
                 if (unguidedWeapon) //unguidedWeapon
                 {
-                    if (SetCargoBays())
+                    MissileLauncher mlauncher = ml as MissileLauncher;
+                    if (ml && mlauncher.multiLauncher && mlauncher.multiLauncher.overrideReferenceTransform)
                     {
-                        yield return new WaitForSecondsFixed(2f);
+                        if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName}'s {CurrentMissile.name} launched from MML, aborting unguided launch.");
                     }
-                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} attempting to fire unguided missile on target {targetVessel.GetName()}");
-
-                    if (ml && targetVessel && GetLaunchAuthorization(targetVessel, this, ml))
+                    else
                     {
-                        FireCurrentMissile(ml, true);
-                        unguidedWeapon = false;
+                        if (SetCargoBays())
+                        {
+                            yield return new WaitForSecondsFixed(2f);
+                        }
+                        if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} attempting to fire unguided missile on target {targetVessel.GetName()}");
+
+                        if (ml && targetVessel && GetLaunchAuthorization(targetVessel, this, ml))
+                        {
+                            FireCurrentMissile(ml, true);
+                            unguidedWeapon = false;
+                        }
                     }
                 }
 
@@ -4117,6 +4125,14 @@ namespace BDArmory.Control
                         if (rd.Current != null && rd.Current.canLock)
                         {
                             if (rd.Current.maxLocks > 0) MaxradarLocks += rd.Current.maxLocks;
+                        }
+                    }
+                using (List<ModuleRadar>.Enumerator rd = _radars.GetEnumerator()) //now refresh lock array size with new maxradarLock value
+                    while (rd.MoveNext())
+                    {
+                        if (rd.Current != null && rd.Current.canLock)
+                        {
+                            rd.Current.RefreshLockArray();
                         }
                     }
             }
