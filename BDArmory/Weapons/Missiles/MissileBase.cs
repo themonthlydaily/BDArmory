@@ -879,7 +879,7 @@ namespace BDArmory.Weapons.Missiles
                     }
                     else
                     {
-                        if (scannedTargets == null) scannedTargets = new TargetSignatureData[5];
+                        if (scannedTargets == null) scannedTargets = new TargetSignatureData[BDATargetManager.LoadedVessels.Count];
                         TargetSignatureData.ResetTSDArray(ref scannedTargets);
                         Ray ray = new Ray(transform.position, radarTarget.predictedPosition - transform.position);
                         bool pingRWR = Time.time - lastRWRPing > 0.4f;
