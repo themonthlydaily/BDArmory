@@ -889,6 +889,7 @@ namespace BDArmory.Weapons.Missiles
                                     }
                                     ml.targetVessel = targetsAssigned[TargetID];
                                     ml.TargetAcquired = true;
+                                    targetsAssigned[TargetID].Engage(wpm);
                                     if (BDArmorySettings.DEBUG_MISSILES)
                                         Debug.Log($"[BDArmory.MultiMissileLauncher] Assigning target {TargetID}: {targetsAssigned[TargetID].Vessel.GetName()}; total possible targets {targetsAssigned.Count - 1}");
                                 }
@@ -919,6 +920,7 @@ namespace BDArmory.Weapons.Missiles
                                             }
                                             ml.targetVessel = targetsAssigned[t];
                                             ml.TargetAcquired = true;
+                                            targetsAssigned[t].Engage(wpm);
                                             if (BDArmorySettings.DEBUG_MISSILES)
                                                 Debug.Log($"[BDArmory.MultiMissileLauncher] Assigning backup target (targetID {TargetID}) {targetsAssigned[t].Vessel.GetName()}");
                                         }
@@ -948,6 +950,7 @@ namespace BDArmory.Weapons.Missiles
                                                     }
                                                     ml.targetVessel = item.Current;
                                                     ml.TargetAcquired = true;
+                                                    item.Current.Engage(wpm);
                                                     if (BDArmorySettings.DEBUG_MISSILES)
                                                         Debug.Log($"[BDArmory.MultiMissileLauncher] original target out of sensor range; engaging {item.Current.Vessel.GetName()}");
                                                     break;
