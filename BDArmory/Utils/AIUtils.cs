@@ -123,7 +123,7 @@ namespace BDArmory.Utils
                 {
                     float G = G_abs * Mathf.Cos(G_ang + 2f * (float)i * Mathf.PI / 3f);
                     float t = -1f / 3f / A * (B + G + D0 * G / G_abs / G_abs);
-                    if (Mathf.Sign(C + t * B / 2f + 3f * t * t * A) > 0) // It's a minimum. There can be at most 2 minima and 1 maxima.
+                    if (Mathf.Sign(C + 2f * t * B + 3f * t * t * A) > 0) // It's a minimum. There can be at most 2 minima and 1 maxima.
                     {
                         switch (cpaType)
                         {

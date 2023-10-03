@@ -2040,7 +2040,7 @@ namespace BDArmory.Weapons
                                     effectsShot = true;
                                 }
 
-                                // Debug.Log("DEBUG FIRE!");
+                                if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE) Debug.Log("DEBUG FIRE!");
                                 //firing bullet
                                 for (int s = 0; s < ProjectileCount; s++)
                                 {
@@ -3585,7 +3585,11 @@ namespace BDArmory.Weapons
                     {
                         // For artillery (if it ever gets implemented), TimeToCPA needs to use the furthest time, not the closest (AIUtils.CPAType).
                         int count = 0;
-                        do // This loop is correct for situation 1. It also appears to be correct for situation 2 from the target's perspective, but needs testing from the shooter's perspective. - Seems slightly off from the shooter's perspective
+                        // This loop is correct for situation 1.
+                        // It also appears to be correct for situation 2, but accuracy is different depending on which vessel has focus.
+                        // - From the target's perspective, the shots are quite accurate.
+                        // - From the shooter's perspective, the shots are often wide, but not consistently.
+                        do
                         {
                             // Note: Bullets are initially placed up to 1 frame ahead (iTime) to compensate for where they would move to during this physics frame.
                             //       Also, we have already adjusted the target's position and velocity for where it ought to be next frame.
@@ -3604,15 +3608,26 @@ namespace BDArmory.Weapons
                             finalTarget = targetPredictedPosition + bulletDropOffset - (timeToCPA + Time.fixedDeltaTime) * smoothedPartVelocity;
                             firingDirection = (finalTarget - fireTransforms[0].position).normalized;
                         } while (++count < 10 && Vector3.Dot(lastFiringDirection, firingDirection) < 0.9998f); // ~1° margin of error is sufficient to prevent premature firing (usually)
-                        if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE) Debug.Log($"DEBUG count: {count}, t: {timeToCPA}, Δt2CPA: {timeToCPA - lastTimeToCPA}, Δx: {relativePosition.magnitude}, Δv: {relativeVelocity.magnitude}, Δa: {relativeAcceleration.magnitude}, V: {smoothedPartVelocity.magnitude}, ΔV: {(smoothedPartVelocity - targetVelocity).magnitude}, kV: {BDKrakensbane.FrameVelocityV3f.magnitude}, bulletDrop: {bulletDropOffset.magnitude}, off-target: {Vector3.Dot(firingDirection, fireTransforms[0].forward)} ({Mathf.Acos(Mathf.Clamp01(Vector3.Dot(firingDirection, fireTransforms[0].forward))) * Mathf.Rad2Deg}°) vs {initialOffTarget}");
+                        if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
+                        {
+                            bulletEffectiveVelocity = smoothedPartVelocity + baseBulletVelocity * firingDirection;
+                            bulletInitialPosition = firePosition + iTime * baseBulletVelocity * firingDirection;
+                            bulletAcceleration = bulletDrop ? (Vector3)FlightGlobals.getGeeForceAtPosition((bulletInitialPosition + targetPredictedPosition) / 2f) : Vector3.zero; // Drag is ignored.
+                            relativePosition = targetPosition - bulletInitialPosition;
+                            relativeVelocity = targetVelocity - bulletEffectiveVelocity;
+                            relativeAcceleration = targetAcceleration - bulletAcceleration;
+                            Debug.Log($"DEBUG count: {count}, t: {timeToCPA}, Δt2CPA: {timeToCPA - lastTimeToCPA}, Δx: {relativePosition.magnitude}, Δv: {relativeVelocity.magnitude}, Δa: {relativeAcceleration.magnitude}, X: ({targetPosition.magnitude}, {fireTransforms[0].position.magnitude}), V: ({smoothedPartVelocity.magnitude}, {targetVelocity.magnitude}), ΔV: {(smoothedPartVelocity - targetVelocity).magnitude}, kV: {BDKrakensbane.FrameVelocityV3f.magnitude}, bulletDrop: {bulletDropOffset.magnitude}, CPA: {AIUtils.PredictPosition(relativePosition, relativeVelocity, relativeAcceleration, timeToCPA).magnitude}, off-target: {Vector3.Dot(firingDirection, fireTransforms[0].forward)} ({Mathf.Acos(Mathf.Clamp01(Vector3.Dot(firingDirection, fireTransforms[0].forward))) * Mathf.Rad2Deg}°)");
+                        }
                     }
                     else // Reasonably on-target and the analytic solution isn't accurate enough.
                     {
                         // Note: we can't base this on the firing direction from the analytic solution as the single step is not enough to converge sufficiently accurately from the analytic solution to the correct solution.
-                        // Instead, we must rely on the convergence over time (which is very quick unless near the limits of the weapon).
-                        // This is correct for situations 1 and 2. (At least, from the target's perspective. Needs to be checked more from the shooter's perspective.)
+                        // Instead, we must rely on the convergence over time based on our estimate from the previous frame (which is very quick unless near the limits of the weapon).
+                        // This is correct for situations 1 and 2.
+                        // It suffers the same accuracy noise as the analytic solution.
                         // However, there seems to be some inconsistencies between the analytic and numeric solutions when the CPA distance is non-zero (t<0 or t>max) or when the solver switches between roots of the cubic.
                         // Also, the numeric solution is giving strangely discrete values initially.
+                        // For situation 3, the solution is not quite right, but is fairly good for high accelerations when within 15-25km.
 
                         var supported = targetIsLandedOrSplashed || targetAcceleration.sqrMagnitude == 0; // Assume non-accelerating targets are "supported".
 
@@ -5186,8 +5201,8 @@ namespace BDArmory.Weapons
             var beta = alpha * alpha;
             if (!reset)
             {
-                velocity += BDKrakensbane.FrameVelocityV3f; // To smooth the velocity, we need to use a consistent reference frame
-                targetVelocityS1 = alpha * velocity + (1f - alpha) * targetVelocityS1;
+                // To smooth velocities, we need to use a consistent reference frame.
+                targetVelocityS1 = alpha * (velocity + BDKrakensbane.FrameVelocityV3f) + (1f - alpha) * targetVelocityS1;
                 targetVelocityS2 = alpha * targetVelocityS1 + (1f - alpha) * targetVelocityS2;
                 targetVelocity = 2f * targetVelocityS1 - targetVelocityS2 - BDKrakensbane.FrameVelocityV3f; // Re-add the Krakensbane velocity to get the smoothed velocity in the current velocity frame.
                 targetAccelerationS1 = beta * acceleration + (1f - beta) * targetAccelerationS1;
