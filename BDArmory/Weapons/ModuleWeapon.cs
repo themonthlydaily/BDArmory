@@ -4161,7 +4161,7 @@ namespace BDArmory.Weapons
                 elapsedTime += timeStep;
                 ++steps;
             }
-            Debug.LogWarning("[BDArmory.ModuleWeapon]: Ballistic trajectory closest approach simulation timed out.");
+            if (elapsedTime < maxTime) Debug.LogWarning("[BDArmory.ModuleWeapon]: Ballistic trajectory closest approach simulation timed out.");
             return (position, targetPosition, elapsedTime, steps, timeStep); // Was heading to a CPA, but didn't reach it in time.
         }
 
