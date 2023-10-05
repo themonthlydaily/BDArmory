@@ -3387,8 +3387,8 @@ namespace BDArmory.Weapons
         #endregion Audio
 
         #region Targeting
-        [KSPField(isPersistant = false, guiActiveEditor = true, guiActive = true, guiName = "Use Analytic Solution"), UI_Toggle(enabledText = "On", disabledText = "Off")] bool useAnalyticAiming = true; // FIXME Manual toggle for performing the long-range correction for debugging purposes.
-        [KSPField(isPersistant = false, guiActiveEditor = true, guiActive = true, guiName = "Numeric Integrator"), UI_Toggle(enabledText = "Leap-frog", disabledText = "Semi-implicit Euler")] bool useLeapFrogForTarget = true; // FIXME Which numeric integrator to use. SI-Euler seems significantly off, maybe an incorrect initial value?
+        // [KSPField(isPersistant = false, guiActiveEditor = true, guiActive = true, guiName = "Use Analytic Solution"), UI_Toggle(enabledText = "On", disabledText = "Off")] bool useAnalyticAiming = false; // FIXME Manual toggle for performing the long-range correction for debugging purposes.
+        [KSPField(isPersistant = false, guiActiveEditor = true, guiActive = true, guiName = "Numeric Integrator"), UI_Toggle(enabledText = "Leap-frog", disabledText = "Semi-implicit Euler")] bool useLeapFrogForTarget = true; // FIXME Which numeric integrator to use. SI-Euler seems significantly off, maybe an incorrect initial value or implementation error?
         [KSPField(isPersistant = false, guiActiveEditor = true, guiActive = true, guiName = "Wait For Frame"), UI_Toggle(enabledText = "On", disabledText = "Off")] bool waitForFrame = true; // FIXME Force iTime to be Time.fixedDeltaTime so we don't have to deal with that just yet
         [KSPField(isPersistant = false, guiActive = true, guiActiveEditor = true, guiName = "Final Target Smoothing Factor"), UI_FloatRange(minValue = 1, maxValue = 50, stepIncrement = 1, scene = UI_Scene.All)] float smoothedRelativeFinalTargetFactor = 50; // Half-life is 1/smoothedRelativeFinalTargetFactor, so 50 is 1 frame, 10 is 0.1s, etc.
 
@@ -3580,7 +3580,7 @@ namespace BDArmory.Weapons
                     var initialOffTarget = Vector3.Dot(firingDirection, fireTransforms[0].forward); // DEBUG Max initial off-target angle seen is ~1.5°.
                     // Debug.Log($"DEBUG Initial relFinalTarget: {(finalTarget - firePosition).magnitude}, smoothed: {smoothedRelativeFinalTarget.At(Time.fixedDeltaTime).magnitude}, Δ: {(finalTarget - firePosition - smoothedRelativeFinalTarget.At(Time.fixedDeltaTime)).magnitude}");
 
-                    // bool useAnalyticAiming = timeToCPA * bulletAcceleration.magnitude > 100f; FIXME we're currently manually overriding this for testing, but we need a better condition that covers all situations where the analytic solution isn't sufficiently accurate.
+                    bool useAnalyticAiming = timeToCPA * bulletAcceleration.magnitude < 100f; // FIXME we're currently manually overriding this for testing, but we need a better condition that covers all situations where the analytic solution isn't sufficiently accurate.
                     if (offTarget || useAnalyticAiming) // The gun is significantly off-target or we want the optimum analytic solution => perform a loop based on an "optimal" firing direction.
                     {
                         // For artillery (if it ever gets implemented), TimeToCPA needs to use the furthest time, not the closest (AIUtils.CPAType).
