@@ -66,6 +66,7 @@ namespace BDArmory.Damage
 
         private bool isProcWing = false;
         private bool isProcPart = false;
+        private bool isProcWheel = false;
         private bool waitingForHullSetup = false;
         private float OldArmorType = -1;
 
@@ -313,6 +314,10 @@ namespace BDArmory.Damage
             if (part.name.Contains("procedural"))
             {
                 isProcPart = true;
+            }
+            if (part.Modules.Contains("KSPWheelBase"))
+            {
+                isProcWheel = true;
             }
             StartingArmor = Armor;
             if (ProjectileUtils.IsArmorPart(this.part))
@@ -577,7 +582,7 @@ namespace BDArmory.Damage
         public void ShipModified(ShipConstruct data)
         {
             // Note: this triggers if the ship is modified, but really we only want to run this when the part is modified.
-            if (isProcWing || isProcPart)
+            if (isProcWing || isProcPart || isProcWheel)
             {
                 if (!_delayedShipModifiedRunning)
                 {
@@ -665,7 +670,7 @@ namespace BDArmory.Damage
                 part.UpdateMass();
                 //partMass = part.mass - armorMass - HullMassAdjust; //part mass is taken from the part.cfg val, not current part mass; this overrides that
                 //need to get ModuleSelfSealingTank mass adjustment. Could move the SST module to BDA.Core
-                if (isProcWing || isProcPart)
+                if (isProcWing || isProcPart || isProcWheel)
                 {
                     float Safetymass = 0;
                     var SST = part.GetComponent<ModuleSelfSealingTank>();
@@ -678,7 +683,7 @@ namespace BDArmory.Damage
                 if (oldPartMass != partMass)
                 {
                     if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} updated mass at {Time.time}: part.mass {part.mass}, partMass {oldPartMass}->{partMass}, armorMass {armorMass}, hullMassAdjust {HullMassAdjust}");
-                    if (isProcPart)
+                    if (isProcPart || isProcWheel)
                     {
                         calcPartSize();
                         _armorModified = true;
@@ -938,7 +943,7 @@ namespace BDArmory.Damage
                             else
                                 hitpoints = (float)part.Modules.GetModule<ModuleLiftingSurface>().deflectionLiftCoeff * 700 * hitpointMultiplier * 0.333f; //stock wings are 700 HP per lifting surface area; using lift instead of mass (110 Lift/ton) due to control surfaces weighing more
                         }
-                        if (isProcPart)
+                        if (isProcPart || isProcWheel)
                         {
                             structuralVolume = armorVolume * Mathf.PI / 6f * 0.1f; // Box area * sphere/cube ratio * 10cm. We use sphere/cube ratio to get similar results as part.GetAverageBoundSize().
                             density = (partMass * 1000f) / structuralVolume;
@@ -952,7 +957,7 @@ namespace BDArmory.Damage
                             density = Mathf.Clamp(density, 250, 10000);
                             structuralMass = density * structuralVolume;
                             //might instead need to grab Procpart mass/size vars via reflection
-                            hitpoints = (structuralMass * hitpointMultiplier * 0.333f) * 5.2f;
+                            hitpoints = (structuralMass * hitpointMultiplier * 0.333f) * (isProcWheel ? 2.6f : 5.2f);
                         }
                         if (clampHP)
                         {
