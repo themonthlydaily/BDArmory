@@ -91,7 +91,8 @@ namespace BDArmory.Weapons
         {
             Ballistic,
             Missile,
-            Omni
+            Omni, 
+            None
         }
         public WeaponStates weaponState = WeaponStates.Disabled;
 
@@ -4852,6 +4853,7 @@ namespace BDArmory.Weapons
             atprAcquired = false;
             slaved = false;
             radarTarget = false;
+            GPSTarget = false;
             lastTargetAcquisitionType = targetAcquisitionType;
             closestTarget = Vector3.zero;
             if (Time.time - lastGoodTargetTime > Mathf.Max(roundsPerMinute / 60f, weaponManager.targetScanInterval))
@@ -5301,7 +5303,7 @@ namespace BDArmory.Weapons
                     eAPSType = APSTypes.Omni;
                     break;
                 default:
-                    eAPSType = APSTypes.Ballistic;
+                    eAPSType = APSTypes.None;
                     break;
             }
         }

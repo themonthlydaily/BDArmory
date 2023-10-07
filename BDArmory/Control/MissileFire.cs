@@ -6244,7 +6244,6 @@ namespace BDArmory.Control
                             if (secTgt.Current == currentTarget) continue;
                             secTgt.Current.Engage(this);
                         }
-                    targetsAssigned.Clear();
                     using (List<TargetInfo>.Enumerator mslTgt = missilesAssigned.GetEnumerator())
                         while (mslTgt.MoveNext())
                         {
@@ -6764,7 +6763,7 @@ namespace BDArmory.Control
                                 {
                                     launchAuthorized = false;
                                 }
-
+                                if (engagedTargets > multiMissileTgtNum) launchAuthorized = false; //already fired on max allowed targets
                                 // Check that launch is possible before entering GuardMissileRoutine, or that missile is on a turret
                                 MissileLauncher ml = CurrentMissile as MissileLauncher;
                                 launchAuthorized = launchAuthorized && (GetLaunchAuthorization(guardTarget, this, CurrentMissile) || (ml is not null && (ml.missileTurret || (ml.multiLauncher && ml.multiLauncher.turret))));
