@@ -345,7 +345,7 @@ namespace BDArmory.Control
         public List<TargetInfo> PDMslTgts; //pointDefense/APS targets list
         public List<PooledBullet> PDBulletTgts; //pointDefense/APS targets list
         public List<PooledRocket> PDRktTgts; //pointDefense/APS targets list
-        public List<MissileTurret> MslTurrets; //list of turrets holding interceptor missiles
+        public List<MissileTurret> MslTurrets; //list of turrets holding interceptor missiels
         TargetInfo overrideTarget; //used for setting target next guard scan for stuff like assisting teammates
         float overrideTimer;
 
@@ -6376,7 +6376,7 @@ namespace BDArmory.Control
         }
 
         /// <summary>
-        /// Check to see if an incoming missile is visible based on guardRange and missile state
+        /// Check to see if an incoming missile is visible bsed on guardRange and missile state
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
@@ -7290,7 +7290,7 @@ namespace BDArmory.Control
                 return;
             }
             /*
-            if (guardMode)  //missile interception stuff, commented out for Sidestrafe's boat comp; mostly working as intended, needs final debugging pass.
+            if (guardMode)
             {
                 using (List<IBDWeapon>.Enumerator weapon = weaponTypesMissile.GetEnumerator()) //have guardMode requirement?
                     while (weapon.MoveNext())
