@@ -155,7 +155,7 @@ namespace BDArmory.Weapons.Missiles
                 if (!isClusterMissile) //Clustermissiles replace/generate MMR on launch, other missiles should have it in the .cfg
                     Debug.LogError($"[BDArmory.MultiMissileLauncher] no ModuleMissileRearm on {part.name}. Please fix your .cfg");
             }
-            //missileSpawner.ammoCount = launchTransforms.Length; //FIXME: remember to remove this for standard builds
+            if (BDArmorySettings.LIMITED_ORDINANCE) missileSpawner.ammoCount = launchTransforms.Length; //FIXME: remember to remove this for standard builds
             missileSpawner.isMultiLauncher = isMultiLauncher;
             if (missileLauncher != null) //deal with race condition/'MissileLauncher' loading before 'MultiMissileLauncher' and 'ModuleMissilerearm' by moving all relevant flags and values to a single location
             {
