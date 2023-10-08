@@ -3628,7 +3628,7 @@ namespace BDArmory.Weapons
                         // It suffers the same accuracy noise as the analytic solution.
                         // However, there seems to be some inconsistencies between the analytic and numeric solutions when the CPA distance is non-zero (t<0 or t>max) or when the solver switches between roots of the cubic.
                         // Also, the numeric solution is giving strangely discrete values initially.
-                        // For situation 3, the solution is not quite right, but is fairly good for high accelerations when within 15-25km.
+                        // For situation 3, the solution is not quite right, but is fairly good for high accelerations when within 5-15km.
 
                         var supported = targetIsLandedOrSplashed || targetAcceleration.sqrMagnitude == 0; // Assume non-accelerating targets are "supported".
 
@@ -4115,8 +4115,7 @@ namespace BDArmory.Weapons
                 }
 
                 // Check whether we've passed through the CPA. This has to behave similarly to AIUtils.TimeToCPA.
-                // FIXME It should support the different CPATypes, but that can be left for later as we only need Earliest for now.
-                // FIXME This still seems to be exiting early in some cases when the relative velocity is outwards, but the relative acceleration is inwards. E.g., giving ~21s instead of ~64s from the analytic solution.
+                // TODO It should support the different CPATypes, but that can be left for later as we only need Earliest for now.
                 if (!closing)
                 {
                     closing = Vector3.Dot(targetPosition - position, targetVelocity - velocity) < 0; // Check if we've started closing.
