@@ -3390,7 +3390,7 @@ namespace BDArmory.Weapons
         #endregion Audio
 
         #region Targeting
-        [KSPField(isPersistant = false, guiActiveEditor = true, guiActive = true, guiName = "Use Analytic Solution"), UI_Toggle(enabledText = "On", disabledText = "Off")] bool useAnalyticAiming = false; // FIXME Manual toggle for performing the long-range correction for debugging purposes.
+        // [KSPField(isPersistant = false, guiActiveEditor = true, guiActive = true, guiName = "Use Analytic Solution"), UI_Toggle(enabledText = "On", disabledText = "Off")] bool useAnalyticAiming = false; // FIXME Manual toggle for performing the long-range correction for debugging purposes.
         [KSPField(isPersistant = false, guiActiveEditor = true, guiActive = true, guiName = "Numeric Integrator"), UI_Toggle(enabledText = "Leap-frog", disabledText = "Semi-implicit Euler")] bool useLeapFrogForTarget = true; // FIXME Which numeric integrator to use. SI-Euler seems significantly off, maybe an incorrect initial value or implementation error?
 
         void Aim()
@@ -3581,7 +3581,7 @@ namespace BDArmory.Weapons
                     targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, timeToCPA);
                     bulletAcceleration = bulletDrop ? (Vector3)FlightGlobals.getGeeForceAtPosition((bulletInitialPosition + targetPredictedPosition) / 2f) : Vector3.zero; // Average acceleration over the bullet's path. Drag is ignored.
                     var offTarget = Vector3.Dot(firingDirection, fireTransforms[0].forward) < 0.985f; // More than 10° off-target. This should cover most cases, even when not using the analytic solution.
-                    // bool useAnalyticAiming = timeToCPA * bulletAcceleration.magnitude < 100f; // TODO This condition could be improved to better cover all situations where the analytic solution isn't sufficiently accurate.
+                    bool useAnalyticAiming = timeToCPA * bulletAcceleration.magnitude < 100f; // TODO This condition could be improved to better cover all situations where the analytic solution isn't sufficiently accurate.
                     if (offTarget || useAnalyticAiming) // The gun is significantly off-target or we want the optimum analytic solution => perform a loop based on an "optimal" firing direction.
                     {
                         // For artillery (if it ever gets implemented), TimeToCPA needs to use the furthest time, not the closest (AIUtils.CPAType).
