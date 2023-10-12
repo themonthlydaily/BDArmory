@@ -2431,7 +2431,6 @@ namespace BDArmory.Control
             float bombAttemptDuration = Mathf.Max(targetScanInterval, 12f);
             float radius = CurrentMissile.GetBlastRadius() * Mathf.Min((1 + (maxMissilesOnTarget / 2f)), 1.5f);
             MissileLauncher cm = CurrentMissile as MissileLauncher;
-            if (cm.multiLauncher && cm.multiLauncher.salvoSize > 1) radius += (((cm.multiLauncher.salvoSize / 4) * (60 / cm.multiLauncher.rippleRPM)) + cm.multiLauncher.deploySpeed) * (float)vessel.horizontalSrfSpeed; //add an offset for bomblet dispensers, etc, to have them start deploying before target to carpet bomb
             radius = Mathf.Min(radius, 150f);
             if ((CurrentMissile.TargetingMode == MissileBase.TargetingModes.Gps && (designatedGPSInfo.worldPos - guardTarget.CoM).sqrMagnitude > CurrentMissile.GetBlastRadius() * CurrentMissile.GetBlastRadius())
                 || (CurrentMissile.TargetingMode == MissileBase.TargetingModes.Laser && (!laserPointDetected || (foundCam && (foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude > CurrentMissile.GetBlastRadius() * CurrentMissile.GetBlastRadius()))))
@@ -7194,7 +7193,7 @@ namespace BDArmory.Control
             MslTurrets.Clear();
             missileTarget = null;
             int APScount = 0;
-            int missileCount = 0;
+            //int missileCount = 0;
             TargetInfo interceptiontarget = null;
             Vector3 closestTarget = Vector3.zero;
             using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
@@ -7284,7 +7283,8 @@ namespace BDArmory.Control
                 }
             }
             */
-            if (APScount + missileCount <= 0)
+            //if (APScount + missileCount <= 0)
+            if (APScount <= 0)
             {
                 PDScanTimer = -100;
                 return;
@@ -7916,6 +7916,8 @@ namespace BDArmory.Control
             MissileLauncher launcher = ml as MissileLauncher;
             if (launcher != null)
             {
+                if (launcher.multiLauncher && launcher.multiLauncher.salvoSize > 1) 
+                    currPos += ((((launcher.multiLauncher.salvoSize / 2) * (60 / launcher.multiLauncher.rippleRPM)) + launcher.multiLauncher.deploySpeed) * vessel.Velocity().magnitude) * vessel.Velocity().normalized; //add an offset for bomblet dispensers, etc, to have them start deploying before target to carpet bomb
                 simVelocity += launcher.decoupleSpeed *
                                (launcher.decoupleForward
                                    ? launcher.MissileReferenceTransform.forward
@@ -8045,16 +8047,16 @@ namespace BDArmory.Control
             }
         }
 
-        // Check GPS target is within 10m for stationary targets, and a scaling distance based on target speed for targets moving faster than ~175 m/s
+        // Check GPS target is within 20m for stationary targets, and a scaling distance based on target speed for targets moving faster than ~175 m/s
         bool GPSDistanceCheck()
         {
-            return (((guardTarget.CoM - VectorUtils.GetWorldSurfacePostion(designatedGPSCoords, vessel.mainBody)).sqrMagnitude < Mathf.Max(100f, 0.004f * (float)guardTarget.srfSpeed * (float)guardTarget.srfSpeed)));
+            return (((guardTarget.CoM - VectorUtils.GetWorldSurfacePostion(designatedGPSCoords, vessel.mainBody)).sqrMagnitude < Mathf.Max(400, 0.013f * (float)guardTarget.srfSpeed * (float)guardTarget.srfSpeed)));
         }
 
-        // Check antiRad target is within 20m for stationary targets, and a scaling distance based on target speed for targets moving faster than ~60 m/s
+        // Check antiRad target is within 20m for stationary targets, and a scaling distance based on target speed for targets moving faster than ~175 m/s
         bool AntiRadDistanceCheck()
         {
-            return (VectorUtils.WorldPositionToGeoCoords(antiRadiationTarget, vessel.mainBody) - VectorUtils.WorldPositionToGeoCoords(guardTarget.CoM, vessel.mainBody)).sqrMagnitude < Mathf.Max(400f, (float)guardTarget.srfSpeed * 3.5f);
+            return (VectorUtils.WorldPositionToGeoCoords(antiRadiationTarget, vessel.mainBody) - VectorUtils.WorldPositionToGeoCoords(guardTarget.CoM, vessel.mainBody)).sqrMagnitude < Mathf.Max(400, 0.013f * (float)guardTarget.srfSpeed * (float)guardTarget.srfSpeed);
         }
 
         bool AltitudeTrigger()

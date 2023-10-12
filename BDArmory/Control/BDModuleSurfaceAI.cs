@@ -694,7 +694,7 @@ namespace BDArmory.Control
                                     {
                                         if (weaponManager.currentTarget.isSplashed || ((weaponManager.currentTarget.isFlying || weaponManager.currentTarget.Vessel.situation == Vessel.Situations.LANDED) && weaponManager.currentGun.turret))
                                         {
-                                            if (Vector3.Distance(vessel.CoM, weaponManager.currentTarget.Vessel.CoM) > weaponManager.selectedWeapon.GetEngageRange())
+                                            if ((vessel.CoM - weaponManager.currentTarget.Vessel.CoM).sqrMagnitude > weaponManager.selectedWeapon.GetEngageRange().Sqr())
                                                 targetAlt = -10; //come to periscope depth in preparation for surface attack when in range
                                             else
                                                 targetAlt = 1;//in range, surface to engage with deck guns
@@ -704,7 +704,7 @@ namespace BDArmory.Control
                                     {
                                         if (weaponManager.currentTarget.Vessel.situation == Vessel.Situations.LANDED && weaponManager.currentGun.turret) //surface for shooting land targets with turrets
                                         {
-                                            if (Vector3.Distance(vessel.CoM, weaponManager.currentTarget.Vessel.CoM) > weaponManager.selectedWeapon.GetEngageRange())
+                                            if ((vessel.CoM - weaponManager.currentTarget.Vessel.CoM).sqrMagnitude > weaponManager.selectedWeapon.GetEngageRange().Sqr())
                                                 targetAlt = -10; //come to periscope depth in preparation for surface attack when in range
                                             else
                                                 targetAlt = 1;//in range, surface to engage with deck guns
@@ -713,7 +713,7 @@ namespace BDArmory.Control
                                         {
                                             if (!doExtend)
                                             {
-                                                if (weaponManager.currentTarget.Vessel.altitude < CombatAltitude / 4 && Vector3.Distance(vessel.CoM, weaponManager.currentTarget.Vessel.CoM) > 200)
+                                                if (weaponManager.currentTarget.Vessel.altitude < CombatAltitude / 4 && (vessel.CoM - weaponManager.currentTarget.Vessel.CoM).sqrMagnitude > 40000) //200m
                                                 {
                                                     targetAlt = (float)weaponManager.currentTarget.Vessel.altitude; //engaging enemy sub or ship, but break off when too close to target or surface
                                                 }
@@ -722,7 +722,7 @@ namespace BDArmory.Control
                                             }
                                             else
                                             {
-                                                if (vessel.altitude < (CombatAltitude * .66f) || Vector3.Distance(vessel.CoM, weaponManager.currentTarget.Vessel.CoM) > 1000) doExtend = false;
+                                                if (vessel.altitude < (CombatAltitude * .66f) || (vessel.CoM - weaponManager.currentTarget.Vessel.CoM).sqrMagnitude > 1000000) doExtend = false;
                                             }
                                         }
                                         //else remain at combat depth and engage with turrets.
@@ -734,7 +734,7 @@ namespace BDArmory.Control
                                 {
                                     if (weaponManager.currentTarget.Vessel.situation == Vessel.Situations.LANDED || weaponManager.currentTarget.isFlying && weaponManager.currentGun.turret)
                                     {
-                                        if (Vector3.Distance(vessel.CoM, weaponManager.currentTarget.Vessel.CoM) > weaponManager.selectedWeapon.GetEngageRange())
+                                        if ((vessel.CoM - weaponManager.currentTarget.Vessel.CoM).sqrMagnitude > weaponManager.selectedWeapon.GetEngageRange().Sqr())
                                             targetAlt = -10; //come to periscope depth in preparation for surface attack when in range
                                         else
                                             targetAlt = 1; //surface to engage with turrets
@@ -743,7 +743,7 @@ namespace BDArmory.Control
                                     {
                                         if (!doExtend)
                                         {
-                                            if (weaponManager.currentTarget.Vessel.altitude < CombatAltitude / 4 && Vector3.Distance(vessel.CoM, weaponManager.currentTarget.Vessel.CoM) > 200)
+                                            if (weaponManager.currentTarget.Vessel.altitude < CombatAltitude / 4 && (vessel.CoM - weaponManager.currentTarget.Vessel.CoM).sqrMagnitude > 40000)
                                             {
                                                 targetAlt = (float)weaponManager.currentTarget.Vessel.altitude; //engaging enemy sub or ship, but break off when too close
                                             }
@@ -752,7 +752,7 @@ namespace BDArmory.Control
                                         }
                                         else
                                         {
-                                            if (vessel.altitude < (CombatAltitude * .66f) || Vector3.Distance(vessel.CoM, weaponManager.currentTarget.Vessel.CoM) > 1000) doExtend = false;
+                                            if (vessel.altitude < (CombatAltitude * .66f) || (vessel.CoM - weaponManager.currentTarget.Vessel.CoM).sqrMagnitude > 1000000) doExtend = false;
                                         }
                                     }
                                     break;

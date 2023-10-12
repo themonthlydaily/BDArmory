@@ -21,14 +21,15 @@
 	- Fix Dual-mode APS turrets getting slaved to radar when firing on standard targets and not subsequently engaging incoming missile targets.
 	- Fix APS occasionally getting stuck on phantom targets.
 	- Missiles:
-		-Fix missiles not firing on surface ships.
-		-Missiles now properly receive explosive damage from point defense HE rounds/interceptor missiles in paintball mode.
-		-Fix missiles occasionally getting stuck when fired from VLS.
-		-Fix Missiles failing LOS check due to kerbins curvature for ship vs ship engagements.
-		-Fix for GPS missiles fired from multiMissileLaunchers losing lock when fired.
-		-Fix guidance type = none missiles detonating 5km from launcher.
-		-Fix NRe from manually firing GPS missiles from a multimissilelauncher.
-		-AIs attempting to dumbfire multimissileLaunchers will now take missile launch vector into account instead of vessel prograde.
+		- Fix missiles not firing on surface ships.
+		- Missiles now properly receive explosive damage from point defense HE rounds/interceptor missiles in paintball mode.
+		- Fix missiles occasionally getting stuck when fired from VLS.
+		- Fix Missiles failing LOS check due to kerbins curvature for ship vs ship engagements.
+		- Fix for GPS missiles fired from multiMissileLaunchers losing lock when fired.
+		- Fix guidance type = none missiles detonating 5km from launcher.
+		- Fix NRe from manually firing GPS missiles from a multimissilelauncher.
+		- AIs attempting to dumbfire multimissileLaunchers will now take missile launch vector into account instead of vessel prograde.
+		- Adds new Settings option 'LIMITED_ORDINANCE' to clamp multimissilelaunchers and reloadable rails to a single salvo's worth of ammo. 
 
 v1.6.6.0
 IMPROVEMENTS / FIXES

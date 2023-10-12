@@ -259,7 +259,7 @@ namespace BDArmory.CounterMeasure
                 case "bubble":
                     cmType = CountermeasureTypes.Bubbles;
                     cmSound = SoundUtils.GetAudioClip("BDArmory/Sounds/smokeEject");
-                    resourceName = "CMSBT";
+                    resourceName = "CMBubbleCurtain";
                     if (!bubblePool)
                     {
                         SetupBubblePool();
