@@ -2119,7 +2119,7 @@ namespace BDArmory.Control
 
             // If they're also in ramming speed and trying to ram us, then just aim straight for them until the last moment.
             var targetAI = VesselModuleRegistry.GetBDModulePilotAI(v);
-            if (timeToCPA > 2f && targetAI != null && targetAI.ramming)
+            if (timeToCPA > 1f && targetAI != null && targetAI.ramming)
             {
                 var targetWM = VesselModuleRegistry.GetMissileFire(v);
                 if (targetWM.currentTarget != null && targetWM.currentTarget.Vessel == vessel && Vector3.Dot(vessel.srf_vel_direction, v.srf_vel_direction) < -0.866f) // They're trying to ram us and are mostly head-on! Two can play at that game!
