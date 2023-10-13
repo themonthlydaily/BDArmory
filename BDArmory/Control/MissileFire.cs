@@ -1553,6 +1553,10 @@ namespace BDArmory.Control
                         GUIUtils.DrawLineBetweenWorldPositions(part.transform.position,
                             incomingMissileVessel.transform.position, 5, Color.cyan);
                     }
+                    if (guardTarget != null)
+                        GUIUtils.DrawLineBetweenWorldPositions(guardTarget.LandedOrSplashed? guardTarget.CoM + ((guardTarget.vesselSize.y / 2) * VectorUtils.GetUpDirection(transform.position)) : guardTarget.CoM,
+                        ((guardTarget.transform.position - transform.position).sqrMagnitude > 2250000f ?
+                        transform.position + (SurfaceVisionOffset.Evaluate((guardTarget.CoM - transform.position).magnitude) * VectorUtils.GetUpDirection(transform.position)) : transform.position), 3, Color.yellow);
                 }
 
                 if (showBombAimer)
@@ -6297,7 +6301,10 @@ namespace BDArmory.Control
         #endregion Smart Targeting
         public float detectedTargetTimeout = 0;
         public bool staleTarget = false;
-        public bool CanSeeTarget(TargetInfo target, bool checkForstaleTarget = true)
+
+        FloatCurve SurfaceVisionOffset = null;
+
+        public bool CanSeeTarget(TargetInfo target, bool checkForNonVisualDetection = true, bool checkForstaleTarget = true)
         {
             // fix cheating: we can see a target IF we either have a visual on it, OR it has been detected on radar/sonar
             // but to prevent AI from stopping an engagement just because a target dropped behind a small hill 5 seconds ago, clamp the timeout to 30 seconds
@@ -6308,6 +6315,19 @@ namespace BDArmory.Control
             //extend to allow teamamtes provide vision? Could count scouted tarets as stale to prevent precise targeting, but at least let AI know something is out there
 
             // can we get a visual sight of the target?
+
+            if (SurfaceVisionOffset == null)
+            {
+                SurfaceVisionOffset = new FloatCurve();
+                SurfaceVisionOffset.Add(1500, 1.88f);
+                SurfaceVisionOffset.Add(2000, 3.35f);
+                SurfaceVisionOffset.Add(3000, 7.5f);
+                SurfaceVisionOffset.Add(4000, 13.35f);
+                SurfaceVisionOffset.Add(5000, 20.85f);
+                SurfaceVisionOffset.Add(6000, 30f);
+                SurfaceVisionOffset.Add(8000, 53.4f);
+                SurfaceVisionOffset.Add(10000, 83.4f);
+            }
             if (target == null || target.Vessel == null) return false;
             VesselCloakInfo vesselcamo = target.Vessel.gameObject.GetComponent<VesselCloakInfo>();
             float viewModifier = 1;
@@ -6322,43 +6342,68 @@ namespace BDArmory.Control
             if ((target.Vessel.transform.position - transform.position).sqrMagnitude < (visDistance * visDistance) &&
             Vector3.Angle(-vessel.ReferenceTransform.forward, target.Vessel.transform.position - vessel.CoM) < guardAngle / 2)
             {
-                if (RadarUtils.TerrainCheck(target.Vessel.transform.position, transform.position)) //vessel behind terrain
+                if ((target.Vessel.LandedOrSplashed && vessel.LandedOrSplashed) && ((target.Vessel.transform.position - transform.position).sqrMagnitude > 2250000f)) //land Vee vs land Vee will have a max of ~1.8km viewDist, due to curvature of Kerbin
                 {
-                    if (target.detectedTime.TryGetValue(Team, out float detectedTime) && Time.time - detectedTime < Mathf.Max(30, targetScanInterval))
+                    Vector3 targetDirection = (target.Vessel.transform.position - transform.position).ProjectOnPlanePreNormalized(VectorUtils.GetUpDirection(transform.position));
+                    if (RadarUtils.TerrainCheck(target.Vessel.CoM + ((target.Vessel.vesselSize.y / 2) * VectorUtils.GetUpDirection(transform.position)), vessel.CoM + (SurfaceVisionOffset.Evaluate((target.Vessel.transform.position - transform.position).magnitude) * VectorUtils.GetUpDirection(transform.position)))
+                        || RadarUtils.TerrainCheck(targetDirection, vessel.CoM)) ////target more than 1.5km away, do a paired raycast looking straight, and a raycast using an offset to adjust the horizonpoint to the target, should catch majority of intervening terrain. Clamps to 10km; beyond that, spotter (air)craft will be needed to share vision
                     {
-                        //Debug.Log($"[BDArmory.MissileFire]: {target.name} last seen {Time.time - detectedTime} seconds ago. Recalling last known position");
-                        detectedTargetTimeout = Time.time - detectedTime;
+                        if (target.detectedTime.TryGetValue(Team, out float detectedTime) && Time.time - detectedTime < Mathf.Max(30, targetScanInterval)) //intervening terrain, has an ally seen the target?
+                        {
+                            //Debug.Log($"[BDArmory.MissileFire]: {target.name} last seen {Time.time - detectedTime} seconds ago. Recalling last known position");
+                            detectedTargetTimeout = Time.time - detectedTime;
+                            staleTarget = true;
+                            return true;
+                        }
                         staleTarget = true;
-                        return true;
+                        return false;
                     }
-                    staleTarget = true;
-                    return false;
                 }
-                detectedTargetTimeout = 0;
-                staleTarget = false;
-                return true;
-            }
-            //target beyond visual range. Detected by radar/IRST?
-            target.detected.TryGetValue(Team, out bool detected);//see if the target is actually within radar sight right now
-            if (detected)
-            {
-                detectedTargetTimeout = 0;
-                staleTarget = false;
-                return true;
-            }
-            //carrying antirads and picking up RWR pings?
-            if (rwr && rwr.rwrEnabled && rwr.displayRWR && hasAntiRadiationOrdinance)//see if RWR is picking up a ping from unseen radar source and craft has HARMs
-            {
-                for (int i = 0; i < rwr.pingsData.Length; i++) //using copy of antirad targets due to CanSee running before weapon selection
+                else//target/vessel is flying, or ground Vees are within 1.5km of each other, standard LoS checks
                 {
-                    if (rwr.pingsData[i].exists && antiradTargets.Contains(rwr.pingsData[i].signalStrength) && (rwr.pingWorldPositions[i] - target.position).sqrMagnitude < 20 * 20)
+                    if (RadarUtils.TerrainCheck((vessel.LandedOrSplashed ? target.Vessel.CoM + (VectorUtils.GetUpDirection(transform.position) * (target.Vessel.vesselSize.y / 2)) : target.Vessel.CoM), transform.position))
                     {
-                        detectedTargetTimeout = 0;
-                        staleTarget = false;
-                        return true;
+                        if (target.detectedTime.TryGetValue(Team, out float detectedTime) && Time.time - detectedTime < Mathf.Max(30, targetScanInterval))
+                        {
+                            //Debug.Log($"[BDArmory.MissileFire]: {target.name} last seen {Time.time - detectedTime} seconds ago. Recalling last known position");
+                            detectedTargetTimeout = Time.time - detectedTime;
+                            staleTarget = true;
+                            return true;
+                        }
+                        staleTarget = true;
+                        return false;
+                    }
+                }
+
+                detectedTargetTimeout = 0;
+                staleTarget = false;
+                return true;
+            }
+            if (checkForNonVisualDetection)
+            {
+                //target beyond visual range. Detected by radar/IRST?
+                target.detected.TryGetValue(Team, out bool detected);//see if the target is actually within radar sight right now
+                if (detected)
+                {
+                    detectedTargetTimeout = 0;
+                    staleTarget = false;
+                    return true;
+                }
+                //carrying antirads and picking up RWR pings?
+                if (rwr && rwr.rwrEnabled && rwr.displayRWR && hasAntiRadiationOrdinance)//see if RWR is picking up a ping from unseen radar source and craft has HARMs
+                {
+                    for (int i = 0; i < rwr.pingsData.Length; i++) //using copy of antirad targets due to CanSee running before weapon selection
+                    {
+                        if (rwr.pingsData[i].exists && antiradTargets.Contains(rwr.pingsData[i].signalStrength) && (rwr.pingWorldPositions[i] - target.position).sqrMagnitude < 20 * 20)
+                        {
+                            detectedTargetTimeout = 0;
+                            staleTarget = false;
+                            return true;
+                        }
                     }
                 }
             }
+
             //can't see target, but did we see it recently?
             if (checkForstaleTarget) //merely look to see if a target was last detected within 30s
             {
@@ -7204,10 +7249,6 @@ namespace BDArmory.Control
                     {
                         APScount++;
                         if (weapon.Current.ammoCount <= 0 && !BDArmorySettings.INFINITE_AMMO) continue;
-                        weapon.Current.visualTargetVessel = null;
-                        weapon.Current.visualTargetPart = null;
-                        weapon.Current.tgtShell = null;
-                        weapon.Current.tgtRocket = null;
                         if (weapon.Current.eAPSType == ModuleWeapon.APSTypes.Missile || weapon.Current.eAPSType == ModuleWeapon.APSTypes.Omni)
                         {
                             interceptiontarget = BDATargetManager.GetClosestMissileThreat(this);
@@ -7475,8 +7516,10 @@ namespace BDArmory.Control
                         }
                         else
                         {
-                            weapon.Current.visualTargetPart = null;
-                            weapon.Current.visualTargetVessel = null;
+                            if (guardTarget == null)
+                            {
+                                weapon.Current.visualTargetPart = null;
+                            }
                             weapon.Current.tgtShell = null;
                             weapon.Current.tgtRocket = null;
                         }
