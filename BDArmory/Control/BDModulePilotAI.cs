@@ -2104,26 +2104,36 @@ namespace BDArmory.Control
             if (BDArmorySettings.DISABLE_RAMMING || !allowRamming || (!allowRammingGroundTargets && v.LandedOrSplashed)) return false; // Override from BDArmory settings and local config.
             if (v == null) return false; // We don't have a target.
             if (Vector3.Dot(vessel.srf_vel_direction, v.srf_vel_direction) * (float)v.srfSpeed / (float)vessel.srfSpeed > 0.95f) return false; // We're not approaching them fast enough.
-            Vector3 relVelocity = v.Velocity() - vessel.Velocity();
-            Vector3 relPosition = v.transform.position - vessel.transform.position;
-            Vector3 relAcceleration = v.acceleration - vessel.acceleration;
             float timeToCPA = vessel.TimeToCPA(v, 16f);
-
-            // Let's try to ram someone!
-            if (!ramming)
-                ramming = true;
-            SetStatus("Ramming speed!");
-
-            // Ease in velocity from 16s to 8s, ease in acceleration from 8s to 2s using the logistic function to give smooth adjustments to target point.
-            float easeAccel = Mathf.Clamp01(1.1f / (1f + Mathf.Exp((timeToCPA - 5f))) - 0.05f);
-            float easeVel = Mathf.Clamp01(2f - timeToCPA / 8f);
-            Vector3 predictedPosition = AIUtils.PredictPosition(v.transform.position, v.Velocity() * easeVel, v.acceleration * easeAccel, timeToCPA + TimeWarp.fixedDeltaTime); // Compensate for the off-by-one frame issue.
 
             // Set steer mode to manoeuvering for less than 8s left, we're trying to collide, not aim.
             if (timeToCPA < 8f)
                 steerMode = SteerModes.Manoeuvering;
             else
                 steerMode = SteerModes.NormalFlight;
+
+            // Let's try to ram someone!
+            if (!ramming)
+                ramming = true;
+            SetStatus("Ramming speed!");
+
+            // If they're also in ramming speed and trying to ram us, then just aim straight for them until the last moment.
+            var targetAI = VesselModuleRegistry.GetBDModulePilotAI(v);
+            if (timeToCPA > 1f && targetAI != null && targetAI.ramming)
+            {
+                var targetWM = VesselModuleRegistry.GetMissileFire(v);
+                if (targetWM.currentTarget != null && targetWM.currentTarget.Vessel == vessel && Vector3.Dot(vessel.srf_vel_direction, v.srf_vel_direction) < -0.866f) // They're trying to ram us and are mostly head-on! Two can play at that game!
+                {
+                    FlyToPosition(s, AIUtils.PredictPosition(v.transform.position, v.Velocity(), v.acceleration, TimeWarp.fixedDeltaTime)); // Ultimate Chicken!!!
+                    AdjustThrottle(maxSpeed, false, true);
+                    return true;
+                }
+            }
+
+            // Ease in velocity from 16s to 8s, ease in acceleration from 8s to 2s using the logistic function to give smooth adjustments to target point.
+            float easeAccel = Mathf.Clamp01(1.1f / (1f + Mathf.Exp(timeToCPA - 5f)) - 0.05f);
+            float easeVel = Mathf.Clamp01(2f - timeToCPA / 8f);
+            Vector3 predictedPosition = AIUtils.PredictPosition(v.transform.position, v.Velocity() * easeVel, v.acceleration * easeAccel, timeToCPA + TimeWarp.fixedDeltaTime); // Compensate for the off-by-one frame issue.
 
             if (controlSurfaceLag > 0)
                 predictedPosition += -1 * controlSurfaceLag * controlSurfaceLag * (timeToCPA / controlSurfaceLag - 1f + Mathf.Exp(-timeToCPA / controlSurfaceLag)) * vessel.acceleration * easeAccel; // Compensation for control surface lag.
@@ -2198,7 +2208,7 @@ namespace BDArmory.Control
                                 steerMode = SteerModes.Aiming; //steer to aim
                                 if (missile.GetWeaponClass() == WeaponClasses.SLW)
                                 {
-                                     target = MissileGuidance.GetAirToAirFireSolution(missile, v) + (vessel.Velocity() * 2.5f); //adding 2.5 to take ~2.5sec (if dropped from 50m) drop time into account where torps will still be moving vessel speed.
+                                    target = MissileGuidance.GetAirToAirFireSolution(missile, v) + (vessel.Velocity() * 2.5f); //adding 2.5 to take ~2.5sec (if dropped from 50m) drop time into account where torps will still be moving vessel speed.
                                 }
                                 else
                                 {
@@ -2217,7 +2227,7 @@ namespace BDArmory.Control
                             }
                             else
                             {
-                                target = target + (bombingAlt * upDirection); 
+                                target = target + (bombingAlt * upDirection);
                             }
                             //dive bomb routine for when starting at high alt?
                         }
@@ -2779,7 +2789,7 @@ namespace BDArmory.Control
                     extendingReason = "Surface target";
                     lastExtendTargetPosition = targetVessel.transform.position;
                     extendTarget = targetVessel;
-                    extendParametersSet = true;                    
+                    extendParametersSet = true;
                     if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: {Time.time:F3} {vessel.vesselName} is extending due to a ground target.");
                     return true;
                 }
