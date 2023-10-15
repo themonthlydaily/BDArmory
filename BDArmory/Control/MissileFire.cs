@@ -7226,7 +7226,7 @@ namespace BDArmory.Control
                     weapon.Current.autoFireLength = (fireBurstLength < 0.01f) ? targetScanInterval / 2f : fireBurstLength;
                 }
         }
-        int MissileID = 0;
+        //int MissileID = 0;
         public void PointDefenseTurretFiring()
         {
             int TurretID = 0;
