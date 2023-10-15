@@ -717,7 +717,7 @@ namespace BDArmory.Weapons.Missiles
                 }
                 var missileCOL = missileSpawner.SpawnedMissile.collider;
                 if (missileCOL) missileCOL.enabled = false;
-                missileSpawner.SpawnedMissile.rb.velocity = vessel.Velocity(); //inherit parent velocity
+                //missileSpawner.SpawnedMissile.rb.velocity = vessel.Velocity(); //inherit parent velocity
                 MissileLauncher ml = missileSpawner.SpawnedMissile.FindModuleImplementing<MissileLauncher>();
                 yield return new WaitUntilFixed(() => ml is null || ml.SetupComplete); // Wait until missile fully initialized.
                 if (ml is null || ml.gameObject is null || !ml.gameObject.activeInHierarchy)
