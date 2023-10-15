@@ -2470,64 +2470,13 @@ namespace BDArmory.Control
         IEnumerator GuardBombRoutine()
         {
             guardFiringMissile = true;
-            bool hasSetCargoBays = false;
             float bombStartTime = Time.time;
             float bombAttemptDuration = Mathf.Max(targetScanInterval, 12f);
-            float radius = CurrentMissile.GetBlastRadius() * Mathf.Min((1 + (maxMissilesOnTarget / 2f)), 1.5f);
+            float radius = CurrentMissile.GetBlastRadius() * Mathf.Min(((maxMissilesOnTarget / 2f)), 1.5f);
             MissileLauncher cm = CurrentMissile as MissileLauncher;
             radius = Mathf.Min(radius, 150f);
-            if ((CurrentMissile.TargetingMode == MissileBase.TargetingModes.Gps && (designatedGPSInfo.worldPos - guardTarget.CoM).sqrMagnitude > CurrentMissile.GetBlastRadius() * CurrentMissile.GetBlastRadius())
-                || (CurrentMissile.TargetingMode == MissileBase.TargetingModes.Laser && (!laserPointDetected || (foundCam && (foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude > CurrentMissile.GetBlastRadius() * CurrentMissile.GetBlastRadius()))))
-            {
-                //check database for target first
-                float twoxsqrRad = 4f * radius * radius;
-                bool foundTargetInDatabase = false;
-                using (List<GPSTargetInfo>.Enumerator gps = BDATargetManager.GPSTargetList(Team).GetEnumerator())
-                    while (gps.MoveNext())
-                    {
-                        if (!((gps.Current.worldPos - guardTarget.CoM).sqrMagnitude < twoxsqrRad)) continue;
-                        designatedGPSInfo = gps.Current;
-                        foundTargetInDatabase = true;
-                        break;
-                    }
-
-                //no target in gps database, acquire via targeting pod
-                if (!foundTargetInDatabase)
-                {
-                    if (targetingPods.Count > 0)
-                    {
-                        using (List<ModuleTargetingCamera>.Enumerator tgp = targetingPods.GetEnumerator())
-                            while (tgp.MoveNext())
-                            {
-                                if (tgp.Current == null) continue;
-                                tgp.Current.EnableCamera();
-                                tgp.Current.CoMLock = true;
-                                yield return StartCoroutine(tgp.Current.PointToPositionRoutine(guardTarget.CoM));
-
-                                if (guardTarget && tgp.Current.groundStabilized && (tgp.Current.targetPointPosition - guardTarget.transform.position).sqrMagnitude < CurrentMissile.GetBlastRadius() * CurrentMissile.GetBlastRadius()) //was tgp.groundtargetposition
-                                {
-                                    radius = 500;
-                                    designatedGPSInfo = new GPSTargetInfo(tgp.Current.bodyRelativeGTP, "Guard Target");
-                                    bombStartTime = Time.time;
-                                }
-                                else//failed to acquire target via tgp, cancel.
-                                {
-                                    tgp.Current.DisableCamera();
-                                    designatedGPSInfo = new GPSTargetInfo();
-                                    guardFiringMissile = false;
-                                    yield break;
-                                }
-
-                            }
-                    }
-                    else //no gps target and no tgp, cancel.
-                    {
-                        guardFiringMissile = false;
-                        yield break;
-                    }
-                }
-            }
-
+            float targetToleranceSqr = Mathf.Max(100, 0.013f * (float)guardTarget.srfSpeed * (float)guardTarget.srfSpeed);
+           
             bool doProxyCheck = true;
 
             float prevDist = 2 * radius;
@@ -2543,11 +2492,68 @@ namespace BDArmory.Control
                     leadTarget = AIUtils.PredictPosition(guardTarget, timeToCPA);//lead moving ground target to properly line up bombing run; bombs fire solution already plotted in missileFire, torps more or less hit top speed instantly, so simplified fire solution can be used
                 }
                 float targetDist = Vector3.Distance(bombAimerPosition, leadTarget);
-                if (targetDist < (radius * 20f) && !hasSetCargoBays)
+                if (targetDist < (radius * 20f))
                 {
-                    SetCargoBays();
-                    hasSetCargoBays = true;
+                    if (SetCargoBays())
+                    yield return new WaitForSecondsFixed(2f);
                 }
+                if ((CurrentMissile.TargetingMode == MissileBase.TargetingModes.Gps && (designatedGPSInfo.worldPos - guardTarget.CoM).sqrMagnitude > targetToleranceSqr) //Was blastRadius, but these are precision guided munitions. Let's use a little precision here
+               || (CurrentMissile.TargetingMode == MissileBase.TargetingModes.Laser && (!laserPointDetected || (foundCam && (foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude > targetToleranceSqr))))
+                {
+                    //check database for target first
+                    float twoxsqrRad = 4f * radius * radius;
+                    bool foundTargetInDatabase = false;
+                    using (List<GPSTargetInfo>.Enumerator gps = BDATargetManager.GPSTargetList(Team).GetEnumerator())
+                        while (gps.MoveNext())
+                        {
+                            if (!((gps.Current.worldPos - guardTarget.CoM).sqrMagnitude < twoxsqrRad)) continue;
+                            designatedGPSInfo = gps.Current;
+                            foundTargetInDatabase = true;
+                            break;
+                        }
+
+                    //no target in gps database, acquire via targeting pod
+                    if (!foundTargetInDatabase)
+                    {
+                        if (targetingPods.Count > 0)
+                        {
+                            using (List<ModuleTargetingCamera>.Enumerator tgp = targetingPods.GetEnumerator())
+                                while (tgp.MoveNext())
+                                {
+                                    if (tgp.Current == null) continue;
+                                    tgp.Current.EnableCamera();
+                                    tgp.Current.CoMLock = true;
+                                    yield return StartCoroutine(tgp.Current.PointToPositionRoutine(guardTarget.CoM));
+                                    break;
+                                }
+                        }
+                        else //no gps target and no tgp, cancel.
+                        {
+                            guardFiringMissile = false;
+                            yield break;
+                        }
+                        float attemptStartTime = Time.time;
+                        float attemptDuration = targetScanInterval * 0.75f;
+                        while (Time.time - attemptStartTime < attemptDuration && (!laserPointDetected || (foundCam && (foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude > targetToleranceSqr)))
+                        {
+                            yield return new WaitForFixedUpdate();
+                        }
+                        if (guardTarget && (foundCam && (foundCam.targetPointPosition - guardTarget.transform.position).sqrMagnitude < targetToleranceSqr)) //was tgp.groundtargetposition
+                        {
+                            radius = 500;
+                            designatedGPSInfo = new GPSTargetInfo(foundCam.bodyRelativeGTP, "Guard Target");
+                            bombStartTime = Time.time;
+                        }
+                        else//failed to acquire target via tgp, cancel.
+                        {
+                            foundCam.DisableCamera();
+                            designatedGPSInfo = new GPSTargetInfo();
+                            guardFiringMissile = false;
+                            yield break;
+                        }
+                    }
+                }
+
                 if (targetDist > radius
                     || Vector3.Dot(VectorUtils.GetUpDirection(vessel.CoM), vessel.transform.forward) > 0) // roll check
                 {
