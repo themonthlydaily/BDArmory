@@ -44,6 +44,8 @@ namespace BDArmory.UI
         [BDAWindowSettingsField] public static Rect WindowRectRadar;
         [BDAWindowSettingsField] public static Rect WindowRectRwr;
         [BDAWindowSettingsField] public static Rect WindowRectVesselSwitcher;
+        [BDAWindowSettingsField] static Rect _WindowRectVesselSwitcherUIHidden;
+        [BDAWindowSettingsField] static Rect _WindowRectVesselSwitcherUIVisible;
         [BDAWindowSettingsField] public static Rect WindowRectWingCommander = new Rect(45, 75, 240, 800);
         [BDAWindowSettingsField] public static Rect WindowRectTargetingCam;
 
@@ -54,6 +56,8 @@ namespace BDArmory.UI
         [BDAWindowSettingsField] public static Rect WindowRectVesselMoverVesselSelection = new Rect(Screen.width / 2 - 300, Screen.height / 2 - 400, 600, 800);
         [BDAWindowSettingsField] public static Rect WindowRectAI;
         [BDAWindowSettingsField] public static Rect WindowRectScores = new Rect(0, 0, 500, 50);
+        [BDAWindowSettingsField] static Rect _WindowRectScoresUIHidden;
+        [BDAWindowSettingsField] static Rect _WindowRectScoresUIVisible;
 
         //reflection field lists
         static FieldInfo[] iFs;
@@ -151,10 +155,6 @@ namespace BDArmory.UI
         public MissileFire ActiveWeaponManager;
         public bool missileWarning;
         public float missileWarningTime = 0;
-
-        //load range stuff
-        VesselRanges combatVesselRanges = new VesselRanges();
-        float physRangeTimer;
 
         public static List<CMFlare> Flares = new List<CMFlare>();
         public static List<CMDecoy> Decoys = new List<CMDecoy>();
@@ -419,6 +419,11 @@ namespace BDArmory.UI
             BDAWindowSettingsField.Load();
             CheckIfWindowsSettingsAreWithinScreen();
 
+            // Configure UI visibility and window rects
+            GAME_UI_ENABLED = true;
+            if (_WindowRectScoresUIVisible != default) WindowRectScores = _WindowRectScoresUIVisible;
+            if (_WindowRectVesselSwitcherUIVisible != default) WindowRectVesselSwitcher = _WindowRectVesselSwitcherUIVisible;
+
             WindowRectGps.width = WindowRectToolbar.width - 10;
 
             // Get the BDA version. We can do this here since it's this assembly we're interested in, other assemblies have to wait until Start.
@@ -449,29 +454,7 @@ namespace BDArmory.UI
                 CheatOptions.InfinitePropellant = BDArmorySettings.INFINITE_FUEL;
                 CheatOptions.InfiniteElectricity = BDArmorySettings.INFINITE_EC;
             }
-            // // Create settings file if not present.
-            // if (ConfigNode.Load(BDArmorySettings.settingsConfigURL) == null)
-            // {
-            //     var node = new ConfigNode();
-            //     node.AddNode("BDASettings");
-            //     node.Save(BDArmorySettings.settingsConfigURL);
-            // }
 
-            // // window position settings
-            // WindowRectToolbar = new Rect(Screen.width - toolWindowWidth - 40, 150, toolWindowWidth, toolWindowHeight);
-            // // Default, if not in file.
-            // WindowRectGps = new Rect(0, 0, WindowRectToolbar.width - 10, 0);
-            // SetupSettingsSize();
-            // BDAWindowSettingsField.Load();
-            // CheckIfWindowsSettingsAreWithinScreen();
-
-            // WindowRectGps.width = WindowRectToolbar.width - 10;
-
-            // //settings
-            // LoadConfig();
-
-            physRangeTimer = Time.time;
-            GAME_UI_ENABLED = true;
             fireKeyGui = BDInputSettingsFields.WEAP_FIRE_KEY.inputString;
 
             //setup gui styles
@@ -700,10 +683,14 @@ namespace BDArmory.UI
             GUIUtils.RepositionWindow(ref WindowRectSettings);
             GUIUtils.RepositionWindow(ref WindowRectRwr);
             GUIUtils.RepositionWindow(ref WindowRectVesselSwitcher);
+            GUIUtils.RepositionWindow(ref _WindowRectVesselSwitcherUIHidden);
+            GUIUtils.RepositionWindow(ref _WindowRectVesselSwitcherUIVisible);
             GUIUtils.RepositionWindow(ref WindowRectWingCommander);
             GUIUtils.RepositionWindow(ref WindowRectTargetingCam);
             GUIUtils.RepositionWindow(ref WindowRectAI);
             GUIUtils.RepositionWindow(ref WindowRectScores);
+            GUIUtils.RepositionWindow(ref _WindowRectScoresUIHidden);
+            GUIUtils.RepositionWindow(ref _WindowRectScoresUIVisible);
         }
 
         void Update()
@@ -4128,6 +4115,12 @@ namespace BDArmory.UI
             GAME_UI_ENABLED = false;
             BDACompetitionMode.Instance.UpdateGUIElements();
             UpdateCursorState();
+
+            // Switch visible/hidden window rects
+            _WindowRectScoresUIVisible = WindowRectScores;
+            if (_WindowRectScoresUIHidden != default) WindowRectScores = _WindowRectScoresUIHidden;
+            _WindowRectVesselSwitcherUIVisible = WindowRectVesselSwitcher;
+            if (_WindowRectVesselSwitcherUIHidden != default) WindowRectVesselSwitcher = _WindowRectVesselSwitcherUIHidden;
         }
 
         void ShowGameUI()
@@ -4135,12 +4128,28 @@ namespace BDArmory.UI
             GAME_UI_ENABLED = true;
             BDACompetitionMode.Instance.UpdateGUIElements();
             UpdateCursorState();
+
+            // Switch visible/hidden window rects
+            _WindowRectScoresUIHidden = WindowRectScores;
+            if (_WindowRectScoresUIVisible != default) WindowRectScores = _WindowRectScoresUIVisible;
+            _WindowRectVesselSwitcherUIHidden = WindowRectVesselSwitcher;
+            if (_WindowRectVesselSwitcherUIVisible != default) WindowRectVesselSwitcher = _WindowRectVesselSwitcherUIVisible;
         }
 
         internal void OnDestroy()
         {
             if (saveWindowPosition)
             {
+                if (GAME_UI_ENABLED)
+                {
+                    _WindowRectScoresUIVisible = WindowRectScores;
+                    _WindowRectVesselSwitcherUIVisible = WindowRectVesselSwitcher;
+                }
+                else
+                {
+                    _WindowRectScoresUIHidden = WindowRectScores;
+                    _WindowRectVesselSwitcherUIHidden = WindowRectVesselSwitcher;
+                }
                 BDAWindowSettingsField.Save();
             }
             if (windowSettingsEnabled || showVesselSpawnerGUI)
