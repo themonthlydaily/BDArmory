@@ -307,7 +307,7 @@ namespace BDArmory.Control
         //bomb aimer
         bool unguidedWeapon = false;
         Part bombPart;
-        Vector3 bombAimerPosition = Vector3.zero;
+        public Vector3 bombAimerPosition = Vector3.zero;
         Texture2D bombAimerTexture = GameDatabase.Instance.GetTexture("BDArmory/Textures/grayCircle", false);
         bool showBombAimer;
 
