@@ -2202,18 +2202,15 @@ namespace BDArmory.Control
                                 }
                                 else
                                 {
-                                    float timeToCPA = vessel.TimeToCPA(v, 20); //20s should be more than enough time, unless puttering around at sub-250m/s vel with max 5km extendDistA2G
+                                    // Use time for bomb aimer position to overlap target lead in order to take bomb flight time into account
+                                    //20s should be more than enough time, unless puttering around at sub-250m/s vel with max 5km extendDistA2G
+                                    float timeToCPA = AIUtils.TimeToCPA(target - weaponManager.bombAimerPosition, v.Velocity() - vessel.Velocity(), v.acceleration - vessel.acceleration, 20f);
                                     if (timeToCPA > 0 && timeToCPA < 20)
                                     {
                                         target = AIUtils.PredictPosition(v, timeToCPA);//lead moving ground target to properly line up bombing run
                                     }
                                 }
-                                target = target + (bombingAlt * upDirection);
-                                Vector3 adjustedVesselPos = GetTerrainSurfacePosition(vesselTransform.position) + (bombingAlt * upDirection);
-                                //Vector3 tDir = (target - (vesselTransform.position - (VectorUtils.GetUpDirection(vessel.CoM) * ((float)vessel.radarAltitude + bombingAlt)))).normalized;
-                                Vector3 tDir = (target - adjustedVesselPos).normalized;
-                                tDir = (1000 * tDir) - (vessel.Velocity().normalized * 600);
-                                target = adjustedVesselPos + tDir;
+                                target = GetTerrainSurfacePosition(target) + (bombingAlt * upDirection); // Aim for a consistent target point
                             }
                             else
                             {

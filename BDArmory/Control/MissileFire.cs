@@ -307,7 +307,7 @@ namespace BDArmory.Control
         //bomb aimer
         bool unguidedWeapon = false;
         Part bombPart;
-        Vector3 bombAimerPosition = Vector3.zero;
+        public Vector3 bombAimerPosition = Vector3.zero;
         Texture2D bombAimerTexture = GameDatabase.Instance.GetTexture("BDArmory/Textures/grayCircle", false);
         bool showBombAimer;
 
@@ -361,6 +361,7 @@ namespace BDArmory.Control
         private BDModulePilotAI pilotAI { get { return AI as BDModulePilotAI; } }
 
         public float timeBombReleased;
+        float bombFlightTime;
 
         //targeting pods
         public ModuleTargetingCamera mainTGP = null;
@@ -1519,7 +1520,7 @@ namespace BDArmory.Control
                 PointDefenseTurretFiring();
                 PDScanTimer = Time.time;
             }
-            BombAimer();
+            bombFlightTime = BombAimer();
         }
 
         void OnDestroy()
@@ -2488,10 +2489,9 @@ namespace BDArmory.Control
                  weaponArray[weaponIndex].GetWeaponClass() == WeaponClasses.Bomb && firedMissiles < maxMissilesOnTarget)
             {
                 Vector3 leadTarget = Vector3.zero;
-                float timeToCPA = vessel.TimeToCPA(guardTarget, 60);
-                if (timeToCPA > 0 && timeToCPA < 60)
+                if (bombFlightTime > 0)
                 {
-                    leadTarget = AIUtils.PredictPosition(guardTarget, timeToCPA);//lead moving ground target to properly line up bombing run; bombs fire solution already plotted in missileFire, torps more or less hit top speed instantly, so simplified fire solution can be used
+                    leadTarget = AIUtils.PredictPosition(guardTarget, bombFlightTime);//lead moving ground target to properly line up bombing run; bombs fire solution already plotted in missileFire, torps more or less hit top speed instantly, so simplified fire solution can be used
                 }
                 float targetDist = Vector3.Distance(bombAimerPosition, leadTarget);
                 if (targetDist < (radius * 20f))
@@ -7961,12 +7961,12 @@ namespace BDArmory.Control
 
         #region Aimer
 
-        void BombAimer()
+        float BombAimer()
         {
             if (selectedWeapon == null)
             {
                 showBombAimer = false;
-                return;
+                return 0f;
             }
             if (!bombPart || selectedWeapon.GetPart() != bombPart)
             {
@@ -7977,7 +7977,7 @@ namespace BDArmory.Control
                 else
                 {
                     showBombAimer = false;
-                    return;
+                    return 0f;
                 }
             }
 
@@ -7994,7 +7994,7 @@ namespace BDArmory.Control
             );
 
             if (!showBombAimer && (!guardMode || weaponIndex <= 0 ||
-                                   selectedWeapon.GetWeaponClass() != WeaponClasses.Bomb)) return;
+                                   selectedWeapon.GetWeaponClass() != WeaponClasses.Bomb)) return 0f;
             MissileBase ml = bombPart.GetComponent<MissileBase>();
 
             float simDeltaTime = 0.1f;
@@ -8136,6 +8136,7 @@ namespace BDArmory.Control
                     lr.SetPosition(i, pointsArray[i]);
                 }
             }
+            return simTime;
         }
 
         // Check GPS target is within 20m for stationary targets, and a scaling distance based on target speed for targets moving faster than ~175 m/s
