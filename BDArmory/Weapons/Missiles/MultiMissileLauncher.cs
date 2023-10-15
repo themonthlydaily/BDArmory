@@ -840,7 +840,7 @@ namespace BDArmory.Weapons.Missiles
                     if (ml.TargetingMode == MissileBase.TargetingModes.Heat || ml.TargetingMode == MissileBase.TargetingModes.Radar || ml.TargetingMode == MissileBase.TargetingModes.Gps)
                     {
                         //Debug.Log($"[BDArmory.MultiMissileLauncherDebug]: Beginning target distribution; Num of targets: {targetsAssigned.Count - 1}; wpm targets: {wpm.targetsAssigned.Count}");
-                        if (wpm.multiMissileTgtNum >= 2 && targetsAssigned.Count > 0)
+                        if (targetsAssigned.Count > 0)
                         {
                             if (TargetID <= Mathf.Min((targetsAssigned.Count-1), wpm.multiMissileTgtNum))
                             {
