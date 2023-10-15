@@ -91,7 +91,8 @@ namespace BDArmory.Weapons
         {
             Ballistic,
             Missile,
-            Omni
+            Omni, 
+            None
         }
         public WeaponStates weaponState = WeaponStates.Disabled;
 
@@ -3726,6 +3727,22 @@ namespace BDArmory.Weapons
                             {
                                 bulletPrediction = hit.point;
                                 hitDetected = true;
+                                Part hitPart;
+                                KerbalEVA hitEVA;
+                                try
+                                {
+                                    hitPart = hit.collider.gameObject.GetComponentInParent<Part>();
+                                    hitEVA = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+                                    if (hitEVA != null)
+                                    {
+                                        hitPart = hitEVA.part;
+                                    }
+                                    if (hitPart == null) autoFire = false;
+                                }
+                                catch (NullReferenceException e)
+                                {
+                                    Debug.Log("[BDArmory.ModuleWeapon]:NullReferenceException for Ballistic Hit: " + e.Message);
+                                }
                             }
                             // else if (FlightGlobals.getAltitudeAtPos(simCurrPos) < 0) // Note: this prevents aiming below sea-level. 
                             // {
@@ -3897,6 +3914,25 @@ namespace BDArmory.Weapons
                                 {
                                     elapsedTime += (hit.point - position).magnitude / velocity.magnitude;
                                     position = hit.point;
+                                    if (hit.collider != null && hit.collider.gameObject != null)
+                                    {
+                                        Part hitPart;
+                                        KerbalEVA hitEVA;
+                                        try
+                                        {
+                                            hitPart = hit.collider.gameObject.GetComponentInParent<Part>();
+                                            hitEVA = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+                                            if (hitEVA != null)
+                                            {
+                                                hitPart = hitEVA.part;
+                                            }
+                                            if (hitPart == null) autoFire = false;
+                                        }
+                                        catch (NullReferenceException e)
+                                        {
+                                            Debug.Log("[BDArmory.ModuleWeapon]:NullReferenceException for Ballistic Hit: " + e.Message);
+                                        }
+                                    }
                                     // Debug.Log("DEBUG breaking trajectory sim due to hit at " + position.ToString("F6") + " at altitude " + FlightGlobals.getAltitudeAtPos(position));
                                 }
                                 break;
@@ -4027,7 +4063,7 @@ namespace BDArmory.Weapons
 
                     if (autoFire && Vector3.Angle(targetPosition - fireTransform.position, aimDirection) < 5) //check LoS for direct-fire weapons
                     {
-                        if (RadarUtils.TerrainCheck(targetPosition, fireTransform.position))
+                        if (RadarUtils.TerrainCheck(eWeaponType == WeaponTypes.Laser ? targetPosition : fireTransform.position + (fireTransform.forward * 1500), fireTransform.position)) //kerbin curvature is going to start returning raycast terrain hits at about 1.8km for tanks
                         {
                             autoFire = false;
                         }
@@ -4852,6 +4888,7 @@ namespace BDArmory.Weapons
             atprAcquired = false;
             slaved = false;
             radarTarget = false;
+            GPSTarget = false;
             lastTargetAcquisitionType = targetAcquisitionType;
             closestTarget = Vector3.zero;
             if (Time.time - lastGoodTargetTime > Mathf.Max(roundsPerMinute / 60f, weaponManager.targetScanInterval))
@@ -4898,11 +4935,10 @@ namespace BDArmory.Weapons
                 }
                 else
                 {
-                    if (turret) turret.ReturnTurret(); //reset turret if no target
-                    visualTargetVessel = null;
-                    visualTargetPart = null;
-                    tgtShell = null;
-                    tgtRocket = null;
+                    if (turret && visualTargetVessel == null) turret.ReturnTurret(); //reset turret if no target
+                    //visualTargetPart = null;
+                    //tgtShell = null;
+                    //tgtRocket = null;
                 }
             }
             return false;
@@ -5301,7 +5337,7 @@ namespace BDArmory.Weapons
                     eAPSType = APSTypes.Omni;
                     break;
                 default:
-                    eAPSType = APSTypes.Ballistic;
+                    eAPSType = APSTypes.None;
                     break;
             }
         }

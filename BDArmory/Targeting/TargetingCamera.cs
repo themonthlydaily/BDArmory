@@ -205,7 +205,7 @@ namespace BDArmory.Targeting
                 cameraTransform = (new GameObject("targetCamObject")).transform;
             }
 
-            Debug.Log("[BDArmory.TargetingCamera]: Setting target camera parent");
+            //Debug.Log("[BDArmory.TargetingCamera]: Setting target camera parent");
             cameraTransform.parent = parentTransform;
             cameraTransform.localPosition = Vector3.zero;
             cameraTransform.localRotation = Quaternion.identity;
