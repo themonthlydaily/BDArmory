@@ -2467,8 +2467,6 @@ namespace BDArmory.Control
             }
         }
 
-        //NRE when setting up target cam - cam activates, but doesn't move to target. Add provision for treating unguided precision bombs like standard UGBs
-
         IEnumerator GuardBombRoutine()
         {
             guardFiringMissile = true;
@@ -2535,7 +2533,7 @@ namespace BDArmory.Control
                             yield return new WaitForFixedUpdate();
                         }
                         
-                        if (guardTarget && (foundCam && (foundCam.groundTargetPosition - guardTarget.transform.position).sqrMagnitude <= targetToleranceSqr)) //was tgp.groundtargetposition
+                        if (guardTarget && (foundCam && (foundCam.groundTargetPosition - guardTarget.transform.position).sqrMagnitude <= targetToleranceSqr)) 
                         {
                             radius = 500;
                         }
