@@ -1,7 +1,10 @@
 ﻿IMPROVEMENTS / FIXES
- ﻿﻿-General:
+- General:
 	- Kerbal Foundries wheel and track HP now properly scales with wheel size.
 	- ProcArmor now has symmetry attach.
+- UI:
+	- Windows that show despite the UI being disabled (i.e., Vessel Switcher and Score windows) store a separate size and location for that mode.
+	- Use a resize handle instead of buttons for horizontally resizing the Vessel Switcher window.
 - AI / WM:
 	- When ramming, if the target is also trying to ram us, aim more directly at them (avoids unstable dynamics).
 	- Fix some depthkeeping logic with Submarine AI.
