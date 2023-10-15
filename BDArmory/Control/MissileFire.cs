@@ -1554,8 +1554,8 @@ namespace BDArmory.Control
                             incomingMissileVessel.transform.position, 5, Color.cyan);
                     }
                     if (guardTarget != null)
-                        GUIUtils.DrawLineBetweenWorldPositions(guardTarget.LandedOrSplashed? guardTarget.CoM + ((guardTarget.vesselSize.y / 2) * VectorUtils.GetUpDirection(transform.position)) : guardTarget.CoM,
-                        ((guardTarget.transform.position - transform.position).sqrMagnitude > 2250000f ?
+                        GUIUtils.DrawLineBetweenWorldPositions(guardTarget.LandedOrSplashed ? guardTarget.CoM + ((guardTarget.vesselSize.y / 2) * VectorUtils.GetUpDirection(transform.position)) : guardTarget.CoM,
+                        ((vessel.LandedOrSplashed && (guardTarget.transform.position - transform.position).sqrMagnitude > 2250000f) ?
                         transform.position + (SurfaceVisionOffset.Evaluate((guardTarget.CoM - transform.position).magnitude) * VectorUtils.GetUpDirection(transform.position)) : transform.position), 3, Color.yellow);
                 }
 
@@ -2433,7 +2433,7 @@ namespace BDArmory.Control
                                         break;
                                         // turretStartTime -= 2 * Time.fixedDeltaTime;
                                     }
-                                    yield return new WaitForFixedUpdate(); //ah, here we go - turret isn't raversing, so this is continously returning and holding up the coroutine
+                                    yield return new WaitForFixedUpdate();
                                 }
                             }
                             if (targetVessel && ml && mlauncher.multiLauncher && mlauncher.multiLauncher.turret && laserPointDetected)
@@ -2467,12 +2467,14 @@ namespace BDArmory.Control
             }
         }
 
+        //NRE when setting up target cam - cam activates, but doesn't move to target. Add provision for treating unguided precision bombs like standard UGBs
+
         IEnumerator GuardBombRoutine()
         {
             guardFiringMissile = true;
             float bombStartTime = Time.time;
             float bombAttemptDuration = Mathf.Max(targetScanInterval, 12f);
-            float radius = CurrentMissile.GetBlastRadius() * Mathf.Min(((maxMissilesOnTarget / 2f)), 1.5f);
+            float radius = CurrentMissile.GetBlastRadius() * Mathf.Min(maxMissilesOnTarget / 2f, 1.5f);
             MissileLauncher cm = CurrentMissile as MissileLauncher;
             radius = Mathf.Min(radius, 150f);
             float targetToleranceSqr = Mathf.Max(100, 0.013f * (float)guardTarget.srfSpeed * (float)guardTarget.srfSpeed);
@@ -2524,13 +2526,7 @@ namespace BDArmory.Control
                                     tgp.Current.EnableCamera();
                                     tgp.Current.CoMLock = true;
                                     yield return StartCoroutine(tgp.Current.PointToPositionRoutine(guardTarget.CoM));
-                                    break;
                                 }
-                        }
-                        else //no gps target and no tgp, cancel.
-                        {
-                            guardFiringMissile = false;
-                            yield break;
                         }
                         float attemptStartTime = Time.time;
                         float attemptDuration = targetScanInterval * 0.75f;
@@ -2538,18 +2534,15 @@ namespace BDArmory.Control
                         {
                             yield return new WaitForFixedUpdate();
                         }
-                        if (guardTarget && (foundCam && (foundCam.targetPointPosition - guardTarget.transform.position).sqrMagnitude < targetToleranceSqr)) //was tgp.groundtargetposition
+                        
+                        if (guardTarget && (foundCam && (foundCam.groundTargetPosition - guardTarget.transform.position).sqrMagnitude <= targetToleranceSqr)) //was tgp.groundtargetposition
                         {
                             radius = 500;
-                            designatedGPSInfo = new GPSTargetInfo(foundCam.bodyRelativeGTP, "Guard Target");
-                            bombStartTime = Time.time;
                         }
-                        else//failed to acquire target via tgp, cancel.
+                        else //no coords, treat as standard unguided bomb
                         {
-                            foundCam.DisableCamera();
-                            designatedGPSInfo = new GPSTargetInfo();
-                            guardFiringMissile = false;
-                            yield break;
+                            if (foundCam) foundCam.DisableCamera();
+                            //designatedGPSInfo = new GPSTargetInfo();
                         }
                     }
                 }
@@ -2581,6 +2574,10 @@ namespace BDArmory.Control
 
                     if (!doProxyCheck)
                     {
+                        if (guardTarget && (foundCam && (foundCam.groundTargetPosition - guardTarget.transform.position).sqrMagnitude <= targetToleranceSqr)) //was tgp.groundtargetposition
+                        {
+                            designatedGPSInfo = new GPSTargetInfo(foundCam.bodyRelativeGTP, "Guard Target");
+                        }
                         FireCurrentMissile(CurrentMissile, true);
                         timeBombReleased = Time.time;
                         yield return new WaitForSecondsFixed(rippleFire ? 60f / rippleRPM : 0.06f);
@@ -6528,7 +6525,7 @@ namespace BDArmory.Control
         void SearchForLaserPoint()
         {
             MissileBase ml = CurrentMissile;
-            if (!ml || ml.TargetingMode != MissileBase.TargetingModes.Laser)
+            if (!ml || !(ml.TargetingMode == MissileBase.TargetingModes.Laser || (ml.TargetingMode == MissileBase.TargetingModes.Gps && ml.GetWeaponClass() == WeaponClasses.Bomb)))
             {
                 return;
             }
@@ -6642,6 +6639,11 @@ namespace BDArmory.Control
                             ml.targetGPSCoords = designatedGPSCoords;
                             ml.TargetAcquired = true;
                             if (guardMode && GPSDistanceCheck()) validTarget = true;
+                        }
+                        else if (ml.GetWeaponClass() == WeaponClasses.Bomb)
+                        {
+                            dumbfire = true;
+                            validTarget = true;
                         }
                         break;
                     }
