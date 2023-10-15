@@ -27,7 +27,6 @@ namespace BDArmory.Settings
         #region Window settings
         [BDAPersistentSettingsField] public static bool STRICT_WINDOW_BOUNDARIES = true;
         [BDAPersistentSettingsField] public static float REMOTE_ORCHESTRATION_WINDOW_WIDTH = 225f;
-        [BDAPersistentSettingsField] public static float VESSEL_SWITCHER_WINDOW_WIDTH = 500f;
         [BDAPersistentSettingsField] public static bool VESSEL_SWITCHER_WINDOW_SORTING = false;
         [BDAPersistentSettingsField] public static bool VESSEL_SWITCHER_WINDOW_OLD_DISPLAY_STYLE = false;
         [BDAPersistentSettingsField] public static bool VESSEL_SWITCHER_PERSIST_UI = false;
