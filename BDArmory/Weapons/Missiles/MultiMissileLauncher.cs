@@ -56,6 +56,7 @@ namespace BDArmory.Weapons.Missiles
         [KSPField] public bool OverrideDropSettings = false; //allow setting eject speed/dir
         [KSPField] public bool displayOrdinance = true; //display missile dummies (for rails and the like) or hide them (bomblet dispensers, gun-launched missiles, etc)
         [KSPField] public bool permitJettison = false; //allow jettisoning of missiles for multimissile launchrails and similar
+        [KSPField] public bool ignoreLauncherColliders = false; //temporarily disable missile colliders to let them clear the launcher, for large-scale VLS or similar. -WARNING- has some effect on missile flight
         AnimationState deployState;
         public ModuleMissileRearm missileSpawner = null;
         MissileLauncher missileLauncher = null;
@@ -715,9 +716,7 @@ namespace BDArmory.Weapons.Missiles
                     if (BDArmorySettings.DEBUG_MISSILES) Debug.LogWarning($"[BDArmory.MissileLauncher]: Failed to spawn a missile in {missileSpawner} on {vessel.vesselName}");
                     continue;
                 }
-                var missileCOL = missileSpawner.SpawnedMissile.collider;
-                if (missileCOL) missileCOL.enabled = false;
-                missileSpawner.SpawnedMissile.rb.velocity = vessel.Velocity(); //inherit parent velocity
+                //missileSpawner.SpawnedMissile.rb.velocity = vessel.Velocity(); //inherit parent velocity
                 MissileLauncher ml = missileSpawner.SpawnedMissile.FindModuleImplementing<MissileLauncher>();
                 yield return new WaitUntilFixed(() => ml is null || ml.SetupComplete); // Wait until missile fully initialized.
                 if (ml is null || ml.gameObject is null || !ml.gameObject.activeInHierarchy)
@@ -730,6 +729,12 @@ namespace BDArmory.Weapons.Missiles
                 {
                     tnt.sourcevessel = missileLauncher.SourceVessel;
                     tnt.isMissile = true;
+                }
+                if (ignoreLauncherColliders)
+                {
+                    var missileCOL = missileSpawner.SpawnedMissile.collider;
+                    if (missileCOL) missileCOL.enabled = false;
+                    ml.useSimpleDragTemp = true;
                 }
                 ml.Team = Team;
                 ml.SourceVessel = missileLauncher.SourceVessel;
@@ -840,7 +845,7 @@ namespace BDArmory.Weapons.Missiles
                     if (ml.TargetingMode == MissileBase.TargetingModes.Heat || ml.TargetingMode == MissileBase.TargetingModes.Radar || ml.TargetingMode == MissileBase.TargetingModes.Gps)
                     {
                         //Debug.Log($"[BDArmory.MultiMissileLauncherDebug]: Beginning target distribution; Num of targets: {targetsAssigned.Count - 1}; wpm targets: {wpm.targetsAssigned.Count}");
-                        if (wpm.multiMissileTgtNum >= 2 && targetsAssigned.Count > 0)
+                        if (targetsAssigned.Count > 0)
                         {
                             if (TargetID <= Mathf.Min((targetsAssigned.Count-1), wpm.multiMissileTgtNum))
                             {

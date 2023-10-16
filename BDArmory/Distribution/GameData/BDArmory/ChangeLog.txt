@@ -1,7 +1,9 @@
-﻿﻿-General:
+﻿IMPROVEMENTS / FIXES
+ ﻿﻿-General:
 	- Kerbal Foundries wheel and track HP now properly scales with wheel size.
 	- ProcArmor now has symmetry attach.
 - AI / WM:
+	- When ramming, if the target is also trying to ram us, aim more directly at them (avoids unstable dynamics).
 	- Fix some depthkeeping logic with Submarine AI.
 	- Guard Mode toggles off if enabled when loading into a battle site from the KSC that had active combatants at the time player previously exited to Space Center.
 	- Fix secondary target assignment logic assigning targets irrespective of target priority settings.

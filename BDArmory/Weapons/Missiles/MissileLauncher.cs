@@ -224,6 +224,8 @@ namespace BDArmory.Weapons.Missiles
         [KSPField]
         public bool useSimpleDrag = false;
 
+        public bool useSimpleDragTemp = false;
+
         [KSPField]
         public float simpleDrag = 0.02f;
 
@@ -1384,7 +1386,7 @@ namespace BDArmory.Weapons.Missiles
                     part.rb.isKinematic = false;
                     AntiSpin();
                     //simpleDrag
-                    if (useSimpleDrag)
+                    if (useSimpleDrag || useSimpleDragTemp)
                     {
                         SimpleDrag();
                     }
@@ -1423,6 +1425,7 @@ namespace BDArmory.Weapons.Missiles
                         if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher] missile timed out; self-destructing!");
                         Detonate();
                     }
+                    //debugString.AppendLine($"crashTol: {part.crashTolerance}; collider: {part.collider.enabled}; usingSimpleDrag: {(useSimpleDrag && useSimpleDragTemp)}; drag: {part.angularDrag.ToString("0.00")}");
                 }
             }
             catch (Exception e)
@@ -1860,7 +1863,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES) debugString.AppendLine($"Missile thrust= {currentThrust * Throttle}");
                 part.rb.AddRelativeForce(currentThrust * Throttle * Vector3.forward);
-            }
+            }            
         }
 
         IEnumerator MissileRoutine()
@@ -1932,8 +1935,14 @@ namespace BDArmory.Weapons.Missiles
         {
             yield return new WaitForSecondsFixed(0.5f); //wait half sec after boost motor fires, then set crashTolerance to 1. Torps have already waited until splashdown before this is called.
             part.crashTolerance = 1;
+            
             var missileCOL = part.collider;
             if (missileCOL) missileCOL.enabled = true;
+            if (useSimpleDragTemp)
+            {
+                part.dragModel = Part.DragModel.DEFAULT;
+                useSimpleDragTemp = false;
+            }            
         }
         IEnumerator BoostRoutine()
         {
@@ -2687,6 +2696,15 @@ namespace BDArmory.Weapons.Missiles
                 try
                 {
                     drawLabels();
+                    if (BDArmorySettings.DEBUG_LINES && HasFired)
+                    {
+                        float burnTimeleft = 10 - Mathf.Min(((TimeIndex / (boostTime + cruiseTime)) * 10), 10);
+
+                        GUIUtils.DrawLineBetweenWorldPositions(MissileReferenceTransform.position + MissileReferenceTransform.forward * burnTimeleft,
+            MissileReferenceTransform.position + MissileReferenceTransform.forward * 10, 2, Color.red);
+                        GUIUtils.DrawLineBetweenWorldPositions(MissileReferenceTransform.position,
+        MissileReferenceTransform.position + MissileReferenceTransform.forward * burnTimeleft, 2, Color.green);
+                    }
                 }
                 catch (Exception e)
                 {
