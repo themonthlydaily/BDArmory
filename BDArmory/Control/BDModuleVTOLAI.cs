@@ -705,7 +705,11 @@ namespace BDArmory.Control
         {
             belowMinAltitude = (float)vessel.radarAltitude < minAltitude;
             if (!belowMinAltitude)
+            {
                 initialTakeOff = false;
+                vessel.Landed = false;
+                vessel.Splashed = vessel.altitude < 0; // Radar altitude could be > minAlt, while the craft is still underwater due to the way radarAlt works...
+            }
         }
 
         public override bool IsValidFixedWeaponTarget(Vessel target)
