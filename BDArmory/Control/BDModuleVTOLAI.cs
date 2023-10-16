@@ -704,12 +704,13 @@ namespace BDArmory.Control
         void Takeoff()
         {
             belowMinAltitude = (float)vessel.radarAltitude < minAltitude;
-            if (!belowMinAltitude)
+            if (vessel.Landed && (float)vessel.radarAltitude > 1)
             {
-                initialTakeOff = false;
-                vessel.Landed = false;
-                vessel.Splashed = vessel.altitude < 0; // Radar altitude could be > minAlt, while the craft is still underwater due to the way radarAlt works...
+                vessel.Landed = false; // KSP sometimes isn't updating this correctly after spawning.
+                vessel.Splashed = vessel.altitude < 0; // Radar altitude could be > 1, while the craft is still underwater due to the way radarAlt works...
             }
+            if (!belowMinAltitude)
+                initialTakeOff = false;
         }
 
         public override bool IsValidFixedWeaponTarget(Vessel target)
