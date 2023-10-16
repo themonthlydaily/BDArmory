@@ -224,6 +224,8 @@ namespace BDArmory.Weapons.Missiles
         [KSPField]
         public bool useSimpleDrag = false;
 
+        public bool useSimpleDragTemp = false;
+
         [KSPField]
         public float simpleDrag = 0.02f;
 
@@ -785,6 +787,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 Fields["terminalGuidanceShouldActivate"].guiActive = false;
                 Fields["terminalGuidanceShouldActivate"].guiActiveEditor = false;
+                terminalGuidanceShouldActivate = false;
             }
 
             if (GuidanceMode != GuidanceModes.AAMLoft)
@@ -1383,7 +1386,7 @@ namespace BDArmory.Weapons.Missiles
                     part.rb.isKinematic = false;
                     AntiSpin();
                     //simpleDrag
-                    if (useSimpleDrag)
+                    if (useSimpleDrag || useSimpleDragTemp)
                     {
                         SimpleDrag();
                     }
@@ -1419,8 +1422,10 @@ namespace BDArmory.Weapons.Missiles
                     //Timed detonation
                     if (isTimed && TimeIndex > detonationTime)
                     {
+                        if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher] missile timed out; self-destructing!");
                         Detonate();
                     }
+                    //debugString.AppendLine($"crashTol: {part.crashTolerance}; collider: {part.collider.enabled}; usingSimpleDrag: {(useSimpleDrag && useSimpleDragTemp)}; drag: {part.angularDrag.ToString("0.00")}");
                 }
             }
             catch (Exception e)
@@ -1578,7 +1583,8 @@ namespace BDArmory.Weapons.Missiles
                     default:
                         if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES)
                         {
-                            debugGuidanceTarget = "none";
+                            TargetPosition = transform.position + (startDirection * 500);
+                            debugGuidanceTarget = TargetPosition.ToString();
                         }
                         break;
                 }
@@ -1857,7 +1863,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES) debugString.AppendLine($"Missile thrust= {currentThrust * Throttle}");
                 part.rb.AddRelativeForce(currentThrust * Throttle * Vector3.forward);
-            }
+            }            
         }
 
         IEnumerator MissileRoutine()
@@ -1927,8 +1933,16 @@ namespace BDArmory.Weapons.Missiles
         }
         IEnumerator updateCrashTolerance()
         {
-            yield return new WaitForSecondsFixed(0.5f); //wait until halfsec after boost motor fires, then set crashTolerance to 1. Torpes have already waited until splashdown before this is called.
+            yield return new WaitForSecondsFixed(0.5f); //wait half sec after boost motor fires, then set crashTolerance to 1. Torps have already waited until splashdown before this is called.
             part.crashTolerance = 1;
+            
+            var missileCOL = part.collider;
+            if (missileCOL) missileCOL.enabled = true;
+            if (useSimpleDragTemp)
+            {
+                part.dragModel = Part.DragModel.DEFAULT;
+                useSimpleDragTemp = false;
+            }            
         }
         IEnumerator BoostRoutine()
         {
@@ -2394,6 +2408,7 @@ namespace BDArmory.Weapons.Missiles
                     //part.Destroy(); //^look into how this interacts with MissileBase.DetonationState
                     // - if the missile is still within the notSafe status, the missile will delete itself, else, the checkProximity state of DetonationState would trigger before the missile reaches the 1/2 blastradius.
                     // would only trigger if someone set the detonation distance override to something smallerthan 1/2 blst radius, for some reason
+                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher] ProxiDetonate triggered");
                     Detonate();
                 }
             }
@@ -2681,6 +2696,15 @@ namespace BDArmory.Weapons.Missiles
                 try
                 {
                     drawLabels();
+                    if (BDArmorySettings.DEBUG_LINES && HasFired)
+                    {
+                        float burnTimeleft = 10 - Mathf.Min(((TimeIndex / (boostTime + cruiseTime)) * 10), 10);
+
+                        GUIUtils.DrawLineBetweenWorldPositions(MissileReferenceTransform.position + MissileReferenceTransform.forward * burnTimeleft,
+            MissileReferenceTransform.position + MissileReferenceTransform.forward * 10, 2, Color.red);
+                        GUIUtils.DrawLineBetweenWorldPositions(MissileReferenceTransform.position,
+        MissileReferenceTransform.position + MissileReferenceTransform.forward * burnTimeleft, 2, Color.green);
+                    }
                 }
                 catch (Exception e)
                 {

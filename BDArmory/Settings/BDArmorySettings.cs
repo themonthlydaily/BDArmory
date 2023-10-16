@@ -41,6 +41,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool VM_TOOLBAR_BUTTON = true;                 // Show or hide the BDA VM toolbar button.
         [BDAPersistentSettingsField] public static bool INFINITE_AMMO = false;              //infinite Bullets/rockets/laserpower
         [BDAPersistentSettingsField] public static bool INFINITE_ORDINANCE = false;         //infinite missiles/bombs (on ordinance w/ Reload Module)
+        [BDAPersistentSettingsField] public static bool LIMITED_ORDINANCE = false;         //MML ammo clamped to salvo size, no relaods
         [BDAPersistentSettingsField] public static bool INFINITE_FUEL = false;              //Infinite propellant
         [BDAPersistentSettingsField] public static bool INFINITE_EC = false;                          //Infinite electric charge
         [BDAPersistentSettingsField] public static bool BULLET_HITS = true;
@@ -80,7 +81,8 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool DISPLAY_COMPETITION_STATUS = true;             //Display competition status
         [BDAPersistentSettingsField] public static bool DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI = false; // Display the competition status when using the "hidden UI"
         [BDAPersistentSettingsField] public static bool SCROLL_ZOOM_PREVENTION = true;                 // Prevent scroll-zoom when over most BDA windows.
-        [BDAPersistentSettingsField] public static bool BULLET_WATER_DRAG = true;
+        [BDAPersistentSettingsField] public static bool BULLET_WATER_DRAG = true;                       // do bullets/rockets get slowed down if fired into/under water
+        [BDAPersistentSettingsField] public static bool UNDERWATER_VISION = false;                       //If false, Subs and other submerged vessels fully visible to surface/air craft and vice versa without detectors?
         [BDAPersistentSettingsField] public static bool PERSISTENT_FX = false;
         [BDAPersistentSettingsField] public static bool LEGACY_ARMOR = false;
         [BDAPersistentSettingsField] public static bool HACK_INTAKES = false;

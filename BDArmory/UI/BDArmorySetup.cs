@@ -2399,13 +2399,16 @@ namespace BDArmory.UI
                 BDArmorySettings.GAPLESS_PARTICLE_EMITTERS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.GAPLESS_PARTICLE_EMITTERS, StringUtils.Localize("#LOC_BDArmory_Settings_GaplessParticleEmitters"));//"Gapless Particle Emitters"
                 if (BDArmorySettings.FLARE_SMOKE != (BDArmorySettings.FLARE_SMOKE = GUI.Toggle(SRightRect(line), BDArmorySettings.FLARE_SMOKE, StringUtils.Localize("#LOC_BDArmory_Settings_FlareSmoke"))))//"Flare Smoke"
                 {
-                    foreach (var flareObj in CMDropper.flarePool.pool)
-                        if (flareObj.activeInHierarchy)
-                        {
-                            var flare = flareObj.GetComponent<CMFlare>();
-                            if (flare == null) continue;
-                            flare.EnableEmitters();
-                        }
+                    if (CMDropper.flarePool != null)
+                    {
+                        foreach (var flareObj in CMDropper.flarePool.pool)
+                            if (flareObj.activeInHierarchy)
+                            {
+                                var flare = flareObj.GetComponent<CMFlare>();
+                                if (flare == null) continue;
+                                flare.EnableEmitters();
+                            }
+                    }
                 }
                 BDArmorySettings.STRICT_WINDOW_BOUNDARIES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.STRICT_WINDOW_BOUNDARIES, StringUtils.Localize("#LOC_BDArmory_Settings_StrictWindowBoundaries"));//"Strict Window Boundaries"
                 if (BDArmorySettings.AI_TOOLBAR_BUTTON != (BDArmorySettings.AI_TOOLBAR_BUTTON = GUI.Toggle(SRightRect(line), BDArmorySettings.AI_TOOLBAR_BUTTON, StringUtils.Localize("#LOC_BDArmory_Settings_AIToolbarButton")))) // AI Toobar Button

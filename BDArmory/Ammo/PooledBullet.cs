@@ -1285,7 +1285,7 @@ namespace BDArmory.Bullets
                 else
                 {
                     float cockpitPen = (float)(16f * impactVelocity.magnitude * BDAMath.Sqrt(bulletMass / 1000) / BDAMath.Sqrt(caliber) * apBulletMod); //assuming a 20mm steel armor plate for cockpit armor
-                    ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, bulletMass, currentVelocity.magnitude, viableBullet ? bulletDmgMult : bulletDmgMult / 2, distanceTraveled, HEType != PooledBulletTypes.Slug ? true : false, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet, penTicker > 0 ? false : true, partsHit.Contains(hitPart) ? false : true, (cockpitPen > Mathf.Max(20 / anglemultiplier, 1)) ? true : false);
+                    ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, bulletMass, impactVelocity.magnitude, viableBullet ? bulletDmgMult : bulletDmgMult / 2, distanceTraveled, HEType != PooledBulletTypes.Slug ? true : false, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet, penTicker > 0 ? false : true, partsHit.Contains(hitPart) ? false : true, (cockpitPen > Mathf.Max(20 / anglemultiplier, 1)) ? true : false);
                     //need to add a check for if the bullet has already struck the part, since it doesn't make sense for some battledamage to apply on the second hit from the bullet exiting the part - wings/ctrl srfs, pilot kills, subsystem damage
                 }
 
