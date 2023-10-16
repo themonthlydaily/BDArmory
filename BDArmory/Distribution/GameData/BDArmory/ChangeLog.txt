@@ -1,17 +1,152 @@
-﻿IMPROVEMENTS / FIXES
+﻿v1.6.6.0
+IMPROVEMENTS / FIXES
+- General:
+	- Procedural Wing max armor thickness now based on mean thickness of the wing.
+	- Adds new Acoustic Decoy CM dropper.
+- UI:
+	- Add Japanese localization files thanks to user Taka005.
+- AI / WM:
+	- Fix the cubic solver giving invalid results for nearly degenerate cubics (used in aiming).
+	- Fix the debug line trajectories not showing the final part of the trajectory.
+	- Add experimental Submarine AI option to Surface Driver AI.
+	- Various weapon selection logic tweaks to support sensible weapon selection/use when submerged and firing on non-submerged targets.
+	- Add torpedo bombing logic to pilot AI.
+	- AI will now lead moving ground targets when bombing.
+	- AI will start dropping bombs from reloadable rails/bomblet dispensers early for proper carpet bombing instead of dropping them behind a target.
+	- Fix AI dropping bombs several hundred meters behind target.
+- Detectors:
+	- Add new radarTransformName field to ModuleRadar/new irstTransformName field to ModuleIRST to allow setting custom radar direction/setting multiple radars to a part using custom radar models.
+	- Add new sonarType field to Radar for setting up Active or Passive sonars.
+- Countermeasures:
+	- Add Acoustic Decoy CM support via 'countermeasureType = decoy'.
+	- APS point defense target acquisition and assignment logic rewritten, APS will now semi-intelligently identify and distribute targets among guns in the PD network.
+	- APS weapons now respect Fire Interval and Burst Length settings.
+- Weapons:
+	- Missiles:
+		- Fix some NREs when manually firing missiles.
+		- Add new guidanceDelay field to allow setting a delay between missile launch and missile beginning to maneuver towards a target.
+		- Dynamic Launch Range now uses missile EngageRange max instead of static launch range.
+		- Improved launch behavior for missiles set to be fired at very short range.
+		- Add LineOfSight check when firing missiles.
+		- Fix torpedoes not working.
+		- Missile/Bomb fratricide prevention now based on team instead of sourcevessel.
+		- Add Salvo size slider to MultiMissile Launchers, enabled via the new MultiMissileLauncher .cfg 'setSalvoSize' bool.
+		- Improve launch of missiles from reloadable rails.
+		- Add new MultiMissileLauncher 'deploySpeed' field to set deploy animation duration.
+		- Add intrinsic scaling option to MultiMissileLauncher for missile pods and the like, use new fields 'scaleTransformName' and 'lengthTransformName'
+		- Fix issue with air-dropped torpedoes exploding on impact with the water despite being within their waterImpactTolearance.
+		- Fix torpedo behavior if trying to target something with a CoM above water level
+		- Tweaked weapon lead aim calcs for guns firing beehive shells, Oerlikon should hit more often now.
+		- MultiMissileLaunchers can now support GPS guided missiles launching at multiple simultaneous targets. 
+- Competition:
+	- Add new GM Kill conditions for planes that have lost engines/weapons/set percentage of their parts and LandedKillTimer conditions for surface AIs that have found themselves in water/water AIs that have beached themselves/sunk.
+	- Don't auto-resume tournaments when custom spawn templates are selected.
+- Vessel Spawning:
+	- Allow using custom spawn templates for airborne spawning too (with altitude >10m).
+	- Add option to immediately set airborne-spawned vessels (with a pilot AI) to their idle speeds.
+	- Tweaks to initial focussed vessel after circular spawning.
+	- Always perform vessel validity checks and wait for WMs to appear in the Vessel Switcher during post-spawning even when not immediately starting a competition.
+- Vessel Mover:
+	- Make the vessel selection more resilient to corrupted vessel files/loadmeta.
+	- Default the vessel selection window to using the VAB if the initial vessel is spawned through the launchpad.
+
+v1.6.5.0
+IMPROVEMENTS / FIXES
+- General: 
+	- Fix Pwing HP error with Pwing edges not contributing as much HP as they should.
+- UI:
+	- Fix numeric input fields not updating when they should.
+	- New Team Icons toolbar icon for easier identification.
+	- Add colour coding to the number of parts in the vessel selection windows.
+- AI:
+	- Add a toggle to the pilot AI to disable ramming ground targets.
+	- Add a toggle to the pilot AI for treating the min altitude as a hard limit.
+	- Include the TWR of a vessel when determining the gain altitude slope, allowing much higher slopes.
+	- Include a climb rate at half the take-off climb rate while evading below min altitude.
+	- Prevent inverted loops when below min altitude and improve the inverted loop threshold calculation.
+	- Improve vessel collision avoidance by prioritising non-debris and by prioritising potential collisions by size.
+	- Add a "post-avoidance cool-down" slider to the pilot AI to increase pitch away from terrain for a short period after avoiding terrain.
+	- Add a Manoeuvering steer mode similar to NormalFlight steer mode, but with Aiming mode's roll behaviour.
+		- Switch a number of inappropriate uses of Aiming steer mode to Manoeuvering mode.
+	- Add a green debug line for showing the pitch target direction the AI is aiming for (which is not necessarily the same as the position the AI is told to go to).
+- Armor:
+	- Allow changing the unclamped min/max dimensions for proc armor in the settings.cfg (PROC_ARMOR_ALT_LIMITS).
+- Weapons:
+	- Fix APS point defenses not respecting Infinite Ammo cheat.
+	- Fix APS weapons not activating when Guardmode enabled, if they aren't already active.
+	- Anti-Missile weapons can now shoot down missiles in Paintball mode.
+	- Missiles:
+		- Add option (in Show Missile and Countermeasure Settings) to allow missiles to be fired from their full dynamic launch range instead of static launch range. 
+		- Add trigger range setting for cluster missile submunition launch.
+		- Fix MultiMissilelaunchers resetting detonation Distance.
+		- Fix MML "TNT Mass Equivalent = -0.0018726" PAW label.
+		- Fixed Missiles with ModuleMissileRearm improperly launching.
+		- Fixed MMLs resetting detonation distance.
+		- Multi Missile launchers now check clearance based on tube orientation regardless of overrideReferenceTransform setting.
+		- Missile/bomb fratricide prevention now also checks the source vessel name to allow explosives to be destroyed by explosives of the same type from another vessel.
+		- Fix NRE from SARH missiles fired without a lock.
+		- Missiles now properly calculate offboresight angle from missile orientation, not vessel prograde.
+- Competition:
+	- Adjust round progress strings in tournaments: ranked => 0→N, shuffled => 1→N.
+	- Report total number of rounds for ranked tournaments properly.
+
+v1.6.4.1
+IMPROVEMENTS / FIXES
+- UI:
+	- Add an option for disabling the self-updating of the text in numeric input fields.
+		- When the value fails to parse (after the delay) the text will turn red.
+		- Toggling the numeric fields or closing the windows will reset the field to the most recently successfully parsed value.
+		- The text will still be updated if the parsed value becomes clamped within the limits of the field.
+	- Make the delay for the "read and interpret" logic of numeric input fields customisable (default 0.5s).
+- AI:
+	- Some QoL improvements for auto-tuning: automatically enable AI and engines and move the craft to the autotuning altitude.
+- Detectors:
+	- Fix Conformal Decals throwing off RCS calculation in editor (SPH/VAB).
+	- Hide scenery during RCS calculation in editor (SPH/VAB) to prevent scenery from affecting calculation.
+	- Add for/aft/side/top/bot RCS readout to the On-Screen Telem debug option when ASPECTED_RCS is enabled.
+	- Add slider for ASPECTED_RCS_OVERALL_RCS_WEIGHT to the BDA Settings menu.
+- Countermeasures:
+	- Fix exceptions caused by ECM jammers.
+- Competition:
+	- Fix a bug in the score window for teams competitions.
+	- Automatically enable the teams score toggle in the score window if the "Teams" slider in the vessel spawner window is set to teams mode on start-up.
+	- Dump a "team scores.log" file to the Tournament folder for teams tournaments after each round.
+
+v1.6.4.0
+IMPROVEMENTS / FIXES
 - General:
 	- Make ammo consumption respect staging and priority order unless "externalAmmo = false" in the weapon config.
 	- Don't auto-switch vessels when MouseAimFlight is active.
 	- Fixed an issue where modules on a vessel re-entering the PRE range weren't being updated in the VesselModuleRegistry.
-	- Fix an issue with chaff vessel modules summoning the Kraken on undocking.
+	- Fix a number of issues with Pwing+FAR HP calc.
+	- PWing Thickness-based Mass+HP now takes PWing Edges into account if PWing Edge Lift enabled.
+	- Fix armored cockpit mass resetting on load.
+	- Add search tags to all BDA parts.
 - AI:
 	- Make the autotuning re-centering distance customisable.
 	- Add unclamped max values for auto-tuning speed and altitude.
 	- Prevent weapon selection from choosing weapons when target is closer than the weapon's minSafeDistance.
+	- Fix AI potentially seeing beyond viewrange.
+	- Increase preemptive lead distance AI will begin leading target before entering engagement range.
+	- AI will now switch off of Afterburner if AB is out of fuel (for Rapiers/other LF/non-air AB-mode engines).
 - Vessel Spawning:
 	- Disable gravity easing when using 'Warp Here' above 10m altitude.
+- Vessel Mover:
+	- Add support for browsing craft in subfolders of the SPH and VAB (also in the custom spawn templates).
+	- Allow resizing the vessel selection window and remember its position.
 - Weapons:
 	- Fix various NREs related to missiles and multi-missile launchers.
+	- Adds optional tracer smoke.
+		- new 'smokeTexturePath' setting for ModuleWeapon to set custom smoke trail FX, leave blank for default bullet FX
+	- Properly support weapons with multiple ModuleWeapon modules.
+	- Turret integration with ModuleMultiLauncher for MML style Hydra Turrets, etc.
+	- Fix missiles fired from same source vessel causing each other to explode when they cross within proximity detonation distance.
+	- Add flareEffectivity = 1 in missile configs. Modifies how the missile targeting is affected by flares, 1 is fully affected (normal behavior), lower values mean less affected (0 is ignores flares), higher values means more affected.
+- Countermeasures:
+	- Add rcsOverride field to ModuleECMJammer to enable setting craft RCS to a set value.
+	- Split CM time into missile evade time and CM deploy time to allow setting a craft to begin evading, then deploy CM, etc.
+	- Fix an issue with chaff vessel modules summoning the Kraken on undocking.
+	- Fix an NRE related to jammers enabling.
 - Competition:
 	- Make the saving of backup tournaments optional (hidden setting TOURNAMENT_BACKUPS in settings.cfg).
 	- Added a ranked tournament mode.
@@ -22,24 +157,28 @@
 		- Use the "UI" button to keep the window visible even when the rest of the UI is disabled (F2).
 		- Use the "±" buttons to adjust the font size.
 		- Use the "W" button to adjust the score weights.
+		- Use the "T" button to switch between individual and team scores for teams competitions.
 		- Left click and drag the drag handle to resize the window.
 		- Right click the drag handle to switch to auto-adjusting height.
 		- Scores update after each round (not heat) in a ranked tournament.
 	- The tournament.state file uses a new format (recursively encoded JSON due to Unity's limited JSON functionality), contains a lot more information and isn't compatible with older tournament.state files.
-		- A script (parse_tournament_state.py) can convert the tournament.state file to proper JSON (tournament.json), but can not convert it back yet.
+		- A script (parse_tournament_state.py) can convert the tournament.state file to proper JSON (tournament.json) and back again for ease of editing.
 	- Fix a minor bug in the tournament log parsing script where wins weren't always being counted for the score.
 	- Make the saving of backup tournaments optional (hidden setting in settings.cfg).
 	- Add NPC support for FFA-RNG tournaments (both ranked and non-ranked).
-		- To use NPCs, create a "NPCs" folder in the folder for the tournament (e.g., "AutoSpawn/MyTourney/NPCs"), add the NPC files to this folder, then set the "NPCs Per Heat" slider to the desired number of NPCs.
+		- To use NPCs, create a "NPCs" folder in the folder for the tournament (e.g., "AutoSpawn/MyTournament/NPCs"), add the NPC files to this folder, then set the "NPCs Per Heat" slider to the desired number of NPCs.
 		- NPC files will be reused as necessary to provide the appropriate number of randomly selected NPCs each heat.
 		- When generating heats, the number of NPCs is taken into account for the total number of vessels per heat (e.g., 8 vessels per heat with 2 NPCs per heat would give 6 players + 2 NPCs in each heat).
 		- The "Tournament Scores" window will only show the scores for non-NPCs.
+	- Add an "auto" setting for the "Vessels Per Team Per Heat" in teams tournaments where the teams will simply be all the craft files in each team's folder.
 - Detectors
 	- Add settings toggle ASPECTED_RCS that enables real-time RCS evaluation based on the target aircraft's azimuth and elevation relative to the radar evaluating it.
 		- Enable from the BDA settings menu under Missile & CM settings: "Real-Time Aspected RCS."
 		- The real-time aspected RCS is dependent on a weighted average against overall craft RCS, so lower overall craft RCS will lead to better aspected RCS.
 		- Overall craft RCS weighting in this average is dependent on ASPECTED_RCS_OVERALL_RCS_WEIGHT = 0.25 in the settings.cfg file.
 		- Final aspected RCS will be = (1-ASPECTED_RCS_OVERALL_RCS_WEIGHT) * [Aspected RCS] + ASPECTED_RCS_OVERALL_RCS_WEIGHT * [Overall RCS].
+	- RWRs now activate when they first detect a missile instead of when missile enters visual range.
+	- RWRs now track active Radar missiles regardless of missile visibility if VARIABLE_MISSILE_VISIBILITY is enabled.
 - RWP:
 	- S5R10 special settings.
 
