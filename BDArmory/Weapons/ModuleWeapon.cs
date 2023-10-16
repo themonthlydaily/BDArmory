@@ -91,7 +91,8 @@ namespace BDArmory.Weapons
         {
             Ballistic,
             Missile,
-            Omni
+            Omni, 
+            None
         }
         public WeaponStates weaponState = WeaponStates.Disabled;
 
@@ -1060,6 +1061,7 @@ namespace BDArmory.Weapons
             if (dualModeAPS) isAPS = true;
             if (isAPS)
             {
+                engageMissile = false; //missiles targeted separately from base WM targeting logic, having this is unnecessary and can cause problems with radar slaving
                 if (!dualModeAPS)
                 {
                     HideEngageOptions();
@@ -3725,6 +3727,22 @@ namespace BDArmory.Weapons
                             {
                                 bulletPrediction = hit.point;
                                 hitDetected = true;
+                                Part hitPart;
+                                KerbalEVA hitEVA;
+                                try
+                                {
+                                    hitPart = hit.collider.gameObject.GetComponentInParent<Part>();
+                                    hitEVA = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+                                    if (hitEVA != null)
+                                    {
+                                        hitPart = hitEVA.part;
+                                    }
+                                    if (hitPart == null) autoFire = false;
+                                }
+                                catch (NullReferenceException e)
+                                {
+                                    Debug.Log("[BDArmory.ModuleWeapon]:NullReferenceException for Ballistic Hit: " + e.Message);
+                                }
                             }
                             // else if (FlightGlobals.getAltitudeAtPos(simCurrPos) < 0) // Note: this prevents aiming below sea-level. 
                             // {
@@ -3896,6 +3914,25 @@ namespace BDArmory.Weapons
                                 {
                                     elapsedTime += (hit.point - position).magnitude / velocity.magnitude;
                                     position = hit.point;
+                                    if (hit.collider != null && hit.collider.gameObject != null)
+                                    {
+                                        Part hitPart;
+                                        KerbalEVA hitEVA;
+                                        try
+                                        {
+                                            hitPart = hit.collider.gameObject.GetComponentInParent<Part>();
+                                            hitEVA = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+                                            if (hitEVA != null)
+                                            {
+                                                hitPart = hitEVA.part;
+                                            }
+                                            if (hitPart == null) autoFire = false;
+                                        }
+                                        catch (NullReferenceException e)
+                                        {
+                                            Debug.Log("[BDArmory.ModuleWeapon]:NullReferenceException for Ballistic Hit: " + e.Message);
+                                        }
+                                    }
                                     // Debug.Log("DEBUG breaking trajectory sim due to hit at " + position.ToString("F6") + " at altitude " + FlightGlobals.getAltitudeAtPos(position));
                                 }
                                 break;
@@ -4020,15 +4057,13 @@ namespace BDArmory.Weapons
                 if (safeToFire)
                 {
                     if (eWeaponType == WeaponTypes.Ballistic || eWeaponType == WeaponTypes.Laser)
-                    {
                         autoFire = (targetCosAngle >= targetAdjustedMaxCosAngle);
-                    }
                     else // Rockets
-                    { autoFire = (targetCosAngle >= targetAdjustedMaxCosAngle) && ((finalAimTarget - fireTransform.position).sqrMagnitude > (blastRadius * blastRadius) * 2); }
+                        autoFire = (targetCosAngle >= targetAdjustedMaxCosAngle) && ((finalAimTarget - fireTransform.position).sqrMagnitude > (blastRadius * blastRadius) * 2);
 
                     if (autoFire && Vector3.Angle(targetPosition - fireTransform.position, aimDirection) < 5) //check LoS for direct-fire weapons
                     {
-                        if (RadarUtils.TerrainCheck(targetPosition, fireTransform.position))
+                        if (RadarUtils.TerrainCheck(eWeaponType == WeaponTypes.Laser ? targetPosition : fireTransform.position + (fireTransform.forward * 1500), fireTransform.position)) //kerbin curvature is going to start returning raycast terrain hits at about 1.8km for tanks
                         {
                             autoFire = false;
                         }
@@ -4139,7 +4174,7 @@ namespace BDArmory.Weapons
             if (isAPS)
             {
                 float threatDirectionFactor = (fireTransforms[0].position - targetPosition).DotNormalized(targetVelocity - part.rb.velocity);
-                if (threatDirectionFactor < 0.9f) autoFire = false; ;   //within 28 degrees in front, else ignore, target likely not on intercept vector
+                if (threatDirectionFactor < 0.9f) autoFire = false;   //within 28 degrees in front, else ignore, target likely not on intercept vector
             }
         }
 
@@ -4850,8 +4885,10 @@ namespace BDArmory.Weapons
         bool TrackIncomingProjectile()
         {
             targetAcquired = false;
-            slaved = false;
             atprAcquired = false;
+            slaved = false;
+            radarTarget = false;
+            GPSTarget = false;
             lastTargetAcquisitionType = targetAcquisitionType;
             closestTarget = Vector3.zero;
             if (Time.time - lastGoodTargetTime > Mathf.Max(roundsPerMinute / 60f, weaponManager.targetScanInterval))
@@ -4881,22 +4918,27 @@ namespace BDArmory.Weapons
                         targetPosition = visualTargetPart.transform.position;
                         visualTargetVessel = visualTargetPart.vessel;
                         TargetInfo currentTarget = visualTargetVessel.gameObject.GetComponent<TargetInfo>();
-                        targetRadius = visualTargetVessel.GetRadius(fireTransforms[0].forward, currentTarget.bounds);
+                        targetRadius = currentTarget != null ? visualTargetVessel.GetRadius(fireTransforms[0].forward, currentTarget.bounds) : 0;
                     }
                     //targetVelocity -= BDKrakensbane.FrameVelocity;
 
                     targetAcceleration = visualTargetPart != null && visualTargetPart.vessel != null ? (Vector3)visualTargetPart.vessel.acceleration : Vector3.zero;
                     targetAcquired = true;
-                    targetAcquisitionType = TargetAcquisitionType.Radar;
-                    if (weaponManager.slavingTurrets && turret) slaved = true;
-                    //Debug.Log("[APS DEBUG] tgtVelocity: " + tgtVelocity + "; tgtPosition: " + targetPosition + "; tgtAccel: " + targetAcceleration);
-                    //Debug.Log("[APS DEBUG] Lead Offset: " + fixedLeadOffset + ", FinalAimTgt: " + finalAimTarget + ", tgt CosAngle " + targetCosAngle + ", wpn CosAngle " + targetAdjustedMaxCosAngle + ", Wpn Autofire: " + autoFire);
+                    targetAcquisitionType = TargetAcquisitionType.Visual;
+                    if (weaponManager.slavingTurrets && turret) slaved = false;
+                    if (BDArmorySettings.DEBUG_WEAPONS)
+                    {
+                        Debug.Log("[APS DEBUG] tgtVelocity: " + tgtVelocity + "; tgtPosition: " + targetPosition + "; tgtAccel: " + targetAcceleration);
+                        Debug.Log($"[APS DEBUG - {(this.vessel != null ? vessel.GetName() : "null")}] Lead Offset: {fixedLeadOffset}, FinalAimTgt: {finalAimTarget}, tgt CosAngle {targetCosAngle}, wpn CosAngle {targetAdjustedMaxCosAngle}, Wpn Autofire: {autoFire}");
+                    }
                     return true;
                 }
                 else
                 {
-                    if (turret) turret.ReturnTurret(); //reset turret if no target
-                    visualTargetVessel = null;
+                    if (turret && visualTargetVessel == null) turret.ReturnTurret(); //reset turret if no target
+                    //visualTargetPart = null;
+                    //tgtShell = null;
+                    //tgtRocket = null;
                 }
             }
             return false;
@@ -5295,7 +5337,7 @@ namespace BDArmory.Weapons
                     eAPSType = APSTypes.Omni;
                     break;
                 default:
-                    eAPSType = APSTypes.Ballistic;
+                    eAPSType = APSTypes.None;
                     break;
             }
         }

@@ -469,7 +469,7 @@ namespace BDArmory.Control
                                         }
                                         else
                                         {
-                                            if (!weaponManager.GetLaunchAuthorization(targetVessel, weaponManager) && (Vector3.SqrMagnitude(targetVessel.vesselTransform.position - vesselTransform.position) < (missile.engageRangeMax * missile.engageRangeMax)))
+                                            if (!weaponManager.GetLaunchAuthorization(targetVessel, weaponManager, missile) && (Vector3.SqrMagnitude(targetVessel.vesselTransform.position - vesselTransform.position) < (missile.engageRangeMax * missile.engageRangeMax)))
                                             {
                                                 aimingMode = true;
                                                 targetDirection = MissileGuidance.GetAirToAirFireSolution(missile, targetVessel);
