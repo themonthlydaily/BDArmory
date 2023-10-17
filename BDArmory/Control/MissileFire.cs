@@ -7193,7 +7193,7 @@ namespace BDArmory.Control
                     }
                     weapon.Current.targetCOM = targetCoM;
                     using (List<TargetInfo>.Enumerator Tgt = targetsAssigned.GetEnumerator())
-                        while(Tgt.MoveNext())
+                        while (Tgt.MoveNext())
                         {
                             if (!firedTargets.Contains(Tgt.Current)) 
                                 Tgt.Current.Disengage(this);

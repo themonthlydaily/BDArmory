@@ -1696,8 +1696,7 @@ namespace BDArmory.Bullets
             }
 
             float fov = c.fieldOfView;
-            float factor = (fov / 60) * resizeFactor *
-                           Mathf.Clamp(Vector3.Distance(transform.position, c.transform.position), 0, 3000) / 50;
+            float factor = (fov / 60) * resizeFactor * Mathf.Clamp(Vector3.Distance(transform.position, c.transform.position), 0, 3000) / 50;
             bulletTrail[0].startWidth = tracerStartWidth * factor * randomWidthScale;
             bulletTrail[0].endWidth = tracerEndWidth * factor * randomWidthScale;
 
