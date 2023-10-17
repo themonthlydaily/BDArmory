@@ -11,6 +11,7 @@ namespace BDArmory.Extensions
     {
         /// <summary>
         /// Avoid local temporaries when all you want is simply the square of a float.
+        /// Note: this is significantly slower than just multiplying the floats despite the inlining hint (which doesn't make any sense), so it should only really be used when the cost of computing the float is itself expensive.
         /// </summary>
         /// <returns>The square of f.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
