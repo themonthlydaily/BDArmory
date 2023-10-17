@@ -716,7 +716,6 @@ namespace BDArmory.Weapons.Missiles
                     if (BDArmorySettings.DEBUG_MISSILES) Debug.LogWarning($"[BDArmory.MissileLauncher]: Failed to spawn a missile in {missileSpawner} on {vessel.vesselName}");
                     continue;
                 }
-                //missileSpawner.SpawnedMissile.rb.velocity = vessel.Velocity(); //inherit parent velocity
                 MissileLauncher ml = missileSpawner.SpawnedMissile.FindModuleImplementing<MissileLauncher>();
                 yield return new WaitUntilFixed(() => ml is null || ml.SetupComplete); // Wait until missile fully initialized.
                 if (ml is null || ml.gameObject is null || !ml.gameObject.activeInHierarchy)

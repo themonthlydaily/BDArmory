@@ -44,6 +44,8 @@ namespace BDArmory.UI
         [BDAWindowSettingsField] public static Rect WindowRectRadar;
         [BDAWindowSettingsField] public static Rect WindowRectRwr;
         [BDAWindowSettingsField] public static Rect WindowRectVesselSwitcher;
+        [BDAWindowSettingsField] static Rect _WindowRectVesselSwitcherUIHidden;
+        [BDAWindowSettingsField] static Rect _WindowRectVesselSwitcherUIVisible;
         [BDAWindowSettingsField] public static Rect WindowRectWingCommander = new Rect(45, 75, 240, 800);
         [BDAWindowSettingsField] public static Rect WindowRectTargetingCam;
 
@@ -54,6 +56,8 @@ namespace BDArmory.UI
         [BDAWindowSettingsField] public static Rect WindowRectVesselMoverVesselSelection = new Rect(Screen.width / 2 - 300, Screen.height / 2 - 400, 600, 800);
         [BDAWindowSettingsField] public static Rect WindowRectAI;
         [BDAWindowSettingsField] public static Rect WindowRectScores = new Rect(0, 0, 500, 50);
+        [BDAWindowSettingsField] static Rect _WindowRectScoresUIHidden;
+        [BDAWindowSettingsField] static Rect _WindowRectScoresUIVisible;
 
         //reflection field lists
         static FieldInfo[] iFs;
@@ -151,10 +155,6 @@ namespace BDArmory.UI
         public MissileFire ActiveWeaponManager;
         public bool missileWarning;
         public float missileWarningTime = 0;
-
-        //load range stuff
-        VesselRanges combatVesselRanges = new VesselRanges();
-        float physRangeTimer;
 
         public static List<CMFlare> Flares = new List<CMFlare>();
         public static List<CMDecoy> Decoys = new List<CMDecoy>();
@@ -419,6 +419,11 @@ namespace BDArmory.UI
             BDAWindowSettingsField.Load();
             CheckIfWindowsSettingsAreWithinScreen();
 
+            // Configure UI visibility and window rects
+            GAME_UI_ENABLED = true;
+            if (_WindowRectScoresUIVisible != default) WindowRectScores = _WindowRectScoresUIVisible;
+            if (_WindowRectVesselSwitcherUIVisible != default) WindowRectVesselSwitcher = _WindowRectVesselSwitcherUIVisible;
+
             WindowRectGps.width = WindowRectToolbar.width - 10;
 
             // Get the BDA version. We can do this here since it's this assembly we're interested in, other assemblies have to wait until Start.
@@ -449,29 +454,7 @@ namespace BDArmory.UI
                 CheatOptions.InfinitePropellant = BDArmorySettings.INFINITE_FUEL;
                 CheatOptions.InfiniteElectricity = BDArmorySettings.INFINITE_EC;
             }
-            // // Create settings file if not present.
-            // if (ConfigNode.Load(BDArmorySettings.settingsConfigURL) == null)
-            // {
-            //     var node = new ConfigNode();
-            //     node.AddNode("BDASettings");
-            //     node.Save(BDArmorySettings.settingsConfigURL);
-            // }
 
-            // // window position settings
-            // WindowRectToolbar = new Rect(Screen.width - toolWindowWidth - 40, 150, toolWindowWidth, toolWindowHeight);
-            // // Default, if not in file.
-            // WindowRectGps = new Rect(0, 0, WindowRectToolbar.width - 10, 0);
-            // SetupSettingsSize();
-            // BDAWindowSettingsField.Load();
-            // CheckIfWindowsSettingsAreWithinScreen();
-
-            // WindowRectGps.width = WindowRectToolbar.width - 10;
-
-            // //settings
-            // LoadConfig();
-
-            physRangeTimer = Time.time;
-            GAME_UI_ENABLED = true;
             fireKeyGui = BDInputSettingsFields.WEAP_FIRE_KEY.inputString;
 
             //setup gui styles
@@ -700,10 +683,14 @@ namespace BDArmory.UI
             GUIUtils.RepositionWindow(ref WindowRectSettings);
             GUIUtils.RepositionWindow(ref WindowRectRwr);
             GUIUtils.RepositionWindow(ref WindowRectVesselSwitcher);
+            GUIUtils.RepositionWindow(ref _WindowRectVesselSwitcherUIHidden);
+            GUIUtils.RepositionWindow(ref _WindowRectVesselSwitcherUIVisible);
             GUIUtils.RepositionWindow(ref WindowRectWingCommander);
             GUIUtils.RepositionWindow(ref WindowRectTargetingCam);
             GUIUtils.RepositionWindow(ref WindowRectAI);
             GUIUtils.RepositionWindow(ref WindowRectScores);
+            GUIUtils.RepositionWindow(ref _WindowRectScoresUIHidden);
+            GUIUtils.RepositionWindow(ref _WindowRectScoresUIVisible);
         }
 
         void Update()
@@ -2528,6 +2515,8 @@ namespace BDArmory.UI
                         //     PROF_n = Mathf.RoundToInt(Mathf.Pow(10, PROF_n_pow));
                         // }
 
+                        // if (GUI.Button(SLineRect(++line), "Test Order of Operations"))
+                        //     TestOrderOfOperations();
                         // if (GUI.Button(SLineRect(++line), "Test GetMass vs Size performance"))
                         //     TestMassVsSizePerformance();
                         // if (GUI.Button(SLineRect(++line), "Test DotNorm performance"))
@@ -2998,7 +2987,6 @@ namespace BDArmory.UI
                         BDArmorySettings.APS_THRESHOLD = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.APS_THRESHOLD, 1f, 356f));
 
                         BDArmorySettings.USE_DLZ_LAUNCH_RANGE = GUI.Toggle(SLineRect(++line, 1), BDArmorySettings.USE_DLZ_LAUNCH_RANGE, StringUtils.Localize("#LOC_BDArmory_MissilesRange"));
-
                     }
                 }
 
@@ -3052,7 +3040,7 @@ namespace BDArmory.UI
                         BDArmorySettings.WEAPON_FX_DURATION = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.WEAPON_FX_DURATION, 5f, 20f));
 
                         GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_BallisticTrajectorSimulationMultiplier")}:  ({BDArmorySettings.BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER})", leftLabel);
-                        BDArmorySettings.BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER, 1f, 256f));
+                        BDArmorySettings.BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER, 1f, 128f));
 
                         GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_ArmorMassMultiplier")}:  ({BDArmorySettings.ARMOR_MASS_MOD})", leftLabel);
                         BDArmorySettings.ARMOR_MASS_MOD = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.ARMOR_MASS_MOD, 0.05f, 2f), 0.05f); //armor mult shouldn't be zero, else armor will never take damage, might also break some other things
@@ -4131,6 +4119,12 @@ namespace BDArmory.UI
             GAME_UI_ENABLED = false;
             BDACompetitionMode.Instance.UpdateGUIElements();
             UpdateCursorState();
+
+            // Switch visible/hidden window rects
+            _WindowRectScoresUIVisible = WindowRectScores;
+            if (_WindowRectScoresUIHidden != default) WindowRectScores = _WindowRectScoresUIHidden;
+            _WindowRectVesselSwitcherUIVisible = WindowRectVesselSwitcher;
+            if (_WindowRectVesselSwitcherUIHidden != default) WindowRectVesselSwitcher = _WindowRectVesselSwitcherUIHidden;
         }
 
         void ShowGameUI()
@@ -4138,12 +4132,28 @@ namespace BDArmory.UI
             GAME_UI_ENABLED = true;
             BDACompetitionMode.Instance.UpdateGUIElements();
             UpdateCursorState();
+
+            // Switch visible/hidden window rects
+            _WindowRectScoresUIHidden = WindowRectScores;
+            if (_WindowRectScoresUIVisible != default) WindowRectScores = _WindowRectScoresUIVisible;
+            _WindowRectVesselSwitcherUIHidden = WindowRectVesselSwitcher;
+            if (_WindowRectVesselSwitcherUIVisible != default) WindowRectVesselSwitcher = _WindowRectVesselSwitcherUIVisible;
         }
 
         internal void OnDestroy()
         {
             if (saveWindowPosition)
             {
+                if (GAME_UI_ENABLED)
+                {
+                    _WindowRectScoresUIVisible = WindowRectScores;
+                    _WindowRectVesselSwitcherUIVisible = WindowRectVesselSwitcher;
+                }
+                else
+                {
+                    _WindowRectScoresUIHidden = WindowRectScores;
+                    _WindowRectVesselSwitcherUIHidden = WindowRectVesselSwitcher;
+                }
                 BDAWindowSettingsField.Save();
             }
             if (windowSettingsEnabled || showVesselSpawnerGUI)
@@ -4373,6 +4383,30 @@ namespace BDArmory.UI
                 clip = SoundUtils.GetAudioClip("BDArmory/Sounds/deployClick");
             dt = Time.realtimeSinceStartup - tic;
             Debug.Log($"DEBUG GetAudioClip took {dt / N:G3}s");
+        }
+
+        public static void TestOrderOfOperations()
+        {
+            var watch = new System.Diagnostics.Stopwatch();
+            float µsResolution = 1e6f / System.Diagnostics.Stopwatch.Frequency;
+            Debug.Log($"DEBUG Clock resolution: {µsResolution}µs, {PROF_N} outer loops, {PROF_n} inner loops");
+            float x = UnityEngine.Random.Range(-1f, 1f);
+            Vector3 X = UnityEngine.Random.insideUnitSphere;
+            Vector3 result = default;
+            var func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { result = x * X; } };
+            Debug.Log($"DEBUG x*X took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs");
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { result = X * x; } };
+            Debug.Log($"DEBUG X*x took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs");
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { result = x * x * X; } };
+            Debug.Log($"DEBUG x*x*X took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs");
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { result = X * x * x; } };
+            Debug.Log($"DEBUG X*x*x took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs");
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { result = x * X * x; } };
+            Debug.Log($"DEBUG x*X*x took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs");
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { result = x * x * x * X; } };
+            Debug.Log($"DEBUG x*x*x*X took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs");
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { result = X * x * x * x; } };
+            Debug.Log($"DEBUG X*x*x*x took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs");
         }
 
         public static void TestMassVsSizePerformance()

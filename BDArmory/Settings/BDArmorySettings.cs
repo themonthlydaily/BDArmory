@@ -27,7 +27,6 @@ namespace BDArmory.Settings
         #region Window settings
         [BDAPersistentSettingsField] public static bool STRICT_WINDOW_BOUNDARIES = true;
         [BDAPersistentSettingsField] public static float REMOTE_ORCHESTRATION_WINDOW_WIDTH = 225f;
-        [BDAPersistentSettingsField] public static float VESSEL_SWITCHER_WINDOW_WIDTH = 500f;
         [BDAPersistentSettingsField] public static bool VESSEL_SWITCHER_WINDOW_SORTING = false;
         [BDAPersistentSettingsField] public static bool VESSEL_SWITCHER_WINDOW_OLD_DISPLAY_STYLE = false;
         [BDAPersistentSettingsField] public static bool VESSEL_SWITCHER_PERSIST_UI = false;
@@ -142,7 +141,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool LOGARITHMIC_RADAR_DISPLAY = true;                //NOTE: used ONLY for display range of radar windows! Actual radar range provided by part configs!
         [BDAPersistentSettingsField] public static float MAX_ENGAGEMENT_RANGE = 200000f;          //NOTE: used ONLY for missile dlz parameters!
         [BDAPersistentSettingsField] public static float IVA_LOWPASS_FREQ = 2500f;
-        [BDAPersistentSettingsField] public static float BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER = 256f;      // Multiplier of fixedDeltaTime for the large scale steps of ballistic trajectory simulations.
+        [BDAPersistentSettingsField] public static float BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER = 128f;      // Multiplier of fixedDeltaTime for the large scale steps of ballistic trajectory simulations. Large values at extreme ranges may cause small inaccuracies. 128 with 1km/s bullets at their max range seems reasonable in most cases.
         [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE = 10f;
         [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_CENTER = 20f;
         [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_SPREAD = 5f;

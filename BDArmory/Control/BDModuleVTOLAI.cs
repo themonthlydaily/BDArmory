@@ -704,6 +704,11 @@ namespace BDArmory.Control
         void Takeoff()
         {
             belowMinAltitude = (float)vessel.radarAltitude < minAltitude;
+            if (vessel.Landed && (float)vessel.radarAltitude > 1)
+            {
+                vessel.Landed = false; // KSP sometimes isn't updating this correctly after spawning.
+                vessel.Splashed = vessel.altitude < 0; // Radar altitude could be > 1, while the craft is still underwater due to the way radarAlt works...
+            }
             if (!belowMinAltitude)
                 initialTakeOff = false;
         }
