@@ -165,7 +165,7 @@ namespace BDArmory.Weapons
         public bool targetIsLandedOrSplashed = false; // Used in the targeting simulations to know whether to separate gravity from other acceleration.
         private float lastTimeToCPA = -1, deltaTimeToCPA = 0;
         public Vector3 finalAimTarget;
-        Vector3 lastFinalAimTarget;
+        Vector3 staleFinalAimTarget, staleTargetVelocity, staleTargetAcceleration, stalePartVelocity;
         public Vessel visualTargetVessel;
         public Vessel lastVisualTargetVessel;
         public Part visualTargetPart;
@@ -191,7 +191,7 @@ namespace BDArmory.Weapons
         enum TargetAcquisitionType { None, Visual, Slaved, Radar, AutoProxy, GPS };
         TargetAcquisitionType targetAcquisitionType = TargetAcquisitionType.None;
         TargetAcquisitionType lastTargetAcquisitionType = TargetAcquisitionType.None;
-        float lastGoodTargetTime = 0;
+        float staleGoodTargetTime = 0;
 
         public Vector3? FiringSolutionVector => finalAimTarget.IsZero() ? (Vector3?)null : (finalAimTarget - fireTransforms[0].position).normalized;
 
@@ -3394,7 +3394,7 @@ namespace BDArmory.Weapons
             {
                 if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                 {
-                    if (!targetAcquired && (!weaponManager || Time.time - lastGoodTargetTime > Mathf.Max(60f / BDArmorySettings.FIRE_RATE_OVERRIDE, weaponManager.targetScanInterval)))
+                    if (!targetAcquired && (!weaponManager || Time.time - staleGoodTargetTime > Mathf.Max(60f / BDArmorySettings.FIRE_RATE_OVERRIDE, weaponManager.targetScanInterval)))
                     {
                         autoFire = false;
                         return;
@@ -3402,7 +3402,7 @@ namespace BDArmory.Weapons
                 }
                 else
                 {
-                    if (!targetAcquired && (!weaponManager || Time.time - lastGoodTargetTime > Mathf.Max(60f / roundsPerMinute, weaponManager.targetScanInterval)))
+                    if (!targetAcquired && (!weaponManager || Time.time - staleGoodTargetTime > Mathf.Max(60f / roundsPerMinute, weaponManager.targetScanInterval)))
                     {
                         autoFire = false;
                         return;
@@ -3414,21 +3414,36 @@ namespace BDArmory.Weapons
             bool manualAiming = false;
             if (aiControlled && !slaved && weaponManager != null && (!targetAcquired || weaponManager.staleTarget))
             {
-                if (BDKrakensbane.IsActive)
+                if (weaponManager.staleTarget && staleGoodTargetTime > 0)
                 {
-                    lastFinalAimTarget -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                    if (BDKrakensbane.IsActive)
+                    {
+                        staleFinalAimTarget -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                        if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DEBUG_WEAPONS)
+                        {
+                            debugLastTargetPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                        }
+                    }
+                    // Continue aiming towards where the target is expected to be while reloading based on the last measured pos, vel, acc.
+                    var timeSinceGood = Time.time - staleGoodTargetTime;
+                    finalAimTarget = AIUtils.PredictPosition(staleFinalAimTarget, staleTargetVelocity - BDKrakensbane.FrameVelocityV3f, staleTargetAcceleration, timeSinceGood / (1f + timeSinceGood / 30f)); // Smoothly limit prediction to 30s to prevent wild aiming.
+                    switch (eWeaponType)
+                    {
+                        case WeaponTypes.Ballistic:
+                            finalAimTarget += lastTimeToCPA * (stalePartVelocity - BDKrakensbane.FrameVelocityV3f - smoothedPartVelocity); // Account for our own velocity changes.
+                            break;
+                        case WeaponTypes.Rocket: // FIXME
+                            break;
+                            // Lasers have no timeToCPA correction.
+                    }
+
+                    fixedLeadOffset = targetPosition - finalAimTarget; //for aiming fixed guns to moving target
+                    // if (FlightGlobals.ActiveVessel == vessel) Debug.Log($"DEBUG t: {Time.time}, tgt acq: {targetAcquired}, stale: {weaponManager.staleTarget}, Stale aimer: aim at {finalAimTarget:G3} ({finalAimTarget.magnitude:G3}m), last: {staleFinalAimTarget:G3}, Δt: {timeSinceGood:F2}s ({timeSinceGood / (1f + timeSinceGood / 30f):F2}s)");
+
                     if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DEBUG_WEAPONS)
                     {
-                        debugLastTargetPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                        debugTargetPosition = AIUtils.PredictPosition(debugLastTargetPosition, targetVelocity, targetAcceleration, Time.time - staleGoodTargetTime);
                     }
-                }
-                // Continue aiming towards where the target is expected to be while reloading based on the last measured pos, vel, acc.
-                finalAimTarget = AIUtils.PredictPosition(lastFinalAimTarget, targetVelocity, targetAcceleration, Time.time - lastGoodTargetTime); // FIXME Check this predicted position when in orbit.
-                fixedLeadOffset = targetPosition - finalAimTarget; //for aiming fixed guns to moving target
-
-                if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DEBUG_WEAPONS)
-                {
-                    debugTargetPosition = AIUtils.PredictPosition(debugLastTargetPosition, targetVelocity, targetAcceleration, Time.time - lastGoodTargetTime);
                 }
             }
             else
@@ -3641,7 +3656,7 @@ namespace BDArmory.Weapons
                     else
                     {
                         deltaTimeToCPA = 0;
-                        smoothedRelativeFinalTarget.Reset(finalTarget);
+                        smoothedRelativeFinalTarget.Reset(finalTarget - fireTransforms[0].position);
                     }
                     lastTimeToCPA = timeToCPA;
                     targetDistance = Vector3.Distance(finalTarget, firePosition);
@@ -3677,8 +3692,11 @@ namespace BDArmory.Weapons
                 }
                 fixedLeadOffset = originalTarget - finalTarget; //for aiming fixed guns to moving target
                 finalAimTarget = finalTarget;
-                lastFinalAimTarget = finalAimTarget;
-                lastGoodTargetTime = Time.time;
+                staleFinalAimTarget = finalAimTarget;
+                staleTargetVelocity = targetVelocity + BDKrakensbane.FrameVelocityV3f;
+                staleTargetAcceleration = targetAcceleration;
+                stalePartVelocity = smoothedPartVelocity + BDKrakensbane.FrameVelocityV3f;
+                staleGoodTargetTime = Time.time;
             }
 
             //final turret aiming
@@ -4772,14 +4790,14 @@ namespace BDArmory.Weapons
 
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
             {
-                if (Time.time - lastGoodTargetTime > Mathf.Max(BDArmorySettings.FIRE_RATE_OVERRIDE / 60f, weaponManager.targetScanInterval))
+                if (Time.time - staleGoodTargetTime > Mathf.Max(BDArmorySettings.FIRE_RATE_OVERRIDE / 60f, weaponManager.targetScanInterval))
                 {
                     targetAcquisitionType = TargetAcquisitionType.None;
                 }
             }
             else
             {
-                if (Time.time - lastGoodTargetTime > Mathf.Max(roundsPerMinute / 60f, weaponManager.targetScanInterval))
+                if (Time.time - staleGoodTargetTime > Mathf.Max(roundsPerMinute / 60f, weaponManager.targetScanInterval))
                 {
                     targetAcquisitionType = TargetAcquisitionType.None;
                 }
@@ -5043,7 +5061,7 @@ namespace BDArmory.Weapons
             GPSTarget = false;
             lastTargetAcquisitionType = targetAcquisitionType;
             closestTarget = Vector3.zero;
-            if (Time.time - lastGoodTargetTime > Mathf.Max(roundsPerMinute / 60f, weaponManager.targetScanInterval))
+            if (Time.time - staleGoodTargetTime > Mathf.Max(roundsPerMinute / 60f, weaponManager.targetScanInterval))
             {
                 targetAcquisitionType = TargetAcquisitionType.None;
             }
