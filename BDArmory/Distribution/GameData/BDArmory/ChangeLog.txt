@@ -1,12 +1,15 @@
 ﻿IMPROVEMENTS / FIXES
- ﻿﻿-General:
+- General:
 	- Kerbal Foundries wheel and track HP now properly scales with wheel size.
 	- ProcArmor now has symmetry attach.
 	- Fix Armor panels < 10mm thick resetting to 25mm.
 	- Toggling Battle Damage will disable Paintball Mode, if enabled.
+- UI:
+	- Windows that show despite the UI being disabled (i.e., Vessel Switcher and Score windows) store a separate size and location for that mode.
+	- Use a resize handle instead of buttons for horizontally resizing the Vessel Switcher window.
 - AI / WM:
 	- When ramming, if the target is also trying to ram us, aim more directly at them (avoids unstable dynamics).
-	- Fix some depthkeeping logic with Submarine AI.
+	- Fix some depth-keeping logic with Submarine AI.
 	- Guard Mode toggles off if enabled when loading into a battle site from the KSC that had active combatants at the time player previously exited to Space Center.
 	- Fix secondary target assignment logic assigning targets irrespective of target priority settings.
 	- Add UNDERWATER_VISION view distance option so ships require sonar to detect submerged subs, and submerged subs require sonar to detect other vessels vs being able to see them as long as they are within guard range.
@@ -18,6 +21,7 @@
 	- Change Surface AI cruise behavior; if MaintainMinRange, craft will slow as before until minRange reached; if disabled, Vees will maintain flank regardless of target distance.
 	- Add missing combat Depth slider to AI GUI for Subs.
 	- AI now has longer object permanence for stationary/slow land targets it has lost sight of.
+	- VTOL AI makes sure Landed status is disabled during take-off.
 - Countermeasures:
 	- Add missing Active Sonar countermeasure.
 - Detectors:
@@ -30,6 +34,7 @@
 	- Bullets now take relative velocity into account when calculating damage.
 	- Fix Dual-mode APS turrets getting slaved to radar when firing on standard targets and not subsequently engaging incoming missile targets.
 	- Fix APS occasionally getting stuck on phantom targets.
+	- Rework aiming logic for improved long-range aiming for vessels moving at orbital speeds (still not entirely correct for low Kerbin orbit at longer ranges, but significantly better).
 	- Missiles:
 		- Fix missiles not firing on surface ships.
 		- Missiles now properly receive explosive damage from point defense HE rounds/interceptor missiles in paintball mode.
