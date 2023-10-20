@@ -539,7 +539,7 @@ namespace BDArmory.Bullets
                 timeElapsedSinceCurrentSpeedWasAdjusted = 0;
             }
             if (bulletDrop)
-                currentVelocity += period * FlightGlobals.getGeeForceAtPosition(transform.position); // FIXME Should this be adjusted for being underwater?
+                currentVelocity += period * FlightGlobals.getGeeForceAtPosition(transform.position); // FIXME Should this be adjusted for being underwater?  -Perhaps to 1/2 local G?
         }
 
         /// <summary>

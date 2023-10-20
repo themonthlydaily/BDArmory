@@ -2390,8 +2390,12 @@ namespace BDArmory.UI
                             GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_Engagement"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //engage ranges desc
                             if (ActiveDriver.SurfaceType != AIUtils.VehicleMovementType.Stationary)
                             {
-                                GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_RCS"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //RCS desc
-                                GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_Mass"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //avoid mass desc
+                                GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_RCSdesc"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //RCS desc
+                                GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_TargetMass"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //avoid mass desc
+                            }
+                            if (ActiveDriver.SurfaceType == AIUtils.VehicleMovementType.Land)
+                            {
+                                GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_Range"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //maintain min range desc
                             }
                         }
                         EndArea();
@@ -2447,6 +2451,27 @@ namespace BDArmory.UI
                             GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_SlopeAngle"), contextLabel);//"undershoot"
                             driverLines++;
                         }
+
+                        if (!NumFieldsEnabled)
+                        {
+                            ActiveDriver.CombatAltitude =
+                                GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth),
+                                    ActiveDriver.CombatAltitude, -200, -15);
+                            ActiveDriver.CombatAltitude = Mathf.Round(ActiveDriver.CombatAltitude);
+                        }
+                        else
+                        {
+                            var field = inputFields["CombatAltitude"];
+                            field.tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), field.possibleValue, 8, field.style));
+                            ActiveDriver.CombatAltitude = (float)field.currentValue;
+                        }
+                        GUI.Label(SettinglabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_CombatAltitude") + ": " + ActiveDriver.CombatAltitude.ToString("0"), Label);//"Steer Ki"
+                        driverLines++;
+                        if (contextTipsEnabled)
+                        {
+                            GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_CombatAlt"), contextLabel);//"undershoot"
+                            driverLines++;
+                        }                        
 
                         if (!NumFieldsEnabled)
                         {
@@ -2595,11 +2620,21 @@ namespace BDArmory.UI
                         GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_DynDampMult"), contextLabel);//"Wobbly"
                         driverLines++;
                     }
-
+                    if (ActiveDriver.SurfaceType == AIUtils.VehicleMovementType.Land)
+                    {
+                        ActiveDriver.maintainMinRange = GUI.Toggle(ToggleButtonRect(leftIndent, driverLines, contentWidth),
+                            ActiveDriver.maintainMinRange, StringUtils.Localize("#LOC_BDArmory_MaintainEngagementRange") + " : " + (ActiveDriver.maintainMinRange ? StringUtils.Localize("#LOC_BDArmory_true") : StringUtils.Localize("#LOC_BDArmory_false")), ActiveDriver.maintainMinRange ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Maintain Min range"
+                        driverLines += 1.25f;
+                        if (contextTipsEnabled)
+                        {
+                            GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_maintainRange"), contextLabel);
+                            driverLines++;
+                        }
+                    }
                     if (ActiveDriver.SurfaceType != AIUtils.VehicleMovementType.Stationary)
                     {
                         ActiveDriver.BroadsideAttack = GUI.Toggle(ToggleButtonRect(leftIndent, driverLines, contentWidth),
-                            ActiveDriver.BroadsideAttack, StringUtils.Localize("#LOC_BDArmory_BroadsideAttack") + " : " + (ActiveDriver.BroadsideAttack ? StringUtils.Localize("#LOC_BDArmory_BroadsideAttack_enabledText") : StringUtils.Localize("#LOC_BDArmory_BroadsideAttack_disabledText")), ActiveDriver.BroadsideAttack ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Dynamic pid"
+                            ActiveDriver.BroadsideAttack, StringUtils.Localize("#LOC_BDArmory_BroadsideAttack") + " : " + (ActiveDriver.BroadsideAttack ? StringUtils.Localize("#LOC_BDArmory_BroadsideAttack_enabledText") : StringUtils.Localize("#LOC_BDArmory_BroadsideAttack_disabledText")), ActiveDriver.BroadsideAttack ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//Broadside Attack"
                         driverLines += 1.25f;
                         if (contextTipsEnabled)
                         {

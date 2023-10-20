@@ -2,6 +2,8 @@
  ﻿﻿-General:
 	- Kerbal Foundries wheel and track HP now properly scales with wheel size.
 	- ProcArmor now has symmetry attach.
+	- Fix Armor panels < 10mm thick resetting to 25mm.
+	- Toggling Battle Damage will disable Paintball Mode, if enabled.
 - AI / WM:
 	- When ramming, if the target is also trying to ram us, aim more directly at them (avoids unstable dynamics).
 	- Fix some depthkeeping logic with Submarine AI.
@@ -12,6 +14,10 @@
 	- AI now respect target priority settings when looking at landed or splashed targets.
 	- Fix issue with ground vehicle AIs not selecting missiles against ground targets in some circumstances.
 	- AI now less jittery when doing bombing runs.
+	- Add new 'Maintain Min Range' toggle for Land AI; if enabled Vees will stop/reverse to maintain minimum engage distance to target.
+	- Change Surface AI cruise behavior; if MaintainMinRange, craft will slow as before until minRange reached; if disabled, Vees will maintain flank regardless of target distance.
+	- Add missing combat Depth slider to AI GUI for Subs.
+	- AI now has longer object permanence for stationary/slow land targets it has lost sight of.
 - Countermeasures:
 	- Add missing Active Sonar countermeasure.
 - Detectors:
@@ -39,6 +45,8 @@
 		- AI can now aim unguided/dumbfired missiles with the missile turret.
 		- AI can now use JDAMs/other guided bombs as unguided bombs when lacking targeting cam instead of aborting.
 		- Improve Bomb lead calcs for better bombing accuracy against moving targets.
+		- Fix turrets spinning wildly about when AI loses track of target and target position goes stale.
+
 v1.6.6.0
 IMPROVEMENTS / FIXES
 - General:
