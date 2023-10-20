@@ -29,7 +29,7 @@ namespace BDArmory.Damage
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorThickness"),//Armor Thickness
         UI_FloatRange(minValue = 0f, maxValue = 200, stepIncrement = 1f, scene = UI_Scene.All)]
-        public float Armor = 10f; //settable Armor thickness availible for editing in the SPH?VAB
+        public float Armor = -1f; //settable Armor thickness availible for editing in the SPH?VAB
 
         [KSPField(advancedTweakable = true, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_ArmorThickness")]//armor Thickness
         public float Armour = 10f;
@@ -93,7 +93,7 @@ namespace BDArmory.Damage
         public float maxHitPoints = -1f;
 
         [KSPField(isPersistant = true)]
-        public float ArmorThickness = 0f;
+        public float ArmorThickness = 10f;
 
         [KSPField(isPersistant = true)]
         public bool ArmorSet;
@@ -424,22 +424,17 @@ namespace BDArmory.Damage
                     IgnoreForArmorSetup = true;
                     SetHullMass();
                 }
-                if (ArmorThickness > 10 || ArmorPanel) //Set to 10, Cerulean's HP MM patches all have armorThickness 10 fields
+                
+                if (ArmorThickness > 10 || ArmorPanel) //Mod part set to start with armor, or armor panel. > 10, since less than 10mm of armor can't be considered 'startsArmored'
                 {
                     startsArmored = true;
-                    if (Armor > 10 && Armor != ArmorThickness)
-                    { }
-                    else
-                    {
-                        Armor = ArmorThickness;
-                    }
-                    //if (ArmorTypeNum == 1)
-                    //{
-                    //    ArmorTypeNum = 2;
-                    //}
-                }
+                    if (Armor < 0) // armor amount modified in SPH/VAB and does not = either the default nor the .cfg thickness
+                        Armor = ArmorThickness;//set Armor amount to .cfg value
+                    //See also ln 1183-1186
+                }                
                 else
                 {
+                    if (Armor < 0) Armor = 10;
                     Fields["Armor"].guiActiveEditor = false;
                     Fields["guiArmorTypeString"].guiActiveEditor = false;
                     Fields["guiArmorTypeString"].guiActive = false;
@@ -1186,23 +1181,13 @@ namespace BDArmory.Damage
         public void overrideArmorSetFromConfig()
         {
             ArmorSet = true;
-            if (ArmorThickness > 10 || ArmorPanel) //primarily panels, but any thing that starts with more than default armor
+
+            if (ArmorThickness > 10 || ArmorPanel) //Mod part set to start with armor, or armor panel
             {
                 startsArmored = true;
-                if (Armor > 10 && Armor != ArmorThickness) //if settings modified and loading in from craft file
-                { }
-                else
-                {
-                    Armor = ArmorThickness;
-                }
-                /*
-                UI_FloatRange armortypes = (UI_FloatRange)Fields["ArmorTypeNum"].uiControlEditor;
-                armortypes.minValue = 2f; //prevent panels from being switched to "None" armor type
-                if (ArmorTypeNum == 1)
-                {
-                    ArmorTypeNum = 2;
-                }
-                */
+                if (Armor < 0) // armor amount modified in SPH/VAB and does not = either the default nor the .cfg thickness
+                    Armor = ArmorThickness;//set Armor amount to .cfg value
+                                           //See also ln 1183-1186
             }
             if (maxSupportedArmor < 0) //hasn't been set in cfg
             {

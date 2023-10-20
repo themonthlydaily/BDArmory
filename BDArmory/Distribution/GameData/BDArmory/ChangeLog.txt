@@ -2,6 +2,8 @@
  ﻿﻿-General:
 	- Kerbal Foundries wheel and track HP now properly scales with wheel size.
 	- ProcArmor now has symmetry attach.
+	- Fix Armor panels < 10mm thick resetting to 25mm.
+	- Toggling Battle Damage will disable Paintball Mode, if enabled.
 - AI / WM:
 	- When ramming, if the target is also trying to ram us, aim more directly at them (avoids unstable dynamics).
 	- Fix some depthkeeping logic with Submarine AI.
@@ -10,6 +12,10 @@
 	- Add UNDERWATER_VISION view distance option so ships require sonar to detect submerged subs, and submerged subs require sonar to detect other vessels vs being able to see them as long as they are within guard range.
 	- Add attack logic for gun-armed submarines when BULLET_WATER_DRAG is disabled.
 	- AI now respect target priority settings when looking at landed or splashed targets.
+	- Add new 'Maintain Min Range' toggle for Land AI; if enabled Vees will stop/reverse to maintain minimum engage distance to target.
+	- Change Surface AI cruise behavior; if MaintainMinRange, craft will slow as before until minRange reached; if disabled, Vees will maintain flank regardless of target distance.
+	- Add missing combat Depth slider to AI GUI for Subs.
+	- AI now has longer object permanence for stationary/slow land targets it has lost sight of.
 - Countermeasures:
 	- Add missing Active Sonar countermeasure.
 - Detectors:
@@ -32,6 +38,7 @@
 		- Fix NRe from manually firing GPS missiles from a multimissilelauncher.
 		- AIs attempting to dumbfire multimissileLaunchers will now take missile launch vector into account instead of vessel prograde.
 		- Adds new Settings option 'LIMITED_ORDINANCE' to clamp multimissilelaunchers and reloadable rails to a single salvo's worth of ammo. 
+		- Fix turrets spinning wildly about when AI loses track of target and target position goes stale.
 
 v1.6.6.0
 IMPROVEMENTS / FIXES
