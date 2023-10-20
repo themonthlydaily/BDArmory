@@ -18,7 +18,7 @@
 	- Fix issue with ground vehicle AIs not selecting missiles against ground targets in some circumstances.
 	- AI now less jittery when doing bombing runs.
 	- Add new 'Maintain Min Range' toggle for Land AI; if enabled Vees will stop/reverse to maintain minimum engage distance to target.
-	- Change Surface AI cruise behavior; if MaintainMinRange, craft will slow as before until minRange reached; if disabled, Vees will maintain flank regardless of target distance.
+	- Change Surface AI cruise behavior; if MaintainMinRange, craft will slow as before until minRange reached; if disabled, Vees will maintain flank speed regardless of target distance.
 	- Add missing combat Depth slider to AI GUI for Subs.
 	- AI now has longer object permanence for stationary/slow land targets it has lost sight of.
 	- VTOL AI makes sure Landed status is disabled during take-off.
