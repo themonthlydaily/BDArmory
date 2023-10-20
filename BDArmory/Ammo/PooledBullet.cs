@@ -532,14 +532,14 @@ namespace BDArmory.Bullets
         {
             timeElapsedSinceCurrentSpeedWasAdjusted += period; // Track flight time for drag purposes
             UpdateDragEstimate(); // Update the drag estimate, accounting for water/air environment changes. Note: changes due to bulletDrop aren't being applied to the drag.
+            if (bulletDrop)
+                currentVelocity += period * FlightGlobals.getGeeForceAtPosition(transform.position);
             if (underwater)
             {
                 currentVelocity *= dragVelocityFactor; // Note: If applied to aerial flight, this screws up targeting, because the weapon's aim code doesn't know how to account for drag. Only have it apply when underwater for now. Review later?
                 currentSpeed = currentVelocity.magnitude;
                 timeElapsedSinceCurrentSpeedWasAdjusted = 0;
             }
-            if (bulletDrop)
-                currentVelocity += period * FlightGlobals.getGeeForceAtPosition(transform.position); // FIXME Should this be adjusted for being underwater?  -Perhaps to 1/2 local G?
         }
 
         /// <summary>
