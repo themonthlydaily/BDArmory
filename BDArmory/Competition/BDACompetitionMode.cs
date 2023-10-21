@@ -806,7 +806,7 @@ namespace BDArmory.Competition
                         foreach (var pilot in pilots[leader.weaponManager.Team])
                             if (pilot != null
                                     && pilot.currentCommand == PilotCommands.Follow
-                                    && (pilot.vessel.CoM - pilot.commandLeader.vessel.CoM).sqrMagnitude > teamDistance * teamDistance)
+                                    && pilot.vessel.CoM.FurtherFromThan(pilot.commandLeader.vessel.CoM, teamDistance))
                                 waiting = true;
 
                         if (waiting) break;

@@ -2504,18 +2504,18 @@ namespace BDArmory.UI
 #if DEBUG  // Only visible when compiled in Debug configuration.
                     if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
                     {
-                        // GUI.Label(SLeftSliderRect(++line), $"Outer loops N ({PROF_N}):");
-                        // if (PROF_N_pow != (PROF_N_pow = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), PROF_N_pow, 0, 8))))
-                        // {
-                        //     PROF_N = Mathf.RoundToInt(Mathf.Pow(10, PROF_N_pow));
-                        // }
-                        // GUI.Label(SLeftSliderRect(++line), $"Inner loops n ({PROF_n}):");
-                        // if (PROF_n_pow != (PROF_n_pow = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), PROF_n_pow, 0, 6))))
-                        // {
-                        //     PROF_n = Mathf.RoundToInt(Mathf.Pow(10, PROF_n_pow));
-                        // }
+                        GUI.Label(SLeftSliderRect(++line), $"Outer loops N ({PROF_N}):");
+                        if (PROF_N_pow != (PROF_N_pow = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), PROF_N_pow, 0, 8))))
+                        {
+                            PROF_N = Mathf.RoundToInt(Mathf.Pow(10, PROF_N_pow));
+                        }
+                        GUI.Label(SLeftSliderRect(++line), $"Inner loops n ({PROF_n}):");
+                        if (PROF_n_pow != (PROF_n_pow = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), PROF_n_pow, 0, 6))))
+                        {
+                            PROF_n = Mathf.RoundToInt(Mathf.Pow(10, PROF_n_pow));
+                        }
 
-                        // if (GUI.Button(SLineRect(++line), "Test Sqr vs x*x")) TestSqrVsSqr();
+                        if (GUI.Button(SLineRect(++line), "Test Sqr vs x*x")) TestSqrVsSqr();
                         // if (GUI.Button(SLineRect(++line), "Test Order of Operations")) TestOrderOfOperations();
                         // if (GUI.Button(SLineRect(++line), "Test GetMass vs Size performance")) TestMassVsSizePerformance();
                         // if (GUI.Button(SLineRect(++line), "Test DotNorm performance")) TestDotNormPerformance();
@@ -4181,7 +4181,7 @@ namespace BDArmory.UI
         }
 
 #if DEBUG
-        // static int PROF_N_pow = 5, PROF_n_pow = 2;
+        static int PROF_N_pow = 5, PROF_n_pow = 2;
         static int PROF_N = 100000, PROF_n = 100;
         IEnumerator TestVesselPositionTiming()
         {
@@ -4394,7 +4394,7 @@ namespace BDArmory.UI
             func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { sqr = value * value; } };
             Debug.Log($"DEBUG value * value took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {sqr}");
             Vector3 a = UnityEngine.Random.insideUnitSphere, b = UnityEngine.Random.insideUnitSphere;
-            float distance=0;
+            float distance = 0;
             func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { distance = Vector3.Distance(a, b); } };
             Debug.Log($"DEBUG Vector3.Distance took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {distance}");
             func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { distance = (a - b).magnitude; } };
@@ -4404,10 +4404,14 @@ namespace BDArmory.UI
             bool lessThan = false;
             func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { lessThan = Vector3.Distance(a, b) < 0.5f; } };
             Debug.Log($"DEBUG Vector3.Distance < v took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {distance}");
-            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { lessThan = (a - b).sqrMagnitude < 0.5f*0.5f; } };
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { lessThan = (a - b).sqrMagnitude < 0.5f * 0.5f; } };
             Debug.Log($"DEBUG sqrMagnitude < v*v took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {distance}");
             func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { lessThan = (a - b).sqrMagnitude < 0.5f.Sqr(); } };
             Debug.Log($"DEBUG sqrMagnitude < v.Sqr() took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {distance}");
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { lessThan = a.CloserToThan(b, 0.5f); } };
+            Debug.Log($"DEBUG a.CloserToThan(b,f) took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {lessThan}");
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { lessThan = a.FurtherFromThan(b, 0.5f); } };
+            Debug.Log($"DEBUG a.FurtherFromThan(b,f) took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {lessThan}");
         }
 
         public static void TestOrderOfOperations()

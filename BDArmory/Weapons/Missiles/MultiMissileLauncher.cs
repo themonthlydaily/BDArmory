@@ -1092,7 +1092,7 @@ namespace BDArmory.Weapons.Missiles
             }
             if (!foundTarget)
             {
-                if ((missileLauncher.MissileReferenceTransform.position - targetV.CoM).sqrMagnitude < ml.activeRadarRange.Sqr())
+                if (missileLauncher.MissileReferenceTransform.position.CloserToThan(targetV.CoM, ml.activeRadarRange))
                 {
                     TargetSignatureData[] scannedTargets = new TargetSignatureData[(int)wpm.multiMissileTgtNum];
                     RadarUtils.RadarUpdateMissileLock(new Ray(ml.transform.position, ml.GetForwardTransform()), ml.maxOffBoresight / 2, ref scannedTargets, 0.4f, ml);

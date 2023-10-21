@@ -642,7 +642,7 @@ namespace BDArmory.Bullets
 
             if (isAPSprojectile && (tgtShell != null || tgtRocket != null))
             {
-                if (Vector3.Distance(transform.position, tgtShell != null ? tgtShell.transform.position : tgtRocket.transform.position) < detonationRange / 2)
+                if (transform.position.CloserToThan(tgtShell != null ? tgtShell.transform.position : tgtRocket.transform.position, detonationRange / 2))
                 {
                     if (BDArmorySettings.DEBUG_WEAPONS)
                         Debug.Log("[BDArmory.PooledRocket]: rocket proximity to APS target | Distance overlap = " + detonationRange + "| tgt name = " + tgtShell != null ? tgtShell.name : tgtRocket.name);
@@ -779,9 +779,9 @@ namespace BDArmory.Bullets
                                 {
                                     KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
                                     Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
-                                    float distance = Vector3.Distance(transform.position, hit.point);
                                     if (p != null)
                                     {
+                                        float distance = Vector3.Distance(transform.position, hit.point);
                                         BulletHitFX.AttachFire(hit.point, p, caliber, sourceVesselName, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)), 1, true); //else apply fire to occluding part
                                         if (BDArmorySettings.DEBUG_WEAPONS)
                                             Debug.Log("[BDArmory.Rocket]: Applying fire to " + p.name + " at distance " + distance + "m, for " + BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)) + " seconds"); ;
@@ -812,9 +812,9 @@ namespace BDArmory.Bullets
                                     if (craftHit.Contains(partHit.vessel)) continue; // Don't hit the same craft multiple times.
                                     craftHit.Add(partHit.vessel);
 
-                                    float Distance = Vector3.Distance(partHit.transform.position, this.transform.position);
                                     if (partHit != null)
                                     {
+                                        float distance = Vector3.Distance(partHit.transform.position, this.transform.position);
                                         if (concussion && partHit.mass > 0)
                                         {
                                             partHit.rb.AddForceAtPosition((partHit.transform.position - this.transform.position).normalized * impulse, partHit.transform.position, ForceMode.Acceleration);
@@ -826,7 +826,7 @@ namespace BDArmory.Bullets
                                             {
                                                 MDEC = (ModuleDrainEC)partHit.vessel.rootPart.AddModule("ModuleDrainEC");
                                             }
-                                            MDEC.incomingDamage = ((25 - Distance) * 5); //this way craft at edge of blast might only get disabled instead of bricked
+                                            MDEC.incomingDamage = (25 - distance) * 5; //this way craft at edge of blast might only get disabled instead of bricked
                                             MDEC.softEMP = false; //can bypass EMP damage cap                                            
                                         }
                                         if (choker)
@@ -836,7 +836,7 @@ namespace BDArmory.Bullets
                                             {
                                                 ash = (ModuleDrainIntakes)partHit.vessel.rootPart.AddModule("ModuleDrainIntakes");
                                             }
-                                            ash.drainDuration += BDArmorySettings.WEAPON_FX_DURATION * (1 - (Distance / 25)); //reduce intake knockout time based on distance from epicenter                                        
+                                            ash.drainDuration += BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / 25)); //reduce intake knockout time based on distance from epicenter                                        
                                         }
                                     }
                                 }
