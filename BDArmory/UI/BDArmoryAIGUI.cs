@@ -2451,28 +2451,29 @@ namespace BDArmory.UI
                             GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_SlopeAngle"), contextLabel);//"undershoot"
                             driverLines++;
                         }
-
-                        if (!NumFieldsEnabled)
+                        if (ActiveDriver.SurfaceType != AIUtils.VehicleMovementType.Submarine)
                         {
-                            ActiveDriver.CombatAltitude =
-                                GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth),
-                                    ActiveDriver.CombatAltitude, -200, -15);
-                            ActiveDriver.CombatAltitude = Mathf.Round(ActiveDriver.CombatAltitude);
-                        }
-                        else
-                        {
-                            var field = inputFields["CombatAltitude"];
-                            field.tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), field.possibleValue, 8, field.style));
-                            ActiveDriver.CombatAltitude = (float)field.currentValue;
-                        }
-                        GUI.Label(SettinglabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_CombatAltitude") + ": " + ActiveDriver.CombatAltitude.ToString("0"), Label);//"Steer Ki"
-                        driverLines++;
-                        if (contextTipsEnabled)
-                        {
-                            GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_CombatAlt"), contextLabel);//"undershoot"
+                            if (!NumFieldsEnabled)
+                            {
+                                ActiveDriver.CombatAltitude =
+                                    GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth),
+                                        ActiveDriver.CombatAltitude, -200, -15);
+                                ActiveDriver.CombatAltitude = Mathf.Round(ActiveDriver.CombatAltitude);
+                            }
+                            else
+                            {
+                                var field = inputFields["CombatAltitude"];
+                                field.tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), field.possibleValue, 8, field.style));
+                                ActiveDriver.CombatAltitude = (float)field.currentValue;
+                            }
+                            GUI.Label(SettinglabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_CombatAltitude") + ": " + ActiveDriver.CombatAltitude.ToString("0"), Label);//"Steer Ki"
                             driverLines++;
-                        }                        
-
+                            if (contextTipsEnabled)
+                            {
+                                GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_CombatAlt"), contextLabel);//"undershoot"
+                                driverLines++;
+                            }
+                        }
                         if (!NumFieldsEnabled)
                         {
                             ActiveDriver.CruiseSpeed =
