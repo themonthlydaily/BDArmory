@@ -2414,7 +2414,7 @@ namespace BDArmory.Weapons.Missiles
             }
             else
             {
-                aamTarget = transform.position + (20 * vessel.Velocity().normalized);
+                aamTarget = transform.position + (2000 * vessel.Velocity().normalized);
             }
 
             if (TimeIndex > dropTime + 0.25f)
@@ -2478,10 +2478,10 @@ namespace BDArmory.Weapons.Missiles
             }
             else
             {
-                SLWTarget = transform.position + (20 * vessel.Velocity().normalized);
+                SLWTarget = TargetPosition; //head to last known contact and then begin circlung
             }
-            TargetPosition -= VectorUtils.GetUpDirection(TargetPosition) * 5;
-            if (FlightGlobals.getAltitudeAtPos(SLWTarget) > 0) SLWTarget -= (MissileGuidance.GetRaycastRadarAltitude(SLWTarget) * VectorUtils.GetUpDirection(vessel.transform.position));
+
+            if (FlightGlobals.getAltitudeAtPos(SLWTarget) > 0) SLWTarget -= ((MissileGuidance.GetRaycastRadarAltitude(SLWTarget) + 2) * VectorUtils.GetUpDirection(vessel.transform.position));// see about implementing a 'set target running depth'?
             //allow inverse contRod-style target offset for srf targets for 'under-the-keel' proximity detonation? or at least not having the torps have a target alt of 0 (and thus be vulnerable to surface PD?)
             if (TimeIndex > dropTime + 0.25f)
             {

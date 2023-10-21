@@ -639,7 +639,7 @@ namespace BDArmory.Weapons.Missiles
                 targetVessel = null;
                 TargetAcquired = false;
                 predictedHeatTarget.exists = false;
-                predictedHeatTarget.signalStrength = 0;
+                predictedHeatTarget.signalStrength = 0; //have this instead set to originalHeatTarget missile had on initial lock?
                 return;
             }
 
