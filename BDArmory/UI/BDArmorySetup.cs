@@ -2504,18 +2504,18 @@ namespace BDArmory.UI
 #if DEBUG  // Only visible when compiled in Debug configuration.
                     if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
                     {
-                        GUI.Label(SLeftSliderRect(++line), $"Outer loops N ({PROF_N}):");
-                        if (PROF_N_pow != (PROF_N_pow = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), PROF_N_pow, 0, 8))))
-                        {
-                            PROF_N = Mathf.RoundToInt(Mathf.Pow(10, PROF_N_pow));
-                        }
-                        GUI.Label(SLeftSliderRect(++line), $"Inner loops n ({PROF_n}):");
-                        if (PROF_n_pow != (PROF_n_pow = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), PROF_n_pow, 0, 6))))
-                        {
-                            PROF_n = Mathf.RoundToInt(Mathf.Pow(10, PROF_n_pow));
-                        }
+                        // GUI.Label(SLeftSliderRect(++line), $"Outer loops N ({PROF_N}):");
+                        // if (PROF_N_pow != (PROF_N_pow = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), PROF_N_pow, 0, 8))))
+                        // {
+                        //     PROF_N = Mathf.RoundToInt(Mathf.Pow(10, PROF_N_pow));
+                        // }
+                        // GUI.Label(SLeftSliderRect(++line), $"Inner loops n ({PROF_n}):");
+                        // if (PROF_n_pow != (PROF_n_pow = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), PROF_n_pow, 0, 6))))
+                        // {
+                        //     PROF_n = Mathf.RoundToInt(Mathf.Pow(10, PROF_n_pow));
+                        // }
 
-                        if (GUI.Button(SLineRect(++line), "Test Sqr vs x*x")) TestSqrVsSqr();
+                        // if (GUI.Button(SLineRect(++line), "Test Sqr vs x*x")) TestSqrVsSqr();
                         // if (GUI.Button(SLineRect(++line), "Test Order of Operations")) TestOrderOfOperations();
                         // if (GUI.Button(SLineRect(++line), "Test GetMass vs Size performance")) TestMassVsSizePerformance();
                         // if (GUI.Button(SLineRect(++line), "Test DotNorm performance")) TestDotNormPerformance();
@@ -4181,8 +4181,8 @@ namespace BDArmory.UI
         }
 
 #if DEBUG
-        static int PROF_N_pow = 5, PROF_n_pow = 2;
-        static int PROF_N = 100000, PROF_n = 100;
+        // static int PROF_N_pow = 5, PROF_n_pow = 2;
+        static int PROF_N = 1000, PROF_n = 1000;
         IEnumerator TestVesselPositionTiming()
         {
             var wait = new WaitForFixedUpdate();
