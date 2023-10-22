@@ -2515,6 +2515,9 @@ namespace BDArmory.UI
                         //     PROF_n = Mathf.RoundToInt(Mathf.Pow(10, PROF_n_pow));
                         // }
 
+                        // GUI.Label(SLeftSliderRect(++line), $"Initial correction: {(TestNumericalMethodsIC == 0 ? "None" : TestNumericalMethodsIC == 1 ? "All" : TestNumericalMethodsIC == 2 ? "Local" : "Gravity")}");
+                        // TestNumericalMethodsIC = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), TestNumericalMethodsIC, 0, 3));
+                        // if (GUI.Button(SLineRect(++line), $"Test Forward Euler vs Semi-Implicit Euler vs Leap-frog ({PROF_N * Time.fixedDeltaTime}s, {PROF_N / Math.Min(PROF_N / 2, PROF_n)} steps)")) StartCoroutine(TestNumericalMethods(PROF_N * Time.fixedDeltaTime, PROF_N / Math.Min(PROF_N / 2, PROF_n)));
                         // if (GUI.Button(SLineRect(++line), "Test Sqr vs x*x")) TestSqrVsSqr();
                         // if (GUI.Button(SLineRect(++line), "Test Order of Operations")) TestOrderOfOperations();
                         // if (GUI.Button(SLineRect(++line), "Test GetMass vs Size performance")) TestMassVsSizePerformance();
@@ -4381,6 +4384,78 @@ namespace BDArmory.UI
                 clip = SoundUtils.GetAudioClip("BDArmory/Sounds/deployClick");
             dt = Time.realtimeSinceStartup - tic;
             Debug.Log($"DEBUG GetAudioClip took {dt / N:G3}s");
+        }
+
+        int TestNumericalMethodsIC = 0;
+        IEnumerator TestNumericalMethods(float duration, int steps)
+        {
+            var vessel = FlightGlobals.ActiveVessel;
+            var wait = new WaitForFixedUpdate();
+            yield return wait; // Wait for the next fixedUpdate to synchronise with the physics.
+            if (vessel == null) yield break;
+            var dt = duration / steps;
+            if (dt < Time.fixedDeltaTime)
+            {
+                dt = Time.fixedDeltaTime;
+                steps = (int)(duration / dt);
+            }
+            Vector3 x = vessel.transform.position, x0 = x, x1 = x, x2 = x;
+            Vector3 a0 = vessel.acceleration - FlightGlobals.getGeeForceAtPosition(x0), a1 = a0, a2 = a0; // Separate acceleration into local and gravitational.
+            // Note: acceleration is an averaged (or derived) value, we should use acceleration_immediate instead, but most of the rest of the code uses acceleration.
+            Vector3 v = vessel.rb_velocity + BDKrakensbane.FrameVelocityV3f;
+            switch (TestNumericalMethodsIC)
+            {
+                case 0: // No correction
+                    break;
+                case 1:
+                    v += 0.5f * Time.fixedDeltaTime * vessel.acceleration; // Unity integration correction for all acceleration
+                    break;
+                case 2:
+                    v += 0.5f * Time.fixedDeltaTime * a0; // Unity integration correction for local acceleration only — this seems to give the best results for leap-frog
+                    break;
+                case 3:
+                    v += 0.5f * Time.fixedDeltaTime * FlightGlobals.getGeeForceAtPosition(x0); // Unity integration correction for gravity only
+                    break;
+            }
+            Vector3 v0 = v, v1 = v, v2 = v;
+            Debug.Log($"DEBUG {Time.time} IC: {TestNumericalMethodsIC}, Initial acceleration: {a0}m/s^2 constant local + {(Vector3)FlightGlobals.getGeeForceAtPosition(x0)}m/s^2 gravity");
+            for (int i = 0; i < steps; ++i)
+            {
+                // Forward Euler (1st order, not symplectic)
+                var g = FlightGlobals.getGeeForceAtPosition(x0); // Get the gravity at the current time
+                x0 += dt * v0; // Update position based on velocity at the current time
+                v0 += dt * (a0 + g); // Update the velocity based on the potential at the current time
+
+                // Semi-implicit Euler (1st order, symplectic)
+                v1 += dt * (a1 + FlightGlobals.getGeeForceAtPosition(x1)); // Update velocity based on the potential at the current time
+                x1 += dt * v1; // Update position based on velocity at the future time
+
+                // Leap-frog (2nd order, symplectic)
+                // Note: combining the second half-update to v2 with the first one of the next step into a single evaluation is where the name of the method comes from.
+                v2 += 0.5f * dt * (a2 + FlightGlobals.getGeeForceAtPosition(x2)); // Update velocity half a step based on the potential at the current time
+                x2 += dt * v2; // Update the position based on the velocity half-way between the current and future times
+                v2 += 0.5f * dt * (a2 + FlightGlobals.getGeeForceAtPosition(x2)); // Update velocity another half a step based on the potential at the future time
+            }
+
+            var tic = Time.time;
+            while (Time.time - tic < duration - Time.fixedDeltaTime / 2)
+            {
+                yield return wait;
+                if (vessel == null)
+                {
+                    Debug.Log($"DEBUG Active vessel disappeared, aborting.");
+                    yield break;
+                }
+
+                if (BDKrakensbane.IsActive) // Correct for Krakensbane
+                {
+                    x0 -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                    x1 -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                    x2 -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                }
+            }
+            x = vessel.transform.position;
+            Debug.Log($"DEBUG {Time.time}: After {duration}s ({steps}*{dt}={steps * dt}), Actual x = {x}, Forward Euler predicts x = {x0} (Δ = {(x - x0).magnitude}), Semi-implicit Euler predicts x = {x1} (Δ = {(x - x1).magnitude}), Leap-frog predicts x = {x2} (Δ = {(x - x2).magnitude})");
         }
 
         public static void TestSqrVsSqr()
