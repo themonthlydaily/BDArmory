@@ -117,6 +117,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool COMPETITION_ALTITUDE__LIMIT_ASL = false;       // Does Killer GM use ASL or AGL for latitide ceiling/floor?
         [BDAPersistentSettingsField] public static bool COMPETITION_GM_KILL_WEAPON = false;             // Competition GM will kill weaponless craft?
         [BDAPersistentSettingsField] public static bool COMPETITION_GM_KILL_ENGINE = false;             // Competition GM will kill engineless craft?
+        [BDAPersistentSettingsField] public static bool COMPETITION_GM_KILL_DISABLED = false;           // Competition GM will kill craft that are disabled (no weapons or ammo, no engine [Pilot/VTOL/Ship/Sub] or no wheels [Surface])
         [BDAPersistentSettingsField] public static float COMPETITION_GM_KILL_HP = 0;                    // Competition GM will kill craft with low HP craft?
         [BDAPersistentSettingsField] public static float COMPETITION_GM_KILL_TIME = 0;                  // CompetitionGM Kill time
         [BDAPersistentSettingsField] public static float COMPETITION_NONCOMPETITOR_REMOVAL_DELAY = 30; // Competition non-competitor removal delay in seconds.

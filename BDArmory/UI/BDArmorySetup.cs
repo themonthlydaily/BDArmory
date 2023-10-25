@@ -3797,8 +3797,9 @@ namespace BDArmory.UI
                         BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY / 10f, 1, 6)) * 10f; // For now, don't control the killerGMEnabled flag (it's controlled by right clicking M).
                     }
                     // Craft autokill criteria
-                    BDArmorySettings.COMPETITION_GM_KILL_WEAPON = GUI.Toggle(SLineRect(++line), BDArmorySettings.COMPETITION_GM_KILL_WEAPON, "#LOC_BDArmory_Settings_CompetitionGMWeaponKill"); // StringUtils.Localize("#LLOC_BDArmory_Settings_CompetitionAltitudeLimitASL"));                    
-                    BDArmorySettings.COMPETITION_GM_KILL_ENGINE = GUI.Toggle(SLineRect(++line), BDArmorySettings.COMPETITION_GM_KILL_ENGINE, "#LOC_BDArmory_Settings_CompetitionGMEngineKill"); // StringUtils.Localize("#LLOC_BDArmory_Settings_CompetitionAltitudeLimitASL"));                    
+                    BDArmorySettings.COMPETITION_GM_KILL_WEAPON = GUI.Toggle(SLineRect(++line), BDArmorySettings.COMPETITION_GM_KILL_WEAPON, StringUtils.Localize("#LOC_BDArmory_Settings_CompetitionGMWeaponKill"));                 
+                    BDArmorySettings.COMPETITION_GM_KILL_ENGINE = GUI.Toggle(SLineRect(++line), BDArmorySettings.COMPETITION_GM_KILL_ENGINE, StringUtils.Localize("#LOC_BDArmory_Settings_CompetitionGMEngineKill"));
+                    BDArmorySettings.COMPETITION_GM_KILL_DISABLED = GUI.Toggle(SLineRect(++line), BDArmorySettings.COMPETITION_GM_KILL_DISABLED, StringUtils.Localize("#LOC_BDArmory_Settings_CompetitionGMDisableKill"));
                     string GMKillHP;
                     if (BDArmorySettings.COMPETITION_GM_KILL_HP <= 0f) GMKillHP = StringUtils.Localize("#LOC_BDArmory_Generic_Off");
                     else GMKillHP = $"<{Mathf.RoundToInt((BDArmorySettings.COMPETITION_GM_KILL_HP))}%";
