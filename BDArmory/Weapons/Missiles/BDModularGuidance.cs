@@ -111,6 +111,8 @@ namespace BDArmory.Weapons.Missiles
         private double angularVelocity;
 
         public float warheadYield = 0;
+        public float thrust = 0;
+        public float mass = 0.1f;
         #endregion KSP FIELDS
 
         public TransformAxisVectors ForwardTransformAxis { get; set; }
@@ -345,7 +347,8 @@ namespace BDArmory.Weapons.Missiles
             while (child.MoveNext())
             {
                 if (child.Current == null) continue;
-
+                mass += child.Current.mass;
+                if (child.Current.isEngine()) thrust += 1;
                 DisablingExplosives(child.Current);
 
                 IEnumerator<PartResource> resource = child.Current.Resources.GetEnumerator();
@@ -449,13 +452,17 @@ namespace BDArmory.Weapons.Missiles
             return true;
         }
 
-        public bool IsEngine(Part p)
+        public bool IsEngine(Part p, bool returnThrust = false)
         {
             using (List<PartModule>.Enumerator m = p.Modules.GetEnumerator())
                 while (m.MoveNext())
                 {
                     if (m.Current == null) continue;
-                    if (m.Current is ModuleEngines) return true;
+                    if (m.Current is ModuleEngines)
+                    {
+                        if (!returnThrust) return true;
+                        else thrust += p.FindModuleImplementing<ModuleEngines>().maxThrust;
+                    }
                 }
             return false;
         }
@@ -491,7 +498,8 @@ namespace BDArmory.Weapons.Missiles
             UpdateTargetingMode((TargetingModes)Enum.Parse(typeof(TargetingModes), _targetingLabel));
 
             _targetDecoupler = FindFirstDecoupler(part.parent, null);
-
+            thrust = 0;
+            mass = 0;
             DisableResourcesFlow();
 
             weaponClass = WeaponClasses.Missile;

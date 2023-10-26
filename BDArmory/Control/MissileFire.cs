@@ -4035,9 +4035,9 @@ namespace BDArmory.Control
 
             //TODO BDModularGuidance: Bombs and turrents
             MissileLauncher launcher = ml as MissileLauncher;
-            Transform referenceTransform = (launcher.multiLauncher != null && launcher.multiLauncher.overrideReferenceTransform) ? launcher.part.FindModelTransform(launcher.multiLauncher.launchTransformName).GetChild(0) : launcher.MissileReferenceTransform;
             if (launcher != null)
             {
+                Transform referenceTransform = (launcher.multiLauncher != null && launcher.multiLauncher.overrideReferenceTransform) ? launcher.part.FindModelTransform(launcher.multiLauncher.launchTransformName).GetChild(0) : launcher.MissileReferenceTransform;
                 if (launcher.rotaryRail && launcher.rotaryRail.readyMissile != ml)
                 {
                     return false;
@@ -5713,7 +5713,7 @@ namespace BDArmory.Control
                                 {
                                     if (!candidateAGM)
                                     {
-                                        if (Missile.TargetingMode == MissileBase.TargetingModes.Radar && (!_radarsEnabled || (vesselRadarData != null && !vesselRadarData.locked)) && !Missile.radarLOAL) candidateYield *= 0.1f;
+                                        if (mm.TargetingMode == MissileBase.TargetingModes.Radar && (!_radarsEnabled || (vesselRadarData != null && !vesselRadarData.locked)) && !mm.radarLOAL) candidateYield *= 0.1f;
                                         if (targetWeapon != null && targetYield > candidateYield) continue;
                                         //targetYield = candidateYield;
                                         //targetWeapon = item.Current;
