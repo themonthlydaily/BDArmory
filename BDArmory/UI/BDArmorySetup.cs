@@ -2518,6 +2518,7 @@ namespace BDArmory.UI
                         // GUI.Label(SLeftSliderRect(++line), $"Initial correction: {(TestNumericalMethodsIC == 0 ? "None" : TestNumericalMethodsIC == 1 ? "All" : TestNumericalMethodsIC == 2 ? "Local" : "Gravity")}");
                         // TestNumericalMethodsIC = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), TestNumericalMethodsIC, 0, 3));
                         // if (GUI.Button(SLineRect(++line), $"Test Forward Euler vs Semi-Implicit Euler vs Leap-frog ({PROF_N * Time.fixedDeltaTime}s, {PROF_N / Math.Min(PROF_N / 2, PROF_n)} steps)")) StartCoroutine(TestNumericalMethods(PROF_N * Time.fixedDeltaTime, PROF_N / Math.Min(PROF_N / 2, PROF_n)));
+                        // if (GUI.Button(SLineRect(++line), "Test Sqr vs x*x")) TestMaxRelSpeed();
                         // if (GUI.Button(SLineRect(++line), "Test Sqr vs x*x")) TestSqrVsSqr();
                         // if (GUI.Button(SLineRect(++line), "Test Order of Operations")) TestOrderOfOperations();
                         // if (GUI.Button(SLineRect(++line), "Test GetMass vs Size performance")) TestMassVsSizePerformance();
@@ -4456,6 +4457,61 @@ namespace BDArmory.UI
             }
             x = vessel.transform.position;
             Debug.Log($"DEBUG {Time.time}: After {duration}s ({steps}*{dt}={steps * dt}), Actual x = {x}, Forward Euler predicts x = {x0} (Δ = {(x - x0).magnitude}), Semi-implicit Euler predicts x = {x1} (Δ = {(x - x1).magnitude}), Leap-frog predicts x = {x2} (Δ = {(x - x2).magnitude})");
+        }
+
+        public static void TestMaxRelSpeed()
+        {
+            var watch = new System.Diagnostics.Stopwatch();
+            float µsResolution = 1e6f / System.Diagnostics.Stopwatch.Frequency;
+            Debug.Log($"DEBUG Clock resolution: {µsResolution}µs, {PROF_N} outer loops, {PROF_n} inner loops");
+            var currentPosition = FlightGlobals.ActiveVessel.transform.position;
+            var currentVelocity = FlightGlobals.ActiveVessel.rb_velocity + BDKrakensbane.FrameVelocityV3f;
+            float maxRelSpeed = 0;
+            var func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { maxRelSpeed = BDAMath.Sqrt((float)FlightGlobals.Vessels.Where(v => v != null && v.loaded).Max(v => (v.rb_velocity + BDKrakensbane.FrameVelocityV3f - currentVelocity).sqrMagnitude)); } };
+            Debug.Log($"DEBUG Without Dot took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {maxRelSpeed}");
+            maxRelSpeed = 0;
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { maxRelSpeed = BDAMath.Sqrt((float)FlightGlobals.Vessels.Where(v => v != null && v.loaded && Vector3.Dot(v.rb_velocity + BDKrakensbane.FrameVelocityV3f - currentVelocity, v.transform.position - currentPosition) < 0).Select(v => (v.rb_velocity + BDKrakensbane.FrameVelocityV3f - currentVelocity).sqrMagnitude).DefaultIfEmpty(0).Max()); } };
+            Debug.Log($"DEBUG With Dot took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {maxRelSpeed}");
+            maxRelSpeed = 0;
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () =>
+            {
+                for (int i = 0; i < PROF_n; ++i)
+                {
+                    float maxRelSpeedSqr = 0, relVelSqr;
+                    Vector3 relVel;
+                    using (var v = FlightGlobals.Vessels.GetEnumerator())
+                        while (v.MoveNext())
+                        {
+                            if (v.Current == null || !v.Current.loaded) continue;
+                            relVel = v.Current.rb_velocity + BDKrakensbane.FrameVelocityV3f - currentVelocity;
+                            // if (Vector3.Dot(relVel, v.Current.transform.position - currentPosition) >= 0) continue;
+                            relVelSqr = relVel.sqrMagnitude;
+                            if (relVelSqr > maxRelSpeedSqr) maxRelSpeedSqr = relVelSqr;
+                        }
+                    maxRelSpeed = BDAMath.Sqrt(maxRelSpeedSqr);
+                }
+            };
+            Debug.Log($"DEBUG Explicit without Dot took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {maxRelSpeed}");
+            maxRelSpeed = 0;
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () =>
+            {
+                for (int i = 0; i < PROF_n; ++i)
+                {
+                    float maxRelSpeedSqr = 0, relVelSqr;
+                    Vector3 relVel;
+                    using (var v = FlightGlobals.Vessels.GetEnumerator())
+                        while (v.MoveNext())
+                        {
+                            if (v.Current == null || !v.Current.loaded) continue;
+                            relVel = v.Current.rb_velocity + BDKrakensbane.FrameVelocityV3f - currentVelocity;
+                            if (Vector3.Dot(relVel, v.Current.transform.position - currentPosition) >= 0) continue;
+                            relVelSqr = relVel.sqrMagnitude;
+                            if (relVelSqr > maxRelSpeedSqr) maxRelSpeedSqr = relVelSqr;
+                        }
+                    maxRelSpeed = BDAMath.Sqrt(maxRelSpeedSqr);
+                }
+            };
+            Debug.Log($"DEBUG Explicit with Dot took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {maxRelSpeed}");
         }
 
         public static void TestSqrVsSqr()
