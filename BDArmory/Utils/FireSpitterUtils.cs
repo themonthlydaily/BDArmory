@@ -54,11 +54,11 @@ namespace BDArmory.Utils
             hasCheckedForFSEngine = true;
             foreach (var type in FSAssembly.GetTypes())
             {
-                if (type.Name == "FSengine" || type.Name == "FSengineBladed")
+                if (type.Name == "FSengine")
                 {
                     FSEngineType = type;
                     hasFSEngine = true;
-                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FireSpitter]: Found {type.Name} type.");
+                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FireSpitter]: Found FSengine type.");
                 }
             }
             return hasFSEngine;
