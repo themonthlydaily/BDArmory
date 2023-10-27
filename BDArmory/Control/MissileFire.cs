@@ -2473,8 +2473,7 @@ namespace BDArmory.Control
             guardFiringMissile = true;
             float bombStartTime = Time.time;
             float bombAttemptDuration = Mathf.Max(targetScanInterval, 12f);
-            float radius = Mathf.Max((CurrentMissile.GetBlastRadius() * CurrentMissile.clusterbomb) * Mathf.Min(0.5f + maxMissilesOnTarget / 3f, 1.5f), 50);
-            MissileLauncher cm = CurrentMissile as MissileLauncher;
+            float radius = CurrentMissile.GetBlastRadius() * Mathf.Max(0.68f * CurrentMissile.clusterbomb, 1f) * Mathf.Min(0.68f + 1.4f * (maxMissilesOnTarget - 1f), 1.5f);
             radius = Mathf.Min(radius, 150f);
             float targetToleranceSqr = Mathf.Max(100, 0.013f * (float)guardTarget.srfSpeed * (float)guardTarget.srfSpeed);
            
