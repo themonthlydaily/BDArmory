@@ -1118,6 +1118,7 @@ namespace BDArmory.Weapons
                             while (weapon.MoveNext())
                             {
                                 if (weapon.Current == null) continue;
+                                if (weapon.Current.isAPS) continue;
                                 if (weapon.Current.GetShortName() != this.GetShortName()) continue;
                                 if (weapon.Current.roundsPerMinute >= 1500 || (weapon.Current.eWeaponType == WeaponTypes.Laser && !weapon.Current.pulseLaser)) continue;
                                 weapon.Current.canRippleFire = false;
@@ -1658,59 +1659,51 @@ namespace BDArmory.Weapons
         [KSPEvent(advancedTweakable = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_FireAngleOverride_Enable", active = true)]//Disable fire angle override
         public void ToggleOverrideAngle()
         {
-            using (List<Part>.Enumerator craftPart = EditorLogic.fetch.ship.parts.GetEnumerator())
-                while (craftPart.MoveNext())
+            using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
+                while (weapon.MoveNext())
                 {
-                    if (craftPart.Current == null) continue;
-                    if (craftPart.Current.name != part.name) continue;
-                    using (List<ModuleWeapon>.Enumerator weapon = craftPart.Current.FindModulesImplementing<ModuleWeapon>().GetEnumerator())
-                        while (weapon.MoveNext())
-                        {
-                            if (weapon.Current == null) continue;
-                            weapon.Current.FireAngleOverride = !weapon.Current.FireAngleOverride;
-                            if (weapon.Current.FireAngleOverride == false)
-                            {
-                                weapon.Current.Events["ToggleOverrideAngle"].guiName = StringUtils.Localize("#LOC_BDArmory_FireAngleOverride_Enable");// Enable Firing Angle Override
-                            }
-                            else
-                            {
-                                weapon.Current.Events["ToggleOverrideAngle"].guiName = StringUtils.Localize("#LOC_BDArmory_FireAngleOverride_Disable");// Disable Firing Angle Override
-                            }
+                    if (weapon.Current == null) continue;
+                    if (weapon.Current.name != part.name) continue;
 
-                            weapon.Current.Fields["FiringTolerance"].guiActive = weapon.Current.FireAngleOverride;
-                            weapon.Current.Fields["FiringTolerance"].guiActiveEditor = weapon.Current.FireAngleOverride;
+                    weapon.Current.FireAngleOverride = !weapon.Current.FireAngleOverride;
+                    if (weapon.Current.FireAngleOverride == false)
+                    {
+                        weapon.Current.Events["ToggleOverrideAngle"].guiName = StringUtils.Localize("#LOC_BDArmory_FireAngleOverride_Enable");// Enable Firing Angle Override
+                    }
+                    else
+                    {
+                        weapon.Current.Events["ToggleOverrideAngle"].guiName = StringUtils.Localize("#LOC_BDArmory_FireAngleOverride_Disable");// Disable Firing Angle Override
+                    }
 
-                            GUIUtils.RefreshAssociatedWindows(weapon.Current.part);
-                        }
+                    weapon.Current.Fields["FiringTolerance"].guiActive = weapon.Current.FireAngleOverride;
+                    weapon.Current.Fields["FiringTolerance"].guiActiveEditor = weapon.Current.FireAngleOverride;
+
+                    GUIUtils.RefreshAssociatedWindows(weapon.Current.part);
                 }
         }
         [KSPEvent(advancedTweakable = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_BurstLengthOverride_Enable", active = true)]//Burst length override
         public void ToggleBurstLengthOverride()
         {
-            using (List<Part>.Enumerator craftPart = EditorLogic.fetch.ship.parts.GetEnumerator())
-                while (craftPart.MoveNext())
+            using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
+                while (weapon.MoveNext())
                 {
-                    if (craftPart.Current == null) continue;
-                    if (craftPart.Current.name != part.name) continue;
-                    using (List<ModuleWeapon>.Enumerator weapon = craftPart.Current.FindModulesImplementing<ModuleWeapon>().GetEnumerator())
-                        while (weapon.MoveNext())
-                        {
-                            if (weapon.Current == null) continue;
-                            weapon.Current.BurstOverride = !weapon.Current.BurstOverride;
-                            if (weapon.Current.BurstOverride == false)
-                            {
-                                weapon.Current.Events["ToggleBurstLengthOverride"].guiName = StringUtils.Localize("#LOC_BDArmory_BurstLengthOverride_Enable");// Enable Firing Angle Override
-                            }
-                            else
-                            {
-                                weapon.Current.Events["ToggleBurstLengthOverride"].guiName = StringUtils.Localize("#LOC_BDArmory_BurstLengthOverride_Disable");// Disable Firing Angle Override
-                            }
+                    if (weapon.Current == null) continue;
+                    if (weapon.Current.name != part.name) continue;
 
-                            weapon.Current.Fields["fireBurstLength"].guiActive = weapon.Current.BurstOverride;
-                            weapon.Current.Fields["fireBurstLength"].guiActiveEditor = weapon.Current.BurstOverride;
+                    weapon.Current.BurstOverride = !weapon.Current.BurstOverride;
+                    if (!weapon.Current.BurstOverride)
+                    {
+                        weapon.Current.Events["ToggleBurstLengthOverride"].guiName = StringUtils.Localize("#LOC_BDArmory_BurstLengthOverride_Enable");// Enable Firing Angle Override
+                    }
+                    else
+                    {
+                        weapon.Current.Events["ToggleBurstLengthOverride"].guiName = StringUtils.Localize("#LOC_BDArmory_BurstLengthOverride_Disable");// Disable Firing Angle Override
+                    }
 
-                            GUIUtils.RefreshAssociatedWindows(weapon.Current.part);
-                        }
+                    weapon.Current.Fields["fireBurstLength"].guiActive = weapon.Current.BurstOverride;
+                    weapon.Current.Fields["fireBurstLength"].guiActiveEditor = weapon.Current.BurstOverride;
+
+                    GUIUtils.RefreshAssociatedWindows(weapon.Current.part);
                 }
         }
 
@@ -6289,6 +6282,7 @@ namespace BDArmory.Weapons
                         {
                             var wpn = p.GetComponent<ModuleWeapon>();
                             if (wpn == null) continue;
+                            if (wpn.isAPS && !wpn.dualModeAPS) continue;
                             if (wpn.GetWeaponClass() != wpnClass) continue;
                             wpn.WeaponDisplayName = newName;
                             wpn.shortName = newName;

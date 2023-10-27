@@ -7466,7 +7466,7 @@ namespace BDArmory.Control
                 while (weapon.MoveNext())
                 {
                     if (weapon.Current == null) continue;
-                    if (ballisticTurretID > PDBulletTgts.Count - 1) ballisticTurretID = 0;
+                    if (ballisticTurretID > PDBulletTgts.Count - 1) break; // ballisticTurretID = 0; //if APS turret count > incoming shell count, hold fire on surplus turrets
                     if (weapon.Current.eAPSType == ModuleWeapon.APSTypes.Ballistic || weapon.Current.eAPSType == ModuleWeapon.APSTypes.Omni)
                     {
                         if (PDBulletTgts.Count > 0)
@@ -7496,7 +7496,7 @@ namespace BDArmory.Control
                         }
                         else weapon.Current.tgtShell = null;
                     }
-                    if (rocketTurretID > PDRktTgts.Count - 1) rocketTurretID = 0;
+                    if (rocketTurretID > PDRktTgts.Count - 1) break; // rocketTurretID = 0;
                     if (weapon.Current.eAPSType == ModuleWeapon.APSTypes.Missile || weapon.Current.eAPSType == ModuleWeapon.APSTypes.Omni)
                     {
                         if (PDRktTgts.Count > 0)
