@@ -2451,7 +2451,7 @@ namespace BDArmory.UI
                             GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_SlopeAngle"), contextLabel);//"undershoot"
                             driverLines++;
                         }
-                        if (ActiveDriver.SurfaceType != AIUtils.VehicleMovementType.Submarine)
+                        if (ActiveDriver.SurfaceType == AIUtils.VehicleMovementType.Submarine)
                         {
                             if (!NumFieldsEnabled)
                             {
