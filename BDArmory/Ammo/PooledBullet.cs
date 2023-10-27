@@ -591,10 +591,12 @@ namespace BDArmory.Bullets
             List<Vessel> nearbyVessels = new List<Vessel>();
 
             const int layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels);
-            var overlapSphereColliderCount = Physics.OverlapSphereNonAlloc(transform.position, currentVelocity.magnitude * period * 2f, overlapSphereColliders, layerMask); // Overlapsphere of 2*period assuming that vessels are moving at similar speeds to the bullet.
+
+            var overlapSphereRadius = GetOverlapSphereRadius(period); // OverlapSphere of sufficient size to catch all potential craft of <100m radius.
+            var overlapSphereColliderCount = Physics.OverlapSphereNonAlloc(currPosition, overlapSphereRadius, overlapSphereColliders, layerMask);
             if (overlapSphereColliderCount == overlapSphereColliders.Length)
             {
-                overlapSphereColliders = Physics.OverlapSphere(transform.position, currentVelocity.magnitude * period * 2f, layerMask);
+                overlapSphereColliders = Physics.OverlapSphere(currPosition, overlapSphereRadius, layerMask);
                 overlapSphereColliderCount = overlapSphereColliders.Length;
             }
 
@@ -617,10 +619,31 @@ namespace BDArmory.Bullets
                     }
                 }
             }
-            foreach (var vessel in nearbyVessels.OrderBy(v => (v.transform.position - transform.position).sqrMagnitude))
+            foreach (var vessel in nearbyVessels.OrderBy(v => (v.transform.position - currPosition).sqrMagnitude))
             {
                 CheckBulletCollisionWithVessel(period, vessel); // FIXME Convert this to use RaycastCommand to do all the raycasts in parallel.
             }
+        }
+
+        /// <summary>
+        /// Calculate the required radius of the overlap sphere such that a craft <100m in radius could potentially collide with the bullet.
+        /// </summary>
+        /// <param name="period">The period of motion (TimeWarp.fixedDeltaTime).</param>
+        /// <returns>The required radius.</returns>
+        float GetOverlapSphereRadius(float period)
+        {
+            float maxRelSpeedSqr = 0, relVelSqr;
+            Vector3 relativeVelocity;
+            using (var v = FlightGlobals.Vessels.GetEnumerator())
+                while (v.MoveNext())
+                {
+                    if (v.Current == null || !v.Current.loaded) continue; // Ignore invalid craft.
+                    relativeVelocity = v.Current.rb_velocity + BDKrakensbane.FrameVelocityV3f - currentVelocity;
+                    if (Vector3.Dot(relativeVelocity, v.Current.transform.position - currPosition) >= 0) continue; // Ignore craft that aren't approaching.
+                    relVelSqr = relativeVelocity.sqrMagnitude;
+                    if (relVelSqr > maxRelSpeedSqr) maxRelSpeedSqr = relVelSqr;
+                }
+            return 100f + period * BDAMath.Sqrt(maxRelSpeedSqr); // Craft of radius <100m that could collide within the period.
         }
 
         public void CheckBulletCollisionWithVessel(float period, Vessel vessel)

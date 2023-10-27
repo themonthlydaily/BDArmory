@@ -542,7 +542,7 @@ namespace BDArmory.Guidances
                 leadTime = AIUtils.TimeToCPA(relPosition, DeltaOptvel, relAcceleration, 8 - T) + T;
             }
 
-            targetPosition = targetPosition + (targetVessel.Velocity() * leadTime);
+            targetPosition += leadTime * targetVessel.Velocity();
 
             if (targetVessel && targetDistance < 800) //TODO - investigate if this would throw off aim accuracy
             {
