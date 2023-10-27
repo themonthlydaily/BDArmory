@@ -2515,6 +2515,10 @@ namespace BDArmory.UI
                         //     PROF_n = Mathf.RoundToInt(Mathf.Pow(10, PROF_n_pow));
                         // }
 
+                        // GUI.Label(SLeftSliderRect(++line), $"Initial correction: {(TestNumericalMethodsIC == 0 ? "None" : TestNumericalMethodsIC == 1 ? "All" : TestNumericalMethodsIC == 2 ? "Local" : "Gravity")}");
+                        // TestNumericalMethodsIC = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), TestNumericalMethodsIC, 0, 3));
+                        // if (GUI.Button(SLineRect(++line), $"Test Forward Euler vs Semi-Implicit Euler vs Leap-frog ({PROF_N * Time.fixedDeltaTime}s, {PROF_N / Math.Min(PROF_N / 2, PROF_n)} steps)")) StartCoroutine(TestNumericalMethods(PROF_N * Time.fixedDeltaTime, PROF_N / Math.Min(PROF_N / 2, PROF_n)));
+                        // if (GUI.Button(SLineRect(++line), "Test Sqr vs x*x")) TestMaxRelSpeed();
                         // if (GUI.Button(SLineRect(++line), "Test Sqr vs x*x")) TestSqrVsSqr();
                         // if (GUI.Button(SLineRect(++line), "Test Order of Operations")) TestOrderOfOperations();
                         // if (GUI.Button(SLineRect(++line), "Test GetMass vs Size performance")) TestMassVsSizePerformance();
@@ -3794,8 +3798,9 @@ namespace BDArmory.UI
                         BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY / 10f, 1, 6)) * 10f; // For now, don't control the killerGMEnabled flag (it's controlled by right clicking M).
                     }
                     // Craft autokill criteria
-                    BDArmorySettings.COMPETITION_GM_KILL_WEAPON = GUI.Toggle(SLineRect(++line), BDArmorySettings.COMPETITION_GM_KILL_WEAPON, "#LOC_BDArmory_Settings_CompetitionGMWeaponKill"); // StringUtils.Localize("#LLOC_BDArmory_Settings_CompetitionAltitudeLimitASL"));                    
-                    BDArmorySettings.COMPETITION_GM_KILL_ENGINE = GUI.Toggle(SLineRect(++line), BDArmorySettings.COMPETITION_GM_KILL_ENGINE, "#LOC_BDArmory_Settings_CompetitionGMEngineKill"); // StringUtils.Localize("#LLOC_BDArmory_Settings_CompetitionAltitudeLimitASL"));                    
+                    BDArmorySettings.COMPETITION_GM_KILL_WEAPON = GUI.Toggle(SLineRect(++line), BDArmorySettings.COMPETITION_GM_KILL_WEAPON, StringUtils.Localize("#LOC_BDArmory_Settings_CompetitionGMWeaponKill"));                 
+                    BDArmorySettings.COMPETITION_GM_KILL_ENGINE = GUI.Toggle(SLineRect(++line), BDArmorySettings.COMPETITION_GM_KILL_ENGINE, StringUtils.Localize("#LOC_BDArmory_Settings_CompetitionGMEngineKill"));
+                    BDArmorySettings.COMPETITION_GM_KILL_DISABLED = GUI.Toggle(SLineRect(++line), BDArmorySettings.COMPETITION_GM_KILL_DISABLED, StringUtils.Localize("#LOC_BDArmory_Settings_CompetitionGMDisableKill"));
                     string GMKillHP;
                     if (BDArmorySettings.COMPETITION_GM_KILL_HP <= 0f) GMKillHP = StringUtils.Localize("#LOC_BDArmory_Generic_Off");
                     else GMKillHP = $"<{Mathf.RoundToInt((BDArmorySettings.COMPETITION_GM_KILL_HP))}%";
@@ -4182,7 +4187,7 @@ namespace BDArmory.UI
 
 #if DEBUG
         // static int PROF_N_pow = 5, PROF_n_pow = 2;
-        static int PROF_N = 100000, PROF_n = 100;
+        static int PROF_N = 1000, PROF_n = 1000;
         IEnumerator TestVesselPositionTiming()
         {
             var wait = new WaitForFixedUpdate();
@@ -4383,6 +4388,133 @@ namespace BDArmory.UI
             Debug.Log($"DEBUG GetAudioClip took {dt / N:G3}s");
         }
 
+        int TestNumericalMethodsIC = 0;
+        IEnumerator TestNumericalMethods(float duration, int steps)
+        {
+            var vessel = FlightGlobals.ActiveVessel;
+            var wait = new WaitForFixedUpdate();
+            yield return wait; // Wait for the next fixedUpdate to synchronise with the physics.
+            if (vessel == null) yield break;
+            var dt = duration / steps;
+            if (dt < Time.fixedDeltaTime)
+            {
+                dt = Time.fixedDeltaTime;
+                steps = (int)(duration / dt);
+            }
+            Vector3 x = vessel.transform.position, x0 = x, x1 = x, x2 = x;
+            Vector3 a0 = vessel.acceleration - FlightGlobals.getGeeForceAtPosition(x0), a1 = a0, a2 = a0; // Separate acceleration into local and gravitational.
+            // Note: acceleration is an averaged (or derived) value, we should use acceleration_immediate instead, but most of the rest of the code uses acceleration.
+            Vector3 v = vessel.rb_velocity + BDKrakensbane.FrameVelocityV3f;
+            switch (TestNumericalMethodsIC)
+            {
+                case 0: // No correction
+                    break;
+                case 1:
+                    v += 0.5f * Time.fixedDeltaTime * vessel.acceleration; // Unity integration correction for all acceleration
+                    break;
+                case 2:
+                    v += 0.5f * Time.fixedDeltaTime * a0; // Unity integration correction for local acceleration only — this seems to give the best results for leap-frog
+                    break;
+                case 3:
+                    v += 0.5f * Time.fixedDeltaTime * FlightGlobals.getGeeForceAtPosition(x0); // Unity integration correction for gravity only
+                    break;
+            }
+            Vector3 v0 = v, v1 = v, v2 = v;
+            Debug.Log($"DEBUG {Time.time} IC: {TestNumericalMethodsIC}, Initial acceleration: {a0}m/s^2 constant local + {(Vector3)FlightGlobals.getGeeForceAtPosition(x0)}m/s^2 gravity");
+            for (int i = 0; i < steps; ++i)
+            {
+                // Forward Euler (1st order, not symplectic)
+                var g = FlightGlobals.getGeeForceAtPosition(x0); // Get the gravity at the current time
+                x0 += dt * v0; // Update position based on velocity at the current time
+                v0 += dt * (a0 + g); // Update the velocity based on the potential at the current time
+
+                // Semi-implicit Euler (1st order, symplectic)
+                v1 += dt * (a1 + FlightGlobals.getGeeForceAtPosition(x1)); // Update velocity based on the potential at the current time
+                x1 += dt * v1; // Update position based on velocity at the future time
+
+                // Leap-frog (2nd order, symplectic)
+                // Note: combining the second half-update to v2 with the first one of the next step into a single evaluation is where the name of the method comes from.
+                v2 += 0.5f * dt * (a2 + FlightGlobals.getGeeForceAtPosition(x2)); // Update velocity half a step based on the potential at the current time
+                x2 += dt * v2; // Update the position based on the velocity half-way between the current and future times
+                v2 += 0.5f * dt * (a2 + FlightGlobals.getGeeForceAtPosition(x2)); // Update velocity another half a step based on the potential at the future time
+            }
+
+            var tic = Time.time;
+            while (Time.time - tic < duration - Time.fixedDeltaTime / 2)
+            {
+                yield return wait;
+                if (vessel == null)
+                {
+                    Debug.Log($"DEBUG Active vessel disappeared, aborting.");
+                    yield break;
+                }
+
+                if (BDKrakensbane.IsActive) // Correct for Krakensbane
+                {
+                    x0 -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                    x1 -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                    x2 -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                }
+            }
+            x = vessel.transform.position;
+            Debug.Log($"DEBUG {Time.time}: After {duration}s ({steps}*{dt}={steps * dt}), Actual x = {x}, Forward Euler predicts x = {x0} (Δ = {(x - x0).magnitude}), Semi-implicit Euler predicts x = {x1} (Δ = {(x - x1).magnitude}), Leap-frog predicts x = {x2} (Δ = {(x - x2).magnitude})");
+        }
+
+        public static void TestMaxRelSpeed()
+        {
+            var watch = new System.Diagnostics.Stopwatch();
+            float µsResolution = 1e6f / System.Diagnostics.Stopwatch.Frequency;
+            Debug.Log($"DEBUG Clock resolution: {µsResolution}µs, {PROF_N} outer loops, {PROF_n} inner loops");
+            var currentPosition = FlightGlobals.ActiveVessel.transform.position;
+            var currentVelocity = FlightGlobals.ActiveVessel.rb_velocity + BDKrakensbane.FrameVelocityV3f;
+            float maxRelSpeed = 0;
+            var func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { maxRelSpeed = BDAMath.Sqrt((float)FlightGlobals.Vessels.Where(v => v != null && v.loaded).Max(v => (v.rb_velocity + BDKrakensbane.FrameVelocityV3f - currentVelocity).sqrMagnitude)); } };
+            Debug.Log($"DEBUG Without Dot took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {maxRelSpeed}");
+            maxRelSpeed = 0;
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { maxRelSpeed = BDAMath.Sqrt((float)FlightGlobals.Vessels.Where(v => v != null && v.loaded && Vector3.Dot(v.rb_velocity + BDKrakensbane.FrameVelocityV3f - currentVelocity, v.transform.position - currentPosition) < 0).Select(v => (v.rb_velocity + BDKrakensbane.FrameVelocityV3f - currentVelocity).sqrMagnitude).DefaultIfEmpty(0).Max()); } };
+            Debug.Log($"DEBUG With Dot took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {maxRelSpeed}");
+            maxRelSpeed = 0;
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () =>
+            {
+                for (int i = 0; i < PROF_n; ++i)
+                {
+                    float maxRelSpeedSqr = 0, relVelSqr;
+                    Vector3 relVel;
+                    using (var v = FlightGlobals.Vessels.GetEnumerator())
+                        while (v.MoveNext())
+                        {
+                            if (v.Current == null || !v.Current.loaded) continue;
+                            relVel = v.Current.rb_velocity + BDKrakensbane.FrameVelocityV3f - currentVelocity;
+                            // if (Vector3.Dot(relVel, v.Current.transform.position - currentPosition) >= 0) continue;
+                            relVelSqr = relVel.sqrMagnitude;
+                            if (relVelSqr > maxRelSpeedSqr) maxRelSpeedSqr = relVelSqr;
+                        }
+                    maxRelSpeed = BDAMath.Sqrt(maxRelSpeedSqr);
+                }
+            };
+            Debug.Log($"DEBUG Explicit without Dot took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {maxRelSpeed}");
+            maxRelSpeed = 0;
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () =>
+            {
+                for (int i = 0; i < PROF_n; ++i)
+                {
+                    float maxRelSpeedSqr = 0, relVelSqr;
+                    Vector3 relVel;
+                    using (var v = FlightGlobals.Vessels.GetEnumerator())
+                        while (v.MoveNext())
+                        {
+                            if (v.Current == null || !v.Current.loaded) continue;
+                            relVel = v.Current.rb_velocity + BDKrakensbane.FrameVelocityV3f - currentVelocity;
+                            if (Vector3.Dot(relVel, v.Current.transform.position - currentPosition) >= 0) continue;
+                            relVelSqr = relVel.sqrMagnitude;
+                            if (relVelSqr > maxRelSpeedSqr) maxRelSpeedSqr = relVelSqr;
+                        }
+                    maxRelSpeed = BDAMath.Sqrt(maxRelSpeedSqr);
+                }
+            };
+            Debug.Log($"DEBUG Explicit with Dot took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {maxRelSpeed}");
+        }
+
         public static void TestSqrVsSqr()
         {
             var watch = new System.Diagnostics.Stopwatch();
@@ -4394,7 +4526,7 @@ namespace BDArmory.UI
             func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { sqr = value * value; } };
             Debug.Log($"DEBUG value * value took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {sqr}");
             Vector3 a = UnityEngine.Random.insideUnitSphere, b = UnityEngine.Random.insideUnitSphere;
-            float distance=0;
+            float distance = 0;
             func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { distance = Vector3.Distance(a, b); } };
             Debug.Log($"DEBUG Vector3.Distance took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {distance}");
             func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { distance = (a - b).magnitude; } };
@@ -4404,10 +4536,14 @@ namespace BDArmory.UI
             bool lessThan = false;
             func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { lessThan = Vector3.Distance(a, b) < 0.5f; } };
             Debug.Log($"DEBUG Vector3.Distance < v took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {distance}");
-            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { lessThan = (a - b).sqrMagnitude < 0.5f*0.5f; } };
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { lessThan = (a - b).sqrMagnitude < 0.5f * 0.5f; } };
             Debug.Log($"DEBUG sqrMagnitude < v*v took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {distance}");
             func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { lessThan = (a - b).sqrMagnitude < 0.5f.Sqr(); } };
             Debug.Log($"DEBUG sqrMagnitude < v.Sqr() took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {distance}");
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { lessThan = a.CloserToThan(b, 0.5f); } };
+            Debug.Log($"DEBUG a.CloserToThan(b,f) took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {lessThan}");
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { lessThan = a.FurtherFromThan(b, 0.5f); } };
+            Debug.Log($"DEBUG a.FurtherFromThan(b,f) took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {lessThan}");
         }
 
         public static void TestOrderOfOperations()

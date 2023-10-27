@@ -14,6 +14,15 @@
 v1.6.7.0
 IMPROVEMENTS / FIXES
 - General:
+	- Add tracking of 'named modules' (from non-dependency DLLs) to the VesselModuleRegistry.
+	- Optimise "Vector3.Distance(from, to) < dist" type checks.
+- Weapons:
+	- Don't apply the unity integrator correction to the unsupported gravity component of the aiming (improves on-orbit aiming).
+	- Improve the estimate of the required OverlapSphere for Vessel-Relative Bullet Checks for hypervelocity craft.
+
+v1.6.7.0
+IMPROVEMENTS / FIXES
+- General:
 	- Kerbal Foundries wheel and track HP now properly scales with wheel size.
 	- ProcArmor now has symmetry attach.
 	- Fix Armor panels < 10mm thick resetting to 25mm.
@@ -56,7 +65,7 @@ IMPROVEMENTS / FIXES
 		- Fix Missiles failing LOS check due to kerbins curvature for ship vs ship engagements.
 		- Fix for GPS missiles fired from multiMissileLaunchers losing lock when fired.
 		- Fix guidance type = none missiles detonating 5km from launcher.
-		- Fix NRe from manually firing GPS missiles from a multimissilelauncher.
+		- Fix NRE from manually firing GPS missiles from a multimissilelauncher.
 		- AIs attempting to dumbfire multimissileLaunchers will now take missile launch vector into account instead of vessel prograde.
 		- Adds new Settings option 'LIMITED_ORDINANCE' to clamp multimissilelaunchers and reloadable rails to a single salvo's worth of ammo. 
 		- Fixed GPS coords not updating for bombs.

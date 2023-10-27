@@ -3424,7 +3424,7 @@ namespace BDArmory.Weapons
                         debugTargetPosition = AIUtils.PredictPosition(debugLastTargetPosition, targetVelocity, targetAcceleration, Time.time - staleGoodTargetTime);
                     }
                 }
-                if (!targetAcquired) 
+                if (!targetAcquired)
                     if (turret) turret.ReturnTurret();
             }
             else
@@ -3508,6 +3508,7 @@ namespace BDArmory.Weapons
                 }
                 //aim assist
                 Vector3 originalTarget = targetPosition;
+                var supported = targetIsLandedOrSplashed || targetAcceleration.sqrMagnitude == 0; // Assume non-accelerating targets are "supported".
                 if (!manualAiming)
                 {
                     // Correct for the FI, which hasn't run yet, but does before visuals are next shown. This should synchronise the target's position and velocity with the bullet at the start of the next frame.
@@ -3517,7 +3518,7 @@ namespace BDArmory.Weapons
                     // Correct for unity integration system
                     // Unity uses semi-implicit euler method during fixed updates. This means the velocity is updated first, and then position.
                     // This creates consistent errors that the following velocity offset compensates for.
-                    targetVelocity += 0.5f * Time.fixedDeltaTime * targetAcceleration;
+                    targetVelocity += 0.5f * Time.fixedDeltaTime * (supported ? targetAcceleration : targetAcceleration - (Vector3)FlightGlobals.getGeeForceAtPosition(targetPosition));
                     // There is no equivalent correction for the weapon part due to our specific placement of the bullet with the given velocity.
                 }
                 targetDistance = Vector3.Distance(targetPosition, fireTransform.parent.position);
@@ -3610,7 +3611,6 @@ namespace BDArmory.Weapons
                         // Also, the numeric solution is giving strangely discrete values initially.
                         // For situation 3, the solution is not quite right, but is fairly good for high accelerations when within 5-15km.
 
-                        var supported = targetIsLandedOrSplashed || targetAcceleration.sqrMagnitude == 0; // Assume non-accelerating targets are "supported".
                         bulletEffectiveVelocity = smoothedPartVelocity + baseBulletVelocity * firingDirection;
 
                         var (simBulletCPA, simTargetCPA, simTimeToCPA) = BallisticTrajectoryClosestApproachSimulation(
@@ -4211,15 +4211,15 @@ namespace BDArmory.Weapons
                     autoFire = false;
                 }
                 if (autoFire && weaponManager.staleTarget && (lastVisualTargetVessel != null && lastVisualTargetVessel.LandedOrSplashed && vessel.LandedOrSplashed)) autoFire = false; //ground Vee engaging another ground Vee which has ducked out of sight, don't fire
-                        // won't catch cloaked tanks, but oh well.
-                // if (eWeaponType != WeaponTypes.Rocket) //guns/lasers
-                // {
-                //     // Vector3 targetDiffVec = finalAimTarget - lastFinalAimTarget;
-                //     // Vector3 projectedTargetPos = targetDiffVec;
-                //     //projectedTargetPos /= TimeWarp.fixedDeltaTime;
-                //     //projectedTargetPos *= TimeWarp.fixedDeltaTime;
-                //     // projectedTargetPos *= 2; //project where the target will be in 2 timesteps
-                //     // projectedTargetPos += finalAimTarget;
+                                                                                                                                                                                       // won't catch cloaked tanks, but oh well.
+                                                                                                                                                                                       // if (eWeaponType != WeaponTypes.Rocket) //guns/lasers
+                                                                                                                                                                                       // {
+                                                                                                                                                                                       //     // Vector3 targetDiffVec = finalAimTarget - lastFinalAimTarget;
+                                                                                                                                                                                       //     // Vector3 projectedTargetPos = targetDiffVec;
+                                                                                                                                                                                       //     //projectedTargetPos /= TimeWarp.fixedDeltaTime;
+                                                                                                                                                                                       //     //projectedTargetPos *= TimeWarp.fixedDeltaTime;
+                                                                                                                                                                                       //     // projectedTargetPos *= 2; //project where the target will be in 2 timesteps
+                                                                                                                                                                                       //     // projectedTargetPos += finalAimTarget;
 
                 //     // targetDiffVec.Normalize();
                 //     // Vector3 lastTargetRelPos = (lastFinalAimTarget) - fireTransform.position;
