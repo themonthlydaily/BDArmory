@@ -911,6 +911,7 @@ namespace BDArmory.UI
                     if (!_vesselsSpawned && !ContinuousSpawning.Instance.vesselsSpawningContinuously && Event.current.button == 0) // Left click
                     {
                         if (BDArmorySettings.VESSEL_SPAWN_CONTINUE_SINGLE_SPAWNING)
+                        {
                             CircularSpawning.Instance.SpawnAllVesselsOnceContinuously(
                                 BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
                                 BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
@@ -925,6 +926,7 @@ namespace BDArmory.UI
                                 null,
                                 BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION
                             ); // Spawn vessels.
+                        }
                         else
                         {
                             CircularSpawning.Instance.SpawnAllVesselsOnce(
