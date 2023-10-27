@@ -1659,52 +1659,38 @@ namespace BDArmory.Weapons
         [KSPEvent(advancedTweakable = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_FireAngleOverride_Enable", active = true)]//Disable fire angle override
         public void ToggleOverrideAngle()
         {
-            using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
-                while (weapon.MoveNext())
-                {
-                    if (weapon.Current == null) continue;
-                    if (weapon.Current.name != part.name) continue;
+            FireAngleOverride = !FireAngleOverride;
+            if (FireAngleOverride == false)
+            {
+                Events["ToggleOverrideAngle"].guiName = StringUtils.Localize("#LOC_BDArmory_FireAngleOverride_Enable");// Enable Firing Angle Override
+            }
+            else
+            {
+                Events["ToggleOverrideAngle"].guiName = StringUtils.Localize("#LOC_BDArmory_FireAngleOverride_Disable");// Disable Firing Angle Override
+            }
 
-                    weapon.Current.FireAngleOverride = !weapon.Current.FireAngleOverride;
-                    if (weapon.Current.FireAngleOverride == false)
-                    {
-                        weapon.Current.Events["ToggleOverrideAngle"].guiName = StringUtils.Localize("#LOC_BDArmory_FireAngleOverride_Enable");// Enable Firing Angle Override
-                    }
-                    else
-                    {
-                        weapon.Current.Events["ToggleOverrideAngle"].guiName = StringUtils.Localize("#LOC_BDArmory_FireAngleOverride_Disable");// Disable Firing Angle Override
-                    }
+            Fields["FiringTolerance"].guiActive = FireAngleOverride;
+            Fields["FiringTolerance"].guiActiveEditor = FireAngleOverride;
 
-                    weapon.Current.Fields["FiringTolerance"].guiActive = weapon.Current.FireAngleOverride;
-                    weapon.Current.Fields["FiringTolerance"].guiActiveEditor = weapon.Current.FireAngleOverride;
-
-                    GUIUtils.RefreshAssociatedWindows(weapon.Current.part);
-                }
+            GUIUtils.RefreshAssociatedWindows(part);
         }
         [KSPEvent(advancedTweakable = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_BurstLengthOverride_Enable", active = true)]//Burst length override
         public void ToggleBurstLengthOverride()
         {
-            using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
-                while (weapon.MoveNext())
-                {
-                    if (weapon.Current == null) continue;
-                    if (weapon.Current.name != part.name) continue;
+            BurstOverride = !BurstOverride;
+            if (!BurstOverride)
+            {
+                Events["ToggleBurstLengthOverride"].guiName = StringUtils.Localize("#LOC_BDArmory_BurstLengthOverride_Enable");// Enable Firing Angle Override
+            }
+            else
+            {
+                Events["ToggleBurstLengthOverride"].guiName = StringUtils.Localize("#LOC_BDArmory_BurstLengthOverride_Disable");// Disable Firing Angle Override
+            }
 
-                    weapon.Current.BurstOverride = !weapon.Current.BurstOverride;
-                    if (!weapon.Current.BurstOverride)
-                    {
-                        weapon.Current.Events["ToggleBurstLengthOverride"].guiName = StringUtils.Localize("#LOC_BDArmory_BurstLengthOverride_Enable");// Enable Firing Angle Override
-                    }
-                    else
-                    {
-                        weapon.Current.Events["ToggleBurstLengthOverride"].guiName = StringUtils.Localize("#LOC_BDArmory_BurstLengthOverride_Disable");// Disable Firing Angle Override
-                    }
+            Fields["fireBurstLength"].guiActive = BurstOverride;
+            Fields["fireBurstLength"].guiActiveEditor = BurstOverride;
 
-                    weapon.Current.Fields["fireBurstLength"].guiActive = weapon.Current.BurstOverride;
-                    weapon.Current.Fields["fireBurstLength"].guiActiveEditor = weapon.Current.BurstOverride;
-
-                    GUIUtils.RefreshAssociatedWindows(weapon.Current.part);
-                }
+            GUIUtils.RefreshAssociatedWindows(part);
         }
 
         void FAOCos(BaseField field, object obj)

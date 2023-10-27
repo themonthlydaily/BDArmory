@@ -1,4 +1,18 @@
 ﻿IMPROVEMENTS / FIXES
+- AI / WM
+	- AI GUI fixes for surface AI.
+	- Fix AI disengagement from launched nuclear/EMP ordinance if within projected blast radius.
+- Weapons
+	- Fix BurstFirelength and FireAngleOverride toggles not working in flight.
+	- Fix APS parts getting mixed in with global weapon shortnaming and overriding barrage settings.
+	- Anti-Ballistic APS no longer assigns multiple turrets to a single incoming shell.
+	- Missiles
+		- Have torpedoes head to last known contact point and start circling it, instead of current sink to bottom behavior.
+		- MultiMissileLauncher deploy anim toggle now affects symmetry twins.
+		- Fix various NullReferenceExceptions when trying to use Modular Missiles.
+
+v1.6.7.0
+IMPROVEMENTS / FIXES
 - General:
 	- Kerbal Foundries wheel and track HP now properly scales with wheel size.
 	- ProcArmor now has symmetry attach.
