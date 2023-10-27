@@ -2473,7 +2473,7 @@ namespace BDArmory.Control
             guardFiringMissile = true;
             float bombStartTime = Time.time;
             float bombAttemptDuration = Mathf.Max(targetScanInterval, 12f);
-            float radius = CurrentMissile.GetBlastRadius() * Mathf.Max(0.68f + 1.4f * (maxMissilesOnTarget - 1f), 1.5f);
+            float radius = CurrentMissile.GetBlastRadius() * Mathf.Min(0.68f + 1.4f * (maxMissilesOnTarget - 1f), 1.5f);
             var cb = CurrentMissile.GetPart(). FindModuleImplementing<ClusterBomb>();
             if (cb != null) { radius *= Mathf.Max(0.68f * cb.submunitions.Count(), 1f); }
             radius = Mathf.Min(radius, 150f);
