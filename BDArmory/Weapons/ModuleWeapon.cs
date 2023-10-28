@@ -4232,15 +4232,16 @@ namespace BDArmory.Weapons
                     autoFire = false;
                 }
                 if (autoFire && weaponManager.staleTarget && (lastVisualTargetVessel != null && lastVisualTargetVessel.LandedOrSplashed && vessel.LandedOrSplashed)) autoFire = false; //ground Vee engaging another ground Vee which has ducked out of sight, don't fire
-                                                                                                                                                                                       // won't catch cloaked tanks, but oh well.
-                                                                                                                                                                                       // if (eWeaponType != WeaponTypes.Rocket) //guns/lasers
-                                                                                                                                                                                       // {
-                                                                                                                                                                                       //     // Vector3 targetDiffVec = finalAimTarget - lastFinalAimTarget;
-                                                                                                                                                                                       //     // Vector3 projectedTargetPos = targetDiffVec;
-                                                                                                                                                                                       //     //projectedTargetPos /= TimeWarp.fixedDeltaTime;
-                                                                                                                                                                                       //     //projectedTargetPos *= TimeWarp.fixedDeltaTime;
-                                                                                                                                                                                       //     // projectedTargetPos *= 2; //project where the target will be in 2 timesteps
-                                                                                                                                                                                       //     // projectedTargetPos += finalAimTarget;
+                // won't catch cloaked tanks, but oh well.
+
+                // if (eWeaponType != WeaponTypes.Rocket) //guns/lasers
+                // {
+                //     // Vector3 targetDiffVec = finalAimTarget - lastFinalAimTarget;
+                //     // Vector3 projectedTargetPos = targetDiffVec;
+                //     //projectedTargetPos /= TimeWarp.fixedDeltaTime;
+                //     //projectedTargetPos *= TimeWarp.fixedDeltaTime;
+                //     // projectedTargetPos *= 2; //project where the target will be in 2 timesteps
+                //     // projectedTargetPos += finalAimTarget;
 
                 //     // targetDiffVec.Normalize();
                 //     // Vector3 lastTargetRelPos = (lastFinalAimTarget) - fireTransform.position;
