@@ -3026,7 +3026,7 @@ namespace BDArmory.Weapons
             }
             if (externalAmmo)
             {
-                if (part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot, ResourceFlowMode.STAGE_PRIORITY_FLOW_BALANCE) > 0)
+                if (part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot) > 0)
                 {
                     return true;
                 }
