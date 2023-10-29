@@ -74,7 +74,7 @@ namespace BDArmory.Radar
         const float minPingInterval = 0.12f;
         const float pingPersistTime = 1;
 
-        const int dataCount = 10;
+        const int dataCount = 12;
 
         internal float rwrDisplayRange = BDArmorySettings.MAX_ACTIVE_RADAR_RANGE;
         internal static float RwrSize = 256;
