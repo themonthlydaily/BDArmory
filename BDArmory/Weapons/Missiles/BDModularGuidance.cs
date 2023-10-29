@@ -1032,6 +1032,12 @@ namespace BDArmory.Weapons.Missiles
             vessel.ActionGroups.ToggleGroup(
                 (KSPActionGroup)Enum.Parse(typeof(KSPActionGroup), "Custom0" + (int)_nextStage));
 
+            if (StagesNumber == 1)
+            {
+                if (SpawnUtils.CountActiveEngines(vessel) < 1)
+                    SpawnUtils.ActivateAllEngines(vessel);
+            }
+
             _nextStage++;
 
             vessel.OnFlyByWire += GuidanceSteer;

@@ -1660,7 +1660,7 @@ namespace BDArmory.Weapons
         public void ToggleOverrideAngle()
         {
             FireAngleOverride = !FireAngleOverride;
-            if (FireAngleOverride == false)
+            if (!FireAngleOverride)
             {
                 Events["ToggleOverrideAngle"].guiName = StringUtils.Localize("#LOC_BDArmory_FireAngleOverride_Enable");// Enable Firing Angle Override
             }

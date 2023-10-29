@@ -2332,6 +2332,8 @@ namespace BDArmory.Control
                             else //no cam, laser missiles now expensive unguided ordinance
                             {
                                 unguidedWeapon = true; //so let them be used as unguided ordinance
+                                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: No Laser target! Available cams: {targetingPods.Count}; switching to unguided firing");
+                                break;
                             }
                             //search for a laser point that corresponds with target vessel
                             float attemptStartTime = Time.time;
@@ -2343,7 +2345,7 @@ namespace BDArmory.Control
                             MissileLauncher mlauncher = ml as MissileLauncher;
                             if (mlauncher != null)
                             {
-                                if (targetVessel && ml && mlauncher.missileTurret && laserPointDetected)
+                                if (targetVessel && ml && mlauncher.missileTurret && foundCam)
                                 {
                                     //foundCam.SlaveTurrets();
                                     float turretStartTime = attemptStartTime;
@@ -2361,7 +2363,7 @@ namespace BDArmory.Control
                                         yield return new WaitForFixedUpdate();
                                     }
                                 }
-                                if (targetVessel && ml && mlauncher.multiLauncher && mlauncher.multiLauncher.turret && laserPointDetected)
+                                if (targetVessel && ml && mlauncher.multiLauncher && mlauncher.multiLauncher.turret && foundCam)
                                 {
                                     //foundCam.SlaveTurrets();
                                     float turretStartTime = attemptStartTime;
@@ -2403,7 +2405,7 @@ namespace BDArmory.Control
                 if (unguidedWeapon) //unguidedWeapon
                 {
                     MissileLauncher mlauncher = ml as MissileLauncher;
-                    if (ml && mlauncher.multiLauncher && mlauncher.multiLauncher.overrideReferenceTransform)
+                    if (mlauncher && mlauncher.multiLauncher && mlauncher.multiLauncher.overrideReferenceTransform)
                     {
                         if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName}'s {CurrentMissile.name} launched from MML, aborting unguided launch.");
                     }
@@ -3142,7 +3144,7 @@ namespace BDArmory.Control
                         float thrust = cm == null ? 30 : cm.thrust;
                         float timeToImpact = AIUtils.TimeToCPA(guardTarget, vessel.CoM, vessel.Velocity(), (thrust / missile.part.mass) * missile.GetForwardTransform(), 16);
                         if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: Blast standoff dist: {ml.StandOffDistance}; time2Impact: {timeToImpact}");
-                        if (ml.StandOffDistance > 0 && Vector3.Distance(transform.position + (vessel.Velocity() * timeToImpact), currentTarget.position + (currentTarget.velocity * timeToImpact)) < ml.StandOffDistance) //if predicted craft position will be within blast radius when missile arrives, break off
+                        if (ml.StandOffDistance > 0 && (transform.position + (timeToImpact * (Vector3)vessel.Velocity())).CloserToThan(currentTarget.position + (timeToImpact * currentTarget.velocity), ml.StandOffDistance)) //if predicted craft position will be within blast radius when missile arrives, break off
                         {
                             DisengageAfterFiring = true;
                             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileFire]: Need to withdraw from projected blast zone!");
