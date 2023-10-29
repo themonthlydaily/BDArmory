@@ -16,6 +16,8 @@ IMPROVEMENTS / FIXES
 - General:
 	- Add tracking of 'named modules' (from non-dependency DLLs) to the VesselModuleRegistry.
 	- Optimise "Vector3.Distance(from, to) < dist" type checks.
+- AI:
+	- Expose the weave strength factor as a tunable parameter for the surface AI.
 - Weapons:
 	- Don't apply the unity integrator correction to the unsupported gravity component of the aiming (improves on-orbit aiming).
 	- Improve the estimate of the required OverlapSphere for Vessel-Relative Bullet Checks for hypervelocity craft.
