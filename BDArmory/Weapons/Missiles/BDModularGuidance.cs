@@ -1035,7 +1035,7 @@ namespace BDArmory.Weapons.Missiles
             if (StagesNumber == 1)
             {
                 if (SpawnUtils.CountActiveEngines(vessel) < 1)
-                    SpawnUtils.ActivateAllEngines(vessel);
+                    SpawnUtils.ActivateAllEngines(vessel, true, false);
             }
 
             _nextStage++;
