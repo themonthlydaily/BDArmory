@@ -2343,42 +2343,30 @@ namespace BDArmory.Control
                                 yield return new WaitForFixedUpdate();
                             }
                             MissileLauncher mlauncher = ml as MissileLauncher;
-                            if (mlauncher != null)
+                            if (mlauncher && foundCam)
                             {
-                                if (targetVessel && ml && mlauncher.missileTurret && foundCam)
+                                float angle = 999;
+                                float turretStartTime = attemptStartTime;
+                                if (mlauncher.missileTurret)
                                 {
-                                    //foundCam.SlaveTurrets();
-                                    float turretStartTime = attemptStartTime;
-                                    while (Time.time - turretStartTime < Mathf.Max(targetScanInterval / 2f, 2))
+                                    while (Time.time - turretStartTime < Mathf.Max(targetScanInterval / 2f, 2) && mlauncher && foundCam && angle > mlauncher.missileTurret.fireFOV)
                                     {
-                                        float angle = Vector3.Angle(mlauncher.missileTurret.finalTransform.forward, mlauncher.missileTurret.slavedTargetPosition - mlauncher.missileTurret.finalTransform.position);
+                                        angle = Vector3.Angle(mlauncher.missileTurret.finalTransform.forward, mlauncher.missileTurret.slavedTargetPosition - mlauncher.missileTurret.finalTransform.position);
                                         mlauncher.missileTurret.slaved = true;
                                         mlauncher.missileTurret.slavedTargetPosition = foundCam.groundTargetPosition;
                                         mlauncher.missileTurret.SlavedAim();
-                                        if (angle < mlauncher.missileTurret.fireFOV)
-                                        {
-                                            break;
-                                            // turretStartTime -= 2 * Time.fixedDeltaTime;
-                                        }
-                                        yield return new WaitForFixedUpdate();
+                                        yield return wait;
                                     }
                                 }
-                                if (targetVessel && ml && mlauncher.multiLauncher && mlauncher.multiLauncher.turret && foundCam)
+                                if (mlauncher.multiLauncher && mlauncher.multiLauncher.turret)
                                 {
-                                    //foundCam.SlaveTurrets();
-                                    float turretStartTime = attemptStartTime;
-                                    while (Time.time - turretStartTime < Mathf.Max(targetScanInterval / 2f, 2))
+                                    while (Time.time - turretStartTime < Mathf.Max(targetScanInterval / 2f, 2) && mlauncher && foundCam && angle > mlauncher.multiLauncher.turret.fireFOV)
                                     {
-                                        float angle = Vector3.Angle(mlauncher.multiLauncher.turret.finalTransform.forward, mlauncher.multiLauncher.turret.slavedTargetPosition - mlauncher.multiLauncher.turret.finalTransform.position);
+                                        angle = Vector3.Angle(mlauncher.multiLauncher.turret.finalTransform.forward, mlauncher.multiLauncher.turret.slavedTargetPosition - mlauncher.multiLauncher.turret.finalTransform.position);
                                         mlauncher.multiLauncher.turret.slaved = true;
                                         mlauncher.multiLauncher.turret.slavedTargetPosition = foundCam.groundTargetPosition;
                                         mlauncher.multiLauncher.turret.SlavedAim();
-                                        if (angle < mlauncher.multiLauncher.turret.fireFOV)
-                                        {
-                                            break;
-                                            // turretStartTime -= 2 * Time.fixedDeltaTime;
-                                        }
-                                        yield return new WaitForFixedUpdate();
+                                        yield return wait;
                                     }
                                 }
                             }
