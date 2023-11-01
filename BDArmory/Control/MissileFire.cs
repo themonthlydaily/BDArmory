@@ -2850,11 +2850,11 @@ namespace BDArmory.Control
             }
         }
 
-        public void FireECM()
+        public void FireECM(float duration)
         {
             if (!isECMJamming)
             {
-                StartCoroutine(ECMRoutine());
+                StartCoroutine(ECMRoutine(duration));
             }
         }
 
@@ -2907,7 +2907,7 @@ namespace BDArmory.Control
             }
         }
 
-        IEnumerator ECMRoutine()
+        IEnumerator ECMRoutine(float duration)
         {
             isECMJamming = true;
             //yield return new WaitForSecondsFixed(UnityEngine.Random.Range(0.2f, 1f));
@@ -2923,7 +2923,7 @@ namespace BDArmory.Control
                     }
                     ecm.Current.EnableJammer();
                 }
-            yield return new WaitForSecondsFixed(10.0f);
+            yield return new WaitForSecondsFixed(duration);
             isECMJamming = false;
 
             using (var ecm1 = VesselModuleRegistry.GetModules<ModuleECMJammer>(vessel).GetEnumerator())
@@ -7047,7 +7047,7 @@ namespace BDArmory.Control
                         StartCoroutine(UnderAttackRoutine());
 
                         FireChaff();
-                        FireECM();
+                        FireECM(10);
                     }
                     //laser missiles
                     if (results.foundAGM) //Assume Laser Warning Reciever regardless of omniDetection? or move laser missiles to the passive missiles section?
@@ -7080,6 +7080,7 @@ namespace BDArmory.Control
                                             rd.Current.DisableRadar();
                                     }
                                 _radarsEnabled = false;
+                                //FireECM(0); //disable jammers
                             }
                             StartCoroutine(UnderAttackRoutine());
                         }
@@ -7119,6 +7120,7 @@ namespace BDArmory.Control
                                                 }
                                             _radarsEnabled = false;
                                         }
+                                        //FireECM(0); uh oh, blip ECM!
                                     }
                                 }
                                 else //assume heater
@@ -7130,6 +7132,8 @@ namespace BDArmory.Control
                             StartCoroutine(UnderAttackRoutine());
                         }
                     }
+                    if (results.incomingMissiles[0].guidanceType == MissileBase.TargetingModes.Gps)
+                        FireECM(cmThreshold);
                 }
                 else
                 {
@@ -7147,6 +7151,7 @@ namespace BDArmory.Control
                                     }
                                 _radarsEnabled = false;
                             }
+                            FireECM(0); // kill active noisemakers
                             FireDecoys();
                             StartCoroutine(UnderAttackRoutine());
                         }
@@ -7156,7 +7161,7 @@ namespace BDArmory.Control
                         StartCoroutine(UnderAttackRoutine());
 
                         FireBubbles();
-                        FireECM();
+                        FireECM(10);
                     }
                 }
             }

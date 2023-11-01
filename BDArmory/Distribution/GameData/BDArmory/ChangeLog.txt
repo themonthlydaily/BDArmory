@@ -12,7 +12,7 @@
 - Weapons:
 	- Fix BurstFirelength and FireAngleOverride toggles not working in flight.
 	- Fix APS parts getting mixed in with global weapon shortnaming and overriding barrage settings.
-	- Anti-Ballistic APS no longer assigns multiple turrets to a single incoming shell.
+	- Anti-Ballistic APS no longer assigns multiple turrets to a single incoming shell, now respects reloading/overheated state of the weapon during target assignement
 	- Guns now properly respect crossfeed.
 	- Don't apply the unity integrator correction to the unsupported gravity component of the aiming (improves on-orbit aiming).
 	- Improve the estimate of the required OverlapSphere for Vessel-Relative Bullet Checks for hypervelocity craft.
@@ -26,7 +26,7 @@
 		- Craft without Radar/radarlock will now wait to fire radar LOAL missiles until target distance is close enough that radarTimeout < (tgtDist - activeRadarRange) / optimalAirspeed.
 		- Fix NRE when trying to fire laser-guided missiles from a turret with no targeting cam.
 		- Single stage Modular Missiles now activate their engine on launch without needing an AG setup.
-		- GPS jamming functionality implemented.
+		- Continuously-updating GPS-guided ordinance can now be jammed by a ECM jammer if within the jammer's garble radius.
 		- Missile Interception reworked, tied to PD logic. Missiles set to engage missiles will automatically launch to intercept incoming missiles (assuming viable launch geometry).
 - Competition:
 	- Include last-damaged-by tracking for bullet explosions that damage vessels, not just hits.
