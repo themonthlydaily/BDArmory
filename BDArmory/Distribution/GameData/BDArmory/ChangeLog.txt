@@ -17,14 +17,20 @@
 	- Don't apply the unity integrator correction to the unsupported gravity component of the aiming (improves on-orbit aiming).
 	- Improve the estimate of the required OverlapSphere for Vessel-Relative Bullet Checks for hypervelocity craft.
 	- Missiles:
+		- Add new Inertial guidance mode.
+		  - Add new 'inertialDrift' missileLauncher field for INS drift, in meters/sec.
 		- Have torpedoes head to last known contact point and start circling it, instead of current sink to bottom behavior.
 		- MultiMissileLauncher deploy anim toggle now affects symmetry twins.
 		- Fix various NullReferenceExceptions when trying to use Modular Missiles.
 		- Antirad missiles using antiRadTypes = 9 now properly home in on active ECM jammers.
+		- Craft without Radar/radarlock will now wait to fire radar LOAL missiles until target distance is close enough that radarTimeout < (tgtDist - activeRadarRange) / optimalAirspeed.
 		- Fix NRE when trying to fire laser-guided missiles from a turret with no targeting cam.
 		- Single stage Modular Missiles now activate their engine on launch without needing an AG setup.
+		- GPS jamming functionality implemented.
+		- Missile Interception reworked, tied to PD logic. Missiles set to engage missiles will automatically launch to intercept incoming missiles (assuming viable launch geometry).
 - Competition:
 	- Include last-damaged-by tracking for bullet explosions that damage vessels, not just hits.
+	- GM kill when weaponless now looks for no weapons with ammo instead of no weapons.
 
 v1.6.7.0
 IMPROVEMENTS / FIXES
