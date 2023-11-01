@@ -2357,29 +2357,30 @@ namespace BDArmory.Control
                                 yield return new WaitForFixedUpdate();
                             }
                             MissileLauncher mlauncher = ml as MissileLauncher;
-
-                            //foundCam.SlaveTurrets();
-                            float turretStartTime = attemptStartTime;
-                            float angle = 999;
-                            while (Time.time - turretStartTime < Mathf.Max(targetScanInterval / 2f, 2) || angle > mlauncher.multiLauncher.turret.fireFOV)
+                            if (mlauncher && foundCam)
                             {
-                                if (mlauncher && foundCam)
+                                float angle = 999;
+                                float turretStartTime = attemptStartTime;
+                                if (mlauncher.missileTurret)
                                 {
-                                    if (mlauncher.missileTurret && (!mlauncher.multiLauncher || mlauncher.multiLauncher && !mlauncher.multiLauncher.turret))
+                                    while (Time.time - turretStartTime < Mathf.Max(targetScanInterval / 2f, 2) && mlauncher && foundCam && angle > mlauncher.missileTurret.fireFOV)
                                     {
                                         angle = Vector3.Angle(mlauncher.missileTurret.finalTransform.forward, mlauncher.missileTurret.slavedTargetPosition - mlauncher.missileTurret.finalTransform.position);
                                         mlauncher.missileTurret.slaved = true;
                                         mlauncher.missileTurret.slavedTargetPosition = foundCam.groundTargetPosition;
                                         mlauncher.missileTurret.SlavedAim();
-                                        yield return new WaitForFixedUpdate();
+                                        yield return wait;
                                     }
-                                    if (mlauncher.multiLauncher && mlauncher.multiLauncher.turret)
+                                }
+                                if (mlauncher.multiLauncher && mlauncher.multiLauncher.turret)
+                                {
+                                    while (Time.time - turretStartTime < Mathf.Max(targetScanInterval / 2f, 2) && mlauncher && foundCam && angle > mlauncher.multiLauncher.turret.fireFOV)
                                     {
                                         angle = Vector3.Angle(mlauncher.multiLauncher.turret.finalTransform.forward, mlauncher.multiLauncher.turret.slavedTargetPosition - mlauncher.multiLauncher.turret.finalTransform.position);
                                         mlauncher.multiLauncher.turret.slaved = true;
                                         mlauncher.multiLauncher.turret.slavedTargetPosition = foundCam.groundTargetPosition;
                                         mlauncher.multiLauncher.turret.SlavedAim();
-                                        yield return new WaitForFixedUpdate();
+                                        yield return wait;
                                     }
                                 }
                             }

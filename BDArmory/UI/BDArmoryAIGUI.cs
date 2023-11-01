@@ -2453,6 +2453,7 @@ namespace BDArmory.UI
                             GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_SlopeAngle"), contextLabel);//"undershoot"
                             driverLines++;
                         }
+
                         if (ActiveDriver.SurfaceType == AIUtils.VehicleMovementType.Submarine)
                         {
                             if (!NumFieldsEnabled)
@@ -2470,7 +2471,6 @@ namespace BDArmory.UI
                             }
                             GUI.Label(SettinglabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_CombatAltitude") + ": " + ActiveDriver.CombatAltitude.ToString("0"), Label);//"Steer Ki"
                             driverLines++;
-
                             if (contextTipsEnabled)
                             {
                                 GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_CombatAlt"), contextLabel);//"undershoot"

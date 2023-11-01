@@ -2,27 +2,29 @@
 - General:
 	- Add tracking of 'named modules' (from non-dependency DLLs) to the VesselModuleRegistry.
 	- Optimise "Vector3.Distance(from, to) < dist" type checks.
-- UI
+- UI:
 	- rcsOverride enabled ECMJammers now properly affect RCs in the SPH/VAB RCS GUI.
 	- Fix Equivalent Armor Thickness readout in the Armor GUI
-- AI / WM
+- AI / WM:
 	- AI GUI fixes for surface AI.
 	- Fix AI disengagement from launched nuclear/EMP ordinance if within projected blast radius.
 	- Expose the weave strength factor as a tunable parameter for the surface AI.
-- Weapons
+- Weapons:
 	- Fix BurstFirelength and FireAngleOverride toggles not working in flight.
 	- Fix APS parts getting mixed in with global weapon shortnaming and overriding barrage settings.
 	- Anti-Ballistic APS no longer assigns multiple turrets to a single incoming shell.
 	- Guns now properly respect crossfeed.
 	- Don't apply the unity integrator correction to the unsupported gravity component of the aiming (improves on-orbit aiming).
 	- Improve the estimate of the required OverlapSphere for Vessel-Relative Bullet Checks for hypervelocity craft.
-	- Missiles
+	- Missiles:
 		- Have torpedoes head to last known contact point and start circling it, instead of current sink to bottom behavior.
 		- MultiMissileLauncher deploy anim toggle now affects symmetry twins.
 		- Fix various NullReferenceExceptions when trying to use Modular Missiles.
-		- Antirad missiles using antiRadTypes = 9 now properly home in on active ECm jammers.
+		- Antirad missiles using antiRadTypes = 9 now properly home in on active ECM jammers.
 		- Fix NRE when trying to fire laser-guided missiles from a turret with no targeting cam.
-		- Single stage Modular Missiles now activate their engine on launch without needing a AG setup.
+		- Single stage Modular Missiles now activate their engine on launch without needing an AG setup.
+- Competition:
+	- Include last-damaged-by tracking for bullet explosions that damage vessels, not just hits.
 
 v1.6.7.0
 IMPROVEMENTS / FIXES
