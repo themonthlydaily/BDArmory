@@ -1,5 +1,34 @@
 ﻿IMPROVEMENTS / FIXES
 - General:
+	- Add tracking of 'named modules' (from non-dependency DLLs) to the VesselModuleRegistry.
+	- Optimise "Vector3.Distance(from, to) < dist" type checks.
+- UI:
+	- rcsOverride enabled ECMJammers now properly affect RCs in the SPH/VAB RCS GUI.
+	- Fix Equivalent Armor Thickness readout in the Armor GUI
+- AI / WM:
+	- AI GUI fixes for surface AI.
+	- Fix AI disengagement from launched nuclear/EMP ordinance if within projected blast radius.
+	- Expose the weave strength factor as a tunable parameter for the surface AI.
+- Weapons:
+	- Fix BurstFirelength and FireAngleOverride toggles not working in flight.
+	- Fix APS parts getting mixed in with global weapon shortnaming and overriding barrage settings.
+	- Anti-Ballistic APS no longer assigns multiple turrets to a single incoming shell.
+	- Guns now properly respect crossfeed.
+	- Don't apply the unity integrator correction to the unsupported gravity component of the aiming (improves on-orbit aiming).
+	- Improve the estimate of the required OverlapSphere for Vessel-Relative Bullet Checks for hypervelocity craft.
+	- Missiles:
+		- Have torpedoes head to last known contact point and start circling it, instead of current sink to bottom behavior.
+		- MultiMissileLauncher deploy anim toggle now affects symmetry twins.
+		- Fix various NullReferenceExceptions when trying to use Modular Missiles.
+		- Antirad missiles using antiRadTypes = 9 now properly home in on active ECM jammers.
+		- Fix NRE when trying to fire laser-guided missiles from a turret with no targeting cam.
+		- Single stage Modular Missiles now activate their engine on launch without needing an AG setup.
+- Competition:
+	- Include last-damaged-by tracking for bullet explosions that damage vessels, not just hits.
+
+v1.6.7.0
+IMPROVEMENTS / FIXES
+- General:
 	- Kerbal Foundries wheel and track HP now properly scales with wheel size.
 	- ProcArmor now has symmetry attach.
 	- Fix Armor panels < 10mm thick resetting to 25mm.
@@ -42,7 +71,7 @@
 		- Fix Missiles failing LOS check due to kerbins curvature for ship vs ship engagements.
 		- Fix for GPS missiles fired from multiMissileLaunchers losing lock when fired.
 		- Fix guidance type = none missiles detonating 5km from launcher.
-		- Fix NRe from manually firing GPS missiles from a multimissilelauncher.
+		- Fix NRE from manually firing GPS missiles from a multimissilelauncher.
 		- AIs attempting to dumbfire multimissileLaunchers will now take missile launch vector into account instead of vessel prograde.
 		- Adds new Settings option 'LIMITED_ORDINANCE' to clamp multimissilelaunchers and reloadable rails to a single salvo's worth of ammo. 
 		- Fixed GPS coords not updating for bombs.

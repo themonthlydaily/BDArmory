@@ -401,6 +401,7 @@ namespace BDArmory.UI
                         { "MaxDrift", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MaxDrift, 1, 180) },
                         { "TargetPitch", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.TargetPitch, -10, 10) },
                         { "BankAngle", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.BankAngle, -45, 45) },
+                        { "WeaveFactor", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.WeaveFactor, 0, 10) },
                         { "steerMult", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.steerMult, 0.2,  20) },
                         { "steerDamping", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.steerDamping, 0.1, 10) },
                         { "MinEngagementRange", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MinEngagementRange, 0, 6000) },
@@ -2383,6 +2384,7 @@ namespace BDArmory.UI
                                 GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_Speeds"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //cruise, flank speed desc
                                 GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_Drift"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //drift angle desc
                                 GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_bank"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //bank angle desc
+                                GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_Weave"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //weave factor desc
                                 GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_steerMult"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //steer mult desc
                                 GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_SteerDamp"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //steer damp desc
                                 GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_DriverAI_Orientation"), infoLinkStyle, Width(ColumnWidth - leftIndent * 4 - 20)); //attack vector, broadside desc
@@ -2451,7 +2453,8 @@ namespace BDArmory.UI
                             GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_DriverAI_SlopeAngle"), contextLabel);//"undershoot"
                             driverLines++;
                         }
-                        if (ActiveDriver.SurfaceType != AIUtils.VehicleMovementType.Submarine)
+
+                        if (ActiveDriver.SurfaceType == AIUtils.VehicleMovementType.Submarine)
                         {
                             if (!NumFieldsEnabled)
                             {
@@ -2474,6 +2477,7 @@ namespace BDArmory.UI
                                 driverLines++;
                             }
                         }
+
                         if (!NumFieldsEnabled)
                         {
                             ActiveDriver.CruiseSpeed =
@@ -2576,6 +2580,25 @@ namespace BDArmory.UI
                         if (contextTipsEnabled)
                         {
                             GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_bankLimit"), contextLabel);//"Wobbly"
+                            driverLines++;
+                        }
+
+                        if (!NumFieldsEnabled)
+                        {
+                            ActiveDriver.WeaveFactor = GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth), ActiveDriver.WeaveFactor, 0, 10);
+                            ActiveDriver.WeaveFactor = BDAMath.RoundToUnit(ActiveDriver.WeaveFactor, 0.1f);
+                        }
+                        else
+                        {
+                            var field = inputFields["WeaveFactor"];
+                            field.tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), field.possibleValue, 8, field.style));
+                            ActiveDriver.WeaveFactor = (float)field.currentValue;
+                        }
+                        GUI.Label(SettinglabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_WeaveFactor") + ": " + ActiveDriver.WeaveFactor.ToString("0.0"), Label);
+                        driverLines++;
+                        if (contextTipsEnabled)
+                        {
+                            GUI.Label(ContextLabelRect(leftIndent, driverLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_WeaveFactor"), contextLabel);
                             driverLines++;
                         }
                     }

@@ -2478,7 +2478,7 @@ namespace BDArmory.Weapons.Missiles
             }
             else
             {
-                SLWTarget = TargetPosition; //head to last known contact and then begin circlung
+                SLWTarget = TargetPosition; //head to last known contact and then begin circling
             }
 
             if (FlightGlobals.getAltitudeAtPos(SLWTarget) > 0) SLWTarget -= ((MissileGuidance.GetRaycastRadarAltitude(SLWTarget) + 2) * VectorUtils.GetUpDirection(vessel.transform.position));// see about implementing a 'set target running depth'?

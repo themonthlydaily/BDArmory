@@ -1118,6 +1118,7 @@ namespace BDArmory.Weapons
                             while (weapon.MoveNext())
                             {
                                 if (weapon.Current == null) continue;
+                                if (weapon.Current.isAPS) continue;
                                 if (weapon.Current.GetShortName() != this.GetShortName()) continue;
                                 if (weapon.Current.roundsPerMinute >= 1500 || (weapon.Current.eWeaponType == WeaponTypes.Laser && !weapon.Current.pulseLaser)) continue;
                                 weapon.Current.canRippleFire = false;
@@ -1658,60 +1659,38 @@ namespace BDArmory.Weapons
         [KSPEvent(advancedTweakable = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_FireAngleOverride_Enable", active = true)]//Disable fire angle override
         public void ToggleOverrideAngle()
         {
-            using (List<Part>.Enumerator craftPart = EditorLogic.fetch.ship.parts.GetEnumerator())
-                while (craftPart.MoveNext())
-                {
-                    if (craftPart.Current == null) continue;
-                    if (craftPart.Current.name != part.name) continue;
-                    using (List<ModuleWeapon>.Enumerator weapon = craftPart.Current.FindModulesImplementing<ModuleWeapon>().GetEnumerator())
-                        while (weapon.MoveNext())
-                        {
-                            if (weapon.Current == null) continue;
-                            weapon.Current.FireAngleOverride = !weapon.Current.FireAngleOverride;
-                            if (weapon.Current.FireAngleOverride == false)
-                            {
-                                weapon.Current.Events["ToggleOverrideAngle"].guiName = StringUtils.Localize("#LOC_BDArmory_FireAngleOverride_Enable");// Enable Firing Angle Override
-                            }
-                            else
-                            {
-                                weapon.Current.Events["ToggleOverrideAngle"].guiName = StringUtils.Localize("#LOC_BDArmory_FireAngleOverride_Disable");// Disable Firing Angle Override
-                            }
+            FireAngleOverride = !FireAngleOverride;
+            if (!FireAngleOverride)
+            {
+                Events["ToggleOverrideAngle"].guiName = StringUtils.Localize("#LOC_BDArmory_FireAngleOverride_Enable");// Enable Firing Angle Override
+            }
+            else
+            {
+                Events["ToggleOverrideAngle"].guiName = StringUtils.Localize("#LOC_BDArmory_FireAngleOverride_Disable");// Disable Firing Angle Override
+            }
 
-                            weapon.Current.Fields["FiringTolerance"].guiActive = weapon.Current.FireAngleOverride;
-                            weapon.Current.Fields["FiringTolerance"].guiActiveEditor = weapon.Current.FireAngleOverride;
+            Fields["FiringTolerance"].guiActive = FireAngleOverride;
+            Fields["FiringTolerance"].guiActiveEditor = FireAngleOverride;
 
-                            GUIUtils.RefreshAssociatedWindows(weapon.Current.part);
-                        }
-                }
+            GUIUtils.RefreshAssociatedWindows(part);
         }
         [KSPEvent(advancedTweakable = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_BurstLengthOverride_Enable", active = true)]//Burst length override
         public void ToggleBurstLengthOverride()
         {
-            using (List<Part>.Enumerator craftPart = EditorLogic.fetch.ship.parts.GetEnumerator())
-                while (craftPart.MoveNext())
-                {
-                    if (craftPart.Current == null) continue;
-                    if (craftPart.Current.name != part.name) continue;
-                    using (List<ModuleWeapon>.Enumerator weapon = craftPart.Current.FindModulesImplementing<ModuleWeapon>().GetEnumerator())
-                        while (weapon.MoveNext())
-                        {
-                            if (weapon.Current == null) continue;
-                            weapon.Current.BurstOverride = !weapon.Current.BurstOverride;
-                            if (weapon.Current.BurstOverride == false)
-                            {
-                                weapon.Current.Events["ToggleBurstLengthOverride"].guiName = StringUtils.Localize("#LOC_BDArmory_BurstLengthOverride_Enable");// Enable Firing Angle Override
-                            }
-                            else
-                            {
-                                weapon.Current.Events["ToggleBurstLengthOverride"].guiName = StringUtils.Localize("#LOC_BDArmory_BurstLengthOverride_Disable");// Disable Firing Angle Override
-                            }
+            BurstOverride = !BurstOverride;
+            if (!BurstOverride)
+            {
+                Events["ToggleBurstLengthOverride"].guiName = StringUtils.Localize("#LOC_BDArmory_BurstLengthOverride_Enable");// Enable Firing Angle Override
+            }
+            else
+            {
+                Events["ToggleBurstLengthOverride"].guiName = StringUtils.Localize("#LOC_BDArmory_BurstLengthOverride_Disable");// Disable Firing Angle Override
+            }
 
-                            weapon.Current.Fields["fireBurstLength"].guiActive = weapon.Current.BurstOverride;
-                            weapon.Current.Fields["fireBurstLength"].guiActiveEditor = weapon.Current.BurstOverride;
+            Fields["fireBurstLength"].guiActive = BurstOverride;
+            Fields["fireBurstLength"].guiActiveEditor = BurstOverride;
 
-                            GUIUtils.RefreshAssociatedWindows(weapon.Current.part);
-                        }
-                }
+            GUIUtils.RefreshAssociatedWindows(part);
         }
 
         void FAOCos(BaseField field, object obj)
@@ -3047,7 +3026,7 @@ namespace BDArmory.Weapons
             }
             if (externalAmmo)
             {
-                if (part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot, ResourceFlowMode.STAGE_PRIORITY_FLOW_BALANCE) > 0)
+                if (part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot) > 0)
                 {
                     return true;
                 }
@@ -3445,7 +3424,7 @@ namespace BDArmory.Weapons
                         debugTargetPosition = AIUtils.PredictPosition(debugLastTargetPosition, targetVelocity, targetAcceleration, Time.time - staleGoodTargetTime);
                     }
                 }
-                if (!targetAcquired) 
+                if (!targetAcquired)
                     if (turret) turret.ReturnTurret();
             }
             else
@@ -3529,6 +3508,7 @@ namespace BDArmory.Weapons
                 }
                 //aim assist
                 Vector3 originalTarget = targetPosition;
+                var supported = targetIsLandedOrSplashed || targetAcceleration.sqrMagnitude == 0; // Assume non-accelerating targets are "supported".
                 if (!manualAiming)
                 {
                     // Correct for the FI, which hasn't run yet, but does before visuals are next shown. This should synchronise the target's position and velocity with the bullet at the start of the next frame.
@@ -3538,7 +3518,7 @@ namespace BDArmory.Weapons
                     // Correct for unity integration system
                     // Unity uses semi-implicit euler method during fixed updates. This means the velocity is updated first, and then position.
                     // This creates consistent errors that the following velocity offset compensates for.
-                    targetVelocity += 0.5f * Time.fixedDeltaTime * targetAcceleration;
+                    targetVelocity += 0.5f * Time.fixedDeltaTime * (supported ? targetAcceleration : targetAcceleration - (Vector3)FlightGlobals.getGeeForceAtPosition(targetPosition));
                     // There is no equivalent correction for the weapon part due to our specific placement of the bullet with the given velocity.
                 }
                 targetDistance = Vector3.Distance(targetPosition, fireTransform.parent.position);
@@ -3631,7 +3611,6 @@ namespace BDArmory.Weapons
                         // Also, the numeric solution is giving strangely discrete values initially.
                         // For situation 3, the solution is not quite right, but is fairly good for high accelerations when within 5-15km.
 
-                        var supported = targetIsLandedOrSplashed || targetAcceleration.sqrMagnitude == 0; // Assume non-accelerating targets are "supported".
                         bulletEffectiveVelocity = smoothedPartVelocity + baseBulletVelocity * firingDirection;
 
                         var (simBulletCPA, simTargetCPA, simTimeToCPA) = BallisticTrajectoryClosestApproachSimulation(
@@ -4232,7 +4211,8 @@ namespace BDArmory.Weapons
                     autoFire = false;
                 }
                 if (autoFire && weaponManager.staleTarget && (lastVisualTargetVessel != null && lastVisualTargetVessel.LandedOrSplashed && vessel.LandedOrSplashed)) autoFire = false; //ground Vee engaging another ground Vee which has ducked out of sight, don't fire
-                        // won't catch cloaked tanks, but oh well.
+                // won't catch cloaked tanks, but oh well.
+
                 // if (eWeaponType != WeaponTypes.Rocket) //guns/lasers
                 // {
                 //     // Vector3 targetDiffVec = finalAimTarget - lastFinalAimTarget;
@@ -6289,6 +6269,7 @@ namespace BDArmory.Weapons
                         {
                             var wpn = p.GetComponent<ModuleWeapon>();
                             if (wpn == null) continue;
+                            if (wpn.isAPS && !wpn.dualModeAPS) continue;
                             if (wpn.GetWeaponClass() != wpnClass) continue;
                             wpn.WeaponDisplayName = newName;
                             wpn.shortName = newName;

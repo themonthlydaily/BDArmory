@@ -806,7 +806,7 @@ namespace BDArmory.Competition
                         foreach (var pilot in pilots[leader.weaponManager.Team])
                             if (pilot != null
                                     && pilot.currentCommand == PilotCommands.Follow
-                                    && (pilot.vessel.CoM - pilot.commandLeader.vessel.CoM).sqrMagnitude > teamDistance * teamDistance)
+                                    && pilot.vessel.CoM.FurtherFromThan(pilot.commandLeader.vessel.CoM, teamDistance))
                                 waiting = true;
 
                         if (waiting) break;
@@ -1017,7 +1017,7 @@ namespace BDArmory.Competition
             if (VesselModuleRegistry.ignoredVesselTypes.Contains(vessel.vesselType)) return;
             if (!BDArmorySettings.AUTONOMOUS_COMBAT_SEATS) CheckForAutonomousCombatSeat(vessel);
             if (BDArmorySettings.DESTROY_UNCONTROLLED_WMS) CheckForUncontrolledVessel(vessel);
-            if (BDArmorySettings.COMPETITION_GM_KILL_TIME > -1 && (BDArmorySettings.COMPETITION_GM_KILL_WEAPON || BDArmorySettings.COMPETITION_GM_KILL_ENGINE || (BDArmorySettings.COMPETITION_GM_KILL_HP > 0))) CheckForGMCulling(vessel);
+            if (BDArmorySettings.COMPETITION_GM_KILL_TIME > -1 && (BDArmorySettings.COMPETITION_GM_KILL_WEAPON || BDArmorySettings.COMPETITION_GM_KILL_ENGINE || BDArmorySettings.COMPETITION_GM_KILL_DISABLED || (BDArmorySettings.COMPETITION_GM_KILL_HP > 0))) CheckForGMCulling(vessel);
         }
 
         HashSet<VesselType> validVesselTypes = new HashSet<VesselType> { VesselType.Plane, VesselType.Ship };
@@ -1097,13 +1097,38 @@ namespace BDArmory.Competition
             if (vessel == null || vessel.vesselName == null) return;
             if (BDArmorySettings.COMPETITION_GM_KILL_ENGINE)
             {
-                if (VesselModuleRegistry.GetModuleCount<ModuleEngines>(vessel) == 0)
+                if (SpawnUtils.CountActiveEngines(vessel) == 0)
                     StartCoroutine(DelayedGMKill(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, " lost all engines. Terminated by GM."));
             }
             if (BDArmorySettings.COMPETITION_GM_KILL_WEAPON)
             {
                 if (VesselModuleRegistry.GetModuleCount<IBDWeapon>(vessel) == 0)
                     StartCoroutine(DelayedGMKill(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, " lost all weapons. Terminated by GM."));
+            }
+            if (BDArmorySettings.COMPETITION_GM_KILL_DISABLED)
+            {
+                var mf = VesselModuleRegistry.GetModule<MissileFire>(vessel);
+                if (mf != null)
+                {
+                    if (!vessel.IsControllable || !mf.HasWeaponsAndAmmo()) // Check first for not controllable or no weapons or ammo
+                        StartCoroutine(DelayedGMKill(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, " lost all weapons or ammo. Terminated by GM."));
+                    else // Check for engines first, then wheels for tanks/amphibious if needed 
+                    {
+                        if (SpawnUtils.CountActiveEngines(vessel) == 0)
+                        {
+                            var surfaceAI = VesselModuleRegistry.GetModule<BDModuleSurfaceAI>(vessel); // Get the surface AI if the vessel has one.
+                            if (surfaceAI == null) // No engines on an AI that needs them, craft is disabled
+                                StartCoroutine(DelayedGMKill(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, " lost all engines. Terminated by GM."));
+                            else if ((surfaceAI.SurfaceType & AIUtils.VehicleMovementType.Land) != 0) // Check for wheels on craft capable of moving on land
+                            {
+                                if ((VesselModuleRegistry.GetModuleCount<ModuleWheelBase>(vessel) + 
+                                        VesselModuleRegistry.GetModuleCount(vessel, "KSPWheelBase") +
+                                        VesselModuleRegistry.GetModuleCount(vessel, "FSwheel")) <= 1) // 1 wheel is disabled
+                                    StartCoroutine(DelayedGMKill(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, " lost wheels or tracks. Terminated by GM."));
+                            }
+                        }
+                    }
+                }
             }
             if (BDArmorySettings.COMPETITION_GM_KILL_HP > 0)
             {

@@ -508,36 +508,31 @@ namespace BDArmory.UI
                     //Debug.Log($"[BDATargetManager] looking at {vessel.GetName()}; has MF: {mf}; Guardmode: {(mf != null ? mf.guardMode.ToString() : "N/A")}");
                     continue;
                 }
-
                 TargetInfo tInfo = vessel.gameObject.GetComponent<TargetInfo>();
 
                 if (tInfo == null)
                 {
-                    var WM = VesselModuleRegistry.GetMissileFire(vessel, true);
-                    if (WM != null)
+                    if (mf != null)
                     {
                         tInfo = vessel.gameObject.AddComponent<TargetInfo>();
                     }
                     else
-                        return finalData; //This is causing Heaters to not work under manual control - Need Guardmode to generate TargetInfos. Could either add missing TI here, or have UpdateGuardScan proc all the time, not just in guardmode
-
+                        return finalData; 
                 }
                 // If no weaponManager or no target or the target is not a missile with engines on..??? and the target weighs less than 50kg, abort.
                 if (mf == null ||
                     !tInfo ||
-                    !(mf && tInfo.isMissile && (tInfo.MissileBaseModule.MissileState == MissileBase.MissileStates.Boost || tInfo.MissileBaseModule.MissileState == MissileBase.MissileStates.Cruise)))
+                    !(mf && tInfo && tInfo.isMissile && (tInfo.MissileBaseModule.MissileState == MissileBase.MissileStates.Boost || tInfo.MissileBaseModule.MissileState == MissileBase.MissileStates.Cruise)))
                 {
                     if (vessel.GetTotalMass() < minMass)
                         continue;
                 }
-
                 // Abort if target is friendly.
                 if (mf != null)
                 {
                     if (mf.Team.IsFriendly(tInfo.Team))
                         continue;
                 }
-
                 // Abort if target is a missile that we've shot
                 if (tInfo.isMissile)
                 {
@@ -557,7 +552,6 @@ namespace BDArmory.UI
                         if (!OtherUtils.CheckSightLineExactDistance(ray.origin, vessel.CoM + vessel.Velocity(), Vector3.Distance(vessel.CoM, ray.origin), 5, 5))
                             continue;
                     }
-
                     IRSig = GetVesselHeatSignature(vessel, BDArmorySettings.ASPECTED_IR_SEEKERS ? missileVessel.CoM : Vector3.zero, frontAspectHeatModifier); //change vector3.zero to missile.transform.position to have missile IR detection dependant on target aspect
                     float score = IRSig.Item1 * Mathf.Clamp01(15 / angle);
                     score *= (1400 * 1400) / Mathf.Max((vessel.CoM - ray.origin).sqrMagnitude, 90000); // Clamp below 300m
@@ -565,9 +559,7 @@ namespace BDArmory.UI
                     // Add bias targets closer to center of seeker FOV, only once missile seeker can see target
                     if ((priorHeatScore > 0f) && (angle < scanRadius))
                         score *= GetSeekerBias(angle, Vector3.Angle(vessel.Velocity(), priorHeatTarget.velocity), lockedSensorFOVBias, lockedSensorVelocityBias);
-
                     score *= Mathf.Clamp(Vector3.Angle(vessel.transform.position - ray.origin, -VectorUtils.GetUpDirection(ray.origin)) / 90, 0.5f, 1.5f);
-
                     if ((finalScore > 0f) && (score > 0f) && (priorHeatScore > 0)) // If we were passed a target heat score, look for the most similar non-zero heat score after picking a target
                     {
                         if (Mathf.Abs(score - priorHeatScore) < Mathf.Abs(finalScore - priorHeatScore))
@@ -587,18 +579,18 @@ namespace BDArmory.UI
                     //Debug.Log($"[IR DEBUG] heatscore of {vessel.GetName()} is {score}");
                 }
             }
-
             // see if there are flares decoying us:
             bool flareSuccess = false;
             TargetSignatureData flareData = TargetSignatureData.noTarget;
             if (priorHeatScore > 0) // Flares can only decoy if we already had a target
             {
                 flareData = GetFlareTarget(ray, scanRadius, highpassThreshold, lockedSensorFOVBias, lockedSensorVelocityBias, priorHeatTarget);
-                flareData.signalStrength *= missileVessel.GetComponent<MissileBase>().flareEffectivity;
+                float flareEft = 1;
+                var mB = missileVessel.GetComponent<MissileBase>();
+                if (mB != null) flareEft = mB.flareEffectivity;
+                flareData.signalStrength *= flareEft;
                 flareSuccess = ((!flareData.Equals(TargetSignatureData.noTarget)) && (flareData.signalStrength > highpassThreshold));
             }
-
-
             // No targets above highpassThreshold
             if (finalScore < highpassThreshold)
             {
@@ -617,8 +609,6 @@ namespace BDArmory.UI
                 flareSuccess = (flareData.signalStrength > finalScore) && flareSuccess;
             else
                 flareSuccess = false;
-
-
 
             if (flareSuccess) // return matching flare
                 return flareData;

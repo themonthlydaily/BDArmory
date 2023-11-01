@@ -99,7 +99,7 @@ namespace BDArmory.Targeting
             using (var mtc = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(v).GetEnumerator())
                 while (mtc.MoveNext())
                 {
-                    if (mtc.Current is null) continue;
+                    if (mtc.Current == null) continue;
                     if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[BDArmory.TargetingCamera]: Vessel switched to vessel with targeting camera.  Refreshing camera state.");
 
                     if (mtc.Current.cameraEnabled)

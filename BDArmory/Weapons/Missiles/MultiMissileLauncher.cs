@@ -110,6 +110,17 @@ namespace BDArmory.Weapons.Missiles
             if (deployState != null)
             {
                 deployState.normalizedTime = HighLogic.LoadedSceneIsFlight ? 0 : toggleBay ? 1 : 0;
+                using (List<Part>.Enumerator pSym = part.symmetryCounterparts.GetEnumerator())
+                    while (pSym.MoveNext())
+                    {
+                        if (pSym.Current == null) continue;
+                        if (pSym.Current != part && pSym.Current.vessel == vessel)
+                        {
+                            var ml = pSym.Current.FindModuleImplementing<MultiMissileLauncher>();
+                            if (ml == null) continue;
+                            ml.deployState.normalizedTime = toggleBay ? 1 : 0;
+                        }
+                    }
             }
         }
 
@@ -1092,7 +1103,7 @@ namespace BDArmory.Weapons.Missiles
             }
             if (!foundTarget)
             {
-                if ((missileLauncher.MissileReferenceTransform.position - targetV.CoM).sqrMagnitude < ml.activeRadarRange.Sqr())
+                if (missileLauncher.MissileReferenceTransform.position.CloserToThan(targetV.CoM, ml.activeRadarRange))
                 {
                     TargetSignatureData[] scannedTargets = new TargetSignatureData[(int)wpm.multiMissileTgtNum];
                     RadarUtils.RadarUpdateMissileLock(new Ray(ml.transform.position, ml.GetForwardTransform()), ml.maxOffBoresight / 2, ref scannedTargets, 0.4f, ml);
