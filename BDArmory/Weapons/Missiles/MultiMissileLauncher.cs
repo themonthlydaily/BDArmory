@@ -677,17 +677,11 @@ namespace BDArmory.Weapons.Missiles
             if (wpm != null)
             {
                 if (wpm.targetsAssigned.Count > 0) targetsAssigned.Clear();
-                /* //uncomment when missileInterception working
                 if (wpm.multiMissileTgtNum >= 2 || (missileLauncher.engageMissile && wpm.PDMslTgts.Count > 0))
                 {
                     if (missileLauncher.engageMissile && wpm.PDMslTgts.Count > 0) targetsAssigned.AddRange(wpm.PDMslTgts);
                     else if (wpm.targetsAssigned.Count > 0) targetsAssigned.AddRange(wpm.targetsAssigned);
-                    Debug.Log($"[BDArmory.MultiMissileLauncherDebug]: Num of targets: {targetsAssigned.Count}");
                 }
-                */
-                ///////////////////////////////////////////////// delete below when uncommenting above
-                    targetsAssigned.AddRange(wpm.targetsAssigned);
-                //////////////////////////////////////////////
                 //Debug.Log($"[BDArmory.MultiMissileLauncherDebug]: Num of targets: {targetsAssigned.Count - 1}");
                 if (targetsAssigned.Count < 1)
                     if (wpm.currentTarget != null) targetsAssigned.Add(wpm.currentTarget);

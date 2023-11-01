@@ -227,6 +227,10 @@ namespace BDArmory.Weapons.Missiles
          UI_FloatRange(minValue = 5f, maxValue = 60f, stepIncrement = 5f, scene = UI_Scene.Editor)]
         public float BallisticAngle = 45.0f;
 
+        [KSPField]
+        public float inertialDrift = 0.05f; //meters/sec
+
+        private Vector3 driftSeed = Vector3.zero;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CruiseAltitude"), UI_FloatRange(minValue = 5f, maxValue = 500f, stepIncrement = 5f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Cruise Altitude
         public float CruiseAltitude = 500;
@@ -283,7 +287,7 @@ namespace BDArmory.Weapons.Missiles
 
         public enum DetonationDistanceStates { NotSafe, Cruising, CheckingProximity, Detonate }
 
-        public enum TargetingModes { None, Radar, Heat, Laser, Gps, AntiRad }
+        public enum TargetingModes { None, Radar, Heat, Laser, Gps, AntiRad, Inertial }
 
         public MissileStates MissileState { get; set; } = MissileStates.Idle;
 
@@ -595,25 +599,32 @@ namespace BDArmory.Weapons.Missiles
                 gpsTargetCoords_ = targetGPSCoords;
                 if (targetVessel && HasFired && (gpsUpdates >= 0f))
                 {
-                    var weaponManager = VesselModuleRegistry.GetMissileFire(SourceVessel);
-                    if (weaponManager != null && weaponManager.CanSeeTarget(targetVessel, false))
+                    float distanceToTarget = (vessel.transform.position - gpsTargetCoords_).sqrMagnitude;
+                    float jamDistance = RadarUtils.GetVesselECMJammingDistance(targetVessel.Vessel); //does the target have a jammer, and is the missile within the jammed AoE
+                    if (jamDistance * jamDistance < distanceToTarget) //outside/no area of interference, can receive GPS signal
                     {
-                        if (gpsUpdates == 0) // Constant updates
+                        var weaponManager = VesselModuleRegistry.GetMissileFire(SourceVessel);
+                        if (weaponManager != null && weaponManager.CanSeeTarget(targetVessel, false))
                         {
-                            gpsTargetCoords_ = VectorUtils.WorldPositionToGeoCoords(targetVessel.Vessel.CoM, targetVessel.Vessel.mainBody);
-                            targetGPSCoords = gpsTargetCoords_;
-                        }
-                        else // Update every gpsUpdates seconds
-                        {
-                            float updateCount = TimeIndex / gpsUpdates;
-                            if (updateCount > gpsUpdateCounter)
+                            if (gpsUpdates == 0) // Constant updates
                             {
-                                gpsUpdateCounter++;
                                 gpsTargetCoords_ = VectorUtils.WorldPositionToGeoCoords(targetVessel.Vessel.CoM, targetVessel.Vessel.mainBody);
                                 targetGPSCoords = gpsTargetCoords_;
                             }
+                            else // Update every gpsUpdates seconds
+                            {
+                                float updateCount = TimeIndex / gpsUpdates;
+                                if (updateCount > gpsUpdateCounter)
+                                {
+                                    gpsUpdateCounter++;
+                                    gpsTargetCoords_ = VectorUtils.WorldPositionToGeoCoords(targetVessel.Vessel.CoM, targetVessel.Vessel.mainBody);
+                                    targetGPSCoords = gpsTargetCoords_;
+                                }
+                            }
                         }
                     }
+                    //else 
+                    // In theory if the jammer knew the GPS tranceiver channel, could transmit false coords using a more powerful signal to drown out the originals...
                 }
             }
 
@@ -1156,6 +1167,33 @@ namespace BDArmory.Weapons.Missiles
             if (targetGPSCoords != Vector3d.zero)
                 TargetPosition = VectorUtils.GetWorldSurfacePostion(targetGPSCoords, vessel.mainBody);
         }
+        private bool setInertialTarget = false;
+
+        public Vector3d UpdateInertialTarget()
+        {
+            Vector3 TargetCoords_;
+            if (!setInertialTarget)
+            {
+                driftSeed = new Vector3(UnityEngine.Random.Range(-1, 1) * inertialDrift, UnityEngine.Random.Range(-1, 1) * inertialDrift, UnityEngine.Random.Range(-1, 1) * inertialDrift);
+                setInertialTarget = true;
+            }
+            TargetCoords_ = targetGPSCoords;
+
+            if (TargetAcquired)
+            {
+                TargetPosition = VectorUtils.GetWorldSurfacePostion(TargetCoords_, vessel.mainBody);
+                TargetVelocity = Vector3.zero;
+                TargetAcceleration = Vector3.zero;
+                TargetPosition += driftSeed * TimeIndex;
+            }
+            else
+            {
+                guidanceActive = false;
+            }
+
+            return TargetCoords_;
+        }
+
 
         public void DrawDebugLine(Vector3 start, Vector3 end, Color color = default(Color))
         {

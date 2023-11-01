@@ -1102,8 +1102,12 @@ namespace BDArmory.Competition
             }
             if (BDArmorySettings.COMPETITION_GM_KILL_WEAPON)
             {
-                if (VesselModuleRegistry.GetModuleCount<IBDWeapon>(vessel) == 0)
-                    StartCoroutine(DelayedGMKill(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, " lost all weapons. Terminated by GM."));
+                var mf = VesselModuleRegistry.GetModule<MissileFire>(vessel);
+                if (mf != null)
+                {
+                    if (!vessel.IsControllable || !mf.HasWeaponsAndAmmo()) // Check first for not controllable or no weapons or ammo
+                        StartCoroutine(DelayedGMKill(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, " lost all weapons. Terminated by GM."));
+                }
             }
             if (BDArmorySettings.COMPETITION_GM_KILL_DISABLED)
             {
