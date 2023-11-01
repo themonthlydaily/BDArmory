@@ -8,7 +8,7 @@
 - AI / WM:
 	- AI GUI fixes for surface AI.
 	- Fix AI disengagement from launched nuclear/EMP ordinance if within projected blast radius.
-	- Expose the weave strength factor as a tunable parameter for the surface AI.
+	- Expose the weave strength factor as a tunable parameter for the surface and VTOL AI.
 - Weapons:
 	- Fix BurstFirelength and FireAngleOverride toggles not working in flight.
 	- Fix APS parts getting mixed in with global weapon shortnaming and overriding barrage settings.
