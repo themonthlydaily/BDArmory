@@ -2178,11 +2178,11 @@ namespace BDArmory.Control
                         }
                     case MissileBase.TargetingModes.Gps:
                         {
-                            designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(targetVessel.CoM, vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
                             if (SetCargoBays())
                             {
                                 yield return new WaitForSecondsFixed(2f);
                             }
+                            designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(targetVessel.CoM, vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
                             MissileLauncher mlauncher;
                             mlauncher = ml as MissileLauncher;
                             if (mlauncher != null)
@@ -2204,6 +2204,7 @@ namespace BDArmory.Control
                                         }
                                         yield return new WaitForFixedUpdate();
                                     }
+                                    designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(targetVessel.CoM, vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
                                 }
                                 if (ml && mlauncher.multiLauncher && mlauncher.multiLauncher.turret)
                                 {
@@ -2222,6 +2223,7 @@ namespace BDArmory.Control
                                         }
                                         yield return new WaitForFixedUpdate();
                                     }
+                                    designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(targetVessel.CoM, vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
                                 }
                             }
                             yield return wait;

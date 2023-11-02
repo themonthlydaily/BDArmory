@@ -31,6 +31,7 @@
 		- Continuously-updating GPS-guided ordinance can now be jammed by a ECM jammer if within the jammer's garble radius.
 		- Missile Interception reworked, tied to PD logic. Missiles set to engage missiles will automatically launch to intercept incoming missiles (assuming viable launch geometry).
 		- Hopefully fix the Missile Turret phantom force issue.
+		- Fix GPS missiles fired from a cargo/custom bay losing lock immediately on firing.
 - Competition:
 	- Include last-damaged-by tracking for bullet explosions that damage vessels, not just hits.
 	- GM kill when weaponless now looks for no weapons with ammo instead of no weapons.
