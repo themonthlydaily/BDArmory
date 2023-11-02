@@ -9,6 +9,7 @@
 	- AI GUI fixes for surface AI.
 	- Fix AI disengagement from launched nuclear/EMP ordinance if within projected blast radius.
 	- Expose the weave strength factor as a tunable parameter for the surface and VTOL AI.
+	- AI will now toggle/disable ECM Jammers if underfire from GPS/antiradition ordinance.
 - Weapons:
 	- Fix BurstFirelength and FireAngleOverride toggles not working in flight.
 	- Fix APS parts getting mixed in with global weapon shortnaming and overriding barrage settings.
@@ -29,6 +30,7 @@
 		- Single stage Modular Missiles now activate their engine on launch without needing an AG setup.
 		- Continuously-updating GPS-guided ordinance can now be jammed by a ECM jammer if within the jammer's garble radius.
 		- Missile Interception reworked, tied to PD logic. Missiles set to engage missiles will automatically launch to intercept incoming missiles (assuming viable launch geometry).
+		- Hopefully fix the Missile Turret phantom force issue.
 - Competition:
 	- Include last-damaged-by tracking for bullet explosions that damage vessels, not just hits.
 	- GM kill when weaponless now looks for no weapons with ammo instead of no weapons.
