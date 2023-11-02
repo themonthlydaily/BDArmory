@@ -624,7 +624,9 @@ namespace BDArmory.Weapons.Missiles
                         }
                     }
                     //else 
-                    // In theory if the jammer knew the GPS tranceiver channel, could transmit false coords using a more powerful signal to drown out the originals...
+                    // In theory if the jammer knew the GPS tranceiver channel/encryption, could transmit false coords using a more powerful signal to override out the originals...
+                    //currently just cuts off updates and ordinance heads to last valid coords. Instead have jammer Strength come into play and have it be a jStrength * 4prDist^2 check that slows update 
+                    //frequency/increases the RNG threshold to make the GPS update?
                 }
             }
 

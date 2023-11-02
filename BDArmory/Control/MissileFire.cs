@@ -7050,7 +7050,7 @@ namespace BDArmory.Control
                         FireECM(10);
                     }
                     //laser missiles
-                    if (results.foundAGM) //Assume Laser Warning Reciever regardless of omniDetection? or move laser missiles to the passive missiles section?
+                    if (results.foundAGM) //Assume Laser Warning Receiver regardless of omniDetection? Or move laser missiles to the passive missiles section?
                     {
                         StartCoroutine(UnderAttackRoutine());
 
@@ -7062,7 +7062,7 @@ namespace BDArmory.Control
                         }
                     }
                     //passive missiles
-                    if ((results.foundHeatMissile && !results.foundTorpedo) || results.foundAntiRadiationMissile)
+                    if (results.foundHeatMissile || results.foundAntiRadiationMissile)
                     {
                         if (rwr && rwr.omniDetection)
                         {
@@ -7080,8 +7080,11 @@ namespace BDArmory.Control
                                             rd.Current.DisableRadar();
                                     }
                                 _radarsEnabled = false;
-                                //FireECM(0); //disable jammers
+                                FireECM(0); //disable jammers
                             }
+                            
+                            if (results.incomingMissiles[0].guidanceType == MissileBase.TargetingModes.Gps)
+                                FireECM(cmThreshold);
                             StartCoroutine(UnderAttackRoutine());
                         }
                         else //one passive missile is going to be indistinguishable from another, until it gets close enough to evaluate
@@ -7098,6 +7101,13 @@ namespace BDArmory.Control
                                             _radarsEnabled = false;
                                         }
                                 }
+                                /*
+                                if (incomingMissileDistance <= guardRange * 0.33f) //within ID range?
+                                {
+                                    if (results.incomingMissiles[0].guidanceType == MissileBase.TargetingModes.Gps)
+                                        FireECM(cmThreshold);
+                                }
+                                */ //uncomment if we want AI enable jammers to jam incoming GPS oridnance
                             }
                             else //likely a heatseeker, but could be an AA HARM...
                             {
@@ -7121,6 +7131,9 @@ namespace BDArmory.Control
                                             _radarsEnabled = false;
                                         }
                                         //FireECM(0); uh oh, blip ECM!
+                                        //if (results.incomingMissiles[0].guidanceType == MissileBase.TargetingModes.Gps)
+                                        //    FireECM(cmThreshold);
+                                        //uncomment if we want AI to disable ECMJammers when incoming Antirad/enable jammers when incoming GPS oridnance
                                     }
                                 }
                                 else //assume heater
@@ -7132,12 +7145,10 @@ namespace BDArmory.Control
                             StartCoroutine(UnderAttackRoutine());
                         }
                     }
-                    if (results.incomingMissiles[0].guidanceType == MissileBase.TargetingModes.Gps)
-                        FireECM(cmThreshold);
                 }
                 else
                 {
-                    if (results.foundHeatMissile) //standin for passive acoustic homing. Will ahve to expand this if facing *actual* heat-seeking torpedoes
+                    if (results.foundHeatMissile) //standin for passive acoustic homing. Will have to expand this if facing *actual* heat-seeking torpedoes
                     {
                         if ((rwr && rwr.omniDetection) || (incomingMissileDistance <= Mathf.Min(guardRange * 0.33f, 2500))) //within ID range?
                         {
