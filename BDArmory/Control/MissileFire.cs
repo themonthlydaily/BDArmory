@@ -2349,7 +2349,7 @@ namespace BDArmory.Control
                                 float turretStartTime = attemptStartTime;
                                 if (mlauncher.missileTurret)
                                 {
-                                    while (Time.time - turretStartTime < Mathf.Max(targetScanInterval / 2f, 2) && mlauncher && foundCam && angle > mlauncher.missileTurret.fireFOV)
+                                    while (Time.time - turretStartTime < Mathf.Max(targetScanInterval / 2f, 2) && mlauncher && mlauncher.isActiveAndEnabled && foundCam && angle > mlauncher.missileTurret.fireFOV)
                                     {
                                         angle = Vector3.Angle(mlauncher.missileTurret.finalTransform.forward, mlauncher.missileTurret.slavedTargetPosition - mlauncher.missileTurret.finalTransform.position);
                                         mlauncher.missileTurret.slaved = true;
@@ -2360,7 +2360,7 @@ namespace BDArmory.Control
                                 }
                                 if (mlauncher.multiLauncher && mlauncher.multiLauncher.turret)
                                 {
-                                    while (Time.time - turretStartTime < Mathf.Max(targetScanInterval / 2f, 2) && mlauncher && foundCam && angle > mlauncher.multiLauncher.turret.fireFOV)
+                                    while (Time.time - turretStartTime < Mathf.Max(targetScanInterval / 2f, 2) && mlauncher && mlauncher.isActiveAndEnabled && foundCam && angle > mlauncher.multiLauncher.turret.fireFOV)
                                     {
                                         angle = Vector3.Angle(mlauncher.multiLauncher.turret.finalTransform.forward, mlauncher.multiLauncher.turret.slavedTargetPosition - mlauncher.multiLauncher.turret.finalTransform.position);
                                         mlauncher.multiLauncher.turret.slaved = true;
