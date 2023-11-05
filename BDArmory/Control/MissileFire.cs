@@ -2995,7 +2995,7 @@ namespace BDArmory.Control
             for (int i = 0; i < count; ++i)
             {
                 DropCMs((int)(CMDropper.CountermeasureTypes.Flare | CMDropper.CountermeasureTypes.Chaff | CMDropper.CountermeasureTypes.Smoke));
-                if (i < count - 1) // Don't wait on the last one.
+                if (i <= count) // Don't wait on the last one.
                     yield return new WaitForSecondsFixed(1f);
             }
             isFlaring = false;
@@ -7219,7 +7219,7 @@ namespace BDArmory.Control
                     {
                         if (weapon.Current.turret)
                         {
-                            if (TurretID > Mathf.Min((targetsAssigned.Count - 1), multiTargetNum))
+                            if (TurretID >= Mathf.Min((targetsAssigned.Count), multiTargetNum))
                             {
                                 TurretID = 0; //if more turrets than targets, loop target list
                             }
@@ -7252,7 +7252,7 @@ namespace BDArmory.Control
                                 }
                                 TurretID++;
                             }
-                            if (MissileTgtID > Mathf.Min((missilesAssigned.Count - 1), multiTargetNum))
+                            if (MissileTgtID >= Mathf.Min((missilesAssigned.Count), multiTargetNum))
                             {
                                 MissileTgtID = 0; //if more turrets than targets, loop target list
                             }
@@ -7444,7 +7444,7 @@ namespace BDArmory.Control
                         if (missile == null) continue;
                         if (!missile.engageMissile) continue;
                         if (missile.HasFired || missile.launched) continue;
-                        if (MissileID > PDMslTgts.Count - 1) MissileID = 0;
+                        if (MissileID >= PDMslTgts.Count) MissileID = 0;
                         if (PDMslTgts.Count > 0)
                         {
                             float targetDist = Vector3.Distance(missile.MissileReferenceTransform.position, PDMslTgts[MissileID].Vessel.CoM);
@@ -7524,14 +7524,14 @@ namespace BDArmory.Control
                     {
                         if (PDBulletTgts.Count > 0)
                         {
-                            if (ballisticTurretID > PDBulletTgts.Count - 1)
+                            if (ballisticTurretID >= PDBulletTgts.Count)
                             {
                                 if ((weapon.Current.isReloading || weapon.Current.isOverheated) || weapon.Current.baseDeviation > 0.05 && (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Ballistic || (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Laser && weapon.Current.pulseLaser)))
                                       //if more APS turrets than targets, and APS is a rotary weapon using volume of fire instead of precision, roll over target list to assign multiple turrets to the incoming shell
                                     ballisticTurretID = 0;
                                     //else assign one turret per target, and hold fire on the rest
                             }
-                            if (ballisticTurretID <= PDBulletTgts.Count - 1)
+                            if (ballisticTurretID < PDBulletTgts.Count)
                             {
                                 if (PDBulletTgts[ballisticTurretID] != null && PDBulletTgts[ballisticTurretID].transform.position.FurtherFromThan(weapon.Current.fireTransforms[0].position, weapon.Current.engageRangeMax * 1.25f)) ballisticTurretID = 0; //reset cycle so out of range guns engage closer targets
                                 if (PDBulletTgts[ballisticTurretID] != null) //second check in case of turretID reset
@@ -7563,12 +7563,12 @@ namespace BDArmory.Control
                     {
                         if (PDRktTgts.Count > 0)
                         {
-                            if (rocketTurretID > PDRktTgts.Count - 1)
+                            if (rocketTurretID >= PDRktTgts.Count)
                             {
                                 if ((weapon.Current.isReloading || weapon.Current.isOverheated) || weapon.Current.baseDeviation > 0.05 && (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Ballistic || (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Laser && weapon.Current.pulseLaser)))
                                     rocketTurretID = 0;
                             }
-                            if (rocketTurretID <= PDRktTgts.Count - 1)
+                            if (rocketTurretID < PDRktTgts.Count)
                             {
                                 if (PDRktTgts[rocketTurretID] != null && PDRktTgts[rocketTurretID].transform.position.FurtherFromThan(weapon.Current.fireTransforms[0].position, weapon.Current.engageRangeMax * 1.25f)) rocketTurretID = 0; //reset cycle so out of range guns engage closer targets
                                 if (PDRktTgts[rocketTurretID] != null)
@@ -7600,7 +7600,7 @@ namespace BDArmory.Control
                             }
                         }
                         else weapon.Current.tgtRocket = null;
-                        if (TurretID > PDMslTgts.Count - 1) TurretID = 0;
+                        if (TurretID >= PDMslTgts.Count) TurretID = 0;
                         if (PDMslTgts.Count > 0)
                         {
                             if (PDMslTgts[TurretID].Vessel != null && PDMslTgts[TurretID].transform.position.FurtherFromThan(weapon.Current.fireTransforms[0].position, weapon.Current.engageRangeMax * 1.25f)) TurretID = 0; //reset cycle so out of range guns engage closer targets
