@@ -5069,7 +5069,7 @@ namespace BDArmory.Weapons
                         targetVelocity = visualTargetPart.vessel.rb_velocity;
                         targetPosition = visualTargetPart.transform.position;
                         visualTargetVessel = visualTargetPart.vessel;
-                        TargetInfo currentTarget = visualTargetVessel.gameObject.GetComponent<TargetInfo>();
+                        TargetInfo currentTarget = (visualTargetVessel != null ? visualTargetVessel.gameObject.GetComponent<TargetInfo>() : null);
                         targetRadius = currentTarget != null ? visualTargetVessel.GetRadius(fireTransforms[0].forward, currentTarget.bounds) : 0;
                     }
                     //targetVelocity -= BDKrakensbane.FrameVelocity;
@@ -6211,7 +6211,7 @@ namespace BDArmory.Weapons
             {
                 editor.Unlock("BD_MN_GUILock");
             }
-            guiWindowRect = GUILayout.Window(GUIUtility.GetControlID(FocusType.Passive), guiWindowRect, GUIWindow, "Weapon Group GUI", Styles.styleEditorPanel);
+            guiWindowRect = GUILayout.Window(GUIUtility.GetControlID(FocusType.Passive), guiWindowRect, GUIWindow, StringUtils.Localize("#LOC_BDArmory_WeaponGroup"), Styles.styleEditorPanel);
         }
 
         string[] applyWeaponGroupTo;
@@ -6226,11 +6226,11 @@ namespace BDArmory.Weapons
 
             GUILayout.BeginHorizontal();
 
-            GUILayout.Label("Add to Weapon Group: ");
+            GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_WeaponGroup")} ");
 
             txtName = GUILayout.TextField(txtName);
 
-            if (GUILayout.Button("Save & Close"))
+            if (GUILayout.Button(StringUtils.Localize("#LOC_BDArmory_saveClose")))
             {
                 string newName = string.IsNullOrEmpty(txtName.Trim()) ? WPNmodule.OriginalShortName : txtName.Trim();
 
@@ -6292,7 +6292,7 @@ namespace BDArmory.Weapons
 
             GUILayout.EndHorizontal();
             GUILayout.BeginHorizontal();
-            GUILayout.Label($"Apply to {_applyWeaponGroupTo}");
+            GUILayout.Label($"{StringUtils.Localize("#LOC_BDArmory_applyTo")} {_applyWeaponGroupTo}");
             if (_applyWeaponGroupToIndex != (_applyWeaponGroupToIndex = Mathf.RoundToInt(GUILayout.HorizontalSlider(_applyWeaponGroupToIndex, 0, 4, GUILayout.Width(150))))) _applyWeaponGroupTo = applyWeaponGroupTo[_applyWeaponGroupToIndex];
             GUILayout.EndHorizontal();
 

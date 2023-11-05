@@ -599,9 +599,9 @@ namespace BDArmory.Weapons.Missiles
                 gpsTargetCoords_ = targetGPSCoords;
                 if (targetVessel && HasFired && (gpsUpdates >= 0f))
                 {
-                    float distanceToTarget = (vessel.transform.position - gpsTargetCoords_).sqrMagnitude;
+                    float distanceToTargetSqr = (vessel.transform.position - gpsTargetCoords_).sqrMagnitude;
                     float jamDistance = RadarUtils.GetVesselECMJammingDistance(targetVessel.Vessel); //does the target have a jammer, and is the missile within the jammed AoE
-                    if (jamDistance * jamDistance < distanceToTarget) //outside/no area of interference, can receive GPS signal
+                    if (jamDistance * jamDistance < distanceToTargetSqr) //outside/no area of interference, can receive GPS signal
                     {
                         var weaponManager = VesselModuleRegistry.GetMissileFire(SourceVessel);
                         if (weaponManager != null && weaponManager.CanSeeTarget(targetVessel, false))
@@ -1176,7 +1176,8 @@ namespace BDArmory.Weapons.Missiles
             Vector3 TargetCoords_;
             if (!setInertialTarget)
             {
-                driftSeed = new Vector3(UnityEngine.Random.Range(-1, 1) * inertialDrift, UnityEngine.Random.Range(-1, 1) * inertialDrift, UnityEngine.Random.Range(-1, 1) * inertialDrift);
+                //driftSeed = new Vector3(UnityEngine.Random.Range(-1, 1) * inertialDrift, UnityEngine.Random.Range(-1, 1) * inertialDrift, UnityEngine.Random.Range(-1, 1) * inertialDrift);
+                driftSeed = UnityEngine.Random.insideUnitSphere * inertialDrift;
                 setInertialTarget = true;
             }
             TargetCoords_ = targetGPSCoords;

@@ -1988,7 +1988,7 @@ namespace BDArmory.Control
                                                 break;
                                                 // turretStartTime -= 2 * Time.fixedDeltaTime;
                                             }
-                                            yield return new WaitForFixedUpdate();
+                                            yield return wait;
                                         }
                                     }
                                     if (targetVessel && ml && mlauncher.multiLauncher && mlauncher.multiLauncher.turret && vesselRadarData.locked)
@@ -2003,7 +2003,7 @@ namespace BDArmory.Control
                                                 break;
                                                 // turretStartTime -= 2 * Time.fixedDeltaTime;
                                             }
-                                            yield return new WaitForFixedUpdate();
+                                            yield return wait;
                                         }
                                     }
                                 }
@@ -2137,7 +2137,7 @@ namespace BDArmory.Control
                                             break;
                                             // turretStartTime -= 3 * Time.fixedDeltaTime;
                                         }
-                                        yield return new WaitForFixedUpdate();
+                                        yield return wait;
                                     }
                                 }
                                 if (ml && mlauncher.multiLauncher && mlauncher.multiLauncher.turret && heatTarget.exists)
@@ -2155,7 +2155,7 @@ namespace BDArmory.Control
                                             break;
                                             // turretStartTime -= 3 * Time.fixedDeltaTime;
                                         }
-                                        yield return new WaitForFixedUpdate();
+                                        yield return wait;
                                     }
                                 }
                             }
@@ -2181,6 +2181,7 @@ namespace BDArmory.Control
                             if (SetCargoBays())
                             {
                                 yield return new WaitForSecondsFixed(2f);
+                                if (vessel == null || targetVessel == null) break;
                             }
                             designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(targetVessel.CoM, vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
                             MissileLauncher mlauncher;
@@ -2202,9 +2203,10 @@ namespace BDArmory.Control
                                             break;
                                             // turretStartTime -= 3 * Time.fixedDeltaTime;
                                         }
-                                        yield return new WaitForFixedUpdate();
+                                        yield return wait;
                                     }
-                                    designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(targetVessel.CoM, vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
+                                    if (vessel && targetVessel) 
+                                        designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(targetVessel.CoM, vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
                                 }
                                 if (ml && mlauncher.multiLauncher && mlauncher.multiLauncher.turret)
                                 {
@@ -2221,9 +2223,10 @@ namespace BDArmory.Control
                                             break;
                                             // turretStartTime -= 3 * Time.fixedDeltaTime;
                                         }
-                                        yield return new WaitForFixedUpdate();
+                                        yield return wait;
                                     }
-                                    designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(targetVessel.CoM, vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
+                                    if (vessel && targetVessel)
+                                        designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(targetVessel.CoM, vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
                                 }
                             }
                             yield return wait;
@@ -2271,7 +2274,7 @@ namespace BDArmory.Control
                                         mlauncher.multiLauncher.turret.SlavedAim();
                                     }
                                 }
-                                yield return new WaitForFixedUpdate();
+                                yield return wait;
                             }
                             mlauncher = ml as MissileLauncher;
                             if (mlauncher != null)
@@ -2291,7 +2294,7 @@ namespace BDArmory.Control
                                             break;
                                             // turretStartTime -= 3 * Time.fixedDeltaTime;
                                         }
-                                        yield return new WaitForFixedUpdate();
+                                        yield return wait;
                                     }
                                 }
                                 if (ml && mlauncher.multiLauncher && mlauncher.multiLauncher.turret && antiRadTargetAcquired)
@@ -2309,7 +2312,7 @@ namespace BDArmory.Control
                                             break;
                                             // turretStartTime -= 3 * Time.fixedDeltaTime;
                                         }
-                                        yield return new WaitForFixedUpdate();
+                                        yield return wait;
                                     }
                                 }
                             }
@@ -2356,7 +2359,7 @@ namespace BDArmory.Control
                             float attemptDuration = targetScanInterval * 0.75f;
                             while (Time.time - attemptStartTime < attemptDuration && (!laserPointDetected || (foundCam && (foundCam.groundTargetPosition - targetVessel.CoM).sqrMagnitude > 100)))
                             {
-                                yield return new WaitForFixedUpdate();
+                                yield return wait;
                             }
                             MissileLauncher mlauncher = ml as MissileLauncher;
                             if (mlauncher && foundCam)
@@ -2405,6 +2408,7 @@ namespace BDArmory.Control
                             if (SetCargoBays())
                             {
                                 yield return new WaitForSecondsFixed(2f);
+                                if (vessel == null || targetVessel == null) break;
                             }
                             designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(MissileGuidance.GetAirToAirFireSolution(ml, targetVessel.CoM, targetVessel.Velocity()), vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
 
@@ -2427,8 +2431,10 @@ namespace BDArmory.Control
                                             break;
                                             // turretStartTime -= 3 * Time.fixedDeltaTime;
                                         }
-                                        yield return new WaitForFixedUpdate();
+                                        yield return wait;
                                     }
+                                    if (vessel && targetVessel)
+                                        designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(MissileGuidance.GetAirToAirFireSolution(ml, targetVessel.CoM, targetVessel.Velocity()), vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
                                 }
                                 if (ml && mlauncher.multiLauncher && mlauncher.multiLauncher.turret)
                                 {
@@ -2445,8 +2451,10 @@ namespace BDArmory.Control
                                             break;
                                             // turretStartTime -= 3 * Time.fixedDeltaTime;
                                         }
-                                        yield return new WaitForFixedUpdate();
+                                        yield return wait;
                                     }
+                                    if (vessel && targetVessel)
+                                        designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(MissileGuidance.GetAirToAirFireSolution(ml, targetVessel.CoM, targetVessel.Velocity()), vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
                                 }
                             }
                             yield return wait;
@@ -2913,19 +2921,22 @@ namespace BDArmory.Control
         {
             isECMJamming = true;
             //yield return new WaitForSecondsFixed(UnityEngine.Random.Range(0.2f, 1f));
-            using (var ecm = VesselModuleRegistry.GetModules<ModuleECMJammer>(vessel).GetEnumerator())
-                while (ecm.MoveNext())
-                {
-                    if (ecm.Current == null) continue;
-                    if (ecm.Current.manuallyEnabled) continue;
-                    if (ecm.Current.jammerEnabled)
+            if (duration > 0)
+            {
+                using (var ecm = VesselModuleRegistry.GetModules<ModuleECMJammer>(vessel).GetEnumerator())
+                    while (ecm.MoveNext())
                     {
-                        ecm.Current.manuallyEnabled = true;
-                        continue;
+                        if (ecm.Current == null) continue;
+                        if (ecm.Current.manuallyEnabled) continue;
+                        if (ecm.Current.jammerEnabled)
+                        {
+                            ecm.Current.manuallyEnabled = true;
+                            continue;
+                        }
+                        ecm.Current.EnableJammer();
                     }
-                    ecm.Current.EnableJammer();
-                }
-            yield return new WaitForSecondsFixed(duration);
+                yield return new WaitForSecondsFixed(duration);
+            }
             isECMJamming = false;
 
             using (var ecm1 = VesselModuleRegistry.GetModules<ModuleECMJammer>(vessel).GetEnumerator())
@@ -7253,7 +7264,7 @@ namespace BDArmory.Control
             if (!guardTarget) return;
             if (selectedWeapon == null) return;
             int TurretID = 0;
-            int MissileID = 0;
+            int MissileTgtID = 0;
             List<TargetInfo> firedTargets = new List<TargetInfo>();
             using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                 while (weapon.MoveNext())
@@ -7305,18 +7316,18 @@ namespace BDArmory.Control
                                 }
                                 TurretID++;
                             }
-                            if (MissileID > Mathf.Min((missilesAssigned.Count - 1), multiTargetNum))
+                            if (MissileTgtID > Mathf.Min((missilesAssigned.Count - 1), multiTargetNum))
                             {
-                                MissileID = 0; //if more turrets than targets, loop target list
+                                MissileTgtID = 0; //if more turrets than targets, loop target list
                             }
-                            if (missilesAssigned.Count > 0 && missilesAssigned[MissileID].Vessel != null) //if missile, override non-missile target
+                            if (missilesAssigned.Count > 0 && missilesAssigned[MissileTgtID].Vessel != null) //if missile, override non-missile target
                             {
                                 if (weapon.Current.engageMissile)
                                 {
-                                    if (TargetInTurretRange(weapon.Current.turret, 7, missilesAssigned[MissileID].Vessel.CoM, weapon.Current))
+                                    if (TargetInTurretRange(weapon.Current.turret, 7, missilesAssigned[MissileTgtID].Vessel.CoM, weapon.Current))
                                     {
-                                        weapon.Current.visualTargetVessel = missilesAssigned[MissileID].Vessel; // if target within turret fire zone, assign
-                                        firedTargets.Add(missilesAssigned[MissileID]);
+                                        weapon.Current.visualTargetVessel = missilesAssigned[MissileTgtID].Vessel; // if target within turret fire zone, assign
+                                        firedTargets.Add(missilesAssigned[MissileTgtID]);
                                     }
                                     else //assigned target outside turret arc, try the other targets on the list
                                     {
@@ -7333,7 +7344,7 @@ namespace BDArmory.Control
                                             }
                                     }
                                 }
-                                MissileID++;
+                                MissileTgtID++;
                             }
                         }
                         else

@@ -1024,7 +1024,7 @@ namespace BDArmory.Weapons.Missiles
 
         /// <summary>
         ///     This method will execute the next ActionGroup. Due to StageManager is designed to work with an active vessel
-        ///     And a missile is not an active vessel. I had to use a different way to handle stages. And action groups works perfect!
+        ///     And a missile is not an active vessel. I had to use a different way to handle stages, and action groups work perfectly!
         /// </summary>
         public void ExecuteNextStage()
         {
