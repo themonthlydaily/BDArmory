@@ -4,7 +4,8 @@
 	- Optimise "Vector3.Distance(from, to) < dist" type checks.
 - UI:
 	- rcsOverride enabled ECMJammers now properly affect RCs in the SPH/VAB RCS GUI.
-	- Fix Equivalent Armor Thickness readout in the Armor GUI
+	- Fix Equivalent Armor Thickness readout in the Armor GUI.
+	- Fix custom ammobelt UI overwriting belts on heterogeneous weapon groups.
 - AI / WM:
 	- AI GUI fixes for surface AI.
 	- Fix AI disengagement from launched nuclear/EMP ordinance if within projected blast radius.
@@ -17,7 +18,7 @@
 	- Guns now properly respect crossfeed.
 	- Don't apply the unity integrator correction to the unsupported gravity component of the aiming (improves on-orbit aiming).
 	- Improve the estimate of the required OverlapSphere for Vessel-Relative Bullet Checks for hypervelocity craft.
-	- Increased Abrams Turret Accuracy; Abrams can now hit a tank-sized target from 2km again.
+	- Abrams Turret maxDeviation decreased to 0.1; Abrams bullet spread should reliably hit a tank-sized target from 2km again.
 	- Missiles:
 		- Add new Inertial guidance mode.
 		  - Add new 'inertialDrift' missileLauncher field for INS drift, in meters/sec.
