@@ -2345,9 +2345,9 @@ namespace BDArmory.Control
                 float minOffBoresight = missile.maxOffBoresight * boresightFactor;
                 var minDynamicLaunchRange = MissileLaunchParams.GetDynamicLaunchParams(
                     missile,
-                    extendTarget.Velocity(),
-                    extendTarget.transform.position,
-                    minOffBoresight + (180f - minOffBoresight) * Mathf.Clamp01(((missile.transform.position - extendTarget.transform.position).magnitude - missile.minStaticLaunchRange) / (Mathf.Max(100f + missile.minStaticLaunchRange * 1.5f, 0.1f * missile.maxStaticLaunchRange) - missile.minStaticLaunchRange)) // Reduce the effect of being off-target while extending to prevent super long extends.
+                    v.Velocity(),
+                    v.transform.position,
+                    minOffBoresight + (180f - minOffBoresight) * Mathf.Clamp01(((missile.transform.position - v.transform.position).magnitude - missile.minStaticLaunchRange) / (Mathf.Max(100f + missile.minStaticLaunchRange * 1.5f, 0.1f * missile.maxStaticLaunchRange) - missile.minStaticLaunchRange)) // Reduce the effect of being off-target while extending to prevent super long extends.
                 ).minLaunchRange;
                 if (canExtend && targetDot > 0 && distanceToTarget < minDynamicLaunchRange && vessel.srfSpeed > idleSpeed)
                 {
