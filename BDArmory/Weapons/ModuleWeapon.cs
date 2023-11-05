@@ -4852,7 +4852,7 @@ namespace BDArmory.Weapons
                                     }
                                 }
                             }
-                            if (targetRandom)
+                            if (targetRandom && currentTarget.Vessel != null)
                             {
                                 for (int i = 0; i < Mathf.Min(currentTarget.Vessel.Parts.Count, weaponManager.multiTargetNum); i++)
                                 {
