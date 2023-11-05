@@ -33,6 +33,8 @@
 		- Missile Interception reworked, tied to PD logic. Missiles set to engage missiles will automatically launch to intercept incoming missiles (assuming viable launch geometry).
 		- Hopefully fix the Missile Turret phantom force issue.
 		- Fix GPS missiles fired from a cargo/custom bay losing lock immediately on firing.
+		- Fix typo in Dynamic Launch Zone calculation that was preventing some missiles from launching.
+		- Remove global toggle to use Dynamic or Static launch range for missiles and replace it with a per-missile toggle. When toggled on, the missile will launch missiles at their max engagement range without taking into account craft velocities.
 - Competition:
 	- Include last-damaged-by tracking for bullet explosions that damage vessels, not just hits.
 	- GM kill when weaponless now looks for no weapons with ammo instead of no weapons.

@@ -2984,8 +2984,6 @@ namespace BDArmory.UI
 
                         GUI.Label(SLeftSliderRect(++line, 1), $"{StringUtils.Localize("#LOC_BDArmory_Settings_APSThreshold")}:  ({BDArmorySettings.APS_THRESHOLD})", leftLabel);
                         BDArmorySettings.APS_THRESHOLD = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.APS_THRESHOLD, 1f, 356f));
-
-                        BDArmorySettings.USE_DLZ_LAUNCH_RANGE = GUI.Toggle(SLineRect(++line, 1), BDArmorySettings.USE_DLZ_LAUNCH_RANGE, StringUtils.Localize("#LOC_BDArmory_MissilesRange"));
                     }
                 }
 

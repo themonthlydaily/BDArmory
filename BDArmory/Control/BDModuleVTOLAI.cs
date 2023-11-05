@@ -464,18 +464,21 @@ namespace BDArmory.Control
                                 {
                                     case WeaponClasses.Missile:
                                         MissileBase missile = weaponManager.CurrentMissile;
-                                        if (missile.TargetingMode == MissileBase.TargetingModes.Heat && !weaponManager.heatTarget.exists)
+                                        if (missile != null)
                                         {
-                                            if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) DebugLine($"Attempting heat lock");
-                                            aimingMode = true;
-                                            targetDirection = MissileGuidance.GetAirToAirFireSolution(missile, targetVessel);
-                                        }
-                                        else
-                                        {
-                                            if (!weaponManager.GetLaunchAuthorization(targetVessel, weaponManager, missile) && (Vector3.SqrMagnitude(targetVessel.vesselTransform.position - vesselTransform.position) < (missile.engageRangeMax * missile.engageRangeMax)))
+                                            if (missile.TargetingMode == MissileBase.TargetingModes.Heat && !weaponManager.heatTarget.exists)
                                             {
+                                                if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) DebugLine($"Attempting heat lock");
                                                 aimingMode = true;
                                                 targetDirection = MissileGuidance.GetAirToAirFireSolution(missile, targetVessel);
+                                            }
+                                            else
+                                            {
+                                                if (!weaponManager.GetLaunchAuthorization(targetVessel, weaponManager, missile) && (Vector3.SqrMagnitude(targetVessel.vesselTransform.position - vesselTransform.position) < (missile.engageRangeMax * missile.engageRangeMax)))
+                                                {
+                                                    aimingMode = true;
+                                                    targetDirection = MissileGuidance.GetAirToAirFireSolution(missile, targetVessel);
+                                                }
                                             }
                                         }
                                         break;
@@ -483,7 +486,7 @@ namespace BDArmory.Control
                                     case WeaponClasses.Rocket:
                                     case WeaponClasses.DefenseLaser:
                                         var gun = (ModuleWeapon)weaponManager.selectedWeapon;
-                                        if ((gun.yawRange == 0 || gun.maxPitch == gun.minPitch) && gun.FiringSolutionVector != null)
+                                        if (gun != null && (gun.yawRange == 0 || gun.maxPitch == gun.minPitch) && gun.FiringSolutionVector != null)
                                         {
                                             aimingMode = true;
                                             if (Vector3.Angle(vesselTransform.up, ((Vector3)gun.FiringSolutionVector).ProjectOnPlanePreNormalized(vesselTransform.right)) < MaxPitchAngle)
