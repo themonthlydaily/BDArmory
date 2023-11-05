@@ -2092,7 +2092,7 @@ namespace BDArmory.Control
                             //wait for missile turret to point at target
                             attemptStartTime = Time.time;
                             mlauncher = ml as MissileLauncher;
-                            if (mlauncher)
+                            if (targetVessel && mlauncher)
                             {
                                 float angle = 999;
                                 float turretStartTime = attemptStartTime;
@@ -2107,7 +2107,7 @@ namespace BDArmory.Control
                                         yield return wait;
                                     }
                                 }
-                                if (ml && mlauncher.multiLauncher && mlauncher.multiLauncher.turret && heatTarget.exists)
+                                if (mlauncher.multiLauncher && mlauncher.multiLauncher.turret && heatTarget.exists)
                                 {
                                     while (heatTarget.exists && Time.time - turretStartTime < Mathf.Max(targetScanInterval / 2f, 2) && targetVessel && mlauncher && angle > mlauncher.missileTurret.fireFOV)
                                     {
@@ -2250,7 +2250,7 @@ namespace BDArmory.Control
 
                             attemptStartTime = Time.time;
                             MissileLauncher mlauncher = ml as MissileLauncher;
-                            if (mlauncher)
+                            if (targetVessel && mlauncher)
                             {
                                 float angle = 999;
                                 float turretStartTime = attemptStartTime;
@@ -2323,7 +2323,7 @@ namespace BDArmory.Control
                                 yield return wait;
                             }
                             MissileLauncher mlauncher = ml as MissileLauncher;
-                            if (mlauncher && foundCam)
+                            if (targetVessel && mlauncher && foundCam)
                             {
                                 float angle = 999;
                                 float turretStartTime = attemptStartTime;
@@ -2436,7 +2436,7 @@ namespace BDArmory.Control
                         if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} attempting to fire unguided missile on target {targetVessel.GetName()}");
 
                         float attemptStartTime = Time.time;
-                        if (mlauncher)
+                        if (targetVessel && mlauncher)
                         {
                             float angle = 999;
                             float turretStartTime = attemptStartTime;
