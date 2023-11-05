@@ -23,6 +23,8 @@
 		- Antirad missiles using antiRadTypes = 9 now properly home in on active ECM jammers.
 		- Fix NRE when trying to fire laser-guided missiles from a turret with no targeting cam.
 		- Single stage Modular Missiles now activate their engine on launch without needing an AG setup.
+		- Fix typo in Dynamic Launch Zone calculation that was preventing some missiles from launching.
+		- Remove global toggle to use Dynamic or Static launch range for missiles and replace it with a per-missile toggle. When toggled on, the missile will launch missiles at their max engagement range without taking into account craft velocities.
 - Competition:
 	- Include last-damaged-by tracking for bullet explosions that damage vessels, not just hits.
 

@@ -93,6 +93,10 @@ namespace BDArmory.Weapons.Missiles
             UI_Toggle(disabledText = "#LOC_BDArmory_false", enabledText = "#LOC_BDArmory_true", scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
         public bool DetonateAtMinimumDistance = false;
 
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_UseStaticMaxLaunchRange", advancedTweakable = true), // Use Static Max Launch Range
+            UI_Toggle(disabledText = "#LOC_BDArmory_dynamic", enabledText = "#LOC_BDArmory_static", scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
+        public bool UseStaticMaxLaunchRange = false;
+
         //[KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "SLW Offset"), UI_FloatRange(minValue = -1000f, maxValue = 0f, stepIncrement = 100f, affectSymCounterparts = UI_Scene.All)]
         public float SLWOffset = 0;
 
