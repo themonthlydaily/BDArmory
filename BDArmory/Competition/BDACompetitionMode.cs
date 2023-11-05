@@ -1127,7 +1127,7 @@ namespace BDArmory.Competition
                             {
                                 if ((VesselModuleRegistry.GetModuleCount<ModuleWheelBase>(vessel) + 
                                         VesselModuleRegistry.GetModuleCount(vessel, "KSPWheelBase") +
-                                        VesselModuleRegistry.GetModuleCount(vessel, "FSwheel")) <= 1) // 1 wheel is disabled
+                                        VesselModuleRegistry.GetModuleCount(vessel, "FSwheel")) == 0)
                                     StartCoroutine(DelayedGMKill(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, " lost wheels or tracks. Terminated by GM."));
                             }
                         }
