@@ -205,7 +205,7 @@ namespace BDArmory.UI
             float line = 0.5f;
             string labelString = GUIstring.ToString() + countString.ToString();
             GUI.Label(new Rect(margin, 0.5f * buttonHeight, width - 2 * margin, buttonHeight), StringUtils.Localize("#LOC_BDArmory_Ammo_Setup"), titleStyle);
-            if (GUI.Button(new Rect(width - 26, 2, 24, 24), "X"))
+            if (GUI.Button(new Rect(width - 26, 2, 24, 24), "X", BDArmorySetup.CloseButtonStyle))
             {
                 open = false;
                 beltString = String.Empty;
@@ -232,7 +232,7 @@ namespace BDArmory.UI
             for (int i = 0; i < AList.Count; i++)
             {
                 string ammoname = String.IsNullOrEmpty(BulletInfo.bullets[AList[i]].DisplayName) ? BulletInfo.bullets[AList[i]].name : BulletInfo.bullets[AList[i]].DisplayName;
-                if (GUI.Button(new Rect(margin * 2, (line + labelLines + ammolines) * buttonHeight, (width - 4 * margin), buttonHeight), ammoname, BDArmorySetup.BDGuiSkin.button))
+                if (GUI.Button(new Rect(margin * 2, (line + labelLines + ammolines) * buttonHeight, (width - 4 * margin), buttonHeight), ammoname, BDArmorySetup.ButtonStyle))
                 {
                     beltString += BulletInfo.bullets[AList[i]].name;
                     beltString += "; ";
@@ -257,7 +257,7 @@ namespace BDArmory.UI
                     ammolines += 1.1f;
                 }
             }
-            if (GUI.Button(new Rect(margin * 5, (line + labelLines + ammolines) * buttonHeight, (width - (10 * margin)) / 2, buttonHeight), StringUtils.Localize("#LOC_BDArmory_reset")))
+            if (GUI.Button(new Rect(margin * 5, (line + labelLines + ammolines) * buttonHeight, (width - (10 * margin)) / 2, buttonHeight), StringUtils.Localize("#LOC_BDArmory_reset"), BDArmorySetup.ButtonStyle))
             {
                 beltString = String.Empty;
                 GUIstring = String.Empty;
@@ -266,17 +266,17 @@ namespace BDArmory.UI
                 labelLines = 1;
                 roundCounter = 1;
             }
-            if (GUI.Button(new Rect(((margin * 5) + ((width - (10 * margin)) / 2)), (line + labelLines + ammolines) * buttonHeight, (width - (10 * margin)) / 2, buttonHeight), StringUtils.Localize("#LOC_BDArmory_save")))
+            if (GUI.Button(new Rect((margin * 5) + ((width - (10 * margin)) / 2), (line + labelLines + ammolines) * buttonHeight, (width - (10 * margin)) / 2, buttonHeight), StringUtils.Localize("#LOC_BDArmory_save"), BDArmorySetup.ButtonStyle))
             {
                 save = true;
                 open = false;
             }
             line += 1.5f;
 
-            GUI.Label(new Rect(margin * 5, (line + labelLines + ammolines) * buttonHeight, width - (10 * margin) , buttonHeight), $"{StringUtils.Localize("#LOC_BDArmory_applyTo")} {_applyWeaponGroupTo}");
-            line += 1.1f;
-            if (_applyWeaponGroupToIndex != (_applyWeaponGroupToIndex = Mathf.RoundToInt(GUI.HorizontalSlider(new Rect(((margin * 5) + (width - (10 * margin))), (line + labelLines + ammolines) * buttonHeight, (width - (10 * margin)) / 2, buttonHeight),
-                _applyWeaponGroupToIndex, 0, 2)))) _applyWeaponGroupTo = applyWeaponGroupTo[_applyWeaponGroupToIndex];
+            GUI.Label(new Rect(margin * 5, (line + labelLines + ammolines) * buttonHeight, (width - (10 * margin)) / 2, buttonHeight), $"{StringUtils.Localize("#LOC_BDArmory_applyTo")} {_applyWeaponGroupTo}");
+            line += 0.2f;
+            if (_applyWeaponGroupToIndex != (_applyWeaponGroupToIndex = Mathf.RoundToInt(GUI.HorizontalSlider(new Rect((margin * 5) + (width - (10 * margin)) / 2, (line + labelLines + ammolines) * buttonHeight, (width - (10 * margin)) / 2, buttonHeight),
+                            _applyWeaponGroupToIndex, 0, 2)))) _applyWeaponGroupTo = applyWeaponGroupTo[_applyWeaponGroupToIndex];
             line += 1.5f;
             height = Mathf.Lerp(height, (line + labelLines + ammolines) * buttonHeight, 0.15f);
             windowRect.height = height;
