@@ -6063,7 +6063,7 @@ namespace BDArmory.Control
             //take target vel into account? //if you're going 250m/s, that's only an extra 500m to the maxRange; if the enemy is closing towards you at 250m/s, that's 250m addition
             //Max 1.5x engagement, or engagementRange + vel*4?
             //min 2x engagement, or engagement + 2000m?
-            if (weaponCandidate.GetWeaponClass() != WeaponClasses.Missile || (weaponCandidate.GetWeaponClass() == WeaponClasses.Missile && ((MissileBase)weaponCandidate).UseStaticMaxLaunchRange))
+            if (weaponCandidate.GetWeaponClass() != WeaponClasses.Missile || ((MissileBase)weaponCandidate).UseStaticMaxLaunchRange)
                 if (distanceToTarget > (Mathf.Min(engageableWeapon.GetEngagementRangeMax() * 2, engageableWeapon.GetEngagementRangeMax() + Mathf.Max(1000, (float)vessel.speed * 2)))) return false; //have AI preemptively begin to lead 2s out from max weapon range
             switch (weaponCandidate.GetWeaponClass())
             {
