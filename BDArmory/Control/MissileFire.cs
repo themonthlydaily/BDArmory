@@ -2995,7 +2995,7 @@ namespace BDArmory.Control
             for (int i = 0; i < count; ++i)
             {
                 DropCMs((int)(CMDropper.CountermeasureTypes.Flare | CMDropper.CountermeasureTypes.Chaff | CMDropper.CountermeasureTypes.Smoke));
-                if (i <= count) // Don't wait on the last one.
+                if (i < count - 1) // Don't wait on the last one.
                     yield return new WaitForSecondsFixed(1f);
             }
             isFlaring = false;
