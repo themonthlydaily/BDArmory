@@ -35,6 +35,7 @@
 		- Fix GPS missiles fired from a cargo/custom bay losing lock immediately on firing.
 		- Fix typo in Dynamic Launch Zone calculation that was preventing some missiles from launching.
 		- Remove global toggle to use Dynamic or Static launch range for missiles and replace it with a per-missile toggle. When toggled on, the missile will launch missiles at their max engagement range without taking into account craft velocities.
+		- Incorporate missile frontAspectHeatModifier value into missile selection logic so rear-aspect missiles are not selected if they cannot be fired.
 - Competition:
 	- Include last-damaged-by tracking for bullet explosions that damage vessels, not just hits.
 	- GM kill when weaponless now looks for no weapons with ammo instead of no weapons.
