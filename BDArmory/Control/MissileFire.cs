@@ -5253,7 +5253,7 @@ namespace BDArmory.Control
                                     candidateTDPS += candidateDetDist; // weight selection towards misiles with proximity warheads
                                 }
                                 if (heat && heatTarget.exists && heatTarget.signalStrength *
-                                        ((BDArmorySettings.ASPECTED_IR_SEEKERS && Vector3.Dot(guardTarget.vesselTransform.up, vessel.vesselTransform.up) > 0.25f) ?
+                                        ((BDArmorySettings.ASPECTED_IR_SEEKERS && Vector3.Dot(guardTarget.vesselTransform.up, mlauncher.transform.forward) > 0.25f) ?
                                         mlauncher.frontAspectHeatModifier : 1) < heatThresh)
                                 {
                                     candidateTDPS *= 0.001f; //Heatseeker, but IR sig is below missile threshold, skip to something else unless nothing else available
