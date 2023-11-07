@@ -11,6 +11,8 @@
 	- Fix AI disengagement from launched nuclear/EMP ordinance if within projected blast radius.
 	- Expose the weave strength factor as a tunable parameter for the surface and VTOL AI.
 	- AI will now toggle/disable ECM Jammers if underfire from GPS/antiradition ordinance.
+	- Adjust the off-boresight angles for DLZ checks for extending to prevent super long-range extends.
+	- Fix FSM not being started when initially deploying landing gear.
 - Weapons:
 	- Fix BurstFirelength and FireAngleOverride toggles not working in flight.
 	- Fix APS parts getting mixed in with global weapon shortnaming and overriding barrage settings.
