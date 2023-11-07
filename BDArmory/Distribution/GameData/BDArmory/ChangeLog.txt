@@ -1,9 +1,10 @@
-﻿IMPROVEMENTS / FIXES
+﻿v1.6.8.0
+IMPROVEMENTS / FIXES
 - General:
 	- Add tracking of 'named modules' (from non-dependency DLLs) to the VesselModuleRegistry.
 	- Optimise "Vector3.Distance(from, to) < dist" type checks.
 - UI:
-	- rcsOverride enabled ECMJammers now properly affect RCs in the SPH/VAB RCS GUI.
+	- rcsOverride enabled ECMJammers now properly affect RCS in the SPH/VAB RCS GUI.
 	- Fix Equivalent Armor Thickness readout in the Armor GUI.
 	- Fix custom ammobelt UI overwriting belts on heterogeneous weapon groups.
 - AI / WM:
