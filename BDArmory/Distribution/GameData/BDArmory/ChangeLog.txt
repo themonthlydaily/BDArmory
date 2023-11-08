@@ -24,7 +24,7 @@ IMPROVEMENTS / FIXES
 	- Abrams Turret maxDeviation decreased to 0.1; Abrams bullet spread should reliably hit a tank-sized target from 2km again.
 	- Missiles:
 		- Add new Inertial guidance mode.
-		  - Add new 'inertialDrift' missileLauncher field for INS drift, in meters/sec.
+			- Add new 'inertialDrift' missileLauncher field for INS drift, in meters/sec.
 		- Have torpedoes head to last known contact point and start circling it, instead of current sink to bottom behavior.
 		- MultiMissileLauncher deploy anim toggle now affects symmetry twins.
 		- Fix various NullReferenceExceptions when trying to use Modular Missiles.
