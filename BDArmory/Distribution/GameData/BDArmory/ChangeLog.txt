@@ -1,4 +1,8 @@
-﻿v1.6.8.0
+﻿IMPROVEMENTS / FIXES
+- Vessel Mover:
+	- Check for outdated loadMeta files when refreshing the craft list in the vessel selection window and update them since KSP doesn't update them when you save your craft!
+
+v1.6.8.0
 IMPROVEMENTS / FIXES
 - General:
 	- Add tracking of 'named modules' (from non-dependency DLLs) to the VesselModuleRegistry.
