@@ -1,6 +1,7 @@
 ﻿IMPROVEMENTS / FIXES
 - Vessel Mover:
 	- Check for outdated loadMeta files when refreshing the craft list in the vessel selection window and update them since KSP doesn't update them when you save your craft!
+	- Fix the spawn point selection sometimes not registering.
 
 v1.6.8.0
 IMPROVEMENTS / FIXES

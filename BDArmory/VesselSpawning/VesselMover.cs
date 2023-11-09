@@ -739,7 +739,7 @@ namespace BDArmory.VesselSpawning
                     HideCrewSelection();
                     break;
                 }
-                yield return wait;
+                yield return null;
             }
         }
 
@@ -786,7 +786,7 @@ namespace BDArmory.VesselSpawning
                 }
                 else
                 {
-                    yield return wait;
+                    yield return null;
                     continue;
                 }
 
@@ -799,7 +799,7 @@ namespace BDArmory.VesselSpawning
                     if (altitudeCorrection) geoCoords.z = currentMainBody.TerrainAltitude(geoCoords.x, geoCoords.y, BDArmorySettings.VESSEL_MOVER_BELOW_WATER);
                     break;
                 }
-                yield return wait;
+                yield return null;
             }
             Destroy(indicatorObject);
         }

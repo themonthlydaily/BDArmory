@@ -10,6 +10,8 @@
 ### TODO (smaller items and specific requests / higher priority)
 - Fix bugs
 
+- Add tooltips to settings.
+
 - Wiki entries
 	- Auto-Tuning
 
