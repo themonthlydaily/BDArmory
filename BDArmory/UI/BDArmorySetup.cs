@@ -3796,7 +3796,7 @@ namespace BDArmory.UI
                         BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY / 10f, 1, 6)) * 10f; // For now, don't control the killerGMEnabled flag (it's controlled by right clicking M).
                     }
                     // Craft autokill criteria
-                    BDArmorySettings.COMPETITION_GM_KILL_WEAPON = GUI.Toggle(SLineRect(++line), BDArmorySettings.COMPETITION_GM_KILL_WEAPON, StringUtils.Localize("#LOC_BDArmory_Settings_CompetitionGMWeaponKill"));                 
+                    BDArmorySettings.COMPETITION_GM_KILL_WEAPON = GUI.Toggle(SLineRect(++line), BDArmorySettings.COMPETITION_GM_KILL_WEAPON, StringUtils.Localize("#LOC_BDArmory_Settings_CompetitionGMWeaponKill"));
                     BDArmorySettings.COMPETITION_GM_KILL_ENGINE = GUI.Toggle(SLineRect(++line), BDArmorySettings.COMPETITION_GM_KILL_ENGINE, StringUtils.Localize("#LOC_BDArmory_Settings_CompetitionGMEngineKill"));
                     BDArmorySettings.COMPETITION_GM_KILL_DISABLED = GUI.Toggle(SLineRect(++line), BDArmorySettings.COMPETITION_GM_KILL_DISABLED, StringUtils.Localize("#LOC_BDArmory_Settings_CompetitionGMDisableKill"));
                     string GMKillHP;
@@ -4117,28 +4117,34 @@ namespace BDArmory.UI
 
         void HideGameUI()
         {
+            if (GAME_UI_ENABLED)
+            {
+                // Switch visible/hidden window rects
+                _WindowRectScoresUIVisible = WindowRectScores;
+                if (_WindowRectScoresUIHidden != default) WindowRectScores = _WindowRectScoresUIHidden;
+                _WindowRectVesselSwitcherUIVisible = WindowRectVesselSwitcher;
+                if (_WindowRectVesselSwitcherUIHidden != default) WindowRectVesselSwitcher = _WindowRectVesselSwitcherUIHidden;
+            }
+
             GAME_UI_ENABLED = false;
             BDACompetitionMode.Instance.UpdateGUIElements();
             UpdateCursorState();
-
-            // Switch visible/hidden window rects
-            _WindowRectScoresUIVisible = WindowRectScores;
-            if (_WindowRectScoresUIHidden != default) WindowRectScores = _WindowRectScoresUIHidden;
-            _WindowRectVesselSwitcherUIVisible = WindowRectVesselSwitcher;
-            if (_WindowRectVesselSwitcherUIHidden != default) WindowRectVesselSwitcher = _WindowRectVesselSwitcherUIHidden;
         }
 
         void ShowGameUI()
         {
+            if (!GAME_UI_ENABLED)
+            {
+                // Switch visible/hidden window rects
+                _WindowRectScoresUIHidden = WindowRectScores;
+                if (_WindowRectScoresUIVisible != default) WindowRectScores = _WindowRectScoresUIVisible;
+                _WindowRectVesselSwitcherUIHidden = WindowRectVesselSwitcher;
+                if (_WindowRectVesselSwitcherUIVisible != default) WindowRectVesselSwitcher = _WindowRectVesselSwitcherUIVisible;
+            }
+
             GAME_UI_ENABLED = true;
             BDACompetitionMode.Instance.UpdateGUIElements();
             UpdateCursorState();
-
-            // Switch visible/hidden window rects
-            _WindowRectScoresUIHidden = WindowRectScores;
-            if (_WindowRectScoresUIVisible != default) WindowRectScores = _WindowRectScoresUIVisible;
-            _WindowRectVesselSwitcherUIHidden = WindowRectVesselSwitcher;
-            if (_WindowRectVesselSwitcherUIVisible != default) WindowRectVesselSwitcher = _WindowRectVesselSwitcherUIVisible;
         }
 
         internal void OnDestroy()

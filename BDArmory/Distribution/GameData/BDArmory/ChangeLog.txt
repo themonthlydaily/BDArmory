@@ -1,4 +1,6 @@
 ﻿IMPROVEMENTS / FIXES
+- UI:
+	- Fix the alternate (hidden UI) window locations (for scores and vessel switcher) not being saved correctly.
 - Vessel Mover:
 	- Check for outdated loadMeta files when refreshing the craft list in the vessel selection window and update them since KSP doesn't update them when you save your craft!
 	- Fix the spawn point selection sometimes not registering.
