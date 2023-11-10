@@ -2675,7 +2675,7 @@ namespace BDArmory.Control
             steerRoll *= dynamicAdjustment;
 
             SetFlightControlState(s,
-                Mathf.Clamp(steerPitch, Mathf.Min(-finalMaxSteer, -0.2f), finalMaxSteer), // pitch
+                Mathf.Clamp(steerPitch, -finalMaxSteer, finalMaxSteer), // pitch
                 Mathf.Clamp(steerYaw, -finalMaxSteer, finalMaxSteer), // yaw
                 Mathf.Clamp(steerRoll, -userLimit, userLimit)); // roll
 
