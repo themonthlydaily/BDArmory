@@ -578,7 +578,7 @@ namespace BDArmory.FX
             if (!nukePool.ContainsKey(ModelPath) || nukePool[ModelPath] == null)
             {
                 GameObject templateFX;
-                if (!String.IsNullOrEmpty(ModelPath))
+                if (!string.IsNullOrEmpty(ModelPath))
                 {
                     templateFX = GameDatabase.Instance.GetModel(ModelPath);
                     if (templateFX == null)

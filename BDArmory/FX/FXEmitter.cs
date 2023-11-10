@@ -54,7 +54,7 @@ namespace BDArmory.FX
                     emission.enabled = true;
                     EffectBehaviour.AddParticleEmitter(pe);
                 }
-            if (!String.IsNullOrEmpty(SoundPath))
+            if (!string.IsNullOrEmpty(SoundPath))
             {
                 audioSource = gameObject.GetComponent<AudioSource>();
                 if (ExSound == null)
@@ -162,7 +162,7 @@ namespace BDArmory.FX
                     FXTemplate = GameDatabase.Instance.GetModel(defaultModelPath);
                 }
                 var eFx = FXTemplate.AddComponent<FXEmitter>();
-                if (!String.IsNullOrEmpty(soundPath))
+                if (!string.IsNullOrEmpty(soundPath))
                 {
                     eFx.audioSource = FXTemplate.AddComponent<AudioSource>();
                     eFx.audioSource.minDistance = 200;
@@ -204,7 +204,7 @@ namespace BDArmory.FX
             eFx.maxTime = lifeTime;
             eFx.overrideLifeTime = fixedLifetime;
             eFx.pEmitters = newFX.GetComponentsInChildren<KSPParticleEmitter>();
-            if (!String.IsNullOrEmpty(soundPath))
+            if (!string.IsNullOrEmpty(soundPath))
             {
                 eFx.audioSource = newFX.GetComponent<AudioSource>();
                 if (scale > 3)

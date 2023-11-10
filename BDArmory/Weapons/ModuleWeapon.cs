@@ -802,7 +802,7 @@ namespace BDArmory.Weapons
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DeployableWeapon"), // In custom/modded "cargo bay"
             UI_ChooseOption(
-            options = new String[] {
+            options = new string[] {
                 "0",
                 "1",
                 "2",
@@ -821,7 +821,7 @@ namespace BDArmory.Weapons
                 "15",
                 "16"
             },
-            display = new String[] {
+            display = new string[] {
                 "Disabled",
                 "AG1",
                 "AG2",
@@ -4423,14 +4423,14 @@ namespace BDArmory.Weapons
                             tracerEndWidth = Mathf.Lerp(tracerEndWidth, tracerMaxEndWidth, 0.02f / LaserGrowTime);
                             if (DynamicBeamColor)
                             {
-                                startColorS[0] = Mathf.Lerp(Single.Parse(startColorS[0]), Single.Parse(endColorS[0]), 0.02f / LaserGrowTime).ToString();
-                                startColorS[1] = Mathf.Lerp(Single.Parse(startColorS[1]), Single.Parse(endColorS[1]), 0.02f / LaserGrowTime).ToString();
-                                startColorS[2] = Mathf.Lerp(Single.Parse(startColorS[2]), Single.Parse(endColorS[2]), 0.02f / LaserGrowTime).ToString();
-                                startColorS[3] = Mathf.Lerp(Single.Parse(startColorS[3]), Single.Parse(endColorS[3]), 0.02f / LaserGrowTime).ToString();
+                                startColorS[0] = Mathf.Lerp(float.Parse(startColorS[0]), float.Parse(endColorS[0]), 0.02f / LaserGrowTime).ToString();
+                                startColorS[1] = Mathf.Lerp(float.Parse(startColorS[1]), float.Parse(endColorS[1]), 0.02f / LaserGrowTime).ToString();
+                                startColorS[2] = Mathf.Lerp(float.Parse(startColorS[2]), float.Parse(endColorS[2]), 0.02f / LaserGrowTime).ToString();
+                                startColorS[3] = Mathf.Lerp(float.Parse(startColorS[3]), float.Parse(endColorS[3]), 0.02f / LaserGrowTime).ToString();
                             }
                             for (int i = 0; i < 4; i++)
                             {
-                                projectileColorC[i] = Single.Parse(startColorS[i]) / 255;
+                                projectileColorC[i] = float.Parse(startColorS[i]) / 255;
                             }
                         }
                         UpdateLaserSpecifics(DynamicBeamColor, dynamicFX, LaserGrowTime > 0, beamScrollRate != 0);
@@ -4719,7 +4719,7 @@ namespace BDArmory.Weapons
                         shutdownRoutine = StartCoroutine(ShutdownRoutine(true));
                     }
                     if (!oneShotSound) audioSource.Stop();
-                    if (!String.IsNullOrEmpty(reloadAudioPath))
+                    if (!string.IsNullOrEmpty(reloadAudioPath))
                     {
                         audioSource.PlayOneShot(reloadAudioClip);
                     }
@@ -4754,7 +4754,7 @@ namespace BDArmory.Weapons
                 {
                     UpdateRocketScales();
                 }
-                if (!String.IsNullOrEmpty(reloadCompletePath))
+                if (!string.IsNullOrEmpty(reloadCompletePath))
                 {
                     audioSource.PlayOneShot(reloadCompleteAudioClip);
                 }
@@ -5317,7 +5317,7 @@ namespace BDArmory.Weapons
                 fireState[i].enabled = false;
             }
             if (!oneShotSound) audioSource.Stop();
-            if (!String.IsNullOrEmpty(reloadAudioPath))
+            if (!string.IsNullOrEmpty(reloadAudioPath))
             {
                 audioSource.PlayOneShot(reloadAudioClip);
             }
@@ -5335,7 +5335,7 @@ namespace BDArmory.Weapons
         {
             isCharging = true;
             guiStatusString = "Charging";
-            if (!String.IsNullOrEmpty(chargeSoundPath))
+            if (!string.IsNullOrEmpty(chargeSoundPath))
             {
                 audioSource.PlayOneShot(chargeSound);
             }

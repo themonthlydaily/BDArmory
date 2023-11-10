@@ -150,7 +150,7 @@ namespace BDArmory.UI
         bool editingGPSName;
         int editingGPSNameIndex;
         bool hasEnteredGPSName;
-        string newGPSName = String.Empty;
+        string newGPSName = string.Empty;
 
         public MissileFire ActiveWeaponManager;
         public bool missileWarning;
@@ -1299,7 +1299,7 @@ namespace BDArmory.UI
                         else
                         {
                             label = StringUtils.Localize("#LOC_BDArmory_WMWindow_NoneWeapon");//"None"
-                            subLabel = String.Empty;
+                            subLabel = string.Empty;
                         }
                         Rect weaponButtonRect = new Rect(leftIndent, (weaponLines * entryHeight), weaponListGroupRect.width - (2 * leftIndent), entryHeight);
 
@@ -3737,12 +3737,12 @@ namespace BDArmory.UI
                 GUI.Label(new Rect(intraTeamSepRect.x + intraTeamSepRect.width / 4 + 2, intraTeamSepRect.y, 15, intraTeamSepRect.height), " + ");
                 compIntraTeamSeparationPerMember = GUI.TextField(new Rect(intraTeamSepRect.x + intraTeamSepRect.width / 4 + 17, intraTeamSepRect.y, intraTeamSepRect.width / 4 + 2, intraTeamSepRect.height), compIntraTeamSeparationPerMember, 6, textFieldStyle);
                 GUI.Label(new Rect(intraTeamSepRect.x + intraTeamSepRect.width / 2 + 25, intraTeamSepRect.y, intraTeamSepRect.width / 2 - 25, intraTeamSepRect.height), StringUtils.Localize("#LOC_BDArmory_Settings_CompetitionIntraTeamSeparationPerMember"));
-                if (Single.TryParse(compIntraTeamSeparationBase, out float cIntraBase) && BDArmorySettings.COMPETITION_INTRA_TEAM_SEPARATION_BASE != cIntraBase)
+                if (float.TryParse(compIntraTeamSeparationBase, out float cIntraBase) && BDArmorySettings.COMPETITION_INTRA_TEAM_SEPARATION_BASE != cIntraBase)
                 {
                     cIntraBase = Mathf.Round(cIntraBase); BDArmorySettings.COMPETITION_INTRA_TEAM_SEPARATION_BASE = cIntraBase;
                     if (cIntraBase != 0) compIntraTeamSeparationBase = cIntraBase.ToString();
                 }
-                if (Single.TryParse(compIntraTeamSeparationPerMember, out float cIntraPerMember) && BDArmorySettings.COMPETITION_INTRA_TEAM_SEPARATION_PER_MEMBER != cIntraPerMember)
+                if (float.TryParse(compIntraTeamSeparationPerMember, out float cIntraPerMember) && BDArmorySettings.COMPETITION_INTRA_TEAM_SEPARATION_PER_MEMBER != cIntraPerMember)
                 {
                     cIntraPerMember = Mathf.Round(cIntraPerMember); BDArmorySettings.COMPETITION_INTRA_TEAM_SEPARATION_PER_MEMBER = cIntraPerMember;
                     if (cIntraPerMember != 0) compIntraTeamSeparationPerMember = cIntraPerMember.ToString();
@@ -3750,7 +3750,7 @@ namespace BDArmory.UI
 
                 GUI.Label(SLeftRect(++line), StringUtils.Localize("#LOC_BDArmory_Settings_CompetitionDistance"));//"Competition Distance"
                 compDistGui = GUI.TextField(SRightRect(line, 1, true), compDistGui, textFieldStyle);
-                if (Single.TryParse(compDistGui, out float cDist) && BDArmorySettings.COMPETITION_DISTANCE != cDist)
+                if (float.TryParse(compDistGui, out float cDist) && BDArmorySettings.COMPETITION_DISTANCE != cDist)
                 {
                     cDist = Mathf.Round(cDist); BDArmorySettings.COMPETITION_DISTANCE = cDist;
                     if (cDist != 0) compDistGui = cDist.ToString();
@@ -4058,7 +4058,7 @@ namespace BDArmory.UI
         void InputSettingsLine(string fieldName, int id, ref float line)
         {
             GUI.Box(SLineRect(line), GUIContent.none);
-            string label = String.Empty;
+            string label = string.Empty;
             if (BDKeyBinder.IsRecordingID(id))
             {
                 string recordedInput;
