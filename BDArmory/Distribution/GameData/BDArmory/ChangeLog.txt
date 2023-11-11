@@ -2,7 +2,7 @@
 - UI:
 	- Fix the alternate (hidden UI) window locations (for scores and vessel switcher) not being saved correctly.
 - AI / WM:
-	- Invert the Immelmann turn (pitch down instead of up) when flying inverted and have recently avoided terrain. (Fixes the pitch oscillation behaviour when targeting an opponent behind the craft while inverted near terrain.)
+	- Base the Immelmann turn pitch direction on the local pitch angular velocity (i.e., pitch down if already rotating that way — fixes the pitch oscillation behaviour when targeting an opponent behind the craft while inverted near terrain).
 - Vessel Mover:
 	- Check for outdated loadMeta files when refreshing the craft list in the vessel selection window and update them since KSP doesn't update them when you save your craft!
 	- Fix the spawn point selection sometimes not registering.
