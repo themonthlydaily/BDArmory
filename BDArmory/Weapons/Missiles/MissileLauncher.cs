@@ -1129,7 +1129,7 @@ namespace BDArmory.Weapons.Missiles
             ml.engageSLW = engageSLW;
             if (GuidanceMode == GuidanceModes.AGMBallistic)
             {
-                ml.BallisticOverShootFactor = BallisticOverShootFactor; //are some of these null, and causeing this to quit? 
+                ml.BallisticOverShootFactor = BallisticOverShootFactor; //are some of these null, and causing this to quit? 
                 ml.BallisticAngle = BallisticAngle;
             }
             if (GuidanceMode == GuidanceModes.Cruise)
@@ -1280,11 +1280,6 @@ namespace BDArmory.Weapons.Missiles
                 part.explosionPotential = 0; // Minimise the default part explosion FX that sometimes gets offset from the main explosion.
 
                 StartCoroutine(MissileRoutine());
-                if (multiLauncher && multiLauncher.isClusterMissile)
-                {
-                    reloadableRail.MissileName = multiLauncher.subMunitionName;
-                    reloadableRail.UpdateMissileValues();
-                }
                 var tnt = part.FindModuleImplementing<BDExplosivePart>();
                 if (tnt)
                 {
@@ -2565,7 +2560,6 @@ namespace BDArmory.Weapons.Missiles
                                 fairing.Current.AddComponent<DecoupledBooster>().DecoupleBooster(part.rb.velocity, boosterDecoupleSpeed);
                             }
                     }
-                    reloadableRail.MissileName = multiLauncher.subMunitionName;
                     multiLauncher.Team = Team;
                     multiLauncher.fireMissile(true);
                 }

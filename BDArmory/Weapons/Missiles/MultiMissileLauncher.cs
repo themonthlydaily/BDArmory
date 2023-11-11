@@ -161,13 +161,13 @@ namespace BDArmory.Weapons.Missiles
             if (missileSpawner == null) //MultiMissile launchers/cluster missiles need a MMR module for spawning their submunitions, so add one if not present in case cfg not set up properly
             {
                 missileSpawner = (ModuleMissileRearm)part.AddModule("ModuleMissileRearm");
-                missileSpawner.maxAmmo = isClusterMissile ? salvoSize : salvoSize * 5;
-                missileSpawner.ammoCount = launchTransforms.Length;
+                missileSpawner.maxAmmo = isClusterMissile ? 1 : salvoSize * 5;
+                missileSpawner.ammoCount = isClusterMissile ? 1 : launchTransforms.Length;
                 missileSpawner.MissileName = subMunitionName;
                 if (!isClusterMissile) //Clustermissiles replace/generate MMR on launch, other missiles should have it in the .cfg
                     Debug.LogError($"[BDArmory.MultiMissileLauncher] no ModuleMissileRearm on {part.name}. Please fix your .cfg");
             }
-            if (BDArmorySettings.LIMITED_ORDINANCE) missileSpawner.ammoCount = launchTransforms.Length; //FIXME: remember to remove this for standard builds
+            if (BDArmorySettings.LIMITED_ORDINANCE) missileSpawner.ammoCount = isClusterMissile ? 1 : launchTransforms.Length;
             missileSpawner.isMultiLauncher = isMultiLauncher;
             if (missileLauncher != null) //deal with race condition/'MissileLauncher' loading before 'MultiMissileLauncher' and 'ModuleMissilerearm' by moving all relevant flags and values to a single location
             {
@@ -182,9 +182,12 @@ namespace BDArmory.Weapons.Missiles
 
                 if (isClusterMissile)
                 {
-                    missileSpawner.MissileName = missileLauncher.missileName;
-                    missileLauncher.DetonationDistance = clusterMissileTriggerDist;
-                    missileLauncher.blastRadius = clusterMissileTriggerDist; //clustermissile det radius hardcoded for now
+                    missileSpawner.MissileName = vessel.Parts.Count == 1 ? subMunitionName : missileLauncher.missileName; //ClMsl set to base name in case of reloadable rails, reset to submuition name after launch
+                    if (vessel.Parts.Count > 1)
+                    {
+                        missileLauncher.DetonationDistance = clusterMissileTriggerDist;
+                        missileLauncher.blastRadius = clusterMissileTriggerDist;
+                    }
                     missileLauncher.Fields["DetonationDistance"].guiActive = false;
                     missileLauncher.Fields["DetonationDistance"].guiActiveEditor = false;
                     missileLauncher.DetonateAtMinimumDistance = false;
@@ -638,7 +641,7 @@ namespace BDArmory.Weapons.Missiles
         public void fireMissile(bool killWhenDone = false)
         {
             if (!HighLogic.LoadedSceneIsFlight) return;
-            if (isClusterMissile) salvoSize = launchTransforms.Length;
+            if (isClusterMissile && vessel.Parts.Count == 1) salvoSize = launchTransforms.Length;
             if (!(missileSalvo != null))
             {
                 wpm = VesselModuleRegistry.GetMissileFire(missileLauncher.SourceVessel, true);
@@ -716,7 +719,7 @@ namespace BDArmory.Weapons.Missiles
                 tubesFired++;
                 launchesThisSalvo++;
                 launchTransforms[m].localScale = Vector3.zero;
-                if (!missileSpawner.SpawnMissile(launchTransforms[m], (offset * Length), !isClusterMissile))
+                if (!missileSpawner.SpawnMissile(launchTransforms[m], (offset * Length), (!isClusterMissile || (isClusterMissile && vessel.parts.Count == 1))))
                 {
                     if (BDArmorySettings.DEBUG_MISSILES) Debug.LogWarning($"[BDArmory.MissileLauncher]: Failed to spawn a missile in {missileSpawner} on {vessel.vesselName}");
                     continue;
@@ -749,7 +752,7 @@ namespace BDArmory.Weapons.Missiles
                 if (BDArmorySettings.DEBUG_MISSILES) ml.shortName = $"{ml.SourceVessel.GetName()}'s {missileLauncher.GetShortName()} Missile";
                 ml.vessel.vesselName = ml.GetShortName();
                 ml.TimeFired = Time.time;
-                if (!isClusterMissile)
+                if (!isClusterMissile || (isClusterMissile && vessel.Parts.Count == 1))
                     ml.DetonationDistance = missileLauncher.DetonationDistance;
                 ml.DetonateAtMinimumDistance = missileLauncher.DetonateAtMinimumDistance;
                 ml.decoupleForward = missileLauncher.decoupleForward;
@@ -1036,7 +1039,7 @@ namespace BDArmory.Weapons.Missiles
             if (missileLauncher is null) yield break;
             if (tubesFired >= launchTransforms.Length) //add a timer for reloading a partially emptied MML if it hasn't been used for a while?
             {
-                if (!isClusterMissile && (BDArmorySettings.INFINITE_ORDINANCE || missileSpawner.ammoCount >= (int)salvoSize))
+                if (!isClusterMissile || (isClusterMissile && vessel.parts.Count > 1) && (BDArmorySettings.INFINITE_ORDINANCE || missileSpawner.ammoCount >= (int)salvoSize))
                     if (!(missileLauncher.reloadRoutine != null))
                     {
                         missileLauncher.reloadRoutine = StartCoroutine(missileLauncher.MissileReload());
