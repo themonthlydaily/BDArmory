@@ -1,16 +1,19 @@
-﻿IMPROVEMENTS / FIXES
+﻿v1.6.8.0
+IMPROVEMENTS / FIXES
 - General:
 	- Add tracking of 'named modules' (from non-dependency DLLs) to the VesselModuleRegistry.
 	- Optimise "Vector3.Distance(from, to) < dist" type checks.
 - UI:
-	- rcsOverride enabled ECMJammers now properly affect RCs in the SPH/VAB RCS GUI.
+	- rcsOverride enabled ECMJammers now properly affect RCS in the SPH/VAB RCS GUI.
 	- Fix Equivalent Armor Thickness readout in the Armor GUI.
 	- Fix custom ammobelt UI overwriting belts on heterogeneous weapon groups.
 - AI / WM:
 	- AI GUI fixes for surface AI.
 	- Fix AI disengagement from launched nuclear/EMP ordinance if within projected blast radius.
 	- Expose the weave strength factor as a tunable parameter for the surface and VTOL AI.
-	- AI will now toggle/disable ECM Jammers if underfire from GPS/antiradition ordinance.
+	- AI will now toggle/disable ECM Jammers if under fire from GPS/antiradiation ordinance.
+	- Adjust the off-boresight angles for DLZ checks for extending to prevent super long-range extends.
+	- Fix FSM not being started when initially deploying landing gear.
 - Weapons:
 	- Fix BurstFirelength and FireAngleOverride toggles not working in flight.
 	- Fix APS parts getting mixed in with global weapon shortnaming and overriding barrage settings.
@@ -35,6 +38,7 @@
 		- Fix GPS missiles fired from a cargo/custom bay losing lock immediately on firing.
 		- Fix typo in Dynamic Launch Zone calculation that was preventing some missiles from launching.
 		- Remove global toggle to use Dynamic or Static launch range for missiles and replace it with a per-missile toggle. When toggled on, the missile will launch missiles at their max engagement range without taking into account craft velocities.
+		- Incorporate missile frontAspectHeatModifier value into missile selection logic so rear-aspect missiles are not selected if they cannot be fired.
 - Competition:
 	- Include last-damaged-by tracking for bullet explosions that damage vessels, not just hits.
 	- GM kill when weaponless now looks for no weapons with ammo instead of no weapons.
