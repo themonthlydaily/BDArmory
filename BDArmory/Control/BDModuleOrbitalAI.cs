@@ -764,7 +764,7 @@ namespace BDArmory.Control
             if (velToClosestApproach < 10)
                 return false;
 
-            float timeToClosestApproach = AIUtils.ClosestTimeToCPA(toClosestApproach, relVel * -1, Vector3.zero, 9999);
+            float timeToClosestApproach = AIUtils.TimeToCPA(toClosestApproach, relVel * -1, Vector3.zero, 9999);
             if (timeToClosestApproach == 0)
                 return false;
 
@@ -817,7 +817,7 @@ namespace BDArmory.Control
         private Vector3 ToClosestApproach(Vector3 toTarget, Vector3 relVel, float minRange)
         {
             Vector3 relVelInverse = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
-            float timeToIntercept = AIUtils.ClosestTimeToCPA(toTarget, relVelInverse, Vector3.zero, 9999);
+            float timeToIntercept = AIUtils.TimeToCPA(toTarget, relVelInverse, Vector3.zero, 9999);
 
             // Minimising the target closest approach to the current closest approach prevents
             // ships that are targeting each other from fighting over the closest approach based on their min ranges.
@@ -832,7 +832,7 @@ namespace BDArmory.Control
             if (Vector3.Dot(targetVessel.acceleration.normalized, toTarget.normalized) > 0)
                 toTarget += Displacement(Vector3.zero, toTarget.normalized * Vector3.Dot(targetVessel.acceleration, toTarget.normalized), Mathf.Min(timeToIntercept, 999));
 
-            Vector3 toClosestApproach = toTarget + (rotatedVector * Mathf.Min(minRange, toTarget.magnitude, actualClosestApproachDistance));
+            Vector3 toClosestApproach = toTarget + (rotatedVector * Mathf.Clamp(actualClosestApproachDistance, minRange, toTarget.magnitude));
 
             // Need a maximum angle so that we don't end up going further away at close range.
             toClosestApproach = Vector3.RotateTowards(toTarget, toClosestApproach, 22.5f, float.MaxValue);
@@ -923,7 +923,7 @@ namespace BDArmory.Control
             Vector3 relVel = target.GetObtVelocity() - firer.vessel.GetObtVelocity();
             Vector3 relAcc = target.acceleration - firer.vessel.acceleration;
 
-            float timeToHit = AIUtils.ClosestTimeToCPA(relPos, relVel + (relPos.normalized * travelVelocity * -1), relAcc, 60);
+            float timeToHit = AIUtils.TimeToCPA(relPos, relVel + (relPos.normalized * travelVelocity * -1), relAcc, 60);
             Vector3 leadPosition = AIUtils.PredictPosition(relPos, relVel, relAcc, timeToHit);
 
             return leadPosition;
