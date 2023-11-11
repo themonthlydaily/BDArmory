@@ -3,7 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using KSP.Localization;
+
+using ModuleWheels;
 
 using BDArmory.Competition;
 using BDArmory.Extensions;
@@ -36,6 +37,9 @@ namespace BDArmory.Control
         /// The default is BDAirspeedControl. If you want to use something else, just override ActivatePilot  (and, potentially, DeactivatePilot), and make it use something else.
         /// </summary>
         protected BDAirspeedControl speedController;
+
+        protected bool hasAxisGroupsModule = false;
+        protected AxisGroupsModule axisGroupsModule;
 
         protected Transform vesselTransform => vessel.ReferenceTransform;
 
@@ -112,6 +116,26 @@ namespace BDArmory.Control
             AutoPilot(s);
         }
 
+        /// <summary>
+        /// Set the flight control state and also the corresponding axis groups.
+        /// </summary>
+        /// <param name="s">The flight control state</param>
+        /// <param name="pitch">pitch</param>
+        /// <param name="yaw">yaw</param>
+        /// <param name="roll">roll</param>
+        protected virtual void SetFlightControlState(FlightCtrlState s, float pitch, float yaw, float roll)
+        {
+            s.pitch = pitch;
+            s.yaw = yaw;
+            s.roll = roll;
+            if (hasAxisGroupsModule)
+            {
+                axisGroupsModule.UpdateAxisGroup(KSPAxisGroup.Pitch, pitch);
+                axisGroupsModule.UpdateAxisGroup(KSPAxisGroup.Yaw, yaw);
+                axisGroupsModule.UpdateAxisGroup(KSPAxisGroup.Roll, roll);
+            }
+        }
+
         #region Pilot on/off
 
         public virtual void ActivatePilot()
@@ -136,12 +160,18 @@ namespace BDArmory.Control
             assignedPositionWorld = vessel.ReferenceTransform.position;
             try // Sometimes the FSM breaks trying to set the gear action group
             {
+                // Make sure the FSM is started for deployable wheels. (This should hopefully fix the FSM errors.)
+                foreach (var part in VesselModuleRegistry.GetModules<ModuleWheelDeployment>(vessel).Where(part => part != null && part.fsm != null && !part.fsm.Started))
+                {
+                    if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDAGenericAIBase]: Starting FSM with state {(string.IsNullOrEmpty(part.fsm.currentStateName) ? "Retracted" : part.fsm.currentStateName)} on {part.name} of {part.vessel.vesselName}");
+                    part.fsm.StartFSM(part.fsm.CurrentState ?? new KFSMState("Retracted"));
+                }
                 // I need to make sure gear is deployed on startup so it'll get properly retracted.
                 vessel.ActionGroups.SetGroup(KSPActionGroup.Gear, true);
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"[BDArmory.BDGenericAIBase]: Failed to set Gear action group: {e.Message}");
+                Debug.LogError($"[BDArmory.BDGenericAIBase]: Failed to set Gear action group on {vessel.vesselName}: {e.Message}");
             }
             RefreshPartWindow();
         }
@@ -215,6 +245,8 @@ namespace BDArmory.Control
 
                 activeVessel = vessel;
                 UpdateWeaponManager();
+                axisGroupsModule = vessel.FindVesselModuleImplementingBDA<AxisGroupsModule>(); // Look for an axis group module so we can set the axis groups when setting the flight control state.
+                if (axisGroupsModule != null) hasAxisGroupsModule = true;
 
                 if (pilotEnabled)
                 {
@@ -359,7 +391,7 @@ namespace BDArmory.Control
             debugString.AppendLine(text);
         }
 
-        protected void SetStatus(string text)
+        protected virtual void SetStatus(string text)
         {
             currentStatus = text;
             // DebugLine(text);
@@ -469,12 +501,13 @@ namespace BDArmory.Control
 
         #region Waypoints
         protected List<Vector3> waypoints = null;
+        protected int waypointCourseIndex = 0;
         protected int activeWaypointIndex = -1;
         protected int activeWaypointLap = 1;
         protected int waypointLapLimit = 1;
         protected Vector3 waypointPosition = default;
         //protected float waypointRadius = 500f;
-        protected float waypointRange = 999f;
+        public float waypointRange = 999f;
 
         public bool IsRunningWaypoints => command == PilotCommands.Waypoints &&
             activeWaypointLap <= waypointLapLimit &&
@@ -500,6 +533,7 @@ namespace BDArmory.Control
             }
             if (BDArmorySettings.DEBUG_AI) Debug.Log(string.Format("[BDArmory.BDGenericAIBase]: Set {0} waypoints", waypoints.Count));
             this.waypoints = waypoints;
+            this.waypointCourseIndex = BDArmorySettings.WAYPOINT_COURSE_INDEX;
             this.activeWaypointIndex = 0;
             this.activeWaypointLap = 1;
             this.waypointLapLimit = BDArmorySettings.WAYPOINT_LOOP_INDEX;
@@ -520,13 +554,13 @@ namespace BDArmory.Control
             var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
             waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
             waypointRange = (float)(vesselTransform.position - waypointPosition).magnitude;
-            var timeToCPA = AIUtils.ClosestTimeToCPA(vessel.transform.position - waypointPosition, vessel.Velocity(), vessel.acceleration, Time.fixedDeltaTime);
-            if (waypointRange < WaypointCourses.CourseLocations[BDArmorySettings.WAYPOINT_COURSE_INDEX].waypoints[activeWaypointIndex].scale && timeToCPA < Time.fixedDeltaTime) // Within waypointRadius and reaching a minimum within the next frame. Looking forwards like this avoids a frame where the fly-to direction is backwards allowing smoother waypoint traversal.
+            var timeToCPA = AIUtils.TimeToCPA(vessel.transform.position - waypointPosition, vessel.Velocity(), vessel.acceleration, Time.fixedDeltaTime);
+            if (waypointRange < WaypointCourses.CourseLocations[waypointCourseIndex].waypoints[activeWaypointIndex].scale && timeToCPA < Time.fixedDeltaTime) // Within waypointRadius and reaching a minimum within the next frame. Looking forwards like this avoids a frame where the fly-to direction is backwards allowing smoother waypoint traversal.
             {
                 // moving away, proceed to next point
                 var deviation = AIUtils.PredictPosition(vessel.transform.position - waypointPosition, vessel.Velocity(), vessel.acceleration, timeToCPA).magnitude;
                 if (BDArmorySettings.DEBUG_AI) Debug.Log(string.Format("[BDArmory.BDGenericAIBase]: Reached waypoint {0} with range {1}", activeWaypointIndex, deviation));
-                BDACompetitionMode.Instance.Scores.RegisterWaypointReached(vessel.vesselName, activeWaypointIndex, activeWaypointLap, deviation);
+                BDACompetitionMode.Instance.Scores.RegisterWaypointReached(vessel.vesselName, waypointCourseIndex, activeWaypointIndex, activeWaypointLap, waypointLapLimit, deviation);
 
                 if (BDArmorySettings.WAYPOINT_GUARD_INDEX >= 0 && activeWaypointIndex >= BDArmorySettings.WAYPOINT_GUARD_INDEX && !weaponManager.guardMode)
                 {

@@ -5,7 +5,6 @@ using System.Linq;
 using UnityEngine;
 using KSP.Localization;
 
-using BDArmory.Competition.VesselSpawning;
 using BDArmory.Control;
 using BDArmory.Damage;
 using BDArmory.Extensions;
@@ -16,7 +15,9 @@ using BDArmory.Radar;
 using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
+using BDArmory.VesselSpawning;
 using BDArmory.Weapons.Missiles;
+using BDArmory.Weapons;
 
 namespace BDArmory.Competition
 {
@@ -36,12 +37,14 @@ namespace BDArmory.Competition
         // Competition flags and variables
         public CompetitionType competitionType = CompetitionType.FFA;
         public int CompetitionID; // time competition was started
+        public string competitionTag = "";
         public double competitionStartTime = -1;
         public double MutatorResetTime = -1;
         public double competitionPreStartTime = -1;
         public double nextUpdateTick = -1;
         private double decisionTick = -1;
         private double finalGracePeriodStart = -1;
+        int competitiveTeamsAliveLimit = 2;
         double altitudeLimitGracePeriod = -1;
         public static float gravityMultiplier = 1f;
         float lastGravityMultiplier;
@@ -134,8 +137,8 @@ namespace BDArmory.Competition
                     string pDate = DateTime.UtcNow.ToString("yyyy-MM-dd\nHH:mm:ss") + " UTC";
                     GUI.Label(dateRectShadow, pDate, dateStyleShadow);
                     GUI.Label(dateRect, pDate, dateStyle);
-                    GUI.Label(versionRectShadow, BDArmorySetup.Instance.Version, dateStyleShadow);
-                    GUI.Label(versionRect, BDArmorySetup.Instance.Version, dateStyle);
+                    GUI.Label(versionRectShadow, BDArmorySetup.Version, dateStyleShadow);
+                    GUI.Label(versionRect, BDArmorySetup.Version, dateStyle);
                 }
 
                 // Messages
@@ -290,11 +293,11 @@ namespace BDArmory.Competition
             }
         }
 
-        public void StartCompetitionMode(float distance, bool startDespiteFailures = false)
+        public void StartCompetitionMode(float distance, bool startDespiteFailures = false, string tag = "")
         {
             if (!competitionStarting)
             {
-                ResetCompetitionStuff();
+                ResetCompetitionStuff(tag);
                 Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Starting Competition");
                 startCompetitionNow = false;
                 if (BDArmorySettings.GRAVITY_HACKS)
@@ -305,11 +308,12 @@ namespace BDArmory.Competition
                     VehiclePhysics.Gravity.Refresh();
                 }
                 RemoveDebrisNow();
+                SpawnUtils.RestoreKALGlobally(BDArmorySettings.RESTORE_KAL);
                 GameEvents.onVesselPartCountChanged.Add(OnVesselModified);
                 GameEvents.onVesselCreate.Add(OnVesselModified);
                 GameEvents.onCrewOnEva.Add(OnCrewOnEVA);
                 if (BDArmorySettings.AUTO_ENABLE_VESSEL_SWITCHING)
-                    LoadedVesselSwitcher.Instance.EnableAutoVesselSwitching(true);
+                    LoadedVesselSwitcher.Instance.EnableAutoVesselSwitching(!hasPinata);
                 competitionStartFailureReason = CompetitionStartFailureReason.None;
                 competitionRoutine = StartCoroutine(DogfightCompetitionModeRoutine(distance, startDespiteFailures));
                 if (BDArmorySettings.COMPETITION_START_NOW_AFTER < 11)
@@ -325,13 +329,14 @@ namespace BDArmory.Competition
                     LoadedVesselSwitcher.Instance.StartVesselTracing();
                 if (BDArmorySettings.TIME_OVERRIDE && BDArmorySettings.TIME_SCALE != 0)
                 { Time.timeScale = BDArmorySettings.TIME_SCALE; }
+                if (BDArmorySettings.VESSEL_MOVER_CLOSE_ON_COMPETITION_START && BDArmorySetup.showVesselMoverGUI) VesselMover.Instance.SetVisible(false);
             }
         }
 
         public void StopCompetition()
         {
             if (LoadedVesselSwitcher.Instance is not null) LoadedVesselSwitcher.Instance.ResetDeadVessels(); // Reset the dead vessels in the LVS so that the final corrected results are shown.
-            LogResults();
+            LogResults(tag: competitionTag);
             if (competitionIsActive && ContinuousSpawning.Instance.vesselsSpawningContinuously)
             {
                 SpawnUtils.CancelSpawning();
@@ -350,6 +355,7 @@ namespace BDArmory.Competition
             sequencedCompetitionStarting = false;
             competitionStartTime = -1;
             competitionType = CompetitionType.FFA;
+            competitionTag = "";
             if (PhysicsGlobals.GraviticForceMultiplier != 1)
             {
                 lastGravityMultiplier = 1f;
@@ -386,10 +392,11 @@ namespace BDArmory.Competition
             Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Competition Started");
         }
 
-        public void ResetCompetitionStuff()
+        public void ResetCompetitionStuff(string tag = "")
         {
             // reinitilize everything when the button get hit.
             CompetitionID = (int)DateTime.UtcNow.Subtract(new DateTime(2020, 1, 1)).TotalSeconds;
+            competitionTag = tag;
             VesselModuleRegistry.CleanRegistries();
             DoPreflightChecks();
             KillTimer.Clear();
@@ -401,6 +408,7 @@ namespace BDArmory.Competition
             if (BDArmorySettings.ASTEROID_RAIN) { AsteroidRain.Instance.Reset(); RemoveDebrisNow(); }
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41) BDArmorySettings.FIRE_RATE_OVERRIDE = BDArmorySettings.FIRE_RATE_OVERRIDE_CENTER;
             finalGracePeriodStart = -1;
+            competitiveTeamsAliveLimit = (BDArmorySettings.WAYPOINTS_MODE || (BDArmorySettings.RUNWAY_PROJECT && (BDArmorySettings.RUNWAY_PROJECT_ROUND == 50 || BDArmorySettings.RUNWAY_PROJECT_ROUND == 55))) ? 1 : 2;
             altitudeLimitGracePeriod = BDArmorySettings.COMPETITION_INITIAL_GRACE_PERIOD;
             competitionPreStartTime = Planetarium.GetUniversalTime();
             competitionStartTime = competitionIsActive ? Planetarium.GetUniversalTime() : -1;
@@ -409,9 +417,10 @@ namespace BDArmory.Competition
             killerGMenabled = false;
             FX.BulletHitFX.CleanPartsOnFireInfo();
             Scores.ConfigurePlayers(GetAllPilots().Select(p => p.vessel).ToList()); // Get the competitors.
-            if (BDArmorySettings.RUNWAY_PROJECT && !String.IsNullOrEmpty(BDArmorySettings.PINATA_NAME) && Scores.Players.Contains(BDArmorySettings.PINATA_NAME)) { hasPinata = true; pinataAlive = false; } else { hasPinata = false; pinataAlive = false; } // Piñata.
+            if (!string.IsNullOrEmpty(BDArmorySettings.PINATA_NAME) && Scores.Players.Contains(BDArmorySettings.PINATA_NAME)) { hasPinata = true; pinataAlive = false; } else { hasPinata = false; pinataAlive = false; } // Piñata.
             if (SpawnUtils.originalTeams.Count == 0) SpawnUtils.SaveTeams(); // If the vessels weren't spawned in with Vessel Spawner, save the current teams.
             if (LoadedVesselSwitcher.Instance is not null) LoadedVesselSwitcher.Instance.ResetDeadVessels();
+            dragLimiting.Clear();
             System.GC.Collect(); // Clear out garbage at a convenient time.
         }
 
@@ -433,14 +442,21 @@ namespace BDArmory.Competition
                         continue;
                     //so, for NPC on NPC violence prevention - have NPCs set to be allies of each other, or set to the same team? Should also probably have a toggle for if NPCs are friends w/ each other
 
-                    if (!String.IsNullOrEmpty(BDArmorySettings.REMOTE_ORC_NPCS_TEAM) && loadedVessels.Current.GetName().Contains(BDArmorySettings.REMOTE_ORCHESTRATION_NPC_SWAPPER)) pilot.weaponManager.SetTeam(BDTeam.Get(BDArmorySettings.REMOTE_ORC_NPCS_TEAM));
+                    if (!string.IsNullOrEmpty(BDArmorySettings.REMOTE_ORC_NPCS_TEAM) && loadedVessels.Current.GetName().Contains(BDArmorySettings.REMOTE_ORCHESTRATION_NPC_SWAPPER)) pilot.weaponManager.SetTeam(BDTeam.Get(BDArmorySettings.REMOTE_ORC_NPCS_TEAM));
 
-                    if (!String.IsNullOrEmpty(BDArmorySettings.PINATA_NAME) && hasPinata)
+                    if (!string.IsNullOrEmpty(BDArmorySettings.PINATA_NAME) && hasPinata)
                     {
                         if (!pilot.vessel.GetName().Contains(BDArmorySettings.PINATA_NAME))
+
                             pilot.weaponManager.SetTeam(BDTeam.Get("PinataPoppers"));
                         else
+                        {
                             pilot.weaponManager.SetTeam(BDTeam.Get("Pinata"));
+                            if (FlightGlobals.ActiveVessel != pilot.vessel)
+                            {
+                                LoadedVesselSwitcher.Instance.ForceSwitchVessel(pilot.vessel);
+                            }
+                        }
                     }
 
                     if (!pilots.TryGetValue(pilot.weaponManager.Team, out List<IBDAIControl> teamPilots))
@@ -519,6 +535,16 @@ namespace BDArmory.Competition
                                     var HPT = part.Current.FindModuleImplementing<HitpointTracker>();
                                     HPT.defenseMutator = (float)(1 / BDArmorySettings.HOS_DMG);
                                 }
+                                if (BDArmorySettings.HOS_SAS)
+                                {
+                                    if (part.Current.GetComponent<ModuleReactionWheel>() != null)
+                                    {
+                                        ModuleReactionWheel SAS;
+                                        SAS = part.Current.GetComponent<ModuleReactionWheel>();
+                                        //if (part.Current.CrewCapacity == 0)
+                                            part.Current.RemoveModule(SAS); //don't strip reaction wheels from cockpits, as those are allowed
+                                    }
+                                }
                                 if (BDArmorySettings.HOS_THRUST != 100)
                                 {
                                     using (var engine = VesselModuleRegistry.GetModuleEngines(pilot.vessel).GetEnumerator())
@@ -536,7 +562,80 @@ namespace BDArmory.Competition
                 }
                 if (BDArmorySettings.RUNWAY_PROJECT)
                 {
+                    float torqueQuantity = 0;
+                    int APSquantity = 0;
                     SpawnUtils.HackActuators(pilot.vessel, true);
+
+                    using (List<Part>.Enumerator part = pilot.vessel.Parts.GetEnumerator())
+                        while (part.MoveNext())
+                        {
+                            if (part.Current.GetComponent<ModuleReactionWheel>() != null)
+                            {
+                                ModuleReactionWheel SAS;
+                                SAS = part.Current.GetComponent<ModuleReactionWheel>();
+                                if (part.Current.CrewCapacity == 0 || BDArmorySettings.RUNWAY_PROJECT_ROUND == 60)
+                                {
+                                    torqueQuantity += ((SAS.PitchTorque + SAS.RollTorque + SAS.YawTorque) / 3) * (SAS.authorityLimiter / 100);
+                                    if (torqueQuantity > (BDArmorySettings.RUNWAY_PROJECT_ROUND == 60 ? 10 : BDArmorySettings.MAX_SAS_TORQUE))
+                                    {
+                                        float excessTorque = torqueQuantity - (BDArmorySettings.RUNWAY_PROJECT_ROUND == 60 ? 10 : BDArmorySettings.MAX_SAS_TORQUE);
+                                        SAS.authorityLimiter = 100 - Mathf.Clamp(((excessTorque / ((SAS.PitchTorque + SAS.RollTorque + SAS.YawTorque) / 3)) * 100), 0, 100);
+                                    }
+                                }
+                            }
+                            if (part.Current.GetComponent<ModuleCommand>() != null)
+                            {
+                                ModuleCommand MC;
+                                MC = part.Current.GetComponent<ModuleCommand>();
+                                if (part.Current.CrewCapacity == 0 && MC.minimumCrew == 0) //Drone core, nuke it
+                                    part.Current.RemoveModule(MC);
+                            }
+                            if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 59)
+                            {
+                                if (part.Current.GetComponent<ModuleWeapon>() != null)
+                                {
+                                    ModuleWeapon gun;
+                                    gun = part.Current.GetComponent<ModuleWeapon>();
+                                    if (gun.isAPS) APSquantity++;
+                                    if (APSquantity > 4)
+                                    {
+                                        part.Current.RemoveModule(gun);
+                                        IEnumerator<PartResource> resource = part.Current.Resources.GetEnumerator();
+                                        while (resource.MoveNext())
+                                        {
+                                            if (resource.Current == null) continue;
+                                            if (resource.Current.flowState)
+                                            {
+                                                resource.Current.flowState = false;
+                                            }
+                                        }
+                                        resource.Dispose();
+                                    }
+                                }
+                            }
+                        }
+                    if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 60)
+                    {
+                        var nuke = pilot.vessel.rootPart.FindModuleImplementing<BDModuleNuke>();
+                        if (nuke == null)
+                        {
+                            nuke = (BDModuleNuke)pilot.vessel.rootPart.AddModule("BDModuleNuke");
+                            nuke.engineCore = true;
+                            nuke.meltDownDuration = 15;
+                            nuke.thermalRadius = 200;
+                            if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMOde]: Adding Nuke Module to " + pilot.vessel.GetName());
+                        }
+                        BDModulePilotAI pilotAI = VesselModuleRegistry.GetModule<BDModulePilotAI>(pilot.vessel);
+                        if (pilotAI != null)
+                        {
+                            pilotAI.minAltitude = Mathf.Max(pilotAI.minAltitude, 750);
+                            pilotAI.defaultAltitude = BDArmorySettings.VESSEL_SPAWN_ALTITUDE;
+                            pilotAI.maxAllowedAoA = 2.5f;
+                            pilotAI.postStallAoA = 5;
+                            pilotAI.maxSpeed = Mathf.Min(250, pilotAI.maxSpeed);
+                            if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMOde]: Setting SpaceMode Ai settings on " + pilot.vessel.GetName());
+                        }
+                    }
                 }
             }
 
@@ -638,7 +737,7 @@ namespace BDArmory.Competition
                 while (leader.MoveNext())
                     center += leader.Current.vessel.CoM;
             center /= leaders.Count;
-            Vector3 startDirection = Vector3.ProjectOnPlane(leaders[0].vessel.CoM - center, VectorUtils.GetUpDirection(center)).normalized;
+            Vector3 startDirection = (leaders[0].vessel.CoM - center).ProjectOnPlanePreNormalized(VectorUtils.GetUpDirection(center)).normalized;
             startDirection *= (distance + 2 * 2000) / 2 / Mathf.Sin(Mathf.PI / leaders.Count); // 2000 is the orbiting radius of each team.
             Quaternion directionStep = Quaternion.AngleAxis(360f / leaders.Count, VectorUtils.GetUpDirection(center));
 
@@ -707,7 +806,7 @@ namespace BDArmory.Competition
                         foreach (var pilot in pilots[leader.weaponManager.Team])
                             if (pilot != null
                                     && pilot.currentCommand == PilotCommands.Follow
-                                    && (pilot.vessel.CoM - pilot.commandLeader.vessel.CoM).sqrMagnitude > teamDistance * teamDistance)
+                                    && pilot.vessel.CoM.FurtherFromThan(pilot.commandLeader.vessel.CoM, teamDistance))
                                 waiting = true;
 
                         if (waiting) break;
@@ -918,6 +1017,7 @@ namespace BDArmory.Competition
             if (VesselModuleRegistry.ignoredVesselTypes.Contains(vessel.vesselType)) return;
             if (!BDArmorySettings.AUTONOMOUS_COMBAT_SEATS) CheckForAutonomousCombatSeat(vessel);
             if (BDArmorySettings.DESTROY_UNCONTROLLED_WMS) CheckForUncontrolledVessel(vessel);
+            if (BDArmorySettings.COMPETITION_GM_KILL_TIME > -1 && (BDArmorySettings.COMPETITION_GM_KILL_WEAPON || BDArmorySettings.COMPETITION_GM_KILL_ENGINE || BDArmorySettings.COMPETITION_GM_KILL_DISABLED || (BDArmorySettings.COMPETITION_GM_KILL_HP > 0))) CheckForGMCulling(vessel);
         }
 
         HashSet<VesselType> validVesselTypes = new HashSet<VesselType> { VesselType.Plane, VesselType.Ship };
@@ -992,6 +1092,56 @@ namespace BDArmory.Competition
                 StartCoroutine(DelayedExplodeWMs(vessel, 2f, UncontrolledReason.Bricked)); // Vessel fried by EMP, destroy its weapon manager in 2s.
             }
         }
+        void CheckForGMCulling(Vessel vessel)
+        {
+            if (vessel == null || vessel.vesselName == null) return;
+            if (BDArmorySettings.COMPETITION_GM_KILL_ENGINE)
+            {
+                if (SpawnUtils.CountActiveEngines(vessel) == 0)
+                    StartCoroutine(DelayedGMKill(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, " lost all engines. Terminated by GM."));
+            }
+            if (BDArmorySettings.COMPETITION_GM_KILL_WEAPON)
+            {
+                var mf = VesselModuleRegistry.GetModule<MissileFire>(vessel);
+                if (mf != null)
+                {
+                    if (!vessel.IsControllable || !mf.HasWeaponsAndAmmo()) // Check first for not controllable or no weapons or ammo
+                        StartCoroutine(DelayedGMKill(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, " lost all weapons. Terminated by GM."));
+                }
+            }
+            if (BDArmorySettings.COMPETITION_GM_KILL_DISABLED)
+            {
+                var mf = VesselModuleRegistry.GetModule<MissileFire>(vessel);
+                if (mf != null)
+                {
+                    if (!vessel.IsControllable || !mf.HasWeaponsAndAmmo()) // Check first for not controllable or no weapons or ammo
+                        StartCoroutine(DelayedGMKill(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, " lost all weapons or ammo. Terminated by GM."));
+                    else // Check for engines first, then wheels for tanks/amphibious if needed 
+                    {
+                        if (SpawnUtils.CountActiveEngines(vessel) == 0)
+                        {
+                            var surfaceAI = VesselModuleRegistry.GetModule<BDModuleSurfaceAI>(vessel); // Get the surface AI if the vessel has one.
+                            if (surfaceAI == null) // No engines on an AI that needs them, craft is disabled
+                                StartCoroutine(DelayedGMKill(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, " lost all engines. Terminated by GM."));
+                            else if ((surfaceAI.SurfaceType & AIUtils.VehicleMovementType.Land) != 0) // Check for wheels on craft capable of moving on land
+                            {
+                                if ((VesselModuleRegistry.GetModuleCount<ModuleWheelBase>(vessel) + 
+                                        VesselModuleRegistry.GetModuleCount(vessel, "KSPWheelBase") +
+                                        VesselModuleRegistry.GetModuleCount(vessel, "FSwheel")) == 0)
+                                    StartCoroutine(DelayedGMKill(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, " lost wheels or tracks. Terminated by GM."));
+                            }
+                        }
+                    }
+                }
+            }
+            if (BDArmorySettings.COMPETITION_GM_KILL_HP > 0)
+            {
+                var mf = VesselModuleRegistry.GetModule<MissileFire>(vessel);
+                if (mf != null)
+                    if (mf.currentHP < BDArmorySettings.COMPETITION_GM_KILL_HP)
+                        StartCoroutine(DelayedGMKill(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, " crippled. Terminated by GM."));
+            }
+        }
 
         enum UncontrolledReason { Uncontrolled, Bricked };
         HashSet<Vessel> explodingWM = new HashSet<Vessel>();
@@ -1028,6 +1178,35 @@ namespace BDArmory.Competition
             explodingWM.Remove(vessel);
         }
 
+        IEnumerator DelayedGMKill(Vessel vessel, float delay, string killReason)
+        {
+            if (explodingWM.Contains(vessel)) yield break; // Already scheduled for exploding.
+            explodingWM.Add(vessel);
+            yield return new WaitForSecondsFixed(delay);
+            if (vessel == null) // It's already dead.
+            {
+                explodingWM = explodingWM.Where(v => v != null).ToHashSet(); // Clean the hashset.
+                yield break;
+            }
+
+            var vesselName = vessel.GetName();
+            var killerName = "";
+            if (Scores.Players.Contains(vesselName))
+            {
+                killerName = Scores.ScoreData[vesselName].lastPersonWhoDamagedMe;
+                if (killerName == "")
+                {
+                    Scores.ScoreData[vesselName].lastPersonWhoDamagedMe = "Killed by GM"; // only do this if it's not already damaged
+                    killerName = "Killed By GM";
+                }
+                Scores.RegisterDeath(vesselName, GMKillReason.GM);
+                competitionStatus.Add(vesselName + killReason);
+            }
+            if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + vesselName + ":REMOVED:" + killerName);
+            VesselUtils.ForceDeadVessel(vessel);
+            explodingWM.Remove(vessel);
+        }
+
         void CheckForBadlyNamedVessels()
         {
             foreach (var wm in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Where(wm => wm != null).ToList())
@@ -1050,12 +1229,12 @@ namespace BDArmory.Competition
         public bool s4r1FiringRateUpdatedFromShotThisFrame = false;
         public bool s4r1FiringRateUpdatedFromHitThisFrame = false;
 
-        public void StartRapidDeployment(float distance)
+        public void StartRapidDeployment(float distance, string tag = "")
         {
             if (!BDArmorySettings.RUNWAY_PROJECT) return;
             if (!sequencedCompetitionStarting)
             {
-                ResetCompetitionStuff();
+                ResetCompetitionStuff(tag);
                 Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Starting Rapid Deployment ");
                 RemoveDebrisNow();
                 GameEvents.onVesselPartCountChanged.Add(OnVesselModified);
@@ -1531,8 +1710,60 @@ namespace BDArmory.Competition
                                     }
                                     if (BDArmorySettings.RUNWAY_PROJECT)
                                     {
+                                        float torqueQuantity = 0;
+                                        int APSquantity = 0;
                                         SpawnUtils.HackActuators(pilot.vessel, true);
+
+                                        using (List<Part>.Enumerator part = pilot.vessel.Parts.GetEnumerator())
+                                            while (part.MoveNext())
+                                            {
+                                                if (part.Current.GetComponent<ModuleReactionWheel>() != null)
+                                                {
+                                                    ModuleReactionWheel SAS;
+                                                    SAS = part.Current.GetComponent<ModuleReactionWheel>();
+                                                    if (part.Current.CrewCapacity == 0)
+                                                    {
+                                                        torqueQuantity += ((SAS.PitchTorque + SAS.RollTorque + SAS.YawTorque) / 3) * (SAS.authorityLimiter / 100);
+                                                        if (torqueQuantity > BDArmorySettings.MAX_SAS_TORQUE)
+                                                        {
+                                                            float excessTorque = torqueQuantity - BDArmorySettings.MAX_SAS_TORQUE;
+                                                            SAS.authorityLimiter = 100 - Mathf.Clamp(((excessTorque / ((SAS.PitchTorque + SAS.RollTorque + SAS.YawTorque) / 3)) * 100), 0, 100);
+                                                        }
+                                                    }
+                                                }
+                                                if (part.Current.GetComponent<ModuleCommand>() != null)
+                                                {
+                                                    ModuleCommand MC;
+                                                    MC = part.Current.GetComponent<ModuleCommand>();
+                                                    if (part.Current.CrewCapacity == 0 && MC.minimumCrew == 0) //Drone core, nuke it
+                                                        part.Current.RemoveModule(MC);
+                                                }
+                                                if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 59)
+                                                {
+                                                    if (part.Current.GetComponent<ModuleWeapon>() != null)
+                                                    {
+                                                        ModuleWeapon gun;
+                                                        gun = part.Current.GetComponent<ModuleWeapon>();
+                                                        if (gun.isAPS) APSquantity++;
+                                                        if (APSquantity > 4)
+                                                        {
+                                                            part.Current.RemoveModule(gun);
+                                                            IEnumerator<PartResource> resource = part.Current.Resources.GetEnumerator();
+                                                            while (resource.MoveNext())
+                                                            {
+                                                                if (resource.Current == null) continue;
+                                                                if (resource.Current.flowState)
+                                                                {
+                                                                    resource.Current.flowState = false;
+                                                                }
+                                                            }
+                                                            resource.Dispose();
+                                                        }
+                                                    }
+                                                }
+                                            }
                                     }
+
                                     if (BDArmorySettings.ENABLE_HOS && BDArmorySettings.HALL_OF_SHAME_LIST.Count > 0)
                                     {
                                         if (BDArmorySettings.HALL_OF_SHAME_LIST.Contains(pilot.vessel.GetName()))
@@ -1558,6 +1789,15 @@ namespace BDArmory.Competition
                                                     {
                                                         var HPT = part.Current.FindModuleImplementing<HitpointTracker>();
                                                         HPT.defenseMutator = (float)(1 / BDArmorySettings.HOS_DMG);
+                                                    }
+                                                    if (BDArmorySettings.HOS_SAS)
+                                                    {
+                                                        if (part.Current.GetComponent<ModuleReactionWheel>() != null)
+                                                        {
+                                                            ModuleReactionWheel SAS; 
+                                                            SAS = part.Current.GetComponent<ModuleReactionWheel>();
+                                                                part.Current.RemoveModule(SAS);
+                                                        }
                                                     }
                                                 }
                                         }
@@ -1585,7 +1825,7 @@ namespace BDArmory.Competition
                             if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: setting team.");
                             foreach (var pilot in pilots)
                             {
-                                if (!String.IsNullOrEmpty(BDArmorySettings.PINATA_NAME) && hasPinata)
+                                if (!string.IsNullOrEmpty(BDArmorySettings.PINATA_NAME) && hasPinata)
                                 {
                                     if (!pilot.vessel.GetName().Contains(BDArmorySettings.PINATA_NAME))
                                         pilot.weaponManager.SetTeam(BDTeam.Get("PinataPoppers"));
@@ -1939,6 +2179,45 @@ namespace BDArmory.Competition
             }
         }
 
+        List<MissileFire> craftToCull = new List<MissileFire>();
+        void CullSlowWaypointRunners(double threshold)
+        {
+            var now = Planetarium.GetUniversalTime();
+            craftToCull.Clear();
+            foreach (var weaponManager in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).ToList())
+            {
+                if (weaponManager == null || weaponManager.vessel == null) continue;
+                if (weaponManager.AI != null && !((BDGenericAIBase)weaponManager.AI).IsRunningWaypoints) continue;
+                var player = weaponManager.vessel.vesselName;
+                if (!Scores.Players.Contains(player)) continue;
+                if (Scores.ScoreData[player].waypointsReached.Count == 0) // Hasn't reached the first waypoint.
+                {
+                    if (now - competitionStartTime > threshold)
+                    {
+                        // Debug.Log($"DEBUG Culling {player} due to {now - competitionStartTime}s since competition start and no waypoint reached. now: {now}, comp. start time: {competitionStartTime}");
+                        craftToCull.Add(weaponManager);
+                    }
+                }
+                else if (now - competitionStartTime - Scores.ScoreData[player].waypointsReached.Last().timestamp > threshold)
+                {
+                    // Debug.Log($"DEBUG Culling {player} due to {now - competitionStartTime - Scores.ScoreData[player].waypointsReached.Last().timestamp}s since last waypoint reached, now: {now}, last: {Scores.ScoreData[player].waypointsReached.Last().timestamp}, WP passed: {Scores.ScoreData[player].waypointsReached.Count}, comp. start time: {competitionStartTime}");
+                    craftToCull.Add(weaponManager);
+                }
+            }
+            foreach (var weaponManager in craftToCull)
+            {
+                var vesselName = weaponManager.vessel.vesselName;
+                Scores.ScoreData[vesselName].lastPersonWhoDamagedMe = $"Failed to reach a waypoint within {threshold:0}s";
+                Scores.RegisterDeath(vesselName, GMKillReason.BigRedButton); // Mark it as a Big Red Button GM kill.
+                var message = $"{vesselName} failed to reach a waypoint within {threshold:0}s, killing it.";
+                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55) message = $"{vesselName} failed to reach a waypoint within {threshold:0}s and was killed by a Tusken Raider.";
+                competitionStatus.Add(message);
+                Debug.Log($"[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + message);
+                VesselUtils.ForceDeadVessel(weaponManager.vessel);
+            }
+            craftToCull.Clear();
+        }
+
         /// <summary>
         /// Delay enabling guard mode until the condition is satisfied.
         /// </summary>
@@ -1954,6 +2233,57 @@ namespace BDArmory.Competition
                 pilot.weaponManager.ToggleGuardMode();
             }
         }
+
+        void AdjustKerbalDrag(float speedThreshold, float scale)
+        {
+            foreach (var weaponManager in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value))
+            {
+                if (weaponManager.vessel.speed > speedThreshold)
+                {
+                    if (dragLimiting.Contains(weaponManager.vessel)) continue; // Already limiting.
+                    StartCoroutine(DragLimit(weaponManager.vessel, speedThreshold, scale));
+                }
+            }
+        }
+        HashSet<Vessel> dragLimiting = new HashSet<Vessel>();
+        IEnumerator DragLimit(Vessel vessel, float speedThreshold, float scale)
+        {
+            if (dragLimiting.Contains(vessel)) yield break; // Already limiting.
+            dragLimiting.Add(vessel);
+            var kerbals = VesselModuleRegistry.GetKerbalEVAs(vessel).Where(kerbal => kerbal != null).ToList();
+            if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode]: {vessel.vesselName} is over the speed limit, applying drag to {string.Join(", ", kerbals.Select(kerbal => kerbal.name))}");
+            var wait = new WaitForFixedUpdate();
+            foreach (var kerbal in kerbals) kerbal.part.ShieldedFromAirstream = false;
+            while (vessel != null && vessel.speed > speedThreshold)
+            {
+                var drag = (float)(vessel.speed - speedThreshold) * scale;
+                bool hasKerbal = false;
+                foreach (var kerbal in kerbals)
+                {
+                    if (kerbal == null || kerbal.vessel != vessel) continue;
+                    hasKerbal = true;
+                    kerbal.part.minimum_drag = drag;
+                    kerbal.part.maximum_drag = drag;
+                }
+                if (!hasKerbal)
+                {
+                    var AI = VesselModuleRegistry.GetModule<BDModulePilotAI>(vessel);
+                    if (AI != null && AI.pilotEnabled) AI.DeactivatePilot();
+                    StartCoroutine(DelayedExplodeWMs(vessel, 1f, UncontrolledReason.Uncontrolled));
+                }
+                yield return wait;
+            }
+            if (vessel != null)
+            {
+                if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode]: {vessel.vesselName} is back within the speed limit, removing drag from {string.Join(", ", kerbals.Where(kerbal => kerbal != null).Select(kerbal => kerbal.name))}");
+                foreach (var kerbal in kerbals)
+                {
+                    if (kerbal == null) continue;
+                    kerbal.part.ShieldedFromAirstream = true;
+                }
+                dragLimiting.Remove(vessel);
+            }
+        }
         #endregion
 
         #region Debris clean-up
@@ -1966,7 +2296,7 @@ namespace BDArmory.Competition
                 if (VesselModuleRegistry.ignoredVesselTypes.Contains(vessel.vesselType)) continue;  // Debris handled by DebrisDelayedCleanUp, others are ignored.
                 if (nonCompetitorsToRemove.Contains(vessel)) continue; // Already scheduled for removal.
                 bool activePilot = false;
-                if (BDArmorySettings.RUNWAY_PROJECT && vessel.GetName() == BDArmorySettings.PINATA_NAME)
+                if (vessel.GetName() == BDArmorySettings.PINATA_NAME)
                 {
                     activePilot = true;
                 }
@@ -2138,7 +2468,9 @@ namespace BDArmory.Competition
         public void DoUpdate()
         {
             if (competitionStartTime < 0) return; // Note: this is the same condition as competitionIsActive and could probably be dropped.
-            if (competitionType == CompetitionType.WAYPOINTS) return; // Don't do anything below when running waypoints (for now).
+            if (competitionType == CompetitionType.WAYPOINTS && BDArmorySettings.RUNWAY_PROJECT_ROUND != 55) return; // Don't do anything below when running waypoints (for now).
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55 && competitionIsActive && competitionIsActive) AdjustKerbalDrag(605, 0.01f); // Over 605m/s, add drag at a rate of 0.01 per m/s.
+
             // Example usage of UpcomingCollisions(). Note that the timeToCPA values are only updated after an interval of half the current timeToCPA.
             // if (competitionIsActive)
             //     foreach (var upcomingCollision in UpcomingCollisions(100f).Take(3))
@@ -2342,6 +2674,18 @@ namespace BDArmory.Competition
                                     vesselsToKill.Add(mf.vessel);
                                 }
                             }
+                            else
+                            {
+                                var surfaceAI = VesselModuleRegistry.GetModule<BDModuleSurfaceAI>(vessel);
+                                if ((surfaceAI.SurfaceType == AIUtils.VehicleMovementType.Land && vessel.Splashed) || ((surfaceAI.SurfaceType == AIUtils.VehicleMovementType.Water || surfaceAI.SurfaceType == AIUtils.VehicleMovementType.Submarine) && vessel.Landed))
+                                {
+                                    KillTimer[vesselName] = (int)(now - vData.landedKillTimer);
+                                    if (now - vData.landedKillTimer > BDArmorySettings.COMPETITION_KILL_TIMER)
+                                    {
+                                        vesselsToKill.Add(mf.vessel);
+                                    }
+                                }
+                            }
                         }
                         if (vData.AltitudeKillTimer > 0 && BDArmorySettings.COMPETITION_KILL_TIMER > 0)
                         {
@@ -2369,7 +2713,7 @@ namespace BDArmory.Competition
             string aliveString = string.Join(",", alive.ToArray());
             previousNumberCompetitive = numberOfCompetitiveVessels;
             // if (BDArmorySettings.DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "] STILLALIVE: " + aliveString); // This just fills the logs needlessly.
-            if (BDArmorySettings.RUNWAY_PROJECT && hasPinata && !String.IsNullOrEmpty(BDArmorySettings.PINATA_NAME))
+            if (hasPinata && !string.IsNullOrEmpty(BDArmorySettings.PINATA_NAME))
             {
                 // If we find a vessel named "Pinata" that's a special case object
                 // this should probably be configurable.
@@ -2386,6 +2730,8 @@ namespace BDArmory.Competition
                     pinataAlive = false;
                     competitionStatus.Add("Pinata killed by " + Scores.ScoreData[BDArmorySettings.PINATA_NAME].lastPersonWhoDamagedMe + "! Competition is now a Free for all");
                     Scores.RegisterMissileStrike(Scores.ScoreData[BDArmorySettings.PINATA_NAME].lastPersonWhoDamagedMe, BDArmorySettings.PINATA_NAME); //give a missile strike point to indicate the pinata kill on the web API
+                    if (BDArmorySettings.AUTO_ENABLE_VESSEL_SWITCHING)
+                        LoadedVesselSwitcher.Instance.EnableAutoVesselSwitching(true);
                     // start kill clock
                     if (!killerGMenabled)
                     {
@@ -2401,7 +2747,7 @@ namespace BDArmory.Competition
                 // check everyone who's no longer alive
                 if (!alive.Contains(player))
                 {
-                    if (BDArmorySettings.RUNWAY_PROJECT && player == BDArmorySettings.PINATA_NAME) continue;
+                    if (player == BDArmorySettings.PINATA_NAME) continue;
                     if (Scores.ScoreData[player].aliveState == AliveState.Alive)
                     {
                         var timeOfDeath = now;
@@ -2412,6 +2758,7 @@ namespace BDArmory.Competition
                             if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode:{CompetitionID}]: Delaying death of {player} due to being involved in a collision {now - rammingInformation[player].timeOfDeath}s ago at {rammingInformation[player].timeOfDeath - competitionStartTime:F3}.");
                             continue; // Involved in a collision, delay registering death.
                         }
+                        if (asteroidCollisions.Contains(player)) continue; // Also delay registering death if they're colliding with an asteroid.
                         switch (Scores.ScoreData[player].lastDamageWasFrom)
                         {
                             case DamageFrom.Ramming:
@@ -2438,6 +2785,9 @@ namespace BDArmory.Competition
                                 break;
                             case DamageFrom.Ramming:
                                 statusMessage += " was rammed by ";
+                                break;
+                            case DamageFrom.Asteroids:
+                                statusMessage += " flew into an asteroid ";
                                 break;
                             case DamageFrom.Incompetence:
                                 statusMessage += " CRASHED and BURNED.";
@@ -2529,7 +2879,7 @@ namespace BDArmory.Competition
             deadOrAlive = deadOrAliveString;
 
             var numberOfCompetitiveTeams = LoadedVesselSwitcher.Instance.WeaponManagers.Count;
-            if (now - competitionStartTime > BDArmorySettings.COMPETITION_INITIAL_GRACE_PERIOD && (numberOfCompetitiveVessels < 2 || (!BDArmorySettings.TAG_MODE && numberOfCompetitiveTeams < 2)) && !ContinuousSpawning.Instance.vesselsSpawningContinuously)
+            if (now - competitionStartTime > BDArmorySettings.COMPETITION_INITIAL_GRACE_PERIOD && (numberOfCompetitiveVessels < competitiveTeamsAliveLimit || (!BDArmorySettings.TAG_MODE && numberOfCompetitiveTeams < competitiveTeamsAliveLimit)) && !ContinuousSpawning.Instance.vesselsSpawningContinuously)
             {
                 if (finalGracePeriodStart < 0)
                     finalGracePeriodStart = now;
@@ -2611,6 +2961,7 @@ namespace BDArmory.Competition
 
             if (now - competitionStartTime > altitudeLimitGracePeriod)
                 CheckAltitudeLimits();
+            if (competitionIsActive && competitionType == CompetitionType.WAYPOINTS && BDArmorySettings.COMPETITION_WAYPOINTS_GM_KILL_PERIOD > 0 && now - competitionStartTime > BDArmorySettings.COMPETITION_INITIAL_GRACE_PERIOD) CullSlowWaypointRunners(BDArmorySettings.COMPETITION_WAYPOINTS_GM_KILL_PERIOD);
             if (BDArmorySettings.RUNWAY_PROJECT)
             {
                 FindVictim();
@@ -2622,7 +2973,7 @@ namespace BDArmory.Competition
                 var message = "Ending competition due to out-of-time.";
                 competitionStatus.Add(message);
                 Debug.Log($"[BDArmory.BDACompetitionMode:{CompetitionID.ToString()}]: " + message);
-                LogResults("due to out-of-time");
+                LogResults(message: "due to out-of-time", tag: competitionTag);
                 StopCompetition();
                 return;
             }
@@ -2802,7 +3153,7 @@ namespace BDArmory.Competition
                     {
                         if (currentTime - rammingInformation[vesselName].targetInformation[otherVesselName].lastUpdateTime > rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA / 2f) // When half the time is gone, update it.
                         {
-                            float timeToCPA = AIUtils.ClosestTimeToCPA(vessel, otherVessel, maxTimeToCPA); // Look up to maxTimeToCPA ahead.
+                            float timeToCPA = AIUtils.TimeToCPA(vessel, otherVessel, maxTimeToCPA); // Look up to maxTimeToCPA ahead.
                             if (timeToCPA > 0f && timeToCPA < maxTimeToCPA) // If the closest approach is within the next maxTimeToCPA, log it.
                                 rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA = timeToCPA;
                             else // Otherwise set it to the max value.
@@ -2824,7 +3175,7 @@ namespace BDArmory.Competition
             if (rammingInformation != null)
                 foreach (var vesselName in rammingInformation.Keys)
                     foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys)
-                        if (rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollision && rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA < maxTimeToCPA && String.Compare(vesselName, otherVesselName) < 0)
+                        if (rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollision && rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA < maxTimeToCPA && string.Compare(vesselName, otherVesselName) < 0)
                             if (rammingInformation[vesselName].vessel != null && rammingInformation[otherVesselName].vessel != null)
                             {
                                 var predictedSqrSeparation = Vector3.SqrMagnitude(rammingInformation[vesselName].vessel.CoM - rammingInformation[otherVesselName].vessel.CoM);
@@ -2949,60 +3300,70 @@ namespace BDArmory.Competition
             }
             try
             {
+                // Debug.Log($"DEBUG Collision of {vessel.vesselName} with: other:{data.other}, sender: {data.sender}, stage: {data.stage}, msg: {data.msg}, param: {data.param}, type: {data.eventType}");
                 bool hitVessel = false;
                 if (rammingInformation.ContainsKey(vessel.vesselName)) // If the part was attached to a vessel,
                 {
                     var vesselName = vessel.vesselName; // For convenience.
-                    var destroyedPotentialColliders = new List<string>();
-                    foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys) // for each other vessel,
-                        if (rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollision) // if it was potentially about to collide,
-                        {
-                            var otherVessel = rammingInformation[vesselName].targetInformation[otherVesselName].vessel;
-                            if (otherVessel == null) // Vessel that was potentially colliding has been destroyed. It's more likely that an alive potential collider is the real collider, so remember it in case there are no living potential colliders.
+                    if (data.other.StartsWith("Ast. ")) // We hit an asteroid, most likely due to one of the asteroids game modes.
+                    {
+                        if (!asteroidCollisions.Contains(vesselName))
+                            StartCoroutine(AsteroidCollision(vessel, rammingInformation[vesselName].partCount));
+                    }
+                    else
+                    {
+                        var destroyedPotentialColliders = new List<string>();
+                        foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys) // for each other vessel,
+                            if (rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollision) // if it was potentially about to collide,
                             {
-                                destroyedPotentialColliders.Add(otherVesselName);
-                                continue;
-                            }
-                            var separation = Vector3.Magnitude(vessel.transform.position - otherVessel.transform.position);
-                            if (separation < collisionMargin * (rammingInformation[vesselName].radius + rammingInformation[otherVesselName].radius)) // and their separation is less than the sum of their radii,
-                            {
-                                if (!rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetected) // Take the values when the collision is first detected.
+                                var otherVessel = rammingInformation[vesselName].targetInformation[otherVesselName].vessel;
+                                if (otherVessel == null) // Vessel that was potentially colliding has been destroyed. It's more likely that an alive potential collider is the real collider, so remember it in case there are no living potential colliders.
                                 {
-                                    rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetected = true; // register it as involved in the collision. We'll check for damaged parts in CheckForDamagedParts.
-                                    rammingInformation[otherVesselName].targetInformation[vesselName].collisionDetected = true; // The information is symmetric.
-                                    rammingInformation[vesselName].targetInformation[otherVesselName].partCountJustPriorToCollision = rammingInformation[otherVesselName].partCount;
-                                    rammingInformation[otherVesselName].targetInformation[vesselName].partCountJustPriorToCollision = rammingInformation[vesselName].partCount;
-                                    if (otherVessel is not null)
-                                        rammingInformation[vesselName].targetInformation[otherVesselName].sqrDistance = (vessel.CoM - otherVessel.CoM).sqrMagnitude;
-                                    else
-                                    {
-                                        var distance = collisionMargin * (rammingInformation[vesselName].radius + rammingInformation[otherVesselName].radius);
-                                        rammingInformation[vesselName].targetInformation[otherVesselName].sqrDistance = distance * distance + 1f;
-                                    }
-                                    rammingInformation[otherVesselName].targetInformation[vesselName].sqrDistance = rammingInformation[vesselName].targetInformation[otherVesselName].sqrDistance;
-                                    rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetectedTime = currentTime;
-                                    rammingInformation[otherVesselName].targetInformation[vesselName].collisionDetectedTime = currentTime;
-                                    if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: Collision detected between " + vesselName + " and " + otherVesselName);
+                                    destroyedPotentialColliders.Add(otherVesselName);
+                                    continue;
                                 }
+                                var separation = Vector3.Magnitude(vessel.transform.position - otherVessel.transform.position);
+                                if (separation < collisionMargin * (rammingInformation[vesselName].radius + rammingInformation[otherVesselName].radius)) // and their separation is less than the sum of their radii,
+                                {
+                                    if (!rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetected) // Take the values when the collision is first detected.
+                                    {
+                                        rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetected = true; // register it as involved in the collision. We'll check for damaged parts in CheckForDamagedParts.
+                                        rammingInformation[otherVesselName].targetInformation[vesselName].collisionDetected = true; // The information is symmetric.
+                                        rammingInformation[vesselName].targetInformation[otherVesselName].partCountJustPriorToCollision = rammingInformation[otherVesselName].partCount;
+                                        rammingInformation[otherVesselName].targetInformation[vesselName].partCountJustPriorToCollision = rammingInformation[vesselName].partCount;
+                                        if (otherVessel is not null)
+                                            rammingInformation[vesselName].targetInformation[otherVesselName].sqrDistance = (vessel.CoM - otherVessel.CoM).sqrMagnitude;
+                                        else
+                                        {
+                                            var distance = collisionMargin * (rammingInformation[vesselName].radius + rammingInformation[otherVesselName].radius);
+                                            rammingInformation[vesselName].targetInformation[otherVesselName].sqrDistance = distance * distance + 1f;
+                                        }
+                                        rammingInformation[otherVesselName].targetInformation[vesselName].sqrDistance = rammingInformation[vesselName].targetInformation[otherVesselName].sqrDistance;
+                                        rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetectedTime = currentTime;
+                                        rammingInformation[otherVesselName].targetInformation[vesselName].collisionDetectedTime = currentTime;
+                                        if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: Collision detected between " + vesselName + " and " + otherVesselName);
+                                    }
+                                    hitVessel = true;
+                                }
+                            }
+                        if (!hitVessel) // No other living vessels were potential targets, add in the destroyed ones (if any).
+                        {
+                            foreach (var otherVesselName in destroyedPotentialColliders) // Note: if there are more than 1, then multiple craft could be credited with the kill, but this is unlikely.
+                            {
+                                rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetected = true; // register it as involved in the collision. We'll check for damaged parts in CheckForDamagedParts.
+                                rammingInformation[otherVesselName].targetInformation[vesselName].collisionDetected = true; // The information is symmetric.
+                                rammingInformation[vesselName].targetInformation[otherVesselName].partCountJustPriorToCollision = rammingInformation[otherVesselName].partCount;
+                                rammingInformation[otherVesselName].targetInformation[vesselName].partCountJustPriorToCollision = rammingInformation[vesselName].partCount;
+                                rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetectedTime = currentTime;
+                                rammingInformation[otherVesselName].targetInformation[vesselName].collisionDetectedTime = currentTime;
                                 hitVessel = true;
                             }
-                        }
-                    if (!hitVessel) // No other living vessels were potential targets, add in the destroyed ones (if any).
-                    {
-                        foreach (var otherVesselName in destroyedPotentialColliders) // Note: if there are more than 1, then multiple craft could be credited with the kill, but this is unlikely.
-                        {
-                            rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetected = true; // register it as involved in the collision. We'll check for damaged parts in CheckForDamagedParts.
-                            rammingInformation[otherVesselName].targetInformation[vesselName].collisionDetected = true; // The information is symmetric.
-                            rammingInformation[vesselName].targetInformation[otherVesselName].partCountJustPriorToCollision = rammingInformation[otherVesselName].partCount;
-                            rammingInformation[otherVesselName].targetInformation[vesselName].partCountJustPriorToCollision = rammingInformation[vesselName].partCount;
-                            rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetectedTime = currentTime;
-                            rammingInformation[otherVesselName].targetInformation[vesselName].collisionDetectedTime = currentTime;
-                            hitVessel = true;
                         }
                     }
                     if (!hitVessel) // We didn't hit another vessel, maybe it crashed and died.
                     {
-                        if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: " + vesselName + " hit something else.");
+                        if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode]: Ram logging: {vesselName} hit {data.other}.");
+                        rammingInformation[vesselName].partCount = vessel.parts.Count; // Update the vessel part count.
                         foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys)
                         {
                             rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollision = false; // Set potential collisions to false.
@@ -3030,6 +3391,40 @@ namespace BDArmory.Competition
                     Debug.Log("[BDArmory.DEBUG]: " + e3.Message);
                 }
             }
+        }
+
+        HashSet<string> asteroidCollisions = new HashSet<string>();
+        IEnumerator AsteroidCollision(Vessel vessel, int preCollisionPartCount)
+        {
+            if (vessel == null) yield break;
+            var vesselName = vessel.vesselName;
+            var partsLost = preCollisionPartCount;
+            var timeOfDeath = Planetarium.GetUniversalTime(); // In case they die.
+            asteroidCollisions.Add(vesselName);
+            yield return new WaitForSecondsFixed(potentialCollisionDetectionTime);
+            if (vessel == null || VesselModuleRegistry.GetMissileFire(vessel) == null)
+            {
+                rammingInformation[vesselName].partCount = 0;
+                if (Scores.ScoreData[vesselName].aliveState == AliveState.Alive)
+                {
+                    Scores.RegisterAsteroidCollision(vesselName, partsLost);
+                    Scores.RegisterDeath(vesselName, GMKillReason.Asteroids, timeOfDeath);
+                    competitionStatus.Add($"{vesselName} flew into an asteroid and died!");
+                    if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode]: {vesselName} flew into an asteroid and died!");
+                }
+            }
+            else
+            {
+                partsLost -= vessel.parts.Count;
+                rammingInformation[vesselName].partCount = vessel.parts.Count;
+                if (Scores.ScoreData[vesselName].aliveState == AliveState.Alive)
+                {
+                    Scores.RegisterAsteroidCollision(vesselName, partsLost);
+                    competitionStatus.Add($"{vesselName} flew into an asteroid and lost {partsLost} parts!");
+                    if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode]: {vesselName} flew into an asteroid and lost {partsLost} parts!");
+                }
+            }
+            asteroidCollisions.Remove(vesselName);
         }
 
         // Check for parts being lost on the various vessels for which collisions have been detected.

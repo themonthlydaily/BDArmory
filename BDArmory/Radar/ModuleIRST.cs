@@ -6,6 +6,7 @@ using UnityEngine;
 using KSP.Localization;
 
 using BDArmory.Control;
+using BDArmory.Extensions;
 using BDArmory.Settings;
 using BDArmory.Targeting;
 using BDArmory.UI;
@@ -29,6 +30,10 @@ namespace BDArmory.Radar
         [KSPField]
         public string rotationTransformName = string.Empty;
         Transform rotationTransform;
+
+        [KSPField]
+        public string irstTransformName = string.Empty;
+        Transform irstTransform;
 
         #endregion General Configuration
 
@@ -54,6 +59,9 @@ namespace BDArmory.Radar
 
         [KSPField]
         public bool canScan = true;                 //irst has detection capabilities
+
+        [KSPField]
+        public bool irstRanging = false;            //irst can get ranging info for target distance
 
         [KSPField]
         public FloatCurve DetectionCurve = new FloatCurve();		//FloatCurve setting default ranging capabilities of the IRST
@@ -251,9 +259,9 @@ namespace BDArmory.Radar
                 {
                     rotationTransform = part.FindModelTransform(rotationTransformName);
                 }
-
+                irstTransform = irstTransformName != string.Empty ? part.FindModelTransform(irstTransformName) : part.transform;
                 referenceTransform = (new GameObject()).transform;
-                referenceTransform.parent = transform;
+                referenceTransform.parent = irstTransform;
                 referenceTransform.localPosition = Vector3.zero;
 
                 // fill TempSensitivityCurve with default values if not set by part config:
@@ -340,13 +348,13 @@ namespace BDArmory.Radar
                     {
                         referenceTransform.position = part.transform.position;
                         referenceTransform.rotation =
-                            Quaternion.LookRotation(VectorUtils.GetNorthVector(transform.position, vessel.mainBody),
+                            Quaternion.LookRotation(VectorUtils.GetNorthVector(irstTransform.position, vessel.mainBody),
                                 VectorUtils.GetUpDirection(transform.position));
                     }
                     else
                     {
                         referenceTransform.position = part.transform.position;
-                        referenceTransform.rotation = Quaternion.LookRotation(part.transform.up,
+                        referenceTransform.rotation = Quaternion.LookRotation(irstTransform.up,
                             VectorUtils.GetUpDirection(referenceTransform.position));
                     }
                     //UpdateInputs();
@@ -373,8 +381,7 @@ namespace BDArmory.Radar
 
                         direction = Quaternion.AngleAxis(currentAngle, referenceTransform.up) * referenceTransform.forward;
 
-                    Vector3 localDirection =
-                        Vector3.ProjectOnPlane(rotationTransform.parent.InverseTransformDirection(direction), Vector3.up);
+                    Vector3 localDirection = rotationTransform.parent.InverseTransformDirection(direction).ProjectOnPlanePreNormalized(Vector3.up);
                     if (localDirection != Vector3.zero)
                     {
                         rotationTransform.localRotation = Quaternion.Lerp(rotationTransform.localRotation,

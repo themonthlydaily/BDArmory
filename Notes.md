@@ -24,11 +24,13 @@ Outdated, probably to be deleted:
     - vessel.vesselName and vessel.GetName() are fine. vessel.GetDisplayName() is bad!
 - Tuples are classes (allocated on the heap), ValueTuples are structs (allocated on the stack). Use ValueTuples to avoid GC allocations.
 - Use non-allocating versions of RaycastAll, OverlapSphere and similar (Raycast uses the stack so it's fine).
+- The break-even point for using RaycastCommand instead of multiple Raycasts seems to be around 8 raycasts. Also, until Unity 2022.2, RaycastCommand only returns the first hit per job.
 - Cache "Wait..." yield instructions instead of using "new Wait...".
 - Starting coroutines causes some GC — avoid starting them in Update or FixedUpdate.
 - Avoid Linq expressions in critical areas. However, some Linq queries can be parallelised (PLINQ) with ".AsParallel()" and sequentialised with ".AsSequential()". Also, ".ForEach()" does a merge to sequential, while ".ForAll()" doesn't.
 - Avoid excessive object references in structs and classes and prefer identifiers instead — affects GC checks.
 - Trigger GC manually at appropriate times (System.GC.Collect()) when it won't affect gameplay, e.g., when resetting competition stuff.
+- Intel and AMD have hardware support for sqrt, but M1 Macs don't, so we do need to avoid using sqrt in frequently used functions.
 
 - Bad GC routines:
     - part.explode when triggering new vessels causes massive GC alloc, but it's in base KSP, so there's not much that can be done.

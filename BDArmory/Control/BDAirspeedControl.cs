@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
+using BDArmory.Extensions;
 using BDArmory.Utils;
 
 namespace BDArmory.Control
@@ -23,16 +24,29 @@ namespace BDArmory.Control
 
         public Vessel vessel;
 
+        AxisGroupsModule axisGroupsModule;
+        bool hasAxisGroupsModule = false; // To avoid repeated null checks
+
         bool controlEnabled;
 
+        float possibleAccel;
         private float smoothedAccel = 0; // smoothed acceleration, prevents super fast toggling of afterburner
         bool shouldSetAfterburners = false;
         bool setAfterburnersEnabled = false;
+        float geeForce = 9.81f;
+        float gravAccel = 0;
+        public float TWR { get; private set; } = 1; // Maximum TWR for the current engine modes.
 
         //[KSPField(guiActive = true, guiName = "Thrust")]
         public float debugThrust;
 
         public List<MultiModeEngine> multiModeEngines;
+
+        void Start()
+        {
+            axisGroupsModule = vessel.FindVesselModuleImplementingBDA<AxisGroupsModule>(); // Look for an axis group module.
+            if (axisGroupsModule != null) hasAxisGroupsModule = true;
+        }
 
         //[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "ToggleAC")]
         public void Toggle()
@@ -67,7 +81,7 @@ namespace BDArmory.Control
             {
                 if (useBrakes)
                     vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
-                s.mainThrottle = 0;
+                SetThrottle(s, 0);
                 return;
             }
 
@@ -86,22 +100,21 @@ namespace BDArmory.Control
 
         void SetAcceleration(float accel, FlightCtrlState s)
         {
-            float gravAccel = GravAccel();
+            gravAccel = GravAccel();
             float requestEngineAccel = accel - gravAccel;
 
             possibleAccel = 0; //gravAccel;
 
-            float dragAccel = 0;
-            float engineAccel = MaxEngineAccel(requestEngineAccel, out dragAccel);
+            float engineAccel = MaxEngineAccel(requestEngineAccel, out float dragAccel);
 
             if (throttleOverride >= 0)
             {
-                s.mainThrottle = throttleOverride;
+                SetThrottle(s, throttleOverride);
                 return;
             }
             if (engineAccel == 0)
             {
-                s.mainThrottle = accel > 0 ? 1 : 0;
+                SetThrottle(s, accel > 0 ? 1 : 0);
                 return;
             }
 
@@ -109,7 +122,7 @@ namespace BDArmory.Control
 
             float requestThrottle = (requestEngineAccel - dragAccel) / engineAccel;
 
-            s.mainThrottle = Mathf.Clamp01(requestThrottle);
+            SetThrottle(s, Mathf.Clamp01(requestThrottle));
 
             //use brakes if overspeeding too much
             if (useBrakes)
@@ -122,6 +135,20 @@ namespace BDArmory.Control
                 {
                     vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, false);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Set the main throttle and the corresponding axis group.
+        /// </summary>
+        /// <param name="s">The flight control state</param>
+        /// <param name="value">The throttle value</param>
+        public void SetThrottle(FlightCtrlState s, float value)
+        {
+            s.mainThrottle = value;
+            if (hasAxisGroupsModule)
+            {
+                axisGroupsModule.UpdateAxisGroup(KSPAxisGroup.MainThrottle, 2f * value - 1f); // Throttle is full-axis: 0—1 throttle maps to -1—1 axis.
             }
         }
 
@@ -160,12 +187,13 @@ namespace BDArmory.Control
             float vesselMass = vessel.GetTotalMass();
 
             float accel = maxThrust / vesselMass; // This assumes that all thrust is in the same direction.
+            TWR = accel / geeForce; // GravAccel gets called before this.
 
             float alpha = 0.05f; // Approx 25 frame (0.5s) lag (similar to 50 frames moving average, but with more weight on recent values and much faster to calculate).
             smoothedAccel = smoothedAccel * (1f - alpha) + alpha * accel;
 
             //estimate drag
-            float estimatedCurrentAccel = finalThrust / vesselMass - GravAccel();
+            float estimatedCurrentAccel = finalThrust / vesselMass - gravAccel;
             Vector3 vesselAccelProjected = Vector3.Project(vessel.acceleration_immediate, vessel.velocityD.normalized);
             float actualCurrentAccel = vesselAccelProjected.magnitude * Mathf.Sign(Vector3.Dot(vesselAccelProjected, vessel.velocityD.normalized));
             float accelError = (actualCurrentAccel - estimatedCurrentAccel); // /2 -- why divide by 2 here?
@@ -191,11 +219,18 @@ namespace BDArmory.Control
                 while (mmes.MoveNext())
                 {
                     if (mmes.Current == null) continue;
-                    if (enable)
+
+                    bool afterburnerHasFuel = true;
+                    using (var fuel = mmes.Current.SecondaryEngine.propellants.GetEnumerator())
+                        while (fuel.MoveNext())
+                        {
+                            if (!GetABresources(fuel.Current.id)) afterburnerHasFuel = false;
+                        }
+                    if (enable && afterburnerHasFuel)
                     {
                         if (mmes.Current.runningPrimary)
                         {
-                            mmes.Current.Events["ModeEvent"].Invoke();
+                            if (afterburnerHasFuel) mmes.Current.Events["ModeEvent"].Invoke();
                         }
                     }
                     else
@@ -205,9 +240,14 @@ namespace BDArmory.Control
                             mmes.Current.Events["ModeEvent"].Invoke();
                         }
                     }
+
                 }
         }
-
+        public bool GetABresources(int fuelID)
+        {
+            vessel.GetConnectedResourceTotals(fuelID, out double fuelCurrent, out double fuelMax);
+            return fuelCurrent > 0;
+        }
         private static bool IsAfterBurnerEngine(MultiModeEngine engine)
         {
             if (engine == null)
@@ -222,11 +262,9 @@ namespace BDArmory.Control
         float GravAccel()
         {
             Vector3 geeVector = FlightGlobals.getGeeForceAtPosition(vessel.CoM);
-            float gravAccel = geeVector.magnitude * Mathf.Cos(Mathf.Deg2Rad * Vector3.Angle(-geeVector, vessel.velocityD)); // -g.v/|v| ???
-            return gravAccel;
+            geeForce = geeVector.magnitude;
+            return geeForce * Mathf.Cos(Mathf.Deg2Rad * Vector3.Angle(-geeVector, vessel.velocityD)); // -g.v/|v| ???
         }
-
-        float possibleAccel;
 
         public float GetPossibleAccel()
         {
@@ -237,14 +275,24 @@ namespace BDArmory.Control
     public class BDLandSpeedControl : MonoBehaviour
     {
         public float targetSpeed;
+        public float signedSrfSpeed;
         public Vessel vessel;
         public bool preventNegativeZeroPoint = false;
+
+        AxisGroupsModule axisGroupsModule;
+        bool hasAxisGroupsModule = false; // To avoid repeated null checks
 
         private float lastThrottle;
         public float zeroPoint { get; private set; }
 
         private const float gain = 0.5f;
         private const float zeroMult = 0.02f;
+
+        void Start()
+        {
+            axisGroupsModule = vessel.FindVesselModuleImplementingBDA<AxisGroupsModule>(); // Look for an axis group module.
+            if (axisGroupsModule != null) hasAxisGroupsModule = true;
+        }
 
         public void Activate()
         {
@@ -262,20 +310,34 @@ namespace BDArmory.Control
         void SpeedControl(FlightCtrlState s)
         {
             if (!vessel.LandedOrSplashed)
-                s.wheelThrottle = 0;
+                SetThrottle(s, 0);
             else if (targetSpeed == 0)
             {
                 vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
-                s.wheelThrottle = 0;
+                SetThrottle(s, 0);
             }
             else
             {
-                float throttle = zeroPoint + (targetSpeed - (float)vessel.srfSpeed) * gain;
+                float throttle = zeroPoint + (targetSpeed - signedSrfSpeed) * gain; 
                 lastThrottle = Mathf.Clamp(throttle, -1, 1);
                 zeroPoint = (zeroPoint + lastThrottle * zeroMult) * (1 - zeroMult);
                 if (preventNegativeZeroPoint && zeroPoint < 0) zeroPoint = 0;
-                s.wheelThrottle = lastThrottle;
-                vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, throttle < -5f);
+                SetThrottle(s, lastThrottle);
+                vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, (targetSpeed * signedSrfSpeed < -5)); 
+            }
+        }
+
+        /// <summary>
+        /// Set the wheel throttle and the corresponding axis group.
+        /// </summary>
+        /// <param name="s">The flight control state</param>
+        /// <param name="value">The throttle value</param>
+        public void SetThrottle(FlightCtrlState s, float value)
+        {
+            s.wheelThrottle = value;
+            if (hasAxisGroupsModule)
+            {
+                axisGroupsModule.UpdateAxisGroup(KSPAxisGroup.MainThrottle, 2f * value - 1f); // Throttle is full-axis: 0—1 throttle maps to -1—1 axis.
             }
         }
     }
@@ -286,6 +348,9 @@ namespace BDArmory.Control
         public Vessel vessel;
         public bool preventNegativeZeroPoint = false;
 
+        AxisGroupsModule axisGroupsModule;
+        bool hasAxisGroupsModule = false; // To avoid repeated null checks
+
         private float altIntegral;
         public float zeroPoint { get; private set; }
 
@@ -293,6 +358,11 @@ namespace BDArmory.Control
         private const float Kd = 0.55f;
         private const float Ki = 0.03f;
 
+        void Start()
+        {
+            axisGroupsModule = vessel.FindVesselModuleImplementingBDA<AxisGroupsModule>(); // Look for an axis group module.
+            if (axisGroupsModule != null) hasAxisGroupsModule = true;
+        }
 
         public void Activate()
         {
@@ -312,7 +382,7 @@ namespace BDArmory.Control
             if (targetAltitude == 0)
             {
                 vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
-                s.mainThrottle = 0;
+                SetThrottle(s, 0);
             }
             else
             {
@@ -322,9 +392,23 @@ namespace BDArmory.Control
                 altIntegral = Ki * Mathf.Clamp(altIntegral + altError * Time.deltaTime, -1f, 1f);
 
                 float throttle = altP + altIntegral - altD;
-                s.mainThrottle = Mathf.Clamp01(throttle);
+                SetThrottle(s, Mathf.Clamp01(throttle));
 
                 vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, throttle < -5f);
+            }
+        }
+
+        /// <summary>
+        /// Set the main throttle and the corresponding axis group.
+        /// </summary>
+        /// <param name="s">The flight control state</param>
+        /// <param name="value">The throttle value</param>
+        public void SetThrottle(FlightCtrlState s, float value)
+        {
+            s.mainThrottle = value;
+            if (hasAxisGroupsModule)
+            {
+                axisGroupsModule.UpdateAxisGroup(KSPAxisGroup.MainThrottle, 2f * value - 1f); // Throttle is full-axis: 0—1 throttle maps to -1—1 axis.
             }
         }
     }

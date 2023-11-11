@@ -19,7 +19,9 @@ namespace BDArmory.WeaponMounts
 
         [KSPField] public int turretID = 0;
 
-        ModuleTurret turret;
+        public ModuleTurret turret;
+
+        public MissileLauncher missilepod;
 
         [KSPField(guiActive = true, guiName = "#LOC_BDArmory_TurretEnabled")] public bool turretEnabled;//Turret Enabled
 
@@ -262,7 +264,14 @@ namespace BDArmory.WeaponMounts
                     break;
                 }
                 tur.Dispose();
-
+                List<MissileLauncher>.Enumerator mml = part.FindModulesImplementing<MissileLauncher>().GetEnumerator();
+                while (mml.MoveNext())
+                {
+                    if (mml.Current == null) continue;
+                    missilepod = mml.Current;
+                    break;
+                }
+                mml.Dispose();
                 attachedRadar = part.FindModuleImplementing<ModuleRadar>();
                 if (attachedRadar) hasAttachedRadar = true;
 
@@ -280,12 +289,10 @@ namespace BDArmory.WeaponMounts
         public override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
-
             if (turretEnabled)
             {
                 hasReturned = false;
-
-                if (missileCount == 0)
+                if ((missilepod == null && missileCount == 0) || (missilepod != null && missilepod.multiLauncher.missileSpawner.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE))
                 {
                     DisableTurret();
                     return;
@@ -306,13 +313,11 @@ namespace BDArmory.WeaponMounts
                 {
                     UpdateMissilePositions();
                 }
-
                 if (autoReturn && !hasReturned)
                 {
                     DisableTurret();
                 }
             }
-
             pausingAfterShot = (Time.time - timeFired < firePauseTime);
         }
 
@@ -578,7 +583,8 @@ namespace BDArmory.WeaponMounts
                 //Vector3 projVel = Vector3.Project(ml.vessel.Velocity-railVel, ray.direction);
 
                 ml.vessel.SetPosition(projPos);
-                if (!ml.reloadableRail) ml.vessel.SetWorldVelocity(railVel + (forwardSpeed * ray.direction)); //this is still imparting veloctity on spawned missiles? Can function without, as long as missile turret is a static SAM site or similar
+                //if (!ml.reloadableRail) ml.vessel.SetWorldVelocity(railVel + (forwardSpeed * ray.direction)); //this is still imparting veloctity on spawned missiles? Can function without, as long as missile turret is a static SAM site or similar
+                //Why is this a thing? MissileLauncher is already imparting forward vel from jettison. If we really need to impart some vel, setWorldvel is absolutely not the method to use.
                 //else ml.reloadableRail.SpawnedMissile.vessel.SetWorldVelocity(railVel + (forwardSpeed * ray.direction));
                 yield return wait;
 

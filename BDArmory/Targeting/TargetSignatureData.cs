@@ -56,13 +56,12 @@ namespace BDArmory.Targeting
             // vessel never been picked up on radar before: create new targetinfo record
             if (targetInfo == null)
             {
-                if (VesselModuleRegistry.GetMissileFire(v))
-                    targetInfo = v.gameObject.AddComponent<TargetInfo>();
+                targetInfo = v.gameObject.AddComponent<TargetInfo>();
             }
 
             Team = null;
 
-            if (targetInfo)
+            if (targetInfo)  // Always true, as we just set it?
             {
                 Team = targetInfo.Team;
             }
@@ -82,6 +81,25 @@ namespace BDArmory.Targeting
         {
             velocity = flare.velocity;
             geoPos = VectorUtils.WorldPositionToGeoCoords(flare.transform.position, FlightGlobals.currentMainBody);
+            exists = true;
+            acceleration = Vector3.zero;
+            timeAcquired = Time.time;
+            signalStrength = _signalStrength;
+            targetInfo = null;
+            vesselJammer = null;
+            Team = null;
+            pingPosition = Vector2.zero;
+            orbital = false;
+            orbit = null;
+            lockedByRadar = null;
+            vessel = null;
+            IRSource = null;
+        }
+
+        public TargetSignatureData(CMDecoy decoy, float _signalStrength)
+        {
+            velocity = decoy.velocity;
+            geoPos = VectorUtils.WorldPositionToGeoCoords(decoy.transform.position, FlightGlobals.currentMainBody);
             exists = true;
             acceleration = Vector3.zero;
             timeAcquired = Time.time;

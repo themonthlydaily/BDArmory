@@ -6,6 +6,7 @@ using UnityEngine;
 using KSP.Localization;
 
 using BDArmory.Control;
+using BDArmory.Extensions;
 using BDArmory.Settings;
 using BDArmory.Targeting;
 using BDArmory.UI;
@@ -29,6 +30,10 @@ namespace BDArmory.Radar
         [KSPField]
         public string rotationTransformName = string.Empty;
         Transform rotationTransform;
+
+        [KSPField]
+        public string radarTransformName = string.Empty;
+        Transform radarTransform;
 
         #endregion General Configuration
 
@@ -95,6 +100,16 @@ namespace BDArmory.Radar
         [KSPField]
         public float radarGroundClutterFactor = 0.25f; //Factor defining how effective the radar is for look-down, compensating for ground clutter (0=ineffective, 1=fully effective)
                                                        //default to 0.25, so all cross sections of landed/splashed/submerged vessels are reduced to 1/4th, as these vessel usually a quite large
+        [KSPField]
+        public int sonarType = 0; //0 = Radar; 1 == Active Sonar; 2 == Passive Sonar
+
+        public enum SonarModes
+        {
+            None = 0,
+            Active = 1,
+            passive = 2
+        }
+        public SonarModes sonarMode = SonarModes.None;
 
         #endregion Radar Capabilities
 
@@ -306,10 +321,14 @@ namespace BDArmory.Radar
             radarEnabled = true;
 
             var mf = VesselModuleRegistry.GetMissileFire(vessel, true);
-            if (mf is not null && vesselRadarData is not null) vesselRadarData.weaponManager = mf;
+            if (mf != null && vesselRadarData != null) vesselRadarData.weaponManager = mf;
             UpdateToggleGuiName();
             vesselRadarData.AddRadar(this);
-            if (mf is not null && mf.guardMode) vesselRadarData.LinkAllRadars();
+            if (mf != null)
+            {
+                if (mf.guardMode) vesselRadarData.LinkAllRadars();
+                mf._radarsEnabled = true;
+            }
         }
 
         public void DisableRadar()
@@ -339,6 +358,25 @@ namespace BDArmory.Radar
                 {
                     BDATargetManager.ClearRadarReport(loadedvessels.Current, weaponManager); //reset radar contact status
                 }
+            var mf = VesselModuleRegistry.GetMissileFire(vessel, true);
+            if (mf != null)
+            {
+                if (mf.radars.Count > 1)
+                {
+                    using (List<ModuleRadar>.Enumerator rd = mf.radars.GetEnumerator())
+                        while (rd.MoveNext())
+                        {
+                            if (rd.Current == null) continue;
+                            mf._radarsEnabled = false;
+                            if (rd.Current != this && rd.Current.radarEnabled)
+                            {
+                                mf._radarsEnabled = true;
+                                break;
+                            }
+                        }
+                }
+                else mf._radarsEnabled = false;
+            }
         }
 
         void OnDestroy()
@@ -392,22 +430,26 @@ namespace BDArmory.Radar
                     : directionalFieldOfView / (scanRotationSpeed + 5);
 
                 rwrType = (RadarWarningReceiver.RWRThreatTypes)rwrThreatType;
+                sonarMode = (SonarModes)sonarType;
                 if (rwrType == RadarWarningReceiver.RWRThreatTypes.Sonar)
                     signalPersistTimeForRwr = RadarUtils.ACTIVE_MISSILE_PING_PERISTS_TIME;
                 else
+                {
                     signalPersistTimeForRwr = signalPersistTime / 2;
+                }
 
                 if (rotationTransformName != string.Empty)
                 {
                     rotationTransform = part.FindModelTransform(rotationTransformName);
                 }
+                radarTransform = radarTransformName != string.Empty ? part.FindModelTransform(radarTransformName) : part.transform;
 
-                attemptedLocks = new TargetSignatureData[3];
+                attemptedLocks = new TargetSignatureData[maxLocks];
                 TargetSignatureData.ResetTSDArray(ref attemptedLocks);
                 lockedTargets = new List<TargetSignatureData>();
 
                 referenceTransform = (new GameObject()).transform;
-                referenceTransform.parent = transform;
+                referenceTransform.parent = radarTransform;
                 referenceTransform.localPosition = Vector3.zero;
 
                 List<ModuleTurret>.Enumerator turr = part.FindModulesImplementing<ModuleTurret>().GetEnumerator();
@@ -537,13 +579,13 @@ namespace BDArmory.Radar
                     {
                         referenceTransform.position = part.transform.position;
                         referenceTransform.rotation =
-                            Quaternion.LookRotation(VectorUtils.GetNorthVector(transform.position, vessel.mainBody),
+                            Quaternion.LookRotation(VectorUtils.GetNorthVector(radarTransform.position, vessel.mainBody),
                                 VectorUtils.GetUpDirection(transform.position));
                     }
                     else
                     {
                         referenceTransform.position = part.transform.position;
-                        referenceTransform.rotation = Quaternion.LookRotation(part.transform.up,
+                        referenceTransform.rotation = Quaternion.LookRotation(radarTransform.up,
                             VectorUtils.GetUpDirection(referenceTransform.position));
                     }
                     //UpdateInputs();
@@ -593,8 +635,7 @@ namespace BDArmory.Radar
                         direction = Quaternion.AngleAxis(currentAngle, referenceTransform.up) * referenceTransform.forward;
                     }
 
-                    Vector3 localDirection =
-                        Vector3.ProjectOnPlane(rotationTransform.parent.InverseTransformDirection(direction), Vector3.up);
+                    Vector3 localDirection = rotationTransform.parent.InverseTransformDirection(direction).ProjectOnPlanePreNormalized(Vector3.up);
                     if (localDirection != Vector3.zero)
                     {
                         rotationTransform.localRotation = Quaternion.Lerp(rotationTransform.localRotation,
@@ -645,9 +686,7 @@ namespace BDArmory.Radar
 
                 if (locked)
                 {
-                    float targetAngle = VectorUtils.SignedAngle(referenceTransform.forward,
-                        Vector3.ProjectOnPlane(lockedTarget.position - referenceTransform.position,
-                            referenceTransform.up), referenceTransform.right);
+                    float targetAngle = VectorUtils.SignedAngle(referenceTransform.forward, (lockedTarget.position - referenceTransform.position).ProjectOnPlanePreNormalized(referenceTransform.up), referenceTransform.right);
                     leftLimit = Mathf.Clamp(targetAngle - (multiLockFOV / 2), -directionalFieldOfView / 2,
                         directionalFieldOfView / 2);
                     rightLimit = Mathf.Clamp(targetAngle + (multiLockFOV / 2), -directionalFieldOfView / 2,
@@ -677,6 +716,7 @@ namespace BDArmory.Radar
 
         public bool TryLockTarget(Vector3 position, Vessel targetVessel = null)
         {
+            //need a way to see what companion radars on the craft have already locked, so multiple radars aren't stacking locks on the same couple target craft? Or is updating attemptedLocks to missileFire.maxradarLocks enough?
             if (!canLock)
             {
                 return false;
@@ -697,8 +737,7 @@ namespace BDArmory.Radar
                 return false;
             }
 
-            Vector3 targetPlanarDirection = Vector3.ProjectOnPlane(position - referenceTransform.position,
-                referenceTransform.up);
+            Vector3 targetPlanarDirection = (position - referenceTransform.position).ProjectOnPlanePreNormalized(referenceTransform.up);
             float angle = Vector3.Angle(targetPlanarDirection, referenceTransform.forward);
             if (referenceTransform.InverseTransformPoint(position).x < 0)
             {
@@ -717,9 +756,7 @@ namespace BDArmory.Radar
 
                     if (!locked && !omnidirectional)
                     {
-                        float targetAngle = VectorUtils.SignedAngle(referenceTransform.forward,
-                            Vector3.ProjectOnPlane(attemptedLocks[i].position - referenceTransform.position,
-                                referenceTransform.up), referenceTransform.right);
+                        float targetAngle = VectorUtils.SignedAngle(referenceTransform.forward, (attemptedLocks[i].position - referenceTransform.position).ProjectOnPlanePreNormalized(referenceTransform.up), referenceTransform.right);
                         currentAngle = targetAngle;
                     }
                     lockedTargets.Add(attemptedLocks[i]);
@@ -764,7 +801,7 @@ namespace BDArmory.Radar
         {
             TargetSignatureData lockedTarget = lockedTargets[index];
 
-            Vector3 targetPlanarDirection = Vector3.ProjectOnPlane(lockedTarget.predictedPosition - referenceTransform.position, referenceTransform.up);
+            Vector3 targetPlanarDirection = (lockedTarget.predictedPosition - referenceTransform.position).ProjectOnPlanePreNormalized(referenceTransform.up);
             float lookAngle = Vector3.Angle(targetPlanarDirection, referenceTransform.forward);
             if (referenceTransform.InverseTransformPoint(lockedTarget.predictedPosition).x < 0)
             {
@@ -913,6 +950,15 @@ namespace BDArmory.Radar
                     UnlockTargetAt(i);
                     return;
                 }
+            }
+        }
+
+        public void RefreshLockArray()
+        {
+            if (wpmr != null)
+            {
+                attemptedLocks = new TargetSignatureData[wpmr.MaxradarLocks];
+                TargetSignatureData.ResetTSDArray(ref attemptedLocks);
             }
         }
 
@@ -1120,6 +1166,11 @@ namespace BDArmory.Radar
                     output.AppendLine(StringUtils.Localize("#autoLOC_bda_1000033", radarLockTrackCurve.Evaluate(radarMaxDistanceLockTrack), radarMaxDistanceLockTrack));
                 else
                     output.AppendLine(StringUtils.Localize("#autoLOC_bda_1000034"));
+
+                if (sonarType == 1)
+                    output.AppendLine(StringUtils.Localize("#autoLOC_bda_1000039"));
+                if (sonarType == 2)
+                    output.AppendLine(StringUtils.Localize("#autoLOC_bda_1000040"));
                 output.AppendLine(StringUtils.Localize("#autoLOC_bda_1000035", radarGroundClutterFactor));
             }
 

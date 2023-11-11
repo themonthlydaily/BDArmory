@@ -107,6 +107,11 @@ namespace BDArmory.UI
                     {
                         if (parts.Current.partConfig == null || parts.Current.partPrefab == null)
                             continue;
+                        if (parts.Current.TechHidden || parts.Current.TechRequired == "Unresearchable")
+                        {
+                            parts.Current.partConfig.RemoveValue(BDACategoryKey); 
+                            continue;
+                        }
                         if (parts.Current.partConfig.HasValue(BDACategoryKey))
                             parts.Current.partConfig.AddValue(AutoBDACategoryKey, parts.Current.partConfig.GetValue(BDACategoryKey));
                         else
@@ -275,6 +280,11 @@ namespace BDArmory.UI
                 {
                     if (parts.Current == null || !parts.Current.partPrefab || parts.Current.partConfig == null)
                         continue;
+                    if (parts.Current.TechHidden || parts.Current.TechRequired == "Unresearchable")
+                    {
+                        parts.Current.partConfig.RemoveValue(BDACategoryKey);
+                        continue;
+                    }
                     string cat = "";
                     if (parts.Current.partConfig.TryGetValue(BDArmorySettings.AUTOCATEGORIZE_PARTS ? AutoBDACategoryKey : BDACategoryKey, ref cat))
                     {

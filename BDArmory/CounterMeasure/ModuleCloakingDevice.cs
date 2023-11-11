@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using BDArmory.UI;
+using System.Collections;
 using System.Text;
 using UnityEngine;
 
@@ -25,6 +26,8 @@ namespace BDArmory.CounterMeasure
 
         [KSPField] public bool alwaysOn = false;
 
+        [KSPField] public float cooldownInterval = -1;
+
         [KSPField(isPersistant = true, guiActive = true, guiName = "#LOC_BDArmory_Enabled")]//Enabled 
         public bool cloakEnabled = false;
 
@@ -33,6 +36,10 @@ namespace BDArmory.CounterMeasure
         bool disabling = false;
 
         float cloakTimer = 0;
+
+        float cooldownTimer = 0;
+
+        private BDStagingAreaGauge gauge;
 
         private int resourceID;
 
@@ -86,6 +93,7 @@ namespace BDArmory.CounterMeasure
             if (!HighLogic.LoadedSceneIsFlight) return;
             part.force_activate();
 
+            gauge = (BDStagingAreaGauge)part.AddModule("BDStagingAreaGauge");
             GameEvents.onVesselCreate.Add(OnVesselCreate);
             EnsureVesselCloak();
         }
@@ -94,12 +102,15 @@ namespace BDArmory.CounterMeasure
         {
             GameEvents.onVesselCreate.Remove(OnVesselCreate);
             cloakEnabled = false;
-            using (var Part = this.part.vessel.Parts.GetEnumerator())
-                while (Part.MoveNext())
-                {
-                    if (Part.Current == null) continue;
-                    Part.Current.SetOpacity(1);
-                }
+            if (part != null && part.vessel != null)
+            {
+                using (var Part = part.vessel.Parts.GetEnumerator())
+                    while (Part.MoveNext())
+                    {
+                        if (Part.Current == null) continue;
+                        Part.Current.SetOpacity(1);
+                    }
+            }
         }
 
         void OnVesselCreate(Vessel v)
@@ -111,13 +122,12 @@ namespace BDArmory.CounterMeasure
         public void EnableCloak()
         {
             if (enabling || cloakEnabled) return;
+            if (cooldownTimer > 0) return;
             EnsureVesselCloak();
-            vesselCloak.AddCloak(this);
-            cloakEnabled = true;
 
             StopCloakDecloakRoutines();
             cloakTimer = 0;
-			cloakRoutine = StartCoroutine(CloakRoutine());
+            cloakRoutine = StartCoroutine(CloakRoutine());
         }
 
         public void DisableCloak()
@@ -204,6 +214,8 @@ namespace BDArmory.CounterMeasure
                 yield return wait;
             }
             enabling = false;
+            vesselCloak.AddCloak(this);
+            cloakEnabled = true;
         }
 
         IEnumerator DecloakRoutine()
@@ -215,11 +227,14 @@ namespace BDArmory.CounterMeasure
                 yield return wait;
             }
             disabling = false;
+            cooldownTimer = cooldownInterval;
         }
 
         void FixedUpdate()
         {
             if (!HighLogic.LoadedSceneIsFlight) return;
+            if (BDArmorySetup.GameIsPaused) return;
+
             if (enabling || disabling)
             {
                 if (opticalReductionFactor < 1)
@@ -240,6 +255,14 @@ namespace BDArmory.CounterMeasure
                     }
                 }
                 //Debug.Log("[CloakingDevice] " + (enabling ? "cloaking" : "decloaking") + ": cloakTimer: " + cloakTimer);
+            }
+            if (cooldownTimer > 0)
+            {
+                cooldownTimer -= TimeWarp.fixedDeltaTime;
+                if (vessel.isActiveVessel)
+                {
+                    gauge.UpdateHeatMeter(cooldownTimer / cooldownInterval);
+                }
             }
         }
 

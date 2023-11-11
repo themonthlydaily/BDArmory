@@ -2,10 +2,10 @@
 using System;
 using UnityEngine;
 
-using BDArmory.Competition.VesselSpawning;
 using BDArmory.Competition;
 using BDArmory.Settings;
 using BDArmory.Utils;
+using BDArmory.VesselSpawning;
 using BDArmory.Weapons.Missiles;
 
 namespace BDArmory.UI
@@ -314,7 +314,6 @@ namespace BDArmory.UI
                                 }
                                 else
                                 {
-
                                     Vector3 selfPos = FlightGlobals.ActiveVessel.CoM;
                                     Vector3 targetPos = (wm.Current.vessel.CoM);
                                     Vector3 targetRelPos = (targetPos - selfPos);
@@ -323,10 +322,10 @@ namespace BDArmory.UI
                                     string UIdist;
                                     string UoM;
                                     string vName;
-                                    string selectedWeapon = String.Empty;
-                                    string AIstate = String.Empty;
+                                    string selectedWeapon = string.Empty;
+                                    string AIstate = string.Empty;
                                     distance = targetRelPos.magnitude;
-                                    if (distance >= BDTISettings.DISTANCE_THRESHOLD)
+                                    if (distance >= BDTISettings.DISTANCE_THRESHOLD) //TODO - look into having vessel icons be based on vesel visibility? (So don't draw icon for undetected stealth plane, etc?)
                                     {
                                         if ((distance / 1000) >= 1)
                                         {

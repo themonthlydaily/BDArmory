@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using BDArmory.UI;
+using System.Text;
 
 namespace BDArmory.CounterMeasure
 {
@@ -9,6 +10,8 @@ namespace BDArmory.CounterMeasure
         [KSPField] public float lockBreakerStrength = 500;
 
         [KSPField] public float rcsReductionFactor = 0.75f;
+
+        [KSPField] public float rcsOverride = -1;
 
         [KSPField] public double resourceDrain = 5;
 
@@ -22,6 +25,8 @@ namespace BDArmory.CounterMeasure
 
         [KSPField] public bool rcsReduction = false;
 
+        [KSPField] public float cooldownInterval = -1;
+
         [KSPField(isPersistant = true, guiActive = true, guiName = "#LOC_BDArmory_Enabled")]//Enabled
         public bool jammerEnabled = false;
 
@@ -29,7 +34,11 @@ namespace BDArmory.CounterMeasure
 
         private int resourceID;
 
+        private float cooldownTimer = 0;
+
         VesselECMJInfo vesselJammer;
+
+        private BDStagingAreaGauge gauge;
 
         [KSPAction("Enable")]
         public void AGEnable(KSPActionParam param)
@@ -77,6 +86,7 @@ namespace BDArmory.CounterMeasure
             if (!HighLogic.LoadedSceneIsFlight) return;
             part.force_activate();
 
+            gauge = (BDStagingAreaGauge)part.AddModule("BDStagingAreaGauge");
             GameEvents.onVesselCreate.Add(OnVesselCreate);
         }
 
@@ -93,6 +103,7 @@ namespace BDArmory.CounterMeasure
 
         public void EnableJammer()
         {
+            if (cooldownTimer > 0) return;
             EnsureVesselJammer();
             vesselJammer.AddJammer(this);
             jammerEnabled = true;
@@ -104,11 +115,14 @@ namespace BDArmory.CounterMeasure
 
             vesselJammer.RemoveJammer(this);
             jammerEnabled = false;
+            cooldownTimer = cooldownInterval;
         }
 
         public override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
+            if (!HighLogic.LoadedSceneIsFlight) return;
+            if (BDArmorySetup.GameIsPaused) return;
 
             if (alwaysOn && !jammerEnabled)
             {
@@ -120,6 +134,14 @@ namespace BDArmory.CounterMeasure
                 EnsureVesselJammer();
 
                 DrainElectricity();
+            }
+            if (cooldownTimer > 0)
+            {
+                cooldownTimer -= TimeWarp.fixedDeltaTime;
+                if (vessel.isActiveVessel)
+                {
+                    gauge.UpdateHeatMeter(cooldownTimer / cooldownInterval);
+                }
             }
         }
 

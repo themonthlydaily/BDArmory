@@ -17,11 +17,12 @@ namespace BDArmory.UI
         private ApplicationLauncherButton toolbarButton = null;
 
         private bool showRcsWindow = false;
-        private string windowTitle = "BDArmory Radar Cross Section Analysis (Worst Three Aspects)";
+        private string windowTitle = !Settings.BDArmorySettings.ASPECTED_RCS ? "BDArmory Radar Cross Section Analysis (Worst Three Aspects)" : "BDArmory Radar Cross Section Analysis (Front/Side/Rear)";
         private Rect windowRect = new Rect(300, 150, 650, 500);
 
         private bool takeSnapshot = false;
         private float rcsReductionFactor;
+        private float rcsOverride = -1;
         private float rcsGCF = 1.0f;
 
         private ModuleRadar[] radars;
@@ -117,7 +118,8 @@ namespace BDArmory.UI
         IEnumerator ToolbarButtonRoutine()
         {
             if (toolbarButton || (!HighLogic.LoadedSceneIsEditor)) yield break;
-            yield return new WaitUntil(() => ApplicationLauncher.Ready);
+            yield return new WaitUntil(() => ApplicationLauncher.Ready && BDArmorySetup.toolbarButtonAdded); // Wait until after the main BDA toolbar button.
+
             AddToolbarButton();
         }
 
@@ -165,9 +167,9 @@ namespace BDArmory.UI
                 HideToolbarGUI();
             }
 
-            GUI.Label(new Rect(10, 40, 200, 20), $"Az {RadarUtils.worstRCSAspects[0, 0].ToString("0")}, El {RadarUtils.worstRCSAspects[0, 1].ToString("0")}", BDArmorySetup.BDGuiSkin.box);
-            GUI.Label(new Rect(220, 40, 200, 20), $"Az {RadarUtils.worstRCSAspects[1, 0].ToString("0")}, El {RadarUtils.worstRCSAspects[1, 1].ToString("0")}", BDArmorySetup.BDGuiSkin.box);
-            GUI.Label(new Rect(430, 40, 200, 20), $"Az {RadarUtils.worstRCSAspects[2, 0].ToString("0")}, El {RadarUtils.worstRCSAspects[2, 1].ToString("0")}", BDArmorySetup.BDGuiSkin.box);
+            GUI.Label(new Rect(10, 40, 200, 20), $"Az {RadarUtils.editorRCSAspects[0, 0].ToString("0")}, El {RadarUtils.editorRCSAspects[0, 1].ToString("0")}", BDArmorySetup.BDGuiSkin.box);
+            GUI.Label(new Rect(220, 40, 200, 20), $"Az {RadarUtils.editorRCSAspects[1, 0].ToString("0")}, El {RadarUtils.editorRCSAspects[1, 1].ToString("0")}", BDArmorySetup.BDGuiSkin.box);
+            GUI.Label(new Rect(430, 40, 200, 20), $"Az {RadarUtils.editorRCSAspects[2, 0].ToString("0")}, El {RadarUtils.editorRCSAspects[2, 1].ToString("0")}", BDArmorySetup.BDGuiSkin.box);
 
             if (takeSnapshot)
                 takeRadarSnapshot();
@@ -177,14 +179,19 @@ namespace BDArmory.UI
             GUI.DrawTexture(new Rect(220, 70, 200, 200), RadarUtils.GetTexture2, ScaleMode.StretchToFill);
             GUI.DrawTexture(new Rect(430, 70, 200, 200), RadarUtils.GetTexture3, ScaleMode.StretchToFill);
 
-            GUI.Label(new Rect(10, 275, 200, 20), string.Format("{0:0.00}", RadarUtils.worstRCSAspects[0, 2]) + " m^2", BDArmorySetup.BDGuiSkin.label);
-            GUI.Label(new Rect(220, 275, 200, 20), string.Format("{0:0.00}", RadarUtils.worstRCSAspects[1, 2]) + " m^2", BDArmorySetup.BDGuiSkin.label);
-            GUI.Label(new Rect(430, 275, 200, 20), string.Format("{0:0.00}", RadarUtils.worstRCSAspects[2, 2]) + " m^2", BDArmorySetup.BDGuiSkin.label);
+            float editorUIRCS0 = (!Settings.BDArmorySettings.ASPECTED_RCS) ? RadarUtils.editorRCSAspects[0, 2] : (RadarUtils.editorRCSAspects[0, 2] * (1 - Settings.BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT) + RadarUtils.rcsTotal *  Settings.BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT);
+            float editorUIRCS1 = (!Settings.BDArmorySettings.ASPECTED_RCS) ? RadarUtils.editorRCSAspects[1, 2] : (RadarUtils.editorRCSAspects[1, 2] * (1 - Settings.BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT) + RadarUtils.rcsTotal * Settings.BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT);
+            float editorUIRCS2 = (!Settings.BDArmorySettings.ASPECTED_RCS) ? RadarUtils.editorRCSAspects[2, 2] : (RadarUtils.editorRCSAspects[2, 2] * (1 - Settings.BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT) + RadarUtils.rcsTotal * Settings.BDArmorySettings.ASPECTED_RCS_OVERALL_RCS_WEIGHT);
+
+            GUI.Label(new Rect(10, 275, 200, 20), string.Format("{0:0.00}", editorUIRCS0) + " m^2", BDArmorySetup.BDGuiSkin.label);
+            GUI.Label(new Rect(220, 275, 200, 20), string.Format("{0:0.00}", editorUIRCS1) + " m^2", BDArmorySetup.BDGuiSkin.label);
+            GUI.Label(new Rect(430, 275, 200, 20), string.Format("{0:0.00}", editorUIRCS2) + " m^2", BDArmorySetup.BDGuiSkin.label);
+            
 
             GUIStyle style = BDArmorySetup.BDGuiSkin.label;
             style.fontStyle = FontStyle.Bold;
             GUI.Label(new Rect(10, 300, 600, 20), "Base radar cross section for vessel: " + string.Format("{0:0.00} m^2 (without ECM/countermeasures)", RadarUtils.rcsTotal), style);
-            GUI.Label(new Rect(10, 320, 600, 20), "Total radar cross section for vessel: " + string.Format("{0:0.00} m^2 (with RCS reduction/stealth/ground clutter)", RadarUtils.rcsTotal * rcsReductionFactor * rcsGCF), style);
+            GUI.Label(new Rect(10, 320, 600, 20), "Total radar cross section for vessel: " + string.Format("{0:0.00} m^2 (with RCS reduction/stealth/ground clutter)", rcsOverride > 0 ? rcsOverride * rcsGCF : RadarUtils.rcsTotal * rcsReductionFactor * rcsGCF), style);
 
             style.fontStyle = FontStyle.Normal;
             GUI.Label(new Rect(10, 380, 600, 20), "** (Range evaluation not accounting for ECM/countermeasures)", style);
@@ -225,7 +232,7 @@ namespace BDArmory.UI
                         for (float distance = selected_radar.radarMaxDistanceDetect; distance >= 0; distance--)
                         {
                             text_detection = $"Detection: undetectable by this radar.";
-                            if (selected_radar.radarDetectionCurve.Evaluate(distance) <= (RadarUtils.rcsTotal * rcsReductionFactor * rcsGCF))
+                            if (selected_radar.radarDetectionCurve.Evaluate(distance) <= (rcsOverride > 0 ? rcsOverride * rcsGCF : RadarUtils.rcsTotal * rcsReductionFactor * rcsGCF))
                             {
                                 text_detection = $"Detection: detected at {distance} km and closer";
                                 break;
@@ -242,7 +249,7 @@ namespace BDArmory.UI
                         text_locktrack = $"Lock/Track: untrackable by this radar.";
                         for (float distance = selected_radar.radarMaxDistanceLockTrack; distance >= 0; distance--)
                         {
-                            if (selected_radar.radarLockTrackCurve.Evaluate(distance) <= (RadarUtils.rcsTotal * rcsReductionFactor * rcsGCF))
+                            if (selected_radar.radarLockTrackCurve.Evaluate(distance) <= (rcsOverride > 0 ? rcsOverride * rcsGCF : RadarUtils.rcsTotal * rcsReductionFactor * rcsGCF))
                             {
                                 text_locktrack = $"Lock/Track: tracked at {distance} km and closer";
                                 break;
@@ -301,7 +308,7 @@ namespace BDArmory.UI
             GUIStyle style = BDArmorySetup.BDGuiSkin.label;
             style.fontStyle = FontStyle.Bold;
             GUI.Label(new Rect(10, 300, 600, 20), "Base radar cross section for vessel: " + string.Format("{0:0.00} m^2 (without ECM/countermeasures)", RadarUtils.rcsTotal), style);
-            GUI.Label(new Rect(10, 320, 600, 20), "Total radar cross section for vessel: " + string.Format("{0:0.00} m^2 (with RCS reduction/stealth/ground clutter)", RadarUtils.rcsTotal * rcsReductionFactor * rcsGCF), style);
+            GUI.Label(new Rect(10, 320, 600, 20), "Total radar cross section for vessel: " + string.Format("{0:0.00} m^2 (with RCS reduction/stealth/ground clutter)", rcsOverride > 0 ? rcsOverride * rcsGCF : RadarUtils.rcsTotal * rcsReductionFactor * rcsGCF), style);
 
             style.fontStyle = FontStyle.Normal;
             GUI.Label(new Rect(10, 380, 600, 20), "** (Range evaluation not accounting for ECM/countermeasures)", style);
@@ -342,7 +349,7 @@ namespace BDArmory.UI
                         for (float distance = selected_radar.radarMaxDistanceDetect; distance >= 0; distance--)
                         {
                             text_detection = $"Detection: undetectable by this radar.";
-                            if (selected_radar.radarDetectionCurve.Evaluate(distance) <= (RadarUtils.rcsTotal * rcsReductionFactor * rcsGCF))
+                            if (selected_radar.radarDetectionCurve.Evaluate(distance) <= (rcsOverride > 0 ? rcsOverride * rcsGCF : RadarUtils.rcsTotal * rcsReductionFactor * rcsGCF))
                             {
                                 text_detection = $"Detection: detected at {distance} km and closer";
                                 break;
@@ -359,7 +366,7 @@ namespace BDArmory.UI
                         text_locktrack = $"Lock/Track: untrackable by this radar.";
                         for (float distance = selected_radar.radarMaxDistanceLockTrack; distance >= 0; distance--)
                         {
-                            if (selected_radar.radarLockTrackCurve.Evaluate(distance) <= (RadarUtils.rcsTotal * rcsReductionFactor * rcsGCF))
+                            if (selected_radar.radarLockTrackCurve.Evaluate(distance) <= (rcsOverride > 0 ? rcsOverride * rcsGCF : RadarUtils.rcsTotal * rcsReductionFactor * rcsGCF))
                             {
                                 text_locktrack = $"Lock/Track: tracked at {distance} km and closer";
                                 break;
@@ -391,11 +398,12 @@ namespace BDArmory.UI
             v.parts = EditorLogic.fetch.ship.Parts;
             v.vesselType = VesselType.Plane; // Tell KSP that it's not debris (which we ignore in the snapshot).
             // RadarUtils.RenderVesselRadarSnapshot(v, EditorLogic.RootPart.transform);  //first rendering for true RCS
-            RadarUtils.RenderVesselRadarSnapshot(v, EditorLogic.RootPart.transform, true);  //create renders
+            RadarUtils.RenderVesselRadarSnapshot(v, EditorLogic.RootPart.transform, null, true);  //create renders
             takeSnapshot = false;
 
             // get RCS reduction measures (stealth/low observability)
             rcsReductionFactor = 1.0f;
+
             int rcsCount = 0;
             List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator();
             while (parts.MoveNext())
@@ -407,13 +415,14 @@ namespace BDArmory.UI
                     {
                         rcsReductionFactor *= rcsJammer.rcsReductionFactor;
                         rcsCount++;
+                        if (rcsOverride < rcsJammer.rcsOverride) rcsOverride = rcsJammer.rcsOverride;
                     }
                 }
             }
             parts.Dispose();
 
             if (rcsCount > 0)
-                rcsReductionFactor = Mathf.Clamp((rcsReductionFactor * rcsCount), 0.0f, 1);    //same formula as in VesselECMJInfo must be used here!
+                rcsReductionFactor = Mathf.Max((rcsReductionFactor * rcsCount), 0.0f);    //same formula as in VesselECMJInfo must be used here!
         }
 
         /// <summary>

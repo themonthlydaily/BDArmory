@@ -5,7 +5,6 @@ using UniLinq;
 using UnityEngine;
 
 using BDArmory.Control;
-using BDArmory.Competition.VesselSpawning;
 using BDArmory.Extensions;
 using BDArmory.Guidances;
 using BDArmory.Radar;
@@ -13,6 +12,7 @@ using BDArmory.Settings;
 using BDArmory.Targeting;
 using BDArmory.UI;
 using BDArmory.Utils;
+using BDArmory.VesselSpawning;
 
 namespace BDArmory.Weapons.Missiles
 {
@@ -111,6 +111,8 @@ namespace BDArmory.Weapons.Missiles
         private double angularVelocity;
 
         public float warheadYield = 0;
+        public float thrust = 0;
+        public float mass = 0.1f;
         #endregion KSP FIELDS
 
         public TransformAxisVectors ForwardTransformAxis { get; set; }
@@ -187,16 +189,101 @@ namespace BDArmory.Weapons.Missiles
                 Fields["SoftAscent"].guiActive = GuidanceMode == GuidanceModes.AGMBallistic;
                 Fields["SoftAscent"].guiActiveEditor = GuidanceMode == GuidanceModes.AGMBallistic;
             }
+
+            if (GuidanceMode != GuidanceModes.AAMLoft)
+            {
+                Fields["LoftMaxAltitude"].guiActive = false;
+                Fields["LoftMaxAltitude"].guiActiveEditor = false;
+                Fields["LoftRangeOverride"].guiActive = false;
+                Fields["LoftRangeOverride"].guiActiveEditor = false;
+                Fields["LoftAltitudeAdvMax"].guiActive = false;
+                Fields["LoftAltitudeAdvMax"].guiActiveEditor = false;
+                Fields["LoftMinAltitude"].guiActive = false;
+                Fields["LoftMinAltitude"].guiActiveEditor = false;
+                Fields["LoftAngle"].guiActive = false;
+                Fields["LoftAngle"].guiActiveEditor = false;
+                Fields["LoftTermAngle"].guiActive = false;
+                Fields["LoftTermAngle"].guiActiveEditor = false;
+                Fields["LoftRangeFac"].guiActive = false;
+                Fields["LoftRangeFac"].guiActiveEditor = false;
+                Fields["LoftVelComp"].guiActive = false;
+                Fields["LoftVelComp"].guiActiveEditor = false;
+                Fields["LoftVertVelComp"].guiActive = false;
+                Fields["LoftVertVelComp"].guiActiveEditor = false;
+                //Fields["LoftAltComp"].guiActive = false;
+                //Fields["LoftAltComp"].guiActiveEditor = false;
+                //Fields["terminalHomingRange"].guiActive = false;
+                //Fields["terminalHomingRange"].guiActiveEditor = false;
+            }
+            else
+            {
+                Fields["LoftMaxAltitude"].guiActive = true;
+                Fields["LoftMaxAltitude"].guiActiveEditor = true;
+                Fields["LoftRangeOverride"].guiActive = true;
+                Fields["LoftRangeOverride"].guiActiveEditor = true;
+                Fields["LoftAltitudeAdvMax"].guiActive = true;
+                Fields["LoftAltitudeAdvMax"].guiActiveEditor = true;
+                Fields["LoftMinAltitude"].guiActive = true;
+                Fields["LoftMinAltitude"].guiActiveEditor = true;
+                //Fields["terminalHomingRange"].guiActive = true;
+                //Fields["terminalHomingRange"].guiActiveEditor = true;
+
+                if (!GameSettings.ADVANCED_TWEAKABLES)
+                {
+                    Fields["LoftAngle"].guiActive = false;
+                    Fields["LoftAngle"].guiActiveEditor = false;
+                    Fields["LoftTermAngle"].guiActive = false;
+                    Fields["LoftTermAngle"].guiActiveEditor = false;
+                    Fields["LoftRangeFac"].guiActive = false;
+                    Fields["LoftRangeFac"].guiActiveEditor = false;
+                    Fields["LoftVelComp"].guiActive = false;
+                    Fields["LoftVelComp"].guiActiveEditor = false;
+                    Fields["LoftVertVelComp"].guiActive = false;
+                    Fields["LoftVertVelComp"].guiActiveEditor = false;
+                    //Fields["LoftAltComp"].guiActive = false;
+                    //Fields["LoftAltComp"].guiActiveEditor = false;
+                }
+                else
+                {
+                    Fields["LoftAngle"].guiActive = true;
+                    Fields["LoftAngle"].guiActiveEditor = true;
+                    Fields["LoftTermAngle"].guiActive = true;
+                    Fields["LoftTermAngle"].guiActiveEditor = true;
+                    Fields["LoftRangeFac"].guiActive = true;
+                    Fields["LoftRangeFac"].guiActiveEditor = true;
+                    Fields["LoftVelComp"].guiActive = true;
+                    Fields["LoftVelComp"].guiActiveEditor = true;
+                    Fields["LoftVertVelComp"].guiActive = true;
+                    Fields["LoftVertVelComp"].guiActiveEditor = true;
+                    //Fields["LoftAltComp"].guiActive = true;
+                    //Fields["LoftAltComp"].guiActiveEditor = true;
+                }
+            }
+
+            if (!terminalHoming && GuidanceMode != GuidanceModes.AAMLoft) //GuidanceMode != GuidanceModes.AAMHybrid && GuidanceMode != GuidanceModes.AAMLoft)
+            {
+                Fields["terminalHomingRange"].guiActive = false;
+                Fields["terminalHomingRange"].guiActiveEditor = false;
+            }
+            else
+            {
+                Fields["terminalHomingRange"].guiActive = true;
+                Fields["terminalHomingRange"].guiActiveEditor = true;
+            }
+
             GUIUtils.RefreshAssociatedWindows(part);
         }
 
         public override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
+
+            if (!HighLogic.LoadedSceneIsFlight) return;
+
             if (HasFired && !HasExploded)
             {
                 UpdateGuidance();
-                CheckDetonationState();
+                CheckDetonationState(true);
                 CheckDetonationDistance();
                 CheckDelayedFired();
                 CheckNextStage();
@@ -215,8 +302,10 @@ namespace BDArmory.Weapons.Missiles
 
         void Update()
         {
+            if (!HighLogic.LoadedSceneIsFlight) return;
+
             if (!HasFired)
-                CheckDetonationState();
+                CheckDetonationState(true);
         }
 
         private void CheckNextStage()
@@ -258,7 +347,8 @@ namespace BDArmory.Weapons.Missiles
             while (child.MoveNext())
             {
                 if (child.Current == null) continue;
-
+                mass += child.Current.mass;
+                if (child.Current.isEngine()) thrust += 1;
                 DisablingExplosives(child.Current);
 
                 IEnumerator<PartResource> resource = child.Current.Resources.GetEnumerator();
@@ -333,7 +423,7 @@ namespace BDArmory.Weapons.Missiles
             MissileState = MissileStates.Cruise;
 
             _missileIgnited = true;
-            RadarWarningReceiver.WarnMissileLaunch(MissileReferenceTransform.position, GetForwardTransform());
+            RadarWarningReceiver.WarnMissileLaunch(MissileReferenceTransform.position, GetForwardTransform(), TargetingMode == TargetingModes.Radar);
         }
 
         private bool ShouldExecuteNextStage()
@@ -362,13 +452,17 @@ namespace BDArmory.Weapons.Missiles
             return true;
         }
 
-        public bool IsEngine(Part p)
+        public bool IsEngine(Part p, bool returnThrust = false)
         {
             using (List<PartModule>.Enumerator m = p.Modules.GetEnumerator())
                 while (m.MoveNext())
                 {
                     if (m.Current == null) continue;
-                    if (m.Current is ModuleEngines) return true;
+                    if (m.Current is ModuleEngines)
+                    {
+                        if (!returnThrust) return true;
+                        else thrust += p.FindModuleImplementing<ModuleEngines>().maxThrust;
+                    }
                 }
             return false;
         }
@@ -404,7 +498,8 @@ namespace BDArmory.Weapons.Missiles
             UpdateTargetingMode((TargetingModes)Enum.Parse(typeof(TargetingModes), _targetingLabel));
 
             _targetDecoupler = FindFirstDecoupler(part.parent, null);
-
+            thrust = 0;
+            mass = 0;
             DisableResourcesFlow();
 
             weaponClass = WeaponClasses.Missile;
@@ -929,13 +1024,19 @@ namespace BDArmory.Weapons.Missiles
 
         /// <summary>
         ///     This method will execute the next ActionGroup. Due to StageManager is designed to work with an active vessel
-        ///     And a missile is not an active vessel. I had to use a different way handle stages. And action groups works perfect!
+        ///     And a missile is not an active vessel. I had to use a different way to handle stages, and action groups work perfectly!
         /// </summary>
         public void ExecuteNextStage()
         {
             if (BDArmorySettings.DEBUG_MISSILES) Debug.LogFormat("[BDArmory.BDModularGuidance]: Executing next stage {0} for {1}", _nextStage, vessel.vesselName);
             vessel.ActionGroups.ToggleGroup(
                 (KSPActionGroup)Enum.Parse(typeof(KSPActionGroup), "Custom0" + (int)_nextStage));
+
+            if (StagesNumber == 1)
+            {
+                if (SpawnUtils.CountActiveEngines(vessel) < 1)
+                    SpawnUtils.ActivateAllEngines(vessel, true, false);
+            }
 
             _nextStage++;
 

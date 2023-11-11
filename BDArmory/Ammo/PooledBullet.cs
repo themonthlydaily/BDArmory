@@ -61,7 +61,9 @@ namespace BDArmory.Bullets
         public Color lightColor = GUIUtils.ParseColor255("255, 235, 145, 255");
         public Color projectileColor;
         public string bulletTexturePath;
+        public string smokeTexturePath;
         public bool fadeColor;
+        Color smokeColor = Color.white;
         public Color startColor;
         Color currentColor;
         public bool bulletDrop = true;
@@ -109,7 +111,8 @@ namespace BDArmory.Bullets
         public float defaultDetonationRange = 3500f;
         public float maxAirDetonationRange = 3500f;
         float randomWidthScale = 1;
-        LineRenderer bulletTrail;
+        LineRenderer[] bulletTrail;
+        float timeAlive = 0;
         public float timeToLiveUntil;
         Light lightFlash;
         bool wasInitiated;
@@ -154,6 +157,7 @@ namespace BDArmory.Bullets
         static List<RaycastHit> allHits;
         static Dictionary<Vessel, float> rayLength;
         private Vector3[] linePositions = new Vector3[2];
+        private Vector3[] smokePositions = new Vector3[5];
 
         private List<Part> partsHit = new List<Part>();
 
@@ -244,12 +248,17 @@ namespace BDArmory.Bullets
             //tracer setup
             if (bulletTrail == null || !gameObject.GetComponent<LineRenderer>())
             {
-                bulletTrail = gameObject.AddOrGetComponent<LineRenderer>();
-            }
+                bulletTrail = new LineRenderer[2];
+                bulletTrail[0] = gameObject.AddOrGetComponent<LineRenderer>();
 
+                GameObject bulletFX = new GameObject("bulletTrail");
+                bulletFX.transform.SetParent(this.gameObject.transform);
+                bulletTrail[1] = bulletFX.AddOrGetComponent<LineRenderer>();
+            }
             if (!wasInitiated)
             {
-                bulletTrail.positionCount = linePositions.Length;
+                bulletTrail[0].positionCount = linePositions.Length;
+                bulletTrail[1].positionCount = smokePositions.Length;
             }
             // Note: call SetTracerPosition() after enabling the bullet and making adjustments to it's position.
 
@@ -261,14 +270,34 @@ namespace BDArmory.Bullets
 
             if (!wasInitiated)
             {
-                bulletTrail.material = new Material(bulletShader);
+                bulletTrail[0].material = new Material(bulletShader);
+                bulletTrail[1].material = new Material(bulletShader);
                 randomWidthScale = UnityEngine.Random.Range(0.5f, 1f);
                 gameObject.layer = 15;
             }
-
-            bulletTrail.material.mainTexture = GameDatabase.Instance.GetTexture(bulletTexturePath, false);
-            bulletTrail.material.SetColor("_TintColor", currentColor);
-            bulletTrail.material.SetFloat("_Lum", tracerLuminance);
+            smokeColor.r = 0.85f;
+            smokeColor.g = 0.85f;
+            smokeColor.b = 0.85f;
+            smokeColor.a = 0.75f;
+            timeAlive = 0;
+            bulletTrail[0].material.mainTexture = GameDatabase.Instance.GetTexture(bulletTexturePath, false);
+            bulletTrail[0].material.SetColor("_TintColor", currentColor);
+            bulletTrail[0].material.SetFloat("_Lum", (tracerLuminance > 0 ? tracerLuminance : 0.5f));
+            if (!string.IsNullOrEmpty(smokeTexturePath))
+            {
+                bulletTrail[1].material.mainTexture = GameDatabase.Instance.GetTexture(smokeTexturePath, false);
+                bulletTrail[1].material.SetColor("_TintColor", smokeColor);
+                bulletTrail[1].material.SetFloat("_Lum", 0.5f);
+                bulletTrail[1].textureMode = LineTextureMode.Tile;
+                bulletTrail[1].material.SetTextureScale("_MainTex", new Vector2(0.1f, 1));
+                bulletTrail[1].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                bulletTrail[1].receiveShadows = false;
+                bulletTrail[1].enabled = true;
+            }
+            else
+            {
+                bulletTrail[1].enabled = false;
+            }
 
             tracerStartWidth *= 2f;
             tracerEndWidth *= 2f;
@@ -282,7 +311,6 @@ namespace BDArmory.Bullets
             if (this.sourceVessel)
             {
                 sourceVesselName = sourceVessel.GetName(); // Set the source vessel name as the vessel might have changed its name or died by the time the bullet hits.
-                BDACompetitionMode.Instance.Scores.RegisterShot(sourceVesselName);
             }
             else
             {
@@ -308,6 +336,7 @@ namespace BDArmory.Bullets
             isAPSprojectile = false;
             tgtRocket = null;
             tgtShell = null;
+            smokeTexturePath = "";
         }
 
         void OnDestroy()
@@ -355,8 +384,17 @@ namespace BDArmory.Bullets
             if (fadeColor)
             {
                 FadeColor();
-                bulletTrail.material.SetColor("_TintColor", currentColor * tracerLuminance);
+                bulletTrail[0].material.SetColor("_TintColor", currentColor * (tracerLuminance > 0 ? tracerLuminance : 0.5f));
             }
+            if (tracerLuminance > 1)
+            {
+                float fade = Mathf.Lerp(0.75f, 0.05f, 0.07f);
+                smokeColor.a = fade;
+                bulletTrail[1].material.SetColor("_TintColor", smokeColor);
+                bulletTrail[1].material.SetTextureOffset("_MainTex", new Vector2(-timeAlive / 3, 0));
+                if (fade <= 0.05f) bulletTrail[1].enabled = false;
+            }
+            timeAlive += Time.fixedDeltaTime;
             SetTracerPosition();
 
             if (Time.time > timeToLiveUntil) //kill bullet when TTL ends
@@ -365,7 +403,7 @@ namespace BDArmory.Bullets
                 if (isAPSprojectile)
                 {
                     if (HEType != PooledBulletTypes.Explosive && tntMass > 0)
-                        ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, -1, true);
+                        ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, default, -1, true);
                 }
                 return;
             }
@@ -396,7 +434,7 @@ namespace BDArmory.Bullets
                     if (caliber < 75f)
                     {
                         if (HEType != PooledBulletTypes.Slug)
-                            ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, -1, false, bulletMass, -1, dmgMult);
+                            ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, default, -1, false, bulletMass, -1, dmgMult);
                         if (nuclear)
                             NukeFX.CreateExplosion(currPosition, ExplosionSourceType.Bullet, sourceVesselName, bullet.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
                         hasDetonated = true;
@@ -416,7 +454,7 @@ namespace BDArmory.Bullets
                             else //if (fuzeType != BulletFuzeTypes.None)
                             {
                                 if (HEType != PooledBulletTypes.Slug)
-                                    ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, -1, false, bulletMass, -1, dmgMult);
+                                    ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, default, -1, false, bulletMass, -1, dmgMult);
                                 if (nuclear)
                                     NukeFX.CreateExplosion(currPosition, ExplosionSourceType.Bullet, sourceVesselName, bullet.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
                                 hasDetonated = true;
@@ -436,7 +474,7 @@ namespace BDArmory.Bullets
             {
                 //detonate
                 if (HEType != PooledBulletTypes.Slug)
-                    ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, HEType == PooledBulletTypes.Explosive ? default : currentVelocity, -1, false, bulletMass, -1, dmgMult, HEType == PooledBulletTypes.Shaped ? "shapedcharge" : "standard", null, HEType == PooledBulletTypes.Shaped ? apBulletMod : 1f, ProjectileUtils.isReportingWeapon(sourceWeapon) ? (float)DistanceTraveled : -1);
+                    ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, HEType == PooledBulletTypes.Explosive ? default : currentVelocity, -1, false, bulletMass, -1, dmgMult, HEType == PooledBulletTypes.Shaped ? "shapedcharge" : "standard", null, HEType == PooledBulletTypes.Shaped ? apBulletMod : 1f, ProjectileUtils.isReportingWeapon(sourceWeapon) ? (float)DistanceTraveled : -1);
                 if (nuclear)
                     NukeFX.CreateExplosion(currPosition, ExplosionSourceType.Bullet, sourceVesselName, bullet.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
                 if (beehive)
@@ -461,8 +499,8 @@ namespace BDArmory.Bullets
             LeapfrogVelocityHalfStep(0.5f * period);
 
             // Full-timestep position change (leapfrog integrator)
-            transform.position += currentVelocity * period; //move bullet
-            distanceTraveled += currentVelocity.magnitude * period; // calculate flight distance for achievement purposes
+            transform.position += period * currentVelocity; //move bullet
+            distanceTraveled += period * currentVelocity.magnitude; // calculate flight distance for achievement purposes
 
             if (!underwater && FlightGlobals.getAltitudeAtPos(transform.position) <= 0) // Check if the bullet is now underwater.
             {
@@ -473,7 +511,7 @@ namespace BDArmory.Bullets
                     tracerEndWidth /= 2;
 
                     currentVelocity = Vector3.Reflect(currentVelocity, VectorUtils.GetUpDirection(transform.position));
-                    currentVelocity = (hitAngle / 150) * currentVelocity * 0.65f;
+                    currentVelocity = (hitAngle / 150) * 0.65f * currentVelocity;
 
                     Vector3 randomDirection = UnityEngine.Random.rotation * Vector3.one;
 
@@ -494,14 +532,14 @@ namespace BDArmory.Bullets
         {
             timeElapsedSinceCurrentSpeedWasAdjusted += period; // Track flight time for drag purposes
             UpdateDragEstimate(); // Update the drag estimate, accounting for water/air environment changes. Note: changes due to bulletDrop aren't being applied to the drag.
+            if (bulletDrop)
+                currentVelocity += period * FlightGlobals.getGeeForceAtPosition(transform.position);
             if (underwater)
             {
                 currentVelocity *= dragVelocityFactor; // Note: If applied to aerial flight, this screws up targeting, because the weapon's aim code doesn't know how to account for drag. Only have it apply when underwater for now. Review later?
                 currentSpeed = currentVelocity.magnitude;
                 timeElapsedSinceCurrentSpeedWasAdjusted = 0;
             }
-            if (bulletDrop)
-                currentVelocity += period * FlightGlobals.getGeeForceAtPosition(transform.position); // FIXME Should this be adjusted for being underwater?
         }
 
         /// <summary>
@@ -523,6 +561,7 @@ namespace BDArmory.Bullets
             hasPenetrated = true;
             hasDetonated = false;
             hasRicocheted = false;
+            CurrentPart = null;
             //penTicker = 0;
             currPosition = transform.position;
             allHits.Clear();
@@ -552,10 +591,12 @@ namespace BDArmory.Bullets
             List<Vessel> nearbyVessels = new List<Vessel>();
 
             const int layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels);
-            var overlapSphereColliderCount = Physics.OverlapSphereNonAlloc(transform.position, currentVelocity.magnitude * period * 2f, overlapSphereColliders, layerMask); // Overlapsphere of 2*period assuming that vessels are moving at similar speeds to the bullet.
+
+            var overlapSphereRadius = GetOverlapSphereRadius(period); // OverlapSphere of sufficient size to catch all potential craft of <100m radius.
+            var overlapSphereColliderCount = Physics.OverlapSphereNonAlloc(currPosition, overlapSphereRadius, overlapSphereColliders, layerMask);
             if (overlapSphereColliderCount == overlapSphereColliders.Length)
             {
-                overlapSphereColliders = Physics.OverlapSphere(transform.position, currentVelocity.magnitude * period * 2f, layerMask);
+                overlapSphereColliders = Physics.OverlapSphere(currPosition, overlapSphereRadius, layerMask);
                 overlapSphereColliderCount = overlapSphereColliders.Length;
             }
 
@@ -578,16 +619,37 @@ namespace BDArmory.Bullets
                     }
                 }
             }
-            foreach (var vessel in nearbyVessels.OrderBy(v => (v.transform.position - transform.position).sqrMagnitude))
+            foreach (var vessel in nearbyVessels.OrderBy(v => (v.transform.position - currPosition).sqrMagnitude))
             {
                 CheckBulletCollisionWithVessel(period, vessel); // FIXME Convert this to use RaycastCommand to do all the raycasts in parallel.
             }
         }
 
+        /// <summary>
+        /// Calculate the required radius of the overlap sphere such that a craft <100m in radius could potentially collide with the bullet.
+        /// </summary>
+        /// <param name="period">The period of motion (TimeWarp.fixedDeltaTime).</param>
+        /// <returns>The required radius.</returns>
+        float GetOverlapSphereRadius(float period)
+        {
+            float maxRelSpeedSqr = 0, relVelSqr;
+            Vector3 relativeVelocity;
+            using (var v = FlightGlobals.Vessels.GetEnumerator())
+                while (v.MoveNext())
+                {
+                    if (v.Current == null || !v.Current.loaded) continue; // Ignore invalid craft.
+                    relativeVelocity = v.Current.rb_velocity + BDKrakensbane.FrameVelocityV3f - currentVelocity;
+                    if (Vector3.Dot(relativeVelocity, v.Current.transform.position - currPosition) >= 0) continue; // Ignore craft that aren't approaching.
+                    relVelSqr = relativeVelocity.sqrMagnitude;
+                    if (relVelSqr > maxRelSpeedSqr) maxRelSpeedSqr = relVelSqr;
+                }
+            return 100f + period * BDAMath.Sqrt(maxRelSpeedSqr); // Craft of radius <100m that could collide within the period.
+        }
+
         public void CheckBulletCollisionWithVessel(float period, Vessel vessel)
         {
             var relativeVelocity = currentVelocity - (Vector3)vessel.Velocity();
-            float dist = relativeVelocity.magnitude * period;
+            float dist = period * relativeVelocity.magnitude;
             bulletRay = new Ray(currPosition, relativeVelocity + 0.5f * period * FlightGlobals.getGeeForceAtPosition(transform.position));
             const int layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels);
 
@@ -637,7 +699,7 @@ namespace BDArmory.Bullets
 
         public void CheckBulletCollisionWithScenery(float period)
         {
-            float dist = currentVelocity.magnitude * period;
+            float dist = period * currentVelocity.magnitude;
             bulletRay = new Ray(currPosition, currentVelocity + 0.5f * period * FlightGlobals.getGeeForceAtPosition(transform.position));
             var layerMask = (int)(LayerMasks.Scenery);
 
@@ -672,7 +734,7 @@ namespace BDArmory.Bullets
         /// <returns>true if a collision is detected, false otherwise.</returns>
         public bool CheckBulletCollision(float period)
         {
-            float dist = currentVelocity.magnitude * period;
+            float dist = period * currentVelocity.magnitude;
             bulletRay = new Ray(currPosition, currentVelocity + 0.5f * period * FlightGlobals.getGeeForceAtPosition(transform.position));
             const int layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Wheels | LayerMasks.Scenery);
             var hitCount = Physics.RaycastNonAlloc(bulletRay, hits, dist, layerMask);
@@ -797,7 +859,7 @@ namespace BDArmory.Bullets
 
                     // Changed from the previous 7 * caliber * 10 maximum to just > caliber since that no longer exists.
                     if ((distanceTraveled + hit.distance - distanceLastHit) * 1000f > caliber)
-                        {
+                    {
                         // The formula is based on distance and the caliber of the shaped charge, now since in our case we are talking
                         // about projectiles rather than shaped charges we'll take the projectile diameter and call that the jet size.
                         // Shaped charge jets have a diameter generally around 5% of the shaped charge's caliber, however in our case
@@ -1246,7 +1308,7 @@ namespace BDArmory.Bullets
                 else
                 {
                     float cockpitPen = (float)(16f * impactVelocity.magnitude * BDAMath.Sqrt(bulletMass / 1000) / BDAMath.Sqrt(caliber) * apBulletMod); //assuming a 20mm steel armor plate for cockpit armor
-                    ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, bulletMass, currentVelocity.magnitude, viableBullet ? bulletDmgMult : bulletDmgMult / 2, distanceTraveled, HEType != PooledBulletTypes.Slug ? true : false, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet, penTicker > 0 ? false : true, partsHit.Contains(hitPart) ? false : true, (cockpitPen > Mathf.Max(20 / anglemultiplier, 1)) ? true : false);
+                    ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, bulletMass, impactVelocity.magnitude, viableBullet ? bulletDmgMult : bulletDmgMult / 2, distanceTraveled, HEType != PooledBulletTypes.Slug ? true : false, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet, penTicker > 0 ? false : true, partsHit.Contains(hitPart) ? false : true, (cockpitPen > Mathf.Max(20 / anglemultiplier, 1)) ? true : false);
                     //need to add a check for if the bullet has already struck the part, since it doesn't make sense for some battledamage to apply on the second hit from the bullet exiting the part - wings/ctrl srfs, pilot kills, subsystem damage
                 }
 
@@ -1326,7 +1388,7 @@ namespace BDArmory.Bullets
             if (!hasDetonated)
             {
                 if (HEType != PooledBulletTypes.Slug)
-                    ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, HEType == PooledBulletTypes.Explosive ? default : currentVelocity, -1, false, bulletMass, -1, dmgMult, HEType == PooledBulletTypes.Shaped ? "shapedcharge" : "standard", CurrentPart, HEType == PooledBulletTypes.Shaped ? apBulletMod : 1f, ProjectileUtils.isReportingWeapon(sourceWeapon) ? (float)DistanceTraveled : -1);
+                    ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, HEType == PooledBulletTypes.Explosive ? default : currentVelocity, -1, false, bulletMass, -1, dmgMult, HEType == PooledBulletTypes.Shaped ? "shapedcharge" : "standard", CurrentPart, HEType == PooledBulletTypes.Shaped ? apBulletMod : 1f, ProjectileUtils.isReportingWeapon(sourceWeapon) ? (float)DistanceTraveled : -1);
                 if (nuclear)
                     NukeFX.CreateExplosion(currPosition, ExplosionSourceType.Bullet, sourceVesselName, bullet.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
                 hasDetonated = true;
@@ -1351,8 +1413,8 @@ namespace BDArmory.Bullets
                 Debug.Log("[BDArmory.PooledBullet] Beehive round not configured with subMunitionType!");
                 return;
             }
-            string fuze = subMunitionType.fuzeType;
-            fuze.ToLower();
+            string fuze = subMunitionType.fuzeType.ToLower();
+
             BulletFuzeTypes sFuze;
             switch (fuze)
             {
@@ -1381,6 +1443,8 @@ namespace BDArmory.Bullets
                     sFuze = PooledBullet.BulletFuzeTypes.None;
                     break;
             }
+            if (BDArmorySettings.DEBUG_WEAPONS)
+                Debug.Log("[BDArmory.PooledBullet]: Beehive Detonation: parsing submunition fuze: " + fuze + ", index: " + sFuze);
             for (int s = 0; s < subMunitionType.subProjectileCount; s++)
             {
                 GameObject Bullet = ModuleWeapon.bulletPool.GetPooledObject();
@@ -1388,7 +1452,7 @@ namespace BDArmory.Bullets
                 pBullet.transform.position = currPosition;
 
                 pBullet.caliber = subMunitionType.caliber;
-                pBullet.bulletVelocity = subMunitionType.bulletVelocity;
+                pBullet.bulletVelocity = GetDragAdjustedVelocity().magnitude + subMunitionType.bulletVelocity;
                 pBullet.bulletMass = subMunitionType.bulletMass;
                 pBullet.incendiary = subMunitionType.incendiary;
                 pBullet.apBulletMod = subMunitionType.apBulletMod;
@@ -1396,8 +1460,8 @@ namespace BDArmory.Bullets
                 pBullet.ballisticCoefficient = subMunitionType.bulletMass / (((Mathf.PI * 0.25f * subMunitionType.caliber * subMunitionType.caliber) / 1000000f) * 0.295f);
                 pBullet.timeElapsedSinceCurrentSpeedWasAdjusted = 0;
                 pBullet.timeToLiveUntil = 2000 / bulletVelocity * 1.1f + Time.time;
-                Vector3 firedVelocity = VectorUtils.GaussianDirectionDeviation(currentVelocity.normalized, subMunitionType.subProjectileDispersion > 0 ? subMunitionType.subProjectileDispersion : (subMunitionType.subProjectileCount / BDAMath.Sqrt((currentVelocity * dragVelocityFactor).magnitude / 100))) * subMunitionType.bulletVelocity; //more subprojectiles = wider spread, higher base velocity = tighter spread
-                pBullet.currentVelocity = GetDragAdjustedVelocity() + firedVelocity; // currentVelocity is already the real velocity w/o offloading
+                Vector3 firedVelocity = VectorUtils.GaussianDirectionDeviation(currentVelocity.normalized, subMunitionType.subProjectileDispersion > 0 ? subMunitionType.subProjectileDispersion : (subMunitionType.subProjectileCount / BDAMath.Sqrt(GetDragAdjustedVelocity().magnitude / 100))) * (GetDragAdjustedVelocity().magnitude + subMunitionType.bulletVelocity); //more subprojectiles = wider spread, higher base velocity = tighter spread
+                pBullet.currentVelocity = firedVelocity; //if submunitions have additional vel, would need modifications to ModuleWeapon's CPA calcs to offset targetPos by -targetVel * (submunitionVelocity / proximityDetonationdist)
                 pBullet.sourceWeapon = sourceWeapon;
                 pBullet.sourceVessel = sourceVessel;
                 pBullet.team = team;
@@ -1417,8 +1481,7 @@ namespace BDArmory.Bullets
                     pBullet.explModelPath = explModelPath;
                     pBullet.explSoundPath = explSoundPath;
                     pBullet.tntMass = subMunitionType.tntMass;
-                    string HEtype = subMunitionType.explosive;
-                    HEtype.ToLower();
+                    string HEtype = subMunitionType.explosive.ToLower();
                     switch (HEtype)
                     {
                         case "standard":
@@ -1480,7 +1543,7 @@ namespace BDArmory.Bullets
 
             if (isAPSprojectile && (tgtShell != null || tgtRocket != null))
             {
-                if (Vector3.Distance(transform.position, tgtShell != null ? tgtShell.transform.position : tgtRocket.transform.position) < detonationRange / 2)
+                if (transform.position.CloserToThan(tgtShell != null ? tgtShell.transform.position : tgtRocket.transform.position, detonationRange / 2))
                 {
                     if (BDArmorySettings.DEBUG_WEAPONS)
                         Debug.Log("[BDArmory.PooledBullet]: bullet proximity to APS target | Distance overlap = " + detonationRange + "| tgt name = " + tgtShell != null ? tgtShell.name : tgtRocket.name);
@@ -1597,7 +1660,14 @@ namespace BDArmory.Bullets
             ///////////////////////////////////////////////////////////////////////
             // High Explosive Detonation
             ///////////////////////////////////////////////////////////////////////
-            if (fuzeType == BulletFuzeTypes.None) return false;
+            if (fuzeType == BulletFuzeTypes.None)
+            {
+                if (BDArmorySettings.DEBUG_WEAPONS)
+                {
+                    Debug.Log($"[BDArmory.PooledBullet]: Bullet {bullet.DisplayName} attempted detonation, has improper fuze ({fuzeType}). Fix your bullet config.");
+                }
+                return false;
+            }
             if (hitPart == null || hitPart.vessel != sourceVessel)
             {
                 //if bullet hits and is HE, detonate and kill bullet
@@ -1610,20 +1680,24 @@ namespace BDArmory.Bullets
                     if ((fuzeType == BulletFuzeTypes.Timed || fuzeType == BulletFuzeTypes.Flak) || HEType == PooledBulletTypes.Shaped)
                     {
                         if (HEType != PooledBulletTypes.Slug)
-                            ExplosionFx.CreateExplosion(hit.point, GetExplosivePower(), explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, HEType == PooledBulletTypes.Explosive ? default : ray.direction, -1, false, bulletMass, -1, dmgMult, HEType == PooledBulletTypes.Shaped ? "shapedcharge" : "standard", null, HEType == PooledBulletTypes.Shaped ? apBulletMod : 1f, ProjectileUtils.isReportingWeapon(sourceWeapon) ? (float)DistanceTraveled : -1);
+                            ExplosionFx.CreateExplosion(hit.point, GetExplosivePower(), explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, HEType == PooledBulletTypes.Explosive ? default : ray.direction, -1, false, bulletMass, -1, dmgMult, HEType == PooledBulletTypes.Shaped ? "shapedcharge" : "standard", hitPart, HEType == PooledBulletTypes.Shaped ? apBulletMod : 1f, ProjectileUtils.isReportingWeapon(sourceWeapon) ? (float)DistanceTraveled : -1);
                         if (nuclear)
                             NukeFX.CreateExplosion(currPosition, ExplosionSourceType.Bullet, sourceVesselName, bullet.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
                     }
                     else
                     {
                         if (HEType != PooledBulletTypes.Slug)
-                            ExplosionFx.CreateExplosion(hit.point - (ray.direction * 0.1f), GetExplosivePower(), explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, HEType == PooledBulletTypes.Explosive ? default : ray.direction, -1, false, bulletMass, -1, dmgMult, HEType == PooledBulletTypes.Shaped ? "shapedcharge" : "standard", penetratingHit ? hitPart : null, HEType == PooledBulletTypes.Shaped ? apBulletMod : 1f, ProjectileUtils.isReportingWeapon(sourceWeapon) ? (float)DistanceTraveled : -1);
+                            ExplosionFx.CreateExplosion(hit.point - (ray.direction * 0.1f), GetExplosivePower(), explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, HEType == PooledBulletTypes.Explosive ? default : ray.direction, -1, false, bulletMass, -1, dmgMult, HEType == PooledBulletTypes.Shaped ? "shapedcharge" : "standard", hitPart, HEType == PooledBulletTypes.Shaped ? apBulletMod : 1f, ProjectileUtils.isReportingWeapon(sourceWeapon) ? (float)DistanceTraveled : -1);
                         if (nuclear)
                             NukeFX.CreateExplosion(currPosition, ExplosionSourceType.Bullet, sourceVesselName, bullet.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
                     }
                     KillBullet();
                     hasDetonated = true;
                     return true;
+                }
+                if (BDArmorySettings.DEBUG_WEAPONS)
+                {
+                    Debug.Log($"[BDArmory.PooledBullet]: Bullet {bullet.DisplayName} attempted detonation, has no tntmass amount ({tntMass}) or is a solid slug ({HEType}). Fix your bullet config.");
                 }
             }
             return false;
@@ -1645,10 +1719,12 @@ namespace BDArmory.Bullets
             }
 
             float fov = c.fieldOfView;
-            float factor = (fov / 60) * resizeFactor *
-                           Mathf.Clamp(Vector3.Distance(transform.position, c.transform.position), 0, 3000) / 50;
-            bulletTrail.startWidth = tracerStartWidth * factor * randomWidthScale;
-            bulletTrail.endWidth = tracerEndWidth * factor * randomWidthScale;
+            float factor = (fov / 60) * resizeFactor * Mathf.Clamp(Vector3.Distance(transform.position, c.transform.position), 0, 3000) / 50;
+            bulletTrail[0].startWidth = tracerStartWidth * factor * randomWidthScale;
+            bulletTrail[0].endWidth = tracerEndWidth * factor * randomWidthScale;
+
+            bulletTrail[1].startWidth = (tracerStartWidth / 2) * factor * 0.5f;
+            bulletTrail[1].endWidth = (tracerEndWidth / 2) * factor * 0.5f;
         }
 
         public void KillBullet()
@@ -1657,7 +1733,7 @@ namespace BDArmory.Bullets
             {
                 if (ProjectileUtils.isReportingWeapon(sourceWeapon) && BDACompetitionMode.Instance.competitionIsActive)
                 {
-                    string msg = $"{partsHit[0].vessel.GetName()} was nailed by {sourceVesselName}'s {sourceWeapon.partInfo.title} at {initialHitDistance:F3}, damaging {partsHit.Count} parts.";
+                    string msg = $"{partsHit[0].vessel.GetName()} was nailed by {sourceVesselName}'s {sourceWeapon.partInfo.title} at {initialHitDistance:F3}m, damaging {partsHit.Count} parts.";
                     //string message = $"{partsHit[0].vessel.GetName()} was nailed by {sourceVesselName}'s {bullet.DisplayName} at {initialHitDistance:F3}, damaging {partsHit.Count} parts.";
                     BDACompetitionMode.Instance.competitionStatus.Add(msg);
                 }
@@ -1670,14 +1746,36 @@ namespace BDArmory.Bullets
             // visual tracer velocity is relative to the observer (which uses srf_vel when below 100km (f*&king KSP!), not orb_vel)
             if (tracerLength == 0)
             {
-                linePositions[0] = transform.position + ((currentVelocity - FlightGlobals.ActiveVessel.Velocity()) * tracerDeltaFactor * 0.45f * Time.fixedDeltaTime);
+                linePositions[0] = transform.position + tracerDeltaFactor * 0.45f * Time.fixedDeltaTime * (currentVelocity - FlightGlobals.ActiveVessel.Velocity());
             }
             else
             {
-                linePositions[0] = transform.position + ((currentVelocity - FlightGlobals.ActiveVessel.Velocity()).normalized * tracerLength);
+                linePositions[0] = transform.position + tracerLength * (currentVelocity - FlightGlobals.ActiveVessel.Velocity()).normalized;
             }
             linePositions[1] = transform.position;
-            bulletTrail.SetPositions(linePositions);
+            smokePositions[0] = startPosition;
+            for (int i = 0; i < smokePositions.Length - 1; i++)
+            {
+                if (timeAlive < i)
+                {
+                    smokePositions[i] = transform.position;
+                }
+            }
+            if (timeAlive > smokePositions.Length)
+            {
+                //smokePositions[0] = smokePositions[1];
+                startPosition = smokePositions[1]; //Start position isn't used for anything else, so modifying shouldn't be an issue. Vestigial value from some deprecated legacy function?
+                for (int i = 0; i < smokePositions.Length - 1; i++)
+                {
+                    smokePositions[i] = smokePositions[i + 1];
+                    //have it so each sec interval after timeAlive > smokePositions.length, have smokePositions[i] = smokePosition[i+1]if i < = smokePosition.length - 1;
+                }
+                timeAlive -= 1;
+            }
+            smokePositions[4] = transform.position;
+            //if (Vector3.Distance(startPosition, transform.position) > 1000) smokePositions[0] = transform.position - ((currentVelocity - FlightGlobals.ActiveVessel.Velocity()).normalized * 1000);
+            bulletTrail[0].SetPositions(linePositions);
+            bulletTrail[1].SetPositions(smokePositions);
         }
 
         void FadeColor()
@@ -1738,6 +1836,7 @@ namespace BDArmory.Bullets
             currentVelocity = Vector3.RotateTowards(currentVelocity, randomDirection,
                 UnityEngine.Random.Range(0f, 5f) * Mathf.Deg2Rad, 0);
             MoveBullet((1f - fractionOfDistance) * period);
+            bulletTrail[1].enabled = false;
         }
 
         private float GetExplosivePower()
