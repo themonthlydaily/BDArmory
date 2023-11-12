@@ -1,4 +1,9 @@
-﻿v1.6.8.0
+﻿IMPROVEMENTS/FIXES
+- Weapons:
+	- Missiles:
+		- Fix clustermissiles launching copies of themselves instead of submunitions.
+
+v1.6.8.0
 IMPROVEMENTS / FIXES
 - General:
 	- Add tracking of 'named modules' (from non-dependency DLLs) to the VesselModuleRegistry.
