@@ -47,6 +47,11 @@ namespace BDArmory.VesselSpawning
         public void CancelSpawning()
         {
             // Continuous spawn
+            if (spawnVesselsContinuouslyCoroutine != null)
+            {
+                StopCoroutine(spawnVesselsContinuouslyCoroutine);
+                spawnVesselsContinuouslyCoroutine = null;
+            }
             if (vesselsSpawningContinuously)
             {
                 vesselsSpawningContinuously = false;
@@ -57,7 +62,7 @@ namespace BDArmory.VesselSpawning
                 if (BDACompetitionMode.Instance != null) BDACompetitionMode.Instance.ResetCompetitionStuff();
             }
             currentlySpawningCount = 0;
-            spawnVesselsContinuouslyCoroutine = null;
+            SpawnUtils.RevertSpawnLocationCamera(true);
         }
 
         public override void PreSpawnInitialisation(SpawnConfig spawnConfig)
@@ -65,6 +70,7 @@ namespace BDArmory.VesselSpawning
             base.PreSpawnInitialisation(spawnConfig);
 
             vesselsSpawningContinuously = true;
+            vesselsSpawning = true;
             spawnFailureReason = SpawnFailureReason.None; // Reset the spawn failure reason.
             continuousSpawningScores = new Dictionary<string, ContinuousSpawningScores>();
             if (spawnVesselsContinuouslyCoroutine != null)
@@ -209,6 +215,11 @@ namespace BDArmory.VesselSpawning
                         craftURLToVesselName = spawnedVesselURLs.ToDictionary(kvp => kvp.Value, kvp => kvp.Key); // Update the vesselName-to-craftURL dictionary for the latest spawns.
                         craftToSpawn.Clear(); // Clear the queue since we just spawned all those vessels.
                     }
+                    if (vesselsSpawning) // Wait for the initial spawn to be ready before letting CameraTools take over.
+                    {
+                        yield return new WaitWhileFixed(() => currentlySpawningCount > 0);
+                        vesselsSpawning = false;
+                    }
 
                     // Start the competition once we have enough craft.
                     if (currentlyActive > 1 && !(BDACompetitionMode.Instance.competitionIsActive || BDACompetitionMode.Instance.competitionStarting))
@@ -239,7 +250,11 @@ namespace BDArmory.VesselSpawning
             ++currentlySpawningCount;
             // Spawn vessel
             yield return SpawnSingleVessel(vesselSpawnConfig);
-            if (spawnFailureReason != SpawnFailureReason.None) yield break;
+            if (spawnFailureReason != SpawnFailureReason.None)
+            {
+                --currentlySpawningCount;
+                yield break;
+            }
             var vessel = GetSpawnedVesselsName(vesselSpawnConfig.craftURL);
             if (vessel == null)
             {
@@ -248,7 +263,7 @@ namespace BDArmory.VesselSpawning
             }
 
             // Perform post-spawn stuff.
-            yield return PostSpawnMainSequence(vessel, true, false);
+            yield return PostSpawnMainSequence(vessel, true, false, false);
             if (spawnFailureReason != SpawnFailureReason.None)
             {
                 --currentlySpawningCount;
