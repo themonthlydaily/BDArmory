@@ -287,6 +287,7 @@ namespace BDArmory.Control
             fc.throttle = 0;
             ModuleWeapon currentProjectile = weaponManager.currentGun;
             vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, ManeuverRCS);
+            var wait = new WaitForFixedUpdate();
 
             // Movement.
             if (allowWithdrawal && hasPropulsion && !hasWeapons && CheckWithdraw())
@@ -322,7 +323,7 @@ namespace BDArmory.Control
                     deltav -= Vector3.Project(vessel.acceleration, deltav) * TimeWarp.fixedDeltaTime;
                     fc.attitude = deltav.normalized;
 
-                    yield return new WaitForFixedUpdate();
+                    yield return wait;
                 }
 
                 fc.throttle = 0;
@@ -350,7 +351,7 @@ namespace BDArmory.Control
                     fc.attitude = dodgeVector;
                     fc.RCSVector = dodgeVector * 2;
 
-                    yield return new WaitForFixedUpdate();
+                    yield return wait;
                     complete = Vector3.Dot(RelVel(vessel, incoming), incomingVector) < 0;
                 }
 
@@ -372,7 +373,7 @@ namespace BDArmory.Control
                     fc.attitude = currentProjectile.finalAimTarget;
                     fc.RCSVector = Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel)) * -1;
 
-                    yield return new WaitForFixedUpdate();
+                    yield return wait;
                 }
 
                 fc.lerpAttitude = true;
@@ -393,7 +394,7 @@ namespace BDArmory.Control
                     {
                         UT = Planetarium.GetUniversalTime();
                         fc.attitude = o.Radial(UT);
-                        yield return new WaitForFixedUpdate();
+                        yield return wait;
                     }
                 }
                 else if (o.altitude < minSafeAltitude)
@@ -408,7 +409,7 @@ namespace BDArmory.Control
                     {
                         UT = Planetarium.GetUniversalTime();
                         fc.attitude = o.Radial(UT);
-                        yield return new WaitForFixedUpdate();
+                        yield return wait;
                     }
                 }
                 else
@@ -423,7 +424,7 @@ namespace BDArmory.Control
 
                     while (UnderTimeLimit() && deltaV.sqrMagnitude > 4)
                     {
-                        yield return new WaitForFixedUpdate();
+                        yield return wait;
 
                         UT = Planetarium.GetUniversalTime();
                         fvel = Math.Sqrt(o.referenceBody.gravParameter / o.GetRadiusAtUT(UT)) * o.Horizontal(UT);
@@ -475,7 +476,7 @@ namespace BDArmory.Control
                         fc.throttle = Vector3.Dot(RelVel(vessel, targetVessel), fc.attitude) < ManeuverSpeed ? 1 : 0;
                         complete = FromTo(vessel, targetVessel).sqrMagnitude > minRange * minRange || !AwayCheck(minRange);
 
-                        yield return new WaitForFixedUpdate();
+                        yield return wait;
                     }
                 }
                 // Reduce near intercept time by accounting for target acceleration
@@ -520,7 +521,7 @@ namespace BDArmory.Control
 
                         complete = FromTo(vessel, targetVessel).sqrMagnitude < maxRange * maxRange || NearIntercept(relVel, minRange);
 
-                        yield return new WaitForFixedUpdate();
+                        yield return wait;
                     }
                 }
                 else
@@ -535,7 +536,7 @@ namespace BDArmory.Control
                             complete = relVel.sqrMagnitude < firingSpeed * firingSpeed / 3;
                             fc.throttle = !complete ? 1 : 0;
 
-                            yield return new WaitForFixedUpdate();
+                            yield return wait;
                         }
                     }
                     else if (hasPropulsion && targetVessel != null && AngularVelocity(vessel, targetVessel) > firingAngularVelocityLimit)// && currentProjectile != null
@@ -548,7 +549,7 @@ namespace BDArmory.Control
                             fc.attitude = Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel)).normalized * -1;
                             fc.throttle = !complete ? 1 : 0;
 
-                            yield return new WaitForFixedUpdate();
+                            yield return wait;
                         }
                     }
                     else
@@ -568,7 +569,7 @@ namespace BDArmory.Control
                                     complete = toTarget.sqrMagnitude > minRange * minRange;
                                     fc.attitude = toTarget.normalized;
 
-                                    yield return new WaitForFixedUpdate();
+                                    yield return wait;
                                 }
                             }
                             else
@@ -585,7 +586,7 @@ namespace BDArmory.Control
                             fc.attitude = Vector3.zero;
                         }
 
-                        yield return new WaitForSeconds(updateInterval);
+                        yield return new WaitForSecondsFixed(updateInterval);
                     }
                 }
             }
@@ -601,7 +602,7 @@ namespace BDArmory.Control
                 fc.throttle = 0;
                 fc.attitude = Vector3.zero;
 
-                yield return new WaitForSeconds(updateInterval);
+                yield return new WaitForSecondsFixed(updateInterval);
             }
         }
 
@@ -792,7 +793,7 @@ namespace BDArmory.Control
         {
             while (vessel.MOI == Vector3.zero)
             {
-                yield return new WaitForSeconds(1);
+                yield return new WaitForSecondsFixed(1);
             }
 
             Vector3 availableTorque = Vector3.zero;
