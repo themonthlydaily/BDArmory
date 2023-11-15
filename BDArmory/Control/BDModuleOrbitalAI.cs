@@ -494,7 +494,7 @@ namespace BDArmory.Control
                         {
                             relVel = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
                             fc.attitude = (relVel + targetVessel.acceleration).normalized;
-                            complete = relVel.sqrMagnitude < firingSpeed * firingSpeed / 3;
+                            complete = relVel.sqrMagnitude < firingSpeed * firingSpeed / 9;
                             fc.throttle = !complete ? 1 : 0;
 
                             yield return wait;
@@ -680,6 +680,7 @@ namespace BDArmory.Control
             Vector3 relVelInverse = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
             float timeToIntercept = AIUtils.TimeToCPA(toTarget, relVelInverse, Vector3.zero, 9999);
 
+            // Minimising the target closest approach to the current closest approach prevents
             // Minimising the target closest approach to the current closest approach prevents
             // ships that are targeting each other from fighting over the closest approach based on their min ranges.
             // todo: allow for trajectory fighting if fuel is high.
