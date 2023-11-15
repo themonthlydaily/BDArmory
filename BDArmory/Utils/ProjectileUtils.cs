@@ -68,7 +68,7 @@ namespace BDArmory.Utils
         {
             if (IgnoredPartNames == null)
             {
-                IgnoredPartNames = new HashSet<string> { "bdPilotAI", "bdShipAI", "missileController", "bdammGuidanceModule" };
+                IgnoredPartNames = new HashSet<string> { "bdPilotAI", "bdShipAI", "bdVTOLAI", "bdOrbitalAI", "missileController", "bdammGuidanceModule" };
                 IgnoredPartNames.UnionWith(PartLoader.LoadedPartsList.Select(p => p.partPrefab.partInfo.name).Where(name => name.Contains("flag")));
                 IgnoredPartNames.UnionWith(PartLoader.LoadedPartsList.Select(p => p.partPrefab.partInfo.name).Where(name => name.Contains("conformaldecals")));
 
@@ -133,7 +133,7 @@ namespace BDArmory.Utils
         {
             if (materialsBlacklist == null)
             {
-                materialsBlacklist = new HashSet<string> { "bdPilotAI", "bdShipAI", "missileController", "bdammGuidanceModule", "PotatoRoid" };
+                materialsBlacklist = new HashSet<string> { "bdPilotAI", "bdShipAI", "bdVTOLAI", "bdOrbitalAI", "missileController", "bdammGuidanceModule", "PotatoRoid" };
 
                 var fileNode = ConfigNode.Load(settingsConfigURL);
                 if (fileNode.HasNode("MaterialsBlacklist"))
