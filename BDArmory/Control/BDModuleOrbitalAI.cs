@@ -45,7 +45,7 @@ namespace BDArmory.Control
         // User parameters changed via UI.
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MinEngagementRange"),//Min engagement range
-            UI_FloatRange(minValue = 0f, maxValue = 5000f, stepIncrement = 100f, scene = UI_Scene.All)]
+            UI_FloatSemiLogRange(minValue = 10f, maxValue = 10000f, scene = UI_Scene.All)]
         public float MinEngagementRange = 500;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ManeuverRCS"),//RCS active
@@ -59,9 +59,9 @@ namespace BDArmory.Control
             guiActiveEditor = true,
             guiName = "#LOC_BDArmory_ManeuverSpeed",
             guiUnits = " m/s"),
-            UI_FloatRange(
+            UI_FloatSemiLogRange(
                 minValue = 10f,
-                maxValue = 500f,
+                maxValue = 10000f,
                 stepIncrement = 10f,
                 scene = UI_Scene.All
             )]
@@ -72,10 +72,9 @@ namespace BDArmory.Control
             guiActiveEditor = true,
             guiName = "#LOC_BDArmory_StrafingSpeed",
             guiUnits = " m/s"),
-            UI_FloatRange(
+            UI_FloatSemiLogRange(
                 minValue = 2f,
-                maxValue = 100f,
-                stepIncrement = 1f,
+                maxValue = 1000f,
                 scene = UI_Scene.All
             )]
         public float firingSpeed = 20f;
@@ -83,18 +82,6 @@ namespace BDArmory.Control
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "UseEvasion"),//Use Evasion
     UI_Toggle(enabledText = "#LOC_BDArmory_ManeuverRCS_enabledText", disabledText = "#LOC_BDArmory_ManeuverRCS_disabledText", scene = UI_Scene.All),]
         public bool useEvasion = false;
-
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_GoesUp", advancedTweakable = true),//Goes up to 
-            UI_Toggle(enabledText = "#LOC_BDArmory_GoesUp_enabledText", disabledText = "#LOC_BDArmory_GoesUp_disabledText", scene = UI_Scene.All),]//eleven--ten
-        public bool UpToEleven = false;
-        bool toEleven = false;
-
-        Dictionary<string, float> altMaxValues = new Dictionary<string, float>
-        {
-            { nameof(MinEngagementRange), 10000f },
-            { nameof(ManeuverSpeed), 1000f },
-            { nameof(firingSpeed), 500f },
-        };
 
         // Debugging
         internal float nearInterceptBurnTime;
@@ -189,33 +176,6 @@ namespace BDArmory.Control
                 UpdateStatus();
                 yield return PilotLogic();
             }
-        }
-
-        void Update()
-        {
-            // switch up the alt values if up to eleven is toggled
-            if (UpToEleven != toEleven)
-            {
-                using (var s = altMaxValues.Keys.ToList().GetEnumerator())
-                    while (s.MoveNext())
-                    {
-                        UI_FloatRange euic = (UI_FloatRange)
-                            (HighLogic.LoadedSceneIsFlight ? Fields[s.Current].uiControlFlight : Fields[s.Current].uiControlEditor);
-                        float tempValue = euic.maxValue;
-                        euic.maxValue = altMaxValues[s.Current];
-                        altMaxValues[s.Current] = tempValue;
-                        // change the value back to what it is now after fixed update, because changing the max value will clamp it down
-                        // using reflection here, don't look at me like that, this does not run often
-                        StartCoroutine(setVar(s.Current, (float)typeof(BDModuleOrbitalAI).GetField(s.Current).GetValue(this)));
-                    }
-                toEleven = UpToEleven;
-            }
-        }
-
-        IEnumerator setVar(string name, float value)
-        {
-            yield return new WaitForFixedUpdate();
-            typeof(BDModuleOrbitalAI).GetField(name).SetValue(this, value);
         }
 
         protected override void OnGUI()
@@ -371,7 +331,7 @@ namespace BDArmory.Control
                 while (UnderTimeLimit() && targetVessel != null && GunReady(currentProjectile))
                 {
                     fc.attitude = currentProjectile.finalAimTarget;
-                    fc.RCSVector = Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel)) * -1;
+                    fc.RCSVector = -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel));
 
                     yield return wait;
                 }
@@ -385,7 +345,7 @@ namespace BDArmory.Control
 
                 if (o.ApA < minSafeAltitude)
                 {
-                    // Entirety of orbit is inside atmosphere, burn up until apoapsis is outside atmosphere by a 10% margin.
+                    // Entirety of orbit is inside atmosphere, perform gravity turn burn until apoapsis is outside atmosphere by a 10% margin.
 
                     currentStatus = "Correcting Orbit (Apoapsis too low)";
                     fc.throttle = 1;
@@ -393,7 +353,8 @@ namespace BDArmory.Control
                     while (UnderTimeLimit() && o.ApA < minSafeAltitude * 1.1)
                     {
                         UT = Planetarium.GetUniversalTime();
-                        fc.attitude = o.Radial(UT);
+                        double turn = (1.1 * minSafeAltitude - o.ApA) / (1.1 * minSafeAltitude);
+                        fc.attitude = Vector3.Lerp(o.Horizontal(UT), o.Radial(UT), Mathf.Clamp01((float)turn));
                         yield return wait;
                     }
                 }
@@ -472,7 +433,7 @@ namespace BDArmory.Control
 
                     while (UnderTimeLimit() && targetVessel != null && !complete)
                     {
-                        fc.attitude = FromTo(vessel, targetVessel).normalized * -1;
+                        fc.attitude = FromTo(targetVessel, vessel).normalized;
                         fc.throttle = Vector3.Dot(RelVel(vessel, targetVessel), fc.attitude) < ManeuverSpeed ? 1 : 0;
                         complete = FromTo(vessel, targetVessel).sqrMagnitude > minRange * minRange || !AwayCheck(minRange);
 
@@ -494,12 +455,12 @@ namespace BDArmory.Control
                         Vector3 toTarget = FromTo(vessel, targetVessel);
                         relVel = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
 
-                        toTarget = ToClosestApproach(toTarget, relVel * -1, minRange);
+                        toTarget = ToClosestApproach(toTarget, -relVel, minRange);
                         debugPosition = toTarget;
 
                         // Burn the difference between the target and current velocities.
                         Vector3 desiredVel = toTarget.normalized * ManeuverSpeed;
-                        Vector3 burn = desiredVel - (relVel * -1);
+                        Vector3 burn = desiredVel + relVel;
 
                         // Bias towards eliminating lateral velocity early on.
                         Vector3 lateral = Vector3.ProjectOnPlane(burn, toTarget.normalized);
@@ -546,7 +507,7 @@ namespace BDArmory.Control
                         while (UnderTimeLimit() && targetVessel != null && !complete)
                         {
                             complete = AngularVelocity(vessel, targetVessel) < firingAngularVelocityLimit / 2;
-                            fc.attitude = Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel)).normalized * -1;
+                            fc.attitude = -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel)).normalized;
                             fc.throttle = !complete ? 1 : 0;
 
                             yield return wait;
@@ -645,7 +606,7 @@ namespace BDArmory.Control
         {
             float timeToKillVelocity = relVel.magnitude / Mathf.Max(maxAcceleration, 0.01f);
 
-            float rotDistance = Vector3.Angle(vessel.ReferenceTransform.up, relVel.normalized * -1) * Mathf.Deg2Rad;
+            float rotDistance = Vector3.Angle(vessel.ReferenceTransform.up, -relVel.normalized) * Mathf.Deg2Rad;
             float timeToRotate = SolveTime(rotDistance * 0.75f, maxAngularAcceleration.magnitude) / 0.75f;
 
             Vector3 toTarget = FromTo(vessel, targetVessel);
@@ -656,7 +617,7 @@ namespace BDArmory.Control
             if (velToClosestApproach < 10)
                 return false;
 
-            float timeToClosestApproach = AIUtils.TimeToCPA(toClosestApproach, relVel * -1, Vector3.zero, 9999);
+            float timeToClosestApproach = AIUtils.TimeToCPA(toClosestApproach, -relVel, Vector3.zero, 9999);
             if (timeToClosestApproach == 0)
                 return false;
 
@@ -700,12 +661,12 @@ namespace BDArmory.Control
             // if it would be better to drift away.
 
             Vector3 toTarget = FromTo(vessel, targetVessel);
-            Vector3 toEscape = toTarget.normalized * -1;
+            Vector3 toEscape = -toTarget.normalized;
             Vector3 relVel = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
 
             float rotDistance = Vector3.Angle(vessel.ReferenceTransform.up, toEscape) * Mathf.Deg2Rad;
             float timeToRotate = SolveTime(rotDistance / 2, maxAngularAcceleration.magnitude) * 2;
-            float timeToDisplace = SolveTime(minRange - toTarget.magnitude, maxAcceleration, Vector3.Dot(relVel * -1, toEscape));
+            float timeToDisplace = SolveTime(minRange - toTarget.magnitude, maxAcceleration, Vector3.Dot(-relVel, toEscape));
             float timeToEscape = timeToRotate * 2 + timeToDisplace;
 
             Vector3 drift = AIUtils.PredictPosition(toTarget, relVel, Vector3.zero, timeToEscape);
@@ -771,7 +732,7 @@ namespace BDArmory.Control
         {
             float a = 0.5f * acceleration;
             float b = vel;
-            float c = Mathf.Abs(distance) * -1;
+            float c = -Mathf.Abs(distance);
 
             float x = (-b + BDAMath.Sqrt(b * b - 4 * a * c)) / (2 * a);
 
@@ -955,8 +916,8 @@ public class BDOrbitalControl : MonoBehaviour //: PartModule
         RCSThrottle = Mathf.Lerp(0, 1.732f, Mathf.InverseLerp(0, RCSPower, RCSVectorLerped.magnitude));
         RCSThrust = RCSVectorLerped.normalized * RCSThrottle;
 
-        up = vessel.ReferenceTransform.forward * -1;
-        forward = vessel.ReferenceTransform.up * -1;
+        up = -vessel.ReferenceTransform.forward;
+        forward = -vessel.ReferenceTransform.up;
         right = Vector3.Cross(up, forward);
 
         SetAxisControlState(s,
