@@ -876,6 +876,9 @@ public class BDOrbitalControl : MonoBehaviour //: PartModule
     public float throttleLerpRate = 1;
     public float alignmentToleranceforBurn = 5;
 
+    AxisGroupsModule axisGroupsModule;
+    bool hasAxisGroupsModule = false; // To avoid repeated null checks
+
     public Vector3 RCSVector;
     public float RCSPower = 3f;
     private Vector3 RCSThrust;
@@ -884,6 +887,12 @@ public class BDOrbitalControl : MonoBehaviour //: PartModule
     private Vector3 RCSVectorLerped = Vector3.zero;
 
     //[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "ToggleAC")]
+
+    void Start()
+    {
+        axisGroupsModule = vessel.FindVesselModuleImplementingBDA<AxisGroupsModule>(); // Look for an axis group module.
+        if (axisGroupsModule != null) hasAxisGroupsModule = true;
+    }
 
     public void Activate()
     {
@@ -916,9 +925,22 @@ public class BDOrbitalControl : MonoBehaviour //: PartModule
         // Move actual throttle towards throttle target gradually.
         throttleLerped = Mathf.MoveTowards(throttleLerped, throttleActual, throttleLerpRate * Time.fixedDeltaTime);
 
-        s.mainThrottle = throttleLerped;
-        //if (FlightGlobals.ActiveVessel != null && v == FlightGlobals.ActiveVessel)
-        //    FlightInputHandler.state.mainThrottle = throttleLerped; //so that the on-screen throttle gauge reflects the autopilot throttle
+        SetThrottle(s, throttleLerped);
+
+    }
+
+    /// <summary>
+    /// Set the main throttle and the corresponding axis group.
+    /// </summary>
+    /// <param name="s">The flight control state</param>
+    /// <param name="value">The throttle value</param>
+    public void SetThrottle(FlightCtrlState s, float value)
+    {
+        s.mainThrottle = value;
+        if (hasAxisGroupsModule)
+        {
+            axisGroupsModule.UpdateAxisGroup(KSPAxisGroup.MainThrottle, 2f * value - 1f); // Throttle is full-axis: 0—1 throttle maps to -1—1 axis.
+        }
     }
 
     void UpdateRCS(FlightCtrlState s)
@@ -937,9 +959,11 @@ public class BDOrbitalControl : MonoBehaviour //: PartModule
         forward = vessel.ReferenceTransform.up * -1;
         right = Vector3.Cross(up, forward);
 
-        s.X = Mathf.Clamp(Vector3.Dot(RCSThrust, right), -1, 1);
-        s.Y = Mathf.Clamp(Vector3.Dot(RCSThrust, up), -1, 1);
-        s.Z = Mathf.Clamp(Vector3.Dot(RCSThrust, forward), -1, 1);
+        SetAxisControlState(s,
+            Mathf.Clamp(Vector3.Dot(RCSThrust, right), -1, 1),
+            Mathf.Clamp(Vector3.Dot(RCSThrust, up), -1, 1),
+            Mathf.Clamp(Vector3.Dot(RCSThrust, forward), -1, 1));
+
     }
 
     void UpdateSAS(FlightCtrlState s)
@@ -966,6 +990,26 @@ public class BDOrbitalControl : MonoBehaviour //: PartModule
         }
 
         ap.SAS.SetTargetOrientation(throttleLerped > 0 && lerpAttitude ? attitudeLerped : attitude, false);
+    }
+
+    /// <summary>
+    /// Set the axis control state and also the corresponding axis groups.
+    /// </summary>
+    /// <param name="s">The flight control state</param>
+    /// <param name="X">x</param>
+    /// <param name="Y">y</param>
+    /// <param name="Z">z</param>
+    protected virtual void SetAxisControlState(FlightCtrlState s, float X, float Y, float Z)
+    {
+        s.X = X;
+        s.Y = Y;
+        s.Z = Z;
+        if (hasAxisGroupsModule)
+        {
+            axisGroupsModule.UpdateAxisGroup(KSPAxisGroup.TranslateX, X);
+            axisGroupsModule.UpdateAxisGroup(KSPAxisGroup.TranslateY, Y);
+            axisGroupsModule.UpdateAxisGroup(KSPAxisGroup.TranslateZ, Z);
+        }
     }
 
 }
