@@ -681,7 +681,6 @@ namespace BDArmory.Control
             float timeToIntercept = AIUtils.TimeToCPA(toTarget, relVelInverse, Vector3.zero, 9999);
 
             // Minimising the target closest approach to the current closest approach prevents
-            // Minimising the target closest approach to the current closest approach prevents
             // ships that are targeting each other from fighting over the closest approach based on their min ranges.
             // todo: allow for trajectory fighting if fuel is high.
             Vector3 actualClosestApproach = toTarget + Displacement(relVelInverse, Vector3.zero, timeToIntercept);
