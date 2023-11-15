@@ -6,14 +6,11 @@ using System.Text;
 using UnityEngine;
 
 using BDArmory.Extensions;
-using BDArmory.Guidances;
 using BDArmory.Targeting;
 using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.Weapons;
-using BDArmory.Weapons.Missiles;
-using static UnityEngine.GraphicsBuffer;
 
 namespace BDArmory.Control
 {
@@ -26,13 +23,11 @@ namespace BDArmory.Control
 
         // Orbiter AI variables.
 
-        public bool controllerRunning;
         public float updateInterval;
         public float emergencyUpdateInterval = 0.5f;
         public float combatUpdateInterval = 2.5f;
         private bool allowWithdrawal = true;
         public float firingAngularVelocityLimit = 1; // degrees per second
-        public float controlTimeout = 10;
 
         private BDOrbitalControl fc;
         private Coroutine pilotLogic;
@@ -45,9 +40,6 @@ namespace BDArmory.Control
         private float maxAcceleration;
         private Vector3 maxAngularAcceleration;
         private double minSafeAltitude;
-        public float heatSignature;
-        public float averagedSize;
-        private Part originalReferenceTransform;
 
         // User parameters changed via UI.
 
@@ -113,8 +105,6 @@ namespace BDArmory.Control
         /// <summary>
         /// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         /// </summary>
-
-        Vector3 targetDirection;
 
         Vector3 upDir;
 
@@ -243,8 +233,6 @@ namespace BDArmory.Control
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + Vector3.Project(vessel.Velocity(), Vector3.ProjectOnPlane(vesselTransform.up, upDir)).normalized * 10f, 2, Color.cyan); //forward/rev
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + Vector3.Project(vessel.Velocity(), Vector3.ProjectOnPlane(vesselTransform.right, upDir)).normalized * 10f, 3, Color.yellow); //lateral
 
-
-            GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + targetDirection * 10f, 5, Color.red);
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + vesselTransform.up * 1000, 3, Color.white);
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + -vesselTransform.forward * 100, 3, Color.yellow);
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + vessel.Velocity().normalized * 100, 3, Color.magenta);
@@ -371,7 +359,6 @@ namespace BDArmory.Control
                 fc.throttle = 0;
                 fc.alignmentToleranceforBurn = previousTolerance;
             }
-            //else if (target != null && HasLock() && CanFireProjectile(target) && AngularVelocity(vessel, target) < firingAngularVelocityLimit)
             else if (targetVessel != null && currentProjectile && GunReady(currentProjectile))
             {
                 // Aim at target using current non-missile weapon.
@@ -390,7 +377,6 @@ namespace BDArmory.Control
                     yield return new WaitForFixedUpdate();
                 }
 
-                RestoreReferenceTransform();
                 fc.lerpAttitude = true;
             }
             else if (CheckOrbitUnsafe())
@@ -755,11 +741,6 @@ namespace BDArmory.Control
             return toClosestApproach;
         }
 
-        internal void RestoreReferenceTransform()
-        {
-            vessel.SetReferenceTransform(originalReferenceTransform);
-        }
-
         #endregion
 
         #region Utils
@@ -773,11 +754,6 @@ namespace BDArmory.Control
             return v1.GetObtVelocity() - v2.GetObtVelocity();
         }
 
-        public static Vector3 RelAccel(Vessel v1, Vessel v2)
-        {
-            return v1.acceleration - v2.acceleration;
-        }
-
         public static Vector3 AngularAcceleration(Vector3 torque, Vector3 MoI)
         {
             return new Vector3(MoI.x.Equals(0) ? float.MaxValue : torque.x / MoI.x,
@@ -785,34 +761,11 @@ namespace BDArmory.Control
                 MoI.z.Equals(0) ? float.MaxValue : torque.z / MoI.z);
         }
 
-        public static bool OnTarget(Vector3 targetAim, Vector3 currentAim, Vector3 relativePosition, float targetSize, float tolerance)
-        {
-            // Scale the accuracy requirement (in degrees) based on the distance and size of the target.
-            Vector3 targetRadius = Vector3.ProjectOnPlane(Vector3.up, relativePosition.normalized).normalized * (targetSize / 2) * tolerance;
-            float aimTolerance = Vector3.Angle(relativePosition, relativePosition + targetRadius);
-
-            return Vector3.Angle(targetAim.normalized, currentAim) < aimTolerance;
-        }
-
         public static float AngularVelocity(Vessel v, Vessel t)
         {
             Vector3 tv1 = FromTo(v, t);
             Vector3 tv2 = tv1 + RelVel(v, t);
             return Vector3.Angle(tv1.normalized, tv2.normalized);
-        }
-
-        public static float Integrate(float d, float a, float i = 0.1f, float v = 0)
-        {
-            float t = 0;
-
-            while (d > 0)
-            {
-                v = v + a * i;
-                d = d - v * i;
-                t = t + i;
-            }
-
-            return t;
         }
 
         public static float SolveTime(float distance, float acceleration, float vel = 0)
@@ -826,10 +779,6 @@ namespace BDArmory.Control
             return x;
         }
 
-        public static float SolveDistance(float time, float acceleration, float vel = 0)
-        {
-            return (vel * time) + 0.5f * acceleration * time * time;
-        }
 
         public static float VesselDistance(Vessel v1, Vessel v2)
         {
@@ -981,7 +930,6 @@ public class BDOrbitalControl : MonoBehaviour //: PartModule
             RCSVectorLerped = RCSVector;
 
         // This system works for now but it's convuluted and isn't very stable.
-        // todo: redo all of this.
         RCSVectorLerped = Vector3.Lerp(RCSVectorLerped, RCSVector, 5f * Time.fixedDeltaTime * Mathf.Clamp01(RCSVectorLerped.magnitude / RCSPower));
         RCSThrottle = Mathf.Lerp(0, 1.732f, Mathf.InverseLerp(0, RCSPower, RCSVectorLerped.magnitude));
         RCSThrust = RCSVectorLerped.normalized * RCSThrottle;
@@ -993,17 +941,11 @@ public class BDOrbitalControl : MonoBehaviour //: PartModule
         s.X = Mathf.Clamp(Vector3.Dot(RCSThrust, right), -1, 1);
         s.Y = Mathf.Clamp(Vector3.Dot(RCSThrust, up), -1, 1);
         s.Z = Mathf.Clamp(Vector3.Dot(RCSThrust, forward), -1, 1);
-
-        //Vector3 origin = v.ReferenceTransform.position;
-        //KCSDebug.PlotLine(new[] { origin, origin + right * 10 * v.ctrlState.X }, rright);
-        //KCSDebug.PlotLine(new[] { origin, origin + up * 10 * v.ctrlState.Y }, rup);
-        //KCSDebug.PlotLine(new[] { origin, origin + forward * 10 * v.ctrlState.Z }, rforward);
     }
 
     void UpdateSAS(FlightCtrlState s)
     {
         if (attitude == Vector3.zero || lockAttitude) return;
-        //if (v == null) return;
 
         // SAS must be turned off. Don't know why.
         if (vessel.ActionGroups[KSPActionGroup.SAS])
@@ -1025,17 +967,6 @@ public class BDOrbitalControl : MonoBehaviour //: PartModule
         }
 
         ap.SAS.SetTargetOrientation(throttleLerped > 0 && lerpAttitude ? attitudeLerped : attitude, false);
-    }
-
-    public void Stability(bool enable)
-    {
-        lockAttitude = enable;
-
-        var ap = vessel.Autopilot;
-        if (ap == null) return;
-
-        vessel.ActionGroups.SetGroup(KSPActionGroup.SAS, enable);
-        ap.SetMode(enable ? VesselAutopilot.AutopilotMode.StabilityAssist : VesselAutopilot.AutopilotMode.Normal);
     }
 
 }
