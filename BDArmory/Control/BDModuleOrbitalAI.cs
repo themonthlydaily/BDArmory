@@ -30,7 +30,8 @@ namespace BDArmory.Control
         public float firingAngularVelocityLimit = 1; // degrees per second
 
         private BDOrbitalControl fc;
-        private Coroutine pilotLogic;
+        private Coroutine shipController;
+        private Coroutine maxAccelerationCR;
 
         public IBDWeapon currentWeapon;
 
@@ -165,9 +166,8 @@ namespace BDArmory.Control
             fc.Activate();
             updateInterval = combatUpdateInterval;
 
-            StartCoroutine(CalculateMaxAcceleration());
-            StartCoroutine(ShipController());
-
+            if (maxAccelerationCR == null) maxAccelerationCR = StartCoroutine(CalculateMaxAcceleration());
+            if (shipController == null) shipController = StartCoroutine(ShipController());
         }
 
         public override void DeactivatePilot()
@@ -176,10 +176,9 @@ namespace BDArmory.Control
 
             if (fc)
                 fc.Deactivate();
-
-            StopCoroutine(CalculateMaxAcceleration());
-            StopCoroutine(ShipController());
-            StopCoroutine(PilotLogic());
+            
+            if (maxAccelerationCR != null) StopCoroutine(maxAccelerationCR);
+            if (shipController != null) StopCoroutine(shipController);
         }
 
         private IEnumerator ShipController()
@@ -188,8 +187,7 @@ namespace BDArmory.Control
             {
                 lastUpdate = Time.time;
                 UpdateStatus();
-                pilotLogic = StartCoroutine(PilotLogic());
-                yield return pilotLogic;
+                yield return PilotLogic();
             }
         }
 
@@ -269,8 +267,8 @@ namespace BDArmory.Control
 
         void UpdateStatus()
         {
-            bool hasRCSFore = vessel.FindPartModulesImplementing<ModuleRCSFX>().FindIndex(e => e.rcsEnabled && !e.flameout && e.useThrottle) > -1;
-            hasPropulsion = hasRCSFore || vessel.FindPartModulesImplementing<ModuleEngines>().FindIndex(e => (e.EngineIgnited && e.isOperational)) > -1;
+            bool hasRCSFore = VesselModuleRegistry.GetModules<ModuleRCSFX>(vessel).FindIndex(e => e.rcsEnabled && !e.flameout && e.useThrottle) > -1;
+            hasPropulsion = hasRCSFore || VesselModuleRegistry.GetModules<ModuleEngines>(vessel).FindIndex(e => (e.EngineIgnited && e.isOperational)) > -1;
             hasWeapons = weaponManager.HasWeaponsAndAmmo();
 
             if (weaponManager.incomingMissileVessel != null && updateInterval != emergencyUpdateInterval)
@@ -310,14 +308,14 @@ namespace BDArmory.Control
 
                 Vector3 direction = -averagePos.normalized;
                 Vector3 orbitNormal = vessel.orbit.Normal(Planetarium.GetUniversalTime());
-                bool facingNorth = Vector3.Angle(direction, orbitNormal) < 90;
+                bool facingNorth = Vector3.Dot(direction, orbitNormal) > 0;
 
                 // Withdraw sequence. Locks behaviour while burning 200 m/s of delta-v either north or south.
 
                 Vector3 deltav = orbitNormal * (facingNorth ? 1 : -1) * 200;
                 fc.throttle = 1;
 
-                while (deltav.magnitude > 10)
+                while (deltav.sqrMagnitude > 100)
                 {
                     if (!hasPropulsion) break;
 
@@ -423,7 +421,7 @@ namespace BDArmory.Control
                     Vector3d fvel, deltaV = Vector3d.up * 100;
                     fc.throttle = 1;
 
-                    while (UnderTimeLimit() && deltaV.magnitude > 2)
+                    while (UnderTimeLimit() && deltaV.sqrMagnitude > 4)
                     {
                         yield return new WaitForFixedUpdate();
 
@@ -432,7 +430,7 @@ namespace BDArmory.Control
                         deltaV = fvel - vessel.GetObtVelocity();
 
                         fc.attitude = deltaV.normalized;
-                        fc.throttle = Mathf.Lerp(0, 1, (float)(deltaV.magnitude / 10));
+                        fc.throttle = Mathf.Lerp(0, 1, (float)(deltaV.sqrMagnitude / 100));
                     }
                 }
             }
@@ -475,7 +473,7 @@ namespace BDArmory.Control
                     {
                         fc.attitude = FromTo(vessel, targetVessel).normalized * -1;
                         fc.throttle = Vector3.Dot(RelVel(vessel, targetVessel), fc.attitude) < ManeuverSpeed ? 1 : 0;
-                        complete = FromTo(vessel, targetVessel).magnitude > minRange || !AwayCheck(minRange);
+                        complete = FromTo(vessel, targetVessel).sqrMagnitude > minRange * minRange || !AwayCheck(minRange);
 
                         yield return new WaitForFixedUpdate();
                     }
@@ -489,7 +487,7 @@ namespace BDArmory.Control
                     && CanInterceptShip(targetVessel))
                 {
                     currentStatus = "Maneuvering (Intercept Target)";
-                    complete = FromTo(vessel, targetVessel).magnitude < maxRange || NearIntercept(relVel, minRange);
+                    complete = FromTo(vessel, targetVessel).sqrMagnitude < maxRange * maxRange || NearIntercept(relVel, minRange);
                     while (UnderTimeLimit() && targetVessel != null && !complete)
                     {
                         Vector3 toTarget = FromTo(vessel, targetVessel);
@@ -520,21 +518,21 @@ namespace BDArmory.Control
                         else
                             fc.attitude = toTarget.normalized;
 
-                        complete = FromTo(vessel, targetVessel).magnitude < maxRange || NearIntercept(relVel, minRange);
+                        complete = FromTo(vessel, targetVessel).sqrMagnitude < maxRange * maxRange || NearIntercept(relVel, minRange);
 
                         yield return new WaitForFixedUpdate();
                     }
                 }
                 else
                 {
-                    if (hasPropulsion && (relVel.magnitude > firingSpeed || nearInt))
+                    if (hasPropulsion && (relVel.sqrMagnitude > firingSpeed * firingSpeed || nearInt))
                     {
                         currentStatus = "Maneuvering (Kill Velocity)";
                         while (UnderTimeLimit() && targetVessel != null && !complete)
                         {
                             relVel = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
                             fc.attitude = (relVel + targetVessel.acceleration).normalized;
-                            complete = relVel.magnitude < firingSpeed / 3;
+                            complete = relVel.sqrMagnitude < firingSpeed * firingSpeed / 3;
                             fc.throttle = !complete ? 1 : 0;
 
                             yield return new WaitForFixedUpdate();
@@ -567,7 +565,7 @@ namespace BDArmory.Control
                                 while (UnderTimeLimit() && targetVessel != null && !complete)
                                 {
                                     toTarget = FromTo(vessel, targetVessel);
-                                    complete = toTarget.magnitude > minRange;
+                                    complete = toTarget.sqrMagnitude > minRange * minRange;
                                     fc.attitude = toTarget.normalized;
 
                                     yield return new WaitForFixedUpdate();
@@ -616,7 +614,7 @@ namespace BDArmory.Control
             var nearest = BDATargetManager.GetClosestTarget(weaponManager);
             if (nearest == null) return false;
 
-            return Mathf.Abs(RelVel(vessel, nearest.Vessel).magnitude) < 200;
+            return RelVel(vessel, nearest.Vessel).sqrMagnitude < 200 * 200;
         }
 
         private bool CheckOrbitUnsafe()
@@ -644,7 +642,7 @@ namespace BDArmory.Control
 
         private bool NearIntercept(Vector3 relVel, float minRange)
         {
-            float timeToKillVelocity = relVel.magnitude / maxAcceleration;
+            float timeToKillVelocity = relVel.magnitude / Mathf.Max(maxAcceleration, 0.01f);
 
             float rotDistance = Vector3.Angle(vessel.ReferenceTransform.up, relVel.normalized * -1) * Mathf.Deg2Rad;
             float timeToRotate = SolveTime(rotDistance * 0.75f, maxAngularAcceleration.magnitude) / 0.75f;
@@ -680,7 +678,7 @@ namespace BDArmory.Control
                 bool escaping = targetAI.currentStatus.Contains("Withdraw"); // || targetAI.currentStatus.Contains("Idle (Unarmed)");
 
                 canIntercept = !escaping || // It is not trying to escape.
-                    toTarget.magnitude < weaponManager.gunRange || // It is already in range.
+                    toTarget.sqrMagnitude < weaponManager.gunRange * weaponManager.gunRange || // It is already in range.
                     maxAcceleration > targetAI.maxAcceleration || // We are faster.
                     Vector3.Dot(target.GetObtVelocity() - vessel.GetObtVelocity(), toTarget) < 0; // It is getting closer.
             }
@@ -710,7 +708,7 @@ namespace BDArmory.Control
             float timeToEscape = timeToRotate * 2 + timeToDisplace;
 
             Vector3 drift = AIUtils.PredictPosition(toTarget, relVel, Vector3.zero, timeToEscape);
-            bool manualEscape = drift.magnitude < minRange;
+            bool manualEscape = drift.sqrMagnitude < minRange * minRange;
 
             return manualEscape;
         }
@@ -798,7 +796,7 @@ namespace BDArmory.Control
             }
 
             Vector3 availableTorque = Vector3.zero;
-            var reactionWheels = vessel.FindPartModulesImplementing<ModuleReactionWheel>();
+            var reactionWheels = VesselModuleRegistry.GetModules<ModuleReactionWheel>(vessel);
             foreach (var wheel in reactionWheels)
             {
                 wheel.GetPotentialTorque(out Vector3 pos, out pos);
@@ -815,11 +813,11 @@ namespace BDArmory.Control
 
         public static float GetMaxThrust(Vessel v)
         {
-            List<ModuleEngines> engines = v.FindPartModulesImplementing<ModuleEngines>();
+            List<ModuleEngines> engines = VesselModuleRegistry.GetModules<ModuleEngines>(v);
             engines.RemoveAll(e => !e.EngineIgnited || !e.isOperational);
             float thrust = engines.Sum(e => e.MaxThrustOutputVac(true));
 
-            List<ModuleRCSFX> RCS = v.FindPartModulesImplementing<ModuleRCSFX>();
+            List<ModuleRCSFX> RCS = VesselModuleRegistry.GetModules<ModuleRCSFX>(v);
             foreach (ModuleRCS thruster in RCS)
             {
                 if (thruster.useThrottle)
@@ -834,7 +832,7 @@ namespace BDArmory.Control
 
         public override bool CanEngage()
         {
-            return !vessel.LandedOrSplashed;
+            return !vessel.LandedOrSplashed && vessel.InOrbit();
         }
 
         public override bool IsValidFixedWeaponTarget(Vessel target)
