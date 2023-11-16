@@ -98,6 +98,24 @@ namespace BDArmory.Control
 
         #endregion
 
+        #region Status Mode
+        enum StatusMode { Idle, Evading, CorrectingOrbit, Withdrawing, Firing, Maneuvering, Stranded , Custom }
+        StatusMode currentStatusMode = StatusMode.Idle;
+        StatusMode lastStatusMode = StatusMode.Idle;
+        protected override void SetStatus(string status)
+        {
+            base.SetStatus(status);
+            if (status.StartsWith("Idle")) currentStatusMode = StatusMode.Idle;
+            else if (status.StartsWith("Correcting Orbit")) currentStatusMode = StatusMode.CorrectingOrbit;
+            else if (status.StartsWith("Evading")) currentStatusMode = StatusMode.Evading;
+            else if (status.StartsWith("Withdrawing")) currentStatusMode = StatusMode.Withdrawing;
+            else if (status.StartsWith("Firing")) currentStatusMode = StatusMode.Firing;
+            else if (status.StartsWith("Maneuvering")) currentStatusMode = StatusMode.Maneuvering;
+            else if (status.StartsWith("Stranded")) currentStatusMode = StatusMode.Stranded;
+            else currentStatusMode = StatusMode.Custom;
+        }
+        #endregion
+
         #region RMB info in editor
 
         // <color={XKCDColors.HexFormat.Lime}>Yes</color>
@@ -261,7 +279,7 @@ namespace BDArmory.Control
             if (useEvasion && weaponManager.incomingMissileVessel) // Needs to start evading an incoming missile.
             {
 
-                currentStatus = "Dodging";
+                SetStatus("Evading");
                 vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
 
                 float previousTolerance = fc.alignmentToleranceforBurn;
@@ -297,7 +315,7 @@ namespace BDArmory.Control
                 {
                     // Entirety of orbit is inside atmosphere, perform gravity turn burn until apoapsis is outside atmosphere by a 10% margin.
 
-                    currentStatus = "Correcting Orbit (Apoapsis too low)";
+                    SetStatus("Correcting Orbit (Apoapsis too low)");
                     fc.throttle = 1;
                     float previousTolerance = fc.alignmentToleranceforBurn;
                     double gravTurnAlt = 0.1;
@@ -324,7 +342,7 @@ namespace BDArmory.Control
                     // Our apoapsis is outside the atmosphere but we are inside the atmosphere and descending.
                     // Burn up until we are ascending and our apoapsis is outside the atmosphere by a 10% margin.
 
-                    currentStatus = "Correcting Orbit (Falling inside atmo)";
+                    SetStatus("Correcting Orbit (Falling inside atmo)");
                     fc.throttle = 1;
 
                     while (UnderTimeLimit() && (o.ApA < minSafeAltitude * 1.1 || o.timeToPe < o.timeToAp))
@@ -339,7 +357,7 @@ namespace BDArmory.Control
                     // We are outside the atmosphere but our periapsis is inside the atmosphere.
                     // Execute a burn to circularize our orbit at the current altitude.
 
-                    currentStatus = "Correcting Orbit (Circularizing)";
+                    SetStatus("Correcting Orbit (Circularizing)");
 
                     Vector3d fvel, deltaV = Vector3d.up * 100;
                     fc.throttle = 1;
@@ -359,7 +377,7 @@ namespace BDArmory.Control
             }
             else if (allowWithdrawal && hasPropulsion && !hasWeapons && CheckWithdraw())
             {
-                currentStatus = "Withdrawing";
+                SetStatus("Withdrawing");
 
 
                 // Determine the direction.
@@ -400,7 +418,7 @@ namespace BDArmory.Control
                 // Aim at target using current non-missile weapon.
                 // The weapon handles firing.
 
-                currentStatus = "Firing Guns";
+                SetStatus("Firing Guns");
                 vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
                 fc.throttle = 0;
                 fc.lerpAttitude = false;
@@ -446,7 +464,7 @@ namespace BDArmory.Control
 
                 if (currentRange < (!usingProjectile ? minRange : minRangeProjectile) && AwayCheck(minRange))
                 {
-                    currentStatus = "Maneuvering (Away)";
+                    SetStatus("Maneuvering (Away)");
                     fc.throttle = 1;
                     fc.alignmentToleranceforBurn = 135;
 
@@ -467,7 +485,7 @@ namespace BDArmory.Control
                     && !(nearInt = NearIntercept(relVel, minRange))
                     && CanInterceptShip(targetVessel))
                 {
-                    currentStatus = "Maneuvering (Intercept Target)";
+                    SetStatus("Maneuvering (Intercept Target)");
                     complete = FromTo(vessel, targetVessel).sqrMagnitude < maxRange * maxRange || NearIntercept(relVel, minRange);
                     while (UnderTimeLimit() && targetVessel != null && !complete)
                     {
@@ -508,7 +526,7 @@ namespace BDArmory.Control
                 {
                     if (hasPropulsion && (relVel.sqrMagnitude > firingSpeed * firingSpeed || nearInt))
                     {
-                        currentStatus = "Maneuvering (Kill Velocity)";
+                        SetStatus("Maneuvering (Kill Velocity)");
                         while (UnderTimeLimit() && targetVessel != null && !complete)
                         {
                             relVel = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
@@ -521,7 +539,7 @@ namespace BDArmory.Control
                     }
                     else if (hasPropulsion && targetVessel != null && AngularVelocity(vessel, targetVessel) > firingAngularVelocityLimit)// && currentProjectile != null
                     {
-                        currentStatus = "Maneuvering (Kill Angular Velocity)";
+                        SetStatus("Maneuvering (Kill Angular Velocity)");
 
                         while (UnderTimeLimit() && targetVessel != null && !complete)
                         {
@@ -538,7 +556,7 @@ namespace BDArmory.Control
                         {
                             if (currentRange < minRange)
                             {
-                                currentStatus = "Maneuvering (Drift Away)";
+                                SetStatus("Maneuvering (Drift Away)");
 
                                 Vector3 toTarget;
                                 fc.throttle = 0;
@@ -554,14 +572,14 @@ namespace BDArmory.Control
                             }
                             else
                             {
-                                currentStatus = "Maneuvering (Drift)";
+                                SetStatus("Maneuvering (Drift)");
                                 fc.throttle = 0;
                                 fc.attitude = FromTo(vessel, targetVessel).normalized;
                             }
                         }
                         else
                         {
-                            currentStatus = "Stranded";
+                            SetStatus("Stranded");
                             fc.throttle = 0;
                             fc.attitude = Vector3.zero;
                         }
@@ -575,9 +593,9 @@ namespace BDArmory.Control
                 // Idle
 
                 if (hasWeapons)
-                    currentStatus = "Idle";
+                    SetStatus("Idle");
                 else
-                    currentStatus = "Idle (Unarmed)";
+                    SetStatus("Idle (Unarmed)");
 
                 fc.throttle = 0;
                 fc.attitude = Vector3.zero;
@@ -656,7 +674,7 @@ namespace BDArmory.Control
             if (targetAI)
             {
                 Vector3 toTarget = target.CoM - vessel.CoM;
-                bool escaping = targetAI.currentStatus.Contains("Withdraw"); // || targetAI.currentStatus.Contains("Idle (Unarmed)");
+                bool escaping = targetAI.currentStatusMode == StatusMode.Withdrawing;
 
                 canIntercept = !escaping || // It is not trying to escape.
                     toTarget.sqrMagnitude < weaponManager.gunRange * weaponManager.gunRange || // It is already in range.
