@@ -11,6 +11,7 @@ using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.Weapons;
+using static UnityEngine.GraphicsBuffer;
 
 namespace BDArmory.Control
 {
@@ -548,7 +549,7 @@ namespace BDArmory.Control
                             {
                                 currentStatus = "Maneuvering (Drift)";
                                 fc.throttle = 0;
-                                fc.attitude = Vector3.zero;
+                                fc.attitude = FromTo(vessel, targetVessel).normalized;
                             }
                         }
                         else
