@@ -11,7 +11,6 @@ using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.Weapons;
-using static UnityEngine.GraphicsBuffer;
 
 namespace BDArmory.Control
 {
@@ -164,9 +163,17 @@ namespace BDArmory.Control
 
             if (fc)
                 fc.Deactivate();
-            
-            if (maxAccelerationCR != null) StopCoroutine(maxAccelerationCR);
-            if (shipController != null) StopCoroutine(shipController);
+
+            if (maxAccelerationCR != null)
+            {
+                StopCoroutine(maxAccelerationCR);
+                maxAccelerationCR = null;
+            }
+            if (shipController != null)
+            {
+                StopCoroutine(shipController);
+                shipController = null;
+            }
         }
 
         private IEnumerator ShipController()
@@ -228,8 +235,8 @@ namespace BDArmory.Control
 
         void UpdateStatus()
         {
-            bool hasRCSFore = VesselModuleRegistry.GetModules<ModuleRCSFX>(vessel).FindIndex(e => e.rcsEnabled && !e.flameout && e.useThrottle) > -1;
-            hasPropulsion = hasRCSFore || VesselModuleRegistry.GetModules<ModuleEngines>(vessel).FindIndex(e => (e.EngineIgnited && e.isOperational)) > -1;
+            bool hasRCSFore = VesselModuleRegistry.GetModules<ModuleRCSFX>(vessel).Any(e => e.rcsEnabled && !e.flameout && e.useThrottle);
+            hasPropulsion = hasRCSFore || VesselModuleRegistry.GetModules<ModuleEngines>(vessel).Any(e => (e.EngineIgnited && e.isOperational));
             hasWeapons = weaponManager.HasWeaponsAndAmmo();
 
             if (weaponManager.incomingMissileVessel != null && updateInterval != emergencyUpdateInterval)
