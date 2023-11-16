@@ -258,45 +258,7 @@ namespace BDArmory.Control
             var wait = new WaitForFixedUpdate();
 
             // Movement.
-            if (allowWithdrawal && hasPropulsion && !hasWeapons && CheckWithdraw())
-            {
-                currentStatus = "Withdrawing";
-
-                
-                // Determine the direction.
-                Vector3 averagePos = Vector3.zero;
-                using (List<TargetInfo>.Enumerator target = BDATargetManager.TargetList(weaponManager.Team).GetEnumerator())
-                    while (target.MoveNext())
-                    {
-                        if (target.Current == null) continue;
-                        if (target.Current && target.Current.Vessel && weaponManager.CanSeeTarget(target.Current))
-                        {
-                            averagePos += FromTo(vessel, target.Current.Vessel).normalized;
-                        }
-                    }
-
-                Vector3 direction = -averagePos.normalized;
-                Vector3 orbitNormal = vessel.orbit.Normal(Planetarium.GetUniversalTime());
-                bool facingNorth = Vector3.Dot(direction, orbitNormal) > 0;
-
-                // Withdraw sequence. Locks behaviour while burning 200 m/s of delta-v either north or south.
-
-                Vector3 deltav = orbitNormal * (facingNorth ? 1 : -1) * 200;
-                fc.throttle = 1;
-
-                while (deltav.sqrMagnitude > 100)
-                {
-                    if (!hasPropulsion) break;
-
-                    deltav -= Vector3.Project(vessel.acceleration, deltav) * TimeWarp.fixedDeltaTime;
-                    fc.attitude = deltav.normalized;
-
-                    yield return wait;
-                }
-
-                fc.throttle = 0;
-            }
-            else if (useEvasion && weaponManager.incomingMissileVessel) // Needs to start evading an incoming missile.
+            if (useEvasion && weaponManager.incomingMissileVessel) // Needs to start evading an incoming missile.
             {
 
                 currentStatus = "Dodging";
@@ -326,26 +288,6 @@ namespace BDArmory.Control
                 fc.throttle = 0;
                 fc.alignmentToleranceforBurn = previousTolerance;
             }
-            else if (targetVessel != null && currentProjectile && GunReady(currentProjectile))
-            {
-                // Aim at target using current non-missile weapon.
-                // The weapon handles firing.
-
-                currentStatus = "Firing Guns";
-                vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
-                fc.throttle = 0;
-                fc.lerpAttitude = false;
-
-                while (UnderTimeLimit() && targetVessel != null && GunReady(currentProjectile))
-                {
-                    fc.attitude = currentProjectile.finalAimTarget;
-                    fc.RCSVector = -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel));
-
-                    yield return wait;
-                }
-
-                fc.lerpAttitude = true;
-            }
             else if (CheckOrbitUnsafe())
             {
                 Orbit o = vessel.orbit;
@@ -371,7 +313,7 @@ namespace BDArmory.Control
                             turn = Mathf.Clamp((float)((1.1 * minSafeAltitude - o.ApA) / (minSafeAltitude * (1.1 - gravTurnAlt))), 0.1f, 1f);
                             turn = Mathf.Clamp(Mathf.Log10(turn) + 1f, 0.33f, 1f);
                         }
-                        fc.attitude = Vector3.Lerp(o.Horizontal(UT), upDir,turn);
+                        fc.attitude = Vector3.Lerp(o.Horizontal(UT), upDir, turn);
                         fc.alignmentToleranceforBurn = Mathf.Clamp(15f * turn, 5f, 15f);
                         yield return wait;
                     }
@@ -414,6 +356,64 @@ namespace BDArmory.Control
                         fc.throttle = Mathf.Lerp(0, 1, (float)(deltaV.sqrMagnitude / 100));
                     }
                 }
+            }
+            else if (allowWithdrawal && hasPropulsion && !hasWeapons && CheckWithdraw())
+            {
+                currentStatus = "Withdrawing";
+
+
+                // Determine the direction.
+                Vector3 averagePos = Vector3.zero;
+                using (List<TargetInfo>.Enumerator target = BDATargetManager.TargetList(weaponManager.Team).GetEnumerator())
+                    while (target.MoveNext())
+                    {
+                        if (target.Current == null) continue;
+                        if (target.Current && target.Current.Vessel && weaponManager.CanSeeTarget(target.Current))
+                        {
+                            averagePos += FromTo(vessel, target.Current.Vessel).normalized;
+                        }
+                    }
+
+                Vector3 direction = -averagePos.normalized;
+                Vector3 orbitNormal = vessel.orbit.Normal(Planetarium.GetUniversalTime());
+                bool facingNorth = Vector3.Dot(direction, orbitNormal) > 0;
+
+                // Withdraw sequence. Locks behaviour while burning 200 m/s of delta-v either north or south.
+
+                Vector3 deltav = orbitNormal * (facingNorth ? 1 : -1) * 200;
+                fc.throttle = 1;
+
+                while (deltav.sqrMagnitude > 100)
+                {
+                    if (!hasPropulsion) break;
+
+                    deltav -= Vector3.Project(vessel.acceleration, deltav) * TimeWarp.fixedDeltaTime;
+                    fc.attitude = deltav.normalized;
+
+                    yield return wait;
+                }
+
+                fc.throttle = 0;
+            }
+            else if (targetVessel != null && currentProjectile && GunReady(currentProjectile))
+            {
+                // Aim at target using current non-missile weapon.
+                // The weapon handles firing.
+
+                currentStatus = "Firing Guns";
+                vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
+                fc.throttle = 0;
+                fc.lerpAttitude = false;
+
+                while (UnderTimeLimit() && targetVessel != null && GunReady(currentProjectile))
+                {
+                    fc.attitude = currentProjectile.finalAimTarget;
+                    fc.RCSVector = -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel));
+
+                    yield return wait;
+                }
+
+                fc.lerpAttitude = true;
             }
             else if (targetVessel != null && hasWeapons)
             {
