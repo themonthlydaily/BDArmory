@@ -349,14 +349,25 @@ namespace BDArmory.Control
 
                     currentStatus = "Correcting Orbit (Apoapsis too low)";
                     fc.throttle = 1;
+                    float previousTolerance = fc.alignmentToleranceforBurn;
+                    double gravTurnAlt = 0.1;
+                    float turn;
 
                     while (UnderTimeLimit() && o.ApA < minSafeAltitude * 1.1)
                     {
                         UT = Planetarium.GetUniversalTime();
-                        double turn = (1.1 * minSafeAltitude - o.ApA) / (1.1 * minSafeAltitude);
-                        fc.attitude = Vector3.Lerp(o.Horizontal(UT), o.Radial(UT), Mathf.Clamp01((float)turn));
+                        if (o.altitude < gravTurnAlt * minSafeAltitude) // At low alts, burn straight up
+                            turn = 1f;
+                        else // At higher alts, gravity turn towards horizontal orbit vector
+                        {
+                            turn = Mathf.Clamp((float)((1.1 * minSafeAltitude - o.ApA) / (minSafeAltitude * (1.1 - gravTurnAlt))), 0.1f, 1f);
+                            turn = Mathf.Clamp(Mathf.Log10(turn) + 1f, 0.33f, 1f);
+                        }
+                        fc.attitude = Vector3.Lerp(o.Horizontal(UT), upDir,turn);
+                        fc.alignmentToleranceforBurn = Mathf.Clamp(15f * turn, 5f, 15f);
                         yield return wait;
                     }
+                    fc.alignmentToleranceforBurn = previousTolerance;
                 }
                 else if (o.altitude < minSafeAltitude)
                 {
