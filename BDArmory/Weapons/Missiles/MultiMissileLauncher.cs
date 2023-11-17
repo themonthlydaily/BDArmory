@@ -28,7 +28,7 @@ namespace BDArmory.Weapons.Missiles
         Coroutine missileSalvo;
 
         [KSPField(isPersistant = true, guiActive = false, guiName = "#LOC_BDArmory_WeaponName", guiActiveEditor = false), UI_Label(affectSymCounterparts = UI_Scene.All, scene = UI_Scene.All)]//Weapon Name 
-        public string loadedMissileName;
+        public string loadedMissileName = "";
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_clustermissileTriggerDistance"), UI_FloatRange(minValue = 100f, maxValue = 10000f, stepIncrement = 100f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Detonation distance override
         public float clusterMissileTriggerDist = 750;
@@ -136,6 +136,7 @@ namespace BDArmory.Weapons.Missiles
             if (HighLogic.LoadedSceneIsFlight)
             {
                 GameEvents.onPartDie.Add(OnPartDie);
+                if (isClusterMissile && vessel.Parts.Count == 1) isLaunchedClusterMissile = true;
             }
             if (!string.IsNullOrEmpty(deployAnimationName))
             {
@@ -150,7 +151,6 @@ namespace BDArmory.Weapons.Missiles
             }
             targetsAssigned = new List<TargetInfo>();
             StartCoroutine(DelayedStart());
-            if (isClusterMissile && vessel.Parts.Count == 1) isLaunchedClusterMissile = true;
         }
 
         IEnumerator DelayedStart()
@@ -188,10 +188,14 @@ namespace BDArmory.Weapons.Missiles
                     {
                         missileSpawner.MissileName = subMunitionName;
                         missileSpawner.ammoCount = launchTransforms.Length;
+                        missileLauncher.DetonationDistance = clusterMissileTriggerDist;
+                        missileLauncher.blastRadius = clusterMissileTriggerDist;
                     }
                     else
                     {
                         missileSpawner.MissileName = missileLauncher.missileName; //ClMsl set to base name in case of reloadable rails, reset to submuition name after launch
+                        missileLauncher.DetonationDistance = 0;
+                        missileLauncher.blastRadius = 0;
                     }
                     missileLauncher.Fields["DetonationDistance"].guiActive = false;
                     missileLauncher.Fields["DetonationDistance"].guiActiveEditor = false;
@@ -213,12 +217,13 @@ namespace BDArmory.Weapons.Missiles
                 Fields["salvoSize"].guiActiveEditor = setSalvoSize;
                 if (isMultiLauncher)
                 {
-                    if (string.IsNullOrEmpty(subMunitionName))
+                    if (!string.IsNullOrEmpty(subMunitionName))
                     {
                         Fields["loadedMissileName"].guiActive = true;
                         Fields["loadedMissileName"].guiActiveEditor = true;
+                        loadedMissileName = subMunitionName;
+                        missileLauncher.missileName = subMunitionName;
                     }
-                    missileLauncher.missileName = subMunitionName;
                     if (!permitJettison) missileLauncher.Events["Jettison"].guiActive = false;
                     if (OverrideDropSettings)
                     {
@@ -651,7 +656,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 wpm = VesselModuleRegistry.GetMissileFire(missileLauncher.SourceVessel, true);
                 missileSalvo = StartCoroutine(salvoFire(killWhenDone));
-                if (useSymCounterpart)
+                if (useSymCounterpart && !killWhenDone)
                 {
                     using (List<Part>.Enumerator pSym = part.symmetryCounterparts.GetEnumerator())
                         while (pSym.MoveNext())
@@ -731,6 +736,11 @@ namespace BDArmory.Weapons.Missiles
                     if (BDArmorySettings.DEBUG_MISSILES) Debug.LogWarning($"[BDArmory.MissileLauncher]: Failed to spawn a missile in {missileSpawner} on {vessel.vesselName}");
                     continue;
                 }
+                if (ignoreLauncherColliders)
+                {
+                    var missileCOL = missileSpawner.SpawnedMissile.collider;
+                    if (missileCOL) missileCOL.enabled = false;
+                }
                 MissileLauncher ml = missileSpawner.SpawnedMissile.FindModuleImplementing<MissileLauncher>();
                 yield return new WaitUntilFixed(() => ml is null || ml.SetupComplete); // Wait until missile fully initialized.
                 if (ml is null || ml.gameObject is null || !ml.gameObject.activeInHierarchy)
@@ -745,11 +755,7 @@ namespace BDArmory.Weapons.Missiles
                     tnt.isMissile = true;
                 }
                 if (ignoreLauncherColliders)
-                {
-                    var missileCOL = missileSpawner.SpawnedMissile.collider;
-                    if (missileCOL) missileCOL.enabled = false;
                     ml.useSimpleDragTemp = true;
-                }
                 ml.Team = Team;
                 ml.SourceVessel = missileLauncher.SourceVessel;
                 if (string.IsNullOrEmpty(ml.GetShortName()))
@@ -760,19 +766,6 @@ namespace BDArmory.Weapons.Missiles
                 ml.vessel.vesselName = ml.GetShortName();
                 ml.TimeFired = Time.time;
                 if (!isClusterMissile) ml.DetonationDistance = missileLauncher.DetonationDistance;
-                else
-                {
-                    if (isLaunchedClusterMissile)
-                    {
-                        ml.DetonationDistance = 0;
-                        ml.blastRadius = 0;
-                    }
-                    else
-                    {
-                        ml.DetonationDistance = clusterMissileTriggerDist;
-                        ml.blastRadius = clusterMissileTriggerDist;
-                    }
-                }
                 ml.DetonateAtMinimumDistance = missileLauncher.DetonateAtMinimumDistance;
                 ml.decoupleForward = missileLauncher.decoupleForward;
                 ml.dropTime = missileLauncher.dropTime;
@@ -1028,13 +1021,14 @@ namespace BDArmory.Weapons.Missiles
                     {
                         wpm.SendTargetDataToMissile(ml, false);
                     }
+                    ml.GpsUpdateMax = wpm.GpsUpdateMax;
                 }
                 if (missileRegistry)
                 {
                     BDATargetManager.FiredMissiles.Add(ml); //so multi-missile salvoes only count as a single missile fired by the WM for maxMissilesPerTarget
                 }
                 ml.launched = true;
-                if (ml.TargetPosition == Vector3.zero) ml.TargetPosition = vessel.ReferenceTransform.position + (vessel.ReferenceTransform.up * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
+                if (ml.TargetPosition == Vector3.zero) ml.TargetPosition = missileLauncher.MissileReferenceTransform.position + (missileLauncher.MissileReferenceTransform.forward * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
                 ml.MissileLaunch();
                 wpm.heatTarget = TargetSignatureData.noTarget;
             }

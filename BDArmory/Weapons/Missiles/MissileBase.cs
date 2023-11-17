@@ -122,6 +122,8 @@ namespace BDArmory.Weapons.Missiles
         [KSPField]
         public float gpsUpdates = -1f;                              // GPS missiles get updates on target position from source vessel every gpsUpdates >= 0 seconds
 
+        public float GpsUpdateMax = -1f;
+
         [KSPField]
         public float lockedSensorFOV = 2.5f;
 
@@ -603,13 +605,28 @@ namespace BDArmory.Weapons.Missiles
                 gpsTargetCoords_ = targetGPSCoords;
                 if (targetVessel && HasFired && (gpsUpdates >= 0f))
                 {
-                    float distanceToTargetSqr = (vessel.transform.position - gpsTargetCoords_).sqrMagnitude;
-                    float jamDistance = RadarUtils.GetVesselECMJammingDistance(targetVessel.Vessel); //does the target have a jammer, and is the missile within the jammed AoE
-                    if (jamDistance * jamDistance < distanceToTargetSqr) //outside/no area of interference, can receive GPS signal
+                    TargetSignatureData t = TargetSignatureData.noTarget;
+                    TargetPosition = Vector3.zero;
+                    UpdateLaserTarget(); //available cam for new GPS coords?
+                    if (TargetPosition == Vector3.zero && vrd && vrd.locked)//no cam; available radar lock?
                     {
-                        var weaponManager = VesselModuleRegistry.GetMissileFire(SourceVessel);
-                        if (weaponManager != null && weaponManager.CanSeeTarget(targetVessel, false))
+                        List<TargetSignatureData> possibleTargets = vrd.GetLockedTargets();
+                        for (int i = 0; i < possibleTargets.Count; i++)
                         {
+                            if (possibleTargets[i].vessel == targetVessel.Vessel)
+                                t = possibleTargets[i];
+                        }
+                        if (t.exists) TargetPosition = t.position;
+                    }
+                    if (TargetPosition != Vector3.zero)
+                    {
+                        float distanceToTargetSqr = (vessel.transform.position - gpsTargetCoords_).sqrMagnitude;
+                        float jamDistance = RadarUtils.GetVesselECMJammingDistance(targetVessel.Vessel); //does the target have a jammer, and is the missile within the jammed AoE
+                        if (jamDistance * jamDistance < distanceToTargetSqr) //outside/no area of interference, can receive GPS signal
+                        {
+                            //var weaponManager = VesselModuleRegistry.GetMissileFire(SourceVessel);
+                            //if (weaponManager != null && weaponManager.CanSeeTarget(targetVessel, false))
+
                             if (gpsUpdates == 0) // Constant updates
                             {
                                 gpsTargetCoords_ = VectorUtils.WorldPositionToGeoCoords(targetVessel.Vessel.CoM, targetVessel.Vessel.mainBody);
@@ -628,7 +645,7 @@ namespace BDArmory.Weapons.Missiles
                         }
                     }
                     //else 
-                    // In theory if the jammer knew the GPS tranceiver channel/encryption, could transmit false coords using a more powerful signal to override out the originals...
+                    // In theory if the jammer knew the GPS receiver channel/encryption, could transmit false coords using a more powerful signal to override out the originals...
                     //currently just cuts off updates and ordinance heads to last valid coords. Instead have jammer Strength come into play and have it be a jStrength * 4prDist^2 check that slows update 
                     //frequency/increases the RNG threshold to make the GPS update?
                 }
@@ -1115,7 +1132,6 @@ namespace BDArmory.Weapons.Missiles
                         radarLOALSearching = true;
                     else
                     {
-                        targetVessel = null;
                         if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileBase]: No assigned radar target. Awaiting timeout.... ");
                     }
                 }
@@ -1178,13 +1194,73 @@ namespace BDArmory.Weapons.Missiles
         public Vector3d UpdateInertialTarget()
         {
             Vector3 TargetCoords_;
+            Vector3 TargetLead;
+            bool detectedByRadar = false;
             if (!setInertialTarget)
             {
                 //driftSeed = new Vector3(UnityEngine.Random.Range(-1, 1) * inertialDrift, UnityEngine.Random.Range(-1, 1) * inertialDrift, UnityEngine.Random.Range(-1, 1) * inertialDrift);
                 driftSeed = UnityEngine.Random.insideUnitSphere * inertialDrift;
                 setInertialTarget = true;
+                if (gpsUpdates >= 0)
+                {
+                    if (gpsUpdates > GpsUpdateMax) GpsUpdateMax = gpsUpdates;
+                }
             }
             TargetCoords_ = targetGPSCoords;
+
+            if (targetVessel && HasFired)
+            {
+                if (gpsUpdates >= 0f)
+                {
+                    var weaponManager = VesselModuleRegistry.GetMissileFire(SourceVessel);
+                    TargetSignatureData INStarget = TargetSignatureData.noTarget;
+                    bool radarLocked = false;
+                    if (weaponManager != null && weaponManager.vesselRadarData)
+                    {
+                        INStarget = weaponManager.vesselRadarData.detectedRadarTarget(targetVessel.Vessel, weaponManager); //is the target tracked by radar or ISRT?
+                        if (INStarget.exists)
+                        {
+                            detectedByRadar = true;
+                            List<TargetSignatureData> possibleTargets = vrd.GetLockedTargets();
+                            for (int i = 0; i < possibleTargets.Count; i++)
+                            {
+                                if (possibleTargets[i].vessel == targetVessel.Vessel)
+                                    radarLocked = true;
+                            }
+                        }
+                        else
+                            INStarget = weaponManager.vesselRadarData.activeIRTarget(targetVessel.Vessel, weaponManager);
+                    }
+                    if (INStarget.exists)
+                    {
+                        float distanceToTargetSqr = (SourceVessel.CoM - targetVessel.Vessel.CoM).sqrMagnitude; //sourceVessel radar tracking garbled?
+                        float distanceToJammerSqr = (vessel.CoM - targetVessel.Vessel.CoM).sqrMagnitude; //missile datalink jammed?
+                        float jamDistance = RadarUtils.GetVesselECMJammingDistance(targetVessel.Vessel); //is the target jamming?
+                        if ((!detectedByRadar || jamDistance * jamDistance < distanceToTargetSqr) && jamDistance * jamDistance < distanceToJammerSqr)
+                        {
+                            if (gpsUpdates == 0 && (detectedByRadar && radarLocked)) // Constant updates
+                            {
+                                TargetLead = MissileGuidance.GetAirToAirFireSolution(this, targetVessel.Vessel);
+                                if (detectedByRadar) TargetLead += (INStarget.predictedPositionWithChaffFactor(chaffEffectivity) - INStarget.position);
+                                TargetCoords_ = VectorUtils.WorldPositionToGeoCoords(TargetLead, targetVessel.Vessel.mainBody);
+                                targetGPSCoords = TargetCoords_;
+                            }
+                            else //clamp updates to radar/IRST track speed
+                            {
+                                float updateCount = TimeIndex / GpsUpdateMax; 
+                                if (updateCount > gpsUpdateCounter)
+                                {
+                                    gpsUpdateCounter++;
+                                    TargetLead = MissileGuidance.GetAirToAirFireSolution(this, targetVessel.Vessel);
+                                    if (detectedByRadar) TargetLead += (INStarget.predictedPositionWithChaffFactor(chaffEffectivity) - INStarget.position);
+                                    TargetCoords_ = VectorUtils.WorldPositionToGeoCoords(TargetLead, targetVessel.Vessel.mainBody);
+                                    targetGPSCoords = TargetCoords_;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             if (TargetAcquired)
             {

@@ -374,7 +374,7 @@ namespace BDArmory.Control
         public int MaxradarLocks = 0;
         public VesselRadarData vesselRadarData;
         public bool _radarsEnabled = false;
-
+        public float GpsUpdateMax = -1;
         public List<ModuleIRST> irsts { get { if (modulesNeedRefreshing) RefreshModules(); return _irsts; } }
         public List<ModuleIRST> _irsts = new List<ModuleIRST>();
 
@@ -743,6 +743,8 @@ namespace BDArmory.Control
                             if (rd.Current != null || rd.Current.canLock)
                             {
                                 rd.Current.EnableRadar();
+                                float scanSpeed = rd.Current.directionalFieldOfView / rd.Current.scanRotationSpeed * 2;
+                                if (GpsUpdateMax > 0 && scanSpeed < GpsUpdateMax) GpsUpdateMax = scanSpeed;
                             }
                             _radarsEnabled = true;
                         }
@@ -755,6 +757,8 @@ namespace BDArmory.Control
                             if (rd.Current != null)
                             {
                                 rd.Current.EnableIRST();
+                                float scanSpeed = rd.Current.directionalFieldOfView / rd.Current.scanRotationSpeed * 2;
+                                if (GpsUpdateMax > 0 && scanSpeed < GpsUpdateMax) GpsUpdateMax = scanSpeed;
                             }
                         }
                 }
@@ -1681,7 +1685,7 @@ namespace BDArmory.Control
                                 if (guardTarget)
                                 {
                                     distanceToTarget = Vector3.Distance(guardTarget.CoM, ml.MissileReferenceTransform.position);
-                                    Vector3 fireSolution = MissileGuidance.GetAirToAirFireSolution(ml, guardTarget.CoM, guardTarget.Velocity());
+                                    Vector3 fireSolution = MissileGuidance.GetAirToAirFireSolution(ml, guardTarget);
                                     Vector3 fsDirection = (fireSolution - ml.MissileReferenceTransform.position).normalized;
                                     GUIUtils.DrawTextureOnWorldPos(ml.MissileReferenceTransform.position + (distanceToTarget * fsDirection), BDArmorySetup.Instance.greenCircleTexture, new Vector2(36, 36), 5);
                                 }
@@ -2144,7 +2148,7 @@ namespace BDArmory.Control
                                 if (vessel == null || targetVessel == null) break;
                             }
                             //have GPS missiles require a targeting cam for coords? GPS bombs require one.
-                            /*
+                            float attemptStartTime;
                             bool foundTargetInDatabase = false;
                             using (List<GPSTargetInfo>.Enumerator gps = BDATargetManager.GPSTargetList(Team).GetEnumerator())
                                 while (gps.MoveNext())
@@ -2166,26 +2170,45 @@ namespace BDArmory.Control
                                             tgp.Current.CoMLock = true;
                                             yield return StartCoroutine(tgp.Current.PointToPositionRoutine(guardTarget.CoM));
                                         }
-                                }
-                                else //no cam, laser missiles now expensive unguided ordinance
-                                {
-                                    unguidedWeapon = true; //so let them be used as unguided ordinance
-                                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: No Laser target! Available cams: {targetingPods.Count}; switching to unguided firing");
-                                    break;
-                                }
-                                //search for a laser point that corresponds with target vessel
-                                float attemptStartTime = Time.time;
-                                float attemptDuration = targetScanInterval * 0.75f;
-                                while (Time.time - attemptStartTime < attemptDuration && (!laserPointDetected || (foundCam && (foundCam.groundTargetPosition - targetVessel.CoM).sqrMagnitude > Mathf.Max(400, 0.013f * (float)guardTarget.srfSpeed * (float)guardTarget.srfSpeed))))
-                                {
-                                    yield return wait;
-                                }
-                                designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(foundCam.groundTargetPosition, vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
-                            }
-                            */
-                            designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(targetVessel.CoM, vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
 
-                            float attemptStartTime = Time.time;
+                                    //search for a laser point that corresponds with target vessel
+                                    attemptStartTime = Time.time;
+                                    float attemptDuration = targetScanInterval * 0.75f;
+                                    while (Time.time - attemptStartTime < attemptDuration && (!laserPointDetected || (foundCam && (foundCam.groundTargetPosition - targetVessel.CoM).sqrMagnitude > Mathf.Max(400, 0.013f * (float)guardTarget.srfSpeed * (float)guardTarget.srfSpeed))))
+                                    {
+                                        yield return wait;
+                                    }
+                                    designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(foundCam.groundTargetPosition, vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
+                                }
+                                else //no cam, get ranging from radar lock?
+                                {
+                                    float attemptLockTime = Time.time;
+                                    while (ml && (!vesselRadarData.locked || (vesselRadarData.lockedTargetData.vessel != targetVessel)) && Time.time - attemptLockTime < 2)
+                                    {
+                                        if (vesselRadarData.locked)
+                                        {
+                                            vesselRadarData.SwitchActiveLockedTarget(targetVessel); 
+                                            yield return wait;
+                                        }
+                                        else
+                                        {
+                                            vesselRadarData.TryLockTarget(targetVessel);
+                                        }
+                                        yield return new WaitForSecondsFixed(0.25f);
+                                    }
+                                    if (vesselRadarData.locked && vesselRadarData.lockedTargetData.vessel == targetVessel) //no GPS coords, missile is now expensive rocket
+                                    {
+                                        designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(targetVessel.CoM, vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
+                                    }
+                                    else
+                                    { 
+                                        unguidedWeapon = true; //so let them be used as unguided ordinance
+                                        if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: No Laser target! Available cams: {targetingPods.Count}; switching to unguided firing");
+                                        break;
+                                    }
+                                }
+                            }
+                            attemptStartTime = Time.time;
                             MissileLauncher mlauncher;
                             mlauncher = ml as MissileLauncher;
                             if (mlauncher)
@@ -2203,8 +2226,6 @@ namespace BDArmory.Control
                                         mlauncher.missileTurret.SlavedAim();
                                         yield return wait;
                                     }
-                                    if (vessel && targetVessel) 
-                                        designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(targetVessel.CoM, vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
                                 }
                                 if (mlauncher.multiLauncher && mlauncher.multiLauncher.turret)
                                 {
@@ -2216,11 +2237,12 @@ namespace BDArmory.Control
                                         mlauncher.multiLauncher.turret.SlavedAim();
                                         yield return wait;
                                     }
-                                    if (vessel && targetVessel)
-                                        designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(targetVessel.CoM, vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
                                 }
                             }
                             yield return wait;
+                            if (vessel && targetVessel)
+                                designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(targetVessel.CoM, vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
+
                             if (BDArmorySettings.DEBUG_MISSILES)
                             {
                                 Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} firing GPS missile at {designatedGPSInfo.worldPos}");
@@ -2371,7 +2393,6 @@ namespace BDArmory.Control
                                 yield return new WaitForSecondsFixed(2f);
                                 if (vessel == null || targetVessel == null) break;
                             }
-                            designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(MissileGuidance.GetAirToAirFireSolution(ml, targetVessel.CoM, targetVessel.Velocity()), vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
 
                             float attemptStartTime = Time.time;
                             MissileLauncher mlauncher = ml as MissileLauncher;
@@ -2389,8 +2410,6 @@ namespace BDArmory.Control
                                         mlauncher.missileTurret.SlavedAim();
                                         yield return wait;
                                     }
-                                    if (vessel && targetVessel)
-                                        designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(MissileGuidance.GetAirToAirFireSolution(ml, targetVessel.CoM, targetVessel.Velocity()), vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
                                 }
                                 if (mlauncher.multiLauncher && mlauncher.multiLauncher.turret)
                                 {
@@ -2402,11 +2421,15 @@ namespace BDArmory.Control
                                         mlauncher.multiLauncher.turret.SlavedAim();
                                         yield return wait;
                                     }
-                                    if (vessel && targetVessel)
-                                        designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(MissileGuidance.GetAirToAirFireSolution(ml, targetVessel.CoM, targetVessel.Velocity()), vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
                                 }
                             }
                             yield return wait;
+                            if (vessel && targetVessel)
+                            {
+                                Vector3 TargetLead = MissileGuidance.GetAirToAirFireSolution(ml, targetVessel);
+                                designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(TargetLead, targetVessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
+                            }
+
                             if (ml && targetVessel && GetLaunchAuthorization(targetVessel, this, ml))
                             {
                                 FireCurrentMissile(ml, true);
@@ -2474,7 +2497,6 @@ namespace BDArmory.Control
                 guardFiringMissile = false;
             }
         }
-
         IEnumerator GuardBombRoutine()
         {
             guardFiringMissile = true;
@@ -6189,6 +6211,35 @@ namespace BDArmory.Control
                                     _radarsEnabled = true;
                                 }
                         }
+                        if (ml.TargetingMode == MissileBase.TargetingModes.Inertial)
+                        {
+                            if (!results.foundAntiRadiationMissile)
+                            {
+                                using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
+                                    while (rd.MoveNext())
+                                    {
+                                        if (rd.Current != null && rd.Current.sonarMode == ModuleRadar.SonarModes.None)
+                                        {
+                                            float scanSpeed = rd.Current.directionalFieldOfView / rd.Current.scanRotationSpeed * 2;
+                                            if (GpsUpdateMax > 0 && scanSpeed < GpsUpdateMax) GpsUpdateMax = scanSpeed;
+                                        }
+                                        _radarsEnabled = true;
+                                    }
+                            }
+                            if (!_radarsEnabled)
+                            {
+                                using (List<ModuleIRST>.Enumerator rd = irsts.GetEnumerator())
+                                    while (rd.MoveNext())
+                                    {
+                                        if (rd.Current != null)
+                                        {
+                                            float scanSpeed = rd.Current.directionalFieldOfView / rd.Current.scanRotationSpeed * 2;
+                                            if (GpsUpdateMax > 0 && scanSpeed < GpsUpdateMax) GpsUpdateMax = scanSpeed;
+                                        }
+                                    }
+                            }
+
+                        }
                         if (ml.TargetingMode == MissileBase.TargetingModes.Laser)
                         {
                             if (targetingPods.Count > 0) //if targeting pods are available, slew them onto target and lock.
@@ -6277,6 +6328,18 @@ namespace BDArmory.Control
                                         rd.Current.EnableRadar();
                                 }
                             _radarsEnabled = true; //add new _sonarsEnabled bool?
+                            return true;
+                        }
+                        if (((MissileBase)weaponCandidate).TargetingMode == MissileBase.TargetingModes.Inertial)
+                        {
+                            using (List<ModuleRadar>.Enumerator rd = radars.GetEnumerator())
+                                while (rd.MoveNext())
+                                {
+                                    if (rd.Current != null && rd.Current.sonarMode == ModuleRadar.SonarModes.passive)
+                                        rd.Current.EnableRadar();
+                                    float scanSpeed = rd.Current.directionalFieldOfView / rd.Current.scanRotationSpeed * 2;
+                                    if (GpsUpdateMax > 0 && scanSpeed < GpsUpdateMax) GpsUpdateMax = scanSpeed;
+                                }
                             return true;
                         }
                         return true;
@@ -6665,6 +6728,8 @@ namespace BDArmory.Control
                         {
                             ml.targetGPSCoords = designatedGPSCoords;
                             ml.TargetAcquired = true;
+                            if (laserPointDetected)
+                                ml.lockedCamera = foundCam;
                             if (guardMode && GPSDistanceCheck()) validTarget = true;
                         }
                         else if (ml.GetWeaponClass() == WeaponClasses.Bomb)
@@ -7052,13 +7117,13 @@ namespace BDArmory.Control
                                             _radarsEnabled = false;
                                         }
                                 }
-                                /*
+                                
                                 if (incomingMissileDistance <= guardRange * 0.33f) //within ID range?
                                 {
-                                    if (results.incomingMissiles[0].guidanceType == MissileBase.TargetingModes.Gps)
+                                    if (results.incomingMissiles[0].guidanceType == MissileBase.TargetingModes.Gps || results.incomingMissiles[0].guidanceType == MissileBase.TargetingModes.Inertial)
                                         FireECM(cmThreshold);
                                 }
-                                */ //uncomment if we want AI enable jammers to jam incoming GPS oridnance
+                                //uncomment if we want AI enable jammers to jam incoming GPS/INS oridnance
                             }
                             else //likely a heatseeker, but could be an AA HARM...
                             {
@@ -7081,9 +7146,9 @@ namespace BDArmory.Control
                                                 }
                                             _radarsEnabled = false;
                                         }
-                                        //FireECM(0); uh oh, blip ECM!
-                                        //if (results.incomingMissiles[0].guidanceType == MissileBase.TargetingModes.Gps)
-                                        //    FireECM(cmThreshold);
+                                        FireECM(0);//uh oh, blip ECM!
+                                        if (results.incomingMissiles[0].guidanceType == MissileBase.TargetingModes.Gps || results.incomingMissiles[0].guidanceType == MissileBase.TargetingModes.Inertial)
+                                            FireECM(cmThreshold);
                                         //uncomment if we want AI to disable ECMJammers when incoming Antirad/enable jammers when incoming GPS oridnance
                                     }
                                 }

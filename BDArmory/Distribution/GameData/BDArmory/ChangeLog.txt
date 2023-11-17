@@ -1,8 +1,14 @@
 ﻿IMPROVEMENTS/FIXES
+- Detectors:
+	-Can now set targeting camera slew rate using "traverseRate" field in ModuleTargetingCamera.
 - Weapons:
 	- Missiles:
 		- Fix clustermissiles launching copies of themselves instead of submunitions.
-
+		- Fix Guidance Type None missiles not holding course.
+		- GPS missiles now require radar lock or target cam for GPS coords.
+		- INS missiles can now use either radar or IRST tracking.
+		- INS missiles now have datalink capability for mid-flight target coordinate updates, update rate clamped to Radar/IRST scan speed.
+		- Fix error with Inertial guidance target prediction for non-updating missiles.
 v1.6.8.0
 IMPROVEMENTS / FIXES
 - General:

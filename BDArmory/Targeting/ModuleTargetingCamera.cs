@@ -32,6 +32,9 @@ namespace BDArmory.Targeting
         public bool gimbalLimitReached;
 
         [KSPField]
+        public float traverseRate = 90;
+
+        [KSPField]
         public bool rollCameraModel = false;
 
         [KSPField(isPersistant = true)]
@@ -612,7 +615,7 @@ namespace BDArmory.Targeting
         {
             if (SlewingButtonCam)
             {
-                finalSlewSpeed = Mathf.Clamp(finalSlewSpeed + (0.5f * (fov / 60)), 0, 80 * fov / 60);
+                finalSlewSpeed = Mathf.Clamp(finalSlewSpeed + (0.5f * (fov / traverseRate)), 0, 80 * fov / traverseRate);
                 SlewingButtonCam = false;
             }
             else
@@ -1454,7 +1457,7 @@ namespace BDArmory.Targeting
 
             while (Vector3.Angle(cameraParentTransform.forward, cameraParentTransform.parent.forward) > 0.1f)
             {
-                Vector3 newForward = Vector3.RotateTowards(cameraParentTransform.forward, cameraParentTransform.parent.forward, 60 * Mathf.Deg2Rad * Time.deltaTime, 0);
+                Vector3 newForward = Vector3.RotateTowards(cameraParentTransform.forward, cameraParentTransform.parent.forward, (2 / 3) * traverseRate * Mathf.Deg2Rad * Time.deltaTime, 0);
                 //cameraParentTransform.rotation = Quaternion.LookRotation(newForward, VectorUtils.GetUpDirection(transform.position));
                 PointCameraModel(newForward);
                 gimbalLimitReached = false;
@@ -1497,7 +1500,7 @@ namespace BDArmory.Targeting
             }
             while (!stopPTPR && Vector3.Angle(cameraParentTransform.transform.forward, position - (cameraParentTransform.transform.position)) > 0.1f)
             {
-                Vector3 newForward = Vector3.RotateTowards(cameraParentTransform.transform.forward, position - cameraParentTransform.transform.position, 90 * Mathf.Deg2Rad * Time.fixedDeltaTime, 0);
+                Vector3 newForward = Vector3.RotateTowards(cameraParentTransform.transform.forward, position - cameraParentTransform.transform.position, traverseRate * Mathf.Deg2Rad * Time.fixedDeltaTime, 0);
                 //cameraParentTransform.rotation = Quaternion.LookRotation(newForward, VectorUtils.GetUpDirection(transform.position));
                 PointCameraModel(newForward);
                 yield return new WaitForFixedUpdate();
