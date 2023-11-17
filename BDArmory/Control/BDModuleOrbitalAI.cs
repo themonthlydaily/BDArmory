@@ -311,7 +311,23 @@ namespace BDArmory.Control
                 Orbit o = vessel.orbit;
                 double UT;
 
-                if (o.ApA < minSafeAltitude)
+                if (o.ApA < 0)
+                {
+                    // Vessel is on an escape orbit, burn retrograde
+
+                    SetStatus("Correcting Orbit (On escape trajectory)");
+
+                    fc.throttle = 1;
+                    while (UnderTimeLimit())
+                    {
+                        yield return wait;
+
+                        UT = Planetarium.GetUniversalTime();
+
+                        fc.attitude = -o.Prograde(UT);
+                    }
+                }
+                else if (o.ApA < minSafeAltitude)
                 {
                     // Entirety of orbit is inside atmosphere, perform gravity turn burn until apoapsis is outside atmosphere by a 10% margin.
 
@@ -678,7 +694,7 @@ namespace BDArmory.Control
 
                 canIntercept = !escaping || // It is not trying to escape.
                     toTarget.sqrMagnitude < weaponManager.gunRange * weaponManager.gunRange || // It is already in range.
-                    maxAcceleration > targetAI.maxAcceleration || // We are faster.
+                    maxAcceleration * maxAcceleration > targetAI.vessel.acceleration_immediate.sqrMagnitude || //  We are faster (currently).
                     Vector3.Dot(target.GetObtVelocity() - vessel.GetObtVelocity(), toTarget) < 0; // It is getting closer.
             }
             return canIntercept;
