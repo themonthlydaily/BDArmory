@@ -439,7 +439,7 @@ namespace BDArmory.Control
                 fc.throttle = 0;
                 fc.lerpAttitude = false;
 
-                while (UnderTimeLimit() && targetVessel != null && GunReady(weaponManager.currentGun))
+                while (UnderTimeLimit() && targetVessel != null && weaponManager.currentGun && GunReady(weaponManager.currentGun))
                 {
                     fc.attitude = weaponManager.currentGun.finalAimTarget;
                     fc.RCSVector = -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel));
@@ -702,6 +702,8 @@ namespace BDArmory.Control
 
         private bool GunReady(ModuleWeapon gun)
         {
+            if (gun == null) return false;
+            
             // Check gun/laser can fire soon, we are within guard and weapon engagement ranges, and we are under the firing speed
             float targetSqrDist = FromTo(vessel, targetVessel).sqrMagnitude;
             return RelVel(vessel, targetVessel).sqrMagnitude < firingSpeed * firingSpeed && 
