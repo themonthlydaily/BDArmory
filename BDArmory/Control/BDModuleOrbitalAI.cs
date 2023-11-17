@@ -79,9 +79,9 @@ namespace BDArmory.Control
             )]
         public float firingSpeed = 20f;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "UseEvasion"),//Use Evasion
-    UI_Toggle(enabledText = "#LOC_BDArmory_ManeuverRCS_enabledText", disabledText = "#LOC_BDArmory_ManeuverRCS_disabledText", scene = UI_Scene.All),]
-        public bool useEvasion = false;
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AIWindow_Evade"),//Evasion
+    UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
+        public bool useEvasion = true;
 
         // Debugging
         internal float nearInterceptBurnTime;
@@ -241,6 +241,7 @@ namespace BDArmory.Control
                 {
                     Vector3 relVel = RelVel(vessel, targetVessel);
                     float minRange = Mathf.Max(MinEngagementRange, targetVessel.GetRadius() + vesselStandoffDistance);
+                    debugString.AppendLine($"Target Vessel: {targetVessel.GetDisplayName()}");
                     debugString.AppendLine($"Can Intercept: {CanInterceptShip(targetVessel)}");
                     debugString.AppendLine($"Near Intercept: {NearIntercept(relVel, minRange)}");
                     debugString.AppendLine($"Near Intercept Burn Time: {nearInterceptBurnTime:G3}");
@@ -255,12 +256,12 @@ namespace BDArmory.Control
         {
             bool hasRCSFore = VesselModuleRegistry.GetModules<ModuleRCSFX>(vessel).Any(e => e.rcsEnabled && !e.flameout && e.useThrottle);
             hasPropulsion = hasRCSFore || VesselModuleRegistry.GetModules<ModuleEngines>(vessel).Any(e => (e.EngineIgnited && e.isOperational));
-            hasWeapons = weaponManager.HasWeaponsAndAmmo();
+                hasWeapons = weaponManager.HasWeaponsAndAmmo();
 
-            if (weaponManager.incomingMissileVessel != null && updateInterval != emergencyUpdateInterval)
-                updateInterval = emergencyUpdateInterval;
-            else if (weaponManager.incomingMissileVessel == null && updateInterval == emergencyUpdateInterval)
-                updateInterval = combatUpdateInterval;
+                if (weaponManager.incomingMissileVessel != null && updateInterval != emergencyUpdateInterval)
+                    updateInterval = emergencyUpdateInterval;
+                else if (weaponManager.incomingMissileVessel == null && updateInterval == emergencyUpdateInterval)
+                    updateInterval = combatUpdateInterval;
 
             return;
         }
@@ -271,12 +272,11 @@ namespace BDArmory.Control
             fc.RCSVector = Vector3.zero;
             fc.alignmentToleranceforBurn = 5;
             fc.throttle = 0;
-            ModuleWeapon currentProjectile = weaponManager.currentGun;
             vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, ManeuverRCS);
             var wait = new WaitForFixedUpdate();
 
             // Movement.
-            if (useEvasion && weaponManager.incomingMissileVessel) // Needs to start evading an incoming missile.
+            if (useEvasion && weaponManager.incomingMissileVessel && weaponManager.incomingMissileTime <= weaponManager.evadeThreshold) // Needs to start evading an incoming missile.
             {
 
                 SetStatus("Evading");
@@ -429,7 +429,7 @@ namespace BDArmory.Control
 
                 fc.throttle = 0;
             }
-            else if (targetVessel != null && currentProjectile && GunReady(currentProjectile))
+            else if (targetVessel != null && weaponManager.currentGun && GunReady(weaponManager.currentGun))
             {
                 // Aim at target using current non-missile weapon.
                 // The weapon handles firing.
@@ -439,9 +439,9 @@ namespace BDArmory.Control
                 fc.throttle = 0;
                 fc.lerpAttitude = false;
 
-                while (UnderTimeLimit() && targetVessel != null && GunReady(currentProjectile))
+                while (UnderTimeLimit() && targetVessel != null && GunReady(weaponManager.currentGun))
                 {
-                    fc.attitude = currentProjectile.finalAimTarget;
+                    fc.attitude = weaponManager.currentGun.finalAimTarget;
                     fc.RCSVector = -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel));
 
                     yield return wait;
@@ -553,7 +553,7 @@ namespace BDArmory.Control
                             yield return wait;
                         }
                     }
-                    else if (hasPropulsion && targetVessel != null && AngularVelocity(vessel, targetVessel) > firingAngularVelocityLimit)// && currentProjectile != null
+                    else if (hasPropulsion && targetVessel != null && AngularVelocity(vessel, targetVessel) > firingAngularVelocityLimit)
                     {
                         SetStatus("Maneuvering (Kill Angular Velocity)");
 
@@ -702,10 +702,12 @@ namespace BDArmory.Control
 
         private bool GunReady(ModuleWeapon gun)
         {
-            // Check gun/laser can fire soon and we are within guard and weapon engagement ranges
-            
+            // Check gun/laser can fire soon, we are within guard and weapon engagement ranges, and we are under the firing speed
             float targetSqrDist = FromTo(vessel, targetVessel).sqrMagnitude;
-            return gun.CanFireSoon() && (targetSqrDist <= gun.GetEngagementRangeMax() * gun.GetEngagementRangeMax()) && (targetSqrDist <= weaponManager.gunRange * weaponManager.gunRange);
+            return RelVel(vessel, targetVessel).sqrMagnitude < firingSpeed * firingSpeed && 
+                gun.CanFireSoon() && 
+                (targetSqrDist <= gun.GetEngagementRangeMax() * gun.GetEngagementRangeMax()) && 
+                (targetSqrDist <= weaponManager.gunRange * weaponManager.gunRange);
         }
 
         private bool AwayCheck(float minRange)
