@@ -403,7 +403,7 @@ namespace BDArmory.FX
                                 break;
                             }
                     }
-                if (!String.IsNullOrEmpty(message)) BDACompetitionMode.Instance.competitionStatus.Add(message);
+                if (!string.IsNullOrEmpty(message)) BDACompetitionMode.Instance.competitionStatus.Add(message);
                 // Note: damage hasn't actually been applied to the parts yet, just assigned as events, so we can't know if they survived.
                 foreach (var vesselName in explosionEventsVesselsHit.Keys) // Note: sourceVesselName is already checked for being in the competition before damagedVesselName is added to explosionEventsVesselsHitByMissiles, so we don't need to check it here.
                 {

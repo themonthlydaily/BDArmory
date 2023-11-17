@@ -10,6 +10,8 @@
 ### TODO (smaller items and specific requests / higher priority)
 - Fix bugs
 
+- Add tooltips to settings.
+
 - Wiki entries
 	- Auto-Tuning
 
@@ -38,7 +40,7 @@
 		- Precision reduction option in aiming guns/guiding missiles.
 		- Laser turrets will still be deadly accurate (increasing maxDeviation would amount to the same thing as targeting jitter).
 		- Add noise (fn of game time, not proper random) to targeting info.
-		- Multiply pos, vel, acc by 1+sin(t)/X for X=10, 100, etc. to simulate sampling noise. t doesn't need to be game time, but something related to the vessel (e.g., speed + time)
+		- Multiply pos, vel, acc by 1+sin(t)/X for X=10, 100, etc. to simulate sampling noise. It doesn't need to be game time, but something related to the vessel (e.g., speed + time)
 	- Multiple ammo types used per shot for weapons (other than just EC).
 
 - Reset things that the RWP slider changes when switching away from the rounds.

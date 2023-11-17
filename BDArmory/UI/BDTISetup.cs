@@ -231,7 +231,7 @@ namespace BDArmory.UI
                 }
             }
         }
-        public Dictionary<String, Color> ColorAssignments = new Dictionary<string, Color>();
+        public Dictionary<string, Color> ColorAssignments = new Dictionary<string, Color>();
         private void UpdateList(bool fromModifiedEvent = false)
         {
             weaponManagers.Clear();

@@ -1514,7 +1514,7 @@ namespace BDArmory.Damage
             }
             var OldHullMassAdjust = HullMassAdjust;
             HullMassAdjust = (partMass * hullInfo.massMod) - partMass;
-            guiHullTypeString = String.IsNullOrEmpty(hullInfo.localizedName) ? hullInfo.name : StringUtils.Localize(hullInfo.localizedName);
+            guiHullTypeString = string.IsNullOrEmpty(hullInfo.localizedName) ? hullInfo.name : StringUtils.Localize(hullInfo.localizedName);
             if (hullInfo.maxTemp > 0)
             {
                 part.maxTemp = hullInfo.maxTemp;

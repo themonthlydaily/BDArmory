@@ -24,10 +24,10 @@ namespace BDArmory.UI
         private bool save = false;
         private float height = 20;
 
-        private string beltString = String.Empty;
-        private string GUIstring = String.Empty;
-        private string lastGUIstring = String.Empty;
-        string countString = String.Empty;
+        private string beltString = string.Empty;
+        private string GUIstring = string.Empty;
+        private string lastGUIstring = string.Empty;
+        string countString = string.Empty;
         private int roundCounter = 0;
         int labelLines = 1;
 
@@ -64,10 +64,10 @@ namespace BDArmory.UI
             open = true;
             selectedWeapon = weapon;
             windowLocation = position;
-            beltString = String.Empty;
-            GUIstring = String.Empty;
-            countString = String.Empty;
-            lastGUIstring = String.Empty;
+            beltString = string.Empty;
+            GUIstring = string.Empty;
+            countString = string.Empty;
+            lastGUIstring = string.Empty;
             roundCounter = 0;
             applyWeaponGroupTo = new string[] { StringUtils.Localize("#LOC_BDArmory_thisWeapon"), StringUtils.Localize("#LOC_BDArmory_SymmetricWeapons"), $"{StringUtils.Localize("#autoLOC_900712")} {weapon.part.partInfo.title}" };
             _applyWeaponGroupTo = applyWeaponGroupTo[_applyWeaponGroupToIndex];
@@ -208,10 +208,10 @@ namespace BDArmory.UI
             if (GUI.Button(new Rect(width - 26, 2, 24, 24), "X", BDArmorySetup.CloseButtonStyle))
             {
                 open = false;
-                beltString = String.Empty;
-                GUIstring = String.Empty;
-                countString = String.Empty;
-                lastGUIstring = String.Empty;
+                beltString = string.Empty;
+                GUIstring = string.Empty;
+                countString = string.Empty;
+                lastGUIstring = string.Empty;
             }
             line++;
             GUI.Label(new Rect(margin, line * buttonHeight, width - 2 * margin, buttonHeight), StringUtils.Localize("#LOC_BDArmory_Ammo_Weapon") + " " + selectedWeapon.part.partInfo.title, labelStyle);
@@ -231,7 +231,7 @@ namespace BDArmory.UI
             float ammolines = 0.1f;
             for (int i = 0; i < AList.Count; i++)
             {
-                string ammoname = String.IsNullOrEmpty(BulletInfo.bullets[AList[i]].DisplayName) ? BulletInfo.bullets[AList[i]].name : BulletInfo.bullets[AList[i]].DisplayName;
+                string ammoname = string.IsNullOrEmpty(BulletInfo.bullets[AList[i]].DisplayName) ? BulletInfo.bullets[AList[i]].name : BulletInfo.bullets[AList[i]].DisplayName;
                 if (GUI.Button(new Rect(margin * 2, (line + labelLines + ammolines) * buttonHeight, (width - 4 * margin), buttonHeight), ammoname, BDArmorySetup.ButtonStyle))
                 {
                     beltString += BulletInfo.bullets[AList[i]].name;
@@ -259,10 +259,10 @@ namespace BDArmory.UI
             }
             if (GUI.Button(new Rect(margin * 5, (line + labelLines + ammolines) * buttonHeight, (width - (10 * margin)) / 2, buttonHeight), StringUtils.Localize("#LOC_BDArmory_reset"), BDArmorySetup.ButtonStyle))
             {
-                beltString = String.Empty;
-                GUIstring = String.Empty;
-                countString = String.Empty;
-                lastGUIstring = String.Empty;
+                beltString = string.Empty;
+                GUIstring = string.Empty;
+                countString = string.Empty;
+                lastGUIstring = string.Empty;
                 labelLines = 1;
                 roundCounter = 1;
             }

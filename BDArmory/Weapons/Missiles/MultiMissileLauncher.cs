@@ -276,7 +276,7 @@ namespace BDArmory.Weapons.Missiles
                     missileMass = parts.Current.partPrefab.mass;
                     break;
                 }
-            if (String.IsNullOrEmpty(scaleTransformName))
+            if (string.IsNullOrEmpty(scaleTransformName))
             {
                 Fields["Scale"].guiActiveEditor = false;
             }
@@ -288,7 +288,7 @@ namespace BDArmory.Weapons.Missiles
                 if (Scale > scaleMax) Scale = scaleMax;
                 AWidth.onFieldChanged = updateScale;
             }
-            if (String.IsNullOrEmpty(lengthTransformName))
+            if (string.IsNullOrEmpty(lengthTransformName))
             {
                 Fields["Length"].guiActiveEditor = false;
             }
@@ -300,7 +300,7 @@ namespace BDArmory.Weapons.Missiles
                 if (Length > scaleMax) Length = scaleMax;
                 ALength.onFieldChanged = updateLength;
             }
-            if (!String.IsNullOrEmpty(lengthTransformName))
+            if (!string.IsNullOrEmpty(lengthTransformName))
             {
                 UI_FloatRange AOffset = (UI_FloatRange)Fields["attachOffset"].uiControlEditor;
                 AOffset.onFieldChanged = updateOffset;
@@ -363,7 +363,7 @@ namespace BDArmory.Weapons.Missiles
                 ScaleTransform.localScale = new Vector3(scale, scale, scale);
             if (LengthTransform != null)
                 LengthTransform.localScale = new Vector3(1, 1, (1 / scale) * length);
-            if (!String.IsNullOrEmpty(lengthTransformName))
+            if (!string.IsNullOrEmpty(lengthTransformName))
             {
                 for (int i = 0; i < launchTransforms.Length; i++)
                 {
@@ -461,15 +461,15 @@ namespace BDArmory.Weapons.Missiles
                 if (MODEL.HasValue("scale"))
                 {
                     string[] strings = MODEL.GetValue("scale").Split(","[0]);
-                    dummyScale.x = Single.Parse(strings[0]);
-                    dummyScale.y = Single.Parse(strings[1]);
-                    dummyScale.z = Single.Parse(strings[2]);
+                    dummyScale.x = float.Parse(strings[0]);
+                    dummyScale.y = float.Parse(strings[1]);
+                    dummyScale.z = float.Parse(strings[2]);
                 }
                 else
                 {
                     if (cfgdir.config.HasValue("rescaleFactor"))
                     {
-                        float scale = Single.Parse(cfgdir.config.GetValue("rescaleFactor"));
+                        float scale = float.Parse(cfgdir.config.GetValue("rescaleFactor"));
                         dummyScale.x = scale;
                         dummyScale.y = scale;
                         dummyScale.z = scale;
@@ -490,7 +490,7 @@ namespace BDArmory.Weapons.Missiles
             }
             if (cfgdir.config.HasValue("rescaleFactor"))
             {
-                float scale = Single.Parse(cfgdir.config.GetValue("rescaleFactor"));
+                float scale = float.Parse(cfgdir.config.GetValue("rescaleFactor"));
                 dummyScale.x = scale;
                 dummyScale.y = scale;
                 dummyScale.z = scale;
