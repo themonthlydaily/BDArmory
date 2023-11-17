@@ -1401,7 +1401,7 @@ namespace BDArmory.UI
                     GUI.Label(LabelRect(++guardLines, guardLabelWidth), StringUtils.Localize("#LOC_BDArmory_WMWindow_VisualRange"), leftLabel);//"Visual Range"
                     if (!NumFieldsEnabled)
                     {
-                        ActiveWeaponManager.guardRange = BDAMath.RoundToUnit(GUI.HorizontalSlider(SliderRect(guardLines, guardLabelWidth), ActiveWeaponManager.guardRange, 100, BDArmorySettings.MAX_GUARD_VISUAL_RANGE), 0.01f);
+                        ActiveWeaponManager.guardRange = UI_FloatSemiLogRange.ToSemiLogValue(Mathf.Round(GUI.HorizontalSlider(SliderRect(guardLines, guardLabelWidth), UI_FloatSemiLogRange.FromSemiLogValue(ActiveWeaponManager.guardRange, 100), 1, UI_FloatSemiLogRange.FromSemiLogValue(BDArmorySettings.MAX_GUARD_VISUAL_RANGE, 100))), 100, 1);
                         GUI.Label(RightLabelRect(guardLines), ActiveWeaponManager.guardRange.ToString(), leftLabel);
                     }
                     else
@@ -1414,7 +1414,7 @@ namespace BDArmory.UI
                     GUI.Label(LabelRect(++guardLines, guardLabelWidth), StringUtils.Localize("#LOC_BDArmory_WMWindow_GunsRange"), leftLabel);//"Guns Range"
                     if (!NumFieldsEnabled)
                     {
-                        ActiveWeaponManager.gunRange = BDAMath.RoundToUnit(GUI.HorizontalSlider(SliderRect(guardLines, guardLabelWidth), ActiveWeaponManager.gunRange, 0, ActiveWeaponManager.maxGunRange), 0.1f);
+                        ActiveWeaponManager.gunRange = UI_FloatSemiLogRange.ToSemiLogValue(BDAMath.RoundToUnit(GUI.HorizontalSlider(SliderRect(guardLines, guardLabelWidth), UI_FloatSemiLogRange.FromSemiLogValue(ActiveWeaponManager.gunRange, 10), 1, UI_FloatSemiLogRange.FromSemiLogValue(ActiveWeaponManager.maxGunRange, 10)), 0.1f), 10);
                         GUI.Label(RightLabelRect(guardLines), ActiveWeaponManager.gunRange.ToString(), leftLabel);
                     }
                     else
