@@ -170,7 +170,7 @@ namespace BDArmory.Weapons.Missiles
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_InCustomCargoBay"), // In custom/modded "cargo bay"
             UI_ChooseOption(
-            options = new String[] {
+            options = new string[] {
                 "0",
                 "1",
                 "2",
@@ -189,7 +189,7 @@ namespace BDArmory.Weapons.Missiles
                 "15",
                 "16"
             },
-            display = new String[] {
+            display = new string[] {
                 "Disabled",
                 "AG1",
                 "AG2",

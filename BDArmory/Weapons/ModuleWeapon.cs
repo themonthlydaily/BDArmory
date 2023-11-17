@@ -802,7 +802,7 @@ namespace BDArmory.Weapons
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DeployableWeapon"), // In custom/modded "cargo bay"
             UI_ChooseOption(
-            options = new String[] {
+            options = new string[] {
                 "0",
                 "1",
                 "2",
@@ -821,7 +821,7 @@ namespace BDArmory.Weapons
                 "15",
                 "16"
             },
-            display = new String[] {
+            display = new string[] {
                 "Disabled",
                 "AG1",
                 "AG2",
@@ -2184,6 +2184,7 @@ namespace BDArmory.Weapons
                                         var gravity = bulletDrop ? (Vector3)FlightGlobals.getGeeForceAtPosition(pBullet.transform.position) : Vector3.zero;
                                         pBullet.transform.position = AIUtils.PredictPosition(pBullet.transform.position, firedVelocity, gravity, iTime);
                                         pBullet.currentVelocity += iTime * gravity; // Adjusting the velocity here mostly eliminates bullet deviation due to iTime.
+                                        if (!BDKrakensbane.IsActive) pBullet.transform.position += TimeWarp.fixedDeltaTime * part.rb.velocity; // If Krakensbane isn't active, bullets get an additional shift by this amount.
                                         pBullet.SetTracerPosition();
                                         pBullet.transform.position += TimeWarp.fixedDeltaTime * (part.rb.velocity + BDKrakensbane.FrameVelocityV3f); // Account for velocity off-loading after visuals are done.
                                     }
@@ -3437,17 +3438,18 @@ namespace BDArmory.Weapons
                 if (!slaved && !GPSTarget && !aiControlled && !MouseAimFlight.IsMouseAimActive && !isAPS && (vessel.isActiveVessel || BDArmorySettings.REMOTE_SHOOTING))
                 {
                     manualAiming = true;
-                    targetVelocity = -BDKrakensbane.FrameVelocityV3f; // Stationary targets are being moved opposite to the Krakensbane frame velocity.
+                    targetVelocity = -BDKrakensbane.FrameVelocityV3f; // Stationary targets' rigid bodies are being moved opposite to the Krakensbane frame velocity.
                     targetAcceleration = Vector3.zero;
-                    targetIsLandedOrSplashed = false;
+                    targetIsLandedOrSplashed = true;
+                    smoothedPartVelocity = part.rb.velocity; // Override the smoothing (which isn't run without a target otherwise).
+                    smoothedPartAcceleration = vessel.acceleration_immediate;
                     if (yawRange > 0 || maxPitch - minPitch > 0)
                     {
                         //MouseControl
-                        Vector3 mouseAim = new Vector3(Input.mousePosition.x / Screen.width, Input.mousePosition.y / Screen.height, 0);
+                        Vector3 mouseAim = new(Input.mousePosition.x / Screen.width, Input.mousePosition.y / Screen.height, 0);
                         Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(mouseAim);
-                        RaycastHit hit;
 
-                        if (Physics.Raycast(ray, out hit, maxTargetingRange, layerMask1))
+                        if (Physics.Raycast(ray, out RaycastHit hit, maxTargetingRange, layerMask1))
                         {
                             KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
                             Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
@@ -3556,6 +3558,7 @@ namespace BDArmory.Weapons
                     firingDirection = smoothedRelativeFinalTarget.At(Time.fixedDeltaTime).normalized; // Estimate of the current firing direction for this frame based on the previous frames.
                     bulletAcceleration = bulletDrop ? (Vector3)FlightGlobals.getGeeForceAtPosition(firePosition) : Vector3.zero; // Acceleration at the start point.
                     bulletInitialPosition = AIUtils.PredictPosition(firePosition, baseBulletVelocity * firingDirection, bulletAcceleration, iTime); // Bullets are initially placed up to 1 frame ahead (iTime).
+                    if (!BDKrakensbane.IsActive) bulletInitialPosition += TimeWarp.fixedDeltaTime * part.rb.velocity; // If Krakensbane isn't active, bullets get an additional shift by this amount.
                     bulletInitialVelocityDelta = iTime * bulletAcceleration;
 
                     // Check whether we should use the analytic solution or the numeric one. These initial values don't affect the numeric solution.
@@ -3590,6 +3593,7 @@ namespace BDArmory.Weapons
                             lastFiringDirection = firingDirection;
                             bulletEffectiveVelocity = smoothedPartVelocity + baseBulletVelocity * firingDirection + bulletInitialVelocityDelta;
                             bulletInitialPosition = firePosition + iTime * baseBulletVelocity * firingDirection;
+                            if (!BDKrakensbane.IsActive) bulletInitialPosition += TimeWarp.fixedDeltaTime * part.rb.velocity; // If Krakensbane isn't active, bullets get an additional shift by this amount.
                             bulletAcceleration = bulletDrop ? (Vector3)FlightGlobals.getGeeForceAtPosition((bulletInitialPosition + targetPredictedPosition) / 2f) : Vector3.zero; // Drag is ignored.
                             relativePosition = targetPosition - bulletInitialPosition;
                             relativeVelocity = targetVelocity - bulletEffectiveVelocity;
@@ -3729,19 +3733,22 @@ namespace BDArmory.Weapons
                 }
                 else if (eWeaponType == WeaponTypes.Ballistic && BDArmorySettings.AIM_ASSIST && BDArmorySettings.DRAW_AIMERS)
                 {
-                    if (Physics.Raycast(new Ray(fireTransform.position, baseBulletVelocity * fireTransform.forward), out RaycastHit hit, Time.fixedDeltaTime * baseBulletVelocity, layerMask1)) // Check between the barrel and the point the bullet appears.
+                    var timeGap = GetTimeGap();
+                    var iTime = timeSinceFired - timeGap >= TimeWarp.fixedDeltaTime ?
+                        TimeWarp.fixedDeltaTime :
+                        TimeWarp.fixedDeltaTime - (TimeWarp.fixedDeltaTime + timeGap - timeSinceFired) % TimeWarp.fixedDeltaTime; // This is the iTime correction for the frame that the gun will actually fire on.
+                    if (iTime < 1e-4f) iTime = TimeWarp.fixedDeltaTime; // Avoid jitter by aliasing iTime < 1e-4 to TimeWarp.fixedDeltaTime for the frame after.
+                    var firePosition = AIUtils.PredictPosition(fireTransform.position, part.rb.velocity, vessel.acceleration_immediate, Time.fixedDeltaTime); // Position of the end of the barrel at the start of the next frame.
+                    var bulletAcceleration = bulletDrop ? (Vector3)FlightGlobals.getGeeForceAtPosition(firePosition) : Vector3.zero; // Acceleration at the start point.
+                    var simCurrPos = AIUtils.PredictPosition(firePosition, baseBulletVelocity * fireTransform.forward, bulletAcceleration, iTime); // Bullets are initially placed up to 1 frame ahead (iTime).
+                    if (!BDKrakensbane.IsActive) simCurrPos += TimeWarp.fixedDeltaTime * part.rb.velocity; // If Krakensbane isn't active, bullets get an additional shift by this amount.
+
+                    if (Physics.Raycast(new Ray(firePosition, simCurrPos - firePosition), out RaycastHit hit, (simCurrPos - firePosition).magnitude, layerMask1)) // Check between the barrel and the point the bullet appears.
                     {
                         bulletPrediction = hit.point;
                     }
                     else
                     {
-                        var timeGap = GetTimeGap();
-                        var iTime = timeSinceFired - timeGap >= TimeWarp.fixedDeltaTime ?
-                            TimeWarp.fixedDeltaTime :
-                            TimeWarp.fixedDeltaTime - (TimeWarp.fixedDeltaTime + timeGap - timeSinceFired) % TimeWarp.fixedDeltaTime; // This is the iTime correction for the frame that the gun will actually fire on.
-                        if (iTime < 1e-4f && Mathf.Abs((timeGap / TimeWarp.fixedDeltaTime + 0.5f) % 1f - 0.5f) < 1e-4f) iTime = TimeWarp.fixedDeltaTime; // Avoid jitter by aliasing iTime < 1e-4 to TimeWarp.fixedDeltaTime if timeGap is resonant with fixedDeltaTime.
-                        var bulletAcceleration = bulletDrop ? (Vector3)FlightGlobals.getGeeForceAtPosition(fireTransform.position) : Vector3.zero;
-                        Vector3 simCurrPos = AIUtils.PredictPosition(fireTransform.position, baseBulletVelocity * fireTransform.forward, bulletAcceleration, iTime); // Bullets are initially placed up to 1 frame ahead (iTime).
                         Vector3 simVelocity = part.rb.velocity + BDKrakensbane.FrameVelocityV3f + baseBulletVelocity * fireTransform.forward + iTime * bulletAcceleration;
                         var simDeltaTime = Mathf.Clamp(Mathf.Min(maxTargetingRange, Mathf.Max(targetDistance, origTargetDistance)) / simVelocity.magnitude / 2f, Time.fixedDeltaTime, Time.fixedDeltaTime * BDArmorySettings.BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER); // With leap-frog, we can use a higher time-step and still get better accuracy than with Euler variants (what was used before). Always take at least 2 steps though.
                         BallisticTrajectorySimulation(ref simCurrPos, simVelocity, Mathf.Min(maxTargetingRange, (simCurrPos - targetPosition).magnitude), maxTargetingRange / baseBulletVelocity / Vector3.Dot((targetPosition - simCurrPos).normalized, fireTransform.forward), simDeltaTime, FlightGlobals.getAltitudeAtPos(targetPosition) < 0);
@@ -4423,14 +4430,14 @@ namespace BDArmory.Weapons
                             tracerEndWidth = Mathf.Lerp(tracerEndWidth, tracerMaxEndWidth, 0.02f / LaserGrowTime);
                             if (DynamicBeamColor)
                             {
-                                startColorS[0] = Mathf.Lerp(Single.Parse(startColorS[0]), Single.Parse(endColorS[0]), 0.02f / LaserGrowTime).ToString();
-                                startColorS[1] = Mathf.Lerp(Single.Parse(startColorS[1]), Single.Parse(endColorS[1]), 0.02f / LaserGrowTime).ToString();
-                                startColorS[2] = Mathf.Lerp(Single.Parse(startColorS[2]), Single.Parse(endColorS[2]), 0.02f / LaserGrowTime).ToString();
-                                startColorS[3] = Mathf.Lerp(Single.Parse(startColorS[3]), Single.Parse(endColorS[3]), 0.02f / LaserGrowTime).ToString();
+                                startColorS[0] = Mathf.Lerp(float.Parse(startColorS[0]), float.Parse(endColorS[0]), 0.02f / LaserGrowTime).ToString();
+                                startColorS[1] = Mathf.Lerp(float.Parse(startColorS[1]), float.Parse(endColorS[1]), 0.02f / LaserGrowTime).ToString();
+                                startColorS[2] = Mathf.Lerp(float.Parse(startColorS[2]), float.Parse(endColorS[2]), 0.02f / LaserGrowTime).ToString();
+                                startColorS[3] = Mathf.Lerp(float.Parse(startColorS[3]), float.Parse(endColorS[3]), 0.02f / LaserGrowTime).ToString();
                             }
                             for (int i = 0; i < 4; i++)
                             {
-                                projectileColorC[i] = Single.Parse(startColorS[i]) / 255;
+                                projectileColorC[i] = float.Parse(startColorS[i]) / 255;
                             }
                         }
                         UpdateLaserSpecifics(DynamicBeamColor, dynamicFX, LaserGrowTime > 0, beamScrollRate != 0);
@@ -4719,7 +4726,7 @@ namespace BDArmory.Weapons
                         shutdownRoutine = StartCoroutine(ShutdownRoutine(true));
                     }
                     if (!oneShotSound) audioSource.Stop();
-                    if (!String.IsNullOrEmpty(reloadAudioPath))
+                    if (!string.IsNullOrEmpty(reloadAudioPath))
                     {
                         audioSource.PlayOneShot(reloadAudioClip);
                     }
@@ -4754,7 +4761,7 @@ namespace BDArmory.Weapons
                 {
                     UpdateRocketScales();
                 }
-                if (!String.IsNullOrEmpty(reloadCompletePath))
+                if (!string.IsNullOrEmpty(reloadCompletePath))
                 {
                     audioSource.PlayOneShot(reloadCompleteAudioClip);
                 }
@@ -5317,7 +5324,7 @@ namespace BDArmory.Weapons
                 fireState[i].enabled = false;
             }
             if (!oneShotSound) audioSource.Stop();
-            if (!String.IsNullOrEmpty(reloadAudioPath))
+            if (!string.IsNullOrEmpty(reloadAudioPath))
             {
                 audioSource.PlayOneShot(reloadAudioClip);
             }
@@ -5335,7 +5342,7 @@ namespace BDArmory.Weapons
         {
             isCharging = true;
             guiStatusString = "Charging";
-            if (!String.IsNullOrEmpty(chargeSoundPath))
+            if (!string.IsNullOrEmpty(chargeSoundPath))
             {
                 audioSource.PlayOneShot(chargeSound);
             }

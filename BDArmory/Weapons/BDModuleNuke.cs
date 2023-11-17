@@ -178,7 +178,7 @@ namespace BDArmory.Weapons
                         {
                             if (!hasDetonated && !goingCritical)
                             {
-                                if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.RWPS3R2NukeModule]: nerva on " + (String.IsNullOrEmpty(Sourcevessel) ? Sourcevessel : part.vessel.GetName()) + " is out of fuel.");
+                                if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.RWPS3R2NukeModule]: nerva on " + (string.IsNullOrEmpty(Sourcevessel) ? Sourcevessel : part.vessel.GetName()) + " is out of fuel.");
                                 StartCoroutine(DelayedDetonation(meltDownDuration)); //bingo fuel, detonate
 
                             }

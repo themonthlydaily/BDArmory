@@ -1,14 +1,25 @@
-﻿IMPROVEMENTS/FIXES
+﻿IMPROVEMENTS / FIXES
+- UI:
+	- Fix the alternate (hidden UI) window locations (for scores and vessel switcher) not being saved correctly.
+- AI / WM:
+	- Base the Immelmann turn pitch direction on the local pitch angular velocity (i.e., pitch down if already rotating that way — fixes the pitch oscillation behaviour when targeting an opponent behind the craft while inverted near terrain).
 - Detectors:
 	-Can now set targeting camera slew rate using "traverseRate" field in ModuleTargetingCamera.
 - Weapons:
-	- Missiles:
+	- Fixes for initial bullet placement and simulated hit position when Krakensbane is not active.
+  	- Missiles:
 		- Fix clustermissiles launching copies of themselves instead of submunitions.
 		- Fix Guidance Type None missiles not holding course.
 		- GPS missiles now require radar lock or target cam for GPS coords.
 		- INS missiles can now use either radar or IRST tracking.
 		- INS missiles now have datalink capability for mid-flight target coordinate updates, update rate clamped to Radar/IRST scan speed.
 		- Fix error with Inertial guidance target prediction for non-updating missiles.
+- Vessel Mover:
+	- Check for outdated loadMeta files when refreshing the craft list in the vessel selection window and update them since KSP doesn't update them when you save your craft!
+	- Fix the spawn point selection sometimes not registering.
+- ModIntegration:
+	- Fixes for inhibiting CameraTools when initial spawning during continuous spawning and disable auto-switching to newly spawned craft joining the competition.
+
 v1.6.8.0
 IMPROVEMENTS / FIXES
 - General:
@@ -35,7 +46,7 @@ IMPROVEMENTS / FIXES
 	- Abrams Turret maxDeviation decreased to 0.1; Abrams bullet spread should reliably hit a tank-sized target from 2km again.
 	- Missiles:
 		- Add new Inertial guidance mode.
-		  - Add new 'inertialDrift' missileLauncher field for INS drift, in meters/sec.
+			- Add new 'inertialDrift' missileLauncher field for INS drift, in meters/sec.
 		- Have torpedoes head to last known contact point and start circling it, instead of current sink to bottom behavior.
 		- MultiMissileLauncher deploy anim toggle now affects symmetry twins.
 		- Fix various NullReferenceExceptions when trying to use Modular Missiles.

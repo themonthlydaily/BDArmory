@@ -322,8 +322,8 @@ namespace BDArmory.UI
                                     string UIdist;
                                     string UoM;
                                     string vName;
-                                    string selectedWeapon = String.Empty;
-                                    string AIstate = String.Empty;
+                                    string selectedWeapon = string.Empty;
+                                    string AIstate = string.Empty;
                                     distance = targetRelPos.magnitude;
                                     if (distance >= BDTISettings.DISTANCE_THRESHOLD) //TODO - look into having vessel icons be based on vesel visibility? (So don't draw icon for undetected stealth plane, etc?)
                                     {

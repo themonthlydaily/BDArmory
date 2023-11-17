@@ -69,6 +69,13 @@ namespace BDArmory.VesselSpawning
                 StopCoroutine(spawnAllVesselsOnceContinuouslyCoroutine);
                 spawnAllVesselsOnceContinuouslyCoroutine = null;
             }
+
+            // Team spawn
+            if (teamSpawnCoroutine!=null)
+            {
+                StopCoroutine(teamSpawnCoroutine);
+                teamSpawnCoroutine = null;
+            }
         }
 
         #region Single spawning

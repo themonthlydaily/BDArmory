@@ -739,7 +739,7 @@ namespace BDArmory.VesselSpawning
                     HideCrewSelection();
                     break;
                 }
-                yield return wait;
+                yield return null;
             }
         }
 
@@ -786,7 +786,7 @@ namespace BDArmory.VesselSpawning
                 }
                 else
                 {
-                    yield return wait;
+                    yield return null;
                     continue;
                 }
 
@@ -799,7 +799,7 @@ namespace BDArmory.VesselSpawning
                     if (altitudeCorrection) geoCoords.z = currentMainBody.TerrainAltitude(geoCoords.x, geoCoords.y, BDArmorySettings.VESSEL_MOVER_BELOW_WATER);
                     break;
                 }
-                yield return wait;
+                yield return null;
             }
             Destroy(indicatorObject);
         }
@@ -1537,7 +1537,7 @@ namespace BDArmory.VesselSpawning
             foreach (var craft in craftList.Keys.ToList())
             {
                 var craftMeta = Path.Combine(currentFolder, $"{Path.GetFileNameWithoutExtension(craft)}.loadmeta");
-                if (File.Exists(craftMeta)) // If the loadMeta file exists, use it, otherwise generate one.
+                if (File.Exists(craftMeta) && File.GetLastWriteTime(craftMeta) > File.GetLastWriteTime(craft)) // If the loadMeta file exists and has a timestamp that's later than the craft file (because WTF KSP‽), use it, otherwise generate one.
                 {
                     craftList[craft].LoadFromMetaFile(craftMeta);
                 }
