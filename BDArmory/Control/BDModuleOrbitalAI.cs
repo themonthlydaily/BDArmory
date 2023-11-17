@@ -685,7 +685,7 @@ namespace BDArmory.Control
             bool canIntercept = false;
 
             // Is it worth us chasing a withdrawing ship?
-            BDModuleOrbitalAI targetAI = target.FindPartModuleImplementing<BDModuleOrbitalAI>();
+            BDModuleOrbitalAI targetAI = VesselModuleRegistry.GetModule<BDModuleOrbitalAI>(target);
 
             if (targetAI)
             {
