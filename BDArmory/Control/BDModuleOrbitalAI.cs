@@ -438,10 +438,14 @@ namespace BDArmory.Control
                 vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
                 fc.throttle = 0;
                 fc.lerpAttitude = false;
+                Vector3 firingSolution = FromTo(vessel, targetVessel).normalized;
 
                 while (UnderTimeLimit() && targetVessel != null && weaponManager.currentGun && GunReady(weaponManager.currentGun))
                 {
-                    fc.attitude = weaponManager.currentGun.finalAimTarget;
+                    if (weaponManager.currentGun.FiringSolutionVector != null)
+                        firingSolution = (Vector3)weaponManager.currentGun.FiringSolutionVector;
+
+                    fc.attitude = firingSolution;
                     fc.RCSVector = -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel));
 
                     yield return wait;
