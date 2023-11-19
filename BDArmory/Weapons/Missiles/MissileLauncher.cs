@@ -1097,7 +1097,6 @@ namespace BDArmory.Weapons.Missiles
                         if (wpm != null)
                         {
                             wpm.heatTarget = TargetSignatureData.noTarget;
-                            GpsUpdateMax = wpm.GpsUpdateMax;
                         }
                         launched = true;
                     }
