@@ -180,7 +180,7 @@ namespace BDArmory.Control
             base.DeactivatePilot();
 
             if (fc)
-                fc.Deactivate();
+                fc.Deactivate(); fc = null;
 
             if (maxAccelerationCR != null)
             {
@@ -225,12 +225,10 @@ namespace BDArmory.Control
         #endregion events
 
         #region Actual AI Pilot
-
         protected override void AutoPilot(FlightCtrlState s)
         {
 
             upDir = VectorUtils.GetUpDirection(vesselTransform.position);
-            
             
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
             {
@@ -249,7 +247,14 @@ namespace BDArmory.Control
                     debugString.AppendLine($"Lateral Velocity: {lateralVelocity:G3}");
                 }
             }
-
+            if (BDArmorySettings.DEBUG_AI)
+            {
+                if (lastStatusMode != currentStatusMode)
+                {
+                    Debug.Log("[BDArmory.BDModuleOrbitalAI]: Status of " + vessel.vesselName + " changed from " + lastStatusMode + " to " + currentStatus);
+                }
+                lastStatusMode = currentStatusMode;
+            }
         }
 
         void UpdateStatus()
@@ -664,7 +669,7 @@ namespace BDArmory.Control
             float timeToKillVelocity = relVel.magnitude / Mathf.Max(maxAcceleration, 0.01f);
 
             float rotDistance = Vector3.Angle(vessel.ReferenceTransform.up, -relVel.normalized) * Mathf.Deg2Rad;
-            float timeToRotate = SolveTime(rotDistance * 0.75f, maxAngularAcceleration.magnitude) / 0.75f;
+            float timeToRotate = BDAMath.SolveTime(rotDistance * 0.75f, maxAngularAcceleration.magnitude) / 0.75f;
 
             Vector3 toTarget = FromTo(vessel, targetVessel);
             Vector3 toClosestApproach = ToClosestApproach(toTarget, relVel, minRange);
@@ -726,8 +731,8 @@ namespace BDArmory.Control
             Vector3 relVel = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
 
             float rotDistance = Vector3.Angle(vessel.ReferenceTransform.up, toEscape) * Mathf.Deg2Rad;
-            float timeToRotate = SolveTime(rotDistance / 2, maxAngularAcceleration.magnitude) * 2;
-            float timeToDisplace = SolveTime(minRange - toTarget.magnitude, maxAcceleration, Vector3.Dot(-relVel, toEscape));
+            float timeToRotate = BDAMath.SolveTime(rotDistance / 2, maxAngularAcceleration.magnitude) * 2;
+            float timeToDisplace = BDAMath.SolveTime(minRange - toTarget.magnitude, maxAcceleration, Vector3.Dot(-relVel, toEscape));
             float timeToEscape = timeToRotate * 2 + timeToDisplace;
 
             Vector3 drift = AIUtils.PredictPosition(toTarget, relVel, Vector3.zero, timeToEscape);
@@ -788,18 +793,6 @@ namespace BDArmory.Control
             Vector3 tv2 = tv1 + RelVel(v, t);
             return Vector3.Angle(tv1.normalized, tv2.normalized);
         }
-
-        public static float SolveTime(float distance, float acceleration, float vel = 0)
-        {
-            float a = 0.5f * acceleration;
-            float b = vel;
-            float c = -Mathf.Abs(distance);
-
-            float x = (-b + BDAMath.Sqrt(b * b - 4 * a * c)) / (2 * a);
-
-            return x;
-        }
-
 
         public static float VesselDistance(Vessel v1, Vessel v2)
         {
@@ -876,162 +869,4 @@ namespace BDArmory.Control
 
         #endregion WingCommander
     }
-}
-
-public class BDOrbitalControl : MonoBehaviour //: PartModule
-{
-
-    // /////////////////////////////////////////////////////
-    public Vessel vessel;
-    public Vector3 attitude = Vector3.zero;
-    private Vector3 attitudeLerped;
-    private float error;
-    private float angleLerp;
-    public bool lerpAttitude = true;
-    private float lerpRate;
-    private bool lockAttitude = false;
-
-    private bool facingDesiredRotation;
-    public float throttle;
-    public float throttleActual;
-    internal float throttleLerped;
-    public float throttleLerpRate = 1;
-    public float alignmentToleranceforBurn = 5;
-
-    AxisGroupsModule axisGroupsModule;
-    bool hasAxisGroupsModule = false; // To avoid repeated null checks
-
-    public Vector3 RCSVector;
-    public float RCSPower = 3f;
-    private Vector3 RCSThrust;
-    private Vector3 up, right, forward;
-    private float RCSThrottle;
-    private Vector3 RCSVectorLerped = Vector3.zero;
-
-    //[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "ToggleAC")]
-
-    void Start()
-    {
-        axisGroupsModule = vessel.FindVesselModuleImplementingBDA<AxisGroupsModule>(); // Look for an axis group module.
-        if (axisGroupsModule != null) hasAxisGroupsModule = true;
-    }
-
-    public void Activate()
-    {
-        vessel.OnFlyByWire -= OrbitalControl;
-        vessel.OnFlyByWire += OrbitalControl;
-    }
-
-    public void Deactivate()
-    {
-        vessel.OnFlyByWire -= OrbitalControl;
-    }
-
-    void OrbitalControl(FlightCtrlState s)
-    {
-        error = Vector3.Angle(vessel.ReferenceTransform.up, attitude);
-
-        UpdateSAS(s);
-        UpdateThrottle(s);
-        UpdateRCS(s);
-    }
-
-    private void UpdateThrottle(FlightCtrlState s)
-    {
-        //if (throttle == 0 && throttleLerped == 0) return;
-        //if (v == null) return;
-
-        facingDesiredRotation = error < alignmentToleranceforBurn;
-        throttleActual = facingDesiredRotation ? throttle : 0;
-
-        // Move actual throttle towards throttle target gradually.
-        throttleLerped = Mathf.MoveTowards(throttleLerped, throttleActual, throttleLerpRate * Time.fixedDeltaTime);
-
-        SetThrottle(s, throttleLerped);
-
-    }
-
-    /// <summary>
-    /// Set the main throttle and the corresponding axis group.
-    /// </summary>
-    /// <param name="s">The flight control state</param>
-    /// <param name="value">The throttle value</param>
-    public void SetThrottle(FlightCtrlState s, float value)
-    {
-        s.mainThrottle = value;
-        if (hasAxisGroupsModule)
-        {
-            axisGroupsModule.UpdateAxisGroup(KSPAxisGroup.MainThrottle, 2f * value - 1f); // Throttle is full-axis: 0—1 throttle maps to -1—1 axis.
-        }
-    }
-
-    void UpdateRCS(FlightCtrlState s)
-    {
-        if (RCSVector == Vector3.zero) return;
-
-        if (RCSVectorLerped == Vector3.zero)
-            RCSVectorLerped = RCSVector;
-
-        // This system works for now but it's convuluted and isn't very stable.
-        RCSVectorLerped = Vector3.Lerp(RCSVectorLerped, RCSVector, 5f * Time.fixedDeltaTime * Mathf.Clamp01(RCSVectorLerped.magnitude / RCSPower));
-        RCSThrottle = Mathf.Lerp(0, 1.732f, Mathf.InverseLerp(0, RCSPower, RCSVectorLerped.magnitude));
-        RCSThrust = RCSVectorLerped.normalized * RCSThrottle;
-
-        up = -vessel.ReferenceTransform.forward;
-        forward = -vessel.ReferenceTransform.up;
-        right = Vector3.Cross(up, forward);
-
-        SetAxisControlState(s,
-            Mathf.Clamp(Vector3.Dot(RCSThrust, right), -1, 1),
-            Mathf.Clamp(Vector3.Dot(RCSThrust, up), -1, 1),
-            Mathf.Clamp(Vector3.Dot(RCSThrust, forward), -1, 1));
-
-    }
-
-    void UpdateSAS(FlightCtrlState s)
-    {
-        if (attitude == Vector3.zero || lockAttitude) return;
-
-        // SAS must be turned off. Don't know why.
-        if (vessel.ActionGroups[KSPActionGroup.SAS])
-            vessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
-
-        var ap = vessel.Autopilot;
-        if (ap == null) return;
-
-        // The offline SAS must not be on stability assist. Normal seems to work on most probes.
-        if (ap.Mode != VesselAutopilot.AutopilotMode.Normal)
-            ap.SetMode(VesselAutopilot.AutopilotMode.Normal);
-
-        // Lerp attitude while burning to reduce instability.
-        if (lerpAttitude)
-        {
-            angleLerp = Mathf.InverseLerp(0, 10, error);
-            lerpRate = Mathf.Lerp(1, 10, angleLerp);
-            attitudeLerped = Vector3.Lerp(attitudeLerped, attitude, lerpRate * Time.deltaTime);
-        }
-
-        ap.SAS.SetTargetOrientation(throttleLerped > 0 && lerpAttitude ? attitudeLerped : attitude, false);
-    }
-
-    /// <summary>
-    /// Set the axis control state and also the corresponding axis groups.
-    /// </summary>
-    /// <param name="s">The flight control state</param>
-    /// <param name="X">x</param>
-    /// <param name="Y">y</param>
-    /// <param name="Z">z</param>
-    protected virtual void SetAxisControlState(FlightCtrlState s, float X, float Y, float Z)
-    {
-        s.X = X;
-        s.Y = Y;
-        s.Z = Z;
-        if (hasAxisGroupsModule)
-        {
-            axisGroupsModule.UpdateAxisGroup(KSPAxisGroup.TranslateX, X);
-            axisGroupsModule.UpdateAxisGroup(KSPAxisGroup.TranslateY, Y);
-            axisGroupsModule.UpdateAxisGroup(KSPAxisGroup.TranslateZ, Z);
-        }
-    }
-
 }
