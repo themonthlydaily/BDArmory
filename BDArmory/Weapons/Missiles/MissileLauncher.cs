@@ -1064,13 +1064,43 @@ namespace BDArmory.Weapons.Missiles
             {
                 SourceVessel = vessel;
             }
-            if (multiLauncher && multiLauncher.isMultiLauncher)
+            if (multiLauncher)
             {
-                //multiLauncher.rippleRPM = wpm.rippleRPM;               
-                //if (wpm.rippleRPM > 0) multiLauncher.rippleRPM = wpm.rippleRPM;
-                multiLauncher.Team = Team;
-                if (reloadableRail && reloadableRail.ammoCount >= 1 || BDArmorySettings.INFINITE_ORDINANCE) multiLauncher.fireMissile();
-                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: firing Multilauncher! {vessel.vesselName}; {multiLauncher.subMunitionName}");
+                if (multiLauncher.isMultiLauncher)
+                {
+                    //multiLauncher.rippleRPM = wpm.rippleRPM;               
+                    //if (wpm.rippleRPM > 0) multiLauncher.rippleRPM = wpm.rippleRPM;
+                    multiLauncher.Team = Team;
+                    if (reloadableRail && reloadableRail.ammoCount >= 1 || BDArmorySettings.INFINITE_ORDINANCE) multiLauncher.fireMissile();
+                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: firing Multilauncher! {vessel.vesselName}; {multiLauncher.subMunitionName}");
+                }
+                else //isClusterMissile
+                {
+                    if (reloadableRail && (reloadableRail.maxAmmo > 1 && (reloadableRail.ammoCount >= 1 || BDArmorySettings.INFINITE_ORDINANCE))) //clustermissile with reload module
+                    {
+                        if (reloadableMissile == null) reloadableMissile = StartCoroutine(FireReloadableMissile());
+                        launched = true;
+                    }
+                    else //standard non-reloadable missile
+                    {
+                        multiLauncher.missileSpawner.MissileName = multiLauncher.subMunitionName;
+                        multiLauncher.missileSpawner.UpdateMissileValues();
+                        DetonationDistance = multiLauncher.clusterMissileTriggerDist;
+                        blastRadius = multiLauncher.clusterMissileTriggerDist;
+                        multiLauncher.isLaunchedClusterMissile = true;
+                        TimeFired = Time.time;
+                        part.decouple(0);
+                        part.Unpack();
+                        TargetPosition = vessel.ReferenceTransform.position + vessel.ReferenceTransform.up * 5000; //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
+                        MissileLaunch();
+                        BDATargetManager.FiredMissiles.Add(this);
+                        if (wpm != null)
+                        {
+                            wpm.heatTarget = TargetSignatureData.noTarget;
+                        }
+                        launched = true;
+                    }
+                }
             }
             else
             {
@@ -1084,7 +1114,7 @@ namespace BDArmory.Weapons.Missiles
                     TimeFired = Time.time;
                     part.decouple(0);
                     part.Unpack();
-                        TargetPosition = (multiLauncher ? vessel.ReferenceTransform.position + vessel.ReferenceTransform.up * 5000 : transform.position + transform.forward * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
+                    TargetPosition = transform.position + transform.forward * 5000; //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
                     MissileLaunch();
                     BDATargetManager.FiredMissiles.Add(this);
                     if (wpm != null) wpm.heatTarget = TargetSignatureData.noTarget;
@@ -1129,7 +1159,7 @@ namespace BDArmory.Weapons.Missiles
             ml.engageSLW = engageSLW;
             if (GuidanceMode == GuidanceModes.AGMBallistic)
             {
-                ml.BallisticOverShootFactor = BallisticOverShootFactor; //are some of these null, and causeing this to quit? 
+                ml.BallisticOverShootFactor = BallisticOverShootFactor; //are some of these null, and causing this to quit? 
                 ml.BallisticAngle = BallisticAngle;
             }
             if (GuidanceMode == GuidanceModes.Cruise)
@@ -1280,11 +1310,6 @@ namespace BDArmory.Weapons.Missiles
                 part.explosionPotential = 0; // Minimise the default part explosion FX that sometimes gets offset from the main explosion.
 
                 StartCoroutine(MissileRoutine());
-                if (multiLauncher && multiLauncher.isClusterMissile)
-                {
-                    reloadableRail.MissileName = multiLauncher.subMunitionName;
-                    reloadableRail.UpdateMissileValues();
-                }
                 var tnt = part.FindModuleImplementing<BDExplosivePart>();
                 if (tnt)
                 {
@@ -2567,7 +2592,6 @@ namespace BDArmory.Weapons.Missiles
                                 fairing.Current.AddComponent<DecoupledBooster>().DecoupleBooster(part.rb.velocity, boosterDecoupleSpeed);
                             }
                     }
-                    reloadableRail.MissileName = multiLauncher.subMunitionName;
                     multiLauncher.Team = Team;
                     multiLauncher.fireMissile(true);
                 }

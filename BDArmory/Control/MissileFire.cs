@@ -527,15 +527,15 @@ namespace BDArmory.Control
             guardAngle = 360;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_VisualRange"),//Visual Range
-            UI_FloatRange(minValue = 100f, maxValue = 200000f, stepIncrement = 100f, scene = UI_Scene.All)]
+            UI_FloatSemiLogRange(minValue = 100f, maxValue = 200000f, sigFig = 1, scene = UI_Scene.All)]
         public float
             guardRange = 200000f;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_GunsRange"),//Guns Range
-            UI_FloatRange(minValue = 0f, maxValue = 10000f, stepIncrement = 10f, scene = UI_Scene.All)]
+            UI_FloatSemiLogRange(minValue = 10f, maxValue = 10000f, scene = UI_Scene.All)]
         public float
             gunRange = 2500f;
-        public float maxGunRange = 0f;
+        public float maxGunRange = 10f;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_WMWindow_MultiTargetNum"),//Max Turret Targets
             UI_FloatRange(minValue = 1, maxValue = 10, stepIncrement = 1, scene = UI_Scene.All)]
@@ -2203,7 +2203,7 @@ namespace BDArmory.Control
                                         mlauncher.missileTurret.SlavedAim();
                                         yield return wait;
                                     }
-                                    if (vessel && targetVessel) 
+                                    if (vessel && targetVessel)
                                         designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(targetVessel.CoM, vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
                                 }
                                 if (mlauncher.multiLauncher && mlauncher.multiLauncher.turret)
@@ -7033,7 +7033,7 @@ namespace BDArmory.Control
                                 _radarsEnabled = false;
                                 FireECM(0); //disable jammers
                             }
-                            
+
                             if (results.incomingMissiles[0].guidanceType == MissileBase.TargetingModes.Gps)
                                 FireECM(cmThreshold);
                             StartCoroutine(UnderAttackRoutine());
@@ -7428,13 +7428,13 @@ namespace BDArmory.Control
                     if (interceptiontarget != null) PDMslTgts.Add(interceptiontarget);
                 }
             }
-            
+
             if (APScount + missileCount <= 0)
             {
                 PDScanTimer = -100;
                 return;
             }
-            
+
             if (guardMode) //missile interception stuff, mostly working as intended, needs final debugging pass.
             {
                 using (List<IBDWeapon>.Enumerator weapon = weaponTypesMissile.GetEnumerator()) //have guardMode requirement?
@@ -7516,7 +7516,7 @@ namespace BDArmory.Control
                         }
                     }
             }
-            
+
             using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                 while (weapon.MoveNext())
                 {
@@ -7529,9 +7529,9 @@ namespace BDArmory.Control
                             if (ballisticTurretID >= PDBulletTgts.Count)
                             {
                                 if ((weapon.Current.isReloading || weapon.Current.isOverheated) || weapon.Current.baseDeviation > 0.05 && (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Ballistic || (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Laser && weapon.Current.pulseLaser)))
-                                      //if more APS turrets than targets, and APS is a rotary weapon using volume of fire instead of precision, roll over target list to assign multiple turrets to the incoming shell
+                                    //if more APS turrets than targets, and APS is a rotary weapon using volume of fire instead of precision, roll over target list to assign multiple turrets to the incoming shell
                                     ballisticTurretID = 0;
-                                    //else assign one turret per target, and hold fire on the rest
+                                //else assign one turret per target, and hold fire on the rest
                             }
                             if (ballisticTurretID < PDBulletTgts.Count)
                             {
@@ -7662,8 +7662,8 @@ namespace BDArmory.Control
 
         public void UpdateMaxGuardRange()
         {
-            UI_FloatRange rangeEditor = (UI_FloatRange)Fields["guardRange"].uiControlEditor;
-            rangeEditor.maxValue = BDArmorySettings.MAX_GUARD_VISUAL_RANGE;
+            var rangeEditor = (UI_FloatSemiLogRange)Fields["guardRange"].uiControlEditor;
+            rangeEditor.UpdateLimits(rangeEditor.minValue, BDArmorySettings.MAX_GUARD_VISUAL_RANGE);
         }
 
         public void UpdateMaxGunRange(Vessel v)
@@ -7678,8 +7678,8 @@ namespace BDArmory.Control
                 if (gunLikeClasses.Contains(weapon.GetWeaponClass()))
                     maxGunRange = Mathf.Max(maxGunRange, weapon.maxEffectiveDistance);
             }
-            UI_FloatRange rangeEditor = (UI_FloatRange)Fields["gunRange"].uiControlEditor;
-            rangeEditor.maxValue = maxGunRange;
+            var rangeEditor = (UI_FloatSemiLogRange)Fields["gunRange"].uiControlEditor;
+            rangeEditor.UpdateLimits(rangeEditor.minValue, maxGunRange);
             if (BDArmorySetup.Instance.textNumFields != null && BDArmorySetup.Instance.textNumFields.ContainsKey("gunRange")) { BDArmorySetup.Instance.textNumFields["gunRange"].maxValue = maxGunRange; }
             gunRange = Mathf.Min(gunRange, maxGunRange);
             if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.MissileFire]: Updating gun range of {v.vesselName} to {gunRange} of {maxGunRange}");
@@ -7701,9 +7701,9 @@ namespace BDArmory.Control
                     }
                 }
             }
-            UI_FloatRange rangeEditor = (UI_FloatRange)Fields["gunRange"].uiControlEditor;
+            var rangeEditor = (UI_FloatSemiLogRange)Fields["gunRange"].uiControlEditor;
+            rangeEditor.UpdateLimits(rangeEditor.minValue, maxGunRange);
             if (gunRange == rangeEditor.maxValue) { gunRange = maxGunRange; }
-            rangeEditor.maxValue = maxGunRange;
             gunRange = Mathf.Min(gunRange, maxGunRange);
             if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.MissileFire]: Updating gun range of {EditorLogic.fetch.ship.shipName} to {gunRange} of {maxGunRange}");
         }

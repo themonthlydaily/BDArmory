@@ -28,7 +28,8 @@ namespace BDArmory.VesselSpawning
             {
                 _vesselsSpawning = value
                     || (CircularSpawning.Instance != null && CircularSpawning.Instance.vesselsSpawning)
-                    || (SingleVesselSpawning.Instance != null && SingleVesselSpawning.Instance.vesselsSpawning);
+                    || (SingleVesselSpawning.Instance != null && SingleVesselSpawning.Instance.vesselsSpawning)
+                    || (ContinuousSpawning.Instance != null && ContinuousSpawning.Instance.vesselsSpawning);
             } // Add in other relevant conditions whenever new classes derived from VesselSpawnerBase are added.
         }
         static bool _vesselsSpawning = false;
@@ -653,7 +654,7 @@ namespace BDArmory.VesselSpawning
         /// <param name="spawnAirborne"></param>
         /// <param name="withInitialVelocity"></param>
         /// <returns></returns>
-        protected IEnumerator PostSpawnMainSequence(Vessel vessel, bool spawnAirborne, bool withInitialVelocity)
+        protected IEnumerator PostSpawnMainSequence(Vessel vessel, bool spawnAirborne, bool withInitialVelocity, bool revertSpawnCamera = true)
         {
             var vesselName = vessel.vesselName;
 
@@ -676,7 +677,7 @@ namespace BDArmory.VesselSpawning
             vessel.SetRotation(finalSpawnRotations[vesselName]);
 
             // Undo any camera adjustment and reset the camera distance. This has an internal check so that it only occurs once.
-            SpawnUtils.RevertSpawnLocationCamera(true);
+            if (revertSpawnCamera) SpawnUtils.RevertSpawnLocationCamera(true);
             if (FlightGlobals.ActiveVessel == null || FlightGlobals.ActiveVessel.state == Vessel.State.DEAD)
             {
                 LoadedVesselSwitcher.Instance.ForceSwitchVessel(vessel); // Update the camera.
