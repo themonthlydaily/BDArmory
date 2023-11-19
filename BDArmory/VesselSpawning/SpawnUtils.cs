@@ -125,7 +125,7 @@ namespace BDArmory.VesselSpawning
 
         public static void ActivateAllEngines(Vessel vessel, bool activate = true, bool ignoreModularMissileEngines = true)
         {
-            foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(vessel))
+            foreach (var engine in VesselModuleRegistry.GetModuleEngines(vessel))
             {
                 if (ignoreModularMissileEngines && IsModularMissileEngine(engine)) continue; // Ignore modular missile engines.
                 if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55) engine.independentThrottle = false;
