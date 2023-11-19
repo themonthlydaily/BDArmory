@@ -684,7 +684,7 @@ namespace BDArmory.FX
 
             if (disabled && explosionEvents.Count == 0 && TimeIndex > MaxTime)
             {
-                if (BDArmorySettings.DEBUG_OTHER)
+                if (BDArmorySettings.DEBUG_DAMAGE)
                 {
                     Debug.Log("[BDArmory.ExplosionFX]: Explosion Finished");
                 }
