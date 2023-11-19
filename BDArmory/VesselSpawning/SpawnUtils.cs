@@ -26,11 +26,11 @@ namespace BDArmory.VesselSpawning
             VesselSpawnerStatus.spawnFailureReason = SpawnFailureReason.Cancelled;
 
             // Single spawn
-            if (CircularSpawning.Instance.vesselsSpawning || CircularSpawning.Instance.vesselsSpawningOnceContinuously)
+            if (CircularSpawning.Instance && CircularSpawning.Instance.vesselsSpawning || CircularSpawning.Instance.vesselsSpawningOnceContinuously)
             { CircularSpawning.Instance.CancelSpawning(); }
 
             // Continuous spawn
-            if (ContinuousSpawning.Instance.vesselsSpawningContinuously)
+            if (ContinuousSpawning.Instance && ContinuousSpawning.Instance.vesselsSpawningContinuously)
             { ContinuousSpawning.Instance.CancelSpawning(); }
 
             SpawnUtils.RevertSpawnLocationCamera(true);
@@ -101,8 +101,8 @@ namespace BDArmory.VesselSpawning
         static Dictionary<string, int> _partCrewCounts;
 
         #region Camera
-        public static void ShowSpawnPoint(int worldIndex, double latitude, double longitude, double altitude = 0, float distance = 0, bool spawning = false) => SpawnUtilsInstance.Instance.ShowSpawnPoint(worldIndex, latitude, longitude, altitude, distance, spawning); // Note: this may launch a coroutine when not spawning and there's no active vessel!
-        public static void RevertSpawnLocationCamera(bool keepTransformValues = true, bool revertIfDead = false) => SpawnUtilsInstance.Instance.RevertSpawnLocationCamera(keepTransformValues, revertIfDead);
+        public static void ShowSpawnPoint(int worldIndex, double latitude, double longitude, double altitude = 0, float distance = 0, bool spawning = false) { if (SpawnUtilsInstance.Instance) SpawnUtilsInstance.Instance.ShowSpawnPoint(worldIndex, latitude, longitude, altitude, distance, spawning); } // Note: this may launch a coroutine when not spawning and there's no active vessel!
+        public static void RevertSpawnLocationCamera(bool keepTransformValues = true, bool revertIfDead = false) { if (SpawnUtilsInstance.Instance) SpawnUtilsInstance.Instance.RevertSpawnLocationCamera(keepTransformValues, revertIfDead); }
         #endregion
 
         #region Teams
@@ -418,6 +418,7 @@ namespace BDArmory.VesselSpawning
         GameObject spawnLocationCamera;
         Transform originalCameraParentTransform;
         float originalCameraNearClipPlane;
+        float originalCameraDistance;
         Coroutine delayedShowSpawnPointCoroutine;
         private readonly WaitForFixedUpdate waitForFixedUpdate = new WaitForFixedUpdate();
         /// <summary>
@@ -434,6 +435,7 @@ namespace BDArmory.VesselSpawning
         /// <param name="recurse">State parameter for when we need to spawn a probe first.</param>
         public void ShowSpawnPoint(int worldIndex, double latitude, double longitude, double altitude = 0, float distance = 0, bool spawning = false, bool recurse = true)
         {
+            if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.SpawnUtils]: Showing spawn point ({latitude:G3}, {longitude:G3}, {altitude:G3}) on {FlightGlobals.Bodies[worldIndex].name}");
             if (BDArmorySettings.ASTEROID_RAIN) { AsteroidRain.Instance.Reset(); }
             if (BDArmorySettings.ASTEROID_FIELD) { AsteroidField.Instance.Reset(); }
             if (!spawning && (FlightGlobals.ActiveVessel == null || FlightGlobals.ActiveVessel.state == Vessel.State.DEAD))
@@ -473,6 +475,7 @@ namespace BDArmory.VesselSpawning
                     spawnLocationCamera.SetActive(true);
                     originalCameraParentTransform = flightCamera.transform.parent;
                     originalCameraNearClipPlane = GUIUtils.GetMainCamera().nearClipPlane;
+                    originalCameraDistance = flightCamera.Distance;
                 }
                 spawnLocationCamera.transform.position = Vector3.zero;
                 spawnLocationCamera.transform.rotation = Quaternion.LookRotation(-cameraPosition, radialUnitVector);
@@ -518,9 +521,11 @@ namespace BDArmory.VesselSpawning
                     originalCameraParentTransform.position = flightCamera.transform.parent.position;
                     originalCameraParentTransform.rotation = flightCamera.transform.parent.rotation;
                     originalCameraNearClipPlane = GUIUtils.GetMainCamera().nearClipPlane;
+                    originalCameraDistance = flightCamera.Distance;
                 }
                 flightCamera.transform.parent = originalCameraParentTransform;
                 GUIUtils.GetMainCamera().nearClipPlane = originalCameraNearClipPlane;
+                flightCamera.SetDistanceImmediate(originalCameraDistance);
                 flightCamera.SetTargetNone();
                 flightCamera.EnableCamera();
             }
