@@ -3801,7 +3801,7 @@ namespace BDArmory.Competition
                 foreach (var vessel in FlightGlobals.Vessels)
                 {
                     if (vessel == null || vessel.packed || !vessel.loaded) continue;
-                    foreach (var module in VesselModuleRegistry.GetModules<ModuleEngines>(vessel)) if (module != null) ++countParts;
+                    foreach (var module in VesselModuleRegistry.GetModuleEngines(vessel)) if (module != null) ++countParts;
                     ++countVessels;
                 }
                 ++countFrames;
@@ -3909,7 +3909,7 @@ namespace BDArmory.Competition
                 foreach (var vessel in FlightGlobals.Vessels)
                 {
                     if (vessel == null || vessel.packed || !vessel.loaded) continue;
-                    foreach (var module in VesselModuleRegistry.GetModules<ModuleEngines>(vessel)) if (module != null) ++countParts;
+                    foreach (var module in VesselModuleRegistry.GetModuleEngines(vessel)) if (module != null) ++countParts;
                     ++countVessels;
                 }
             }

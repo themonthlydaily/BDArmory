@@ -171,6 +171,8 @@ namespace BDArmory.Control
             fc.Activate();
             updateInterval = combatUpdateInterval;
 
+            VesselModuleRegistry.OnVesselModified(vessel, true); // Force an update of the VMR for the vessel. FIXME Why does Orbital AI need this when none of the others do?
+
             if (maxAccelerationCR == null) maxAccelerationCR = StartCoroutine(CalculateMaxAcceleration());
             if (shipController == null) shipController = StartCoroutine(ShipController());
         }
@@ -260,7 +262,7 @@ namespace BDArmory.Control
         void UpdateStatus()
         {
             bool hasRCSFore = VesselModuleRegistry.GetModules<ModuleRCSFX>(vessel).Any(e => e.rcsEnabled && !e.flameout && e.useThrottle);
-            hasPropulsion = hasRCSFore || VesselModuleRegistry.GetModules<ModuleEngines>(vessel).Any(e => (e.EngineIgnited && e.isOperational));
+            hasPropulsion = hasRCSFore || VesselModuleRegistry.GetModuleEngines(vessel).Any(e => (e.EngineIgnited && e.isOperational));
                 hasWeapons = weaponManager.HasWeaponsAndAmmo();
 
                 if (weaponManager.incomingMissileVessel != null && updateInterval != emergencyUpdateInterval)

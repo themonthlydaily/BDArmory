@@ -126,7 +126,7 @@ namespace BDArmory.GameModes
             {
                 if (!RepulsorOverride) //MSF added via Spawn utilities for Space Hacks
                 {
-                    using (var engine = VesselModuleRegistry.GetModules<ModuleEngines>(vessel).GetEnumerator())
+                    using (var engine = VesselModuleRegistry.GetModuleEngines(vessel).GetEnumerator())
                         while (engine.MoveNext())
                         {
                             if (engine.Current == null) continue;

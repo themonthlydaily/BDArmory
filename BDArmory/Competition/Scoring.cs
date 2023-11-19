@@ -685,7 +685,7 @@ namespace BDArmory.Competition
                     if (VesselModuleRegistry.GetModuleCount<ModuleEngines>(vessel) > 0)
                     {
                         int engineOut = 0;
-                        foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(vessel))
+                        foreach (var engine in VesselModuleRegistry.GetModuleEngines(vessel))
                         {
                             if (engine == null || engine.flameout || engine.finalThrust <= 0)
                                 engineOut++;
