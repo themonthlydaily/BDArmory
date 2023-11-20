@@ -508,8 +508,8 @@ namespace BDArmory.Control
                 RCSVectorLerped = RCSVector;
 
             // This system works for now but it's convuluted and isn't very stable.
-            RCSVectorLerped = Vector3.Lerp(RCSVectorLerped, RCSVector, 5f * Time.fixedDeltaTime * Mathf.Clamp01(RCSVectorLerped.magnitude / RCSPower));
-            RCSThrottle = Mathf.Lerp(0, 1.732f, Mathf.InverseLerp(0, RCSPower, RCSVectorLerped.magnitude));
+            RCSVectorLerped = Vector3.Lerp(RCSVectorLerped, RCSVector, 5f * Time.fixedDeltaTime * Mathf.Clamp01(RCSVectorLerped.sqrMagnitude / RCSPower / RCSPower));
+            RCSThrottle = Mathf.Lerp(0, 1.732f, Mathf.InverseLerp(0, RCSPower * RCSPower, RCSVectorLerped.sqrMagnitude));
             RCSThrust = RCSVectorLerped.normalized * RCSThrottle;
 
             up = -vessel.ReferenceTransform.forward;

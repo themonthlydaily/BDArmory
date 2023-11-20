@@ -846,7 +846,7 @@ namespace BDArmory.Weapons.Missiles
                 if (!missileTarget)
                 {
                     timeToImpact = BDAMath.SolveTime(targetVector.magnitude, maxAcceleration, Vector3.Dot(relVel, targetVector.normalized));
-                    Vector3 lead = (relVelNrm * -1) * timeToImpact * relVelmag;
+                    Vector3 lead = timeToImpact * relVelmag * -relVelNrm;
                     interceptVector = (TargetPosition + lead) - vessel.CoM;
                 }
                 else
@@ -857,15 +857,15 @@ namespace BDArmory.Weapons.Missiles
                     interceptVector = AIUtils.PredictPosition(targetVector, relVel, TargetAcceleration - acceleration * 0.5f, timeToImpact);
                     interceptVector = interceptVector.normalized;
                     
-                    if (Vector3.Dot(interceptVector, targetVector.normalized) < 0)
-                        interceptVector = targetVector.normalized;
+                    if (Vector3.Dot(interceptVector, targetVector) < 0)
+                        interceptVector = targetVector;
                 }
                 
                 orbitalTarget = interceptVector.normalized;
 
                 float accuracy = Vector3.Dot(orbitalTarget, relVelNrm);
-                float shutoffDistance = missileTarget ? 3 : 10;
-                if (targetVector.magnitude < shutoffDistance || (!engines.Any() && !rcsThrusters.Any()) && accuracy < 0.99)
+                float shutoffDistanceSqr = missileTarget ? 9 : 100;
+                if (targetVector.sqrMagnitude < shutoffDistanceSqr || (!engines.Any() && !rcsThrusters.Any()) && accuracy < 0.99)
                 {
                     guidanceActive = false;
                     return vessel.ReferenceTransform.up;
@@ -932,8 +932,6 @@ namespace BDArmory.Weapons.Missiles
         private static Vector3 GetFireVector(List<ModuleEngines> engines, List<ModuleRCSFX> RCS = null, Vector3 thrustVector = default(Vector3))
         {
             // Place linears first to establish a direction, not currently needed
-            //RCS.Sort((a, b) => a.thrusterTransforms.Count().CompareTo(b.thrusterTransforms.Count()));
-
             if (engines?.Any() == true)
             {
                 // If there are engines we can override any potential provided vector
@@ -974,10 +972,10 @@ namespace BDArmory.Weapons.Missiles
 
             foreach (Transform thrusterTransform in positions)
             {
-                Vector3 pos = thrusterTransform.up * thruster.thrusterPower;
+                Vector3 pos = thruster.thrusterPower * thrusterTransform.up;
                 // rcs will fire if thrust goes in the forward direction by any degree, this is reduced with angle offset
                 if (Vector3.Dot(thrustVector.normalized, pos.normalized) > 0)
-                    meanVector += pos * Vector3.Dot(thrustVector.normalized, pos.normalized);
+                    meanVector += Vector3.Dot(thrustVector.normalized, pos.normalized) * pos;
             }
 
             return meanVector;
@@ -996,7 +994,7 @@ namespace BDArmory.Weapons.Missiles
             }
 
             //get vector and set length to the thruster power
-            meanVector = (meanVector.normalized * thruster.MaxThrustOutputVac(true));
+            meanVector = (thruster.MaxThrustOutputVac(true) * meanVector.normalized);
             return meanVector;
         }
         #endregion
@@ -1007,7 +1005,7 @@ namespace BDArmory.Weapons.Missiles
             if (MissileState != MissileStates.PostThrust) return;
             if (GuidanceMode == GuidanceModes.Orbital) return; 
             // if I'm to close to my vessel avoid explosion
-            if ((vessel.CoM - SourceVessel.CoM).magnitude < 4 * DetonationDistance) return;
+            if ((vessel.CoM - SourceVessel.CoM).sqrMagnitude < 16 * DetonationDistance) return;
             // if I'm getting closer to my target avoid explosion
             if ((vessel.CoM - targetPosition).sqrMagnitude >
                 (vessel.CoM + (vessel.Velocity() * Time.fixedDeltaTime) - (targetPosition + (TargetVelocity * Time.fixedDeltaTime))).sqrMagnitude) return;
@@ -1208,10 +1206,10 @@ namespace BDArmory.Weapons.Missiles
                         // Update RCS
                         if (rcsVector != Vector3.zero)
                         {
-                            float rcsPower = 20;
+                            float rcsPowerSqr = 400;
 
-                            rcsVectorLerped = Vector3.Lerp(rcsVectorLerped, rcsVector, 5f * Time.fixedDeltaTime * Mathf.Clamp01(rcsVectorLerped.magnitude / rcsPower));
-                            float rcsThrottle = Mathf.Lerp(0, 1.732f, Mathf.InverseLerp(0, rcsPower, rcsVectorLerped.magnitude));
+                            rcsVectorLerped = Vector3.Lerp(rcsVectorLerped, rcsVector, 5f * Time.fixedDeltaTime * Mathf.Clamp01(rcsVectorLerped.sqrMagnitude / rcsPowerSqr));
+                            float rcsThrottle = Mathf.Lerp(0, 1.732f, Mathf.InverseLerp(0, rcsPowerSqr, rcsVectorLerped.sqrMagnitude));
                             Vector3 rcsThrust = rcsVectorLerped.normalized * rcsThrottle;
 
                             Vector3 up = vessel.ReferenceTransform.forward * -1;
