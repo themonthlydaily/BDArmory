@@ -507,9 +507,11 @@ namespace BDArmory.Control
             if (RCSVectorLerped == Vector3.zero)
                 RCSVectorLerped = RCSVector;
 
+            float rcsLerpMag = RCSVectorLerped.magnitude;
+
             // This system works for now but it's convuluted and isn't very stable.
-            RCSVectorLerped = Vector3.Lerp(RCSVectorLerped, RCSVector, 5f * Time.fixedDeltaTime * Mathf.Clamp01(RCSVectorLerped.sqrMagnitude / RCSPower / RCSPower));
-            RCSThrottle = Mathf.Lerp(0, 1.732f, Mathf.InverseLerp(0, RCSPower * RCSPower, RCSVectorLerped.sqrMagnitude));
+            RCSVectorLerped = Vector3.Lerp(RCSVectorLerped, RCSVector, 5f * Time.fixedDeltaTime * Mathf.Clamp01(rcsLerpMag / RCSPower));
+            RCSThrottle = Mathf.Lerp(0, 1.732f, Mathf.InverseLerp(0, RCSPower, rcsLerpMag));
             RCSThrust = RCSVectorLerped.normalized * RCSThrottle;
 
             up = -vessel.ReferenceTransform.forward;

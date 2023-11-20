@@ -1206,10 +1206,11 @@ namespace BDArmory.Weapons.Missiles
                         // Update RCS
                         if (rcsVector != Vector3.zero)
                         {
-                            float rcsPowerSqr = 400;
+                            float rcsPower = 20;
+                            float rcsLerpMag = rcsVectorLerped.magnitude;
 
-                            rcsVectorLerped = Vector3.Lerp(rcsVectorLerped, rcsVector, 5f * Time.fixedDeltaTime * Mathf.Clamp01(rcsVectorLerped.sqrMagnitude / rcsPowerSqr));
-                            float rcsThrottle = Mathf.Lerp(0, 1.732f, Mathf.InverseLerp(0, rcsPowerSqr, rcsVectorLerped.sqrMagnitude));
+                            rcsVectorLerped = Vector3.Lerp(rcsVectorLerped, rcsVector, 5f * Time.fixedDeltaTime * Mathf.Clamp01(rcsLerpMag / rcsPower));
+                            float rcsThrottle = Mathf.Lerp(0, 1.732f, Mathf.InverseLerp(0, rcsPower, rcsLerpMag));
                             Vector3 rcsThrust = rcsVectorLerped.normalized * rcsThrottle;
 
                             Vector3 up = vessel.ReferenceTransform.forward * -1;
