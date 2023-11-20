@@ -182,7 +182,10 @@ namespace BDArmory.Control
             base.DeactivatePilot();
 
             if (fc)
-                fc.Deactivate(); fc = null;
+            {
+                fc.Deactivate();
+                fc = null;
+            }
 
             if (maxAccelerationCR != null)
             {

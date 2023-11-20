@@ -846,7 +846,7 @@ namespace BDArmory.Weapons.Missiles
                 if (!missileTarget)
                 {
                     timeToImpact = BDAMath.SolveTime(targetVector.magnitude, maxAcceleration, Vector3.Dot(relVel, targetVector.normalized));
-                    Vector3 lead = timeToImpact * relVelmag * -relVelNrm;
+                    Vector3 lead = -timeToImpact * relVelmag * relVelNrm;
                     interceptVector = (TargetPosition + lead) - vessel.CoM;
                 }
                 else
@@ -855,7 +855,6 @@ namespace BDArmory.Weapons.Missiles
 
                     timeToImpact = AIUtils.TimeToCPA(targetVector, relVel, TargetAcceleration - acceleration, 30);
                     interceptVector = AIUtils.PredictPosition(targetVector, relVel, TargetAcceleration - acceleration * 0.5f, timeToImpact);
-                    interceptVector = interceptVector.normalized;
                     
                     if (Vector3.Dot(interceptVector, targetVector) < 0)
                         interceptVector = targetVector;
@@ -974,8 +973,9 @@ namespace BDArmory.Weapons.Missiles
             {
                 Vector3 pos = thruster.thrusterPower * thrusterTransform.up;
                 // rcs will fire if thrust goes in the forward direction by any degree, this is reduced with angle offset
-                if (Vector3.Dot(thrustVector.normalized, pos.normalized) > 0)
-                    meanVector += Vector3.Dot(thrustVector.normalized, pos.normalized) * pos;
+                float rcsThrustDot = Vector3.Dot(thrustVector.normalized, pos.normalized);
+                if (rcsThrustDot > 0)
+                    meanVector += rcsThrustDot * pos;
             }
 
             return meanVector;
@@ -1060,7 +1060,7 @@ namespace BDArmory.Weapons.Missiles
             if (HasMissed) return;
             bool noProgress = MissileState == MissileStates.PostThrust && 
                 ((Vector3.Dot(vessel.Velocity() - TargetVelocity, TargetPosition - vessel.transform.position) < 0) ||
-                (vessel.LandedOrSplashed || vessel.Velocity().magnitude < 10f));
+                (vessel.LandedOrSplashed || vessel.Velocity().sqrMagnitude < 100f));
             if (noProgress)
             {
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.BDModularGuidance]: Missile CheckMiss showed miss for {vessel.vesselName}");
