@@ -1005,7 +1005,7 @@ namespace BDArmory.Weapons.Missiles
             if (MissileState != MissileStates.PostThrust) return;
             if (GuidanceMode == GuidanceModes.Orbital) return; 
             // if I'm to close to my vessel avoid explosion
-            if ((vessel.CoM - SourceVessel.CoM).sqrMagnitude < 16 * DetonationDistance) return;
+            if ((vessel.CoM - SourceVessel.CoM).sqrMagnitude < 16 * DetonationDistanceSqr) return;
             // if I'm getting closer to my target avoid explosion
             if ((vessel.CoM - targetPosition).sqrMagnitude >
                 (vessel.CoM + (vessel.Velocity() * Time.fixedDeltaTime) - (targetPosition + (TargetVelocity * Time.fixedDeltaTime))).sqrMagnitude) return;
