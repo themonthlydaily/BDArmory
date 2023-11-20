@@ -1325,7 +1325,7 @@ namespace BDArmory.Weapons.Missiles
 
             _nextStage++;
 
-            if (GuidanceMode == GuidanceModes.Orbital && (TimeIndex > dropTime + 0.5f))
+            if (GuidanceMode == GuidanceModes.Orbital)
                 UpdateOrbitalStage();
 
             vessel.OnFlyByWire += GuidanceSteer;
