@@ -403,7 +403,7 @@ namespace BDArmory.Bullets
                 if (isAPSprojectile)
                 {
                     if (HEType != PooledBulletTypes.Explosive && tntMass > 0)
-                        ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, default, -1, true);
+                        ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, default, -1, true, sourceVelocity: currentVelocity);
                 }
                 return;
             }
@@ -474,7 +474,7 @@ namespace BDArmory.Bullets
             {
                 //detonate
                 if (HEType != PooledBulletTypes.Slug)
-                    ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, HEType == PooledBulletTypes.Explosive ? default : currentVelocity, -1, false, bulletMass, -1, dmgMult, HEType == PooledBulletTypes.Shaped ? "shapedcharge" : "standard", null, HEType == PooledBulletTypes.Shaped ? apBulletMod : 1f, ProjectileUtils.isReportingWeapon(sourceWeapon) ? (float)DistanceTraveled : -1);
+                    ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, HEType == PooledBulletTypes.Explosive ? default : currentVelocity, -1, false, bulletMass, -1, dmgMult, HEType == PooledBulletTypes.Shaped ? "shapedcharge" : "standard", null, HEType == PooledBulletTypes.Shaped ? apBulletMod : 1f, ProjectileUtils.isReportingWeapon(sourceWeapon) ? (float)DistanceTraveled : -1, sourceVelocity: currentVelocity);
                 if (nuclear)
                     NukeFX.CreateExplosion(currPosition, ExplosionSourceType.Bullet, sourceVesselName, bullet.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
                 if (beehive)

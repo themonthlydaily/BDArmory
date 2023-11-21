@@ -387,7 +387,7 @@ namespace BDArmory.Bullets
                                 ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, 1, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team, ExplosionSourceType.Rocket, true, true, true);
                             }
                             ResourceUtils.StealResources(hitPart, sourceVessel, thief);
-                            Detonate(hit.point, false);
+                            Detonate(hit.point, false, hitPart);
                             return;
                         }
 
@@ -426,7 +426,7 @@ namespace BDArmory.Bullets
                                 hitPart.rb.AddForceAtPosition(impactVector.normalized * impulse, hit.point, ForceMode.Acceleration);
                             }
                             BDACompetitionMode.Instance.Scores.RegisterRocketStrike(sourceVesselName, hitPart.vessel.GetName());
-                            Detonate(hit.point, false);
+                            Detonate(hit.point, false, hitPart);
                             hasDetonated = true;
                             return; //impulse rounds shouldn't penetrate/do damage
                         }
@@ -579,13 +579,13 @@ namespace BDArmory.Bullets
                             //not going to do ballistic damage if stopped by armor
                             ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, ExplosionSourceType.Rocket, (rocketMass * 1000), penetrationFactor);
                             //the warhead exploding, on the other hand...
-                            Detonate(hit.point, false);
+                            Detonate(hit.point, false, hitPart);
                             hasDetonated = true;
                         }
 
                         if (penTicker >= 2)
                         {
-                            Detonate(hit.point, false);
+                            Detonate(hit.point, false, hitPart);
                             return;
                         }
 
@@ -595,7 +595,7 @@ namespace BDArmory.Bullets
                             {
                                 Debug.Log("[BDArmory.PooledRocket]: Rocket ballistic velocity too low, stopping");
                             }
-                            Detonate(hit.point, false);
+                            Detonate(hit.point, false, hitPart);
                             return;
                         }
                         if (!hasPenetrated || hasDetonated) break;
@@ -624,15 +624,15 @@ namespace BDArmory.Bullets
 
             if (Time.time - startTime > lifeTime)
             {
-                Detonate(transform.position, true);
+                Detonate(transform.position, true, airDetonation: true);
             }
             if (distanceFromStart >= (beehive ? maxAirDetonationRange - 100 : maxAirDetonationRange))//rockets are performance intensive, lets cull those that have flown too far away
             {
-                Detonate(transform.position, false);
+                Detonate(transform.position, false, airDetonation: true);
             }
             if (ProximityAirDetonation(distanceFromStart))
             {
-                Detonate(transform.position, false);
+                Detonate(transform.position, false, airDetonation: true);
             }
         }
 
@@ -717,7 +717,7 @@ namespace BDArmory.Bullets
             }
         }
 
-        void Detonate(Vector3 pos, bool missed, Part PenetratingHit = null)
+        void Detonate(Vector3 pos, bool missed, Part hitPart = null, bool airDetonation = false)
         {
             if (!missed)
             {
@@ -841,14 +841,14 @@ namespace BDArmory.Bullets
                                     }
                                 }
                             }
-                            ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, null, direction, -1, true);
+                            ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, null, direction, -1, true, Hitpart: hitPart, sourceVelocity: airDetonation ? currentVelocity : default);
                         }
                         else
                         {
                             if (nuclear)
                                 NukeFX.CreateExplosion(currPosition, ExplosionSourceType.Rocket, sourceVesselName, rocket.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
                             else
-                                ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, null, direction, -1, false, rocketMass * 1000, -1, dmgMult, shaped ? "shapedcharge" : "standard", PenetratingHit, apMod, ProjectileUtils.isReportingWeapon(sourceWeapon) ? (float)distanceFromStart : -1);
+                                ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, null, direction, -1, false, rocketMass * 1000, -1, dmgMult, shaped ? "shapedcharge" : "standard", hitPart, apMod, ProjectileUtils.isReportingWeapon(sourceWeapon) ? (float)distanceFromStart : -1, sourceVelocity: airDetonation ? currentVelocity : default);
                         }
                     }
                 }
