@@ -11,6 +11,7 @@ using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.Weapons;
+using static UnityEngine.GraphicsBuffer;
 
 namespace BDArmory.Control
 {
@@ -270,6 +271,13 @@ namespace BDArmory.Control
                     updateInterval = emergencyUpdateInterval;
                 else if (weaponManager.incomingMissileVessel == null && updateInterval == emergencyUpdateInterval)
                     updateInterval = combatUpdateInterval;
+
+            if (weaponManager.guardMode && targetVessel != null && (vessel.targetObject == null || vessel.targetObject.GetVessel() != targetVessel))
+            {
+                vessel.targetObject = targetVessel;
+                if (vessel == FlightGlobals.ActiveVessel)
+                    FlightGlobals.fetch.SetVesselTarget(targetVessel, true);
+            }
 
             return;
         }
