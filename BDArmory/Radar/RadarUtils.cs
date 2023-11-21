@@ -1873,7 +1873,7 @@ namespace BDArmory.Radar
                                         {
                                             guidanceType = missileBase.TargetingMode,
                                             distance = Vector3.Distance(missileBase.part.transform.position, myWpnManager.part.transform.position),
-                                            time = AIUtils.TimeToCPA(missileBase.vessel, myWpnManager.vessel, 16f),
+                                            time = AIUtils.TimeToCPA(missileBase.vessel, myWpnManager.vessel, myWpnManager.evadeThreshold * 1.2f),
                                             position = missileBase.transform.position,
                                             vessel = missileBase.vessel,
                                             weaponManager = missileBase.SourceVessel != null ? VesselModuleRegistry.GetModule<MissileFire>(missileBase.SourceVessel) : null,

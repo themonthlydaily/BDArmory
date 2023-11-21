@@ -120,7 +120,7 @@ namespace BDArmory.VesselSpawning
         #region Engine Activation
         public static int CountActiveEngines(Vessel vessel)
         {
-            return VesselModuleRegistry.GetModules<ModuleEngines>(vessel).Where(engine => engine.EngineIgnited).ToList().Count + FireSpitter.CountActiveEngines(vessel);
+            return VesselModuleRegistry.GetModuleEngines(vessel).Where(engine => engine.EngineIgnited).ToList().Count + FireSpitter.CountActiveEngines(vessel);
         }
 
         public static void ActivateAllEngines(Vessel vessel, bool activate = true, bool ignoreModularMissileEngines = true)
