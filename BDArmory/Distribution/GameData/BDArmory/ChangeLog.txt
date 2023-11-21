@@ -12,7 +12,7 @@
 		- Fix clustermissiles not respecting submunition trigger distance.
 		- Fix clustermissiles acting like reloadable missiles when not set up for reloading.
 		- Fix Guidance Type None missiles not holding course.
-		- GPS missiles now require radar lock or target cam for GPS coords.
+		- GPS missiles now require a target cam or radar lock for GPS coords.
 		- INS missiles can now use either radar or IRST tracking.
 		- INS missiles now have datalink capability for mid-flight target coordinate updates, update rate clamped to Radar/IRST scan speed.
 		- Fix error with Inertial guidance target prediction for non-updating missiles.

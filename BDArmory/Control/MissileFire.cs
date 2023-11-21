@@ -2180,7 +2180,7 @@ namespace BDArmory.Control
                                     }
                                     designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(foundCam.groundTargetPosition, vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
                                 }
-                                else //no cam, get ranging from radar lock?
+                                else //no cam, get ranging from radar lock? Limit to aerial targets only to not obsolete the tgtCam? Or see if the speed improvemetns to camera tracking speed permit cams to now be able to track planes
                                 {
                                     float attemptLockTime = Time.time;
                                     while (ml && (!vesselRadarData.locked || (vesselRadarData.lockedTargetData.vessel != targetVessel)) && Time.time - attemptLockTime < 2)
@@ -7601,7 +7601,6 @@ namespace BDArmory.Control
                             }
                             if (ballisticTurretID < PDBulletTgts.Count)
                             {
-                                if (weapon.Current.dualModeAPS) weapon.Current.isAPS = true;//override dual-mode and prevent bool smartpickweapon reassigning weapon while threat exists
                                 if (PDBulletTgts[ballisticTurretID] != null && PDBulletTgts[ballisticTurretID].transform.position.FurtherFromThan(weapon.Current.fireTransforms[0].position, weapon.Current.engageRangeMax * 1.25f)) ballisticTurretID = 0; //reset cycle so out of range guns engage closer targets
                                 if (PDBulletTgts[ballisticTurretID] != null) //second check in case of turretID reset
                                 {
@@ -7626,11 +7625,7 @@ namespace BDArmory.Control
                                 }
                             }
                         }
-                        else
-                        {
-                            weapon.Current.tgtShell = null;
-                            if (weapon.Current.dualModeAPS) weapon.Current.isAPS = false;//reset and allow AI to use APS as weapon turret 
-                        }
+                        else weapon.Current.tgtShell = null;
                     }
                     if (weapon.Current.eAPSType == ModuleWeapon.APSTypes.Missile || weapon.Current.eAPSType == ModuleWeapon.APSTypes.Omni)
                     {
@@ -7643,7 +7638,6 @@ namespace BDArmory.Control
                             }
                             if (rocketTurretID < PDRktTgts.Count)
                             {
-                                if (weapon.Current.dualModeAPS) weapon.Current.isAPS = true;//override dual-mode and prevent bool smartpickweapon reassigning weapon while threat exists
                                 if (PDRktTgts[rocketTurretID] != null && PDRktTgts[rocketTurretID].transform.position.FurtherFromThan(weapon.Current.fireTransforms[0].position, weapon.Current.engageRangeMax * 1.25f)) rocketTurretID = 0; //reset cycle so out of range guns engage closer targets
                                 if (PDRktTgts[rocketTurretID] != null)
                                 {
@@ -7673,15 +7667,10 @@ namespace BDArmory.Control
                                 }
                             }
                         }
-                        else
-                        {
-                            weapon.Current.tgtRocket = null;
-                            if (weapon.Current.dualModeAPS) weapon.Current.isAPS = false;//reset and allow AI to use APS as weapon turret 
-                        }
+                        else weapon.Current.tgtRocket = null;
                         if (TurretID >= PDMslTgts.Count) TurretID = 0;
                         if (PDMslTgts.Count > 0)
                         {
-                            if (weapon.Current.dualModeAPS) weapon.Current.isAPS = true;//override dual-mode and prevent bool smartpickweapon reassigning weapon while threat exists
                             if (PDMslTgts[TurretID].Vessel != null && PDMslTgts[TurretID].transform.position.FurtherFromThan(weapon.Current.fireTransforms[0].position, weapon.Current.engageRangeMax * 1.25f)) TurretID = 0; //reset cycle so out of range guns engage closer targets
                             if (PDMslTgts[TurretID].Vessel != null)
                             {
@@ -7720,7 +7709,6 @@ namespace BDArmory.Control
                             }
                             weapon.Current.tgtShell = null;
                             weapon.Current.tgtRocket = null;
-                            if (weapon.Current.dualModeAPS) weapon.Current.isAPS = false;//reset and allow AI to use APS as weapon turret 
                         }
                     }
                     if (BDArmorySettings.DEBUG_WEAPONS)
