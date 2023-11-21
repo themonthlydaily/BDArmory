@@ -64,9 +64,9 @@ namespace BDArmory.Damage
                 }
             }
             vessel.ActionGroups.ToggleGroup(KSPActionGroup.Custom10); // restart engines
-            if (!VesselModuleRegistry.GetModules<ModuleEngines>(vessel).Any(engine => engine.EngineIgnited)) // Find vessels that didn't activate their engines on AG10 and fire their next stage.
+            if (!VesselModuleRegistry.GetModuleEngines(vessel).Any(engine => engine.EngineIgnited)) // Find vessels that didn't activate their engines on AG10 and fire their next stage.
             {
-                foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(vessel))
+                foreach (var engine in VesselModuleRegistry.GetModuleEngines(vessel))
                     engine.Activate();
             }
             disabled = false;

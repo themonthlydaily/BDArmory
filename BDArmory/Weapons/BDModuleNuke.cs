@@ -139,7 +139,7 @@ namespace BDArmory.Weapons
                         bool engineOut = true;
                         if (part.vessel.rootPart == part)
                         {
-                            foreach (var e in VesselModuleRegistry.GetModules<ModuleEngines>(vessel))
+                            foreach (var e in VesselModuleRegistry.GetModuleEngines(vessel))
                             {
                                 if (e != null && !e.flameout && e.vessel == part.vessel && e.thrustPercentage > 0)
                                 {
@@ -209,7 +209,7 @@ namespace BDArmory.Weapons
             {
                 bool engineOut = true;
                 {
-                    foreach (var e in VesselModuleRegistry.GetModules<ModuleEngines>(vessel))
+                    foreach (var e in VesselModuleRegistry.GetModuleEngines(vessel))
                     {
                         if (e != null && !e.flameout && e.vessel == part.vessel && e.thrustPercentage > 0)
                         {

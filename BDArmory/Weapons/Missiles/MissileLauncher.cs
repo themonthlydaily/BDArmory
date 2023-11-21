@@ -1518,7 +1518,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 bool noProgress = MissileState == MissileStates.PostThrust && (Vector3.Dot(vessel.Velocity() - TargetVelocity, TargetPosition - vessel.transform.position) < 0);
                 bool pastGracePeriod = TimeIndex > ((vessel.LandedOrSplashed ? 0f : dropTime) + 180f / maxTurnRateDPS);
-                bool targetBehindMissile = Vector3.Dot(TargetPosition - transform.position, transform.forward) < 0f;
+                bool targetBehindMissile = !(MissileState != MissileStates.PostThrust && hasRCS) && Vector3.Dot(TargetPosition - transform.position, transform.forward) < 0f; // Allow thrusting RCS missiles to be behind the target
                 if ((pastGracePeriod && targetBehindMissile) || noProgress) // Check that we're not moving away from the target after a grace period
                 {
                     if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: Missile has missed!");
@@ -1725,6 +1725,8 @@ namespace BDArmory.Weapons.Missiles
                     else if (GuidanceMode == GuidanceModes.RCS)
                     {
                         part.transform.rotation = Quaternion.RotateTowards(part.transform.rotation, Quaternion.LookRotation(TargetPosition - part.transform.position, part.transform.up), turnRateDPS * Time.fixedDeltaTime);
+                        if (TimeIndex > dropTime + 0.25f)
+                            CheckMiss();
                     }
                     else if (GuidanceMode == GuidanceModes.Cruise)
                     {
