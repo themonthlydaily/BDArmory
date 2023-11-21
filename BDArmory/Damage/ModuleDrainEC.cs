@@ -31,15 +31,10 @@ namespace BDArmory.Damage
             foreach (Part p in vessel.parts)
             {
                 var engine = p.FindModuleImplementing<ModuleEngines>();
-                var engineFX = p.FindModuleImplementing<ModuleEnginesFX>();
 
                 if (engine != null)
                 {
                     engine.allowRestart = true;
-                }
-                if (engineFX != null)
-                {
-                    engineFX.allowRestart = true;
                 }
                 var command = p.FindModuleImplementing<ModuleCommand>();
                 var weapon = p.FindModuleImplementing<ModuleWeapon>();
@@ -175,22 +170,10 @@ namespace BDArmory.Damage
                     }
                 }
                 var engine = p.FindModuleImplementing<ModuleEngines>();
-                var engineFX = p.FindModuleImplementing<ModuleEnginesFX>();
-                if (engine != null)
+                if (engine != null && engine.enabled && engine.allowShutdown) //kill engines unless they're lit SRBs
                 {
-                    if (engine.enabled && engine.allowShutdown) //kill engines
-                    {
-                        engine.Shutdown();
-                        engine.allowRestart = false;
-                    }
-                }
-                if (engineFX != null && engine.allowShutdown) //unless they're lit SRBs
-                {
-                    if (engineFX.enabled)
-                    {
-                        engineFX.Shutdown();
-                        engineFX.allowRestart = false;
-                    }
+                    engine.Shutdown();
+                    engine.allowRestart = false;
                 }
                 var command = p.FindModuleImplementing<ModuleCommand>();
                 var weapon = p.FindModuleImplementing<ModuleWeapon>();

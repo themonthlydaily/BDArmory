@@ -859,7 +859,7 @@ namespace BDArmory.Weapons.Missiles
                             {
                                 if (_radarFailTimer == 0)
                                 {
-                                    if (BDArmorySettings.DEBUG_MISSILES) 
+                                    if (BDArmorySettings.DEBUG_MISSILES)
                                         Debug.Log("[BDArmory.MissileBase]: Semi-Active Radar guidance failed - waiting for data");
                                     hasLostLock = true;
                                 }
