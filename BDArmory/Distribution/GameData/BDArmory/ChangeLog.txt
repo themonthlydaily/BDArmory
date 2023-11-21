@@ -9,6 +9,8 @@
 	- Fixes for initial bullet placement and simulated hit position when Krakensbane is not active.
   	- Missiles:
 		- Fix clustermissiles launching copies of themselves instead of submunitions.
+		- Fix clustermissiles not respecting submunition trigger distance.
+		- Fix clustermissiles acting like reloadable missiles when not set up for reloading.
 		- Fix Guidance Type None missiles not holding course.
 		- GPS missiles now require radar lock or target cam for GPS coords.
 		- INS missiles can now use either radar or IRST tracking.

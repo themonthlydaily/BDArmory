@@ -7502,6 +7502,7 @@ namespace BDArmory.Control
             
             if (guardMode) //missile interception stuff, mostly working as intended, needs final debugging pass.
             {
+                if (PDMslTgts.Count == 0) return;
                 using (List<IBDWeapon>.Enumerator weapon = weaponTypesMissile.GetEnumerator()) //have guardMode requirement?
                     while (weapon.MoveNext())
                     {
@@ -7538,7 +7539,7 @@ namespace BDArmory.Control
                                 {
                                     missilesAway.TryGetValue(PDMslTgts[MissileID], out int missiles);
                                     interceptorsAway = missiles;
-                                    Debug.Log($"[PD Missile Debug] Missiles aready fired against this target {interceptorsAway}");
+                                    //Debug.Log($"[PD Missile Debug] Missiles aready fired against this target {interceptorsAway}");
                                 }
                                 if (interceptorsAway < maxMissilesOnTarget)
                                 {
@@ -7581,12 +7582,12 @@ namespace BDArmory.Control
                         }
                     }
             }
-            
+            if (PDBulletTgts.Count + PDRktTgts.Count + PDMslTgts.Count == 0) return;
             using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                 while (weapon.MoveNext())
                 {
                     if (weapon.Current == null) continue;
-                    if (!weapon.Current.isAPS || weapon.Current.dualModeAPS) continue;
+                    if (!weapon.Current.isAPS || !weapon.Current.dualModeAPS) continue;
                     if (weapon.Current.eAPSType == ModuleWeapon.APSTypes.Ballistic || weapon.Current.eAPSType == ModuleWeapon.APSTypes.Omni)
                     {
                         if (PDBulletTgts.Count > 0)
@@ -7594,12 +7595,13 @@ namespace BDArmory.Control
                             if (ballisticTurretID >= PDBulletTgts.Count)
                             {
                                 if ((weapon.Current.isReloading || weapon.Current.isOverheated) || weapon.Current.baseDeviation > 0.05 && (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Ballistic || (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Laser && weapon.Current.pulseLaser)))
-                                      //if more APS turrets than targets, and APS is a rotary weapon using volume of fire instead of precision, roll over target list to assign multiple turrets to the incoming shell
+                                    //if more APS turrets than targets, and APS is a rotary weapon using volume of fire instead of precision, roll over target list to assign multiple turrets to the incoming shell
                                     ballisticTurretID = 0;
-                                    //else assign one turret per target, and hold fire on the rest
+                                //else assign one turret per target, and hold fire on the rest
                             }
                             if (ballisticTurretID < PDBulletTgts.Count)
                             {
+                                if (weapon.Current.dualModeAPS) weapon.Current.isAPS = true;//override dual-mode and prevent bool smartpickweapon reassigning weapon while threat exists
                                 if (PDBulletTgts[ballisticTurretID] != null && PDBulletTgts[ballisticTurretID].transform.position.FurtherFromThan(weapon.Current.fireTransforms[0].position, weapon.Current.engageRangeMax * 1.25f)) ballisticTurretID = 0; //reset cycle so out of range guns engage closer targets
                                 if (PDBulletTgts[ballisticTurretID] != null) //second check in case of turretID reset
                                 {
@@ -7624,7 +7626,11 @@ namespace BDArmory.Control
                                 }
                             }
                         }
-                        else weapon.Current.tgtShell = null;
+                        else
+                        {
+                            weapon.Current.tgtShell = null;
+                            if (weapon.Current.dualModeAPS) weapon.Current.isAPS = false;//reset and allow AI to use APS as weapon turret 
+                        }
                     }
                     if (weapon.Current.eAPSType == ModuleWeapon.APSTypes.Missile || weapon.Current.eAPSType == ModuleWeapon.APSTypes.Omni)
                     {
@@ -7637,6 +7643,7 @@ namespace BDArmory.Control
                             }
                             if (rocketTurretID < PDRktTgts.Count)
                             {
+                                if (weapon.Current.dualModeAPS) weapon.Current.isAPS = true;//override dual-mode and prevent bool smartpickweapon reassigning weapon while threat exists
                                 if (PDRktTgts[rocketTurretID] != null && PDRktTgts[rocketTurretID].transform.position.FurtherFromThan(weapon.Current.fireTransforms[0].position, weapon.Current.engageRangeMax * 1.25f)) rocketTurretID = 0; //reset cycle so out of range guns engage closer targets
                                 if (PDRktTgts[rocketTurretID] != null)
                                 {
@@ -7666,10 +7673,15 @@ namespace BDArmory.Control
                                 }
                             }
                         }
-                        else weapon.Current.tgtRocket = null;
+                        else
+                        {
+                            weapon.Current.tgtRocket = null;
+                            if (weapon.Current.dualModeAPS) weapon.Current.isAPS = false;//reset and allow AI to use APS as weapon turret 
+                        }
                         if (TurretID >= PDMslTgts.Count) TurretID = 0;
                         if (PDMslTgts.Count > 0)
                         {
+                            if (weapon.Current.dualModeAPS) weapon.Current.isAPS = true;//override dual-mode and prevent bool smartpickweapon reassigning weapon while threat exists
                             if (PDMslTgts[TurretID].Vessel != null && PDMslTgts[TurretID].transform.position.FurtherFromThan(weapon.Current.fireTransforms[0].position, weapon.Current.engageRangeMax * 1.25f)) TurretID = 0; //reset cycle so out of range guns engage closer targets
                             if (PDMslTgts[TurretID].Vessel != null)
                             {
@@ -7708,16 +7720,15 @@ namespace BDArmory.Control
                             }
                             weapon.Current.tgtShell = null;
                             weapon.Current.tgtRocket = null;
+                            if (weapon.Current.dualModeAPS) weapon.Current.isAPS = false;//reset and allow AI to use APS as weapon turret 
                         }
                     }
                     if (BDArmorySettings.DEBUG_WEAPONS)
-                        Debug.Log($"[BDArmory.MissileFire - {(this.vessel != null ? vessel.GetName() : "null")}]: {weapon.Current.shortName} assigned shell:{(weapon.Current.tgtShell != null ? "true" : "false")}; rocket: {(weapon.Current.tgtRocket != null ? "true" : "false")}; missile:{(weapon.Current.visualTargetVessel != null ? weapon.Current.visualTargetVessel.vesselName : "null")}");
+                        Debug.Log($"[BDArmory.MissileFire - {(this.vessel != null ? vessel.GetName() : "null")}]: {weapon.Current.shortName} assigned shell:{(weapon.Current.tgtShell != null ? "true" : "false")}; rocket: {(weapon.Current.tgtRocket != null ? "true" : "false")}; missile:{(weapon.Current.visualTargetPart != null ? weapon.Current.visualTargetPart.vesselName : "null")}");
 
                     weapon.Current.autoFireTimer = Time.time;
                     weapon.Current.autoFireLength = (fireBurstLength < 0.01f) ? targetScanInterval / 2f : fireBurstLength;
                 }
-            if (BDArmorySettings.DEBUG_WEAPONS)
-                Debug.Log($"[BDArmory.MissileFire] Current targeted missiles for {(this.vessel != null ? vessel.GetName() : "null")}: {PDMslTgts.Count}");
         }
         public void SetOverrideTarget(TargetInfo target)
         {
@@ -7803,7 +7814,7 @@ namespace BDArmory.Control
 
                 // Check that target is within maxOffBoresight now and in future time fTime
                 //launchAuthorized = Vector3.Angle((mlauncher != null && mlauncher.missileTurret) ? mlauncher.missileTurret.finalTransform.forward :
-                launchAuthorized = missile.maxOffBoresight >= 360 ? true : Vector3.Angle(missile.GetForwardTransform(), target - missile.transform.position) < (unguidedWeapon ? 5 : missile.maxOffBoresight * boresightFactor); // Launch is possible now
+                launchAuthorized = missile.maxOffBoresight >= 360 ? true : Vector3.Angle(missile.GetForwardTransform(), target - missile.transform.position) < (unguidedWeapon ? 1 : missile.maxOffBoresight * boresightFactor); // Launch is possible now
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} final boresight check {(launchAuthorized ? "passed" : "failed")}.");
                 if (launchAuthorized)
                 {

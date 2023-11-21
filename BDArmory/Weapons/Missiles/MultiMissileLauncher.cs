@@ -43,7 +43,7 @@ namespace BDArmory.Weapons.Missiles
         public float salvoSize = 1;
         [KSPField] public bool setSalvoSize = false; //allow player to edit salvo size
         [KSPField] public bool isClusterMissile = false; //cluster submunitions deployed instead of standard detonation? Fold this into warHeadType?
-        private bool isLaunchedClusterMissile = false;
+        public bool isLaunchedClusterMissile = false;
         [KSPField] public bool isMultiLauncher = false; //is this a pod or launcher holding multiple missiles that fire in a salvo?
         [KSPField] public bool useSymCounterpart = false; //have symmetrically placed parts fire along with this part as part of salvo? Requires isMultMissileLauncher = true;
         [KSPField] public bool overrideReferenceTransform = false; //override the missileReferenceTransform in Missilelauncher to use vessel prograde
@@ -742,11 +742,16 @@ namespace BDArmory.Weapons.Missiles
                     if (missileCOL) missileCOL.enabled = false;
                 }
                 MissileLauncher ml = missileSpawner.SpawnedMissile.FindModuleImplementing<MissileLauncher>();
+                MultiMissileLauncher mml = missileSpawner.SpawnedMissile.FindModuleImplementing<MultiMissileLauncher>();
                 yield return new WaitUntilFixed(() => ml is null || ml.SetupComplete); // Wait until missile fully initialized.
                 if (ml is null || ml.gameObject is null || !ml.gameObject.activeInHierarchy)
                 {
                     if (ml is not null) Destroy(ml); // The gameObject is gone, make sure the module goes too.
                     continue; // The missile died for some reason, try the next tube.
+                }
+                if (mml != null && mml.isClusterMissile)
+                {
+                    mml.clusterMissileTriggerDist = clusterMissileTriggerDist;
                 }
                 var tnt = VesselModuleRegistry.GetModule<BDExplosivePart>(vessel, true);
                 if (tnt != null)
