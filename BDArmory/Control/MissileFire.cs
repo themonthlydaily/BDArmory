@@ -7437,6 +7437,7 @@ namespace BDArmory.Control
 
             if (guardMode) //missile interception stuff, mostly working as intended, needs final debugging pass.
             {
+                if (PDMslTgts.Count == 0) return;
                 using (List<IBDWeapon>.Enumerator weapon = weaponTypesMissile.GetEnumerator()) //have guardMode requirement?
                     while (weapon.MoveNext())
                     {
@@ -7473,7 +7474,7 @@ namespace BDArmory.Control
                                 {
                                     missilesAway.TryGetValue(PDMslTgts[MissileID], out int missiles);
                                     interceptorsAway = missiles;
-                                    Debug.Log($"[PD Missile Debug] Missiles aready fired against this target {interceptorsAway}");
+                                    //Debug.Log($"[PD Missile Debug] Missiles aready fired against this target {interceptorsAway}");
                                 }
                                 if (interceptorsAway < maxMissilesOnTarget)
                                 {
@@ -7516,12 +7517,12 @@ namespace BDArmory.Control
                         }
                     }
             }
-
+            if (PDBulletTgts.Count + PDRktTgts.Count + PDMslTgts.Count == 0) return;
             using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                 while (weapon.MoveNext())
                 {
                     if (weapon.Current == null) continue;
-                    if (!weapon.Current.isAPS || weapon.Current.dualModeAPS) continue;
+                    if (!weapon.Current.isAPS || !weapon.Current.dualModeAPS) continue;
                     if (weapon.Current.eAPSType == ModuleWeapon.APSTypes.Ballistic || weapon.Current.eAPSType == ModuleWeapon.APSTypes.Omni)
                     {
                         if (PDBulletTgts.Count > 0)
@@ -7646,13 +7647,11 @@ namespace BDArmory.Control
                         }
                     }
                     if (BDArmorySettings.DEBUG_WEAPONS)
-                        Debug.Log($"[BDArmory.MissileFire - {(this.vessel != null ? vessel.GetName() : "null")}]: {weapon.Current.shortName} assigned shell:{(weapon.Current.tgtShell != null ? "true" : "false")}; rocket: {(weapon.Current.tgtRocket != null ? "true" : "false")}; missile:{(weapon.Current.visualTargetVessel != null ? weapon.Current.visualTargetVessel.vesselName : "null")}");
+                        Debug.Log($"[BDArmory.MissileFire - {(this.vessel != null ? vessel.GetName() : "null")}]: {weapon.Current.shortName} assigned shell:{(weapon.Current.tgtShell != null ? "true" : "false")}; rocket: {(weapon.Current.tgtRocket != null ? "true" : "false")}; missile:{(weapon.Current.visualTargetVessel != null ? weapon.Current.visualTargetPart.vessel.GetName() : "null")}");
 
                     weapon.Current.autoFireTimer = Time.time;
                     weapon.Current.autoFireLength = (fireBurstLength < 0.01f) ? targetScanInterval / 2f : fireBurstLength;
                 }
-            if (BDArmorySettings.DEBUG_WEAPONS)
-                Debug.Log($"[BDArmory.MissileFire] Current targeted missiles for {(this.vessel != null ? vessel.GetName() : "null")}: {PDMslTgts.Count}");
         }
         public void SetOverrideTarget(TargetInfo target)
         {
