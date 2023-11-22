@@ -99,7 +99,7 @@ namespace BDArmory.Control
         #endregion
 
         #region Status Mode
-        enum StatusMode { Idle, Evading, CorrectingOrbit, Withdrawing, Firing, Maneuvering, Stranded , Custom }
+        enum StatusMode { Idle, Evading, CorrectingOrbit, Withdrawing, Firing, Maneuvering, Stranded, Custom }
         StatusMode currentStatusMode = StatusMode.Idle;
         StatusMode lastStatusMode = StatusMode.Idle;
         protected override void SetStatus(string status)
@@ -232,7 +232,7 @@ namespace BDArmory.Control
         {
 
             upDir = VectorUtils.GetUpDirection(vesselTransform.position);
-            
+
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
             {
                 debugString.AppendLine($"Current Status: {currentStatus}");
@@ -264,17 +264,22 @@ namespace BDArmory.Control
         {
             bool hasRCSFore = VesselModuleRegistry.GetModules<ModuleRCSFX>(vessel).Any(e => e.rcsEnabled && !e.flameout && e.useThrottle);
             hasPropulsion = hasRCSFore || VesselModuleRegistry.GetModuleEngines(vessel).Any(e => (e.EngineIgnited && e.isOperational));
-                hasWeapons = weaponManager.HasWeaponsAndAmmo();
+            hasWeapons = weaponManager.HasWeaponsAndAmmo();
 
-                if (weaponManager.incomingMissileVessel != null && updateInterval != emergencyUpdateInterval)
-                    updateInterval = emergencyUpdateInterval;
-                else if (weaponManager.incomingMissileVessel == null && updateInterval == emergencyUpdateInterval)
-                    updateInterval = combatUpdateInterval;
+            if (weaponManager.incomingMissileVessel != null && updateInterval != emergencyUpdateInterval)
+                updateInterval = emergencyUpdateInterval;
+            else if (weaponManager.incomingMissileVessel == null && updateInterval == emergencyUpdateInterval)
+                updateInterval = combatUpdateInterval;
+
+            if (vessel.isActiveVessel && targetVessel && (vessel.targetObject == null || vessel.targetObject.GetVessel() != targetVessel))
+            {
+                FlightGlobals.fetch.SetVesselTarget(targetVessel);
+            }
 
             return;
         }
 
-            private IEnumerator PilotLogic()
+        private IEnumerator PilotLogic()
         {
             maxAcceleration = GetMaxAcceleration(vessel);
             fc.RCSVector = Vector3.zero;
@@ -319,9 +324,9 @@ namespace BDArmory.Control
                 Orbit o = vessel.orbit;
                 double UT;
 
-                if (o.ApA < 0)
+                if (o.ApA < 0 && o.GetTimeToPeriapsis() < 0)
                 {
-                    // Vessel is on an escape orbit, burn retrograde
+                    // Vessel is on an escape orbit and has passed the periapsis, burn retrograde
 
                     SetStatus("Correcting Orbit (On escape trajectory)");
 
@@ -715,12 +720,12 @@ namespace BDArmory.Control
         private bool GunReady(ModuleWeapon gun)
         {
             if (gun == null) return false;
-            
+
             // Check gun/laser can fire soon, we are within guard and weapon engagement ranges, and we are under the firing speed
             float targetSqrDist = FromTo(vessel, targetVessel).sqrMagnitude;
-            return RelVel(vessel, targetVessel).sqrMagnitude < firingSpeed * firingSpeed && 
-                gun.CanFireSoon() && 
-                (targetSqrDist <= gun.GetEngagementRangeMax() * gun.GetEngagementRangeMax()) && 
+            return RelVel(vessel, targetVessel).sqrMagnitude < firingSpeed * firingSpeed &&
+                gun.CanFireSoon() &&
+                (targetSqrDist <= gun.GetEngagementRangeMax() * gun.GetEngagementRangeMax()) &&
                 (targetSqrDist <= weaponManager.gunRange * weaponManager.gunRange);
         }
 
