@@ -56,7 +56,7 @@ namespace BDArmory.FX
         KSPParticleEmitter[] pEmitters;
 
         Collider[] blastHitColliders = new Collider[100];
-
+        bool vacuum = false;
         void OnEnable()
         {
             if (parentPart == null)
@@ -84,6 +84,8 @@ namespace BDArmory.FX
             fireIntensity = burnRate;
             BDArmorySetup.numberOfParticleEmitters++;
             pEmitters = gameObject.GetComponentsInChildren<KSPParticleEmitter>();
+            vacuum = FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(transform.position),
+FlightGlobals.getExternalTemperature(), FlightGlobals.currentMainBody) < 0.05f;
 
             using (var pe = pEmitters.AsEnumerable().GetEnumerator())
                 while (pe.MoveNext())
@@ -91,6 +93,10 @@ namespace BDArmory.FX
                     if (pe.Current == null) continue;
                     pe.Current.emit = true;
                     _highestEnergy = pe.Current.maxEnergy;
+                    if (vacuum)
+                    {
+                        pe.Current.localVelocity = new Vector3(0, (float)parentPart.vessel.obt_speed, 0);
+                    }
                     EffectBehaviour.AddParticleEmitter(pe.Current);
                 }
 
@@ -181,7 +187,8 @@ namespace BDArmory.FX
             {
                 return;
             }
-            transform.rotation = Quaternion.FromToRotation(Vector3.up, -FlightGlobals.getGeeForceAtPosition(transform.position));
+            if (vacuum) transform.rotation = Quaternion.FromToRotation(Vector3.up, parentPart.vessel.obt_velocity.normalized);
+            else transform.rotation = Quaternion.FromToRotation(Vector3.up, -FlightGlobals.getGeeForceAtPosition(transform.position));
             fuel = parentPart.Resources.Where(pr => pr.resourceName == "LiquidFuel").FirstOrDefault();
             if (disableTime < 0) //only have fire do it's stuff while burning and not during FX timeout
             {
