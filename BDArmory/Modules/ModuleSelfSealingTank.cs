@@ -447,8 +447,7 @@ namespace BDArmory.Modules
             output.Append(Environment.NewLine);
             output.AppendLine($" Can outfit part with Fire Suppression Systems."); //localize this at some point, future me
             var engine = part.FindModuleImplementing<ModuleEngines>();
-            var engineFX = part.FindModuleImplementing<ModuleEnginesFX>();
-            if (engine == null || engineFX == null)
+            if (engine == null)
             {
                 output.AppendLine($" Can upgrade to Self-Sealing Tank.");
             }

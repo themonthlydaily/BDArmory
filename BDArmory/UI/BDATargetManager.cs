@@ -314,11 +314,11 @@ namespace BDArmory.UI
                         {
                             if (tInfo.targetEngineList.Contains(closestPart))
                             {
-                                string transformName = (closestPart.GetComponent<ModuleEnginesFX>()) ? closestPart.GetComponent<ModuleEnginesFX>().thrustVectorTransformName : "thrustTransform";
+                                string transformName = closestPart.GetComponent<ModuleEngines>() ? closestPart.GetComponent<ModuleEngines>().thrustVectorTransformName : "thrustTransform";
                                 thrustTransform = closestPart.FindModelTransform(transformName);
-                                propEngine = (closestPart.GetComponent<ModuleEngines>()) ? closestPart.GetComponent<ModuleEngines>().velCurve.Evaluate(1.1f) <= 0 : false; // Props don't generate thrust above Mach 1--will catch props that don't use Firespitter
+                                propEngine = closestPart.GetComponent<ModuleEngines>() ? closestPart.GetComponent<ModuleEngines>().velCurve.Evaluate(1.1f) <= 0 : false; // Props don't generate thrust above Mach 1--will catch props that don't use Firespitter
                                 if (!propEngine)
-                                    afterburner = (closestPart.GetComponent<MultiModeEngine>()) ? !(closestPart.GetComponent<MultiModeEngine>().runningPrimary) : false;
+                                    afterburner = closestPart.GetComponent<MultiModeEngine>() ? !closestPart.GetComponent<MultiModeEngine>().runningPrimary : false;
                             }
                         }
                         // Set thrustTransform as heat source position for engines
@@ -711,7 +711,7 @@ namespace BDArmory.UI
                     {
                         if (ti.targetEngineList.Contains(closestPart))
                         {
-                            string transformName = (closestPart.GetComponent<ModuleEnginesFX>()) ? closestPart.GetComponent<ModuleEnginesFX>().thrustVectorTransformName : "thrustTransform";
+                            string transformName = closestPart.GetComponent<ModuleEngines>() ? closestPart.GetComponent<ModuleEngines>().thrustVectorTransformName : "thrustTransform";
                             thrustTransform = closestPart.FindModelTransform(transformName);
                         }
                         // Set thrustTransform as noise source position for engines

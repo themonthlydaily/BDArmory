@@ -71,7 +71,7 @@ namespace BDArmory.VesselSpawning
             }
 
             // Team spawn
-            if (teamSpawnCoroutine!=null)
+            if (teamSpawnCoroutine != null)
             {
                 StopCoroutine(teamSpawnCoroutine);
                 teamSpawnCoroutine = null;

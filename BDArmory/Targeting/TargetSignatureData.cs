@@ -177,10 +177,10 @@ namespace BDArmory.Targeting
                     float distortionFactor = decoyFactor * UnityEngine.Random.Range(16f, 256f);
 
                     // Convert Float jammingFactor position bias and signatureFactor scaling to Vector3 position
-                    Vector3 signatureDistortion = distortionFactor * (vessel.GetSrfVelocity().normalized * -1f * jammingFactor + UnityEngine.Random.insideUnitSphere);
+                    Vector3 signatureDistortion = distortionFactor * (UnityEngine.Random.insideUnitSphere - jammingFactor * vessel.Velocity().normalized);
 
                     // Higher speed -> missile decoyed further "behind" where the chaff drops (also means that chaff is least effective for head-on engagements)
-                    posDistortion = (vessel.GetSrfVelocity() * -1f * Mathf.Clamp(decoyFactor * decoyFactor, 0f, 0.5f)) + signatureDistortion;
+                    posDistortion = signatureDistortion - Mathf.Clamp(decoyFactor * decoyFactor, 0f, 0.5f) * vessel.Velocity();
 
                     // Apply effects from global settings and individual missile chaffEffectivity
                     posDistortion *= Mathf.Max(BDArmorySettings.CHAFF_FACTOR, 0f) * chaffEffectivity;
