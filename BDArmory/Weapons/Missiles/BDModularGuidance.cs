@@ -850,16 +850,16 @@ namespace BDArmory.Weapons.Missiles
                     interceptVector = (TargetPosition + lead) - vessel.CoM;
                 }
                 else
-                {;
+                {
                     Vector3 acceleration = vessel.ReferenceTransform.up * maxAcceleration;
 
                     timeToImpact = AIUtils.TimeToCPA(targetVector, relVel, TargetAcceleration - acceleration, 30);
                     interceptVector = AIUtils.PredictPosition(targetVector, relVel, TargetAcceleration - acceleration * 0.5f, timeToImpact);
-                    
+
                     if (Vector3.Dot(interceptVector, targetVector) < 0)
                         interceptVector = targetVector;
                 }
-                
+
                 orbitalTarget = interceptVector.normalized;
 
                 float accuracy = Vector3.Dot(orbitalTarget, relVelNrm);
@@ -872,7 +872,7 @@ namespace BDArmory.Weapons.Missiles
 
                 bool drift = accuracy > 0.999999
                     && (Vector3.Dot(relVel, orbitalTarget) > MaxSpeed || missileTarget);
-                
+
                 rcsVector = Vector3.ProjectOnPlane(relVel, vessel.ReferenceTransform.up) * -1;
                 Throttle = drift ? 0 : 1;
             }
@@ -966,11 +966,12 @@ namespace BDArmory.Weapons.Missiles
         private static Vector3 GetRCSVector(ModuleRCSFX thruster, Vector3 thrustVector)
         {
             //method to get the thrust vector of a specified rcs thruster
-            List<Transform> positions = thruster.thrusterTransforms;
             Vector3 meanVector = Vector3.zero;
+            if (!thruster) return meanVector;
 
-            foreach (Transform thrusterTransform in positions)
+            foreach (Transform thrusterTransform in thruster.thrusterTransforms)
             {
+                if (!thrusterTransform) continue;
                 Vector3 pos = thruster.thrusterPower * thrusterTransform.up;
                 // rcs will fire if thrust goes in the forward direction by any degree, this is reduced with angle offset
                 float rcsThrustDot = Vector3.Dot(thrustVector.normalized, pos.normalized);
@@ -985,10 +986,11 @@ namespace BDArmory.Weapons.Missiles
         {
             //method to get the thrust vector of a specified engine
             Vector3 meanVector = Vector3.zero;
-            List<Transform> positions = thruster.thrustTransforms;
+            if (!thruster) return meanVector;
 
-            foreach (Transform thrusterTransform in positions)
+            foreach (Transform thrusterTransform in thruster.thrustTransforms)
             {
+                if (!thrusterTransform) continue;
                 Vector3 pos = thrusterTransform.forward;
                 meanVector += pos;
             }
@@ -1003,7 +1005,7 @@ namespace BDArmory.Weapons.Missiles
         {
             if (HasMissed) return;
             if (MissileState != MissileStates.PostThrust) return;
-            if (GuidanceMode == GuidanceModes.Orbital) return; 
+            if (GuidanceMode == GuidanceModes.Orbital) return;
             // if I'm to close to my vessel avoid explosion
             if ((vessel.CoM - SourceVessel.CoM).sqrMagnitude < 16 * DetonationDistanceSqr) return;
             // if I'm getting closer to my target avoid explosion
@@ -1058,7 +1060,7 @@ namespace BDArmory.Weapons.Missiles
         private void CheckMiss()
         {
             if (HasMissed) return;
-            bool noProgress = MissileState == MissileStates.PostThrust && 
+            bool noProgress = MissileState == MissileStates.PostThrust &&
                 ((Vector3.Dot(vessel.Velocity() - TargetVelocity, TargetPosition - vessel.transform.position) < 0) ||
                 (vessel.LandedOrSplashed || vessel.Velocity().sqrMagnitude < 100f));
             if (noProgress)
