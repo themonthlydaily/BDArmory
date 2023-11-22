@@ -11,7 +11,6 @@ using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.Weapons;
-using static UnityEngine.GraphicsBuffer;
 
 namespace BDArmory.Control
 {
