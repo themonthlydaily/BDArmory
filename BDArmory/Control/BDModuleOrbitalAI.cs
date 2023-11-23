@@ -647,7 +647,7 @@ namespace BDArmory.Control
             }
             minSafeAltitude = Math.Max(maxTerrainHeight, body.atmosphereDepth);
 
-            return (o.PeA < minSafeAltitude && o.timeToPe < o.timeToAp) || o.ApA < minSafeAltitude;
+            return (o.PeA < minSafeAltitude && o.timeToPe < o.timeToAp) || (o.ApA < minSafeAltitude && (o.ApA >= 0 || o.timeToPe < -60)); // Match conditions in PilotLogic
         }
 
         private bool UnderTimeLimit(float timeLimit = 0)
