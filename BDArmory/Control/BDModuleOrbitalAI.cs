@@ -310,7 +310,7 @@ namespace BDArmory.Control
                 Orbit o = vessel.orbit;
                 double UT;
 
-                if (o.ApA < 0 && o.GetTimeToPeriapsis() < -60)
+                if (o.ApA < 0 && o.timeToPe < -60)
                 {
                     // Vessel is on an escape orbit and has passed the periapsis by over 60s, burn retrograde
 
