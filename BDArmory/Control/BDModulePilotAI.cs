@@ -356,6 +356,7 @@ namespace BDArmory.Control
             UI_FloatRange(minValue = 0f, maxValue = 90f, stepIncrement = 1f, scene = UI_Scene.All)]
         public float ImmelmannTurnAngle = 30f; // 30° from directly behind -> 150°
         float ImmelmannTurnCosAngle = -0.866f;
+        float BankedTurnDistance = 2800f;
         #endregion
 
         #region EvadeExtend
@@ -1377,6 +1378,17 @@ namespace BDArmory.Control
             ImmelmannTurnCosAngle = -Mathf.Cos(ImmelmannTurnAngle * Mathf.Deg2Rad);
         }
 
+        public void SetOnMaxSpeedChanged()
+        {
+            UI_FloatRange field = (UI_FloatRange)Fields["maxSpeed"].uiControlFlight;
+            field.onFieldChanged = OnMaxSpeedChanged;
+            OnMaxSpeedChanged(null, null);
+        }
+        public void OnMaxSpeedChanged(BaseField field, object obj)
+        {
+            BankedTurnDistance = Mathf.Clamp(8f * maxSpeed, 1000f, 4000f);
+        }
+
         public void SetOnAutoTuningRecenteringDistanceChanged()
         {
             UI_FloatRange field = (UI_FloatRange)Fields["autoTuningRecenteringDistance"].uiControlEditor;
@@ -1676,6 +1688,7 @@ namespace BDArmory.Control
             SetOnExtendAngleA2AChanged();
             SetOnTerrainAvoidanceCriticalAngleChanged();
             SetOnImmelmannTurnAngleChanged();
+            SetOnMaxSpeedChanged();
             SetOnAutoTuningRecenteringDistanceChanged();
             SetupAutoTuneSliders();
             if ((HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor) && storedSettings != null && storedSettings.ContainsKey(HighLogic.LoadedSceneIsFlight ? vessel.GetName() : EditorLogic.fetch.ship.shipName))
@@ -3905,10 +3918,11 @@ namespace BDArmory.Control
         {
             Vector3 forwardDirection = vesselTransform.up;
             Vector3 targetDirection = (targetPosition - vesselTransform.position).normalized;
+            float targetDistance = (targetPosition - vesselTransform.position).magnitude;
 
             float vertFactor = 0;
-            vertFactor += (((float)vessel.srfSpeed / minSpeed) - 2f) * 0.3f;          //speeds greater than 2x minSpeed encourage going upwards; below encourages downwards
-            vertFactor += (((targetPosition - vesselTransform.position).magnitude / 1000f) - 1f) * 0.3f;    //distances greater than 1000m encourage going upwards; closer encourages going downwards
+            vertFactor += ((float)vessel.srfSpeed / minSpeed - 2f) * 0.3f;          //speeds greater than 2x minSpeed encourage going upwards; below encourages downwards
+            vertFactor += (targetDistance / 1000f - 1f) * 0.3f;    //distances greater than 1000m encourage going upwards; closer encourages going downwards
             vertFactor -= Mathf.Clamp01(Vector3.Dot(vesselTransform.position - targetPosition, upDirection) / 1600f - 1f) * 0.5f;       //being higher than 1600m above a target encourages going downwards
             if (targetVessel)
                 vertFactor += Vector3.Dot(targetVessel.Velocity() / targetVessel.srfSpeed, (targetVessel.ReferenceTransform.position - vesselTransform.position).normalized) * 0.3f;   //the target moving away from us encourages upward motion, moving towards us encourages downward motion
@@ -3930,7 +3944,11 @@ namespace BDArmory.Control
             var cosAngle = Vector3.Dot(targetDirection, forwardDirection);
             if (cosAngle < 0)
             {
-                if (cosAngle < ImmelmannTurnCosAngle)
+                if (targetDistance > BankedTurnDistance) // For long-range turning, do a banked turn (horizontal) instead to conserve energy.
+                {
+                    targetDirection = Vector3.ProjectOnPlane(targetDirection, upDirection).normalized;
+                }
+                else if (cosAngle < ImmelmannTurnCosAngle) // Otherwise, if the target is almost directly behind, do an Immelmann turn.
                 {
                     targetDirection = Vector3.RotateTowards(-vesselTransform.up, vessel.angularVelocity.x < 0.1f ? -vesselTransform.forward : vesselTransform.forward, Mathf.Deg2Rad * ImmelmannTurnAngle, 0); // If the target is in our blind spot, just pitch up (or down depending on pitch angular velocity) to get a better view. (Immelmann turn.)
                 }
