@@ -3944,9 +3944,9 @@ namespace BDArmory.Control
             var cosAngle = Vector3.Dot(targetDirection, forwardDirection);
             if (cosAngle < 0)
             {
-                if (targetDistance > BankedTurnDistance) // For long-range turning, do a banked turn (horizontal) instead to conserve energy.
+                if (canExtend && targetDistance > BankedTurnDistance) // For long-range turning, do a banked turn (horizontal) instead to conserve energy, but only if extending is allowed.
                 {
-                    targetPosition = vesselTransform.position + Vector3.Cross(Vector3.Cross(forwardDirection, targetDirection), forwardDirection).ProjectOnPlanePreNormalized(upDirection).normalized * 200;
+                    targetPosition = vesselTransform.position + Vector3.Cross(Vector3.Cross(projectedDirection, projectedTargetDirection), projectedDirection).normalized * 200;
                 }
                 else
                 {
