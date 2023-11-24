@@ -795,7 +795,6 @@ namespace BDArmory.VesselSpawning
                     if (orbitalAI && vessel.altitude + vessel.mainBody.Radius > vessel.mainBody.minOrbitalDistance) // In space with an orbital AI. Set it in a circular orbit.
                     {
                         Vector3d orbitVelocity = Math.Sqrt(FlightGlobals.getGeeForceAtPosition(vessel.CoM, vessel.mainBody).magnitude * (vessel.mainBody.Radius + vessel.altitude)) * FlightGlobals.currentMainBody.getRFrmVel(vessel.CoM).normalized;
-                        if (withInitialVelocity) orbitVelocity += orbitalAI.firingSpeed * vessel.transform.up;
                         vessel.SetWorldVelocity(orbitVelocity);
                     }
                 }
