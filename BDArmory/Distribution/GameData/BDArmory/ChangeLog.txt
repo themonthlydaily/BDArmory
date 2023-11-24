@@ -22,9 +22,7 @@
 - Vessel Mover:
 	- Check for outdated loadMeta files when refreshing the craft list in the vessel selection window and update them since KSP doesn't update them when you save your craft!
 	- Fix the spawn point selection sometimes not registering.
-	- Vessels with an orbital AI that are spawned at safe orbital altitudes are spawned into circular orbits.
-		- Vessels are spawned pointing away from each other.
-		- If "Air-Spawn With Idle Speed" is enabled, then each vessel gets an additional forward velocity based on their Strafing Speed.
+	- Vessels with an orbital AI that are spawned at safe orbital altitudes are spawned into circular orbits. Vessels are spawned pointing away from each other.
 - ModIntegration:
 	- Fixes for inhibiting CameraTools when initial spawning during continuous spawning and disable auto-switching to newly spawned craft joining the competition.
 
