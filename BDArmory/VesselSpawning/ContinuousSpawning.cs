@@ -118,6 +118,8 @@ namespace BDArmory.VesselSpawning
             }
             spawnConfig.craftFiles.Shuffle(); // Randomise the spawn order.
             spawnConfig.altitude = Math.Max(100, spawnConfig.altitude); // Don't spawn too low.
+            var spawnBody = FlightGlobals.Bodies[spawnConfig.worldIndex];
+            var spawnInOrbit = spawnConfig.altitude + spawnBody.Radius > spawnBody.minOrbitalDistance; // Min safe orbital distance
             var spawnDistance = spawnConfig.craftFiles.Count > 1 ? (spawnConfig.absDistanceOrFactor ? spawnConfig.distance : spawnConfig.distance * (1 + (BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS > 0 ? Math.Min(spawnConfig.craftFiles.Count, BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS) : spawnConfig.craftFiles.Count))) : 0f; // If it's a single craft, spawn it at the spawn point.
             if (BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS == 0)
                 LogMessage("Spawning " + spawnConfig.craftFiles.Count + " vessels at an altitude of " + spawnConfig.altitude.ToString("G0") + (spawnConfig.craftFiles.Count > 8 ? "m, this may take some time..." : "m."));
@@ -210,7 +212,7 @@ namespace BDArmory.VesselSpawning
                             var direction = (Quaternion.AngleAxis(heading, radialUnitVector) * refDirection).ProjectOnPlanePreNormalized(radialUnitVector).normalized;
                             craftSpawnPosition = spawnPoint + spawnDistance * direction;
                             FlightGlobals.currentMainBody.GetLatLonAlt(craftSpawnPosition, out craftGeoCoords.x, out craftGeoCoords.y, out craftGeoCoords.z); // Convert spawn point to geo-coords for the actual spawning function.
-                            StartCoroutine(SpawnCraft(new VesselSpawnConfig(craftURL, craftSpawnPosition, direction, (float)spawnConfig.altitude, -80f, true, 0, true)));
+                            StartCoroutine(SpawnCraft(new VesselSpawnConfig(craftURL, craftSpawnPosition, direction, (float)spawnConfig.altitude, -80f, true, spawnInOrbit, 0, true)));
                         }
                         craftURLToVesselName = spawnedVesselURLs.ToDictionary(kvp => kvp.Value, kvp => kvp.Key); // Update the vesselName-to-craftURL dictionary for the latest spawns.
                         craftToSpawn.Clear(); // Clear the queue since we just spawned all those vessels.

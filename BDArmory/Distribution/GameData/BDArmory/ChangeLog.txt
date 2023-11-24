@@ -8,15 +8,23 @@
 		- Recommend using the cheat menu (Alt+F12) to place craft in orbit within physics range of each other.
 	- Base the Immelmann turn pitch direction on the local pitch angular velocity (i.e., pitch down if already rotating that way — fixes the pitch oscillation behaviour when targeting an opponent behind the craft while inverted near terrain).
 	- Don't summon the NaN-Kraken when the post-terrain avoidance cool-down is 0.
+	- Perform banked turns when the target is behind us at long range instead of Immelmann turns or turning directly to target. Threshold is clamp(8 * max speed, 1000, 4000).
 - Weapons:
 	- Fixes for initial bullet placement and simulated hit position when Krakensbane is not active.
   	- Missiles:
 		  - Add new Orbital guidance option for Modular Missiles
 		    - Missile will attempt to intercept orbital target at the user-set Max Speed value
       - Fix clustermissiles launching copies of themselves instead of submunitions.
+	  - Fix for HEKV launching unguided in non-ideal situations.
+- Countermeasures
+	- Add vessel's velocity to chaff ejection particles.
+	- Use vessel acceleration instead of velocity for chaff decoy factor calculation when in space.
 - Vessel Mover:
 	- Check for outdated loadMeta files when refreshing the craft list in the vessel selection window and update them since KSP doesn't update them when you save your craft!
 	- Fix the spawn point selection sometimes not registering.
+	- Vessels with an orbital AI that are spawned at safe orbital altitudes are spawned into circular orbits.
+		- Vessels are spawned pointing away from each other.
+		- If "Air-Spawn With Idle Speed" is enabled, then each vessel gets an additional forward velocity based on their Strafing Speed.
 - ModIntegration:
 	- Fixes for inhibiting CameraTools when initial spawning during continuous spawning and disable auto-switching to newly spawned craft joining the competition.
 

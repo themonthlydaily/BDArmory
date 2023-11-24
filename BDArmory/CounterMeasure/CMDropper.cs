@@ -8,6 +8,7 @@ using UnityEngine;
 using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
+using BDArmory.Extensions;
 
 namespace BDArmory.CounterMeasure
 {
@@ -308,7 +309,7 @@ namespace BDArmory.CounterMeasure
 
             GameObject cm = chaffPool.GetPooledObject();
             CMChaff chaff = cm.GetComponent<CMChaff>();
-            chaff.Emit(ejectTransform.position, ejectVelocity * ejectTransform.forward);
+            chaff.Emit(ejectTransform.position, ejectVelocity * ejectTransform.forward + vessel.Velocity());
 
             FireParticleEffects();
             return true;
