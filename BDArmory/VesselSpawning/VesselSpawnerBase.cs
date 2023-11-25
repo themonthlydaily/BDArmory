@@ -336,7 +336,7 @@ namespace BDArmory.VesselSpawning
             RaycastHit hit;
             var distanceToCoMainBody = (ray.origin - spawnBody.transform.position).magnitude;
             float distance;
-            var spawnInOrbit = vesselSpawnConfig.altitude + spawnBody.Radius > spawnBody.minOrbitalDistance; // Min safe orbital distance
+            var spawnInOrbit = vesselSpawnConfig.altitude + spawnBody.Radius >= spawnBody.minOrbitalDistance; // Min safe orbital distance
             Vector3 localSurfaceNormal = -ray.direction;
             var localTerrainAltitude = BodyUtils.GetTerrainAltitudeAtPos(ray.origin);
             if (localTerrainAltitude > 0 && Physics.Raycast(ray, out hit, distanceToCoMainBody, (int)LayerMasks.Scenery))
