@@ -20,10 +20,11 @@
 - Countermeasures
 	- Add vessel's velocity to chaff ejection particle effect.
 	- Use vessel acceleration instead of velocity for chaff decoy factor calculation when in space.
-- Vessel Mover:
+- Vessel Mover / Spawning:
 	- Check for outdated loadMeta files when refreshing the craft list in the vessel selection window and update them since KSP doesn't update them when you save your craft!
 	- Fix the spawn point selection sometimes not registering.
 	- Vessels with an orbital AI that are spawned at safe orbital altitudes are spawned into circular orbits. Vessels are spawned pointing away from each other.
+	- Increase maximum spawn distance to 200km.
 - ModIntegration:
 	- Fixes for inhibiting CameraTools when initial spawning during continuous spawning and disable auto-switching to newly spawned craft joining the competition.
 
