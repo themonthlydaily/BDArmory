@@ -248,7 +248,7 @@ namespace BDArmory.Control
 
         void UpdateStatus()
         {
-            bool hasRCSFore = VesselModuleRegistry.GetModules<ModuleRCSFX>(vessel).Any(e => e.rcsEnabled && !e.flameout && e.useThrottle);
+            bool hasRCSFore = VesselModuleRegistry.GetModules<ModuleRCS>(vessel).Any(e => e.rcsEnabled && !e.flameout && e.useThrottle);
             hasPropulsion = hasRCSFore || VesselModuleRegistry.GetModuleEngines(vessel).Any(e => (e.EngineIgnited && e.isOperational));
             hasWeapons = weaponManager.HasWeaponsAndAmmo();
 
@@ -823,18 +823,9 @@ namespace BDArmory.Control
 
         public static float GetMaxThrust(Vessel v)
         {
-            List<ModuleEngines> engines = VesselModuleRegistry.GetModules<ModuleEngines>(v).ToList();
-            engines.RemoveAll(e => !e.EngineIgnited || !e.isOperational);
-            float thrust = engines.Sum(e => e.MaxThrustOutputVac(true));
-
-            List<ModuleRCSFX> RCS = VesselModuleRegistry.GetModules<ModuleRCSFX>(v).ToList();
-            foreach (ModuleRCS thruster in RCS)
-            {
-                if (thruster.useThrottle)
-                    thrust += thruster.thrusterPower;
-            }
-
-            return engines.Sum(e => e.MaxThrustOutputVac(true));
+            float thrust = VesselModuleRegistry.GetModuleEngines(v).Where(e => e != null && e.EngineIgnited && e.isOperational).Sum(e => e.MaxThrustOutputVac(true));
+            thrust += VesselModuleRegistry.GetModules<ModuleRCS>(v).Where(rcs => rcs != null && rcs.useThrottle).Sum(rcs => rcs.thrusterPower);
+            return thrust;
         }
         #endregion
 
