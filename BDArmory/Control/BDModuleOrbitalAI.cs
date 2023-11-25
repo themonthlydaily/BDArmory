@@ -125,7 +125,7 @@ namespace BDArmory.Control
             // does not update the info. :( No idea how to force an update.
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("<b>Available settings</b>:");
-            sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Min Engagement Range</color> - can this vessel operate on land/sea/both");
+            sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Min Engagement Range</color> - AI will try to move away from oponents if closer than this range");
             sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- RCS Active</color> - Use RCS during any maneuvers, or only in combat");
             sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Maneuver Speed</color> - Max speed relative to target during intercept maneuvers");
             sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Strafing Speed</color> - Max speed relative to target during gun firing");
@@ -600,7 +600,7 @@ namespace BDArmory.Control
                         {
                             SetStatus("Stranded");
                             fc.throttle = 0;
-                            fc.attitude = Vector3.zero;
+                            fc.attitude = FromTo(vessel, targetVessel).normalized;
                         }
 
                         yield return new WaitForSecondsFixed(updateInterval);
@@ -827,7 +827,7 @@ namespace BDArmory.Control
             engines.RemoveAll(e => !e.EngineIgnited || !e.isOperational);
             float thrust = engines.Sum(e => e.MaxThrustOutputVac(true));
 
-            List<ModuleRCSFX> RCS = VesselModuleRegistry.GetModules<ModuleRCSFX>(v);
+            List<ModuleRCSFX> RCS = VesselModuleRegistry.GetModules<ModuleRCSFX>(v).ToList();
             foreach (ModuleRCS thruster in RCS)
             {
                 if (thruster.useThrottle)
