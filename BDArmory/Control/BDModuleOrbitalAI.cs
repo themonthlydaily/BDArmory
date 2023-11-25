@@ -125,7 +125,7 @@ namespace BDArmory.Control
             // does not update the info. :( No idea how to force an update.
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("<b>Available settings</b>:");
-            sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Min Engagement Range</color> - can this vessel operate on land/sea/both");
+            sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Min Engagement Range</color> - AI will try to move away from oponents if closer than this range");
             sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- RCS Active</color> - Use RCS during any maneuvers, or only in combat");
             sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Maneuver Speed</color> - Max speed relative to target during intercept maneuvers");
             sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Strafing Speed</color> - Max speed relative to target during gun firing");
@@ -248,7 +248,7 @@ namespace BDArmory.Control
 
         void UpdateStatus()
         {
-            bool hasRCSFore = VesselModuleRegistry.GetModules<ModuleRCSFX>(vessel).Any(e => e.rcsEnabled && !e.flameout && e.useThrottle);
+            bool hasRCSFore = VesselModuleRegistry.GetModules<ModuleRCS>(vessel).Any(e => e.rcsEnabled && !e.flameout && e.useThrottle);
             hasPropulsion = hasRCSFore || VesselModuleRegistry.GetModuleEngines(vessel).Any(e => (e.EngineIgnited && e.isOperational));
             hasWeapons = weaponManager.HasWeaponsAndAmmo();
 
@@ -600,7 +600,7 @@ namespace BDArmory.Control
                         {
                             SetStatus("Stranded");
                             fc.throttle = 0;
-                            fc.attitude = Vector3.zero;
+                            fc.attitude = FromTo(vessel, targetVessel).normalized;
                         }
 
                         yield return new WaitForSecondsFixed(updateInterval);
@@ -823,18 +823,9 @@ namespace BDArmory.Control
 
         public static float GetMaxThrust(Vessel v)
         {
-            List<ModuleEngines> engines = VesselModuleRegistry.GetModules<ModuleEngines>(v).ToList();
-            engines.RemoveAll(e => !e.EngineIgnited || !e.isOperational);
-            float thrust = engines.Sum(e => e.MaxThrustOutputVac(true));
-
-            List<ModuleRCSFX> RCS = VesselModuleRegistry.GetModules<ModuleRCSFX>(v);
-            foreach (ModuleRCS thruster in RCS)
-            {
-                if (thruster.useThrottle)
-                    thrust += thruster.thrusterPower;
-            }
-
-            return engines.Sum(e => e.MaxThrustOutputVac(true));
+            float thrust = VesselModuleRegistry.GetModuleEngines(v).Where(e => e != null && e.EngineIgnited && e.isOperational).Sum(e => e.MaxThrustOutputVac(true));
+            thrust += VesselModuleRegistry.GetModules<ModuleRCS>(v).Where(rcs => rcs != null && rcs.useThrottle).Sum(rcs => rcs.thrusterPower);
+            return thrust;
         }
         #endregion
 

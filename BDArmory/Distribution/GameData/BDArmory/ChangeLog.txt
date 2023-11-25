@@ -3,12 +3,13 @@
 	- Fix the alternate (hidden UI) window locations (for scores and vessel switcher) not being saved correctly.
 - AI / WM:
 	- Add new Orbital AI part for spacecraft in orbit:
-		- The orbital AI will use orbital maneuvers to close within gun range of the target to fire weapons. It will also automatically fire missiles when able.
+		- The Orbital AI will use orbital maneuvers to close within gun range of the target to fire weapons. It will also automatically fire missiles when able.
 		- The AI will maneuver at the Maneuver Speed setting and once within gun range try to fire guns while at the Strafe Speed setting. If evasion is enabled, it will attempt to dodge vacuum missiles (i.e. HEKVs) or Modular Missiles with Orbital guidance (see Weapons section of changelog).
-		- Recommend using the cheat menu (Alt+F12) to place craft in orbit within physics range of each other.
+		- When spawned at orbital altitudes using the BDA Vessel Spawner, craft with the Orbital AI will be automatically spawned into orbit (other options for orbital spawning are cheat menu and HyperEdit mod).
 	- Base the Immelmann turn pitch direction on the local pitch angular velocity (i.e., pitch down if already rotating that way — fixes the pitch oscillation behaviour when targeting an opponent behind the craft while inverted near terrain).
 	- Don't summon the NaN-Kraken when the post-terrain avoidance cool-down is 0.
 	- Perform banked turns when the target is behind us at long range and extending is allowed instead of Immelmann turns or turning directly to target. Threshold is clamp(8 * max speed, 1000, 4000).
+	- Pilot AI turns will now turn harder (using Max AoA setting) towards the notch direction the closer the missile is to impact.
 - Weapons:
 	- Fixes for initial bullet placement and simulated hit position when Krakensbane is not active.
   	- Missiles:
@@ -17,7 +18,7 @@
       - Fix clustermissiles launching copies of themselves instead of submunitions.
 	  - Fix for HEKV launching unguided in non-ideal situations.
 - Countermeasures
-	- Add vessel's velocity to chaff ejection particles.
+	- Add vessel's velocity to chaff ejection particle effect.
 	- Use vessel acceleration instead of velocity for chaff decoy factor calculation when in space.
 - Vessel Mover / Spawning:
 	- Check for outdated loadMeta files when refreshing the craft list in the vessel selection window and update them since KSP doesn't update them when you save your craft!
