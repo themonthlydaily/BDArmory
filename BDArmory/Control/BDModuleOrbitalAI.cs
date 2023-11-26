@@ -22,7 +22,7 @@ namespace BDArmory.Control
         #region Declarations
 
         // Orbiter AI variables.
-
+        public float commandedBurn = 10f;
         public float updateInterval;
         public float emergencyUpdateInterval = 0.5f;
         public float combatUpdateInterval = 2.5f;
@@ -99,8 +99,8 @@ namespace BDArmory.Control
         #endregion
 
         #region Status Mode
-        enum StatusMode { Idle, Evading, CorrectingOrbit, Withdrawing, Firing, Maneuvering, Stranded, Custom }
-        StatusMode currentStatusMode = StatusMode.Idle;
+        public enum StatusMode { Idle, Evading, CorrectingOrbit, Withdrawing, Firing, Maneuvering, Stranded, Custom }
+        public StatusMode currentStatusMode = StatusMode.Idle;
         StatusMode lastStatusMode = StatusMode.Idle;
         protected override void SetStatus(string status)
         {
@@ -388,6 +388,24 @@ namespace BDArmory.Control
                         fc.attitude = deltaV.normalized;
                         fc.throttle = Mathf.Lerp(0, 1, (float)(deltaV.sqrMagnitude / 100));
                     }
+                }
+            }
+            else if (hasPropulsion && (currentCommand == PilotCommands.FlyTo || currentCommand == PilotCommands.Follow))
+            {
+                // We have been given a command from the WingCommander to fly/follow in a general direction
+                // Burn for commandedBurn length, coast for 2x commandedBurn length
+                SetStatus("Maneuvering " + (currentCommand == PilotCommands.FlyTo ? "(Commanded Position)" : "(Following)"));
+                float timer = 0;
+
+                while (UnderTimeLimit(commandedBurn * 3f) && (currentCommand == PilotCommands.FlyTo || currentCommand == PilotCommands.Follow))
+                {
+                    if (currentCommand == PilotCommands.FlyTo)
+                        fc.attitude = (assignedPositionGeo - vessel.transform.position).normalized;
+                    else // Following
+                        fc.attitude = commandLeader.transform.up;
+                    fc.throttle = Mathf.Lerp(1, 0, Mathf.Clamp01(timer / commandedBurn));
+                    timer += Time.fixedDeltaTime;
+                    yield return wait;
                 }
             }
             else if (allowWithdrawal && hasPropulsion && !hasWeapons && CheckWithdraw())

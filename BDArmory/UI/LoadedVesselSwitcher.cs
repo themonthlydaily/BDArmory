@@ -1258,6 +1258,7 @@ namespace BDArmory.UI
                                     float HP = 0;
                                     float WreckFactor = 0;
                                     var AI = VesselModuleRegistry.GetBDModulePilotAI(wm.Current.vessel, true);
+                                    var OAI = VesselModuleRegistry.GetModule<BDModuleOrbitalAI>(wm.Current.vessel, true);
 
                                     // If we're running a waypoints competition, only focus on vessels still running waypoints.
                                     if (BDACompetitionMode.Instance.competitionType == CompetitionType.WAYPOINTS)
@@ -1322,6 +1323,18 @@ namespace BDArmory.UI
                                             }
                                         }
                                         //else got weapons and engaging
+                                    }
+                                    if (OAI) // Maneuvering is interesting, other statuses are not
+                                    {
+                                        if (OAI.currentStatusMode == BDModuleOrbitalAI.StatusMode.Maneuvering)
+                                            vesselScore *= 0.5f;
+                                        else if (OAI.currentStatusMode == BDModuleOrbitalAI.StatusMode.CorrectingOrbit)
+                                            vesselScore *= 1.5f;
+                                        else if (OAI.currentStatusMode == BDModuleOrbitalAI.StatusMode.Idle)
+                                            vesselScore *= 2f;
+                                        else if (OAI.currentStatusMode == BDModuleOrbitalAI.StatusMode.Stranded)
+                                            vesselScore *= 3f;
+                                        // else -- Firing, Evading covered by weapon manager checks
                                     }
                                     vesselScore *= 0.031623f * BDAMath.Sqrt(targetDistance); // Equal to 1 at 1000m
                                     if (wm.Current.recentlyFiring) // Firing guns or missiles at stuff is more interesting. (Uses 1/2 the camera switch frequency on all guns.)

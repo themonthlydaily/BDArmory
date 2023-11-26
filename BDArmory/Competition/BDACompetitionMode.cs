@@ -745,7 +745,10 @@ namespace BDArmory.Competition
             {
                 var pilotAI = VesselModuleRegistry.GetBDModulePilotAI(leaders[i].vessel, true); // Adjust initial fly-to point for terrain and default altitudes.
                 var startPosition = center + startDirection + (pilotAI != null ? (pilotAI.defaultAltitude - BodyUtils.GetRadarAltitudeAtPos(center + startDirection, false)) * VectorUtils.GetUpDirection(center + startDirection) : Vector3.zero);
-                leaders[i].CommandFlyTo(VectorUtils.WorldPositionToGeoCoords(startPosition, FlightGlobals.currentMainBody));
+                if (VesselModuleRegistry.GetModule<BDModuleOrbitalAI>(leaders[i].vessel, true))
+                    leaders[i].CommandFlyTo(leaders[i].vessel.CoM + (leaders[i].vessel.CoM - center));
+                else
+                    leaders[i].CommandFlyTo(VectorUtils.WorldPositionToGeoCoords(startPosition, FlightGlobals.currentMainBody));
                 startDirection = directionStep * startDirection;
             }
 
