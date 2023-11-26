@@ -190,6 +190,7 @@ namespace BDArmory.Control
                 lastUpdate = Time.time;
                 UpdateStatus();
                 yield return PilotLogic();
+                if (!vessel) yield break; // Abort if the vessel died.
             }
         }
 
@@ -299,6 +300,7 @@ namespace BDArmory.Control
                     fc.RCSVector = dodgeVector * 2;
 
                     yield return wait;
+                    if (!vessel) yield break; // Abort if the vessel died.
                     complete = Vector3.Dot(RelVel(vessel, incoming), incomingVector) < 0;
                 }
 
@@ -320,6 +322,7 @@ namespace BDArmory.Control
                     while (UnderTimeLimit())
                     {
                         yield return wait;
+                        if (!vessel) yield break; // Abort if the vessel died.
 
                         UT = Planetarium.GetUniversalTime();
 
@@ -349,6 +352,7 @@ namespace BDArmory.Control
                         fc.attitude = Vector3.Lerp(o.Horizontal(UT), upDir, turn);
                         fc.alignmentToleranceforBurn = Mathf.Clamp(15f * turn, 5f, 15f);
                         yield return wait;
+                        if (!vessel) yield break; // Abort if the vessel died.
                     }
                     fc.alignmentToleranceforBurn = previousTolerance;
                 }
@@ -365,6 +369,7 @@ namespace BDArmory.Control
                         UT = Planetarium.GetUniversalTime();
                         fc.attitude = o.Radial(UT);
                         yield return wait;
+                        if (!vessel) yield break; // Abort if the vessel died.
                     }
                 }
                 else
@@ -380,6 +385,7 @@ namespace BDArmory.Control
                     while (UnderTimeLimit() && deltaV.sqrMagnitude > 4)
                     {
                         yield return wait;
+                        if (!vessel) yield break; // Abort if the vessel died.
 
                         UT = Planetarium.GetUniversalTime();
                         fvel = Math.Sqrt(o.referenceBody.gravParameter / o.GetRadiusAtUT(UT)) * o.Horizontal(UT);
@@ -442,6 +448,7 @@ namespace BDArmory.Control
                     fc.attitude = deltav.normalized;
 
                     yield return wait;
+                    if (!vessel) yield break; // Abort if the vessel died.
                 }
 
                 fc.throttle = 0;
@@ -466,6 +473,7 @@ namespace BDArmory.Control
                     fc.RCSVector = -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel));
 
                     yield return wait;
+                    if (!vessel) yield break; // Abort if the vessel died.
                 }
 
                 fc.lerpAttitude = true;
@@ -512,6 +520,7 @@ namespace BDArmory.Control
                         complete = FromTo(vessel, targetVessel).sqrMagnitude > minRange * minRange || !AwayCheck(minRange);
 
                         yield return wait;
+                        if (!vessel) yield break; // Abort if the vessel died.
                     }
                 }
                 // Reduce near intercept time by accounting for target acceleration
@@ -557,6 +566,7 @@ namespace BDArmory.Control
                         complete = FromTo(vessel, targetVessel).sqrMagnitude < maxRange * maxRange || NearIntercept(relVel, minRange);
 
                         yield return wait;
+                        if (!vessel) yield break; // Abort if the vessel died.
                     }
                 }
                 else
@@ -572,6 +582,7 @@ namespace BDArmory.Control
                             fc.throttle = !complete ? 1 : 0;
 
                             yield return wait;
+                            if (!vessel) yield break; // Abort if the vessel died.
                         }
                     }
                     else if (hasPropulsion && targetVessel != null && AngularVelocity(vessel, targetVessel) > firingAngularVelocityLimit)
@@ -585,6 +596,7 @@ namespace BDArmory.Control
                             fc.throttle = !complete ? 1 : 0;
 
                             yield return wait;
+                            if (!vessel) yield break; // Abort if the vessel died.
                         }
                     }
                     else
@@ -605,6 +617,7 @@ namespace BDArmory.Control
                                     fc.attitude = toTarget.normalized;
 
                                     yield return wait;
+                                    if (!vessel) yield break; // Abort if the vessel died.
                                 }
                             }
                             else
@@ -821,6 +834,7 @@ namespace BDArmory.Control
             while (vessel.MOI == Vector3.zero)
             {
                 yield return new WaitForSecondsFixed(1);
+                if (!vessel) yield break; // Abort if the vessel died.
             }
 
             Vector3 availableTorque = Vector3.zero;
