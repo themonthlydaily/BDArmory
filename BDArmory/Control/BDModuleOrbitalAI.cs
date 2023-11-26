@@ -412,6 +412,7 @@ namespace BDArmory.Control
                     fc.throttle = Mathf.Lerp(1, 0, Mathf.Clamp01(timer / commandedBurn));
                     timer += Time.fixedDeltaTime;
                     yield return wait;
+                    if (!vessel) yield break; // Abort if the vessel died.
                 }
             }
             else if (allowWithdrawal && hasPropulsion && !hasWeapons && CheckWithdraw())
