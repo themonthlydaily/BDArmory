@@ -3115,7 +3115,8 @@ namespace BDArmory.Control
 
                 if (weaponManager.incomingMissileVessel != null && (weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= weaponManager.evadeThreshold)) // Missile evasion
                 {
-
+                    Vector3 targetDirection;
+                    bool overrideThrottle = false;
                     if ((weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= 1.5f) && (!weaponManager.isChaffing)) // Missile is about to impact, pull a hard turn
                     {
                         if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Missile about to impact! pull away!");
@@ -3127,10 +3128,7 @@ namespace BDArmory.Control
                         {
                             cross = -cross;
                         }
-                        Vector3 targetDirection = vesselTransform.position + (50 * vessel.Velocity() / vessel.srfSpeed) + (100 * cross);
-                        RCSEvade(s, targetDirection);//add spacemode RCS dodging; missile evasion, fire in targetDirection
-                        FlyToPosition(s, targetDirection);
-                        return;
+                        targetDirection = (50 * vessel.Velocity() / vessel.srfSpeed + 100 * cross).normalized;
                     }
                     else // Fly at 90 deg to missile to put max distance between ourselves and dispensed flares/chaff
                     {
@@ -3154,7 +3152,7 @@ namespace BDArmory.Control
 
                         // Rotate target direction towards break direction, starting with 15 deg, and increasing to maxAllowedAoA as missile gets closer
                         float rotAngle = Mathf.Deg2Rad * Mathf.Lerp(maxAllowedAoA, 15f, Mathf.Clamp01(weaponManager.incomingMissileTime / weaponManager.evadeThreshold));
-                        Vector3 targetDirection = Vector3.RotateTowards(vessel.Velocity(), breakDirection, rotAngle, 0).normalized;
+                        targetDirection = Vector3.RotateTowards(vessel.Velocity(), breakDirection, rotAngle, 0).normalized;
 
                         if (weaponManager.isFlaring)
                             if (!hasABEngines)
@@ -3166,10 +3164,22 @@ namespace BDArmory.Control
                             useAB = true;
                             AdjustThrottle(maxSpeed, false, useAB);
                         }
-                        RCSEvade(s, targetDirection);//add spacemode RCS dodging; missile evasion, fire in targetDirection
-                        FlyToPosition(s, vesselTransform.position + (targetDirection * 100), true);
-                        return;
+                        overrideThrottle = true;
                     }
+                    if (belowMinAltitude)
+                    {
+                        float rise = 0.5f * Mathf.Max(5f, (float)vessel.srfSpeed * 0.25f) * Mathf.Max(speedController.TWR, 1f); // Add some climb like in TakeOff (at half the rate) to get back above min altitude.
+                        targetDirection += rise * upDirection;
+
+                        float verticalComponent = Vector3.Dot(targetDirection, upDirection);
+                        if (verticalComponent < 0) // If we're below minimum altitude, enforce the evade direction to gain altitude.
+                        {
+                            targetDirection += -2f * verticalComponent * upDirection;
+                        }
+                    }
+                    RCSEvade(s, targetDirection);//add spacemode RCS dodging; missile evasion, fire in targetDirection
+                    FlyToPosition(s, vesselTransform.position + targetDirection * 100, overrideThrottle);
+                    return;
                 }
                 else if (weaponManager.underFire)
                 {
@@ -3874,7 +3884,10 @@ namespace BDArmory.Control
             maxLiftAcceleration = Mathf.Clamp(maxLiftAcceleration, bodyGravity, maxAllowedGForce * bodyGravity); //limit it to whichever is smaller, what we can provide or what we can handle. Assume minimum of 1G to avoid extremely high turn radiuses.
 
             turnRadius = dynVelocityMagSqr / maxLiftAcceleration; //radius that we can turn in assuming constant velocity, assuming simple circular motion (this is a terrible assumption, the AI usually turns on afterboosters!)
-            if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Turn Radius: {turnRadius:G4}m (terrain threat range: {turnRadiusTwiddleFactorMax * turnRadius + (float)vessel.srfSpeed * controlSurfaceDeploymentTime:G5}m, threshold: {terrainAlertThreshold:G5}m)");
+            if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
+            {
+                debugString.AppendLine($"Turn Radius: {turnRadius:0}m (max lift acc: {maxLiftAcceleration:0}m/s²), terrain threat range: {turnRadiusTwiddleFactorMax * turnRadius + (float)vessel.srfSpeed * controlSurfaceDeploymentTime:0}m, threshold: {terrainAlertThreshold:0}m");
+            }
         }
 
         void CheckFlatSpin()
