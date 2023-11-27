@@ -3146,7 +3146,8 @@ namespace BDArmory.Control
                         // Dive to gain energy and hopefully lead missile into ground when not in space
                         if (vessel.atmDensity > 0.05)
                         {
-                            float angle = Mathf.Clamp((float)vessel.radarAltitude - minAltitude, 0, 1500) / 1500 * 90;
+                            float diveScale = Mathf.Max(1000f, 2f * turnRadius);
+                            float angle = Mathf.Clamp((float)vessel.radarAltitude - minAltitude, 0, diveScale) / diveScale * 90;
                             float angleAdjMissile = Mathf.Max(Mathf.Asin(((float)vessel.radarAltitude - (float)weaponManager.incomingMissileVessel.radarAltitude) /
                                 weaponManager.incomingMissileDistance) * Mathf.Rad2Deg, 0f); // Don't dive into the missile if it's coming from below
                             angle = Mathf.Clamp(angle - angleAdjMissile, 0, 75) * Mathf.Deg2Rad;
