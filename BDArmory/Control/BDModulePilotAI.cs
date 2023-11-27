@@ -874,6 +874,7 @@ namespace BDArmory.Control
         float dynVelocityMagSqr = 1f; // Start at reasonable non-zero value.
         float dynDecayRate = 1f; // Decay rate for dynamic measurements. Set to a half-life of 60s in Start.
         float dynVelSmoothingCoef = 1f; // Decay rate for smoothing the dynVelocityMagSqr
+        float dynUserSteerLimitMax = 1f; // Track the recently used max user steer limit.
 
         float maxAllowedSinAoA;
         float lastAllowedAoA;
@@ -1017,6 +1018,7 @@ namespace BDArmory.Control
         Vector3 prevTargetDir;
         bool useVelRollTarget;
         float finalMaxSteer = 1;
+        float userSteerLimit = 1;
 
         float targetStalenessTimer = 0;
         Vector3 staleTargetPosition = Vector3.zero;
@@ -1821,7 +1823,7 @@ namespace BDArmory.Control
         // This is triggered every Time.fixedDeltaTime.
         protected override void AutoPilot(FlightCtrlState s)
         {
-            finalMaxSteer = 1f; // Reset finalMaxSteer, is adjusted in subsequent methods
+            // Reset and update various internal values and checks. Then update the pilot logic for the physics frame.
 
             //default brakes off full throttle
             //s.mainThrottle = 1;
@@ -1850,6 +1852,8 @@ namespace BDArmory.Control
 
             upDirection = VectorUtils.GetUpDirection(vessel.transform.position);
 
+            finalMaxSteer = 1f; // Reset finalMaxSteer, is adjusted in subsequent methods
+            userSteerLimit = GetUserDefinedSteerLimit(); // Get the current user-defined steer limit.
             CalculateAccelerationAndTurningCircle();
             CheckFlatSpin();
 
@@ -2550,8 +2554,7 @@ namespace BDArmory.Control
             //debugString.AppendLine($"Attitude: " + attitude);
 
             // User-set steer limits
-            float userLimit = GetUserDefinedSteerLimit();
-            finalMaxSteer *= userLimit;
+            finalMaxSteer *= userSteerLimit;
             finalMaxSteer = Mathf.Clamp(finalMaxSteer, 0.1f, 1f); // added just in case to ensure some input is retained no matter what happens
 
             //roll
@@ -3143,7 +3146,7 @@ namespace BDArmory.Control
                         // Dive to gain energy and hopefully lead missile into ground when not in space
                         if (vessel.atmDensity > 0.05)
                         {
-                            float angle = (Mathf.Clamp((float)vessel.radarAltitude - minAltitude, 0, 1500) / 1500) * 90;
+                            float angle = Mathf.Clamp((float)vessel.radarAltitude - minAltitude, 0, 1500) / 1500 * 90;
                             float angleAdjMissile = Mathf.Max(Mathf.Asin(((float)vessel.radarAltitude - (float)weaponManager.incomingMissileVessel.radarAltitude) /
                                 weaponManager.incomingMissileDistance) * Mathf.Rad2Deg, 0f); // Don't dive into the missile if it's coming from below
                             angle = Mathf.Clamp(angle - angleAdjMissile, 0, 75) * Mathf.Deg2Rad;
@@ -3722,6 +3725,7 @@ namespace BDArmory.Control
                 dynDynPresGRecorded *= dynDecayRate; // Decay the highest observed G-force from dynamic pressure (we want a fairly recent value in case the planes dynamics have changed).
             if (!vessel.LandedOrSplashed && Math.Abs(gLoadPred) > dynDynPresGRecorded)
                 dynDynPresGRecorded = Math.Abs(gLoadPred);
+            dynUserSteerLimitMax = Mathf.Max(userSteerLimit, dynDecayRate * dynUserSteerLimitMax, 0.1f); // Recent-ish max user-defined steer limit, clamped to at least 0.1. Decays at the same rate as dynamic pressure for consistency.
 
             if (!vessel.LandedOrSplashed)
             {
@@ -3883,7 +3887,8 @@ namespace BDArmory.Control
 
             maxLiftAcceleration = Mathf.Clamp(maxLiftAcceleration, bodyGravity, maxAllowedGForce * bodyGravity); //limit it to whichever is smaller, what we can provide or what we can handle. Assume minimum of 1G to avoid extremely high turn radiuses.
 
-            turnRadius = dynVelocityMagSqr / maxLiftAcceleration; //radius that we can turn in assuming constant velocity, assuming simple circular motion (this is a terrible assumption, the AI usually turns on afterboosters!)
+            // Radius that we can turn in assuming constant velocity, assuming simple circular motion (note: this is a terrible assumption, the AI usually turns on afterboosters!)
+            turnRadius = dynVelocityMagSqr / maxLiftAcceleration / (userSteerLimit / dynUserSteerLimitMax);
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
             {
                 debugString.AppendLine($"Turn Radius: {turnRadius:0}m (max lift acc: {maxLiftAcceleration:0}m/s²), terrain threat range: {turnRadiusTwiddleFactorMax * turnRadius + (float)vessel.srfSpeed * controlSurfaceDeploymentTime:0}m, threshold: {terrainAlertThreshold:0}m");
