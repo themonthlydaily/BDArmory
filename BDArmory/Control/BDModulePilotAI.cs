@@ -2693,7 +2693,7 @@ namespace BDArmory.Control
             SetFlightControlState(s,
                 Mathf.Clamp(steerPitch, -finalMaxSteer, finalMaxSteer), // pitch
                 Mathf.Clamp(steerYaw, -finalMaxSteer, finalMaxSteer), // yaw
-                Mathf.Clamp(steerRoll, -userLimit, userLimit)); // roll
+                Mathf.Clamp(steerRoll, -userSteerLimit, userSteerLimit)); // roll
 
             if (autoTune)
             { pidAutoTuning.Update(pitchError, rollError, yawError); }
