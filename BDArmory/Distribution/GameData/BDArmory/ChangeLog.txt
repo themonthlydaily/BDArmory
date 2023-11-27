@@ -10,6 +10,7 @@
 	- Don't summon the NaN-Kraken when the post-terrain avoidance cool-down is 0.
 	- Perform banked turns when the target is behind us at long range and extending is allowed instead of Immelmann turns or turning directly to target. Threshold is clamp(8 * max speed, 1000, 4000).
 	- Pilot AI turns will now turn harder (using Max AoA setting) towards the notch direction the closer the missile is to impact.
+	- Factor the user-defined steer limit into the turn radius calculations.
 - Weapons:
 	- Fixes for initial bullet placement and simulated hit position when Krakensbane is not active.
   	- Missiles:
