@@ -2425,8 +2425,7 @@ namespace BDArmory.Weapons
                                 if (instagib)
                                 {
                                     p.AddInstagibDamage();
-                                    ExplosionFx.CreateExplosion(hit.point,
-                                                   (1), "BDArmory/Models/explosion/explosion", explSoundPath, ExplosionSourceType.Bullet, 0, null, vessel.vesselName, null);
+                                    ExplosionFx.CreateExplosion(hit.point, 1, "BDArmory/Models/explosion/explosion", explSoundPath, ExplosionSourceType.Bullet, 0, null, vessel.vesselName, null);
                                 }
                                 else
                                 {
@@ -3435,7 +3434,7 @@ namespace BDArmory.Weapons
                 {
                     fireTransform = rockets[0].parent; // support for legacy RLs
                 }
-                if (!slaved && !GPSTarget && !aiControlled && !MouseAimFlight.IsMouseAimActive && !isAPS && (vessel.isActiveVessel || BDArmorySettings.REMOTE_SHOOTING))
+                if (!slaved && !GPSTarget && (!aiControlled || MouseAimFlight.IsMouseAimActive) && !isAPS && (vessel.isActiveVessel || BDArmorySettings.REMOTE_SHOOTING))
                 {
                     manualAiming = true;
                     targetVelocity = -BDKrakensbane.FrameVelocityV3f; // Stationary targets' rigid bodies are being moved opposite to the Krakensbane frame velocity.
@@ -3446,8 +3445,18 @@ namespace BDArmory.Weapons
                     if (yawRange > 0 || maxPitch - minPitch > 0)
                     {
                         //MouseControl
-                        Vector3 mouseAim = new(Input.mousePosition.x / Screen.width, Input.mousePosition.y / Screen.height, 0);
-                        Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(mouseAim);
+                        var camera = FlightCamera.fetch;
+                        Ray ray;
+                        if (!MouseAimFlight.IsMouseAimActive)
+                        {
+                            Vector3 mouseAim = new(Input.mousePosition.x / Screen.width, Input.mousePosition.y / Screen.height, 0);
+                            ray = camera.mainCamera.ViewportPointToRay(mouseAim);
+                        }
+                        else
+                        {
+                            Vector3 mouseAimFlightTarget = MouseAimFlight.GetMouseAimTarget;
+                            ray = new Ray(camera.transform.position, mouseAimFlightTarget);
+                        }
 
                         if (Physics.Raycast(ray, out RaycastHit hit, maxTargetingRange, layerMask1))
                         {
