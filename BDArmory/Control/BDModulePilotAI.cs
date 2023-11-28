@@ -3369,8 +3369,10 @@ namespace BDArmory.Control
                 var alpha = Mathf.Clamp(0.9f + 0.1f * radarAlt / minAltitude, 0f, 0.99f);
                 gainAltSmoothedForwardPoint = wasGainingAlt ? alpha * gainAltSmoothedForwardPoint + (1f - alpha) * forwardPoint : forwardPoint; // Adjust the forward point a bit more smoothly to avoid sudden jerks.
                 gainingAlt = true;
-                float rise = Mathf.Max(5f, (float)vessel.srfSpeed * 0.25f) * Mathf.Max(speedController.TWR * Mathf.Clamp01(radarAlt / 20f), 1f); // Scale climb rate by TWR (if >1 and not really close to terrain) to allow more powerful craft to climb faster.
+                float rise = Mathf.Max(5f, (float)vessel.srfSpeed * 0.25f) * Mathf.Max(speedController.TWR * Mathf.Clamp01(radarAlt / terrainAlertDetectionRadius), 1f); // Scale climb rate by TWR (if >1 and not really close to terrain) to allow more powerful craft to climb faster.
                 rise = Mathf.Min(rise, 1.5f * (defaultAltitude - radarAlt)); // Aim for at most 50% higher than the default altitude.
+                if (initialTakeOff) // During the initial take-off, use a more gentle climb rate. 5°—15° at the take-off speed.
+                { rise = Mathf.Min(rise, Mathf.Max(5f, 10f * (float)vessel.srfSpeed / takeOffSpeed) * (0.5f + Mathf.Clamp01(radarAlt / terrainAlertDetectionRadius))); }
                 if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Gaining altitude @ {Mathf.Rad2Deg * Mathf.Atan(rise / 100f):0.0}°");
                 FlyToPosition(s, vessel.transform.position + gainAltSmoothedForwardPoint + upDirection * rise);
             }
