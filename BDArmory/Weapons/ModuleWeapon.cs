@@ -2187,6 +2187,7 @@ namespace BDArmory.Weapons
                                         if (!BDKrakensbane.IsActive) pBullet.transform.position += TimeWarp.fixedDeltaTime * part.rb.velocity; // If Krakensbane isn't active, bullets get an additional shift by this amount.
                                         pBullet.SetTracerPosition();
                                         pBullet.transform.position += TimeWarp.fixedDeltaTime * (part.rb.velocity + BDKrakensbane.FrameVelocityV3f); // Account for velocity off-loading after visuals are done.
+                                        pBullet.DistanceTraveled += iTime * bulletVelocity; // Adjust the distance traveled to account for iTime.
                                     }
                                 }
                                 //heat
