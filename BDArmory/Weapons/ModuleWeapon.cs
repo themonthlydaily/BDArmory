@@ -3434,6 +3434,7 @@ namespace BDArmory.Weapons
                 {
                     fireTransform = rockets[0].parent; // support for legacy RLs
                 }
+                // FIXME If the WM is controlling the guns, don't override with MouseAimFlight
                 if (!slaved && !GPSTarget && (!aiControlled || MouseAimFlight.IsMouseAimActive) && !isAPS && (vessel.isActiveVessel || BDArmorySettings.REMOTE_SHOOTING))
                 {
                     manualAiming = true;
@@ -4614,6 +4615,19 @@ namespace BDArmory.Weapons
 
             GUIUtils.DrawLineBetweenWorldPositions(fwdPos, refFwdPos, 2, XKCDColors.Orange);
 
+            string blocker = "";
+            if (Physics.Raycast(new Ray(fireTransforms[0].position, fireTransforms[0].forward), out RaycastHit hit, 1000f, (int)LayerMasks.Parts))
+            {
+                var hitPart = hit.collider.gameObject.GetComponentInParent<Part>();
+                var hitEVA = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+                if (hitEVA != null) hitPart = hitEVA.part;
+                if (hitPart != null)
+                {
+                    blocker = hitPart.partInfo.title;
+                    GUIUtils.DrawTextureOnWorldPos(hit.point, BDArmorySetup.Instance.redDotTexture, new Vector2(16, 16), 0);
+                }
+            }
+
             Vector2 guiPos;
             if (GUIUtils.WorldToGUIPos(fwdPos, out guiPos))
             {
@@ -4647,7 +4661,13 @@ namespace BDArmory.Weapons
                 string xAngle = $"X: {Vector3.Angle(fireTransforms[0].forward, pitchVector):0.00}";
                 string yAngle = $"Y: {Vector3.Angle(fireTransforms[0].forward, yawVector):0.00}";
 
-                GUI.Label(angleRect, xAngle + "\n" + yAngle + "\n" + convergeDistance);
+                string label = $"{xAngle}\n{yAngle}\n{convergeDistance}";
+                if (!string.IsNullOrEmpty(blocker))
+                {
+                    angleRect.width += 6 * blocker.Length;
+                    label += $"\nBlocked: {blocker}";
+                }
+                GUI.Label(angleRect, label);
             }
         }
 
