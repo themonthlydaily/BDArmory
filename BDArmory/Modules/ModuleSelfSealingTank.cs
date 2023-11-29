@@ -538,7 +538,8 @@ namespace BDArmory.Modules
                         if (fuel != null || monoprop != null)
                         {
                             Events["ToggleTankOption"].guiActiveEditor = true;
-                            if (fuel != null) Events["ToggleInertOption"].guiActiveEditor = true; //I don't think inerting would work on something containing its own oxidizer...
+                            Events["ToggleInertOption"].guiActiveEditor = fuel != null; //I don't think inerting would work on something containing its own oxidizer...
+                            if (InertTank && !Events["ToggleInertOption"].guiActiveEditor) ToggleInertOption(); // If inerting was somehow enabled previously, but is now not valid, disable it.
                             if (!InertTank)
                             {
                                 Fields["FireBottles"].guiActiveEditor = true;
