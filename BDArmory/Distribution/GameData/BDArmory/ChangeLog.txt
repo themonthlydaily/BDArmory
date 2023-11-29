@@ -15,6 +15,7 @@
 - Weapons:
 	- Fixes for initial bullet placement and simulated hit position when Krakensbane is not active.
 	- Fixes for aiming reticles of guns (both fixed and turrets) when using MouseAimFlight.
+	- Show where aimer lines in the SPH are blocked and by what.
 	- Missiles:
 		- Add new Orbital guidance option for Modular Missiles
 			- Missile will attempt to intercept orbital target at the user-set Max Speed value
