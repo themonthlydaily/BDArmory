@@ -289,8 +289,8 @@ namespace BDArmory.UI
                                         if (wm.Current.currentTarget == null) continue;
                                         Vector3 sPos = FlightGlobals.ActiveVessel.CoM;
                                         Vector3 tPos = (wm.Current.currentTarget.Vessel.CoM);
-                                        Vector3 RelPos = (tPos - sPos);
-                                        if (RelPos.magnitude >= BDTISettings.DISTANCE_THRESHOLD)
+                                        float RelPos = (tPos - sPos).magnitude;
+                                        if (RelPos >= BDTISettings.DISTANCE_THRESHOLD && RelPos <= BDTISettings.MAX_DISTANCE_THRESHOLD)
                                         {
                                             DrawThreatIndicator(wm.Current.vessel.CoM, wm.Current.currentTarget.Vessel.CoM, Teamcolor);
                                         }
@@ -325,7 +325,7 @@ namespace BDArmory.UI
                                     string selectedWeapon = string.Empty;
                                     string AIstate = string.Empty;
                                     distance = targetRelPos.magnitude;
-                                    if (distance >= BDTISettings.DISTANCE_THRESHOLD) //TODO - look into having vessel icons be based on vesel visibility? (So don't draw icon for undetected stealth plane, etc?)
+                                    if (distance >= BDTISettings.DISTANCE_THRESHOLD && distance <= BDTISettings.MAX_DISTANCE_THRESHOLD) //TODO - look into having vessel icons be based on vesel visibility? (So don't draw icon for undetected stealth plane, etc?)
                                     {
                                         if ((distance / 1000) >= 1)
                                         {
