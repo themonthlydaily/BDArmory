@@ -207,31 +207,31 @@ namespace BDArmory.UI
                                     if (ml.Current == null) continue;
                                     MissileLauncher launcher = ml.Current as MissileLauncher;
                                     //if (ml.Current.MissileState != MissileBase.MissileStates.Idle && ml.Current.MissileState != MissileBase.MissileStates.Drop)
-                                    
+
                                     bool multilauncher = false;
                                     if (launcher != null)
                                     {
                                         if (launcher.multiLauncher && !launcher.multiLauncher.isClusterMissile) multilauncher = true;
                                     }
-                                    if ((ml.Current.HasFired && !multilauncher) && !ml.Current.HasMissed && !ml.Current.HasExploded) //culling post-thrust missiles makes AGMs get cleared almost immediately after launch
+                                    if (ml.Current.HasFired && !multilauncher && !ml.Current.HasMissed && !ml.Current.HasExploded) //culling post-thrust missiles makes AGMs get cleared almost immediately after launch
                                     {
                                         Vector3 sPos = FlightGlobals.ActiveVessel.vesselTransform.position;
                                         Vector3 tPos = v.Current.vesselTransform.position;
-                                        Vector3 Dist = (tPos - sPos);
+                                        float Dist = (tPos - sPos).magnitude;
                                         Vector2 guiPos;
                                         string UIdist;
                                         string UoM;
-                                        if (Dist.magnitude > BDTISettings.DISTANCE_THRESHOLD)
+                                        if (Dist >= BDTISettings.DISTANCE_THRESHOLD && Dist <= BDTISettings.MAX_DISTANCE_THRESHOLD)
                                         {
-                                            if ((Dist.magnitude / 1000) >= 1)
+                                            if (Dist / 1000 >= 1)
                                             {
                                                 UoM = "km";
-                                                UIdist = (Dist.magnitude / 1000).ToString("0.00");
+                                                UIdist = (Dist / 1000).ToString("0.00");
                                             }
                                             else
                                             {
                                                 UoM = "m";
-                                                UIdist = Dist.magnitude.ToString("0.0");
+                                                UIdist = Dist.ToString("0.0");
                                             }
                                             GUIUtils.DrawTextureOnWorldPos(v.Current.CoM, BDTISetup.Instance.TextureIconMissile, new Vector2(20, 20), 0);
                                             if (GUIUtils.WorldToGUIPos(ml.Current.vessel.CoM, out guiPos))
@@ -264,8 +264,8 @@ namespace BDArmory.UI
 
                             Vector3 sPos = FlightGlobals.ActiveVessel.vesselTransform.position;
                             Vector3 tPos = v.Current.vesselTransform.position;
-                            Vector3 Dist = (tPos - sPos);
-                            if (Dist.magnitude > BDTISettings.DISTANCE_THRESHOLD)
+                            float Dist = (tPos - sPos).magnitude;
+                            if (Dist >= BDTISettings.DISTANCE_THRESHOLD && Dist <= BDTISettings.MAX_DISTANCE_THRESHOLD)
                             {
                                 GUIUtils.DrawTextureOnWorldPos(v.Current.CoM, BDTISetup.Instance.TextureIconDebris, new Vector2(20, 20), 0);
                             }

@@ -1,6 +1,7 @@
 ﻿IMPROVEMENTS / FIXES
 - UI:
 	- Fix the alternate (hidden UI) window locations (for scores and vessel switcher) not being saved correctly.
+	- Add a max distance threshold setting to Team Icons.
 - AI / WM:
 	- Add new Orbital AI part for spacecraft in orbit:
 		- The Orbital AI will use orbital maneuvers to close within gun range of the target to fire weapons. It will also automatically fire missiles when able.
