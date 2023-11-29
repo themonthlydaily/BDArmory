@@ -166,7 +166,7 @@ namespace BDArmory.Bullets
         private double initialHitDistance = 0;
         private float kDist = 1;
 
-        public double DistanceTraveled { get { return distanceTraveled; } }
+        public double DistanceTraveled { get { return distanceTraveled; } set { distanceTraveled = value; } }
 
         void Awake()
         {

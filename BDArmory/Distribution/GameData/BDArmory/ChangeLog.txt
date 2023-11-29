@@ -14,6 +14,7 @@
 	- Use a more gentle take-off slope for the initial take-off.
 - Weapons:
 	- Fixes for initial bullet placement and simulated hit position when Krakensbane is not active.
+	- Account for the initial bullet placement in the bullet traveled distance.
 	- Fixes for aiming reticles of guns (both fixed and turrets) when using MouseAimFlight.
 	- Show where aimer lines in the SPH are blocked and by what.
 	- Missiles:
