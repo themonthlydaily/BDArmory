@@ -2488,11 +2488,11 @@ namespace BDArmory.Weapons
                                         if (laserDamage > 0)
                                         {
                                             var angularSpread = tanAngle * distance; //Scales down the damage based on the increased surface area of the area being hit by the laser. Think flashlight on a wall.
-                                            initialDamage = (laserDamage / (1 + Mathf.PI * angularSpread * angularSpread) * 0.425f);
+                                            initialDamage = laserDamage / (1 + Mathf.PI * angularSpread * angularSpread) * 0.425f;
 
                                             if (armor != null)// technically, lasers shouldn't do damage until armor gone, but that would require localized armor tracking instead of the monolithic model currently used                                              
                                             {
-                                                damage = (initialDamage * (pulseLaser ? 1 : TimeWarp.fixedDeltaTime)) * Mathf.Clamp((1 - (BDAMath.Sqrt(armor.Diffusivity * (armor.Density / 1000)) * armor.ArmorThickness) / initialDamage), 0.005f, 1); //old calc lacked a clamp, could potentially become negative damage
+                                                damage = initialDamage * (pulseLaser ? 1 : TimeWarp.fixedDeltaTime) * Mathf.Clamp(1 - BDAMath.Sqrt(armor.Diffusivity * (armor.Density / 1000)) * armor.Armor / initialDamage, 0.005f, 1); //old calc lacked a clamp, could potentially become negative damage
                                             }  //clamps laser damage to not go negative, allow some small amount of bleedthrough - ~30 Be/Steel will negate ABL, ~62 Ti, 42 DU
                                             else
                                             {
