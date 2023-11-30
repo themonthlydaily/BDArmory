@@ -360,20 +360,25 @@ namespace BDArmory.Control
         #endregion
 
         #region EvadeExtend
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MinEvasionTime", advancedTweakable = true, // Minimum Evasion Time
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MinEvasionTime", advancedTweakable = true, // Min Evasion Time
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 1f, stepIncrement = .05f, scene = UI_Scene.All)]
         public float minEvasionTime = 0.2f;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionThreshold", advancedTweakable = true, //Evade Threshold
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionThreshold", advancedTweakable = true, //Evasion Distance Threshold
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1f, scene = UI_Scene.All)]
         public float evasionThreshold = 25f;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionTimeThreshold", advancedTweakable = true, // Time on Target Threshold
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionTimeThreshold", advancedTweakable = true, // Evasion Time Threshold
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 5f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float evasionTimeThreshold = 0.1f;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionMinRangeThreshold", advancedTweakable = true, // Evasion Min Range Threshold
+            groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
+            UI_FloatSemiLogRange(minValue = 10f, maxValue = 10000f, sigFig = 1)]
+        public float evasionMinRangeThreshold = 10f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionNonlinearity", advancedTweakable = true, // Evasion/Extension Nonlinearity
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
@@ -576,6 +581,9 @@ namespace BDArmory.Control
             { nameof(extendAngleAirToAir), -90f },
             { nameof(altitudeSteerLimiterFactor), -10f },
         };
+        Dictionary<string, (float, float, int)> altSemiLogValues = new Dictionary<string, (float, float, int)> {
+            { nameof(evasionMinRangeThreshold), (1f, 1000000f, 1) },
+        };
 
         void TurnItUpToEleven(bool upToEleven)
         {
@@ -609,6 +617,14 @@ namespace BDArmory.Control
                     // using reflection here, don't look at me like that, this does not run often
                     StartCoroutine(SetVar(s.Current, (float)typeof(BDModulePilotAI).GetField(s.Current).GetValue(this)));
                 }
+            foreach (var fieldName in altSemiLogValues.Keys.ToList())
+            {
+                var field = (UI_FloatSemiLogRange)(HighLogic.LoadedSceneIsFlight ? Fields[fieldName].uiControlFlight : Fields[fieldName].uiControlEditor);
+                var temp = (field.minValue, field.maxValue, field.sigFig);
+                var altValues = altSemiLogValues[fieldName];
+                field.UpdateLimits(altValues.Item1, altValues.Item2, altValues.Item3);
+                altSemiLogValues[fieldName] = temp;
+            }
             toEleven = upToEleven;
             OnAutoTuneOptionsChanged(null, null); // Reset auto-tuning again (including the gradient) so that the correct PID limits are used.
         }
@@ -1949,8 +1965,10 @@ namespace BDArmory.Control
                 }
                 else if (weaponManager.underFire && !ramming) // If we're ramming, ignore gunfire.
                 {
-                    if (weaponManager.incomingMissTime >= evasionTimeThreshold) // If we haven't been under fire long enough, ignore gunfire
+                    if (weaponManager.incomingMissTime >= evasionTimeThreshold && weaponManager.incomingThreatDistanceSqr >= evasionMinRangeThreshold * evasionMinRangeThreshold) // If we haven't been under fire long enough or they're too close, ignore gunfire
+                    {
                         threatRating = weaponManager.incomingMissDistance;
+                    }
                 }
             }
 

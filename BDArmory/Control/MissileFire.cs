@@ -490,6 +490,7 @@ namespace BDArmory.Control
         public Vessel incomingThreatVessel;
         public float incomingMissDistance;
         public float incomingMissTime;
+        public float incomingThreatDistanceSqr;
         public Vessel priorGunThreatVessel = null;
         private ViewScanResults results;
 
@@ -7151,9 +7152,10 @@ namespace BDArmory.Control
                     priorGunThreatVessel = results.threatVessel;
                     incomingMissTime = 0f;
                 }
+                incomingThreatDistanceSqr = (results.threatPosition - vessel.transform.position).sqrMagnitude;
                 if ((pilotAI != null && incomingMissTime >= pilotAI.evasionTimeThreshold && incomingMissDistance < pilotAI.evasionThreshold) || AI != null && pilotAI == null) // If we haven't been under fire long enough, ignore gunfire
                 {
-                    FireOCM(false); //enable visual coutnermeasures if under fire
+                    FireOCM(false); //enable visual countermeasures if under fire
                 }
                 if (results.threatWeaponManager != null)
                 {
