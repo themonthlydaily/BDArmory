@@ -13,6 +13,7 @@
 	- Pilot AI turns will now turn harder (using Max AoA setting) towards the notch direction the closer the missile is to impact.
 	- Factor the user-defined steer limit into the turn radius calculations.
 	- Use a more gentle take-off slope for the initial take-off.
+	- Add an Evasion Min Range Threshold option to only trigger evasion from an attacker using guns when they're beyond that distance.
 - Weapons:
 	- Fixes for initial bullet placement and simulated hit position when Krakensbane is not active.
 	- Account for the initial bullet placement in the bullet traveled distance.

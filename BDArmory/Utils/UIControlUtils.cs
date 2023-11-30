@@ -502,7 +502,11 @@ namespace BDArmory.Utils
             if (Mathf.Log10(value) - (semiLogFloatRange.sigFig - 1) > 0) value = Mathf.Round(value); // Round whole numbers.
             return value;
         }
-        float FromSemiLogValue(float value) { value /= minStepSize; return Mathf.Floor(Mathf.Log10(value)) * 9 + value / Mathf.Pow(10, Mathf.Floor(Mathf.Log10(value))); }
+        float FromSemiLogValue(float value)
+        {
+            value /= minStepSize;
+            return Mathf.Floor(Mathf.Log10(value)) * 9 + value / Mathf.Pow(10, Mathf.Floor(Mathf.Log10(value)));
+        }
         private void UpdateDisplay(float value)
         {
             if (numericSliders != Window.NumericSliders)
@@ -514,10 +518,8 @@ namespace BDArmory.Utils
             blockSliderUpdate = true;
             lastDisplayedValue = value;
             fieldValue.text = value.ToString(fieldFormatString);
-            if (numericSliders)
-            { inputField.text = fieldValue.text; }
-            else
-            { slider.value = FromSemiLogValue(value); }
+            if (numericSliders) { inputField.text = fieldValue.text; }
+            else { slider.value = FromSemiLogValue(value); }
             blockSliderUpdate = false;
         }
         private void OnValueChanged(float obj)

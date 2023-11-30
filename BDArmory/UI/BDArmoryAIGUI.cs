@@ -370,6 +370,7 @@ namespace BDArmory.UI
                         { "evasionNonlinearity", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionNonlinearity, 0, 10) },
                         { "evasionThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionThreshold, 0, 100) },
                         { "evasionTimeThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionTimeThreshold, 0, 1) },
+                        { "evasionMinRangeThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionMinRangeThreshold, 10, 10000) },
                         { "collisionAvoidanceThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.collisionAvoidanceThreshold, 0, 50) },
                         { "vesselCollisionAvoidanceLookAheadPeriod", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselCollisionAvoidanceLookAheadPeriod, 0, 3) },
                         { "vesselCollisionAvoidanceStrength", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselCollisionAvoidanceStrength, 0, 4) },
@@ -1885,6 +1886,26 @@ namespace BDArmory.UI
                                 ActivePilot.evasionTimeThreshold = (float)field.currentValue;
                             }
                             if (contextTipsEnabled) GUI.Label(ContextLabelRect(leftIndent, ++evadeLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_evadetimeDist"), contextLabel);
+
+                            GUI.Label(SettinglabelRect(leftIndent, ++evadeLines), $"{StringUtils.Localize("#LOC_BDArmory_AIWindow_EvasionMinRangeThreshold")}: {(ActivePilot.evasionMinRangeThreshold < 1000 ? $"{ActivePilot.evasionMinRangeThreshold:0}m" : $"{ActivePilot.evasionMinRangeThreshold / 1000:0}km")}", Label);
+                            if (!NumFieldsEnabled)
+                            {
+                                if (ActivePilot.UpToEleven)
+                                {
+                                    ActivePilot.evasionMinRangeThreshold = UI_FloatSemiLogRange.ToSemiLogValue(Mathf.Round(GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth), UI_FloatSemiLogRange.FromSemiLogValue(ActivePilot.evasionMinRangeThreshold, 1), 1, UI_FloatSemiLogRange.FromSemiLogValue(1000000, 1))), 1, 1);
+                                }
+                                else
+                                {
+                                    ActivePilot.evasionMinRangeThreshold = UI_FloatSemiLogRange.ToSemiLogValue(Mathf.Round(GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth), UI_FloatSemiLogRange.FromSemiLogValue(ActivePilot.evasionMinRangeThreshold, 10), 1, UI_FloatSemiLogRange.FromSemiLogValue(10000, 10))), 10, 1);
+                                }
+                            }
+                            else
+                            {
+                                var field = inputFields["evasionMinRangeThreshold"];
+                                field.tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), field.possibleValue, 8, field.style));
+                                ActivePilot.evasionMinRangeThreshold = (float)field.currentValue;
+                            }
+                            if (contextTipsEnabled) GUI.Label(ContextLabelRect(leftIndent, ++evadeLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_evadeMinRange"), contextLabel);
 
                             GUI.Label(SettinglabelRect(leftIndent, ++evadeLines), $"{StringUtils.Localize("#LOC_BDArmory_AIWindow_EvasionNonlinearity")}: {ActivePilot.evasionNonlinearity:0.0}°", Label);//"Evasion/Extension Nonlinearity"
                             if (!NumFieldsEnabled)
