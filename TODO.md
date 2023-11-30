@@ -11,11 +11,14 @@
 - Fix bugs
 
 - Add tooltips to settings.
+- Add thumbnails to the craft browser.
+- Evasion:
+	- If the UnderFireRoutine alert triggers then allow beyond visual range checks for triggering evasion for the weapon that triggered the alert.
 
 - Wiki entries
 	- Auto-Tuning
 
-- Requests from #tea
+- Requests from discord:
 	- ? Add an action group trigger to the WM based on the current target being an enemy vessel within a custom distance. - Make it a collapsable section of custom triggers to include other conditions later.
 	- Artillery aiming support
 	- Lift stacking improvements with logical wing segments
@@ -26,6 +29,7 @@
 		- Entering evasion.
 	- Smart part that can trigger an action group when one of the specified parts gets below X% HP.
 		- Would have to work similarly to the KAL to remember which parts it should affect/monitor.
+	- Scope view for aiming tank turrets (similar to the targeting pod, but more direct), maybe holding a button adjusts the camera zoom based on the distance to the target?
 
 - Ilya_G requests:
 	- Omni-radars to include a radiation pattern so that they don't see well along the dipole axis.
