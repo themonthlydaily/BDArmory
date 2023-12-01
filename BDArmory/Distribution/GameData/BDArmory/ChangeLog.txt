@@ -1,6 +1,8 @@
 ﻿IMPROVEMENTS / FIXES
 - UI:
 	- Fix the alternate (hidden UI) window locations (for scores and vessel switcher) not being saved correctly.
+- General:
+	- New tex for 1.25m radomes.
 - AI / WM:
 	- Add new Orbital AI part for spacecraft in orbit:
 		- The orbital AI will use orbital maneuvers to close within gun range of the target to fire weapons. It will also automatically fire missiles when able.
@@ -12,6 +14,7 @@
 	-Can now set targeting camera slew rate using "traverseRate" field in ModuleTargetingCamera.
 - Weapons:
 	- Fixes for initial bullet placement and simulated hit position when Krakensbane is not active.
+	- Fix lasers using wrong armor thickness value for damage reduction calcs.
   	- Missiles:
 		  - Add new Orbital guidance option for Modular Missiles
 		    - Missile will attempt to intercept orbital target at the user-set Max Speed value
@@ -23,6 +26,7 @@
 		- INS missiles can now use either radar or IRST tracking.
 		- INS missiles now have datalink capability for mid-flight target coordinate updates, update rate clamped to Radar/IRST scan speed.
 		- Fix error with Inertial guidance target prediction for non-updating missiles.
+		- Fix Missiles having 10 armor instead of 2.
 - Vessel Mover:
 	- Check for outdated loadMeta files when refreshing the craft list in the vessel selection window and update them since KSP doesn't update them when you save your craft!
 	- Fix the spawn point selection sometimes not registering.
