@@ -7484,7 +7484,7 @@ namespace BDArmory.Control
                         }
                     }
                 }
-            Debug.Log($"[BDArmory.MissileFire - {(this.vessel != null ? vessel.GetName() : "null")}] tgtcount: {PDBulletTgts.Count + PDRktTgts.Count + PDMslTgts.Count}, APS count: {APScount}");
+            //Debug.Log($"[BDArmory.MissileFire - {(this.vessel != null ? vessel.GetName() : "null")}] tgtcount: {PDBulletTgts.Count + PDRktTgts.Count + PDMslTgts.Count}, APS count: {APScount}");
             using (var missile = VesselModuleRegistry.GetModules<MissileLauncher>(vessel).GetEnumerator())
             {
                 while (missile.MoveNext())
@@ -7501,11 +7501,9 @@ namespace BDArmory.Control
             if (APScount + missileCount <= 0)
             {
                 PDScanTimer = -100;
-                Debug.Log($"[BDArmory.MissileFire - {(this.vessel != null ? vessel.GetName() : "null")}] No interceptors, aborting!");
                 return;
             }
 
-            //isAPS = true, dualModeAPS = false is not working, isASP = true && dualModeAPS= true is; find where this is getting caught up.
             if (APScount > 0)
             using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                 while (weapon.MoveNext())
