@@ -7730,7 +7730,10 @@ namespace BDArmory.Control
                 //if (!targetV.LandedOrSplashed) //no leading for moving surface targets? two use condtions come to mind - leading torps and unguided AtG missiles. Latter can use A2AFS, torps slightly complicated in that there's a ~2.5s drop time where theyr'e moving at parent speed
                 if (targetV.speed > 1) //target is moving
                 {
-                    target = MissileGuidance.GetAirToAirFireSolution(missile, targetV);
+                    if (VesselModuleRegistry.GetModule<BDModuleOrbitalAI>(vessel, true) == null)
+                        target = MissileGuidance.GetAirToAirFireSolution(missile, targetV);
+                    else // Orbital AI condition
+                        target = MissileGuidance.GetAirToAirFireSolution(missile, targetV.transform.position, targetV.Velocity());
                 }
 
                 float boresightFactor = (mf.vessel.LandedOrSplashed || targetV.LandedOrSplashed || missile.uncagedLock) ? 0.75f : 0.35f; // Allow launch at close to maxOffBoresight for ground targets or missiles with allAspect = true

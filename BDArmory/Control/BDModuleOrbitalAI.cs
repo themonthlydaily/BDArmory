@@ -11,6 +11,8 @@ using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.Weapons;
+using BDArmory.Weapons.Missiles;
+using BDArmory.Guidances;
 
 namespace BDArmory.Control
 {
@@ -406,7 +408,7 @@ namespace BDArmory.Control
                 while (UnderTimeLimit(commandedBurn * 3f) && (currentCommand == PilotCommands.FlyTo || currentCommand == PilotCommands.Follow))
                 {
                     if (currentCommand == PilotCommands.FlyTo)
-                        fc.attitude = (assignedPositionGeo - vessel.transform.position).normalized;
+                        fc.attitude = (assignedPositionWorld - vessel.transform.position).normalized;
                     else // Following
                         fc.attitude = commandLeader.transform.up;
                     fc.throttle = Mathf.Lerp(1, 0, Mathf.Clamp01(timer / commandedBurn));
@@ -457,7 +459,6 @@ namespace BDArmory.Control
             else if (targetVessel != null && weaponManager.currentGun && GunReady(weaponManager.currentGun))
             {
                 // Aim at target using current non-missile weapon.
-                // The weapon handles firing.
 
                 SetStatus("Firing Guns");
                 vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
@@ -472,6 +473,29 @@ namespace BDArmory.Control
 
                     fc.attitude = firingSolution;
                     fc.RCSVector = -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel));
+
+                    yield return wait;
+                    if (!vessel) yield break; // Abort if the vessel died.
+                }
+
+                fc.lerpAttitude = true;
+            }
+            else if (targetVessel != null && weaponManager.CurrentMissile && !weaponManager.GetLaunchAuthorization(targetVessel, weaponManager, weaponManager.CurrentMissile))
+            {
+                // Aim at appropriate point to launch missiles that aren't able to launch now
+                
+                SetStatus("Firing Missiles");
+                vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
+                fc.throttle = 0;
+                fc.lerpAttitude = false;
+                Vector3 firingSolution = FromTo(vessel, targetVessel).normalized;
+
+                while (UnderTimeLimit() && targetVessel != null && weaponManager.CurrentMissile && !weaponManager.GetLaunchAuthorization(targetVessel, weaponManager, weaponManager.CurrentMissile))
+                {
+                    firingSolution = MissileGuidance.GetAirToAirFireSolution(weaponManager.CurrentMissile, targetVessel.transform.position, targetVessel.Velocity());
+
+                    fc.attitude = firingSolution;
+                    //fc.RCSVector = -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel));
 
                     yield return wait;
                     if (!vessel) yield break; // Abort if the vessel died.
