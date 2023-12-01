@@ -1525,7 +1525,7 @@ namespace BDArmory.Weapons.Missiles
             if (!HasMissed && checkMiss)
             {
                 bool noProgress = MissileState == MissileStates.PostThrust && (Vector3.Dot(vessel.Velocity() - TargetVelocity, TargetPosition - vessel.transform.position) < 0);
-                bool pastGracePeriod = TimeIndex > ((vessel.LandedOrSplashed ? 0f : dropTime) + 180f / maxTurnRateDPS);
+                bool pastGracePeriod = TimeIndex > ((vessel.LandedOrSplashed ? 0f : dropTime) + Mathf.Clamp(maxTurnRateDPS / 15, 1, 8)); //180f / maxTurnRateDPS);
                 if ((pastGracePeriod && targetBehindMissile) || noProgress) // Check that we're not moving away from the target after a grace period
                 {
                     if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: Missile has missed!");

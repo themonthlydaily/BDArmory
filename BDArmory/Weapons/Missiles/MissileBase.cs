@@ -860,6 +860,7 @@ namespace BDArmory.Weapons.Missiles
                             TargetPosition = radarTarget.predictedPositionWithChaffFactor(chaffEffectivity);
                             TargetVelocity = radarTarget.velocity;
                             TargetAcceleration = radarTarget.acceleration;
+                            targetVessel = t.targetInfo; //reset targetvessel in case of canRelock getting a new target
                             _radarFailTimer = 0;
                             return;
                         }
@@ -1120,7 +1121,7 @@ namespace BDArmory.Weapons.Missiles
                             List<TargetSignatureData> possibleTargets = vrd.GetLockedTargets();
                             for (int i = 0; i < possibleTargets.Count; i++)
                             {
-                                if (possibleTargets[i].vessel == targetVessel)
+                                if (possibleTargets[i].vessel == targetVessel.Vessel)
                                 {
                                     lockedTarget = possibleTargets[i];
                                     break;
