@@ -2187,6 +2187,7 @@ namespace BDArmory.Weapons
                                         if (!BDKrakensbane.IsActive) pBullet.transform.position += TimeWarp.fixedDeltaTime * part.rb.velocity; // If Krakensbane isn't active, bullets get an additional shift by this amount.
                                         pBullet.SetTracerPosition();
                                         pBullet.transform.position += TimeWarp.fixedDeltaTime * (part.rb.velocity + BDKrakensbane.FrameVelocityV3f); // Account for velocity off-loading after visuals are done.
+                                        pBullet.DistanceTraveled += iTime * bulletVelocity; // Adjust the distance traveled to account for iTime.
                                     }
                                 }
                                 //heat
@@ -2425,8 +2426,7 @@ namespace BDArmory.Weapons
                                 if (instagib)
                                 {
                                     p.AddInstagibDamage();
-                                    ExplosionFx.CreateExplosion(hit.point,
-                                                   (1), "BDArmory/Models/explosion/explosion", explSoundPath, ExplosionSourceType.Bullet, 0, null, vessel.vesselName, null);
+                                    ExplosionFx.CreateExplosion(hit.point, 1, "BDArmory/Models/explosion/explosion", explSoundPath, ExplosionSourceType.Bullet, 0, null, vessel.vesselName, null);
                                 }
                                 else
                                 {
@@ -2488,11 +2488,11 @@ namespace BDArmory.Weapons
                                         if (laserDamage > 0)
                                         {
                                             var angularSpread = tanAngle * distance; //Scales down the damage based on the increased surface area of the area being hit by the laser. Think flashlight on a wall.
-                                            initialDamage = (laserDamage / (1 + Mathf.PI * angularSpread * angularSpread) * 0.425f);
+                                            initialDamage = laserDamage / (1 + Mathf.PI * angularSpread * angularSpread) * 0.425f;
 
                                             if (armor != null)// technically, lasers shouldn't do damage until armor gone, but that would require localized armor tracking instead of the monolithic model currently used                                              
                                             {
-                                                damage = (initialDamage * (pulseLaser ? 1 : TimeWarp.fixedDeltaTime)) * Mathf.Clamp((1 - (BDAMath.Sqrt(armor.Diffusivity * (armor.Density / 1000)) * armor.ArmorThickness) / initialDamage), 0.005f, 1); //old calc lacked a clamp, could potentially become negative damage
+                                                damage = initialDamage * (pulseLaser ? 1 : TimeWarp.fixedDeltaTime) * Mathf.Clamp(1 - BDAMath.Sqrt(armor.Diffusivity * (armor.Density / 1000)) * armor.Armor / initialDamage, 0.005f, 1); //old calc lacked a clamp, could potentially become negative damage
                                             }  //clamps laser damage to not go negative, allow some small amount of bleedthrough - ~30 Be/Steel will negate ABL, ~62 Ti, 42 DU
                                             else
                                             {
@@ -3435,7 +3435,8 @@ namespace BDArmory.Weapons
                 {
                     fireTransform = rockets[0].parent; // support for legacy RLs
                 }
-                if (!slaved && !GPSTarget && !aiControlled && !MouseAimFlight.IsMouseAimActive && !isAPS && (vessel.isActiveVessel || BDArmorySettings.REMOTE_SHOOTING))
+                // FIXME If the WM is controlling the guns, don't override with MouseAimFlight
+                if (!slaved && !GPSTarget && (!aiControlled || MouseAimFlight.IsMouseAimActive) && !isAPS && (vessel.isActiveVessel || BDArmorySettings.REMOTE_SHOOTING))
                 {
                     manualAiming = true;
                     targetVelocity = -BDKrakensbane.FrameVelocityV3f; // Stationary targets' rigid bodies are being moved opposite to the Krakensbane frame velocity.
@@ -3446,8 +3447,18 @@ namespace BDArmory.Weapons
                     if (yawRange > 0 || maxPitch - minPitch > 0)
                     {
                         //MouseControl
-                        Vector3 mouseAim = new(Input.mousePosition.x / Screen.width, Input.mousePosition.y / Screen.height, 0);
-                        Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(mouseAim);
+                        var camera = FlightCamera.fetch;
+                        Ray ray;
+                        if (!MouseAimFlight.IsMouseAimActive)
+                        {
+                            Vector3 mouseAim = new(Input.mousePosition.x / Screen.width, Input.mousePosition.y / Screen.height, 0);
+                            ray = camera.mainCamera.ViewportPointToRay(mouseAim);
+                        }
+                        else
+                        {
+                            Vector3 mouseAimFlightTarget = MouseAimFlight.GetMouseAimTarget;
+                            ray = new Ray(camera.transform.position, mouseAimFlightTarget);
+                        }
 
                         if (Physics.Raycast(ray, out RaycastHit hit, maxTargetingRange, layerMask1))
                         {
@@ -4605,6 +4616,19 @@ namespace BDArmory.Weapons
 
             GUIUtils.DrawLineBetweenWorldPositions(fwdPos, refFwdPos, 2, XKCDColors.Orange);
 
+            string blocker = "";
+            if (Physics.Raycast(new Ray(fireTransforms[0].position, fireTransforms[0].forward), out RaycastHit hit, 1000f, (int)LayerMasks.Parts))
+            {
+                var hitPart = hit.collider.gameObject.GetComponentInParent<Part>();
+                var hitEVA = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+                if (hitEVA != null) hitPart = hitEVA.part;
+                if (hitPart != null)
+                {
+                    blocker = hitPart.partInfo.title;
+                    GUIUtils.DrawTextureOnWorldPos(hit.point, BDArmorySetup.Instance.redDotTexture, new Vector2(16, 16), 0);
+                }
+            }
+
             Vector2 guiPos;
             if (GUIUtils.WorldToGUIPos(fwdPos, out guiPos))
             {
@@ -4638,7 +4662,13 @@ namespace BDArmory.Weapons
                 string xAngle = $"X: {Vector3.Angle(fireTransforms[0].forward, pitchVector):0.00}";
                 string yAngle = $"Y: {Vector3.Angle(fireTransforms[0].forward, yawVector):0.00}";
 
-                GUI.Label(angleRect, xAngle + "\n" + yAngle + "\n" + convergeDistance);
+                string label = $"{xAngle}\n{yAngle}\n{convergeDistance}";
+                if (!string.IsNullOrEmpty(blocker))
+                {
+                    angleRect.width += 6 * blocker.Length;
+                    label += $"\nBlocked: {blocker}";
+                }
+                GUI.Label(angleRect, label);
             }
         }
 
