@@ -11,6 +11,8 @@ using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.Weapons;
 using BDArmory.Weapons.Missiles;
+using System.Text;
+using System;
 
 namespace BDArmory.Targeting
 {
@@ -1333,7 +1335,7 @@ namespace BDArmory.Targeting
 
                     if (CoMLock)
                     {
-                        
+
                         if (pCheck && p.vessel.CoM != Vector3.zero)
                         {
                             groundTargetPosition = p.vessel.CoM + (p.vessel.Velocity() * Time.fixedDeltaTime);
@@ -1574,6 +1576,16 @@ namespace BDArmory.Targeting
             y = Mathf.Clamp(y, textureSize / 2, (screenRect.height) - (textureSize / 2));
 
             return new Vector2(x, y);
+        }
+        public override string GetInfo()
+        {
+            StringBuilder output = new StringBuilder();
+
+            output.Append(Environment.NewLine);
+            output.AppendLine($"Targeting Camera:");
+            output.AppendLine($"- Slew rate: {traverseRate}Deg./s");
+            output.AppendLine($"- Max traverse: {gimbalLimit} degrees");
+            return output.ToString();
         }
     }
 }
