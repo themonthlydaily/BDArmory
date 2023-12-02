@@ -44,6 +44,14 @@ namespace BDArmory.Control
         private Vector3 maxAngularAcceleration;
         private double minSafeAltitude;
 
+        // Evading
+        bool evadingGunfire = false;
+        float evasiveTimer;
+        float threatRating;
+        Vector3 threatRelativePosition;
+        Vector3 evasionNonLinearityDirection;
+        string evasionString = " & Evading Gunfire";
+
         // User parameters changed via UI.
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MinEngagementRange"),//Min engagement range
@@ -81,9 +89,33 @@ namespace BDArmory.Control
             )]
         public float firingSpeed = 20f;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AIWindow_Evade"),//Evasion
+        #region Evade
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MinEvasionTime", advancedTweakable = true, // Min Evasion Time
+            groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
+            UI_FloatRange(minValue = 0f, maxValue = 1f, stepIncrement = .05f, scene = UI_Scene.All)]
+        public float minEvasionTime = 0.2f;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionThreshold", advancedTweakable = true, //Evasion Distance Threshold
+            groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
+            UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1f, scene = UI_Scene.All)]
+        public float evasionThreshold = 25f;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionTimeThreshold", advancedTweakable = true, // Evasion Time Threshold
+            groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
+            UI_FloatRange(minValue = 0f, maxValue = 5f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float evasionTimeThreshold = 0.1f;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionMinRangeThreshold", advancedTweakable = true, // Evasion Min Range Threshold
+            groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
+            UI_FloatSemiLogRange(minValue = 10f, maxValue = 10000f, sigFig = 1)]
+        public float evasionMinRangeThreshold = 10f;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionIgnoreMyTargetTargetingMe", advancedTweakable = true,//Ignore my target targeting me
+            groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
             UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
-        public bool useEvasion = true;
+        public bool evasionIgnoreMyTargetTargetingMe = false;
+        #endregion
+
 
         // Debugging
         internal float nearInterceptBurnTime;
@@ -183,6 +215,8 @@ namespace BDArmory.Control
                 StopCoroutine(shipController);
                 shipController = null;
             }
+
+            SetStatus("");
         }
 
         private IEnumerator ShipController()
@@ -203,15 +237,11 @@ namespace BDArmory.Control
             if (!pilotEnabled || !vessel.isActiveVessel) return;
 
             if (!BDArmorySettings.DEBUG_LINES) return;
-            GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, debugPosition, 5, Color.red); // The point we're asked to fly to
-
-            // Vel vectors
-            GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + Vector3.Project(vessel.Velocity(), Vector3.ProjectOnPlane(vesselTransform.up, upDir)).normalized * 10f, 2, Color.cyan); //forward/rev
-            GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + Vector3.Project(vessel.Velocity(), Vector3.ProjectOnPlane(vesselTransform.right, upDir)).normalized * 10f, 3, Color.yellow); //lateral
+            GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, debugPosition, 5, Color.red); // Target intercept position
+            GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, fc.attitude * 100, 5, Color.green); // Attitude command
+            GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, fc.RCSVector * 100, 5, Color.cyan); // RCS command
 
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + vesselTransform.up * 1000, 3, Color.white);
-            GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + -vesselTransform.forward * 100, 3, Color.yellow);
-            GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + vessel.Velocity().normalized * 100, 3, Color.magenta);
         }
 
         #endregion events
@@ -238,6 +268,8 @@ namespace BDArmory.Control
                     debugString.AppendLine($"Near Intercept Approach Time: {nearInterceptApproachTime:G3}");
                     debugString.AppendLine($"Lateral Velocity: {lateralVelocity:G3}");
                 }
+                debugString.AppendLine($"Evasive {evasiveTimer}s");
+                debugString.AppendLine($"Threat Sqr Distance: {weaponManager.incomingThreatDistanceSqr}");
             }
             if (BDArmorySettings.DEBUG_AI)
             {
@@ -251,37 +283,75 @@ namespace BDArmory.Control
 
         void UpdateStatus()
         {
+            // Update propulsion and weapon status
             bool hasRCSFore = VesselModuleRegistry.GetModules<ModuleRCS>(vessel).Any(e => e.rcsEnabled && !e.flameout && e.useThrottle);
             hasPropulsion = hasRCSFore || VesselModuleRegistry.GetModuleEngines(vessel).Any(e => (e.EngineIgnited && e.isOperational));
             hasWeapons = weaponManager.HasWeaponsAndAmmo();
 
+            // Update intervals
             if (weaponManager.incomingMissileVessel != null && updateInterval != emergencyUpdateInterval)
                 updateInterval = emergencyUpdateInterval;
             else if (weaponManager.incomingMissileVessel == null && updateInterval == emergencyUpdateInterval)
                 updateInterval = combatUpdateInterval;
 
-            if (vessel.isActiveVessel && targetVessel && (vessel.targetObject == null || vessel.targetObject.GetVessel() != targetVessel))
+            // Set evasion status
+            EvasionStatus();
+
+            // Set target as UI target
+            if (vessel.isActiveVessel && targetVessel && !targetVessel.IsMissile() && (vessel.targetObject == null || vessel.targetObject.GetVessel() != targetVessel))
             {
-                FlightGlobals.fetch.SetVesselTarget(targetVessel);
+                FlightGlobals.fetch.SetVesselTarget(targetVessel, true);
             }
 
             return;
+        }
+
+        void EvasionStatus()
+        {
+            // Check if we should be evading gunfire, missile evasion is handled separately
+            threatRating = evasionThreshold + 1f; // Don't evade by default
+            evadingGunfire = false;
+            if (weaponManager != null && weaponManager.underFire)
+            {
+                if (weaponManager.incomingMissTime >= evasionTimeThreshold && weaponManager.incomingThreatDistanceSqr >= evasionMinRangeThreshold * evasionMinRangeThreshold) // If we haven't been under fire long enough or they're too close, ignore gunfire
+                    threatRating = weaponManager.incomingMissDistance;
+            }
+            // If we're currently evading or a threat is significant
+            if ((evasiveTimer < minEvasionTime && evasiveTimer != 0) || threatRating < evasionThreshold)
+            {
+                if (evasiveTimer < minEvasionTime)
+                {
+                    threatRelativePosition = vessel.Velocity().normalized + vesselTransform.right;
+                    if (weaponManager)
+                    {
+                        if (weaponManager.underFire)
+                            threatRelativePosition = weaponManager.incomingThreatPosition - vesselTransform.position;
+                    }
+                }
+                evadingGunfire = true;
+                evasiveTimer += Time.fixedDeltaTime;
+
+                if (evasiveTimer >= minEvasionTime)
+                    evasiveTimer = 0;
+            }
         }
 
         private IEnumerator PilotLogic()
         {
             maxAcceleration = GetMaxAcceleration(vessel);
             fc.RCSVector = Vector3.zero;
+            debugPosition = Vector3.zero;
+            evasionNonLinearityDirection = UnityEngine.Random.insideUnitSphere;
             fc.alignmentToleranceforBurn = 5;
             fc.throttle = 0;
             vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, ManeuverRCS);
-            var wait = new WaitForFixedUpdate();
+            var wait = new WaitForFixedUpdate(); 
 
             // Movement.
-            if (useEvasion && weaponManager.incomingMissileVessel && weaponManager.incomingMissileTime <= weaponManager.evadeThreshold) // Needs to start evading an incoming missile.
+            if (weaponManager.missileIsIncoming && weaponManager.incomingMissileVessel && weaponManager.incomingMissileTime <= weaponManager.evadeThreshold) // Needs to start evading an incoming missile.
             {
 
-                SetStatus("Evading");
+                SetStatus("Evading Missile");
                 vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
 
                 float previousTolerance = fc.alignmentToleranceforBurn;
@@ -318,7 +388,7 @@ namespace BDArmory.Control
                 {
                     // Vessel is on an escape orbit and has passed the periapsis by over 60s, burn retrograde
 
-                    SetStatus("Correcting Orbit (On escape trajectory)");
+                    SetStatus("Correcting Orbit (On escape trajectory)" + (evadingGunfire ? evasionString : ""));
 
                     fc.throttle = 1;
                     while (UnderTimeLimit())
@@ -329,13 +399,14 @@ namespace BDArmory.Control
                         UT = Planetarium.GetUniversalTime();
 
                         fc.attitude = -o.Prograde(UT);
+                        fc.RCSVector = evadingGunfire ? Vector3.ProjectOnPlane(evasionNonLinearityDirection, threatRelativePosition) : Vector3.zero;
                     }
                 }
                 else if (o.ApA < minSafeAltitude)
                 {
                     // Entirety of orbit is inside atmosphere, perform gravity turn burn until apoapsis is outside atmosphere by a 10% margin.
 
-                    SetStatus("Correcting Orbit (Apoapsis too low)");
+                    SetStatus("Correcting Orbit (Apoapsis too low)" + (evadingGunfire ? evasionString : ""));
                     fc.throttle = 1;
                     float previousTolerance = fc.alignmentToleranceforBurn;
                     double gravTurnAlt = 0.1;
@@ -352,6 +423,7 @@ namespace BDArmory.Control
                             turn = Mathf.Clamp(Mathf.Log10(turn) + 1f, 0.33f, 1f);
                         }
                         fc.attitude = Vector3.Lerp(o.Horizontal(UT), upDir, turn);
+                        fc.RCSVector = evadingGunfire ? Vector3.ProjectOnPlane(evasionNonLinearityDirection, threatRelativePosition) : Vector3.zero;
                         fc.alignmentToleranceforBurn = Mathf.Clamp(15f * turn, 5f, 15f);
                         yield return wait;
                         if (!vessel) yield break; // Abort if the vessel died.
@@ -363,13 +435,14 @@ namespace BDArmory.Control
                     // Our apoapsis is outside the atmosphere but we are inside the atmosphere and descending.
                     // Burn up until we are ascending and our apoapsis is outside the atmosphere by a 10% margin.
 
-                    SetStatus("Correcting Orbit (Falling inside atmo)");
+                    SetStatus("Correcting Orbit (Falling inside atmo)" + (evadingGunfire ? evasionString : ""));
                     fc.throttle = 1;
 
                     while (UnderTimeLimit() && (o.ApA < minSafeAltitude * 1.1 || o.timeToPe < o.timeToAp))
                     {
                         UT = Planetarium.GetUniversalTime();
                         fc.attitude = o.Radial(UT);
+                        fc.RCSVector = evadingGunfire ? Vector3.ProjectOnPlane(evasionNonLinearityDirection, threatRelativePosition) : Vector3.zero;
                         yield return wait;
                         if (!vessel) yield break; // Abort if the vessel died.
                     }
@@ -379,7 +452,7 @@ namespace BDArmory.Control
                     // We are outside the atmosphere but our periapsis is inside the atmosphere.
                     // Execute a burn to circularize our orbit at the current altitude.
 
-                    SetStatus("Correcting Orbit (Circularizing)");
+                    SetStatus("Correcting Orbit (Circularizing)" + (evadingGunfire ? evasionString : ""));
 
                     Vector3d fvel, deltaV = Vector3d.up * 100;
                     fc.throttle = 1;
@@ -394,6 +467,7 @@ namespace BDArmory.Control
                         deltaV = fvel - vessel.GetObtVelocity();
 
                         fc.attitude = deltaV.normalized;
+                        fc.RCSVector = evadingGunfire ? Vector3.ProjectOnPlane(evasionNonLinearityDirection, threatRelativePosition) : Vector3.zero;
                         fc.throttle = Mathf.Lerp(0, 1, (float)(deltaV.sqrMagnitude / 100));
                     }
                 }
@@ -411,6 +485,7 @@ namespace BDArmory.Control
                         fc.attitude = (assignedPositionWorld - vessel.transform.position).normalized;
                     else // Following
                         fc.attitude = commandLeader.transform.up;
+                    fc.RCSVector = evadingGunfire ? Vector3.ProjectOnPlane(evasionNonLinearityDirection, threatRelativePosition) : Vector3.zero;
                     fc.throttle = Mathf.Lerp(1, 0, Mathf.Clamp01(timer / commandedBurn));
                     timer += Time.fixedDeltaTime;
                     yield return wait;
@@ -419,7 +494,7 @@ namespace BDArmory.Control
             }
             else if (allowWithdrawal && hasPropulsion && !hasWeapons && CheckWithdraw())
             {
-                SetStatus("Withdrawing");
+                SetStatus("Withdrawing" + (evadingGunfire ? evasionString : ""));
 
 
                 // Determine the direction.
@@ -449,7 +524,7 @@ namespace BDArmory.Control
 
                     deltav -= Vector3.Project(vessel.acceleration, deltav) * TimeWarp.fixedDeltaTime;
                     fc.attitude = deltav.normalized;
-
+                    fc.RCSVector = evadingGunfire ? Vector3.ProjectOnPlane(evasionNonLinearityDirection, threatRelativePosition) : Vector3.zero;
                     yield return wait;
                     if (!vessel) yield break; // Abort if the vessel died.
                 }
@@ -460,7 +535,7 @@ namespace BDArmory.Control
             {
                 // Aim at target using current non-missile weapon.
 
-                SetStatus("Firing Guns");
+                SetStatus("Firing Guns" + (evadingGunfire ? evasionString : ""));
                 vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
                 fc.throttle = 0;
                 fc.lerpAttitude = false;
@@ -472,7 +547,7 @@ namespace BDArmory.Control
                         firingSolution = (Vector3)weaponManager.currentGun.FiringSolutionVector;
 
                     fc.attitude = firingSolution;
-                    fc.RCSVector = -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel));
+                    fc.RCSVector = evadingGunfire ? Vector3.ProjectOnPlane(evasionNonLinearityDirection, threatRelativePosition) : -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel));
 
                     yield return wait;
                     if (!vessel) yield break; // Abort if the vessel died.
@@ -484,7 +559,7 @@ namespace BDArmory.Control
             {
                 // Aim at appropriate point to launch missiles that aren't able to launch now
                 
-                SetStatus("Firing Missiles");
+                SetStatus("Firing Missiles" + (evadingGunfire ? evasionString : ""));
                 vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
                 fc.throttle = 0;
                 fc.lerpAttitude = false;
@@ -492,10 +567,10 @@ namespace BDArmory.Control
 
                 while (UnderTimeLimit() && targetVessel != null && weaponManager.CurrentMissile && !weaponManager.GetLaunchAuthorization(targetVessel, weaponManager, weaponManager.CurrentMissile))
                 {
-                    firingSolution = MissileGuidance.GetAirToAirFireSolution(weaponManager.CurrentMissile, targetVessel.transform.position, targetVessel.Velocity());
+                    firingSolution = MissileGuidance.GetAirToAirFireSolution(weaponManager.CurrentMissile, targetVessel);
 
                     fc.attitude = firingSolution;
-                    //fc.RCSVector = -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel));
+                    fc.RCSVector = evadingGunfire ? Vector3.ProjectOnPlane(evasionNonLinearityDirection, threatRelativePosition) : -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel));
 
                     yield return wait;
                     if (!vessel) yield break; // Abort if the vessel died.
@@ -534,13 +609,14 @@ namespace BDArmory.Control
 
                 if (currentRange < (!usingProjectile ? minRange : minRangeProjectile) && AwayCheck(minRange))
                 {
-                    SetStatus("Maneuvering (Away)");
+                    SetStatus("Maneuvering (Away)" + (evadingGunfire ? evasionString : ""));
                     fc.throttle = 1;
                     fc.alignmentToleranceforBurn = 135;
 
                     while (UnderTimeLimit() && targetVessel != null && !complete)
                     {
                         fc.attitude = FromTo(targetVessel, vessel).normalized;
+                        fc.RCSVector = evadingGunfire ? Vector3.ProjectOnPlane(evasionNonLinearityDirection, threatRelativePosition) : Vector3.zero;
                         fc.throttle = Vector3.Dot(RelVel(vessel, targetVessel), fc.attitude) < ManeuverSpeed ? 1 : 0;
                         complete = FromTo(vessel, targetVessel).sqrMagnitude > minRange * minRange || !AwayCheck(minRange);
 
@@ -556,7 +632,7 @@ namespace BDArmory.Control
                     && !(nearInt = NearIntercept(relVel, minRange))
                     && CanInterceptShip(targetVessel))
                 {
-                    SetStatus("Maneuvering (Intercept Target)");
+                    SetStatus("Maneuvering (Intercept Target)" + (evadingGunfire ? evasionString : ""));
                     complete = FromTo(vessel, targetVessel).sqrMagnitude < maxRange * maxRange || NearIntercept(relVel, minRange);
                     while (UnderTimeLimit() && targetVessel != null && !complete)
                     {
@@ -587,7 +663,8 @@ namespace BDArmory.Control
                             fc.attitude = burn.normalized;
                         else
                             fc.attitude = toTarget.normalized;
-
+                        
+                        fc.RCSVector = evadingGunfire ? Vector3.ProjectOnPlane(evasionNonLinearityDirection, threatRelativePosition) : Vector3.zero;
                         complete = FromTo(vessel, targetVessel).sqrMagnitude < maxRange * maxRange || NearIntercept(relVel, minRange);
 
                         yield return wait;
@@ -598,11 +675,12 @@ namespace BDArmory.Control
                 {
                     if (hasPropulsion && (relVel.sqrMagnitude > firingSpeed * firingSpeed || nearInt))
                     {
-                        SetStatus("Maneuvering (Kill Velocity)");
+                        SetStatus("Maneuvering (Kill Velocity)" + (evadingGunfire ? evasionString : ""));
                         while (UnderTimeLimit() && targetVessel != null && !complete)
                         {
                             relVel = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
                             fc.attitude = (relVel + targetVessel.acceleration).normalized;
+                            fc.RCSVector = evadingGunfire ? Vector3.ProjectOnPlane(evasionNonLinearityDirection, threatRelativePosition) : Vector3.zero;
                             complete = relVel.sqrMagnitude < firingSpeed * firingSpeed / 9;
                             fc.throttle = !complete ? 1 : 0;
 
@@ -612,12 +690,13 @@ namespace BDArmory.Control
                     }
                     else if (hasPropulsion && targetVessel != null && AngularVelocity(vessel, targetVessel) > firingAngularVelocityLimit)
                     {
-                        SetStatus("Maneuvering (Kill Angular Velocity)");
+                        SetStatus("Maneuvering (Kill Angular Velocity)" + (evadingGunfire ? evasionString : ""));
 
                         while (UnderTimeLimit() && targetVessel != null && !complete)
                         {
                             complete = AngularVelocity(vessel, targetVessel) < firingAngularVelocityLimit / 2;
                             fc.attitude = -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel)).normalized;
+                            fc.RCSVector = evadingGunfire ? Vector3.ProjectOnPlane(evasionNonLinearityDirection, threatRelativePosition) : Vector3.zero;
                             fc.throttle = !complete ? 1 : 0;
 
                             yield return wait;
@@ -630,7 +709,7 @@ namespace BDArmory.Control
                         {
                             if (currentRange < minRange)
                             {
-                                SetStatus("Maneuvering (Drift Away)");
+                                SetStatus("Maneuvering (Drift Away)" + (evadingGunfire ? evasionString : ""));
 
                                 Vector3 toTarget;
                                 fc.throttle = 0;
@@ -640,23 +719,25 @@ namespace BDArmory.Control
                                     toTarget = FromTo(vessel, targetVessel);
                                     complete = toTarget.sqrMagnitude > minRange * minRange;
                                     fc.attitude = toTarget.normalized;
-
+                                    fc.RCSVector = evadingGunfire ? Vector3.ProjectOnPlane(evasionNonLinearityDirection, threatRelativePosition) : Vector3.zero;
                                     yield return wait;
                                     if (!vessel) yield break; // Abort if the vessel died.
                                 }
                             }
                             else
                             {
-                                SetStatus("Maneuvering (Drift)");
+                                SetStatus("Maneuvering (Drift)" + (evadingGunfire ? evasionString : ""));
                                 fc.throttle = 0;
                                 fc.attitude = FromTo(vessel, targetVessel).normalized;
+                                fc.RCSVector = evadingGunfire ? Vector3.ProjectOnPlane(evasionNonLinearityDirection, threatRelativePosition) : Vector3.zero;
                             }
                         }
                         else
                         {
-                            SetStatus("Stranded");
+                            SetStatus("Stranded" + (evadingGunfire ? evasionString : ""));
                             fc.throttle = 0;
                             fc.attitude = FromTo(vessel, targetVessel).normalized;
+                            fc.RCSVector = evadingGunfire ? Vector3.ProjectOnPlane(evasionNonLinearityDirection, threatRelativePosition) : Vector3.zero;
                         }
 
                         yield return new WaitForSecondsFixed(updateInterval);
@@ -668,13 +749,13 @@ namespace BDArmory.Control
                 // Idle
 
                 if (hasWeapons)
-                    SetStatus("Idle");
+                    SetStatus("Idle" + (evadingGunfire ? evasionString : ""));
                 else
-                    SetStatus("Idle (Unarmed)");
+                    SetStatus("Idle (Unarmed)" + (evadingGunfire ? evasionString : ""));
 
                 fc.throttle = 0;
                 fc.attitude = Vector3.zero;
-
+                fc.RCSVector = evadingGunfire ? Vector3.ProjectOnPlane(evasionNonLinearityDirection, threatRelativePosition) : Vector3.zero;
                 yield return new WaitForSecondsFixed(updateInterval);
             }
         }

@@ -5,6 +5,7 @@ using BDArmory.Extensions;
 using BDArmory.Settings;
 using BDArmory.Utils;
 using BDArmory.Weapons.Missiles;
+using static UnityEngine.GraphicsBuffer;
 
 namespace BDArmory.Guidances
 {
@@ -510,27 +511,15 @@ namespace BDArmory.Guidances
             float leadTime = 0;
             float targetDistance = Vector3.Distance(targetVessel.transform.position, missile.transform.position);
 
-            //Vector3 simMissileVel = 500 * (targetPosition - missile.transform.position).normalized;
-
             MissileLauncher launcher = missile as MissileLauncher;
             BDModularGuidance modLauncher = missile as BDModularGuidance;
-            /*
-            float optSpeed = 400; //TODO: Add parameter
-            if (launcher != null)
-            {
-                optSpeed = launcher.optimumAirspeed; //so it assumes missiles start out immediately possessing all their velocity instead of having to accelerate? That explains alot.
-            }
-            simMissileVel = optSpeed * (targetPosition - missile.transform.position).normalized;
-
-            leadTime = targetDistance / (float)(targetVessel.Velocity() - simMissileVel).magnitude;
-            leadTime = Mathf.Clamp(leadTime, 0f, 8f);
-            */
+    
             Vector3 vel = missile.vessel.Velocity();
-            Vector3 VelOpt = vel.normalized * (launcher != null ? launcher.optimumAirspeed : 1500);
+            Vector3 VelOpt = missile.GetForwardTransform() * (launcher != null ? launcher.optimumAirspeed : 1500);
             float accel = launcher != null ? (launcher.thrust / missile.part.mass) : modLauncher != null ? (modLauncher.thrust/modLauncher.mass) : 10;
             Vector3 deltaVel = targetVessel.Velocity() - vel;
             Vector3 DeltaOptvel = targetVessel.Velocity() - VelOpt;
-            float T = Mathf.Clamp((VelOpt - vel).magnitude / accel, 0, 8); //time to optimal airspeed
+            float T = Mathf.Clamp(Vector3.Project(VelOpt - vel, missile.GetForwardTransform()).magnitude / accel, 0, 8); //time to optimal airspeed
 
             Vector3 relPosition = targetPosition - missile.transform.position;
             Vector3 relAcceleration = targetVessel.acceleration - missile.GetForwardTransform() * accel;
@@ -543,11 +532,21 @@ namespace BDArmory.Guidances
                 leadTime = AIUtils.TimeToCPA(relPosition, DeltaOptvel, relAcceleration, 8 - T) + T;
             }
 
-            targetPosition += leadTime * targetVessel.Velocity();
-
-            if (targetVessel && targetDistance < 800) //TODO - investigate if this would throw off aim accuracy
+            if (missile.vessel.atmDensity < 0.05 && missile.vessel.InOrbit()) // More accurate, but too susceptible to slight acceleration changes for use in-atmo
             {
-                targetPosition += (Vector3)targetVessel.acceleration * 0.05f * leadTime * leadTime;
+                Vector3 relPos = targetPosition - missile.transform.position;
+                Vector3 relVel = targetVessel.Velocity() - missile.vessel.Velocity();
+                Vector3 relAcc = targetVessel.acceleration - (missile.vessel.acceleration + missile.GetForwardTransform() * accel);
+                targetPosition = AIUtils.PredictPosition(relPos, relVel, relAcc, leadTime);
+            }
+            else // Not accurate enough for orbital speeds, but more resilient to acceleration changes
+            {
+                targetPosition += leadTime * targetVessel.Velocity();
+
+                if (targetVessel && targetDistance < 800) //TODO - investigate if this would throw off aim accuracy
+                {
+                    targetPosition += (Vector3)targetVessel.acceleration * 0.05f * leadTime * leadTime;
+                }
             }
 
             return targetPosition;
