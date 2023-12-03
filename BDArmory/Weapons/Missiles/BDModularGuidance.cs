@@ -888,8 +888,8 @@ namespace BDArmory.Weapons.Missiles
         private void UpdateOrbitalStage()
         {
             // Update list of engines/thrusters
-            engines = VesselModuleRegistry.GetModuleEngines(vessel);
-            rcsThrusters = VesselModuleRegistry.GetModules<ModuleRCS>(vessel);
+            engines = VesselModuleRegistry.GetModuleEngines(vessel).ToList();
+            rcsThrusters = VesselModuleRegistry.GetModules<ModuleRCS>(vessel).ToList();
 
             // Get a probe core and align its reference transform with the propulsion vector.
             ModuleCommand commander = VesselModuleRegistry.GetModuleCommand(vessel);

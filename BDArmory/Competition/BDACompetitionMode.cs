@@ -587,7 +587,7 @@ namespace BDArmory.Competition
                             {
                                 ModuleCommand MC;
                                 MC = part.Current.GetComponent<ModuleCommand>();
-                                if (part.Current.CrewCapacity == 0 && MC.minimumCrew == 0) //Drone core, nuke it
+                                if (part.Current.CrewCapacity == 0 && MC.minimumCrew == 0 && !SpawnUtils.IsModularMissilePart(part.Current)) //Non-MMG drone core, nuke it
                                     part.Current.RemoveModule(MC);
                             }
                             if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 59)

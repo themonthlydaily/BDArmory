@@ -127,7 +127,7 @@ namespace BDArmory.VesselSpawning
         {
             foreach (var engine in VesselModuleRegistry.GetModuleEngines(vessel))
             {
-                if (ignoreModularMissileEngines && IsModularMissileEngine(engine)) continue; // Ignore modular missile engines.
+                if (ignoreModularMissileEngines && IsModularMissilePart(engine.part)) continue; // Ignore modular missile engines.
                 if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55) engine.independentThrottle = false;
                 var mme = engine.part.FindModuleImplementing<MultiModeEngine>();
                 if (mme == null)
@@ -164,9 +164,8 @@ namespace BDArmory.VesselSpawning
             FireSpitter.ActivateFSEngines(vessel, activate);
         }
 
-        public static bool IsModularMissileEngine(ModuleEngines engine)
+        public static bool IsModularMissilePart(Part part)
         {
-            var part = engine.part;
             if (part is not null)
             {
                 var firstDecoupler = BDModularGuidance.FindFirstDecoupler(part.parent, null);
