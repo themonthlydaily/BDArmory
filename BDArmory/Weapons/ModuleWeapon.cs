@@ -4491,11 +4491,7 @@ namespace BDArmory.Weapons
         void AimAndFire()
         {
             // This runs in the FashionablyLate timing phase of FixedUpdate before Krakensbane corrections have been applied.
-            if (!(aimAndFireIfPossible || aimOnly))
-            {
-                Debug.Log($"[APS DEBUG - {(this.vessel != null ? vessel.GetName() : "null")}] Weapon {WeaponName} cannot fire at this time");
-                return;
-            }
+            if (!(aimAndFireIfPossible || aimOnly)) return;
             if (this == null || weaponManager == null || !gameObject.activeInHierarchy || FlightGlobals.currentMainBody == null) return;
 
             if (isAPS || (weaponManager.guardMode && dualModeAPS)) //prioritize APS as APS if AI using dualmode units for engaging standard targets

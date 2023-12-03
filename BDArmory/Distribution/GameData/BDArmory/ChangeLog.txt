@@ -10,6 +10,7 @@
 		- Recommend using the cheat menu (Alt+F12) to place craft in orbit within physics range of each other.
 	- Base the Immelmann turn pitch direction on the local pitch angular velocity (i.e., pitch down if already rotating that way — fixes the pitch oscillation behaviour when targeting an opponent behind the craft while inverted near terrain).
 	- Don't summon the NaN-Kraken when the post-terrain avoidance cool-down is 0.
+	- Tightened up 'on target' threshold for dumbfiring missiles.
 - Detectors:
 	-Can now set targeting camera slew rate using "traverseRate" field in ModuleTargetingCamera.
 - Weapons:
@@ -24,9 +25,12 @@
 		- Fix Guidance Type None missiles not holding course.
 		- GPS missiles now require a target cam or radar lock for GPS coords.
 		- INS missiles can now use either radar or IRST tracking.
-		- INS missiles now have datalink capability for mid-flight target coordinate updates, update rate clamped to Radar/IRST scan speed.
+		- INS missiles now have datalink capability for mid-flight target coordinate updates (uses gpsUpdates field), update rate clamped to Radar/IRST scan speed.
+		- ECM can now jam GPS/INS datalink if missile wihin hostile ECM AoE.
 		- Fix error with Inertial guidance target prediction for non-updating missiles.
 		- Fix Missiles having 10 armor instead of 2.
+		- Fix SARH missiles that relock to a new target not updating their target vessel 
+		- Changed missile missed check, missiles now check if they have come withi 400m, are post-thrust, or are more than 1km behind target, and have exceeded a grace period of maxTurnRateDPS/15	
 - Vessel Mover:
 	- Check for outdated loadMeta files when refreshing the craft list in the vessel selection window and update them since KSP doesn't update them when you save your craft!
 	- Fix the spawn point selection sometimes not registering.
