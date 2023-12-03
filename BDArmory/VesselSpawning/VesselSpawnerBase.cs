@@ -241,7 +241,8 @@ namespace BDArmory.VesselSpawning
             Vector3d craftGeoCoords;
             var radialUnitVector = (vesselSpawnConfig.position - FlightGlobals.currentMainBody.transform.position).normalized;
             vesselSpawnConfig.position += 1000f * radialUnitVector; // Adjust the spawn point upwards by 1000m.
-            FlightGlobals.currentMainBody.GetLatLonAlt(vesselSpawnConfig.position, out craftGeoCoords.x, out craftGeoCoords.y, out craftGeoCoords.z); // Convert spawn point (+1000m) to geo-coords for the actual spawning function.
+            var spawnBody = FlightGlobals.currentMainBody;
+            spawnBody.GetLatLonAlt(vesselSpawnConfig.position, out craftGeoCoords.x, out craftGeoCoords.y, out craftGeoCoords.z); // Convert spawn point (+1000m) to geo-coords for the actual spawning function.
             try
             {
                 // Spawn the craft with zero pitch, roll and yaw as the final rotation depends on the root transform, which takes some time to be populated.
@@ -333,8 +334,9 @@ namespace BDArmory.VesselSpawning
             // Now rotate the vessel and put it at the right altitude.
             var ray = new Ray(vesselSpawnConfig.position, -radialUnitVector);
             RaycastHit hit;
-            var distanceToCoMainBody = (ray.origin - FlightGlobals.currentMainBody.transform.position).magnitude;
+            var distanceToCoMainBody = (ray.origin - spawnBody.transform.position).magnitude;
             float distance;
+            var spawnInOrbit = vesselSpawnConfig.altitude + spawnBody.Radius >= spawnBody.minOrbitalDistance; // Min safe orbital distance
             Vector3 localSurfaceNormal = -ray.direction;
             var localTerrainAltitude = BodyUtils.GetTerrainAltitudeAtPos(ray.origin);
             if (localTerrainAltitude > 0 && Physics.Raycast(ray, out hit, distanceToCoMainBody, (int)LayerMasks.Scenery))
@@ -349,12 +351,12 @@ namespace BDArmory.VesselSpawning
                 if (BDArmorySettings.DEBUG_SPAWNING && localTerrainAltitude > 0) LogMessage("Failed to find terrain for spawn adjustments", false);
             }
             // Rotation
-            vessel.SetRotation(Quaternion.FromToRotation(vesselSpawnConfig.editorFacility == EditorFacility.SPH ? -vessel.ReferenceTransform.forward : vessel.ReferenceTransform.up, localSurfaceNormal) * vessel.transform.rotation); // Re-orient the vessel to the terrain normal (or radial unit vector).
-            vessel.SetRotation(Quaternion.AngleAxis(Vector3.SignedAngle(vesselSpawnConfig.editorFacility == EditorFacility.SPH ? vessel.ReferenceTransform.up : -vessel.ReferenceTransform.forward, vesselSpawnConfig.direction, localSurfaceNormal), localSurfaceNormal) * vessel.transform.rotation); // Re-orient the vessel to the right direction.
-            if (vesselSpawnConfig.airborne && (!BDArmorySettings.SF_GRAVITY && !BDArmorySettings.SF_REPULSOR))
+            vessel.SetRotation(Quaternion.FromToRotation((vesselSpawnConfig.editorFacility == EditorFacility.SPH || spawnInOrbit) ? -vessel.ReferenceTransform.forward : vessel.ReferenceTransform.up, localSurfaceNormal) * vessel.transform.rotation); // Re-orient the vessel to the terrain normal (or radial unit vector).
+            vessel.SetRotation(Quaternion.AngleAxis(Vector3.SignedAngle((vesselSpawnConfig.editorFacility == EditorFacility.SPH || spawnInOrbit) ? vessel.ReferenceTransform.up : -vessel.ReferenceTransform.forward, vesselSpawnConfig.direction, localSurfaceNormal), localSurfaceNormal) * vessel.transform.rotation); // Re-orient the vessel to the right direction.
+            if (vesselSpawnConfig.airborne && !spawnInOrbit && !BDArmorySettings.SF_GRAVITY && !BDArmorySettings.SF_REPULSOR)
             { vessel.SetRotation(Quaternion.AngleAxis(-vesselSpawnConfig.pitch, vessel.ReferenceTransform.right) * vessel.transform.rotation); }
             // Position
-            if (FlightGlobals.currentMainBody.hasSolidSurface)
+            if (spawnBody.hasSolidSurface)
             { vesselSpawnConfig.position += radialUnitVector * (vesselSpawnConfig.altitude + heightFromTerrain - distance); }
             else
             { vesselSpawnConfig.position -= 1000f * radialUnitVector; }
@@ -787,7 +789,13 @@ namespace BDArmory.VesselSpawning
                     if (withInitialVelocity)
                     {
                         var pilot = weaponManager.AI as BDModulePilotAI;
-                        if (pilot != null) vessel.SetWorldVelocity(pilot.idleSpeed * vessel.transform.up);
+                        if (pilot != null) { vessel.SetWorldVelocity(pilot.idleSpeed * vessel.transform.up); }
+                    }
+                    var orbitalAI = weaponManager.AI as BDModuleOrbitalAI;
+                    if (orbitalAI && vessel.altitude + vessel.mainBody.Radius > vessel.mainBody.minOrbitalDistance) // In space with an orbital AI. Set it in a circular orbit.
+                    {
+                        Vector3d orbitVelocity = Math.Sqrt(FlightGlobals.getGeeForceAtPosition(vessel.CoM, vessel.mainBody).magnitude * (vessel.mainBody.Radius + vessel.altitude)) * FlightGlobals.currentMainBody.getRFrmVel(vessel.CoM).normalized;
+                        vessel.SetWorldVelocity(orbitVelocity);
                     }
                 }
                 if (weaponManager.guardMode)

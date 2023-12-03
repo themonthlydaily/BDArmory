@@ -166,7 +166,7 @@ namespace BDArmory.Bullets
         private double initialHitDistance = 0;
         private float kDist = 1;
 
-        public double DistanceTraveled { get { return distanceTraveled; } }
+        public double DistanceTraveled { get { return distanceTraveled; } set { distanceTraveled = value; } }
 
         void Awake()
         {
@@ -1419,28 +1419,28 @@ namespace BDArmory.Bullets
             switch (fuze)
             {
                 case "timed":
-                    sFuze = PooledBullet.BulletFuzeTypes.Timed;
+                    sFuze = BulletFuzeTypes.Timed;
                     break;
                 case "proximity":
-                    sFuze = PooledBullet.BulletFuzeTypes.Proximity;
+                    sFuze = BulletFuzeTypes.Proximity;
                     break;
                 case "flak":
-                    sFuze = PooledBullet.BulletFuzeTypes.Flak;
+                    sFuze = BulletFuzeTypes.Flak;
                     break;
                 case "delay":
-                    sFuze = PooledBullet.BulletFuzeTypes.Delay;
+                    sFuze = BulletFuzeTypes.Delay;
                     break;
                 case "penetrating":
-                    sFuze = PooledBullet.BulletFuzeTypes.Penetrating;
+                    sFuze = BulletFuzeTypes.Penetrating;
                     break;
                 case "impact":
-                    sFuze = PooledBullet.BulletFuzeTypes.Impact;
+                    sFuze = BulletFuzeTypes.Impact;
                     break;
                 case "none":
-                    sFuze = PooledBullet.BulletFuzeTypes.Impact;
+                    sFuze = BulletFuzeTypes.Impact;
                     break;
                 default:
-                    sFuze = PooledBullet.BulletFuzeTypes.None;
+                    sFuze = BulletFuzeTypes.None;
                     break;
             }
             if (BDArmorySettings.DEBUG_WEAPONS)
@@ -1485,14 +1485,14 @@ namespace BDArmory.Bullets
                     switch (HEtype)
                     {
                         case "standard":
-                            pBullet.HEType = PooledBullet.PooledBulletTypes.Explosive;
+                            pBullet.HEType = PooledBulletTypes.Explosive;
                             break;
                         //legacy support for older configs that are still explosive = true
                         case "true":
-                            pBullet.HEType = PooledBullet.PooledBulletTypes.Explosive;
+                            pBullet.HEType = PooledBulletTypes.Explosive;
                             break;
                         case "shaped":
-                            pBullet.HEType = PooledBullet.PooledBulletTypes.Shaped;
+                            pBullet.HEType = PooledBulletTypes.Shaped;
                             break;
                     }
                     pBullet.detonationRange = detonationRange;
@@ -1502,9 +1502,9 @@ namespace BDArmory.Bullets
                 }
                 else
                 {
-                    pBullet.fuzeType = PooledBullet.BulletFuzeTypes.None;
-                    pBullet.sabot = (((((subMunitionType.bulletMass * 1000) / ((subMunitionType.caliber * subMunitionType.caliber * Mathf.PI / 400) * 19) + 1) * 10) > subMunitionType.caliber * 4)) ? true : false;
-                    pBullet.HEType = PooledBullet.PooledBulletTypes.Slug;
+                    pBullet.fuzeType = BulletFuzeTypes.None;
+                    pBullet.sabot = ((subMunitionType.bulletMass * 1000 / (subMunitionType.caliber * subMunitionType.caliber * Mathf.PI / 400 * 19) + 1) * 10) > subMunitionType.caliber * 4;
+                    pBullet.HEType = PooledBulletTypes.Slug;
                 }
                 pBullet.EMP = subMunitionType.EMP;
                 pBullet.nuclear = subMunitionType.nuclear;
@@ -1516,16 +1516,16 @@ namespace BDArmory.Bullets
                 switch (subMunitionType.bulletDragTypeName)
                 {
                     case "None":
-                        pBullet.dragType = PooledBullet.BulletDragTypes.None;
+                        pBullet.dragType = BulletDragTypes.None;
                         break;
                     case "AnalyticEstimate":
-                        pBullet.dragType = PooledBullet.BulletDragTypes.AnalyticEstimate;
+                        pBullet.dragType = BulletDragTypes.AnalyticEstimate;
                         break;
                     case "NumericalIntegration":
-                        pBullet.dragType = PooledBullet.BulletDragTypes.NumericalIntegration;
+                        pBullet.dragType = BulletDragTypes.NumericalIntegration;
                         break;
                     default:
-                        pBullet.dragType = PooledBullet.BulletDragTypes.AnalyticEstimate;
+                        pBullet.dragType = BulletDragTypes.AnalyticEstimate;
                         break;
                 }
                 pBullet.bullet = BulletInfo.bullets[subMunitionType.name];

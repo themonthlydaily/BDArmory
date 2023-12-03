@@ -48,8 +48,9 @@ namespace BDArmory.CounterMeasure
 
         void FixedUpdate()
         {
+            float speedOrAccel = (vessel.atmDensity > 0.05) ? (float)vessel.srfSpeed : Mathf.Abs((float)vessel.acceleration_immediate.magnitude);
             chaffScalar = Mathf.MoveTowards(chaffScalar, chaffMax,
-                Mathf.Clamp(speedRegenMult * (float)vessel.srfSpeed, minRegen, maxRegen) * Time.fixedDeltaTime);
+                Mathf.Clamp(speedRegenMult * speedOrAccel, minRegen, maxRegen) * Time.fixedDeltaTime);
         }
     }
 }

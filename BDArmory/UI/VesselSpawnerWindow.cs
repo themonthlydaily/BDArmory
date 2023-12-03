@@ -296,11 +296,8 @@ namespace BDArmory.UI
             {
                 if (BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE)
                 { // Absolute distance
-                    var value = BDArmorySettings.VESSEL_SPAWN_DISTANCE < 100 ? BDArmorySettings.VESSEL_SPAWN_DISTANCE / 10 : BDArmorySettings.VESSEL_SPAWN_DISTANCE < 1000 ? 9 + BDArmorySettings.VESSEL_SPAWN_DISTANCE / 100 : BDArmorySettings.VESSEL_SPAWN_DISTANCE < 10000 ? 18 + BDArmorySettings.VESSEL_SPAWN_DISTANCE / 1000 : 26 + BDArmorySettings.VESSEL_SPAWN_DISTANCE / 5000;
-                    var displayValue = BDArmorySettings.VESSEL_SPAWN_DISTANCE < 1000 ? $"{BDArmorySettings.VESSEL_SPAWN_DISTANCE:0}m" : $"{BDArmorySettings.VESSEL_SPAWN_DISTANCE / 1000:0}km";
-                    GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_SpawnDistance")}:  ({displayValue})", leftLabel);//Spawn Distance
-                    value = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), value, 1f, 30f));
-                    BDArmorySettings.VESSEL_SPAWN_DISTANCE = value < 10 ? 10 * value : value < 19 ? 100 * (value - 9) : value < 28 ? 1000 * (value - 18) : 5000 * (value - 26);
+                    GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_SpawnDistance")}:  ({(BDArmorySettings.VESSEL_SPAWN_DISTANCE < 1000 ? $"{BDArmorySettings.VESSEL_SPAWN_DISTANCE:G4}m" : $"{BDArmorySettings.VESSEL_SPAWN_DISTANCE / 1000:G4}km")})", leftLabel);//Spawn Distance
+                    BDArmorySettings.VESSEL_SPAWN_DISTANCE = UI_FloatSemiLogRange.ToSemiLogValue(Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), UI_FloatSemiLogRange.FromSemiLogValue(BDArmorySettings.VESSEL_SPAWN_DISTANCE, 10), 1, UI_FloatSemiLogRange.FromSemiLogValue(200000, 10))), 10, 1);
                 }
                 else
                 { // Distance factor

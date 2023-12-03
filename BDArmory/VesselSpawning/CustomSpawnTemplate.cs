@@ -119,9 +119,11 @@ namespace BDArmory.VesselSpawning
             // Tally up the craft to spawn and figure out teams.
             spawnConfig.craftFiles = spawnConfig.customVesselSpawnConfigs.SelectMany(team => team).Select(config => config.craftURL).Where(craftURL => !string.IsNullOrEmpty(craftURL)).ToList();
             var spawnAirborne = spawnConfig.altitude > 10f;
+            var spawnBody = FlightGlobals.Bodies[spawnConfig.worldIndex];
+            var spawnInOrbit = spawnConfig.altitude + spawnBody.Radius >= spawnBody.minOrbitalDistance; // Min safe orbital distance
             var withInitialVelocity = spawnAirborne && BDArmorySettings.VESSEL_SPAWN_INITIAL_VELOCITY;
             var spawnPitch = withInitialVelocity ? 0f : -80f;
-            LogMessage($"Spawning {spawnConfig.craftFiles.Count} vessels at an altitude of {spawnConfig.altitude.ToString("G0")}m ({(spawnAirborne ? "airborne" : "landed")}).");
+            LogMessage($"Spawning {spawnConfig.craftFiles.Count} vessels at an altitude of {spawnConfig.altitude.ToString("G0")}m ({(spawnInOrbit ? "in orbit" : spawnAirborne ? "airborne" : "landed")}).");
             #endregion
 
             yield return AcquireSpawnPoint(spawnConfig, 100f, false);
@@ -150,6 +152,7 @@ namespace BDArmory.VesselSpawning
                     (float)spawnConfig.altitude,
                     spawnPitch,
                     spawnAirborne,
+                    spawnInOrbit,
                     customVesselSpawnConfig.teamIndex,
                     false,
                     crew
