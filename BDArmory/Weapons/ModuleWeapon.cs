@@ -1456,6 +1456,7 @@ namespace BDArmory.Weapons
             if (hasDeployAnim)
             {
                 deployState = GUIUtils.SetUpSingleAnimation(deployAnimName, part);
+                Events["ToggleDeploy"].guiActiveEditor = true;
                 if (deployState != null)
                 {
                     deployState.normalizedTime = 0;
@@ -1691,6 +1692,37 @@ namespace BDArmory.Weapons
             Fields["fireBurstLength"].guiActiveEditor = BurstOverride;
 
             GUIUtils.RefreshAssociatedWindows(part);
+        }
+
+        public bool toggleDeployState = true;
+        [KSPEvent(guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_ToggleAnimation", active = true)]//Disable Engage Options
+        public void ToggleDeploy()
+        {
+            toggleDeployState = !toggleDeployState;
+
+            if (toggleDeployState == false)
+            {
+                Events["ToggleDeploy"].guiName = StringUtils.Localize("#autoLOC_6001080");//"Deploy"
+            }
+            else
+            {
+                Events["ToggleDeploy"].guiName = StringUtils.Localize("#autoLOC_6001339");//""Retract"
+            }
+            if (deployState != null)
+            {
+                deployState.normalizedTime = HighLogic.LoadedSceneIsFlight ? 0 : toggleDeployState ? 1 : 0;
+                using (List<Part>.Enumerator pSym = part.symmetryCounterparts.GetEnumerator())
+                    while (pSym.MoveNext())
+                    {
+                        if (pSym.Current == null) continue;
+                        if (pSym.Current != part && pSym.Current.vessel == vessel)
+                        {
+                            var wep = pSym.Current.FindModuleImplementing<ModuleWeapon>();
+                            if (wep == null) continue;
+                            wep.deployState.normalizedTime = toggleDeployState ? 1 : 0;
+                        }
+                    }
+            }
         }
 
         void FAOCos(BaseField field, object obj)

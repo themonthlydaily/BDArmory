@@ -25,6 +25,7 @@
 	- Account for the initial bullet placement in the bullet traveled distance.
 	- Fixes for aiming reticles of guns (both fixed and turrets) when using MouseAimFlight.
 	- Show where aimer lines in the SPH are blocked and by what.
+	- Add Deploy toggle to see where weapons with deploy animations will point when deployed vs retracted (e.g. M230 chaingun).
 	- Fix lasers using wrong armor thickness value for damage reduction calcs.
 	- Fix Beehive ammo detonation timing when used in orbit.
   	- Missiles:
