@@ -12,10 +12,12 @@
 	- Don't summon the NaN-Kraken when the post-terrain avoidance cool-down is 0.
 	- Tightened up 'on target' threshold for dumbfiring missiles.
 - Detectors:
-	-Can now set targeting camera slew rate using "traverseRate" field in ModuleTargetingCamera.
+	- Can now set targeting camera slew rate using "traverseRate" field in ModuleTargetingCamera.
+	- Improve Targeting Camera ability to track moving targets.
 - Weapons:
 	- Fixes for initial bullet placement and simulated hit position when Krakensbane is not active.
 	- Fix lasers using wrong armor thickness value for damage reduction calcs.
+	- Fix Beehive ammo detonation timing when used in orbit.
   	- Missiles:
 		  - Add new Orbital guidance option for Modular Missiles
 		    - Missile will attempt to intercept orbital target at the user-set Max Speed value

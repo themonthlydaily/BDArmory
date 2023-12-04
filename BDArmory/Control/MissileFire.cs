@@ -1854,7 +1854,7 @@ namespace BDArmory.Control
                                 if (!tgp.Current.enabled || (tgp.Current.cameraEnabled && tgp.Current.groundStabilized &&
                                                              !((tgp.Current.groundTargetPosition - guardTarget.transform.position).sqrMagnitude > scaledDistance))) continue;
                                 tgp.Current.EnableCamera();
-                                yield return StartCoroutine(tgp.Current.PointToPositionRoutine(guardTarget.CoM));
+                                yield return StartCoroutine(tgp.Current.PointToPositionRoutine(guardTarget.CoM, guardTarget));
                                 //yield return StartCoroutine(tgp.Current.PointToPositionRoutine(TargetInfo.TargetCOMDispersion(guardTarget)));
                                 if (!tgp.Current) continue;
                                 if (tgp.Current.groundStabilized && guardTarget &&
@@ -2162,7 +2162,7 @@ namespace BDArmory.Control
                                     foundTargetInDatabase = true;
                                     break;
                                 }
-                            if (foundTargetInDatabase)
+                            if (!foundTargetInDatabase)
                             {
                                 if (targetingPods.Count > 0) //if targeting pods are available, slew them onto target and lock.
                                 {
@@ -2172,7 +2172,7 @@ namespace BDArmory.Control
                                             if (tgp.Current == null) continue;
                                             tgp.Current.EnableCamera();
                                             tgp.Current.CoMLock = true;
-                                            yield return StartCoroutine(tgp.Current.PointToPositionRoutine(guardTarget.CoM));
+                                            yield return StartCoroutine(tgp.Current.PointToPositionRoutine(targetVessel.CoM, targetVessel));
                                         }
 
                                     //search for a laser point that corresponds with target vessel
@@ -2326,7 +2326,7 @@ namespace BDArmory.Control
                                     {
                                         if (tgp.Current == null) continue;
                                         tgp.Current.CoMLock = true;
-                                        yield return StartCoroutine(tgp.Current.PointToPositionRoutine(targetVessel.CoM));
+                                        yield return StartCoroutine(tgp.Current.PointToPositionRoutine(targetVessel.CoM, targetVessel));
                                         //if (tgp.Current.groundStabilized && (tgp.Current.GroundtargetPosition - guardTarget.transform.position).sqrMagnitude < 20 * 20) 
                                         //if ((tgp.Current.groundTargetPosition - guardTarget.transform.position).sqrMagnitude < 10 * 10) 
                                         //{
@@ -2555,7 +2555,7 @@ namespace BDArmory.Control
                                     if (tgp.Current == null) continue;
                                     tgp.Current.EnableCamera();
                                     tgp.Current.CoMLock = true;
-                                    yield return StartCoroutine(tgp.Current.PointToPositionRoutine(guardTarget.CoM));
+                                    yield return StartCoroutine(tgp.Current.PointToPositionRoutine(guardTarget.CoM, guardTarget));
                                 }
                         }
                         float attemptStartTime = Time.time;
@@ -6619,7 +6619,7 @@ namespace BDArmory.Control
         void SearchForLaserPoint()
         {
             MissileBase ml = CurrentMissile;
-            if (!ml || !(ml.TargetingMode == MissileBase.TargetingModes.Laser || (ml.TargetingMode == MissileBase.TargetingModes.Gps && ml.GetWeaponClass() == WeaponClasses.Bomb)))
+            if (!ml || !(ml.TargetingMode == MissileBase.TargetingModes.Laser || ml.TargetingMode == MissileBase.TargetingModes.Gps))
             {
                 return;
             }
