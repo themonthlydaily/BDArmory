@@ -912,7 +912,7 @@ namespace BDArmory.Bullets
                     pBullet.timeElapsedSinceCurrentSpeedWasAdjusted = 0;
                     pBullet.timeToLiveUntil = 2000 / sBullet.bulletVelocity * 1.1f + Time.time;
                     Vector3 firedVelocity = VectorUtils.GaussianDirectionDeviation(currentVelocity.normalized, sBullet.subProjectileDispersion > 0 ? sBullet.subProjectileDispersion : (sBullet.subProjectileCount / BDAMath.Sqrt(currentVelocity.magnitude / 100))) * sBullet.bulletVelocity; //more subprojectiles = wider spread, higher base velocity = tighter spread
-                    pBullet.currentVelocity = currentVelocity + firedVelocity; // currentVelocity is already the real velocity w/o offloading
+                    pBullet.currentVelocity = currentVelocity + firedVelocity + BDKrakensbane.FrameVelocityV3f; // currentVelocity is already the real velocity w/o offloading
                     pBullet.sourceWeapon = sourceWeapon;
                     pBullet.sourceVessel = sourceVessel;
                     pBullet.team = team;
