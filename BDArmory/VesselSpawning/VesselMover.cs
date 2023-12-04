@@ -833,7 +833,7 @@ namespace BDArmory.VesselSpawning
                 VesselSpawner.ReservedCrew = crew.Select(crew => crew.name).ToHashSet(); // Reserve the crew so they don't get swapped out.
                 foreach (var c in crew) c.rosterStatus = ProtoCrewMember.RosterStatus.Available; // Set all the requested crew as available.
             }
-            VesselSpawnConfig vesselSpawnConfig = new VesselSpawnConfig(craftUrl, spawnPoint, direction, (float)altitude, initialPitch, false, crew: crew);
+            VesselSpawnConfig vesselSpawnConfig = new VesselSpawnConfig(craftUrl, spawnPoint, direction, (float)altitude, initialPitch, false, false, crew: crew);
 
             // Spawn vessel.
             yield return SpawnSingleVessel(vesselSpawnConfig);

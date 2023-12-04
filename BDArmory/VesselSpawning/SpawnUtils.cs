@@ -516,15 +516,16 @@ namespace BDArmory.VesselSpawning
             var flightCamera = FlightCamera.fetch;
             if (originalCameraParentTransform != null)
             {
+                var mainCamera = GUIUtils.GetMainCamera();
                 if (keepTransformValues && flightCamera.transform != null && flightCamera.transform.parent != null)
                 {
                     originalCameraParentTransform.position = flightCamera.transform.parent.position;
                     originalCameraParentTransform.rotation = flightCamera.transform.parent.rotation;
-                    originalCameraNearClipPlane = GUIUtils.GetMainCamera().nearClipPlane;
+                    if (mainCamera) originalCameraNearClipPlane = mainCamera.nearClipPlane;
                     originalCameraDistance = flightCamera.Distance;
                 }
                 flightCamera.transform.parent = originalCameraParentTransform;
-                GUIUtils.GetMainCamera().nearClipPlane = originalCameraNearClipPlane;
+                if (mainCamera) mainCamera.nearClipPlane = originalCameraNearClipPlane;
                 flightCamera.SetDistanceImmediate(originalCameraDistance);
                 flightCamera.SetTargetNone();
                 flightCamera.EnableCamera();

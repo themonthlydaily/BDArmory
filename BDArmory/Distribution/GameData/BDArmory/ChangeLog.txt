@@ -3,19 +3,28 @@
 	- Fix the alternate (hidden UI) window locations (for scores and vessel switcher) not being saved correctly.
 - General:
 	- New tex for 1.25m radomes.
+	- Add a max distance threshold setting to Team Icons.
 - AI / WM:
 	- Add new Orbital AI part for spacecraft in orbit:
-		- The orbital AI will use orbital maneuvers to close within gun range of the target to fire weapons. It will also automatically fire missiles when able.
+		- The Orbital AI will use orbital maneuvers to close within gun range of the target to fire weapons. It will also automatically fire missiles when able.
 		- The AI will maneuver at the Maneuver Speed setting and once within gun range try to fire guns while at the Strafe Speed setting. If evasion is enabled, it will attempt to dodge vacuum missiles (i.e. HEKVs) or Modular Missiles with Orbital guidance (see Weapons section of changelog).
-		- Recommend using the cheat menu (Alt+F12) to place craft in orbit within physics range of each other.
+		- When spawned at orbital altitudes using the BDA Vessel Spawner, craft with the Orbital AI will be automatically spawned into orbit (other options for orbital spawning are cheat menu and HyperEdit mod).
 	- Base the Immelmann turn pitch direction on the local pitch angular velocity (i.e., pitch down if already rotating that way — fixes the pitch oscillation behaviour when targeting an opponent behind the craft while inverted near terrain).
 	- Don't summon the NaN-Kraken when the post-terrain avoidance cool-down is 0.
 	- Tightened up 'on target' threshold for dumbfiring missiles.
+	- Perform banked turns when the target is behind us at long range and extending is allowed instead of Immelmann turns or turning directly to target. Threshold is clamp(8 * max speed, 1000, 4000).
+	- Pilot AI turns will now turn harder (using Max AoA setting) towards the notch direction the closer the missile is to impact.
+	- Factor the user-defined steer limit into the turn radius calculations.
+	- Use a more gentle take-off slope for the initial take-off.
+	- Add an Evasion Min Range Threshold option to only trigger evasion from an attacker using guns when they're beyond that distance.
 - Detectors:
 	- Can now set targeting camera slew rate using "traverseRate" field in ModuleTargetingCamera.
 	- Improve Targeting Camera ability to track moving targets.
 - Weapons:
 	- Fixes for initial bullet placement and simulated hit position when Krakensbane is not active.
+	- Account for the initial bullet placement in the bullet traveled distance.
+	- Fixes for aiming reticles of guns (both fixed and turrets) when using MouseAimFlight.
+	- Show where aimer lines in the SPH are blocked and by what.
 	- Fix lasers using wrong armor thickness value for damage reduction calcs.
 	- Fix Beehive ammo detonation timing when used in orbit.
   	- Missiles:
@@ -24,6 +33,7 @@
       		- Fix clustermissiles launching copies of themselves instead of submunitions.
 		- Fix clustermissiles not respecting submunition trigger distance.
 		- Fix clustermissiles acting like reloadable missiles when not set up for reloading.
+		- Fix for HEKV launching unguided in non-ideal situations.
 		- Fix Guidance Type None missiles not holding course.
 		- GPS missiles now require a target cam or radar lock for GPS coords.
 		- INS missiles can now use either radar or IRST tracking.
@@ -33,9 +43,14 @@
 		- Fix Missiles having 10 armor instead of 2.
 		- Fix SARH missiles that relock to a new target not updating their target vessel 
 		- Changed missile missed check, missiles now check if they have come withi 400m, are post-thrust, or are more than 1km behind target, and have exceeded a grace period of maxTurnRateDPS/15	
-- Vessel Mover:
+- Countermeasures
+	- Add vessel's velocity to chaff ejection particle effect.
+	- Use vessel acceleration instead of velocity for chaff decoy factor calculation when in space.
+- Vessel Mover / Spawning:
 	- Check for outdated loadMeta files when refreshing the craft list in the vessel selection window and update them since KSP doesn't update them when you save your craft!
 	- Fix the spawn point selection sometimes not registering.
+	- Vessels with an orbital AI that are spawned at safe orbital altitudes are spawned into circular orbits. Vessels are spawned pointing away from each other.
+	- Increase maximum spawn distance to 200km.
 - ModIntegration:
 	- Fixes for inhibiting CameraTools when initial spawning during continuous spawning and disable auto-switching to newly spawned craft joining the competition.
 

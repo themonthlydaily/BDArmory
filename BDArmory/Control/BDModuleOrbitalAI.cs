@@ -80,7 +80,7 @@ namespace BDArmory.Control
         public float firingSpeed = 20f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AIWindow_Evade"),//Evasion
-    UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
+            UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
         public bool useEvasion = true;
 
         // Debugging
@@ -125,25 +125,11 @@ namespace BDArmory.Control
             // does not update the info. :( No idea how to force an update.
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("<b>Available settings</b>:");
-            sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Vehicle type</color> - can this vessel operate on land/sea/both");
-            sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Max slope angle</color> - what is the steepest slope this vessel can negotiate");
-            sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Cruise speed</color> - the default speed at which it is safe to maneuver");
-            sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Max speed</color> - the maximum combat speed");
-            sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Max drift</color> - maximum allowed angle between facing and velocity vector");
-            sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Moving pitch</color> - the pitch level to maintain when moving at cruise speed");
-            sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Bank angle</color> - the limit on roll when turning, positive rolls into turns");
-            sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Steer Factor</color> - higher will make the AI apply more control input for the same desired rotation");
-            sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Steer Damping</color> - higher will make the AI apply more control input when it wants to stop rotation");
-            sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Attack vector</color> - does the vessel attack from the front or the sides");
-            sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Min engagement range</color> - AI will try to move away from oponents if closer than this range");
-            sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Max engagement range</color> - AI will prioritize getting closer over attacking when beyond this range");
-            sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- RCS active</color> - Use RCS during any maneuvers, or only in combat ");
-            if (GameSettings.ADVANCED_TWEAKABLES)
-            {
-                sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Min obstacle mass</color> - Obstacles of a lower mass than this will be ignored instead of avoided");
-                sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Goes up to</color> - Increases variable limits, no direct effect on behaviour");
-            }
-
+            sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Min Engagement Range</color> - AI will try to move away from oponents if closer than this range");
+            sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- RCS Active</color> - Use RCS during any maneuvers, or only in combat");
+            sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Maneuver Speed</color> - Max speed relative to target during intercept maneuvers");
+            sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Strafing Speed</color> - Max speed relative to target during gun firing");
+            sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Evasion</color> - Evade missiles, or not");
             return sb.ToString();
         }
 
@@ -204,6 +190,7 @@ namespace BDArmory.Control
                 lastUpdate = Time.time;
                 UpdateStatus();
                 yield return PilotLogic();
+                if (!vessel) yield break; // Abort if the vessel died.
             }
         }
 
@@ -262,7 +249,7 @@ namespace BDArmory.Control
 
         void UpdateStatus()
         {
-            bool hasRCSFore = VesselModuleRegistry.GetModules<ModuleRCSFX>(vessel).Any(e => e.rcsEnabled && !e.flameout && e.useThrottle);
+            bool hasRCSFore = VesselModuleRegistry.GetModules<ModuleRCS>(vessel).Any(e => e.rcsEnabled && !e.flameout && e.useThrottle);
             hasPropulsion = hasRCSFore || VesselModuleRegistry.GetModuleEngines(vessel).Any(e => (e.EngineIgnited && e.isOperational));
             hasWeapons = weaponManager.HasWeaponsAndAmmo();
 
@@ -313,6 +300,7 @@ namespace BDArmory.Control
                     fc.RCSVector = dodgeVector * 2;
 
                     yield return wait;
+                    if (!vessel) yield break; // Abort if the vessel died.
                     complete = Vector3.Dot(RelVel(vessel, incoming), incomingVector) < 0;
                 }
 
@@ -324,9 +312,9 @@ namespace BDArmory.Control
                 Orbit o = vessel.orbit;
                 double UT;
 
-                if (o.ApA < 0 && o.GetTimeToPeriapsis() < 0)
+                if (o.ApA < 0 && o.timeToPe < -60)
                 {
-                    // Vessel is on an escape orbit and has passed the periapsis, burn retrograde
+                    // Vessel is on an escape orbit and has passed the periapsis by over 60s, burn retrograde
 
                     SetStatus("Correcting Orbit (On escape trajectory)");
 
@@ -334,6 +322,7 @@ namespace BDArmory.Control
                     while (UnderTimeLimit())
                     {
                         yield return wait;
+                        if (!vessel) yield break; // Abort if the vessel died.
 
                         UT = Planetarium.GetUniversalTime();
 
@@ -363,6 +352,7 @@ namespace BDArmory.Control
                         fc.attitude = Vector3.Lerp(o.Horizontal(UT), upDir, turn);
                         fc.alignmentToleranceforBurn = Mathf.Clamp(15f * turn, 5f, 15f);
                         yield return wait;
+                        if (!vessel) yield break; // Abort if the vessel died.
                     }
                     fc.alignmentToleranceforBurn = previousTolerance;
                 }
@@ -379,6 +369,7 @@ namespace BDArmory.Control
                         UT = Planetarium.GetUniversalTime();
                         fc.attitude = o.Radial(UT);
                         yield return wait;
+                        if (!vessel) yield break; // Abort if the vessel died.
                     }
                 }
                 else
@@ -394,6 +385,7 @@ namespace BDArmory.Control
                     while (UnderTimeLimit() && deltaV.sqrMagnitude > 4)
                     {
                         yield return wait;
+                        if (!vessel) yield break; // Abort if the vessel died.
 
                         UT = Planetarium.GetUniversalTime();
                         fvel = Math.Sqrt(o.referenceBody.gravParameter / o.GetRadiusAtUT(UT)) * o.Horizontal(UT);
@@ -438,6 +430,7 @@ namespace BDArmory.Control
                     fc.attitude = deltav.normalized;
 
                     yield return wait;
+                    if (!vessel) yield break; // Abort if the vessel died.
                 }
 
                 fc.throttle = 0;
@@ -462,6 +455,7 @@ namespace BDArmory.Control
                     fc.RCSVector = -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel));
 
                     yield return wait;
+                    if (!vessel) yield break; // Abort if the vessel died.
                 }
 
                 fc.lerpAttitude = true;
@@ -508,6 +502,7 @@ namespace BDArmory.Control
                         complete = FromTo(vessel, targetVessel).sqrMagnitude > minRange * minRange || !AwayCheck(minRange);
 
                         yield return wait;
+                        if (!vessel) yield break; // Abort if the vessel died.
                     }
                 }
                 // Reduce near intercept time by accounting for target acceleration
@@ -553,6 +548,7 @@ namespace BDArmory.Control
                         complete = FromTo(vessel, targetVessel).sqrMagnitude < maxRange * maxRange || NearIntercept(relVel, minRange);
 
                         yield return wait;
+                        if (!vessel) yield break; // Abort if the vessel died.
                     }
                 }
                 else
@@ -568,6 +564,7 @@ namespace BDArmory.Control
                             fc.throttle = !complete ? 1 : 0;
 
                             yield return wait;
+                            if (!vessel) yield break; // Abort if the vessel died.
                         }
                     }
                     else if (hasPropulsion && targetVessel != null && AngularVelocity(vessel, targetVessel) > firingAngularVelocityLimit)
@@ -581,6 +578,7 @@ namespace BDArmory.Control
                             fc.throttle = !complete ? 1 : 0;
 
                             yield return wait;
+                            if (!vessel) yield break; // Abort if the vessel died.
                         }
                     }
                     else
@@ -601,6 +599,7 @@ namespace BDArmory.Control
                                     fc.attitude = toTarget.normalized;
 
                                     yield return wait;
+                                    if (!vessel) yield break; // Abort if the vessel died.
                                 }
                             }
                             else
@@ -614,7 +613,7 @@ namespace BDArmory.Control
                         {
                             SetStatus("Stranded");
                             fc.throttle = 0;
-                            fc.attitude = Vector3.zero;
+                            fc.attitude = FromTo(vessel, targetVessel).normalized;
                         }
 
                         yield return new WaitForSecondsFixed(updateInterval);
@@ -661,7 +660,7 @@ namespace BDArmory.Control
             }
             minSafeAltitude = Math.Max(maxTerrainHeight, body.atmosphereDepth);
 
-            return (o.PeA < minSafeAltitude && o.timeToPe < o.timeToAp) || o.ApA < minSafeAltitude;
+            return (o.PeA < minSafeAltitude && o.timeToPe < o.timeToAp) || (o.ApA < minSafeAltitude && (o.ApA >= 0 || o.timeToPe < -60)); // Match conditions in PilotLogic
         }
 
         private bool UnderTimeLimit(float timeLimit = 0)
@@ -817,6 +816,7 @@ namespace BDArmory.Control
             while (vessel.MOI == Vector3.zero)
             {
                 yield return new WaitForSecondsFixed(1);
+                if (!vessel) yield break; // Abort if the vessel died.
             }
 
             Vector3 availableTorque = Vector3.zero;
@@ -837,18 +837,9 @@ namespace BDArmory.Control
 
         public static float GetMaxThrust(Vessel v)
         {
-            List<ModuleEngines> engines = VesselModuleRegistry.GetModules<ModuleEngines>(v).ToList();
-            engines.RemoveAll(e => !e.EngineIgnited || !e.isOperational);
-            float thrust = engines.Sum(e => e.MaxThrustOutputVac(true));
-
-            List<ModuleRCSFX> RCS = VesselModuleRegistry.GetModules<ModuleRCSFX>(v);
-            foreach (ModuleRCS thruster in RCS)
-            {
-                if (thruster.useThrottle)
-                    thrust += thruster.thrusterPower;
-            }
-
-            return engines.Sum(e => e.MaxThrustOutputVac(true));
+            float thrust = VesselModuleRegistry.GetModuleEngines(v).Where(e => e != null && e.EngineIgnited && e.isOperational).Sum(e => e.MaxThrustOutputVac(true));
+            thrust += VesselModuleRegistry.GetModules<ModuleRCS>(v).Where(rcs => rcs != null && rcs.useThrottle).Sum(rcs => rcs.thrusterPower);
+            return thrust;
         }
         #endregion
 

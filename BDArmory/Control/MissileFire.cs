@@ -490,6 +490,7 @@ namespace BDArmory.Control
         public Vessel incomingThreatVessel;
         public float incomingMissDistance;
         public float incomingMissTime;
+        public float incomingThreatDistanceSqr;
         public Vessel priorGunThreatVessel = null;
         private ViewScanResults results;
 
@@ -2494,8 +2495,8 @@ namespace BDArmory.Control
                         if (ml && targetVessel && GetLaunchAuthorization(targetVessel, this, ml))
                         {
                             FireCurrentMissile(ml, true);
-                            unguidedWeapon = false;
                         }
+                        unguidedWeapon = false;
                     }
                 }
                 guardFiringMissile = false;
@@ -7220,9 +7221,10 @@ namespace BDArmory.Control
                     priorGunThreatVessel = results.threatVessel;
                     incomingMissTime = 0f;
                 }
+                incomingThreatDistanceSqr = (results.threatPosition - vessel.transform.position).sqrMagnitude;
                 if ((pilotAI != null && incomingMissTime >= pilotAI.evasionTimeThreshold && incomingMissDistance < pilotAI.evasionThreshold) || AI != null && pilotAI == null) // If we haven't been under fire long enough, ignore gunfire
                 {
-                    FireOCM(false); //enable visual coutnermeasures if under fire
+                    FireOCM(false); //enable visual countermeasures if under fire
                 }
                 if (results.threatWeaponManager != null)
                 {
@@ -7814,7 +7816,7 @@ namespace BDArmory.Control
                     float fTime = Mathf.Min(missile.dropTime, 2f);
                     Vector3 futurePos = target + (targetV.Velocity() * fTime);
                     Vector3 myFuturePos = vessel.ReferenceTransform.position + (vessel.Velocity() * fTime);
-                    launchAuthorized = launchAuthorized && (missile.maxOffBoresight >= 360 ? true : Vector3.Angle(missile.GetForwardTransform(), futurePos - myFuturePos) < (unguidedWeapon ? 5 : missile.maxOffBoresight * boresightFactor)); // Launch is likely also possible at fTime
+                    launchAuthorized = launchAuthorized && ((!unguidedWeapon && missile.maxOffBoresight >= 360) ? true : Vector3.Angle(missile.GetForwardTransform(), futurePos - myFuturePos) < (unguidedWeapon ? 5 : missile.maxOffBoresight * boresightFactor)); // Launch is likely also possible at fTime
                 }
             }
 
