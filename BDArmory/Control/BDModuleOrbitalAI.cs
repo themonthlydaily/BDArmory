@@ -234,7 +234,6 @@ namespace BDArmory.Control
             while (true)
             {
                 lastUpdate = Time.time;
-                UpdateStatus();
                 yield return PilotLogic();
                 if (!vessel) yield break; // Abort if the vessel died.
             }
@@ -259,9 +258,13 @@ namespace BDArmory.Control
         #region Actual AI Pilot
         protected override void AutoPilot(FlightCtrlState s)
         {
-
+            // TO-DO: re-work logic of ShipController and PilotLogic to be run from AutoPilot
             upDir = VectorUtils.GetUpDirection(vesselTransform.position);
+            UpdateStatus();
+        }
 
+        void AddDebugMessages()
+        {
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
             {
                 debugString.AppendLine($"Current Status: {currentStatus}");
