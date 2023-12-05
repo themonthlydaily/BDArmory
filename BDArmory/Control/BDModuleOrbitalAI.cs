@@ -338,7 +338,8 @@ namespace BDArmory.Control
                             threatRelativePosition = weaponManager.incomingThreatPosition - vesselTransform.position;
                     }
                 }
-                evadingGunfire = true;
+                // Evade gunfire if we are not evading a missile
+                evadingGunfire = !(weaponManager.missileIsIncoming && weaponManager.incomingMissileVessel && weaponManager.incomingMissileTime <= weaponManager.evadeThreshold);
                 evasiveTimer += Time.fixedDeltaTime;
 
                 if (evasiveTimer >= minEvasionTime)
@@ -884,13 +885,7 @@ namespace BDArmory.Control
         private void UpdateRCSVector(Vector3 inputVec = default(Vector3))
         {
             // Sets RCS vector on flight controller
-
-            // If we are evading gunfire, try to evade with RCS
-            if (!weaponManager.missileIsIncoming && evadingGunfire)
-                inputVec = Vector3.ProjectOnPlane(evasionNonLinearityDirection, threatRelativePosition);
-            //else use inputVec
-
-            fc.RCSVector = inputVec;
+            fc.RCSVector = evadingGunfire ? Vector3.ProjectOnPlane(evasionNonLinearityDirection, threatRelativePosition) : inputVec;
         }
 
         private Vector3 ToClosestApproach(Vector3 toTarget, Vector3 relVel, float minRange)
