@@ -2686,7 +2686,7 @@ namespace BDArmory.Weapons.Missiles
         {
             try
             {
-                Vector3 relV = TargetVelocity - vessel.obt_velocity;
+                Vector3 relV = TargetVelocity - vessel.Velocity();
 
                 for (int i = 0; i < 4; i++)
                 {
