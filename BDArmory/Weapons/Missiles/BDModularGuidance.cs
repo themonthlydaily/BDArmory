@@ -777,7 +777,7 @@ namespace BDArmory.Weapons.Missiles
             }
             else
             {
-                aamTarget = vessel.CoM + (20 * vessel.srfSpeed * vessel.Velocity().normalized);
+                aamTarget = vessel.CoM + (20 * vessel.Velocity());
             }
 
             return aamTarget;

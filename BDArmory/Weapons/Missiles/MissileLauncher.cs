@@ -1801,7 +1801,7 @@ namespace BDArmory.Weapons.Missiles
                             if (heatTarget.signalStrength > 0)
                             {
                                 float currentFactor = (1400 * 1400) / Mathf.Clamp((heatTarget.position - transform.position).sqrMagnitude, 90000, 36000000);
-                                Vector3 currVel = (float)vessel.srfSpeed * vessel.Velocity().normalized;
+                                Vector3 currVel = vessel.Velocity();
                                 heatTarget.position = heatTarget.position + heatTarget.velocity * Time.fixedDeltaTime;
                                 heatTarget.velocity = heatTarget.velocity + heatTarget.acceleration * Time.fixedDeltaTime;
                                 float futureFactor = (1400 * 1400) / Mathf.Clamp((heatTarget.position - (transform.position + (currVel * Time.fixedDeltaTime))).sqrMagnitude, 90000, 36000000);

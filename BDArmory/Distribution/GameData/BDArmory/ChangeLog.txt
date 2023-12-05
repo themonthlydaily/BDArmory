@@ -24,7 +24,8 @@
 		- Add new Orbital guidance option for Modular Missiles
 			- Missile will attempt to intercept orbital target at the user-set Max Speed value
 		- Fix clustermissiles launching copies of themselves instead of submunitions.
-	  - Fix for HEKV launching unguided in non-ideal situations.
+		- Improvements to AAM guidance types so that they work in orbit
+		- Fix for HEKV launching unguided in non-ideal situations.
 - Countermeasures
 	- Add vessel's velocity to chaff ejection particle effect.
 	- Use vessel acceleration instead of velocity for chaff decoy factor calculation when in space.

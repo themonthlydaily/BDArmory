@@ -403,7 +403,7 @@ namespace BDArmory.Guidances
             float targetDistance = Vector3.Distance(targetPosition, missileVessel.CoM);
 
             //Basic lead time calculation
-            Vector3 currVel = ((float)missileVessel.srfSpeed * missileVessel.Velocity().normalized);
+            Vector3 currVel = missileVessel.Velocity();
             timeToImpact = targetDistance / (targetVelocity - currVel).magnitude;
 
             // Calculate time to CPA to determine target position
@@ -417,7 +417,7 @@ namespace BDArmory.Guidances
 
         public static Vector3 GetPNTarget(Vector3 targetPosition, Vector3 targetVelocity, Vessel missileVessel, float N, out float timeToGo)
         {
-            Vector3 missileVel = (float)missileVessel.srfSpeed * missileVessel.Velocity().normalized;
+            Vector3 missileVel = missileVessel.Velocity();
             Vector3 relVelocity = targetVelocity - missileVel;
             Vector3 relRange = targetPosition - missileVessel.CoM;
             Vector3 RotVector = Vector3.Cross(relRange, relVelocity) / Vector3.Dot(relRange, relRange);
@@ -429,7 +429,7 @@ namespace BDArmory.Guidances
 
         public static Vector3 GetAPNTarget(Vector3 targetPosition, Vector3 targetVelocity, Vector3 targetAcceleration, Vessel missileVessel, float N, out float timeToGo)
         {
-            Vector3 missileVel = (float)missileVessel.srfSpeed * missileVessel.Velocity().normalized;
+            Vector3 missileVel = missileVessel.Velocity();
             Vector3 relVelocity = targetVelocity - missileVel;
             Vector3 relRange = targetPosition - missileVessel.CoM;
             Vector3 RotVector = Vector3.Cross(relRange, relVelocity) / Vector3.Dot(relRange, relRange);
@@ -444,54 +444,12 @@ namespace BDArmory.Guidances
         }
         public static float GetLOSRate(Vector3 targetPosition, Vector3 targetVelocity, Vessel missileVessel)
         {
-            Vector3 missileVel = (float)missileVessel.srfSpeed * missileVessel.Velocity().normalized;
+            Vector3 missileVel = missileVessel.Velocity();
             Vector3 relVelocity = targetVelocity - missileVel;
             Vector3 relRange = targetPosition - missileVessel.CoM;
             Vector3 RotVector = Vector3.Cross(relRange, relVelocity) / Vector3.Dot(relRange, relRange);
             Vector3 LOSRate = Mathf.Rad2Deg * RotVector;
             return LOSRate.magnitude;
-        }
-
-        /// <summary>
-        /// Calculate a very accurate time to impact, use the out timeToimpact property if the method returned true. DEPRECATED, use TimeToCPA.
-        /// </summary>
-        /// <param name="targetVelocity"></param>
-        /// <param name="missileVessel"></param>
-        /// <param name="effectiveMissileAcceleration"></param>
-        /// <param name="effectiveTargetAcceleration"></param>
-        /// <param name="targetDistance"></param>
-        /// <param name="timeToImpact"></param>
-        /// <returns> true if it was possible to reach the target, false otherwise</returns>
-        private static bool CalculateAccurateTimeToImpact(float targetDistance, Vector3 targetVelocity, Vessel missileVessel,
-            Vector3d effectiveMissileAcceleration, Vector3 effectiveTargetAcceleration, out float timeToImpact)
-        {
-            int iterations = 0;
-            Vector3d relativeAcceleration = effectiveMissileAcceleration - effectiveTargetAcceleration;
-            Vector3d relativeVelocity = (float)missileVessel.srfSpeed * missileVessel.Velocity().normalized -
-                                   targetVelocity;
-            Vector3 missileFinalPosition = missileVessel.CoM;
-            float previousDistanceSqr = 0f;
-            float currentDistanceSqr;
-            do
-            {
-                missileFinalPosition += relativeVelocity * Time.fixedDeltaTime;
-                relativeVelocity += relativeAcceleration;
-                currentDistanceSqr = (missileFinalPosition - missileVessel.CoM).sqrMagnitude;
-
-                if (currentDistanceSqr <= previousDistanceSqr)
-                {
-                    Debug.Log("[BDArmory.MissileGuidance]: Accurate time to impact failed");
-
-                    timeToImpact = 0;
-                    return false;
-                }
-
-                previousDistanceSqr = currentDistanceSqr;
-                iterations++;
-            } while (currentDistanceSqr < targetDistance * targetDistance);
-
-            timeToImpact = Time.fixedDeltaTime * iterations;
-            return true;
         }
 
         /// <summary>
