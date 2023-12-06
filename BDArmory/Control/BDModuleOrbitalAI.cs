@@ -33,7 +33,9 @@ namespace BDArmory.Control
 
         public IBDWeapon currentWeapon;
 
-        private Vector3 withdrawDeltaV;
+        private float trackedDeltaV;
+        private Vector3 attitudeCommand;
+        private PilotCommands lastUpdateCommand = PilotCommands.Free;
         private float maneuverTime;
         private float minManeuverTime;
         private bool maneuverStateChanged = false;
@@ -271,11 +273,23 @@ namespace BDArmory.Control
                             Vector3 direction = -averagePos.normalized;
                             Vector3 orbitNormal = vessel.orbit.Normal(Planetarium.GetUniversalTime());
                             bool facingNorth = Vector3.Dot(direction, orbitNormal) > 0;
-                            withdrawDeltaV = orbitNormal * (facingNorth ? 1 : -1) * 200;
+                            trackedDeltaV = 200;
+                            attitudeCommand = (orbitNormal * (facingNorth ? 1 : -1)).normalized;
                         }
                         break;
                     case StatusMode.Commanded:
-                        minManeuverTime = 30;
+                        {
+                            lastUpdateCommand = currentCommand;
+                            if (maneuverStateChanged)
+                            {
+                                if (currentCommand == PilotCommands.Follow)
+                                    attitudeCommand = commandLeader.transform.up;
+                                else
+                                    attitudeCommand = (assignedPositionWorld - vessel.transform.position).normalized;
+                            }
+                            minManeuverTime = 30f;
+                            trackedDeltaV = 200;
+                        }
                         break;
                     case StatusMode.Firing:
                         fc.lerpAttitude = false;
@@ -303,6 +317,7 @@ namespace BDArmory.Control
             fc.alignmentToleranceforBurn = 5;
             fc.throttle = 0;
             vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, ManeuverRCS);
+            maneuverStateChanged = false;
         }
 
         void Maneuver()
@@ -402,17 +417,23 @@ namespace BDArmory.Control
                     break;
                 case StatusMode.Commanded:
                     {
-                        // We have been given a command from the WingCommander to fly/follow in a general direction
-                        // Burn for commandedBurn length, coast for 2x commandedBurn length
-                        SetStatus("Commanded to " + (currentCommand == PilotCommands.FlyTo ? "(Position)" : "(Follow Leader)"));
-                        
-                        if (currentCommand == PilotCommands.FlyTo)
-                            fc.attitude = (assignedPositionGeo - vessel.transform.position).normalized;
-                        else // Following
-                            fc.attitude = commandLeader.transform.up;
-                        UpdateRCSVector();
-                        fc.throttle = Mathf.Lerp(1, 0, Mathf.Clamp01(maneuverTime / (minManeuverTime / 3f)));
-
+                        // We have been given a command from the WingCommander to fly/follow/attack in a general direction
+                        // Burn for 200 m/s then coast remainder of 30s period
+                        switch (currentCommand)
+                        {
+                            case PilotCommands.Follow:
+                                SetStatus("Commanded to Follow Leader");
+                                break;
+                            case PilotCommands.Attack:
+                                SetStatus("Commanded to Attack");
+                                break;
+                            default: // Fly To
+                                SetStatus("Commanded to Position");
+                                break;
+                        }
+                        trackedDeltaV -= Vector3.Project(vessel.acceleration, attitudeCommand).magnitude * TimeWarp.fixedDeltaTime;
+                        fc.attitude = attitudeCommand;
+                        fc.throttle = (trackedDeltaV > 10) ? 1 : 0;
                     }
                     break;
                 case StatusMode.Withdrawing:
@@ -420,10 +441,9 @@ namespace BDArmory.Control
                         SetStatus("Withdrawing");
 
                         // Withdraw sequence. Locks behaviour while burning 200 m/s of delta-v either north or south.
-                        withdrawDeltaV -= Vector3.Project(vessel.acceleration, withdrawDeltaV) * TimeWarp.fixedDeltaTime;
-                        
-                        fc.attitude = withdrawDeltaV.normalized;
-                        fc.throttle = (withdrawDeltaV.sqrMagnitude > 100) ? 1 : 0;
+                        trackedDeltaV -= Vector3.Project(vessel.acceleration, attitudeCommand).magnitude * TimeWarp.fixedDeltaTime;
+                        fc.attitude = attitudeCommand;
+                        fc.throttle = (trackedDeltaV > 10) ? 1 : 0;
                     }
                     break;
                 case StatusMode.Firing:
@@ -610,15 +630,22 @@ namespace BDArmory.Control
             hasWeapons = weaponManager.HasWeaponsAndAmmo();
 
             // Check for incoming gunfire
-            EvasionStatus(); 
+            EvasionStatus();
+
+            // Check on command status
+            UpdateCommand();
 
             // Update status mode
             if (weaponManager.missileIsIncoming && weaponManager.incomingMissileVessel && weaponManager.incomingMissileTime <= weaponManager.evadeThreshold) // Needs to start evading an incoming missile.
                 currentStatusMode = StatusMode.Evading;
             else if (CheckOrbitUnsafe() || belowSafeAlt)
                 currentStatusMode = StatusMode.CorrectingOrbit;
-            else if (hasPropulsion && (currentCommand == PilotCommands.FlyTo || currentCommand == PilotCommands.Follow))
+            else if (currentCommand == PilotCommands.FlyTo || currentCommand == PilotCommands.Follow || currentCommand == PilotCommands.Attack)
+            {
                 currentStatusMode = StatusMode.Commanded;
+                if (currentCommand != lastUpdateCommand)
+                    maneuverStateChanged = true;
+            }
             else if (allowWithdrawal && hasPropulsion && !hasWeapons && CheckWithdraw())
                 currentStatusMode = StatusMode.Withdrawing;
             else if (targetVessel != null && weaponManager.currentGun && GunReady(weaponManager.currentGun))
@@ -634,7 +661,7 @@ namespace BDArmory.Control
                 currentStatusMode = StatusMode.Idle;
 
             // Flag changed status if necessary
-            if (lastStatusMode != currentStatusMode)
+            if (lastStatusMode != currentStatusMode || maneuverStateChanged)
             {
                 maneuverStateChanged = true;
                 lastStatusMode = currentStatusMode;
@@ -646,6 +673,28 @@ namespace BDArmory.Control
             if (vessel.isActiveVessel && targetVessel && !targetVessel.IsMissile() && (vessel.targetObject == null || vessel.targetObject.GetVessel() != targetVessel))
             {
                 FlightGlobals.fetch.SetVesselTarget(targetVessel, true);
+            }
+        }
+
+        void UpdateCommand()
+        {
+            if (command == PilotCommands.Follow && commandLeader is null)
+            {
+                ReleaseCommand();
+                return;
+            }
+            else if (command == PilotCommands.Attack)
+            {
+                if (targetVessel != null)
+                {
+                    ReleaseCommand(false);
+                    return;
+                }
+                else if (weaponManager.underAttack || weaponManager.underFire)
+                {
+                    ReleaseCommand(false);
+                    return;
+                }
             }
         }
 

@@ -745,10 +745,7 @@ namespace BDArmory.Competition
             {
                 var pilotAI = VesselModuleRegistry.GetBDModulePilotAI(leaders[i].vessel, true); // Adjust initial fly-to point for terrain and default altitudes.
                 var startPosition = center + startDirection + (pilotAI != null ? (pilotAI.defaultAltitude - BodyUtils.GetRadarAltitudeAtPos(center + startDirection, false)) * VectorUtils.GetUpDirection(center + startDirection) : Vector3.zero);
-                if (VesselModuleRegistry.GetModule<BDModuleOrbitalAI>(leaders[i].vessel, true))
-                    leaders[i].CommandFlyTo(leaders[i].vessel.CoM + (leaders[i].vessel.CoM - center));
-                else
-                    leaders[i].CommandFlyTo(VectorUtils.WorldPositionToGeoCoords(startPosition, FlightGlobals.currentMainBody));
+                leaders[i].CommandFlyTo(VectorUtils.WorldPositionToGeoCoords(startPosition, FlightGlobals.currentMainBody));
                 startDirection = directionStep * startDirection;
             }
 
@@ -892,6 +889,13 @@ namespace BDArmory.Competition
                     }
                 }
             }
+            // Update attack point (necessary for orbit)
+            var allPilots = GetAllPilots().Where(pilot => pilot != null && pilot.vessel != null && gameObject != null).ToList();
+            foreach (var pilot in allPilots) center += pilot.vessel.CoM;
+            center /= allPilots.Count;
+            centerGPS = VectorUtils.WorldPositionToGeoCoords(center, FlightGlobals.currentMainBody);
+            
+            // Command attack
             foreach (var teamPilots in pilots)
                 foreach (var pilot in teamPilots.Value)
                 {
@@ -1815,11 +1819,14 @@ namespace BDArmory.Competition
                             foreach (var pilot in pilots) center += pilot.vessel.CoM;
                             center /= pilots.Count;
                             Vector3 centerGPS = VectorUtils.WorldPositionToGeoCoords(center, FlightGlobals.currentMainBody);
-                            centerGPS.z = (float)BodyUtils.GetTerrainAltitudeAtPos(center) + 1000; // Target 1km above the terrain at the center.
+                            Vector3 attackGPS;
                             foreach (var pilot in pilots)
                             {
+                                attackGPS = centerGPS;
+                                if (VesselModuleRegistry.GetBDModulePilotAI(pilot.vessel)!=null)
+                                    attackGPS.z = (float)BodyUtils.GetTerrainAltitudeAtPos(center) + 1000; // Target 1km above the terrain at the center.
                                 pilot.ReleaseCommand();
-                                pilot.CommandAttack(centerGPS);
+                                pilot.CommandAttack(attackGPS);
                             }
                             break;
                         }
