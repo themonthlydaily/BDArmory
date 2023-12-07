@@ -2478,7 +2478,14 @@ namespace BDArmory.Control
             Vector3 localAngVel = vessel.angularVelocity;
             //test
             Vector3 currTargetDir = (targetPosition - vesselTransform.position).normalized;
-            if (IsExtending || IsEvading) // If we're extending or evading, add a deviation to the fly-to direction to make us harder to hit.
+            if (evasionNonlinearity > 0 && (IsExtending || IsEvading || // If we're extending or evading, add a deviation to the fly-to direction to make us harder to hit.
+                (steerMode == SteerModes.NormalFlight && weaponManager && weaponManager.guardMode && // Also, if we know enemies are near, but they're beyond gun or visual range and we're not aiming.
+                    BDATargetManager.TargetList(weaponManager.Team).Where(target =>
+                        !target.isMissile &&
+                        weaponManager.CanSeeTarget(target, true, true)
+                    ).AllAndNotEmpty(target =>
+                        (target.Vessel.vesselTransform.position - vesselTransform.position).sqrMagnitude > weaponManager.maxVisualGunRangeSqr
+                    ))))
             {
                 var squigglySquidTime = 90f * (float)vessel.missionTime + 8f * Mathf.Sin((float)vessel.missionTime * 6.28f) + 16f * Mathf.Sin((float)vessel.missionTime * 3.14f); // Vary the rate around 90°/s to be more unpredictable.
                 var squigglySquidDirection = Quaternion.AngleAxis(evasionNonlinearityDirection * squigglySquidTime, currTargetDir) * upDirection.ProjectOnPlanePreNormalized(currTargetDir).normalized;

@@ -17,9 +17,11 @@
 	- Factor the user-defined steer limit into the turn radius calculations.
 	- Use a more gentle take-off slope for the initial take-off.
 	- Add an Evasion Min Range Threshold option to only trigger evasion from an attacker using guns when they're beyond that distance.
+  - If enemies are detected nearby but beyond gun range and we're not aiming, perform nonlinear (evasive) weaving to avoid long-range sniping.
+	- Make the gun range slider more tolerant to following increases in the max gun range.
 - Detectors:
-	- Can now set targeting camera slew rate using "traverseRate" field in ModuleTargetingCamera.
-	- Improve Targeting Camera ability to track moving targets.
+	- Can now set targeting camera slew speed using "traverseRate" field in ModuleTargetingCamera.
+	- Improve Targeting Camera ability to track moving/flying targets.
 - Weapons:
 	- Fixes for initial bullet placement and simulated hit position when Krakensbane is not active.
 	- Account for the initial bullet placement in the bullet traveled distance.
