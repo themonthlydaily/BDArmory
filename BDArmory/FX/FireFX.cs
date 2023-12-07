@@ -389,7 +389,7 @@ FlightGlobals.getExternalTemperature(), FlightGlobals.currentMainBody) < 0.05f;
             {
                 Deactivate();
             }
-            if (!FlightGlobals.currentMainBody.atmosphereContainsOxygen && (ox == null && mp == null))
+            if (vacuum || !FlightGlobals.currentMainBody.atmosphereContainsOxygen && (ox == null && mp == null))
             {
                 Deactivate(); //only fuel+oxy or monoprop fires in vac/non-oxy atmo
             }

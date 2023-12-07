@@ -55,8 +55,8 @@ namespace BDArmory.FX
             BDArmorySetup.numberOfParticleEmitters++;
             startTime = Time.time;
             pEmitters = gameObject.GetComponentsInChildren<KSPParticleEmitter>();
-            bool vacuum = FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(transform.position),
-            FlightGlobals.getExternalTemperature(), FlightGlobals.currentMainBody) < 0.05f;
+            bool vacuum = false;
+            if (parentPart.vessel.situation == Vessel.Situations.ORBITING || parentPart.vessel.situation == Vessel.Situations.SUB_ORBITAL) vacuum = true;
             using (var pe = pEmitters.AsEnumerable().GetEnumerator())
                 while (pe.MoveNext())
                 {
@@ -98,12 +98,11 @@ namespace BDArmory.FX
             {
                 return;
             }
-            bool vacuum = FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(transform.position),
-                        FlightGlobals.getExternalTemperature(), FlightGlobals.currentMainBody) < 0.05f;
+            bool vacuum = (parentPart.vessel.situation == Vessel.Situations.ORBITING || parentPart.vessel.situation == Vessel.Situations.SUB_ORBITAL);
             if (vacuum) transform.rotation = Quaternion.FromToRotation(Vector3.up, parentPart.vessel.obt_velocity.normalized);
             else transform.rotation = Quaternion.FromToRotation(Vector3.up, -FlightGlobals.getGeeForceAtPosition(transform.position));
             fuel = parentPart.Resources.Where(pr => pr.resourceName == "LiquidFuel").FirstOrDefault();
-            if (disableTime < 0) //only have fire do it's stuff while burning and not during FX timeout
+            if (disableTime < 0) //only have fire do its stuff while burning and not during FX timeout
             {
                 if (engine != null)
                 {
@@ -156,7 +155,8 @@ namespace BDArmory.FX
                         }
                     }
                 }
-
+                //if we want a vacuum BattleDamage option to produce (small amounts of) thrust from leaking tanks
+                //if (disableTime < 0 && (fuelLeft > 0 && (lifeTime >= 0 && Time.time - startTime < lifeTime))) parentPart.Rigidbody.AddForce(transform.up * (drainRate / 5), ForceMode.Acceleration); //needs a quaternion to reverse per-frame rotation to face prograde/gravity
             }
 
             if (disableTime < 0 && (fuelLeft <= 0 || (lifeTime >= 0 && Time.time - startTime > lifeTime)))
@@ -172,7 +172,6 @@ namespace BDArmory.FX
                 Deactivate();
             }
         }
-
         public void AttachAt(Part hitPart, RaycastHit hit, Vector3 offset)
         {
             if (hitPart is null) return;
@@ -181,7 +180,7 @@ namespace BDArmory.FX
             // parentVesselName = parentPart.vessel.vesselName;
             transform.SetParent(hitPart.transform);
             transform.position = hit.point + offset;
-            transform.rotation = Quaternion.FromToRotation(Vector3.up, -FlightGlobals.getGeeForceAtPosition(transform.position));
+            transform.rotation = (parentPart.vessel.situation == Vessel.Situations.ORBITING || parentPart.vessel.situation == Vessel.Situations.SUB_ORBITAL) ? Quaternion.FromToRotation(Vector3.up, parentPart.vessel.obt_velocity.normalized) : Quaternion.FromToRotation(Vector3.up, -FlightGlobals.getGeeForceAtPosition(transform.position));
             parentPart.OnJustAboutToDie += OnParentDestroy;
             parentPart.OnJustAboutToBeDestroyed += OnParentDestroy;
             if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // onVesselUnloaded event introduced in 1.11

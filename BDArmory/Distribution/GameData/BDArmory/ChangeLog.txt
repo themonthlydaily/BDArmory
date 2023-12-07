@@ -39,11 +39,11 @@
 		- GPS missiles now require a target cam or radar lock for GPS coords.
 		- INS missiles can now use either radar or IRST tracking.
 		- INS missiles now have datalink capability for mid-flight target coordinate updates (uses gpsUpdates field), update rate clamped to Radar/IRST scan speed.
-		- ECM can now jam GPS/INS datalink if missile wihin hostile ECM AoE.
+		- ECM can now jam GPS/INS datalink if missile within hostile ECM AoE.
 		- Fix error with Inertial guidance target prediction for non-updating missiles.
 		- Fix Missiles having 10 armor instead of 2.
 		- Fix SARH missiles that relock to a new target not updating their target vessel 
-		- Changed missile missed check, missiles now check if they have come withi 400m, are post-thrust, or are more than 1km behind target, and have exceeded a grace period of maxTurnRateDPS/15	
+		- Changed missile missed check, missiles now check if they have come within 400m, are post-thrust, or are more than 1km behind target, and have exceeded a grace period of maxTurnRateDPS/15	
 - Countermeasures
 	- Add vessel's velocity to chaff ejection particle effect.
 	- Use vessel acceleration instead of velocity for chaff decoy factor calculation when in space.
