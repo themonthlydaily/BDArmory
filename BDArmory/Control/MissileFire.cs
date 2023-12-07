@@ -537,6 +537,7 @@ namespace BDArmory.Control
         public float
             gunRange = 2500f;
         public float maxGunRange = 10f;
+        public float maxVisualGunRangeSqr;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_WMWindow_MultiTargetNum"),//Max Turret Targets
             UI_FloatRange(minValue = 1, maxValue = 10, stepIncrement = 1, scene = UI_Scene.All)]
@@ -1236,6 +1237,15 @@ namespace BDArmory.Control
                 totalHP = GetTotalHP();
                 currentHP = totalHP;
                 UpdateMaxGunRange(vessel);
+
+                // Update the max visual gun range (sqr) whenever the gun range or guard range changes.
+                {
+                    var field = (UI_FloatSemiLogRange)Fields["guardRange"].uiControlFlight;
+                    field.onFieldChanged = UpdateVisualGunRangeSqr;
+                    field = (UI_FloatSemiLogRange)Fields["gunRange"].uiControlFlight;
+                    field.onFieldChanged = UpdateVisualGunRangeSqr;
+                    UpdateVisualGunRangeSqr(null, null);
+                }
 
                 AI = VesselModuleRegistry.GetIBDAIControl(vessel, true);
 
@@ -7704,9 +7714,17 @@ namespace BDArmory.Control
             }
             var rangeEditor = (UI_FloatSemiLogRange)Fields["gunRange"].uiControlEditor;
             rangeEditor.UpdateLimits(rangeEditor.minValue, maxGunRange);
-            if (gunRange == rangeEditor.maxValue) { gunRange = maxGunRange; }
+            if (gunRange > rangeEditor.maxValue - 1) { gunRange = maxGunRange; }
             gunRange = Mathf.Min(gunRange, maxGunRange);
             if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.MissileFire]: Updating gun range of {EditorLogic.fetch.ship.shipName} to {gunRange} of {maxGunRange}");
+        }
+
+        /// <summary>
+        /// Update the max rangeSqr of engaging a visual target with guns.
+        /// </summary>
+        public void UpdateVisualGunRangeSqr(BaseField field, object obj)
+        {
+            maxVisualGunRangeSqr = Mathf.Min(gunRange * gunRange, guardRange * guardRange);
         }
 
         public float ThreatClosingTime(Vessel threat)
