@@ -44,12 +44,12 @@ namespace BDArmory.Control
         private bool hasWeapons;
         private float maxAcceleration;
         private Vector3 maxAngularAcceleration;
+        private Vector3 availableTorque;
         private double minSafeAltitude;
 
         // Evading
         bool evadingGunfire = false;
         float evasiveTimer;
-        float threatRating;
         Vector3 threatRelativePosition;
         Vector3 evasionNonLinearityDirection;
         string evasionString = " & Evading Gunfire";
@@ -187,6 +187,15 @@ namespace BDArmory.Control
         public override void OnStart(StartState state)
         {
             base.OnStart(state);
+            if (HighLogic.LoadedSceneIsFlight)
+                GameEvents.onVesselPartCountChanged.Add(CalculateAvailableTorque);
+            CalculateAvailableTorque(vessel);
+        }
+
+        protected override void OnDestroy()
+        {
+            GameEvents.onVesselPartCountChanged.Add(CalculateAvailableTorque);
+            base.OnDestroy();
         }
 
         public override void ActivatePilot()
@@ -214,6 +223,7 @@ namespace BDArmory.Control
                 fc = null;
             }
 
+            evadingGunfire = false;
             SetStatus("");
         }
 
@@ -245,10 +255,9 @@ namespace BDArmory.Control
             if (maneuverStateChanged || maneuverTime > minManeuverTime)
             {
                 maneuverTime = 0;
-                evasionNonLinearityDirection = UnityEngine.Random.insideUnitSphere;
+                evasionNonLinearityDirection = UnityEngine.Random.onUnitSphere;
                 fc.lerpAttitude = true;
                 minManeuverTime = combatUpdateInterval;
-                UpdateRCSVector();
                 switch (currentStatusMode)
                 {
                     case StatusMode.Evading:
@@ -310,8 +319,7 @@ namespace BDArmory.Control
         void InitialFrameUpdates()
         {
             upDir = VectorUtils.GetUpDirection(vesselTransform.position);
-            CalculateMaxAcceleration();
-            UpdateRCSVector();
+            CalculateAngularAcceleration();
             maxAcceleration = GetMaxAcceleration(vessel);
             debugPosition = Vector3.zero;
             fc.alignmentToleranceforBurn = 5;
@@ -322,6 +330,7 @@ namespace BDArmory.Control
 
         void Maneuver()
         {
+            Vector3 rcsVector = Vector3.zero;
             switch (currentStatusMode)
             {
                 case StatusMode.Evading:
@@ -335,14 +344,13 @@ namespace BDArmory.Control
                         fc.attitude = dodgeVector;
                         fc.alignmentToleranceforBurn = 45;
                         fc.throttle = 1;
-                        UpdateRCSVector(dodgeVector * 2);
+                        rcsVector = dodgeVector;
                     }
                     break;
                 case StatusMode.CorrectingOrbit:
                     {
                         Orbit o = vessel.orbit;
                         double UT = Planetarium.GetUniversalTime();
-                        UpdateRCSVector();
                         if (!belowSafeAlt && (o.ApA < 0 && o.timeToPe < -60))
                         {
                             // Vessel is on an escape orbit and has passed the periapsis by over 60s, burn retrograde
@@ -471,7 +479,7 @@ namespace BDArmory.Control
 
                         fc.attitude = firingSolution;
                         fc.throttle = 0;
-                        UpdateRCSVector(-Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel)));
+                        rcsVector = -Vector3.ProjectOnPlane(RelVel(vessel, targetVessel), FromTo(vessel, targetVessel));
                     }
                     break;
                 case StatusMode.Maneuvering:
@@ -508,7 +516,6 @@ namespace BDArmory.Control
                             fc.throttle = 1;
                             fc.alignmentToleranceforBurn = 135;
                             fc.attitude = FromTo(targetVessel, vessel).normalized;
-                            UpdateRCSVector();
                             fc.throttle = Vector3.Dot(RelVel(vessel, targetVessel), fc.attitude) < ManeuverSpeed ? 1 : 0;
                         }
                         // Reduce near intercept time by accounting for target acceleration
@@ -597,6 +604,7 @@ namespace BDArmory.Control
                     }
                     break;
             }
+            UpdateRCSVector(rcsVector);
         }
 
         void AddDebugMessages()
@@ -627,16 +635,13 @@ namespace BDArmory.Control
             // Update propulsion and weapon status
             bool hasRCSFore = VesselModuleRegistry.GetModules<ModuleRCS>(vessel).Any(e => e.rcsEnabled && !e.flameout && e.useThrottle);
             hasPropulsion = hasRCSFore || VesselModuleRegistry.GetModuleEngines(vessel).Any(e => (e.EngineIgnited && e.isOperational));
-            hasWeapons = weaponManager.HasWeaponsAndAmmo();
-
-            // Check for incoming gunfire
-            EvasionStatus();
+            hasWeapons = (weaponManager != null) && weaponManager.HasWeaponsAndAmmo();
 
             // Check on command status
             UpdateCommand();
 
             // Update status mode
-            if (weaponManager.missileIsIncoming && weaponManager.incomingMissileVessel && weaponManager.incomingMissileTime <= weaponManager.evadeThreshold) // Needs to start evading an incoming missile.
+            if (weaponManager && weaponManager.missileIsIncoming && weaponManager.incomingMissileVessel && weaponManager.incomingMissileTime <= weaponManager.evadeThreshold) // Needs to start evading an incoming missile.
                 currentStatusMode = StatusMode.Evading;
             else if (CheckOrbitUnsafe() || belowSafeAlt)
                 currentStatusMode = StatusMode.CorrectingOrbit;
@@ -648,11 +653,11 @@ namespace BDArmory.Control
             }
             else if (allowWithdrawal && hasPropulsion && !hasWeapons && CheckWithdraw())
                 currentStatusMode = StatusMode.Withdrawing;
-            else if (targetVessel != null && weaponManager.currentGun && GunReady(weaponManager.currentGun))
+            else if (weaponManager && targetVessel != null && weaponManager.currentGun && GunReady(weaponManager.currentGun))
                 currentStatusMode = StatusMode.Firing; // Guns
-            else if (targetVessel != null && weaponManager.CurrentMissile && !weaponManager.GetLaunchAuthorization(targetVessel, weaponManager, weaponManager.CurrentMissile))
+            else if (weaponManager && targetVessel != null && weaponManager.CurrentMissile && !weaponManager.GetLaunchAuthorization(targetVessel, weaponManager, weaponManager.CurrentMissile))
                 currentStatusMode = StatusMode.Firing; // Missiles
-            else if (targetVessel != null && hasWeapons)
+            else if (weaponManager && targetVessel != null && hasWeapons)
                 if (hasPropulsion)
                     currentStatusMode = StatusMode.Maneuvering;
                 else
@@ -668,6 +673,9 @@ namespace BDArmory.Control
                 if (BDArmorySettings.DEBUG_AI)
                     Debug.Log("[BDArmory.BDModuleOrbitalAI]: Status of " + vessel.vesselName + " changed from " + lastStatusMode + " to " + currentStatus);
             }
+
+            // Check for incoming gunfire
+            EvasionStatus();
 
             // Set target as UI target
             if (vessel.isActiveVessel && targetVessel && !targetVessel.IsMissile() && (vessel.targetObject == null || vessel.targetObject.GetVessel() != targetVessel))
@@ -700,9 +708,17 @@ namespace BDArmory.Control
 
         void EvasionStatus()
         {
-            // Check if we should be evading gunfire, missile evasion is handled separately
-            threatRating = evasionThreshold + 1f; // Don't evade by default
             evadingGunfire = false;
+
+            // Return if evading missile
+            if (currentStatusMode == StatusMode.Evading)
+            {
+                evasiveTimer = 0;
+                return;
+            }
+
+            // Check if we should be evading gunfire, missile evasion is handled separately
+            float threatRating = evasionThreshold + 1f; // Don't evade by default
             if (weaponManager != null && weaponManager.underFire)
             {
                 if (weaponManager.incomingMissTime >= evasionTimeThreshold && weaponManager.incomingThreatDistanceSqr >= evasionMinRangeThreshold * evasionMinRangeThreshold) // If we haven't been under fire long enough or they're too close, ignore gunfire
@@ -720,8 +736,8 @@ namespace BDArmory.Control
                             threatRelativePosition = weaponManager.incomingThreatPosition - vesselTransform.position;
                     }
                 }
-                // Evade gunfire if we are not evading a missile
-                evadingGunfire = !(weaponManager.missileIsIncoming && weaponManager.incomingMissileVessel && weaponManager.incomingMissileTime <= weaponManager.evadeThreshold);
+                evadingGunfire = true;
+                evasionNonLinearityDirection = (evasionNonLinearityDirection + 0.1f * UnityEngine.Random.onUnitSphere).normalized;
                 evasiveTimer += Time.fixedDeltaTime;
 
                 if (evasiveTimer >= minEvasionTime)
@@ -901,17 +917,23 @@ namespace BDArmory.Control
             return velocity * time + 0.5f * acceleration * time * time;
         }
 
-        private void CalculateMaxAcceleration()
+        private void CalculateAngularAcceleration()
         {
-            Vector3 availableTorque = Vector3.zero;
-            var reactionWheels = VesselModuleRegistry.GetModules<ModuleReactionWheel>(vessel);
+            maxAngularAcceleration = AngularAcceleration(availableTorque, vessel.MOI);
+        }
+
+        private void CalculateAvailableTorque(Vessel v)
+        {
+            if (!HighLogic.LoadedSceneIsFlight) return;
+            if (v != vessel) return;
+
+            availableTorque = Vector3.zero;
+            var reactionWheels = VesselModuleRegistry.GetModules<ModuleReactionWheel>(v);
             foreach (var wheel in reactionWheels)
             {
                 wheel.GetPotentialTorque(out Vector3 pos, out pos);
                 availableTorque += pos;
             }
-
-            maxAngularAcceleration = AngularAcceleration(availableTorque, vessel.MOI);
         }
 
         public static float GetMaxAcceleration(Vessel v)
