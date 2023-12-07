@@ -431,18 +431,20 @@ namespace BDArmory.Control
         public float throttleActual;
         internal float throttleLerped;
         public float throttleLerpRate = 1;
+        public float rcsLerpRate = 5;
+        public bool rcsRotate = false;
         public float alignmentToleranceforBurn = 5;
 
         AxisGroupsModule axisGroupsModule;
         bool hasAxisGroupsModule = false; // To avoid repeated null checks
 
         public Vector3 RCSVector;
+        public Vector3 RCSVectorLerped = Vector3.zero;
         public float RCSPower = 3f;
         private Vector3 RCSThrust;
         private Vector3 up, right, forward;
         private float RCSThrottle;
-        private Vector3 RCSVectorLerped = Vector3.zero;
-
+        
         //[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "ToggleAC")]
 
         void Start()
@@ -508,9 +510,12 @@ namespace BDArmory.Control
                 RCSVectorLerped = RCSVector;
 
             float rcsLerpMag = RCSVectorLerped.magnitude;
+            float rcsLerpT = rcsLerpRate * Time.fixedDeltaTime * Mathf.Clamp01(rcsLerpMag / RCSPower);
 
-            // This system works for now but it's convuluted and isn't very stable.
-            RCSVectorLerped = Vector3.Lerp(RCSVectorLerped, RCSVector, 5f * Time.fixedDeltaTime * Mathf.Clamp01(rcsLerpMag / RCSPower));
+            if (rcsRotate) // Quickly rotate RCS thrust towards commanded RCSVector
+                RCSVectorLerped = Vector3.RotateTowards(RCSVectorLerped, RCSVector, rcsLerpT, rcsLerpT);
+            else // Gradually lerp RCS thrust towards commanded RCSVector
+                RCSVectorLerped = Vector3.Lerp(RCSVectorLerped, RCSVector, rcsLerpT);
             RCSThrottle = Mathf.Lerp(0, 1.732f, Mathf.InverseLerp(0, RCSPower, rcsLerpMag));
             RCSThrust = RCSVectorLerped.normalized * RCSThrottle;
 

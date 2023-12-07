@@ -237,6 +237,7 @@ namespace BDArmory.Control
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, debugPosition, 5, Color.red); // Target intercept position
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, fc.attitude * 100, 5, Color.green); // Attitude command
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, fc.RCSVector * 100, 5, Color.cyan); // RCS command
+            GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, fc.RCSVectorLerped * 100, 5, Color.blue); // RCS lerped command
 
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + vesselTransform.up * 1000, 3, Color.white);
         }
@@ -850,8 +851,19 @@ namespace BDArmory.Control
 
         private void UpdateRCSVector(Vector3 inputVec = default(Vector3))
         {
-            // Sets RCS vector on flight controller
-            fc.RCSVector = evadingGunfire ? Vector3.ProjectOnPlane(evasionNonLinearityDirection, threatRelativePosition) : inputVec;
+            if (evadingGunfire) // Quickly move RCS vector
+            {
+                inputVec = Vector3.ProjectOnPlane(evasionNonLinearityDirection, threatRelativePosition);
+                fc.rcsLerpRate = 15f;
+                fc.rcsRotate = true;
+            }
+            else // Slowly lerp RCS vector
+            {
+                fc.rcsLerpRate = 5f;
+                fc.rcsRotate = false;
+            }
+            
+            fc.RCSVector = inputVec;
         }
 
         private Vector3 ToClosestApproach(Vector3 toTarget, Vector3 relVel, float minRange)
