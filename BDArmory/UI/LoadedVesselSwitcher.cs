@@ -1136,7 +1136,13 @@ namespace BDArmory.UI
                 if (activeVessel != null && activeVessel.loaded && !activeVessel.packed && activeVessel.IsMissile())
                 {
                     var mb = VesselModuleRegistry.GetMissileBase(activeVessel);
-                    if (mb != null && !mb.HasMissed && Vector3.Dot((mb.TargetPosition - mb.vessel.transform.position).normalized, mb.vessel.transform.up) < 0.5f) return; // Don't switch away from an active missile until it misses or is off-target.
+                    // Don't switch away from an active missile until it misses or is off-target, or if it is within 1 km of its source vessel or target position
+                    bool stayOnMissile = mb != null && 
+                        !mb.HasMissed && 
+                        Vector3.Dot((mb.TargetPosition - mb.vessel.transform.position).normalized, mb.vessel.transform.up) < 0.5f &&
+                        ((mb.vessel.transform.position - mb.SourceVessel.transform.position).sqrMagnitude < 1e6 ||
+                        (mb.vessel.transform.position - mb.TargetPosition).sqrMagnitude < 1e6); 
+                    if (stayOnMissile) return; 
                 }
                 bool foundActiveVessel = false;
                 Vector3 centroid = Vector3.zero;
@@ -1161,8 +1167,8 @@ namespace BDArmory.UI
                         if (missile == null || missile.HasMissed) continue; // Ignore missed missiles.
                         var targetDirection = missile.TargetPosition - missile.transform.position;
                         var targetDistance = targetDirection.magnitude;
-                        if (Vector3.Dot(targetDirection, missile.vessel.up) < 0.5f * targetDistance) continue; // Ignore off-target missiles.
-                        float missileScore = targetDistance < 1.1e3f ? 1e-3f : (targetDistance - 1e3f) * (targetDistance - 1e3f) * 1e-10f; // Prioritise missiles that are within 1km from their targets.
+                        if (Vector3.Dot(targetDirection, missile.GetForwardTransform()) < 0.5f * targetDistance) continue; // Ignore off-target missiles.
+                        float missileScore = targetDistance < 1.1e3f ? 0.1f : (targetDistance - 1e3f) * (targetDistance - 1e3f) * 1e-5f; // Prioritise missiles that are within 1km from their targets.
                         if (missileScore < bestScore)
                         {
                             bestScore = missileScore;

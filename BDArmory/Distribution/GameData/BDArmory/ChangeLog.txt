@@ -2,6 +2,7 @@
 - UI:
 	- Fix the alternate (hidden UI) window locations (for scores and vessel switcher) not being saved correctly.
 	- Add a max distance threshold setting to Team Icons.
+	- Fix "Camera Switch: Incl. Missiles" not switching to missiles about to hit their target.
 - AI / WM:
 	- Add new Orbital AI part for spacecraft in orbit:
 		- The Orbital AI will use orbital maneuvers to close within gun range of the target to fire weapons. It will also automatically fire missiles when able.
@@ -25,6 +26,8 @@
 	- Missiles:
 		- Add new Orbital guidance option for Modular Missiles
 			- Missile will attempt to intercept orbital target at the user-set Max Speed value
+		- homingType = orbital replaces homingType = RCS in missile configuration files (BDA is still backwards-compatible with homingType = RCS)
+		- Orbital/RCS homing types now lead the target
 		- Fix clustermissiles launching copies of themselves instead of submunitions.
 		- Improvements to AAM guidance types so that they work in orbit
 		- Fix for HEKV launching unguided in non-ideal situations.

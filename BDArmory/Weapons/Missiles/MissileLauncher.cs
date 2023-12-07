@@ -1722,11 +1722,9 @@ namespace BDArmory.Weapons.Missiles
                     {
                         BeamRideGuidance();
                     }
-                    else if (GuidanceMode == GuidanceModes.RCS)
+                    else if (GuidanceMode == GuidanceModes.Orbital)
                     {
-                        part.transform.rotation = Quaternion.RotateTowards(part.transform.rotation, Quaternion.LookRotation(TargetPosition - part.transform.position, part.transform.up), turnRateDPS * Time.fixedDeltaTime);
-                        if (TimeIndex > dropTime + 0.25f)
-                            CheckMiss();
+                        OrbitalGuidance(turnRateDPS);
                     }
                     else if (GuidanceMode == GuidanceModes.Cruise)
                     {
@@ -2559,6 +2557,28 @@ namespace BDArmory.Weapons.Missiles
             DoAero(CalculateAGMBallisticGuidance(this, TargetPosition));
         }
 
+        void OrbitalGuidance(float turnRateDPS)
+        {
+            Vector3 orbitalTarget;
+            if (TargetAcquired)
+            {
+                DrawDebugLine(transform.position + (part.rb.velocity * Time.fixedDeltaTime), TargetPosition);
+                Vector3 targetVector = TargetPosition - vessel.CoM;
+                Vector3 relVel = vessel.Velocity() - TargetVelocity;
+                Vector3 accel = currentThrust * Throttle / part.mass * Vector3.forward;
+                float timeToImpact = AIUtils.TimeToCPA(targetVector, relVel, TargetAcceleration - accel, 30f);
+                orbitalTarget = AIUtils.PredictPosition(targetVector, relVel, TargetAcceleration - 0.5f * accel, timeToImpact);
+            }
+            else
+            {
+                orbitalTarget = transform.position + (2000 * vessel.Velocity().normalized);
+            }
+
+            part.transform.rotation = Quaternion.RotateTowards(part.transform.rotation, Quaternion.LookRotation(orbitalTarget - part.transform.position, part.transform.up), turnRateDPS * Time.fixedDeltaTime);
+            if (TimeIndex > dropTime + 0.25f)
+                CheckMiss();
+        }
+
         public override void Detonate()
         {
             if (HasExploded || FuseFailed || !HasFired) return;
@@ -2849,7 +2869,11 @@ namespace BDArmory.Weapons.Missiles
                     break;
 
                 case "rcs":
-                    GuidanceMode = GuidanceModes.RCS;
+                    GuidanceMode = GuidanceModes.Orbital;
+                    break;
+
+                case "orbital":
+                    GuidanceMode = GuidanceModes.Orbital;
                     break;
 
                 case "beamriding":
@@ -2973,7 +2997,11 @@ namespace BDArmory.Weapons.Missiles
                     break;
 
                 case "rcs":
-                    homingModeTerminal = GuidanceModes.RCS;
+                    homingModeTerminal = GuidanceModes.Orbital;
+                    break;
+
+                case "orbital":
+                    homingModeTerminal = GuidanceModes.Orbital;
                     break;
 
                 case "beamriding":
