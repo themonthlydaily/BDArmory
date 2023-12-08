@@ -27,9 +27,8 @@
 		- Add new Orbital guidance option for Modular Missiles
 			- Missile will attempt to intercept orbital target at the user-set Max Speed value
 		- homingType = orbital replaces homingType = RCS in missile configuration files (BDA is still backwards-compatible with homingType = RCS)
-		- Orbital/RCS homing types now lead the target
 		- Fix clustermissiles launching copies of themselves instead of submunitions.
-		- Improvements to AAM guidance types so that they work in orbit
+		- Improvements to modular missile AAM guidance types so that they work in orbit
 		- Fix for HEKV launching unguided in non-ideal situations.
 - Countermeasures
 	- Add vessel's velocity to chaff ejection particle effect.

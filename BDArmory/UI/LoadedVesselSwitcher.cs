@@ -1160,14 +1160,14 @@ namespace BDArmory.UI
                     }
                     centroid /= (float)count;
                 }
-                if (BDArmorySettings.CAMERA_SWITCH_INCLUDE_MISSILES) // Prioritise active missiles. // FIXME Not sure this bit is actually doing much.
+                if (BDArmorySettings.CAMERA_SWITCH_INCLUDE_MISSILES) // Prioritise active missiles.
                 {
                     foreach (MissileBase missile in BDATargetManager.FiredMissiles)
                     {
                         if (missile == null || missile.HasMissed) continue; // Ignore missed missiles.
                         var targetDirection = missile.TargetPosition - missile.transform.position;
                         var targetDistance = targetDirection.magnitude;
-                        if (Vector3.Dot(targetDirection, missile.GetForwardTransform()) < 0.5f * targetDistance) continue; // Ignore off-target missiles.
+                        if (Vector3.Dot(targetDirection.normalized, missile.GetForwardTransform()) < 0.7f) continue; // Ignore off-target missiles.
                         float missileScore = targetDistance < 1.1e3f ? 0.1f : (targetDistance - 1e3f) * (targetDistance - 1e3f) * 1e-5f; // Prioritise missiles that are within 1km from their targets.
                         if (missileScore < bestScore)
                         {

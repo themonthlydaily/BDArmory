@@ -1517,7 +1517,7 @@ namespace BDArmory.Weapons.Missiles
             if (!HasMissed && checkMiss)
             {
                 bool noProgress = MissileState == MissileStates.PostThrust && (Vector3.Dot(vessel.Velocity() - TargetVelocity, TargetPosition - vessel.transform.position) < 0);
-                bool pastGracePeriod = TimeIndex > ((vessel.LandedOrSplashed ? 0f : dropTime) + 180f / maxTurnRateDPS);
+                bool pastGracePeriod = TimeIndex > ((vessel.LandedOrSplashed ? 0f : dropTime) + Mathf.Clamp(maxTurnRateDPS / 15, 1, 8)); //180f / maxTurnRateDPS);
                 bool targetBehindMissile = !(MissileState != MissileStates.PostThrust && hasRCS) && Vector3.Dot(TargetPosition - transform.position, transform.forward) < 0f; // Allow thrusting RCS missiles to be behind the target
                 if ((pastGracePeriod && targetBehindMissile) || noProgress) // Check that we're not moving away from the target after a grace period
                 {
@@ -2563,11 +2563,14 @@ namespace BDArmory.Weapons.Missiles
             if (TargetAcquired)
             {
                 DrawDebugLine(transform.position + (part.rb.velocity * Time.fixedDeltaTime), TargetPosition);
-                Vector3 targetVector = TargetPosition - vessel.CoM;
+                // orbitalTarget = TargetPosition is more accurate than the below for the HEKV, TO-DO: investigate whether the below works for 
+                // multiple different missile configurations, or if a more generalized OrbitalGuidance method is needed
+                /*(Vector3 targetVector = TargetPosition - vessel.CoM;
                 Vector3 relVel = vessel.Velocity() - TargetVelocity;
                 Vector3 accel = currentThrust * Throttle / part.mass * Vector3.forward;
                 float timeToImpact = AIUtils.TimeToCPA(targetVector, relVel, TargetAcceleration - accel, 30f);
-                orbitalTarget = AIUtils.PredictPosition(targetVector, relVel, TargetAcceleration - 0.5f * accel, timeToImpact);
+                orbitalTarget = AIUtils.PredictPosition(targetVector, relVel, TargetAcceleration - 0.5f * accel, timeToImpact); */
+                orbitalTarget = TargetPosition;
             }
             else
             {
