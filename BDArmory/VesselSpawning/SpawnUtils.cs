@@ -484,7 +484,7 @@ namespace BDArmory.VesselSpawning
                 flightCamera.transform.localRotation = Quaternion.identity;
                 flightCamera.ActivateUpdate();
             }
-            flightCamera.SetDistance(distance);
+            flightCamera.SetDistanceImmediate(distance);
             FlightCamera.CamHdg = cameraHeading;
             FlightCamera.CamPitch = cameraPitch;
         }

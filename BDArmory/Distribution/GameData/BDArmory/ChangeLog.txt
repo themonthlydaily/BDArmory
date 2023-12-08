@@ -41,6 +41,7 @@
 	- Increase maximum spawn distance to 200km.
 - ModIntegration:
 	- Fixes for inhibiting CameraTools when initial spawning during continuous spawning and disable auto-switching to newly spawned craft joining the competition.
+	- Provide helpers for CameraTools so that the camera can aim at missiles' targets (requires CameraTools v1.31.0).
 
 v1.6.8.0
 IMPROVEMENTS / FIXES

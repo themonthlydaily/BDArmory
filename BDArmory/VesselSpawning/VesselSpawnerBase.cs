@@ -45,7 +45,7 @@ namespace BDArmory.VesselSpawning
         }
         static bool _vesselSpawnSuccess = true;
         public static SpawnFailureReason spawnFailureReason = SpawnFailureReason.None;
-        public static bool inhibitCameraTools => vesselsSpawning; // Flag for CameraTools (currently just checks for vessels being spawned).
+        [Obsolete("Use ModIntegration.CameraTools.InhibitCameraTools instead.")] public static bool inhibitCameraTools => vesselsSpawning; // [Deprecated] Flag for CameraTools (currently just checks for vessels being spawned).
     }
 
     /// Base class for VesselSpawner classes so that it can work with spawn strategies.
