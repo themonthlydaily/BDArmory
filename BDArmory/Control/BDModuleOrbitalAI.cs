@@ -658,6 +658,8 @@ namespace BDArmory.Control
                 currentStatusMode = StatusMode.Firing; // Guns
             else if (weaponManager && targetVessel != null && weaponManager.CurrentMissile && !weaponManager.GetLaunchAuthorization(targetVessel, weaponManager, weaponManager.CurrentMissile))
                 currentStatusMode = StatusMode.Firing; // Missiles
+            else if (weaponManager && targetVessel != null && weaponManager.CurrentMissile && weaponManager.guardFiringMissile && currentStatusMode == StatusMode.Firing)
+                currentStatusMode = StatusMode.Firing; // Post-launch authorization missile firing underway, don't change status from Firing
             else if (weaponManager && targetVessel != null && hasWeapons)
                 if (hasPropulsion)
                     currentStatusMode = StatusMode.Maneuvering;
