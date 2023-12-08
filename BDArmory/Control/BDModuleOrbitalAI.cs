@@ -194,7 +194,7 @@ namespace BDArmory.Control
 
         protected override void OnDestroy()
         {
-            GameEvents.onVesselPartCountChanged.Add(CalculateAvailableTorque);
+            GameEvents.onVesselPartCountChanged.Remove(CalculateAvailableTorque);
             base.OnDestroy();
         }
 

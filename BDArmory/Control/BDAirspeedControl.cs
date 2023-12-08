@@ -513,7 +513,7 @@ namespace BDArmory.Control
             float rcsLerpT = rcsLerpRate * Time.fixedDeltaTime * Mathf.Clamp01(rcsLerpMag / RCSPower);
 
             if (rcsRotate) // Quickly rotate RCS thrust towards commanded RCSVector
-                RCSVectorLerped = Vector3.RotateTowards(RCSVectorLerped, RCSVector, rcsLerpT, rcsLerpT);
+                RCSVectorLerped = Vector3.Slerp(RCSVectorLerped, RCSVector, rcsLerpT);
             else // Gradually lerp RCS thrust towards commanded RCSVector
                 RCSVectorLerped = Vector3.Lerp(RCSVectorLerped, RCSVector, rcsLerpT);
             RCSThrottle = Mathf.Lerp(0, 1.732f, Mathf.InverseLerp(0, RCSPower, rcsLerpMag));

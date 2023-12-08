@@ -1167,8 +1167,8 @@ namespace BDArmory.UI
                         if (missile == null || missile.HasMissed) continue; // Ignore missed missiles.
                         var targetDirection = missile.TargetPosition - missile.transform.position;
                         var targetDistance = targetDirection.magnitude;
-                        if (Vector3.Dot(targetDirection.normalized, missile.GetForwardTransform()) < 0.7f) continue; // Ignore off-target missiles.
-                        float missileScore = targetDistance < 1.1e3f ? 0.1f : (targetDistance - 1e3f) * (targetDistance - 1e3f) * 1e-5f; // Prioritise missiles that are within 1km from their targets.
+                        if (Vector3.Dot(targetDirection, missile.GetForwardTransform()) < 0.5f * targetDistance) continue; // Ignore off-target missiles.
+                        float missileScore = targetDistance < 1e3f ? 0.1f : 0.1f + (targetDistance - 1e3f) * (targetDistance - 1e3f) * 2e-8f; // Prioritise missiles that are within 1km from their targets.
                         if (missileScore < bestScore)
                         {
                             bestScore = missileScore;
