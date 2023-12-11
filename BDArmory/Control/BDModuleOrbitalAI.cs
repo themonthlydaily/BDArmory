@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -40,6 +39,7 @@ namespace BDArmory.Control
         private float minManeuverTime;
         private bool maneuverStateChanged = false;
         private bool belowSafeAlt = false;
+        private bool wasDescendingUnsafe = false;
         private bool hasPropulsion;
         private bool hasWeapons;
         private float maxAcceleration;
@@ -142,7 +142,7 @@ namespace BDArmory.Control
         {
             if (evadingGunfire)
                 status += evasionString;
-            
+
             base.SetStatus(status);
             if (status.StartsWith("Idle")) currentStatusMode = StatusMode.Idle;
             else if (status.StartsWith("Correcting Orbit")) currentStatusMode = StatusMode.CorrectingOrbit;
@@ -251,7 +251,7 @@ namespace BDArmory.Control
             InitialFrameUpdates();
 
             UpdateStatus(); // Combat decisions, evasion, maneuverStateChanged = true and set new statusMode, etc.
-            
+
             maneuverTime += Time.fixedDeltaTime;
             if (maneuverStateChanged || maneuverTime > minManeuverTime)
             {
@@ -341,7 +341,7 @@ namespace BDArmory.Control
 
                         Vector3 incomingVector = FromTo(vessel, weaponManager.incomingMissileVessel);
                         Vector3 dodgeVector = Vector3.ProjectOnPlane(vessel.ReferenceTransform.up, incomingVector.normalized);
-                        
+
                         fc.attitude = dodgeVector;
                         fc.alignmentToleranceforBurn = 45;
                         fc.throttle = 1;
@@ -374,6 +374,7 @@ namespace BDArmory.Control
                         else
                         {
                             belowSafeAlt = true;
+                            var descending = o.timeToPe > 0 && o.timeToPe < o.timeToAp;
                             if (o.ApA < minSafeAltitude * 1.1)
                             {
                                 // Entirety of orbit is inside atmosphere, perform gravity turn burn until apoapsis is outside atmosphere by a 10% margin.
@@ -383,44 +384,60 @@ namespace BDArmory.Control
                                 double gravTurnAlt = 0.1;
                                 float turn;
 
-                                if (o.altitude < gravTurnAlt * minSafeAltitude) // At low alts, burn straight up
+                                if (o.altitude < gravTurnAlt * minSafeAltitude || descending || wasDescendingUnsafe) // At low alts or when descending, burn straight up
+                                {
                                     turn = 1f;
+                                    fc.alignmentToleranceforBurn = 45f; // Use a wide tolerance as aero forces could make it difficult to align otherwise. // FIXME Josue Thoughts on this?
+                                    wasDescendingUnsafe = descending || o.timeToAp < 10; // Hysteresis for upwards vs gravity turn burns.
+                                }
                                 else // At higher alts, gravity turn towards horizontal orbit vector
                                 {
                                     turn = Mathf.Clamp((float)((1.1 * minSafeAltitude - o.ApA) / (minSafeAltitude * (1.1 - gravTurnAlt))), 0.1f, 1f);
                                     turn = Mathf.Clamp(Mathf.Log10(turn) + 1f, 0.33f, 1f);
+                                    fc.alignmentToleranceforBurn = Mathf.Clamp(15f * turn, 5f, 15f);
+                                    wasDescendingUnsafe = false;
                                 }
 
                                 fc.attitude = Vector3.Lerp(o.Horizontal(UT), upDir, turn);
-                                fc.alignmentToleranceforBurn = Mathf.Clamp(15f * turn, 5f, 15f);
                                 fc.throttle = 1;
                             }
-                            else if (o.ApA < minSafeAltitude * 1.1)
+                            // else if (o.ApA < minSafeAltitude * 1.1) // FIXME Josue This is a duplicate of the above. It should be the o.altitude < minSafeAltitude ("Falling inside atmo") section. I've added that in below, but you should check that I've done it right. I've also adjusted the above 
+                            // {
+                            //     // Entirety of orbit is inside atmosphere, perform gravity turn burn until apoapsis is outside atmosphere by a 10% margin.
+
+                            //     SetStatus("Correcting Orbit (Apoapsis too low)");
+
+                            //     double gravTurnAlt = 0.1;
+                            //     float turn;
+
+                            //     if (o.altitude < gravTurnAlt * minSafeAltitude) // At low alts, burn straight up
+                            //         turn = 1f;
+                            //     else // At higher alts, gravity turn towards horizontal orbit vector
+                            //     {
+                            //         turn = Mathf.Clamp((float)((1.1 * minSafeAltitude - o.ApA) / (minSafeAltitude * (1.1 - gravTurnAlt))), 0.1f, 1f);
+                            //         turn = Mathf.Clamp(Mathf.Log10(turn) + 1f, 0.33f, 1f);
+                            //     }
+
+                            //     fc.attitude = Vector3.Lerp(o.Horizontal(UT), upDir, turn);
+                            //     fc.alignmentToleranceforBurn = Mathf.Clamp(15f * turn, 5f, 15f);
+                            //     fc.throttle = 1;
+                            // }
+                            else if (o.altitude < minSafeAltitude * 1.1 && descending)
                             {
-                                // Entirety of orbit is inside atmosphere, perform gravity turn burn until apoapsis is outside atmosphere by a 10% margin.
+                                // Our apoapsis is outside the atmosphere but we are inside the atmosphere and descending.
+                                // Burn up until we are ascending and our apoapsis is outside the atmosphere by a 10% margin.
 
-                                SetStatus("Correcting Orbit (Apoapsis too low)");
+                                SetStatus("Correcting Orbit (Falling inside atmo)");
 
-                                double gravTurnAlt = 0.1;
-                                float turn;
-
-                                if (o.altitude < gravTurnAlt * minSafeAltitude) // At low alts, burn straight up
-                                    turn = 1f;
-                                else // At higher alts, gravity turn towards horizontal orbit vector
-                                {
-                                    turn = Mathf.Clamp((float)((1.1 * minSafeAltitude - o.ApA) / (minSafeAltitude * (1.1 - gravTurnAlt))), 0.1f, 1f);
-                                    turn = Mathf.Clamp(Mathf.Log10(turn) + 1f, 0.33f, 1f);
-                                }
-
-                                fc.attitude = Vector3.Lerp(o.Horizontal(UT), upDir, turn);
-                                fc.alignmentToleranceforBurn = Mathf.Clamp(15f * turn, 5f, 15f);
+                                fc.attitude = o.Radial(UT);
+                                fc.alignmentToleranceforBurn = 45f; // Use a wide tolerance as aero forces could make it difficult to align otherwise. // FIXME Josue Thoughts on this?
                                 fc.throttle = 1;
                             }
                             else
                             {
                                 SetStatus("Correcting Orbit (Drifting)");
                                 belowSafeAlt = false;
-                            }   
+                            }
                         }
                     }
                     break;
@@ -460,15 +477,15 @@ namespace BDArmory.Control
                         // Aim at appropriate point to launch missiles that aren't able to launch now
                         SetStatus("Firing Missiles");
                         vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
-                        
+
                         fc.lerpAttitude = false;
                         Vector3 firingSolution = FromTo(vessel, targetVessel).normalized;
 
                         if (weaponManager.currentGun && GunReady(weaponManager.currentGun))
                         {
                             SetStatus("Firing Guns");
-                            firingSolution = (Vector3)weaponManager.currentGun.FiringSolutionVector;
-                        } 
+                            firingSolution = weaponManager.currentGun.FiringSolutionVector ?? Vector3.zero;
+                        }
                         else if (weaponManager.CurrentMissile && !weaponManager.GetLaunchAuthorization(targetVessel, weaponManager, weaponManager.CurrentMissile))
                         {
                             SetStatus("Firing Missiles");
@@ -527,7 +544,7 @@ namespace BDArmory.Control
                             && !(nearInt = NearIntercept(relVel, minRange))
                             && CanInterceptShip(targetVessel))
                         {
-                            SetStatus("Maneuvering (Intercept Target)");
+                            SetStatus("Maneuvering (Intercept Target)"); // FIXME Josue If possible, it would be nice to see the approximate min separation and time to min separation in the status here and in the Kill Velocity status.
                             Vector3 toTarget = FromTo(vessel, targetVessel);
                             relVel = targetVessel.GetObtVelocity() - vessel.GetObtVelocity();
 
@@ -590,7 +607,7 @@ namespace BDArmory.Control
                         SetStatus("Stranded");
 
                         fc.attitude = FromTo(vessel, targetVessel).normalized;
-                        fc.throttle = 0;  
+                        fc.throttle = 0;
                     }
                     break;
                 default: // Idle
@@ -640,6 +657,11 @@ namespace BDArmory.Control
 
             // Check on command status
             UpdateCommand();
+
+            // FIXME Josue There seems to be a fair bit of oscillation between circularising, intercept velocity and kill velocity in my tests, with the craft repeatedly rotating 180° to perform burns in opposite directions.
+            // In particular, this happens a lot when the craft's periapsis is at the min safe altitude, which occurs frequently if the spawn distance is large enough to give significant inclinations.
+            // I think there needs to be some manoeuvre logic to better handle this condition, such as modifying burns that would bring the periapsis below the min safe altitude, which might help with inclination shifts.
+            // Also, maybe some logic to ignore targets that will fall below the min safe altitude before they can be reached could be useful.
 
             // Update status mode
             if (weaponManager && weaponManager.missileIsIncoming && weaponManager.incomingMissileVessel && weaponManager.incomingMissileTime <= weaponManager.evadeThreshold) // Needs to start evading an incoming missile.
@@ -740,7 +762,24 @@ namespace BDArmory.Control
                     }
                 }
                 evadingGunfire = true;
-                evasionNonLinearityDirection = (evasionNonLinearityDirection + 0.1f * UnityEngine.Random.onUnitSphere).normalized;
+                evasionNonLinearityDirection = (evasionNonLinearityDirection + 0.1f * UnityEngine.Random.onUnitSphere).normalized; // FIXME Josue This 0.1f factor should probably be configurable.
+                /* Example python code to show evolution of direction for 2s of evasion. Remove after considering the 0.1f factor.
+                import numpy, matplotlib.pyplot as plt
+                d = numpy.random.randn(3)
+                d/=numpy.linalg.norm(d)
+                D=[d]
+                for i in range(100): # 2s
+                    v = numpy.random.randn(3)
+                    v/=numpy.linalg.norm(v)
+                    d = d + 0.1 * v
+                    d/=numpy.linalg.norm(d)
+                    D.append(d)
+                D = numpy.stack(D)
+                fig = plt.figure()
+                ax = fig.add_subplot(111,projection='3d')
+                ax.scatter(D[:,0],D[:,1],D[:,2], c='b',marker='.')
+                plt.show()
+                */
                 evasiveTimer += Time.fixedDeltaTime;
 
                 if (evasiveTimer >= minEvasionTime)
@@ -769,7 +808,7 @@ namespace BDArmory.Control
                 PQS pqs = body.pqsController;
                 maxTerrainHeight = pqs.radiusMax - pqs.radius;
             }
-            minSafeAltitude = Math.Max(maxTerrainHeight, body.atmosphereDepth);
+            minSafeAltitude = Math.Max(maxTerrainHeight, body.atmosphereDepth); // FIXME Josue Why not use body.minOrbitalDistance?
 
             return (o.PeA < minSafeAltitude && o.timeToPe < o.timeToAp) || (o.ApA < minSafeAltitude && (o.ApA >= 0 || o.timeToPe < -60)); // Match conditions in PilotLogic
         }
@@ -864,7 +903,7 @@ namespace BDArmory.Control
                 fc.rcsLerpRate = 5f;
                 fc.rcsRotate = false;
             }
-            
+
             fc.RCSVector = inputVec;
         }
 

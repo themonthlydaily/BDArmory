@@ -1137,12 +1137,12 @@ namespace BDArmory.UI
                 {
                     var mb = VesselModuleRegistry.GetMissileBase(activeVessel);
                     // Don't switch away from an active missile until it misses or is off-target, or if it is within 1 km of its source vessel or target position
-                    bool stayOnMissile = mb != null && 
-                        !mb.HasMissed && 
+                    bool stayOnMissile = mb != null &&
+                        !mb.HasMissed &&
                         Vector3.Dot((mb.TargetPosition - mb.vessel.transform.position).normalized, mb.vessel.transform.up) < 0.5f &&
-                        ((mb.vessel.transform.position - mb.SourceVessel.transform.position).sqrMagnitude < 1e6 ||
-                        (mb.vessel.transform.position - mb.TargetPosition).sqrMagnitude < 1e6); 
-                    if (stayOnMissile) return; 
+                        ((mb.SourceVessel && (mb.vessel.transform.position - mb.SourceVessel.transform.position).sqrMagnitude < 1e6) || // FIXME Josue Why the source vessel, wouldn't the target vessel make more sense?
+                        (mb.vessel.transform.position - mb.TargetPosition).sqrMagnitude < 1e6);
+                    if (stayOnMissile) return;
                 }
                 bool foundActiveVessel = false;
                 Vector3 centroid = Vector3.zero;
