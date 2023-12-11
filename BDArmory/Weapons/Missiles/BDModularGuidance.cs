@@ -1335,6 +1335,7 @@ namespace BDArmory.Weapons.Missiles
             if (GuidanceMode == GuidanceModes.Orbital)
                 UpdateOrbitalStage();
 
+            vessel.OnFlyByWire -= GuidanceSteer; // Remove possibly pre-existing callback.
             vessel.OnFlyByWire += GuidanceSteer;
 
             //todo: find a way to fly by wire vessel decoupled
