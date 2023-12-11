@@ -1092,6 +1092,7 @@ namespace BDArmory.Weapons.Missiles
 
         public void GuidanceSteer(FlightCtrlState s)
         {
+            if (!vessel || !vessel.loaded || vessel.packed) return;
             FloatingOriginCorrection();
             debugString.Length = 0;
             if (guidanceActive && MissileReferenceTransform != null && _velocityTransform != null)
