@@ -9,7 +9,6 @@ using BDArmory.Competition;
 using BDArmory.Damage;
 using BDArmory.Extensions;
 using BDArmory.FX;
-using BDArmory.Modules;
 using BDArmory.Settings;
 using BDArmory.Shaders;
 using BDArmory.Targeting;
@@ -165,6 +164,7 @@ namespace BDArmory.Bullets
         private double distanceLastHit = double.PositiveInfinity;
         private double initialHitDistance = 0;
         private float kDist = 1;
+        private float timeToCPA = 0;
 
         public double DistanceTraveled { get { return distanceTraveled; } set { distanceTraveled = value; } }
 
@@ -474,7 +474,7 @@ namespace BDArmory.Bullets
             {
                 //detonate
                 if (HEType != PooledBulletTypes.Slug)
-                    ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, HEType == PooledBulletTypes.Explosive ? default : currentVelocity, -1, false, bulletMass, -1, dmgMult, HEType == PooledBulletTypes.Shaped ? "shapedcharge" : "standard", null, HEType == PooledBulletTypes.Shaped ? apBulletMod : 1f, ProjectileUtils.isReportingWeapon(sourceWeapon) ? (float)DistanceTraveled : -1);
+                    ExplosionFx.CreateExplosion(currPosition + currentVelocity * timeToCPA, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, HEType == PooledBulletTypes.Explosive ? default : currentVelocity, -1, false, bulletMass, -1, dmgMult, HEType == PooledBulletTypes.Shaped ? "shapedcharge" : "standard", null, HEType == PooledBulletTypes.Shaped ? apBulletMod : 1f, ProjectileUtils.isReportingWeapon(sourceWeapon) ? (float)DistanceTraveled : -1);
                 if (nuclear)
                     NukeFX.CreateExplosion(currPosition, ExplosionSourceType.Bullet, sourceVesselName, bullet.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
                 if (beehive)
@@ -1445,11 +1445,14 @@ namespace BDArmory.Bullets
             }
             if (BDArmorySettings.DEBUG_WEAPONS)
                 Debug.Log("[BDArmory.PooledBullet]: Beehive Detonation: parsing submunition fuze: " + fuze + ", index: " + sFuze);
+            float incrementVelocity = 1000 / (currentSpeed + subMunitionType.bulletVelocity); //using 1km/s as a reference Unit
+            float dispersionAngle = subMunitionType.subProjectileDispersion > 0 ? subMunitionType.subProjectileDispersion : BDAMath.Sqrt(subMunitionType.subProjectileCount) / 2; //fewer fragments/pellets are going to be larger-> move slower, less dispersion
+            float dispersionVelocityforAngle = 1000 / incrementVelocity * Mathf.Sin(dispersionAngle / Mathf.Rad2Deg); // May need to add a DegToRad conversion, check; convert m/s despersion to angle, accounting for vel of round
             for (int s = 0; s < subMunitionType.subProjectileCount; s++)
             {
                 GameObject Bullet = ModuleWeapon.bulletPool.GetPooledObject();
                 PooledBullet pBullet = Bullet.GetComponent<PooledBullet>();
-                pBullet.transform.position = currPosition;
+                pBullet.transform.position = currPosition + currentVelocity * timeToCPA;
 
                 pBullet.caliber = subMunitionType.caliber;
                 pBullet.bulletVelocity = GetDragAdjustedVelocity().magnitude + subMunitionType.bulletVelocity;
@@ -1460,8 +1463,9 @@ namespace BDArmory.Bullets
                 pBullet.ballisticCoefficient = subMunitionType.bulletMass / (((Mathf.PI * 0.25f * subMunitionType.caliber * subMunitionType.caliber) / 1000000f) * 0.295f);
                 pBullet.timeElapsedSinceCurrentSpeedWasAdjusted = 0;
                 pBullet.timeToLiveUntil = 2000 / bulletVelocity * 1.1f + Time.time;
-                Vector3 firedVelocity = VectorUtils.GaussianDirectionDeviation(currentVelocity.normalized, subMunitionType.subProjectileDispersion > 0 ? subMunitionType.subProjectileDispersion : (subMunitionType.subProjectileCount / BDAMath.Sqrt(GetDragAdjustedVelocity().magnitude / 100))) * (GetDragAdjustedVelocity().magnitude + subMunitionType.bulletVelocity); //more subprojectiles = wider spread, higher base velocity = tighter spread
-                pBullet.currentVelocity = BDKrakensbane.FrameVelocityV3f + firedVelocity; //if submunitions have additional vel, would need modifications to ModuleWeapon's CPA calcs to offset targetPos by -targetVel * (submunitionVelocity / proximityDetonationdist)
+                //Vector3 firedVelocity = VectorUtils.GaussianDirectionDeviation(currentVelocity.normalized, subMunitionType.subProjectileDispersion > 0 ? subMunitionType.subProjectileDispersion : (subMunitionType.subProjectileCount / BDAMath.Sqrt(GetDragAdjustedVelocity().magnitude / 100))) * (GetDragAdjustedVelocity().magnitude + subMunitionType.bulletVelocity); //more subprojectiles = wider spread, higher base velocity = tighter spread
+                Vector3 firedVelocity = currentVelocity + UnityEngine.Random.onUnitSphere * dispersionVelocityforAngle;
+                pBullet.currentVelocity = firedVelocity; //if submunitions have additional vel, would need modifications to ModuleWeapon's CPA calcs to offset targetPos by -targetVel * (submunitionVelocity / proximityDetonationdist)
                 pBullet.sourceWeapon = sourceWeapon;
                 pBullet.sourceVessel = sourceVessel;
                 pBullet.team = team;
@@ -1540,7 +1544,7 @@ namespace BDArmory.Bullets
         private bool ProximityAirDetonation(float distanceFromStart)
         {
             bool detonate = false;
-
+            timeToCPA = 0;
             if (isAPSprojectile && (tgtShell != null || tgtRocket != null))
             {
                 if (transform.position.CloserToThan(tgtShell != null ? tgtShell.transform.position : tgtRocket.transform.position, detonationRange / 2))
@@ -1555,7 +1559,6 @@ namespace BDArmory.Bullets
 
             if (!(((HEType != PooledBulletTypes.Slug || nuclear) && tntMass > 0) || beehive)) return false;
 
-
             if (fuzeType == BulletFuzeTypes.Timed || fuzeType == BulletFuzeTypes.Flak)
             {
                 if (distanceFromStart > (beehive ? maxAirDetonationRange - detonationRange : maxAirDetonationRange) || distanceFromStart > (beehive ? defaultDetonationRange - detonationRange : defaultDetonationRange))
@@ -1564,7 +1567,7 @@ namespace BDArmory.Bullets
                 }
             }
             if (fuzeType == BulletFuzeTypes.Proximity || fuzeType == BulletFuzeTypes.Flak)
-            {
+            {/*
                 var layerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19 | LayerMasks.Wheels);
                 var overlapSphereColliderCount = Physics.OverlapSphereNonAlloc(transform.position, detonationRange, proximityOverlapSphereColliders, layerMask);
                 if (overlapSphereColliderCount == proximityOverlapSphereColliders.Length)
@@ -1594,6 +1597,31 @@ namespace BDArmory.Bullets
                         {
                             // ignored
                             Debug.LogWarning("[BDArmory.PooledBullet]: Exception thrown in ProximityAirDetonation: " + e.Message + "\n" + e.StackTrace);
+                        }
+                    }
+                }
+                if (BDArmorySettings.VESSEL_RELATIVE_BULLET_CHECKS) //additional check if fast-moving vessel advances part bullet position/predicted pos during next FlightIntegrator tick. Possibly repalce OverlapSphere entirely with this method?
+                */ 
+                {
+                    using (var loadedVessels = BDATargetManager.LoadedVessels.GetEnumerator())
+                    {
+                        while (loadedVessels.MoveNext())
+                        {
+                            if (loadedVessels.Current == null || !loadedVessels.Current.loaded) continue;
+                            if (loadedVessels.Current == sourceVessel) continue;
+                            float detRangeTime = TimeWarp.fixedDeltaTime * (detonationRange / (currentSpeed * TimeWarp.fixedDeltaTime)); //if detonation range > distance bullet moves in 1 frame, increase lok time to time it takes for bullet to move proxiRange
+                            timeToCPA = AIUtils.TimeToCPA(loadedVessels.Current, currPosition, currentVelocity, Vector3.zero, detRangeTime);
+                            if (timeToCPA > detRangeTime) timeToCPA = 0;
+                            if (timeToCPA > 0)
+                            {
+                                Vector3 adjustedTgtPos = loadedVessels.Current.CoM + (currPosition - loadedVessels.Current.CoM).normalized * (loadedVessels.Current.GetRadius() + detonationRange);
+                                Vector3 CPA = AIUtils.PredictPosition(currPosition, currentVelocity, bulletDrop ? FlightGlobals.getGeeForceAtPosition(transform.position) : Vector3.zero, timeToCPA);
+                                if ((CPA - adjustedTgtPos).sqrMagnitude < detonationRange * detonationRange) //for head-on intercepts, t2CPA will likely be near 0; adjust to back when CPA just reaches detonationRange to give an appropriate currPos + currVel * time2CPA offset for visuals
+                                {
+                                    timeToCPA -= ((detonationRange - (CPA - adjustedTgtPos).magnitude) / (currentSpeed * TimeWarp.fixedDeltaTime)) * TimeWarp.fixedDeltaTime;
+                                    return detonate = true;
+                                }
+                            }
                         }
                     }
                 }
