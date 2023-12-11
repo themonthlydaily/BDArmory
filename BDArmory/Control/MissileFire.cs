@@ -7655,6 +7655,12 @@ namespace BDArmory.Control
             if (guardMode && missileCount > 0) //missile interception stuff, mostly working as intended, needs final debugging pass.
             {
                 if (PDMslTgts.Count == 0) return;
+                if (guardFiringMissile)
+                {
+                    //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] Oops, trying to launch something while guardMissileRoutine already active! Cannot launch interceptor");
+                    return;
+                }
+                //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] PDMslTgt size: {PDMslTgts.Count}");
                 using (List<IBDWeapon>.Enumerator weapon = weaponTypesMissile.GetEnumerator()) //have guardMode requirement?
                     while (weapon.MoveNext())
                     {
@@ -7691,7 +7697,7 @@ namespace BDArmory.Control
                                 {
                                     missilesAway.TryGetValue(PDMslTgts[MissileID], out int missiles);
                                     interceptorsAway = missiles;
-                                    //Debug.Log($"[PD Missile Debug] Missiles aready fired against this target {interceptorsAway}");
+                                    //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] Missiles aready fired against this target {PDMslTgts[MissileID].Vessel.GetName()}: {interceptorsAway}");
                                 }
                                 if (interceptorsAway < maxMissilesOnTarget)
                                 {
@@ -7700,6 +7706,7 @@ namespace BDArmory.Control
                                         if (!guardFiringMissile)
                                         {
                                             missileTarget = PDMslTgts[MissileID].Vessel;
+                                            //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] triggering launch of interceptor against {missileTarget.GetName()}");
                                             StartCoroutine(GuardMissileRoutine(PDMslTgts[MissileID].Vessel, currMissile));
                                             //how to prevent all interceptor missiles firing off at once? (or just let them all launch simultaneously...?)
                                             //A) have pointDefenseTurretFiring only assign a single missile per function call, end result is launch rate determined by fireInterval. (what happens if this is oddly large?)
@@ -7715,6 +7722,15 @@ namespace BDArmory.Control
                                         while (item.MoveNext())
                                         {
                                             if (item.Current.Vessel == null) continue;
+                                            if (item.Current == PDMslTgts[MissileID]) continue;
+                                            interceptorsAway = 0;
+                                            if (missilesAway.ContainsKey(item.Current))
+                                            {
+                                                missilesAway.TryGetValue(item.Current, out int missiles);
+                                                interceptorsAway = missiles;
+                                                //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] Missiles aready fired against this secondary target {item.Current.Vessel.GetName()}: {interceptorsAway}");
+                                            }
+                                            if (item.Current.Vessel.Splashed && !missile.torpedo) viableTarget = false;
                                             if (interceptorsAway < maxMissilesOnTarget)
                                             {
                                                 if (viableTarget && turreted ? TargetInTurretRange(missile.missileTurret.turret, 7, item.Current.Vessel.CoM) : GetLaunchAuthorization(item.Current.Vessel, this, currMissile))
@@ -7722,10 +7738,11 @@ namespace BDArmory.Control
                                                     if (!guardFiringMissile)
                                                     {
                                                         missileTarget = item.Current.Vessel;
+                                                        //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] triggering launch of interceptor against secondary target {missileTarget.GetName()}");
                                                         StartCoroutine(GuardMissileRoutine(item.Current.Vessel, currMissile));
+                                                        break;
                                                     }
                                                 }
-                                                break;
                                             }
                                         }
                                 }
@@ -7827,7 +7844,7 @@ namespace BDArmory.Control
 
                 // Check that target is within maxOffBoresight now and in future time fTime
                 //launchAuthorized = Vector3.Angle((mlauncher != null && mlauncher.missileTurret) ? mlauncher.missileTurret.finalTransform.forward :
-                launchAuthorized = missile.maxOffBoresight >= 360 ? true : Vector3.Angle(missile.GetForwardTransform(), target - missile.transform.position) < (unguidedWeapon ? 1 : missile.maxOffBoresight * boresightFactor); // Launch is possible now
+                launchAuthorized = missile.maxOffBoresight >= 360 ? true : Vector3.Angle(missile.GetForwardTransform(), target - missile.transform.position) < (unguidedWeapon ? 5 : missile.maxOffBoresight * boresightFactor); // Launch is possible now
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} final boresight check {(launchAuthorized ? "passed" : "failed")}.");
                 if (launchAuthorized)
                 {
@@ -8043,8 +8060,11 @@ namespace BDArmory.Control
             {
                 if (weapon == null) continue; // First entry is the "no weapon" option.
                 hasWeapons = true;
-                if (weapon.GetWeaponClass() == WeaponClasses.Gun || weapon.GetWeaponClass() == WeaponClasses.Rocket)
+                if (weapon.GetWeaponClass() == WeaponClasses.Gun || weapon.GetWeaponClass() == WeaponClasses.Rocket || weapon.GetWeaponClass() == WeaponClasses.DefenseLaser)
                 {
+                    var gun = weapon.GetWeaponModule();
+                    if (gun.isAPS && !gun.dualModeAPS) continue; //ignore non-dual purpose APS weapons, they can't attack
+                    if (gun.ammoName == "ElectricCharge") { hasWeaponsAndAmmo = true; break; }
                     if (BDArmorySettings.INFINITE_AMMO || CheckAmmo((ModuleWeapon)weapon)) { hasWeaponsAndAmmo = true; break; } // If the gun has ammo or we're using infinite ammo, return true after cleaning up.
                 }
                 else if (weapon.GetWeaponClass() == WeaponClasses.Missile || weapon.GetWeaponClass() == WeaponClasses.Bomb || weapon.GetWeaponClass() == WeaponClasses.SLW)
@@ -8066,7 +8086,9 @@ namespace BDArmory.Control
                 if (weapon == null) continue; // First entry is the "no weapon" option.
                 if (weapon.GetWeaponClass() == WeaponClasses.Gun || weapon.GetWeaponClass() == WeaponClasses.Rocket || weapon.GetWeaponClass() == WeaponClasses.DefenseLaser)
                 {
-                    if (weapon.GetShortName().EndsWith("Laser")) { countWeaponsAndAmmo++; continue; } // If it's a laser (counts as a gun) consider it as having ammo and count it, since electric charge can replenish.
+                    var gun = weapon.GetWeaponModule();
+                    if (gun.isAPS && !gun.dualModeAPS) continue; //ignore non-dual purpose APS weapons, they can't attack
+                    if (gun.ammoName == "ElectricCharge") { countWeaponsAndAmmo++; continue; } // If it's a laser (counts as a gun) consider it as having ammo and count it, since electric charge can replenish.
                     if (BDArmorySettings.INFINITE_AMMO || CheckAmmo((ModuleWeapon)weapon)) { countWeaponsAndAmmo++; } // If the gun has ammo or we're using infinite ammo, count it.
                 }
                 else if (weapon.GetWeaponClass() == WeaponClasses.Missile || weapon.GetWeaponClass() == WeaponClasses.SLW || weapon.GetWeaponClass() == WeaponClasses.Bomb)

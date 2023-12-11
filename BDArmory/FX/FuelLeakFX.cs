@@ -4,6 +4,7 @@ using UnityEngine;
 using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
+using BDArmory.Extensions;
 
 namespace BDArmory.FX
 {
@@ -55,8 +56,7 @@ namespace BDArmory.FX
             BDArmorySetup.numberOfParticleEmitters++;
             startTime = Time.time;
             pEmitters = gameObject.GetComponentsInChildren<KSPParticleEmitter>();
-            bool vacuum = false;
-            if (parentPart.vessel.situation == Vessel.Situations.ORBITING || parentPart.vessel.situation == Vessel.Situations.SUB_ORBITAL) vacuum = true;
+            Vector3 Gravity = FlightGlobals.getGeeForceAtPosition(transform.position);
             using (var pe = pEmitters.AsEnumerable().GetEnumerator())
                 while (pe.MoveNext())
                 {
@@ -64,7 +64,8 @@ namespace BDArmory.FX
 
                     pe.Current.emit = true;
                     _highestEnergy = pe.Current.maxEnergy;
-                    if (vacuum)
+                    pe.Current.force = Gravity;
+                    if (parentPart.vessel.InVacuum())
                     {
                         pe.Current.localVelocity = new Vector3(0, (float)parentPart.vessel.obt_speed, 0);
                         pe.Current.force = Vector3.zero;
@@ -97,9 +98,8 @@ namespace BDArmory.FX
             if (!gameObject.activeInHierarchy || !HighLogic.LoadedSceneIsFlight || BDArmorySetup.GameIsPaused)
             {
                 return;
-            }
-            bool vacuum = (parentPart.vessel.situation == Vessel.Situations.ORBITING || parentPart.vessel.situation == Vessel.Situations.SUB_ORBITAL);
-            if (vacuum) transform.rotation = Quaternion.FromToRotation(Vector3.up, parentPart.vessel.obt_velocity.normalized);
+            }           
+            if (parentPart.vessel.InVacuum()) transform.rotation = Quaternion.FromToRotation(Vector3.up, parentPart.vessel.obt_velocity.normalized);
             else transform.rotation = Quaternion.FromToRotation(Vector3.up, -FlightGlobals.getGeeForceAtPosition(transform.position));
             fuel = parentPart.Resources.Where(pr => pr.resourceName == "LiquidFuel").FirstOrDefault();
             if (disableTime < 0) //only have fire do its stuff while burning and not during FX timeout
