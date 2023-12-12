@@ -1731,8 +1731,8 @@ namespace BDArmory.Weapons.Missiles
                         case GuidanceModes.BeamRiding:
                             BeamRideGuidance();
                             break;
-                        case GuidanceModes.RCS:
-                            part.transform.rotation = Quaternion.RotateTowards(part.transform.rotation, Quaternion.LookRotation(TargetPosition - part.transform.position, part.transform.up), turnRateDPS * Time.fixedDeltaTime);
+                        case GuidanceModes.Orbital:
+                            OrbitalGuidance(turnRateDPS);
                             break;
                         case GuidanceModes.Cruise:
                             CruiseGuidance();
@@ -1809,7 +1809,7 @@ namespace BDArmory.Weapons.Missiles
                             if (heatTarget.signalStrength > 0)
                             {
                                 float currentFactor = (1400 * 1400) / Mathf.Clamp((heatTarget.position - transform.position).sqrMagnitude, 90000, 36000000);
-                                Vector3 currVel = (float)vessel.srfSpeed * vessel.Velocity().normalized;
+                                Vector3 currVel = vessel.Velocity();
                                 heatTarget.position = heatTarget.position + heatTarget.velocity * Time.fixedDeltaTime;
                                 heatTarget.velocity = heatTarget.velocity + heatTarget.acceleration * Time.fixedDeltaTime;
                                 float futureFactor = (1400 * 1400) / Mathf.Clamp((heatTarget.position - (transform.position + (currVel * Time.fixedDeltaTime))).sqrMagnitude, 90000, 36000000);
@@ -2567,6 +2567,31 @@ namespace BDArmory.Weapons.Missiles
             DoAero(CalculateAGMBallisticGuidance(this, TargetPosition));
         }
 
+        void OrbitalGuidance(float turnRateDPS)
+        {
+            Vector3 orbitalTarget;
+            if (TargetAcquired)
+            {
+                DrawDebugLine(transform.position + (part.rb.velocity * Time.fixedDeltaTime), TargetPosition);
+                // orbitalTarget = TargetPosition is more accurate than the below for the HEKV, TO-DO: investigate whether the below works for 
+                // multiple different missile configurations, or if a more generalized OrbitalGuidance method is needed
+                /*(Vector3 targetVector = TargetPosition - vessel.CoM;
+                Vector3 relVel = vessel.Velocity() - TargetVelocity;
+                Vector3 accel = currentThrust * Throttle / part.mass * Vector3.forward;
+                float timeToImpact = AIUtils.TimeToCPA(targetVector, relVel, TargetAcceleration - accel, 30f);
+                orbitalTarget = AIUtils.PredictPosition(targetVector, relVel, TargetAcceleration - 0.5f * accel, timeToImpact); */
+                orbitalTarget = TargetPosition;
+            }
+            else
+            {
+                orbitalTarget = transform.position + (2000 * vessel.Velocity().normalized);
+            }
+
+            part.transform.rotation = Quaternion.RotateTowards(part.transform.rotation, Quaternion.LookRotation(orbitalTarget - part.transform.position, part.transform.up), turnRateDPS * Time.fixedDeltaTime);
+            if (TimeIndex > dropTime + 0.25f)
+                CheckMiss();
+        }
+
         public override void Detonate()
         {
             if (HasExploded || FuseFailed || !HasFired) return;
@@ -2694,7 +2719,7 @@ namespace BDArmory.Weapons.Missiles
         {
             try
             {
-                Vector3 relV = TargetVelocity - vessel.obt_velocity;
+                Vector3 relV = TargetVelocity - vessel.Velocity();
 
                 for (int i = 0; i < 4; i++)
                 {
@@ -2857,7 +2882,11 @@ namespace BDArmory.Weapons.Missiles
                     break;
 
                 case "rcs":
-                    GuidanceMode = GuidanceModes.RCS;
+                    GuidanceMode = GuidanceModes.Orbital;
+                    break;
+
+                case "orbital":
+                    GuidanceMode = GuidanceModes.Orbital;
                     break;
 
                 case "beamriding":
@@ -2981,7 +3010,11 @@ namespace BDArmory.Weapons.Missiles
                     break;
 
                 case "rcs":
-                    homingModeTerminal = GuidanceModes.RCS;
+                    homingModeTerminal = GuidanceModes.Orbital;
+                    break;
+
+                case "orbital":
+                    homingModeTerminal = GuidanceModes.Orbital;
                     break;
 
                 case "beamriding":

@@ -1818,7 +1818,9 @@ namespace BDArmory.Radar
             Vector3 upVector = referenceTransform.up;
             Vector3 lookDirection = -forwardVector;
             var pilotAI = VesselModuleRegistry.GetBDModulePilotAI(myWpnManager.vessel, true);
-            var ignoreMyTargetTargetingMe = pilotAI != null && pilotAI.evasionIgnoreMyTargetTargetingMe;
+            var orbitalAI = VesselModuleRegistry.GetModule<BDModuleOrbitalAI>(myWpnManager.vessel, true);
+            var ignoreMyTargetTargetingMe = (pilotAI != null && pilotAI.evasionIgnoreMyTargetTargetingMe) ||
+                (orbitalAI != null && orbitalAI.evasionIgnoreMyTargetTargetingMe);
             float maxRWRDistance = RWR != null ? RWR.rwrDisplayRange : maxViewDistance;
             using (var loadedvessels = BDATargetManager.LoadedVessels.GetEnumerator())
                 while (loadedvessels.MoveNext())
@@ -1899,7 +1901,7 @@ namespace BDArmory.Radar
                                 else
                                 {
                                     Debug.LogWarning("[BDArmory.RadarUtils]: Supposed missile (" + loadedvessels.Current.vesselName + ") has no MissileBase!");
-                                    tInfo.isMissile = false; // The target vessel has lost it's missile base component and should no longer count as a missile.
+                                    tInfo.isMissile = false; // The target vessel has lost it's missile base component and should no longer count as a missile. This can happen for modular missiles that are getting destroyed.
                                 }
                             }
                             else
