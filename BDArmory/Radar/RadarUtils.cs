@@ -1901,7 +1901,7 @@ namespace BDArmory.Radar
                                 else
                                 {
                                     Debug.LogWarning("[BDArmory.RadarUtils]: Supposed missile (" + loadedvessels.Current.vesselName + ") has no MissileBase!");
-                                    tInfo.isMissile = false; // The target vessel has lost it's missile base component and should no longer count as a missile.
+                                    tInfo.isMissile = false; // The target vessel has lost it's missile base component and should no longer count as a missile. This can happen for modular missiles that are getting destroyed.
                                 }
                             }
                             else
