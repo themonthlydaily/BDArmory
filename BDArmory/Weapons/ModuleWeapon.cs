@@ -2555,7 +2555,7 @@ namespace BDArmory.Weapons
                                             {
                                                 //if (Impulse > 0)
                                                 //{
-                                                p.rb.AddForceAtPosition((p.transform.position - tf.position).normalized * (float)Impulse, p.transform.position, ForceMode.Impulse);
+                                                p.rb.AddForceAtPosition((p.transform.position - tf.position).normalized * (float)Impulse, laserPoint, ForceMode.Impulse);
                                                 //}
                                                 //else
                                                 //{

@@ -1445,9 +1445,9 @@ namespace BDArmory.Bullets
             }
             if (BDArmorySettings.DEBUG_WEAPONS)
                 Debug.Log("[BDArmory.PooledBullet]: Beehive Detonation: parsing submunition fuze: " + fuze + ", index: " + sFuze);
-            float incrementVelocity = 1000 / (currentSpeed + subMunitionType.bulletVelocity); //using 1km/s as a reference Unit
+            float incrementVelocity = 1000 / (bulletVelocity + subMunitionType.bulletVelocity); //using 1km/s as a reference Unit
             float dispersionAngle = subMunitionType.subProjectileDispersion > 0 ? subMunitionType.subProjectileDispersion : BDAMath.Sqrt(subMunitionType.subProjectileCount) / 2; //fewer fragments/pellets are going to be larger-> move slower, less dispersion
-            float dispersionVelocityforAngle = 1000 / incrementVelocity * Mathf.Sin(dispersionAngle / Mathf.Rad2Deg); // May need to add a DegToRad conversion, check; convert m/s despersion to angle, accounting for vel of round
+            float dispersionVelocityforAngle = 1000 / incrementVelocity * Mathf.Sin(dispersionAngle / Mathf.Rad2Deg); // convert m/s despersion to angle, accounting for vel of round
             for (int s = 0; s < subMunitionType.subProjectileCount; s++)
             {
                 GameObject Bullet = ModuleWeapon.bulletPool.GetPooledObject();
@@ -1603,6 +1603,7 @@ namespace BDArmory.Bullets
                 if (BDArmorySettings.VESSEL_RELATIVE_BULLET_CHECKS) //additional check if fast-moving vessel advances part bullet position/predicted pos during next FlightIntegrator tick. Possibly repalce OverlapSphere entirely with this method?
                 */ 
                 {
+                    Vector3 prevPos = currPosition - currentVelocity * TimeWarp.fixedDeltaTime; 
                     using (var loadedVessels = BDATargetManager.LoadedVessels.GetEnumerator())
                     {
                         while (loadedVessels.MoveNext())
@@ -1610,12 +1611,12 @@ namespace BDArmory.Bullets
                             if (loadedVessels.Current == null || !loadedVessels.Current.loaded) continue;
                             if (loadedVessels.Current == sourceVessel) continue;
                             float detRangeTime = TimeWarp.fixedDeltaTime * (detonationRange / (currentSpeed * TimeWarp.fixedDeltaTime)); //if detonation range > distance bullet moves in 1 frame, increase lok time to time it takes for bullet to move proxiRange
-                            timeToCPA = AIUtils.TimeToCPA(loadedVessels.Current, currPosition, currentVelocity, Vector3.zero, detRangeTime);
+                            timeToCPA = AIUtils.TimeToCPA(loadedVessels.Current, prevPos, currentVelocity, Vector3.zero, detRangeTime);
                             if (timeToCPA > detRangeTime) timeToCPA = 0;
                             if (timeToCPA > 0)
                             {
-                                Vector3 adjustedTgtPos = loadedVessels.Current.CoM + (currPosition - loadedVessels.Current.CoM).normalized * (loadedVessels.Current.GetRadius() + detonationRange);
-                                Vector3 CPA = AIUtils.PredictPosition(currPosition, currentVelocity, bulletDrop ? FlightGlobals.getGeeForceAtPosition(transform.position) : Vector3.zero, timeToCPA);
+                                Vector3 adjustedTgtPos = loadedVessels.Current.CoM + (prevPos - loadedVessels.Current.CoM).normalized * (loadedVessels.Current.GetRadius() + detonationRange);
+                                Vector3 CPA = AIUtils.PredictPosition(prevPos, currentVelocity, bulletDrop ? FlightGlobals.getGeeForceAtPosition(transform.position) : Vector3.zero, timeToCPA);
                                 if ((CPA - adjustedTgtPos).sqrMagnitude < detonationRange * detonationRange) //for head-on intercepts, t2CPA will likely be near 0; adjust to back when CPA just reaches detonationRange to give an appropriate currPos + currVel * time2CPA offset for visuals
                                 {
                                     timeToCPA -= ((detonationRange - (CPA - adjustedTgtPos).magnitude) / (currentSpeed * TimeWarp.fixedDeltaTime)) * TimeWarp.fixedDeltaTime;
@@ -1624,6 +1625,7 @@ namespace BDArmory.Bullets
                             }
                         }
                     }
+                    //something like 1 in 10 rounds detonating on the wrong frame and resulting on offset subprojectile spawning? Only in orbit, doesn't happen against sttic targets
                 }
             }
             return detonate;
