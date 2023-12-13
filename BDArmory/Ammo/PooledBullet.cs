@@ -1447,7 +1447,7 @@ namespace BDArmory.Bullets
                 Debug.Log("[BDArmory.PooledBullet]: Beehive Detonation: parsing submunition fuze: " + fuze + ", index: " + sFuze);
             float incrementVelocity = 1000 / (bulletVelocity + subMunitionType.bulletVelocity); //using 1km/s as a reference Unit
             float dispersionAngle = subMunitionType.subProjectileDispersion > 0 ? subMunitionType.subProjectileDispersion : BDAMath.Sqrt(subMunitionType.subProjectileCount) / 2; //fewer fragments/pellets are going to be larger-> move slower, less dispersion
-            float dispersionVelocityforAngle = 1000 / incrementVelocity * Mathf.Sin(dispersionAngle / Mathf.Rad2Deg); // convert m/s despersion to angle, accounting for vel of round
+            float dispersionVelocityforAngle = 1000 / incrementVelocity * Mathf.Sin(dispersionAngle * Mathf.Deg2Rad); // convert m/s despersion to angle, accounting for vel of round
             for (int s = 0; s < subMunitionType.subProjectileCount; s++)
             {
                 GameObject Bullet = ModuleWeapon.bulletPool.GetPooledObject();
@@ -1455,7 +1455,6 @@ namespace BDArmory.Bullets
                 //currentVel includes orbital vel if in orbit, which will cause lateral spawn offsets if duelling above, say, jool, because the shots are moving sideways at 6km/s but only moving 'forward' at 1km/s or W/E
                 pBullet.transform.position = currPosition + (linePositions[0] - linePositions[1]).normalized * (bulletVelocity * (timeToCPA - TimeWarp.fixedDeltaTime));
                 pBullet.transform.position += (TimeWarp.fixedDeltaTime / 2) * (currentVelocity + BDKrakensbane.FrameVelocityV3f); // Account for velocity off-loading after visuals are done.
-                //pBullet.transform.position += TimeWarp.fixedDeltaTime * (currentVelocity - (linePositions[0] - linePositions[1]));
                 pBullet.caliber = subMunitionType.caliber;
                 pBullet.bulletVelocity = GetDragAdjustedVelocity().magnitude + subMunitionType.bulletVelocity;
                 pBullet.bulletMass = subMunitionType.bulletMass;
@@ -1628,7 +1627,6 @@ namespace BDArmory.Bullets
                             if (detonate) return true;
                         }
                     }
-                    //something like 1 in 10 rounds detonating on the wrong frame and resulting on offset subprojectile spawning? Only in orbit, doesn't happen against sttic targets
                 }
             }
             return detonate;
