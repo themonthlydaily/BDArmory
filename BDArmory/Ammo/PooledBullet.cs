@@ -474,7 +474,7 @@ namespace BDArmory.Bullets
             {
                 //detonate
                 if (HEType != PooledBulletTypes.Slug)
-                    ExplosionFx.CreateExplosion(currPosition + currentVelocity * timeToCPA, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, HEType == PooledBulletTypes.Explosive ? default : currentVelocity, -1, false, bulletMass, -1, dmgMult, HEType == PooledBulletTypes.Shaped ? "shapedcharge" : "standard", null, HEType == PooledBulletTypes.Shaped ? apBulletMod : 1f, ProjectileUtils.isReportingWeapon(sourceWeapon) ? (float)DistanceTraveled : -1);
+                    ExplosionFx.CreateExplosion(currPosition + ((linePositions[0] - linePositions[1]).normalized * bulletVelocity) * timeToCPA, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, HEType == PooledBulletTypes.Explosive ? default : currentVelocity, -1, false, bulletMass, -1, dmgMult, HEType == PooledBulletTypes.Shaped ? "shapedcharge" : "standard", null, HEType == PooledBulletTypes.Shaped ? apBulletMod : 1f, ProjectileUtils.isReportingWeapon(sourceWeapon) ? (float)DistanceTraveled : -1);
                 if (nuclear)
                     NukeFX.CreateExplosion(currPosition, ExplosionSourceType.Bullet, sourceVesselName, bullet.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
                 if (beehive)
@@ -1452,8 +1452,10 @@ namespace BDArmory.Bullets
             {
                 GameObject Bullet = ModuleWeapon.bulletPool.GetPooledObject();
                 PooledBullet pBullet = Bullet.GetComponent<PooledBullet>();
-                pBullet.transform.position = currPosition + currentVelocity * timeToCPA;
-
+                //currentVel includes orbital vel if in orbit, which will cause lateral spawn offsets if duelling above, say, jool, because the shots are moving sideways at 6km/s but only moving 'forward' at 1km/s or W/E
+                pBullet.transform.position = currPosition + (linePositions[0] - linePositions[1]).normalized * (bulletVelocity * (timeToCPA - TimeWarp.fixedDeltaTime));
+                pBullet.transform.position += (TimeWarp.fixedDeltaTime / 2) * (currentVelocity + BDKrakensbane.FrameVelocityV3f); // Account for velocity off-loading after visuals are done.
+                //pBullet.transform.position += TimeWarp.fixedDeltaTime * (currentVelocity - (linePositions[0] - linePositions[1]));
                 pBullet.caliber = subMunitionType.caliber;
                 pBullet.bulletVelocity = GetDragAdjustedVelocity().magnitude + subMunitionType.bulletVelocity;
                 pBullet.bulletMass = subMunitionType.bulletMass;
@@ -1610,19 +1612,20 @@ namespace BDArmory.Bullets
                         {
                             if (loadedVessels.Current == null || !loadedVessels.Current.loaded) continue;
                             if (loadedVessels.Current == sourceVessel) continue;
-                            float detRangeTime = TimeWarp.fixedDeltaTime * (detonationRange / (currentSpeed * TimeWarp.fixedDeltaTime)); //if detonation range > distance bullet moves in 1 frame, increase lok time to time it takes for bullet to move proxiRange
+                            float detRangeTime = detonationRange / (float)(currentVelocity - loadedVessels.Current.Velocity()).magnitude; //if detonationRange > distance bullet moves in 1 frame, increase look time to time it takes for bullet to move the detonationRange
                             timeToCPA = AIUtils.TimeToCPA(loadedVessels.Current, prevPos, currentVelocity, Vector3.zero, detRangeTime);
-                            if (timeToCPA > detRangeTime) timeToCPA = 0;
+                            //if (timeToCPA > detRangeTime) timeToCPA = 0;
                             if (timeToCPA > 0)
                             {
-                                Vector3 adjustedTgtPos = loadedVessels.Current.CoM + (prevPos - loadedVessels.Current.CoM).normalized * (loadedVessels.Current.GetRadius() + detonationRange);
-                                Vector3 CPA = AIUtils.PredictPosition(prevPos, currentVelocity, bulletDrop ? FlightGlobals.getGeeForceAtPosition(transform.position) : Vector3.zero, timeToCPA);
+                                Vector3 adjustedTgtPos = AIUtils.PredictPosition(loadedVessels.Current, timeToCPA) + (prevPos - loadedVessels.Current.CoM).normalized * (loadedVessels.Current.GetRadius() + detonationRange);
+                                Vector3 CPA = AIUtils.PredictPosition(prevPos, currentVelocity, Vector3.zero, timeToCPA);
                                 if ((CPA - adjustedTgtPos).sqrMagnitude < detonationRange * detonationRange) //for head-on intercepts, t2CPA will likely be near 0; adjust to back when CPA just reaches detonationRange to give an appropriate currPos + currVel * time2CPA offset for visuals
                                 {
                                     timeToCPA -= ((detonationRange - (CPA - adjustedTgtPos).magnitude) / (currentSpeed * TimeWarp.fixedDeltaTime)) * TimeWarp.fixedDeltaTime;
-                                    return detonate = true;
+                                    detonate = true;
                                 }
                             }
+                            if (detonate) return true;
                         }
                     }
                     //something like 1 in 10 rounds detonating on the wrong frame and resulting on offset subprojectile spawning? Only in orbit, doesn't happen against sttic targets
