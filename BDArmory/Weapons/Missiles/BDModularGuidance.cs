@@ -113,7 +113,7 @@ namespace BDArmory.Weapons.Missiles
         private Vector3 rcsVector = Vector3.zero;
         private Vector3 rcsVectorLerped = Vector3.zero;
         private bool missileTarget = false;
-        private List<ModuleRCSFX> rcsThrusters;
+        private List<ModuleRCS> rcsThrusters;
         private List<ModuleEngines> engines;
 
         private bool _minSpeedAchieved = false;
@@ -777,7 +777,7 @@ namespace BDArmory.Weapons.Missiles
             }
             else
             {
-                aamTarget = vessel.CoM + (20 * vessel.srfSpeed * vessel.Velocity().normalized);
+                aamTarget = vessel.CoM + (20 * vessel.Velocity());
             }
 
             return aamTarget;
@@ -889,13 +889,17 @@ namespace BDArmory.Weapons.Missiles
         {
             // Update list of engines/thrusters
             engines = VesselModuleRegistry.GetModuleEngines(vessel);
-            rcsThrusters = VesselModuleRegistry.GetModules<ModuleRCSFX>(vessel);
+            rcsThrusters = VesselModuleRegistry.GetModules<ModuleRCS>(vessel);
 
             // Get a probe core and align its reference transform with the propulsion vector.
             ModuleCommand commander = VesselModuleRegistry.GetModuleCommand(vessel);
-            commander.MakeReference();
-            Vector3 propulsionVector = -GetFireVector(engines, rcsThrusters, -vessel.ReferenceTransform.up);
-            AlignReference(commander, propulsionVector.normalized);
+            if (commander != null)
+            {
+                commander.MakeReference();
+                Vector3 propulsionVector = -GetFireVector(engines, rcsThrusters, -vessel.ReferenceTransform.up);
+                if (propulsionVector != null)
+                    AlignReference(commander, propulsionVector.normalized);
+            }
         }
 
         // Create and set a new control point for a command module (commander) pointing along a world space vector (direction).
@@ -929,7 +933,7 @@ namespace BDArmory.Weapons.Missiles
             dynamic.transform.rotation = Quaternion.LookRotation(perpendicular, direction.normalized); // VAB orientation.
         }
 
-        private static Vector3 GetFireVector(List<ModuleEngines> engines, List<ModuleRCSFX> RCS = null, Vector3 thrustVector = default(Vector3))
+        private static Vector3 GetFireVector(List<ModuleEngines> engines, List<ModuleRCS> RCS = null, Vector3 thrustVector = default(Vector3))
         {
             // Place linears first to establish a direction, not currently needed
             if (engines?.Any() == true)
@@ -943,7 +947,7 @@ namespace BDArmory.Weapons.Missiles
                 if (RCS?.Any() == true)
                 {
                     // If there are engines we can add RCS on top
-                    foreach (ModuleRCSFX thruster in RCS)
+                    foreach (ModuleRCS thruster in RCS)
                     {
                         thrustVector += GetRCSVector(thruster, thrustVector);
                     }
@@ -964,7 +968,7 @@ namespace BDArmory.Weapons.Missiles
             return thrustVector;
         }
 
-        private static Vector3 GetRCSVector(ModuleRCSFX thruster, Vector3 thrustVector)
+        private static Vector3 GetRCSVector(ModuleRCS thruster, Vector3 thrustVector)
         {
             //method to get the thrust vector of a specified rcs thruster
             Vector3 meanVector = Vector3.zero;
@@ -1088,6 +1092,7 @@ namespace BDArmory.Weapons.Missiles
 
         public void GuidanceSteer(FlightCtrlState s)
         {
+            if (!vessel || !vessel.loaded || vessel.packed) return;
             FloatingOriginCorrection();
             debugString.Length = 0;
             if (guidanceActive && MissileReferenceTransform != null && _velocityTransform != null)
@@ -1331,6 +1336,7 @@ namespace BDArmory.Weapons.Missiles
             if (GuidanceMode == GuidanceModes.Orbital)
                 UpdateOrbitalStage();
 
+            vessel.OnFlyByWire -= GuidanceSteer; // Remove possibly pre-existing callback.
             vessel.OnFlyByWire += GuidanceSteer;
 
             //todo: find a way to fly by wire vessel decoupled

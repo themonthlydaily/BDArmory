@@ -1818,7 +1818,9 @@ namespace BDArmory.Radar
             Vector3 upVector = referenceTransform.up;
             Vector3 lookDirection = -forwardVector;
             var pilotAI = VesselModuleRegistry.GetBDModulePilotAI(myWpnManager.vessel, true);
-            var ignoreMyTargetTargetingMe = pilotAI != null && pilotAI.evasionIgnoreMyTargetTargetingMe;
+            var orbitalAI = VesselModuleRegistry.GetModule<BDModuleOrbitalAI>(myWpnManager.vessel, true);
+            var ignoreMyTargetTargetingMe = (pilotAI != null && pilotAI.evasionIgnoreMyTargetTargetingMe) ||
+                (orbitalAI != null && orbitalAI.evasionIgnoreMyTargetTargetingMe);
             float maxRWRDistance = RWR != null ? RWR.rwrDisplayRange : maxViewDistance;
             using (var loadedvessels = BDATargetManager.LoadedVessels.GetEnumerator())
                 while (loadedvessels.MoveNext())

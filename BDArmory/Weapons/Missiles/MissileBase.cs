@@ -300,7 +300,7 @@ namespace BDArmory.Weapons.Missiles
 
         public DetonationDistanceStates DetonationDistanceState { get; set; } = DetonationDistanceStates.NotSafe;
 
-        public enum GuidanceModes { None, AAMLead, AAMPure, AGM, AGMBallistic, Cruise, STS, Bomb, RCS, BeamRiding, SLW, PN, APN, AAMLoft, Orbital }
+        public enum GuidanceModes { None, AAMLead, AAMPure, AGM, AGMBallistic, Cruise, STS, Bomb, Orbital, BeamRiding, SLW, PN, APN, AAMLoft }
 
         public GuidanceModes GuidanceMode;
 
@@ -734,7 +734,7 @@ namespace BDArmory.Weapons.Missiles
                 if (predictedHeatTarget.exists)
                 {
                     float currentFactor = (1400 * 1400) / Mathf.Clamp((predictedHeatTarget.position - transform.position).sqrMagnitude, 90000, 36000000);
-                    Vector3 currVel = (float)vessel.srfSpeed * vessel.Velocity().normalized;
+                    Vector3 currVel = vessel.Velocity();
                     predictedHeatTarget.position = predictedHeatTarget.position + predictedHeatTarget.velocity * Time.fixedDeltaTime;
                     predictedHeatTarget.velocity = predictedHeatTarget.velocity + predictedHeatTarget.acceleration * Time.fixedDeltaTime;
                     float futureFactor = (1400 * 1400) / Mathf.Clamp((predictedHeatTarget.position - (transform.position + (currVel * Time.fixedDeltaTime))).sqrMagnitude, 90000, 36000000);

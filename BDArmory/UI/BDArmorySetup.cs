@@ -2515,10 +2515,11 @@ namespace BDArmory.UI
                         //     PROF_n = Mathf.RoundToInt(Mathf.Pow(10, PROF_n_pow));
                         // }
 
-                        if (BDArmorySettings.DEBUG_OTHER && GUI.Button(SLineRect(++line), "Dump VesselModuleRegistry") && FlightGlobals.ActiveVessel != null) { VesselModuleRegistry.Instance.DumpRegistriesFor(FlightGlobals.ActiveVessel); }
+                        // if (BDArmorySettings.DEBUG_OTHER && GUI.Button(SLineRect(++line), "Dump VesselModuleRegistry") && FlightGlobals.ActiveVessel != null) { VesselModuleRegistry.Instance.DumpRegistriesFor(FlightGlobals.ActiveVessel); }
                         // GUI.Label(SLeftSliderRect(++line), $"Initial correction: {(TestNumericalMethodsIC == 0 ? "None" : TestNumericalMethodsIC == 1 ? "All" : TestNumericalMethodsIC == 2 ? "Local" : "Gravity")}");
                         // TestNumericalMethodsIC = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), TestNumericalMethodsIC, 0, 3));
                         // if (GUI.Button(SLineRect(++line), $"Test Forward Euler vs Semi-Implicit Euler vs Leap-frog ({PROF_N * Time.fixedDeltaTime}s, {PROF_N / Math.Min(PROF_N / 2, PROF_n)} steps)")) StartCoroutine(TestNumericalMethods(PROF_N * Time.fixedDeltaTime, PROF_N / Math.Min(PROF_N / 2, PROF_n)));
+                        // if (GUI.Button(SLineRect(++line), "Test inside vs on unit sphere")) TestInOnUnitSphere();
                         // if (GUI.Button(SLineRect(++line), "Test Sqr vs x*x")) TestMaxRelSpeed();
                         // if (GUI.Button(SLineRect(++line), "Test Sqr vs x*x")) TestSqrVsSqr();
                         // if (GUI.Button(SLineRect(++line), "Test Order of Operations")) TestOrderOfOperations();
@@ -4463,6 +4464,18 @@ namespace BDArmory.UI
             }
             x = vessel.transform.position;
             Debug.Log($"DEBUG {Time.time}: After {duration}s ({steps}*{dt}={steps * dt}), Actual x = {x}, Forward Euler predicts x = {x0} (Δ = {(x - x0).magnitude}), Semi-implicit Euler predicts x = {x1} (Δ = {(x - x1).magnitude}), Leap-frog predicts x = {x2} (Δ = {(x - x2).magnitude})");
+        }
+
+        public static void TestInOnUnitSphere()
+        {
+            var watch = new System.Diagnostics.Stopwatch();
+            float µsResolution = 1e6f / System.Diagnostics.Stopwatch.Frequency;
+            Debug.Log($"DEBUG Clock resolution: {µsResolution}µs, {PROF_N} outer loops, {PROF_n} inner loops");
+            Vector3 point = default;
+            var func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { point = UnityEngine.Random.onUnitSphere; } };
+            Debug.Log($"DEBUG onUnitSphere took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {point}");
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { point = UnityEngine.Random.insideUnitSphere; } };
+            Debug.Log($"DEBUG insideUnitSphere took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {point}");
         }
 
         public static void TestMaxRelSpeed()
