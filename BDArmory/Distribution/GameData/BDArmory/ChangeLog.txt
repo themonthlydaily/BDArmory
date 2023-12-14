@@ -39,6 +39,7 @@
 	- Fix the spawn point selection sometimes not registering.
 	- Vessels with an orbital AI that are spawned at safe orbital altitudes are spawned into circular orbits. Vessels are spawned pointing away from each other.
 	- Increase maximum spawn distance to 200km.
+	- Add a "bubble shuffle" to the waiting craft in continuous spawning to increase the randomness of the spawn order.
 - ModIntegration:
 	- Fixes for inhibiting CameraTools when initial spawning during continuous spawning and disable auto-switching to newly spawned craft joining the competition.
 	- Provide helpers for CameraTools so that the camera can aim at missiles' targets (requires CameraTools v1.31.0).
