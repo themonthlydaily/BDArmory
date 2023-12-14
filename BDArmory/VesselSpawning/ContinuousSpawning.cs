@@ -195,7 +195,7 @@ namespace BDArmory.VesselSpawning
                         while (spawnQueue.Count > 0)
                         {
                             shufflePool.Add(spawnQueue.Dequeue()); // Take craft from the spawn queue.
-                            if (shufflePool.Count > 3) // Use a pool of size 4 for shuffling.
+                            if (shufflePool.Count > 1) // Use a pool of size 2 for shuffling.
                             {
                                 shufflePool.Shuffle();
                                 bubbleShuffleQueue.Enqueue(shufflePool.First());
