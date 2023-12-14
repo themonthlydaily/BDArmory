@@ -1731,7 +1731,7 @@ namespace BDArmory.Weapons.Missiles
                         case GuidanceModes.BeamRiding:
                             BeamRideGuidance();
                             break;
-                        case GuidanceModes.Orbital:
+                        case GuidanceModes.Orbital: //nee GuidanceModes.RCS
                             OrbitalGuidance(turnRateDPS);
                             break;
                         case GuidanceModes.Cruise:

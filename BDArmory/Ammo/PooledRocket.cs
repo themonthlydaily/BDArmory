@@ -899,7 +899,8 @@ namespace BDArmory.Bullets
                 float relVelocity = (thrust / rocketMass) * Mathf.Clamp(Time.time - startTime, 0, thrustTime); //currVel is rocketVel + orbitalvel, if in orbit, which will dramatically increase dispersion cone angle, so using accel * time instad
                 float incrementVelocity = 1000 / (relVelocity + sBullet.bulletVelocity); //using 1km/s as a reference Unit 
                 float dispersionAngle = sBullet.subProjectileDispersion > 0 ? sBullet.subProjectileDispersion : BDAMath.Sqrt(sBullet.subProjectileCount) / 2; //fewer fragments/pellets are going to be larger-> move slower, less dispersion
-                float dispersionVelocityforAngle = 1000 / incrementVelocity * Mathf.Sin(dispersionAngle / Mathf.Rad2Deg); // convert m/s despersion to angle, accounting for vel of round
+                float dispersionVelocityforAngle = 1000 / incrementVelocity * Mathf.Sin(dispersionAngle * Mathf.Deg2Rad); // convert m/s despersion to angle, accounting for vel of round
+
                 for (int s = 0; s < sBullet.subProjectileCount; s++)
                 {
                     GameObject Bullet = ModuleWeapon.bulletPool.GetPooledObject();
