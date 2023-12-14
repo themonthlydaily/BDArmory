@@ -37,10 +37,11 @@
 		- Add new Orbital guidance option for Modular Missiles.
 			- Missile will attempt to intercept orbital target at the user-set Max Speed value.
 			- homingType = orbital replaces homingType = RCS in missile configuration files (BDA is still backwards-compatible with homingType = RCS).
+		- Improvements to modular missile AAM guidance types so that they work in orbit.
+		- Fix for HEKV launching unguided in non-ideal situations.
 		- Fix clustermissiles launching copies of themselves instead of submunitions.
 		- Fix clustermissiles not respecting submunition trigger distance.
 		- Fix clustermissiles acting like reloadable missiles when not set up for reloading.
-		- Fix for HEKV launching unguided in non-ideal situations.
 		- Fix Guidance Type None missiles not holding course.
 		- GPS missiles now require a target cam or radar lock for GPS coords.
 		- INS missiles can now use either radar or IRST tracking.
@@ -50,7 +51,6 @@
 		- Fix Missiles having 10 armor instead of 2.
 		- Fix SARH missiles that relock to a new target not updating their target vessel.
 		- Changed missile missed check, missiles now check if they have come within 400m, are post-thrust, or are more than 1km behind target, and have exceeded a grace period of maxTurnRateDPS/15.
-		- Improvements to modular missile AAM guidance types so that they work in orbit.
 - Countermeasures
 	- Add vessel's velocity to chaff ejection particle effect.
 	- Use vessel acceleration instead of velocity for chaff decoy factor calculation when in space.
