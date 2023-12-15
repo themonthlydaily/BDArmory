@@ -34,6 +34,7 @@
 - Countermeasures
 	- Add vessel's velocity to chaff ejection particle effect.
 	- Use vessel acceleration instead of velocity for chaff decoy factor calculation when in space.
+	- Add option in WM's CM settings for auto-deploying CMs when not in guard mode (e.g., for manual combat).
 - Vessel Mover / Spawning:
 	- Check for outdated loadMeta files when refreshing the craft list in the vessel selection window and update them since KSP doesn't update them when you save your craft!
 	- Fix the spawn point selection sometimes not registering.
