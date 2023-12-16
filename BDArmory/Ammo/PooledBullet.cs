@@ -1651,7 +1651,7 @@ namespace BDArmory.Bullets
                         float localDetonationRangeSqr = localDetonationRange * localDetonationRange;
                         if (minSepSqr < localDetonationRangeSqr)
                         {
-                            timeToCPA -= BDAMath.Sqrt((localDetonationRangeSqr - minSepSqr) / relativeVelocity.sqrMagnitude); // Move the detonation time back to the point where it came within the detonation range.
+                            timeToCPA = Mathf.Max(0, timeToCPA - BDAMath.Sqrt((localDetonationRangeSqr - minSepSqr) / relativeVelocity.sqrMagnitude)); // Move the detonation time back to the point where it came within the detonation range, but not before the current time.
                             if (timeToCPA < TimeWarp.fixedDeltaTime) // Detonate if timeToCPA is this frame.
                             {
                                 detonationPosition = AIUtils.PredictPosition(currentPosition, currentVelocity, bulletAcceleration, timeToCPA);
