@@ -1,4 +1,5 @@
-﻿IMPROVEMENTS / FIXES
+﻿v1.6.9.0
+IMPROVEMENTS / FIXES
 - UI:
 	- Fix the alternate (hidden UI) window locations (for scores and vessel switcher) not being saved correctly.
 - General:
@@ -32,7 +33,8 @@
 	- Show where aimer lines in the SPH are blocked and by what.
 	- Add Deploy toggle to see where weapons with deploy animations will point when deployed vs retracted (e.g. M230 chaingun).
 	- Fix lasers using wrong armor thickness value for damage reduction calcs.
-	- Fix Beehive ammo detonation timing when used in orbit.
+	- Fixes point defense/APS turrets not engaging incoming missiles.
+	- Fix proximity/flak/beehive ammo detonation timing when used in orbit.
 	- Missiles:
 		- Add new Orbital guidance option for Modular Missiles.
 			- Missile will attempt to intercept orbital target at the user-set Max Speed value.

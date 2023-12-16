@@ -12,8 +12,6 @@
 
 - Add tooltips to settings.
 - Add thumbnails to the craft browser.
-- Evasion:
-	- If the UnderFireRoutine alert triggers then allow beyond visual range checks for triggering evasion for the weapon that triggered the alert.
 
 - Wiki entries
 	- Auto-Tuning
