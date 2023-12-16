@@ -73,7 +73,7 @@ namespace BDArmory.Bullets
         public float lifeTime;
 
         Vector3 prevPosition;
-        public Vector3 currPosition;
+        public Vector3 currPosition => transform.position; // We can't optimise this like in PooledBullet as it has a rigid body attached that can modify the transform.position.
         Vector3 startPosition;
         bool startUnderwater = false;
         Ray RocketRay;
@@ -140,7 +140,6 @@ namespace BDArmory.Bullets
             gpEmitters = gameObject.GetComponentsInChildren<BDAGaplessParticleEmitter>();
 
             prevPosition = transform.position;
-            currPosition = transform.position;
             startPosition = transform.position;
             transform.rotation = transform.parent.rotation;
             startTime = Time.time;
@@ -293,7 +292,7 @@ namespace BDArmory.Bullets
                 }//0.012/rocketmass - use .012 as baseline, it's the mass of the hydra, which the randomTurstdeviation was originally calibrated for
                 if (BDArmorySettings.BULLET_WATER_DRAG)
                 {
-                    if (FlightGlobals.getAltitudeAtPos(currPosition) < 0)
+                    if (FlightGlobals.getAltitudeAtPos(transform.position) < 0)
                     {
                         //atmosMultiplier *= 83.33f;
                         dragVector.z = -(0.5f * 1 * (rb.velocity.magnitude * rb.velocity.magnitude) * 0.5f * ((Mathf.PI * caliber * caliber * 0.25f) / 1000000)) * TimeWarp.fixedDeltaTime;
@@ -332,9 +331,8 @@ namespace BDArmory.Bullets
             hasDetonated = false;
             penTicker = 0;
 
-            currPosition = transform.position;
-            float dist = (currPosition - prevPosition).magnitude;
-            RocketRay = new Ray(prevPosition, currPosition - prevPosition);
+            float dist = (transform.position - prevPosition).magnitude;
+            RocketRay = new Ray(prevPosition, transform.position - prevPosition);
             var hitCount = Physics.RaycastNonAlloc(RocketRay, hits, dist, collisionLayerMask);
             if (hitCount == hits.Length) // If there's a whole bunch of stuff in the way (unlikely), then we need to increase the size of our hits buffer.
             {
@@ -620,7 +618,7 @@ namespace BDArmory.Bullets
                     FXMonger.Splash(transform.position, caliber);
                 }
             }
-            prevPosition = currPosition;
+            prevPosition = transform.position;
 
             if (Time.time - startTime > lifeTime)
             {
@@ -846,7 +844,7 @@ namespace BDArmory.Bullets
                         else
                         {
                             if (nuclear)
-                                NukeFX.CreateExplosion(currPosition, ExplosionSourceType.Rocket, sourceVesselName, rocket.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
+                                NukeFX.CreateExplosion(transform.position, ExplosionSourceType.Rocket, sourceVesselName, rocket.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
                             else
                                 ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, null, direction, -1, false, rocketMass * 1000, -1, dmgMult, shaped ? "shapedcharge" : "standard", PenetratingHit, apMod, ProjectileUtils.isReportingWeapon(sourceWeapon) ? (float)distanceFromStart : -1);
                         }
@@ -905,7 +903,7 @@ namespace BDArmory.Bullets
                 {
                     GameObject Bullet = ModuleWeapon.bulletPool.GetPooledObject();
                     PooledBullet pBullet = Bullet.GetComponent<PooledBullet>();
-                    pBullet.transform.position = currPosition;
+                    pBullet.currentPosition = transform.position;
 
                     pBullet.caliber = sBullet.caliber;
                     pBullet.bulletVelocity = sBullet.bulletVelocity;

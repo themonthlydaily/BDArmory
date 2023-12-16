@@ -7482,7 +7482,7 @@ namespace BDArmory.Control
                                     if (PDBulletTgts.Contains(target.Current)) continue;
                                     float threatDirectionFactor = (transform.position - target.Current.transform.position).DotNormalized(target.Current.currentVelocity - vessel.Velocity());
                                     if (threatDirectionFactor < 0.95) continue; //if incoming round is heading this way 
-                                    if (target.Current.currPosition.CloserToThan(weapon.Current.fireTransforms[0].position, weapon.Current.maxTargetingRange * 2))
+                                    if (target.Current.currentPosition.CloserToThan(weapon.Current.fireTransforms[0].position, weapon.Current.maxTargetingRange * 2))
                                     {
                                         if (RadarUtils.TerrainCheck(target.Current.transform.position, transform.position))
                                         {
@@ -7492,7 +7492,7 @@ namespace BDArmory.Control
                                         {
                                             if (closestTarget == Vector3.zero || (target.Current.transform.position - weapon.Current.fireTransforms[0].position).sqrMagnitude < (closestTarget - weapon.Current.fireTransforms[0].position).sqrMagnitude)
                                             {
-                                                closestTarget = target.Current.currPosition;
+                                                closestTarget = target.Current.currentPosition;
                                                 PDBulletTgts.Add(target.Current);
                                             }
                                         }

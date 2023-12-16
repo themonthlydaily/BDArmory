@@ -2,7 +2,7 @@
 - UI:
 	- Fix the alternate (hidden UI) window locations (for scores and vessel switcher) not being saved correctly.
 - General:
-	- New tex for 1.25m radomes.
+	- New texture for 1.25m radomes.
 	- Add a max distance threshold setting to Team Icons.
 	- Fix "Camera Switch: Incl. Missiles" not switching to missiles about to hit their target.
 - AI / WM:
@@ -51,7 +51,7 @@
 		- Fix Missiles having 10 armor instead of 2.
 		- Fix SARH missiles that relock to a new target not updating their target vessel.
 		- Changed missile missed check, missiles now check if they have come within 400m, are post-thrust, or are more than 1km behind target, and have exceeded a grace period of maxTurnRateDPS/15.
-- Countermeasures
+- Countermeasures:
 	- Add vessel's velocity to chaff ejection particle effect.
 	- Use vessel acceleration instead of velocity for chaff decoy factor calculation when in space.
 	- Add option in WM's CM settings for auto-deploying CMs when not in guard mode (e.g., for manual combat).

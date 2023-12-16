@@ -1273,12 +1273,12 @@ namespace BDArmory.Weapons
             }
             if (HighLogic.LoadedSceneIsFlight)
             {
+                if (bulletPool == null)
+                {
+                    SetupBulletPool(); // Always set up the bullet pool in case the ammo type has bullet submunitions (it's not that big anyway).
+                }
                 if (eWeaponType == WeaponTypes.Ballistic)
                 {
-                    if (bulletPool == null)
-                    {
-                        SetupBulletPool();
-                    }
                     if (shellPool == null)
                     {
                         SetupShellPool();
@@ -1546,7 +1546,7 @@ namespace BDArmory.Weapons
                             Debug.Log("[BDArmory.ModuleWeapon]: AmmoType Loaded : " + currentType);
                         if (beehive)
                         {
-                            if (!BulletInfo.bulletNames.Contains(rocketInfo.subMunitionType) || !RocketInfo.rocketNames.Contains(rocketInfo.subMunitionType))
+                            if (!BulletInfo.bulletNames.Contains(rocketInfo.subMunitionType) && !RocketInfo.rocketNames.Contains(rocketInfo.subMunitionType))
                             {
                                 beehive = false;
                                 Debug.LogWarning("[BDArmory.ModuleWeapon]: Invalid submunition on : " + currentType);
@@ -1644,6 +1644,7 @@ namespace BDArmory.Weapons
                 Fields["defaultDetonationRange"].guiActiveEditor = true;
                 Fields["detonationRange"].guiActive = true;
                 Fields["detonationRange"].guiActiveEditor = true;
+                // detonationRange = -1;
             }
             else
             {
@@ -2043,7 +2044,7 @@ namespace BDArmory.Weapons
                                     PooledBullet pBullet = firedBullet.GetComponent<PooledBullet>();
 
 
-                                    pBullet.transform.position = fireTransform.position;
+                                    pBullet.currentPosition = fireTransform.position;
 
                                     pBullet.caliber = bulletInfo.caliber;
                                     pBullet.bulletVelocity = bulletInfo.bulletVelocity;
@@ -2213,12 +2214,12 @@ namespace BDArmory.Weapons
                                         // The following gets bullet tracers to line up properly when at orbital velocities.
                                         // It should be consistent with how it's done in Aim().
                                         // Technically, there could be a small gap between the collision check and the start position, but this should be insignificant.
-                                        var gravity = bulletDrop ? (Vector3)FlightGlobals.getGeeForceAtPosition(pBullet.transform.position) : Vector3.zero;
-                                        pBullet.transform.position = AIUtils.PredictPosition(pBullet.transform.position, firedVelocity, gravity, iTime);
+                                        var gravity = bulletDrop ? (Vector3)FlightGlobals.getGeeForceAtPosition(pBullet.currentPosition) : Vector3.zero;
+                                        pBullet.currentPosition = AIUtils.PredictPosition(pBullet.currentPosition, firedVelocity, gravity, iTime);
                                         pBullet.currentVelocity += iTime * gravity; // Adjusting the velocity here mostly eliminates bullet deviation due to iTime.
-                                        if (!BDKrakensbane.IsActive) pBullet.transform.position += TimeWarp.fixedDeltaTime * part.rb.velocity; // If Krakensbane isn't active, bullets get an additional shift by this amount.
+                                        if (!BDKrakensbane.IsActive) pBullet.currentPosition += TimeWarp.fixedDeltaTime * part.rb.velocity; // If Krakensbane isn't active, bullets get an additional shift by this amount.
                                         pBullet.SetTracerPosition();
-                                        pBullet.transform.position += TimeWarp.fixedDeltaTime * (part.rb.velocity + BDKrakensbane.FrameVelocityV3f); // Account for velocity off-loading after visuals are done.
+                                        pBullet.currentPosition += TimeWarp.fixedDeltaTime * (part.rb.velocity + BDKrakensbane.FrameVelocityV3f); // Account for velocity off-loading after visuals are done.
                                         pBullet.DistanceTraveled += iTime * bulletVelocity; // Adjust the distance traveled to account for iTime.
                                     }
                                 }
@@ -5125,7 +5126,7 @@ namespace BDArmory.Weapons
                     if (tgtShell != null)
                     {
                         targetVelocity = tgtShell.currentVelocity;
-                        targetPosition = tgtShell.currPosition;
+                        targetPosition = tgtShell.currentPosition;
                         targetRadius = 0.25f;
                     }
                     if (tgtRocket != null)
@@ -5813,13 +5814,20 @@ namespace BDArmory.Weapons
             {
                 if (eWeaponType == WeaponTypes.Ballistic && (bulletInfo.tntMass != 0 && (eFuzeType == FuzeTypes.Proximity || eFuzeType == FuzeTypes.Flak)))
                 {
-                    blastRadius = BlastPhysicsUtils.CalculateBlastRange(bulletInfo.tntMass); //reproting as two so blastradius can be handed over to PooledRocket for detonation/safety stuff
-                    detonationRange = blastRadius * 0.666f;
+                    if (bulletInfo.tntMass != 0 && (eFuzeType == FuzeTypes.Proximity || eFuzeType == FuzeTypes.Flak))
+                    {
+                        blastRadius = BlastPhysicsUtils.CalculateBlastRange(bulletInfo.tntMass); //reporting as two so blastradius can be handed over to PooledRocket for detonation/safety stuff
+                        detonationRange = blastRadius * 0.666f;
+                    }
+                    if (beehive)
+                        detonationRange = 100;
                 }
-                else if (eWeaponType == WeaponTypes.Rocket && rocketInfo.tntMass != 0) //don't fire rockets ar point blank
+                else if (eWeaponType == WeaponTypes.Rocket && rocketInfo.tntMass != 0) //don't fire rockets at point blank
                 {
                     blastRadius = BlastPhysicsUtils.CalculateBlastRange(rocketInfo.tntMass);
                     detonationRange = blastRadius * 0.666f;
+                    if (beehive)
+                        detonationRange = 100;
                 }
                 else
                 {
