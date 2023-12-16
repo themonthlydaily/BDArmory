@@ -1558,14 +1558,13 @@ namespace BDArmory.Bullets
         }
         private bool ProximityAirDetonation(float distanceFromStart)
         {
-            bool detonate = false;
             if (isAPSprojectile && (tgtShell != null || tgtRocket != null))
             {
                 if (currentPosition.CloserToThan(tgtShell != null ? tgtShell.transform.position : tgtRocket.transform.position, detonationRange / 2))
                 {
                     if (BDArmorySettings.DEBUG_WEAPONS)
                         Debug.Log("[BDArmory.PooledBullet]: bullet proximity to APS target | Distance overlap = " + detonationRange + "| tgt name = " + tgtShell != null ? tgtShell.name : tgtRocket.name);
-                    return detonate = true;
+                    return true;
                 }
             }
 
@@ -1577,47 +1576,10 @@ namespace BDArmory.Bullets
             {
                 if (distanceFromStart > (beehive ? maxAirDetonationRange - detonationRange : maxAirDetonationRange) || distanceFromStart > (beehive ? defaultDetonationRange - detonationRange : defaultDetonationRange))
                 {
-                    return detonate = true;
+                    return true;
                 }
             }
-            /* if (fuzeType == BulletFuzeTypes.Proximity || fuzeType == BulletFuzeTypes.Flak)
-            {
-                var layerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19 | LayerMasks.Wheels);
-                var overlapSphereColliderCount = Physics.OverlapSphereNonAlloc(currentPosition, detonationRange, proximityOverlapSphereColliders, layerMask);
-                if (overlapSphereColliderCount == proximityOverlapSphereColliders.Length)
-                {
-                    proximityOverlapSphereColliders = Physics.OverlapSphere(currentPosition, detonationRange, layerMask);
-                    overlapSphereColliderCount = proximityOverlapSphereColliders.Length;
-                }
-                using (var hitsEnu = proximityOverlapSphereColliders.Take(overlapSphereColliderCount).GetEnumerator())
-                {
-                    while (hitsEnu.MoveNext())
-                    {
-                        if (hitsEnu.Current == null) continue;
-                        try
-                        {
-                            Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
-                            if (partHit == null || partHit.vessel == null) continue;
-                            if (partHit.vessel == sourceVessel) continue;
-                            if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
-
-
-                            if (BDArmorySettings.DEBUG_WEAPONS)
-                                Debug.Log("[BDArmory.PooledBullet]: Bullet proximity sphere hit | Distance overlap = " + detonationRange + "| Part name = " + partHit.name);
-
-                            return detonate = true;
-                        }
-                        catch (Exception e)
-                        {
-                            // ignored
-                            Debug.LogWarning("[BDArmory.PooledBullet]: Exception thrown in ProximityAirDetonation: " + e.Message + "\n" + e.StackTrace);
-                        }
-                    }
-                }
-                if (BDArmorySettings.VESSEL_RELATIVE_BULLET_CHECKS) //additional check if fast-moving vessel advances part bullet position/predicted pos during next FlightIntegrator tick. Possibly repalce OverlapSphere entirely with this method?
-
-            } */
-            return detonate;
+            return false;
         }
 
         /// <summary>
