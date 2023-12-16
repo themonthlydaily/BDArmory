@@ -21,7 +21,6 @@ using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.Weapons.Missiles;
 using BDArmory.WeaponMounts;
-using System.Diagnostics.Eventing.Reader;
 
 namespace BDArmory.Weapons
 {
@@ -1645,7 +1644,6 @@ namespace BDArmory.Weapons
                 Fields["defaultDetonationRange"].guiActiveEditor = true;
                 Fields["detonationRange"].guiActive = true;
                 Fields["detonationRange"].guiActiveEditor = true;
-                detonationRange = -1;
             }
             else
             {
@@ -5813,26 +5811,15 @@ namespace BDArmory.Weapons
         {
             if (this.detonationRange == -1)
             {
-                if (eWeaponType == WeaponTypes.Ballistic)
+                if (eWeaponType == WeaponTypes.Ballistic && bulletInfo.tntMass != 0 && (eFuzeType == FuzeTypes.Proximity || eFuzeType == FuzeTypes.Flak))
                 {
-                    if (bulletInfo.tntMass != 0 && (eFuzeType == FuzeTypes.Proximity || eFuzeType == FuzeTypes.Flak))
-                    {
-                        blastRadius = BlastPhysicsUtils.CalculateBlastRange(bulletInfo.tntMass); //reproting as two so blastradius can be handed over to PooledRocket for detonation/safety stuff
-                        detonationRange = blastRadius * 0.666f;
-                    }
-                    if (beehive)
-                        detonationRange = 100;
+                    blastRadius = BlastPhysicsUtils.CalculateBlastRange(bulletInfo.tntMass); //reproting as two so blastradius can be handed over to PooledRocket for detonation/safety stuff
+                    detonationRange = beehive ? 100 :blastRadius * 0.666f;
                 }
                 else if (eWeaponType == WeaponTypes.Rocket && rocketInfo.tntMass != 0) //don't fire rockets ar point blank
                 {
                     blastRadius = BlastPhysicsUtils.CalculateBlastRange(rocketInfo.tntMass);
-                    detonationRange = blastRadius * 0.666f;
-                }
-                else
-                {
-                    blastRadius = 0;
-                    detonationRange = 0f;
-                    proximityDetonation = false;
+                    detonationRange = beehive ? 100 : blastRadius * 0.666f;
                 }
             }
             if (BDArmorySettings.DEBUG_WEAPONS)
