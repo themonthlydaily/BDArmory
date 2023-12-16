@@ -71,7 +71,7 @@ namespace BDArmory.Bullets
         public float tracerLength = 0;
         public float tracerDeltaFactor = 1.35f;
         public float tracerLuminance = 1;
-        public Vector3 currentPosition { get { return _currentPosition; } set { _currentPosition = value; transform.position = value; } } // Local alias for transform.position speeding up access by around 100x. We can do this since it has no rb.
+        public Vector3 currentPosition { get { return _currentPosition; } set { _currentPosition = value; transform.position = value; } } // Local alias for transform.position speeding up access by around 100x.
         Vector3 _currentPosition = default;
 
         //explosive parameters
@@ -164,7 +164,6 @@ namespace BDArmory.Bullets
         private double initialHitDistance = 0;
         private float kDist = 1;
         private float iTime = 0; // Consistent naming with ModuleWeapon: TimeWarp.fixedDeltaTime - timeToCPA of proxy detonation.
-        private Vector3 detonationPosition = default;
 
         public double DistanceTraveled { get { return distanceTraveled; } set { distanceTraveled = value; } }
 
@@ -253,7 +252,7 @@ namespace BDArmory.Bullets
                 bulletTrail[0] = gameObject.AddOrGetComponent<LineRenderer>();
 
                 GameObject bulletFX = new GameObject("bulletTrail");
-                bulletFX.transform.SetParent(this.gameObject.transform);
+                bulletFX.transform.SetParent(gameObject.transform);
                 bulletTrail[1] = bulletFX.AddOrGetComponent<LineRenderer>();
             }
             if (!wasInitiated)
@@ -309,7 +308,7 @@ namespace BDArmory.Bullets
             StartCoroutine(FrameDelayedRoutine());
 
             // Log shots fired.
-            if (this.sourceVessel)
+            if (sourceVessel)
             {
                 sourceVesselName = sourceVessel.GetName(); // Set the source vessel name as the vessel might have changed its name or died by the time the bullet hits.
             }
@@ -425,9 +424,9 @@ namespace BDArmory.Bullets
             {
                 //detonate
                 if (HEType != PooledBulletTypes.Slug)
-                    ExplosionFx.CreateExplosion(detonationPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, HEType == PooledBulletTypes.Explosive ? default : currentVelocity, -1, false, bulletMass, -1, dmgMult, HEType == PooledBulletTypes.Shaped ? "shapedcharge" : "standard", null, HEType == PooledBulletTypes.Shaped ? apBulletMod : 1f, ProjectileUtils.isReportingWeapon(sourceWeapon) ? (float)DistanceTraveled : -1);
+                    ExplosionFx.CreateExplosion(currentPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, HEType == PooledBulletTypes.Explosive ? default : currentVelocity, -1, false, bulletMass, -1, dmgMult, HEType == PooledBulletTypes.Shaped ? "shapedcharge" : "standard", null, HEType == PooledBulletTypes.Shaped ? apBulletMod : 1f, ProjectileUtils.isReportingWeapon(sourceWeapon) ? (float)DistanceTraveled : -1);
                 if (nuclear)
-                    NukeFX.CreateExplosion(detonationPosition, ExplosionSourceType.Bullet, sourceVesselName, bullet.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
+                    NukeFX.CreateExplosion(currentPosition, ExplosionSourceType.Bullet, sourceVesselName, bullet.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
                 if (beehive)
                     BeehiveDetonation();
                 hasDetonated = true;
@@ -490,7 +489,7 @@ namespace BDArmory.Bullets
             {
                 //detonate
                 if (HEType != PooledBulletTypes.Slug)
-                    ExplosionFx.CreateExplosion(detonationPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, HEType == PooledBulletTypes.Explosive ? default : currentVelocity, -1, false, bulletMass, -1, dmgMult, HEType == PooledBulletTypes.Shaped ? "shapedcharge" : "standard", null, HEType == PooledBulletTypes.Shaped ? apBulletMod : 1f, ProjectileUtils.isReportingWeapon(sourceWeapon) ? (float)DistanceTraveled : -1);
+                    ExplosionFx.CreateExplosion(currentPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, null, HEType == PooledBulletTypes.Explosive ? default : currentVelocity, -1, false, bulletMass, -1, dmgMult, HEType == PooledBulletTypes.Shaped ? "shapedcharge" : "standard", null, HEType == PooledBulletTypes.Shaped ? apBulletMod : 1f, ProjectileUtils.isReportingWeapon(sourceWeapon) ? (float)DistanceTraveled : -1);
                 if (nuclear)
                     NukeFX.CreateExplosion(currentPosition, ExplosionSourceType.Bullet, sourceVesselName, bullet.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
                 if (beehive)
@@ -1464,7 +1463,7 @@ namespace BDArmory.Bullets
             {
                 GameObject Bullet = ModuleWeapon.bulletPool.GetPooledObject();
                 PooledBullet pBullet = Bullet.GetComponent<PooledBullet>();
-                pBullet.currentPosition = detonationPosition;
+                pBullet.currentPosition = currentPosition;
 
                 pBullet.caliber = subMunitionType.caliber;
                 pBullet.bulletVelocity = GetDragAdjustedVelocity().magnitude + subMunitionType.bulletVelocity;
@@ -1566,7 +1565,6 @@ namespace BDArmory.Bullets
                 {
                     if (BDArmorySettings.DEBUG_WEAPONS)
                         Debug.Log("[BDArmory.PooledBullet]: bullet proximity to APS target | Distance overlap = " + detonationRange + "| tgt name = " + tgtShell != null ? tgtShell.name : tgtRocket.name);
-                    detonationPosition = currentPosition;
                     return detonate = true;
                 }
             }
@@ -1579,7 +1577,6 @@ namespace BDArmory.Bullets
             {
                 if (distanceFromStart > (beehive ? maxAirDetonationRange - detonationRange : maxAirDetonationRange) || distanceFromStart > (beehive ? defaultDetonationRange - detonationRange : defaultDetonationRange))
                 {
-                    detonationPosition = currentPosition;
                     return detonate = true;
                 }
             }
@@ -1654,9 +1651,9 @@ namespace BDArmory.Bullets
                             timeToCPA = Mathf.Max(0, timeToCPA - BDAMath.Sqrt((localDetonationRangeSqr - minSepSqr) / relativeVelocity.sqrMagnitude)); // Move the detonation time back to the point where it came within the detonation range, but not before the current time.
                             if (timeToCPA < TimeWarp.fixedDeltaTime) // Detonate if timeToCPA is this frame.
                             {
-                                detonationPosition = AIUtils.PredictPosition(currentPosition, currentVelocity, bulletAcceleration, timeToCPA);
+                                currentPosition = AIUtils.PredictPosition(currentPosition, currentVelocity, bulletAcceleration, timeToCPA); // Adjust the bullet position back to the detonation position.
                                 iTime = TimeWarp.fixedDeltaTime - timeToCPA;
-                                if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.PooledBullet]: Detonating proxy round with detonation range {detonationRange}m at {detonationPosition} at distance {(detonationPosition - AIUtils.PredictPosition(loadedVessels.Current, timeToCPA)).magnitude}m from {loadedVessels.Current.vesselName} of radius {loadedVessels.Current.GetRadius()}m");
+                                if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.PooledBullet]: Detonating proxy round with detonation range {detonationRange}m at {currentPosition} at distance {(currentPosition - AIUtils.PredictPosition(loadedVessels.Current, timeToCPA)).magnitude}m from {loadedVessels.Current.vesselName} of radius {loadedVessels.Current.GetRadius()}m");
                                 return true;
                             }
                         }

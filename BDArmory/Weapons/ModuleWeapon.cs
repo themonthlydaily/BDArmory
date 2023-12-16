@@ -307,13 +307,13 @@ namespace BDArmory.Weapons
             //using (List<Part>.Enumerator craftPart = vessel.parts.GetEnumerator())
             //{
             ammoLeft = $"Ammo Left: {ammoCount:0}";
-            int lastAmmoID = this.AmmoID;
+            int lastAmmoID = AmmoID;
             using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                 while (weapon.MoveNext())
                 {
                     if (weapon.Current == null) continue;
-                    if (weapon.Current.GetShortName() != this.GetShortName()) continue;
-                    if (weapon.Current.AmmoID != this.AmmoID && weapon.Current.AmmoID != lastAmmoID)
+                    if (weapon.Current.GetShortName() != GetShortName()) continue;
+                    if (weapon.Current.AmmoID != AmmoID && weapon.Current.AmmoID != lastAmmoID)
                     {
                         vessel.GetConnectedResourceTotals(weapon.Current.AmmoID, out double ammoCurrent, out double ammoMax);
                         ammoLeft += $"; {ammoCurrent:0}";
@@ -900,7 +900,7 @@ namespace BDArmory.Weapons
             {
                 yield return new WaitForSecondsFixed(delay);
             }
-            if (weaponManager == null || weaponManager.vessel != this.vessel) yield break;
+            if (weaponManager == null || weaponManager.vessel != vessel) yield break;
             weaponManager.incrementRippleIndex(WeaponName);
 
             //Debug.Log("[BDArmory.ModuleWeapon]: incrementing ripple index to: " + weaponManager.gunRippleIndex);
@@ -1046,13 +1046,13 @@ namespace BDArmory.Weapons
             base.OnAwake();
 
             part.stagingIconAlwaysShown = true;
-            this.part.stackIconGrouping = StackIconGrouping.SAME_TYPE;
+            part.stackIconGrouping = StackIconGrouping.SAME_TYPE;
         }
 
         public void Start()
         {
             part.stagingIconAlwaysShown = true;
-            this.part.stackIconGrouping = StackIconGrouping.SAME_TYPE;
+            part.stackIconGrouping = StackIconGrouping.SAME_TYPE;
 
             Events["HideUI"].active = false;
             Events["ShowUI"].active = true;
@@ -1119,7 +1119,7 @@ namespace BDArmory.Weapons
                             {
                                 if (weapon.Current == null) continue;
                                 if (weapon.Current.isAPS) continue;
-                                if (weapon.Current.GetShortName() != this.GetShortName()) continue;
+                                if (weapon.Current.GetShortName() != GetShortName()) continue;
                                 if (weapon.Current.roundsPerMinute >= 1500 || (weapon.Current.eWeaponType == WeaponTypes.Laser && !weapon.Current.pulseLaser)) continue;
                                 weapon.Current.canRippleFire = false;
                                 weapon.Current.useRippleFire = false;
@@ -2094,7 +2094,7 @@ namespace BDArmory.Weapons
                                     Vector3 firedVelocity = VectorUtils.GaussianDirectionDeviation(fireTransform.forward, (maxDeviation / 2)) * bulletVelocity;
                                     pBullet.currentVelocity = part.rb.velocity + BDKrakensbane.FrameVelocityV3f + firedVelocity; // use the real velocity, w/o offloading
 
-                                    pBullet.sourceWeapon = this.part;
+                                    pBullet.sourceWeapon = part;
                                     pBullet.sourceVessel = vessel;
                                     pBullet.team = weaponManager.Team.Name;
                                     pBullet.bulletTexturePath = bulletTexturePath;
@@ -2251,7 +2251,7 @@ namespace BDArmory.Weapons
                 {
                     barrelIndex++;
                     animIndex++;
-                    //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " is " + barrelIndex + "; total barrels " + fireTransforms.Length);
+                    //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + GetShortName() + " is " + barrelIndex + "; total barrels " + fireTransforms.Length);
                     if ((!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag))) && barrelIndex + 1 > fireTransforms.Length) //only advance ripple index if weapon isn't burstfire, has finished burst, or has fired with all barrels
                     {
                         StartCoroutine(IncrementRippleIndex(InitialFireDelay * TimeWarp.CurrentRate));
@@ -2259,7 +2259,7 @@ namespace BDArmory.Weapons
                         if (barrelIndex >= fireTransforms.Length)
                         {
                             barrelIndex = 0;
-                            //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " reset");
+                            //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + GetShortName() + " reset");
                         }
                     }
                     if (animIndex >= fireState.Length) animIndex = 0;
@@ -2330,7 +2330,7 @@ namespace BDArmory.Weapons
                         {
                             barrelIndex++;
                             animIndex++;
-                            //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " is " + barrelIndex + "; total barrels " + fireTransforms.Length);
+                            //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + GetShortName() + " is " + barrelIndex + "; total barrels " + fireTransforms.Length);
                             if ((!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag))) && barrelIndex + 1 > fireTransforms.Length) //only advance ripple index if weapon isn't brustfire, has finished burst, or has fired with all barrels
                             {
                                 StartCoroutine(IncrementRippleIndex(InitialFireDelay * TimeWarp.CurrentRate));
@@ -2338,7 +2338,7 @@ namespace BDArmory.Weapons
                                 if (barrelIndex >= fireTransforms.Length)
                                 {
                                     barrelIndex = 0;
-                                    //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " reset");
+                                    //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + GetShortName() + " reset");
                                 }
                             }
                             if (animIndex >= fireState.Length) animIndex = 0;
@@ -2776,7 +2776,7 @@ namespace BDArmory.Weapons
                                 rocket.randomThrustDeviation = thrustDeviation;
                                 rocket.bulletDmgMult = bulletDmgMult;
                                 rocket.sourceVessel = vessel;
-                                rocket.sourceWeapon = this.part;
+                                rocket.sourceWeapon = part;
                                 rocketObj.transform.SetParent(currentRocketTfm.parent);
                                 rocket.rocketName = GetShortName() + " rocket";
                                 rocket.team = weaponManager.Team.Name;
@@ -2864,7 +2864,7 @@ namespace BDArmory.Weapons
                                             rocket.randomThrustDeviation = thrustDeviation;
                                             rocket.bulletDmgMult = bulletDmgMult;
                                             rocket.sourceVessel = vessel;
-                                            rocket.sourceWeapon = this.part;
+                                            rocket.sourceWeapon = part;
                                             rocketObj.transform.SetParent(currentRocketTfm);
                                             rocket.parentRB = part.rb;
                                             rocket.rocket = RocketInfo.rockets[currentType];
@@ -2912,7 +2912,7 @@ namespace BDArmory.Weapons
                 {
                     barrelIndex++;
                     animIndex++;
-                    //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " is " + barrelIndex + "; total barrels " + fireTransforms.Length);
+                    //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + GetShortName() + " is " + barrelIndex + "; total barrels " + fireTransforms.Length);
                     if ((!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag))) && barrelIndex + 1 > fireTransforms.Length) //only advance ripple index if weapon isn't brustfire, has finished burst, or has fired with all barrels
                     {
                         StartCoroutine(IncrementRippleIndex(InitialFireDelay * TimeWarp.CurrentRate));
@@ -2920,7 +2920,7 @@ namespace BDArmory.Weapons
                         if (barrelIndex >= fireTransforms.Length)
                         {
                             barrelIndex = 0;
-                            //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " reset");
+                            //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + GetShortName() + " reset");
                         }
                     }
                     if (animIndex >= fireState.Length) animIndex = 0;
@@ -3053,7 +3053,7 @@ namespace BDArmory.Weapons
                 }
                 else
                 {
-                    if (this.part.vessel.isActiveVessel) ScreenMessages.PostScreenMessage("Weapon Requires EC", 5.0f, ScreenMessageStyle.UPPER_CENTER);
+                    if (part.vessel.isActiveVessel) ScreenMessages.PostScreenMessage("Weapon Requires EC", 5.0f, ScreenMessageStyle.UPPER_CENTER);
                     return false;
                 }
                 //else return true; //this is causing weapons thath have ECPerShot + standard ammo (railguns, etc) to not consume ammo, only EC
@@ -5132,7 +5132,7 @@ namespace BDArmory.Weapons
                     if (tgtRocket != null)
                     {
                         targetVelocity = tgtRocket.currentVelocity;
-                        targetPosition = tgtRocket.currPosition;
+                        targetPosition = tgtRocket.currentPosition;
                         targetRadius = 0.25f;
                     }
                     if (visualTargetPart != null)
@@ -5161,7 +5161,7 @@ namespace BDArmory.Weapons
                     if (BDArmorySettings.DEBUG_WEAPONS)
                     {
                         Debug.Log("[BDArmory.ModuleWeapon] tgtVelocity: " + tgtVelocity + "; tgtPosition: " + targetPosition + "; tgtAccel: " + targetAcceleration);
-                        Debug.Log($"[BDArmory.ModuleWeapon - {(this.vessel != null ? vessel.GetName() : "null")}] Lead Offset: {fixedLeadOffset}, FinalAimTgt: {finalAimTarget}, tgt CosAngle {targetCosAngle}, wpn CosAngle {targetAdjustedMaxCosAngle}, Wpn Autofire: {autoFire}");
+                        Debug.Log($"[BDArmory.ModuleWeapon - {(vessel != null ? vessel.GetName() : "null")}] Lead Offset: {fixedLeadOffset}, FinalAimTgt: {finalAimTarget}, tgt CosAngle {targetCosAngle}, wpn CosAngle {targetAdjustedMaxCosAngle}, Wpn Autofire: {autoFire}");
                     }
                     return true;
                 }
@@ -5810,7 +5810,7 @@ namespace BDArmory.Weapons
         }
         protected void SetInitialDetonationDistance()
         {
-            if (this.detonationRange == -1)
+            if (detonationRange == -1)
             {
                 if (eWeaponType == WeaponTypes.Ballistic && bulletInfo.tntMass != 0 && (eFuzeType == FuzeTypes.Proximity || eFuzeType == FuzeTypes.Flak))
                 {
