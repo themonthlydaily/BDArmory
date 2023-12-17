@@ -1,4 +1,8 @@
-﻿v1.6.9.0
+﻿IMPROVEMENTS / FIXES
+- AI / WM:
+	- Invert the roll target when the fly-to direction is below and behind the craft.
+
+v1.6.9.0
 IMPROVEMENTS / FIXES
 - UI:
 	- Fix the alternate (hidden UI) window locations (for scores and vessel switcher) not being saved correctly.
