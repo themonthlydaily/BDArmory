@@ -1,6 +1,7 @@
 ﻿IMPROVEMENTS / FIXES
 - AI / WM:
 	- Invert the roll target when the fly-to direction is below and behind the craft.
+	- Fix automatic gun range adjustments in the WM again.
 
 v1.6.9.0
 IMPROVEMENTS / FIXES

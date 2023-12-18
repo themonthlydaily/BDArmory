@@ -7779,13 +7779,16 @@ namespace BDArmory.Control
             {
                 if (weapon == null) continue;
                 if (gunLikeClasses.Contains(weapon.GetWeaponClass()))
+                {
                     maxGunRange = Mathf.Max(maxGunRange, weapon.maxEffectiveDistance);
+                }
             }
             var rangeEditor = (UI_FloatSemiLogRange)Fields["gunRange"].uiControlEditor;
             rangeEditor.UpdateLimits(rangeEditor.minValue, maxGunRange);
             if (BDArmorySetup.Instance.textNumFields != null && BDArmorySetup.Instance.textNumFields.ContainsKey("gunRange")) { BDArmorySetup.Instance.textNumFields["gunRange"].maxValue = maxGunRange; }
+            var oldGunRange = gunRange;
             gunRange = Mathf.Min(gunRange, maxGunRange);
-            if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.MissileFire]: Updating gun range of {v.vesselName} to {gunRange} of {maxGunRange}");
+            if (BDArmorySettings.DEBUG_AI && gunRange != oldGunRange) Debug.Log($"[BDArmory.MissileFire]: Updating gun range of {v.vesselName} to {gunRange} of {maxGunRange} from {oldGunRange}");
         }
 
         public void UpdateMaxGunRange(Part eventPart)
@@ -7805,10 +7808,11 @@ namespace BDArmory.Control
                 }
             }
             var rangeEditor = (UI_FloatSemiLogRange)Fields["gunRange"].uiControlEditor;
+            if (gunRange == 10 || gunRange > rangeEditor.maxValue - 1) { gunRange = maxGunRange; }
             rangeEditor.UpdateLimits(rangeEditor.minValue, maxGunRange);
-            if (gunRange > rangeEditor.maxValue - 1) { gunRange = maxGunRange; }
+            var oldGunRange = gunRange;
             gunRange = Mathf.Min(gunRange, maxGunRange);
-            if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.MissileFire]: Updating gun range of {EditorLogic.fetch.ship.shipName} to {gunRange} of {maxGunRange}");
+            if (BDArmorySettings.DEBUG_AI && gunRange != oldGunRange) Debug.Log($"[BDArmory.MissileFire]: Updating gun range of {EditorLogic.fetch.ship.shipName} to {gunRange} of {maxGunRange} from {oldGunRange}");
         }
 
         /// <summary>
