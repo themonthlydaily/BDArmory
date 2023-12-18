@@ -2593,7 +2593,7 @@ namespace BDArmory.Control
             rollTarget = targetPosition + (rollUp * upDirection) - vesselTransform.position;
 
             //test
-            if (steerMode == SteerModes.Aiming && !belowMinAltitude)
+            if (steerMode == SteerModes.Aiming && !belowMinAltitude && !invertRollTarget)
             {
                 angVelRollTarget = -140 * vesselTransform.TransformVector(Quaternion.AngleAxis(90f, Vector3.up) * localTargetAngVel);
                 rollTarget += angVelRollTarget;
