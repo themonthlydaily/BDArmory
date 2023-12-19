@@ -1904,7 +1904,7 @@ namespace BDArmory.Radar
                                     tInfo.isMissile = false; // The target vessel has lost it's missile base component and should no longer count as a missile. This can happen for modular missiles that are getting destroyed.
                                 }
                             }
-                            else
+                            else if (myWpnManager.guardMode) // Only check being under fire when in guard mode (for non-guardmode CMs).
                             {
                                 /*
                                 VesselCloakInfo vesselcamo;
