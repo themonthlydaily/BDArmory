@@ -1045,6 +1045,7 @@ namespace BDArmory.Control
         public float FlatSpin = 0; // 0 is not in FlatSpin, -1 is clockwise spin, 1 is counter-clockwise spin (set up this way instead of bool to allow future implementation for asymmetric thrust)
         float flatSpinStartTime = float.MaxValue;
         bool isPSM = false; // Is the plane doing post-stall manoeuvering? Note: this isn't really being used for anything other than debugging at the moment.
+        bool invertRollTarget = false; // Invert the roll target under some conditions.
         #endregion
 
         #region Collision Detection (between vessels)
@@ -2592,7 +2593,7 @@ namespace BDArmory.Control
             rollTarget = targetPosition + (rollUp * upDirection) - vesselTransform.position;
 
             //test
-            if (steerMode == SteerModes.Aiming && !belowMinAltitude)
+            if (steerMode == SteerModes.Aiming && !belowMinAltitude && !invertRollTarget)
             {
                 angVelRollTarget = -140 * vesselTransform.TransformVector(Quaternion.AngleAxis(90f, Vector3.up) * localTargetAngVel);
                 rollTarget += angVelRollTarget;
@@ -2603,6 +2604,8 @@ namespace BDArmory.Control
                 rollTarget = -commandLeader.vessel.ReferenceTransform.forward;
             }
 
+            if (invertRollTarget) rollTarget = -rollTarget;
+
             bool requiresLowAltitudeRollTargetCorrection = false;
             if (avoidingTerrain || postTerrainAvoidanceCoolDownTimer >= 0)
             {
@@ -2610,7 +2613,7 @@ namespace BDArmory.Control
                 var terrainAvoidanceRollCosAngle = Vector3.Dot(-vesselTransform.forward, terrainAlertNormal.ProjectOnPlanePreNormalized(vesselTransform.up).normalized);
                 if (terrainAvoidanceRollCosAngle < terrainAvoidanceCriticalCosAngle)
                 {
-                    if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"inverting rollTarget: {rollTarget}, cosAngle: {terrainAvoidanceRollCosAngle} vs {terrainAvoidanceCriticalCosAngle}, isPSM: {isPSM}");
+                    if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Inverting rollTarget: {rollTarget}, cosAngle: {terrainAvoidanceRollCosAngle} vs {terrainAvoidanceCriticalCosAngle}, isPSM: {isPSM}");
                     rollTarget = -rollTarget; // Avoid terrain fully inverted if the plane is mostly inverted (>30°) to begin with.
                 }
                 if (postTerrainAvoidanceCoolDownTimer >= 0 && postTerrainAvoidanceCoolDownDuration > 0)
@@ -3991,6 +3994,7 @@ namespace BDArmory.Control
             Vector3 projectedDirection = forwardDirection.ProjectOnPlanePreNormalized(upDirection);
             Vector3 projectedTargetDirection = targetDirection.ProjectOnPlanePreNormalized(upDirection);
             var cosAngle = Vector3.Dot(targetDirection, forwardDirection);
+            invertRollTarget = false;
             if (cosAngle < 0)
             {
                 if (canExtend && targetDistance > BankedTurnDistance) // For long-range turning, do a banked turn (horizontal) instead to conserve energy, but only if extending is allowed.
@@ -4004,6 +4008,7 @@ namespace BDArmory.Control
                         targetDirection = Vector3.RotateTowards(-vesselTransform.up, vessel.angularVelocity.x < 0.1f ? -vesselTransform.forward : vesselTransform.forward, Mathf.Deg2Rad * ImmelmannTurnAngle, 0); // If the target is in our blind spot, just pitch up (or down depending on pitch angular velocity) to get a better view. (Immelmann turn.)
                     }
                     targetPosition = vesselTransform.position + Vector3.Cross(Vector3.Cross(forwardDirection, targetDirection), forwardDirection).normalized * 200; // Make the target position 90° from vesselTransform.up.
+                    invertRollTarget = Vector3.Dot(targetDirection, vesselTransform.forward) > 0; // Target is behind and below, pitch down first then roll up.
                 }
             }
             else if (steerMode != SteerModes.Aiming)

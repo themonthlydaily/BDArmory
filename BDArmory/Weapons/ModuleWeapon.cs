@@ -4542,7 +4542,7 @@ namespace BDArmory.Weapons
         {
             // This runs in the FashionablyLate timing phase of FixedUpdate before Krakensbane corrections have been applied.
             if (!(aimAndFireIfPossible || aimOnly)) return;
-            if (this == null || weaponManager == null || !gameObject.activeInHierarchy || FlightGlobals.currentMainBody == null) return;
+            if (this == null || vessel == null || !vessel.loaded || weaponManager == null || !gameObject.activeInHierarchy || FlightGlobals.currentMainBody == null) return;
 
             if (isAPS || (weaponManager.guardMode && dualModeAPS)) //prioritize APS as APS if AI using dualmode units for engaging standard targets
             {
@@ -5821,7 +5821,7 @@ namespace BDArmory.Weapons
                 if (eWeaponType == WeaponTypes.Ballistic && bulletInfo.tntMass != 0 && (eFuzeType == FuzeTypes.Proximity || eFuzeType == FuzeTypes.Flak))
                 {
                     blastRadius = BlastPhysicsUtils.CalculateBlastRange(bulletInfo.tntMass); //reporting as two so blastradius can be handed over to PooledRocket for detonation/safety stuff
-                    detonationRange = beehive ? 100 :blastRadius * 0.666f;
+                    detonationRange = beehive ? 100 : blastRadius * 0.666f;
                 }
                 else if (eWeaponType == WeaponTypes.Rocket && rocketInfo.tntMass != 0) //don't fire rockets at point blank
                 {

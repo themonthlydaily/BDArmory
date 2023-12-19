@@ -1,9 +1,15 @@
-﻿Changes to ammo definitions
+v1.6.9.0
+﻿IMPROVEMENTS / FIXES
+- AI / WM:
+	- Invert the roll target when the fly-to direction is below and behind the craft.
+	- Fix automatic gun range adjustments in the WM again.
+- Weapons:
+	- Corrections to penetration and ricochet velocity changes.
   - 'subProjectileCount' has been deprecated and replaced with 'projectileCount'; this specifies number of pellets per shot (for shotguns, etc) to make it more intuitive. Existing shotgun-type weapons will need to update their bulletDefs.
   - The subMunitionType field for beehive ammo now uses the syntax of ammotype; quantity (e.g. subMunitionType = 35x228AHEADPellet; 30) with number of projectiles released on detonation set here instead of the subMunition's bulletDef.
-  - Fix issue with Rotary Rails trying to use missiles that have previouslt been blown off from combat damage.
-  - Fix issue with MultiMissilelauncher Turrets throwing an NRE when AI firing.
-
+  - Missiles:
+    - Fix issue with Rotary Rails trying to use missiles that have previouslt been blown off from combat damage.
+    - Fix issue with MultiMissilelauncher Turrets throwing an NRE when AI firing.
 
 IMPROVEMENTS / FIXES
 - UI:
@@ -39,7 +45,8 @@ IMPROVEMENTS / FIXES
 	- Show where aimer lines in the SPH are blocked and by what.
 	- Add Deploy toggle to see where weapons with deploy animations will point when deployed vs retracted (e.g. M230 chaingun).
 	- Fix lasers using wrong armor thickness value for damage reduction calcs.
-	- Fix Beehive ammo detonation timing when used in orbit.
+	- Fixes point defense/APS turrets not engaging incoming missiles.
+	- Fix proximity/flak/beehive ammo detonation timing when used in orbit.
 	- Missiles:
 		- Add new Orbital guidance option for Modular Missiles.
 			- Missile will attempt to intercept orbital target at the user-set Max Speed value.

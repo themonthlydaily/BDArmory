@@ -837,12 +837,8 @@ namespace BDArmory.Bullets
             if (hitPart != null && hitPart.vessel == sourceVessel) return false;  //avoid autohit;
 
             Vector3 impactVelocity = GetDragAdjustedVelocity();
-            if (hitPart != null && hitPart.rb != null)
-            {
-                // using relative velocity vector instead of just bullet velocity
-                // since KSP vessels might move faster than bullets
-                impactVelocity -= (hitPart.rb.velocity + BDKrakensbane.FrameVelocityV3f);
-            }
+            Vector3 hitPartVelocity = (hitPart != null && hitPart.rb != null) ? hitPart.rb.velocity + BDKrakensbane.FrameVelocityV3f : Vector3.zero;
+            impactVelocity -= hitPartVelocity;
 
             impactSpeed = impactVelocity.magnitude;
 
@@ -1269,8 +1265,8 @@ namespace BDArmory.Bullets
 
                             // In the case we are reaching that cap we decrease the velocity by
                             // the adjustedPenRatio minus the portion that went into erosion
-                            currentVelocity = currentVelocity * adjustedPenRatio;
                             impactVelocity = impactVelocity * adjustedPenRatio;
+                            currentVelocity = hitPartVelocity + impactVelocity;
                         }
                         else
                         {
@@ -1278,23 +1274,23 @@ namespace BDArmory.Bullets
 
                             // If we don't, I.E. the round isn't completely eroded, we decrease
                             // the velocity by a max of 5%, proportional to the adjustedPenRatio
-                            currentVelocity = currentVelocity * (0.95f + 0.05f * adjustedPenRatio);
                             impactVelocity = impactVelocity * (0.95f + 0.05f * adjustedPenRatio);
+                            currentVelocity = hitPartVelocity + impactVelocity;
                         }
                     }
                     else
                     {
                         // If the projectile has already been eroded away we just decrease the
                         // velocity by the adjustedPenRatio
-                        currentVelocity = currentVelocity * adjustedPenRatio;
                         impactVelocity = impactVelocity * adjustedPenRatio;
+                        currentVelocity = hitPartVelocity + impactVelocity;
                     }
                 }
                 else
                 {
                     // Low velocity impacts behave the same as before
-                    currentVelocity = currentVelocity * adjustedPenRatio;
                     impactVelocity = impactVelocity * adjustedPenRatio;
+                    currentVelocity = hitPartVelocity + impactVelocity;
                 }
 
                 currentSpeed = currentVelocity.magnitude;
@@ -1856,16 +1852,15 @@ namespace BDArmory.Bullets
             tracerStartWidth /= 2;
             tracerEndWidth /= 2;
 
-            MoveBullet(fractionOfDistance * period);
+            MoveBullet(fractionOfDistance * period); // Move the bullet up to the impact point (including velocity and tracking updates).
             currentPosition = hit.point; // Error in position is around 1e-3.
-            currentVelocity = Vector3.Reflect(currentVelocity, hit.normal);
-            currentVelocity = (hitAngle / 150) * currentVelocity * 0.65f;
-
-            Vector3 randomDirection = UnityEngine.Random.rotation * Vector3.one;
-
-            currentVelocity = Vector3.RotateTowards(currentVelocity, randomDirection,
-                UnityEngine.Random.Range(0f, 5f) * Mathf.Deg2Rad, 0);
-            MoveBullet((1f - fractionOfDistance) * period);
+            Vector3 hitPartVelocity = (p != null && p.rb != null) ? p.rb.velocity + BDKrakensbane.FrameVelocityV3f : Vector3.zero;
+            Vector3 relativeVelocity = currentVelocity - hitPartVelocity;
+            relativeVelocity = Vector3.Reflect(relativeVelocity, hit.normal); // Change angle.
+            relativeVelocity = Vector3.RotateTowards(relativeVelocity, UnityEngine.Random.onUnitSphere, UnityEngine.Random.Range(0f, 5f) * Mathf.Deg2Rad, 0); // Add some randomness to the new direction.
+            relativeVelocity *= hitAngle / 150 * 0.65f; // Reduce speed.
+            currentVelocity = hitPartVelocity + relativeVelocity; // Update the new current velocity.
+            MoveBullet((1f - fractionOfDistance) * period); // Move the bullet the remaining distance in the new direction.
             bulletTrail[1].enabled = false;
         }
 
