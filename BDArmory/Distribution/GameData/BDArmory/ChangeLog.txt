@@ -1,4 +1,11 @@
-﻿IMPROVEMENTS / FIXES
+﻿Changes to ammo definitions
+  - 'subProjectileCount' has been deprecated and replaced with 'projectileCount'; this specifies number of pellets per shot (for shotguns, etc) to make it more intuitive. Existing shotgun-type weapons will need to update their bulletDefs.
+  - The subMunitionType field for beehive ammo now uses the syntax of ammotype; quantity (e.g. subMunitionType = 35x228AHEADPellet; 30) with number of projectiles released on detonation set here instead of the subMunition's bulletDef.
+  - Fix issue with Rotary Rails trying to use missiles that have previouslt been blown off from combat damage.
+  - Fix issue with MultiMissilelauncher Turrets throwing an NRE when AI firing.
+
+
+IMPROVEMENTS / FIXES
 - UI:
 	- Fix the alternate (hidden UI) window locations (for scores and vessel switcher) not being saved correctly.
 - General:

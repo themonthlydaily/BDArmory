@@ -1963,7 +1963,6 @@ namespace BDArmory.Control
                                     BayTriggerTime = Time.time;
                                     //yield return new WaitForSecondsFixed(2f); //so this doesn't delay radar targeting stuff below
                                 }
-
                                 float attemptLockTime = Time.time;
                                 while (ml && (!vesselRadarData.locked || (vesselRadarData.lockedTargetData.vessel != targetVessel)) && Time.time - attemptLockTime < 2)
                                 {
@@ -2010,14 +2009,13 @@ namespace BDArmory.Control
                                     if (mlauncher.multiLauncher && mlauncher.multiLauncher.turret && vesselRadarData.locked)
                                     {
                                         vesselRadarData.SlaveTurrets();
-                                        while (Time.time - turretStartTime < Mathf.Max(targetScanInterval / 2f, 2) && targetVessel && mlauncher && angle > mlauncher.missileTurret.fireFOV)
+                                        while (Time.time - turretStartTime < Mathf.Max(targetScanInterval / 2f, 2) && targetVessel && mlauncher && angle > mlauncher.multiLauncher.turret.fireFOV)
                                         {
                                             angle = Vector3.Angle(mlauncher.multiLauncher.turret.finalTransform.forward, mlauncher.multiLauncher.turret.slavedTargetPosition - mlauncher.multiLauncher.turret.finalTransform.position);
                                             yield return wait;
                                         }
                                     }
                                 }
-
                                 yield return wait;
 
                                 // if (ml && guardTarget && vesselRadarData.locked && (!AIMightDirectFire() || GetLaunchAuthorization(guardTarget, this)))
@@ -2195,8 +2193,13 @@ namespace BDArmory.Control
                                     }
                                     designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(foundCam.groundTargetPosition, vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
                                 }
-                                else //no cam, get ranging from radar lock? Limit to aerial targets only to not obsolete the tgtCam? Or see if the speed improvemetns to camera tracking speed permit cams to now be able to track planes
+                                else //no cam, get ranging from radar lock? Limit to aerial targets only to not obsolete the tgtCam? Or see if the speed improvements to camera tracking speed permit cams to now be able to track planes
                                 {
+                                    // unguidedWeapon = true; //so let them be used as unguided ordinance
+                                    //if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: No targeting cam! Available cams: {targetingPods.Count}; switching to unguided firing");
+                                    //break;
+
+                                    //comment out section below, and uncomment above, if we don't want radar locks to provide GPS ranging/coord data
                                     float attemptLockTime = Time.time;
                                     while (ml && (!vesselRadarData.locked || (vesselRadarData.lockedTargetData.vessel != targetVessel)) && Time.time - attemptLockTime < 2)
                                     {
