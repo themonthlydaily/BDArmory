@@ -439,7 +439,7 @@ namespace BDArmory.Bullets
 
             if (CheckBulletCollisions(TimeWarp.fixedDeltaTime)) return;
 
-            MoveBullet(Time.fixedDeltaTime);
+            if (!hasRicocheted) MoveBullet(Time.fixedDeltaTime); // Ricochets perform movement internally.
 
             if (BDArmorySettings.BULLET_WATER_DRAG)
             {
@@ -1149,7 +1149,6 @@ namespace BDArmory.Bullets
                         {
                             fuzeTriggered = true;
                         }
-                        hasRicocheted = true;
                     }
                 }
                 if (!hasRicocheted) // explosive bullets that get stopped by armor will explode
@@ -1301,7 +1300,6 @@ namespace BDArmory.Bullets
 
                 float bulletDragArea = Mathf.PI * (caliber * caliber / 4f); //if bullet not killed by impact, possbily deformed from impact; grab new ballistic coeff for drag
                 ballisticCoefficient = bulletMass / ((bulletDragArea / 1000000f) * 0.295f); // mm^2 to m^2
-                hasRicocheted = false; // bullet inside part
 
                 //fully penetrated continue ballistic damage
                 hasPenetrated = true;
@@ -1847,8 +1845,9 @@ namespace BDArmory.Bullets
             tracerEndWidth /= 2;
 
             MoveBullet(fractionOfDistance * period); // Move the bullet up to the impact point (including velocity and tracking updates).
-            currentPosition = hit.point; // Error in position is around 1e-3.
-            Vector3 hitPartVelocity = (p != null && p.rb != null) ? p.rb.velocity + BDKrakensbane.FrameVelocityV3f : Vector3.zero;
+            var hitPoint = p != null ? AIUtils.PredictPosition(hit.point, p.vessel.Velocity(), p.vessel.acceleration_immediate, fractionOfDistance * period) : hit.point; // Adjust the hit point for the movement of the part.
+            currentPosition = hitPoint; // This is usually very accurate (<1mm), but is sometimes off by a couple of metres for some reason.
+            Vector3 hitPartVelocity = p != null ? p.vessel.Velocity() : Vector3.zero;
             Vector3 relativeVelocity = currentVelocity - hitPartVelocity;
             relativeVelocity = Vector3.Reflect(relativeVelocity, hit.normal); // Change angle.
             relativeVelocity = Vector3.RotateTowards(relativeVelocity, UnityEngine.Random.onUnitSphere, UnityEngine.Random.Range(0f, 5f) * Mathf.Deg2Rad, 0); // Add some randomness to the new direction.
@@ -1856,6 +1855,7 @@ namespace BDArmory.Bullets
             currentVelocity = hitPartVelocity + relativeVelocity; // Update the new current velocity.
             MoveBullet((1f - fractionOfDistance) * period); // Move the bullet the remaining distance in the new direction.
             bulletTrail[1].enabled = false;
+            hasRicocheted = true;
         }
 
         private float GetExplosivePower()
