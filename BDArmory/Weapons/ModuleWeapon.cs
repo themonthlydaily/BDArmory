@@ -3708,7 +3708,7 @@ namespace BDArmory.Weapons
                     }
                     else
                     {
-                        defaultDetonationRange = maxTargetingRange; //airburst at max range
+                        defaultDetonationRange = maxEffectiveDistance; //airburst at max range
                     }
                 }
                 fixedLeadOffset = originalTarget - finalTarget; //for aiming fixed guns to moving target
