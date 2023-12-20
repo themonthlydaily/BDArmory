@@ -1,4 +1,6 @@
 ﻿IMPROVEMENTS / FIXES
+- General:
+	- Fix part filtering by search terms in the editors.
 - AI / WM:
 	- Invert the roll target when the fly-to direction is below and behind the craft.
 	- Fix automatic gun range adjustments in the WM again.
