@@ -93,6 +93,7 @@ namespace BDArmory.Bullets
 
         //bool isThrusting = true;
         public bool isAPSprojectile = false;
+        public bool isSubProjectile = false;
         public PooledRocket tgtRocket = null;
         public PooledBullet tgtShell = null;
 
@@ -146,7 +147,7 @@ namespace BDArmory.Bullets
             startPosition = currentPosition;
             transform.rotation = transform.parent.rotation;
             startTime = Time.time;
-            armingTime = BDAMath.Sqrt(4 * blastRadius * rocketMass / thrust); // d = a/2 * t^2 for initial 0 relative velocity
+            armingTime = isSubProjectile ? 0 : BDAMath.Sqrt(4 * blastRadius * rocketMass / thrust); // d = a/2 * t^2 for initial 0 relative velocity
             if (FlightGlobals.getAltitudeAtPos(currentPosition) < 0)
             {
                 startUnderwater = true;
@@ -992,6 +993,7 @@ namespace BDArmory.Bullets
                     pBullet.stealResources = thief;
                     pBullet.dmgMult = dmgMult;
                     pBullet.isAPSprojectile = isAPSprojectile;
+                    pBullet.isSubProjectile = true;
                     pBullet.tgtShell = tgtShell;
                     pBullet.tgtRocket = tgtRocket;
                     pBullet.gameObject.SetActive(true);
@@ -1052,6 +1054,7 @@ namespace BDArmory.Bullets
                         rocket.tgtShell = tgtShell;
                         rocket.tgtRocket = tgtRocket;
                     }
+                    rocket.isSubProjectile = true;
                     rocketObj.SetActive(true);
                 }
             }

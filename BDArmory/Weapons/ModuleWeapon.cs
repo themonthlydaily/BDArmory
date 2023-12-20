@@ -163,7 +163,7 @@ namespace BDArmory.Weapons
         readonly SmoothingV3 partAccelerationSmoothing = new(); // Smoothing for the part's acceleration, required for long-range aiming.
         readonly SmoothingV3 smoothedRelativeFinalTarget = new(0.5f); // Smoothing for the finalTarget aim-point: half-life of 1 frame. This seems good. More than 5 frames (0.1s) seems too slow.
         public bool targetIsLandedOrSplashed = false; // Used in the targeting simulations to know whether to separate gravity from other acceleration.
-        private float lastTimeToCPA = -1, deltaTimeToCPA = 0; 
+        private float lastTimeToCPA = -1, deltaTimeToCPA = 0;
         float bulletTimeToCPA; // Time until the bullet is expected to reach the closest point to the target. Used for timing-based bullet detonation.
         public Vector3 finalAimTarget;
         Vector3 staleFinalAimTarget, staleTargetVelocity, staleTargetAcceleration, stalePartVelocity;
@@ -2194,6 +2194,7 @@ namespace BDArmory.Weapons
                                         pBullet.tgtRocket = tgtRocket;
                                         if (delayTime > -1) pBullet.timeToLiveUntil = delayTime;
                                     }
+                                    pBullet.isSubProjectile = false;
                                     BDACompetitionMode.Instance.Scores.RegisterShot(vessel.GetName());
                                     pBullet.gameObject.SetActive(true);
 
@@ -2782,6 +2783,7 @@ namespace BDArmory.Weapons
                                     rocket.tgtRocket = tgtRocket;
                                     if (delayTime > 0) rocket.lifeTime = delayTime;
                                 }
+                                rocket.isSubProjectile = false;
                                 rocketObj.SetActive(true);
                             }
                             if (!BDArmorySettings.INFINITE_AMMO)
@@ -2871,6 +2873,7 @@ namespace BDArmory.Weapons
                                                 rocket.tgtRocket = tgtRocket;
                                                 if (delayTime > 0) rocket.lifeTime = delayTime;
                                             }
+                                            rocket.isSubProjectile = false;
                                             rocketObj.SetActive(true);
                                         }
                                         if (!BDArmorySettings.INFINITE_AMMO)

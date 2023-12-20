@@ -140,6 +140,7 @@ namespace BDArmory.Bullets
         private Part CurrentPart = null;
 
         public bool isAPSprojectile = false;
+        public bool isSubProjectile = false;
         public PooledRocket tgtRocket = null;
         public PooledBullet tgtShell = null;
 
@@ -184,7 +185,7 @@ namespace BDArmory.Bullets
             startPosition = currentPosition;
             currentSpeed = currentVelocity.magnitude; // this is the velocity used for drag estimations (only), use total velocity, not muzzle velocity
             timeAlive = 0;
-            armingTime = 1.5f * ((beehive ? BlastPhysicsUtils.CalculateBlastRange(tntMass) : detonationRange) / bulletVelocity); //beehive rounds have artifically large detDists; only need explosive radius arming check
+            armingTime = isSubProjectile ? 0 : 1.5f * ((beehive ? BlastPhysicsUtils.CalculateBlastRange(tntMass) : detonationRange) / bulletVelocity); //beehive rounds have artifically large detDists; only need explosive radius arming check
 
             if (HEType != PooledBulletTypes.Slug)
             {
@@ -1544,6 +1545,7 @@ namespace BDArmory.Bullets
                 pBullet.stealResources = stealResources;
                 pBullet.dmgMult = dmgMult;
                 pBullet.isAPSprojectile = isAPSprojectile;
+                pBullet.isSubProjectile = true;
                 pBullet.tgtShell = tgtShell;
                 pBullet.tgtRocket = tgtRocket;
                 pBullet.gameObject.SetActive(true);
