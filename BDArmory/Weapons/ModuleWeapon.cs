@@ -163,7 +163,8 @@ namespace BDArmory.Weapons
         readonly SmoothingV3 partAccelerationSmoothing = new(); // Smoothing for the part's acceleration, required for long-range aiming.
         readonly SmoothingV3 smoothedRelativeFinalTarget = new(0.5f); // Smoothing for the finalTarget aim-point: half-life of 1 frame. This seems good. More than 5 frames (0.1s) seems too slow.
         public bool targetIsLandedOrSplashed = false; // Used in the targeting simulations to know whether to separate gravity from other acceleration.
-        private float lastTimeToCPA = -1, deltaTimeToCPA = 0;
+        private float lastTimeToCPA = -1, deltaTimeToCPA = 0; 
+        float bulletTimeToCPA; // Time until the bullet is expected to reach the closest point to the target. Used for timing-based bullet detonation.
         public Vector3 finalAimTarget;
         Vector3 staleFinalAimTarget, staleTargetVelocity, staleTargetAcceleration, stalePartVelocity;
         public Vessel visualTargetVessel;
@@ -2135,8 +2136,8 @@ namespace BDArmory.Weapons
                                         pBullet.explSoundPath = explSoundPath;
                                         pBullet.tntMass = bulletInfo.tntMass;
                                         pBullet.detonationRange = detonationRange;
-                                        pBullet.maxAirDetonationRange = maxAirDetonationRange;
                                         pBullet.defaultDetonationRange = defaultDetonationRange;
+                                        pBullet.timeToDetonation = bulletTimeToCPA;
                                         switch (eFuzeType)
                                         {
                                             case FuzeTypes.None:
@@ -2757,7 +2758,8 @@ namespace BDArmory.Weapons
                                 rocket.lifeTime = rocketInfo.lifeTime;
                                 rocket.flak = proximityDetonation;
                                 rocket.detonationRange = detonationRange;
-                                rocket.maxAirDetonationRange = maxAirDetonationRange;
+                                // rocket.maxAirDetonationRange = maxAirDetonationRange;
+                                rocket.timeToDetonation = predictedFlightTime;
                                 rocket.tntMass = rocketInfo.tntMass;
                                 rocket.shaped = rocketInfo.shaped;
                                 rocket.concussion = rocketInfo.impulse;
@@ -2845,7 +2847,8 @@ namespace BDArmory.Weapons
                                             rocket.lifeTime = rocketInfo.lifeTime;
                                             rocket.flak = proximityDetonation;
                                             rocket.detonationRange = detonationRange;
-                                            rocket.maxAirDetonationRange = maxAirDetonationRange;
+                                            // rocket.maxAirDetonationRange = maxAirDetonationRange;
+                                            rocket.timeToDetonation = predictedFlightTime;
                                             rocket.tntMass = rocketInfo.tntMass;
                                             rocket.shaped = rocketInfo.shaped;
                                             rocket.concussion = impulseWeapon;
@@ -3689,6 +3692,7 @@ namespace BDArmory.Weapons
                         smoothedRelativeFinalTarget.Reset(finalTarget - fireTransforms[0].position);
                     }
                     lastTimeToCPA = timeToCPA;
+                    bulletTimeToCPA = timeToCPA;
                     targetDistance = Vector3.Distance(finalTarget, firePosition);
 
                     if (BDArmorySettings.DEBUG_LINES && BDArmorySettings.DEBUG_WEAPONS)

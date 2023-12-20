@@ -109,7 +109,8 @@ namespace BDArmory.Bullets
         Vector3 startPosition;
         public float detonationRange = 5f;
         public float defaultDetonationRange = 3500f;
-        public float maxAirDetonationRange = 3500f;
+        public float timeToDetonation;
+        float armingTime;
         float randomWidthScale = 1;
         LineRenderer[] bulletTrail;
         float timeAlive = 0;
@@ -182,6 +183,8 @@ namespace BDArmory.Bullets
             currentPosition = transform.position; // In case something sets transform.position instead of currentPosition.
             startPosition = currentPosition;
             currentSpeed = currentVelocity.magnitude; // this is the velocity used for drag estimations (only), use total velocity, not muzzle velocity
+            timeAlive = 0;
+            armingTime = 2.5f * detonationRange / bulletVelocity;
 
             if (HEType != PooledBulletTypes.Slug)
             {
@@ -279,7 +282,6 @@ namespace BDArmory.Bullets
             smokeColor.g = 0.85f;
             smokeColor.b = 0.85f;
             smokeColor.a = 0.75f;
-            timeAlive = 0;
             bulletTrail[0].material.mainTexture = GameDatabase.Instance.GetTexture(bulletTexturePath, false);
             bulletTrail[0].material.SetColor("_TintColor", currentColor);
             bulletTrail[0].material.SetFloat("_Lum", (tracerLuminance > 0 ? tracerLuminance : 0.5f));
@@ -420,7 +422,7 @@ namespace BDArmory.Bullets
             }
             */
 
-            if (ProximityAirDetonation()) // Pre-move proximity detonation check.
+            if (ProximityAirDetonation(true)) // Pre-move proximity detonation check.
             {
                 //detonate
                 if (HEType != PooledBulletTypes.Slug)
@@ -485,7 +487,7 @@ namespace BDArmory.Bullets
             //Flak Explosion (air detonation/proximity fuse)
             //////////////////////////////////////////////////
 
-            if (ProximityAirDetonation((float)distanceTraveled)) // Post-move proximity detonation check
+            if (ProximityAirDetonation(false)) // Post-move proximity (end-of-life) detonation check
             {
                 //detonate
                 if (HEType != PooledBulletTypes.Slug)
@@ -1507,7 +1509,6 @@ namespace BDArmory.Bullets
                             break;
                     }
                     pBullet.detonationRange = detonationRange;
-                    pBullet.maxAirDetonationRange = maxAirDetonationRange;
                     pBullet.defaultDetonationRange = defaultDetonationRange;
                     pBullet.fuzeType = sFuze;
                 }
@@ -1552,9 +1553,15 @@ namespace BDArmory.Bullets
                 pBullet.timeAlive = iTime;
             }
         }
-        private bool ProximityAirDetonation(float distanceFromStart)
+        /// <summary>
+        /// Proximity detection prior to and after moving
+        /// The proximity check prior to moving needs to be done first in case moving the bullet would collide with a target, which would trigger that first.
+        /// </summary>
+        /// <param name="preMove"></param>
+        /// <returns></returns>
+        private bool ProximityAirDetonation(bool preMove)
         {
-            if (isAPSprojectile && (tgtShell != null || tgtRocket != null))
+            if (!preMove && isAPSprojectile && (tgtShell != null || tgtRocket != null)) // APS can detonate at close range.
             {
                 if (currentPosition.CloserToThan(tgtShell != null ? tgtShell.transform.position : tgtRocket.transform.position, detonationRange / 2))
                 {
@@ -1564,62 +1571,54 @@ namespace BDArmory.Bullets
                 }
             }
 
-            if (distanceTraveled <= detonationRange * 2.5f && (fuzeType == BulletFuzeTypes.Proximity || fuzeType == BulletFuzeTypes.Timed)) return false; //bullet not past arming distance
+            if (timeAlive < armingTime && (fuzeType == BulletFuzeTypes.Proximity || fuzeType == BulletFuzeTypes.Timed)) return false; // Not yet armed.
 
-            if (!(((HEType != PooledBulletTypes.Slug || nuclear) && tntMass > 0) || beehive)) return false;
-
-            if (fuzeType == BulletFuzeTypes.Timed || fuzeType == BulletFuzeTypes.Flak)
+            if (preMove) // For proximity detonation.
             {
-                if (distanceFromStart > (beehive ? maxAirDetonationRange - detonationRange : maxAirDetonationRange) || distanceFromStart > (beehive ? defaultDetonationRange - detonationRange : defaultDetonationRange))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
+                if (fuzeType != BulletFuzeTypes.Proximity && fuzeType != BulletFuzeTypes.Flak) return false; // Invalid type.
 
-        /// <summary>
-        /// This should be called prior to moving the bullet and checks for proximity detonations in the upcoming movement distance.
-        /// It can't be done afterwards because if moving the bullet would collide with a target, then that would trigger first.
-        /// </summary>
-        bool ProximityAirDetonation()
-        {
-            if (fuzeType != BulletFuzeTypes.Proximity && fuzeType != BulletFuzeTypes.Flak) return false; // Invalid type.
-            if (distanceTraveled <= detonationRange * 2.5f && (fuzeType == BulletFuzeTypes.Proximity || fuzeType == BulletFuzeTypes.Timed)) return false; //bullet not past arming distance
-
-            Vector3 bulletAcceleration = bulletDrop ? FlightGlobals.getGeeForceAtPosition(currentPosition) : Vector3.zero;
-            using (var loadedVessels = BDATargetManager.LoadedVessels.GetEnumerator())
-            {
-                while (loadedVessels.MoveNext())
+                Vector3 bulletAcceleration = bulletDrop ? FlightGlobals.getGeeForceAtPosition(currentPosition) : Vector3.zero;
+                using (var loadedVessels = BDATargetManager.LoadedVessels.GetEnumerator())
                 {
-                    if (loadedVessels.Current == null || !loadedVessels.Current.loaded) continue;
-                    if (loadedVessels.Current == sourceVessel) continue;
-                    Vector3 relativeVelocity = currentVelocity - loadedVessels.Current.Velocity();
-                    float localDetonationRange = detonationRange + loadedVessels.Current.GetRadius(); // Detonate when the outermost part of the vessel is within the detonateRange.
-                    float detRangeTime = TimeWarp.fixedDeltaTime + 2 * localDetonationRange / Mathf.Max(1f, relativeVelocity.magnitude); // Time for this frame's movement plus the relative separation to change by twice the detonation range + the vessel's radius (within reason). This is more than the worst-case time needed for the bullet to reach the CPA (ignoring relative acceleration, technically we should be solving x=v*t+1/2*a*t^2 for t).
-                    var timeToCPA = AIUtils.TimeToCPA(loadedVessels.Current, currentPosition, currentVelocity, bulletAcceleration, detRangeTime);
-                    if (timeToCPA > 0 && timeToCPA < detRangeTime) // Going to reach the CPA within the detRangeTime
+                    while (loadedVessels.MoveNext())
                     {
-                        Vector3 adjustedTgtPos = AIUtils.PredictPosition(loadedVessels.Current, timeToCPA);
-                        Vector3 CPA = AIUtils.PredictPosition(currentPosition, currentVelocity, bulletAcceleration, timeToCPA);
-                        float minSepSqr = (CPA - adjustedTgtPos).sqrMagnitude;
-                        float localDetonationRangeSqr = localDetonationRange * localDetonationRange;
-                        if (minSepSqr < localDetonationRangeSqr)
+                        if (loadedVessels.Current == null || !loadedVessels.Current.loaded) continue;
+                        if (loadedVessels.Current == sourceVessel) continue;
+                        Vector3 relativeVelocity = currentVelocity - loadedVessels.Current.Velocity();
+                        float localDetonationRange = detonationRange + loadedVessels.Current.GetRadius(); // Detonate when the outermost part of the vessel is within the detonateRange.
+                        float detRangeTime = TimeWarp.fixedDeltaTime + 2 * localDetonationRange / Mathf.Max(1f, relativeVelocity.magnitude); // Time for this frame's movement plus the relative separation to change by twice the detonation range + the vessel's radius (within reason). This is more than the worst-case time needed for the bullet to reach the CPA (ignoring relative acceleration, technically we should be solving x=v*t+1/2*a*t^2 for t).
+                        var timeToCPA = AIUtils.TimeToCPA(loadedVessels.Current, currentPosition, currentVelocity, bulletAcceleration, detRangeTime);
+                        if (timeToCPA > 0 && timeToCPA < detRangeTime) // Going to reach the CPA within the detRangeTime
                         {
-                            timeToCPA = Mathf.Max(0, timeToCPA - BDAMath.Sqrt((localDetonationRangeSqr - minSepSqr) / relativeVelocity.sqrMagnitude)); // Move the detonation time back to the point where it came within the detonation range, but not before the current time.
-                            if (timeToCPA < TimeWarp.fixedDeltaTime) // Detonate if timeToCPA is this frame.
+                            Vector3 adjustedTgtPos = AIUtils.PredictPosition(loadedVessels.Current, timeToCPA);
+                            Vector3 CPA = AIUtils.PredictPosition(currentPosition, currentVelocity, bulletAcceleration, timeToCPA);
+                            float minSepSqr = (CPA - adjustedTgtPos).sqrMagnitude;
+                            float localDetonationRangeSqr = localDetonationRange * localDetonationRange;
+                            if (minSepSqr < localDetonationRangeSqr)
                             {
-                                currentPosition = AIUtils.PredictPosition(currentPosition, currentVelocity, bulletAcceleration, timeToCPA); // Adjust the bullet position back to the detonation position.
-                                iTime = TimeWarp.fixedDeltaTime - timeToCPA;
-                                if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.PooledBullet]: Detonating proxy round with detonation range {detonationRange}m at {currentPosition} at distance {(currentPosition - AIUtils.PredictPosition(loadedVessels.Current, timeToCPA)).magnitude}m from {loadedVessels.Current.vesselName} of radius {loadedVessels.Current.GetRadius()}m");
-                                return true;
+                                timeToCPA = Mathf.Max(0, timeToCPA - BDAMath.Sqrt((localDetonationRangeSqr - minSepSqr) / relativeVelocity.sqrMagnitude)); // Move the detonation time back to the point where it came within the detonation range, but not before the current time.
+                                if (timeToCPA < TimeWarp.fixedDeltaTime) // Detonate if timeToCPA is this frame.
+                                {
+                                    currentPosition = AIUtils.PredictPosition(currentPosition, currentVelocity, bulletAcceleration, timeToCPA); // Adjust the bullet position back to the detonation position.
+                                    iTime = TimeWarp.fixedDeltaTime - timeToCPA;
+                                    if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.PooledBullet]: Detonating proxy round with detonation range {detonationRange}m at {currentPosition} at distance {(currentPosition - AIUtils.PredictPosition(loadedVessels.Current, timeToCPA)).magnitude}m from {loadedVessels.Current.vesselName} of radius {loadedVessels.Current.GetRadius()}m");
+                                    return true;
+                                }
                             }
                         }
                     }
                 }
+                return false;
             }
-            return false;
+            else // For end-of-life detonation.
+            {
+                if (!(((HEType != PooledBulletTypes.Slug || nuclear) && tntMass > 0) || beehive)) return false;
+                if (!(fuzeType == BulletFuzeTypes.Timed || fuzeType == BulletFuzeTypes.Flak)) return false;
+                if (timeAlive > (beehive ? timeToDetonation - detonationRange / bulletVelocity : timeToDetonation)) return true;
+                return false;
+            }
         }
+
         private void UpdateDragEstimate()
         {
             switch (dragType)
