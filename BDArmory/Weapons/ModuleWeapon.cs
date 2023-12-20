@@ -742,10 +742,6 @@ namespace BDArmory.Weapons
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ProximityFuzeRadius"), UI_FloatRange(minValue = 0f, maxValue = 300f, stepIncrement = 1f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Proximity Fuze Radius
         public float detonationRange = -1f; // give ability to set proximity range
 
-        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_MaxDetonationRange"),//Max Detonation Range
-        UI_FloatRange(minValue = 500, maxValue = 8000f, stepIncrement = 5f, scene = UI_Scene.All)]
-        public float maxAirDetonationRange = 3500; // could probably get rid of this entirely, max engagement range more or less already does this
-
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Ammo_Type"),//Ammunition Types
         UI_FloatRange(minValue = 1, maxValue = 999, stepIncrement = 1, scene = UI_Scene.All)]
         public float AmmoTypeNum = 1;
@@ -1183,9 +1179,6 @@ namespace BDArmory.Weapons
             }
             if (eWeaponType == WeaponTypes.Ballistic)
             {
-                UI_FloatRange detRange = (UI_FloatRange)Fields["maxAirDetonationRange"].uiControlEditor;
-                detRange.maxValue = maxEffectiveDistance; //altitude fuzing clamped to max range
-
                 rocketPod = false;
             }
             if (eWeaponType == WeaponTypes.Rocket)
@@ -1236,8 +1229,6 @@ namespace BDArmory.Weapons
                 }
                 rocketPod = false;
                 //disable fuze GUI elements
-                Fields["maxAirDetonationRange"].guiActive = false;
-                Fields["maxAirDetonationRange"].guiActiveEditor = false;
                 Fields["defaultDetonationRange"].guiActive = false;
                 Fields["defaultDetonationRange"].guiActiveEditor = false;
                 Fields["detonationRange"].guiActive = false;
@@ -1639,8 +1630,6 @@ namespace BDArmory.Weapons
         {
             if (eFuzeType == FuzeTypes.Proximity || eFuzeType == FuzeTypes.Flak || eFuzeType == FuzeTypes.Timed || beehive)
             {
-                Fields["maxAirDetonationRange"].guiActive = true;
-                Fields["maxAirDetonationRange"].guiActiveEditor = true;
                 Fields["defaultDetonationRange"].guiActive = true;
                 Fields["defaultDetonationRange"].guiActiveEditor = true;
                 Fields["detonationRange"].guiActive = true;
@@ -1649,8 +1638,6 @@ namespace BDArmory.Weapons
             }
             else
             {
-                Fields["maxAirDetonationRange"].guiActive = false;
-                Fields["maxAirDetonationRange"].guiActiveEditor = false;
                 Fields["defaultDetonationRange"].guiActive = false;
                 Fields["defaultDetonationRange"].guiActiveEditor = false;
                 Fields["detonationRange"].guiActive = false;
@@ -3721,7 +3708,7 @@ namespace BDArmory.Weapons
                     }
                     else
                     {
-                        defaultDetonationRange = maxAirDetonationRange; //airburst at max range
+                        defaultDetonationRange = maxTargetingRange; //airburst at max range
                     }
                 }
                 fixedLeadOffset = originalTarget - finalTarget; //for aiming fixed guns to moving target
@@ -3808,7 +3795,7 @@ namespace BDArmory.Weapons
                 {
                     float simTime = 0;
                     float maxTime = rocketInfo.lifeTime;
-                    float maxDistance = Mathf.Min(Mathf.Min(targetDistance, maxTargetingRange), maxAirDetonationRange); // Rockets often detonate earlier than their lifetime.
+                    float maxDistance = Mathf.Min(targetDistance, maxTargetingRange); // Rockets often detonate earlier than their lifetime.
                     Vector3 pointingDirection = fireTransform.forward;
                     Vector3 simVelocity = part.rb.velocity + BDKrakensbane.FrameVelocityV3f;
                     Vector3 simCurrPos = fireTransform.position;
@@ -5951,7 +5938,7 @@ namespace BDArmory.Weapons
                             {
                                 output.AppendLine($"Air detonation: True");
                                 output.AppendLine($"- auto timing: {(binfo.fuzeType.ToLower() != "proximity")}");
-                                output.AppendLine($"- max range: {maxAirDetonationRange} m");
+                                output.AppendLine($"- max range: {maxTargetingRange} m");
                             }
                             else
                             {

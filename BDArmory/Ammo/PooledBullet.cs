@@ -184,7 +184,7 @@ namespace BDArmory.Bullets
             startPosition = currentPosition;
             currentSpeed = currentVelocity.magnitude; // this is the velocity used for drag estimations (only), use total velocity, not muzzle velocity
             timeAlive = 0;
-            armingTime = 2.5f * detonationRange / bulletVelocity;
+            armingTime = 1.5f * ((beehive ? BlastPhysicsUtils.CalculateBlastRange(tntMass) : detonationRange) / bulletVelocity); //beehive rounds have artifically large detDists; only need explosive radius arming check
 
             if (HEType != PooledBulletTypes.Slug)
             {
