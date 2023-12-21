@@ -6,6 +6,8 @@
 	- Fix automatic gun range adjustments in the WM again.
 - Weapons:
 	- Corrections to penetration and ricochet velocity changes.
+	- Missiles:
+		-	Fix mass changes of missiles that decouple boosters and add missile mass debug telemetry.
 
 v1.6.9.0
 IMPROVEMENTS / FIXES
