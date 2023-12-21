@@ -1549,12 +1549,11 @@ namespace BDArmory.Bullets
                 pBullet.gameObject.SetActive(true);
 
                 // Tracers shouldn't really be drawn before the next frame, but not doing so results in them appearing as randomly oriented streaks and the parent bullet disappears on the same frame, so we draw them here and they appear to stutter for a frame (drawn ahead by 1 frame, then drawn in the same position as the FX catches up with the physics).
-                pBullet.currentPosition -= TimeWarp.fixedDeltaTime * BDKrakensbane.FrameVelocityV3f; // Adjust the position for the visuals since the FI hasn't run yet.
                 pBullet.SetTracerPosition();
-                pBullet.currentPosition += TimeWarp.fixedDeltaTime * BDKrakensbane.FrameVelocityV3f; // And adjust them back again.
 
                 if (pBullet.CheckBulletCollisions(iTime)) continue; // Bullet immediately hit something and died.
                 if (!hasRicocheted) pBullet.MoveBullet(iTime); // Move the bullet the remaining part of the frame.
+                pBullet.currentPosition += (TimeWarp.fixedDeltaTime - iTime) * BDKrakensbane.FrameVelocityV3f; // Re-adjust for Krakensbane.
                 pBullet.timeAlive = iTime;
             }
         }
@@ -1607,6 +1606,7 @@ namespace BDArmory.Bullets
                                     currentPosition = AIUtils.PredictPosition(currentPosition, currentVelocity, bulletAcceleration, timeToCPA); // Adjust the bullet position back to the detonation position.
                                     iTime = TimeWarp.fixedDeltaTime - timeToCPA;
                                     if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.PooledBullet]: Detonating proxy round with detonation range {detonationRange}m at {currentPosition} at distance {(currentPosition - AIUtils.PredictPosition(loadedVessels.Current, timeToCPA)).magnitude}m from {loadedVessels.Current.vesselName} of radius {loadedVessels.Current.GetRadius()}m");
+                                    currentPosition -= timeToCPA * BDKrakensbane.FrameVelocityV3f; // Adjust for Krakensbane.
                                     return true;
                                 }
                             }
@@ -1619,7 +1619,13 @@ namespace BDArmory.Bullets
             {
                 if (!(((HEType != PooledBulletTypes.Slug || nuclear) && tntMass > 0) || beehive)) return false;
                 if (!(fuzeType == BulletFuzeTypes.Timed || fuzeType == BulletFuzeTypes.Flak)) return false;
-                if (timeAlive > (beehive ? timeToDetonation - detonationRange / bulletVelocity : timeToDetonation)) return true;
+                if (timeAlive > (beehive ? timeToDetonation - detonationRange / bulletVelocity : timeToDetonation))
+                {
+                    iTime = 0;
+                    currentPosition -= TimeWarp.fixedDeltaTime * BDKrakensbane.FrameVelocityV3f; // Adjust for Krakensbane.
+                    if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.PooledBullet]: Proximity detonation from reaching max time {timeToDetonation}s");
+                    return true;
+                }
                 return false;
             }
         }
