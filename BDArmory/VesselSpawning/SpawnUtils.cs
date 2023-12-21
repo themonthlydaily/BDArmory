@@ -13,6 +13,7 @@ using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.Weapons.Missiles;
+using BDArmory.Weapons;
 
 namespace BDArmory.VesselSpawning
 {
@@ -127,7 +128,7 @@ namespace BDArmory.VesselSpawning
         {
             foreach (var engine in VesselModuleRegistry.GetModuleEngines(vessel))
             {
-                if (ignoreModularMissileEngines && IsModularMissileEngine(engine)) continue; // Ignore modular missile engines.
+                if (ignoreModularMissileEngines && IsModularMissilePart(engine.part)) continue; // Ignore modular missile engines.
                 if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55) engine.independentThrottle = false;
                 var mme = engine.part.FindModuleImplementing<MultiModeEngine>();
                 if (mme == null)
@@ -164,9 +165,8 @@ namespace BDArmory.VesselSpawning
             FireSpitter.ActivateFSEngines(vessel, activate);
         }
 
-        public static bool IsModularMissileEngine(ModuleEngines engine)
+        public static bool IsModularMissilePart(Part part)
         {
-            var part = engine.part;
             if (part is not null)
             {
                 var firstDecoupler = BDModularGuidance.FindFirstDecoupler(part.parent, null);
@@ -388,6 +388,7 @@ namespace BDArmory.VesselSpawning
         /// <returns></returns>
         public IEnumerator RemoveAllVessels()
         {
+            DisableAllBulletsAndRockets(); // First get rid of any bullets and rockets flying around (missiles count as vessels).
             var vesselsToKill = FlightGlobals.Vessels.ToList();
             // Spawn in the SpawnProbe at the camera position.
             var spawnProbe = VesselSpawner.SpawnSpawnProbe();
@@ -411,6 +412,21 @@ namespace BDArmory.VesselSpawning
             // Now, clear the teams and wait for everything to be removed.
             SpawnUtils.originalTeams.Clear();
             yield return new WaitWhile(() => removeVesselsPending > 0);
+        }
+
+        public void DisableAllBulletsAndRockets()
+        {
+            if (ModuleWeapon.bulletPool != null)
+                foreach (var bullet in ModuleWeapon.bulletPool.pool)
+                    bullet.SetActive(false);
+            if (ModuleWeapon.shellPool != null)
+                foreach (var shell in ModuleWeapon.shellPool.pool)
+                    shell.SetActive(false);
+            if (ModuleWeapon.rocketPool != null)
+                foreach (var rocketPool in ModuleWeapon.rocketPool.Values)
+                    if (rocketPool != null)
+                        foreach (var rocket in rocketPool.pool)
+                            rocket.SetActive(false);
         }
         #endregion
 
@@ -485,7 +501,7 @@ namespace BDArmory.VesselSpawning
                 flightCamera.transform.localRotation = Quaternion.identity;
                 flightCamera.ActivateUpdate();
             }
-            flightCamera.SetDistance(distance);
+            flightCamera.SetDistanceImmediate(distance);
             FlightCamera.CamHdg = cameraHeading;
             FlightCamera.CamPitch = cameraPitch;
         }

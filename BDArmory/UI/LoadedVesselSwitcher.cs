@@ -1136,7 +1136,13 @@ namespace BDArmory.UI
                 if (activeVessel != null && activeVessel.loaded && !activeVessel.packed && activeVessel.IsMissile())
                 {
                     var mb = VesselModuleRegistry.GetMissileBase(activeVessel);
-                    if (mb != null && !mb.HasMissed && Vector3.Dot((mb.TargetPosition - mb.vessel.transform.position).normalized, mb.vessel.transform.up) < 0.5f) return; // Don't switch away from an active missile until it misses or is off-target.
+                    // Don't switch away from an active missile until it misses or is off-target, or if it is within 1 km of its source vessel or target position
+                    bool stayOnMissile = mb != null &&
+                        !mb.HasMissed &&
+                        Vector3.Dot((mb.TargetPosition - mb.vessel.transform.position).normalized, mb.vessel.transform.up) < 0.5f &&
+                        ((mb.SourceVessel && (mb.vessel.transform.position - mb.SourceVessel.transform.position).sqrMagnitude < 1e6) || // FIXME Josue Why the source vessel, wouldn't the target vessel make more sense?
+                        (mb.vessel.transform.position - mb.TargetPosition).sqrMagnitude < 1e6);
+                    if (stayOnMissile) return;
                 }
                 bool foundActiveVessel = false;
                 Vector3 centroid = Vector3.zero;
@@ -1154,15 +1160,15 @@ namespace BDArmory.UI
                     }
                     centroid /= (float)count;
                 }
-                if (BDArmorySettings.CAMERA_SWITCH_INCLUDE_MISSILES) // Prioritise active missiles. // FIXME Not sure this bit is actually doing much.
+                if (BDArmorySettings.CAMERA_SWITCH_INCLUDE_MISSILES) // Prioritise active missiles.
                 {
                     foreach (MissileBase missile in BDATargetManager.FiredMissiles)
                     {
                         if (missile == null || missile.HasMissed) continue; // Ignore missed missiles.
                         var targetDirection = missile.TargetPosition - missile.transform.position;
                         var targetDistance = targetDirection.magnitude;
-                        if (Vector3.Dot(targetDirection, missile.vessel.up) < 0.5f * targetDistance) continue; // Ignore off-target missiles.
-                        float missileScore = targetDistance < 1.1e3f ? 1e-3f : (targetDistance - 1e3f) * (targetDistance - 1e3f) * 1e-10f; // Prioritise missiles that are within 1km from their targets.
+                        if (Vector3.Dot(targetDirection, missile.GetForwardTransform()) < 0.5f * targetDistance) continue; // Ignore off-target missiles.
+                        float missileScore = targetDistance < 1e3f ? 0.1f : 0.1f + (targetDistance - 1e3f) * (targetDistance - 1e3f) * 2e-8f; // Prioritise missiles that are within 1km from their targets.
                         if (missileScore < bestScore)
                         {
                             bestScore = missileScore;
@@ -1258,6 +1264,7 @@ namespace BDArmory.UI
                                     float HP = 0;
                                     float WreckFactor = 0;
                                     var AI = VesselModuleRegistry.GetBDModulePilotAI(wm.Current.vessel, true);
+                                    var OAI = VesselModuleRegistry.GetModule<BDModuleOrbitalAI>(wm.Current.vessel, true);
 
                                     // If we're running a waypoints competition, only focus on vessels still running waypoints.
                                     if (BDACompetitionMode.Instance.competitionType == CompetitionType.WAYPOINTS)
@@ -1322,6 +1329,18 @@ namespace BDArmory.UI
                                             }
                                         }
                                         //else got weapons and engaging
+                                    }
+                                    if (OAI) // Maneuvering is interesting, other statuses are not
+                                    {
+                                        if (OAI.currentStatusMode == BDModuleOrbitalAI.StatusMode.Maneuvering)
+                                            vesselScore *= 0.5f;
+                                        else if (OAI.currentStatusMode == BDModuleOrbitalAI.StatusMode.CorrectingOrbit)
+                                            vesselScore *= 1.5f;
+                                        else if (OAI.currentStatusMode == BDModuleOrbitalAI.StatusMode.Idle)
+                                            vesselScore *= 2f;
+                                        else if (OAI.currentStatusMode == BDModuleOrbitalAI.StatusMode.Stranded)
+                                            vesselScore *= 3f;
+                                        // else -- Firing, Evading covered by weapon manager checks
                                     }
                                     vesselScore *= 0.031623f * BDAMath.Sqrt(targetDistance); // Equal to 1 at 1000m
                                     if (wm.Current.recentlyFiring) // Firing guns or missiles at stuff is more interesting. (Uses 1/2 the camera switch frequency on all guns.)

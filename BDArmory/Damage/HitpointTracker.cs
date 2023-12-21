@@ -93,7 +93,7 @@ namespace BDArmory.Damage
         public float maxHitPoints = -1f;
 
         [KSPField(isPersistant = true)]
-        public float ArmorThickness = 10f;
+        public float ArmorThickness = -1f;
 
         [KSPField(isPersistant = true)]
         public bool ArmorSet;
@@ -344,6 +344,7 @@ namespace BDArmory.Damage
                 skinskinConduction = part.partInfo.partPrefab.skinSkinConductionMult;
                 skinInternalConduction = part.partInfo.partPrefab.skinSkinConductionMult;
             }
+            if (ArmorThickness < 0) ArmorThickness = part.IsMissile() ? 2 : 10;
             if (HighLogic.LoadedSceneIsFlight)
             {
                 if (BDArmorySettings.RESET_ARMOUR)
@@ -434,7 +435,7 @@ namespace BDArmory.Damage
                 }                
                 else
                 {
-                    if (Armor < 0) Armor = 10;
+                    if (Armor < 0) Armor = ArmorThickness; //10 for parts, 2 for missiles, from ln 347
                     Fields["Armor"].guiActiveEditor = false;
                     Fields["guiArmorTypeString"].guiActiveEditor = false;
                     Fields["guiArmorTypeString"].guiActive = false;
@@ -1041,7 +1042,6 @@ namespace BDArmory.Damage
             else
             {
                 hitpoints = maxHitPoints > 0 ? maxHitPoints : 5;
-                Armor = ArmorThickness > 0 ? ArmorThickness : 2;
             }
             if (!_finished_setting_up && _armorConfigured && _hullConfigured) _hpConfigured = true;
             if (BDArmorySettings.HP_CLAMP >= 100)
@@ -1315,7 +1315,7 @@ namespace BDArmory.Damage
                 HEATEquiv = 0.5528789891f;
 
                 SafeUseTemp = 993;
-                Armor = 10;
+                Armor = part.IsMissile() ? 2 : 10;
                 if (ArmorPanel)
                 {
                     ArmorTypeNum = ArmorInfo.armors.FindIndex(t => t.name == "Steel") + 1;

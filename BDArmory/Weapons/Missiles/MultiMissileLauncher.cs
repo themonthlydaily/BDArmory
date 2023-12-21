@@ -1026,6 +1026,7 @@ namespace BDArmory.Weapons.Missiles
                     {
                         wpm.SendTargetDataToMissile(ml, false);
                     }
+                    ml.GpsUpdateMax = wpm.GpsUpdateMax;
                 }
                 if (missileRegistry)
                 {

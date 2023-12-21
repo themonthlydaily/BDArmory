@@ -172,7 +172,7 @@ namespace BDArmory.VesselSpawning
                         continuousSpawnedVesselCount %= spawnSlots.Count;
                     }
                     // Add any craft that hasn't been spawned or has died to the spawn queue if it isn't already in the queue.
-                    foreach (var craftURL in spawnConfig.craftFiles.Where(craftURL => (BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL > 0 ? spawnCounts[craftURL] < BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL : true) && !spawnQueue.Contains(craftURL) && (!craftURLToVesselName.ContainsKey(craftURL) || (BDACompetitionMode.Instance.Scores.Players.Contains(craftURLToVesselName[craftURL]) && BDACompetitionMode.Instance.Scores.ScoreData[craftURLToVesselName[craftURL]].deathTime >= 0))))
+                    foreach (var craftURL in spawnConfig.craftFiles.Where(craftURL => (BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL == 0 || spawnCounts[craftURL] < BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL) && !spawnQueue.Contains(craftURL) && (!craftURLToVesselName.ContainsKey(craftURL) || (BDACompetitionMode.Instance.Scores.Players.Contains(craftURLToVesselName[craftURL]) && BDACompetitionMode.Instance.Scores.ScoreData[craftURLToVesselName[craftURL]].deathTime >= 0))))
                     {
                         if (BDArmorySettings.DEBUG_SPAWNING)
                         {
@@ -188,6 +188,22 @@ namespace BDArmory.VesselSpawning
                         LogMessage("Spawn queue is empty and not enough vessels are active, ending competition.", false);
                         BDACompetitionMode.Instance.StopCompetition();
                         break;
+                    }
+                    { // Perform a "bubble shuffle" (randomly swap pairs of craft moving through the queue).
+                        List<string> shufflePool = new();
+                        Queue<string> bubbleShuffleQueue = new();
+                        while (spawnQueue.Count > 0)
+                        {
+                            shufflePool.Add(spawnQueue.Dequeue()); // Take craft from the spawn queue.
+                            if (shufflePool.Count > 1) // Use a pool of size 2 for shuffling.
+                            {
+                                shufflePool.Shuffle();
+                                bubbleShuffleQueue.Enqueue(shufflePool.First());
+                                shufflePool.RemoveAt(0);
+                            }
+                        }
+                        foreach (var craft in shufflePool) bubbleShuffleQueue.Enqueue(craft); // Add any remaining craft in the shuffle pool.
+                        while (bubbleShuffleQueue.Count > 0) spawnQueue.Enqueue(bubbleShuffleQueue.Dequeue()); // Re-insert the craft into the spawn queue from the bubble shuffle queue.
                     }
                     while (craftToSpawn.Count + currentlySpawningCount + currentlyActive < spawnSlots.Count && spawnQueue.Count > 0)
                         craftToSpawn.Enqueue(spawnQueue.Dequeue());

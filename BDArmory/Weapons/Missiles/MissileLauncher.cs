@@ -1097,6 +1097,7 @@ namespace BDArmory.Weapons.Missiles
                         if (wpm != null)
                         {
                             wpm.heatTarget = TargetSignatureData.noTarget;
+                            GpsUpdateMax = wpm.GpsUpdateMax;
                         }
                         launched = true;
                     }
@@ -1117,7 +1118,11 @@ namespace BDArmory.Weapons.Missiles
                     TargetPosition = transform.position + transform.forward * 5000; //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
                     MissileLaunch();
                     BDATargetManager.FiredMissiles.Add(this);
-                    if (wpm != null) wpm.heatTarget = TargetSignatureData.noTarget;
+                    if (wpm != null)
+                    {
+                        wpm.heatTarget = TargetSignatureData.noTarget;
+                        GpsUpdateMax = wpm.GpsUpdateMax;
+                    }
                     launched = true;
                 }
             }
@@ -1157,6 +1162,7 @@ namespace BDArmory.Weapons.Missiles
             ml.engageGround = engageGround;
             ml.engageMissile = engageMissile;
             ml.engageSLW = engageSLW;
+
             if (GuidanceMode == GuidanceModes.AGMBallistic)
             {
                 ml.BallisticOverShootFactor = BallisticOverShootFactor; //are some of these null, and causing this to quit? 
@@ -1242,6 +1248,7 @@ namespace BDArmory.Weapons.Missiles
                 ml.Team = wpm.Team;
                 wpm.SendTargetDataToMissile(ml);
                 wpm.heatTarget = TargetSignatureData.noTarget;
+                ml.GpsUpdateMax = wpm.GpsUpdateMax;
             }
                 ml.TargetPosition = transform.position + (multiLauncher ? vessel.ReferenceTransform.up * 5000 : transform.forward * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
             ml.MissileLaunch();
@@ -1504,7 +1511,8 @@ namespace BDArmory.Weapons.Missiles
         private void CheckMiss()
         {
             float sqrDist = (float)((TargetPosition + (TargetVelocity * Time.fixedDeltaTime)) - (vessel.CoM + (vessel.Velocity() * Time.fixedDeltaTime))).sqrMagnitude;
-            if (sqrDist < 160000 || MissileState == MissileStates.PostThrust)
+            bool targetBehindMissile = !(MissileState != MissileStates.PostThrust && hasRCS) && Vector3.Dot(TargetPosition - transform.position, transform.forward) < 0f; // Allow thrusting RCS missiles to be behind the target
+            if (sqrDist < 160000 || MissileState == MissileStates.PostThrust || (targetBehindMissile && sqrDist > 1000000)) //missile has come within 400m, is post thrust, or > 1km behind target
             {
                 checkMiss = true;
             }
@@ -1517,8 +1525,7 @@ namespace BDArmory.Weapons.Missiles
             if (!HasMissed && checkMiss)
             {
                 bool noProgress = MissileState == MissileStates.PostThrust && (Vector3.Dot(vessel.Velocity() - TargetVelocity, TargetPosition - vessel.transform.position) < 0);
-                bool pastGracePeriod = TimeIndex > ((vessel.LandedOrSplashed ? 0f : dropTime) + 180f / maxTurnRateDPS);
-                bool targetBehindMissile = !(MissileState != MissileStates.PostThrust && hasRCS) && Vector3.Dot(TargetPosition - transform.position, transform.forward) < 0f; // Allow thrusting RCS missiles to be behind the target
+                bool pastGracePeriod = TimeIndex > ((vessel.LandedOrSplashed ? 0f : dropTime) + Mathf.Clamp(maxTurnRateDPS / 15, 1, 8)); //180f / maxTurnRateDPS);
                 if ((pastGracePeriod && targetBehindMissile) || noProgress) // Check that we're not moving away from the target after a grace period
                 {
                     if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: Missile has missed!");
@@ -1705,38 +1712,39 @@ namespace BDArmory.Weapons.Missiles
                             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileGuidance]: Terminal");
                         }
                     }
-
-                    if ((GuidanceMode == GuidanceModes.AAMLead) || (GuidanceMode == GuidanceModes.APN) || (GuidanceMode == GuidanceModes.PN) || (GuidanceMode == GuidanceModes.AAMLoft) || (GuidanceMode == GuidanceModes.AAMPure))// || (GuidanceMode == GuidanceModes.AAMHybrid))
+                    switch (GuidanceMode)
                     {
-                        AAMGuidance();
-                    }
-                    else if (GuidanceMode == GuidanceModes.AGM)
-                    {
-                        AGMGuidance();
-                    }
-                    else if (GuidanceMode == GuidanceModes.AGMBallistic)
-                    {
-                        AGMBallisticGuidance();
-                    }
-                    else if (GuidanceMode == GuidanceModes.BeamRiding)
-                    {
-                        BeamRideGuidance();
-                    }
-                    else if (GuidanceMode == GuidanceModes.RCS)
-                    {
-                        part.transform.rotation = Quaternion.RotateTowards(part.transform.rotation, Quaternion.LookRotation(TargetPosition - part.transform.position, part.transform.up), turnRateDPS * Time.fixedDeltaTime);
-                        if (TimeIndex > dropTime + 0.25f)
+                        case GuidanceModes.AAMLead:
+                        case GuidanceModes.APN:
+                        case GuidanceModes.PN:
+                        case GuidanceModes.AAMLoft:
+                        case GuidanceModes.AAMPure:
+                            //GuidanceModes.AAMHybrid:
+                            AAMGuidance();
+                            break;
+                        case GuidanceModes.AGM:
+                            AGMGuidance();
+                            break;
+                        case GuidanceModes.AGMBallistic:
+                            AGMBallisticGuidance();
+                            break;
+                        case GuidanceModes.BeamRiding:
+                            BeamRideGuidance();
+                            break;
+                        case GuidanceModes.Orbital: //nee GuidanceModes.RCS
+                            OrbitalGuidance(turnRateDPS);
+                            break;
+                        case GuidanceModes.Cruise:
+                            CruiseGuidance();
+                            break;
+                        case GuidanceModes.SLW:
+                            SLWGuidance();
+                            break;
+                        case GuidanceModes.None:
+                            DoAero(TargetPosition);
                             CheckMiss();
+                            break;
                     }
-                    else if (GuidanceMode == GuidanceModes.Cruise)
-                    {
-                        CruiseGuidance();
-                    }
-                    else if (GuidanceMode == GuidanceModes.SLW)
-                    {
-                        SLWGuidance();
-                    }
-
                 }
                 else
                 {
@@ -1744,7 +1752,7 @@ namespace BDArmory.Weapons.Missiles
                     TargetMf = null;
                     if (aero)
                     {
-                        aeroTorque = MissileGuidance.DoAeroForces(this, transform.position + (20 * vessel.Velocity()), liftArea, .25f, aeroTorque, maxTorque, maxAoA);
+                        aeroTorque = MissileGuidance.DoAeroForces(this, TargetPosition, liftArea, .25f, aeroTorque, maxTorque, maxAoA);
                     }
                 }
 
@@ -1801,7 +1809,7 @@ namespace BDArmory.Weapons.Missiles
                             if (heatTarget.signalStrength > 0)
                             {
                                 float currentFactor = (1400 * 1400) / Mathf.Clamp((heatTarget.position - transform.position).sqrMagnitude, 90000, 36000000);
-                                Vector3 currVel = (float)vessel.srfSpeed * vessel.Velocity().normalized;
+                                Vector3 currVel = vessel.Velocity();
                                 heatTarget.position = heatTarget.position + heatTarget.velocity * Time.fixedDeltaTime;
                                 heatTarget.velocity = heatTarget.velocity + heatTarget.acceleration * Time.fixedDeltaTime;
                                 float futureFactor = (1400 * 1400) / Mathf.Clamp((heatTarget.position - (transform.position + (currVel * Time.fixedDeltaTime))).sqrMagnitude, 90000, 36000000);
@@ -2559,6 +2567,31 @@ namespace BDArmory.Weapons.Missiles
             DoAero(CalculateAGMBallisticGuidance(this, TargetPosition));
         }
 
+        void OrbitalGuidance(float turnRateDPS)
+        {
+            Vector3 orbitalTarget;
+            if (TargetAcquired)
+            {
+                DrawDebugLine(transform.position + (part.rb.velocity * Time.fixedDeltaTime), TargetPosition);
+                // orbitalTarget = TargetPosition is more accurate than the below for the HEKV, TO-DO: investigate whether the below works for 
+                // multiple different missile configurations, or if a more generalized OrbitalGuidance method is needed
+                /*(Vector3 targetVector = TargetPosition - vessel.CoM;
+                Vector3 relVel = vessel.Velocity() - TargetVelocity;
+                Vector3 accel = currentThrust * Throttle / part.mass * Vector3.forward;
+                float timeToImpact = AIUtils.TimeToCPA(targetVector, relVel, TargetAcceleration - accel, 30f);
+                orbitalTarget = AIUtils.PredictPosition(targetVector, relVel, TargetAcceleration - 0.5f * accel, timeToImpact); */
+                orbitalTarget = TargetPosition;
+            }
+            else
+            {
+                orbitalTarget = transform.position + (2000 * vessel.Velocity().normalized);
+            }
+
+            part.transform.rotation = Quaternion.RotateTowards(part.transform.rotation, Quaternion.LookRotation(orbitalTarget - part.transform.position, part.transform.up), turnRateDPS * Time.fixedDeltaTime);
+            if (TimeIndex > dropTime + 0.25f)
+                CheckMiss();
+        }
+
         public override void Detonate()
         {
             if (HasExploded || FuseFailed || !HasFired) return;
@@ -2686,7 +2719,7 @@ namespace BDArmory.Weapons.Missiles
         {
             try
             {
-                Vector3 relV = TargetVelocity - vessel.obt_velocity;
+                Vector3 relV = TargetVelocity - vessel.Velocity();
 
                 for (int i = 0; i < 4; i++)
                 {
@@ -2849,7 +2882,11 @@ namespace BDArmory.Weapons.Missiles
                     break;
 
                 case "rcs":
-                    GuidanceMode = GuidanceModes.RCS;
+                    GuidanceMode = GuidanceModes.Orbital;
+                    break;
+
+                case "orbital":
+                    GuidanceMode = GuidanceModes.Orbital;
                     break;
 
                 case "beamriding":
@@ -2973,7 +3010,11 @@ namespace BDArmory.Weapons.Missiles
                     break;
 
                 case "rcs":
-                    homingModeTerminal = GuidanceModes.RCS;
+                    homingModeTerminal = GuidanceModes.Orbital;
+                    break;
+
+                case "orbital":
+                    homingModeTerminal = GuidanceModes.Orbital;
                     break;
 
                 case "beamriding":
