@@ -5,7 +5,7 @@
 	- Invert the roll target when the fly-to direction is below and behind the craft.
 	- Fix automatic gun range adjustments in the WM again.
 - Weapons:
-	- Corrections to penetration and ricochet velocity changes.
+	- Corrections to penetration and ricochet velocity changes and ricochet positions.
 	- Missiles:
 		-	Fix mass changes of missiles that decouple boosters and add missile mass debug telemetry.
 
