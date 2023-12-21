@@ -3914,17 +3914,18 @@ namespace BDArmory.Control
                     {
                         if (mt.Current.ContainsMissileOfType(cm) && (!mt.Current.activeMissileOnly || cm.missileTurret == mt.Current))
                         {
-                            mt.Current.EnableTurret();
+                            mt.Current.EnableTurret(CurrentMissile);
                         }
                     }
                     else
                     {
+                        if (MslTurrets.Contains(mt.Current)) continue;
                         mt.Current.DisableTurret();
                     }
                 }
             if (weaponIndex > 0 && cm && cm.multiLauncher && cm.multiLauncher.turret)
             {
-                cm.multiLauncher.turret.EnableTurret();
+                cm.multiLauncher.turret.EnableTurret(CurrentMissile);
             }
         }
         void SetDeployableRails()
@@ -6276,8 +6277,8 @@ namespace BDArmory.Control
                             }
                         }
                         // check DLZ                            
-
-                        MissileLaunchParams dlz = MissileLaunchParams.GetDynamicLaunchParams(ml, targetVessel.Velocity(), targetVessel.transform.position, -1,
+                        MissileLauncher mlauncher = ml as MissileLauncher;
+                        MissileLaunchParams dlz = MissileLaunchParams.GetDynamicLaunchParams(ml, targetVessel.Velocity(), targetVessel.transform.position, mlauncher.missileTurret ? mlauncher.missileTurret.fireFOV : -1,
                             (ml.TargetingMode == MissileBase.TargetingModes.Laser && BDATargetManager.ActiveLasers.Count <= 0 || ml.TargetingMode == MissileBase.TargetingModes.Radar && !_radarsEnabled && !ml.radarLOAL));
                         if (vessel.srfSpeed > ml.minLaunchSpeed && distanceToTarget < dlz.maxLaunchRange && distanceToTarget > dlz.minLaunchRange)
                         {
@@ -7514,7 +7515,7 @@ namespace BDArmory.Control
                     if (missile.Current.HasFired || missile.Current.launched) continue;
                     missileCount++;
                     interceptiontarget = BDATargetManager.GetClosestMissileThreat(this);
-                    if (interceptiontarget != null) PDMslTgts.Add(interceptiontarget);
+                    if (interceptiontarget != null && !PDMslTgts.Contains(interceptiontarget)) PDMslTgts.Add(interceptiontarget);
                 }
             }
 
@@ -7679,83 +7680,85 @@ namespace BDArmory.Control
                         if (!missile.engageMissile) continue;
                         if (missile.HasFired || missile.launched) continue;
                         if (MissileID >= PDMslTgts.Count) MissileID = 0;
-                        if (PDMslTgts.Count > 0)
-                        {
+
                             float targetDist = Vector3.Distance(missile.MissileReferenceTransform.position, PDMslTgts[MissileID].Vessel.CoM);
                             if (PDMslTgts[MissileID].Vessel != null && targetDist > missile.engageRangeMax) MissileID = 0;
-                            if (PDMslTgts[MissileID].Vessel != null)
+                        if (PDMslTgts[MissileID].Vessel != null)
+                        {
+                            if (!CheckEngagementEnvelope(missile, targetDist, PDMslTgts[MissileID].Vessel)) continue;
+                            if (targetDist < missile.engageRangeMin) continue;
+                            bool viableTarget = true;
+                            int interceptorsAway = 0;
+                            if (PDMslTgts[MissileID].Vessel.Splashed && !missile.torpedo) viableTarget = false;
+                            //need to see if missile is turreted (and is a unique turret we haven't seen yet); if so, check if target is within traverse, else see if target is within boresight
+                            bool turreted = false;
+                            if (missile.TargetingMode == MissileBase.TargetingModes.Radar && _radarsEnabled && !missile.radarLOAL && MaxradarLocks < vesselRadarData.GetLockedTargets().Count) continue; //don't have available radar lock, move to next missile                            
+                            MissileTurret mT = null;
+                            if (missile.missileTurret || missile.multiLauncher && missile.multiLauncher.turret)
                             {
-                                if (!CheckEngagementEnvelope(missile, targetDist, PDMslTgts[MissileID].Vessel)) continue;
-                                if (targetDist < missile.engageRangeMin) continue;
-                                bool viableTarget = true;
-                                int interceptorsAway = 0;
-                                if (PDMslTgts[MissileID].Vessel.Splashed && !missile.torpedo) viableTarget = false;
-                                //need to see if missile is turreted (and is a unique turret we haven't seen yet); if so, check if target is within traverse, else see if target is within boresight
-                                bool turreted = false;
-                                if (missile.TargetingMode == MissileBase.TargetingModes.Radar && _radarsEnabled && !missile.radarLOAL && MaxradarLocks < vesselRadarData.GetLockedTargets().Count) continue; //don't have available radar lock, move to next missile
-                                if (missile.missileTurret)
+                                mT = missile.missileTurret ? missile.missileTurret : missile.multiLauncher.turret;
+                                if (!MslTurrets.Contains(mT))
                                 {
-                                    if (!MslTurrets.Contains(missile.missileTurret))
+                                    turreted = true;
+                                    if (mT.turretEnabled) mT.slaved = false;
+                                    else mT.EnableTurret(currMissile);
+                                    MslTurrets.Add(mT); //don't try to assign two different targets to a turret, so treat remaining missiles on the turret as boresight launch
+                                }
+                            }
+                            if (missilesAway.ContainsKey(PDMslTgts[MissileID]))
+                            {
+                                missilesAway.TryGetValue(PDMslTgts[MissileID], out int missiles);
+                                interceptorsAway = missiles;
+                                //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] Missiles aready fired against this target {PDMslTgts[MissileID].Vessel.GetName()}: {interceptorsAway}");
+                            }
+                            if (interceptorsAway < maxMissilesOnTarget)
+                            {
+                                if (viableTarget && turreted ? TargetInTurretRange(mT.turret, 7, PDMslTgts[MissileID].Vessel.CoM) : GetLaunchAuthorization(PDMslTgts[MissileID].Vessel, this, currMissile))
+                                {
+                                    if (!guardFiringMissile)
                                     {
-                                        turreted = true;
-                                        MslTurrets.Add(missile.missileTurret); //don't try to assign two different targets to a turret, so treat remaining missiles on the turret as boresight launch
+                                        missileTarget = PDMslTgts[MissileID].Vessel;
+                                        //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] triggering launch of interceptor against {missileTarget.GetName()}");
+                                        StartCoroutine(GuardMissileRoutine(PDMslTgts[MissileID].Vessel, currMissile));
+                                        //how to prevent all interceptor missiles firing off at once? (or just let them all launch simultaneously...?)
+                                        //A) have pointDefenseTurretFiring only assign a single missile per function call, end result is launch rate determined by fireInterval. (what happens if this is oddly large?)
+                                        //B) modify the guardMissileRoutine to have a optional delay, and each subsequent missile fired by pointDefenseTurretFiring adds an increasing delay to the coroutine. Also needs turreted bool input
+                                        //C) take into account the current guardMissileFiring lock which would function sinilar to A), but would also delay subsequent interceptor launches if the first, say, has to wait for a turret
+                                        //to traverse, which could delay VLS based interceptors also carried. using guardFiringMissile might also delay missile interception if actively attacking an enemy w/ missiles
                                     }
                                 }
-                                if (missilesAway.ContainsKey(PDMslTgts[MissileID]))
-                                {
-                                    missilesAway.TryGetValue(PDMslTgts[MissileID], out int missiles);
-                                    interceptorsAway = missiles;
-                                    //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] Missiles aready fired against this target {PDMslTgts[MissileID].Vessel.GetName()}: {interceptorsAway}");
-                                }
-                                if (interceptorsAway < maxMissilesOnTarget)
-                                {
-                                    if (viableTarget && turreted ? TargetInTurretRange(missile.missileTurret.turret, 7, PDMslTgts[MissileID].Vessel.CoM) : GetLaunchAuthorization(PDMslTgts[MissileID].Vessel, this, currMissile))
+                            }
+                            else //else try remaining targets
+                            {
+                                using (List<TargetInfo>.Enumerator item = PDMslTgts.GetEnumerator())
+                                    while (item.MoveNext())
                                     {
-                                        if (!guardFiringMissile)
+                                        if (item.Current.Vessel == null) continue;
+                                        if (item.Current == PDMslTgts[MissileID]) continue;
+                                        interceptorsAway = 0;
+                                        if (missilesAway.ContainsKey(item.Current))
                                         {
-                                            missileTarget = PDMslTgts[MissileID].Vessel;
-                                            //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] triggering launch of interceptor against {missileTarget.GetName()}");
-                                            StartCoroutine(GuardMissileRoutine(PDMslTgts[MissileID].Vessel, currMissile));
-                                            //how to prevent all interceptor missiles firing off at once? (or just let them all launch simultaneously...?)
-                                            //A) have pointDefenseTurretFiring only assign a single missile per function call, end result is launch rate determined by fireInterval. (what happens if this is oddly large?)
-                                            //B) modify the guardMissileRoutine to have a optional delay, and each subsequent missile fired by pointDefenseTurretFiring adds an increasing delay to the coroutine. Also needs turreted bool input
-                                            //C) take into account the current guardMissileFiring lock which would function sinilar to A), but would also delay subsequent interceptor launches if the first, say, has to wait for a turret
-                                            //to traverse, which could delay VLS based interceptors also carried. using guardFiringMissile might also delay missile interception if actively attacking an enemy w/ missiles
+                                            missilesAway.TryGetValue(item.Current, out int missiles);
+                                            interceptorsAway = missiles;
+                                            //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] Missiles aready fired against this secondary target {item.Current.Vessel.GetName()}: {interceptorsAway}");
                                         }
-                                    }
-                                }
-                                else //else try remaining targets
-                                {
-                                    using (List<TargetInfo>.Enumerator item = PDMslTgts.GetEnumerator())
-                                        while (item.MoveNext())
+                                        if (item.Current.Vessel.Splashed && !missile.torpedo) viableTarget = false;
+                                        if (interceptorsAway < maxMissilesOnTarget)
                                         {
-                                            if (item.Current.Vessel == null) continue;
-                                            if (item.Current == PDMslTgts[MissileID]) continue;
-                                            interceptorsAway = 0;
-                                            if (missilesAway.ContainsKey(item.Current))
+                                            if (viableTarget && turreted ? TargetInTurretRange(mT.turret, 7, item.Current.Vessel.CoM) : GetLaunchAuthorization(item.Current.Vessel, this, currMissile))
                                             {
-                                                missilesAway.TryGetValue(item.Current, out int missiles);
-                                                interceptorsAway = missiles;
-                                                //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] Missiles aready fired against this secondary target {item.Current.Vessel.GetName()}: {interceptorsAway}");
-                                            }
-                                            if (item.Current.Vessel.Splashed && !missile.torpedo) viableTarget = false;
-                                            if (interceptorsAway < maxMissilesOnTarget)
-                                            {
-                                                if (viableTarget && turreted ? TargetInTurretRange(missile.missileTurret.turret, 7, item.Current.Vessel.CoM) : GetLaunchAuthorization(item.Current.Vessel, this, currMissile))
+                                                if (!guardFiringMissile)
                                                 {
-                                                    if (!guardFiringMissile)
-                                                    {
-                                                        missileTarget = item.Current.Vessel;
-                                                        //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] triggering launch of interceptor against secondary target {missileTarget.GetName()}");
-                                                        StartCoroutine(GuardMissileRoutine(item.Current.Vessel, currMissile));
-                                                        break;
-                                                    }
+                                                    missileTarget = item.Current.Vessel;
+                                                    //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] triggering launch of interceptor against secondary target {missileTarget.GetName()}");
+                                                    StartCoroutine(GuardMissileRoutine(item.Current.Vessel, currMissile));
+                                                    break;
                                                 }
                                             }
                                         }
-                                }
-                                MissileID++;
+                                    }
                             }
+                            MissileID++;
                         }
                     }
             }

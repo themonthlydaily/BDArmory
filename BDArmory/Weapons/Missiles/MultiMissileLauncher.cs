@@ -221,7 +221,6 @@ namespace BDArmory.Weapons.Missiles
                     {
                         Fields["loadedMissileName"].guiActive = true;
                         Fields["loadedMissileName"].guiActiveEditor = true;
-                        loadedMissileName = subMunitionName;
                         missileLauncher.missileName = subMunitionName;
                     }
                     if (!permitJettison) missileLauncher.Events["Jettison"].guiActive = false;
@@ -245,6 +244,12 @@ namespace BDArmory.Weapons.Missiles
                             if (parts.Current.partPrefab.partInfo.name != subMunitionName) continue;
                             var explosivePart = parts.Current.partPrefab.FindModuleImplementing<BDExplosivePart>();
                             bRadius = explosivePart != null ? explosivePart.GetBlastRadius() : 0;
+                            var ML = parts.Current.partPrefab.FindModuleImplementing<MissileLauncher>();
+                            if (!string.IsNullOrEmpty(subMunitionName))
+                            {
+                                loadedMissileName = ML.GetShortName();
+                            }
+                            break;
                         }
                     if (bRadius == 0)
                     {
@@ -418,6 +423,10 @@ namespace BDArmory.Weapons.Missiles
                                     PopulateMissileDummies(true);
                                     MissileLauncher MLConfig = missile.FindModuleImplementing<MissileLauncher>();
                                     LoadoutModified = true;
+                                    Fields["loadedMissileName"].guiActive = true;
+                                    Fields["loadedMissileName"].guiActiveEditor = true;
+                                    loadedMissileName = MLConfig.GetShortName();
+                                    GUIUtils.RefreshAssociatedWindows(part);
                                     if (missileSpawner)
                                     {
                                         missileSpawner.MissileName = subMunitionName;
