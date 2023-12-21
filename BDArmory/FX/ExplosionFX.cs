@@ -1148,8 +1148,8 @@ namespace BDArmory.FX
             eFx.ExplosivePart = explosivePart;
             eFx.Direction = direction;
             sourceVelocity = sourceVelocity != default ? sourceVelocity : (explosivePart != null && explosivePart.rb != null) ? explosivePart.rb.velocity + BDKrakensbane.FrameVelocityV3f : default; // Use the explosive part's velocity if the sourceVelocity isn't specified.
-            eFx.Velocity = (Hitpart != null && Hitpart.rb != null) ? Hitpart.rb.velocity + BDKrakensbane.FrameVelocityV3f : sourceVelocity; // sourceVelocity is the real velocity w/o offloading.
-            Debug.Log($"DEBUG Creating explosion with velocity {eFx.Velocity.magnitude}, hitpart vel: {((Hitpart != null && Hitpart.rb != null) ? $"{(Hitpart.rb.velocity + BDKrakensbane.FrameVelocityV3f).magnitude}" : "none")}, source vel: {sourceVelocity.magnitude}"); // FIXME some explosions are being created from hits on parts, but the part is null.
+            eFx.Velocity = Hitpart != null ? Hitpart.vessel.Velocity() : sourceVelocity; // sourceVelocity is the real velocity w/o offloading.
+            if (Hitpart == null && sourceVelocity == default) Debug.LogError($"DEBUG Creating explosion with velocity {eFx.Velocity.magnitude}, hitpart vel: {(Hitpart != null ? $"{Hitpart.vessel.Velocity().magnitude}" : "none")}, source vel: {sourceVelocity.magnitude}{(Hitpart != null ? $", hit part: {Hitpart.partInfo.name} on {Hitpart.vessel.vesselName}" : "")}{(explosivePart != null ? $", explosive part: {explosivePart.partInfo.name}" : "")}"); // FIXME some explosions are being created from hits on parts, but the part is null.
             eFx.isFX = isfx;
             eFx.ProjMass = projectilemass;
             eFx.CASEClamp = caseLimiter;
