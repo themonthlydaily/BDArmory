@@ -865,7 +865,6 @@ namespace BDArmory.Bullets
             }
             string[] subMunitionData = subMunitionType.Split(new char[] { ';' });
             string projType = subMunitionData[0];
-            int count = 1;
             if (subMunitionData.Length < 2 || !int.TryParse(subMunitionData[1], out int count)) count = 1;
             if (BulletInfo.bulletNames.Contains(projType))
             {

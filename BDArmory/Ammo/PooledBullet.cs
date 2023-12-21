@@ -1422,7 +1422,6 @@ namespace BDArmory.Bullets
             }
             string[] subMunitionData = subMunitionType.Split(new char[] { ';' });
             string projType = subMunitionData[0];
-            int count = 1;
             if (subMunitionData.Length < 2 || !int.TryParse(subMunitionData[1], out int count)) count = 1;
             if (BulletInfo.bulletNames.Contains(projType))
             {
@@ -1462,7 +1461,7 @@ namespace BDArmory.Bullets
                 float incrementVelocity = 1000 / (bulletVelocity + sBullet.bulletVelocity); //using 1km/s as a reference Unit
                 float dispersionAngle = sBullet.subProjectileDispersion > 0 ? sBullet.subProjectileDispersion : BDAMath.Sqrt(count) / 2; //fewer fragments/pellets are going to be larger-> move slower, less dispersion
                 float dispersionVelocityforAngle = 1000 / incrementVelocity * Mathf.Sin(dispersionAngle * Mathf.Deg2Rad); // convert m/s despersion to angle, accounting for vel of round
-                for (int s = 0; s < count * subMunitiontype.projectileCount; s++) //this does mean that setting a subMunitionType to, say, shotgun shells and then setting a sMT projectile count of, say, 5, would have only 5 shotgun pellets spawn, even if the shutgun shell projectileCount = 30. Could always have it be count * subMunitiontype.projectileCount if you want shotshells as an allowable submunition
+                for (int s = 0; s < count * sBullet.projectileCount; s++) //this does mean that setting a subMunitionType to, say, shotgun shells and then setting a sMT projectile count of, say, 5, would have only 5 shotgun pellets spawn, even if the shutgun shell projectileCount = 30. Could always have it be count * subMunitiontype.projectileCount if you want shotshells as an allowable submunition
                 {
                     GameObject Bullet = ModuleWeapon.bulletPool.GetPooledObject();
                     PooledBullet pBullet = Bullet.GetComponent<PooledBullet>();
