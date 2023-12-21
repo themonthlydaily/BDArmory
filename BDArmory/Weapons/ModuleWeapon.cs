@@ -5996,7 +5996,8 @@ namespace BDArmory.Weapons
                             output.AppendLine($"Beehive Shell:");
                             string[] subMunitionData = binfo.subMunitionType.Split(new char[] { ';' });
                             string projType = subMunitionData[0];
-                            int count = int.Parse(subMunitionData[1]);
+                            int count = 1;
+                            if (subMunitionData.Length < 2 || !int.TryParse(subMunitionData[1], out int count)) count = 1;
                             BulletInfo sinfo = BulletInfo.bullets[projType];
                             output.AppendLine($"- deploys {count}x {(string.IsNullOrEmpty(sinfo.DisplayName) ? sinfo.name : sinfo.DisplayName)}");
                         }
@@ -6075,7 +6076,8 @@ namespace BDArmory.Weapons
                                 output.AppendLine($"Cluster Rocket:");
                                 string[] subMunitionData = rinfo.subMunitionType.Split(new char[] { ';' });
                                 string projType = subMunitionData[0];
-                                int count = int.Parse(subMunitionData[1]);
+                                int count = 1;
+                                if (subMunitionData.Length < 2 || !int.TryParse(subMunitionData[1], out int count)) count = 1;
                                 if (BulletInfo.bulletNames.Contains(projType))
                                 {
                                     BulletInfo sinfo = BulletInfo.bullets[projType];

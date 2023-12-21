@@ -4,12 +4,12 @@ v1.6.9.0
 	- Invert the roll target when the fly-to direction is below and behind the craft.
 	- Fix automatic gun range adjustments in the WM again.
 - Weapons:
-	- Corrections to penetration and ricochet velocity changes.
-  - 'subProjectileCount' has been deprecated and replaced with 'projectileCount'; this specifies number of pellets per shot (for shotguns, etc) to make it more intuitive. Existing shotgun-type weapons will need to update their bulletDefs.
-  - The subMunitionType field for beehive ammo now uses the syntax of ammotype; quantity (e.g. subMunitionType = 35x228AHEADPellet; 30) with number of projectiles released on detonation set here instead of the subMunition's bulletDef.
-  - Missiles:
-    - Fix issue with Rotary Rails trying to use missiles that have previouslt been blown off from combat damage.
-    - Fix issue with MultiMissilelauncher Turrets throwing an NRE when AI firing.
+  	- Corrections to penetration and ricochet velocity changes.
+  	- 'subProjectileCount' has been deprecated and replaced with 'projectileCount'; this specifies number of pellets per shot (for shotguns, etc) to make it more intuitive. Existing shotgun-type weapons will need to update their bulletDefs.
+ 	 - The subMunitionType field for beehive ammo now uses the syntax of "ammotype; quantity" (e.g. subMunitionType = 35x228AHEADPellet; 30) with number of projectiles released on detonation set here instead of the subMunition's bulletDef.
+  	- Missiles:
+    		- Fix issue with Rotary Rails trying to use missiles that have previously been blown off from combat damage.
+    		- Fix issue with MultiMissilelauncher Turrets throwing an NRE when AI firing.
 
 IMPROVEMENTS / FIXES
 - UI:
