@@ -865,7 +865,8 @@ namespace BDArmory.Bullets
             }
             string[] subMunitionData = subMunitionType.Split(new char[] { ';' });
             string projType = subMunitionData[0];
-            int count = int.Parse(subMunitionData[1]);
+            int count = 1;
+            if (subMunitionData.Length < 2 || !int.TryParse(subMunitionData[1], out int count)) count = 1;
             if (BulletInfo.bulletNames.Contains(projType))
             {
                 BulletInfo sBullet = BulletInfo.bullets[projType];
@@ -1000,9 +1001,6 @@ namespace BDArmory.Bullets
             }
             else
             {
-                subMunitionData = subMunitionType.Split(new char[] { ';' });
-                projType = subMunitionData[0];
-                count = int.Parse(subMunitionData[1]);
                 RocketInfo sRocket = RocketInfo.rockets[projType];
                 for (int s = 0; s < count; s++)
                 {
