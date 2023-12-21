@@ -2198,18 +2198,21 @@ namespace BDArmory.Weapons
                                     BDACompetitionMode.Instance.Scores.RegisterShot(vessel.GetName());
                                     pBullet.gameObject.SetActive(true);
 
-                                    if (!pBullet.CheckBulletCollisions(iTime)) // Check that the bullet won't immediately hit anything.
+                                    if (!pBullet.CheckBulletCollisions(iTime)) // Check that the bullet won't immediately hit anything and die.
                                     {
                                         // The following gets bullet tracers to line up properly when at orbital velocities.
                                         // It should be consistent with how it's done in Aim().
                                         // Technically, there could be a small gap between the collision check and the start position, but this should be insignificant.
-                                        var gravity = bulletDrop ? (Vector3)FlightGlobals.getGeeForceAtPosition(pBullet.currentPosition) : Vector3.zero;
-                                        pBullet.currentPosition = AIUtils.PredictPosition(pBullet.currentPosition, firedVelocity, gravity, iTime);
-                                        pBullet.currentVelocity += iTime * gravity; // Adjusting the velocity here mostly eliminates bullet deviation due to iTime.
+                                        if (!pBullet.hasRicocheted) // Movement is handled internally for ricochets.
+                                        {
+                                            var gravity = bulletDrop ? (Vector3)FlightGlobals.getGeeForceAtPosition(pBullet.currentPosition) : Vector3.zero;
+                                            pBullet.currentPosition = AIUtils.PredictPosition(pBullet.currentPosition, firedVelocity, gravity, iTime);
+                                            pBullet.currentVelocity += iTime * gravity; // Adjusting the velocity here mostly eliminates bullet deviation due to iTime.
+                                            pBullet.DistanceTraveled += iTime * bulletVelocity; // Adjust the distance traveled to account for iTime.
+                                        }
                                         if (!BDKrakensbane.IsActive) pBullet.currentPosition += TimeWarp.fixedDeltaTime * part.rb.velocity; // If Krakensbane isn't active, bullets get an additional shift by this amount.
                                         pBullet.SetTracerPosition();
                                         pBullet.currentPosition += TimeWarp.fixedDeltaTime * (part.rb.velocity + BDKrakensbane.FrameVelocityV3f); // Account for velocity off-loading after visuals are done.
-                                        pBullet.DistanceTraveled += iTime * bulletVelocity; // Adjust the distance traveled to account for iTime.
                                     }
                                 }
                                 //heat

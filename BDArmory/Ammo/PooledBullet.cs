@@ -398,7 +398,6 @@ namespace BDArmory.Bullets
                 if (fade <= 0.05f) bulletTrail[1].enabled = false;
             }
             timeAlive += Time.fixedDeltaTime;
-            SetTracerPosition();
 
             if (Time.time > timeToLiveUntil) //kill bullet when TTL ends
             {
@@ -436,6 +435,7 @@ namespace BDArmory.Bullets
                 KillBullet();
                 return;
             }
+            SetTracerPosition(); // Set tracers after proximity detonation check.
 
             if (CheckBulletCollisions(TimeWarp.fixedDeltaTime)) return;
 
@@ -1548,8 +1548,13 @@ namespace BDArmory.Bullets
                 pBullet.tgtRocket = tgtRocket;
                 pBullet.gameObject.SetActive(true);
 
-                if (pBullet.CheckBulletCollisions(iTime)) return; // Bullet immediately hit something.
-                pBullet.MoveBullet(iTime); // Move the bullet the remaining part of the frame.
+                // Tracers shouldn't really be drawn before the next frame, but not doing so results in them appearing as randomly oriented streaks and the parent bullet disappears on the same frame, so we draw them here and they appear to stutter for a frame (drawn ahead by 1 frame, then drawn in the same position as the FX catches up with the physics).
+                pBullet.currentPosition -= TimeWarp.fixedDeltaTime * BDKrakensbane.FrameVelocityV3f; // Adjust the position for the visuals since the FI hasn't run yet.
+                pBullet.SetTracerPosition();
+                pBullet.currentPosition += TimeWarp.fixedDeltaTime * BDKrakensbane.FrameVelocityV3f; // And adjust them back again.
+
+                if (pBullet.CheckBulletCollisions(iTime)) continue; // Bullet immediately hit something and died.
+                if (!hasRicocheted) pBullet.MoveBullet(iTime); // Move the bullet the remaining part of the frame.
                 pBullet.timeAlive = iTime;
             }
         }

@@ -997,6 +997,7 @@ namespace BDArmory.Bullets
                     pBullet.tgtShell = tgtShell;
                     pBullet.tgtRocket = tgtRocket;
                     pBullet.gameObject.SetActive(true);
+                    pBullet.SetTracerPosition();
                 }
             }
             else
