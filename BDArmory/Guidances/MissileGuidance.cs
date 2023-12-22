@@ -323,18 +323,53 @@ namespace BDArmory.Guidances
                     return missileVessel.transform.position + 1.5f * Time.fixedDeltaTime * missileVessel.Velocity() + 2.25f * Time.fixedDeltaTime * Time.fixedDeltaTime * accVec * accel;
                     */
 
+                    Vector3 finalTargetPos;
+
                     if (velUp > 0f)
                     {
+                        // If the missile is told to go up, then we either try to go above the target or remain at the current altitude
                         /*return missileVessel.transform.position + (float)missileVessel.srfSpeed * new Vector3(velDirection.x - upDirection.x * velUp,
                             velDirection.y - upDirection.y * velUp,
                             velDirection.z - upDirection.z * velUp) + Mathf.Max(targetAlt - (float)missileVessel.altitude, 0f) * upDirection;*/
-                        return missileVessel.transform.position + (float)missileVessel.srfSpeed * planarDirectionToTarget + Mathf.Max(targetAlt - (float)missileVessel.altitude, 0f) * upDirection;
-                    }
-
-                    //return missileVessel.transform.position + (float)missileVessel.srfSpeed *  velDirection;
-                    return missileVessel.transform.position + (float)missileVessel.srfSpeed * new Vector3(velUp * upDirection.x + velForwards * planarDirectionToTarget.x,
+                        finalTargetPos = missileVessel.transform.position + (float)missileVessel.srfSpeed * planarDirectionToTarget + Mathf.Max(targetAlt - (float)missileVessel.altitude, 0f) * upDirection;
+                    } else
+                    {
+                        // Otherwise just fly towards the target according to velUp and velForwards
+                        finalTargetPos = missileVessel.transform.position + (float)missileVessel.srfSpeed * new Vector3(velUp * upDirection.x + velForwards * planarDirectionToTarget.x,
                         velUp * upDirection.y + velForwards * planarDirectionToTarget.y,
                         velUp * upDirection.z + velForwards * planarDirectionToTarget.z);
+                    }
+
+                    // If the target is at <  2 * termDist start mixing
+                    if (targetDistance < 2 * termDist)
+                    {
+                        if (homingModeTerminal == MissileBase.GuidanceModes.PN)
+                            return (1f - (targetDistance - termDist) / termDist) * GetPNTarget(targetPosition, targetVelocity, missileVessel, N, out timeToImpact) + ((targetDistance - termDist) / termDist) * finalTargetPos;
+                        else if (homingModeTerminal == MissileBase.GuidanceModes.APN)
+                            return (1f - (targetDistance - termDist) / termDist) * GetAPNTarget(targetPosition, targetVelocity, targetAcceleration, missileVessel, N, out timeToImpact) + ((targetDistance - termDist) / termDist) * finalTargetPos;
+                        else if (homingModeTerminal == MissileBase.GuidanceModes.AAMPure)
+                            return (1f - (targetDistance - termDist) / termDist) * targetPosition + ((targetDistance - termDist) / termDist) * finalTargetPos;
+                        else
+                            return (1f - (targetDistance - termDist) / termDist) * GetPNTarget(targetPosition, targetVelocity, missileVessel, N, out timeToImpact) + ((targetDistance - termDist) / termDist) * finalTargetPos; // Default to PN
+                    }
+
+                    // No mixing if targetDistance > 2 * termDist
+                    return finalTargetPos;
+
+                    //if (velUp > 0f)
+                    //{
+                    //    // If the missile is told to go up, then we either try to go above the target or remain at the current altitude
+                    //    /*return missileVessel.transform.position + (float)missileVessel.srfSpeed * new Vector3(velDirection.x - upDirection.x * velUp,
+                    //        velDirection.y - upDirection.y * velUp,
+                    //        velDirection.z - upDirection.z * velUp) + Mathf.Max(targetAlt - (float)missileVessel.altitude, 0f) * upDirection;*/
+                    //    return missileVessel.transform.position + (float)missileVessel.srfSpeed * planarDirectionToTarget + Mathf.Max(targetAlt - (float)missileVessel.altitude, 0f) * upDirection;
+                    //}
+
+                    //// Otherwise just fly towards the target according to velUp and velForwards
+                    ////return missileVessel.transform.position + (float)missileVessel.srfSpeed *  velDirection;
+                    //return missileVessel.transform.position + (float)missileVessel.srfSpeed * new Vector3(velUp * upDirection.x + velForwards * planarDirectionToTarget.x,
+                    //    velUp * upDirection.y + velForwards * planarDirectionToTarget.y,
+                    //    velUp * upDirection.z + velForwards * planarDirectionToTarget.z);
                 }
             }
             else
@@ -681,7 +716,7 @@ namespace BDArmory.Guidances
                 if (AoA < maxAoA)
                 {
                     targetDirection = (targetPosition - ml.transform.position);
-                    targetAngle = Vector3.Angle(velocity.normalized, targetDirection) * 4;
+                    targetAngle = Mathf.Min(maxAoA,Vector3.Angle(velocity.normalized, targetDirection) * 4);
                 }
                 else
                 {
