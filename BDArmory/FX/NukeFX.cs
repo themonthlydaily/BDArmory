@@ -39,6 +39,7 @@ namespace BDArmory.FX
         public string ReportingName { get; set; }
         public float yield { get; set; } //kilotons
         public Vector3 Position { get; set; }
+        public Vector3 Velocity { get; set; }
         public Part ExplosivePart { get; set; }
         public float TimeIndex => Time.time - StartTime;
         public string flashModelPath { get; set; }
@@ -68,6 +69,15 @@ namespace BDArmory.FX
         public static List<Part> IgnoreParts;
         public static List<DestructibleBuilding> IgnoreBuildings;
         internal static readonly float ExplosionVelocity = 422.75f;
+        internal static float KerbinSeaLevelAtmDensity
+        {
+            get
+            {
+                if (_KerbinSeaLevelAtmDensity == 0) _KerbinSeaLevelAtmDensity = (float)FlightGlobals.GetBodyByName("Kerbin").atmDensityASL;
+                return _KerbinSeaLevelAtmDensity;
+            }
+        }
+        internal static float _KerbinSeaLevelAtmDensity = 0;
 
         internal static HashSet<ExplosionSourceType> ignoreCasingFor = new HashSet<ExplosionSourceType> { ExplosionSourceType.Missile, ExplosionSourceType.Rocket };
 
@@ -115,6 +125,7 @@ namespace BDArmory.FX
                     if (pe != null)
                     {
                         pe.emit = true;
+                        pe.useWorldSpace = false; // Don't use worldspace, so that we can move the FX properly.
                         var emission = pe.ps.emission;
                         emission.enabled = true;
                         EffectBehaviour.AddParticleEmitter(pe);
@@ -333,6 +344,15 @@ namespace BDArmory.FX
             if (BDKrakensbane.IsActive)
             {
                 transform.position -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+                Position -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
+            }
+            { // Explosion centre velocity depends on atmospheric density relative to Kerbin sea level.
+                var atmDensity = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(Position), FlightGlobals.getExternalTemperature(Position));
+                Velocity /= 1 + atmDensity / KerbinSeaLevelAtmDensity;
+                if (Velocity.sqrMagnitude > 1) Debug.Log($"DEBUG V: {Velocity.magnitude}");
+                var deltaPos = Velocity * TimeWarp.fixedDeltaTime; // Krakensbane is already accounted for above.
+                transform.position += deltaPos;
+                Position += deltaPos;
             }
             if (Time.time - startTime > detonationTimer)
             {
@@ -346,7 +366,10 @@ namespace BDArmory.FX
                     LightFx.intensity = thermalRadius / 3f;
                     if (lastValidAtmDensity < 0.05)
                     {
-                        FXEmitter.CreateFX(transform.position, scale, flashModelPath, "", 0.3f);
+                        if (!string.IsNullOrWhiteSpace(flashModelPath))
+                            FXEmitter.CreateFX(transform.position, scale * 50f, flashModelPath, "", 0.4f, 0.4f);
+                        if (!string.IsNullOrWhiteSpace(shockModelPath))
+                            FXEmitter.CreateFX(transform.position, scale * 14f, shockModelPath, "", 0.2f, 0.6f);
                     }
                     else
                     {
@@ -604,7 +627,8 @@ namespace BDArmory.FX
         }
         public static void CreateExplosion(Vector3 position, ExplosionSourceType explosionSourceType, string sourceVesselName, string sourceWeaponName = "Nuke",
             float delay = 2.5f, float blastRadius = 750, float Yield = 0.05f, float thermalShock = 0.05f, bool emp = true, string blastSound = "",
-            string flashModel = "", string shockModel = "", string blastModel = "", string plumeModel = "", string debrisModel = "", string ModelPath = "", string soundPath = "")
+            string flashModel = "", string shockModel = "", string blastModel = "", string plumeModel = "", string debrisModel = "", string ModelPath = "", string soundPath = "",
+            Part nukePart = null, Part hitPart = null, Vector3 sourceVelocity = default)
         {
             SetupPool(ModelPath, soundPath, blastRadius);
 
@@ -615,6 +639,9 @@ namespace BDArmory.FX
             newExplosion.transform.SetPositionAndRotation(position, rotation);
 
             eFx.Position = position;
+            sourceVelocity = sourceVelocity != default ? sourceVelocity : (nukePart != null && nukePart.rb != null) ? nukePart.rb.velocity + BDKrakensbane.FrameVelocityV3f : default; // Use the explosive part's velocity if the sourceVelocity isn't specified.
+            eFx.Velocity = (hitPart != null && hitPart.rb != null) ? hitPart.rb.velocity + BDKrakensbane.FrameVelocityV3f : sourceVelocity; // sourceVelocity is the real velocity w/o offloading.
+            Debug.Log($"DEBUG Creating nuclear explosion with velocity {eFx.Velocity.magnitude}, hitpart vel: {((hitPart != null && hitPart.rb != null) ? $"{(hitPart.rb.velocity + BDKrakensbane.FrameVelocityV3f).magnitude}" : "none")}, source vel: {sourceVelocity.magnitude}");
             eFx.ExplosionSource = explosionSourceType;
             eFx.SourceVesselName = sourceVesselName;
             eFx.ReportingName = sourceWeaponName;
