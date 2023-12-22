@@ -6278,10 +6278,14 @@ namespace BDArmory.Control
                             (ml.TargetingMode == MissileBase.TargetingModes.Laser && BDATargetManager.ActiveLasers.Count <= 0 || ml.TargetingMode == MissileBase.TargetingModes.Radar && !_radarsEnabled && !ml.radarLOAL));
                         if (vessel.srfSpeed > ml.minLaunchSpeed && distanceToTarget < dlz.maxLaunchRange && distanceToTarget > dlz.minLaunchRange)
                         {
-                            if (ml.TargetingMode == MissileBase.TargetingModes.Radar && ml.radarLOAL && (!_radarsEnabled || (vesselRadarData != null && !vesselRadarData.locked)))
+                            if (ml.TargetingMode == MissileBase.TargetingModes.Radar && (!_radarsEnabled || (vesselRadarData != null && !vesselRadarData.locked)))
                             {
-                                MissileLauncher msl = ml as MissileLauncher;
-                                if (msl != null && ml.radarTimeout < ((distanceToTarget - ml.activeRadarRange) / msl.optimumAirspeed)) return false; //outside missile self-lock zone, wait
+                                if (!ml.radarLOAL) return false;
+                                else
+                                {
+                                    MissileLauncher msl = ml as MissileLauncher;
+                                    if (msl != null && ml.radarTimeout < ((distanceToTarget - ml.activeRadarRange) / msl.optimumAirspeed)) return false; //outside missile self-lock zone, wait
+                                }
                             }
                             return true;
                         }
