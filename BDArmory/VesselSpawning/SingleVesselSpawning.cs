@@ -62,7 +62,7 @@ namespace BDArmory.VesselSpawning
             var north = VectorUtils.GetNorthVector(spawnPoint, spawnBody);
             var direction = (Quaternion.AngleAxis(initialHeading, radialUnitVector) * north).ProjectOnPlanePreNormalized(radialUnitVector).normalized;
             var airborne = altitude > 10;
-            var spawnInOrbit = altitude + spawnBody.Radius >= spawnBody.minOrbitalDistance; // Min safe orbital distance
+            var spawnInOrbit = altitude + spawnBody.Radius >= spawnBody.MinOrbitalDistance(); // Min safe orbital distance
             var withInitialVelocity = airborne && BDArmorySettings.VESSEL_SPAWN_INITIAL_VELOCITY;
             VesselSpawnConfig vesselSpawnConfig = new VesselSpawnConfig(craftUrl, spawnPoint, direction, (float)altitude, initialPitch, airborne, spawnInOrbit);
 

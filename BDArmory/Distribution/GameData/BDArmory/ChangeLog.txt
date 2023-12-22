@@ -7,7 +7,9 @@
 - Weapons:
 	- Corrections to penetration and ricochet velocity changes and ricochet positions.
 	- Missiles:
-		-	Fix mass changes of missiles that decouple boosters and add missile mass debug telemetry.
+		- Fix mass changes of missiles that decouple boosters and add missile mass debug telemetry.
+		- Fix radar and heat targeting leading targets excessively (most apparent in orbit)
+		- Change spacing missiles with continous warhead from Detonation Distance / 3 to  Min(Blast Radius / 3, Detonation Distance / 3)
 
 v1.6.9.0
 IMPROVEMENTS / FIXES

@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System;
 
 namespace BDArmory.Extensions
 {
@@ -54,6 +55,22 @@ namespace BDArmory.Extensions
             longitude = iLng + dLng;
 
             return k < maxIterations;
+        }
+
+        public static double MinSafeAltitude(this CelestialBody body)
+        {
+            double maxTerrainHeight = 200;
+            if (body.pqsController)
+            {
+                PQS pqs = body.pqsController;
+                maxTerrainHeight = pqs.radiusMax - pqs.radius;
+            }
+            return Math.Max(maxTerrainHeight, body.atmosphereDepth);
+        }
+
+        public static double MinOrbitalDistance(this CelestialBody body)
+        {
+            return body.MinSafeAltitude() + body.Radius;
         }
     }
 }
