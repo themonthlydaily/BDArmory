@@ -45,7 +45,7 @@ namespace BDArmory.Control
         private float maxAcceleration;
         private Vector3 maxAngularAcceleration;
         private Vector3 availableTorque;
-        private double minSafeAltitude = -1;
+        private double minSafeAltitude;
         private CelestialBody safeAltBody = null;
 
         // Evading
@@ -613,7 +613,7 @@ namespace BDArmory.Control
         void AddDebugMessages()
         {
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
-            { 
+            {
                 debugString.AppendLine($"Current Status: {currentStatus}");
                 debugString.AppendLine($"Has Propulsion: {hasPropulsion}");
                 debugString.AppendLine($"Has Weapons: {hasWeapons}");
