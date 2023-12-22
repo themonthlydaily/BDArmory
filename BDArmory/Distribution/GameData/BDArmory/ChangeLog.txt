@@ -2,7 +2,7 @@
 - General:
 	- Fix part filtering by search terms in the editors.
 - AI / WM:
-	- Invert the roll target when the fly-to direction is below and behind the craft.
+	- Invert the roll target when the fly-to direction is below and behind the craft within the Immelmann turn angle.
 	- Fix automatic gun range adjustments in the WM again.
 - Weapons:
 	- Corrections to penetration and ricochet velocity changes and ricochet positions.

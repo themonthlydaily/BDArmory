@@ -4006,9 +4006,9 @@ namespace BDArmory.Control
                     if (cosAngle < ImmelmannTurnCosAngle) // Otherwise, if the target is almost directly behind, do an Immelmann turn.
                     {
                         targetDirection = Vector3.RotateTowards(-vesselTransform.up, vessel.angularVelocity.x < 0.1f ? -vesselTransform.forward : vesselTransform.forward, Mathf.Deg2Rad * ImmelmannTurnAngle, 0); // If the target is in our blind spot, just pitch up (or down depending on pitch angular velocity) to get a better view. (Immelmann turn.)
+                        invertRollTarget = Vector3.Dot(targetDirection, vesselTransform.forward) > 0; // Target is behind and below, pitch down first then roll up.
                     }
                     targetPosition = vesselTransform.position + Vector3.Cross(Vector3.Cross(forwardDirection, targetDirection), forwardDirection).normalized * 200; // Make the target position 90° from vesselTransform.up.
-                    invertRollTarget = Vector3.Dot(targetDirection, vesselTransform.forward) > 0; // Target is behind and below, pitch down first then roll up.
                 }
             }
             else if (steerMode != SteerModes.Aiming)
