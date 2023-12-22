@@ -2389,7 +2389,7 @@ namespace BDArmory.Weapons
             WeaponFX();
             for (int i = 0; i < fireTransforms.Length; i++)
             {
-                if ((!useRippleFire || !pulseLaser || fireState.Length == 1) || (useRippleFire && i == barrelIndex))
+                if (!useRippleFire || !pulseLaser || fireState.Length == 1 || (useRippleFire && i == barrelIndex))
                 {
                     float damage = laserDamage;
                     float initialDamage = damage * 0.425f;
@@ -2416,10 +2416,11 @@ namespace BDArmory.Weapons
                     lr.useWorldSpace = false;
                     lr.SetPosition(0, Vector3.zero);
 
-                    var hitCount = Physics.RaycastNonAlloc(ray, laserHits, maxTargetingRange, layerMask1);
+                    var raycastDistance = isAPS ? (tgtShell != null ? (tgtShell.currentPosition - tf.position).magnitude : tgtRocket != null ? (tgtRocket.currentPosition - tf.position).magnitude : maxTargetingRange) : maxTargetingRange; // Only raycast to the incoming projectile if APS.
+                    var hitCount = Physics.RaycastNonAlloc(ray, laserHits, raycastDistance, layerMask1);
                     if (hitCount == laserHits.Length) // If there's a whole bunch of stuff in the way (unlikely), then we need to increase the size of our hits buffer.
                     {
-                        laserHits = Physics.RaycastAll(ray, maxTargetingRange, layerMask1);
+                        laserHits = Physics.RaycastAll(ray, raycastDistance, layerMask1);
                         hitCount = laserHits.Length;
                     }
                     //Debug.Log($"[LASER DEBUG] hitCount: {hitCount}");
@@ -2428,16 +2429,20 @@ namespace BDArmory.Weapons
                         var orderedHits = laserHits.Take(hitCount).OrderBy(x => x.distance);
                         using (var hitsEnu = orderedHits.GetEnumerator())
                         {
+                            Vector3 hitPartVelocity = Vector3.zero;
                             while (hitsEnu.MoveNext())
                             {
                                 var hitPart = hitsEnu.Current.collider.gameObject.GetComponentInParent<Part>();
-                                if (hitPart == null) continue;
-                                if (ProjectileUtils.IsIgnoredPart(hitPart)) continue; // Ignore ignored parts.
+                                if (hitPart != null) // Don't ignore terrain hits.
+                                {
+                                    if (ProjectileUtils.IsIgnoredPart(hitPart)) continue; // Ignore ignored parts.
+                                    hitPartVelocity = hitPart.vessel.Velocity();
+                                }
                                 break;
                             }
                             var hit = hitsEnu.Current;
                             lr.useWorldSpace = true;
-                            laserPoint = hit.point + (targetVelocity * Time.fixedDeltaTime);
+                            laserPoint = hit.point + TimeWarp.fixedDeltaTime * hitPartVelocity;
 
                             lr.SetPosition(0, tf.position + (part.rb.velocity * Time.fixedDeltaTime));
                             lr.SetPosition(1, laserPoint);
@@ -2614,7 +2619,11 @@ namespace BDArmory.Weapons
                     else
                     {
                         if (isAPS && !pulseLaser)
-                            laserPoint = (tgtShell != null ? tgtShell.transform.position : (tgtRocket != null ? tgtRocket.transform.position : lr.transform.InverseTransformPoint((targetDirectionLR * maxTargetingRange) + tf.position)));
+                            laserPoint = lr.transform.InverseTransformPoint(
+                                tgtShell != null ? (tgtShell.currentPosition - TimeWarp.fixedDeltaTime * BDKrakensbane.FrameVelocityV3f) : // Bullets have already moved, so we need to correct for the frame velocity.
+                                tgtRocket != null ? (tgtRocket.currentPosition + TimeWarp.fixedDeltaTime * (tgtRocket.currentVelocity - BDKrakensbane.FrameVelocityV3f)) : // Rockets have had frame velocity corrections applied, but not physics.
+                                (targetDirectionLR * maxTargetingRange) + tf.position
+                            );
                         else
                             laserPoint = lr.transform.InverseTransformPoint((targetDirectionLR * maxTargetingRange) + tf.position);
                         lr.SetPosition(1, laserPoint);
@@ -5122,13 +5131,13 @@ namespace BDArmory.Weapons
                     visualTargetVessel = null;
                     if (tgtShell != null)
                     {
-                        targetVelocity = tgtShell.currentVelocity;
-                        targetPosition = tgtShell.currentPosition;
+                        targetVelocity = tgtShell.currentVelocity - BDKrakensbane.FrameVelocityV3f; // Local frame velocity.
+                        targetPosition = tgtShell.previousPosition; // Bullets have been moved already, but aiming logic is based on pre-move positions.
                         targetRadius = 0.25f;
                     }
                     if (tgtRocket != null)
                     {
-                        targetVelocity = tgtRocket.currentVelocity;
+                        targetVelocity = tgtRocket.currentVelocity - BDKrakensbane.FrameVelocityV3f;
                         targetPosition = tgtRocket.currentPosition;
                         targetRadius = 0.25f;
                     }
@@ -5140,7 +5149,6 @@ namespace BDArmory.Weapons
                         TargetInfo currentTarget = (visualTargetVessel != null ? visualTargetVessel.gameObject.GetComponent<TargetInfo>() : null);
                         targetRadius = currentTarget != null ? visualTargetVessel.GetRadius(fireTransforms[0].forward, currentTarget.bounds) : 0;
                     }
-                    //targetVelocity -= BDKrakensbane.FrameVelocity;
 
                     if (visualTargetPart != null && visualTargetPart.vessel != null)
                     {
@@ -5189,7 +5197,7 @@ namespace BDArmory.Weapons
                         yield break; //simulate inaccuracy, decreasing as incoming projectile gets closer
                     }
                 }
-                delayTime = eWeaponType == WeaponTypes.Ballistic ? (targetDistance / (bulletVelocity + targetVelocity.magnitude)) : (eWeaponType == WeaponTypes.Rocket ? (targetDistance / ((targetDistance / predictedFlightTime) + targetVelocity.magnitude)) : -1);
+                delayTime = eWeaponType == WeaponTypes.Ballistic ? (targetDistance / (bulletVelocity + (targetVelocity - part.rb.velocity).magnitude)) : (eWeaponType == WeaponTypes.Rocket ? (targetDistance / ((targetDistance / predictedFlightTime) + (targetVelocity - part.rb.velocity).magnitude)) : -1);
                 if (delayTime < 0)
                 {
                     delayTime = rocket != null ? 0.5f : (shell.bulletMass * (1 - Mathf.Clamp(shell.tntMass / shell.bulletMass, 0f, 0.95f) / 2)); //for shells, laser delay time is based on shell mass/HEratio. The heavier the shell, the more mass to burn through. Don't expect to stop sabots via laser APS

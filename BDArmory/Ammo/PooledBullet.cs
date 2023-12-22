@@ -73,6 +73,7 @@ namespace BDArmory.Bullets
         public float tracerLuminance = 1;
         public Vector3 currentPosition { get { return _currentPosition; } set { _currentPosition = value; transform.position = value; } } // Local alias for transform.position speeding up access by around 100x.
         Vector3 _currentPosition = default;
+        public Vector3 previousPosition { get; private set; } // Previous position, adjusted for the current Krakensbane. (Used for APS targeting.)
 
         //explosive parameters
         public float radius = 30;
@@ -182,6 +183,7 @@ namespace BDArmory.Bullets
         void OnEnable()
         {
             currentPosition = transform.position; // In case something sets transform.position instead of currentPosition.
+            previousPosition = currentPosition;
             startPosition = currentPosition;
             currentSpeed = currentVelocity.magnitude; // this is the velocity used for drag estimations (only), use total velocity, not muzzle velocity
             timeAlive = 0;
@@ -383,6 +385,7 @@ namespace BDArmory.Bullets
                 currentPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
                 startPosition -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
             }
+            previousPosition = currentPosition;
 
             if (fadeColor)
             {
