@@ -2389,7 +2389,7 @@ namespace BDArmory.Weapons
             WeaponFX();
             for (int i = 0; i < fireTransforms.Length; i++)
             {
-                if ((!useRippleFire || !pulseLaser || fireState.Length == 1) || (useRippleFire && i == barrelIndex))
+                if (!useRippleFire || !pulseLaser || fireState.Length == 1 || (useRippleFire && i == barrelIndex))
                 {
                     float damage = laserDamage;
                     float initialDamage = damage * 0.425f;
@@ -2416,10 +2416,11 @@ namespace BDArmory.Weapons
                     lr.useWorldSpace = false;
                     lr.SetPosition(0, Vector3.zero);
 
-                    var hitCount = Physics.RaycastNonAlloc(ray, laserHits, maxTargetingRange, layerMask1);
+                    var raycastDistance = isAPS ? (tgtShell != null ? (tgtShell.currentPosition - tf.position).magnitude : tgtRocket != null ? (tgtRocket.currentPosition - tf.position).magnitude : maxTargetingRange) : maxTargetingRange; // Only raycast to the incoming projectile if APS.
+                    var hitCount = Physics.RaycastNonAlloc(ray, laserHits, raycastDistance, layerMask1);
                     if (hitCount == laserHits.Length) // If there's a whole bunch of stuff in the way (unlikely), then we need to increase the size of our hits buffer.
                     {
-                        laserHits = Physics.RaycastAll(ray, maxTargetingRange, layerMask1);
+                        laserHits = Physics.RaycastAll(ray, raycastDistance, layerMask1);
                         hitCount = laserHits.Length;
                     }
                     //Debug.Log($"[LASER DEBUG] hitCount: {hitCount}");
@@ -2614,7 +2615,7 @@ namespace BDArmory.Weapons
                     else
                     {
                         if (isAPS && !pulseLaser)
-                            laserPoint = (tgtShell != null ? tgtShell.transform.position : (tgtRocket != null ? tgtRocket.transform.position : lr.transform.InverseTransformPoint((targetDirectionLR * maxTargetingRange) + tf.position)));
+                            laserPoint = lr.transform.InverseTransformPoint(tgtShell != null ? tgtShell.transform.position : tgtRocket != null ? tgtRocket.transform.position : (targetDirectionLR * maxTargetingRange) + tf.position);
                         else
                             laserPoint = lr.transform.InverseTransformPoint((targetDirectionLR * maxTargetingRange) + tf.position);
                         lr.SetPosition(1, laserPoint);
