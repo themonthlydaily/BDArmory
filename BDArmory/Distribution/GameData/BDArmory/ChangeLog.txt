@@ -4,6 +4,7 @@
 - AI / WM:
 	- Invert the roll target when the fly-to direction is below and behind the craft within the Immelmann turn angle.
 	- Fix automatic gun range adjustments in the WM again.
+	- Prevent Orbital AI from changing attitude while launched missile is still near spacecraft.
 - Weapons:
 	- Corrections to penetration and ricochet velocity changes and ricochet positions.
 	- Missiles:

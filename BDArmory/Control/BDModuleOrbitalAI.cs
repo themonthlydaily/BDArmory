@@ -11,6 +11,7 @@ using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.Weapons;
 using BDArmory.Guidances;
+using BDArmory.Weapons.Missiles;
 
 namespace BDArmory.Control
 {
@@ -683,6 +684,17 @@ namespace BDArmory.Control
                 if (BDArmorySettings.DEBUG_AI)
                     Debug.Log("[BDArmory.BDModuleOrbitalAI]: Status of " + vessel.vesselName + " changed from " + lastStatusMode + " to " + currentStatus);
             }
+
+            // Temporarily inhibit maneuvers if not evading a missile and waiting for a launched missile to fly to a safe distance
+            if (currentStatusMode != StatusMode.Evading && weaponManager.PreviousMissile)
+            {
+                if ((vessel.CoM - weaponManager.PreviousMissile.vessel.transform.position).sqrMagnitude < vessel.vesselSize.sqrMagnitude)
+                    fc.Stability(true);
+                else
+                    fc.Stability(false);
+            }
+            else
+                fc.Stability(false);
 
             // Check for incoming gunfire
             EvasionStatus();
