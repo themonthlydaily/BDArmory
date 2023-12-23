@@ -35,7 +35,8 @@ namespace BDArmory.FX
         public string SourceVesselTeam { get; set; }
         public string SourceWeaponName { get; set; }
         public float Power { get; set; }
-        public Vector3 Position { get; set; }
+        public Vector3 Position { get { return _position; } set { _position = value; transform.position = _position; } }
+        Vector3 _position;
         public Vector3 Direction { get; set; }
         public Vector3 Velocity { get; set; }
         public float cosAngleOfEffect { get; set; }
@@ -151,9 +152,9 @@ namespace BDArmory.FX
                 Debug.Log("[BDArmory.ExplosionFX]: Explosion started tntMass: {" + Power + "}  BlastRadius: {" + Range + "} StartTime: {" + StartTime + "}, Duration: {" + MaxTime + "}");
             }
             /*
-            if (BDArmorySettings.PERSISTENT_FX && Caliber > 30 && BodyUtils.GetRadarAltitudeAtPos(transform.position) > Caliber / 60)
+            if (BDArmorySettings.PERSISTENT_FX && Caliber > 30 && BodyUtils.GetRadarAltitudeAtPos(Position) > Caliber / 60)
             {
-                if (FlightGlobals.getAltitudeAtPos(transform.position) > Caliber / 60)
+                if (FlightGlobals.getAltitudeAtPos(Position) > Caliber / 60)
                 {
                     FXEmitter.CreateFX(Position, (Caliber / 30), "BDArmory/Models/explosion/flakSmoke", "", 0.3f, Caliber / 6);                   
                 }
@@ -672,14 +673,12 @@ namespace BDArmory.FX
             //floating origin and velocity offloading corrections
             if (BDKrakensbane.IsActive)
             {
-                transform.position -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
                 Position -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
             }
             { // Explosion centre velocity depends on atmospheric density relative to Kerbin sea level.
                 var atmDensity = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(Position), FlightGlobals.getExternalTemperature(Position));
                 Velocity /= 1 + atmDensity / KerbinSeaLevelAtmDensity;
                 var deltaPos = Velocity * TimeWarp.fixedDeltaTime; // Krakensbane is already accounted for above.
-                transform.position += deltaPos;
                 Position += deltaPos;
             }
 
@@ -1149,7 +1148,6 @@ namespace BDArmory.FX
             eFx.Direction = direction;
             sourceVelocity = sourceVelocity != default ? sourceVelocity : (explosivePart != null && explosivePart.rb != null) ? explosivePart.rb.velocity + BDKrakensbane.FrameVelocityV3f : default; // Use the explosive part's velocity if the sourceVelocity isn't specified.
             eFx.Velocity = Hitpart != null ? Hitpart.vessel.Velocity() : sourceVelocity; // sourceVelocity is the real velocity w/o offloading.
-            if (Hitpart == null && sourceVelocity == default) Debug.LogError($"DEBUG Creating explosion with velocity {eFx.Velocity.magnitude}, hitpart vel: {(Hitpart != null ? $"{Hitpart.vessel.Velocity().magnitude}" : "none")}, source vel: {sourceVelocity.magnitude}{(Hitpart != null ? $", hit part: {Hitpart.partInfo.name} on {Hitpart.vessel.vesselName}" : "")}{(explosivePart != null ? $", explosive part: {explosivePart.partInfo.name}" : "")}"); // FIXME some explosions are being created from hits on parts, but the part is null.
             eFx.isFX = isfx;
             eFx.ProjMass = projectilemass;
             eFx.CASEClamp = caseLimiter;
