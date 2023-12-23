@@ -676,6 +676,8 @@ namespace BDArmory.Control
                     else
                         currentStatusMode = StatusMode.Stranded;
                 }
+                else
+                    currentStatusMode = StatusMode.Idle;
             }
             else
                 currentStatusMode = StatusMode.Idle;
