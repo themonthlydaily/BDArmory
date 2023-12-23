@@ -1694,10 +1694,10 @@ namespace BDArmory.Bullets
             ///////////////////////////////////////////////////////////////////////
             if (fuzeType == BulletFuzeTypes.None)
             {
-                if (BDArmorySettings.DEBUG_WEAPONS)
-                {
-                    Debug.Log($"[BDArmory.PooledBullet]: Bullet {bullet.DisplayName} attempted detonation, has improper fuze ({fuzeType}). Fix your bullet config.");
-                }
+                // if (BDArmorySettings.DEBUG_WEAPONS)
+                // {
+                //     Debug.Log($"[BDArmory.PooledBullet]: Bullet {bullet.DisplayName} attempted detonation, has improper fuze ({fuzeType}). Fix your bullet config."); // This is getting called regardless of fuzeType, so don't give a warning.
+                // }
                 return false;
             }
             if (hitPart == null || hitPart.vessel != sourceVessel)
