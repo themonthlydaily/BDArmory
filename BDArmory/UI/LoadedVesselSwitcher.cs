@@ -1137,11 +1137,10 @@ namespace BDArmory.UI
                 {
                     var mb = VesselModuleRegistry.GetMissileBase(activeVessel);
                     // Don't switch away from an active missile until it misses or is off-target, or if it is within 1 km of its target position
-                    Vector3 targetPosition = mb.targetVessel ? mb.targetVessel.transform.position : mb.TargetPosition;
                     bool stayOnMissile = mb != null &&
                         !mb.HasMissed &&
-                        Vector3.Dot((targetPosition - mb.vessel.transform.position).normalized, mb.vessel.transform.up) < 0.5f &&
-                        ((mb.vessel.transform.position - targetPosition).sqrMagnitude < 1e6);
+                        Vector3.Dot((mb.TargetPosition - mb.vessel.transform.position).normalized, mb.vessel.transform.up) < 0.5f &&
+                        ((mb.vessel.transform.position - mb.TargetPosition).sqrMagnitude < 1e6);
                     if (stayOnMissile) return;
                 }
                 bool foundActiveVessel = false;
