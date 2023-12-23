@@ -1140,7 +1140,7 @@ namespace BDArmory.UI
                     bool stayOnMissile = mb != null &&
                         !mb.HasMissed &&
                         Vector3.Dot((mb.TargetPosition - mb.vessel.transform.position).normalized, mb.vessel.transform.up) < 0.5f &&
-                        ((mb.vessel.transform.position - mb.TargetPosition).sqrMagnitude < 1e6);
+                        (mb.vessel.transform.position - mb.TargetPosition).sqrMagnitude < 1e6;
                     if (stayOnMissile) return;
                 }
                 bool foundActiveVessel = false;
