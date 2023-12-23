@@ -67,10 +67,5 @@ namespace BDArmory.Extensions
             }
             return Math.Max(maxTerrainHeight, body.atmosphereDepth);
         }
-
-        public static double MinOrbitalDistance(this CelestialBody body)
-        {
-            return body.MinSafeAltitude() + body.Radius;
-        }
     }
 }
