@@ -710,7 +710,6 @@ namespace BDArmory.Weapons.Missiles
             partModules.Dispose();
             StartSetupComplete = true;
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher] Start() setup complete");
-            TimingManager.FixedUpdateAdd(TimingManager.TimingStage.FashionablyLate, GuidanceTelemetry);
         }
 
         public void SetFields()
@@ -1008,7 +1007,6 @@ namespace BDArmory.Weapons.Missiles
                     if (pe) EffectBehaviour.RemoveParticleEmitter(pe);
             BDArmorySetup.OnVolumeChange -= UpdateVolume;
             GameEvents.onPartDie.Remove(PartDie);
-            TimingManager.FixedUpdateRemove(TimingManager.TimingStage.FashionablyLate, GuidanceTelemetry);
             if (vesselReferenceTransform != null && vesselReferenceTransform.gameObject != null)
             {
                 Destroy(vesselReferenceTransform.gameObject);
@@ -1785,19 +1783,16 @@ namespace BDArmory.Weapons.Missiles
             {
                 if (guidanceActive) debugString.AppendLine("Missile target=" + debugGuidanceTarget);
                 else debugString.AppendLine("Guidance inactive");
+
+                if (!(BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES)) return;
+                var distance = (TargetPosition - transform.position).magnitude;
+                debugString.AppendLine($"Target distance: {(distance > 1000 ? $" {distance / 1000:F1} km" : $" {distance:F0} m")}");
+                var fwdDistance = Vector3.Dot(TargetPosition - transform.position, GetForwardTransform());
+                debugString.AppendLine($"Target fwd dist: {(fwdDistance > 1000 ? $" {fwdDistance / 1000:F1} km" : $" {fwdDistance:F0} m")}, speed: {Vector3.Dot(TargetVelocity - vessel.Velocity(), GetForwardTransform()):F1} m/s (measured: {(fwdDistance - prevFwdDistance) / TimeWarp.fixedDeltaTime:F1} m/s)");
+                prevFwdDistance = fwdDistance;
             }
         }
-
         float prevFwdDistance = 0;
-        void GuidanceTelemetry()
-        {
-            if (!(BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES)) return;
-            var distance = (TargetPosition - transform.position).magnitude;
-            debugString.AppendLine($"Target distance: {(distance > 1000 ? $" {distance / 1000:F1} km" : $" {distance:F0} m")}");
-            var fwdDistance = Vector3.Dot(TargetPosition - transform.position, GetForwardTransform());
-            debugString.AppendLine($"Target fwd dist: {(fwdDistance > 1000 ? $" {fwdDistance / 1000:F1} km" : $" {fwdDistance:F0} m")}, speed: {Vector3.Dot(TargetVelocity - vessel.Velocity(), GetForwardTransform()):F1} m/s (measured: {(fwdDistance - prevFwdDistance) / TimeWarp.fixedDeltaTime:F1} m/s)");
-            prevFwdDistance = fwdDistance;
-        }
 
         // feature_engagementenvelope: terminal guidance mode for cruise missiles
         private void UpdateTerminalGuidance()
@@ -2480,7 +2475,7 @@ namespace BDArmory.Weapons.Missiles
                             break;
                         }
                     /* Case GuidanceModes.AAMHybrid:
-{
+    {
                             aamTarget = MissileGuidance.GetAirToAirHybridTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, terminalHomingRange, out timeToImpact, homingModeTerminal, pronavGain, optimumAirspeed);
                             TimeToImpact = timeToImpact;
                             break;
