@@ -1086,7 +1086,7 @@ namespace BDArmory.UI
                 if (v.IsMissile())
                 {
                     currentVesselDied = true;
-                    currentVesselDiedAt = Time.time - (BDArmorySettings.DEATH_CAMERA_SWITCH_INHIBIT_PERIOD == 0 ? BDArmorySettings.CAMERA_SWITCH_FREQUENCY / 2f : BDArmorySettings.DEATH_CAMERA_SWITCH_INHIBIT_PERIOD) + minCameraCheckInterval;
+                    currentVesselDiedAt = Time.time - (BDArmorySettings.DEATH_CAMERA_SWITCH_INHIBIT_PERIOD == 0 ? BDArmorySettings.CAMERA_SWITCH_FREQUENCY / 2f : BDArmorySettings.DEATH_CAMERA_SWITCH_INHIBIT_PERIOD) / 2f; // Wait half the death cam period on missile death.
                 }
                 else
                 {
@@ -1167,7 +1167,8 @@ namespace BDArmory.UI
                         var targetDirection = missile.TargetPosition - missile.transform.position;
                         var targetDistance = targetDirection.magnitude;
                         if (Vector3.Dot(targetDirection, missile.GetForwardTransform()) < 0.5f * targetDistance) continue; // Ignore off-target missiles.
-                        float missileScore = targetDistance < 1e3f ? 0.1f : 0.1f + (targetDistance - 1e3f) * (targetDistance - 1e3f) * 2e-8f; // Prioritise missiles that are within 1km from their targets.
+                        if (missile.targetVessel != null && missile.targetVessel.Vessel != null && missile.targetVessel.Vessel.IsMissile()) continue; // Ignore missiles targeting missiles.
+                        float missileScore = targetDistance < 1e3f ? 0.1f : 0.1f + (targetDistance - 1e3f) * (targetDistance - 1e3f) * 1e-7f; // Prioritise missiles that are within 1km from their targets and de-prioritise those more than 4km away.
                         if (missileScore < bestScore)
                         {
                             bestScore = missileScore;
