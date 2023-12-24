@@ -659,19 +659,26 @@ namespace BDArmory.Control
                 if (currentCommand != lastUpdateCommand)
                     maneuverStateChanged = true;
             }
-            else if (allowWithdrawal && hasPropulsion && !hasWeapons && CheckWithdraw())
-                currentStatusMode = StatusMode.Withdrawing;
-            else if (weaponManager && targetVessel != null && weaponManager.currentGun && GunReady(weaponManager.currentGun))
-                currentStatusMode = StatusMode.Firing; // Guns
-            else if (weaponManager && targetVessel != null && weaponManager.CurrentMissile && !weaponManager.GetLaunchAuthorization(targetVessel, weaponManager, weaponManager.CurrentMissile))
-                currentStatusMode = StatusMode.Firing; // Missiles
-            else if (weaponManager && targetVessel != null && weaponManager.CurrentMissile && weaponManager.guardFiringMissile && currentStatusMode == StatusMode.Firing)
-                currentStatusMode = StatusMode.Firing; // Post-launch authorization missile firing underway, don't change status from Firing
-            else if (weaponManager && targetVessel != null && hasWeapons)
-                if (hasPropulsion)
-                    currentStatusMode = StatusMode.Maneuvering;
+            else if (weaponManager)
+            {
+                if (allowWithdrawal && hasPropulsion && !hasWeapons && CheckWithdraw())
+                    currentStatusMode = StatusMode.Withdrawing;
+                else if (targetVessel != null && weaponManager.currentGun && GunReady(weaponManager.currentGun))
+                    currentStatusMode = StatusMode.Firing; // Guns
+                else if (targetVessel != null && weaponManager.CurrentMissile && !weaponManager.GetLaunchAuthorization(targetVessel, weaponManager, weaponManager.CurrentMissile))
+                    currentStatusMode = StatusMode.Firing; // Missiles
+                else if (targetVessel != null && weaponManager.CurrentMissile && weaponManager.guardFiringMissile && currentStatusMode == StatusMode.Firing)
+                    currentStatusMode = StatusMode.Firing; // Post-launch authorization missile firing underway, don't change status from Firing
+                else if (targetVessel != null && hasWeapons)
+                {
+                    if (hasPropulsion)
+                        currentStatusMode = StatusMode.Maneuvering;
+                    else
+                        currentStatusMode = StatusMode.Stranded;
+                }
                 else
-                    currentStatusMode = StatusMode.Stranded;
+                    currentStatusMode = StatusMode.Idle;
+            }
             else
                 currentStatusMode = StatusMode.Idle;
 
