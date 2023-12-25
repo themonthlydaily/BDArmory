@@ -1,4 +1,17 @@
-﻿v1.6.9.0
+﻿IMPROVEMENTS / FIXES
+- General:
+	- Fix part filtering by search terms in the editors.
+- AI / WM:
+	- Invert the roll target when the fly-to direction is below and behind the craft within the Immelmann turn angle.
+	- Fix automatic gun range adjustments in the WM again.
+- Weapons:
+	- Corrections to penetration and ricochet velocity changes and ricochet positions.
+	- Missiles:
+		- Fix mass changes of missiles that decouple boosters and add missile mass debug telemetry.
+		- Fix radar and heat targeting leading targets excessively (most apparent in orbit)
+		- Change spacing missiles with continous warhead from Detonation Distance / 3 to  Min(Blast Radius / 3, Detonation Distance / 3)
+
+v1.6.9.0
 IMPROVEMENTS / FIXES
 - UI:
 	- Fix the alternate (hidden UI) window locations (for scores and vessel switcher) not being saved correctly.

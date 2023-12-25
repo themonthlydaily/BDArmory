@@ -35,7 +35,8 @@ namespace BDArmory.Bullets
         private Vector3 dragVector;
         public float thrustTime;
         public bool shaped;
-        public float maxAirDetonationRange;
+        public float timeToDetonation;
+        float armingTime;
         public bool flak;
         public bool concussion;
         public bool gravitic;
@@ -92,6 +93,7 @@ namespace BDArmory.Bullets
 
         //bool isThrusting = true;
         public bool isAPSprojectile = false;
+        public bool isSubProjectile = false;
         public PooledRocket tgtRocket = null;
         public PooledBullet tgtShell = null;
 
@@ -145,6 +147,7 @@ namespace BDArmory.Bullets
             startPosition = currentPosition;
             transform.rotation = transform.parent.rotation;
             startTime = Time.time;
+            armingTime = isSubProjectile ? 0 : BDAMath.Sqrt(4 * blastRadius * rocketMass / thrust); // d = a/2 * t^2 for initial 0 relative velocity
             if (FlightGlobals.getAltitudeAtPos(currentPosition) < 0)
             {
                 startUnderwater = true;
@@ -627,18 +630,18 @@ namespace BDArmory.Bullets
             {
                 Detonate(currentPosition, true);
             }
-            if (distanceFromStart >= (beehive ? maxAirDetonationRange - 100 : maxAirDetonationRange))//rockets are performance intensive, lets cull those that have flown too far away
+            if (Time.time - startTime >= (beehive ? timeToDetonation - 1 : timeToDetonation))
             {
                 Detonate(currentPosition, false);
             }
-            if (ProximityAirDetonation(distanceFromStart))
+            if (ProximityAirDetonation())
             {
                 Detonate(currentPosition, false);
             }
             prevPosition = currentPosition;
         }
 
-        private bool ProximityAirDetonation(float distanceFromStart)
+        private bool ProximityAirDetonation()
         {
             if (isAPSprojectile && (tgtShell != null || tgtRocket != null))
             {
@@ -650,7 +653,7 @@ namespace BDArmory.Bullets
                 }
             }
 
-            if (distanceFromStart <= blastRadius * 2) return false;
+            if (Time.time - startTime < armingTime) return false;
 
             if (!(((explosive || nuclear) && tntMass > 0) || beehive)) return false;
 
@@ -954,8 +957,8 @@ namespace BDArmory.Bullets
                                 break;
                         }
                         pBullet.detonationRange = detonationRange;
-                        pBullet.maxAirDetonationRange = maxAirDetonationRange;
                         pBullet.defaultDetonationRange = 1000;
+                        pBullet.timeToDetonation = detonationRange / Mathf.Max(1, currentVelocity.magnitude); // Only a short time remaining to the target.
                         pBullet.fuzeType = sFuze;
                     }
                     else
@@ -990,9 +993,11 @@ namespace BDArmory.Bullets
                     pBullet.stealResources = thief;
                     pBullet.dmgMult = dmgMult;
                     pBullet.isAPSprojectile = isAPSprojectile;
+                    pBullet.isSubProjectile = true;
                     pBullet.tgtShell = tgtShell;
                     pBullet.tgtRocket = tgtRocket;
                     pBullet.gameObject.SetActive(true);
+                    pBullet.SetTracerPosition();
                 }
             }
             else
@@ -1016,7 +1021,7 @@ namespace BDArmory.Bullets
                     rocket.thrustTime = sRocket.thrustTime;
                     rocket.flak = sRocket.flak;
                     rocket.detonationRange = detonationRange;
-                    rocket.maxAirDetonationRange = maxAirDetonationRange;
+                    rocket.timeToDetonation = detonationRange / Mathf.Max(1, currentVelocity.magnitude); // Only a short time remaining to the target.
                     rocket.tntMass = sRocket.tntMass;
                     rocket.shaped = sRocket.shaped;
                     rocket.concussion = sRocket.impulse;
@@ -1050,6 +1055,7 @@ namespace BDArmory.Bullets
                         rocket.tgtShell = tgtShell;
                         rocket.tgtRocket = tgtRocket;
                     }
+                    rocket.isSubProjectile = true;
                     rocketObj.SetActive(true);
                 }
             }

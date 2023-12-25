@@ -1104,7 +1104,7 @@ namespace BDArmory.Competition
             if (vessel == null || vessel.vesselName == null) return;
             if (BDArmorySettings.COMPETITION_GM_KILL_ENGINE)
             {
-                if (SpawnUtils.CountActiveEngines(vessel) == 0)
+                if (SpawnUtils.CountActiveEngines(vessel, true) == 0)
                     StartCoroutine(DelayedGMKill(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, " lost all engines. Terminated by GM."));
             }
             if (BDArmorySettings.COMPETITION_GM_KILL_WEAPON)
@@ -1125,7 +1125,7 @@ namespace BDArmory.Competition
                         StartCoroutine(DelayedGMKill(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, " lost all weapons or ammo. Terminated by GM."));
                     else // Check for engines first, then wheels for tanks/amphibious if needed 
                     {
-                        if (SpawnUtils.CountActiveEngines(vessel) == 0)
+                        if (SpawnUtils.CountActiveEngines(vessel, true) == 0)
                         {
                             var surfaceAI = VesselModuleRegistry.GetModule<BDModuleSurfaceAI>(vessel); // Get the surface AI if the vessel has one.
                             if (surfaceAI == null) // No engines on an AI that needs them, craft is disabled
