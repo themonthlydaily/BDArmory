@@ -692,7 +692,7 @@ namespace BDArmory.Control
             }
 
             // Temporarily inhibit maneuvers if not evading a missile and waiting for a launched missile to fly to a safe distance
-            if (currentStatusMode != StatusMode.Evading && weaponManager.PreviousMissile)
+            if (currentStatusMode != StatusMode.Evading && weaponManager && weaponManager.PreviousMissile)
             {
                 if ((vessel.CoM - weaponManager.PreviousMissile.vessel.transform.position).sqrMagnitude < vessel.vesselSize.sqrMagnitude)
                     fc.Stability(true);
