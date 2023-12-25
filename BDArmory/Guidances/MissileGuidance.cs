@@ -150,8 +150,9 @@ namespace BDArmory.Guidances
         public static Vector3 GetAirToAirLoftTarget(Vector3 targetPosition, Vector3 targetVelocity,
             Vector3 targetAcceleration, Vessel missileVessel, float targetAlt, float maxAltitude,
             float rangeFactor, float vertVelComp, float velComp, float loftAngle, float termAngle,
-            float termDist, ref int loftState, out float timeToImpact, out float targetDistance,
-            MissileBase.GuidanceModes homingModeTerminal, float N, float minSpeed = 200)
+            float termDist, ref int loftState, out float timeToImpact, out float gLimit,
+            out float targetDistance, MissileBase.GuidanceModes homingModeTerminal, float N,
+            float minSpeed = 200)
         {
             Vector3 velDirection = missileVessel.srf_vel_direction; //missileVessel.Velocity().normalized;
 
@@ -168,6 +169,8 @@ namespace BDArmory.Guidances
 
             timeToImpact = leadTime;
             leadTime = Mathf.Clamp(leadTime, 0f, 16f);
+
+            gLimit = -1f;
 
             // If loft is not terminal
             if ((targetDistance > termDist) && (loftState < 3))
@@ -343,14 +346,16 @@ namespace BDArmory.Guidances
                     // If the target is at <  2 * termDist start mixing
                     if (targetDistance < 2 * termDist)
                     {
+                        float dummy;
+
                         if (homingModeTerminal == MissileBase.GuidanceModes.PN)
-                            return (1f - (targetDistance - termDist) / termDist) * GetPNTarget(targetPosition, targetVelocity, missileVessel, N, out timeToImpact) + ((targetDistance - termDist) / termDist) * finalTargetPos;
+                            return (1f - (targetDistance - termDist) / termDist) * GetPNTarget(targetPosition, targetVelocity, missileVessel, N, out timeToImpact, out dummy) + ((targetDistance - termDist) / termDist) * finalTargetPos;
                         else if (homingModeTerminal == MissileBase.GuidanceModes.APN)
-                            return (1f - (targetDistance - termDist) / termDist) * GetAPNTarget(targetPosition, targetVelocity, targetAcceleration, missileVessel, N, out timeToImpact) + ((targetDistance - termDist) / termDist) * finalTargetPos;
+                            return (1f - (targetDistance - termDist) / termDist) * GetAPNTarget(targetPosition, targetVelocity, targetAcceleration, missileVessel, N, out timeToImpact, out dummy) + ((targetDistance - termDist) / termDist) * finalTargetPos;
                         else if (homingModeTerminal == MissileBase.GuidanceModes.AAMPure)
                             return (1f - (targetDistance - termDist) / termDist) * targetPosition + ((targetDistance - termDist) / termDist) * finalTargetPos;
                         else
-                            return (1f - (targetDistance - termDist) / termDist) * GetPNTarget(targetPosition, targetVelocity, missileVessel, N, out timeToImpact) + ((targetDistance - termDist) / termDist) * finalTargetPos; // Default to PN
+                            return (1f - (targetDistance - termDist) / termDist) * GetPNTarget(targetPosition, targetVelocity, missileVessel, N, out timeToImpact, out dummy) + ((targetDistance - termDist) / termDist) * finalTargetPos; // Default to PN
                     }
 
                     // No mixing if targetDistance > 2 * termDist
@@ -381,15 +386,15 @@ namespace BDArmory.Guidances
                 if (targetDistance < termDist)
                 {
                     if (homingModeTerminal == MissileBase.GuidanceModes.PN)
-                        return GetPNTarget(targetPosition, targetVelocity, missileVessel, N, out timeToImpact);
+                        return GetPNTarget(targetPosition, targetVelocity, missileVessel, N, out timeToImpact, out gLimit);
                     else if (homingModeTerminal == MissileBase.GuidanceModes.APN)
-                        return GetAPNTarget(targetPosition, targetVelocity, targetAcceleration, missileVessel, N, out timeToImpact);
+                        return GetAPNTarget(targetPosition, targetVelocity, targetAcceleration, missileVessel, N, out timeToImpact, out gLimit);
                     else if (homingModeTerminal == MissileBase.GuidanceModes.AAMLead)
                         return AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, leadTime + TimeWarp.fixedDeltaTime);
                     else if (homingModeTerminal == MissileBase.GuidanceModes.AAMPure)
                         return targetPosition;
                     else
-                        return GetPNTarget(targetPosition, targetVelocity, missileVessel, N, out timeToImpact); // Default to PN
+                        return GetPNTarget(targetPosition, targetVelocity, missileVessel, N, out timeToImpact, out gLimit); // Default to PN
                 }
                 else
                 {
@@ -450,7 +455,7 @@ namespace BDArmory.Guidances
             return AIUtils.PredictPosition(targetPosition, targetVelocity * easeVel, targetAcceleration * easeAccel, timeToCPA + TimeWarp.fixedDeltaTime); // Compensate for the off-by-one frame issue.
         }
 
-        public static Vector3 GetPNTarget(Vector3 targetPosition, Vector3 targetVelocity, Vessel missileVessel, float N, out float timeToGo)
+        public static Vector3 GetPNTarget(Vector3 targetPosition, Vector3 targetVelocity, Vessel missileVessel, float N, out float timeToGo, out float gLimit)
         {
             Vector3 missileVel = missileVessel.Velocity();
             Vector3 relVelocity = targetVelocity - missileVel;
@@ -458,11 +463,12 @@ namespace BDArmory.Guidances
             Vector3 RotVector = Vector3.Cross(relRange, relVelocity) / Vector3.Dot(relRange, relRange);
             Vector3 RefVector = missileVel.normalized;
             Vector3 normalAccel = -N * relVelocity.magnitude * Vector3.Cross(RefVector, RotVector);
+            gLimit = normalAccel.magnitude / (float)PhysicsGlobals.GravitationalAcceleration;
             timeToGo = missileVessel.TimeToCPA(targetPosition, targetVelocity, Vector3.zero, 120f);
             return missileVessel.CoM + missileVel * timeToGo + normalAccel * timeToGo * timeToGo;
         }
 
-        public static Vector3 GetAPNTarget(Vector3 targetPosition, Vector3 targetVelocity, Vector3 targetAcceleration, Vessel missileVessel, float N, out float timeToGo)
+        public static Vector3 GetAPNTarget(Vector3 targetPosition, Vector3 targetVelocity, Vector3 targetAcceleration, Vessel missileVessel, float N, out float timeToGo, out float gLimit)
         {
             Vector3 missileVel = missileVessel.Velocity();
             Vector3 relVelocity = targetVelocity - missileVel;
@@ -474,6 +480,7 @@ namespace BDArmory.Guidances
             Vector3 accelBias = Vector3.Cross(relRange.normalized, targetAcceleration);
             accelBias = Vector3.Cross(RefVector, accelBias);
             normalAccel -= 0.5f * N * accelBias;
+            gLimit = normalAccel.magnitude / (float)PhysicsGlobals.GravitationalAcceleration;
             timeToGo = missileVessel.TimeToCPA(targetPosition, targetVelocity, targetAcceleration, 120f);
             return missileVessel.CoM + missileVel * timeToGo + normalAccel * timeToGo * timeToGo;
         }
@@ -642,6 +649,329 @@ namespace BDArmory.Guidances
 
         public static FloatCurve DefaultLiftCurve = null;
         public static FloatCurve DefaultDragCurve = null;
+
+        const float TRatioInflec1 = 1.181181181181181f; // Thrust to Lift Ratio (at AoA of 30) where the maximum occurs
+        // after the 65 degree mark
+        const float TRatioInflec2 = 2.242242242242242f; // Thrust to Lift Ratio (at AoA of 30) where a local maximum no
+        // longer exists, above this every section must be searched
+
+        public static FloatCurve AoACurve = null; // Floatcurve containing AoA of (local) max acceleration
+        // for a given thrust to lift (at the max CL of 1.5 at 30 degrees of AoA) ratio. Limited to a max
+        // of TRatioInflec2 where a local maximum no longer exists
+
+        public static FloatCurve AoAEqCurve = null; // Floatcurve containing AoA after which the acceleration goes above
+        // that of the local maximums'. Only exists between TRatioInflec1 and TRatioInflec2.
+
+        public static FloatCurve gMaxCurve = null; // Floatcurve containing max acceleration times the mass (total force)
+        // normalized by q*S*GLOBAL_LIFT_MULTIPLIER for TRatio between 0 and TRatioInflec2. Note that after TRatioInflec1
+        // this becomes a local maxima not a global maxima. This is used to narrow down what part of the curve we should
+        // solve on.
+
+        // Linearized CL v.s. AoA curve to enable fast solving. Algorithm performs bisection using the fast calculations of the bounds
+        // and then performs a linear solve 
+        public static float[] linAoA = null;
+        public static float[] linCL = null;
+        public static float[] linSin = null;
+        public static float[] linSlope = null;
+        public static float[] linIntc = null;
+
+        public static float getGLimit(MissileLauncher ml, float thrust, float gLim, float margin)//, out bool gLimited)
+        {
+            bool gLimited = false;
+
+            // Force required to reach g-limit
+            float mg = gLim * (float)(ml.vessel.totalMass * PhysicsGlobals.GravitationalAcceleration);
+
+            float maxAoA = ml.maxAoA;
+
+            float currAoA = maxAoA;
+
+            int interval = 0;
+
+            // Factor by which to multiply the lift coefficient to get lift, it's the dynamic pressure times the lift area times
+            // the global lift multiplier
+            float qSk = (float) (0.5f * ml.vessel.atmDensity * ml.vessel.srfSpeed * ml.vessel.srfSpeed) * ml.liftArea * BDArmorySettings.GLOBAL_LIFT_MULTIPLIER;
+
+            if (DefaultLiftCurve == null)
+            {
+                DefaultLiftCurve = new FloatCurve();
+                DefaultLiftCurve.Add(0, 0);
+                DefaultLiftCurve.Add(8, .35f);
+                //	DefaultLiftCurve.Add(19, 1);
+                //	DefaultLiftCurve.Add(23, .9f);
+                DefaultLiftCurve.Add(30, 1.5f);
+                DefaultLiftCurve.Add(65, .6f);
+                DefaultLiftCurve.Add(90, .7f);
+            }
+
+            if (DefaultDragCurve == null)
+            {
+                DefaultDragCurve = new FloatCurve();
+                DefaultDragCurve.Add(0, 0.00215f);
+                DefaultDragCurve.Add(5, .00285f);
+                DefaultDragCurve.Add(15, .007f);
+                DefaultDragCurve.Add(29, .01f);
+                DefaultDragCurve.Add(55, .3f);
+                DefaultDragCurve.Add(90, .5f);
+            }
+
+            if (AoACurve == null)
+            {
+                AoACurve = new FloatCurve();
+                AoACurve.Add(0.0000000000f, 30.0000000000f);
+                AoACurve.Add(0.7107107107f, 33.9639639640f);
+                AoACurve.Add(1.5315315315f, 39.6396396396f);
+                AoACurve.Add(1.9419419419f, 43.6936936937f);
+                AoACurve.Add(2.1421421421f, 46.6666666667f);
+                AoACurve.Add(2.2122122122f, 48.3783783784f);
+                AoACurve.Add(2.2422422422f, 49.7297297297f);
+            }
+
+            if (AoAEqCurve == null)
+            {
+                AoAEqCurve = new FloatCurve();
+                AoAEqCurve.Add(1.1911911912f, 89.6396396396f);
+                AoAEqCurve.Add(1.3413413413f, 81.6216216216f);
+                AoAEqCurve.Add(1.5215215215f, 73.3333333333f);
+                AoAEqCurve.Add(1.7217217217f, 67.4774774775f);
+                AoAEqCurve.Add(1.9819819820f, 62.4324324324f);
+                AoAEqCurve.Add(2.1821821822f, 56.6666666667f);
+                AoAEqCurve.Add(2.2422422422f, 52.6126126126f);
+            }
+
+            if (gMaxCurve == null)
+            {
+                gMaxCurve = new FloatCurve();
+                gMaxCurve.Add(0.0000000000f, 1.5000000000f);
+                gMaxCurve.Add(1.2012012012f, 2.4907813293f);
+                gMaxCurve.Add(1.9119119119f, 3.1757276995f);
+                gMaxCurve.Add(2.2422422422f, 3.5307206802f);
+            }
+
+            if (linAoA == null)
+            {
+                linAoA = new float[] { 0f, 10f, 24f, 30f, 38f, 57f, 65f, 90f };
+            }
+
+            if (linCL == null)
+            {
+                linCL = new float[] { 0f, 0.454444597111092f, 1.34596044049850f, 1.5f, 1.38043381924198f, 0.719566180758018f, 0.6f, 0.7f };
+            }
+
+            if (linSin == null)
+            {
+                linSin = new float[] { 0f, 0.173648177666930f, 0.406736643075800f, 0.5f, 0.615661475325658f, 0.838670567945424f, 0.906307787036650f, 1f };
+            }
+
+            if (linSlope == null)
+            {
+                linSlope = new float[] { 0.0454444597111092f, 0.0636797030991005f, 0.0256732599169169f, -0.0149457725947522f, -0.0347825072886297f, -0.0149457725947522f, 0.004f };
+            }
+
+            if (linIntc == null)
+            {
+                linIntc = new float[] { 0f, -0.182352433879912f, 0.729802202492494f, 1.94837317784257f, 2.70216909620991f, 1.57147521865889f, 0.34f };
+            }
+
+            float currG = 0;
+
+            if (thrust == 0)
+            {
+                if (mg > 1.5f*qSk)
+                {
+                    gLimited = false;
+                    return maxAoA;
+                } else
+                {
+                    currG = linCL[2] * qSk; // CL(alpha)*qSk + thrust*sin(alpha)
+
+                    if (currG < mg)
+                    {
+                        interval = 2;
+                    }
+                    else
+                    {
+                        currG = linCL[1] * qSk;
+
+                        if (currG > mg)
+                        {
+                            interval = 0;
+                        } else
+                        {
+                            interval = 1;
+                        }
+                    }
+
+                    currAoA = calcAoAforGLinear(qSk, mg, linSlope[interval], linIntc[interval], 0);
+
+                    gLimited = currAoA < maxAoA;
+                    return gLimited ? currAoA : maxAoA;
+                }
+            }
+            else
+            {
+                float TRatio = thrust / (1.5f * qSk);
+
+                int LHS = 0;
+                int RHS = 7;
+
+                if (TRatio < TRatioInflec2)
+                {
+                    currG = gMaxCurve.Evaluate(TRatio);
+
+                    if (TRatio > TRatioInflec1)
+                    {
+                        margin = Mathf.Max(margin, 0f);
+
+                        margin *= (float)ml.vessel.totalMass;
+
+                        if (currG + margin < gLim)
+                        {
+                            if (currG < gLim)
+                            {
+                                float AoAMax = AoACurve.Evaluate(TRatio);
+                                
+                                if (AoAMax > linAoA[4])
+                                {
+                                    RHS = 5;
+                                }
+                                else if (AoAMax > linAoA[3])
+                                {
+                                    RHS = 4;
+                                }
+                                else
+                                {
+                                    RHS = 3;
+                                }
+                            }
+                            else
+                            {
+                                currAoA = AoACurve.Evaluate(TRatio);
+                                gLimited = currAoA < maxAoA;
+                                return gLimited ? currAoA : maxAoA;
+                            }
+                        }
+                        else
+                        {
+                            currG = 0.3f * qSk + thrust;
+
+                            // If the absolute maximum g we can achieve is not enough, then return
+                            // the local maximum in order to preserve energy
+                            if (currG < gLim)
+                            {
+                                currAoA = AoACurve.Evaluate(TRatio);
+                                gLimited = currAoA < maxAoA;
+                                return gLimited ? currAoA : maxAoA;
+                            }
+
+                            float AoAEq = AoAEqCurve.Evaluate(TRatio);
+
+                            if (AoAEq > linAoA[6])
+                            {
+                                currAoA = calcAoAforGNonLin(qSk, mg, linSlope[6], linIntc[6], 0);
+                                gLimited = currAoA < maxAoA;
+                                return gLimited ? currAoA : maxAoA;
+                            }
+                            else if (AoAEq > linAoA[5])
+                            {
+                                LHS = 5;
+                            }
+                            else
+                            {
+                                LHS = 4;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        float AoAMax = AoACurve.Evaluate(TRatio);
+
+                        if (currG < gLim)
+                        {
+                            if (AoAMax > linAoA[3])
+                            {
+                                RHS = 4;
+                            }
+                            else
+                            {
+                                RHS = 3;
+                            }
+                        }
+                        else
+                        {
+                            gLimited = currAoA < maxAoA;
+                            return gLimited ? currAoA : maxAoA;
+                        }
+                    }
+                }
+
+                while (RHS - LHS > 2)
+                {
+                    interval = (int)0.5f * (RHS + LHS);
+
+                    currG = linCL[interval] * qSk + thrust * linSin[interval];
+                    if (currG < gLim)
+                    {
+                        LHS = interval;
+                    }
+                    else
+                    {
+                        RHS = interval;
+                    }
+                }
+
+                if (LHS < 2)
+                {
+                    currAoA = calcAoAforGLinear(qSk, mg, linSlope[LHS], linIntc[LHS], 0);
+                }
+                else
+                {
+                    currAoA = calcAoAforGNonLin(qSk, mg, linSlope[LHS], linIntc[LHS], 0);
+                }
+
+                gLimited = currAoA < maxAoA;
+                return gLimited ? currAoA : maxAoA;
+            }
+
+            // If T = 0
+            // We know it's in the first section. If m*gReq > (1.5*q*k*s) then set to min of maxAoA and 30 (margin?). If
+            // < then we first make linear estimate, then solve by bisection of intervals first -> solve on interval.
+            // If TRatio < TRatioInflec2
+            // First we check the endpoints -> both gMax, and, if TRatio > TRatioInflec1, then 0.3*q*S*k + T (90 degree case).
+            // If gMax > m*gReq then the answer < AoACurve -> Determine where it is via calculating the pre-calculated points
+            // then seeing which one has gCalc > m*gReq, using the interval bounded by the point with gCalc > m*gReq on the
+            // right end. Use bisection -> we know it's bounded at the RHS by the 38 or the 57 section. We can compare the
+            // AoACurve with 38, if > 38 then use 57 as the bound, otherwise bisection with 38 as the bound. Using this to
+            // determine which interval we're looking at, we then calc AoACalc. Return the min of maxAoA and AoACalc.
+            // If gMax < m*gReq, then if TRatio < TRatioInflec1, set to min of AoACurve and maxAoA. If TRatio > TRatioInflec1
+            // then we look at the 0.3*q*S*k + T. If < m*gReq then we'll set it to the min of maxAoA and either AoACurve or
+            // 90, depends on the margin. See below. If > m*gReq then it's in the last two sections, bound by AoAEq on the LHS.
+            // If AoAEq > 65, then we solve on the last section. If AoAEq < 65 then we check the point at AoA = 65 using the
+            // pre-calculated values. If > m*gReq then we know that it's in the 57-65 section, otherwise we know it's in the
+            // 65-90 section.
+            // Consider adding a margin, if gMax only misses m*gReq by a little we should probably avoid going to the higher
+            // angles as it adds a lot of drag. Maybe distance based? User settable?
+            // If TRatio > TRatioInflec2 then we have a continuously monotonically increasing function
+            // We use the fraction m*gReq/(0.3*q*S*k + T) to determine along which interval we should solve, noting that this
+            // is an underestimate of the thrust required. (Maybe use arcsin for a more accurate estimate? Costly.) Then simply
+            // calculate the pre-calculated value at the next point -> bisection and solve on the interval.
+            
+            // For all cases, if AoA < 15 then we can use the linear approximation of sin, if an interval includes both AoA < 15
+            // and AoA > 15 then try < 15 (interval 2) first, then if > 15 try the non-linear starting from 15. Otherwise we use
+            // non-linear equation.
+        }
+
+        public static float calcAoAforGLinear(float qSk, float mg, float CLalpha, float CLintc, float thrust)
+        {
+            return Mathf.Rad2Deg * (mg - CLintc * qSk) / (CLalpha * qSk + thrust);
+        }
+
+        public static float calcAoAforGNonLin(float qSk, float mg, float CLalpha, float CLintc, float thrust)
+        {
+            CLalpha *= qSk;
+
+            return Mathf.Rad2Deg * (2f * CLalpha + Mathf.PI * thrust + 2f * Mathf.Sqrt(CLalpha * CLalpha + Mathf.PI * thrust * CLalpha + 2f * thrust * (CLintc * qSk + thrust - mg))) / (2f * thrust);
+        }
 
         public static Vector3 DoAeroForces(MissileLauncher ml, Vector3 targetPosition, float liftArea, float steerMult,
             Vector3 previousTorque, float maxTorque, float maxAoA)

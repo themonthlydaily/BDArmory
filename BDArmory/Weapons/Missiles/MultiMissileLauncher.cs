@@ -536,6 +536,8 @@ namespace BDArmory.Weapons.Missiles
             missileLauncher.initMaxAoA = MLConfig.maxAoA;
             missileLauncher.homingModeTerminal = MLConfig.homingModeTerminal;
             missileLauncher.pronavGain = MLConfig.pronavGain;
+            missileLauncher.gLimit = MLConfig.gLimit;
+            missileLauncher.gMargin = MLConfig.gMargin;
             missileLauncher.terminalHoming = MLConfig.terminalHoming;
             missileLauncher.terminalHomingActive = false;
 
@@ -781,6 +783,9 @@ namespace BDArmory.Weapons.Missiles
                 ml.engageGround = missileLauncher.engageGround;
                 ml.engageMissile = missileLauncher.engageMissile;
                 ml.engageSLW = missileLauncher.engageSLW;
+                ml.gLimit = missileLauncher.gLimit;
+                ml.gMargin = missileLauncher.gMargin;
+
                 if (missileLauncher.GuidanceMode == GuidanceModes.AGMBallistic)
                 {
                     ml.BallisticOverShootFactor = missileLauncher.BallisticOverShootFactor;
