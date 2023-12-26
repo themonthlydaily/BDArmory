@@ -147,6 +147,74 @@ namespace BDArmory.Guidances
             return targetPosition + (targetVelocity * leadTime);
         }
 
+        public static Vector3 GetKappaTarget(Vector3 targetPosition, Vector3 targetVelocity,
+            Vector3 targetAcceleration, MissileLauncher ml, float thrust, float shapingAngle, out float ttgo, out float gLimit, float minSpeed = 200f)
+        {
+            Vector3 velDirection = ml.vessel.srf_vel_direction;
+
+            float R = Vector3.Distance(targetPosition, ml.vessel.transform.position);
+
+            float currSpeed = Mathf.Max((float)ml.vessel.srfSpeed, minSpeed);
+            Vector3 currVel = currSpeed * velDirection;
+
+            float leadTime = R / (targetVelocity - currVel).magnitude;
+            leadTime = Mathf.Clamp(leadTime, 0f, 16f);
+
+            //Vector3 Rdir = (targetPosition - ml.vessel.transform.position).normalized;
+            //float ttgoInv = R/Vector3.Dot(targetVelocity - currVel, Rdir);
+            ttgo = ml.vessel.TimeToCPA(targetPosition, targetVelocity, targetAcceleration);
+            float ttgoInv = 1 / ttgo;
+
+            float qS = (float)(0.5f * ml.vessel.atmDensity * ml.vessel.srfSpeed * ml.vessel.srfSpeed) * ml.liftArea;
+
+            // Need to be changed if the lift curves are changed
+            float Lalpha = 2.864788975654117f * qS * BDArmorySettings.GLOBAL_LIFT_MULTIPLIER;
+            float D0 = 0.00215f * qS * BDArmorySettings.GLOBAL_DRAG_MULTIPLIER;
+            float eta = 0.025f * BDArmorySettings.GLOBAL_DRAG_MULTIPLIER / BDArmorySettings.GLOBAL_LIFT_MULTIPLIER;
+
+            float TL = thrust / Lalpha;
+
+            Vector3 upDirection = VectorUtils.GetUpDirection(ml.vessel.CoM);
+
+            Vector3 accel;
+
+            Vector3 predictedImpactPoint = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, leadTime + TimeWarp.fixedDeltaTime);
+
+            Vector3 planarDirectionToTarget = ((predictedImpactPoint - ml.vessel.transform.position).ProjectOnPlanePreNormalized(upDirection)).normalized;
+
+            float K1;
+            float K2;
+
+            if (thrust > 0)
+            {
+                
+
+                float F2sqr = Lalpha*(thrust-D0)*(TL*TL + 1f)*(TL*TL+1f)/ ((float)(ml.vessel.totalMass * ml.vessel.totalMass * ml.vessel.srfSpeed * ml.vessel.srfSpeed * ml.vessel.srfSpeed * ml.vessel.srfSpeed) * (2 * eta + TL));
+                float F2 = Mathf.Sqrt(F2sqr);
+
+                float sinF2R = Mathf.Sin(F2 * R);
+                float cosF2R = Mathf.Cos(F2 * R);
+
+                K1 = F2 * R * (sinF2R - F2 * R) / (2f - 2f * cosF2R - F2 * R * sinF2R);
+                K2 = F2sqr * R * R * (1f - cosF2R) / (2f - 2f * cosF2R - F2 * R * sinF2R);
+            }
+            else
+            {
+                float Fsqr = D0 * Lalpha * (thrust + 1) * (thrust + 1) / ((float)(ml.vessel.totalMass * ml.vessel.totalMass * ml.vessel.srfSpeed * ml.vessel.srfSpeed * ml.vessel.srfSpeed * ml.vessel.srfSpeed) * (2 * eta + thrust));
+                float F = Mathf.Sqrt(Fsqr);
+
+                float eFR = Mathf.Exp(F * R);
+                float enFR = Mathf.Exp(-F * R);
+
+                K1 = (2f * Fsqr * R * R - F * R * (eFR - enFR)) / (eFR * (F * R - 2f) - enFR * (F * R + 2f) + 4f);
+                K2 = (Fsqr * R * R * (eFR + enFR - 2f)) / (eFR * (F * R - 2f) - enFR * (F * R + 2f) + 4f);
+            }
+
+            accel = (K1 * ttgoInv) * (currSpeed * (Mathf.Cos(shapingAngle) * planarDirectionToTarget - Mathf.Sin(shapingAngle) * upDirection) - currVel) + (K2 * ttgoInv) * (predictedImpactPoint - ml.vessel.transform.position - currVel * ttgo);
+            gLimit = accel.magnitude;
+            return ml.vessel.CoM + currVel * ttgo + accel * ttgo * ttgo;
+        }
+
         public static Vector3 GetAirToAirLoftTarget(Vector3 targetPosition, Vector3 targetVelocity,
             Vector3 targetAcceleration, Vessel missileVessel, float targetAlt, float maxAltitude,
             float rangeFactor, float vertVelComp, float velComp, float loftAngle, float termAngle,
@@ -680,7 +748,7 @@ namespace BDArmory.Guidances
             bool gLimited = false;
 
             // Force required to reach g-limit
-            float mg = gLim * (float)(ml.vessel.totalMass * PhysicsGlobals.GravitationalAcceleration);
+            gLim *= (float)(ml.vessel.totalMass * PhysicsGlobals.GravitationalAcceleration);
 
             float maxAoA = ml.maxAoA;
 
@@ -777,7 +845,7 @@ namespace BDArmory.Guidances
 
             if (thrust == 0)
             {
-                if (mg > 1.5f*qSk)
+                if (gLim > 1.5f*qSk)
                 {
                     gLimited = false;
                     return maxAoA;
@@ -785,7 +853,7 @@ namespace BDArmory.Guidances
                 {
                     currG = linCL[2] * qSk; // CL(alpha)*qSk + thrust*sin(alpha)
 
-                    if (currG < mg)
+                    if (currG < gLim)
                     {
                         interval = 2;
                     }
@@ -793,7 +861,7 @@ namespace BDArmory.Guidances
                     {
                         currG = linCL[1] * qSk;
 
-                        if (currG > mg)
+                        if (currG > gLim)
                         {
                             interval = 0;
                         } else
@@ -802,7 +870,7 @@ namespace BDArmory.Guidances
                         }
                     }
 
-                    currAoA = calcAoAforGLinear(qSk, mg, linSlope[interval], linIntc[interval], 0);
+                    currAoA = calcAoAforGLinear(qSk, gLim, linSlope[interval], linIntc[interval], 0);
 
                     gLimited = currAoA < maxAoA;
                     return gLimited ? currAoA : maxAoA;
@@ -868,7 +936,7 @@ namespace BDArmory.Guidances
 
                             if (AoAEq > linAoA[6])
                             {
-                                currAoA = calcAoAforGNonLin(qSk, mg, linSlope[6], linIntc[6], 0);
+                                currAoA = calcAoAforGNonLin(qSk, gLim, linSlope[6], linIntc[6], 0);
                                 gLimited = currAoA < maxAoA;
                                 return gLimited ? currAoA : maxAoA;
                             }
@@ -905,11 +973,14 @@ namespace BDArmory.Guidances
                     }
                 }
 
-                while (RHS - LHS > 2)
+                while ( (RHS - LHS) > 1)
                 {
-                    interval = (int)0.5f * (RHS + LHS);
+                    interval = (int)(0.5f * (RHS + LHS));
 
                     currG = linCL[interval] * qSk + thrust * linSin[interval];
+
+                    //if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileGuidance]: LHS: {LHS}, RHS: {RHS}, interval: {interval}, currG: {currG}, gLim: {gLim}");
+
                     if (currG < gLim)
                     {
                         LHS = interval;
@@ -922,12 +993,14 @@ namespace BDArmory.Guidances
 
                 if (LHS < 2)
                 {
-                    currAoA = calcAoAforGLinear(qSk, mg, linSlope[LHS], linIntc[LHS], 0);
+                    currAoA = calcAoAforGLinear(qSk, gLim, linSlope[LHS], linIntc[LHS], 0);
                 }
                 else
                 {
-                    currAoA = calcAoAforGNonLin(qSk, mg, linSlope[LHS], linIntc[LHS], 0);
+                    currAoA = calcAoAforGNonLin(qSk, gLim, linSlope[LHS], linIntc[LHS], 0);
                 }
+
+                //if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileGuidance]: Final Interval: {LHS}, currAoA: {currAoA}, gLim: {gLim}");
 
                 gLimited = currAoA < maxAoA;
                 return gLimited ? currAoA : maxAoA;
