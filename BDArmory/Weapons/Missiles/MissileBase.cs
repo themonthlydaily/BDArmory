@@ -288,6 +288,9 @@ namespace BDArmory.Weapons.Missiles
         public bool terminalHoming = false;
 
         [KSPField]
+        public float kappaAngle = 45; // Kappa Guidance Vertical Shaping Angle
+
+        [KSPField]
         public float missileRadarCrossSection = RadarUtils.RCS_MISSILES;            // radar cross section of this missile for detection purposes
 
         public enum MissileStates { Idle, Drop, Boost, Cruise, PostThrust }
@@ -300,7 +303,7 @@ namespace BDArmory.Weapons.Missiles
 
         public DetonationDistanceStates DetonationDistanceState { get; set; } = DetonationDistanceStates.NotSafe;
 
-        public enum GuidanceModes { None, AAMLead, AAMPure, AGM, AGMBallistic, Cruise, STS, Bomb, Orbital, BeamRiding, SLW, PN, APN, AAMLoft }
+        public enum GuidanceModes { None, AAMLead, AAMPure, AGM, AGMBallistic, Cruise, STS, Bomb, Orbital, BeamRiding, SLW, PN, APN, AAMLoft, Kappa }
 
         public GuidanceModes GuidanceMode;
 
@@ -332,6 +335,8 @@ namespace BDArmory.Weapons.Missiles
         public bool terminalHomingActive = false;
 
         public float TimeToImpact { get; set; }
+
+        public int loftState = 0;
 
         public bool TargetAcquired { get; set; }
 
@@ -1428,7 +1433,7 @@ namespace BDArmory.Weapons.Missiles
 
                             if (TimeIndex > 1f)
                             {
-                                Ray rayFuturePosition = new Ray(vessel.CoM, futureMissilePosition);
+                                Ray rayFuturePosition = new Ray(vessel.CoM, missileDistancePerFrame);
                                 var dist = (float)missileDistancePerFrame.magnitude;
                                 var hitCount = Physics.RaycastNonAlloc(rayFuturePosition, proximityHits, dist, layerMask);
                                 if (hitCount == proximityHits.Length) // If there's a whole bunch of stuff in the way (unlikely), then we need to increase the size of our hits buffer.
@@ -1455,7 +1460,7 @@ namespace BDArmory.Weapons.Missiles
                                                 if (hitPart.vessel != SourceVessel && hitPart.vessel != vessel)
                                                 {
                                                     //We found a hit to other vessel
-                                                    vessel.SetPosition(hit.point - 0.5f * missileDistancePerFrame.normalized);
+                                                    vessel.SetPosition(hit.point - 0.5f * rayFuturePosition.direction);
                                                     DetonationDistanceState = DetonationDistanceStates.Detonate;
                                                     Detonate();
                                                     return;

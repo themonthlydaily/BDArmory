@@ -536,6 +536,7 @@ namespace BDArmory.Weapons.Missiles
             missileLauncher.initMaxAoA = MLConfig.maxAoA;
             missileLauncher.homingModeTerminal = MLConfig.homingModeTerminal;
             missileLauncher.pronavGain = MLConfig.pronavGain;
+            missileLauncher.kappaAngle = MLConfig.kappaAngle;
             missileLauncher.gLimit = MLConfig.gLimit;
             missileLauncher.gMargin = MLConfig.gMargin;
             missileLauncher.terminalHoming = MLConfig.terminalHoming;
@@ -825,6 +826,15 @@ namespace BDArmory.Weapons.Missiles
                 if (missileLauncher.GuidanceMode == GuidanceModes.APN || missileLauncher.GuidanceMode == GuidanceModes.PN)
                     ml.pronavGain = missileLauncher.pronavGain;
 
+                if (missileLauncher.GuidanceMode == GuidanceModes.Kappa)
+                {
+                    ml.kappaAngle = missileLauncher.kappaAngle;
+                    ml.LoftAngle = missileLauncher.LoftAngle;
+                    ml.LoftMaxAltitude = missileLauncher.LoftMaxAltitude;
+                    ml.LoftRangeOverride = missileLauncher.LoftRangeOverride;
+                }
+
+
                 ml.terminalHoming = missileLauncher.terminalHoming;
                 if (missileLauncher.terminalHoming)
                 {
@@ -858,6 +868,14 @@ namespace BDArmory.Weapons.Missiles
                     }
                     if (missileLauncher.homingModeTerminal == GuidanceModes.APN || missileLauncher.homingModeTerminal == GuidanceModes.PN)
                         ml.pronavGain = missileLauncher.pronavGain;
+
+                    if (missileLauncher.homingModeTerminal == GuidanceModes.Kappa)
+                    {
+                        ml.kappaAngle = missileLauncher.kappaAngle;
+                        ml.LoftAngle = missileLauncher.LoftAngle;
+                        ml.LoftMaxAltitude = missileLauncher.LoftMaxAltitude;
+                        ml.LoftRangeOverride = missileLauncher.LoftRangeOverride;
+                    }
 
                     ml.terminalHomingRange = missileLauncher.terminalHomingRange;
                     ml.homingModeTerminal = missileLauncher.homingModeTerminal;
