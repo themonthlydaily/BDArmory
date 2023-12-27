@@ -4871,6 +4871,8 @@ namespace BDArmory.Weapons
 
             if (weaponManager)
             {
+                if (visualTargetVessel && !visualTargetVessel.gameObject.activeInHierarchy) visualTargetVessel = null; // Stop firing at targets that are deactivated, but not null (e.g., missiles).
+                if (visualTargetPart && !visualTargetPart.gameObject.activeInHierarchy) visualTargetPart = null;
                 //legacy or visual range guard targeting
                 if (aiControlled && weaponManager && visualTargetVessel &&
                     (visualTargetVessel.transform.position - transform.position).sqrMagnitude < weaponManager.guardRange * weaponManager.guardRange)
@@ -5132,6 +5134,8 @@ namespace BDArmory.Weapons
             }
             if (weaponManager && weaponState == WeaponStates.Enabled)
             {
+                if (visualTargetVessel && !visualTargetVessel.gameObject.activeInHierarchy) visualTargetVessel = null; // Stop firing at targets that are deactivated, but not null (e.g., missiles).
+                if (visualTargetPart && !visualTargetPart.gameObject.activeInHierarchy) visualTargetPart = null;
                 if (tgtShell != null || tgtRocket != null || visualTargetPart != null)
                 {
                     visualTargetVessel = null;

@@ -1779,16 +1779,36 @@ namespace BDArmory.Bullets
             gameObject.SetActive(false);
         }
 
+        static Vector3 ViewerVelocity
+        {
+            get
+            {
+                if (Time.time != _viewerVelocity.Item1)
+                {
+                    if (FlightGlobals.ActiveVessel != null && FlightGlobals.ActiveVessel.gameObject.activeInHierarchy) // Missiles don't become null on being killed.
+                    {
+                        _viewerVelocity = (Time.time, FlightGlobals.ActiveVessel.Velocity());
+                    }
+                    else
+                    {
+                        _viewerVelocity = (Time.time, _viewerVelocity.Item2); // Maintain the last velocity.
+                    }
+                }
+                return _viewerVelocity.Item2;
+            }
+        }
+        static (float, Vector3) _viewerVelocity = new(0, default);
         public void SetTracerPosition()
         {
             // visual tracer velocity is relative to the observer (which uses srf_vel when below 100km (f*&king KSP!), not orb_vel)
+            var tracerDirection = currentVelocity - ViewerVelocity;
             if (tracerLength == 0)
             {
-                linePositions[0] = currentPosition + tracerDeltaFactor * 0.45f * Time.fixedDeltaTime * (currentVelocity - FlightGlobals.ActiveVessel.Velocity());
+                linePositions[0] = currentPosition + tracerDeltaFactor * 0.45f * Time.fixedDeltaTime * tracerDirection;
             }
             else
             {
-                linePositions[0] = currentPosition + tracerLength * (currentVelocity - FlightGlobals.ActiveVessel.Velocity()).normalized;
+                linePositions[0] = currentPosition + tracerLength * tracerDirection.normalized;
             }
             linePositions[1] = currentPosition;
             smokePositions[0] = startPosition;

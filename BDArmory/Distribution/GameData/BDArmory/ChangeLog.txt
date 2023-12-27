@@ -2,11 +2,16 @@ v1.6.9.0
 ﻿IMPROVEMENTS / FIXES
 - General:
 	- Fix part filtering by search terms in the editors.
+	- Fix Krakensbane adjustments when the active vessel dies.
+	- Fix tracer visuals when the active vessel dies.
+	- Adjust timing and conditions for auto-camera switching to and away from missiles.
 - AI / WM:
 	- Invert the roll target when the fly-to direction is below and behind the craft within the Immelmann turn angle.
 	- Fix automatic gun range adjustments in the WM again.
+	- Prevent Orbital AI from changing attitude while launched missile is still near spacecraft.
 - Weapons:
   	- Corrections to penetration and ricochet velocity changes and ricochet positions.
+    - Stop APS firing at dead missiles.
   	- 'subProjectileCount' has been deprecated and replaced with 'projectileCount'; this specifies number of pellets per shot (for shotguns, etc) to make it more intuitive. Existing shotgun-type weapons will need to update their bulletDefs.
  	  - The subMunitionType field for beehive ammo now uses the syntax of "ammotype; quantity" (e.g. subMunitionType = 35x228AHEADPellet; 30) with number of projectiles released on detonation set here instead of the subMunition's bulletDef.
   	- Missiles:
