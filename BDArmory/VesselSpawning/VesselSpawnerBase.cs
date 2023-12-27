@@ -336,7 +336,7 @@ namespace BDArmory.VesselSpawning
             RaycastHit hit;
             var distanceToCoMainBody = (ray.origin - spawnBody.transform.position).magnitude;
             float distance;
-            var spawnInOrbit = vesselSpawnConfig.altitude + spawnBody.Radius >= spawnBody.minOrbitalDistance; // Min safe orbital distance
+            var spawnInOrbit = vesselSpawnConfig.altitude >= spawnBody.MinSafeAltitude(); // Min safe orbital altitude
             Vector3 localSurfaceNormal = -ray.direction;
             var localTerrainAltitude = BodyUtils.GetTerrainAltitudeAtPos(ray.origin);
             if (localTerrainAltitude > 0 && Physics.Raycast(ray, out hit, distanceToCoMainBody, (int)LayerMasks.Scenery))
@@ -792,7 +792,7 @@ namespace BDArmory.VesselSpawning
                         if (pilot != null) { vessel.SetWorldVelocity(pilot.idleSpeed * vessel.transform.up); }
                     }
                     var orbitalAI = weaponManager.AI as BDModuleOrbitalAI;
-                    if (orbitalAI && vessel.altitude + vessel.mainBody.Radius > vessel.mainBody.minOrbitalDistance) // In space with an orbital AI. Set it in a circular orbit.
+                    if (orbitalAI && vessel.altitude > vessel.mainBody.MinSafeAltitude()) // In space with an orbital AI. Set it in a circular orbit.
                     {
                         Vector3d orbitVelocity = Math.Sqrt(FlightGlobals.getGeeForceAtPosition(vessel.CoM, vessel.mainBody).magnitude * (vessel.mainBody.Radius + vessel.altitude)) * FlightGlobals.currentMainBody.getRFrmVel(vessel.CoM).normalized;
                         vessel.SetWorldVelocity(orbitVelocity);

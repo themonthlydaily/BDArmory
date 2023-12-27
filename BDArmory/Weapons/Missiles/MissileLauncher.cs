@@ -257,19 +257,20 @@ namespace BDArmory.Weapons.Missiles
 
         [KSPField]
         public bool decoupleBoosters = false;
+        bool boostersDecoupled = false;
 
         [KSPField]
         public float boosterDecoupleSpeed = 5;
 
         [KSPField]
-        public float boosterMass = 0;
+        public float boosterMass = 0; // The booster mass (dry mass if using fuel, wet otherwise)
 
         //Fuel Weight variables
         [KSPField]
-        public float boosterFuelMass = 0;
+        public float boosterFuelMass = 0; // The mass of the booster fuel (separate from the booster mass)
 
         [KSPField]
-        public float cruiseFuelMass = 0;
+        public float cruiseFuelMass = 0; // The mass of the cruise fuel
 
         [KSPField]
         public bool useFuel = false;
@@ -313,7 +314,7 @@ namespace BDArmory.Weapons.Missiles
         private bool StartSetupComplete = false;
 
         //Fuel Burn Variables
-        public float GetModuleMass(float baseMass, ModifierStagingSituation situation) => -burnedFuelMass;
+        public float GetModuleMass(float baseMass, ModifierStagingSituation situation) => -burnedFuelMass - (boostersDecoupled ? boosterMass : 0);
         public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.CONSTANTLY;
 
         private float burnRate = 0;
@@ -420,19 +421,30 @@ namespace BDArmory.Weapons.Missiles
                     cruiseFuelMass = 0;
                 }
 
-                if (boosterFuelMass + cruiseFuelMass > initialMass * 0.95f)
+                if (boosterMass + boosterFuelMass + cruiseFuelMass > initialMass * 0.95f)
                 {
-                    Debug.LogWarning($"[BDArmory.MissileLauncher]: Error in configuration of {part.name}, boosterFuelMass: {boosterFuelMass} + cruiseFuelMass: {cruiseFuelMass} can't be greater than 95% of the missile mass {initialMass}, clamping to 80% of the missile mass.");
+                    Debug.LogWarning($"[BDArmory.MissileLauncher]: Error in configuration of {part.name}, boosterMass: {boosterMass} + boosterFuelMass: {boosterFuelMass} + cruiseFuelMass: {cruiseFuelMass} can't be greater than 95% of the missile mass {initialMass}, clamping to 80% of the missile mass.");
                     if (boosterFuelMass > 0 || boostTime > 0)
                     {
                         if (cruiseFuelMass > 0 || cruiseTime > 0)
                         {
-                            boosterFuelMass = Mathf.Clamp(boosterFuelMass, 0, initialMass * 0.4f);
+                            var totalBoosterMass = Mathf.Clamp(boosterMass + boosterFuelMass, 0, initialMass * 0.4f); // Scale total booster mass + fuel to 40% of missile.
+                            boosterMass = boosterMass / (boosterMass + boosterFuelMass) * totalBoosterMass;
+                            boosterFuelMass = totalBoosterMass - boosterMass;
                             cruiseFuelMass = Mathf.Clamp(cruiseFuelMass, 0, initialMass * 0.4f);
                         }
-                        else boosterFuelMass = Mathf.Clamp(boosterFuelMass, 0, initialMass * 0.8f);
+                        else
+                        {
+                            var totalBoosterMass = Mathf.Clamp(boosterMass + boosterFuelMass, 0, initialMass * 0.8f); // Scale total booster mass + fuel to 80% of missile.
+                            boosterMass = boosterMass / (boosterMass + boosterFuelMass) * totalBoosterMass;
+                            boosterFuelMass = totalBoosterMass - boosterMass;
+                        }
                     }
-                    else cruiseFuelMass = Mathf.Clamp(cruiseFuelMass, 0, initialMass * 0.8f);
+                    else
+                    {
+                        boosterMass = 0; // Fuel-less boosters aren't sensible when requiring fuel.
+                        cruiseFuelMass = Mathf.Clamp(cruiseFuelMass, 0, initialMass * 0.8f);
+                    }
                 }
                 else
                 {
@@ -1250,7 +1262,7 @@ namespace BDArmory.Weapons.Missiles
                 wpm.heatTarget = TargetSignatureData.noTarget;
                 ml.GpsUpdateMax = wpm.GpsUpdateMax;
             }
-                ml.TargetPosition = transform.position + (multiLauncher ? vessel.ReferenceTransform.up * 5000 : transform.forward * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
+            ml.TargetPosition = transform.position + (multiLauncher ? vessel.ReferenceTransform.up * 5000 : transform.forward * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
             ml.MissileLaunch();
             GetMissileCount();
             if (reloadableRail.ammoCount > 0 || BDArmorySettings.INFINITE_ORDINANCE)
@@ -1911,9 +1923,13 @@ namespace BDArmory.Weapons.Missiles
             if (weaponClass == WeaponClasses.SLW && FlightGlobals.getAltitudeAtPos(part.transform.position) > 0) return; //#710, no torp thrust out of water
             if (currentThrust * Throttle > 0)
             {
-                if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES) debugString.AppendLine($"Missile thrust= {currentThrust * Throttle}");
+                if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES)
+                {
+                    debugString.AppendLine($"Missile thrust= {currentThrust * Throttle:F3} kN");
+                    debugString.AppendLine($"Missile mass= {part.mass * 1000f:F1} kg");
+                }
                 part.rb.AddRelativeForce(currentThrust * Throttle * Vector3.forward);
-            }            
+            }
         }
 
         IEnumerator MissileRoutine()
@@ -1985,14 +2001,14 @@ namespace BDArmory.Weapons.Missiles
         {
             yield return new WaitForSecondsFixed(0.5f); //wait half sec after boost motor fires, then set crashTolerance to 1. Torps have already waited until splashdown before this is called.
             part.crashTolerance = 1;
-            
+
             var missileCOL = part.collider;
             if (missileCOL) missileCOL.enabled = true;
             if (useSimpleDragTemp)
             {
                 part.dragModel = Part.DragModel.DEFAULT;
                 useSimpleDragTemp = false;
-            }            
+            }
         }
         IEnumerator BoostRoutine()
         {
@@ -2133,7 +2149,7 @@ namespace BDArmory.Weapons.Missiles
 
             if (decoupleBoosters)
             {
-                part.mass -= boosterMass;
+                boostersDecoupled = true;
                 using (var booster = boosters.GetEnumerator())
                     while (booster.MoveNext())
                     {
@@ -2400,8 +2416,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 if (warheadType == WarheadTypes.ContinuousRod) //Have CR missiles target slightly above target to ensure craft caught in planar blast AOE
                 {
-                    TargetPosition += VectorUtils.GetUpDirection(TargetPosition) * (blastRadius > 0 ? (DetonationDistance / 3) : 5);
-                    //TargetPosition += VectorUtils.GetUpDirection(TargetPosition) * (blastRadius < 10? (blastRadius / 2) : 10);
+                    TargetPosition += VectorUtils.GetUpDirection(TargetPosition) * (blastRadius > 0f ? Mathf.Min(blastRadius / 3f, DetonationDistance / 3f) : 5f);
                 }
                 DrawDebugLine(transform.position + (part.rb.velocity * Time.fixedDeltaTime), TargetPosition);
 
@@ -2681,7 +2696,7 @@ namespace BDArmory.Weapons.Missiles
 
         public override Vector3 GetForwardTransform()
         {
-            if (multiLauncher && multiLauncher.overrideReferenceTransform) 
+            if (multiLauncher && multiLauncher.overrideReferenceTransform)
                 return vessel.ReferenceTransform.up;
             else
                 return MissileReferenceTransform.forward;
