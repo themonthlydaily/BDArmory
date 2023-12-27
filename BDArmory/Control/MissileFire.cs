@@ -7549,7 +7549,7 @@ namespace BDArmory.Control
                                     }
                                     if (ballisticTurretID < PDBulletTgts.Count)
                                     {
-                                        if (PDBulletTgts[ballisticTurretID] != null && PDBulletTgts[ballisticTurretID].transform.position.FurtherFromThan(weapon.Current.fireTransforms[0].position, weapon.Current.engageRangeMax * 1.25f)) ballisticTurretID = 0; //reset cycle so out of range guns engage closer targets
+                                        if (PDBulletTgts[ballisticTurretID] != null && PDBulletTgts[ballisticTurretID].transform.position.FurtherFromThan(weapon.Current.fireTransforms[0].position, weapon.Current.engageRangeMax * 2)) ballisticTurretID = 0; //reset cycle so out of range guns engage closer targets
                                         if (PDBulletTgts[ballisticTurretID] != null) //second check in case of turretID reset
                                         {
                                             if (TargetInTurretRange(weapon.Current.turret, 7, PDBulletTgts[ballisticTurretID].transform.position, weapon.Current))
@@ -7572,6 +7572,7 @@ namespace BDArmory.Control
                                             ballisticTurretID++;
                                         }
                                     }
+                                    else weapon.Current.tgtShell = null;
                                 }
                                 else weapon.Current.tgtShell = null;
                             }
@@ -7586,7 +7587,7 @@ namespace BDArmory.Control
                                     }
                                     if (rocketTurretID < PDRktTgts.Count)
                                     {
-                                        if (PDRktTgts[rocketTurretID] != null && PDRktTgts[rocketTurretID].transform.position.FurtherFromThan(weapon.Current.fireTransforms[0].position, weapon.Current.engageRangeMax * 1.25f)) rocketTurretID = 0; //reset cycle so out of range guns engage closer targets
+                                        if (PDRktTgts[rocketTurretID] != null && PDRktTgts[rocketTurretID].transform.position.FurtherFromThan(weapon.Current.fireTransforms[0].position, weapon.Current.engageRangeMax * 2)) rocketTurretID = 0; //reset cycle so out of range guns engage closer targets
                                         if (PDRktTgts[rocketTurretID] != null)
                                         {
                                             bool viableTarget = true;

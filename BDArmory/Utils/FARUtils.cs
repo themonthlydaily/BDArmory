@@ -129,6 +129,27 @@ namespace BDArmory.Utils
             }
             return -1;
         }
+        public static float GetFARWingSweep(Part part)
+        {
+            if (!hasFARWing) return 1;
+
+            foreach (var module in part.Modules)
+            {
+                if (module.GetType() == FARWingModule)
+                {
+                    var sweep = (float)FARWingModule.GetField("MidChordSweep", BindingFlags.Public | BindingFlags.Instance).GetValue(module);
+                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FARUtils]: Found mid chord sweep of {sweep} for {part.name}.");
+                    return sweep;
+                }
+                if (module.GetType() == FARControllableSurfaceModule)
+                {
+                    var sweep = (float)FARControllableSurfaceModule.GetField("MidChordSweep", BindingFlags.Public | BindingFlags.Instance).GetValue(module);
+                    if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FARUtils]: Found ctrl. srf. mid chord sweep of {sweep} for {part.name}.");
+                    return sweep;
+                }
+            }
+            return 1;
+        }
     }
 
     public class ProceduralWing : MonoBehaviour
