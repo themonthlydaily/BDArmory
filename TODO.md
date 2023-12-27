@@ -16,6 +16,7 @@
 - Wiki entries
 	- Auto-Tuning
 
+- Stability of the targeting cam when slewing with the mouse.
 - Requests from discord:
 	- ? Add an action group trigger to the WM based on the current target being an enemy vessel within a custom distance. - Make it a collapsable section of custom triggers to include other conditions later.
 	- Artillery aiming support
