@@ -1517,7 +1517,6 @@ namespace BDArmory.Bullets
                                 break;
                         }
                         pBullet.detonationRange = detonationRange;
-                        pBullet.maxAirDetonationRange = maxAirDetonationRange;
                         pBullet.defaultDetonationRange = defaultDetonationRange;
                         pBullet.fuzeType = sFuze;
                     }
