@@ -1198,9 +1198,9 @@ namespace BDArmory.Weapons.Missiles
                         var ap = vessel.Autopilot;
                         if (ap == null) return;
 
-                        // The offline SAS must not be on stability assist. Prograde seems to work on most probes.
-                        if (ap.Mode != VesselAutopilot.AutopilotMode.Prograde)
-                            ap.SetMode(VesselAutopilot.AutopilotMode.Prograde);
+                        // The offline SAS must not be on stability assist. Normal seems to work on most probes.
+                        if (ap.Mode != VesselAutopilot.AutopilotMode.Normal)
+                            ap.SetMode(VesselAutopilot.AutopilotMode.Normal);
 
                         ap.SAS.SetTargetOrientation(attitude, false);
 
