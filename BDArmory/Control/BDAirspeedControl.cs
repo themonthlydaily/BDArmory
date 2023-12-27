@@ -541,9 +541,9 @@ namespace BDArmory.Control
             var ap = vessel.Autopilot;
             if (ap == null) return;
 
-            // The offline SAS must not be on stability assist. Prograde seems to work on most probes (those with at least SASServiceLevel = 1).
-            if (ap.Mode != VesselAutopilot.AutopilotMode.Prograde)
-                ap.SetMode(VesselAutopilot.AutopilotMode.Prograde);
+            // The offline SAS must not be on stability assist. Normal seems to work on most probes.
+            if (ap.Mode != VesselAutopilot.AutopilotMode.Normal)
+                ap.SetMode(VesselAutopilot.AutopilotMode.Normal);
 
             // Lerp attitude while burning to reduce instability.
             if (lerpAttitude)
@@ -565,7 +565,7 @@ namespace BDArmory.Control
             if (ap == null) return;
 
             vessel.ActionGroups.SetGroup(KSPActionGroup.SAS, enable);
-            ap.SetMode(enable ? VesselAutopilot.AutopilotMode.StabilityAssist : VesselAutopilot.AutopilotMode.Prograde);
+            ap.SetMode(enable ? VesselAutopilot.AutopilotMode.StabilityAssist : VesselAutopilot.AutopilotMode.Normal);
         }
 
         /// <summary>
