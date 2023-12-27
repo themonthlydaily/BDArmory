@@ -565,7 +565,7 @@ namespace BDArmory.Control
             if (ap == null) return;
 
             vessel.ActionGroups.SetGroup(KSPActionGroup.SAS, enable);
-            ap.SetMode(enable ? VesselAutopilot.AutopilotMode.StabilityAssist : VesselAutopilot.AutopilotMode.Normal);
+            ap.SetMode(enable ? VesselAutopilot.AutopilotMode.StabilityAssist : VesselAutopilot.AutopilotMode.Prograde);
         }
 
         /// <summary>
