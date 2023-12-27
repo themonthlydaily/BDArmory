@@ -1162,7 +1162,7 @@ namespace BDArmory.UI
                 }
                 if (BDArmorySettings.CAMERA_SWITCH_INCLUDE_MISSILES) // Prioritise active missiles.
                 {
-                    foreach (MissileBase missile in BDATargetManager.FiredMissiles)
+                    foreach (MissileBase missile in BDATargetManager.FiredMissiles.Cast<MissileBase>())
                     {
                         if (missile == null || missile.HasMissed) continue; // Ignore missed missiles.
                         var targetDirection = missile.TargetPosition - missile.transform.position;

@@ -35,8 +35,10 @@ namespace BDArmory.FX
         public string SourceVesselTeam { get; set; }
         public string SourceWeaponName { get; set; }
         public float Power { get; set; }
-        public Vector3 Position { get; set; }
+        public Vector3 Position { get { return _position; } set { _position = value; transform.position = _position; } }
+        Vector3 _position;
         public Vector3 Direction { get; set; }
+        public Vector3 Velocity { get; set; }
         public float cosAngleOfEffect { get; set; }
         public Part ExplosivePart { get; set; }
         public bool isFX { get; set; }
@@ -69,6 +71,15 @@ namespace BDArmory.FX
         public static List<Part> IgnoreParts;
         public static List<DestructibleBuilding> IgnoreBuildings;
         internal static readonly float ExplosionVelocity = 422.75f;
+        internal static float KerbinSeaLevelAtmDensity
+        {
+            get
+            {
+                if (_KerbinSeaLevelAtmDensity == 0) _KerbinSeaLevelAtmDensity = (float)FlightGlobals.GetBodyByName("Kerbin").atmDensityASL;
+                return _KerbinSeaLevelAtmDensity;
+            }
+        }
+        internal static float _KerbinSeaLevelAtmDensity = 0;
 
         private float particlesMaxEnergy;
         internal static HashSet<ExplosionSourceType> ignoreCasingFor = new HashSet<ExplosionSourceType> { ExplosionSourceType.Missile, ExplosionSourceType.Rocket };
@@ -111,6 +122,7 @@ namespace BDArmory.FX
                     if (pe.maxEnergy > particlesMaxEnergy)
                         particlesMaxEnergy = pe.maxEnergy;
                     pe.emit = true;
+                    pe.useWorldSpace = false; // Don't use worldspace, so that we can move the FX properly.
                     var emission = pe.ps.emission;
                     emission.enabled = true;
                     EffectBehaviour.AddParticleEmitter(pe);
@@ -140,9 +152,9 @@ namespace BDArmory.FX
                 Debug.Log("[BDArmory.ExplosionFX]: Explosion started tntMass: {" + Power + "}  BlastRadius: {" + Range + "} StartTime: {" + StartTime + "}, Duration: {" + MaxTime + "}");
             }
             /*
-            if (BDArmorySettings.PERSISTENT_FX && Caliber > 30 && BodyUtils.GetRadarAltitudeAtPos(transform.position) > Caliber / 60)
+            if (BDArmorySettings.PERSISTENT_FX && Caliber > 30 && BodyUtils.GetRadarAltitudeAtPos(Position) > Caliber / 60)
             {
-                if (FlightGlobals.getAltitudeAtPos(transform.position) > Caliber / 60)
+                if (FlightGlobals.getAltitudeAtPos(Position) > Caliber / 60)
                 {
                     FXEmitter.CreateFX(Position, (Caliber / 30), "BDArmory/Models/explosion/flakSmoke", "", 0.3f, Caliber / 6);                   
                 }
@@ -661,9 +673,15 @@ namespace BDArmory.FX
             //floating origin and velocity offloading corrections
             if (BDKrakensbane.IsActive)
             {
-                transform.position -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
                 Position -= BDKrakensbane.FloatingOriginOffsetNonKrakensbane;
             }
+            { // Explosion centre velocity depends on atmospheric density relative to Kerbin sea level.
+                var atmDensity = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(Position), FlightGlobals.getExternalTemperature(Position));
+                Velocity /= 1 + atmDensity / KerbinSeaLevelAtmDensity;
+                var deltaPos = Velocity * TimeWarp.fixedDeltaTime; // Krakensbane is already accounted for above.
+                Position += deltaPos;
+            }
+
             if (!isFX)
             {
                 while (explosionEvents.Count > 0 && explosionEvents.Peek().TimeToImpact <= TimeIndex)
@@ -1097,9 +1115,9 @@ namespace BDArmory.FX
         }
 
         public static void CreateExplosion(Vector3 position, float tntMassEquivalent, string explModelPath, string soundPath, ExplosionSourceType explosionSourceType,
-            float caliber = 120, Part explosivePart = null, string sourceVesselName = null, string sourceVesselTeam = null, string sourceWeaponName = null, Vector3 direction = default(Vector3),
+            float caliber = 120, Part explosivePart = null, string sourceVesselName = null, string sourceVesselTeam = null, string sourceWeaponName = null, Vector3 direction = default,
             float angle = 100f, bool isfx = false, float projectilemass = 0, float caseLimiter = -1, float dmgMutator = 1, string type = "standard", Part Hitpart = null,
-            float apMod = 1f, float distancetravelled = -1)
+            float apMod = 1f, float distancetravelled = -1, Vector3 sourceVelocity = default)
         {
             if (BDArmorySettings.DEBUG_MISSILES && explosionSourceType == ExplosionSourceType.Missile && (!explosionFXPools.ContainsKey(explModelPath) || !audioClips.ContainsKey(soundPath)))
             { Debug.Log($"[BDArmory.ExplosionFX]: Setting up object pool for explosion of type {explModelPath} with audio {soundPath}{(sourceWeaponName != null ? $" for {sourceWeaponName}" : "")}"); }
@@ -1128,6 +1146,8 @@ namespace BDArmory.FX
             eFx.Caliber = caliber;
             eFx.ExplosivePart = explosivePart;
             eFx.Direction = direction;
+            sourceVelocity = sourceVelocity != default ? sourceVelocity : (explosivePart != null && explosivePart.rb != null) ? explosivePart.rb.velocity + BDKrakensbane.FrameVelocityV3f : default; // Use the explosive part's velocity if the sourceVelocity isn't specified.
+            eFx.Velocity = Hitpart != null ? Hitpart.vessel.Velocity() : sourceVelocity; // sourceVelocity is the real velocity w/o offloading.
             eFx.isFX = isfx;
             eFx.ProjMass = projectilemass;
             eFx.CASEClamp = caseLimiter;
