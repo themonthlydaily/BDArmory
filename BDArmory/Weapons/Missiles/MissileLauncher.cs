@@ -1528,7 +1528,7 @@ namespace BDArmory.Weapons.Missiles
         private void CheckMiss()
         {
             float sqrDist = (float)((TargetPosition + (TargetVelocity * Time.fixedDeltaTime)) - (vessel.CoM + (vessel.Velocity() * Time.fixedDeltaTime))).sqrMagnitude;
-            bool targetBehindMissile = !(MissileState != MissileStates.PostThrust && hasRCS) && Vector3.Dot(TargetPosition - transform.position, transform.forward) < 0f; // Allow thrusting RCS missiles to be behind the target
+            bool targetBehindMissile = !TargetAcquired || (!(MissileState != MissileStates.PostThrust && hasRCS) && Vector3.Dot(TargetPosition - transform.position, transform.forward) < 0f); // Target is not acquired or we are behind it and not an RCS missile
             if (sqrDist < 160000 || MissileState == MissileStates.PostThrust || (targetBehindMissile && sqrDist > 1000000)) //missile has come within 400m, is post thrust, or > 1km behind target
             {
                 checkMiss = true;
@@ -1786,7 +1786,15 @@ namespace BDArmory.Weapons.Missiles
                 }
             }
 
-            if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES) debugString.AppendLine("Missile target=" + debugGuidanceTarget);
+            if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES)
+            {
+                if (guidanceActive) debugString.AppendLine("Missile target=" + debugGuidanceTarget);
+                else debugString.AppendLine("Guidance inactive");
+
+                if (!(BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES)) return;
+                var distance = (TargetPosition - transform.position).magnitude;
+                debugString.AppendLine($"Target distance: {(distance > 1000 ? $" {distance / 1000:F1} km" : $" {distance:F0} m")}, closing speed: {Vector3.Dot(vessel.Velocity() - TargetVelocity, GetForwardTransform()):F1} m/s");
+            }
         }
 
         // feature_engagementenvelope: terminal guidance mode for cruise missiles
@@ -2472,7 +2480,7 @@ namespace BDArmory.Weapons.Missiles
                             break;
                         }
                     /* Case GuidanceModes.AAMHybrid:
-{
+                        {
                             aamTarget = MissileGuidance.GetAirToAirHybridTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, terminalHomingRange, out timeToImpact, homingModeTerminal, pronavGain, optimumAirspeed);
                             TimeToImpact = timeToImpact;
                             break;

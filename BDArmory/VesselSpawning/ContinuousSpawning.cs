@@ -218,7 +218,8 @@ namespace BDArmory.VesselSpawning
                     if (craftToSpawn.Count > 0)
                     {
                         VesselModuleRegistry.CleanRegistries(); // Clean out any old entries.
-                                                                // Configure vessel spawn configs
+                        yield return new WaitForSeconds(1); // Wait 1s before spawning new vessels to give the death cam a little extra time.
+                        // Configure vessel spawn configs
                         foreach (var craftURL in craftToSpawn)
                         {
                             if (BDArmorySettings.DEBUG_SPAWNING) LogMessage($"Spawning vessel from {Path.Combine(AutoSpawnFolder, craftURL.Substring(AutoSpawnPath.Length))}", false);
