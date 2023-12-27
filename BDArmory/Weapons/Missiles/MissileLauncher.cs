@@ -996,6 +996,7 @@ namespace BDArmory.Weapons.Missiles
             if (downRCS) EffectBehaviour.RemoveParticleEmitter(downRCS);
             if (leftRCS) EffectBehaviour.RemoveParticleEmitter(leftRCS);
             if (rightRCS) EffectBehaviour.RemoveParticleEmitter(rightRCS);
+            if (forwardRCS) EffectBehaviour.RemoveParticleEmitter(forwardRCS);
             if (pEmitters != null)
                 foreach (var pe in pEmitters)
                     if (pe) EffectBehaviour.RemoveParticleEmitter(pe);
@@ -2046,6 +2047,10 @@ namespace BDArmory.Weapons.Missiles
                         {
                             emitter.Current.sizeGrow = Mathf.Lerp(emitter.Current.sizeGrow, 0, 20 * Time.deltaTime);
                         }
+                        if (Throttle == 0)
+                            emitter.Current.emit = false;
+                        else
+                            emitter.Current.emit = true;
                     }
 
                 using (var gpe = boostGaplessEmitters.GetEnumerator())
@@ -2092,6 +2097,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 audioSource.clip = thrustAudio;
             }
+            audioSource.volume = Throttle;
 
             using (var light = gameObject.GetComponentsInChildren<Light>().AsEnumerable().GetEnumerator())
                 while (light.MoveNext())
@@ -2108,6 +2114,8 @@ namespace BDArmory.Weapons.Missiles
             if (string.IsNullOrEmpty(boostTransformName))
             {
                 boostEmitters = pEmitters;
+                boostEmitters.RemoveAll(pe => rcsTransforms.Contains(pe));
+                if (hasRCS && forwardRCS && !boostEmitters.Contains(forwardRCS)) boostEmitters.Add(forwardRCS);
                 boostGaplessEmitters = gaplessEmitters;
             }
 
@@ -2117,11 +2125,6 @@ namespace BDArmory.Weapons.Missiles
                     if (emitter.Current == null) continue;
                     emitter.Current.emit = true;
                 }
-
-            if (hasRCS)
-            {
-                forwardRCS.emit = true;
-            }
 
             if (!(thrust > 0)) return;
             sfAudioSource.PlayOneShot(SoundUtils.GetAudioClip("BDArmory/Sounds/launch"));
@@ -2591,7 +2594,7 @@ namespace BDArmory.Weapons.Missiles
                 // orbitalTarget = TargetPosition is more accurate than the below for the HEKV, TO-DO: investigate whether the below works for 
                 // multiple different missile configurations, or if a more generalized OrbitalGuidance method is needed
                 /*(Vector3 targetVector = TargetPosition - vessel.CoM;
-                Vector3 relVel = vessel.Velocity() - TargetVelocity;
+                    Vector3 relVel = vessel.Velocity() - TargetVelocity;
                 Vector3 accel = currentThrust * Throttle / part.mass * Vector3.forward;
                 float timeToImpact = AIUtils.TimeToCPA(targetVector, relVel, TargetAcceleration - accel, 30f);
                 orbitalTarget = AIUtils.PredictPosition(targetVector, relVel, TargetAcceleration - 0.5f * accel, timeToImpact); */
@@ -2726,8 +2729,8 @@ namespace BDArmory.Weapons.Missiles
 
         void SetupRCS()
         {
-            rcsFiredTimes = new float[] { 0, 0, 0, 0 };
-            rcsTransforms = new KSPParticleEmitter[] { upRCS, leftRCS, rightRCS, downRCS };
+            rcsFiredTimes = [ 0, 0, 0, 0 ];
+            rcsTransforms = [ upRCS, leftRCS, rightRCS, downRCS ];
         }
 
         void DoRCS()
