@@ -182,7 +182,7 @@ namespace BDArmory.VesselSpawning
             int spawnedVesselCount = 0; // Reset our spawned vessel count.
             var spawnAirborne = spawnConfig.altitude > 10;
             var spawnBody = FlightGlobals.Bodies[spawnConfig.worldIndex];
-            var spawnInOrbit = spawnConfig.altitude + spawnBody.Radius >= spawnBody.minOrbitalDistance; // Min safe orbital distance
+            var spawnInOrbit = spawnConfig.altitude >= spawnBody.MinSafeAltitude(); // Min safe orbital altitude
             var withInitialVelocity = spawnAirborne && BDArmorySettings.VESSEL_SPAWN_INITIAL_VELOCITY;
             var spawnPitch = (withInitialVelocity || spawnInOrbit) ? 0f : -80f;
             bool PinataMode = false;
