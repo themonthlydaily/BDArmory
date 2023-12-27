@@ -1780,7 +1780,15 @@ namespace BDArmory.Weapons.Missiles
                 }
             }
 
-            if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES) debugString.AppendLine("Missile target=" + debugGuidanceTarget);
+            if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES)
+            {
+                if (guidanceActive) debugString.AppendLine("Missile target=" + debugGuidanceTarget);
+                else debugString.AppendLine("Guidance inactive");
+
+                if (!(BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES)) return;
+                var distance = (TargetPosition - transform.position).magnitude;
+                debugString.AppendLine($"Target distance: {(distance > 1000 ? $" {distance / 1000:F1} km" : $" {distance:F0} m")}, closing speed: {Vector3.Dot(vessel.Velocity() - TargetVelocity, GetForwardTransform()):F1} m/s");
+            }
         }
 
         // feature_engagementenvelope: terminal guidance mode for cruise missiles
@@ -2466,7 +2474,7 @@ namespace BDArmory.Weapons.Missiles
                             break;
                         }
                     /* Case GuidanceModes.AAMHybrid:
-{
+                        {
                             aamTarget = MissileGuidance.GetAirToAirHybridTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, terminalHomingRange, out timeToImpact, homingModeTerminal, pronavGain, optimumAirspeed);
                             TimeToImpact = timeToImpact;
                             break;
