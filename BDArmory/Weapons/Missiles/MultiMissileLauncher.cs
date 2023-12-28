@@ -241,6 +241,7 @@ namespace BDArmory.Weapons.Missiles
                     using (var parts = PartLoader.LoadedPartsList.GetEnumerator())
                         while (parts.MoveNext())
                         {
+                            if (parts.Current == null) continue;
                             if (parts.Current.partConfig == null || parts.Current.partPrefab == null) continue;
                             if (parts.Current.partPrefab.partInfo.name != subMunitionName) continue;
                             var explosivePart = parts.Current.partPrefab.FindModuleImplementing<BDExplosivePart>();
@@ -274,6 +275,7 @@ namespace BDArmory.Weapons.Missiles
             using (var parts = PartLoader.LoadedPartsList.GetEnumerator())
                 while (parts.MoveNext())
                 {
+                    if (parts.Current == null) continue;
                     if (parts.Current.partConfig == null || parts.Current.partPrefab == null)
                         continue;
                     if (parts.Current.partPrefab.partInfo.name != subMunitionName) continue;
@@ -404,6 +406,7 @@ namespace BDArmory.Weapons.Missiles
                 using (List<AttachNode>.Enumerator stackNode = part.attachNodes.GetEnumerator())
                     while (stackNode.MoveNext())
                     {
+                        if (stackNode.Current == null) continue;
                         if (stackNode.Current?.nodeType != AttachNode.NodeType.Stack) continue;
                         if (stackNode.Current.id != RailNode) continue;
                         {
@@ -969,6 +972,7 @@ namespace BDArmory.Weapons.Missiles
                                         using (List<TargetInfo>.Enumerator item = targetsAssigned.GetEnumerator())
                                             while (item.MoveNext())
                                             {
+                                                if (item.Current == null) continue;
                                                 if (item.Current.Vessel == null) continue;
                                                 if ((ml.engageAir && !item.Current.isFlying) ||
                                                     (ml.engageGround && !item.Current.isLandedOrSurfaceSplashed) ||
@@ -1044,6 +1048,7 @@ namespace BDArmory.Weapons.Missiles
             using (List<TargetInfo>.Enumerator Tgt = targetsAssigned.GetEnumerator())
                 while (Tgt.MoveNext())
                 {
+                    if (Tgt.Current == null) continue;
                     if (!firedTargets.Contains(Tgt.Current))
                         Tgt.Current.Disengage(wpm);
                 }
@@ -1189,6 +1194,7 @@ namespace BDArmory.Weapons.Missiles
             using (var parts = PartLoader.LoadedPartsList.GetEnumerator())
                 while (parts.MoveNext())
                 {
+                    if (parts.Current == null) continue;
                     //Debug.Log($"[BDArmory.MML]: Looking for {subMunitionName}");
                     if (parts.Current.partConfig == null || parts.Current.partPrefab == null)
                         continue;
