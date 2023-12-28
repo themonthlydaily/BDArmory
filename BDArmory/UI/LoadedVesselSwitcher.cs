@@ -1083,14 +1083,14 @@ namespace BDArmory.UI
         {
             if (_autoCameraSwitch && lastActiveVessel == v)
             {
+                currentVesselDied = true;
                 if (v.IsMissile())
                 {
-                    currentVesselDied = true;
-                    currentVesselDiedAt = Time.time - (BDArmorySettings.DEATH_CAMERA_SWITCH_INHIBIT_PERIOD == 0 ? BDArmorySettings.CAMERA_SWITCH_FREQUENCY / 2f : BDArmorySettings.DEATH_CAMERA_SWITCH_INHIBIT_PERIOD) + minCameraCheckInterval;
+                    currentVesselDiedAt = Time.time - (BDArmorySettings.DEATH_CAMERA_SWITCH_INHIBIT_PERIOD == 0 ? BDArmorySettings.CAMERA_SWITCH_FREQUENCY / 2f : BDArmorySettings.DEATH_CAMERA_SWITCH_INHIBIT_PERIOD) / 2f; // Wait half the death cam period on missile death.
+                    // FIXME If the missile is a clustermissile, we should immediately switch to one of the sub-missiles.
                 }
                 else
                 {
-                    currentVesselDied = true;
                     currentVesselDiedAt = Time.time;
                 }
             }
@@ -1162,7 +1162,7 @@ namespace BDArmory.UI
                 }
                 if (BDArmorySettings.CAMERA_SWITCH_INCLUDE_MISSILES) // Prioritise active missiles.
                 {
-                    foreach (MissileBase missile in BDATargetManager.FiredMissiles)
+                    foreach (MissileBase missile in BDATargetManager.FiredMissiles.Cast<MissileBase>())
                     {
                         if (missile == null || missile.HasMissed) continue; // Ignore missed missiles.
                         var targetDirection = missile.TargetPosition - missile.transform.position;

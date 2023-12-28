@@ -20,6 +20,8 @@ v1.6.9.0
        	- Fix mass changes of missiles that decouple boosters and add missile mass debug telemetry.
 		    - Fix radar and heat targeting leading targets excessively (most apparent in orbit)
 	    	- Change spacing missiles with continous rod warheads from Detonation Distance / 3 to  Min(Blast Radius / 3, Detonation Distance / 3)
+        - Fix missile RCS FX constantly displaying.
+		    - Missiles with RCS/Orbital homing types (i.e. HEKV) in vacuum now perform turn maneuver after launch to face target and only throttle up once facing target.
 
 IMPROVEMENTS / FIXES
 - UI:
