@@ -1331,7 +1331,7 @@ namespace BDArmory.Weapons.Missiles
                 MissileState = MissileStates.Drop;
                 part.crashTolerance = torpedo ? waterImpactTolerance : 9999; //to combat stresses of launch, missiles generate a lot of G Force
                 part.explosionPotential = 0; // Minimise the default part explosion FX that sometimes gets offset from the main explosion.
-                rcsClearanceState = (GuidanceMode == GuidanceModes.Orbital && hasRCS && vacuumSteerable && (vessel.atmDensity < 0.05f)) ? RCSClearanceStates.Clearing : RCSClearanceStates.Cleared; // Set up clearance check if missile hasRCS, is vacuumSteerable, and is in space
+                rcsClearanceState = (GuidanceMode == GuidanceModes.Orbital && hasRCS && vacuumSteerable && (vessel.InVacuum()) ? RCSClearanceStates.Clearing : RCSClearanceStates.Cleared); // Set up clearance check if missile hasRCS, is vacuumSteerable, and is in space
 
                 StartCoroutine(MissileRoutine());
                 var tnt = part.FindModuleImplementing<BDExplosivePart>();
@@ -1682,7 +1682,7 @@ namespace BDArmory.Weapons.Missiles
 
                     // Increase turn rate gradually after launch, unless vacuum steerable in space
                     float turnRateDPS = maxTurnRateDPS;
-                    if (!(vacuumSteerable && vessel.atmDensity < 0.05f))
+                    if (!((vacuumSteerable && vessel.InVacuum()) || boostTime == 0f))
                         turnRateDPS = Mathf.Clamp(((TimeIndex - dropTime) / boostTime) * maxTurnRateDPS * 25f, 0, maxTurnRateDPS);
                     if (!hasRCS)
                     {
@@ -2621,7 +2621,7 @@ namespace BDArmory.Weapons.Missiles
 
             // In vacuum, with RCS, point towards target shortly after launch to minimize wasted delta-V
             // During this maneuver, check that we have cleared any obstacles before throttling up
-            if (hasRCS && vacuumSteerable && (vessel.atmDensity < 0.05f))
+            if (hasRCS && vacuumSteerable && (vessel.InVacuum()))
             {
                 float dotTol;
                 Vector3 toSource = SourceVessel ? part.transform.position - SourceVessel.CoM : orbitalTarget;
@@ -2802,8 +2802,9 @@ namespace BDArmory.Weapons.Missiles
                 Vector3 relV;
                 if (rcsClearanceState == RCSClearanceStates.Turning && SourceVessel) // Clear away from launching vessel
                 {
-                    relV = (part.transform.position - SourceVessel.CoM).normalized + (vessel.Velocity() - SourceVessel.Velocity()).normalized;
-                    relV = Vector3.ProjectOnPlane(100f * relV, TargetPosition - part.transform.position);
+                    Vector3 relP = (part.transform.position - SourceVessel.CoM).normalized;
+                    relV = relP + (vessel.Velocity() - SourceVessel.Velocity()).normalized.ProjectOnPlanePreNormalized(relP);
+                    relV = 100f * relV.ProjectOnPlane(TargetPosition - part.transform.position);
                 }
                 else // Kill relative velocity to target
                     relV = TargetVelocity - vessel.Velocity();

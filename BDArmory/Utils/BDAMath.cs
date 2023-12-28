@@ -72,15 +72,20 @@ namespace BDArmory.Utils
 
         public static float SolveTime(float distance, float acceleration, float vel = 0)
         {
-            if (acceleration == 0f) return float.MaxValue;
-            
-            float a = 0.5f * acceleration;
-            float b = vel;
-            float c = -Mathf.Abs(distance);
+            if (acceleration == 0f && vel == 0)
+                return float.MaxValue;
+            else if (acceleration == 0f && vel != 0)
+                return Mathf.Abs(distance) / vel;
+            else
+            {
+                float a = 0.5f * acceleration;
+                float b = vel;
+                float c = -Mathf.Abs(distance);
 
-            float x = (-b + BDAMath.Sqrt(b * b - 4 * a * c)) / (2 * a);
+                float x = (-b + BDAMath.Sqrt(b * b - 4 * a * c)) / (2 * a);
 
-            return x;
+                return x;
+            }
         }
     }
 }

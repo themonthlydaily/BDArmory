@@ -24,6 +24,11 @@ namespace BDArmory.Extensions
             return v.atmDensity <= 0.001f;
         }
 
+        public static bool InNearVacuum(this Vessel v)
+        {
+            return v.atmDensity <= 0.05f;
+        }
+
         public static bool IsUnderwater(this Vessel v)
         {
             if (!v) return false;

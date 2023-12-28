@@ -241,7 +241,7 @@ FlightGlobals.getExternalTemperature(), FlightGlobals.currentMainBody) < 0.05f;
                     {
                         if (fuel != null)
                         {
-                            if (parentPart.vessel.atmDensity < 0.05 && ox == null)
+                            if (parentPart.vessel.InNearVacuum() && ox == null)
                             {
                                 hasFuel = false;
                             }
@@ -304,7 +304,7 @@ FlightGlobals.getExternalTemperature(), FlightGlobals.currentMainBody) < 0.05f;
                         ec = parentPart.Resources.Where(pr => pr.resourceName == "ElectricCharge").FirstOrDefault();
                         if (ec != null)
                         {
-                            if (parentPart.vessel.atmDensity < 0.05)
+                            if (parentPart.vessel.InNearVacuum())
                             {
                                 hasFuel = false;
                             }
