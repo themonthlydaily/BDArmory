@@ -70,12 +70,22 @@ namespace BDArmory.Utils
             return sqrt1;
         }
 
+        /// <summary>
+        /// Solve quadratic of a•t²+v•t=d for t, where acceleration (a) and distance (d) are assumed to be non-negative and v is the speed in the direction of the target.
+        /// </summary>
+        /// <param name="distance"></param>
+        /// <param name="acceleration"></param>
+        /// <param name="vel"></param>
+        /// <returns></returns>
         public static float SolveTime(float distance, float acceleration, float vel = 0)
         {
-            if (acceleration == 0f && vel == 0)
-                return float.MaxValue;
-            else if (acceleration == 0f && vel != 0)
-                return Mathf.Abs(distance) / vel;
+            if (acceleration == 0f)
+            {
+                if (vel == 0)
+                    return float.MaxValue;
+                else
+                    return Mathf.Abs(distance) / vel;
+            }
             else
             {
                 float a = 0.5f * acceleration;
