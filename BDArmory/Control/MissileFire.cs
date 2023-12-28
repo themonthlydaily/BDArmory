@@ -7780,11 +7780,14 @@ namespace BDArmory.Control
             rangeEditor.UpdateLimits(rangeEditor.minValue, BDArmorySettings.MAX_GUARD_VISUAL_RANGE);
         }
 
+        /// <summary>
+        /// Update the max gun range in-flight.
+        /// </summary>
         public void UpdateMaxGunRange(Vessel v)
         {
             if (v != vessel || vessel == null || !vessel.loaded || !part.isActiveAndEnabled) return;
             VesselModuleRegistry.OnVesselModified(v);
-            List<WeaponClasses> gunLikeClasses = new List<WeaponClasses> { WeaponClasses.Gun, WeaponClasses.DefenseLaser, WeaponClasses.Rocket };
+            List<WeaponClasses> gunLikeClasses = [WeaponClasses.Gun, WeaponClasses.DefenseLaser, WeaponClasses.Rocket];
             maxGunRange = 10f;
             foreach (var weapon in VesselModuleRegistry.GetModules<ModuleWeapon>(vessel))
             {
@@ -7794,18 +7797,19 @@ namespace BDArmory.Control
                     maxGunRange = Mathf.Max(maxGunRange, weapon.maxEffectiveDistance);
                 }
             }
-            var rangeEditor = (UI_FloatSemiLogRange)Fields["gunRange"].uiControlEditor;
-            rangeEditor.UpdateLimits(rangeEditor.minValue, maxGunRange);
             if (BDArmorySetup.Instance.textNumFields != null && BDArmorySetup.Instance.textNumFields.ContainsKey("gunRange")) { BDArmorySetup.Instance.textNumFields["gunRange"].maxValue = maxGunRange; }
             var oldGunRange = gunRange;
             gunRange = Mathf.Min(gunRange, maxGunRange);
             if (BDArmorySettings.DEBUG_AI && gunRange != oldGunRange) Debug.Log($"[BDArmory.MissileFire]: Updating gun range of {v.vesselName} to {gunRange} of {maxGunRange} from {oldGunRange}");
         }
 
+        /// <summary>
+        /// Update the max gun range in the editor.
+        /// </summary>
         public void UpdateMaxGunRange(Part eventPart)
         {
             if (EditorLogic.fetch.ship == null) return;
-            List<WeaponClasses> gunLikeClasses = new List<WeaponClasses> { WeaponClasses.Gun, WeaponClasses.DefenseLaser, WeaponClasses.Rocket };
+            List<WeaponClasses> gunLikeClasses = [WeaponClasses.Gun, WeaponClasses.DefenseLaser, WeaponClasses.Rocket];
             maxGunRange = 10f;
             foreach (var p in EditorLogic.fetch.ship.Parts)
             {
