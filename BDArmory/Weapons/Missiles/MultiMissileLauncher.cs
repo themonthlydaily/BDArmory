@@ -427,7 +427,7 @@ namespace BDArmory.Weapons.Missiles
                                     var explosivePart = missile.FindModuleImplementing<BDExplosivePart>();
                                     tntMass = explosivePart != null ? explosivePart.tntMass : 0;
                                     missileLauncher.blastRadius = BlastPhysicsUtils.CalculateBlastRange(tntMass);
-                                    missileMass = missile.partInfo.partPrefab.mass; 
+                                    missileMass = missile.partInfo.partPrefab.mass;
                                     EditorLogic.DeletePart(missile);
                                     using (List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator())
                                         while (sym.MoveNext())
@@ -704,11 +704,14 @@ namespace BDArmory.Weapons.Missiles
             {
                 deployState.enabled = true;
                 deployState.speed = deploySpeed / deployState.length;
-                yield return new WaitWhileFixed(() => deployState.normalizedTime < 1); //wait for animation here
-                deployState.normalizedTime = 1;
-                deployState.speed = 0;
-                deployState.enabled = false;
-                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MultiMissileLauncher] deploy anim complete");
+                yield return new WaitWhileFixed(() => deployState != null && deployState.normalizedTime < 1); //wait for animation here
+                if (deployState != null)
+                {
+                    deployState.normalizedTime = 1;
+                    deployState.speed = 0;
+                    deployState.enabled = false;
+                    if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MultiMissileLauncher] deploy anim complete");
+                }
             }
             if (missileSpawner is null) yield break; // Died while waiting.
             for (int m = tubesFired; m < launchTransforms.Length; m++)
@@ -871,9 +874,9 @@ namespace BDArmory.Weapons.Missiles
                         //Debug.Log($"[BDArmory.MultiMissileLauncherDebug]: Beginning target distribution; Num of targets: {targetsAssigned.Count - 1}; wpm targets: {wpm.targetsAssigned.Count}");
                         if (targetsAssigned.Count > 0)
                         {
-                            if (TargetID <= Mathf.Min((targetsAssigned.Count-1), wpm.multiMissileTgtNum))
+                            if (TargetID <= Mathf.Min((targetsAssigned.Count - 1), wpm.multiMissileTgtNum))
                             {
-                                for (int t = TargetID; t < Mathf.Min((targetsAssigned.Count-1), wpm.multiMissileTgtNum); t++) //MML targeting independant of MissileFire target assignment,
+                                for (int t = TargetID; t < Mathf.Min((targetsAssigned.Count - 1), wpm.multiMissileTgtNum); t++) //MML targeting independant of MissileFire target assignment,
                                 {// and each MMl will be independantly working off the same targets list, iterating over the same first couple targets
                                     if (wpm.missilesAway.ContainsKey(targetsAssigned[t]))
                                     {
@@ -894,7 +897,7 @@ namespace BDArmory.Weapons.Missiles
                                 }
                             }
                             //Debug.Log($"[MML Targeting Debug] TargetID is {TargetID} of {Mathf.Min((targetsAssigned.Count), wpm.multiMissileTgtNum)}");
-                            if (TargetID > Mathf.Min((targetsAssigned.Count-1), wpm.multiMissileTgtNum))
+                            if (TargetID > Mathf.Min((targetsAssigned.Count - 1), wpm.multiMissileTgtNum))
                             {
                                 TargetID = 0; //if more missiles than targets, loop target list
                                 missileRegistry = false;  //this isn't ignoring subsequent missiles in the salvo for some reason?
@@ -929,7 +932,7 @@ namespace BDArmory.Weapons.Missiles
                                 }
                                 else //else try remaining targets on the list. 
                                 {
-                                    for (int t = TargetID; t < targetsAssigned.Count-1; t++)
+                                    for (int t = TargetID; t < targetsAssigned.Count - 1; t++)
                                     {
                                         if (targetsAssigned[t] == null) continue;
                                         if ((ml.engageAir && !targetsAssigned[t].isFlying) ||
@@ -1049,10 +1052,13 @@ namespace BDArmory.Weapons.Missiles
                 yield return new WaitForSecondsFixed(0.5f); //wait for missile to clear bay
                 deployState.enabled = true;
                 deployState.speed = -deploySpeed / deployState.length;
-                yield return new WaitWhileFixed(() => deployState.normalizedTime > 0);
-                deployState.normalizedTime = 0;
-                deployState.speed = 0;
-                deployState.enabled = false;
+                yield return new WaitWhileFixed(() => deployState != null && deployState.normalizedTime > 0);
+                if (deployState != null)
+                {
+                    deployState.normalizedTime = 0;
+                    deployState.speed = 0;
+                    deployState.enabled = false;
+                }
             }
             if (missileLauncher is null) yield break;
             if (tubesFired >= launchTransforms.Length) //add a timer for reloading a partially emptied MML if it hasn't been used for a while?
@@ -1236,6 +1242,6 @@ namespace BDArmory.Weapons.Missiles
                 }
             }
             return output.ToString();
-        }        
+        }
     }
 }
