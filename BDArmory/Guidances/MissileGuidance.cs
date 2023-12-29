@@ -274,7 +274,7 @@ namespace BDArmory.Guidances
                 gLimit = (accel).magnitude / (float)PhysicsGlobals.GravitationalAcceleration;
 
                 // Debug output, useful for tuning
-                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"Kappa Guidance K1: {K1}, K2: {K2}, accel: {accel}, vF-currVel: {vF-currVel}, posError: {predictedImpactPoint- ml.vessel.transform.position - currVel*ttgo}, g: {gLimit}, ttgo: {ttgo}");
+                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileGuidance]: Kappa Guidance K1: {K1}, K2: {K2}, accel: {accel}, vF-currVel: {vF-currVel}, posError: {predictedImpactPoint- ml.vessel.transform.position - currVel*ttgo}, g: {gLimit}, ttgo: {ttgo}");
 
                 return ml.vessel.transform.position + currVel * Mathf.Min(leadTime, 3f) + accel * Mathf.Min(leadTime * leadTime, 9f);
             }
