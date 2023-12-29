@@ -4,6 +4,12 @@
 	- Fix automatic gun range adjustments in the WM again.
 - Weapons:
 	- Corrections to penetration and ricochet velocity changes.
+- Missiles:
+	- Added missile g-limiting. Now you can set a missile maximum g-limit using the "gLimit" field. Additionally a "gMargin" field exists which allows you to specify an allowable margin the missile can miss by to optimize drag. I.E. the missile is allowed to pull only gLimit - gMargin if pulling gLimit will result in too much drag.
+	- Corrected pronav and augpronav normal acceleration using the g-limiting feature
+	- Smoothed out missile turning behavior. Missiles now won't abruptly stop turning if they hit maxAoA.
+	- Added Kappa guidance, an optimal type of midcourse guidance for in-atmosphere missiles. This re-uses the LoftAngle, LoftMaxAltitude and LoftRangeOverride fields, though LoftRangeOverride is now the range where the missile will switch from lofting to the midcourse guidance. Introduces a new field, "kappaAngle" which is a trajectory shaping angle, higher values mean a steeper terminal trajectory.
+	- Fixed missile contact detonation logic, a bug was present which lead to inaccurate detection of missile contact
 
 v1.6.9.0
 IMPROVEMENTS / FIXES
