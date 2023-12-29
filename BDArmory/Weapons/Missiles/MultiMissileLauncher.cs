@@ -247,7 +247,8 @@ namespace BDArmory.Weapons.Missiles
                             var ML = parts.Current.partPrefab.FindModuleImplementing<MissileLauncher>();
                             if (!string.IsNullOrEmpty(subMunitionName))
                             {
-                                loadedMissileName = ML.GetShortName();
+                                if (ML != null) loadedMissileName = ML.GetShortName();
+                                else Debug.LogError("[BDArmory.MultiMissileLauncher] submunition MissileLauncher module null! Check subMunitionName is correct");
                             }
                             break;
                         }
@@ -713,7 +714,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 deployState.enabled = true;
                 deployState.speed = deploySpeed / deployState.length;
-                yield return new WaitWhileFixed(() => deployState.normalizedTime < 1); //wait for animation here
+                yield return new WaitWhileFixed(() => deployState != null && deployState.normalizedTime < 1); //wait for animation here
                 deployState.normalizedTime = 1;
                 deployState.speed = 0;
                 deployState.enabled = false;
@@ -1058,7 +1059,7 @@ namespace BDArmory.Weapons.Missiles
                 yield return new WaitForSecondsFixed(0.5f); //wait for missile to clear bay
                 deployState.enabled = true;
                 deployState.speed = -deploySpeed / deployState.length;
-                yield return new WaitWhileFixed(() => deployState.normalizedTime > 0);
+                yield return new WaitWhileFixed(() => deployState != null && deployState.normalizedTime > 0);
                 deployState.normalizedTime = 0;
                 deployState.speed = 0;
                 deployState.enabled = false;

@@ -2083,9 +2083,7 @@ namespace BDArmory.Control
                             MissileLauncher mlauncher;
                             while (ml && targetVessel && Time.time - attemptStartTime < attemptDuration && (!heatTarget.exists || (heatTarget.predictedPosition - targetVessel.transform.position).sqrMagnitude > 40 * 40))
                                 yield return wait;
-
-                            if (BDArmorySettings.DEBUG_MISSILES)
-                                Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName}'s {CurrentMissile.GetShortName()} has heatTarget: {heatTarget.exists}");
+                            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName}'s {CurrentMissile.GetShortName()} has heatTarget: {heatTarget.exists}");
                             //try uncaged IR lock with radar
                             if (ml.activeRadarRange > 0) //defaults to 6k for non-radar missiles, using negative value for differentiating passive acoustic vs heater
                             {
@@ -2106,8 +2104,7 @@ namespace BDArmory.Control
                                     yield return new WaitForSecondsFixed(Mathf.Min(1, (targetScanInterval * 0.25f)));
                                 }
                             }
-                            if (BDArmorySettings.DEBUG_MISSILES)
-                                Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName}'s heatTarget locked");
+                            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName}'s heatTarget locked");
                             // if (AIMightDirectFire() && ml && heatTarget.exists)
                             // {
                             //     float LAstartTime = Time.time;
@@ -2150,7 +2147,6 @@ namespace BDArmory.Control
                             }
 
                             yield return wait;
-
                             // if (guardTarget && ml && heatTarget.exists && (!AIMightDirectFire() || GetLaunchAuthorization(guardTarget, this)))
                             if (targetVessel && ml && heatTarget.exists && heatTarget.vessel == targetVessel && GetLaunchAuthorization(targetVessel, this, ml))
                             {
@@ -2504,9 +2500,9 @@ namespace BDArmory.Control
                                     yield return new WaitForFixedUpdate();
                                 }
                             }
-                            if (targetVessel && ml && mlauncher.multiLauncher && mlauncher.multiLauncher.turret)
+                            if (mlauncher.multiLauncher && mlauncher.multiLauncher.turret)
                             {
-                                while (Time.time - turretStartTime < Mathf.Max(targetScanInterval / 2f, 2) && mlauncher && targetVessel && angle > mlauncher.missileTurret.fireFOV)
+                                while (Time.time - turretStartTime < Mathf.Max(targetScanInterval / 2f, 2) && mlauncher && targetVessel && angle > mlauncher.multiLauncher.turret.fireFOV)
                                 {
                                     angle = Vector3.Angle(mlauncher.multiLauncher.turret.finalTransform.forward, mlauncher.multiLauncher.turret.slavedTargetPosition - mlauncher.multiLauncher.turret.finalTransform.position);
                                     mlauncher.multiLauncher.turret.slaved = true;

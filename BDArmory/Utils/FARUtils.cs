@@ -131,13 +131,13 @@ namespace BDArmory.Utils
         }
         public static float GetFARWingSweep(Part part)
         {
-            if (!hasFARWing) return 1;
+            if (!hasFARWing) return 0;
 
             foreach (var module in part.Modules)
             {
                 if (module.GetType() == FARWingModule)
                 {
-                    var sweep = (float)FARWingModule.GetField("MidChordSweep", BindingFlags.Public | BindingFlags.Instance).GetValue(module);
+                    var sweep = (float)FARWingModule.GetField("MidChordSweep", BindingFlags.Public | BindingFlags.Instance).GetValue(module); //leading + trailing angle / 2
                     if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FARUtils]: Found mid chord sweep of {sweep} for {part.name}.");
                     return sweep;
                 }
@@ -148,7 +148,7 @@ namespace BDArmory.Utils
                     return sweep;
                 }
             }
-            return 1;
+            return 0;
         }
     }
 

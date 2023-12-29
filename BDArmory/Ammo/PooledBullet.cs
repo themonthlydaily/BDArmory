@@ -1551,6 +1551,7 @@ namespace BDArmory.Bullets
                     pBullet.bullet = BulletInfo.bullets[sBullet.name];
                     pBullet.stealResources = stealResources;
                     pBullet.dmgMult = dmgMult;
+                    pBullet.isSubProjectile = true;
                     pBullet.isAPSprojectile = isAPSprojectile;
                     pBullet.tgtShell = tgtShell;
                     pBullet.tgtRocket = tgtRocket;
