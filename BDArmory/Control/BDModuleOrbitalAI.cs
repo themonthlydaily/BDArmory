@@ -629,7 +629,7 @@ namespace BDArmory.Control
                     debugString.AppendLine($"Lateral Velocity: {lateralVelocity:G3}");
                 }
                 debugString.AppendLine($"Evasive {evasiveTimer}s");
-                debugString.AppendLine($"Threat Sqr Distance: {weaponManager.incomingThreatDistanceSqr}");
+                if (weaponManager) debugString.AppendLine($"Threat Sqr Distance: {weaponManager.incomingThreatDistanceSqr}");
             }
         }
 
@@ -690,6 +690,17 @@ namespace BDArmory.Control
                 if (BDArmorySettings.DEBUG_AI)
                     Debug.Log("[BDArmory.BDModuleOrbitalAI]: Status of " + vessel.vesselName + " changed from " + lastStatusMode + " to " + currentStatus);
             }
+
+            // Temporarily inhibit maneuvers if not evading a missile and waiting for a launched missile to fly to a safe distance
+            if (currentStatusMode != StatusMode.Evading && weaponManager && weaponManager.PreviousMissile)
+            {
+                if ((vessel.CoM - weaponManager.PreviousMissile.vessel.transform.position).sqrMagnitude < vessel.vesselSize.sqrMagnitude)
+                    fc.Stability(true);
+                else
+                    fc.Stability(false);
+            }
+            else
+                fc.Stability(false);
 
             // Check for incoming gunfire
             EvasionStatus();
@@ -897,7 +908,7 @@ namespace BDArmory.Control
             if (Vector3.Dot(targetVessel.acceleration.normalized, toTarget.normalized) > 0)
                 toTarget += Displacement(Vector3.zero, toTarget.normalized * Vector3.Dot(targetVessel.acceleration, toTarget.normalized), Mathf.Min(timeToIntercept, 999));
 
-            Vector3 toClosestApproach = toTarget + (rotatedVector * Mathf.Clamp(actualClosestApproachDistance, minRange, weaponManager.gunRange * 0.5f));
+            Vector3 toClosestApproach = toTarget + (rotatedVector * Mathf.Clamp(actualClosestApproachDistance, minRange, weaponManager ? weaponManager.gunRange * 0.5f : actualClosestApproachDistance));
 
             // Need a maximum angle so that we don't end up going further away at close range.
             toClosestApproach = Vector3.RotateTowards(toTarget, toClosestApproach, 22.5f * Mathf.Deg2Rad, float.MaxValue);

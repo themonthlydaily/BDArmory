@@ -1772,7 +1772,7 @@ namespace BDArmory.Control
                             // weaponAimDebugStrings.Add($" - Target pos: {weapon.targetPosition.ToString("G3")}, vel: {weapon.targetVelocity.ToString("G4")}, acc: {weapon.targetAcceleration.ToString("G6")}");
                             // weaponAimDebugStrings.Add($" - Target rel pos: {(weapon.targetPosition - weapon.fireTransforms[0].position).ToString("G3")} ({(weapon.targetPosition - weapon.fireTransforms[0].position).magnitude:F1}), rel vel: {(weapon.targetVelocity - weapon.part.rb.velocity).ToString("G4")}, rel acc: {((Vector3)(weapon.targetAcceleration - weapon.vessel.acceleration)).ToString("G6")}");
 #if DEBUG
-                            if (weapon.visualTargetVessel != null && weapon.visualTargetVessel.loaded) weaponAimDebugStrings.Add($" - Visual target {(weapon.visualTargetPart is not null ? weapon.visualTargetPart.name : "CoM")} on {weapon.visualTargetVessel.vesselName}, distance: {(weapon.fireTransforms[0] != null ? (weapon.finalAimTarget - weapon.fireTransforms[0].position).magnitude : 0):F1}, radius: {weapon.targetRadius:F1} ({weapon.visualTargetVessel.GetBounds()}), max deviation: {weapon.maxDeviation}, firing tolerance: {weapon.FiringTolerance}");
+                            if (weapon.visualTargetVessel != null && weapon.visualTargetVessel.loaded) weaponAimDebugStrings.Add($" - Visual target {(weapon.visualTargetPart != null ? weapon.visualTargetPart.name : "CoM")} on {weapon.visualTargetVessel.vesselName}, distance: {(weapon.fireTransforms[0] != null ? (weapon.finalAimTarget - weapon.fireTransforms[0].position).magnitude : 0):F1}, radius: {weapon.targetRadius:F1} ({weapon.visualTargetVessel.GetBounds()}), max deviation: {weapon.maxDeviation}, firing tolerance: {weapon.FiringTolerance}");
                             if (weapon.turret) weaponAimDebugStrings.Add($" - Turret: pitch: {weapon.turret.Pitch:F3}° ({weapon.turret.minPitch}°—{weapon.turret.maxPitch}°), yaw: {weapon.turret.Yaw:F3}° ({-weapon.turret.yawRange / 2f}°—{weapon.turret.yawRange / 2f}°)");
 #endif
                         }
@@ -7787,11 +7787,14 @@ namespace BDArmory.Control
             rangeEditor.UpdateLimits(rangeEditor.minValue, BDArmorySettings.MAX_GUARD_VISUAL_RANGE);
         }
 
+        /// <summary>
+        /// Update the max gun range in-flight.
+        /// </summary>
         public void UpdateMaxGunRange(Vessel v)
         {
             if (v != vessel || vessel == null || !vessel.loaded || !part.isActiveAndEnabled) return;
             VesselModuleRegistry.OnVesselModified(v);
-            List<WeaponClasses> gunLikeClasses = new List<WeaponClasses> { WeaponClasses.Gun, WeaponClasses.DefenseLaser, WeaponClasses.Rocket };
+            List<WeaponClasses> gunLikeClasses = [WeaponClasses.Gun, WeaponClasses.DefenseLaser, WeaponClasses.Rocket];
             maxGunRange = 10f;
             foreach (var weapon in VesselModuleRegistry.GetModules<ModuleWeapon>(vessel))
             {
@@ -7801,18 +7804,19 @@ namespace BDArmory.Control
                     maxGunRange = Mathf.Max(maxGunRange, weapon.maxEffectiveDistance);
                 }
             }
-            var rangeEditor = (UI_FloatSemiLogRange)Fields["gunRange"].uiControlEditor;
-            rangeEditor.UpdateLimits(rangeEditor.minValue, maxGunRange);
             if (BDArmorySetup.Instance.textNumFields != null && BDArmorySetup.Instance.textNumFields.ContainsKey("gunRange")) { BDArmorySetup.Instance.textNumFields["gunRange"].maxValue = maxGunRange; }
             var oldGunRange = gunRange;
             gunRange = Mathf.Min(gunRange, maxGunRange);
             if (BDArmorySettings.DEBUG_AI && gunRange != oldGunRange) Debug.Log($"[BDArmory.MissileFire]: Updating gun range of {v.vesselName} to {gunRange} of {maxGunRange} from {oldGunRange}");
         }
 
+        /// <summary>
+        /// Update the max gun range in the editor.
+        /// </summary>
         public void UpdateMaxGunRange(Part eventPart)
         {
             if (EditorLogic.fetch.ship == null) return;
-            List<WeaponClasses> gunLikeClasses = new List<WeaponClasses> { WeaponClasses.Gun, WeaponClasses.DefenseLaser, WeaponClasses.Rocket };
+            List<WeaponClasses> gunLikeClasses = [WeaponClasses.Gun, WeaponClasses.DefenseLaser, WeaponClasses.Rocket];
             maxGunRange = 10f;
             foreach (var p in EditorLogic.fetch.ship.Parts)
             {
