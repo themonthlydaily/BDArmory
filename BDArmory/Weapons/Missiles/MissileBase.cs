@@ -1210,7 +1210,6 @@ namespace BDArmory.Weapons.Missiles
                 }
             }
             TargetCoords_ = targetGPSCoords;
-
             if (targetVessel && HasFired)
             {
                 if (gpsUpdates >= 0f)
@@ -1220,19 +1219,22 @@ namespace BDArmory.Weapons.Missiles
                     bool radarLocked = false;
                     if (weaponManager != null && weaponManager.vesselRadarData)
                     {
-                        INStarget = weaponManager.vesselRadarData.detectedRadarTarget(targetVessel.Vessel, weaponManager); //is the target tracked by radar or ISRT?
+                        INStarget = weaponManager._radarsEnabled ? weaponManager.vesselRadarData.detectedRadarTarget(targetVessel.Vessel, weaponManager) : TargetSignatureData.noTarget; //is the target tracked by radar or ISRT?
                         if (INStarget.exists)
                         {
                             detectedByRadar = true;
-                            List<TargetSignatureData> possibleTargets = vrd.GetLockedTargets();
+                            List<TargetSignatureData> possibleTargets = weaponManager.vesselRadarData.GetLockedTargets();
                             for (int i = 0; i < possibleTargets.Count; i++)
                             {
                                 if (possibleTargets[i].vessel == targetVessel.Vessel)
+                                {
                                     radarLocked = true;
+                                    break;
+                                }
                             }
                         }
                         else
-                            INStarget = weaponManager.vesselRadarData.activeIRTarget(targetVessel.Vessel, weaponManager);
+                            if (weaponManager.irsts.Count > 0) INStarget = weaponManager.vesselRadarData.activeIRTarget(targetVessel.Vessel, weaponManager);
                     }
                     if (INStarget.exists)
                     {
@@ -1264,7 +1266,6 @@ namespace BDArmory.Weapons.Missiles
                     }
                 }
             }
-
             if (TargetAcquired)
             {
                 TargetPosition = VectorUtils.GetWorldSurfacePostion(TargetCoords_, vessel.mainBody);
@@ -1276,7 +1277,6 @@ namespace BDArmory.Weapons.Missiles
             {
                 guidanceActive = false;
             }
-
             return TargetCoords_;
         }
 

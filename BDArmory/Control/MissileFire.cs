@@ -6836,7 +6836,25 @@ namespace BDArmory.Control
                             ml.TargetAcquired = true;
                             validTarget = true;
                         }
-                        else if (ml.GetWeaponClass() == WeaponClasses.Bomb)
+                        else
+                        {
+                            if (vesselRadarData)
+                            {
+                                if (vesselRadarData.locked)
+                                {
+                                    validTarget = true;
+                                    targetVessel = vesselRadarData.lockedTargetData.targetData.vessel;
+                                }
+                                else if (irsts.Count > 0)
+                                {
+                                    validTarget = true;
+                                    targetVessel = vesselRadarData.activeIRTarget(null, this).vessel;
+                                }
+                            }
+                            if (validTarget) designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(targetVessel.CoM, vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
+                            else designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(ml.MissileReferenceTransform.position + ml.MissileReferenceTransform.forward * 10000, vessel.mainBody), "null target");
+                        }
+                        if (ml.GetWeaponClass() == WeaponClasses.Bomb)
                         {
                             dumbfire = true;
                             validTarget = true;
