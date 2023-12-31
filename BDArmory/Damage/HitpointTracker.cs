@@ -121,6 +121,8 @@ namespace BDArmory.Damage
         [KSPField(isPersistant = true)]
         public float SafeUseTemp;
         [KSPField(isPersistant = true)]
+        public float StealthRating;
+        [KSPField(isPersistant = true)]
         public float Cost;
 
         [KSPField(isPersistant = true)]
@@ -164,6 +166,9 @@ namespace BDArmory.Damage
 
         AttachNode bottom;
         AttachNode top;
+
+        private float hullRadarReturnFactor = 1;
+        private float armorRadarReturnFactor = 1;
 
         public List<Shader> defaultShader;
         public List<Color> defaultColor;
@@ -1253,6 +1258,7 @@ namespace BDArmory.Damage
                 Hardness = armorInfo.Hardness;
                 Strength = armorInfo.Strength;
                 SafeUseTemp = armorInfo.SafeUseTemp;
+                armorRadarReturnFactor = 1;
 
                 vFactor = armorInfo.vFactor;
                 muParam1 = armorInfo.muParam1;
@@ -1363,6 +1369,7 @@ namespace BDArmory.Damage
                 part.skinInternalConductionMult = skinInternalConduction * BDAMath.Sqrt(Diffusivity / 237); //how well does the armor allow external heat to flow into the part internals?
                 part.skinSkinConductionMult = skinskinConduction * BDAMath.Sqrt(Diffusivity / 237); //how well does the armor conduct heat to connected part skins?
                 part.skinMassPerArea = (Density / 1000) * ArmorThickness;
+                armorRadarReturnFactor = armorInfo.StealthRating;
             }
             if (ArmorTypeNum == (ArmorInfo.armors.FindIndex(t => t.name == "None") + 1) && ArmorPanel)
             {
@@ -1373,7 +1380,9 @@ namespace BDArmory.Damage
                 part.skinInternalConductionMult = skinInternalConduction * BDAMath.Sqrt(Diffusivity / 237); //how well does the armor allow external heat to flow into the part internals?
                 part.skinSkinConductionMult = skinskinConduction * BDAMath.Sqrt(Diffusivity / 237); //how well does the armor conduct heat to connected part skins?
                 part.skinMassPerArea = (Density / 1000) * ArmorThickness;
+                armorRadarReturnFactor = armorInfo.StealthRating;
             }
+            CalculateRCSreduction();
             totalArmorQty = armorMass; //grabbing a copy of unmodified armorMAss so it can be used in armorMass' place for armor reduction without having to un/re-modify the mass before and after armor hits
             armorMass *= BDArmorySettings.ARMOR_MASS_MOD;
             //part.RefreshAssociatedWindows(); //having this fire every time a change happens prevents sliders from being used. Add delay timer?
@@ -1533,7 +1542,9 @@ namespace BDArmory.Damage
             part.breakingTorque = maxTorque;
             maxG = part.partInfo.partPrefab.gTolerance * hullInfo.ImpactMod;
             part.gTolerance = maxG;
+            hullRadarReturnFactor = hullInfo.ImpactMod; //FIXME
             hullType = hullInfo.name;
+            CalculateRCSreduction();
             float partCost = part.partInfo.cost + part.partInfo.variant.Cost;
             if (hullInfo.costMod < 1) HullCostAdjust = Mathf.Max((partCost - (float)resourceCost) * hullInfo.costMod, partCost - (1000 - (hullInfo.costMod * 1000))) - (partCost - (float)resourceCost);//max of 1000 funds discount on cheaper materials
             else HullCostAdjust = Mathf.Min((partCost - (float)resourceCost) * hullInfo.costMod, (partCost - (float)resourceCost) + (hullInfo.costMod * 1000)) - (partCost - (float)resourceCost); //Increase costs if costMod => 1                                                                                                                                                             
@@ -1549,6 +1560,26 @@ namespace BDArmory.Damage
                     GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
             }
             _hullConfigured = true;
+        }
+        private void CalculateRCSreduction()
+        {
+            if (ArmorTypeNum > 1 && Armor > 1) //if ArmorType != None and armor thickness != 0
+            {
+                StealthRating = armorRadarReturnFactor; //radar return based on armor material
+                if (armorRadarReturnFactor > 1 && hullRadarReturnFactor < 1) //radar-translucent armor and hull materials
+                {
+                    StealthRating = 1 - (hullRadarReturnFactor * (armorRadarReturnFactor - 1));
+                }
+            }
+            else //(ArmorTypeNum < 1 || Armor < 1) //no armor, radar return based on hull material
+            {
+                StealthRating = hullRadarReturnFactor;
+            }
+            if (StealthRating > 1 || StealthRating < 0)
+            {
+                StealthRating = Mathf.Clamp(StealthRating, 0, 1);
+            }
+            if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[ARMOR]: Radar return rating is " + StealthRating);
         }
         private List<PartResource> GetResources()
         {
