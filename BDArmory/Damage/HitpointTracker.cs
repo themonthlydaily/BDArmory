@@ -1549,7 +1549,7 @@ namespace BDArmory.Damage
             part.breakingTorque = maxTorque;
             maxG = part.partInfo.partPrefab.gTolerance * hullInfo.ImpactMod;
             part.gTolerance = maxG;
-            hullRadarReturnFactor = hullInfo.ImpactMod; //FIXME
+            hullRadarReturnFactor = hullInfo.radarMod; 
             hullType = hullInfo.name;
             CalculateRCSreduction();
             float partCost = part.partInfo.cost + part.partInfo.variant.Cost;
