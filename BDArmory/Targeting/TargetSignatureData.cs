@@ -164,7 +164,7 @@ namespace BDArmory.Targeting
             {
                 // chaff check
                 decoyFactor = (1f - RadarUtils.GetVesselChaffFactor(vessel));
-                Vector3 velOrAccel = (vessel.atmDensity > 0.05) ? vessel.Velocity() : vessel.acceleration_immediate;
+                Vector3 velOrAccel = (!vessel.InVacuum()) ? vessel.Velocity() : vessel.acceleration_immediate;
 
                 if (decoyFactor > 0f)
                 {

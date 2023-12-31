@@ -24,7 +24,7 @@ namespace BDArmory.Bullets
         public float massMod { get; private set; }
         public float impulse { get; private set; }
         public string fuzeType { get; private set; }
-        public int subProjectileCount { get; private set; }
+        public int projectileCount { get; private set; }
         public float subProjectileDispersion { get; private set; }
         public float apBulletMod { get; private set; }
         public string bulletDragTypeName { get; private set; }
@@ -38,7 +38,7 @@ namespace BDArmory.Bullets
 
         public BulletInfo(string name, string DisplayName, float caliber, float bulletVelocity, float bulletMass, 
                           string explosive, bool incendiary, float tntMass, bool EMP, bool nuclear, bool beehive, string subMunitionType, float massMod, float impulse, string fuzeType, float apBulletDmg,
-                          int subProjectileCount, float subProjectileDispersion, string bulletDragTypeName, string projectileColor, string startColor, bool fadeColor)
+                          int projectileCount, float subProjectileDispersion, string bulletDragTypeName, string projectileColor, string startColor, bool fadeColor)
         {
             this.name = name;
             this.DisplayName = DisplayName;
@@ -56,7 +56,7 @@ namespace BDArmory.Bullets
             this.impulse = impulse;
             this.fuzeType = fuzeType;
             this.apBulletMod = apBulletDmg;
-            this.subProjectileCount = subProjectileCount;
+            this.projectileCount = projectileCount;
             this.subProjectileDispersion = subProjectileDispersion;
             this.bulletDragTypeName = bulletDragTypeName;
             this.projectileColor = projectileColor;
@@ -98,7 +98,7 @@ namespace BDArmory.Bullets
                         (float)ParseField(node, "impulse", typeof(float)),
                         (string)ParseField(node, "fuzeType", typeof(string)),
                         (float)ParseField(node, "apBulletMod", typeof(float)),
-                        Math.Max((int)ParseField(node, "subProjectileCount", typeof(int)), 1),
+                        Math.Max((int)ParseField(node, "projectileCount", typeof(int)), 1),
                         -1,
                         (string)ParseField(node, "bulletDragTypeName", typeof(string)),
                         (string)ParseField(node, "projectileColor", typeof(string)),
@@ -144,7 +144,7 @@ namespace BDArmory.Bullets
                         (float)ParseField(node, "impulse", typeof(float)),
                         (string)ParseField(node, "fuzeType", typeof(string)),
                         (float)ParseField(node, "apBulletMod", typeof(float)),
-                        (int)ParseField(node, "subProjectileCount", typeof(int)),
+                        (int)ParseField(node, "projectileCount", typeof(int)),
                         (float)ParseField(node, "subProjectileDispersion", typeof(float)),
                         (string)ParseField(node, "bulletDragTypeName", typeof(string)),
                         (string)ParseField(node, "projectileColor", typeof(string)),

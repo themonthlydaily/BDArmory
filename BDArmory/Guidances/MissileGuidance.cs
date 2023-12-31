@@ -489,7 +489,7 @@ namespace BDArmory.Guidances
                 leadTime = AIUtils.TimeToCPA(relPosition, DeltaOptvel, relAcceleration, 8 - T) + T;
             }
 
-            if (missile.vessel.atmDensity < 0.05 && missile.vessel.InOrbit()) // More accurate, but too susceptible to slight acceleration changes for use in-atmo
+            if (missile.vessel.InNearVacuum() && missile.vessel.InOrbit()) // More accurate, but too susceptible to slight acceleration changes for use in-atmo
             {
                 Vector3 relPos = targetPosition - missile.transform.position;
                 Vector3 relVel = targetVessel.Velocity() - missile.vessel.Velocity();

@@ -1083,14 +1083,14 @@ namespace BDArmory.UI
         {
             if (_autoCameraSwitch && lastActiveVessel == v)
             {
+                currentVesselDied = true;
                 if (v.IsMissile())
                 {
-                    currentVesselDied = true;
-                    currentVesselDiedAt = Time.time - (BDArmorySettings.DEATH_CAMERA_SWITCH_INHIBIT_PERIOD == 0 ? BDArmorySettings.CAMERA_SWITCH_FREQUENCY / 2f : BDArmorySettings.DEATH_CAMERA_SWITCH_INHIBIT_PERIOD) + minCameraCheckInterval;
+                    currentVesselDiedAt = Time.time - (BDArmorySettings.DEATH_CAMERA_SWITCH_INHIBIT_PERIOD == 0 ? BDArmorySettings.CAMERA_SWITCH_FREQUENCY / 2f : BDArmorySettings.DEATH_CAMERA_SWITCH_INHIBIT_PERIOD) / 2f; // Wait half the death cam period on missile death.
+                    // FIXME If the missile is a clustermissile, we should immediately switch to one of the sub-missiles.
                 }
                 else
                 {
-                    currentVesselDied = true;
                     currentVesselDiedAt = Time.time;
                 }
             }
@@ -1136,13 +1136,13 @@ namespace BDArmory.UI
                 if (activeVessel != null && activeVessel.loaded && !activeVessel.packed && activeVessel.IsMissile())
                 {
                     var mb = VesselModuleRegistry.GetMissileBase(activeVessel);
-                    // Don't switch away from an active missile until it misses or is off-target, or if it is within 1 km of its source vessel or target position
+                    // Don't switch away from an active missile until it misses or is off-target, or if it is within 1 km of its target position
                     bool stayOnMissile = mb != null &&
                         !mb.HasMissed &&
                         Vector3.Dot((mb.TargetPosition - mb.vessel.transform.position).normalized, mb.vessel.transform.up) < 0.5f &&
-                        ((mb.SourceVessel && (mb.vessel.transform.position - mb.SourceVessel.transform.position).sqrMagnitude < 1e6) || // FIXME Josue Why the source vessel, wouldn't the target vessel make more sense?
-                        (mb.vessel.transform.position - mb.TargetPosition).sqrMagnitude < 1e6);
+                        (mb.vessel.transform.position - mb.TargetPosition).sqrMagnitude < 1e6;
                     if (stayOnMissile) return;
+                    lastCameraCheck -= TimeWarp.deltaTime; // Speed up moving away from less relevant missiles.
                 }
                 bool foundActiveVessel = false;
                 Vector3 centroid = Vector3.zero;
@@ -1162,13 +1162,15 @@ namespace BDArmory.UI
                 }
                 if (BDArmorySettings.CAMERA_SWITCH_INCLUDE_MISSILES) // Prioritise active missiles.
                 {
-                    foreach (MissileBase missile in BDATargetManager.FiredMissiles)
+                    foreach (MissileBase missile in BDATargetManager.FiredMissiles.Cast<MissileBase>())
                     {
                         if (missile == null || missile.HasMissed) continue; // Ignore missed missiles.
                         var targetDirection = missile.TargetPosition - missile.transform.position;
                         var targetDistance = targetDirection.magnitude;
                         if (Vector3.Dot(targetDirection, missile.GetForwardTransform()) < 0.5f * targetDistance) continue; // Ignore off-target missiles.
-                        float missileScore = targetDistance < 1e3f ? 0.1f : 0.1f + (targetDistance - 1e3f) * (targetDistance - 1e3f) * 2e-8f; // Prioritise missiles that are within 1km from their targets.
+                        if (missile.targetVessel != null && missile.targetVessel.Vessel != null && missile.targetVessel.Vessel.IsMissile()) continue; // Ignore missiles targeting missiles.
+                        if (Vector3.Dot(missile.TargetVelocity - missile.vessel.Velocity(), missile.GetForwardTransform()) > -1f) continue; // Ignore missiles that aren't gaining on their targets.
+                        float missileScore = targetDistance < 1e3f ? 0.1f : 0.1f + (targetDistance - 1e3f) * (targetDistance - 1e3f) * 5e-8f; // Prioritise missiles that are within 1km from their targets and de-prioritise those more than 5km away.
                         if (missileScore < bestScore)
                         {
                             bestScore = missileScore;

@@ -4206,9 +4206,9 @@ namespace BDArmory.UI
             TimingManager.FixedUpdateAdd(TimingManager.TimingStage.FlightIntegrator, FlightIntegrator);
             TimingManager.FixedUpdateAdd(TimingManager.TimingStage.Late, Late);
             TimingManager.FixedUpdateAdd(TimingManager.TimingStage.BetterLateThanNever, BetterLateThanNever);
-            yield return wait;
-            yield return wait;
-            yield return wait;
+            yield return wait; Debug.Log($"DEBUG {Time.time} WaitForFixedUpdate");
+            yield return wait; Debug.Log($"DEBUG {Time.time} WaitForFixedUpdate");
+            yield return wait; Debug.Log($"DEBUG {Time.time} WaitForFixedUpdate");
             TimingManager.FixedUpdateRemove(TimingManager.TimingStage.ObscenelyEarly, ObscenelyEarly);
             TimingManager.FixedUpdateRemove(TimingManager.TimingStage.Early, Early);
             TimingManager.FixedUpdateRemove(TimingManager.TimingStage.Precalc, Precalc);

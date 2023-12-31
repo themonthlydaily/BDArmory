@@ -556,6 +556,18 @@ namespace BDArmory.Control
             ap.SAS.SetTargetOrientation(throttleLerped > 0 && lerpAttitude ? attitudeLerped : attitude, false);
         }
 
+        public void Stability(bool enable)
+        {
+            if (lockAttitude == enable) return;
+            lockAttitude = enable;
+
+            var ap = vessel.Autopilot;
+            if (ap == null) return;
+
+            vessel.ActionGroups.SetGroup(KSPActionGroup.SAS, enable);
+            ap.SetMode(enable ? VesselAutopilot.AutopilotMode.StabilityAssist : VesselAutopilot.AutopilotMode.Normal);
+        }
+
         /// <summary>
         /// Set the axis control state and also the corresponding axis groups.
         /// </summary>
