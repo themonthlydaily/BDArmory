@@ -169,8 +169,8 @@ namespace BDArmory.Guidances
             //leadTime = Mathf.Clamp(leadTime, 0f, 16f);
 
             // Time to go calculation according to instantaneous change in range (dR/dt)
-            Vector3 Rdir = (targetPosition - ml.vessel.transform.position).normalized;
-            ttgo = -R / Vector3.Dot(targetVelocity - currVel, Rdir);
+            Vector3 Rdir = (targetPosition - ml.vessel.transform.position);
+            ttgo = -R*R / Vector3.Dot(targetVelocity - currVel, Rdir);
             float ttgoInv = 1f / ttgo;
 
             float leadTime = Mathf.Clamp(ttgo, 0f, 16f);
@@ -490,16 +490,14 @@ namespace BDArmory.Guidances
                     // If the target is at <  2 * termDist start mixing
                     if (targetDistance < 2 * termDist)
                     {
-                        float dummy;
-
                         if (homingModeTerminal == MissileBase.GuidanceModes.PN)
-                            return (1f - (targetDistance - termDist) / termDist) * GetPNTarget(targetPosition, targetVelocity, missileVessel, N, out timeToImpact, out dummy) + ((targetDistance - termDist) / termDist) * finalTargetPos;
+                            return (1f - (targetDistance - termDist) / termDist) * GetPNTarget(targetPosition, targetVelocity, missileVessel, N, out timeToImpact, out gLimit) + ((targetDistance - termDist) / termDist) * finalTargetPos;
                         else if (homingModeTerminal == MissileBase.GuidanceModes.APN)
-                            return (1f - (targetDistance - termDist) / termDist) * GetAPNTarget(targetPosition, targetVelocity, targetAcceleration, missileVessel, N, out timeToImpact, out dummy) + ((targetDistance - termDist) / termDist) * finalTargetPos;
+                            return (1f - (targetDistance - termDist) / termDist) * GetAPNTarget(targetPosition, targetVelocity, targetAcceleration, missileVessel, N, out timeToImpact, out gLimit) + ((targetDistance - termDist) / termDist) * finalTargetPos;
                         else if (homingModeTerminal == MissileBase.GuidanceModes.AAMPure)
                             return (1f - (targetDistance - termDist) / termDist) * targetPosition + ((targetDistance - termDist) / termDist) * finalTargetPos;
                         else
-                            return (1f - (targetDistance - termDist) / termDist) * GetPNTarget(targetPosition, targetVelocity, missileVessel, N, out timeToImpact, out dummy) + ((targetDistance - termDist) / termDist) * finalTargetPos; // Default to PN
+                            return (1f - (targetDistance - termDist) / termDist) * GetPNTarget(targetPosition, targetVelocity, missileVessel, N, out timeToImpact, out gLimit) + ((targetDistance - termDist) / termDist) * finalTargetPos; // Default to PN
                     }
 
                     // No mixing if targetDistance > 2 * termDist
