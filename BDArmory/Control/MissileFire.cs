@@ -2055,14 +2055,14 @@ namespace BDArmory.Control
                                     }
                                     else
                                     {
-                                        if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName}'s {CurrentMissile.name} could not lock, attempting unguided fire.");
+                                        if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName}'s {(CurrentMissile ? CurrentMissile.name : "null missile")} could not lock, attempting unguided fire.");
                                         unguidedWeapon = true; //so let them be used as unguided ordinance
                                     }
                                 }
                             }
                             else //no radar, missiles now expensive unguided ordinance
                             {
-                                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName}'s {CurrentMissile.name} has no radar, attempting unguided fire.");
+                                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName}'s {(CurrentMissile ? CurrentMissile.name : "null missile")} has no radar, attempting unguided fire.");
                                 unguidedWeapon = true; //so let them be used as unguided ordinance
                             }
                             break;
@@ -2475,7 +2475,7 @@ namespace BDArmory.Control
                     MissileLauncher mlauncher = ml as MissileLauncher;
                     if (mlauncher && mlauncher.multiLauncher && mlauncher.multiLauncher.overrideReferenceTransform)
                     {
-                        if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName}'s {CurrentMissile.name} launched from MML, aborting unguided launch.");
+                        if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName}'s {(CurrentMissile ? CurrentMissile.name : "null missile")} launched from MML, aborting unguided launch.");
                     }
                     else
                     {
@@ -6435,7 +6435,7 @@ namespace BDArmory.Control
                         }
                         else
                         {
-                            if (PreviousMissile != null && PreviousMissile.ActiveRadar && PreviousMissile.targetVessel != null && PreviousMissile.targetVessel.Vessel != null) //previous missile has gone active, don't need that lock anymore
+                            if (PreviousMissile != null && PreviousMissile.ActiveRadar && PreviousMissile.targetVessel != null) //previous missile has gone active, don't need that lock anymore
                             {
                                 vesselRadarData.UnlockSelectedTarget(PreviousMissile.targetVessel.Vessel);
                             }
@@ -6858,7 +6858,7 @@ namespace BDArmory.Control
                 if (ml.targetVessel != null) Debug.Log($"[BDArmory.MissileData]: targetInfo sent for {ml.targetVessel.Vessel.GetName()}");
             }
             if (BDArmorySettings.DEBUG_MISSILES)
-                Debug.Log($"[BDArmory.MissileData]: firing missile at {(currentTarget != null ? currentTarget.Vessel.GetName() : "null target")}");
+                Debug.Log($"[BDArmory.MissileData]: firing missile at {(currentTarget != null && currentTarget.Vessel != null ? currentTarget.Vessel.GetName() : "null target")}");
         }
 
         #endregion Targeting
