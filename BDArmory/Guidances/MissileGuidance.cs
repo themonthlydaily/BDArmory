@@ -205,8 +205,16 @@ namespace BDArmory.Guidances
 
                 // Final velocity is shaped by shapingAngle, we want the missile to dive onto the target but we don't want to affect the
                 // horizontal components of velocity
-                Vector3 vF = velDirection.ProjectOnPlanePreNormalized(upDirection).normalized;
-                vF = currSpeed * (Mathf.Cos(shapingAngle) * vF - Mathf.Sin(shapingAngle) * upDirection);
+                Vector3 vF;
+                if (shapingAngle == 0f)
+                {
+                    vF = currVel;
+                }
+                else
+                {
+                    vF = velDirection.ProjectOnPlanePreNormalized(upDirection).normalized;
+                    vF = currSpeed * (Mathf.Cos(shapingAngle) * vF - Mathf.Sin(shapingAngle) * upDirection);
+                }
 
                 // Gains for velocity error and positional error
                 float K1;
@@ -215,9 +223,12 @@ namespace BDArmory.Guidances
                 // If we're above terminal homing range
                 if (R > terminalHomingRange)
                 {
-                    // As we get closer to the target we want to focus on the positional error, not the velocity error
-                    float factor = Mathf.Min(0.5f * (R - terminalHomingRange) / terminalHomingRange, 1f);
-                    vF = factor * vF + (1f - factor) * currVel;
+                    if (shapingAngle != 0f)
+                    {
+                        // As we get closer to the target we want to focus on the positional error, not the velocity error
+                        float factor = Mathf.Min(0.5f * (R - terminalHomingRange) / terminalHomingRange, 1f);
+                        vF = factor * vF + (1f - factor) * currVel;
+                    }
 
                     // Dynamic pressure times the lift area
                     float qS = (float)(0.5f * ml.vessel.atmDensity * ml.vessel.srfSpeed * ml.vessel.srfSpeed) * ml.liftArea;
