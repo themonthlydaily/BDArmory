@@ -1351,7 +1351,6 @@ namespace BDArmory.Weapons.Missiles
                 try { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG null BDATargetManager.FiredMissiles?: " + (BDATargetManager.FiredMissiles == null)); } catch (Exception e2) { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG BDATargetManager.FiredMissiles: " + e2.Message); }
                 try { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG null vessel?: " + (vessel == null)); } catch (Exception e2) { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG vessel: " + e2.Message); }
                 try { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG null targetVessel?: " + (targetVessel == null)); } catch (Exception e2) { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG targetVessel: " + e2.Message); }
-                try { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG null targetVessel.Vessel?: " + (targetVessel.Vessel == null)); } catch (Exception e2) { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG targetVessel.Vessel: " + e2.Message); }
                 try { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG null sfAudioSource?: " + (sfAudioSource == null)); } catch (Exception e2) { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG sfAudioSource: " + e2.Message); }
                 throw; // Re-throw the exception so behaviour is unchanged so we see it.
             }

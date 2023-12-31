@@ -6435,7 +6435,7 @@ namespace BDArmory.Control
                         }
                         else
                         {
-                            if (PreviousMissile != null && PreviousMissile.ActiveRadar && PreviousMissile.targetVessel != null && PreviousMissile.targetVessel.Vessel != null) //previous missile has gone active, don't need that lock anymore
+                            if (PreviousMissile != null && PreviousMissile.ActiveRadar && PreviousMissile.targetVessel != null) //previous missile has gone active, don't need that lock anymore
                             {
                                 vesselRadarData.UnlockSelectedTarget(PreviousMissile.targetVessel.Vessel);
                             }
@@ -6855,7 +6855,7 @@ namespace BDArmory.Control
             if (BDArmorySettings.DEBUG_MISSILES)
             {
                 Debug.Log($"[BDArmory.MissileData]: Sending targetInfo to {(dumbfire ? "dumbfire" : "")}{Enum.GetName(typeof(MissileBase.TargetingModes), ml.TargetingMode)} Missile...");
-                if (ml.targetVessel != null) Debug.Log($"[BDArmory.MissileData]: targetInfo sent for {(ml.targetVessel.Vessel != null ? ml.targetVessel.Vessel.GetName() : "null target")}");
+                if (ml.targetVessel != null) Debug.Log($"[BDArmory.MissileData]: targetInfo sent for {ml.targetVessel.Vessel.GetName()}");
             }
             if (BDArmorySettings.DEBUG_MISSILES)
                 Debug.Log($"[BDArmory.MissileData]: firing missile at {(currentTarget != null && currentTarget.Vessel != null ? currentTarget.Vessel.GetName() : "null target")}");

@@ -406,7 +406,7 @@ namespace BDArmory.Weapons.Missiles
         {
             get
             {
-                if (_targetVessel != null && _targetVessel.Vessel == null) _targetVessel = null;
+                if (_targetVessel != null && _targetVessel.Vessel == null) _targetVessel = null; // The vessel could die before _targetVessel gets cleared otherwise.
                 return _targetVessel;
             }
             set
