@@ -35,6 +35,11 @@ namespace BDArmory.UI
         private float updateList = 0;
         private bool maySavethisInstance = false;
 
+        // Opacity Settings
+        internal const float textOpacity = 1f;
+        internal const float iconOpacity = 0.5f;
+        internal const float localToGlobalOpacity = 0.02f; // Conversion between BDATeamIcons.Opacity and BDTISettings.OPACITY
+
         public SortedList<string, List<MissileFire>> weaponManagers = new SortedList<string, List<MissileFire>>();
 
         public static string textureDir = "BDArmory/Textures/";
@@ -409,6 +414,8 @@ namespace BDArmory.UI
                 line -= 0.15f;
                 GUI.Label(new Rect(15, line++ * 25, toolWindowWidth - 20, 20), $"{StringUtils.Localize("#LOC_BDArmory_Icon_distance_threshold")} {BDTISettings.DISTANCE_THRESHOLD:0}m");
                 BDTISettings.DISTANCE_THRESHOLD = BDAMath.RoundToUnit(GUI.HorizontalSlider(new Rect(10, line++ * 25, toolWindowWidth - 40, 20), BDTISettings.DISTANCE_THRESHOLD, 10f, 250f), 10f);
+                GUI.Label(new Rect(15, line++ * 25, toolWindowWidth - 20, 20), $"{StringUtils.Localize("#LOC_BDArmory_Icon_opacity")} {BDTISettings.OPACITY:0}%");
+                BDTISettings.OPACITY = BDAMath.RoundToUnit(GUI.HorizontalSlider(new Rect(10, line++ * 25, toolWindowWidth - 40, 20), BDTISettings.OPACITY, 0f, 100f), 1f);
                 GUI.Label(new Rect(15, line++ * 25, toolWindowWidth - 20, 20), $"{StringUtils.Localize("#LOC_BDArmory_Icon_max_distance_threshold")} {(BDTISettings.MAX_DISTANCE_THRESHOLD < BDArmorySettings.MAX_GUARD_VISUAL_RANGE ? $"{BDTISettings.MAX_DISTANCE_THRESHOLD / 1000f:0}km" : "Unlimited")}");
                 BDTISettings.MAX_DISTANCE_THRESHOLD = UI_FloatSemiLogRange.ToSemiLogValue(Mathf.Round(GUI.HorizontalSlider(new Rect(10, line++ * 25, toolWindowWidth - 40, 20), UI_FloatSemiLogRange.FromSemiLogValue(BDTISettings.MAX_DISTANCE_THRESHOLD / 1000f, 1f), 1f, UI_FloatSemiLogRange.FromSemiLogValue(BDArmorySettings.MAX_GUARD_VISUAL_RANGE / 1000f, 1f))), 1f, 1) * 1000f;
                 GUI.EndGroup();

@@ -4,6 +4,9 @@
 	- Fix Krakensbane adjustments when the active vessel dies.
 	- Fix tracer visuals when the active vessel dies.
 	- Adjust timing and conditions for auto-camera switching to and away from missiles.
+	- Battle damage fuel leak rates now scale by (bullet caliber)^2, instead of (bullet caliber). Fuel leak rates for 20mm caliber remain the same, calibers higher and lower than 20mm will now have higher and lower leak rates, respectively.
+- UI:
+	- New Opacity option in BDA Team Icons to set icon opacity.
 - AI / WM:
 	- Invert the roll target when the fly-to direction is below and behind the craft within the Immelmann turn angle.
 	- Fix automatic gun range adjustments in the WM again.
