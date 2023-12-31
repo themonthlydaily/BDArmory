@@ -212,7 +212,7 @@ namespace BDArmory.Radar
                 else
                 {
                     if (displayedTargets[i].targetData.Team == mf.Team) continue;
-                    if (displayedTargets[i].targetData.signalStrength > targetMagnitude )
+                    if (displayedTargets[i].targetData.signalStrength > targetMagnitude)
                     {
                         targetMagnitude = displayedTargets[i].targetData.signalStrength;
                         brightestTarget = i;
@@ -1023,6 +1023,7 @@ namespace BDArmory.Radar
 
                 for (int i = 0; i < rCount; i++)
                 {
+                    if (availableRadars[i] == null || availableRadars[i].gameObject == null) continue;
                     bool canScan = availableRadars[i].canScan;
                     bool canTrackWhileScan = availableRadars[i].canTrackWhileScan;
                     bool islocked = availableRadars[i].locked;
@@ -1076,6 +1077,7 @@ namespace BDArmory.Radar
                 }
                 for (int i = 0; i < iCount; i++)
                 {
+                    if (availableIRSTs[i] == null || availableIRSTs[i].gameObject == null) continue;
                     bool canScan = availableIRSTs[i].canScan;
                     float currentAngle = availableIRSTs[i].currentAngle;
 

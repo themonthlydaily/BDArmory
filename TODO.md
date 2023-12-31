@@ -12,11 +12,12 @@
 
 - Add tooltips to settings.
 - Add thumbnails to the craft browser.
+- Figure out how to add a 0 value to UI_FloatSemiLogRange sliders.
+- Stability of the targeting cam when slewing with the mouse (jitter).
 
 - Wiki entries
 	- Auto-Tuning
 
-- Stability of the targeting cam when slewing with the mouse.
 - Requests from discord:
 	- ? Add an action group trigger to the WM based on the current target being an enemy vessel within a custom distance. - Make it a collapsable section of custom triggers to include other conditions later.
 	- Artillery aiming support

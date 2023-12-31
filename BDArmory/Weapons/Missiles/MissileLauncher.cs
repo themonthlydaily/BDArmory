@@ -1345,11 +1345,13 @@ namespace BDArmory.Weapons.Missiles
             }
             catch (Exception e)
             {
-                Debug.LogError("[BDArmory.MissileLauncher]: DEBUG " + e.Message);
+                Debug.LogError("[BDArmory.MissileLauncher]: DEBUG " + e.Message + "\n" + e.StackTrace);
                 try { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG null part?: " + (part == null)); } catch (Exception e2) { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG part: " + e2.Message); }
                 try { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG null part.rb?: " + (part.rb == null)); } catch (Exception e2) { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG part.rb: " + e2.Message); }
                 try { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG null BDATargetManager.FiredMissiles?: " + (BDATargetManager.FiredMissiles == null)); } catch (Exception e2) { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG BDATargetManager.FiredMissiles: " + e2.Message); }
                 try { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG null vessel?: " + (vessel == null)); } catch (Exception e2) { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG vessel: " + e2.Message); }
+                try { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG null targetVessel?: " + (targetVessel == null)); } catch (Exception e2) { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG targetVessel: " + e2.Message); }
+                try { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG null targetVessel.Vessel?: " + (targetVessel.Vessel == null)); } catch (Exception e2) { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG targetVessel.Vessel: " + e2.Message); }
                 try { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG null sfAudioSource?: " + (sfAudioSource == null)); } catch (Exception e2) { Debug.LogWarning("[BDArmory.MissileLauncher]: DEBUG sfAudioSource: " + e2.Message); }
                 throw; // Re-throw the exception so behaviour is unchanged so we see it.
             }
@@ -2128,7 +2130,7 @@ namespace BDArmory.Weapons.Missiles
             if (string.IsNullOrEmpty(boostTransformName))
             {
                 boostEmitters = pEmitters;
-                if (hasRCS && rcsTransforms!=null) boostEmitters.RemoveAll(pe => rcsTransforms.Contains(pe));
+                if (hasRCS && rcsTransforms != null) boostEmitters.RemoveAll(pe => rcsTransforms.Contains(pe));
                 if (hasRCS && forwardRCS && !boostEmitters.Contains(forwardRCS)) boostEmitters.Add(forwardRCS);
                 boostGaplessEmitters = gaplessEmitters;
             }
@@ -2790,8 +2792,8 @@ namespace BDArmory.Weapons.Missiles
 
         void SetupRCS()
         {
-            rcsFiredTimes = [ 0, 0, 0, 0 ];
-            rcsTransforms = [ upRCS, leftRCS, rightRCS, downRCS ];
+            rcsFiredTimes = [0, 0, 0, 0];
+            rcsTransforms = [upRCS, leftRCS, rightRCS, downRCS];
         }
 
         void DoRCS()

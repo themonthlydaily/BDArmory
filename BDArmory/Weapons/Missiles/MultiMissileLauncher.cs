@@ -1055,14 +1055,17 @@ namespace BDArmory.Weapons.Missiles
             if (deployState != null)
             {
                 yield return new WaitForSecondsFixed(0.5f); //wait for missile to clear bay
-                deployState.enabled = true;
-                deployState.speed = -deploySpeed / deployState.length;
-                yield return new WaitWhileFixed(() => deployState != null && deployState.normalizedTime > 0);
                 if (deployState != null)
                 {
-                    deployState.normalizedTime = 0;
-                    deployState.speed = 0;
-                    deployState.enabled = false;
+                    deployState.enabled = true;
+                    deployState.speed = -deploySpeed / deployState.length;
+                    yield return new WaitWhileFixed(() => deployState != null && deployState.normalizedTime > 0);
+                    if (deployState != null)
+                    {
+                        deployState.normalizedTime = 0;
+                        deployState.speed = 0;
+                        deployState.enabled = false;
+                    }
                 }
             }
             if (missileLauncher == null) yield break;
