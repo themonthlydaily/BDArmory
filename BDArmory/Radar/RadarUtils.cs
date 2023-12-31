@@ -13,7 +13,6 @@ using BDArmory.Utils;
 using BDArmory.Weapons;
 using BDArmory.Weapons.Missiles;
 using BDArmory.Damage;
-using static FinePrint.ContractDefs;
 
 namespace BDArmory.Radar
 {
@@ -577,9 +576,9 @@ namespace BDArmory.Radar
                             r[i].material.SetColor("_RCSCOLOR", Color.white);
                             if (a != null && a.StealthRating < 1)
                             {
-                                StealthAdjust.r = a.StealthRating;
-                                StealthAdjust.g = a.StealthRating;
-                                StealthAdjust.b = a.StealthRating;
+                                StealthAdjust.r = BDArmorySettings.DEBUG_RADAR ? 1 : a.StealthRating;
+                                StealthAdjust.g = BDArmorySettings.DEBUG_RADAR ? 0 : a.StealthRating;
+                                StealthAdjust.b = BDArmorySettings.DEBUG_RADAR ? 0 : a.StealthRating;
                                 StealthAdjust.a = 1;
                                 r[i].material.SetColor("_RCSCOLOR", StealthAdjust);
                             }
@@ -646,7 +645,7 @@ namespace BDArmory.Radar
                 aspect = Vector3.RotateTowards(aspect, Vector3.Cross(t.right, t.up), -rcsAspects[i, 1] / 180f * Mathf.PI, 0);
 
                 // Render aspect
-                RenderSinglePass(v, t, false, aspect, vesselbounds, radarDistance, radarFOV, rcsRenderingVariable, drawTextureVariable);
+                RenderSinglePass(t, false, aspect, vesselbounds, radarDistance, radarFOV, rcsRenderingVariable, drawTextureVariable);
 
                 // Count pixel colors to determine radar returns
                 rcsVariable = 0;
@@ -738,10 +737,9 @@ namespace BDArmory.Radar
                 aspect3 = Vector3.RotateTowards(aspect3, Vector3.Cross(t.right, t.up), -editorRCSAspects[2, 1] / 180f * Mathf.PI, 0);
 
                 // Render three highest aspects
-                RenderSinglePass(v, t, inEditorZoom, aspect1, vesselbounds, radarDistance, radarFOV, rcsRendering1, drawTexture1);
-                RenderSinglePass(v, t, inEditorZoom, aspect2, vesselbounds, radarDistance, radarFOV, rcsRendering2, drawTexture2);
-                RenderSinglePass(v, t, inEditorZoom, aspect3, vesselbounds, radarDistance, radarFOV, rcsRendering3, drawTexture3);
-
+                RenderSinglePass(t, inEditorZoom, aspect1, vesselbounds, radarDistance, radarFOV, rcsRendering1, drawTexture1);
+                RenderSinglePass(t, inEditorZoom, aspect2, vesselbounds, radarDistance, radarFOV, rcsRendering2, drawTexture2);
+                RenderSinglePass(t, inEditorZoom, aspect3, vesselbounds, radarDistance, radarFOV, rcsRendering3, drawTexture3);
             }
             else
             {
@@ -763,53 +761,55 @@ namespace BDArmory.Radar
                     v.SetRotation(priorRotation);
                     v.SetPosition(v.transform.position - presentationPosition);
                 }
-                using (List<Part>.Enumerator parts = (HighLogic.LoadedSceneIsEditor ? EditorLogic.fetch.ship.Parts.GetEnumerator() : v.parts.GetEnumerator()))
-                    while (parts.MoveNext())
+            }
+
+            using (List<Part>.Enumerator parts = (HighLogic.LoadedSceneIsEditor ? EditorLogic.fetch.ship.Parts.GetEnumerator() : v.parts.GetEnumerator()))
+                while (parts.MoveNext())
+                {
+                    HitpointTracker a = parts.Current.GetComponent<HitpointTracker>();
+                    FlagDecal flag = parts.Current.GetComponent<FlagDecal>();
+                    if (flag != null)
                     {
-                        HitpointTracker a = parts.Current.GetComponent<HitpointTracker>();
-                        FlagDecal flag = parts.Current.GetComponent<FlagDecal>();
-                        if (flag != null)
+                        if (!flag.flagDisplayed)
                         {
-                            if (!flag.flagDisplayed)
-                            {
-                                flag.ToggleFlag();
-                            }
+                            flag.ToggleFlag();
                         }
-                        var r = parts.Current.GetComponentsInChildren<Renderer>();
-                        for (int i = 0; i < r.Length; i++)
+                    }
+                    var r = parts.Current.GetComponentsInChildren<Renderer>();
+                    for (int i = 0; i < r.Length; i++)
+                    {
+                        if (r[i].material.shader != a.defaultShader[i])
                         {
-                            if (r[i].material.shader != a.defaultShader[i])
+                            if (a.defaultShader[i] != null)
                             {
-                                if (a.defaultShader[i] != null)
+                                r[i].material.shader = a.defaultShader[i];
+                            }
+                            if (a.defaultColor[i] != null)
+                            {
+                                if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
                                 {
-                                    r[i].material.shader = a.defaultShader[i];
-                                }
-                                if (a.defaultColor[i] != null)
-                                {
-                                    if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
-                                    {
-                                        r[i].material.SetColor("_MainTex", a.defaultColor[i]); //this doesn't work either
-                                    }
-                                    else
-                                    {
-                                        r[i].material.SetColor("_Color", a.defaultColor[i]);
-                                    }
+                                    r[i].material.SetColor("_MainTex", a.defaultColor[i]); //this doesn't work either
                                 }
                                 else
                                 {
-                                    if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
-                                    {
-                                        r[i].material.SetColor("_MainTex", Color.white);
-                                    }
-                                    else
-                                    {
-                                        r[i].material.SetColor("_Color", Color.white);
-                                    }
+                                    r[i].material.SetColor("_Color", a.defaultColor[i]);
+                                }
+                            }
+                            else
+                            {
+                                if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
+                                {
+                                    r[i].material.SetColor("_MainTex", Color.white);
+                                }
+                                else
+                                {
+                                    r[i].material.SetColor("_Color", Color.white);
                                 }
                             }
                         }
                     }
-            }
+                }
+
 
             // If in editor, turn back on rendering of conformal decals
             if (!HighLogic.LoadedSceneIsFlight && CheckForConformalDecals())
@@ -1067,16 +1067,16 @@ namespace BDArmory.Radar
             }
 
             // pass1: frontal
-            RenderSinglePass(v, t, inEditorZoom, t.up, vesselbounds, radarDistance, radarFOV, rcsRenderingFrontal, drawTextureFrontal);
+            RenderSinglePass(t, inEditorZoom, t.up, vesselbounds, radarDistance, radarFOV, rcsRenderingFrontal, drawTextureFrontal);
             // pass2: lateral
-            RenderSinglePass(v, t, inEditorZoom, t.right, vesselbounds, radarDistance, radarFOV, rcsRenderingLateral, drawTextureLateral);
+            RenderSinglePass(t, inEditorZoom, t.right, vesselbounds, radarDistance, radarFOV, rcsRenderingLateral, drawTextureLateral);
             // pass3: Ventral
-            RenderSinglePass(v, t, inEditorZoom, t.forward, vesselbounds, radarDistance, radarFOV, rcsRenderingVentral, drawTextureVentral);
+            RenderSinglePass(t, inEditorZoom, t.forward, vesselbounds, radarDistance, radarFOV, rcsRenderingVentral, drawTextureVentral);
 
             //additional 45� offset renderings:
-            RenderSinglePass(v, t, inEditorZoom, (t.up + t.right), vesselbounds, radarDistance, radarFOV, rcsRenderingFrontal, drawTextureFrontal45);
-            RenderSinglePass(v, t, inEditorZoom, (t.right + t.forward), vesselbounds, radarDistance, radarFOV, rcsRenderingLateral, drawTextureLateral45);
-            RenderSinglePass(v, t, inEditorZoom, (t.forward - t.up), vesselbounds, radarDistance, radarFOV, rcsRenderingVentral, drawTextureVentral45);
+            RenderSinglePass(t, inEditorZoom, (t.up + t.right), vesselbounds, radarDistance, radarFOV, rcsRenderingFrontal, drawTextureFrontal45);
+            RenderSinglePass(t, inEditorZoom, (t.right + t.forward), vesselbounds, radarDistance, radarFOV, rcsRenderingLateral, drawTextureLateral45);
+            RenderSinglePass(t, inEditorZoom, (t.forward - t.up), vesselbounds, radarDistance, radarFOV, rcsRenderingVentral, drawTextureVentral45);
 
             // revert presentation (only if outside editor and thus vessel is a real vessel)
             if (HighLogic.LoadedSceneIsFlight)
@@ -1128,7 +1128,7 @@ namespace BDArmory.Radar
         /// <summary>
         /// Internal helpder method
         /// </summary>
-        private static void RenderSinglePass(Vessel v, Transform t, bool inEditorZoom, Vector3 cameraDirection, Bounds vesselbounds, float radarDistance, float radarFOV, RenderTexture rcsRendering, Texture2D rcsTexture)
+        private static void RenderSinglePass(Transform t, bool inEditorZoom, Vector3 cameraDirection, Bounds vesselbounds, float radarDistance, float radarFOV, RenderTexture rcsRendering, Texture2D rcsTexture)
         {
             // Render one snapshop pass:
             // setup camera FOV
@@ -1146,7 +1146,8 @@ namespace BDArmory.Radar
 
             radarCam.targetTexture = rcsRendering;
             Shader.SetGlobalVector("_LIGHTDIR", -cameraDirection);
-            radarCam.Render();
+            Shader.SetGlobalColor("_RCSCOLOR", Color.white);
+            radarCam.RenderWithShader(BDAShaderLoader.RCSShader, string.Empty);
             rcsTexture.ReadPixels(new Rect(0, 0, radarResolution, radarResolution), 0, 0);
             rcsTexture.Apply();
         }
