@@ -2497,7 +2497,7 @@ namespace BDArmory.Control
                                     mlauncher.missileTurret.slaved = true;
                                     mlauncher.missileTurret.slavedTargetPosition = MissileGuidance.GetAirToAirFireSolution(ml, targetVessel);
                                     mlauncher.missileTurret.SlavedAim();
-                                    yield return new WaitForFixedUpdate();
+                                    yield return wait;
                                 }
                             }
                             if (mlauncher.multiLauncher && mlauncher.multiLauncher.turret)
@@ -2508,7 +2508,7 @@ namespace BDArmory.Control
                                     mlauncher.multiLauncher.turret.slaved = true;
                                     mlauncher.multiLauncher.turret.slavedTargetPosition = MissileGuidance.GetAirToAirFireSolution(ml, targetVessel);
                                     mlauncher.multiLauncher.turret.SlavedAim();
-                                    yield return new WaitForFixedUpdate();
+                                    yield return wait;
                                 }
                             }
                         }
@@ -6851,13 +6851,25 @@ namespace BDArmory.Control
                                     targetVessel = vesselRadarData.activeIRTarget(null, this).vessel;
                                 }
                             }
-                            if (validTarget) designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(targetVessel.CoM, vessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
-                            else designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(ml.MissileReferenceTransform.position + ml.MissileReferenceTransform.forward * 10000, vessel.mainBody), "null target");
-                        }
-                        if (ml.GetWeaponClass() == WeaponClasses.Bomb)
-                        {
-                            dumbfire = true;
-                            validTarget = true;
+                            if (validTarget)
+                            {
+                                Vector3 TargetLead = MissileGuidance.GetAirToAirFireSolution(ml, targetVessel.CoM, targetVessel.Velocity());
+                                designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(TargetLead, targetVessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
+                            }
+                            else
+                            {
+                                if (ml.GetWeaponClass() == WeaponClasses.Bomb)
+                                {
+                                    dumbfire = true;
+                                    validTarget = true;
+                                }
+                                else
+                                {
+                                    designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(ml.MissileReferenceTransform.position + ml.MissileReferenceTransform.forward * 10000, vessel.mainBody), "null target");
+                                }
+                            }
+                            ml.targetGPSCoords = designatedGPSCoords;
+                            ml.TargetAcquired = true;
                         }
                         break;
                     }
