@@ -2766,6 +2766,21 @@ namespace BDArmory.Weapons.Missiles
                 return MissileReferenceTransform.forward;
         }
 
+        public override float GetKinematicTime()
+        {
+            if (!launched) return -1f;
+
+            float missileKinematicTime = boostTime + cruiseTime + cruiseDelay + dropTime - TimeIndex;
+            float drag = deployed ? deployedDrag : simpleDrag;
+            float speed = (float)vessel.srfSpeed;
+            float dragAccel = 0.008f * drag * 0.5f * speed * speed * (float)vessel.atmDensity;
+            float minSpeed = Mathf.Max(optimumAirspeed / 2f, 200f);
+            if (speed > minSpeed)
+                missileKinematicTime += (speed - minSpeed) / dragAccel; // Add time for missile to slow down to min speed
+
+            return missileKinematicTime;
+        }
+
         protected override void PartDie(Part p)
         {
             if (p == part)

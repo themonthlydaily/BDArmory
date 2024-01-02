@@ -15,6 +15,8 @@ using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.Weapons;
 using BDArmory.Weapons.Missiles;
+using BDArmory.Radar;
+using BDArmory.Targeting;
 
 namespace BDArmory.Control
 {
@@ -390,6 +392,11 @@ namespace BDArmory.Control
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
             UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
         public bool evasionIgnoreMyTargetTargetingMe = false;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionMissileKinematic", advancedTweakable = true,//Kinematic missile evasion
+            groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
+            UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
+        public bool evasionMissileKinematic = false;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CollisionAvoidanceThreshold", advancedTweakable = true, //Vessel collision avoidance threshold
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
@@ -3163,7 +3170,7 @@ namespace BDArmory.Control
                     }
                     else // Fly at 90 deg to missile to put max distance between ourselves and dispensed flares/chaff
                     {
-                        if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Breaking from missile threat!");
+                        string missileEvasionStatus = "Breaking from missile threat!";
 
                         // Break off at 90 deg to missile
                         Vector3 threatDirection = -1f * weaponManager.incomingMissileVessel.Velocity();
@@ -3171,8 +3178,73 @@ namespace BDArmory.Control
                         float sign = Vector3.SignedAngle(threatDirection, vessel.Velocity().ProjectOnPlanePreNormalized(upDirection), upDirection);
                         Vector3 breakDirection = Vector3.Cross(Mathf.Sign(sign) * upDirection, threatDirection).ProjectOnPlanePreNormalized(upDirection);
 
+                        // Missile kinematics check to see if alternate break directions are better (crank or turn around and run)
+                        bool dive = true;
+                        if (evasionMissileKinematic && !vessel.InNearVacuum())
+                        {
+                            breakDirection = breakDirection.normalized;
+                            float missileKinematicTime = VesselModuleRegistry.GetMissileBase(weaponManager.incomingMissileVessel).GetKinematicTime();
+
+                            float crankAngle;
+                            VesselRadarData vrd = vessel.gameObject.GetComponent<VesselRadarData>();
+                            if (vrd)
+                                crankAngle = Mathf.Clamp(vrd.GetCrankFOV() / 2 - 5f, 5f, 90f);
+                            else
+                                crankAngle = 45f;
+
+                            Vector3 crankDir = Vector3.RotateTowards(breakDirection, threatDirection, (90f - crankAngle) * Mathf.Deg2Rad, 0).normalized;
+                            Vector3 fleeDir = -threatDirection.normalized;
+                            float missileSpeed = (float)weaponManager.incomingMissileVessel.srfSpeed;
+                            Vector3 missilePos = weaponManager.incomingMissileVessel.transform.position;
+                            Vector3 missileVel;   
+                            float timeToImpact = weaponManager.incomingMissileVessel.TimeToCPA(vesselTransform.position, Vector3.zero, Vector3.zero, missileKinematicTime);
+                            float notchTime = timeToImpact;
+                            float crankTime = timeToImpact;
+                            float fleeTime = timeToImpact;
+
+                            Vector3 futurePos;
+                            Vector3 futureVel;
+                            // Notch
+                            futureVel = (float)vessel.srfSpeed * breakDirection;
+                            futurePos = vesselTransform.position + notchTime * futureVel;
+                            missileVel = missileSpeed * (futurePos - missilePos).normalized;
+                            notchTime = AIUtils.TimeToCPA(vesselTransform.position - missilePos, futureVel - missileVel, Vector3.zero, missileKinematicTime);
+
+                            // Crank
+                            futureVel = (float)vessel.srfSpeed * crankDir;
+                            futurePos = vesselTransform.position + crankTime * futureVel;
+                            missileVel = missileSpeed * (futurePos - missilePos).normalized;
+                            crankTime = AIUtils.TimeToCPA(vesselTransform.position - missilePos, futureVel - missileVel, Vector3.zero, missileKinematicTime);
+
+                            // Run Away
+                            futureVel = (float)vessel.srfSpeed * fleeDir;
+                            futurePos = vesselTransform.position + fleeTime * futureVel;
+                            missileVel = missileSpeed * (futurePos - missilePos).normalized;
+                            fleeTime = AIUtils.TimeToCPA(vesselTransform.position - missilePos, futureVel - missileVel, Vector3.zero, missileKinematicTime);
+                            debugString.AppendLine($"Notch: {notchTime}s; Crank: {crankTime}s; Flee: {fleeTime}s; Missile: {missileKinematicTime}s");
+
+                            if (crankTime == missileKinematicTime || missileKinematicTime <= 0f) // Cranking will defeat missile 
+                            {
+                                breakDirection = crankDir;
+                                dive = false;
+                                missileEvasionStatus = "Cranking from missile threat!";
+                            }
+                            else if (notchTime == missileKinematicTime) // Notching without a dive will defeat missile
+                            {
+                                dive = false;
+                                missileEvasionStatus = "Notching from missile threat!";
+                            }
+                            else if (fleeTime == missileKinematicTime) // We need to run away and dive
+                            {
+                                breakDirection = fleeDir;
+                                missileEvasionStatus = "Flying away from missile threat!";
+                            }
+                            else //(times < missileKinematicTime), we need to dive and notch to have a chance against the missile
+                                missileEvasionStatus = "Notching and diving from missile threat";
+                        }
+
                         // Dive to gain energy and hopefully lead missile into ground when not in space
-                        if (!vessel.InNearVacuum())
+                        if (!vessel.InNearVacuum() && dive)
                         {
                             float diveScale = Mathf.Max(1000f, 2f * turnRadius);
                             float angle = Mathf.Clamp((float)vessel.radarAltitude - minAltitude, 0, diveScale) / diveScale * 90;
@@ -3197,6 +3269,7 @@ namespace BDArmory.Control
                             AdjustThrottle(maxSpeed, false, useAB);
                         }
                         overrideThrottle = true;
+                        if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine(missileEvasionStatus);
                     }
                     if (belowMinAltitude)
                     {

@@ -13,6 +13,7 @@ using BDArmory.Targeting;
 using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.VesselSpawning;
+using static VehiclePhysics.VPAudio;
 
 namespace BDArmory.Weapons.Missiles
 {
@@ -1575,6 +1576,23 @@ namespace BDArmory.Weapons.Missiles
         public override Vector3 GetForwardTransform()
         {
             return GetTransform(ForwardTransformAxis);
+        }
+
+        public override float GetKinematicTime()
+        {
+            if (!_missileIgnited) return -1f;
+
+            float deltaV = (float)vessel.GetDeltaV();
+            float accel = VesselModuleRegistry.GetModuleEngines(weaponManager.incomingMissileVessel).Where(e => e != null && e.EngineIgnited && e.isOperational).Sum(e => e.GetCurrentThrust()) / weaponManager.incomingMissileVessel.GetTotalMass();
+            float missileKinematicTime = deltaV / accel; // FIXME, there must be a better way to calculate burn time
+            float drag = vessel.parts.Sum(x => x.dragScalar);
+            float speed = (float)vessel.srfSpeed;
+            float dragAccel = 0.008f * drag * 0.5f * speed * speed * (float)vessel.atmDensity;
+            float minSpeed = Mathf.Max(MinSpeedGuidance, 200f);
+            if (speed > minSpeed)
+                missileKinematicTime += (speed - minSpeed) / dragAccel; // Add time for missile to slow down to min speed
+
+            return missileKinematicTime;
         }
 
         public Vector3 GetTransform(TransformAxisVectors transformAxis)
