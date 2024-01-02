@@ -1052,7 +1052,7 @@ namespace BDArmory.Weapons.Missiles
                 ml.launched = true;
                 if (ml.TargetPosition == Vector3.zero) ml.TargetPosition = missileLauncher.MissileReferenceTransform.position + (missileLauncher.MissileReferenceTransform.forward * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
                 ml.MissileLaunch();
-                wpm.heatTarget = TargetSignatureData.noTarget;
+                if (wpm != null) wpm.heatTarget = TargetSignatureData.noTarget;
             }
             missileLauncher.launched = true;
             using (List<TargetInfo>.Enumerator Tgt = targetsAssigned.GetEnumerator())
