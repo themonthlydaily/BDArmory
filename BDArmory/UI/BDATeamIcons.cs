@@ -478,9 +478,9 @@ namespace BDArmory.UI
         {
             // Update opacity for DropshadowStyle, mIStyle, Missilecolor. IconUIStyle opacity
             // is updated in OnGUI().
-            if (forceUpdate || Opacity != BDTISettings.OPACITY * BDTISetup.localToGlobalOpacity)
+            if (forceUpdate || Opacity != BDTISettings.OPACITY)
             {
-                Opacity = BDTISettings.OPACITY * BDTISetup.localToGlobalOpacity;
+                Opacity = BDTISettings.OPACITY;
 
                 Teamcolor.a = Opacity;
                 Color temp;
