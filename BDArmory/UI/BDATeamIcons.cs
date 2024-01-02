@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
-
 using BDArmory.Competition;
 using BDArmory.Settings;
 using BDArmory.Utils;
