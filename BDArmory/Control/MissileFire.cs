@@ -7415,7 +7415,7 @@ namespace BDArmory.Control
                         else
                         {
                             //weapon.Current.visualTargetVessel = guardTarget;
-                            weapon.Current.visualTargetVessel = targetsAssigned[0].Vessel; //make sure all guns targeting the same target, to ensure the leadOffest is the same, and that the Ai isn't trying to use the leadOffset from a turret
+                            weapon.Current.visualTargetVessel = targetsAssigned.Count > 0 && targetsAssigned[0].Vessel != null ? targetsAssigned[0].Vessel : guardTarget; //make sure all guns targeting the same target, to ensure the leadOffest is the same, and that the Ai isn't trying to use the leadOffset from a turret
                             //Debug.Log("[BDArmory.MTD]: target from list was null, defaulting to " + guardTarget.name);
                         }
                     }
