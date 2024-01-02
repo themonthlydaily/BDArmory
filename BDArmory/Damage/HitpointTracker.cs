@@ -513,9 +513,16 @@ namespace BDArmory.Damage
                 {
                     if (!isProcWing) //procWings handled elsewhere
                     {
-                        if ((float)part.Modules.GetModule<ModuleLiftingSurface>().deflectionLiftCoeff < (Mathf.Max(partSize.x, partSize.y) * Mathf.Max (partSize.y, partSize.z) / 3.52f)) 
+                        if (!FerramAerospace.CheckForFAR())
                         {
-                            sizeAdjust = 0.5f; //wing is triangular
+                            if ((float)part.Modules.GetModule<ModuleLiftingSurface>().deflectionLiftCoeff < (Mathf.Max(partSize.x, partSize.y) * Mathf.Max(partSize.y, partSize.z) / 3.52f))
+                            {
+                                sizeAdjust = 0.5f; //wing is triangular
+                            }
+                        }
+                        else
+                        {
+                            if (FerramAerospace.GetFARWingSweep(part) > 0) sizeAdjust = 0.5f; //wing isn't rectangular
                         }
                     }
                 }

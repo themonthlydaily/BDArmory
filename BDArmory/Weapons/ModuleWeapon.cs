@@ -1538,16 +1538,20 @@ namespace BDArmory.Weapons
                             Debug.Log("[BDArmory.ModuleWeapon]: AmmoType Loaded : " + currentType);
                         if (beehive)
                         {
-                            if (!BulletInfo.bulletNames.Contains(rocketInfo.subMunitionType) && !RocketInfo.rocketNames.Contains(rocketInfo.subMunitionType))
+                            string[] subMunitionData = bulletInfo.subMunitionType.Split(new char[] { ';' });
+                            string projType = subMunitionData[0];
+                            string[] subrocketData = rocketInfo.subMunitionType.Split(new char[] { ';' });
+                            string rocketType = subMunitionData[0];
+                            if (!BulletInfo.bulletNames.Contains(projType) || !RocketInfo.rocketNames.Contains(rocketType))
                             {
                                 beehive = false;
                                 Debug.LogWarning("[BDArmory.ModuleWeapon]: Invalid submunition on : " + currentType);
                             }
                             else
                             {
-                                if (RocketInfo.rocketNames.Contains(rocketInfo.subMunitionType))
+                                if (RocketInfo.rocketNames.Contains(rocketType))
                                 {
-                                    RocketInfo sRocket = RocketInfo.rockets[rocketInfo.subMunitionType];
+                                    RocketInfo sRocket = RocketInfo.rockets[rocketType];
                                     SetupRocketPool(sRocket.name, sRocket.rocketModelPath); //Will need to move this if rockets ever get ammobelt functionality
                                 }
                             }
@@ -1567,7 +1571,9 @@ namespace BDArmory.Weapons
                             Debug.Log("[BDArmory.ModuleWeapon]: BulletType Loaded : " + currentType);
                         if (beehive)
                         {
-                            if (!BulletInfo.bulletNames.Contains(bulletInfo.subMunitionType))
+                            string[] subMunitionData = bulletInfo.subMunitionType.Split(new char[] { ';' });
+                            string projType = subMunitionData[0];
+                            if (!BulletInfo.bulletNames.Contains(projType))
                             {
                                 beehive = false;
                                 Debug.LogWarning("[BDArmory.ModuleWeapon]: Invalid submunition on : " + currentType);
@@ -1721,7 +1727,7 @@ namespace BDArmory.Weapons
         void AccAdjust(BaseField field, object obj)
         {
             maxDeviation = baseDeviation + ((baseDeviation / (baseRPM / roundsPerMinute)) - baseDeviation);
-            maxDeviation *= Mathf.Clamp(bulletInfo.subProjectileCount / 5, 1, 5); //modify deviation if shot vs slug
+            maxDeviation *= Mathf.Clamp(bulletInfo.projectileCount / 5, 1, 5); //modify deviation if shot vs slug
         }
         public string WeaponStatusdebug()
         {
@@ -2160,7 +2166,7 @@ namespace BDArmory.Weapons
                                     pBullet.beehive = beehive;
                                     if (bulletInfo.beehive)
                                     {
-                                        pBullet.subMunitionType = BulletInfo.bullets[bulletInfo.subMunitionType];
+                                        pBullet.subMunitionType = bulletInfo.subMunitionType;
                                     }
                                     //pBullet.homing = BulletInfo.homing;
                                     pBullet.impulse = Impulse;
@@ -5647,7 +5653,7 @@ namespace BDArmory.Weapons
                 caliber = bulletInfo.caliber;
                 bulletVelocity = bulletInfo.bulletVelocity;
                 bulletMass = bulletInfo.bulletMass;
-                ProjectileCount = bulletInfo.subProjectileCount;
+                ProjectileCount = bulletInfo.projectileCount;
                 bulletDragTypeName = bulletInfo.bulletDragTypeName;
                 projectileColorC = GUIUtils.ParseColor255(bulletInfo.projectileColor);
                 startColorC = GUIUtils.ParseColor255(bulletInfo.startColor);
@@ -5677,7 +5683,7 @@ namespace BDArmory.Weapons
                 if (!useCustomBelt)
                 {
                     baseBulletVelocity = bulletVelocity;
-                    if (bulletInfo.subProjectileCount > 1)
+                    if (bulletInfo.projectileCount > 1)
                     {
                         guiAmmoTypeString = StringUtils.Localize("#LOC_BDArmory_Ammo_Shot") + " ";
                         //maxDeviation *= Mathf.Clamp(bulletInfo.subProjectileCount/5, 2, 5); //modify deviation if shot vs slug
@@ -5741,14 +5747,14 @@ namespace BDArmory.Weapons
                 caliber = rocketInfo.caliber;
                 thrust = rocketInfo.thrust;
                 thrustTime = rocketInfo.thrustTime;
-                ProjectileCount = rocketInfo.subProjectileCount;
+                ProjectileCount = rocketInfo.projectileCount;
                 rocketModelPath = rocketInfo.rocketModelPath;
                 SelectedAmmoType = rocketInfo.name; //store selected ammo name as string for retrieval by web orc filter/later GUI implementation
                 beehive = rocketInfo.beehive;
                 tntMass = rocketInfo.tntMass;
                 Impulse = rocketInfo.force;
                 massAdjustment = rocketInfo.massMod;
-                if (rocketInfo.subProjectileCount > 1)
+                if (rocketInfo.projectileCount > 1)
                 {
                     guiAmmoTypeString = StringUtils.Localize("#LOC_BDArmory_Ammo_Shot") + " "; // maybe add an int value to these for future Missilefire SmartPick expansion? For now, choose loadouts carefuly!
                 }
@@ -5941,10 +5947,10 @@ namespace BDArmory.Weapons
                         output.AppendLine($"Bullet mass: {Math.Round(binfo.bulletMass, 2)} kg");
                         output.AppendLine($"Muzzle velocity: {Math.Round(binfo.bulletVelocity, 2)} m/s");
                         //output.AppendLine($"Explosive: {binfo.explosive}");
-                        if (binfo.subProjectileCount > 1)
+                        if (binfo.projectileCount > 1)
                         {
                             output.AppendLine($"Cannister Round");
-                            output.AppendLine($" - Submunition count: {binfo.subProjectileCount}");
+                            output.AppendLine($" - Submunition count: {binfo.projectileCount}");
                         }
                         output.AppendLine($"Estimated Penetration: {ProjectileUtils.CalculatePenetration(binfo.caliber, binfo.bulletVelocity, binfo.bulletMass, binfo.apBulletMod):F2} mm");
                         if ((binfo.tntMass > 0) && !binfo.nuclear)
@@ -5997,8 +6003,11 @@ namespace BDArmory.Weapons
                         if (binfo.beehive)
                         {
                             output.AppendLine($"Beehive Shell:");
-                            BulletInfo sinfo = BulletInfo.bullets[binfo.subMunitionType.ToString()];
-                            output.AppendLine($"- deploys {sinfo.subProjectileCount}x {(string.IsNullOrEmpty(sinfo.DisplayName) ? sinfo.name : sinfo.DisplayName)}");
+                            string[] subMunitionData = binfo.subMunitionType.Split(new char[] { ';' });
+                            string projType = subMunitionData[0];
+                            if (subMunitionData.Length < 2 || !int.TryParse(subMunitionData[1], out int count)) count = 1;
+                            BulletInfo sinfo = BulletInfo.bullets[projType];
+                            output.AppendLine($"- deploys {count}x {(string.IsNullOrEmpty(sinfo.DisplayName) ? sinfo.name : sinfo.DisplayName)}");
                         }
                     }
                 }
@@ -6037,10 +6046,10 @@ namespace BDArmory.Weapons
                             }
                         }
                         output.AppendLine("");
-                        if (rinfo.subProjectileCount > 1)
+                        if (rinfo.projectileCount > 1)
                         {
                             output.AppendLine($"Cluster Rocket");
-                            output.AppendLine($" - Submunition count: {rinfo.subProjectileCount}");
+                            output.AppendLine($" - Submunition count: {rinfo.projectileCount}");
                         }
                         if (impulseWeapon || graviticWeapon || choker || electroLaser || incendiary)
                         {
@@ -6073,15 +6082,18 @@ namespace BDArmory.Weapons
                             if (rinfo.beehive)
                             {
                                 output.AppendLine($"Cluster Rocket:");
-                                if (BulletInfo.bulletNames.Contains(rinfo.subMunitionType))
+                                string[] subMunitionData = rinfo.subMunitionType.Split(new char[] { ';' });
+                                string projType = subMunitionData[0];
+                                if (subMunitionData.Length < 2 || !int.TryParse(subMunitionData[1], out int count)) count = 1;
+                                if (BulletInfo.bulletNames.Contains(projType))
                                 {
-                                    BulletInfo sinfo = BulletInfo.bullets[rinfo.subMunitionType.ToString()];
-                                    output.AppendLine($"- deploys {sinfo.subProjectileCount}x {(string.IsNullOrEmpty(sinfo.DisplayName) ? sinfo.name : sinfo.DisplayName)}");
+                                    BulletInfo sinfo = BulletInfo.bullets[projType];
+                                    output.AppendLine($"- deploys {count}x {(string.IsNullOrEmpty(sinfo.DisplayName) ? sinfo.name : sinfo.DisplayName)}");
                                 }
-                                else if (RocketInfo.rocketNames.Contains(rinfo.subMunitionType))
+                                else if (RocketInfo.rocketNames.Contains(projType))
                                 {
-                                    RocketInfo sinfo = RocketInfo.rockets[rinfo.subMunitionType.ToString()];
-                                    output.AppendLine($"- deploys {sinfo.subProjectileCount}x {(string.IsNullOrEmpty(sinfo.DisplayName) ? sinfo.name : sinfo.DisplayName)}");
+                                    RocketInfo sinfo = RocketInfo.rockets[projType];
+                                    output.AppendLine($"- deploys {count}x {(string.IsNullOrEmpty(sinfo.DisplayName) ? sinfo.name : sinfo.DisplayName)}");
                                 }
                             }
                         }

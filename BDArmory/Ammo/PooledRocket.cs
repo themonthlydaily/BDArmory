@@ -863,12 +863,15 @@ namespace BDArmory.Bullets
         {
             if (subMunitionType == null)
             {
-                Debug.Log("[BDArmory.PooledBullet] Beehive round not configured with subMunitionType!");
+                Debug.Log("[BDArmory.PooledRocket] Beehive round not configured with subMunitionType!");
                 return;
             }
-            if (BulletInfo.bulletNames.Contains(subMunitionType))
+            string[] subMunitionData = subMunitionType.Split(new char[] { ';' });
+            string projType = subMunitionData[0];
+            if (subMunitionData.Length < 2 || !int.TryParse(subMunitionData[1], out int count)) count = 1;
+            if (BulletInfo.bulletNames.Contains(projType))
             {
-                BulletInfo sBullet = BulletInfo.bullets[subMunitionType];
+                BulletInfo sBullet = BulletInfo.bullets[projType];
                 string fuze = sBullet.fuzeType;
                 fuze.ToLower();
                 BulletFuzeTypes sFuze;
@@ -901,10 +904,10 @@ namespace BDArmory.Bullets
                 }
                 float relVelocity = (thrust / rocketMass) * Mathf.Clamp(Time.time - startTime, 0, thrustTime); //currVel is rocketVel + orbitalvel, if in orbit, which will dramatically increase dispersion cone angle, so using accel * time instad
                 float incrementVelocity = 1000 / (relVelocity + sBullet.bulletVelocity); //using 1km/s as a reference Unit 
-                float dispersionAngle = sBullet.subProjectileDispersion > 0 ? sBullet.subProjectileDispersion : BDAMath.Sqrt(sBullet.subProjectileCount) / 2; //fewer fragments/pellets are going to be larger-> move slower, less dispersion
+                float dispersionAngle = sBullet.subProjectileDispersion > 0 ? sBullet.subProjectileDispersion : BDAMath.Sqrt(count) / 2; //fewer fragments/pellets are going to be larger-> move slower, less dispersion
                 float dispersionVelocityforAngle = 1000 / incrementVelocity * Mathf.Sin(dispersionAngle * Mathf.Deg2Rad); // convert m/s despersion to angle, accounting for vel of round
 
-                for (int s = 0; s < sBullet.subProjectileCount; s++)
+                for (int s = 0; s < count; s++)
                 {
                     GameObject Bullet = ModuleWeapon.bulletPool.GetPooledObject();
                     PooledBullet pBullet = Bullet.GetComponent<PooledBullet>();
@@ -936,7 +939,7 @@ namespace BDArmory.Bullets
                     pBullet.tracerLuminance = 1.75f;
                     pBullet.bulletDrop = true;
 
-                    if (sBullet.tntMass > 0 || sBullet.beehive)
+                    if (sBullet.tntMass > 0)// || sBullet.beehive)
                     {
                         pBullet.explModelPath = explModelPath;
                         pBullet.explSoundPath = explSoundPath;
@@ -969,8 +972,8 @@ namespace BDArmory.Bullets
                     }
                     pBullet.EMP = sBullet.EMP;
                     pBullet.nuclear = sBullet.nuclear;
-                    pBullet.beehive = sBullet.beehive;
-                    pBullet.subMunitionType = BulletInfo.bullets[sBullet.subMunitionType];
+                    //pBullet.beehive = sBullet.beehive;
+                    //pBullet.subMunitionType = BulletInfo.bullets[sBullet.subMunitionType]; //submunitions of submunitions is a bit silly, and they'd be detonating immediately, due to inherited detonationRange
                     //pBullet.homing = BulletInfo.homing;
                     pBullet.impulse = sBullet.impulse;
                     pBullet.massMod = sBullet.massMod;
@@ -1002,8 +1005,8 @@ namespace BDArmory.Bullets
             }
             else
             {
-                RocketInfo sRocket = RocketInfo.rockets[subMunitionType];
-                for (int s = 0; s < sRocket.subProjectileCount; s++)
+                RocketInfo sRocket = RocketInfo.rockets[projType];
+                for (int s = 0; s < count; s++)
                 {
                     GameObject rocketObj = ModuleWeapon.rocketPool[sRocket.name].GetPooledObject();
                     rocketObj.transform.position = currentPosition;
@@ -1029,10 +1032,10 @@ namespace BDArmory.Bullets
                     rocket.EMP = sRocket.EMP;
                     rocket.nuclear = sRocket.nuclear;
                     rocket.beehive = sRocket.beehive;
-                    if (beehive)
-                    {
-                        rocket.subMunitionType = sRocket.subMunitionType;
-                    }
+                    //if (beehive) //no submunitions of submunitions, not while detoantionRange remains the sasme (sub-submunitions would instantly spawn)
+                    //{
+                    //    rocket.subMunitionType = sRocket.subMunitionType;
+                    //}
                     rocket.choker = choker;
                     rocket.impulse = sRocket.force;
                     rocket.massMod = sRocket.massMod;
