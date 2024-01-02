@@ -99,7 +99,7 @@ namespace BDArmory.UI
             {
                 bulletInfo = BulletInfo.bullets[AList[a].ToString()];
                 guiAmmoTypeString = "";
-                if (bulletInfo.subProjectileCount >= 2)
+                if (bulletInfo.projectileCount >= 2)
                 {
                     guiAmmoTypeString = StringUtils.Localize("#LOC_BDArmory_Ammo_Shot") + " ";
                 }
