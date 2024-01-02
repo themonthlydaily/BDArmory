@@ -1055,13 +1055,16 @@ namespace BDArmory.Weapons.Missiles
                 if (wpm != null) wpm.heatTarget = TargetSignatureData.noTarget;
             }
             missileLauncher.launched = true;
-            using (List<TargetInfo>.Enumerator Tgt = targetsAssigned.GetEnumerator())
-                while (Tgt.MoveNext())
-                {
-                    if (Tgt.Current == null) continue;
-                    if (!firedTargets.Contains(Tgt.Current))
-                        Tgt.Current.Disengage(wpm);
-                }
+            if (wpm != null)
+            {
+                using (List<TargetInfo>.Enumerator Tgt = targetsAssigned.GetEnumerator())
+                    while (Tgt.MoveNext())
+                    {
+                        if (Tgt.Current == null) continue;
+                        if (!firedTargets.Contains(Tgt.Current))
+                            Tgt.Current.Disengage(wpm);
+                    }
+            }
             if (deployState != null)
             {
                 yield return new WaitForSecondsFixed(0.5f); //wait for missile to clear bay
