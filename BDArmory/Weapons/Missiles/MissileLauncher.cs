@@ -2781,17 +2781,11 @@ namespace BDArmory.Weapons.Missiles
             else
             {
                 float AoA = Mathf.Clamp(Vector3.Angle(transform.forward, vessel.Velocity()), 0, 90);
-                FloatCurve dragCurve = MissileGuidance.DefaultDragCurve;
-                float dragMultiplier = BDArmorySettings.GLOBAL_DRAG_MULTIPLIER;
-                dragAccel = 0.5f * airDensity * speed * speed * liftArea * dragMultiplier * dragCurve.Evaluate(AoA) / part.mass;
-                Debug.Log($"0.5f * {airDensity} * {speed} * {speed} * {liftArea} * {dragMultiplier} * {dragCurve.Evaluate(AoA)} at {AoA} / {part.mass}");
-                Debug.Log($"{maxAoA} drag is {dragCurve.Evaluate(maxAoA)}");
+                dragAccel = 0.5f * airDensity * speed * speed * liftArea * BDArmorySettings.GLOBAL_DRAG_MULTIPLIER * Mathf.Max(MissileGuidance.DefaultDragCurve.Evaluate(AoA), 0f) / part.mass;
             }
             float minSpeed = GetKinematicSpeed();
             if (speed > minSpeed)
                 missileKinematicTime += (speed - minSpeed) / dragAccel; // Add time for missile to slow down to min speed
-
-            Debug.Log($"Time to reach {minSpeed} from {speed}, accel {dragAccel} is {missileKinematicTime}");
 
             return missileKinematicTime;
         }
