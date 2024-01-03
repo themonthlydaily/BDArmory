@@ -608,7 +608,7 @@ namespace BDArmory.Guidances
         public static FloatCurve DefaultLiftCurve = null;
         public static FloatCurve DefaultDragCurve = null;
 
-        public static Vector3 DoAeroForces(MissileLauncher ml, Vector3 targetPosition, float liftArea, float steerMult,
+        public static Vector3 DoAeroForces(MissileLauncher ml, Vector3 targetPosition, float liftArea, float dragArea, float steerMult,
             Vector3 previousTorque, float maxTorque, float maxAoA)
         {
             if (DefaultLiftCurve == null)
@@ -637,11 +637,11 @@ namespace BDArmory.Guidances
             FloatCurve liftCurve = DefaultLiftCurve;
             FloatCurve dragCurve = DefaultDragCurve;
 
-            return DoAeroForces(ml, targetPosition, liftArea, steerMult, previousTorque, maxTorque, maxAoA, liftCurve,
+            return DoAeroForces(ml, targetPosition, liftArea, dragArea, steerMult, previousTorque, maxTorque, maxAoA, liftCurve,
                 dragCurve);
         }
 
-        public static Vector3 DoAeroForces(MissileLauncher ml, Vector3 targetPosition, float liftArea, float steerMult,
+        public static Vector3 DoAeroForces(MissileLauncher ml, Vector3 targetPosition, float liftArea, float dragArea, float steerMult,
             Vector3 previousTorque, float maxTorque, float maxAoA, FloatCurve liftCurve, FloatCurve dragCurve)
         {
             Rigidbody rb = ml.part.rb;
@@ -668,7 +668,7 @@ namespace BDArmory.Guidances
             //drag
             if (airSpeed > 0)
             {
-                double dragForce = 0.5 * airDensity * airSpeed * airSpeed * liftArea * dragMultiplier * Mathf.Max(dragCurve.Evaluate(AoA), 0f);
+                double dragForce = 0.5 * airDensity * airSpeed * airSpeed * dragArea * dragMultiplier * Mathf.Max(dragCurve.Evaluate(AoA), 0f);
                 rb.AddForceAtPosition((float)dragForce * -velocity.normalized,
                     ml.transform.TransformPoint(ml.part.CoMOffset + CoL));
             }
