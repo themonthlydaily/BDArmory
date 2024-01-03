@@ -15,6 +15,7 @@ using BDArmory.Targeting;
 using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.WeaponMounts;
+using static VehiclePhysics.VPAudio;
 
 namespace BDArmory.Weapons.Missiles
 {
@@ -2772,19 +2773,32 @@ namespace BDArmory.Weapons.Missiles
             if (!launched) return -1f;
 
             float missileKinematicTime = boostTime + cruiseTime + cruiseDelay + dropTime - TimeIndex;
-            float drag = deployed ? deployedDrag : simpleDrag;
             float speed = (float)vessel.srfSpeed;
-            float dragAccel = 0.008f * drag * 0.5f * speed * speed * (float)vessel.atmDensity;
+            float airDensity = (float)vessel.atmDensity;
+            float dragAccel;
+            if (useSimpleDrag)
+                dragAccel = (deployed ? deployedDrag : simpleDrag) * 0.008f * 0.5f * speed * speed * airDensity;
+            else
+            {
+                float AoA = Mathf.Clamp(Vector3.Angle(transform.forward, vessel.Velocity()), 0, 90);
+                FloatCurve dragCurve = MissileGuidance.DefaultDragCurve;
+                float dragMultiplier = BDArmorySettings.GLOBAL_DRAG_MULTIPLIER;
+                dragAccel = 0.5f * airDensity * speed * speed * liftArea * dragMultiplier * dragCurve.Evaluate(AoA) / part.mass;
+                Debug.Log($"0.5f * {airDensity} * {speed} * {speed} * {liftArea} * {dragMultiplier} * {dragCurve.Evaluate(AoA)} at {AoA} / {part.mass}");
+                Debug.Log($"{maxAoA} drag is {dragCurve.Evaluate(maxAoA)}");
+            }
             float minSpeed = GetKinematicSpeed();
             if (speed > minSpeed)
                 missileKinematicTime += (speed - minSpeed) / dragAccel; // Add time for missile to slow down to min speed
+
+            Debug.Log($"Time to reach {minSpeed} from {speed}, accel {dragAccel} is {missileKinematicTime}");
 
             return missileKinematicTime;
         }
 
         public override float GetKinematicSpeed()
         {
-            return Mathf.Max(optimumAirspeed / 2f, 200f);
+            return 200f;// Mathf.Min(optimumAirspeed / 2f, 0.5f * (float)vessel.mach * (float)vessel.speedOfSound);
         }
 
         protected override void PartDie(Part p)

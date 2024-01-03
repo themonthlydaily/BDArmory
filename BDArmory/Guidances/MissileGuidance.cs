@@ -626,12 +626,12 @@ namespace BDArmory.Guidances
             if (DefaultDragCurve == null)
             {
                 DefaultDragCurve = new FloatCurve();
-                DefaultDragCurve.Add(0, 0.00215f);
-                DefaultDragCurve.Add(5, .00285f);
-                DefaultDragCurve.Add(15, .007f);
-                DefaultDragCurve.Add(29, .01f);
-                DefaultDragCurve.Add(55, .3f);
-                DefaultDragCurve.Add(90, .5f);
+                DefaultDragCurve.Add(0, 0.00215f, 0.00014f, 0.00014f);
+                DefaultDragCurve.Add(5, .00285f, 0.0002775f, 0.0002775f);
+                DefaultDragCurve.Add(15, .007f, 0.0003146428f, 0.0003146428f);
+                DefaultDragCurve.Add(29, .01f, 0.0002142857f, 0.01115385f);
+                DefaultDragCurve.Add(55, .3f, 0.008434067f, 0.008434067f);
+                DefaultDragCurve.Add(90, .5f, 0.005714285f, 0.005714285f);
             }
 
             FloatCurve liftCurve = DefaultLiftCurve;
