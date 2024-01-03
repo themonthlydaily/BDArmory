@@ -1588,11 +1588,16 @@ namespace BDArmory.Weapons.Missiles
             float drag = vessel.parts.Sum(x => x.dragScalar);
             float speed = (float)vessel.srfSpeed;
             float dragAccel = 0.008f * drag * 0.5f * speed * speed * (float)vessel.atmDensity;
-            float minSpeed = Mathf.Max(MinSpeedGuidance, 200f);
+            float minSpeed = GetKinematicSpeed();
             if (speed > minSpeed)
                 missileKinematicTime += (speed - minSpeed) / dragAccel; // Add time for missile to slow down to min speed
 
             return missileKinematicTime;
+        }
+
+        public override float GetKinematicSpeed()
+        {
+            return Mathf.Max(MinSpeedGuidance, 200f);
         }
 
         public Vector3 GetTransform(TransformAxisVectors transformAxis)

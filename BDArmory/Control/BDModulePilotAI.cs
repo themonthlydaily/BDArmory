@@ -3183,8 +3183,9 @@ namespace BDArmory.Control
                         if (evasionMissileKinematic && !vessel.InNearVacuum())
                         {
                             breakDirection = breakDirection.normalized;
-                            float missileKinematicTime = VesselModuleRegistry.GetMissileBase(weaponManager.incomingMissileVessel).GetKinematicTime();
-
+                            MissileBase missile = VesselModuleRegistry.GetMissileBase(weaponManager.incomingMissileVessel);
+                            float missileKinematicTime = missile.GetKinematicTime();
+                            float missileKinematicSpeed = missile.GetKinematicSpeed();
                             float crankAngle;
                             VesselRadarData vrd = vessel.gameObject.GetComponent<VesselRadarData>();
                             if (vrd)
@@ -3195,33 +3196,50 @@ namespace BDArmory.Control
                             Vector3 crankDir = Vector3.RotateTowards(breakDirection, threatDirection, (90f - crankAngle) * Mathf.Deg2Rad, 0).normalized;
                             Vector3 fleeDir = -threatDirection.normalized;
                             float missileSpeed = (float)weaponManager.incomingMissileVessel.srfSpeed;
+                            float missileAccel = (missileKinematicSpeed - missileSpeed) / missileKinematicTime;
                             Vector3 missilePos = weaponManager.incomingMissileVessel.transform.position;
-                            Vector3 missileVel;   
+                            Vector3 missileVel;
+                            Vector3 missileAccelVec;
                             float timeToImpact = weaponManager.incomingMissileVessel.TimeToCPA(vesselTransform.position, Vector3.zero, Vector3.zero, missileKinematicTime);
                             float notchTime = timeToImpact;
                             float crankTime = timeToImpact;
                             float fleeTime = timeToImpact;
 
+                            Vector3 currentPos = vesselTransform.position;
                             Vector3 futurePos;
                             Vector3 futureVel;
+                            Vector3 futureAccel;
+                            Vector3 missileDirNorm;
                             // Notch
                             futureVel = (float)vessel.srfSpeed * breakDirection;
-                            futurePos = vesselTransform.position + notchTime * futureVel;
-                            missileVel = missileSpeed * (futurePos - missilePos).normalized;
-                            notchTime = AIUtils.TimeToCPA(vesselTransform.position - missilePos, futureVel - missileVel, Vector3.zero, missileKinematicTime);
+                            futureAccel = speedController.GetPossibleAccel() * breakDirection;
+                            //futurePos = currentPos + notchTime * futureVel;
+                            futurePos = AIUtils.PredictPosition(currentPos, futureVel, futureAccel, notchTime);
+                            missileDirNorm = (futurePos - missilePos).normalized;
+                            missileVel = missileSpeed * missileDirNorm;
+                            missileAccelVec = missileAccel * missileDirNorm;
+                            notchTime = AIUtils.TimeToCPA(currentPos - missilePos, futureVel - missileVel, futureAccel - missileAccelVec, missileKinematicTime);
+                            float notchTime2 = AIUtils.TimeToCPA(currentPos - missilePos, futureVel - missileVel, Vector3.zero, missileKinematicTime);
 
                             // Crank
                             futureVel = (float)vessel.srfSpeed * crankDir;
-                            futurePos = vesselTransform.position + crankTime * futureVel;
+                            futureAccel = speedController.GetPossibleAccel() * crankDir;
+                            //futurePos = currentPos + crankTime * futureVel;
+                            futurePos = AIUtils.PredictPosition(currentPos, futureVel, futureAccel, crankTime);
                             missileVel = missileSpeed * (futurePos - missilePos).normalized;
-                            crankTime = AIUtils.TimeToCPA(vesselTransform.position - missilePos, futureVel - missileVel, Vector3.zero, missileKinematicTime);
+                            crankTime = AIUtils.TimeToCPA(currentPos - missilePos, futureVel - missileVel, futureAccel - missileAccelVec, missileKinematicTime);
+                            float crankTime2 = AIUtils.TimeToCPA(currentPos - missilePos, futureVel - missileVel, Vector3.zero, missileKinematicTime);
 
                             // Run Away
                             futureVel = (float)vessel.srfSpeed * fleeDir;
-                            futurePos = vesselTransform.position + fleeTime * futureVel;
+                            futureAccel = speedController.GetPossibleAccel() * fleeDir;
+                            //futurePos = currentPos + fleeTime * futureVel;
+                            futurePos = AIUtils.PredictPosition(currentPos, futureVel, futureAccel, fleeTime);
                             missileVel = missileSpeed * (futurePos - missilePos).normalized;
-                            fleeTime = AIUtils.TimeToCPA(vesselTransform.position - missilePos, futureVel - missileVel, Vector3.zero, missileKinematicTime);
-                            debugString.AppendLine($"Notch: {notchTime}s; Crank: {crankTime}s; Flee: {fleeTime}s; Missile: {missileKinematicTime}s");
+                            fleeTime = AIUtils.TimeToCPA(currentPos - missilePos, futureVel - missileVel, futureAccel - missileAccelVec, missileKinematicTime);
+                            float fleeTime2 = AIUtils.TimeToCPA(currentPos - missilePos, futureVel - missileVel, Vector3.zero, missileKinematicTime);
+                            debugString.AppendLine($"With Accel; Notch: {notchTime}s; Crank: {crankTime}s; Flee: {fleeTime}s; Missile: {missileKinematicTime}s");
+                            debugString.AppendLine($" W/O Accel; Notch: {notchTime2}s; Crank: {crankTime2}s; Flee: {fleeTime2}s; Missile: {missileKinematicTime}s");
 
                             if (crankTime == missileKinematicTime || missileKinematicTime <= 0f) // Cranking will defeat missile 
                             {

@@ -2775,11 +2775,16 @@ namespace BDArmory.Weapons.Missiles
             float drag = deployed ? deployedDrag : simpleDrag;
             float speed = (float)vessel.srfSpeed;
             float dragAccel = 0.008f * drag * 0.5f * speed * speed * (float)vessel.atmDensity;
-            float minSpeed = Mathf.Max(optimumAirspeed / 2f, 200f);
+            float minSpeed = GetKinematicSpeed();
             if (speed > minSpeed)
                 missileKinematicTime += (speed - minSpeed) / dragAccel; // Add time for missile to slow down to min speed
 
             return missileKinematicTime;
+        }
+
+        public override float GetKinematicSpeed()
+        {
+            return Mathf.Max(optimumAirspeed / 2f, 200f);
         }
 
         protected override void PartDie(Part p)
