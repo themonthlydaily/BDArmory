@@ -312,6 +312,13 @@ namespace BDArmory.UI
                         TargetInfo tInfo;
                         if (tInfo = v.gameObject.GetComponent<TargetInfo>())
                         {
+                            if (tInfo.isMissile)
+                            {
+                                heatScore = tInfo.MissileBaseModule.MissileState == MissileBase.MissileStates.Boost ? 1500 : tInfo.MissileBaseModule.MissileState == MissileBase.MissileStates.Cruise ? 1000 : minHeat; //make missiles actually return a heatvalue unless post thrust
+                                heatScore = Mathf.Max(heatScore, minHeat * frontAspectModifier);
+                                if (BDArmorySettings.DEBUG_RADAR) Debug.Log("[BDArmory.BDATargetManager] missile heatScore: " + heatScore);
+                                return new Tuple<float, Part>(heatScore, IRPart);
+                            }
                             if (tInfo.targetEngineList.Contains(closestPart))
                             {
                                 string transformName = closestPart.GetComponent<ModuleEngines>() ? closestPart.GetComponent<ModuleEngines>().thrustVectorTransformName : "thrustTransform";
