@@ -6415,7 +6415,7 @@ namespace BDArmory.Control
                 MissileBase ml = CurrentMissile;
                 MissileBase pMl = PreviousMissile;
                 if (!ml && pMl) ml = PreviousMissile; //if fired missile, then switched to guns or something
-                if (ml && ml.TargetingMode == MissileBase.TargetingModes.Radar && vesselRadarData != null && (!vesselRadarData.locked || vesselRadarData.lockedTargetData.vessel != guardTarget))
+                if (vesselRadarData != null && (!vesselRadarData.locked || vesselRadarData.lockedTargetData.vessel != guardTarget))
                 {
                     if (!vesselRadarData.locked)
                     {

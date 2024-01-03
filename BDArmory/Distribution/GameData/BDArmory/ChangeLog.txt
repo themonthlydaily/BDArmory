@@ -20,6 +20,8 @@
 		- Change spacing missiles with continous warhead from Detonation Distance / 3 to  Min(Blast Radius / 3, Detonation Distance / 3).
 		- Fix missile RCS FX constantly displaying.
 		- Missiles with RCS/Orbital homing types (i.e. HEKV) in vacuum now perform turn maneuver after launch to face target and only throttle up once facing target.
+		- Fix missile drag curve having negative drag at ~25 deg AoA
+		- Fix AI occasionally not firing radar missiles; Git Issue #573
 
 v1.6.9.0
 IMPROVEMENTS / FIXES
