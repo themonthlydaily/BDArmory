@@ -233,7 +233,7 @@ namespace BDArmory.Weapons.Missiles
         public FloatCurve activeRadarVelocityGate = new FloatCurve();
 
         [KSPField]
-        public float activeRadarVelocityFilter = 20f;
+        public float activeRadarVelocityFilter = 50f;
 
         [KSPField]
         public FloatCurve activeRadarRangeGate = new FloatCurve();
