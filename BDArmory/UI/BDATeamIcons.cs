@@ -244,7 +244,7 @@ namespace BDArmory.UI
                                                 Rect distRect = new Rect((guiPos.x - 12), (guiPos.y + 10), 100, 32);
                                                 GUI.Label(distRect, UIdist + UoM, mIStyle);
                                             }
-                                            if (BDTISettings.VESSELNAMES)
+                                            if (BDTISettings.MISSILE_TEXT)
                                             {
                                                 if (GUIUtils.WorldToGUIPos(ml.Current.vessel.CoM, out guiPos))
                                                 {

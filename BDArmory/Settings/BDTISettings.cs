@@ -14,7 +14,8 @@ namespace BDArmory.Settings
 		[SettingsDataField] public static bool HEALTHBAR = false;
 		[SettingsDataField] public static bool THREATICON = false;
 		[SettingsDataField] public static bool MISSILES = false;
-		[SettingsDataField] public static bool DEBRIS = true;
+        [SettingsDataField] public static bool MISSILE_TEXT = true;
+        [SettingsDataField] public static bool DEBRIS = true;
 		[SettingsDataField] public static bool PERSISTANT = true;
 		[SettingsDataField] public static bool POINTERS = true;
 		[SettingsDataField] public static bool TELEMETRY = false;
