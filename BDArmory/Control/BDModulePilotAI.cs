@@ -3189,9 +3189,9 @@ namespace BDArmory.Control
                             float crankAngle;
                             VesselRadarData vrd = vessel.gameObject.GetComponent<VesselRadarData>();
                             if (vrd)
-                                crankAngle = Mathf.Clamp(vrd.GetCrankFOV() / 2 - 5f, 5f, 90f);
+                                crankAngle = Mathf.Clamp(vrd.GetCrankFOV() / 2 - 5f, 5f, 85f);
                             else
-                                crankAngle = 45f;
+                                crankAngle = 60f;
 
                             Vector3 crankDir = Vector3.RotateTowards(breakDirection, threatDirection, (90f - crankAngle) * Mathf.Deg2Rad, 0).normalized;
                             Vector3 fleeDir = -threatDirection.normalized;
@@ -3221,7 +3221,9 @@ namespace BDArmory.Control
                             missileVel = missileSpeed * missileDirNorm;
                             missileAccelVec = missileAccel * missileDirNorm;
                             notchTime = AIUtils.TimeToCPA(currentPos - missilePos, futureVel - missileVel, futureAccel - missileAccelVec, missileKinematicTime + 5f);
+                            float nD = (AIUtils.PredictPosition(currentPos, futureVel, futureAccel, notchTime) - AIUtils.PredictPosition(missilePos, missileVel, missileAccelVec, notchTime)).magnitude;
                             float notchTime2 = AIUtils.TimeToCPA(currentPos - missilePos, futureVel - missileVel, Vector3.zero, missileKinematicTime + 5f);
+                            float nD2 = (AIUtils.PredictPosition(currentPos, futureVel, Vector3.zero, notchTime2) - AIUtils.PredictPosition(missilePos, missileVel, Vector3.zero, notchTime2)).magnitude;
 
                             // Crank
                             futureVel = currentSpeed * crankDir;
@@ -3230,7 +3232,9 @@ namespace BDArmory.Control
                             futurePos = AIUtils.PredictPosition(currentPos, futureVel, futureAccel, crankTime);
                             missileVel = missileSpeed * (futurePos - missilePos).normalized;
                             crankTime = AIUtils.TimeToCPA(currentPos - missilePos, futureVel - missileVel, futureAccel - missileAccelVec, missileKinematicTime + 5f);
+                            float cD = (AIUtils.PredictPosition(currentPos, futureVel, futureAccel, crankTime) - AIUtils.PredictPosition(missilePos, missileVel, missileAccelVec, crankTime)).magnitude;
                             float crankTime2 = AIUtils.TimeToCPA(currentPos - missilePos, futureVel - missileVel, Vector3.zero, missileKinematicTime + 5f);
+                            float cD2 = (AIUtils.PredictPosition(currentPos, futureVel, Vector3.zero, crankTime2) - AIUtils.PredictPosition(missilePos, missileVel, Vector3.zero, crankTime2)).magnitude;
 
                             // Run Away
                             futureVel = currentSpeed * fleeDir;
@@ -3239,9 +3243,13 @@ namespace BDArmory.Control
                             futurePos = AIUtils.PredictPosition(currentPos, futureVel, futureAccel, fleeTime);
                             missileVel = missileSpeed * (futurePos - missilePos).normalized;
                             fleeTime = AIUtils.TimeToCPA(currentPos - missilePos, futureVel - missileVel, futureAccel - missileAccelVec, missileKinematicTime + 5f);
+                            float fD = (AIUtils.PredictPosition(currentPos, futureVel, futureAccel, fleeTime) - AIUtils.PredictPosition(missilePos, missileVel, Vector3.zero, fleeTime)).magnitude;
                             float fleeTime2 = AIUtils.TimeToCPA(currentPos - missilePos, futureVel - missileVel, Vector3.zero, missileKinematicTime + 5f);
+                            float fD2 = (AIUtils.PredictPosition(currentPos, futureVel, Vector3.zero, fleeTime2) - AIUtils.PredictPosition(missilePos, missileVel, Vector3.zero, fleeTime2)).magnitude;
                             debugString.AppendLine($"With Accel; Notch: {notchTime}s; Crank: {crankTime}s; Flee: {fleeTime}s; Missile: {missileKinematicTime}s");
+                            debugString.AppendLine($"  Distance; Notch: {nD}m; Crank: {cD}m; Flee: {fD}m; Missile: {missileKinematicSpeed}m/s");
                             debugString.AppendLine($" W/O Accel; Notch: {notchTime2}s; Crank: {crankTime2}s; Flee: {fleeTime2}s; Missile: {missileKinematicTime}s");
+                            debugString.AppendLine($"  Distance; Notch: {nD2}m; Crank: {cD2}m; Flee: {fD2}m; Missile: {missileKinematicSpeed}m/s");
 
 
                             if (crankTime > missileKinematicTime || missileKinematicTime <= 0f) // Cranking will defeat missile 
