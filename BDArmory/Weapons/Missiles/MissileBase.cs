@@ -563,6 +563,10 @@ namespace BDArmory.Weapons.Missiles
 
         public abstract Vector3 GetForwardTransform();
 
+        public abstract float GetKinematicTime();
+
+        public abstract float GetKinematicSpeed();
+
         protected void AddTargetInfoToVessel()
         {
             TargetInfo info = vessel.gameObject.AddComponent<TargetInfo>();
