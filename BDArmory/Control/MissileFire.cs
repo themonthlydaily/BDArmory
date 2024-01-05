@@ -2517,7 +2517,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     mlauncher.missileTurret.slaved = true;
                                     mlauncher.missileTurret.slavedTargetPosition = MissileGuidance.GetAirToAirFireSolution(ml, targetVessel);
                                     mlauncher.missileTurret.SlavedAim();
-                                    yield return new WaitForFixedUpdate();
+                                    yield return wait;
                                 }
                             }
                             if (mlauncher.multiLauncher && mlauncher.multiLauncher.turret)
@@ -2528,7 +2528,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     mlauncher.multiLauncher.turret.slaved = true;
                                     mlauncher.multiLauncher.turret.slavedTargetPosition = MissileGuidance.GetAirToAirFireSolution(ml, targetVessel);
                                     mlauncher.multiLauncher.turret.SlavedAim();
-                                    yield return new WaitForFixedUpdate();
+                                    yield return wait;
                                 }
                             }
                         }
