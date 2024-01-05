@@ -404,7 +404,11 @@ namespace BDArmory.Weapons.Missiles
 
         public TargetInfo targetVessel
         {
-            get { return _targetVessel; }
+            get
+            {
+                if (_targetVessel != null && _targetVessel.Vessel == null) _targetVessel = null; // The vessel could die before _targetVessel gets cleared otherwise.
+                return _targetVessel;
+            }
             set
             {
                 _targetVessel = value;
@@ -1251,7 +1255,7 @@ namespace BDArmory.Weapons.Missiles
                             }
                             else //clamp updates to radar/IRST track speed
                             {
-                                float updateCount = TimeIndex / GpsUpdateMax; 
+                                float updateCount = TimeIndex / GpsUpdateMax;
                                 if (updateCount > gpsUpdateCounter)
                                 {
                                     gpsUpdateCounter++;

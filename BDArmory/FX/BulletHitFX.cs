@@ -476,8 +476,8 @@ namespace BDArmory.FX
                     if (!hitPart.isEngine())
                     {
                         leakFX.AttachAt(hitPart, hit, new Vector3(0.25f, 0f, 0f));
-                        leakFX.transform.localScale = Vector3.one * (caliber / 10);
-                        leakFX.drainRate = ((caliber / 10) * BDArmorySettings.BD_TANK_LEAK_RATE);
+                        leakFX.transform.localScale = Vector3.one * (caliber * caliber / 200f);
+                        leakFX.drainRate = ((caliber * caliber / 200f) * BDArmorySettings.BD_TANK_LEAK_RATE);
                         leakFX.lifeTime = (BDArmorySettings.BD_TANK_LEAK_TIME);
                         if (BDArmorySettings.BD_FIRES_ENABLED && !inertTank)
                         {
@@ -509,8 +509,8 @@ namespace BDArmory.FX
                 else
                 {
                     leakFX.AttachAt(hitPart, hit, new Vector3(0.25f, 0f, 0f));
-                    leakFX.transform.localScale = Vector3.one * (caliber / 10);
-                    leakFX.drainRate = ((caliber / 10) * BDArmorySettings.BD_TANK_LEAK_RATE);
+                    leakFX.transform.localScale = Vector3.one * (caliber * caliber / 200f);
+                    leakFX.drainRate = ((caliber * caliber / 200f) * BDArmorySettings.BD_TANK_LEAK_RATE);
                     leakFX.lifeTime = (BDArmorySettings.BD_TANK_LEAK_TIME);
 
                     if (hitPart.isEngine())

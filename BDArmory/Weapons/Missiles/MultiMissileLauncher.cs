@@ -240,6 +240,7 @@ namespace BDArmory.Weapons.Missiles
                     using (var parts = PartLoader.LoadedPartsList.GetEnumerator())
                         while (parts.MoveNext())
                         {
+                            if (parts.Current == null) continue;
                             if (parts.Current.partConfig == null || parts.Current.partPrefab == null) continue;
                             if (parts.Current.partPrefab.partInfo.name != subMunitionName) continue;
                             var explosivePart = parts.Current.partPrefab.FindModuleImplementing<BDExplosivePart>();
@@ -280,6 +281,7 @@ namespace BDArmory.Weapons.Missiles
             using (var parts = PartLoader.LoadedPartsList.GetEnumerator())
                 while (parts.MoveNext())
                 {
+                    if (parts.Current == null) continue;
                     if (parts.Current.partConfig == null || parts.Current.partPrefab == null)
                         continue;
                     if (parts.Current.partPrefab.partInfo.name != subMunitionName) continue;
@@ -410,6 +412,7 @@ namespace BDArmory.Weapons.Missiles
                 using (List<AttachNode>.Enumerator stackNode = part.attachNodes.GetEnumerator())
                     while (stackNode.MoveNext())
                     {
+                        if (stackNode.Current == null) continue;
                         if (stackNode.Current?.nodeType != AttachNode.NodeType.Stack) continue;
                         if (stackNode.Current.id != RailNode) continue;
                         {
@@ -694,7 +697,7 @@ namespace BDArmory.Weapons.Missiles
             float timeGap = (60 / rippleRPM) * TimeWarp.CurrentRate;
             int TargetID = 0;
             bool missileRegistry = true;
-            List<TargetInfo> firedTargets = new List<TargetInfo>();
+            List<TargetInfo> firedTargets = [];
             //missileSpawner.MissileName = subMunitionName;
 
             if (wpm != null)
@@ -723,12 +726,12 @@ namespace BDArmory.Weapons.Missiles
                     if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MultiMissileLauncher] deploy anim complete");
                 }
             }
-            if (missileSpawner is null) yield break; // Died while waiting.
+            if (missileSpawner == null) yield break; // Died while waiting.
             for (int m = tubesFired; m < launchTransforms.Length; m++)
             {
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MultiMissileLauncher] starting ripple launch on tube {m}, ripple delay: {timeGap:F3}");
                 yield return new WaitForSecondsFixed(timeGap);
-                if (missileSpawner is null) yield break; // Died while waiting.
+                if (missileSpawner == null) yield break; // Died while waiting.
                 if (launchesThisSalvo >= (int)salvoSize) //catch if launcher is trying to launch more missiles than it has
                 {
                     //if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MultiMissileLauncher] oops! firing more missiles than tubes or ammo");
@@ -756,8 +759,8 @@ namespace BDArmory.Weapons.Missiles
                 }
                 MissileLauncher ml = missileSpawner.SpawnedMissile.FindModuleImplementing<MissileLauncher>();
                 MultiMissileLauncher mml = missileSpawner.SpawnedMissile.FindModuleImplementing<MultiMissileLauncher>();
-                yield return new WaitUntilFixed(() => ml is null || ml.SetupComplete); // Wait until missile fully initialized.
-                if (ml is null || ml.gameObject is null || !ml.gameObject.activeInHierarchy)
+                yield return new WaitUntilFixed(() => ml == null || ml.SetupComplete); // Wait until missile fully initialized.
+                if (ml == null || ml.gameObject == null || !ml.gameObject.activeInHierarchy)
                 {
                     if (ml is not null) Destroy(ml); // The gameObject is gone, make sure the module goes too.
                     continue; // The missile died for some reason, try the next tube.
@@ -879,14 +882,14 @@ namespace BDArmory.Weapons.Missiles
                 //if (isClusterMissile) ml.multiLauncher.overrideReferenceTransform = true;
                 if (wpm != null)
                 {
-                    if (ml.TargetingMode == MissileBase.TargetingModes.Heat || ml.TargetingMode == MissileBase.TargetingModes.Radar || ml.TargetingMode == MissileBase.TargetingModes.Gps)
+                    if (ml.TargetingMode == TargetingModes.Heat || ml.TargetingMode == TargetingModes.Radar || ml.TargetingMode == TargetingModes.Gps)
                     {
                         //Debug.Log($"[BDArmory.MultiMissileLauncherDebug]: Beginning target distribution; Num of targets: {targetsAssigned.Count - 1}; wpm targets: {wpm.targetsAssigned.Count}");
                         if (targetsAssigned.Count > 0)
                         {
-                            if (TargetID <= Mathf.Min((targetsAssigned.Count - 1), wpm.multiMissileTgtNum))
+                            if (TargetID <= Mathf.Min(targetsAssigned.Count - 1, wpm.multiMissileTgtNum))
                             {
-                                for (int t = TargetID; t < Mathf.Min((targetsAssigned.Count - 1), wpm.multiMissileTgtNum); t++) //MML targeting independant of MissileFire target assignment,
+                                for (int t = TargetID; t < Mathf.Min(targetsAssigned.Count - 1, wpm.multiMissileTgtNum); t++) //MML targeting independant of MissileFire target assignment,
                                 {// and each MMl will be independantly working off the same targets list, iterating over the same first couple targets
                                     if (wpm.missilesAway.ContainsKey(targetsAssigned[t]))
                                     {
@@ -907,7 +910,7 @@ namespace BDArmory.Weapons.Missiles
                                 }
                             }
                             //Debug.Log($"[MML Targeting Debug] TargetID is {TargetID} of {Mathf.Min((targetsAssigned.Count), wpm.multiMissileTgtNum)}");
-                            if (TargetID > Mathf.Min((targetsAssigned.Count - 1), wpm.multiMissileTgtNum))
+                            if (TargetID > Mathf.Min(targetsAssigned.Count - 1, wpm.multiMissileTgtNum))
                             {
                                 TargetID = 0; //if more missiles than targets, loop target list
                                 missileRegistry = false;  //this isn't ignoring subsequent missiles in the salvo for some reason?
@@ -921,16 +924,16 @@ namespace BDArmory.Weapons.Missiles
                                     (ml.engageSLW && targetsAssigned[TargetID].isUnderwater) ||
                                     (ml.engageMissile && targetsAssigned[TargetID].isMissile))) //check engagement envelope
                                 {
-                                    if (ml.TargetingMode == MissileBase.TargetingModes.Heat) //need to input a heattarget, else this will just return MissileFire.CurrentTarget
+                                    if (ml.TargetingMode == TargetingModes.Heat) //need to input a heattarget, else this will just return MissileFire.CurrentTarget
                                     {
                                         Vector3 direction = (targetsAssigned[TargetID].position * targetsAssigned[TargetID].velocity.magnitude) - missileLauncher.MissileReferenceTransform.position;
                                         ml.heatTarget = BDATargetManager.GetHeatTarget(ml.SourceVessel, ml.vessel, new Ray(missileLauncher.MissileReferenceTransform.position + (5 * missileLauncher.GetForwardTransform()), direction), TargetSignatureData.noTarget, ml.lockedSensorFOV * 0.5f, ml.heatThreshold, ml.frontAspectHeatModifier, true, ml.lockedSensorFOVBias, ml.lockedSensorVelocityBias, wpm, targetsAssigned[TargetID]);
                                     }
-                                    if (ml.TargetingMode == MissileBase.TargetingModes.Radar)
+                                    if (ml.TargetingMode == TargetingModes.Radar)
                                     {
                                         AssignRadarTarget(ml, targetsAssigned[TargetID].Vessel);
                                     }
-                                    if (ml.TargetingMode == MissileBase.TargetingModes.Gps)
+                                    if (ml.TargetingMode == TargetingModes.Gps)
                                     {
                                         ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(targetsAssigned[TargetID].Vessel.CoM, vessel.mainBody);
                                     }
@@ -952,16 +955,16 @@ namespace BDArmory.Weapons.Missiles
 
                                         if (Vector3.Angle(targetsAssigned[t].position - missileLauncher.MissileReferenceTransform.position, missileLauncher.GetForwardTransform()) < missileLauncher.maxOffBoresight) //is the target more-or-less in front of the missile(launcher)?
                                         {
-                                            if (ml.TargetingMode == MissileBase.TargetingModes.Heat)
+                                            if (ml.TargetingMode == TargetingModes.Heat)
                                             {
                                                 Vector3 direction = (targetsAssigned[t].position * targetsAssigned[t].velocity.magnitude) - missileLauncher.MissileReferenceTransform.position;
                                                 ml.heatTarget = BDATargetManager.GetHeatTarget(ml.SourceVessel, ml.vessel, new Ray(missileLauncher.MissileReferenceTransform.position + (5 * missileLauncher.GetForwardTransform()), direction), TargetSignatureData.noTarget, ml.lockedSensorFOV * 0.5f, ml.heatThreshold, ml.frontAspectHeatModifier, true, ml.lockedSensorFOVBias, ml.lockedSensorVelocityBias, wpm, targetsAssigned[t]);
                                             }
-                                            if (ml.TargetingMode == MissileBase.TargetingModes.Radar)
+                                            if (ml.TargetingMode == TargetingModes.Radar)
                                             {
                                                 AssignRadarTarget(ml, targetsAssigned[t].Vessel);
                                             }
-                                            if (ml.TargetingMode == MissileBase.TargetingModes.Gps)
+                                            if (ml.TargetingMode == TargetingModes.Gps)
                                             {
                                                 ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(targetsAssigned[t].Vessel.CoM, vessel.mainBody);
                                             }
@@ -979,6 +982,7 @@ namespace BDArmory.Weapons.Missiles
                                         using (List<TargetInfo>.Enumerator item = targetsAssigned.GetEnumerator())
                                             while (item.MoveNext())
                                             {
+                                                if (item.Current == null) continue;
                                                 if (item.Current.Vessel == null) continue;
                                                 if ((ml.engageAir && !item.Current.isFlying) ||
                                                     (ml.engageGround && !item.Current.isLandedOrSurfaceSplashed) ||
@@ -986,16 +990,16 @@ namespace BDArmory.Weapons.Missiles
                                                     (ml.engageMissile && !item.Current.isMissile)) continue; //check engagement envelope
                                                 if (Vector3.Angle(item.Current.position - missileLauncher.MissileReferenceTransform.position, missileLauncher.GetForwardTransform()) < missileLauncher.maxOffBoresight) //is the target more-or-less in front of the missile(launcher)?
                                                 {
-                                                    if (ml.TargetingMode == MissileBase.TargetingModes.Heat)
+                                                    if (ml.TargetingMode == TargetingModes.Heat)
                                                     {
                                                         Vector3 direction = (item.Current.position * item.Current.velocity.magnitude) - missileLauncher.MissileReferenceTransform.position;
                                                         ml.heatTarget = BDATargetManager.GetHeatTarget(ml.SourceVessel, ml.vessel, new Ray(missileLauncher.MissileReferenceTransform.position + (5 * missileLauncher.GetForwardTransform()), direction), TargetSignatureData.noTarget, ml.lockedSensorFOV * 0.5f, ml.heatThreshold, ml.frontAspectHeatModifier, true, ml.lockedSensorFOVBias, ml.lockedSensorVelocityBias, wpm, item.Current);
                                                     }
-                                                    if (ml.TargetingMode == MissileBase.TargetingModes.Radar)
+                                                    if (ml.TargetingMode == TargetingModes.Radar)
                                                     {
                                                         AssignRadarTarget(ml, item.Current.Vessel);
                                                     }
-                                                    if (ml.TargetingMode == MissileBase.TargetingModes.Gps)
+                                                    if (ml.TargetingMode == TargetingModes.Gps)
                                                     {
                                                         ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(item.Current.Vessel.CoM, vessel.mainBody);
                                                     }
@@ -1021,7 +1025,7 @@ namespace BDArmory.Weapons.Missiles
                         else
                         {
                             if (tubesFired > 1) missileRegistry = false;
-                            if (ml.TargetingMode == MissileBase.TargetingModes.Gps) //missileFire's GPS coords were snapshotted before anim delay (if any); refresh coords to target's current position post delay
+                            if (ml.TargetingMode == TargetingModes.Gps) //missileFire's GPS coords were snapshotted before anim delay (if any); refresh coords to target's current position post delay
                             {
                                 Vector3d designatedGPScoords = Vector3.zero;
                                 if (missileLauncher.targetVessel) designatedGPScoords = VectorUtils.WorldPositionToGeoCoords(missileLauncher.targetVessel.Vessel.CoM, vessel.mainBody);
@@ -1064,17 +1068,20 @@ namespace BDArmory.Weapons.Missiles
             if (deployState != null)
             {
                 yield return new WaitForSecondsFixed(0.5f); //wait for missile to clear bay
-                deployState.enabled = true;
-                deployState.speed = -deploySpeed / deployState.length;
-                yield return new WaitWhileFixed(() => deployState != null && deployState.normalizedTime > 0);
                 if (deployState != null)
                 {
-                    deployState.normalizedTime = 0;
-                    deployState.speed = 0;
-                    deployState.enabled = false;
+                    deployState.enabled = true;
+                    deployState.speed = -deploySpeed / deployState.length;
+                    yield return new WaitWhileFixed(() => deployState != null && deployState.normalizedTime > 0);
+                    if (deployState != null)
+                    {
+                        deployState.normalizedTime = 0;
+                        deployState.speed = 0;
+                        deployState.enabled = false;
+                    }
                 }
             }
-            if (missileLauncher is null) yield break;
+            if (missileLauncher == null) yield break;
             if (tubesFired >= launchTransforms.Length) //add a timer for reloading a partially emptied MML if it hasn't been used for a while?
             {
                 if (!isLaunchedClusterMissile && (BDArmorySettings.INFINITE_ORDINANCE || missileSpawner.ammoCount >= (int)salvoSize))
@@ -1100,7 +1107,7 @@ namespace BDArmory.Weapons.Missiles
                     {
                         missileLauncher.heatTimer = launcherCooldown;
                         yield return new WaitForSecondsFixed(launcherCooldown);
-                        if (missileLauncher is null) yield break;
+                        if (missileLauncher == null) yield break;
                         missileLauncher.launched = false;
                         missileLauncher.heatTimer = -1;
                     }
@@ -1203,6 +1210,7 @@ namespace BDArmory.Weapons.Missiles
             using (var parts = PartLoader.LoadedPartsList.GetEnumerator())
                 while (parts.MoveNext())
                 {
+                    if (parts.Current == null) continue;
                     //Debug.Log($"[BDArmory.MML]: Looking for {subMunitionName}");
                     if (parts.Current.partConfig == null || parts.Current.partPrefab == null)
                         continue;
