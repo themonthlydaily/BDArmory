@@ -13,7 +13,6 @@ using BDArmory.Targeting;
 using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.VesselSpawning;
-using static VehiclePhysics.VPAudio;
 
 namespace BDArmory.Weapons.Missiles
 {

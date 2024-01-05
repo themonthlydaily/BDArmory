@@ -15,7 +15,6 @@ using BDArmory.Targeting;
 using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.WeaponMounts;
-using static VehiclePhysics.VPAudio;
 
 namespace BDArmory.Weapons.Missiles
 {
