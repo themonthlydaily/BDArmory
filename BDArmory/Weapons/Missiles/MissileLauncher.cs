@@ -68,6 +68,9 @@ namespace BDArmory.Weapons.Missiles
         public float liftArea = 0.015f;
 
         [KSPField]
+        public float dragArea = -1f; // Optional parameter to specify separate drag reference area, otherwise defaults to liftArea
+
+        [KSPField]
         public float steerMult = 0.5f;
 
         [KSPField]
@@ -473,6 +476,12 @@ namespace BDArmory.Weapons.Missiles
             Fields["maxStaticLaunchRange"].guiActiveEditor = false;
             Fields["minStaticLaunchRange"].guiActive = false;
             Fields["minStaticLaunchRange"].guiActiveEditor = false;
+
+            if (dragArea < 0)
+            {
+                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: OnStart missile {shortName}: setting default dragArea to liftArea {liftArea}:");
+                dragArea = liftArea;
+            }
 
             loftState = 0;
             TimeToImpact = float.PositiveInfinity;
@@ -1777,7 +1786,7 @@ namespace BDArmory.Weapons.Missiles
                     TargetMf = null;
                     if (aero)
                     {
-                        aeroTorque = MissileGuidance.DoAeroForces(this, TargetPosition, liftArea, .25f, aeroTorque, maxTorque, maxAoA);
+                        aeroTorque = MissileGuidance.DoAeroForces(this, TargetPosition, liftArea, dragArea, .25f, aeroTorque, maxTorque, maxAoA);
                     }
                 }
 
@@ -2597,7 +2606,7 @@ namespace BDArmory.Weapons.Missiles
 
         void DoAero(Vector3 targetPosition)
         {
-            aeroTorque = MissileGuidance.DoAeroForces(this, targetPosition, liftArea, controlAuthority * steerMult, aeroTorque, finalMaxTorque, maxAoA);
+            aeroTorque = MissileGuidance.DoAeroForces(this, targetPosition, liftArea, dragArea, controlAuthority * steerMult, aeroTorque, finalMaxTorque, maxAoA);
         }
 
         void AGMBallisticGuidance()
@@ -2791,7 +2800,7 @@ namespace BDArmory.Weapons.Missiles
                     //float AoA = Mathf.Clamp(Vector3.Angle(transform.forward, vessel.Velocity()), 0f, 90f);
                     FloatCurve dragCurve = MissileGuidance.DefaultDragCurve;
                     float dragMultiplier = BDArmorySettings.GLOBAL_DRAG_MULTIPLIER;
-                    dragAccel = 0.5f * airDensity * speed * speed * liftArea * dragMultiplier * dragCurve.Evaluate(Mathf.Max(smoothedAoA.Value, 0f)) / part.mass;
+                    dragAccel = 0.5f * airDensity * speed * speed * dragArea * dragMultiplier * dragCurve.Evaluate(Mathf.Max(smoothedAoA.Value, 0f)) / part.mass;
                 }
                 missileKinematicTime += (speed - minSpeed) / dragAccel; // Add time for missile to slow down to min speed
             }
