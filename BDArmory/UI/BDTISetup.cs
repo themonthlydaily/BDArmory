@@ -416,7 +416,7 @@ namespace BDArmory.UI
                 GUI.Label(new Rect(15, line++ * 25, toolWindowWidth - 20, 20), $"{StringUtils.Localize("#LOC_BDArmory_Icon_distance_threshold")} {BDTISettings.DISTANCE_THRESHOLD:0}m");
                 BDTISettings.DISTANCE_THRESHOLD = BDAMath.RoundToUnit(GUI.HorizontalSlider(new Rect(10, line++ * 25, toolWindowWidth - 40, 20), BDTISettings.DISTANCE_THRESHOLD, 10f, 250f), 10f);
                 GUI.Label(new Rect(15, line++ * 25, toolWindowWidth - 20, 20), $"{StringUtils.Localize("#LOC_BDArmory_Icon_opacity")} {BDTISettings.OPACITY * 100f:0}%");
-                BDTISettings.OPACITY = BDAMath.RoundToUnit(GUI.HorizontalSlider(new Rect(10, line++ * 25, toolWindowWidth - 40, 20), BDTISettings.OPACITY * 100f, 0f, 100f) / 100f, 0.01f);
+                BDTISettings.OPACITY = BDAMath.RoundToUnit(GUI.HorizontalSlider(new Rect(10, line++ * 25, toolWindowWidth - 40, 20), BDTISettings.OPACITY, 0f, 1f), 0.01f);
                 GUI.Label(new Rect(15, line++ * 25, toolWindowWidth - 20, 20), $"{StringUtils.Localize("#LOC_BDArmory_Icon_max_distance_threshold")} {(BDTISettings.MAX_DISTANCE_THRESHOLD < BDArmorySettings.MAX_GUARD_VISUAL_RANGE ? $"{BDTISettings.MAX_DISTANCE_THRESHOLD / 1000f:0}km" : "Unlimited")}");
                 BDTISettings.MAX_DISTANCE_THRESHOLD = UI_FloatSemiLogRange.ToSemiLogValue(Mathf.Round(GUI.HorizontalSlider(new Rect(10, line++ * 25, toolWindowWidth - 40, 20), UI_FloatSemiLogRange.FromSemiLogValue(BDTISettings.MAX_DISTANCE_THRESHOLD / 1000f, 1f), 1f, UI_FloatSemiLogRange.FromSemiLogValue(BDArmorySettings.MAX_GUARD_VISUAL_RANGE / 1000f, 1f))), 1f, 1) * 1000f;
                 GUI.EndGroup();
