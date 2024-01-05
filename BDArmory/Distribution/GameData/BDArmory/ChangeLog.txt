@@ -9,6 +9,7 @@ v1.6.9.0
 	- Invert the roll target when the fly-to direction is below and behind the craft within the Immelmann turn angle.
 	- Fix automatic gun range adjustments in the WM again.
 	- Prevent Orbital AI from changing attitude while launched missile is still near spacecraft.
+	- Add Smoke CM timing/interal/repetition settings.
 - Weapons:
   	- Corrections to penetration and ricochet velocity changes and ricochet positions.
     - Stop APS firing at dead missiles.
@@ -22,6 +23,8 @@ v1.6.9.0
 	    	- Change spacing missiles with continous rod warheads from Detonation Distance / 3 to  Min(Blast Radius / 3, Detonation Distance / 3)
         - Fix missile RCS FX constantly displaying.
 		    - Missiles with RCS/Orbital homing types (i.e. HEKV) in vacuum now perform turn maneuver after launch to face target and only throttle up once facing target.
+		-Fixes to anti-missile missile point-defense logic to support missile turret launched interceptors.
+		-Fix radar missiles not locking and firing until well within their max engagement range.
 
 IMPROVEMENTS / FIXES
 - UI:
