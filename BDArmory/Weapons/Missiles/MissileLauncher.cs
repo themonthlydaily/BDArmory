@@ -327,6 +327,7 @@ namespace BDArmory.Weapons.Missiles
         public bool SetupComplete => StartSetupComplete;
         public int loftState = 0;
         public float initMaxAoA = 0;
+        public SmoothingF smoothedAoA;
         #endregion Variable Declarations
 
         [KSPAction("Fire Missile")]
@@ -712,6 +713,7 @@ namespace BDArmory.Weapons.Missiles
                 break;
             }
             partModules.Dispose();
+            smoothedAoA = new SmoothingF(Mathf.Exp(Mathf.Log(0.5f) * Time.fixedDeltaTime * 10f)); // Half-life of 0.1s.
             StartSetupComplete = true;
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher] Start() setup complete");
         }
@@ -1672,6 +1674,7 @@ namespace BDArmory.Weapons.Missiles
                 }
 
                 if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES) debugString.AppendLine($"controlAuthority: {controlAuthority}");
+                if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_MISSILES) debugString.AppendLine($"smoothedAoA: {Mathf.Max(smoothedAoA.Value, 0f)}"); // FIXMEJ
 
                 if (guidanceActive && TimeIndex - dropTime > guidanceDelay)
                 {
@@ -2785,10 +2788,10 @@ namespace BDArmory.Weapons.Missiles
                     dragAccel = (deployed ? deployedDrag : simpleDrag) * 0.008f * 0.5f * speed * speed * airDensity;
                 else
                 {
-                    float AoA = Mathf.Clamp(Vector3.Angle(transform.forward, vessel.Velocity()), 0f, 90f);
+                    //float AoA = Mathf.Clamp(Vector3.Angle(transform.forward, vessel.Velocity()), 0f, 90f);
                     FloatCurve dragCurve = MissileGuidance.DefaultDragCurve;
                     float dragMultiplier = BDArmorySettings.GLOBAL_DRAG_MULTIPLIER;
-                    dragAccel = 0.5f * airDensity * speed * speed * liftArea * dragMultiplier * dragCurve.Evaluate(AoA) / part.mass;
+                    dragAccel = 0.5f * airDensity * speed * speed * liftArea * dragMultiplier * dragCurve.Evaluate(Mathf.Max(smoothedAoA.Value, 0f)) / part.mass;
                 }
                 missileKinematicTime += (speed - minSpeed) / dragAccel; // Add time for missile to slow down to min speed
             }
