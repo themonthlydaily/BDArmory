@@ -6419,7 +6419,7 @@ namespace BDArmory.Control
                 MissileBase ml = CurrentMissile;
                 MissileBase pMl = PreviousMissile;
                 if (!ml && pMl) ml = PreviousMissile; //if fired missile, then switched to guns or something
-                if (ml && ml.TargetingMode == MissileBase.TargetingModes.Radar && vesselRadarData != null && (!vesselRadarData.locked || vesselRadarData.lockedTargetData.vessel != guardTarget))
+                if (vesselRadarData != null && (!vesselRadarData.locked || vesselRadarData.lockedTargetData.vessel != guardTarget))
                 {
                     if (!vesselRadarData.locked)
                     {
@@ -6429,7 +6429,7 @@ namespace BDArmory.Control
                     {
                         if (firedMissiles >= maxMissilesOnTarget && (multiMissileTgtNum > 1 && BDATargetManager.TargetList(Team).Count > 1)) //if there are multiple potential targets, see how many can be fired at with missiles
                         {
-                            if (!ml.radarLOAL) //switch active lock instead of clearing locks for SARH missiles
+                            if (ml && !ml.radarLOAL) //switch active lock instead of clearing locks for SARH missiles
                             {
                                 //vesselRadarData.UnlockCurrentTarget();
                                 vesselRadarData.TryLockTarget(guardTarget);
