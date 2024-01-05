@@ -362,7 +362,8 @@ namespace BDArmory.GameModes
                             iconPath = MutatorInfo.mutators[mutators[i]].icon;
                             iconcolor = MutatorInfo.mutators[mutators[i]].iconColor;
                             iconColor = GUIUtils.ParseColor255(iconcolor);
-                            iconColor.a = BDTISettings.OPACITY * BDTISetup.localToGlobalOpacity * BDTISetup.iconOpacity;
+                            iconColor.a = BDTISettings.OPACITY * BDTISetup.iconOpacity;
+
                             switch (iconPath)
                             {
                                 case "IconAccuracy":

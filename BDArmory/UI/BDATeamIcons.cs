@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
-
 using BDArmory.Competition;
 using BDArmory.Settings;
 using BDArmory.Utils;
@@ -245,7 +244,7 @@ namespace BDArmory.UI
                                                 Rect distRect = new Rect((guiPos.x - 12), (guiPos.y + 10), 100, 32);
                                                 GUI.Label(distRect, UIdist + UoM, mIStyle);
                                             }
-                                            if (BDTISettings.VESSELNAMES)
+                                            if (BDTISettings.MISSILE_TEXT)
                                             {
                                                 if (GUIUtils.WorldToGUIPos(ml.Current.vessel.CoM, out guiPos))
                                                 {
@@ -478,9 +477,9 @@ namespace BDArmory.UI
         {
             // Update opacity for DropshadowStyle, mIStyle, Missilecolor. IconUIStyle opacity
             // is updated in OnGUI().
-            if (forceUpdate || Opacity != BDTISettings.OPACITY * BDTISetup.localToGlobalOpacity)
+            if (forceUpdate || Opacity != BDTISettings.OPACITY)
             {
-                Opacity = BDTISettings.OPACITY * BDTISetup.localToGlobalOpacity;
+                Opacity = BDTISettings.OPACITY;
 
                 Teamcolor.a = Opacity;
                 Color temp;
