@@ -35,6 +35,11 @@ namespace BDArmory.UI
         private float updateList = 0;
         private bool maySavethisInstance = false;
 
+        // Opacity Settings
+        internal const float textOpacity = 2f;
+        internal const float iconOpacity = 1f;
+        internal const float localToGlobalOpacity = 0.02f; // Conversion between BDATeamIcons.Opacity and BDTISettings.OPACITY
+
         public SortedList<string, List<MissileFire>> weaponManagers = new SortedList<string, List<MissileFire>>();
 
         public static string textureDir = "BDArmory/Textures/";
@@ -398,6 +403,7 @@ namespace BDArmory.UI
                 BDTISettings.HEALTHBAR = GUI.Toggle(new Rect(15, line++ * 25, toolWindowWidth - 20, 20), BDTISettings.HEALTHBAR, StringUtils.Localize("#LOC_BDArmory_Icon_healthbars"), BDArmorySetup.BDGuiSkin.toggle);
                 BDTISettings.SHOW_SELF = GUI.Toggle(new Rect(15, line++ * 25, toolWindowWidth - 20, 20), BDTISettings.SHOW_SELF, StringUtils.Localize("#LOC_BDArmory_Icon_show_self"), BDArmorySetup.BDGuiSkin.toggle);
                 BDTISettings.MISSILES = GUI.Toggle(new Rect(15, line++ * 25, toolWindowWidth - 20, 20), BDTISettings.MISSILES, StringUtils.Localize("#LOC_BDArmory_Icon_missiles"), BDArmorySetup.BDGuiSkin.toggle);
+                if (BDTISettings.MISSILES) BDTISettings.MISSILE_TEXT = GUI.Toggle(new Rect(15, line++ * 25, toolWindowWidth - 20, 20), BDTISettings.MISSILE_TEXT, StringUtils.Localize("#LOC_BDArmory_Icon_missile_text"), BDArmorySetup.BDGuiSkin.toggle);
                 BDTISettings.DEBRIS = GUI.Toggle(new Rect(15, line++ * 25, toolWindowWidth - 20, 20), BDTISettings.DEBRIS, StringUtils.Localize("#LOC_BDArmory_Icon_debris"), BDArmorySetup.BDGuiSkin.toggle);
                 BDTISettings.PERSISTANT = GUI.Toggle(new Rect(15, line++ * 25, toolWindowWidth - 20, 20), BDTISettings.PERSISTANT, StringUtils.Localize("#LOC_BDArmory_Icon_persist"), BDArmorySetup.BDGuiSkin.toggle);
                 BDTISettings.THREATICON = GUI.Toggle(new Rect(15, line++ * 25, toolWindowWidth - 20, 20), BDTISettings.THREATICON, StringUtils.Localize("#LOC_BDArmory_Icon_threats"), BDArmorySetup.BDGuiSkin.toggle);
@@ -409,6 +415,8 @@ namespace BDArmory.UI
                 line -= 0.15f;
                 GUI.Label(new Rect(15, line++ * 25, toolWindowWidth - 20, 20), $"{StringUtils.Localize("#LOC_BDArmory_Icon_distance_threshold")} {BDTISettings.DISTANCE_THRESHOLD:0}m");
                 BDTISettings.DISTANCE_THRESHOLD = BDAMath.RoundToUnit(GUI.HorizontalSlider(new Rect(10, line++ * 25, toolWindowWidth - 40, 20), BDTISettings.DISTANCE_THRESHOLD, 10f, 250f), 10f);
+                GUI.Label(new Rect(15, line++ * 25, toolWindowWidth - 20, 20), $"{StringUtils.Localize("#LOC_BDArmory_Icon_opacity")} {BDTISettings.OPACITY * 100f:0}%");
+                BDTISettings.OPACITY = BDAMath.RoundToUnit(GUI.HorizontalSlider(new Rect(10, line++ * 25, toolWindowWidth - 40, 20), BDTISettings.OPACITY, 0f, 1f), 0.01f);
                 GUI.Label(new Rect(15, line++ * 25, toolWindowWidth - 20, 20), $"{StringUtils.Localize("#LOC_BDArmory_Icon_max_distance_threshold")} {(BDTISettings.MAX_DISTANCE_THRESHOLD < BDArmorySettings.MAX_GUARD_VISUAL_RANGE ? $"{BDTISettings.MAX_DISTANCE_THRESHOLD / 1000f:0}km" : "Unlimited")}");
                 BDTISettings.MAX_DISTANCE_THRESHOLD = UI_FloatSemiLogRange.ToSemiLogValue(Mathf.Round(GUI.HorizontalSlider(new Rect(10, line++ * 25, toolWindowWidth - 40, 20), UI_FloatSemiLogRange.FromSemiLogValue(BDTISettings.MAX_DISTANCE_THRESHOLD / 1000f, 1f), 1f, UI_FloatSemiLogRange.FromSemiLogValue(BDArmorySettings.MAX_GUARD_VISUAL_RANGE / 1000f, 1f))), 1f, 1) * 1000f;
                 GUI.EndGroup();

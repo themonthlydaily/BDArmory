@@ -46,6 +46,7 @@ namespace BDArmory.Control
         private Vector3 maxAngularAcceleration;
         private Vector3 availableTorque;
         private double minSafeAltitude;
+        private CelestialBody safeAltBody = null;
 
         // Evading
         bool evadingGunfire = false;
@@ -106,6 +107,11 @@ namespace BDArmory.Control
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 5f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float evasionTimeThreshold = 0.1f;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionErraticness", advancedTweakable = true, // Evasion Erraticness
+            groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
+            UI_FloatRange(minValue = 0f, maxValue = 1f, stepIncrement = 0.01f, scene = UI_Scene.All)]
+        public float evasionErraticness = 0.1f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionMinRangeThreshold", advancedTweakable = true, // Evasion Min Range Threshold
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
@@ -387,7 +393,7 @@ namespace BDArmory.Control
                                 if (o.altitude < gravTurnAlt * minSafeAltitude || descending || wasDescendingUnsafe) // At low alts or when descending, burn straight up
                                 {
                                     turn = 1f;
-                                    fc.alignmentToleranceforBurn = 45f; // Use a wide tolerance as aero forces could make it difficult to align otherwise. // FIXME Josue Thoughts on this?
+                                    fc.alignmentToleranceforBurn = 45f; // Use a wide tolerance as aero forces could make it difficult to align otherwise.
                                     wasDescendingUnsafe = descending || o.timeToAp < 10; // Hysteresis for upwards vs gravity turn burns.
                                 }
                                 else // At higher alts, gravity turn towards horizontal orbit vector
@@ -401,27 +407,6 @@ namespace BDArmory.Control
                                 fc.attitude = Vector3.Lerp(o.Horizontal(UT), upDir, turn);
                                 fc.throttle = 1;
                             }
-                            // else if (o.ApA < minSafeAltitude * 1.1) // FIXME Josue This is a duplicate of the above. It should be the o.altitude < minSafeAltitude ("Falling inside atmo") section. I've added that in below, but you should check that I've done it right. I've also adjusted the above 
-                            // {
-                            //     // Entirety of orbit is inside atmosphere, perform gravity turn burn until apoapsis is outside atmosphere by a 10% margin.
-
-                            //     SetStatus("Correcting Orbit (Apoapsis too low)");
-
-                            //     double gravTurnAlt = 0.1;
-                            //     float turn;
-
-                            //     if (o.altitude < gravTurnAlt * minSafeAltitude) // At low alts, burn straight up
-                            //         turn = 1f;
-                            //     else // At higher alts, gravity turn towards horizontal orbit vector
-                            //     {
-                            //         turn = Mathf.Clamp((float)((1.1 * minSafeAltitude - o.ApA) / (minSafeAltitude * (1.1 - gravTurnAlt))), 0.1f, 1f);
-                            //         turn = Mathf.Clamp(Mathf.Log10(turn) + 1f, 0.33f, 1f);
-                            //     }
-
-                            //     fc.attitude = Vector3.Lerp(o.Horizontal(UT), upDir, turn);
-                            //     fc.alignmentToleranceforBurn = Mathf.Clamp(15f * turn, 5f, 15f);
-                            //     fc.throttle = 1;
-                            // }
                             else if (o.altitude < minSafeAltitude * 1.1 && descending)
                             {
                                 // Our apoapsis is outside the atmosphere but we are inside the atmosphere and descending.
@@ -430,7 +415,7 @@ namespace BDArmory.Control
                                 SetStatus("Correcting Orbit (Falling inside atmo)");
 
                                 fc.attitude = o.Radial(UT);
-                                fc.alignmentToleranceforBurn = 45f; // Use a wide tolerance as aero forces could make it difficult to align otherwise. // FIXME Josue Thoughts on this?
+                                fc.alignmentToleranceforBurn = 45f; // Use a wide tolerance as aero forces could make it difficult to align otherwise.
                                 fc.throttle = 1;
                             }
                             else
@@ -644,7 +629,7 @@ namespace BDArmory.Control
                     debugString.AppendLine($"Lateral Velocity: {lateralVelocity:G3}");
                 }
                 debugString.AppendLine($"Evasive {evasiveTimer}s");
-                debugString.AppendLine($"Threat Sqr Distance: {weaponManager.incomingThreatDistanceSqr}");
+                if (weaponManager) debugString.AppendLine($"Threat Sqr Distance: {weaponManager.incomingThreatDistanceSqr}");
             }
         }
 
@@ -674,19 +659,26 @@ namespace BDArmory.Control
                 if (currentCommand != lastUpdateCommand)
                     maneuverStateChanged = true;
             }
-            else if (allowWithdrawal && hasPropulsion && !hasWeapons && CheckWithdraw())
-                currentStatusMode = StatusMode.Withdrawing;
-            else if (weaponManager && targetVessel != null && weaponManager.currentGun && GunReady(weaponManager.currentGun))
-                currentStatusMode = StatusMode.Firing; // Guns
-            else if (weaponManager && targetVessel != null && weaponManager.CurrentMissile && !weaponManager.GetLaunchAuthorization(targetVessel, weaponManager, weaponManager.CurrentMissile))
-                currentStatusMode = StatusMode.Firing; // Missiles
-            else if (weaponManager && targetVessel != null && weaponManager.CurrentMissile && weaponManager.guardFiringMissile && currentStatusMode == StatusMode.Firing)
-                currentStatusMode = StatusMode.Firing; // Post-launch authorization missile firing underway, don't change status from Firing
-            else if (weaponManager && targetVessel != null && hasWeapons)
-                if (hasPropulsion)
-                    currentStatusMode = StatusMode.Maneuvering;
+            else if (weaponManager)
+            {
+                if (allowWithdrawal && hasPropulsion && !hasWeapons && CheckWithdraw())
+                    currentStatusMode = StatusMode.Withdrawing;
+                else if (targetVessel != null && weaponManager.currentGun && GunReady(weaponManager.currentGun))
+                    currentStatusMode = StatusMode.Firing; // Guns
+                else if (targetVessel != null && weaponManager.CurrentMissile && !weaponManager.GetLaunchAuthorization(targetVessel, weaponManager, weaponManager.CurrentMissile))
+                    currentStatusMode = StatusMode.Firing; // Missiles
+                else if (targetVessel != null && weaponManager.CurrentMissile && weaponManager.guardFiringMissile && currentStatusMode == StatusMode.Firing)
+                    currentStatusMode = StatusMode.Firing; // Post-launch authorization missile firing underway, don't change status from Firing
+                else if (targetVessel != null && hasWeapons)
+                {
+                    if (hasPropulsion)
+                        currentStatusMode = StatusMode.Maneuvering;
+                    else
+                        currentStatusMode = StatusMode.Stranded;
+                }
                 else
-                    currentStatusMode = StatusMode.Stranded;
+                    currentStatusMode = StatusMode.Idle;
+            }
             else
                 currentStatusMode = StatusMode.Idle;
 
@@ -698,6 +690,17 @@ namespace BDArmory.Control
                 if (BDArmorySettings.DEBUG_AI)
                     Debug.Log("[BDArmory.BDModuleOrbitalAI]: Status of " + vessel.vesselName + " changed from " + lastStatusMode + " to " + currentStatus);
             }
+
+            // Temporarily inhibit maneuvers if not evading a missile and waiting for a launched missile to fly to a safe distance
+            if (currentStatusMode != StatusMode.Evading && weaponManager && weaponManager.PreviousMissile)
+            {
+                if ((vessel.CoM - weaponManager.PreviousMissile.vessel.transform.position).sqrMagnitude < vessel.vesselSize.sqrMagnitude)
+                    fc.Stability(true);
+                else
+                    fc.Stability(false);
+            }
+            else
+                fc.Stability(false);
 
             // Check for incoming gunfire
             EvasionStatus();
@@ -762,24 +765,7 @@ namespace BDArmory.Control
                     }
                 }
                 evadingGunfire = true;
-                evasionNonLinearityDirection = (evasionNonLinearityDirection + 0.1f * UnityEngine.Random.onUnitSphere).normalized; // FIXME Josue This 0.1f factor should probably be configurable.
-                /* Example python code to show evolution of direction for 2s of evasion. Remove after considering the 0.1f factor.
-                import numpy, matplotlib.pyplot as plt
-                d = numpy.random.randn(3)
-                d/=numpy.linalg.norm(d)
-                D=[d]
-                for i in range(100): # 2s
-                    v = numpy.random.randn(3)
-                    v/=numpy.linalg.norm(v)
-                    d = d + 0.1 * v
-                    d/=numpy.linalg.norm(d)
-                    D.append(d)
-                D = numpy.stack(D)
-                fig = plt.figure()
-                ax = fig.add_subplot(111,projection='3d')
-                ax.scatter(D[:,0],D[:,1],D[:,2], c='b',marker='.')
-                plt.show()
-                */
+                evasionNonLinearityDirection = (evasionNonLinearityDirection + evasionErraticness * UnityEngine.Random.onUnitSphere).normalized;
                 evasiveTimer += Time.fixedDeltaTime;
 
                 if (evasiveTimer >= minEvasionTime)
@@ -801,14 +787,11 @@ namespace BDArmory.Control
         private bool CheckOrbitUnsafe()
         {
             Orbit o = vessel.orbit;
-            CelestialBody body = o.referenceBody;
-            double maxTerrainHeight = 200;
-            if (body.pqsController)
+            if (o.referenceBody != safeAltBody) // Body has been updated, update min safe alt
             {
-                PQS pqs = body.pqsController;
-                maxTerrainHeight = pqs.radiusMax - pqs.radius;
+                minSafeAltitude = o.referenceBody.MinSafeAltitude();
+                safeAltBody = o.referenceBody;
             }
-            minSafeAltitude = Math.Max(maxTerrainHeight, body.atmosphereDepth); // FIXME Josue Why not use body.minOrbitalDistance?
 
             return (o.PeA < minSafeAltitude && o.timeToPe < o.timeToAp) || (o.ApA < minSafeAltitude && (o.ApA >= 0 || o.timeToPe < -60)); // Match conditions in PilotLogic
         }
@@ -925,7 +908,7 @@ namespace BDArmory.Control
             if (Vector3.Dot(targetVessel.acceleration.normalized, toTarget.normalized) > 0)
                 toTarget += Displacement(Vector3.zero, toTarget.normalized * Vector3.Dot(targetVessel.acceleration, toTarget.normalized), Mathf.Min(timeToIntercept, 999));
 
-            Vector3 toClosestApproach = toTarget + (rotatedVector * Mathf.Clamp(actualClosestApproachDistance, minRange, weaponManager.gunRange * 0.5f));
+            Vector3 toClosestApproach = toTarget + (rotatedVector * Mathf.Clamp(actualClosestApproachDistance, minRange, weaponManager ? weaponManager.gunRange * 0.5f : actualClosestApproachDistance));
 
             // Need a maximum angle so that we don't end up going further away at close range.
             toClosestApproach = Vector3.RotateTowards(toTarget, toClosestApproach, 22.5f * Mathf.Deg2Rad, float.MaxValue);

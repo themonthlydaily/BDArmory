@@ -90,7 +90,7 @@ namespace BDArmory.Utils
                 }
                 if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log($"[BDArmory.ProjectileUtils]: Ignored Parts: " + string.Join(", ", IgnoredPartNames));
             }
-            return ProjectileUtils.IgnoredPartNames.Contains(part.partInfo.name);
+            return IgnoredPartNames.Contains(part.partInfo.name);
         }
         static HashSet<string> armorParts;
         public static bool IsArmorPart(Part part)
