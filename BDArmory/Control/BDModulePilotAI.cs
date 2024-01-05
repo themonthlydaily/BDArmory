@@ -356,23 +356,29 @@ namespace BDArmory.Control
             UI_FloatRange(minValue = 0f, maxValue = 90f, stepIncrement = 1f, scene = UI_Scene.All)]
         public float ImmelmannTurnAngle = 30f; // 30° from directly behind -> 150°
         float ImmelmannTurnCosAngle = -0.866f;
+        float BankedTurnDistance = 2800f;
         #endregion
 
         #region EvadeExtend
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MinEvasionTime", advancedTweakable = true, // Minimum Evasion Time
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MinEvasionTime", advancedTweakable = true, // Min Evasion Time
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 1f, stepIncrement = .05f, scene = UI_Scene.All)]
         public float minEvasionTime = 0.2f;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionThreshold", advancedTweakable = true, //Evade Threshold
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionThreshold", advancedTweakable = true, //Evasion Distance Threshold
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1f, scene = UI_Scene.All)]
         public float evasionThreshold = 25f;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionTimeThreshold", advancedTweakable = true, // Time on Target Threshold
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionTimeThreshold", advancedTweakable = true, // Evasion Time Threshold
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 5f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float evasionTimeThreshold = 0.1f;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionMinRangeThreshold", advancedTweakable = true, // Evasion Min Range Threshold
+            groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
+            UI_FloatSemiLogRange(minValue = 10f, maxValue = 10000f, sigFig = 1)]
+        public float evasionMinRangeThreshold = 10f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionNonlinearity", advancedTweakable = true, // Evasion/Extension Nonlinearity
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
@@ -575,6 +581,9 @@ namespace BDArmory.Control
             { nameof(extendAngleAirToAir), -90f },
             { nameof(altitudeSteerLimiterFactor), -10f },
         };
+        Dictionary<string, (float, float, int)> altSemiLogValues = new Dictionary<string, (float, float, int)> {
+            { nameof(evasionMinRangeThreshold), (1f, 1000000f, 1) },
+        };
 
         void TurnItUpToEleven(bool upToEleven)
         {
@@ -608,6 +617,14 @@ namespace BDArmory.Control
                     // using reflection here, don't look at me like that, this does not run often
                     StartCoroutine(SetVar(s.Current, (float)typeof(BDModulePilotAI).GetField(s.Current).GetValue(this)));
                 }
+            foreach (var fieldName in altSemiLogValues.Keys.ToList())
+            {
+                var field = (UI_FloatSemiLogRange)(HighLogic.LoadedSceneIsFlight ? Fields[fieldName].uiControlFlight : Fields[fieldName].uiControlEditor);
+                var temp = (field.minValue, field.maxValue, field.sigFig);
+                var altValues = altSemiLogValues[fieldName];
+                field.UpdateLimits(altValues.Item1, altValues.Item2, altValues.Item3);
+                altSemiLogValues[fieldName] = temp;
+            }
             toEleven = upToEleven;
             OnAutoTuneOptionsChanged(null, null); // Reset auto-tuning again (including the gradient) so that the correct PID limits are used.
         }
@@ -873,6 +890,7 @@ namespace BDArmory.Control
         float dynVelocityMagSqr = 1f; // Start at reasonable non-zero value.
         float dynDecayRate = 1f; // Decay rate for dynamic measurements. Set to a half-life of 60s in Start.
         float dynVelSmoothingCoef = 1f; // Decay rate for smoothing the dynVelocityMagSqr
+        float dynUserSteerLimitMax = 1f; // Track the recently used max user steer limit.
 
         float maxAllowedSinAoA;
         float lastAllowedAoA;
@@ -1016,6 +1034,7 @@ namespace BDArmory.Control
         Vector3 prevTargetDir;
         bool useVelRollTarget;
         float finalMaxSteer = 1;
+        float userSteerLimit = 1;
 
         float targetStalenessTimer = 0;
         Vector3 staleTargetPosition = Vector3.zero;
@@ -1377,6 +1396,17 @@ namespace BDArmory.Control
             ImmelmannTurnCosAngle = -Mathf.Cos(ImmelmannTurnAngle * Mathf.Deg2Rad);
         }
 
+        public void SetOnMaxSpeedChanged()
+        {
+            UI_FloatRange field = (UI_FloatRange)Fields["maxSpeed"].uiControlFlight;
+            field.onFieldChanged = OnMaxSpeedChanged;
+            OnMaxSpeedChanged(null, null);
+        }
+        public void OnMaxSpeedChanged(BaseField field, object obj)
+        {
+            BankedTurnDistance = Mathf.Clamp(8f * maxSpeed, 1000f, 4000f);
+        }
+
         public void SetOnAutoTuningRecenteringDistanceChanged()
         {
             UI_FloatRange field = (UI_FloatRange)Fields["autoTuningRecenteringDistance"].uiControlEditor;
@@ -1676,6 +1706,7 @@ namespace BDArmory.Control
             SetOnExtendAngleA2AChanged();
             SetOnTerrainAvoidanceCriticalAngleChanged();
             SetOnImmelmannTurnAngleChanged();
+            SetOnMaxSpeedChanged();
             SetOnAutoTuningRecenteringDistanceChanged();
             SetupAutoTuneSliders();
             if ((HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor) && storedSettings != null && storedSettings.ContainsKey(HighLogic.LoadedSceneIsFlight ? vessel.GetName() : EditorLogic.fetch.ship.shipName))
@@ -1808,7 +1839,7 @@ namespace BDArmory.Control
         // This is triggered every Time.fixedDeltaTime.
         protected override void AutoPilot(FlightCtrlState s)
         {
-            finalMaxSteer = 1f; // Reset finalMaxSteer, is adjusted in subsequent methods
+            // Reset and update various internal values and checks. Then update the pilot logic for the physics frame.
 
             //default brakes off full throttle
             //s.mainThrottle = 1;
@@ -1837,6 +1868,8 @@ namespace BDArmory.Control
 
             upDirection = VectorUtils.GetUpDirection(vessel.transform.position);
 
+            finalMaxSteer = 1f; // Reset finalMaxSteer, is adjusted in subsequent methods
+            userSteerLimit = GetUserDefinedSteerLimit(); // Get the current user-defined steer limit.
             CalculateAccelerationAndTurningCircle();
             CheckFlatSpin();
 
@@ -1932,8 +1965,10 @@ namespace BDArmory.Control
                 }
                 else if (weaponManager.underFire && !ramming) // If we're ramming, ignore gunfire.
                 {
-                    if (weaponManager.incomingMissTime >= evasionTimeThreshold) // If we haven't been under fire long enough, ignore gunfire
+                    if (weaponManager.incomingMissTime >= evasionTimeThreshold && weaponManager.incomingThreatDistanceSqr >= evasionMinRangeThreshold * evasionMinRangeThreshold) // If we haven't been under fire long enough or they're too close, ignore gunfire
+                    {
                         threatRating = weaponManager.incomingMissDistance;
+                    }
                 }
             }
 
@@ -2104,26 +2139,36 @@ namespace BDArmory.Control
             if (BDArmorySettings.DISABLE_RAMMING || !allowRamming || (!allowRammingGroundTargets && v.LandedOrSplashed)) return false; // Override from BDArmory settings and local config.
             if (v == null) return false; // We don't have a target.
             if (Vector3.Dot(vessel.srf_vel_direction, v.srf_vel_direction) * (float)v.srfSpeed / (float)vessel.srfSpeed > 0.95f) return false; // We're not approaching them fast enough.
-            Vector3 relVelocity = v.Velocity() - vessel.Velocity();
-            Vector3 relPosition = v.transform.position - vessel.transform.position;
-            Vector3 relAcceleration = v.acceleration - vessel.acceleration;
             float timeToCPA = vessel.TimeToCPA(v, 16f);
-
-            // Let's try to ram someone!
-            if (!ramming)
-                ramming = true;
-            SetStatus("Ramming speed!");
-
-            // Ease in velocity from 16s to 8s, ease in acceleration from 8s to 2s using the logistic function to give smooth adjustments to target point.
-            float easeAccel = Mathf.Clamp01(1.1f / (1f + Mathf.Exp((timeToCPA - 5f))) - 0.05f);
-            float easeVel = Mathf.Clamp01(2f - timeToCPA / 8f);
-            Vector3 predictedPosition = AIUtils.PredictPosition(v.transform.position, v.Velocity() * easeVel, v.acceleration * easeAccel, timeToCPA + TimeWarp.fixedDeltaTime); // Compensate for the off-by-one frame issue.
 
             // Set steer mode to manoeuvering for less than 8s left, we're trying to collide, not aim.
             if (timeToCPA < 8f)
                 steerMode = SteerModes.Manoeuvering;
             else
                 steerMode = SteerModes.NormalFlight;
+
+            // Let's try to ram someone!
+            if (!ramming)
+                ramming = true;
+            SetStatus("Ramming speed!");
+
+            // If they're also in ramming speed and trying to ram us, then just aim straight for them until the last moment.
+            var targetAI = VesselModuleRegistry.GetBDModulePilotAI(v);
+            if (timeToCPA > 1f && targetAI != null && targetAI.ramming)
+            {
+                var targetWM = VesselModuleRegistry.GetMissileFire(v);
+                if (targetWM.currentTarget != null && targetWM.currentTarget.Vessel == vessel && Vector3.Dot(vessel.srf_vel_direction, v.srf_vel_direction) < -0.866f) // They're trying to ram us and are mostly head-on! Two can play at that game!
+                {
+                    FlyToPosition(s, AIUtils.PredictPosition(v.transform.position, v.Velocity(), v.acceleration, TimeWarp.fixedDeltaTime)); // Ultimate Chicken!!!
+                    AdjustThrottle(maxSpeed, false, true);
+                    return true;
+                }
+            }
+
+            // Ease in velocity from 16s to 8s, ease in acceleration from 8s to 2s using the logistic function to give smooth adjustments to target point.
+            float easeAccel = Mathf.Clamp01(1.1f / (1f + Mathf.Exp(timeToCPA - 5f)) - 0.05f);
+            float easeVel = Mathf.Clamp01(2f - timeToCPA / 8f);
+            Vector3 predictedPosition = AIUtils.PredictPosition(v.transform.position, v.Velocity() * easeVel, v.acceleration * easeAccel, timeToCPA + TimeWarp.fixedDeltaTime); // Compensate for the off-by-one frame issue.
 
             if (controlSurfaceLag > 0)
                 predictedPosition += -1 * controlSurfaceLag * controlSurfaceLag * (timeToCPA / controlSurfaceLag - 1f + Mathf.Exp(-timeToCPA / controlSurfaceLag)) * vessel.acceleration * easeAccel; // Compensation for control surface lag.
@@ -2198,26 +2243,23 @@ namespace BDArmory.Control
                                 steerMode = SteerModes.Aiming; //steer to aim
                                 if (missile.GetWeaponClass() == WeaponClasses.SLW)
                                 {
-                                     target = MissileGuidance.GetAirToAirFireSolution(missile, v) + (vessel.Velocity() * 2.5f); //adding 2.5 to take ~2.5sec (if dropped from 50m) drop time into account where torps will still be moving vessel speed.
+                                    target = MissileGuidance.GetAirToAirFireSolution(missile, v) + (vessel.Velocity() * 2.5f); //adding 2.5 to take ~2.5sec (if dropped from 50m) drop time into account where torps will still be moving vessel speed.
                                 }
                                 else
                                 {
-                                    float timeToCPA = vessel.TimeToCPA(v, 20); //20s should be more than enough time, unless puttering around at sub-250m/s vel with max 5km extendDistA2G
+                                    // Use time for bomb aimer position to overlap target lead in order to take bomb flight time into account
+                                    //20s should be more than enough time, unless puttering around at sub-250m/s vel with max 5km extendDistA2G
+                                    float timeToCPA = AIUtils.TimeToCPA(target - weaponManager.bombAimerPosition, v.Velocity() - vessel.Velocity(), v.acceleration - vessel.acceleration, 20f);
                                     if (timeToCPA > 0 && timeToCPA < 20)
                                     {
                                         target = AIUtils.PredictPosition(v, timeToCPA);//lead moving ground target to properly line up bombing run
                                     }
                                 }
-                                target = target + (bombingAlt * upDirection);
-                                Vector3 adjustedVesselPos = GetTerrainSurfacePosition(vesselTransform.position) + (bombingAlt * upDirection);
-                                //Vector3 tDir = (target - (vesselTransform.position - (VectorUtils.GetUpDirection(vessel.CoM) * ((float)vessel.radarAltitude + bombingAlt)))).normalized;
-                                Vector3 tDir = (target - adjustedVesselPos).normalized;
-                                tDir = (1000 * tDir) - (vessel.Velocity().normalized * 600);
-                                target = adjustedVesselPos + tDir;
+                                target = GetTerrainSurfacePosition(target) + (bombingAlt * upDirection); // Aim for a consistent target point
                             }
                             else
                             {
-                                target = target + (bombingAlt * upDirection); 
+                                target = target + (bombingAlt * upDirection);
                             }
                             //dive bomb routine for when starting at high alt?
                         }
@@ -2335,7 +2377,13 @@ namespace BDArmory.Control
             if (missile != null)
             {
                 float boresightFactor = (vessel.LandedOrSplashed || v.LandedOrSplashed || missile.uncagedLock) ? 0.75f : 0.35f;
-                float minDynamicLaunchRange = MissileLaunchParams.GetDynamicLaunchParams(missile, v.Velocity(), v.transform.position, missile.maxOffBoresight * boresightFactor).minLaunchRange;
+                float minOffBoresight = missile.maxOffBoresight * boresightFactor;
+                var minDynamicLaunchRange = MissileLaunchParams.GetDynamicLaunchParams(
+                    missile,
+                    v.Velocity(),
+                    v.transform.position,
+                    minOffBoresight + (180f - minOffBoresight) * Mathf.Clamp01(((missile.transform.position - v.transform.position).magnitude - missile.minStaticLaunchRange) / (Mathf.Max(100f + missile.minStaticLaunchRange * 1.5f, 0.1f * missile.maxStaticLaunchRange) - missile.minStaticLaunchRange)) // Reduce the effect of being off-target while extending to prevent super long extends.
+                ).minLaunchRange;
                 if (canExtend && targetDot > 0 && distanceToTarget < minDynamicLaunchRange && vessel.srfSpeed > idleSpeed)
                 {
                     RequestExtend($"too close for missile: {minDynamicLaunchRange}m", v, minDynamicLaunchRange, missile: missile); // Get far enough away to use the missile.
@@ -2430,7 +2478,14 @@ namespace BDArmory.Control
             Vector3 localAngVel = vessel.angularVelocity;
             //test
             Vector3 currTargetDir = (targetPosition - vesselTransform.position).normalized;
-            if (IsExtending || IsEvading) // If we're extending or evading, add a deviation to the fly-to direction to make us harder to hit.
+            if (evasionNonlinearity > 0 && (IsExtending || IsEvading || // If we're extending or evading, add a deviation to the fly-to direction to make us harder to hit.
+                (steerMode == SteerModes.NormalFlight && weaponManager && weaponManager.guardMode && // Also, if we know enemies are near, but they're beyond gun or visual range and we're not aiming.
+                    BDATargetManager.TargetList(weaponManager.Team).Where(target =>
+                        !target.isMissile &&
+                        weaponManager.CanSeeTarget(target, true, true)
+                    ).AllAndNotEmpty(target =>
+                        (target.Vessel.vesselTransform.position - vesselTransform.position).sqrMagnitude > weaponManager.maxVisualGunRangeSqr
+                    ))))
             {
                 var squigglySquidTime = 90f * (float)vessel.missionTime + 8f * Mathf.Sin((float)vessel.missionTime * 6.28f) + 16f * Mathf.Sin((float)vessel.missionTime * 3.14f); // Vary the rate around 90°/s to be more unpredictable.
                 var squigglySquidDirection = Quaternion.AngleAxis(evasionNonlinearityDirection * squigglySquidTime, currTargetDir) * upDirection.ProjectOnPlanePreNormalized(currTargetDir).normalized;
@@ -2524,8 +2579,7 @@ namespace BDArmory.Control
             //debugString.AppendLine($"Attitude: " + attitude);
 
             // User-set steer limits
-            float userLimit = GetUserDefinedSteerLimit();
-            finalMaxSteer *= userLimit;
+            finalMaxSteer *= userSteerLimit;
             finalMaxSteer = Mathf.Clamp(finalMaxSteer, 0.1f, 1f); // added just in case to ensure some input is retained no matter what happens
 
             //roll
@@ -2559,7 +2613,7 @@ namespace BDArmory.Control
                     if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"inverting rollTarget: {rollTarget}, cosAngle: {terrainAvoidanceRollCosAngle} vs {terrainAvoidanceCriticalCosAngle}, isPSM: {isPSM}");
                     rollTarget = -rollTarget; // Avoid terrain fully inverted if the plane is mostly inverted (>30°) to begin with.
                 }
-                if (postTerrainAvoidanceCoolDownTimer >= 0)
+                if (postTerrainAvoidanceCoolDownTimer >= 0 && postTerrainAvoidanceCoolDownDuration > 0)
                 {
                     targetDirection = Vector3.RotateTowards(targetDirection, Vector3.forward, (terrainAvoidanceRollCosAngle < terrainAvoidanceCriticalCosAngle ? 30f : -30f) * Mathf.Deg2Rad * Mathf.Clamp01(1f - postTerrainAvoidanceCoolDownTimer / postTerrainAvoidanceCoolDownDuration), 0);
                 }
@@ -2662,21 +2716,21 @@ namespace BDArmory.Control
             steerRoll *= dynamicAdjustment;
 
             SetFlightControlState(s,
-                Mathf.Clamp(steerPitch, Mathf.Min(-finalMaxSteer, -0.2f), finalMaxSteer), // pitch
+                Mathf.Clamp(steerPitch, -finalMaxSteer, finalMaxSteer), // pitch
                 Mathf.Clamp(steerYaw, -finalMaxSteer, finalMaxSteer), // yaw
-                Mathf.Clamp(steerRoll, -userLimit, userLimit)); // roll
+                Mathf.Clamp(steerRoll, -userSteerLimit, userSteerLimit)); // roll
 
             if (autoTune)
             { pidAutoTuning.Update(pitchError, rollError, yawError); }
 
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
             {
-                debugString.AppendLine(String.Format("steerMode: {0}, rollError: {1,7:F4}, pitchError: {2,7:F4}, yawError: {3,7:F4}", steerMode, rollError, pitchError, yawError));
+                debugString.AppendLine(string.Format("steerMode: {0}, rollError: {1,7:F4}, pitchError: {2,7:F4}, yawError: {3,7:F4}", steerMode, rollError, pitchError, yawError));
                 debugString.AppendLine($"finalMaxSteer: {finalMaxSteer:G3}, dynAdj: {dynamicAdjustment:G3}");
                 // debugString.AppendLine($"Bank Angle: " + bankAngle);
-                debugString.AppendLine(String.Format("Pitch: P: {0,7:F4}, I: {1,7:F4}, D: {2,7:F4}", pitchProportional, pitchIntegral, pitchDamping));
-                debugString.AppendLine(String.Format("Yaw: P: {0,7:F4}, I: {1,7:F4}, D: {2,7:F4}", yawProportional, yawIntegral, yawDamping));
-                debugString.AppendLine(String.Format("Roll: P: {0,7:F4}, I: {1,7:F4}, D: {2,7:F4}", rollProportional, rollIntegral, rollDamping));
+                debugString.AppendLine(string.Format("Pitch: P: {0,7:F4}, I: {1,7:F4}, D: {2,7:F4}", pitchProportional, pitchIntegral, pitchDamping));
+                debugString.AppendLine(string.Format("Yaw: P: {0,7:F4}, I: {1,7:F4}, D: {2,7:F4}", yawProportional, yawIntegral, yawDamping));
+                debugString.AppendLine(string.Format("Roll: P: {0,7:F4}, I: {1,7:F4}, D: {2,7:F4}", rollProportional, rollIntegral, rollDamping));
             }
         }
 
@@ -2727,7 +2781,13 @@ namespace BDArmory.Control
                     if (extendForMissile != null) // If extending to fire a missile, update the extend distance for the dynamic launch range.
                     {
                         float boresightFactor = (vessel.LandedOrSplashed || extendTarget.LandedOrSplashed || extendForMissile.uncagedLock) ? 0.75f : 0.35f;
-                        var minDynamicLaunchRange = MissileLaunchParams.GetDynamicLaunchParams(extendForMissile, extendTarget.Velocity(), extendTarget.transform.position, extendForMissile.maxOffBoresight * boresightFactor).minLaunchRange;
+                        float minOffBoresight = extendForMissile.maxOffBoresight * boresightFactor;
+                        var minDynamicLaunchRange = MissileLaunchParams.GetDynamicLaunchParams(
+                            extendForMissile,
+                            extendTarget.Velocity(),
+                            extendTarget.transform.position,
+                            minOffBoresight + (180f - minOffBoresight) * Mathf.Clamp01(((extendForMissile.transform.position - extendTarget.transform.position).magnitude - extendForMissile.minStaticLaunchRange) / (Mathf.Max(100f + extendForMissile.minStaticLaunchRange * 1.5f, 0.1f * extendForMissile.maxStaticLaunchRange) - extendForMissile.minStaticLaunchRange)) // Reduce the effect of being off-target while extending to prevent super long extends.
+                        ).minLaunchRange;
                         extendDistance = Mathf.Max(extendDistanceAirToAir, minDynamicLaunchRange);
                         extendDesiredMinAltitude = weaponManager.currentTarget.Vessel.LandedOrSplashed ? (extendForMissile.GetWeaponClass() == WeaponClasses.SLW ? 10 : //drop to the deck for torpedo run
                                    Mathf.Max(defaultAltitude - 500f, minAltitude)) : //else commence level bombing
@@ -3083,7 +3143,8 @@ namespace BDArmory.Control
 
                 if (weaponManager.incomingMissileVessel != null && (weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= weaponManager.evadeThreshold)) // Missile evasion
                 {
-
+                    Vector3 targetDirection;
+                    bool overrideThrottle = false;
                     if ((weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= 1.5f) && (!weaponManager.isChaffing)) // Missile is about to impact, pull a hard turn
                     {
                         if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Missile about to impact! pull away!");
@@ -3095,10 +3156,7 @@ namespace BDArmory.Control
                         {
                             cross = -cross;
                         }
-                        Vector3 targetDirection = vesselTransform.position + (50 * vessel.Velocity() / vessel.srfSpeed) + (100 * cross);
-                        RCSEvade(s, targetDirection);//add spacemode RCS dodging; missile evasion, fire in targetDirection
-                        FlyToPosition(s, targetDirection);
-                        return;
+                        targetDirection = (50 * vessel.Velocity() / vessel.srfSpeed + 100 * cross).normalized;
                     }
                     else // Fly at 90 deg to missile to put max distance between ourselves and dispensed flares/chaff
                     {
@@ -3113,14 +3171,17 @@ namespace BDArmory.Control
                         // Dive to gain energy and hopefully lead missile into ground when not in space
                         if (vessel.atmDensity > 0.05)
                         {
-                            float angle = (Mathf.Clamp((float)vessel.radarAltitude - minAltitude, 0, 1500) / 1500) * 90;
+                            float diveScale = Mathf.Max(1000f, 2f * turnRadius);
+                            float angle = Mathf.Clamp((float)vessel.radarAltitude - minAltitude, 0, diveScale) / diveScale * 90;
                             float angleAdjMissile = Mathf.Max(Mathf.Asin(((float)vessel.radarAltitude - (float)weaponManager.incomingMissileVessel.radarAltitude) /
                                 weaponManager.incomingMissileDistance) * Mathf.Rad2Deg, 0f); // Don't dive into the missile if it's coming from below
                             angle = Mathf.Clamp(angle - angleAdjMissile, 0, 75) * Mathf.Deg2Rad;
                             breakDirection = Vector3.RotateTowards(breakDirection, -upDirection, angle, 0);
                         }
 
-                        Vector3 targetDirection = Vector3.RotateTowards(vessel.Velocity(), breakDirection, 15f * Mathf.Deg2Rad, 0).normalized;
+                        // Rotate target direction towards break direction, starting with 15 deg, and increasing to maxAllowedAoA as missile gets closer
+                        float rotAngle = Mathf.Deg2Rad * Mathf.Lerp(maxAllowedAoA, 15f, Mathf.Clamp01(weaponManager.incomingMissileTime / weaponManager.evadeThreshold));
+                        targetDirection = Vector3.RotateTowards(vessel.Velocity(), breakDirection, rotAngle, 0).normalized;
 
                         if (weaponManager.isFlaring)
                             if (!hasABEngines)
@@ -3132,10 +3193,22 @@ namespace BDArmory.Control
                             useAB = true;
                             AdjustThrottle(maxSpeed, false, useAB);
                         }
-                        RCSEvade(s, targetDirection);//add spacemode RCS dodging; missile evasion, fire in targetDirection
-                        FlyToPosition(s, vesselTransform.position + (targetDirection * 100), true);
-                        return;
+                        overrideThrottle = true;
                     }
+                    if (belowMinAltitude)
+                    {
+                        float rise = 0.5f * Mathf.Max(5f, (float)vessel.srfSpeed * 0.25f) * Mathf.Max(speedController.TWR, 1f); // Add some climb like in TakeOff (at half the rate) to get back above min altitude.
+                        targetDirection += rise * upDirection;
+
+                        float verticalComponent = Vector3.Dot(targetDirection, upDirection);
+                        if (verticalComponent < 0) // If we're below minimum altitude, enforce the evade direction to gain altitude.
+                        {
+                            targetDirection += -2f * verticalComponent * upDirection;
+                        }
+                    }
+                    RCSEvade(s, targetDirection);//add spacemode RCS dodging; missile evasion, fire in targetDirection
+                    FlyToPosition(s, vesselTransform.position + targetDirection * 100, overrideThrottle);
+                    return;
                 }
                 else if (weaponManager.underFire)
                 {
@@ -3321,8 +3394,10 @@ namespace BDArmory.Control
                 var alpha = Mathf.Clamp(0.9f + 0.1f * radarAlt / minAltitude, 0f, 0.99f);
                 gainAltSmoothedForwardPoint = wasGainingAlt ? alpha * gainAltSmoothedForwardPoint + (1f - alpha) * forwardPoint : forwardPoint; // Adjust the forward point a bit more smoothly to avoid sudden jerks.
                 gainingAlt = true;
-                float rise = Mathf.Max(5f, (float)vessel.srfSpeed * 0.25f) * Mathf.Max(speedController.TWR * Mathf.Clamp01(radarAlt / 20f), 1f); // Scale climb rate by TWR (if >1 and not really close to terrain) to allow more powerful craft to climb faster.
+                float rise = Mathf.Max(5f, (float)vessel.srfSpeed * 0.25f) * Mathf.Max(speedController.TWR * Mathf.Clamp01(radarAlt / terrainAlertDetectionRadius), 1f); // Scale climb rate by TWR (if >1 and not really close to terrain) to allow more powerful craft to climb faster.
                 rise = Mathf.Min(rise, 1.5f * (defaultAltitude - radarAlt)); // Aim for at most 50% higher than the default altitude.
+                if (initialTakeOff) // During the initial take-off, use a more gentle climb rate. 5°—15° at the take-off speed.
+                { rise = Mathf.Min(rise, Mathf.Max(5f, 10f * (float)vessel.srfSpeed / takeOffSpeed) * (0.5f + Mathf.Clamp01(radarAlt / terrainAlertDetectionRadius))); }
                 if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Gaining altitude @ {Mathf.Rad2Deg * Mathf.Atan(rise / 100f):0.0}°");
                 FlyToPosition(s, vessel.transform.position + gainAltSmoothedForwardPoint + upDirection * rise);
             }
@@ -3356,6 +3431,7 @@ namespace BDArmory.Control
                 terrainAlertDistance = float.MaxValue; // Reset the terrain alert distance.
                 float turnRadiusTwiddleFactor = turnRadiusTwiddleFactorMax; // A twiddle factor based on the orientation of the vessel, since it often takes considerable time to re-orient before avoiding the terrain. Start with the worst value.
                 terrainAlertThreatRange = turnRadiusTwiddleFactor * turnRadius + (float)vessel.srfSpeed * controlSurfaceDeploymentTime; // The distance to the terrain to consider.
+                terrainAlertThreshold = 0; // Reset the threshold in case no threats are within range.
 
                 // First, look 45° down, up, left and right from our velocity direction for immediate danger. (This should cover most immediate dangers.)
                 Ray rayForwardUp = new Ray(vesselPosition, (vesselSrfVelDir - relativeVelocityDownDirection).normalized);
@@ -3505,7 +3581,7 @@ namespace BDArmory.Control
                     correctionDirection = Vector3.RotateTowards(correctionDirection, horizontalCorrectionDirection, Mathf.Max(0.0f, (1.0f - (float)vessel.srfSpeed / 120.0f) * 0.8f * maxAngle) * adjustmentFactor, 0.0f); // Rotate up to 0.8*maxAngle back towards horizontal depending on speed < 120m/s.
                     FlyToPosition(s, vesselPosition + correctionDirection * 100);
                 }
-                postTerrainAvoidanceCoolDownTimer = 0;
+                if (postTerrainAvoidanceCoolDownDuration > 0) postTerrainAvoidanceCoolDownTimer = 0;
                 steerMode = SteerModes.Manoeuvering;
                 // Update status and book keeping.
                 SetStatus("Terrain (" + (int)terrainAlertDistance + "m)");
@@ -3677,6 +3753,7 @@ namespace BDArmory.Control
                 dynDynPresGRecorded *= dynDecayRate; // Decay the highest observed G-force from dynamic pressure (we want a fairly recent value in case the planes dynamics have changed).
             if (!vessel.LandedOrSplashed && Math.Abs(gLoadPred) > dynDynPresGRecorded)
                 dynDynPresGRecorded = Math.Abs(gLoadPred);
+            dynUserSteerLimitMax = Mathf.Max(userSteerLimit, dynDecayRate * dynUserSteerLimitMax, 0.1f); // Recent-ish max user-defined steer limit, clamped to at least 0.1. Decays at the same rate as dynamic pressure for consistency.
 
             if (!vessel.LandedOrSplashed)
             {
@@ -3829,7 +3906,7 @@ namespace BDArmory.Control
             lastSinAoA = curSinAoA;
 
             // if ((BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) && negLim>posLim) debugString.AppendLine($"Bad limits: curSinAoA: {curSinAoA}, sinAoADiff: {sinAoADiff}, : curSinAoANorm: {curSinAoANorm}, maxAllowedAoA: {maxAllowedAoA}, maxAllowedSinAoA: {maxAllowedSinAoA}");
-            if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine(String.Format("Final Pitch: {0,7:F4}  (Limits: {1,7:F4} — {2,6:F4})", s.pitch, negLim, posLim));
+            if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine(string.Format("Final Pitch: {0,7:F4}  (Limits: {1,7:F4} — {2,6:F4})", s.pitch, negLim, posLim));
         }
 
         void CalculateAccelerationAndTurningCircle()
@@ -3838,8 +3915,12 @@ namespace BDArmory.Control
 
             maxLiftAcceleration = Mathf.Clamp(maxLiftAcceleration, bodyGravity, maxAllowedGForce * bodyGravity); //limit it to whichever is smaller, what we can provide or what we can handle. Assume minimum of 1G to avoid extremely high turn radiuses.
 
-            turnRadius = dynVelocityMagSqr / maxLiftAcceleration; //radius that we can turn in assuming constant velocity, assuming simple circular motion (this is a terrible assumption, the AI usually turns on afterboosters!)
-            if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Turn Radius: {turnRadius:G4}m (terrain threat range: {turnRadiusTwiddleFactorMax * turnRadius + (float)vessel.srfSpeed * controlSurfaceDeploymentTime:G5}m)");
+            // Radius that we can turn in assuming constant velocity, assuming simple circular motion (note: this is a terrible assumption, the AI usually turns on afterboosters!)
+            turnRadius = dynVelocityMagSqr / maxLiftAcceleration / (userSteerLimit / dynUserSteerLimitMax);
+            if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
+            {
+                debugString.AppendLine($"Turn Radius: {turnRadius:0}m (max lift acc: {maxLiftAcceleration:0}m/s²), terrain threat range: {turnRadiusTwiddleFactorMax * turnRadius + (float)vessel.srfSpeed * controlSurfaceDeploymentTime:0}m, threshold: {terrainAlertThreshold:0}m");
+            }
         }
 
         void CheckFlatSpin()
@@ -3886,10 +3967,11 @@ namespace BDArmory.Control
         {
             Vector3 forwardDirection = vesselTransform.up;
             Vector3 targetDirection = (targetPosition - vesselTransform.position).normalized;
+            float targetDistance = (targetPosition - vesselTransform.position).magnitude;
 
             float vertFactor = 0;
-            vertFactor += (((float)vessel.srfSpeed / minSpeed) - 2f) * 0.3f;          //speeds greater than 2x minSpeed encourage going upwards; below encourages downwards
-            vertFactor += (((targetPosition - vesselTransform.position).magnitude / 1000f) - 1f) * 0.3f;    //distances greater than 1000m encourage going upwards; closer encourages going downwards
+            vertFactor += ((float)vessel.srfSpeed / minSpeed - 2f) * 0.3f;          //speeds greater than 2x minSpeed encourage going upwards; below encourages downwards
+            vertFactor += (targetDistance / 1000f - 1f) * 0.3f;    //distances greater than 1000m encourage going upwards; closer encourages going downwards
             vertFactor -= Mathf.Clamp01(Vector3.Dot(vesselTransform.position - targetPosition, upDirection) / 1600f - 1f) * 0.5f;       //being higher than 1600m above a target encourages going downwards
             if (targetVessel)
                 vertFactor += Vector3.Dot(targetVessel.Velocity() / targetVessel.srfSpeed, (targetVessel.ReferenceTransform.position - vesselTransform.position).normalized) * 0.3f;   //the target moving away from us encourages upward motion, moving towards us encourages downward motion
@@ -3911,10 +3993,18 @@ namespace BDArmory.Control
             var cosAngle = Vector3.Dot(targetDirection, forwardDirection);
             if (cosAngle < 0)
             {
-                if (cosAngle < ImmelmannTurnCosAngle)
-                    targetDirection = Vector3.RotateTowards(-vesselTransform.up, -vesselTransform.forward, Mathf.Deg2Rad * ImmelmannTurnAngle, 0); // If the target is in our blind spot, just pitch up to get a better view. (Immelmann turn.)
-
-                targetPosition = vesselTransform.position + Vector3.Cross(Vector3.Cross(forwardDirection, targetDirection), forwardDirection).normalized * 200; // Make the target position 90° from vesselTransform.up.
+                if (canExtend && targetDistance > BankedTurnDistance) // For long-range turning, do a banked turn (horizontal) instead to conserve energy, but only if extending is allowed.
+                {
+                    targetPosition = vesselTransform.position + Vector3.Cross(Vector3.Cross(projectedDirection, projectedTargetDirection), projectedDirection).normalized * 200;
+                }
+                else
+                {
+                    if (cosAngle < ImmelmannTurnCosAngle) // Otherwise, if the target is almost directly behind, do an Immelmann turn.
+                    {
+                        targetDirection = Vector3.RotateTowards(-vesselTransform.up, vessel.angularVelocity.x < 0.1f ? -vesselTransform.forward : vesselTransform.forward, Mathf.Deg2Rad * ImmelmannTurnAngle, 0); // If the target is in our blind spot, just pitch up (or down depending on pitch angular velocity) to get a better view. (Immelmann turn.)
+                    }
+                    targetPosition = vesselTransform.position + Vector3.Cross(Vector3.Cross(forwardDirection, targetDirection), forwardDirection).normalized * 200; // Make the target position 90° from vesselTransform.up.
+                }
             }
             else if (steerMode != SteerModes.Aiming)
             {

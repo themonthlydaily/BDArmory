@@ -520,7 +520,7 @@ namespace BDArmory.Extensions
         }
         public static bool IsMotor(this Part part)
         {
-            if (part.GetComponent<ModuleEngines>() != null || part.GetComponent<ModuleEnginesFX>() != null)
+            if (part.GetComponent<ModuleEngines>() != null)
                 return true;
             else return false;
         }

@@ -261,7 +261,7 @@ namespace BDArmory.Radar
                 }
                 irstTransform = irstTransformName != string.Empty ? part.FindModelTransform(irstTransformName) : part.transform;
                 referenceTransform = (new GameObject()).transform;
-                referenceTransform.parent = transform;
+                referenceTransform.parent = irstTransform;
                 referenceTransform.localPosition = Vector3.zero;
 
                 // fill TempSensitivityCurve with default values if not set by part config:

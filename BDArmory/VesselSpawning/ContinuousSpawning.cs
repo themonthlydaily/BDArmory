@@ -47,6 +47,11 @@ namespace BDArmory.VesselSpawning
         public void CancelSpawning()
         {
             // Continuous spawn
+            if (spawnVesselsContinuouslyCoroutine != null)
+            {
+                StopCoroutine(spawnVesselsContinuouslyCoroutine);
+                spawnVesselsContinuouslyCoroutine = null;
+            }
             if (vesselsSpawningContinuously)
             {
                 vesselsSpawningContinuously = false;
@@ -57,7 +62,7 @@ namespace BDArmory.VesselSpawning
                 if (BDACompetitionMode.Instance != null) BDACompetitionMode.Instance.ResetCompetitionStuff();
             }
             currentlySpawningCount = 0;
-            spawnVesselsContinuouslyCoroutine = null;
+            SpawnUtils.RevertSpawnLocationCamera(true);
         }
 
         public override void PreSpawnInitialisation(SpawnConfig spawnConfig)
@@ -65,6 +70,7 @@ namespace BDArmory.VesselSpawning
             base.PreSpawnInitialisation(spawnConfig);
 
             vesselsSpawningContinuously = true;
+            vesselsSpawning = true;
             spawnFailureReason = SpawnFailureReason.None; // Reset the spawn failure reason.
             continuousSpawningScores = new Dictionary<string, ContinuousSpawningScores>();
             if (spawnVesselsContinuouslyCoroutine != null)
@@ -112,6 +118,8 @@ namespace BDArmory.VesselSpawning
             }
             spawnConfig.craftFiles.Shuffle(); // Randomise the spawn order.
             spawnConfig.altitude = Math.Max(100, spawnConfig.altitude); // Don't spawn too low.
+            var spawnBody = FlightGlobals.Bodies[spawnConfig.worldIndex];
+            var spawnInOrbit = spawnConfig.altitude + spawnBody.Radius >= spawnBody.minOrbitalDistance; // Min safe orbital distance
             var spawnDistance = spawnConfig.craftFiles.Count > 1 ? (spawnConfig.absDistanceOrFactor ? spawnConfig.distance : spawnConfig.distance * (1 + (BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS > 0 ? Math.Min(spawnConfig.craftFiles.Count, BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS) : spawnConfig.craftFiles.Count))) : 0f; // If it's a single craft, spawn it at the spawn point.
             if (BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS == 0)
                 LogMessage("Spawning " + spawnConfig.craftFiles.Count + " vessels at an altitude of " + spawnConfig.altitude.ToString("G0") + (spawnConfig.craftFiles.Count > 8 ? "m, this may take some time..." : "m."));
@@ -164,7 +172,7 @@ namespace BDArmory.VesselSpawning
                         continuousSpawnedVesselCount %= spawnSlots.Count;
                     }
                     // Add any craft that hasn't been spawned or has died to the spawn queue if it isn't already in the queue.
-                    foreach (var craftURL in spawnConfig.craftFiles.Where(craftURL => (BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL > 0 ? spawnCounts[craftURL] < BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL : true) && !spawnQueue.Contains(craftURL) && (!craftURLToVesselName.ContainsKey(craftURL) || (BDACompetitionMode.Instance.Scores.Players.Contains(craftURLToVesselName[craftURL]) && BDACompetitionMode.Instance.Scores.ScoreData[craftURLToVesselName[craftURL]].deathTime >= 0))))
+                    foreach (var craftURL in spawnConfig.craftFiles.Where(craftURL => (BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL == 0 || spawnCounts[craftURL] < BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL) && !spawnQueue.Contains(craftURL) && (!craftURLToVesselName.ContainsKey(craftURL) || (BDACompetitionMode.Instance.Scores.Players.Contains(craftURLToVesselName[craftURL]) && BDACompetitionMode.Instance.Scores.ScoreData[craftURLToVesselName[craftURL]].deathTime >= 0))))
                     {
                         if (BDArmorySettings.DEBUG_SPAWNING)
                         {
@@ -180,6 +188,22 @@ namespace BDArmory.VesselSpawning
                         LogMessage("Spawn queue is empty and not enough vessels are active, ending competition.", false);
                         BDACompetitionMode.Instance.StopCompetition();
                         break;
+                    }
+                    { // Perform a "bubble shuffle" (randomly swap pairs of craft moving through the queue).
+                        List<string> shufflePool = new();
+                        Queue<string> bubbleShuffleQueue = new();
+                        while (spawnQueue.Count > 0)
+                        {
+                            shufflePool.Add(spawnQueue.Dequeue()); // Take craft from the spawn queue.
+                            if (shufflePool.Count > 1) // Use a pool of size 2 for shuffling.
+                            {
+                                shufflePool.Shuffle();
+                                bubbleShuffleQueue.Enqueue(shufflePool.First());
+                                shufflePool.RemoveAt(0);
+                            }
+                        }
+                        foreach (var craft in shufflePool) bubbleShuffleQueue.Enqueue(craft); // Add any remaining craft in the shuffle pool.
+                        while (bubbleShuffleQueue.Count > 0) spawnQueue.Enqueue(bubbleShuffleQueue.Dequeue()); // Re-insert the craft into the spawn queue from the bubble shuffle queue.
                     }
                     while (craftToSpawn.Count + currentlySpawningCount + currentlyActive < spawnSlots.Count && spawnQueue.Count > 0)
                         craftToSpawn.Enqueue(spawnQueue.Dequeue());
@@ -204,10 +228,15 @@ namespace BDArmory.VesselSpawning
                             var direction = (Quaternion.AngleAxis(heading, radialUnitVector) * refDirection).ProjectOnPlanePreNormalized(radialUnitVector).normalized;
                             craftSpawnPosition = spawnPoint + spawnDistance * direction;
                             FlightGlobals.currentMainBody.GetLatLonAlt(craftSpawnPosition, out craftGeoCoords.x, out craftGeoCoords.y, out craftGeoCoords.z); // Convert spawn point to geo-coords for the actual spawning function.
-                            StartCoroutine(SpawnCraft(new VesselSpawnConfig(craftURL, craftSpawnPosition, direction, (float)spawnConfig.altitude, -80f, true, 0, true)));
+                            StartCoroutine(SpawnCraft(new VesselSpawnConfig(craftURL, craftSpawnPosition, direction, (float)spawnConfig.altitude, -80f, true, spawnInOrbit, 0, true)));
                         }
                         craftURLToVesselName = spawnedVesselURLs.ToDictionary(kvp => kvp.Value, kvp => kvp.Key); // Update the vesselName-to-craftURL dictionary for the latest spawns.
                         craftToSpawn.Clear(); // Clear the queue since we just spawned all those vessels.
+                    }
+                    if (vesselsSpawning) // Wait for the initial spawn to be ready before letting CameraTools take over.
+                    {
+                        yield return new WaitWhileFixed(() => currentlySpawningCount > 0);
+                        vesselsSpawning = false;
                     }
 
                     // Start the competition once we have enough craft.
@@ -239,7 +268,11 @@ namespace BDArmory.VesselSpawning
             ++currentlySpawningCount;
             // Spawn vessel
             yield return SpawnSingleVessel(vesselSpawnConfig);
-            if (spawnFailureReason != SpawnFailureReason.None) yield break;
+            if (spawnFailureReason != SpawnFailureReason.None)
+            {
+                --currentlySpawningCount;
+                yield break;
+            }
             var vessel = GetSpawnedVesselsName(vesselSpawnConfig.craftURL);
             if (vessel == null)
             {
@@ -248,7 +281,7 @@ namespace BDArmory.VesselSpawning
             }
 
             // Perform post-spawn stuff.
-            yield return PostSpawnMainSequence(vessel, true, false);
+            yield return PostSpawnMainSequence(vessel, true, false, false);
             if (spawnFailureReason != SpawnFailureReason.None)
             {
                 --currentlySpawningCount;

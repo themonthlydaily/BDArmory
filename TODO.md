@@ -3,20 +3,20 @@
 - Auto-tuning with numeric input fields enabled in the AI GUI won't let the values change
 - Changing the slider resolution sometimes triggers clamping of unclamped values
 - HP of asteroids in the SPH is wrong.
+- Taking off with the global 'P' button for two VTOL craft on the runway disables their engines!
+- WM without AI or with stationary ground AI sometimes just sits there without attacking valid targets.
 
 
 ### TODO (smaller items and specific requests / higher priority)
 - Fix bugs
 
+- Add tooltips to settings.
+- Add thumbnails to the craft browser.
+
 - Wiki entries
 	- Auto-Tuning
 
-- Ranked tournament mode
-	- Add support for converting tournament.json to tournament.state
-- Vessel Spawner
-	- Add option to select craft from subfolders of the SPH/VAB.
-
-- Requests from #tea
+- Requests from discord:
 	- ? Add an action group trigger to the WM based on the current target being an enemy vessel within a custom distance. - Make it a collapsable section of custom triggers to include other conditions later.
 	- Artillery aiming support
 	- Lift stacking improvements with logical wing segments
@@ -27,6 +27,7 @@
 		- Entering evasion.
 	- Smart part that can trigger an action group when one of the specified parts gets below X% HP.
 		- Would have to work similarly to the KAL to remember which parts it should affect/monitor.
+	- Scope view for aiming tank turrets (similar to the targeting pod, but more direct), maybe holding a button adjusts the camera zoom based on the distance to the target?
 
 - Ilya_G requests:
 	- Omni-radars to include a radiation pattern so that they don't see well along the dipole axis.
@@ -41,10 +42,15 @@
 		- Precision reduction option in aiming guns/guiding missiles.
 		- Laser turrets will still be deadly accurate (increasing maxDeviation would amount to the same thing as targeting jitter).
 		- Add noise (fn of game time, not proper random) to targeting info.
-		- Multiply pos, vel, acc by 1+sin(t)/X for X=10, 100, etc. to simulate sampling noise. t doesn't need to be game time, but something related to the vessel (e.g., speed + time)
+		- Multiply pos, vel, acc by 1+sin(t)/X for X=10, 100, etc. to simulate sampling noise. It doesn't need to be game time, but something related to the vessel (e.g., speed + time)
 	- Multiple ammo types used per shot for weapons (other than just EC).
 
+- Reset things that the RWP slider changes when switching away from the rounds.
+	- RWP really shouldn't be setting the sliders, but should instead provide overrides for when accessing those values.
 - Fix the piñata spawning logic - spawn the piñata(s) separately after circular spawning has occured.
+- Add NPC and piñata support for single competitions as well (currently they're only supported in tournaments)
+	- Add "role" option in the VM for specifying PC, NPC, piñata, etc.
+- Tournament support for custom spawn templates.
 - Add VTOL AI to the AI GUI.
 - Motherships branch
 - Figure out why bullet hole decals are frequently offset behind the craft. - krakensbane or flightintegrator at time of decal attachment?

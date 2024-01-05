@@ -31,8 +31,7 @@ namespace BDArmory.Control
         Vector3? dodgeVector;
         float weaveAdjustment = 0;
         float weaveDirection = 1;
-        const float weaveLimit = 15;
-        const float weaveFactor = 6.5f;
+        const float weaveLimit = 2.3f; // Scale factor for the limit of the WeaveFactor (original was 6.5 factor and 15 limit).
 
         Vector3 upDir;
 
@@ -41,7 +40,7 @@ namespace BDArmory.Control
         bool leftPath = false;
 
         bool doExtend = false;
-
+        bool doReverse = false;
         protected override Vector3d assignedPositionGeo
         {
             get { return intermediatePositionGeo; }
@@ -96,6 +95,10 @@ namespace BDArmory.Control
             UI_FloatRange(minValue = -45f, maxValue = 45f, stepIncrement = 1f, scene = UI_Scene.All)]
         public float BankAngle = 0;
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_WeaveFactor"),//Weave Factor
+            UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float WeaveFactor = 6.5f;
+
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_SteerFactor"),//Steer Factor
             UI_FloatRange(minValue = 0.2f, maxValue = 20f, stepIncrement = .1f, scene = UI_Scene.All)]
         public float steerMult = 6;
@@ -119,6 +122,10 @@ namespace BDArmory.Control
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MaxEngagementRange"),//Max engagement range
             UI_FloatRange(minValue = 500f, maxValue = 8000f, stepIncrement = 100f, scene = UI_Scene.All)]
         public float MaxEngagementRange = 4000;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MaintainEngagementRange"),//Maintain min Range
+    UI_Toggle(enabledText = "#LOC_BDArmory_true", disabledText = "#LOC_BDArmory_false")]//true; false
+        public bool maintainMinRange = false;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ManeuverRCS"),//RCS active
             UI_Toggle(enabledText = "#LOC_BDArmory_ManeuverRCS_enabledText", disabledText = "#LOC_BDArmory_ManeuverRCS_disabledText", scene = UI_Scene.All),]//Maneuvers--Combat
@@ -270,6 +277,8 @@ namespace BDArmory.Control
             }
             Fields["CombatAltitude"].guiActive = (SurfaceType == AIUtils.VehicleMovementType.Submarine);
             Fields["CombatAltitude"].guiActiveEditor = (SurfaceType == AIUtils.VehicleMovementType.Submarine);
+            Fields["maintainMinRange"].guiActive = (SurfaceType == AIUtils.VehicleMovementType.Land);
+            Fields["maintainMinRange"].guiActiveEditor = (SurfaceType == AIUtils.VehicleMovementType.Land);
             this.part.RefreshAssociatedWindows();
             if (BDArmoryAIGUI.Instance != null)
             {
@@ -326,8 +335,9 @@ namespace BDArmory.Control
             }
 
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + targetDirection * 10f, 2, Color.blue);
-            GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position + (0.05f * vesselTransform.right), vesselTransform.position + (0.05f * vesselTransform.right), 2, Color.green);
-
+            //GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position + (0.05f * vesselTransform.right), vesselTransform.position + (0.05f * vesselTransform.right), 2, Color.green);
+            GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + vessel.srf_vel_direction.ProjectOnPlanePreNormalized(upDir) * 10f, 2, Color.green);
+            GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + vesselTransform.up * 10f, 5, Color.red);
             if (SurfaceType != AIUtils.VehicleMovementType.Stationary)
                 pathingMatrix.DrawDebug(vessel.CoM, pathingWaypoints);
         }
@@ -362,6 +372,7 @@ namespace BDArmory.Control
 
         void PilotLogic()
         {
+            doReverse = false;
             if (SurfaceType != AIUtils.VehicleMovementType.Stationary)
             {
                 // check for collisions, but not every frame
@@ -460,9 +471,9 @@ namespace BDArmory.Control
                     }
                     else // just point at target and go
                     {
-                        if ((targetVessel.horizontalSrfSpeed < 10 || Vector3.Dot(targetVessel.srf_vel_direction.ProjectOnPlanePreNormalized(upDir), vessel.up) < 0) //if target is stationary or we're facing in opposite directions
+                        if (!maintainMinRange && (((targetVessel.horizontalSrfSpeed < 10) || Vector3.Dot(targetVessel.vesselTransform.up, vessel.vesselTransform.up) < 0) //if target is stationary or we're facing in opposite directions
                             && (distance < MinEngagementRange || (distance < (MinEngagementRange * 3 + MaxEngagementRange) / 4 //and too close together
-                            && extendingTarget != null && targetVessel != null && extendingTarget == targetVessel)))
+                            && extendingTarget != null && targetVessel != null && extendingTarget == targetVessel))))
                         {
                             extendingTarget = targetVessel;
                             // not sure if this part is very smart, potential for improvement
@@ -473,34 +484,60 @@ namespace BDArmory.Control
                         }
                         else
                         {
+                            if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) DebugLine($"velAngle: {Vector3.Angle(vessel.srf_vel_direction.ProjectOnPlanePreNormalized(vessel.up), vesselTransform.up)}");
                             extendingTarget = null;
                             targetDirection = vecToTarget.ProjectOnPlanePreNormalized(upDir);
-                            if (Vector3.Dot(targetDirection, vesselTransform.up) < 0)
-                                targetVelocity = PoweredSteering ? MaxSpeed : 0; // if facing away from target
-                            else if (distance >= MaxEngagementRange || distance <= MinEngagementRange)
-                                targetVelocity = MaxSpeed;
-                            else
+                            if (weaponManager != null && weaponManager.selectedWeapon != null)
                             {
-                                targetVelocity = CruiseSpeed / 10 + (MaxSpeed - CruiseSpeed / 10) * (distance - MinEngagementRange) / (MaxEngagementRange - MinEngagementRange); //slow down if inside engagement range to extend shooting opportunities
-                                if (weaponManager != null && weaponManager.selectedWeapon != null)
+                                switch (weaponManager.selectedWeapon.GetWeaponClass())
                                 {
-                                    switch (weaponManager.selectedWeapon.GetWeaponClass())
-                                    {
-                                        case WeaponClasses.Gun:
-                                        case WeaponClasses.Rocket:
-                                        case WeaponClasses.DefenseLaser:
-                                            var gun = (ModuleWeapon)weaponManager.selectedWeapon;
-                                            if (gun != null && (gun.yawRange == 0 || gun.maxPitch == gun.minPitch) && gun.FiringSolutionVector != null)
-                                            {
-                                                aimingMode = true;
-                                                if (Vector3.Angle((Vector3)gun.FiringSolutionVector, vessel.transform.up) < 20)
-                                                    targetDirection = (Vector3)gun.FiringSolutionVector;
-                                            }
-                                            break;
-                                    }
+                                    case WeaponClasses.Gun:
+                                    case WeaponClasses.Rocket:
+                                    case WeaponClasses.DefenseLaser:
+                                        var gun = (ModuleWeapon)weaponManager.selectedWeapon;
+                                        if (gun != null && (gun.yawRange == 0 || gun.maxPitch == gun.minPitch) && gun.FiringSolutionVector != null)
+                                        {
+                                            aimingMode = true;
+                                            if (Vector3.Angle((Vector3)gun.FiringSolutionVector, vessel.transform.up) < 20)
+                                                targetDirection = (Vector3)gun.FiringSolutionVector;
+                                        }
+                                        break;
                                 }
                             }
-                            targetVelocity = Mathf.Clamp(targetVelocity, PoweredSteering ? CruiseSpeed / 5 : 0, MaxSpeed); // maintain a bit of speed if using powered steering
+                            if (distance >= MaxEngagementRange || distance <= MinEngagementRange * 1.25f)
+                            {
+                                if (distance >= MaxEngagementRange)
+                                    targetVelocity = MaxSpeed;//out of engagement range, engines ahead full
+                                if (distance <= MinEngagementRange * 1.25f) //coming within minEngagement range
+                                {
+                                    if (maintainMinRange) //for some reason ignored if both vessel and targetvessel using Mk2roverCans?
+                                    {
+                                        if (targetVessel.srfSpeed < 10)
+                                        {
+                                            targetVelocity = 0;
+                                            SetStatus($"Braking");
+                                        }
+                                        if (distance <= MinEngagementRange) //rolled to a stop inside minRange/target has encroached
+                                        {
+                                            //if (Vector3.Dot(vessel.vesselTransform.up, vessel.srf_vel_direction.ProjectOnPlanePreNormalized(upDir)) > 0) //we're still moving forward
+                                            //brakes = true;
+                                            //else brakes = false;//come to a stop and reversing, stop braking
+                                            doReverse = true;
+                                            targetVelocity = -MaxSpeed;
+                                            SetStatus($"Reversing");
+                                            return;
+                                        }
+                                        return;
+                                    }
+                                    else
+                                        targetVelocity = MaxSpeed;
+                                }
+                            }
+                            else //within engagement envelope
+                            {
+                                targetVelocity = !maintainMinRange ? MaxSpeed : CruiseSpeed / 10 + (MaxSpeed - CruiseSpeed / 10) * (distance - MinEngagementRange) / (MaxEngagementRange - MinEngagementRange); //slow down if inside engagement range to extend shooting opportunities
+                            }
+                            targetVelocity = Mathf.Clamp(targetVelocity, PoweredSteering ? CruiseSpeed / 5 : (doReverse ? -MaxSpeed : 0), MaxSpeed); // maintain a bit of speed if using powered steering
                         }
                     }
                     SetStatus($"Engaging target");
@@ -580,11 +617,11 @@ namespace BDArmory.Control
                 if (weaponManager.isDecoying) //incoming passive sonar torpedo, reduce craft noise
                     targetVelocity = CruiseSpeed / 2;
                 else
-                    targetVelocity = MaxSpeed;
+                    if (!maintainMinRange) targetVelocity = MaxSpeed;
                 if (weaponManager.underFire || weaponManager.incomingMissileDistance < 2500)
                 {
-                    if (Mathf.Abs(weaveAdjustment) + Time.deltaTime * weaveFactor > weaveLimit) weaveDirection *= -1;
-                    weaveAdjustment += weaveFactor * weaveDirection * Time.deltaTime;
+                    if (Mathf.Abs(weaveAdjustment) + Time.deltaTime * WeaveFactor > weaveLimit * WeaveFactor) weaveDirection *= -1;
+                    weaveAdjustment += WeaveFactor * weaveDirection * Time.deltaTime;
                 }
                 else
                 {
@@ -632,7 +669,9 @@ namespace BDArmory.Control
 
         void AdjustThrottle(float targetSpeed)
         {
-            targetVelocity = Mathf.Clamp(targetVelocity, 0, MaxSpeed);
+            targetVelocity = Mathf.Clamp(targetVelocity, doReverse ? -MaxSpeed : 0, MaxSpeed);
+            targetSpeed = Mathf.Clamp(targetSpeed, doReverse ? -MaxSpeed : 0, MaxSpeed);
+            float velocitySignedSrfSpeed = Vector3.Angle(vessel.srf_vel_direction.ProjectOnPlanePreNormalized(upDir), vesselTransform.up) < 110 ? (float)vessel.srfSpeed : -(float)vessel.srfSpeed;
 
             if (float.IsNaN(targetSpeed)) //because yeah, I might have left division by zero in there somewhere
             {
@@ -641,11 +680,12 @@ namespace BDArmory.Control
             }
             else
             {
-                if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) DebugLine($"Target velocity: {targetVelocity}");
+                if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) DebugLine($"Target velocity: {targetSpeed}; signed Velocity: {velocitySignedSrfSpeed}; brakeVel: {targetSpeed * velocitySignedSrfSpeed}; use brakes: {(targetSpeed * velocitySignedSrfSpeed < -5)}");
             }
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) DebugLine($"engine thrust: {speedController.debugThrust}, motor zero: {motorControl.zeroPoint}");
 
             speedController.targetSpeed = motorControl.targetSpeed = targetSpeed;
+            motorControl.signedSrfSpeed = velocitySignedSrfSpeed;
             speedController.useBrakes = motorControl.preventNegativeZeroPoint = speedController.debugThrust > 0;
         }
 
@@ -665,8 +705,8 @@ namespace BDArmory.Control
                 driftMult = Mathf.Max(Vector3.Angle(vessel.srf_velocity, yawTarget) / MaxDrift, 1);
                 yawTarget = Vector3.RotateTowards(vessel.srf_velocity, yawTarget, MaxDrift * Mathf.Deg2Rad, 0);
             }
-
-            float yawError = VectorUtils.SignedAngle(vesselTransform.up, yawTarget, vesselTransform.right) + (aimingMode ? 0 : weaveAdjustment);
+            bool invertCtrlPoint = Vector3.Angle(vessel.srf_vel_direction.ProjectOnPlanePreNormalized(vessel.up), vesselTransform.up) > 90 && Math.Round(vessel.srfSpeed, 1) > 1; //need to flip vessel 'forward' when reversing for proper steerage
+            float yawError = VectorUtils.SignedAngle(invertCtrlPoint ? -vesselTransform.up : vesselTransform.up, yawTarget, vesselTransform.right) + (aimingMode ? 0 : weaveAdjustment);
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
             {
                 DebugLine($"yaw target: {yawTarget}, yaw error: {yawError}");
@@ -679,7 +719,7 @@ namespace BDArmory.Control
                 if (SurfaceType == AIUtils.VehicleMovementType.Submarine)
                 {
                     float targetAlt = CombatAltitude;
-                    if (weaponManager != null && weaponManager.selectedWeapon != null)
+                    if (weaponManager != null && weaponManager.currentTarget != null && weaponManager.selectedWeapon != null)
                     {
                         switch (weaponManager.selectedWeapon.GetWeaponClass())
                         {
@@ -690,12 +730,42 @@ namespace BDArmory.Control
                                 }
                             case WeaponClasses.Gun:
                                 {
-                                    if (weaponManager.currentTarget.isSplashed || ((weaponManager.currentTarget.isFlying || weaponManager.currentTarget.Vessel.situation == Vessel.Situations.LANDED) && weaponManager.currentGun.turret))
+                                    if (BDArmorySettings.BULLET_WATER_DRAG)
                                     {
-                                        if (Vector3.Distance(vessel.CoM, weaponManager.currentTarget.Vessel.CoM) > weaponManager.selectedWeapon.GetEngageRange())
-                                            targetAlt = 10; //come to periscope depth in preparation for surface attack when in range
-                                        else
-                                            targetAlt = -1;//in range, surface to engage with deck guns
+                                        if (weaponManager.currentTarget.isSplashed || ((weaponManager.currentTarget.isFlying || weaponManager.currentTarget.Vessel.situation == Vessel.Situations.LANDED) && weaponManager.currentGun.turret))
+                                        {
+                                            if (vessel.CoM.FurtherFromThan(weaponManager.currentTarget.Vessel.CoM, weaponManager.selectedWeapon.GetEngageRange()))
+                                                targetAlt = -10; //come to periscope depth in preparation for surface attack when in range
+                                            else
+                                                targetAlt = 1;//in range, surface to engage with deck guns
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (weaponManager.currentTarget.Vessel.situation == Vessel.Situations.LANDED && weaponManager.currentGun.turret) //surface for shooting land targets with turrets
+                                        {
+                                            if (vessel.CoM.FurtherFromThan(weaponManager.currentTarget.Vessel.CoM, weaponManager.selectedWeapon.GetEngageRange()))
+                                                targetAlt = -10; //come to periscope depth in preparation for surface attack when in range
+                                            else
+                                                targetAlt = 1;//in range, surface to engage with deck guns
+                                        }
+                                        if (!weaponManager.currentGun.turret && weaponManager.currentTarget.isSplashed)
+                                        {
+                                            if (!doExtend)
+                                            {
+                                                if (weaponManager.currentTarget.Vessel.altitude < CombatAltitude / 4 && vessel.CoM.FurtherFromThan(weaponManager.currentTarget.Vessel.CoM, 200)) //200m
+                                                {
+                                                    targetAlt = (float)weaponManager.currentTarget.Vessel.altitude; //engaging enemy sub or ship, but break off when too close to target or surface
+                                                }
+                                                else
+                                                    doExtend = true;
+                                            }
+                                            else
+                                            {
+                                                if (vessel.altitude < (CombatAltitude * .66f) || vessel.CoM.FurtherFromThan(weaponManager.currentTarget.Vessel.CoM, 1000)) doExtend = false;
+                                            }
+                                        }
+                                        //else remain at combat depth and engage with turrets.
                                     }
                                     break;
                                 }
@@ -704,16 +774,16 @@ namespace BDArmory.Control
                                 {
                                     if (weaponManager.currentTarget.Vessel.situation == Vessel.Situations.LANDED || weaponManager.currentTarget.isFlying && weaponManager.currentGun.turret)
                                     {
-                                        if (Vector3.Distance(vessel.CoM, weaponManager.currentTarget.Vessel.CoM) > weaponManager.selectedWeapon.GetEngageRange())
-                                            targetAlt = 10; //come to periscope depth in preparation for surface attack when in range
+                                        if (vessel.CoM.FurtherFromThan(weaponManager.currentTarget.Vessel.CoM, weaponManager.selectedWeapon.GetEngageRange()))
+                                            targetAlt = -10; //come to periscope depth in preparation for surface attack when in range
                                         else
-                                            targetAlt = -1; //surface to engage with turrets
+                                            targetAlt = 1; //surface to engage with turrets
                                     }
                                     if (weaponManager.currentTarget.isSplashed)
                                     {
                                         if (!doExtend)
                                         {
-                                            if (weaponManager.currentTarget.Vessel.altitude < CombatAltitude / 4 && Vector3.Distance(vessel.CoM, weaponManager.currentTarget.Vessel.CoM) > 200)
+                                            if (weaponManager.currentTarget.Vessel.altitude < CombatAltitude / 4 && vessel.CoM.FurtherFromThan(weaponManager.currentTarget.Vessel.CoM, 200))
                                             {
                                                 targetAlt = (float)weaponManager.currentTarget.Vessel.altitude; //engaging enemy sub or ship, but break off when too close
                                             }
@@ -722,7 +792,7 @@ namespace BDArmory.Control
                                         }
                                         else
                                         {
-                                            if (vessel.altitude < (CombatAltitude *.66f) || Vector3.Distance(vessel.CoM, weaponManager.currentTarget.Vessel.CoM) > 1000) doExtend = false;
+                                            if (vessel.altitude < (CombatAltitude * .66f) || vessel.CoM.FurtherFromThan(weaponManager.currentTarget.Vessel.CoM, 1000)) doExtend = false;
                                         }
                                     }
                                     break;
@@ -765,8 +835,6 @@ namespace BDArmory.Control
                 pitchError = VectorUtils.SignedAngle(vesselTransform.up, targetDirection.ProjectOnPlanePreNormalized(vesselTransform.right), -vesselTransform.forward);
                 if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) DebugLine($"pitch error: {pitchError}");
             }
-
-
             float rollError = 0;
             if (SurfaceType != AIUtils.VehicleMovementType.Stationary)
             {
@@ -789,9 +857,9 @@ namespace BDArmory.Control
             Vector3 localAngVel = vessel.angularVelocity;
             SetFlightControlState(s,
                 Mathf.Clamp(((aimingMode ? 0.02f : 0.015f) * steerMult * pitchError) + pitchIntegral - (steerDamping * -localAngVel.x), -2, 2), // pitch
-                (((aimingMode ? 0.007f : 0.005f) * steerMult * yawError) - (steerDamping * 0.2f * -localAngVel.z)) * driftMult, // yaw
+                Mathf.Clamp((((aimingMode ? 0.007f : 0.005f) * steerMult * yawError) - (steerDamping * 0.2f * -localAngVel.z)) * driftMult, -2, 2), // yaw
                 steerMult * 0.006f * rollError - 0.4f * steerDamping * -localAngVel.y, // roll
-                -(((aimingMode ? 0.005f : 0.003f) * steerMult * yawError) - (steerDamping * 0.1f * -localAngVel.z)) // wheel steer
+                -Mathf.Clamp((((aimingMode ? 0.005f : 0.003f) * steerMult * yawError) - (steerDamping * 0.1f * -localAngVel.z)), -2, 2) // wheel steer
             );
 
             if (ManeuverRCS && (Mathf.Abs(s.roll) >= 1 || Mathf.Abs(s.pitch) >= 1 || Mathf.Abs(s.yaw) >= 1))
