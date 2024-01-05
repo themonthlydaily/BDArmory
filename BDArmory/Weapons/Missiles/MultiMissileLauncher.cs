@@ -742,7 +742,7 @@ namespace BDArmory.Weapons.Missiles
                 tubesFired++;
                 launchesThisSalvo++;
                 launchTransforms[m].localScale = Vector3.zero;
-                //time to deduct ammo = !clustermissile or clsuter missile still on plane
+                //time to deduct ammo = !clustermissile or cluster missile still on plane
                 //time to not deduct ammo = in-flight clMsl
                 if (!missileSpawner.SpawnMissile(launchTransforms[m], offset * Length, !isLaunchedClusterMissile))
                 {
@@ -1048,15 +1048,19 @@ namespace BDArmory.Weapons.Missiles
                 ml.launched = true;
                 if (ml.TargetPosition == Vector3.zero) ml.TargetPosition = missileLauncher.MissileReferenceTransform.position + (missileLauncher.MissileReferenceTransform.forward * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
                 ml.MissileLaunch();
-                wpm.heatTarget = TargetSignatureData.noTarget;
+                if (wpm != null) wpm.heatTarget = TargetSignatureData.noTarget;
             }
             missileLauncher.launched = true;
-            using (List<TargetInfo>.Enumerator Tgt = targetsAssigned.GetEnumerator())
-                while (Tgt.MoveNext())
-                {
-                    if (!firedTargets.Contains(Tgt.Current))
-                        Tgt.Current.Disengage(wpm);
-                }
+            if (wpm != null)
+            {
+                using (List<TargetInfo>.Enumerator Tgt = targetsAssigned.GetEnumerator())
+                    while (Tgt.MoveNext())
+                    {
+                        if (Tgt.Current == null) continue;
+                        if (!firedTargets.Contains(Tgt.Current))
+                            Tgt.Current.Disengage(wpm);
+                    }
+            }
             if (deployState != null)
             {
                 yield return new WaitForSecondsFixed(0.5f); //wait for missile to clear bay

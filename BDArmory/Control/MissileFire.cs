@@ -699,8 +699,20 @@ namespace BDArmory.Control
         public float chaffInterval = 0.5f; // Prior default was 0.6
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ChaffWaitTime", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Chaff dispensing wait time
-            UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+    UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float chaffWaitTime = 0.6f; // Works well
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_SmokeRepetition", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Chaff dispensing repetition
+    UI_FloatRange(minValue = 1f, maxValue = 10, stepIncrement = 1f, scene = UI_Scene.All)]
+        public float smokeRepetition = 1f; 
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_SmokeInterval", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Chaff dispensing interval
+            UI_FloatRange(minValue = 0.1f, maxValue = 4f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float smokeInterval = 1;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_SmokeWaitTime", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Chaff dispensing wait time
+UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float smokeWaitTime = 1f; // Works well
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_NonGuardModeCMs", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true), // Non-guard mode CMs.
             UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All)]
@@ -2889,7 +2901,7 @@ namespace BDArmory.Control
         {
             if (!isSmoking && ThreatClosingTime(incomingMissileVessel) <= cmThreshold)
             {
-                StartCoroutine(SmokeRoutine((int)chaffRepetition, chaffInterval));
+                StartCoroutine(SmokeRoutine((int)smokeRepetition, smokeInterval)); 
             }
         }
 
@@ -2905,7 +2917,7 @@ namespace BDArmory.Control
         {
             if (!isBubbling && ThreatClosingTime(incomingMissileVessel) <= cmThreshold)
             {
-                StartCoroutine(BubbleRoutine((int)cmRepetition, cmInterval));
+                StartCoroutine(BubbleRoutine((int)chaffRepetition, chaffInterval));
             }
         }
 
@@ -3007,7 +3019,7 @@ namespace BDArmory.Control
                 if (i < repetition - 1) // Don't wait on the last one.
                     yield return new WaitForSecondsFixed(interval);
             }
-            yield return new WaitForSecondsFixed(cmWaitTime);
+            yield return new WaitForSecondsFixed(smokeWaitTime);
             isSmoking = false;
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} ending smoke routine");
         }
@@ -6428,7 +6440,8 @@ namespace BDArmory.Control
                 MissileBase ml = CurrentMissile;
                 MissileBase pMl = PreviousMissile;
                 if (!ml && pMl) ml = PreviousMissile; //if fired missile, then switched to guns or something
-                if (ml && ml.TargetingMode == MissileBase.TargetingModes.Radar && vesselRadarData != null && (!vesselRadarData.locked || vesselRadarData.lockedTargetData.vessel != guardTarget))
+                //if (ml && ml.TargetingMode == MissileBase.TargetingModes.Radar &&
+                if (vesselRadarData != null && (!vesselRadarData.locked || vesselRadarData.lockedTargetData.vessel != guardTarget))
                 {
                     if (!vesselRadarData.locked)
                     {
@@ -6865,12 +6878,20 @@ namespace BDArmory.Control
                                 Vector3 TargetLead = MissileGuidance.GetAirToAirFireSolution(ml, targetVessel.CoM, targetVessel.Velocity());
                                 designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(TargetLead, targetVessel.mainBody), targetVessel.vesselName.Substring(0, Mathf.Min(12, targetVessel.vesselName.Length)));
                             }
-                            else designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(ml.MissileReferenceTransform.position + ml.MissileReferenceTransform.forward * 10000, vessel.mainBody), "null target");
-                        }
-                        if (ml.GetWeaponClass() == WeaponClasses.Bomb)
-                        {
-                            dumbfire = true;
-                            validTarget = true;
+                            else
+                            {
+                                if (ml.GetWeaponClass() == WeaponClasses.Bomb)
+                                {
+                                    dumbfire = true;
+                                    validTarget = true;
+                                }
+                                else
+                                {
+                                    designatedGPSInfo = new GPSTargetInfo(VectorUtils.WorldPositionToGeoCoords(ml.MissileReferenceTransform.position + ml.MissileReferenceTransform.forward * 10000, vessel.mainBody), "null target");
+                                }
+                            }
+                            ml.targetGPSCoords = designatedGPSCoords;
+                            ml.TargetAcquired = true;
                         }
                         break;
                     }
