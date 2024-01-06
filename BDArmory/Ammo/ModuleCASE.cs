@@ -113,12 +113,9 @@ namespace BDArmory.Ammo
                     sphere.SetActive(false);
                     detSpheres[0] = ObjectPool.CreateObjectPool(sphere, 10, true, true);
 
-                    Debug.Log("A");
                     var dome = GameDatabase.Instance.GetModel(detDomeModelpath);
-                    Debug.Log("B");
                     if (dome == null)
                     {
-                        Debug.Log("C");
                         Debug.LogError("[BDArmory.ModuleCase]: model '" + detDomeModelpath + "' not found.");
                         dome = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                         var dc = dome.GetComponent<Collider>();
@@ -128,17 +125,16 @@ namespace BDArmory.Ammo
                             Destroy(dc);
                         }
                     }
-                    Debug.Log("D");
-                    r = dome.GetComponent<Renderer>();
-                    Debug.Log("E");
-                    //r.material = new Material(shader); //erroring here!
-                    Debug.Log("F");                  
-                    r.material.color = new Color(Color.red.r, Color.green.g, 0, 0.35f);
-                    Debug.Log("i");
+                    var d = dome.GetComponent<Renderer>();
+                    if (d != null)
+                    {
+                        d.material.shader = Shader.Find("KSP/Particles/Alpha Blended");
+                        d.material.SetColor("_TintColor", new Color(Color.red.r, Color.green.g, 0, 0.35f));
+                        d.material.color = new Color(Color.red.r, Color.green.g, 0, 0.35f);
+                    }
+
                     dome.SetActive(false);
-                    Debug.Log("k");
                     detSpheres[1] = ObjectPool.CreateObjectPool(dome, 10, true, true);
-                    Debug.Log("l");
                     if (detSpheres[0] != null)
                     {
                         visSphere = detSpheres[0].GetPooledObject();
@@ -463,16 +459,16 @@ namespace BDArmory.Ammo
             {
                 case 0:
                     visDome.SetActive(false);
+                    visSphere.SetActive(true);
                     visSphere.transform.position = transform.position;
                     visSphere.transform.localScale = Vector3.one * blastRadius;
-                    visSphere.SetActive(true);
                     break;
                 case 1:
                     visSphere.SetActive(false);
+                    visDome.SetActive(true);
                     visDome.transform.position = transform.position;
                     visDome.transform.localScale = Vector3.one * blastRadius;
                     visDome.transform.rotation = transform.rotation;
-                    visDome.SetActive(true);
                     break;
                 case 2:
                     Vector3 fwdPos = transform.position + (blastRadius * transform.up);
