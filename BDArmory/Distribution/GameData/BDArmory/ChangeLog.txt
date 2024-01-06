@@ -1,3 +1,9 @@
+-Radar stealth coatings - can now apply radar absorbent/reflective materials on a per part basis.
+	-Armor coatings less than 10mm thick will provide lessened benefits.
+-Adds new radarReflectivity field to Armor materials so specify degree of radar absorbsion/reflectivity of the armor.
+-Adds new radarMod field to Hull materials to set degree of radar return off unarmored parts.
+-Adds new Radar Absorbent Coating armor type
+-Adds new Radar Absorbent Foam hull material.
 v1.6.9.0
 ﻿IMPROVEMENTS / FIXES
 - General:

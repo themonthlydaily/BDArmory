@@ -1138,11 +1138,11 @@ namespace BDArmory.Radar
                                 r[i].material.shader = RCSshader;
                                 r[i].material.SetVector("_LIGHTDIR", -cameraDirection);
                                 r[i].material.SetColor("_RCSCOLOR", Color.white);
-                                if (a != null && a.StealthRating < 1)
+                                if (a != null && a.radarReflectivity < 1)
                                 {
-                                    StealthAdjust.r = a.StealthRating;
-                                    StealthAdjust.g = a.StealthRating;
-                                    StealthAdjust.b = a.StealthRating;
+                                    StealthAdjust.r = a.radarReflectivity;
+                                    StealthAdjust.g = a.radarReflectivity;
+                                    StealthAdjust.b = a.radarReflectivity;
                                     StealthAdjust.a = 1;
                                     r[i].material.SetColor("_RCSCOLOR", StealthAdjust);
                                 }

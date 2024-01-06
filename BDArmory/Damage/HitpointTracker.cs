@@ -121,7 +121,7 @@ namespace BDArmory.Damage
         [KSPField(isPersistant = true)]
         public float SafeUseTemp;
         [KSPField(isPersistant = true)]
-        public float StealthRating;
+        public float radarReflectivity;
         [KSPField(isPersistant = true)]
         public float Cost;
 
@@ -1376,7 +1376,7 @@ namespace BDArmory.Damage
                 part.skinInternalConductionMult = skinInternalConduction * BDAMath.Sqrt(Diffusivity / 237); //how well does the armor allow external heat to flow into the part internals?
                 part.skinSkinConductionMult = skinskinConduction * BDAMath.Sqrt(Diffusivity / 237); //how well does the armor conduct heat to connected part skins?
                 part.skinMassPerArea = (Density / 1000) * ArmorThickness;
-                armorRadarReturnFactor = armorInfo.StealthRating;
+                armorRadarReturnFactor = armorInfo.radarReflectivity;
             }
             if (ArmorTypeNum == (ArmorInfo.armors.FindIndex(t => t.name == "None") + 1) && ArmorPanel)
             {
@@ -1387,7 +1387,7 @@ namespace BDArmory.Damage
                 part.skinInternalConductionMult = skinInternalConduction * BDAMath.Sqrt(Diffusivity / 237); //how well does the armor allow external heat to flow into the part internals?
                 part.skinSkinConductionMult = skinskinConduction * BDAMath.Sqrt(Diffusivity / 237); //how well does the armor conduct heat to connected part skins?
                 part.skinMassPerArea = (Density / 1000) * ArmorThickness;
-                armorRadarReturnFactor = armorInfo.StealthRating;
+                armorRadarReturnFactor = armorInfo.radarReflectivity;
             }
             CalculateRCSreduction();
             totalArmorQty = armorMass; //grabbing a copy of unmodified armorMAss so it can be used in armorMass' place for armor reduction without having to un/re-modify the mass before and after armor hits
@@ -1570,23 +1570,28 @@ namespace BDArmory.Damage
         }
         private void CalculateRCSreduction()
         {
-            if (ArmorTypeNum > 1 && Armor > 1) //if ArmorType != None and armor thickness != 0
+            float radarReflected = armorRadarReturnFactor < 10 ? 1 - (Mathf.Log(Mathf.Max(ArmorThickness, 1f), 10) * (1 - armorRadarReturnFactor)) : //armor < 10 will have reduced radar absorbsion
+            armorRadarReturnFactor;//reflector armor/ translucent armor reflecting subsurface structure/RAM thicker than it needs to be, no change;
+            if (ArmorTypeNum > 1 && Armor > 0) //if ArmorType != None and armor thickness != 0
             {
-                StealthRating = armorRadarReturnFactor; //radar return based on armor material
-                if (armorRadarReturnFactor > 1 && hullRadarReturnFactor < 1) //radar-translucent armor and hull materials
+                radarReflectivity = radarReflected; //radar return based on armor material
+                if (radarReflected > 1) //radar-translucent armor...
                 {
-                    StealthRating = 1 - (hullRadarReturnFactor * (armorRadarReturnFactor - 1));
+                    if (hullRadarReturnFactor < 1) // w/ radar absorbent structural elements
+                        radarReflectivity = 1 - (hullRadarReturnFactor * (radarReflected - 1));
+                    if (hullRadarReturnFactor < 1) // w/ radar reflective structural elements
+                        radarReflectivity = 1 - (hullRadarReturnFactor * (1 - radarReflected));
                 }
             }
             else //(ArmorTypeNum < 1 || Armor < 1) //no armor, radar return based on hull material
             {
-                StealthRating = hullRadarReturnFactor;
+                radarReflectivity = hullRadarReturnFactor;
             }
-            if (StealthRating > 1 || StealthRating < 0)
+            if (radarReflected > 2 || radarReflected < 0) // goes up to 2 in case of radar reflectors/anti-stealth coatings, etc
             {
-                StealthRating = Mathf.Clamp(StealthRating, 0, 1);
+                radarReflectivity = Mathf.Clamp(radarReflectivity, 0, 2);
             }
-            if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[ARMOR]: Radar return rating is " + StealthRating);
+            if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[ARMOR]: Radar return rating is " + radarReflectivity);
         }
         private List<PartResource> GetResources()
         {

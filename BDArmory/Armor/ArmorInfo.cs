@@ -19,7 +19,7 @@ namespace BDArmory.Armor
                                                      //Too low, and armor is brittle. Too High, and armor cannot effectively stop projectiles in reasonable distance
         public float Diffusivity { get; private set; } //ability to disperse electrical/thermal energy when material is subject to laser/EMP attack. Higher is better
         public float SafeUseTemp { get; private set; } //In Kelvin, determines max temp armor retains full mechanical properties
-        public float StealthRating { get; private set; } //radar stealthiness
+        public float radarReflectivity { get; private set; } //radar stealthiness
         public float Cost { get; private set; }
 
         public float vFactor { get; private set; }
@@ -52,7 +52,7 @@ namespace BDArmory.Armor
             this.Ductility = Ductility;
             this.Diffusivity = Diffusivity;
             this.SafeUseTemp = SafeUseTemp;
-            this.StealthRating = Stealth;
+            this.radarReflectivity = Stealth;
             this.Cost = Cost;
 
             // Since we don't actually need yield and youngModulus we'll just calculate
@@ -132,7 +132,7 @@ namespace BDArmory.Armor
                         (float)ParseField(node, "Ductility", typeof(float)),
                         (float)ParseField(node, "Diffusivity", typeof(float)),
                         (float)ParseField(node, "SafeUseTemp", typeof(float)),
-                        (float)ParseField(node, "StealthRating", typeof(float)),
+                        (float)ParseField(node, "radarReflectivity", typeof(float)),
                         (float)ParseField(node, "Cost", typeof(float)),
                         defaultPenShrapnel,
                         defaultPenHEAT
@@ -169,7 +169,7 @@ namespace BDArmory.Armor
                         (float)ParseField(node, "Ductility", typeof(float)),
                         (float)ParseField(node, "Diffusivity", typeof(float)),
                         (float)ParseField(node, "SafeUseTemp", typeof(float)),
-                        (float)ParseField(node, "StealthRating", typeof(float)),
+                        (float)ParseField(node, "radarReflectivity", typeof(float)),
                         (float)ParseField(node, "Cost", typeof(float)),
                         defaultPenShrapnel,
                         defaultPenHEAT
