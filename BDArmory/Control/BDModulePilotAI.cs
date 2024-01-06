@@ -1989,7 +1989,7 @@ namespace BDArmory.Control
                     {
                         threatRating = weaponManager.incomingMissDistance;
                     }
-                }                
+                }
             }
 
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Threat Rating: {threatRating:G3}");
