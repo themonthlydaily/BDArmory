@@ -11,11 +11,15 @@ using BDArmory.Settings;
 using BDArmory.Utils;
 using BDArmory.VesselSpawning;
 using BDArmory.Weapons;
+using BDArmory.UI;
 
 namespace BDArmory.Ammo
 {
     class ModuleCASE : PartModule, IPartMassModifier, IPartCostModifier
     {
+        public static Dictionary<int, ObjectPool> detSpheres = new Dictionary<int, ObjectPool>();
+        GameObject visSphere;
+        GameObject visDome;
         public float GetModuleMass(float baseMass, ModifierStagingSituation situation) => CASEmass;
         public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.FIXED;
         public float GetModuleCost(float baseCost, ModifierStagingSituation situation) => CASEcost;
@@ -30,10 +34,10 @@ namespace BDArmory.Ammo
 
         private string limitEdexploModelPath = "BDArmory/Models/explosion/30mmExplosion";
         private string shuntExploModelPath = "BDArmory/Models/explosion/CASEexplosion";
-
+        private string detDomeModelpath = "BDArmory/Models/explosion/detHemisphere";
         public string SourceVessel = "";
         public bool hasDetonated = false;
-        private float blastRadius = 0;
+        private float blastRadius = -1;
         const int explosionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23 | LayerMasks.Wheels);
 
         public bool externallyCalled = false;
@@ -88,6 +92,65 @@ namespace BDArmory.Ammo
                     origMass = part.mass;
                     //origScale = part.rescaleFactor;
                     CASESetup(null, null);
+                }
+                if (HighLogic.LoadedSceneIsEditor)
+                {
+
+                    var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                    var collider = sphere.GetComponent<Collider>();
+                    if (collider)
+                    {
+                        collider.enabled = false;
+                        Destroy(collider);
+                    }
+                    Renderer r = sphere.GetComponent<Renderer>();
+                    var shader = Shader.Find("KSP/Alpha/Unlit Transparent");
+                    r.material = new Material(shader);
+                    r.receiveShadows = false;
+                    r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    r.material.color = new Color(Color.red.r, 0, 0, 0.35f);
+                    r.enabled = true;
+                    sphere.SetActive(false);
+                    detSpheres[0] = ObjectPool.CreateObjectPool(sphere, 10, true, true);
+
+                    Debug.Log("A");
+                    var dome = GameDatabase.Instance.GetModel(detDomeModelpath);
+                    Debug.Log("B");
+                    if (dome == null)
+                    {
+                        Debug.Log("C");
+                        Debug.LogError("[BDArmory.ModuleCase]: model '" + detDomeModelpath + "' not found.");
+                        dome = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                        var dc = dome.GetComponent<Collider>();
+                        if (dc)
+                        {
+                            dc.enabled = false;
+                            Destroy(dc);
+                        }
+                    }
+                    Debug.Log("D");
+                    r = dome.GetComponent<Renderer>();
+                    Debug.Log("E");
+                    //r.material = new Material(shader); //erroring here!
+                    Debug.Log("F");                  
+                    r.material.color = new Color(Color.red.r, Color.green.g, 0, 0.35f);
+                    Debug.Log("i");
+                    dome.SetActive(false);
+                    Debug.Log("k");
+                    detSpheres[1] = ObjectPool.CreateObjectPool(dome, 10, true, true);
+                    Debug.Log("l");
+                    if (detSpheres[0] != null)
+                    {
+                        visSphere = detSpheres[0].GetPooledObject();
+                        visSphere.transform.SetPositionAndRotation(transform.position, transform.rotation);
+                        visSphere.transform.localScale = Vector3.zero;
+                    }
+                    if (detSpheres[1] != null)
+                    {
+                        visDome = detSpheres[1].GetPooledObject();
+                        visDome.transform.SetPositionAndRotation(transform.position, transform.rotation);
+                        visDome.transform.localScale = Vector3.zero;
+                    }
                 }
             }
             if (HighLogic.LoadedSceneIsFlight)
@@ -202,6 +265,10 @@ namespace BDArmory.Ammo
         }
         private void CalculateBlast()
         {
+            ammoMass = 0;
+            ammoQuantity = 0;
+            ammoExplosionYield = 0;
+            blastRadius = 0;
             foreach (PartResource resource in GetResources())
             {
                 var resources = part.Resources.ToList();
@@ -213,14 +280,29 @@ namespace BDArmory.Ammo
                         {
                             ammoMass = ammo.Current.info.density;
                             ammoQuantity = ammo.Current.amount;
-                            ammoExplosionYield += (((ammoMass * 1000) * ammoQuantity) / 10);
+                            ammoExplosionYield += (((ammoMass * 1000) * ammoQuantity) / 20);
                         }
                     }
             }
-            blastRadius = BlastPhysicsUtils.CalculateBlastRange(ammoExplosionYield * BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE);
+            if (ammoExplosionYield > 0)
+            {
+                switch (CASELevel)
+                {
+                    case 1:
+                        ammoExplosionYield /= 2;
+                        break;
+                    case 2:
+                        ammoExplosionYield /= 4;
+                        break;
+                    default:
+                        break;
+                }
+                blastRadius = BlastPhysicsUtils.CalculateBlastRange(ammoExplosionYield * BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE);
+            }
         }
         public float GetBlastRadius()
         {
+            //if (blastRadius >= 0 && HighLogic.LoadedSceneIsEditor) return blastRadius; //only calc blast radius once in Editor if F2 weapon alignment/blast visualization enabeld
             CalculateBlast();
             return blastRadius;
         }
@@ -242,13 +324,13 @@ namespace BDArmory.Ammo
                 else
                 {
                     direction = part.transform.up;
-                    ExplosionFx.CreateExplosion(part.transform.position, ((float)ammoExplosionYield / 2), limitEdexploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 60, part, SourceVessel, null, "Ammunition (CASE-I)", direction, -1, false, part.mass + ((float)ammoExplosionYield * 10f), 600 * BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE);
+                    ExplosionFx.CreateExplosion(part.transform.position, ((float)ammoExplosionYield), limitEdexploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 60, part, SourceVessel, null, "Ammunition (CASE-I)", direction, -1, false, part.mass + ((float)ammoExplosionYield * 10f), 600 * BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE);
                     if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ModuleCASE]: CASE I explosion, tntMassEquivilent: " + ammoExplosionYield + ", part: " + part + ", vessel: " + vesselName);
                 }
             }
             else //if (CASELevel == 2) //blast contained, shunted out side of hull, minimal damage
             {
-                ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield / 4f, shuntExploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 30, part, SourceVessel, null, "Ammunition (CASE-II)", direction, -1, true);
+                ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield, shuntExploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 30, part, SourceVessel, null, "Ammunition (CASE-II)", direction, -1, true);
                 if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ModuleCASE]: CASE II explosion, tntMassEquivilent: " + ammoExplosionYield);
                 Ray BlastRay = new Ray(part.transform.position, part.transform.up);
                 var hitCount = Physics.RaycastNonAlloc(BlastRay, raycastHitBuffer, blastRadius, explosionLayerMask);
@@ -356,6 +438,49 @@ namespace BDArmory.Ammo
                 if (!hasDetonated) DetonateIfPossible();
             }
             GameEvents.onGameSceneSwitchRequested.Remove(HandleSceneChange);
+            visSphere.SetActive(false);
+            visDome.SetActive(false);
+        }
+
+        void OnGUI()
+        {
+            if (HighLogic.LoadedSceneIsEditor)
+            {
+                if (BDArmorySetup.showWeaponAlignment)
+                    DrawDetonationVisualization();
+                else
+                {
+                    visSphere.SetActive(false);
+                    visDome.SetActive(false);
+                }
+            }
+        }
+
+        void DrawDetonationVisualization()
+        {
+            GetBlastRadius();
+            switch (CASELevel)
+            {
+                case 0:
+                    visDome.SetActive(false);
+                    visSphere.transform.position = transform.position;
+                    visSphere.transform.localScale = Vector3.one * blastRadius;
+                    visSphere.SetActive(true);
+                    break;
+                case 1:
+                    visSphere.SetActive(false);
+                    visDome.transform.position = transform.position;
+                    visDome.transform.localScale = Vector3.one * blastRadius;
+                    visDome.transform.rotation = transform.rotation;
+                    visDome.SetActive(true);
+                    break;
+                case 2:
+                    Vector3 fwdPos = transform.position + (blastRadius * transform.up);
+                    GUIUtils.DrawLineBetweenWorldPositions(transform.position, fwdPos, 4, Color.red);
+                    visSphere.SetActive(false);
+                    visDome.SetActive(false);
+                    break;
+            }            
         }
 
         public override string GetInfo()
