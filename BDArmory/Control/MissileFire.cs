@@ -6911,7 +6911,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
             if (BDArmorySettings.DEBUG_MISSILES)
             {
                 Debug.Log($"[BDArmory.MissileData]: Sending targetInfo to {(dumbfire ? "dumbfire" : "")}{Enum.GetName(typeof(MissileBase.TargetingModes), ml.TargetingMode)} Missile...");
-                if (ml.targetVessel.Vessel != null) Debug.Log($"[BDArmory.MissileData]: targetInfo sent for {ml.targetVessel.Vessel.GetName()}");
+                if (ml.targetVessel != null) Debug.Log($"[BDArmory.MissileData]: targetInfo sent for {ml.targetVessel.Vessel.GetName()}");
             }
             if (BDArmorySettings.DEBUG_MISSILES)
                 Debug.Log($"[BDArmory.MissileData]: firing missile at {(currentTarget != null && currentTarget.Vessel != null ? currentTarget.Vessel.GetName() : "null target")}");
@@ -7578,6 +7578,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                     if (missile.Current.HasFired || missile.Current.launched) continue;
                     if (missile.Current.multiLauncher && missile.Current.multiLauncher.turret)
                     {
+                        if (missile.Current.multiLauncher.missileSpawner.ammoCount == 0 && !BDArmorySettings.INFINITE_ORDINANCE) continue;
                         if (!missile.Current.multiLauncher.turret.turretEnabled) 
                             missile.Current.multiLauncher.turret.EnableTurret(missile.Current);
                         missileCount += (int)Mathf.Clamp(Mathf.Floor(missile.Current.multiLauncher.missileSpawner.ammoCount / missile.Current.multiLauncher.salvoSize), 1, missile.Current.multiLauncher.missileSpawner.ammoCount);
@@ -7731,9 +7732,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                             weapon.Current.autoFireLength = (fireBurstLength < 0.01f) ? targetScanInterval / 2f : fireBurstLength;
                         }
                     }
-            if (guardMode && missileCount > 0) //missile interception stuff, mostly working as intended, needs final debugging pass.
+            if (guardMode && missileCount > 0 && PDMslTgts.Count > 0 && !guardFiringMissile)
             {
-                if (PDMslTgts.Count == 0) return;
                 //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] PDMslTgt size: {PDMslTgts.Count}; missile count: {missileCount}");
                 using (List<IBDWeapon>.Enumerator weapon = weaponTypesMissile.GetEnumerator()) //have guardMode requirement?
                     while (weapon.MoveNext())
@@ -7817,18 +7817,11 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                 //Debug.Log($"[PD Missile Debug - {vessel.GetName()}]viable: {viableTarget}; turreted: {turreted}; inRange: {(turreted ? TargetInTurretRange(mT.turret, mT.fireFOV, PDMslTgts[MissileID].Vessel.CoM) : GetLaunchAuthorization(PDMslTgts[MissileID].Vessel, this, currMissile))}");
                                 if (viableTarget && turreted ? TargetInTurretRange(mT.turret, mT.fireFOV, PDMslTgts[MissileID].Vessel.CoM) : GetLaunchAuthorization(PDMslTgts[MissileID].Vessel, this, currMissile))
                                 {
-                                    if (!guardFiringMissile)
-                                    {
-                                        missileTarget = PDMslTgts[MissileID].Vessel;
-                                        StartCoroutine(GuardMissileRoutine(PDMslTgts[MissileID].Vessel, currMissile));
-                                        return;
-                                        //GuardMissileRoutine only runs a single instance, so no point having this continue iterating through subsequent missiles, if available,
-                                        //unless GMR changed to permit multiple simultanenous copies of the coroutine running near simultaneously.
-                                    }
-                                    else
-                                    {
-                                        return;
-                                    }
+                                     missileTarget = PDMslTgts[MissileID].Vessel;
+                                     StartCoroutine(GuardMissileRoutine(PDMslTgts[MissileID].Vessel, currMissile));
+                                     break;
+                                    //GuardMissileRoutine only runs a single instance, so no point having this continue iterating through subsequent missiles, if available,
+                                    //unless GMR changed to permit multiple simultanenous copies of the coroutine running near simultaneously.
                                 }
                             }
                             else //else try remaining targets
@@ -7850,13 +7843,10 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                         {
                                             if (viableTarget && turreted ? TargetInTurretRange(mT.turret, mT.fireFOV, item.Current.Vessel.CoM) : GetLaunchAuthorization(item.Current.Vessel, this, currMissile))
                                             {
-                                                if (!guardFiringMissile)
-                                                {
-                                                    missileTarget = item.Current.Vessel;
-                                                    //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] triggering launch of interceptor against secondary target {missileTarget.GetName()}");
-                                                    StartCoroutine(GuardMissileRoutine(item.Current.Vessel, currMissile));
-                                                    return;
-                                                }
+                                                missileTarget = item.Current.Vessel;
+                                                //Debug.Log($"[PD Missile Debug - {vessel.GetName()}] triggering launch of interceptor against secondary target {missileTarget.GetName()}");
+                                                 StartCoroutine(GuardMissileRoutine(item.Current.Vessel, currMissile));
+                                                break;
                                             }
                                         }
                                     }
