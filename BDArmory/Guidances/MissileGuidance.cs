@@ -657,7 +657,6 @@ namespace BDArmory.Guidances
 
             //lift
             float AoA = Mathf.Clamp(Vector3.Angle(ml.transform.forward, velocity.normalized), 0, 90);
-            ml.smoothedAoA.Update(AoA);
             if (AoA > 0)
             {
                 double liftForce = 0.5 * airDensity * airSpeed * airSpeed * liftArea * liftMultiplier * Mathf.Max(liftCurve.Evaluate(AoA), 0f);
