@@ -729,6 +729,7 @@ namespace BDArmory.Control
                         if (!weapon.Current.isAPS) weapon.Current.aiControlled = false;
                         if (weapon.Current.dualModeAPS) weapon.Current.isAPS = true;
                     }
+                vesselRadarData.UnslaveTurrets(); // Unslave the turrets so that manual firing works.
                 weaponIndex = 0;
                 selectedWeapon = null;
             }
@@ -1760,7 +1761,7 @@ namespace BDArmory.Control
                         List<string> weaponHeatDebugStrings = new List<string>();
                         List<string> weaponAimDebugStrings = new List<string>();
                         HashSet<WeaponClasses> validClasses = new HashSet<WeaponClasses> { WeaponClasses.Gun, WeaponClasses.Rocket, WeaponClasses.DefenseLaser };
-                        foreach (var weaponCandidate in weaponArray)
+                        foreach (var weaponCandidate in VesselModuleRegistry.GetModules<IBDWeapon>(vessel)) // Show each weapon, not each weapon group (which might contain multiple weapon types).
                         {
                             if (weaponCandidate == null || !validClasses.Contains(weaponCandidate.GetWeaponClass())) continue;
                             var weapon = (ModuleWeapon)weaponCandidate;

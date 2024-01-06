@@ -790,6 +790,7 @@ namespace BDArmory.UI
                     if (MouseAimFlight.IsMouseAimActive)
                     {
                         Cursor.visible = false;
+                        drawCursor = false;
                         return;
                     }
                 }
