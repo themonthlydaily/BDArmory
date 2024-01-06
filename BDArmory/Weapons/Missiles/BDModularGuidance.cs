@@ -1067,7 +1067,7 @@ namespace BDArmory.Weapons.Missiles
             if (HasMissed) return;
             bool noProgress = MissileState == MissileStates.PostThrust &&
                 ((Vector3.Dot(vessel.Velocity() - TargetVelocity, TargetPosition - vessel.transform.position) < 0) ||
-                (vessel.LandedOrSplashed || vessel.Velocity().sqrMagnitude < 100f));
+                (vessel.LandedOrSplashed || vessel.Velocity().sqrMagnitude < GetKinematicSpeed() * GetKinematicSpeed()));
             if (noProgress)
             {
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.BDModularGuidance]: Missile CheckMiss showed miss for {vessel.vesselName}");
@@ -1596,7 +1596,7 @@ namespace BDArmory.Weapons.Missiles
 
         public override float GetKinematicSpeed()
         {
-            return Mathf.Max(MinSpeedGuidance, 200f);
+            return Mathf.Max(MinSpeedGuidance, 100f);
         }
 
         public Vector3 GetTransform(TransformAxisVectors transformAxis)

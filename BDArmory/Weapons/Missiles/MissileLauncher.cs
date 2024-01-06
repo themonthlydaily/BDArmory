@@ -1554,7 +1554,8 @@ namespace BDArmory.Weapons.Missiles
             if (!HasMissed && checkMiss)
             {
                 Vector3 tgtVel = TargetVelocity == Vector3.zero && targetVessel != null ? targetVessel.Vessel.Velocity() : TargetVelocity;
-                bool noProgress = MissileState == MissileStates.PostThrust && (Vector3.Dot(vessel.Velocity() - tgtVel, TargetPosition - vessel.transform.position) < 0);
+                bool noProgress = MissileState == MissileStates.PostThrust && (Vector3.Dot(vessel.Velocity() - tgtVel, TargetPosition - vessel.transform.position) < 0 || 
+                    (!vessel.InNearVacuum() && vessel.srfSpeed < GetKinematicSpeed()) && weaponClass == WeaponClasses.Missile);
                 bool pastGracePeriod = TimeIndex > ((vessel.LandedOrSplashed ? 0f : dropTime) + Mathf.Clamp(maxTurnRateDPS / 15, 1, 8)); //180f / maxTurnRateDPS);
                 if ((pastGracePeriod && targetBehindMissile) || noProgress) // Check that we're not moving away from the target after a grace period
                 {
