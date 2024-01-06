@@ -1925,6 +1925,7 @@ namespace BDArmory.UI
                             if (contextTipsEnabled) GUI.Label(ContextLabelRect(leftIndent, ++evadeLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_EvExNonlin"), contextLabel);
 
                             ActivePilot.evasionIgnoreMyTargetTargetingMe = GUI.Toggle(ToggleButtonRect(leftIndent, ++evadeLines, contentWidth), ActivePilot.evasionIgnoreMyTargetTargetingMe, StringUtils.Localize("#LOC_BDArmory_EvasionIgnoreMyTargetTargetingMe"), ActivePilot.evasionIgnoreMyTargetTargetingMe ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
+                            ActivePilot.evasionMissileKinematic = GUI.Toggle(ToggleButtonRect(leftIndent, ++evadeLines, contentWidth), ActivePilot.evasionMissileKinematic, StringUtils.Localize("#LOC_BDArmory_EvasionMissileKinematic"), ActivePilot.evasionMissileKinematic ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
                             #endregion
 
                             #region Craft Avoidance

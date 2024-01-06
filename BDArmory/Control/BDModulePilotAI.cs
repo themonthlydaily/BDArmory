@@ -3389,7 +3389,6 @@ namespace BDArmory.Control
             Vector3 futureAccel;
 
             // Set up maneuver directions
-            Vector3 currentDir = vesselTransform.up;
             Vector3 crankDir = breakDirection;
             Vector3 turnDir = breakDirection;
             Vector3 targetDir = (targetVessel != null) ?
@@ -3397,14 +3396,12 @@ namespace BDArmory.Control
                 : (missilePos - currentPos).normalized;
 
             // Calculate estimated time to impact if we execute no maneuvers
-            float timeToCPA = vessel.TimeToCPA(missilePos, missileVel, missileAccelVec, missileKinematicTime + 5f);
             float timeToImpact;
             float currentAccel = 0; // FIXME if speedController.GetPossibleAccel() is able to calculate acceleration reliably incorporating drag
             float distToMissile = (currentPos - missilePos).magnitude;
 
             // Turn to target / Turn hot
             timeToImpact = distToMissile / (missileSpeed + currentSpeed);
-            timeToImpact = Mathf.Lerp(timeToImpact, timeToCPA, Mathf.Clamp01(Vector3.Dot(currentDir, targetDir)));
             futureVel = currentSpeed * targetDir;
             futureAccel = currentAccel * targetDir;
             futurePos = AIUtils.PredictPosition(currentPos, futureVel, futureAccel, timeToImpact);
@@ -3430,7 +3427,6 @@ namespace BDArmory.Control
 
                 // Calculate time and distance of closest point of approach
                 timeToImpact = distToMissile / BDAMath.Sqrt(currentSpeed * currentSpeed + missileSpeed * missileSpeed); // Assumes missile/target are perpendicular at impact point, 60% of the time it works everytime
-                timeToImpact = Mathf.Lerp(timeToImpact, timeToCPA, Mathf.Clamp01(Vector3.Dot(currentDir, crankDir)));
                 futureVel = currentSpeed * crankDir;
                 futureAccel = currentAccel * crankDir;
                 futurePos = AIUtils.PredictPosition(currentPos, futureVel, futureAccel, timeToImpact);
@@ -3449,7 +3445,6 @@ namespace BDArmory.Control
                 float v1 = Mathf.Max(missileSpeed, currentSpeed);
                 float v2 = Mathf.Min(missileSpeed, currentSpeed);
                 timeToImpact = (v1 != v2) ? distToMissile / BDAMath.Sqrt(v1 * v1 - v2 * v2) : timeToImpact; // Assumes angle between start and impact point is 90 deg, 60% of the time it works everytime
-                timeToImpact = Mathf.Lerp(timeToImpact, timeToCPA, Mathf.Clamp01(Vector3.Dot(currentDir, breakDirection)));
                 futureVel = currentSpeed * breakDirection;
                 futureAccel = currentAccel * breakDirection;
                 futurePos = AIUtils.PredictPosition(currentPos, futureVel, futureAccel, timeToImpact);
@@ -3466,8 +3461,6 @@ namespace BDArmory.Control
             if (kinematicEvasionState <= KinematicEvasionStates.TurnAway || BDArmorySettings.DEBUG_AI || BDArmorySettings.DEBUG_TELEMETRY)
             {
                 turnDir = (currentPos - missilePos).ProjectOnPlanePreNormalized(upDirection).normalized;
-                //timeToImpact = distToMissile / (missileSpeed - currentSpeed);
-                //timeToImpact = Mathf.Lerp(timeToImpact, timeToCPA, Mathf.Clamp01(Vector3.Dot(currentDir.ProjectOnPlanePreNormalized(upDirection), turnDir)));
                 futureVel = currentSpeed * turnDir;
                 futureAccel = currentAccel * turnDir;
                 futurePos = AIUtils.PredictPosition(currentPos, futureVel, futureAccel, missileKinematicTime);
