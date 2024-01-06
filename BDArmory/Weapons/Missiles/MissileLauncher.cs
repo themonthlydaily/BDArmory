@@ -329,6 +329,7 @@ namespace BDArmory.Weapons.Missiles
         public bool SetupComplete => StartSetupComplete;
         public int loftState = 0;
         public float initMaxAoA = 0;
+        public SmoothingF smoothedAoA;
         #endregion Variable Declarations
 
         [KSPAction("Fire Missile")]
@@ -720,6 +721,7 @@ namespace BDArmory.Weapons.Missiles
                 break;
             }
             partModules.Dispose();
+            smoothedAoA = new SmoothingF(Mathf.Exp(Mathf.Log(0.5f) * Time.fixedDeltaTime * 10f)); // Half-life of 0.1s.
             StartSetupComplete = true;
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher] Start() setup complete");
         }
@@ -2786,20 +2788,25 @@ namespace BDArmory.Weapons.Missiles
             float minSpeed = GetKinematicSpeed();
             if (speed > minSpeed)
             {
-                float dragSpeed = (speed + minSpeed) / 2f;
                 float airDensity = (float)vessel.atmDensity;
-                float dragAccel;
+                float dragTerm;
+                float t;
                 if (useSimpleDrag)
-                    dragAccel = (deployed ? deployedDrag : simpleDrag) * 0.008f * 0.5f * speed * speed * airDensity;
+                {
+                    dragTerm = (deployed ? deployedDrag : simpleDrag) * (0.008f * part.mass) * 0.5f * airDensity;
+                    t = part.mass / (minSpeed * dragTerm) - part.mass / (speed * dragTerm);
+                }
                 else
                 {
-                    float AoA = 6f; // Fixed value better for prediction than exponential smoothing, 6 seems to work well
+                    float AoA = smoothedAoA.Value;
                     FloatCurve dragCurve = MissileGuidance.DefaultDragCurve;
                     float dragCd = dragCurve.Evaluate(AoA);
                     float dragMultiplier = BDArmorySettings.GLOBAL_DRAG_MULTIPLIER;
-                    dragAccel = 0.5f * airDensity * dragSpeed * dragSpeed * dragArea * dragMultiplier * dragCd / part.mass;
+                    dragTerm = 0.5f * airDensity * dragArea * dragMultiplier * dragCd;
+                    float dragTermMinSpeed = 0.5f * airDensity * dragArea * dragMultiplier * dragCurve.Evaluate(Mathf.Min(29f, maxAoA)); // Max AoA or 29 deg (at kink in drag curve)
+                    t = part.mass / (minSpeed * dragTermMinSpeed) - part.mass / (speed * dragTerm);
                 }
-                missileKinematicTime += (speed - minSpeed) / dragAccel; // Add time for missile to slow down to min speed
+                missileKinematicTime += t; // Add time for missile to slow down to min speed
             }
 
             return missileKinematicTime;
