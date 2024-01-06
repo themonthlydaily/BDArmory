@@ -245,8 +245,8 @@ namespace BDArmory.Bullets
                     var submunition = bullets[pair.Item2];
                     if (bullet.projectileCount == 1 && submunition.projectileCount > 1)
                     {
-                        bullet.projectileCount = submunition.projectileCount;
-                        Debug.LogWarning($"[BDArmory.BulletInfo]: Updating {bullet.name} to have {bullet.projectileCount} sub-projectiles of type {submunition.name}");
+                        bullet.subMunitionType += $"; {submunition.projectileCount}";
+                        Debug.LogWarning($"[BDArmory.BulletInfo]: Updating {bullet.name} to have {submunition.projectileCount} sub-projectiles of type {submunition.name}");
                     }
                     if (submunition.projectileCount != 1)
                     {
