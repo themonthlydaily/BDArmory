@@ -729,7 +729,7 @@ namespace BDArmory.Control
                         if (!weapon.Current.isAPS) weapon.Current.aiControlled = false;
                         if (weapon.Current.dualModeAPS) weapon.Current.isAPS = true;
                     }
-                vesselRadarData.UnslaveTurrets(); // Unslave the turrets so that manual firing works.
+                if (vesselRadarData) vesselRadarData.UnslaveTurrets(); // Unslave the turrets so that manual firing works.
                 weaponIndex = 0;
                 selectedWeapon = null;
             }

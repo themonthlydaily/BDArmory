@@ -470,6 +470,7 @@ namespace BDArmory.VesselSpawning
             var cameraHeading = FlightCamera.CamHdg;
             var cameraPitch = FlightCamera.CamPitch;
             if (distance == 0) distance = flightCamera.Distance;
+            if (FlightGlobals.ActiveVessel != null && FlightGlobals.ActiveVessel.PatchedConicsAttached) FlightGlobals.ActiveVessel.DetachPatchedConicsSolver();
             if (!spawning)
             {
                 var overLand = (worldIndex != -1 ? FlightGlobals.Bodies[worldIndex] : FlightGlobals.currentMainBody).TerrainAltitude(latitude, longitude) > 0;
