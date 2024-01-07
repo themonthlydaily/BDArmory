@@ -212,6 +212,7 @@ namespace BDArmory.VesselSpawning
         public static bool removingVessels => SpawnUtilsInstance.Instance.removeVesselsPending > 0;
         public static void RemoveVessel(Vessel vessel) => SpawnUtilsInstance.Instance.RemoveVessel(vessel);
         public static IEnumerator RemoveAllVessels() => SpawnUtilsInstance.Instance.RemoveAllVessels();
+        public static void DisableAllBulletsAndRockets() => SpawnUtilsInstance.Instance.DisableAllBulletsAndRockets();
         #endregion
 
         #region AI/WM stuff for RWP
@@ -416,17 +417,37 @@ namespace BDArmory.VesselSpawning
 
         public void DisableAllBulletsAndRockets()
         {
-            if (ModuleWeapon.bulletPool != null)
+            if (ModuleWeapon.bulletPool != null && ModuleWeapon.bulletPool.pool != null)
+            {
+                if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.SpawnUtils]: Setting {ModuleWeapon.bulletPool.pool.Count(b => b != null && b.activeInHierarchy)} bullets inactive.");
                 foreach (var bullet in ModuleWeapon.bulletPool.pool)
+                {
+                    if (bullet == null) continue;
                     bullet.SetActive(false);
-            if (ModuleWeapon.shellPool != null)
+                }
+            }
+            if (ModuleWeapon.shellPool != null && ModuleWeapon.shellPool.pool != null)
+            {
+                if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.SpawnUtils]: Setting {ModuleWeapon.shellPool.pool.Count(s => s != null && s.activeInHierarchy)} shells inactive.");
                 foreach (var shell in ModuleWeapon.shellPool.pool)
+                {
+                    if (shell == null) continue;
                     shell.SetActive(false);
+                }
+            }
             if (ModuleWeapon.rocketPool != null)
+            {
+                if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.SpawnUtils]: Setting {ModuleWeapon.rocketPool.Values.Where(rocketPool => rocketPool != null && rocketPool.pool != null).Sum(rocketPool => rocketPool.pool.Count(s => s != null && s.activeInHierarchy))} rockets inactive.");
                 foreach (var rocketPool in ModuleWeapon.rocketPool.Values)
-                    if (rocketPool != null)
-                        foreach (var rocket in rocketPool.pool)
-                            rocket.SetActive(false);
+                {
+                    if (rocketPool == null || rocketPool.pool == null) continue;
+                    foreach (var rocket in rocketPool.pool)
+                    {
+                        if (rocket == null) continue;
+                        rocket.SetActive(false);
+                    }
+                }
+            }
         }
         #endregion
 

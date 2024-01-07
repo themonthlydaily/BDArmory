@@ -1520,7 +1520,7 @@ namespace BDArmory.Control
         }
         public override void OnFixedUpdate()
         {
-            if (vessel == null) return;
+            if (vessel == null || !vessel.gameObject.activeInHierarchy) return;
             if (weaponsListNeedsUpdating) UpdateList();
 
             if (!vessel.packed)
@@ -2812,7 +2812,7 @@ namespace BDArmory.Control
 
                 yield return new WaitForSecondsFixed(waitTime);
 
-                if (ml.vessel && CanSeeTarget(ml))
+                if (ml && ml.vessel && CanSeeTarget(ml))
                 {
                     BDATargetManager.ReportVessel(ml.vessel, this);
                 }
@@ -6907,7 +6907,6 @@ namespace BDArmory.Control
 
         void GuardMode()
         {
-            if (!gameObject.activeInHierarchy) return;
             if (BDArmorySettings.PEACE_MODE) return;
 
             UpdateGuardViewScan();

@@ -427,7 +427,7 @@ namespace BDArmory.Extensions
                 {
                     if (partModules.Current.moduleName == "MultiMissileLauncher")
                     {
-                        return (((Weapons.Missiles.MultiMissileLauncher)partModules.Current).isClusterMissile);
+                        return ((Weapons.Missiles.MultiMissileLauncher)partModules.Current).isClusterMissile;
                     }
                 }
                 //return ((part.Modules.Contains("MissileBase") || part.Modules.Contains("MissileLauncher") ||
