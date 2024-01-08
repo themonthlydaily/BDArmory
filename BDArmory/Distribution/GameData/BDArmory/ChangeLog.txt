@@ -1,4 +1,3 @@
-v1.6.9.0
 ﻿IMPROVEMENTS / FIXES
 - General:
 	- Fix part filtering by search terms in the editors.
@@ -6,6 +5,7 @@ v1.6.9.0
 	- Fix tracer visuals when the active vessel dies.
 	- Adjust timing and conditions for auto-camera switching to and away from missiles.
 	- Battle damage fuel leak rates now scale by (bullet caliber)^2, instead of (bullet caliber). Fuel leak rates for 20mm caliber remain the same, calibers higher and lower than 20mm will now have higher and lower leak rates, respectively.
+	- Make sure various pooled objects are disabled when leaving the flight scene.
 - UI:
 	- New Opacity option in BDA Team Icons to set icon opacity.
 - AI / WM:
@@ -14,24 +14,26 @@ v1.6.9.0
 	- Prevent Orbital AI from changing attitude while launched missile is still near spacecraft.
 	- Add Smoke CM timing/interal/repetition settings.
 - Weapons:
-  	- Corrections to penetration and ricochet velocity changes and ricochet positions.
-    - Stop APS firing at dead missiles.
-  	- 'subProjectileCount' has been deprecated and replaced with 'projectileCount'; this specifies number of pellets per shot (for shotguns, etc) to make it more intuitive. Existing shotgun-type weapons will need to update their bulletDefs.
- 	  - The subMunitionType field for beehive ammo now uses the syntax of "ammotype; quantity" (e.g. subMunitionType = 35x228AHEADPellet; 30) with number of projectiles released on detonation set here instead of the subMunition's bulletDef.
-  	- Missiles:
-		  - Fix issue with Rotary Rails trying to use missiles that have previously been blown off from combat damage.
-		  - Fix issue with MultiMissilelauncher Turrets throwing an NRE when AI firing.
-		  - Fix mass changes of missiles that decouple boosters and add missile mass debug telemetry.
-		  - Fix radar and heat targeting leading targets excessively (most apparent in orbit).
-      - Fix missile drag curve having negative drag at ~25 deg AoA.
-		  - Fix AI occasionally not firing radar missiles; Git Issue #573.
-		  - Change target offset on missiles with continous rod warheads from Detonation Distance / 3 to  Min(Blast Radius / 3, Detonation Distance / 3).
-      - Fix missile RCS FX constantly displaying.
-		  - Missiles with RCS/Orbital homing types (i.e. HEKV) in vacuum now perform turn maneuver after launch to face target and only throttle up once facing target.
-		  - Fixes to anti-missile missile point-defense logic to support missile turret launched interceptors.
-		  - Fix radar missiles not locking and firing until well within their max engagement range.
-      - Add new dragArea configuration variable for missiles to set reference area for drag independently from the lift area. If not set, this defaults to the liftArea setting in the missile configuration file.
+	- Corrections to penetration and ricochet velocity changes and ricochet positions.
+	- Stop APS firing at dead missiles.
+	- 'subProjectileCount' has been deprecated and replaced with 'projectileCount'; this specifies number of pellets per shot (for shotguns, etc) to make it more intuitive. Existing shotgun-type weapons will need to update their bulletDefs.
+	- The subMunitionType field for beehive ammo now uses the syntax of "ammotype; quantity" (e.g. subMunitionType = 35x228AHEADPellet; 30) with number of projectiles released on detonation set here instead of the subMunition's bulletDef.
+	- Fix the aiming reticles of guns (fixed and turrets) and auto-proxy-tracking when using MouseAimFlight (again).
+	- Missiles:
+		- Fix issue with Rotary Rails trying to use missiles that have previously been blown off from combat damage.
+		- Fix issue with MultiMissilelauncher Turrets throwing an NRE when AI firing.
+		- Fix mass changes of missiles that decouple boosters and add missile mass debug telemetry.
+		- Fix radar and heat targeting leading targets excessively (most apparent in orbit).
+		- Fix missile drag curve having negative drag at ~25 deg AoA.
+		- Fix AI occasionally not firing radar missiles; Git Issue #573.
+		- Change target offset on missiles with continous rod warheads from Detonation Distance / 3 to  Min(Blast Radius / 3, Detonation Distance / 3).
+		- Fix missile RCS FX constantly displaying.
+		- Missiles with RCS/Orbital homing types (i.e. HEKV) in vacuum now perform turn maneuver after launch to face target and only throttle up once facing target.
+		- Fixes to anti-missile missile point-defense logic to support missile turret launched interceptors.
+		- Fix radar missiles not locking and firing until well within their max engagement range.
+		- Add new dragArea configuration variable for missiles to set reference area for drag independently from the lift area. If not set, this defaults to the liftArea setting in the missile configuration file.
 
+v1.6.9.0
 IMPROVEMENTS / FIXES
 - UI:
 	- Fix the alternate (hidden UI) window locations (for scores and vessel switcher) not being saved correctly.
