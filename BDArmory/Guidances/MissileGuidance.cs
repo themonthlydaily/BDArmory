@@ -231,12 +231,12 @@ namespace BDArmory.Guidances
                     }
 
                     // Dynamic pressure times the lift area
-                    float qS = (float)(0.5f * ml.vessel.atmDensity * ml.vessel.srfSpeed * ml.vessel.srfSpeed) * ml.liftArea;
+                    float q = (float)(0.5f * ml.vessel.atmDensity * ml.vessel.srfSpeed * ml.vessel.srfSpeed);
 
                     // Needs to be changed if the lift and drag curves are changed
-                    float Lalpha = 2.864788975654117f * qS * BDArmorySettings.GLOBAL_LIFT_MULTIPLIER; // CLmax/AoA(CLmax) * q * S * Lift Multiplier, I.E. linearized Lift/AoA (not CL/AoA)
-                    float D0 = 0.00215f * qS * BDArmorySettings.GLOBAL_DRAG_MULTIPLIER; // Drag at 0 AoA
-                    float eta = 0.025f * BDArmorySettings.GLOBAL_DRAG_MULTIPLIER / BDArmorySettings.GLOBAL_LIFT_MULTIPLIER; // D = D0 + eta*Lalpha*AoA^2, quadratic approximation of drag.
+                    float Lalpha = 2.864788975654117f * q * ml.liftArea * BDArmorySettings.GLOBAL_LIFT_MULTIPLIER; // CLmax/AoA(CLmax) * q * S * Lift Multiplier, I.E. linearized Lift/AoA (not CL/AoA)
+                    float D0 = 0.00215f * q * ml.dragArea * BDArmorySettings.GLOBAL_DRAG_MULTIPLIER; // Drag at 0 AoA
+                    float eta = 0.025f * BDArmorySettings.GLOBAL_DRAG_MULTIPLIER * ml.dragArea / (BDArmorySettings.GLOBAL_LIFT_MULTIPLIER * ml.liftArea); // D = D0 + eta*Lalpha*AoA^2, quadratic approximation of drag.
                     // eta needs to change if the lift/drag curves are changed. Note this is for small angles
 
                     // Pre-calculation since it's used a lot
