@@ -6913,7 +6913,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
             if (BDArmorySettings.DEBUG_MISSILES)
             {
                 Debug.Log($"[BDArmory.MissileData]: Sending targetInfo to {(dumbfire ? "dumbfire" : "")}{Enum.GetName(typeof(MissileBase.TargetingModes), ml.TargetingMode)} Missile...");
-                if (ml.targetVessel.Vessel != null) Debug.Log($"[BDArmory.MissileData]: targetInfo sent for {ml.targetVessel.Vessel.GetName()}");
+                if (ml.targetVessel != null) Debug.Log($"[BDArmory.MissileData]: targetInfo sent for {ml.targetVessel.Vessel.GetName()}");
             }
             if (BDArmorySettings.DEBUG_MISSILES)
                 Debug.Log($"[BDArmory.MissileData]: firing missile at {(currentTarget != null && currentTarget.Vessel != null ? currentTarget.Vessel.GetName() : "null target")}");
