@@ -7581,7 +7581,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                         if (missile.Current.multiLauncher.missileSpawner.ammoCount == 0 && !BDArmorySettings.INFINITE_ORDINANCE) continue;
                         if (!missile.Current.multiLauncher.turret.turretEnabled) 
                             missile.Current.multiLauncher.turret.EnableTurret(missile.Current);
-                        missileCount += (int)Mathf.Clamp(Mathf.Floor(missile.Current.multiLauncher.missileSpawner.ammoCount / missile.Current.multiLauncher.salvoSize), 1, missile.Current.multiLauncher.missileSpawner.ammoCount);
+                       missileCount += Mathf.CeilToInt(missile.Current.multiLauncher.missileSpawner.ammoCount / missile.Current.multiLauncher.salvoSize);
                     }
                     else missileCount++;
                     interceptiontarget = BDATargetManager.GetClosestMissileThreat(this);
@@ -7850,6 +7850,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                             }
                                         }
                                     }
+                                if (missileTarget != null) break;
                             }
                             MissileID++;
                         }
