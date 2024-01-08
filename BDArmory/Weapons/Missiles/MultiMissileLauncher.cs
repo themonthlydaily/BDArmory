@@ -745,7 +745,7 @@ namespace BDArmory.Weapons.Missiles
                 tubesFired++;
                 launchesThisSalvo++;
                 launchTransforms[m].localScale = Vector3.zero;
-                //time to deduct ammo = !clustermissile or clsuter missile still on plane
+                //time to deduct ammo = !clustermissile or cluster missile still on plane
                 //time to not deduct ammo = in-flight clMsl
                 if (!missileSpawner.SpawnMissile(launchTransforms[m], offset * Length, !isLaunchedClusterMissile))
                 {
