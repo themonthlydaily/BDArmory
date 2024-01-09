@@ -440,7 +440,7 @@ namespace BDArmory.Ammo
 
         void OnGUI()
         {
-            if (HighLogic.LoadedSceneIsEditor)
+            if (HighLogic.LoadedSceneIsEditor && BDArmorySettings.BD_VOLATILE_AMMO)
             {
                 if (BDArmorySetup.showWeaponAlignment)
                     DrawDetonationVisualization();
