@@ -8,6 +8,7 @@ v1.6.9.0
 	- Battle damage fuel leak rates now scale by (bullet caliber)^2, instead of (bullet caliber). Fuel leak rates for 20mm caliber remain the same, calibers higher and lower than 20mm will now have higher and lower leak rates, respectively.
 - UI:
 	- New Opacity option in BDA Team Icons to set icon opacity.
+	- Adds CASE ammo explosion radii visualizer to the F2 Guns Alignment overlay.
 - AI / WM:
 	- Invert the roll target when the fly-to direction is below and behind the craft within the Immelmann turn angle.
 	- Fix automatic gun range adjustments in the WM again.
@@ -23,7 +24,7 @@ v1.6.9.0
 		  - Fix issue with MultiMissilelauncher Turrets throwing an NRE when AI firing.
 		  - Fix mass changes of missiles that decouple boosters and add missile mass debug telemetry.
 		  - Fix radar and heat targeting leading targets excessively (most apparent in orbit).
-      - Fix missile drag curve having negative drag at ~25 deg AoA.
+      		  - Fix missile drag curve having negative drag at ~25 deg AoA.
 		  - Fix AI occasionally not firing radar missiles; Git Issue #573.
 		  - Change target offset on missiles with continous rod warheads from Detonation Distance / 3 to  Min(Blast Radius / 3, Detonation Distance / 3).
       - Fix missile RCS FX constantly displaying.
