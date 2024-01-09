@@ -333,7 +333,6 @@ namespace BDArmory.Weapons.Missiles
         private float burnedFuelMass = 0;
 
         public bool SetupComplete => StartSetupComplete;
-        public int loftState = 0;
         public float initMaxAoA = 0;
         #endregion Variable Declarations
 
@@ -1235,6 +1234,8 @@ namespace BDArmory.Weapons.Missiles
             {
                 ml.kappaAngle = kappaAngle;
                 ml.LoftAngle = LoftAngle;
+                ml.loftState = 0;
+                ml.LoftTermAngle = LoftTermAngle;
                 ml.LoftMaxAltitude = LoftMaxAltitude;
                 ml.LoftRangeOverride = LoftRangeOverride;
             }
@@ -1277,6 +1278,8 @@ namespace BDArmory.Weapons.Missiles
                 {
                     ml.kappaAngle = kappaAngle;
                     ml.LoftAngle = LoftAngle;
+                    ml.loftState = 0;
+                    ml.LoftTermAngle = LoftTermAngle;
                     ml.LoftMaxAltitude = LoftMaxAltitude;
                     ml.LoftRangeOverride = LoftRangeOverride;
                 }
@@ -2535,7 +2538,7 @@ namespace BDArmory.Weapons.Missiles
 
                     case GuidanceModes.Kappa:
                         {
-                            aamTarget = MissileGuidance.GetKappaTarget(TargetPosition, TargetVelocity, TargetAcceleration, this, MissileState == MissileStates.PostThrust ? 0f : currentThrust * Throttle, kappaAngle, terminalHomingRange, LoftAngle, LoftRangeOverride, LoftMaxAltitude, out timeToImpact, out currgLimit, optimumAirspeed);
+                            aamTarget = MissileGuidance.GetKappaTarget(TargetPosition, TargetVelocity, TargetAcceleration, this, MissileState == MissileStates.PostThrust ? 0f : currentThrust * Throttle, kappaAngle, terminalHomingRange, LoftAngle, LoftTermAngle, LoftRangeOverride, LoftMaxAltitude, out timeToImpact, out currgLimit, ref loftState);
                             TimeToImpact = timeToImpact;
                             break;
                         }

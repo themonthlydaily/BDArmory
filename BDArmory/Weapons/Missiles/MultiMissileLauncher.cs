@@ -848,6 +848,8 @@ namespace BDArmory.Weapons.Missiles
                     ml.LoftAngle = missileLauncher.LoftAngle;
                     ml.LoftMaxAltitude = missileLauncher.LoftMaxAltitude;
                     ml.LoftRangeOverride = missileLauncher.LoftRangeOverride;
+                    ml.loftState = 0;
+                    ml.LoftTermAngle = missileLauncher.LoftTermAngle;
                 }
 
 
@@ -891,6 +893,8 @@ namespace BDArmory.Weapons.Missiles
                         ml.LoftAngle = missileLauncher.LoftAngle;
                         ml.LoftMaxAltitude = missileLauncher.LoftMaxAltitude;
                         ml.LoftRangeOverride = missileLauncher.LoftRangeOverride;
+                        ml.loftState = 0;
+                        ml.LoftTermAngle = missileLauncher.LoftTermAngle;
                     }
 
                     ml.terminalHomingRange = missileLauncher.terminalHomingRange;

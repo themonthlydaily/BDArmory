@@ -150,14 +150,16 @@ namespace BDArmory.Guidances
         // Kappa/Trajectory Curvature Optimal Guidance 
         public static Vector3 GetKappaTarget(Vector3 targetPosition, Vector3 targetVelocity,
             Vector3 targetAcceleration, MissileLauncher ml, float thrust, float shapingAngle,
-            float terminalHomingRange, float loftAngle, float midcourseRange, float maxAltitude,
-            out float ttgo, out float gLimit, float minSpeed = 200f)
+            float terminalHomingRange, float loftAngle, float loftTermAngle, 
+            float midcourseRange, float maxAltitude, out float ttgo, out float gLimit,
+            ref int loftState)
         {
             // Get surface velocity direction
             Vector3 velDirection = ml.vessel.srf_vel_direction;
 
             // Get range
             float R = Vector3.Distance(targetPosition, ml.vessel.transform.position);
+            // Unfortunately can't be simplified as R is needed later on
 
             // Kappa Guidance needs an accurate measure of speed to function so no minSpeed application here
             float currSpeed = (float)ml.vessel.srfSpeed;
@@ -176,13 +178,13 @@ namespace BDArmory.Guidances
             float leadTime = Mathf.Clamp(ttgo, 0f, 16f);
 
             // Get up direction at missile location
-            Vector3 upDirection = VectorUtils.GetUpDirection(ml.vessel.CoM);
+            Vector3 upDirection = ml.vessel.upAxis; //VectorUtils.GetUpDirection(ml.vessel.CoM);
 
             // Set up PIP vector
             Vector3 predictedImpactPoint = AIUtils.PredictPosition(targetPosition, targetVelocity, Vector3.zero, leadTime + TimeWarp.fixedDeltaTime);
 
             // If still in boost phase
-            if (R > midcourseRange)
+            if (loftState < 2 && R > midcourseRange && Vector3.Dot((targetPosition - ml.vessel.CoM) / R, -upDirection) < Mathf.Sin(loftTermAngle * Mathf.Deg2Rad))
             {
                 Vector3 planarDirectionToTarget = ((predictedImpactPoint - ml.vessel.transform.position).ProjectOnPlanePreNormalized(upDirection)).normalized;
 
@@ -200,6 +202,7 @@ namespace BDArmory.Guidances
             }
             else
             {
+                loftState = 2;
                 // Accurately predict impact point
                 //predictedImpactPoint = AIUtils.PredictPosition(targetPosition, targetVelocity, Vector3.zero, ttgo + TimeWarp.fixedDeltaTime);
 
@@ -322,7 +325,7 @@ namespace BDArmory.Guidances
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileGuidance]: Lofting");
 
                 // Get up direction
-                Vector3 upDirection = VectorUtils.GetUpDirection(missileVessel.CoM);
+                Vector3 upDirection = missileVessel.upAxis; //VectorUtils.GetUpDirection(missileVessel.CoM);
 
                 // Use the gun aim-assist logic to determine ballistic angle (assuming no drag)
                 Vector3 missileRelativePosition, missileRelativeVelocity, missileAcceleration, missileRelativeAcceleration, targetPredictedPosition, missileDropOffset, lastVelDirection, ballisticTarget, targetHorVel, targetCompVel;
