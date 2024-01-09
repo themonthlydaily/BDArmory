@@ -704,7 +704,7 @@ namespace BDArmory.Control
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_SmokeRepetition", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Chaff dispensing repetition
     UI_FloatRange(minValue = 1f, maxValue = 10, stepIncrement = 1f, scene = UI_Scene.All)]
-        public float smokeRepetition = 1f; 
+        public float smokeRepetition = 1f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_SmokeInterval", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Chaff dispensing interval
             UI_FloatRange(minValue = 0.1f, maxValue = 4f, stepIncrement = 0.1f, scene = UI_Scene.All)]
@@ -741,6 +741,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                         if (!weapon.Current.isAPS) weapon.Current.aiControlled = false;
                         if (weapon.Current.dualModeAPS) weapon.Current.isAPS = true;
                     }
+                if (vesselRadarData) vesselRadarData.UnslaveTurrets(); // Unslave the turrets so that manual firing works.
                 weaponIndex = 0;
                 selectedWeapon = null;
             }
@@ -1531,7 +1532,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
         }
         public override void OnFixedUpdate()
         {
-            if (vessel == null) return;
+            if (vessel == null || !vessel.gameObject.activeInHierarchy) return;
             if (weaponsListNeedsUpdating) UpdateList();
 
             if (!vessel.packed)
@@ -1774,7 +1775,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                         List<string> weaponHeatDebugStrings = new List<string>();
                         List<string> weaponAimDebugStrings = new List<string>();
                         HashSet<WeaponClasses> validClasses = new HashSet<WeaponClasses> { WeaponClasses.Gun, WeaponClasses.Rocket, WeaponClasses.DefenseLaser };
-                        foreach (var weaponCandidate in weaponArray)
+                        foreach (var weaponCandidate in VesselModuleRegistry.GetModules<IBDWeapon>(vessel)) // Show each weapon, not each weapon group (which might contain multiple weapon types).
                         {
                             if (weaponCandidate == null || !validClasses.Contains(weaponCandidate.GetWeaponClass())) continue;
                             var weapon = (ModuleWeapon)weaponCandidate;
@@ -2833,7 +2834,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
 
                 yield return new WaitForSecondsFixed(waitTime);
 
-                if (ml.vessel && CanSeeTarget(ml))
+                if (ml && ml.vessel && CanSeeTarget(ml))
                 {
                     BDATargetManager.ReportVessel(ml.vessel, this);
                 }
@@ -2903,7 +2904,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
         {
             if (!isSmoking && ThreatClosingTime(incomingMissileVessel) <= cmThreshold)
             {
-                StartCoroutine(SmokeRoutine((int)smokeRepetition, smokeInterval)); 
+                StartCoroutine(SmokeRoutine((int)smokeRepetition, smokeInterval));
             }
         }
 
@@ -6930,7 +6931,6 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
 
         void GuardMode()
         {
-            if (!gameObject.activeInHierarchy) return;
             if (BDArmorySettings.PEACE_MODE) return;
 
             UpdateGuardViewScan();
@@ -7581,7 +7581,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                     if (missile.Current.multiLauncher && missile.Current.multiLauncher.turret)
                     {
                         if (missile.Current.multiLauncher.missileSpawner.ammoCount == 0 && !BDArmorySettings.INFINITE_ORDINANCE) continue;
-                        if (!missile.Current.multiLauncher.turret.turretEnabled) 
+                        if (!missile.Current.multiLauncher.turret.turretEnabled)
                             missile.Current.multiLauncher.turret.EnableTurret(missile.Current);
                         missileCount += Mathf.CeilToInt(missile.Current.multiLauncher.missileSpawner.ammoCount / missile.Current.multiLauncher.salvoSize);
                     }
@@ -7765,7 +7765,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     }
                                     else
                                     {
-                                        if (firedMissiles >= maxMissilesOnTarget && (multiMissileTgtNum > 1 && BDATargetManager.TargetList(Team).Count > 1)) 
+                                        if (firedMissiles >= maxMissilesOnTarget && (multiMissileTgtNum > 1 && BDATargetManager.TargetList(Team).Count > 1))
                                         {
                                             if (!currMissile.radarLOAL) //switch active lock instead of clearing locks for SARH missiles
                                             {

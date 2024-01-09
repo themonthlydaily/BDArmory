@@ -505,9 +505,9 @@ namespace BDArmory.UI
                 GameEvents.onShowUI.Add(ShowGameUI);
                 GameEvents.onVesselGoOffRails.Add(OnVesselGoOffRails);
                 GameEvents.OnGameSettingsApplied.Add(SaveVolumeSettings);
-
                 GameEvents.onVesselChange.Add(VesselChange);
             }
+            GameEvents.onGameSceneSwitchRequested.Add(OnGameSceneSwitchRequested);
 
             BulletInfo.Load();
             RocketInfo.Load();
@@ -790,6 +790,7 @@ namespace BDArmory.UI
                     if (MouseAimFlight.IsMouseAimActive)
                     {
                         Cursor.visible = false;
+                        drawCursor = false;
                         return;
                     }
                 }
@@ -2519,6 +2520,7 @@ namespace BDArmory.UI
                         // GUI.Label(SLeftSliderRect(++line), $"Initial correction: {(TestNumericalMethodsIC == 0 ? "None" : TestNumericalMethodsIC == 1 ? "All" : TestNumericalMethodsIC == 2 ? "Local" : "Gravity")}");
                         // TestNumericalMethodsIC = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), TestNumericalMethodsIC, 0, 3));
                         // if (GUI.Button(SLineRect(++line), $"Test Forward Euler vs Semi-Implicit Euler vs Leap-frog ({PROF_N * Time.fixedDeltaTime}s, {PROF_N / Math.Min(PROF_N / 2, PROF_n)} steps)")) StartCoroutine(TestNumericalMethods(PROF_N * Time.fixedDeltaTime, PROF_N / Math.Min(PROF_N / 2, PROF_n)));
+                        // if (GUI.Button(SLineRect(++line), "Test \"up\"")) TestUp();
                         // if (GUI.Button(SLineRect(++line), "Test inside vs on unit sphere")) TestInOnUnitSphere();
                         // if (GUI.Button(SLineRect(++line), "Test Sqr vs x*x")) TestMaxRelSpeed();
                         // if (GUI.Button(SLineRect(++line), "Test Sqr vs x*x")) TestSqrVsSqr();
@@ -4173,6 +4175,7 @@ namespace BDArmory.UI
             GameEvents.onVesselGoOffRails.Remove(OnVesselGoOffRails);
             GameEvents.OnGameSettingsApplied.Remove(SaveVolumeSettings);
             GameEvents.onVesselChange.Remove(VesselChange);
+            GameEvents.onGameSceneSwitchRequested.Remove(OnGameSceneSwitchRequested);
         }
 
         void OnVesselGoOffRails(Vessel v)
@@ -4192,8 +4195,8 @@ namespace BDArmory.UI
         }
 
 #if DEBUG
-        // static int PROF_N_pow = 5, PROF_n_pow = 2;
-        static int PROF_N = 1000, PROF_n = 1000;
+        // static int PROF_N_pow = 4, PROF_n_pow = 4;
+        static int PROF_N = 10000, PROF_n = 10000;
         IEnumerator TestVesselPositionTiming()
         {
             var wait = new WaitForFixedUpdate();
@@ -4219,15 +4222,15 @@ namespace BDArmory.UI
             TimingManager.FixedUpdateRemove(TimingManager.TimingStage.Late, Late);
             TimingManager.FixedUpdateRemove(TimingManager.TimingStage.BetterLateThanNever, BetterLateThanNever);
         }
-        void ObscenelyEarly() { Debug.Log($"DEBUG {Time.time} ObscenelyEarly, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
-        void Early() { Debug.Log($"DEBUG {Time.time} Early, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
-        void Precalc() { Debug.Log($"DEBUG {Time.time} Precalc, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
-        void Earlyish() { Debug.Log($"DEBUG {Time.time} Earlyish, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
-        void Normal() { Debug.Log($"DEBUG {Time.time} Normal, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
-        void FashionablyLate() { Debug.Log($"DEBUG {Time.time} FashionablyLate, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
-        void FlightIntegrator() { Debug.Log($"DEBUG {Time.time} FlightIntegrator, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
-        void Late() { Debug.Log($"DEBUG {Time.time} Late, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
-        void BetterLateThanNever() { Debug.Log($"DEBUG {Time.time} BetterLateThanNever, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void ObscenelyEarly() { Debug.Log($"DEBUG {Time.time} ObscenelyEarly, active vessel position: {FlightGlobals.ActiveVessel.CoM.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void Early() { Debug.Log($"DEBUG {Time.time} Early, active vessel position: {FlightGlobals.ActiveVessel.CoM.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void Precalc() { Debug.Log($"DEBUG {Time.time} Precalc, active vessel position: {FlightGlobals.ActiveVessel.CoM.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void Earlyish() { Debug.Log($"DEBUG {Time.time} Earlyish, active vessel position: {FlightGlobals.ActiveVessel.CoM.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void Normal() { Debug.Log($"DEBUG {Time.time} Normal, active vessel position: {FlightGlobals.ActiveVessel.CoM.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void FashionablyLate() { Debug.Log($"DEBUG {Time.time} FashionablyLate, active vessel position: {FlightGlobals.ActiveVessel.CoM.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void FlightIntegrator() { Debug.Log($"DEBUG {Time.time} FlightIntegrator, active vessel position: {FlightGlobals.ActiveVessel.CoM.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void Late() { Debug.Log($"DEBUG {Time.time} Late, active vessel position: {FlightGlobals.ActiveVessel.CoM.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void BetterLateThanNever() { Debug.Log($"DEBUG {Time.time} BetterLateThanNever, active vessel position: {FlightGlobals.ActiveVessel.CoM.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
 
         IEnumerator TestYieldWaitLengths()
         {
@@ -4464,6 +4467,25 @@ namespace BDArmory.UI
             }
             x = vessel.transform.position;
             Debug.Log($"DEBUG {Time.time}: After {duration}s ({steps}*{dt}={steps * dt}), Actual x = {x}, Forward Euler predicts x = {x0} (Δ = {(x - x0).magnitude}), Semi-implicit Euler predicts x = {x1} (Δ = {(x - x1).magnitude}), Leap-frog predicts x = {x2} (Δ = {(x - x2).magnitude})");
+        }
+
+        public static void TestUp()
+        {
+            Vessel vessel = FlightGlobals.ActiveVessel;
+            Debug.Log($"DEBUG Vector3.up: {Vector3.up}, vessel.up: {vessel.up}, vessel.transform.up: {vessel.transform.up}, vessel.upAxis: {vessel.upAxis}, GetUpDir: {VectorUtils.GetUpDirection(vessel.CoM)}");
+            var watch = new System.Diagnostics.Stopwatch();
+            float µsResolution = 1e6f / System.Diagnostics.Stopwatch.Frequency;
+            Debug.Log($"DEBUG Clock resolution: {µsResolution}µs, {PROF_N} outer loops, {PROF_n} inner loops");
+            Vector3 up = default;
+            var func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { up = vessel.upAxis; } };
+            Debug.Log($"DEBUG vessel.upAxis took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {up}");
+            Vector3 pos = vessel.CoM;
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { up = VectorUtils.GetUpDirection(pos); } };
+            Debug.Log($"DEBUG GetUpDirection took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {up}");
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { up = vessel.up; } };
+            Debug.Log($"DEBUG vessel.up took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {up}");
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { up = vessel.transform.up; } };
+            Debug.Log($"DEBUG vessel.transform.up took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {up}");
         }
 
         public static void TestInOnUnitSphere()
@@ -4753,5 +4775,22 @@ namespace BDArmory.UI
                 vector.z - planeNormal.z * dot);
         }
 #endif
+
+        /// <summary>
+        /// On leaving flight mode. Perform some clean-up of things that might still be active.
+        /// Not everything gets cleaned up by default for some reason.
+        /// </summary>
+        void OnGameSceneSwitchRequested(GameEvents.FromToAction<GameScenes, GameScenes> fromTo)
+        {
+            if (fromTo.from == GameScenes.FLIGHT && fromTo.to != GameScenes.FLIGHT)
+            {
+                SpawnUtils.DisableAllBulletsAndRockets();
+                ExplosionFx.DisableAllExplosionFX();
+                FXEmitter.DisableAllFX();
+                CMDropper.DisableAllCMs();
+                BulletHitFX.DisableAllFX();
+                // FIXME Add in any other things that may otherwise continue doing stuff on scene changes, e.g., various FX.
+            }
+        }
     }
 }

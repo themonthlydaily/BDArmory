@@ -2778,13 +2778,12 @@ namespace BDArmory.Weapons.Missiles
 
         protected override void PartDie(Part p)
         {
-            if (p == part)
-            {
-                HasDied = true;
-                Detonate();
-                BDATargetManager.FiredMissiles.Remove(this);
-                GameEvents.onPartDie.Remove(PartDie);
-            }
+            if (p != part) return;
+            HasDied = true;
+            Detonate();
+            BDATargetManager.FiredMissiles.Remove(this);
+            GameEvents.onPartDie.Remove(PartDie);
+            Destroy(this); // If this is the active vessel, then KSP doesn't destroy it until we switch away, but we want to get rid of the MissileBase straight away.
         }
 
         public static bool CheckIfMissile(Part p)

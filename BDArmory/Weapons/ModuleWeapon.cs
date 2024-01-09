@@ -152,6 +152,7 @@ namespace BDArmory.Weapons
                 return finalAimTarget.IsZero() ? 1f : Mathf.Max(1f - 0.5f * theta * theta, 0); // Approximation to cos(theta). (cos(x) = 1-x^2/2!+O(x^4))
             }
         }
+        public Vector3 atprTargetPosition;
         public Vector3 targetPosition;
         public Vector3 targetVelocity;  // local frame velocity
         readonly SmoothingV3 targetVelocitySmoothing = new(); // Smoothing for the target's velocity, required for long-range aiming.
@@ -1915,7 +1916,8 @@ namespace BDArmory.Weapons
                 Vector3 reticlePosition;
                 if (BDArmorySettings.AIM_ASSIST)
                 {
-                    if (targetAcquired && (GPSTarget || slaved || yawRange < 1 || maxPitch - minPitch < 1))
+                    if (targetAcquired && (GPSTarget || slaved || MouseAimFlight.IsMouseAimActive || yawRange < 1 || maxPitch - minPitch < 1)
+                        && (BDArmorySettings.AIM_ASSIST_MODE || !turret))
                     {
                         if (BDArmorySettings.AIM_ASSIST_MODE) // Target
                             reticlePosition = pointingAtPosition + fixedLeadOffset / targetDistance * pointingDistance;
@@ -1931,7 +1933,7 @@ namespace BDArmory.Weapons
 
                         if (atprAcquired)
                         {
-                            GUIUtils.DrawTextureOnWorldPos(targetPosition, BDArmorySetup.Instance.openGreenSquare, new Vector2(20, 20), 0);
+                            GUIUtils.DrawTextureOnWorldPos(atprTargetPosition, BDArmorySetup.Instance.openGreenSquare, new Vector2(20, 20), 0);
                         }
                     }
                     else
@@ -3479,15 +3481,15 @@ namespace BDArmory.Weapons
                 {
                     fireTransform = rockets[0].parent; // support for legacy RLs
                 }
-                // FIXME If the WM is controlling the guns, don't override with MouseAimFlight
-                if (!slaved && !GPSTarget && (!aiControlled || MouseAimFlight.IsMouseAimActive) && !isAPS && (vessel.isActiveVessel || BDArmorySettings.REMOTE_SHOOTING))
+                if (!slaved && !GPSTarget && !aiControlled && !isAPS && (vessel.isActiveVessel || BDArmorySettings.REMOTE_SHOOTING))
                 {
                     manualAiming = true;
-                    targetVelocity = -BDKrakensbane.FrameVelocityV3f; // Stationary targets' rigid bodies are being moved opposite to the Krakensbane frame velocity.
-                    targetAcceleration = Vector3.zero;
-                    targetIsLandedOrSplashed = true;
-                    smoothedPartVelocity = part.rb.velocity; // Override the smoothing (which isn't run without a target otherwise).
-                    smoothedPartAcceleration = vessel.acceleration_immediate;
+                    bool foundTarget = targetAcquired;
+                    if (!targetAcquired)
+                    { // Override the smoothing (which isn't run without a target otherwise).
+                        smoothedPartVelocity = part.rb.velocity;
+                        smoothedPartAcceleration = vessel.acceleration_immediate;
+                    }
                     if (yawRange > 0 || maxPitch - minPitch > 0)
                     {
                         //MouseControl
@@ -3504,6 +3506,7 @@ namespace BDArmory.Weapons
                             ray = new Ray(camera.transform.position, mouseAimFlightTarget);
                         }
 
+                        float maxAimRange = targetAcquired ? (targetPosition - ray.origin).magnitude : maxTargetingRange;
                         if (Physics.Raycast(ray, out RaycastHit hit, maxTargetingRange, layerMask1))
                         {
                             KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
@@ -3511,7 +3514,7 @@ namespace BDArmory.Weapons
 
                             if (p != null && p.vessel != null && p.vessel == vessel) //aim through self vessel if occluding mouseray
                             {
-                                targetPosition = ray.origin + ray.direction * maxTargetingRange;
+                                targetPosition = ray.origin + ray.direction * maxAimRange;
                             }
                             else
                             {
@@ -3519,6 +3522,7 @@ namespace BDArmory.Weapons
                             }
                             if (p != null && p.rb != null && p.vessel != null)
                             {
+                                foundTarget = true;
                                 targetVelocity = p.rb.velocity;
                                 targetAcceleration = p.vessel.acceleration;
                                 targetIsLandedOrSplashed = p.vessel.LandedOrSplashed;
@@ -3528,6 +3532,7 @@ namespace BDArmory.Weapons
                         {
                             if (visualTargetVessel != null && visualTargetVessel.loaded)
                             {
+                                foundTarget = true;
                                 if (!targetCOM && visualTargetPart != null)
                                 {
                                     targetPosition = ray.origin + ray.direction * Vector3.Distance(visualTargetPart.transform.position, ray.origin);
@@ -3545,12 +3550,21 @@ namespace BDArmory.Weapons
                             }
                             else
                             {
-                                targetPosition = ray.origin + ray.direction * maxTargetingRange;
+                                targetPosition = ray.origin + ray.direction * maxAimRange;
                             }
                         }
                     }
                     else if (!targetAcquired && (weaponManager == null || !weaponManager.staleTarget))
-                        targetPosition = fireTransform.position + fireTransform.forward * maxTargetingRange; // For fixed weapons, aim straight ahead (needed for targetDistance below for the trajectory sim) if no current target.
+                    {
+                        float maxAimRange = targetAcquired ? (targetPosition - fireTransform.position).magnitude : maxTargetingRange;
+                        targetPosition = fireTransform.position + fireTransform.forward * maxAimRange; // For fixed weapons, aim straight ahead (needed for targetDistance below for the trajectory sim) if no current target.
+                    }
+                    if (!foundTarget)
+                    {
+                        targetVelocity = -BDKrakensbane.FrameVelocityV3f; // Stationary targets' rigid bodies are being moved opposite to the Krakensbane frame velocity.
+                        targetAcceleration = Vector3.zero;
+                        targetIsLandedOrSplashed = true;
+                    }
                     finalTarget = targetPosition; // In case aim assist and AI control is off.
                 }
                 if (BDArmorySettings.BULLET_WATER_DRAG)
@@ -5011,8 +5025,6 @@ namespace BDArmory.Weapons
                     targetRadius = weaponManager.slavedTarget.vessel != null ? weaponManager.slavedTarget.vessel.GetRadius() : 35f;
                     targetPosition = weaponManager.slavedPosition;
                     targetVelocity = weaponManager.slavedTarget.vessel != null ? weaponManager.slavedTarget.vessel.rb_velocity : (weaponManager.slavedVelocity - BDKrakensbane.FrameVelocityV3f);
-                    //targetAcceleration = weaponManager.slavedTarget.vessel != null ? weaponManager.slavedTarget.vessel.acceleration : weaponManager.slavedAcceleration;
-                    //CS0172 Type of conditional expression cannot be determined because 'Vector3' and 'Vector3' implicitly convert to one another
                     if (weaponManager.slavedTarget.vessel != null)
                     {
                         targetAcceleration = weaponManager.slavedTarget.vessel.acceleration;
@@ -5065,12 +5077,10 @@ namespace BDArmory.Weapons
                 }
 
                 //auto proxy tracking
-                if (vessel.isActiveVessel && autoProxyTrackRange > 0)
+                if (vessel.isActiveVessel && (autoProxyTrackRange > 0 || MouseAimFlight.IsMouseAimActive)) // Allow better auto-proxy tracking when using MouseAimFlight.
                 {
-                    if (aptrTicker < 20)
+                    if (++aptrTicker < 20)
                     {
-                        aptrTicker++;
-
                         if (atprWasAcquired)
                         {
                             targetAcquired = true;
@@ -5082,32 +5092,41 @@ namespace BDArmory.Weapons
                         aptrTicker = 0;
                         Vessel tgt = null;
                         float closestSqrDist = autoProxyTrackRange * autoProxyTrackRange;
+                        if (MouseAimFlight.IsMouseAimActive) closestSqrDist = Mathf.Max(closestSqrDist, maxEffectiveDistance * maxEffectiveDistance);
                         using (var v = BDATargetManager.LoadedVessels.GetEnumerator())
                             while (v.MoveNext())
                             {
                                 if (v.Current == null || !v.Current.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(v.Current.vesselType)) continue;
                                 if (!v.Current.IsControllable) continue;
                                 if (v.Current == vessel) continue;
-                                Vector3 targetVector = v.Current.transform.position - part.transform.position;
-                                if (Vector3.Dot(targetVector, fireTransforms[0].forward) < 0) continue;
-                                float sqrDist = (v.Current.transform.position - part.transform.position).sqrMagnitude;
+                                Vector3 targetVector = v.Current.CoM - part.transform.position;
+                                var turretInRange = turret && turret.TargetInRange(v.Current.CoM, 20, maxEffectiveDistance);
+                                if (!(turretInRange || Vector3.Dot(targetVector, fireTransforms[0].forward) > 0)) continue;
+                                float sqrDist = (v.Current.CoM - part.transform.position).sqrMagnitude;
                                 if (sqrDist > closestSqrDist) continue;
-                                if (Vector3.Angle(targetVector, fireTransforms[0].forward) > 20) continue;
+                                if (!(turretInRange || Vector3.Angle(targetVector, fireTransforms[0].forward) < 20)) continue;
                                 tgt = v.Current;
                                 closestSqrDist = sqrDist;
                             }
 
-                        if (tgt == null) return;
-                        targetAcquired = true;
-                        atprAcquired = true;
-                        targetRadius = tgt.GetRadius();
-                        targetPosition = tgt.CoM;
-                        targetVelocity = tgt.rb_velocity;
-                        targetAcceleration = tgt.acceleration;
-                        targetIsLandedOrSplashed = tgt.LandedOrSplashed;
+                        if (tgt != null)
+                        {
+                            targetAcquired = true;
+                            atprAcquired = true;
+                            targetRadius = tgt.GetRadius();
+                            targetPosition = tgt.CoM;
+                            targetVelocity = tgt.rb_velocity;
+                            targetAcceleration = tgt.acceleration;
+                            targetIsLandedOrSplashed = tgt.LandedOrSplashed;
+                            atprTargetPosition = targetPosition;
+                        }
                     }
-                    targetAcquisitionType = TargetAcquisitionType.AutoProxy;
-                    return;
+                    if (targetAcquired)
+                    {
+                        targetPosition = atprTargetPosition;
+                        targetAcquisitionType = TargetAcquisitionType.AutoProxy;
+                        return;
+                    }
                 }
             }
 
