@@ -3127,7 +3127,7 @@ namespace BDArmory.Weapons
         void WeaponFX()
         {
             //sound
-            if (ChargeTime > 0)
+            if (ChargeTime > 0 && !hasCharged)
             {
                 audioSource.Stop();
             }
@@ -4554,7 +4554,7 @@ namespace BDArmory.Weapons
                         roundsPerMinute = Mathf.Lerp(baseRPM, (baseRPM / 10), spooltime);
                     }
                 }
-                if (ChargeTime > 0) hasCharged = false;
+                if (ChargeTime > 0 && hasCharged && timeSinceFired > GetTimeGap() * 2) hasCharged = false;
             }
         }
 
