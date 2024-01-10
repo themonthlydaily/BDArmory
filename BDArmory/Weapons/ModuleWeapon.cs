@@ -2310,7 +2310,8 @@ namespace BDArmory.Weapons
 
             float timeGap = GetTimeGap();
             beamDuration = Math.Min(timeGap * 0.8f, 0.1f);
-            if ((!pulseLaser || ((timeSinceFired > timeGap) && pulseLaser))
+
+            if (timeSinceFired > timeGap
                 && !pointingAtSelf && !GUIUtils.CheckMouseIsOnGui() && WMgrAuthorized() && !isOverheated) // && !isReloading)
             {
                 if (CanFire(chargeAmount))
@@ -4554,7 +4555,7 @@ namespace BDArmory.Weapons
                         roundsPerMinute = Mathf.Lerp(baseRPM, (baseRPM / 10), spooltime);
                     }
                 }
-                if (ChargeTime > 0 && hasCharged && timeSinceFired > GetTimeGap() * 2) hasCharged = false;
+                if (ChargeTime > 0 && hasCharged && timeSinceFired > 1) hasCharged = false;
             }
         }
 
