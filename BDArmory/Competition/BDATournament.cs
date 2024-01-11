@@ -1914,7 +1914,7 @@ namespace BDArmory.Competition
             }
             if (!(resumingEvolution || resumingTournament)) // Auto-Load To KSC
             {
-                if (!TryLoadCleanSlate()) yield break; // This shouldn't fail, but anyway...
+                if (!TryLoadCleanSlate()) yield break;
             }
             // Load saved game.
             var tic = Time.time;
@@ -2009,8 +2009,9 @@ namespace BDArmory.Competition
         bool TryLoadCleanSlate()
         {
             game = BDArmorySettings.LAST_USED_SAVEGAME;
+            if (string.IsNullOrEmpty(game)) game = "sandbox"; // Set the game to the default "sandbox" name if no previous name has been used.
             savegame = Path.Combine(savesDir, game, save + ".sfs");
-            return true;
+            return File.Exists(savegame) || BDArmorySettings.GENERATE_CLEAN_SAVE;
         }
 
         bool GenerateCleanGame()
