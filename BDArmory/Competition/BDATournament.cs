@@ -2017,7 +2017,7 @@ namespace BDArmory.Competition
         {
             // Grab the scenarios from the previous persistent game.
             HighLogic.CurrentGame = GamePersistence.LoadGame("persistent", game, true, false);
-            var scenarios = HighLogic.CurrentGame.scenarios;
+            var scenarios = HighLogic.CurrentGame?.scenarios;
 
             if (BDArmorySettings.GENERATE_CLEAN_SAVE)
             {
@@ -2026,7 +2026,7 @@ namespace BDArmory.Competition
                 HighLogic.CurrentGame.startScene = GameScenes.SPACECENTER;
                 HighLogic.CurrentGame.Mode = Game.Modes.SANDBOX;
                 HighLogic.SaveFolder = game;
-                foreach (var scenario in scenarios) { CheckForScenario(scenario.moduleName, scenario.targetScenes); }
+                if (scenarios != null) foreach (var scenario in scenarios) { CheckForScenario(scenario.moduleName, scenario.targetScenes); }
 
                 // Generate the default roster and make them all badass pilots.
                 HighLogic.CurrentGame.CrewRoster = KerbalRoster.GenerateInitialCrewRoster(HighLogic.CurrentGame.Mode);

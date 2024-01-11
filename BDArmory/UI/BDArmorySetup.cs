@@ -2423,10 +2423,13 @@ namespace BDArmory.UI
                 { GUIUtils.EndDisableScrollZoom(); }
                 if (BDArmorySettings.VM_TOOLBAR_BUTTON != (BDArmorySettings.VM_TOOLBAR_BUTTON = GUI.Toggle(SRightRect(line), BDArmorySettings.VM_TOOLBAR_BUTTON, StringUtils.Localize("#LOC_BDArmory_Settings_VMToolbarButton")))) // VM Toobar Button
                 {
-                    if (BDArmorySettings.VM_TOOLBAR_BUTTON)
-                    { VesselMover.Instance.AddToolbarButton(); }
-                    else
-                    { VesselMover.Instance.RemoveToolbarButton(); }
+                    if (HighLogic.LoadedSceneIsFlight)
+                    {
+                        if (BDArmorySettings.VM_TOOLBAR_BUTTON)
+                        { VesselMover.Instance.AddToolbarButton(); }
+                        else
+                        { VesselMover.Instance.RemoveToolbarButton(); }
+                    }
                 }
                 BDArmorySettings.DISPLAY_COMPETITION_STATUS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.DISPLAY_COMPETITION_STATUS, StringUtils.Localize("#LOC_BDArmory_Settings_DisplayCompetitionStatus"));
                 BDArmorySettings.AUTO_DISABLE_UI = GUI.Toggle(SRightRect(line), BDArmorySettings.AUTO_DISABLE_UI, StringUtils.Localize("#LOC_BDArmory_Settings_AutoDisableUI")); // Auto-disable UI
@@ -3645,8 +3648,8 @@ namespace BDArmory.UI
             {
                 line += 0.2f;
 
-                GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_TriggerHold")}: {BDArmorySettings.TRIGGER_HOLD_TIME: 0} s", leftLabel);//Trigger Hold
-                BDArmorySettings.TRIGGER_HOLD_TIME = GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.TRIGGER_HOLD_TIME, 0.02f, 1f);
+                GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_TriggerHold")}: {BDArmorySettings.TRIGGER_HOLD_TIME:0.00} s", leftLabel);//Trigger Hold
+                BDArmorySettings.TRIGGER_HOLD_TIME = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.TRIGGER_HOLD_TIME, 0.02f, 1f), 0.02f);
 
                 GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_UIVolume")}: {(BDArmorySettings.BDARMORY_UI_VOLUME * 100):0}", leftLabel);//UI Volume
                 float uiVol = BDArmorySettings.BDARMORY_UI_VOLUME;
