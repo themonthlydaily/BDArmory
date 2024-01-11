@@ -1799,13 +1799,22 @@ namespace BDArmory.Weapons
                     autoFire = false;
                 }
 
-                if (spinningDown && spinDownAnimation && hasFireAnimation)
+                if (spinningDown && spinDownAnimation)
                 {
-                    for (int i = 0; i < fireState.Length; i++)
+                    if (hasChargeAnimation)
                     {
-                        if (fireState[i].normalizedTime > 1) fireState[i].normalizedTime = 0;
-                        fireState[i].speed = fireAnimSpeed;
+                        if (chargeState.normalizedTime > 1) chargeState.normalizedTime = 0;
+                        chargeState.speed = fireAnimSpeed;
                         fireAnimSpeed = Mathf.Lerp(fireAnimSpeed, 0, 0.04f);
+                    }
+                    else if (hasFireAnimation)
+                    {
+                        for (int i = 0; i < fireState.Length; i++)
+                        {
+                            if (fireState[i].normalizedTime > 1) fireState[i].normalizedTime = 0;
+                            fireState[i].speed = fireAnimSpeed;
+                            fireAnimSpeed = Mathf.Lerp(fireAnimSpeed, 0, 0.04f);
+                        }
                     }
                 }
                 // Draw gauges
@@ -2362,8 +2371,7 @@ namespace BDArmory.Weapons
                         {
                             BDACompetitionMode.Instance.Scores.RegisterShot(aName);
                         }
-                        for (float iTime = TimeWarp.fixedDeltaTime; iTime > 1e-4f; iTime -= timeGap)
-                            timeFired = Time.time - iTime;
+                        timeFired = Time.time;
                     }
                     if (!BeltFed)
                     {
@@ -3024,6 +3032,7 @@ namespace BDArmory.Weapons
         /// <returns></returns>
         float GetTimeGap()
         {
+            if (eWeaponType == WeaponTypes.Laser && !pulseLaser) return 0;
             float timeGap = 60 / roundsPerMinute * TimeWarp.CurrentRate; // RPM * barrels
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                 timeGap = 60 / BDArmorySettings.FIRE_RATE_OVERRIDE * TimeWarp.CurrentRate;
@@ -4555,7 +4564,7 @@ namespace BDArmory.Weapons
                         roundsPerMinute = Mathf.Lerp(baseRPM, (baseRPM / 10), spooltime);
                     }
                 }
-                if (ChargeTime > 0 && hasCharged && timeSinceFired > 1) hasCharged = false;
+                if (ChargeTime > 0 && hasCharged && timeSinceFired > ChargeTime * 2) hasCharged = false;
             }
         }
 

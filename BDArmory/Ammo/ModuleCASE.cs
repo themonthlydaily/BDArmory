@@ -19,7 +19,9 @@ namespace BDArmory.Ammo
     {
         public static Dictionary<int, ObjectPool> detSpheres = new Dictionary<int, ObjectPool>();
         GameObject visSphere;
+        Renderer r_sphere;
         GameObject visDome;
+        Renderer r_dome;
         public float GetModuleMass(float baseMass, ModifierStagingSituation situation) => CASEmass;
         public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.FIXED;
         public float GetModuleCost(float baseCost, ModifierStagingSituation situation) => CASEcost;
@@ -93,60 +95,58 @@ namespace BDArmory.Ammo
                     //origScale = part.rescaleFactor;
                     CASESetup(null, null);
                 }
-                if (HighLogic.LoadedSceneIsEditor)
+
+                var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                var collider = sphere.GetComponent<Collider>();
+                if (collider)
                 {
+                    collider.enabled = false;
+                    Destroy(collider);
+                }
+                Renderer r = sphere.GetComponent<Renderer>();
+                var shader = Shader.Find("KSP/Alpha/Unlit Transparent");
+                r.material = new Material(shader);
+                r.receiveShadows = false;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                r.material.color = new Color(Color.red.r, 0, 0, 0.35f);
+                r.enabled = true;
+                sphere.SetActive(false);
+                detSpheres[0] = ObjectPool.CreateObjectPool(sphere, 10, true, true);
 
-                    var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                    var collider = sphere.GetComponent<Collider>();
-                    if (collider)
+                var dome = GameDatabase.Instance.GetModel(detDomeModelpath);
+                if (dome == null)
+                {
+                    Debug.LogError("[BDArmory.ModuleCase]: model '" + detDomeModelpath + "' not found.");
+                    dome = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                    var dc = dome.GetComponent<Collider>();
+                    if (dc)
                     {
-                        collider.enabled = false;
-                        Destroy(collider);
+                        dc.enabled = false;
+                        Destroy(dc);
                     }
-                    Renderer r = sphere.GetComponent<Renderer>();
-                    var shader = Shader.Find("KSP/Alpha/Unlit Transparent");
-                    r.material = new Material(shader);
-                    r.receiveShadows = false;
-                    r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                    r.material.color = new Color(Color.red.r, 0, 0, 0.35f);
-                    r.enabled = true;
-                    sphere.SetActive(false);
-                    detSpheres[0] = ObjectPool.CreateObjectPool(sphere, 10, true, true);
+                }
+                Renderer d = dome.GetComponent<Renderer>();
+                if (d != null)
+                {
+                    d.material = new Material(Shader.Find("KSP/Particles/Alpha Blended"));
+                    d.material.SetColor("_TintColor", Color.blue);
+                }
 
-                    var dome = GameDatabase.Instance.GetModel(detDomeModelpath);
-                    if (dome == null)
-                    {
-                        Debug.LogError("[BDArmory.ModuleCase]: model '" + detDomeModelpath + "' not found.");
-                        dome = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                        var dc = dome.GetComponent<Collider>();
-                        if (dc)
-                        {
-                            dc.enabled = false;
-                            Destroy(dc);
-                        }
-                    }
-                    var d = dome.GetComponent<Renderer>();
-                    if (d != null)
-                    {
-                        d.material.shader = Shader.Find("KSP/Particles/Alpha Blended");
-                        d.material.SetColor("_TintColor", new Color(Color.red.r, Color.green.g, 0, 0.35f));
-                        d.material.color = new Color(Color.red.r, Color.green.g, 0, 0.35f);
-                    }
-
-                    dome.SetActive(false);
-                    detSpheres[1] = ObjectPool.CreateObjectPool(dome, 10, true, true);
-                    if (detSpheres[0] != null)
-                    {
-                        visSphere = detSpheres[0].GetPooledObject();
-                        visSphere.transform.SetPositionAndRotation(transform.position, transform.rotation);
-                        visSphere.transform.localScale = Vector3.zero;
-                    }
-                    if (detSpheres[1] != null)
-                    {
-                        visDome = detSpheres[1].GetPooledObject();
-                        visDome.transform.SetPositionAndRotation(transform.position, transform.rotation);
-                        visDome.transform.localScale = Vector3.zero;
-                    }
+                dome.SetActive(false);
+                detSpheres[1] = ObjectPool.CreateObjectPool(dome, 10, true, true);
+                if (detSpheres[0] != null)
+                {
+                    visSphere = detSpheres[0].GetPooledObject();
+                    visSphere.transform.SetPositionAndRotation(transform.position, transform.rotation);
+                    visSphere.transform.localScale = Vector3.zero;
+                    r_sphere = visSphere.GetComponent<Renderer>();
+                }
+                if (detSpheres[1] != null)
+                {
+                    visDome = detSpheres[1].GetPooledObject();
+                    visDome.transform.SetPositionAndRotation(transform.position, transform.rotation);
+                    visDome.transform.localScale = Vector3.zero;
+                    r_dome = visDome.GetComponentInChildren<Renderer>();
                 }
             }
             if (HighLogic.LoadedSceneIsFlight)
@@ -434,13 +434,13 @@ namespace BDArmory.Ammo
                 if (!hasDetonated) DetonateIfPossible();
             }
             GameEvents.onGameSceneSwitchRequested.Remove(HandleSceneChange);
-            visSphere.SetActive(false);
-            visDome.SetActive(false);
+            if (visSphere != null) visSphere.SetActive(false);
+            if (visDome != null) visDome.SetActive(false);
         }
 
         void OnGUI()
         {
-            if (HighLogic.LoadedSceneIsEditor && BDArmorySettings.BD_VOLATILE_AMMO)
+            if (HighLogic.LoadedSceneIsEditor && BDArmorySettings.BD_AMMOBINS)
             {
                 if (BDArmorySetup.showWeaponAlignment)
                     DrawDetonationVisualization();
@@ -451,23 +451,36 @@ namespace BDArmory.Ammo
                 }
             }
         }
-
+        float blastSim = 0f;
+        float simTimer = 0;
+        Color blastColor = Color.red;
         void DrawDetonationVisualization()
         {
             GetBlastRadius();
+            if (simTimer < 5)
+            {
+                simTimer += Time.fixedDeltaTime / 4;
+                blastSim = simTimer;
+                blastSim = Mathf.Clamp01(blastSim);
+                blastColor = Color.HSVToRGB((blastRadius * blastSim/ blastRadius) / 6, 1, 1);
+            }
+            else simTimer = 0;
+
             switch (CASELevel)
             {
                 case 0:
                     visDome.SetActive(false);
                     visSphere.SetActive(true);
                     visSphere.transform.position = transform.position;
-                    visSphere.transform.localScale = Vector3.one * blastRadius;
+                    visSphere.transform.localScale = Vector3.one * Mathf.Lerp((blastRadius / 10), blastRadius, blastSim);
+                    r_sphere.material.color = new Color(blastColor.r, blastColor.g, blastColor.b, (1.4f - blastSim) / 2);
                     break;
                 case 1:
                     visSphere.SetActive(false);
                     visDome.SetActive(true);
+                    r_dome.material.SetColor("_TintColor", new Color(blastColor.r, blastColor.g, blastColor.b, 0.15f - (blastSim / 10)));
                     visDome.transform.position = transform.position;
-                    visDome.transform.localScale = Vector3.one * blastRadius;
+                    visDome.transform.localScale = Vector3.one * Mathf.Lerp((blastRadius / 10), blastRadius, blastSim);
                     visDome.transform.rotation = transform.rotation;
                     break;
                 case 2:
@@ -476,7 +489,7 @@ namespace BDArmory.Ammo
                     visSphere.SetActive(false);
                     visDome.SetActive(false);
                     break;
-            }            
+            }         
         }
 
         public override string GetInfo()
