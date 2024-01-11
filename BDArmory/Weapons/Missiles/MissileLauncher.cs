@@ -2538,7 +2538,7 @@ namespace BDArmory.Weapons.Missiles
 
                     case GuidanceModes.Kappa:
                         {
-                            aamTarget = MissileGuidance.GetKappaTarget(TargetPosition, TargetVelocity, TargetAcceleration, this, MissileState == MissileStates.PostThrust ? 0f : currentThrust * Throttle, kappaAngle, terminalHomingRange, LoftAngle, LoftTermAngle, LoftRangeOverride, LoftMaxAltitude, out timeToImpact, out currgLimit, ref loftState);
+                            aamTarget = MissileGuidance.GetKappaTarget(TargetPosition, TargetVelocity, this, MissileState == MissileStates.PostThrust ? 0f : currentThrust * Throttle, kappaAngle, terminalHomingRange, LoftAngle, LoftTermAngle, LoftRangeOverride, LoftMaxAltitude, out timeToImpact, out currgLimit, ref loftState);
                             TimeToImpact = timeToImpact;
                             break;
                         }
