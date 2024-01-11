@@ -796,36 +796,76 @@ namespace BDArmory.Guidances
             return finalTarget;
         }
 
-        public static FloatCurve DefaultLiftCurve = null;
-        public static FloatCurve DefaultDragCurve = null;
+        public static FloatCurve DefaultLiftCurve = new([
+            new(0, 0),
+            new(8, 0.35f),
+            //new(19, 1f),
+            //new(23, 0.9f),
+            new(30, 1.5f),
+            new(65, 0.6f),
+            new(90, 0.7f)
+            ]);
+
+        public static FloatCurve DefaultDragCurve = new([
+            new(0, 0.00215f, 0.00014f, 0.00014f),
+            new(5, .00285f, 0.0002775f, 0.0002775f),
+            new(15, .007f, 0.0003146428f, 0.0003146428f),
+            new(29, .01f, 0.0002142857f, 0.01115385f),
+            new(55, .3f, 0.008434067f, 0.008434067f),
+            new(90, .5f, 0.005714285f, 0.005714285f)
+        ]);
 
         // The below curves and constants are derived from the lift and drag curves and will need to be re-calculated
         // if these are changed
-      
+
         const float TRatioInflec1 = 1.181181181181181f; // Thrust to Lift Ratio (at AoA of 30) where the maximum occurs
         // after the 65 degree mark
         const float TRatioInflec2 = 2.242242242242242f; // Thrust to Lift Ratio (at AoA of 30) where a local maximum no
         // longer exists, above this every section must be searched
 
-        public static FloatCurve AoACurve = null; // Floatcurve containing AoA of (local) max acceleration
+        public static FloatCurve AoACurve = new([
+            new(0.0000000000f, 30.0000000000f),
+            new(0.7107107107f, 33.9639639640f),
+            new(1.5315315315f, 39.6396396396f),
+            new(1.9419419419f, 43.6936936937f),
+            new(2.1421421421f, 46.6666666667f),
+            new(2.2122122122f, 48.3783783784f),
+            new(2.2422422422f, 49.7297297297f)
+        ]); // Floatcurve containing AoA of (local) max acceleration
         // for a given thrust to lift (at the max CL of 1.5 at 30 degrees of AoA) ratio. Limited to a max
         // of TRatioInflec2 where a local maximum no longer exists
 
-        public static FloatCurve AoAEqCurve = null; // Floatcurve containing AoA after which the acceleration goes above
+        public static FloatCurve AoAEqCurve = new([
+            new(1.1911911912f, 89.6396396396f),
+            new(1.3413413413f, 81.6216216216f),
+            new(1.5215215215f, 73.3333333333f),
+            new(1.7217217217f, 67.4774774775f),
+            new(1.9819819820f, 62.4324324324f),
+            new(2.1821821822f, 56.6666666667f),
+            new(2.2422422422f, 52.6126126126f)
+        ]); // Floatcurve containing AoA after which the acceleration goes above
         // that of the local maximums'. Only exists between TRatioInflec1 and TRatioInflec2.
 
-        public static FloatCurve gMaxCurve = null; // Floatcurve containing max acceleration times the mass (total force)
+        public static FloatCurve gMaxCurve = new([
+            new(0.0000000000f, 1.5000000000f),
+            new(1.2012012012f, 2.4907813293f),
+            new(1.9119119119f, 3.1757276995f),
+            new(2.2422422422f, 3.5307206802f)
+        ]); // Floatcurve containing max acceleration times the mass (total force)
         // normalized by q*S*GLOBAL_LIFT_MULTIPLIER for TRatio between 0 and TRatioInflec2. Note that after TRatioInflec1
         // this becomes a local maxima not a global maxima. This is used to narrow down what part of the curve we should
         // solve on.
 
         // Linearized CL v.s. AoA curve to enable fast solving. Algorithm performs bisection using the fast calculations of the bounds
         // and then performs a linear solve 
-        public static float[] linAoA = null;
-        public static float[] linCL = null;
-        public static float[] linSin = null;
-        public static float[] linSlope = null;
-        public static float[] linIntc = null;
+        public static float[] linAoA = { 0f, 10f, 24f, 30f, 38f, 57f, 65f, 90f };
+        public static float[] linCL = { 0f, 0.454444597111092f, 1.34596044049850f, 1.5f, 1.38043381924198f, 0.719566180758018f, 0.6f, 0.7f };
+        // Sin at the points
+        public static float[] linSin = { 0f, 0.173648177666930f, 0.406736643075800f, 0.5f, 0.615661475325658f, 0.838670567945424f, 0.906307787036650f, 1f };
+        // Slope of CL at the intervals
+        public static float[] linSlope = { 0.0454444597111092f, 0.0636797030991005f, 0.0256732599169169f, -0.0149457725947522f, -0.0347825072886297f, -0.0149457725947522f, 0.004f };
+        // y-Intercept of line at those intervals
+        public static float[] linIntc = { 0f, -0.182352433879912f, 0.729802202492494f, 1.94837317784257f, 2.70216909620991f, 1.57147521865889f, 0.34f };
 
         public static float getGLimit(MissileLauncher ml, float thrust, float gLim, float margin)//, out bool gLimited)
         {
@@ -847,7 +887,7 @@ namespace BDArmory.Guidances
                 else
                 {
                     // If we're in vacuum, only consider engine thrust
-                    currAoA = Mathf.Asin(gLim / thrust);
+                    currAoA = Mathf.Asin(gLim / thrust) * Mathf.Rad2Deg;
                 }
 
                 // Are we gLimited?
@@ -860,88 +900,6 @@ namespace BDArmory.Guidances
             // Factor by which to multiply the lift coefficient to get lift, it's the dynamic pressure times the lift area times
             // the global lift multiplier
             float qSk = (float) (0.5f * ml.vessel.atmDensity * ml.vessel.srfSpeed * ml.vessel.srfSpeed) * ml.liftArea * BDArmorySettings.GLOBAL_LIFT_MULTIPLIER;
-
-            // Set the curves if they don't exist
-            if (DefaultLiftCurve == null)
-            {
-                DefaultLiftCurve = new FloatCurve();
-                DefaultLiftCurve.Add(0, 0);
-                DefaultLiftCurve.Add(8, .35f);
-                //	DefaultLiftCurve.Add(19, 1);
-                //	DefaultLiftCurve.Add(23, .9f);
-                DefaultLiftCurve.Add(30, 1.5f);
-                DefaultLiftCurve.Add(65, .6f);
-                DefaultLiftCurve.Add(90, .7f);
-            }
-
-            if (DefaultDragCurve == null)
-            {
-                DefaultDragCurve = new FloatCurve();
-                DefaultDragCurve.Add(0, 0.00215f, 0.00014f, 0.00014f);
-                DefaultDragCurve.Add(5, .00285f, 0.0002775f, 0.0002775f);
-                DefaultDragCurve.Add(15, .007f, 0.0003146428f, 0.0003146428f);
-                DefaultDragCurve.Add(29, .01f, 0.0002142857f, 0.01115385f);
-                DefaultDragCurve.Add(55, .3f, 0.008434067f, 0.008434067f);
-                DefaultDragCurve.Add(90, .5f, 0.005714285f, 0.005714285f);
-            }
-
-            if (AoACurve == null)
-            {
-                AoACurve = new FloatCurve();
-                AoACurve.Add(0.0000000000f, 30.0000000000f);
-                AoACurve.Add(0.7107107107f, 33.9639639640f);
-                AoACurve.Add(1.5315315315f, 39.6396396396f);
-                AoACurve.Add(1.9419419419f, 43.6936936937f);
-                AoACurve.Add(2.1421421421f, 46.6666666667f);
-                AoACurve.Add(2.2122122122f, 48.3783783784f);
-                AoACurve.Add(2.2422422422f, 49.7297297297f);
-            }
-
-            if (AoAEqCurve == null)
-            {
-                AoAEqCurve = new FloatCurve();
-                AoAEqCurve.Add(1.1911911912f, 89.6396396396f);
-                AoAEqCurve.Add(1.3413413413f, 81.6216216216f);
-                AoAEqCurve.Add(1.5215215215f, 73.3333333333f);
-                AoAEqCurve.Add(1.7217217217f, 67.4774774775f);
-                AoAEqCurve.Add(1.9819819820f, 62.4324324324f);
-                AoAEqCurve.Add(2.1821821822f, 56.6666666667f);
-                AoAEqCurve.Add(2.2422422422f, 52.6126126126f);
-            }
-
-            if (gMaxCurve == null)
-            {
-                gMaxCurve = new FloatCurve();
-                gMaxCurve.Add(0.0000000000f, 1.5000000000f);
-                gMaxCurve.Add(1.2012012012f, 2.4907813293f);
-                gMaxCurve.Add(1.9119119119f, 3.1757276995f);
-                gMaxCurve.Add(2.2422422422f, 3.5307206802f);
-            }
-
-            if (linAoA == null)
-            {
-                linAoA = new float[] { 0f, 10f, 24f, 30f, 38f, 57f, 65f, 90f };
-            }
-
-            if (linCL == null)
-            {
-                linCL = new float[] { 0f, 0.454444597111092f, 1.34596044049850f, 1.5f, 1.38043381924198f, 0.719566180758018f, 0.6f, 0.7f };
-            }
-
-            if (linSin == null)
-            {
-                linSin = new float[] { 0f, 0.173648177666930f, 0.406736643075800f, 0.5f, 0.615661475325658f, 0.838670567945424f, 0.906307787036650f, 1f };
-            }
-
-            if (linSlope == null)
-            {
-                linSlope = new float[] { 0.0454444597111092f, 0.0636797030991005f, 0.0256732599169169f, -0.0149457725947522f, -0.0347825072886297f, -0.0149457725947522f, 0.004f };
-            }
-
-            if (linIntc == null)
-            {
-                linIntc = new float[] { 0f, -0.182352433879912f, 0.729802202492494f, 1.94837317784257f, 2.70216909620991f, 1.57147521865889f, 0.34f };
-            }
 
             float currG = 0;
 
@@ -1198,28 +1156,6 @@ namespace BDArmory.Guidances
         public static Vector3 DoAeroForces(MissileLauncher ml, Vector3 targetPosition, float liftArea, float dragArea, float steerMult,
             Vector3 previousTorque, float maxTorque, float maxAoA)
         {
-            if (DefaultLiftCurve == null)
-            {
-                DefaultLiftCurve = new FloatCurve();
-                DefaultLiftCurve.Add(0, 0);
-                DefaultLiftCurve.Add(8, .35f);
-                //	DefaultLiftCurve.Add(19, 1);
-                //	DefaultLiftCurve.Add(23, .9f);
-                DefaultLiftCurve.Add(30, 1.5f);
-                DefaultLiftCurve.Add(65, .6f);
-                DefaultLiftCurve.Add(90, .7f);
-            }
-
-            if (DefaultDragCurve == null)
-            {
-                DefaultDragCurve = new FloatCurve();
-                DefaultDragCurve.Add(0, 0.00215f, 0.00014f, 0.00014f);
-                DefaultDragCurve.Add(5, .00285f, 0.0002775f, 0.0002775f);
-                DefaultDragCurve.Add(15, .007f, 0.0003146428f, 0.0003146428f);
-                DefaultDragCurve.Add(29, .01f, 0.0002142857f, 0.01115385f);
-                DefaultDragCurve.Add(55, .3f, 0.008434067f, 0.008434067f);
-                DefaultDragCurve.Add(90, .5f, 0.005714285f, 0.005714285f);
-            }
 
             FloatCurve liftCurve = DefaultLiftCurve;
             FloatCurve dragCurve = DefaultDragCurve;
