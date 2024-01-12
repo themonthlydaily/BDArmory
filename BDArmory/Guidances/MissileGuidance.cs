@@ -365,7 +365,7 @@ namespace BDArmory.Guidances
                     missileRelativeVelocity = targetVelocity - currVel;
                     missileRelativeAcceleration = targetAcceleration - missileAcceleration;
                     timeToCPA = AIUtils.TimeToCPA(missileRelativePosition, missileRelativeVelocity, missileRelativeAcceleration, timeToImpact * 3f);
-                    targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetCompVel, targetAcceleration, timeToCPA);
+                    targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetCompVel, targetAcceleration, Mathf.Min(timeToCPA, 8f));
                     missileDropOffset = -0.5f * missileAcceleration * timeToCPA * timeToCPA;
                     ballisticTarget = targetPredictedPosition + missileDropOffset;
                     velDirection = (ballisticTarget - missileVessel.CoM).normalized;
