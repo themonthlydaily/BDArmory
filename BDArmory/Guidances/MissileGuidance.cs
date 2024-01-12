@@ -605,41 +605,21 @@ namespace BDArmory.Guidances
             return finalTarget;
         }
 
-        public static FloatCurve DefaultLiftCurve = null;
-        public static FloatCurve DefaultDragCurve = null;
-
-        public static Vector3 DoAeroForces(MissileLauncher ml, Vector3 targetPosition, float liftArea, float dragArea, float steerMult,
-            Vector3 previousTorque, float maxTorque, float maxAoA)
-        {
-            if (DefaultLiftCurve == null)
-            {
-                DefaultLiftCurve = new FloatCurve();
-                DefaultLiftCurve.Add(0, 0);
-                DefaultLiftCurve.Add(8, .35f);
-                //	DefaultLiftCurve.Add(19, 1);
-                //	DefaultLiftCurve.Add(23, .9f);
-                DefaultLiftCurve.Add(30, 1.5f);
-                DefaultLiftCurve.Add(65, .6f);
-                DefaultLiftCurve.Add(90, .7f);
-            }
-
-            if (DefaultDragCurve == null)
-            {
-                DefaultDragCurve = new FloatCurve();
-                DefaultDragCurve.Add(0, 0.00215f, 0.00014f, 0.00014f);
-                DefaultDragCurve.Add(5, .00285f, 0.0002775f, 0.0002775f);
-                DefaultDragCurve.Add(15, .007f, 0.0003146428f, 0.0003146428f);
-                DefaultDragCurve.Add(29, .01f, 0.0002142857f, 0.01115385f);
-                DefaultDragCurve.Add(55, .3f, 0.008434067f, 0.008434067f);
-                DefaultDragCurve.Add(90, .5f, 0.005714285f, 0.005714285f);
-            }
-
-            FloatCurve liftCurve = DefaultLiftCurve;
-            FloatCurve dragCurve = DefaultDragCurve;
-
-            return DoAeroForces(ml, targetPosition, liftArea, dragArea, steerMult, previousTorque, maxTorque, maxAoA, liftCurve,
-                dragCurve);
-        }
+        public static FloatCurve DefaultLiftCurve = new([
+            new(0, 0),
+            new(8, 0.35f),
+            new(30, 1.5f),
+            new(65, 0.6f),
+            new(90, 0.7f)
+]);
+        public static FloatCurve DefaultDragCurve = new([
+            new(0, 0.00215f, 0.00014f, 0.00014f),
+            new(5, .00285f, 0.0002775f, 0.0002775f),
+            new(15, .007f, 0.0003146428f, 0.0003146428f),
+            new(29, .01f, 0.0002142857f, 0.01115385f),
+            new(55, .3f, 0.008434067f, 0.008434067f),
+            new(90, .5f, 0.005714285f, 0.005714285f)
+        ]);
 
         public static Vector3 DoAeroForces(MissileLauncher ml, Vector3 targetPosition, float liftArea, float dragArea, float steerMult,
             Vector3 previousTorque, float maxTorque, float maxAoA, FloatCurve liftCurve, FloatCurve dragCurve)

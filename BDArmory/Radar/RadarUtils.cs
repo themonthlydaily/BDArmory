@@ -1972,7 +1972,7 @@ namespace BDArmory.Radar
             if (missile == null || missile.part == null) return false;
             Vector3 vectorFromMissile = mf.vessel.CoM - missile.part.transform.position;      
             if ((vectorFromMissile.sqrMagnitude > (mf.guardRange * mf.guardRange)) && (missile.TargetingMode != MissileBase.TargetingModes.Radar)) return false;
-            bool maneuverCapability = missile.vessel.InNearVacuum() ? true : missile.vessel.srfSpeed > missile.GetKinematicSpeed();  // Missiles with no ability to hit target are not a threat
+            bool maneuverCapability = missile.vessel.InVacuum() ? true : missile.vessel.srfSpeed > missile.GetKinematicSpeed();  // Missiles with no ability to hit target are not a threat
             if (threatToMeOnly)
             {
                 Vector3 relV = missile.vessel.Velocity() - mf.vessel.Velocity();

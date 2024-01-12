@@ -1969,10 +1969,11 @@ namespace BDArmory.Control
             if (weaponManager != null)
             {
                 bool evadeMissile = weaponManager.incomingMissileTime <= weaponManager.evadeThreshold;
-                if (evadeMissile && evasionMissileKinematic) // Ignore missiles when they are post-thrust and we are turning back towards target
+                if (evadeMissile && evasionMissileKinematic && weaponManager.incomingMissileVessel) // Ignore missiles when they are post-thrust and we are turning back towards target
                 {
                     MissileBase mb = VesselModuleRegistry.GetMissileBase(weaponManager.incomingMissileVessel);
-                    evadeMissile = !(kinematicEvasionState == KinematicEvasionStates.ToTarget && incomingMissileVessel == weaponManager.incomingMissileVessel && mb.MissileState == MissileBase.MissileStates.PostThrust);
+                    if (mb != null)
+                        evadeMissile = !(kinematicEvasionState == KinematicEvasionStates.ToTarget && incomingMissileVessel == weaponManager.incomingMissileVessel && mb.MissileState == MissileBase.MissileStates.PostThrust);
                 }
                 else
                     kinematicEvasionState = KinematicEvasionStates.None; // Reset missile kinematic evasion state
@@ -3371,7 +3372,7 @@ namespace BDArmory.Control
             if (missile is MissileLauncher)
                 boostSpeed = Mathf.Max(boostSpeed, ((MissileLauncher)missile).optimumAirspeed);
             missileSpeed = (missile.MissileState == MissileBase.MissileStates.Boost && missileSpeed < boostSpeed) ? boostSpeed : missileSpeed;
-            float missileAccel = (missileKinematicSpeed - missileSpeed) / missileKinematicTime;
+            float missileAccel = (missileKinematicSpeed - missileSpeed) / (missileKinematicTime == 0 ? Mathf.Sign(missileKinematicTime) * 0.001f : missileKinematicTime);
             float missileSafeDist = safeDistMult * missile.GetBlastRadius(); // Comfortable safe distance
             float missileSafeDistSqr = missileSafeDist * missileSafeDist;
             Vector3 missilePos = weaponManager.incomingMissileVessel.transform.position;
@@ -3409,7 +3410,8 @@ namespace BDArmory.Control
             missileVel = missileSpeed * missileDirNorm;
             missileAccelVec = missileAccel * missileDirNorm;
             float targetTime = AIUtils.TimeToCPA(currentPos - missilePos, futureVel - missileVel, futureAccel - missileAccelVec, missileKinematicTime + 5f);
-            float targetDistSqr = (AIUtils.PredictPosition(currentPos, futureVel, futureAccel, targetTime) - AIUtils.PredictPosition(missilePos, missileVel, missileAccelVec, targetTime)).sqrMagnitude;
+            //float targetDistSqr = (AIUtils.PredictPosition(currentPos, futureVel, futureAccel, targetTime) - AIUtils.PredictPosition(missilePos, missileVel, missileAccelVec, targetTime)).sqrMagnitude;
+            float targetDistSqr = AIUtils.PredictPosition(currentPos - missilePos, futureVel - missileVel, futureAccel - missileAccelVec, targetTime).sqrMagnitude;
 
             // Crank
             float crankTime = 0f;
@@ -3434,7 +3436,7 @@ namespace BDArmory.Control
                 missileVel = missileSpeed * missileDirNorm;
                 missileAccelVec = missileAccel * missileDirNorm;
                 crankTime = AIUtils.TimeToCPA(currentPos - missilePos, futureVel - missileVel, futureAccel - missileAccelVec, missileKinematicTime + 5f);
-                crankDistSqr = (AIUtils.PredictPosition(currentPos, futureVel, futureAccel, crankTime) - AIUtils.PredictPosition(missilePos, missileVel, missileAccelVec, crankTime)).sqrMagnitude;
+                crankDistSqr = AIUtils.PredictPosition(currentPos - missilePos, futureVel - missileVel, futureAccel - missileAccelVec, crankTime).sqrMagnitude;
             }
 
             // Notch
@@ -3452,7 +3454,7 @@ namespace BDArmory.Control
                 missileVel = missileSpeed * missileDirNorm;
                 missileAccelVec = missileAccel * missileDirNorm;
                 notchTime = AIUtils.TimeToCPA(currentPos - missilePos, futureVel - missileVel, futureAccel - missileAccelVec, missileKinematicTime + 5f);
-                notchDistSqr = (AIUtils.PredictPosition(currentPos, futureVel, futureAccel, notchTime) - AIUtils.PredictPosition(missilePos, missileVel, missileAccelVec, notchTime)).sqrMagnitude;
+                notchDistSqr = AIUtils.PredictPosition(currentPos - missilePos, futureVel - missileVel, futureAccel - missileAccelVec, notchTime).sqrMagnitude;
             }
 
             // Turn Away / Turn Cold
@@ -3470,7 +3472,7 @@ namespace BDArmory.Control
                 missileVel = missileSpeed * missileDirNorm;
                 missileAccelVec = missileAccel * missileDirNorm;
                 turnTime = AIUtils.TimeToCPA(currentPos - missilePos, futureVel - missileVel, futureAccel - missileAccelVec, missileKinematicTime + 5f);
-                turnDistSqr = (AIUtils.PredictPosition(currentPos, futureVel, futureAccel, turnTime) - AIUtils.PredictPosition(missilePos, missileVel, Vector3.zero, turnTime)).sqrMagnitude;
+                turnDistSqr = AIUtils.PredictPosition(currentPos - missilePos, futureVel - missileVel, futureAccel - missileAccelVec, turnTime).sqrMagnitude;
             }
 
             if (BDArmorySettings.DEBUG_AI || BDArmorySettings.DEBUG_TELEMETRY)

@@ -1581,22 +1581,24 @@ namespace BDArmory.Weapons.Missiles
         {
             if (!_missileIgnited) return -1f;
 
-            float deltaV = (float)vessel.GetDeltaV();
-            float accel = VesselModuleRegistry.GetModuleEngines(weaponManager.incomingMissileVessel).Where(e => e != null && e.EngineIgnited && e.isOperational).Sum(e => e.GetCurrentThrust()) / weaponManager.incomingMissileVessel.GetTotalMass();
-            float missileKinematicTime = deltaV / accel; // FIXME, there must be a better way to calculate burn time
-            float drag = vessel.parts.Sum(x => x.dragScalar);
-            float speed = (float)vessel.srfSpeed;
-            float dragAccel = 0.008f * drag * 0.5f * speed * speed * (float)vessel.atmDensity;
-            float minSpeed = GetKinematicSpeed();
-            if (speed > minSpeed)
-                missileKinematicTime += (speed - minSpeed) / dragAccel; // Add time for missile to slow down to min speed
+            float missileKinematicTime = (float)vessel.VesselDeltaV.TotalBurnTime;
+            if (!vessel.InVacuum())
+            {
+                float drag = vessel.parts.Sum(x => x.dragScalar);
+                float speed = (float)vessel.srfSpeed;
+                float mass = (float)vessel.totalMass;
+                float dragTerm = 0.008f * mass * drag * 0.5f * (float)vessel.atmDensity;
+                float minSpeed = GetKinematicSpeed();
+                if (speed > minSpeed)
+                    missileKinematicTime += mass / (minSpeed * dragTerm) - mass / (speed * dragTerm); ; // Add time for missile to slow down to min speed
+            }
 
             return missileKinematicTime;
         }
 
         public override float GetKinematicSpeed()
         {
-            return Mathf.Max(MinSpeedGuidance, 100f);
+            return vessel.InVacuum() ? 0f : Mathf.Max(MinSpeedGuidance, 100f);
         }
 
         public Vector3 GetTransform(TransformAxisVectors transformAxis)

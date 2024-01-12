@@ -8,7 +8,7 @@
 - UI:
 	- New Opacity option in BDA Team Icons to set icon opacity.
 - AI / WM:
-	- Add new "Evade Missiles Kinematically" toggle to Pilot AI under the evasion settings. When this is enabled the AI will evaluate the best maneuver to defeat a beyond-visual-range (BVR) missile using only kinematic maneuvers. The The Time to Impact Before Evade before evade setting on the weapons manager should be set to a high value when this evasion option is enabled. Maneuvers the AI will use are:
+	- Add new "Kinematic Msl Evasion" toggle to Pilot AI under the evasion settings. When this is enabled the AI will evaluate the best maneuver to defeat a beyond-visual-range (BVR) missile using only kinematic maneuvers. The The Time to Impact Before Evade setting on the weapons manager should be set to a high value when this evasion option is enabled. Maneuvers the AI will use are:
 		- Crank - Fly at an angle to the target, while still maintaining radar lock.
 		- Beam/Notch - Fly perpendicular to the missile.
 		- Turn away/Turn cold - Fly away from the missile.
