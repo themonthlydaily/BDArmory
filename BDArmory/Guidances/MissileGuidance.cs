@@ -611,7 +611,7 @@ namespace BDArmory.Guidances
             new(30, 1.5f),
             new(65, 0.6f),
             new(90, 0.7f)
-]);
+        ]);
         public static FloatCurve DefaultDragCurve = new([
             new(0, 0.00215f, 0.00014f, 0.00014f),
             new(5, .00285f, 0.0002775f, 0.0002775f),
