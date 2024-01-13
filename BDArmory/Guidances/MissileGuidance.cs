@@ -495,16 +495,18 @@ namespace BDArmory.Guidances
                     }
 
                     // If the target is at <  2 * termDist start mixing
-                    if (targetDistance < 2 * termDist)
+                    if (targetDistance < 2f * termDist)
                     {
+                        float blendFac = (targetDistance - termDist) / termDist;
+
                         if (homingModeTerminal == MissileBase.GuidanceModes.PN)
-                            return (1f - (targetDistance - termDist) / termDist) * GetPNTarget(targetPosition, targetVelocity, missileVessel, N, out timeToImpact, out gLimit) + ((targetDistance - termDist) / termDist) * finalTargetPos;
+                            return (1f - blendFac) * GetPNTarget(targetPosition, targetVelocity, missileVessel, N, out timeToImpact, out gLimit) + blendFac * finalTargetPos;
                         else if (homingModeTerminal == MissileBase.GuidanceModes.APN)
-                            return (1f - (targetDistance - termDist) / termDist) * GetAPNTarget(targetPosition, targetVelocity, targetAcceleration, missileVessel, N, out timeToImpact, out gLimit) + ((targetDistance - termDist) / termDist) * finalTargetPos;
+                            return (1f - blendFac) * GetAPNTarget(targetPosition, targetVelocity, targetAcceleration, missileVessel, N, out timeToImpact, out gLimit) + blendFac * finalTargetPos;
                         else if (homingModeTerminal == MissileBase.GuidanceModes.AAMPure)
-                            return (1f - (targetDistance - termDist) / termDist) * targetPosition + ((targetDistance - termDist) / termDist) * finalTargetPos;
+                            return (1f - blendFac) * targetPosition + blendFac * finalTargetPos;
                         else
-                            return (1f - (targetDistance - termDist) / termDist) * GetPNTarget(targetPosition, targetVelocity, missileVessel, N, out timeToImpact, out gLimit) + ((targetDistance - termDist) / termDist) * finalTargetPos; // Default to PN
+                            return (1f - blendFac) * GetPNTarget(targetPosition, targetVelocity, missileVessel, N, out timeToImpact, out gLimit) + blendFac * finalTargetPos; // Default to PN
                     }
 
                     // No mixing if targetDistance > 2 * termDist
@@ -532,18 +534,28 @@ namespace BDArmory.Guidances
                 loftState = 3;
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileGuidance]: Terminal");
 
-                if (targetDistance < termDist)
+                if (targetDistance < 2f * termDist)
                 {
+                    float blendFac = 0f;
+                    Vector3 targetPos = Vector3.zero;
+
+                    if ((targetDistance > termDist) && (homingModeTerminal != MissileBase.GuidanceModes.AAMLead) && (homingModeTerminal != MissileBase.GuidanceModes.AAMPure))
+                    {
+                        blendFac = (targetDistance - termDist) / termDist;
+                        targetPos = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, leadTime + TimeWarp.fixedDeltaTime);
+                    }
+                        
+
                     if (homingModeTerminal == MissileBase.GuidanceModes.PN)
-                        return GetPNTarget(targetPosition, targetVelocity, missileVessel, N, out timeToImpact, out gLimit);
+                        return (1f-blendFac) * GetPNTarget(targetPosition, targetVelocity, missileVessel, N, out timeToImpact, out gLimit) + blendFac * targetPos;
                     else if (homingModeTerminal == MissileBase.GuidanceModes.APN)
-                        return GetAPNTarget(targetPosition, targetVelocity, targetAcceleration, missileVessel, N, out timeToImpact, out gLimit);
+                        return (1f - blendFac) * GetAPNTarget(targetPosition, targetVelocity, targetAcceleration, missileVessel, N, out timeToImpact, out gLimit) + blendFac * targetPos;
                     else if (homingModeTerminal == MissileBase.GuidanceModes.AAMLead)
                         return AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, leadTime + TimeWarp.fixedDeltaTime);
                     else if (homingModeTerminal == MissileBase.GuidanceModes.AAMPure)
                         return targetPosition;
                     else
-                        return GetPNTarget(targetPosition, targetVelocity, missileVessel, N, out timeToImpact, out gLimit); // Default to PN
+                        return (1f - blendFac) * GetPNTarget(targetPosition, targetVelocity, missileVessel, N, out timeToImpact, out gLimit) + blendFac * targetPos; // Default to PN
                 }
                 else
                 {
