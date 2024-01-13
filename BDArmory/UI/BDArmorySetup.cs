@@ -3938,10 +3938,17 @@ namespace BDArmory.UI
                 editKeys = true;
             }
             line += 0.5f;
-            if (!BDKeyBinder.current && GUI.Button(SLineRect(++line), StringUtils.Localize("#LOC_BDArmory_Generic_SaveandClose")))//"Save and Close"
+            if (!BDKeyBinder.current)
             {
-                SaveConfig();
-                windowSettingsEnabled = false;
+                if (GUI.Button(SQuarterRect(++line, 0), StringUtils.Localize("#LOC_BDArmory_Generic_Reload"))) // Reload
+                {
+                    LoadConfig();
+                }
+                if (GUI.Button(SQuarterRect(line, 1, 3), StringUtils.Localize("#LOC_BDArmory_Generic_SaveandClose")))//"Save and Close"
+                {
+                    SaveConfig();
+                    windowSettingsEnabled = false;
+                }
             }
 
             line += 1.5f; // Bottom internal margin
