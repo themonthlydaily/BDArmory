@@ -642,7 +642,7 @@ namespace BDArmory.FX
 
         void Update()
         {
-            if (!gameObject.activeInHierarchy) return;
+            if (!HighLogic.LoadedSceneIsFlight || !gameObject.activeInHierarchy) return;
 
             if (LightFx != null) LightFx.intensity -= 12 * Time.deltaTime;
 
@@ -659,7 +659,7 @@ namespace BDArmory.FX
 
         public void FixedUpdate()
         {
-            if (!gameObject.activeInHierarchy) return;
+            if (!HighLogic.LoadedSceneIsFlight || !gameObject.activeInHierarchy) return;
 
             if (UI.BDArmorySetup.GameIsPaused)
             {
