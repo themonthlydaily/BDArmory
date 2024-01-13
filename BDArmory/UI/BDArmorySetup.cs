@@ -107,6 +107,7 @@ namespace BDArmory.UI
 
         //editor alignment
         public static bool showWeaponAlignment;
+        public static bool showCASESimulation;
 
         //check for Apple Silicon
         public static bool AppleSilicon = false;
@@ -717,6 +718,10 @@ namespace BDArmory.UI
                 if (Input.GetKeyDown(KeyCode.F2))
                 {
                     showWeaponAlignment = !showWeaponAlignment;
+                }
+                if (Input.GetKeyDown(KeyCode.F3))
+                {
+                    showCASESimulation = !showCASESimulation;
                 }
             }
 

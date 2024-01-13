@@ -64,6 +64,10 @@ namespace BDArmory.Ammo
         UI_FloatRange(minValue = 0f, maxValue = 2f, stepIncrement = 1f, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
         public float CASELevel = 0; //tier of ammo storage. 0 = nothing, ammosplosion; 1 = base, ammosplosion contained(barely), 2 = blast safely shunted outside, minimal damage to surrounding parts
 
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_CASE_Sim"),//Cellular Ammo Storage Equipment Tier
+UI_FloatRange(minValue = 0f, maxValue = 100, stepIncrement = 1f, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
+        public float blastSim = 0;
+
         [KSPField(isPersistant = true)]
         public bool Case2 = false;
 
@@ -125,7 +129,7 @@ namespace BDArmory.Ammo
                         Destroy(dc);
                     }
                 }
-                Renderer d = dome.GetComponent<Renderer>();
+                Renderer d = dome.GetComponentInChildren<Renderer>();
                 if (d != null)
                 {
                     d.material = new Material(Shader.Find("KSP/Particles/Alpha Blended"));
@@ -440,31 +444,46 @@ namespace BDArmory.Ammo
 
         void OnGUI()
         {
-            if (HighLogic.LoadedSceneIsEditor && BDArmorySettings.BD_AMMOBINS)
+            if (HighLogic.LoadedSceneIsEditor)
             {
-                if (BDArmorySetup.showWeaponAlignment)
-                    DrawDetonationVisualization();
-                else
+                if (BDArmorySettings.BD_AMMOBINS) //having this on showWeaponAlignment could get really annoying if lots of ammo boxes on a craft and merely wanting to calibrate guns
+                {
+                    if (BDArmorySetup.showCASESimulation || blastSim >= 1)
+                    DrawDetonationVisualization(BDArmorySetup.showCASESimulation); //though perhaps a per-box visualizer toggle would be smarter than a global one?
+                }
+                else if (simStartTime > 0)
                 {
                     visSphere.SetActive(false);
                     visDome.SetActive(false);
+                    simStartTime = 0;
                 }
             }
         }
-        float blastSim = 0f;
-        float simTimer = 0;
+
+        float simStartTime = 0;
+        float blastTimeline = 0;
+        float simTimer => Time.time - simStartTime;
         Color blastColor = Color.red;
-        void DrawDetonationVisualization()
+        public static FloatCurve blastCurve = null; //'close enough' approximation for the rather more complex geometry of the actual blast dmg equations
+
+        void DrawDetonationVisualization(bool globalToggle)
         {
-            GetBlastRadius();
-            if (simTimer < 5)
+            if (blastCurve == null)
             {
-                simTimer += Time.fixedDeltaTime / 4;
-                blastSim = simTimer;
-                blastSim = Mathf.Clamp01(blastSim);
-                blastColor = Color.HSVToRGB((blastRadius * blastSim/ blastRadius) / 6, 1, 1);
+                blastCurve = new FloatCurve(); //1kg tntmass
+                blastCurve.Add(0, 1640, -2922.85f, -2922.85f);
+                blastCurve.Add(1, 128, -81.1f, -81.1f);
+                blastCurve.Add(5, 20, 7.24f, 7.24f);
+                blastCurve.Add(10, 10);
+                blastCurve.Add(20, 7);
+                blastCurve.Add(40, 1);
             }
-            else simTimer = 0;
+            Vector2 guiPos;
+            GetBlastRadius();
+            if (simTimer > 5) simStartTime = Time.time; //another possible improvement would have a 'sim blast range' slider that would allow seeing damage at specific range instead of cycling the anim
+            blastTimeline = globalToggle ? Mathf.Clamp01(simTimer / 2) : blastSim / 100;
+            float blastDmg = Mathf.Clamp(blastCurve.Evaluate(blastRadius * blastTimeline) + (11 - (blastRadius * blastTimeline * 0.4f)) * (float)ammoExplosionYield, 0, 1200) / (CASELevel == 1 ? 2 : 1); //CASE I clamps to 600, so mult CAS 0 dmg to maintian color per x dmg value
+            blastColor = Color.HSVToRGB((((CASELevel == 1 ? 600 : 1200) - (float)blastDmg) / (CASELevel == 1 ? 600 : 1200)) / 4, 1, 1); //yellow = 200dmg, green, less, orange-> , more
 
             switch (CASELevel)
             {
@@ -472,24 +491,31 @@ namespace BDArmory.Ammo
                     visDome.SetActive(false);
                     visSphere.SetActive(true);
                     visSphere.transform.position = transform.position;
-                    visSphere.transform.localScale = Vector3.one * Mathf.Lerp((blastRadius / 10), blastRadius, blastSim);
-                    r_sphere.material.color = new Color(blastColor.r, blastColor.g, blastColor.b, (1.4f - blastSim) / 2);
+                    visSphere.transform.localScale = Vector3.one * Mathf.Lerp(0, blastRadius, blastTimeline);
+                    r_sphere.material.color = new Color(blastColor.r, blastColor.g, blastColor.b, (1.3f - blastTimeline) / 2);
                     break;
                 case 1:
                     visSphere.SetActive(false);
                     visDome.SetActive(true);
-                    r_dome.material.SetColor("_TintColor", new Color(blastColor.r, blastColor.g, blastColor.b, 0.15f - (blastSim / 10)));
+                    r_dome.material.SetColor("_TintColor", new Color(blastColor.r, blastColor.g, blastColor.b, 0.15f - (blastTimeline / 10)));
                     visDome.transform.position = transform.position;
-                    visDome.transform.localScale = Vector3.one * Mathf.Lerp((blastRadius / 10), blastRadius, blastSim);
+                    visDome.transform.localScale = Vector3.one * Mathf.Lerp(0, blastRadius, blastTimeline);
                     visDome.transform.rotation = transform.rotation;
                     break;
                 case 2:
-                    Vector3 fwdPos = transform.position + (blastRadius * transform.up);
+                    Vector3 fwdPos = transform.position + (blastTimeline * blastRadius * transform.up);
                     GUIUtils.DrawLineBetweenWorldPositions(transform.position, fwdPos, 4, Color.red);
                     visSphere.SetActive(false);
                     visDome.SetActive(false);
+                    blastDmg = Mathf.Clamp(blastDmg, 0, 100);
                     break;
-            }         
+            }
+            if (GUIUtils.WorldToGUIPos(transform.position, out guiPos))
+            {
+                Rect labelRect = new Rect(guiPos.x + 64, guiPos.y + 32, 200, 100);
+                string label = $"{Mathf.Round(blastDmg)} damage at {Math.Round(blastTimeline * blastRadius, 2)}m";
+                GUI.Label(labelRect, label);
+            }
         }
 
         public override string GetInfo()

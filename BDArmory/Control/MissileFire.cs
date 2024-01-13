@@ -3427,6 +3427,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                         if (engageableWeapon.GetEngageMissileTargets())
                         {
                             weaponTypesMissile.Add(weapon.Current);
+                            Debug.Log($"[BDArmory.MissileFire] Adding {weapon.Current.GetShortName()}; {weapon.Current.GetPart().persistentId} to engageMissiles list...");
                             targetMissiles = true;
                         }
                         if (engageableWeapon.GetEngageGroundTargets()) weaponTypesGround.Add(weapon.Current);
@@ -5215,9 +5216,6 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                             }
                             if (Gun.dualModeAPS) candidateRPM /= 4; //disincentivise selecting dual mode APS turrets if something else is available to maintain Point Defense umbrella
 
-                            if ((targetWeapon != null) && (targetWeapon.GetWeaponClass() == WeaponClasses.Missile) && (targetWeaponTDPS > 0))
-                                continue; //dont replace missiles within their engage range
-
                             if (targetWeaponPriority < candidatePriority) //use priority gun
                             {
                                 targetWeapon = item.Current;
@@ -5228,6 +5226,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                             {
                                 if (targetWeaponRPM < candidateRPM)
                                 {
+                                    if ((targetWeapon != null) && (targetWeapon.GetWeaponClass() == WeaponClasses.Missile) && (targetWeaponTDPS > 0))
+                                        continue; //dont replace missiles within their engage range
                                     targetWeapon = item.Current;
                                     targetWeaponRPM = candidateRPM;
                                     targetWeaponPriority = candidatePriority;
@@ -6317,6 +6317,10 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                                     MissileLauncher msl = ml as MissileLauncher;
                                     if (msl != null && ml.radarTimeout < ((distanceToTarget - ml.activeRadarRange) / msl.optimumAirspeed)) return false; //outside missile self-lock zone, wait
                                 }
+                            }
+                            if (BDArmorySettings.DEBUG_MISSILES)
+                            {
+                                Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} - Firing possible with {weaponCandidate.GetShortName()}");
                             }
                             return true;
                         }

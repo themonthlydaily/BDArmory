@@ -270,13 +270,13 @@ namespace BDArmory.Utils
 							aeroVolume = (0.786f * length * width * adjustedThickness) / 4f; //original .7 was based on errorneous 2x4 wingboard dimensions; stock reference wing area is 1.875x3.75m
 							liftCoeff = (length * (width / 2f)) / 3.52f;
                         }
-                        if (BDArmorySettings.RUNWAY_PROJECT) liftCoeff = Mathf.Clamp((float)liftCoeff, 0, BDArmorySettings.MAX_PWING_LIFT); //if Runway Project, check lift is within limit and clamp if not
-                        PWType.GetField("stockLiftCoefficient", BindingFlags.Public | BindingFlags.Instance).SetValue(module, isAeroSrf ? (float)liftCoeff : 0f); //adjust PWing GUI lift readout
                         if (!FerramAerospace.CheckForFAR()) part.Modules.GetModule<ModuleLiftingSurface>().deflectionLiftCoeff = (float)Math.Round(liftCoeff, 2);
                         if (!ctrlSrf && !WingctrlSrf)
                             PWType.GetField("aeroUIMass", BindingFlags.Public | BindingFlags.Instance).SetValue(module, ((float)liftCoeff / 10f) * (adjustedThickness * 2.78f)); //Adjust PWing GUI mass readout
                         else
                             PWType.GetField("aeroUIMass", BindingFlags.Public | BindingFlags.Instance).SetValue(module, ((float)liftCoeff / 5f) * (adjustedThickness * 2.78f)); //this modifies the IPartMassModifier, so the mass will also change along with the GUI
+                        if (BDArmorySettings.RUNWAY_PROJECT) liftCoeff = Mathf.Clamp((float)liftCoeff, 0, BDArmorySettings.MAX_PWING_LIFT); //if Runway Project, check lift is within limit and clamp if not
+                        PWType.GetField("stockLiftCoefficient", BindingFlags.Public | BindingFlags.Instance).SetValue(module, isAeroSrf ? (float)liftCoeff : 0f); //adjust PWing GUI lift readout
                         if (part.name.Contains("B9.Aero.Wing.Procedural.Panel") || !isAeroSrf) //if Josue's noLift PWings PR never gets folded in, here's an alternative using an MM'ed PWing structural panel part
                         {
                             PWType.GetField("stockLiftCoefficient", BindingFlags.Public | BindingFlags.Instance).SetValue(module, 0f); //adjust PWing GUI lift readout
