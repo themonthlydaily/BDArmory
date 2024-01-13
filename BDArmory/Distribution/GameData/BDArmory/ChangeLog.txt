@@ -33,6 +33,7 @@
 		- Improved missile turning behavior, turns should be slightly smoother overall.
 		- Added Kappa guidance, an optimal type of midcourse guidance for in-atmosphere missiles. This re-uses the LoftAngle, LoftMaxAltitude and LoftRangeOverride fields, though LoftRangeOverride is now the range where the missile will switch from lofting to the midcourse guidance. Introduces a new field, "kappaAngle" which is a trajectory shaping angle, higher values mean a steeper terminal trajectory.
 		- Fixed missile contact detonation logic, a bug was present which lead to inaccurate detection of missile contact
+		- Improved AAMLoft performance against maneuvering targets
 
 v1.6.9.0
 IMPROVEMENTS / FIXES
