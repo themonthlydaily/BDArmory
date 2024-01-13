@@ -331,7 +331,16 @@ namespace BDArmory.Control
         public float incomingMissileLastDetected = 0;
         public float incomingMissileDistance = float.MaxValue;
         public float incomingMissileTime = float.MaxValue;
-        public Vessel incomingMissileVessel;
+        public Vessel incomingMissileVessel
+        {
+            get
+            {
+                if (_incomingMissileVessel != null && !_incomingMissileVessel.gameObject.activeInHierarchy) _incomingMissileVessel = null;
+                return _incomingMissileVessel;
+            }
+            set { _incomingMissileVessel = value; }
+        }
+        Vessel _incomingMissileVessel;
 
         //guard mode vars
         float targetScanTimer;
