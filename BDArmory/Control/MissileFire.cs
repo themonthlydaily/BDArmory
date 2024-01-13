@@ -4888,64 +4888,68 @@ namespace BDArmory.Control
                                 targetWeaponRPM = candidateRPM;
                             }
                         }
-                        /*
                         if (candidateClass == WeaponClasses.Missile)
                         {
-                            if (firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
-                            MissileLauncher mlauncher = item.Current as MissileLauncher;
-                            float candidateDetDist = 0;
-                            float candidateAccel = 0; //for anti-missile, prioritize proxidetonation and accel
-                            int candidatePriority = 0;
-                            float candidateTDPS = 0f;
-
-                            if (mlauncher != null)
-                            {
-                                if (mlauncher.TargetingMode == MissileBase.TargetingModes.Radar && (!_radarsEnabled && !mlauncher.radarLOAL)) continue; //dont select RH missiles when no radar aboard
-                                if (mlauncher.TargetingMode == MissileBase.TargetingModes.Laser && targetingPods.Count <= 0) continue; //don't select LH missiles when no FLIR aboard
-                                if (mlauncher.reloadableRail != null && (mlauncher.reloadableRail.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE)) continue; //don't select when out of ordinance
-                                candidateDetDist = mlauncher.DetonationDistance;
-                                candidateAccel = mlauncher.thrust / mlauncher.part.mass; //for anti-missile, prioritize proxidetonation and accel
-                                bool EMP = mlauncher.warheadType == MissileBase.WarheadTypes.EMP;
-                                candidatePriority = Mathf.RoundToInt(mlauncher.priority);
-
-                                if (EMP) continue;
-                                if (vessel.Splashed && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < -10) continue; //we aren't going to surface in time (and are under no threat from the missile while underwater0 so don't baother
-                                if (targetWeapon != null && targetWeaponPriority > candidatePriority)
-                                    continue; //keep higher priority weapon
-                                if (candidateDetDist + candidateAccel > targetWeaponTDPS)
-                                {
-                                    candidateTDPS = candidateDetDist + candidateAccel; // weight selection faster missiles and larger proximity detonations that might catch an incoming missile in the blast
-                                }
-                            }
-                            else
-                            { //is modular missile
-                                BDModularGuidance mm = item.Current as BDModularGuidance; //need to work out priority stuff for MMGs
-                                candidateTDPS = 5000;
-
-                                candidateDetDist = mm.warheadYield;
-                                //candidateAccel = (((MissileLauncher)item.Current).thrust / ((MissileLauncher)item.Current).part.mass); 
-                                candidateAccel = 1;
-                                candidatePriority = Mathf.RoundToInt(mm.priority);
-
-                                if (vessel.Splashed && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < -5) continue;
-                                if (targetWeapon != null && targetWeaponPriority > candidatePriority)
-                                    continue; //keep higher priority weapon
-                                if (candidateDetDist + candidateAccel > targetWeaponTDPS)
-                                {
-                                    candidateTDPS = candidateDetDist + candidateAccel;
-                                }
-                            }
-                            if (distance < ((EngageableWeapon)item.Current).engageRangeMin)
-                                candidateTDPS *= -1f; // if within min range, negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
-
-                            if ((targetWeapon != null) && (((distance < gunRange) && targetWeapon.GetWeaponClass() == WeaponClasses.Gun || targetWeapon.GetWeaponClass() == WeaponClasses.Rocket || targetWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser) || (targetWeaponTDPS > candidateTDPS)))
-                                continue; //dont replace guns or better missiles
-                            targetWeapon = item.Current;
-                            targetWeaponTDPS = candidateTDPS;
-                            targetWeaponPriority = candidatePriority;
+                            continue; //interceptor counter-missile selection logic handled in PointDefenseTurretFiring
                         }
-                        */
-                    }
+                            /*
+                            if (candidateClass == WeaponClasses.Missile)
+                            {
+                                if (firedMissiles >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
+                                MissileLauncher mlauncher = item.Current as MissileLauncher;
+                                float candidateDetDist = 0;
+                                float candidateAccel = 0; //for anti-missile, prioritize proxidetonation and accel
+                                int candidatePriority = 0;
+                                float candidateTDPS = 0f;
+
+                                if (mlauncher != null)
+                                {
+                                    if (mlauncher.TargetingMode == MissileBase.TargetingModes.Radar && (!_radarsEnabled && !mlauncher.radarLOAL)) continue; //dont select RH missiles when no radar aboard
+                                    if (mlauncher.TargetingMode == MissileBase.TargetingModes.Laser && targetingPods.Count <= 0) continue; //don't select LH missiles when no FLIR aboard
+                                    if (mlauncher.reloadableRail != null && (mlauncher.reloadableRail.ammoCount < 1 && !BDArmorySettings.INFINITE_ORDINANCE)) continue; //don't select when out of ordinance
+                                    candidateDetDist = mlauncher.DetonationDistance;
+                                    candidateAccel = mlauncher.thrust / mlauncher.part.mass; //for anti-missile, prioritize proxidetonation and accel
+                                    bool EMP = mlauncher.warheadType == MissileBase.WarheadTypes.EMP;
+                                    candidatePriority = Mathf.RoundToInt(mlauncher.priority);
+
+                                    if (EMP) continue;
+                                    if (vessel.Splashed && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < -10) continue; //we aren't going to surface in time (and are under no threat from the missile while underwater0 so don't baother
+                                    if (targetWeapon != null && targetWeaponPriority > candidatePriority)
+                                        continue; //keep higher priority weapon
+                                    if (candidateDetDist + candidateAccel > targetWeaponTDPS)
+                                    {
+                                        candidateTDPS = candidateDetDist + candidateAccel; // weight selection faster missiles and larger proximity detonations that might catch an incoming missile in the blast
+                                    }
+                                }
+                                else
+                                { //is modular missile
+                                    BDModularGuidance mm = item.Current as BDModularGuidance; //need to work out priority stuff for MMGs
+                                    candidateTDPS = 5000;
+
+                                    candidateDetDist = mm.warheadYield;
+                                    //candidateAccel = (((MissileLauncher)item.Current).thrust / ((MissileLauncher)item.Current).part.mass); 
+                                    candidateAccel = 1;
+                                    candidatePriority = Mathf.RoundToInt(mm.priority);
+
+                                    if (vessel.Splashed && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < -5) continue;
+                                    if (targetWeapon != null && targetWeaponPriority > candidatePriority)
+                                        continue; //keep higher priority weapon
+                                    if (candidateDetDist + candidateAccel > targetWeaponTDPS)
+                                    {
+                                        candidateTDPS = candidateDetDist + candidateAccel;
+                                    }
+                                }
+                                if (distance < ((EngageableWeapon)item.Current).engageRangeMin)
+                                    candidateTDPS *= -1f; // if within min range, negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
+
+                                if ((targetWeapon != null) && (((distance < gunRange) && targetWeapon.GetWeaponClass() == WeaponClasses.Gun || targetWeapon.GetWeaponClass() == WeaponClasses.Rocket || targetWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser) || (targetWeaponTDPS > candidateTDPS)))
+                                    continue; //dont replace guns or better missiles
+                                targetWeapon = item.Current;
+                                targetWeaponTDPS = candidateTDPS;
+                                targetWeaponPriority = candidatePriority;
+                            }
+                            */
+                        }
             }
 
             //else if (!target.isLanded)
@@ -5055,9 +5059,6 @@ namespace BDArmory.Control
                                 candidateRPM = BDArmorySettings.FIRE_RATE_OVERRIDE;
                             }
 
-                            if (targetWeapon != null && (targetWeapon.GetWeaponClass() == WeaponClasses.Missile) && (targetWeaponTDPS > 0))
-                                continue; //dont replace missiles within their engage range
-
                             if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                 continue; //dont replace a higher priority weapon with a lower priority one
 
@@ -5098,6 +5099,9 @@ namespace BDArmory.Control
                             }
                             if (targetWeaponPriority == candidatePriority) //if equal priority, use standard weighting
                             {
+
+                                if (targetWeapon != null && (targetWeapon.GetWeaponClass() == WeaponClasses.Missile) && (targetWeaponTDPS > 0))
+                                    continue; //dont replace missiles within their engage range
                                 if (targetWeaponRPM < candidateRPM) //or best gun
                                 {
                                     targetWeapon = item.Current;
@@ -5185,9 +5189,6 @@ namespace BDArmory.Control
                             }
                             if (Gun.dualModeAPS) candidateRPM /= 4; //disincentivise selecting dual mode APS turrets if something else is available to maintain Point Defense umbrella
 
-                            if ((targetWeapon != null) && (targetWeapon.GetWeaponClass() == WeaponClasses.Missile) && (targetWeaponTDPS > 0))
-                                continue; //dont replace missiles within their engage range
-
                             if (targetWeaponPriority < candidatePriority) //use priority gun
                             {
                                 targetWeapon = item.Current;
@@ -5196,6 +5197,8 @@ namespace BDArmory.Control
                             }
                             else //if equal priority, use standard weighting
                             {
+                                if ((targetWeapon != null) && (targetWeapon.GetWeaponClass() == WeaponClasses.Missile) && (targetWeaponTDPS > 0))
+                                    continue; //dont replace missiles within their engage range
                                 if (targetWeaponRPM < candidateRPM)
                                 {
                                     targetWeapon = item.Current;
@@ -5253,6 +5256,7 @@ namespace BDArmory.Control
                             }
                             else //if equal priority, use standard weighting
                             {
+
                                 if (targetWeaponRPM < candidateRPM)
                                 {
                                     targetWeapon = item.Current;
@@ -6283,6 +6287,7 @@ namespace BDArmory.Control
                                 MissileLauncher msl = ml as MissileLauncher;
                                 if (msl != null && ml.radarTimeout < ((distanceToTarget - ml.activeRadarRange) / msl.optimumAirspeed)) return false; //outside missile self-lock zone, wait
                             }
+                            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire]: {vessel.vesselName} - Firing possible with {weaponCandidate.GetShortName()}");
                             return true;
                         }
                         if (BDArmorySettings.DEBUG_MISSILES)
@@ -6408,7 +6413,8 @@ namespace BDArmory.Control
                 MissileBase ml = CurrentMissile;
                 MissileBase pMl = PreviousMissile;
                 if (!ml && pMl) ml = PreviousMissile; //if fired missile, then switched to guns or something
-                if (ml && ml.TargetingMode == MissileBase.TargetingModes.Radar && vesselRadarData != null && (!vesselRadarData.locked || vesselRadarData.lockedTargetData.vessel != guardTarget))
+                //if (ml && ml.TargetingMode == MissileBase.TargetingModes.Radar &&
+                if(vesselRadarData != null && (!vesselRadarData.locked || vesselRadarData.lockedTargetData.vessel != guardTarget))
                 {
                     if (!vesselRadarData.locked)
                     {
