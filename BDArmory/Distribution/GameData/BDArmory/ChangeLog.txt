@@ -5,10 +5,12 @@
 	- Adjust timing and conditions for auto-camera switching to and away from missiles.
 	- Battle damage fuel leak rates now scale by (bullet caliber)^2, instead of (bullet caliber). Fuel leak rates for 20mm caliber remain the same, calibers higher and lower than 20mm will now have higher and lower leak rates, respectively.
 	- Make sure various pooled objects are disabled when leaving the flight scene.
+	- Fix missing resource or the Bubble CM.
 - UI:
 	- Fix part filtering by search terms in the editors.
 	- New Opacity option in BDA Team Icons to set icon opacity.
-	- Adds CASE ammo explosion radii visualizer to the F2 Guns Alignment overlay.
+	- Adds CASE ammo explosion radii visualizer, enable via F3.
+	- Continuous Spawn now shows lives remaining in the Vessel Switcher GUI.
 - AI / WM:
 	- Invert the roll target when the fly-to direction is below and behind the craft within the Immelmann turn angle.
 	- Fix automatic gun range adjustments in the WM again.
@@ -33,6 +35,7 @@
 		- Fixes to anti-missile missile point-defense logic to support missile turret launched interceptors.
 		- Fix radar missiles not locking and firing until well within their max engagement range.
 		- Add new dragArea configuration variable for missiles to set reference area for drag independently from the lift area. If not set, this defaults to the liftArea setting in the missile configuration file.
+		- Fix missiles ignoring guns with priority.
 
 v1.6.9.0
 IMPROVEMENTS / FIXES
