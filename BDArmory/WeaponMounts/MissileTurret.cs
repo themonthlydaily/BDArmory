@@ -23,8 +23,6 @@ namespace BDArmory.WeaponMounts
 
         public MissileLauncher missilepod;
 
-        public MissileLauncher missilepod;
-
         [KSPField(guiActive = true, guiName = "#LOC_BDArmory_TurretEnabled")] public bool turretEnabled;//Turret Enabled
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MissileTurretFireFOV"),
