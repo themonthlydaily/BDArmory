@@ -350,7 +350,7 @@ namespace BDArmory.WeaponMounts
         {
             slaved = false;
 
-            if (weaponManager && wm.slavingTurrets && activeMissile) //wm.CurrentMissile)
+            if (weaponManager && wm.slavingTurrets && wm.CurrentMissile)
             {
                 slaved = true;
                 //slavedTargetPosition = MissileGuidance.GetAirToAirFireSolution(wm.CurrentMissile, wm.slavedPosition, wm.slavedVelocity);

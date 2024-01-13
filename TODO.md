@@ -12,7 +12,7 @@
 
 - Add tooltips to settings.
 - Add thumbnails to the craft browser.
-- Figure out how to add a 0 value to UI_FloatSemiLogRange sliders.
+- Figure out how to add a 0 value and 1.5 sig.fig. to UI_FloatSemiLogRange sliders.
 - Stability of the targeting cam when slewing with the mouse (jitter).
 
 - Wiki entries

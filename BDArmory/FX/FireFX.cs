@@ -59,7 +59,7 @@ namespace BDArmory.FX
         bool vacuum = false;
         void OnEnable()
         {
-            if (parentPart == null)
+            if (parentPart == null || !HighLogic.LoadedSceneIsFlight)
             {
                 gameObject.SetActive(false);
                 return;
@@ -84,8 +84,7 @@ namespace BDArmory.FX
             fireIntensity = burnRate;
             BDArmorySetup.numberOfParticleEmitters++;
             pEmitters = gameObject.GetComponentsInChildren<KSPParticleEmitter>();
-            vacuum = FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(transform.position),
-FlightGlobals.getExternalTemperature(), FlightGlobals.currentMainBody) < 0.05f;
+            vacuum = FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(transform.position), FlightGlobals.getExternalTemperature(), FlightGlobals.currentMainBody) < 0.05f;
 
             using (var pe = pEmitters.AsEnumerable().GetEnumerator())
                 while (pe.MoveNext())
