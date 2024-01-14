@@ -309,7 +309,13 @@ namespace BDArmory.Guidances
 
             targetDistance = Vector3.Distance(targetPosition, missileVessel.CoM);
 
-            float currSpeed = Mathf.Max((float)missileVessel.srfSpeed, minSpeed);
+            float currSpeed;// = Mathf.Max((float)missileVessel.srfSpeed, minSpeed);
+
+            if (loftState < 2)
+                currSpeed = Mathf.Max((float)missileVessel.srfSpeed, minSpeed);
+            else
+                currSpeed = (float)missileVessel.srfSpeed;
+
             Vector3 currVel = currSpeed * velDirection;
 
             //Vector3 Rdir = (targetPosition - missileVessel.transform.position).normalized;
@@ -337,7 +343,7 @@ namespace BDArmory.Guidances
                 var firePosition = missileVessel.CoM; //+ (currSpeed * velDirection) * Time.fixedDeltaTime; // Bullets are initially placed up to 1 frame ahead (iTime). Not offsetting by part vel gives the correct initial placement.
                 missileRelativePosition = targetPosition - firePosition;
                 float timeToCPA = timeToImpact; // Rough initial estimate.
-                targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, timeToCPA);
+                targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, Vector3.zero, timeToCPA);
 
                 // Velocity Compensation Logic
                 float compMult = Mathf.Clamp(0.5f * (targetDistance - termDist) / termDist, 0f, 1f);
@@ -365,7 +371,7 @@ namespace BDArmory.Guidances
                     missileRelativeVelocity = targetVelocity - currVel;
                     missileRelativeAcceleration = targetAcceleration - missileAcceleration;
                     timeToCPA = AIUtils.TimeToCPA(missileRelativePosition, missileRelativeVelocity, missileRelativeAcceleration, timeToImpact * 3f);
-                    targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetCompVel, targetAcceleration, Mathf.Min(timeToCPA, 8f));
+                    targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetCompVel, Vector3.zero, Mathf.Min(timeToCPA, 16f));
                     missileDropOffset = -0.5f * missileAcceleration * timeToCPA * timeToCPA;
                     ballisticTarget = targetPredictedPosition + missileDropOffset;
                     velDirection = (ballisticTarget - missileVessel.CoM).normalized;
@@ -382,7 +388,7 @@ namespace BDArmory.Guidances
                 // Use simple lead compensation to minimize over-compensation
                 // Get planar direction to target
                 Vector3 planarDirectionToTarget =
-                    ((AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, leadTime + TimeWarp.fixedDeltaTime) - missileVessel.CoM).ProjectOnPlanePreNormalized(upDirection)).normalized;
+                    ((AIUtils.PredictPosition(targetPosition, targetVelocity, Vector3.zero, leadTime + TimeWarp.fixedDeltaTime) - missileVessel.CoM).ProjectOnPlanePreNormalized(upDirection)).normalized;
 
                 // Check if termination angle agrees with termAngle
                 if ((angle > -termAngle * Mathf.Deg2Rad) && (loftState < 2))
@@ -542,7 +548,7 @@ namespace BDArmory.Guidances
                     if ((targetDistance > termDist) && (homingModeTerminal != MissileBase.GuidanceModes.AAMLead) && (homingModeTerminal != MissileBase.GuidanceModes.AAMPure))
                     {
                         blendFac = (targetDistance - termDist) / termDist;
-                        targetPos = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, leadTime + TimeWarp.fixedDeltaTime);
+                        targetPos = AIUtils.PredictPosition(targetPosition, targetVelocity, Vector3.zero, leadTime + TimeWarp.fixedDeltaTime);
                     }
                         
 
@@ -559,7 +565,7 @@ namespace BDArmory.Guidances
                 }
                 else
                 {
-                    return AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, leadTime + TimeWarp.fixedDeltaTime); //targetPosition + targetVelocity * leadTime + 0.5f * leadTime * leadTime * targetAcceleration;
+                    return AIUtils.PredictPosition(targetPosition, targetVelocity, Vector3.zero, leadTime + TimeWarp.fixedDeltaTime); //targetPosition + targetVelocity * leadTime + 0.5f * leadTime * leadTime * targetAcceleration;
                     //return targetPosition + targetVelocity * leadTime;
                 }
             }
