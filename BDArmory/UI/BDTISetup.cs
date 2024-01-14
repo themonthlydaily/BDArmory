@@ -38,7 +38,6 @@ namespace BDArmory.UI
         // Opacity Settings
         internal const float textOpacity = 2f;
         internal const float iconOpacity = 1f;
-        internal const float localToGlobalOpacity = 0.02f; // Conversion between BDATeamIcons.Opacity and BDTISettings.OPACITY
 
         public SortedList<string, List<MissileFire>> weaponManagers = new SortedList<string, List<MissileFire>>();
 

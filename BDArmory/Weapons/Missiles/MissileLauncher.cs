@@ -329,6 +329,7 @@ namespace BDArmory.Weapons.Missiles
         public bool SetupComplete => StartSetupComplete;
         public int loftState = 0;
         public float initMaxAoA = 0;
+        public SmoothingF smoothedAoA;
         #endregion Variable Declarations
 
         [KSPAction("Fire Missile")]
@@ -720,6 +721,7 @@ namespace BDArmory.Weapons.Missiles
                 break;
             }
             partModules.Dispose();
+            smoothedAoA = new SmoothingF(Mathf.Exp(Mathf.Log(0.5f) * Time.fixedDeltaTime * 10f)); // Half-life of 0.1s.
             StartSetupComplete = true;
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher] Start() setup complete");
         }
@@ -1537,6 +1539,7 @@ namespace BDArmory.Weapons.Missiles
 
         private void CheckMiss()
         {
+            if (weaponClass == WeaponClasses.Bomb) return;
             float sqrDist = (float)((TargetPosition + (TargetVelocity * Time.fixedDeltaTime)) - (vessel.CoM + (vessel.Velocity() * Time.fixedDeltaTime))).sqrMagnitude;
             bool targetBehindMissile = !TargetAcquired || (!(MissileState != MissileStates.PostThrust && hasRCS) && Vector3.Dot(TargetPosition - transform.position, transform.forward) < 0f); // Target is not acquired or we are behind it and not an RCS missile
             if (sqrDist < 160000 || MissileState == MissileStates.PostThrust || (targetBehindMissile && sqrDist > 1000000)) //missile has come within 400m, is post thrust, or > 1km behind target
@@ -1552,7 +1555,8 @@ namespace BDArmory.Weapons.Missiles
             if (!HasMissed && checkMiss)
             {
                 Vector3 tgtVel = TargetVelocity == Vector3.zero && targetVessel != null ? targetVessel.Vessel.Velocity() : TargetVelocity;
-                bool noProgress = MissileState == MissileStates.PostThrust && (Vector3.Dot(vessel.Velocity() - tgtVel, TargetPosition - vessel.transform.position) < 0);
+                bool noProgress = MissileState == MissileStates.PostThrust && (Vector3.Dot(vessel.Velocity() - tgtVel, TargetPosition - vessel.transform.position) < 0 ||
+                    (!vessel.InVacuum() && vessel.srfSpeed < GetKinematicSpeed()) && weaponClass == WeaponClasses.Missile);
                 bool pastGracePeriod = TimeIndex > ((vessel.LandedOrSplashed ? 0f : dropTime) + Mathf.Clamp(maxTurnRateDPS / 15, 1, 8)); //180f / maxTurnRateDPS);
                 if ((pastGracePeriod && targetBehindMissile) || noProgress) // Check that we're not moving away from the target after a grace period
                 {
@@ -1782,7 +1786,7 @@ namespace BDArmory.Weapons.Missiles
                     TargetMf = null;
                     if (aero)
                     {
-                        aeroTorque = MissileGuidance.DoAeroForces(this, TargetPosition, liftArea, dragArea, .25f, aeroTorque, maxTorque, maxAoA);
+                        aeroTorque = MissileGuidance.DoAeroForces(this, TargetPosition, liftArea, dragArea, .25f, aeroTorque, maxTorque, maxAoA, MissileGuidance.DefaultLiftCurve, MissileGuidance.DefaultDragCurve);
                     }
                 }
 
@@ -2468,7 +2472,7 @@ namespace BDArmory.Weapons.Missiles
                             if (TimeToImpact == float.PositiveInfinity)
                             {
                                 // If the missile is not in a vaccuum, is above LoftMinAltitude and has an angle to target below the climb angle (or 90 - climb angle if climb angle > 45) (in this case, since it's angle from the vertical the check is if it's > 90f - LoftAngle) and is either is at a lower altitude than targetAlt + LoftAltitudeAdvMax or further than LoftRangeOverride, then loft.
-                                if (!vessel.InVacuum() && (vessel.altitude >= LoftMinAltitude) && Vector3.Angle(TargetPosition - vessel.transform.position, VectorUtils.GetUpDirection(vessel.CoM)) > Mathf.Min(LoftAngle, 90f - LoftAngle) && ((vessel.altitude - targetAlt <= LoftAltitudeAdvMax) || (TargetPosition - vessel.transform.position).sqrMagnitude > (LoftRangeOverride * LoftRangeOverride))) loftState = 0;
+                                if (!vessel.InVacuum() && (vessel.altitude >= LoftMinAltitude) && Vector3.Angle(TargetPosition - vessel.transform.position, vessel.up) > Mathf.Min(LoftAngle, 90f - LoftAngle) && ((vessel.altitude - targetAlt <= LoftAltitudeAdvMax) || (TargetPosition - vessel.transform.position).sqrMagnitude > (LoftRangeOverride * LoftRangeOverride))) loftState = 0;
                                 else loftState = 3;
                             }
 
@@ -2589,7 +2593,7 @@ namespace BDArmory.Weapons.Missiles
                 SLWTarget = TargetPosition; //head to last known contact and then begin circling
             }
 
-            if (FlightGlobals.getAltitudeAtPos(SLWTarget) > 0) SLWTarget -= ((MissileGuidance.GetRaycastRadarAltitude(SLWTarget) + 2) * VectorUtils.GetUpDirection(vessel.transform.position));// see about implementing a 'set target running depth'?
+            if (FlightGlobals.getAltitudeAtPos(SLWTarget) > 0) SLWTarget -= ((MissileGuidance.GetRaycastRadarAltitude(SLWTarget) + 2) * vessel.up);// see about implementing a 'set target running depth'?
             //allow inverse contRod-style target offset for srf targets for 'under-the-keel' proximity detonation? or at least not having the torps have a target alt of 0 (and thus be vulnerable to surface PD?)
             if (TimeIndex > dropTime + 0.25f)
             {
@@ -2602,7 +2606,7 @@ namespace BDArmory.Weapons.Missiles
 
         void DoAero(Vector3 targetPosition)
         {
-            aeroTorque = MissileGuidance.DoAeroForces(this, targetPosition, liftArea, dragArea, controlAuthority * steerMult, aeroTorque, finalMaxTorque, maxAoA);
+            aeroTorque = MissileGuidance.DoAeroForces(this, targetPosition, liftArea, dragArea, controlAuthority * steerMult, aeroTorque, finalMaxTorque, maxAoA, MissileGuidance.DefaultLiftCurve, MissileGuidance.DefaultDragCurve);
         }
 
         void AGMBallisticGuidance()
@@ -2774,6 +2778,58 @@ namespace BDArmory.Weapons.Missiles
                 return vessel.ReferenceTransform.up;
             else
                 return MissileReferenceTransform.forward;
+        }
+
+        public override float GetKinematicTime()
+        {
+            // Get time at which the missile is traveling at the GetKinematicSpeed() speed
+            if (!launched) return -1f;
+
+            float missileKinematicTime = boostTime + cruiseTime + cruiseDelay + dropTime - TimeIndex;
+            if (!vessel.InVacuum())
+            {
+                float speed = currentThrust > 0 ? optimumAirspeed : (float)vessel.srfSpeed;
+                float minSpeed = GetKinematicSpeed();
+                if (speed > minSpeed)
+                {
+                    float airDensity = (float)vessel.atmDensity;
+                    float dragTerm;
+                    float t;
+                    if (useSimpleDrag)
+                    {
+                        dragTerm = (deployed ? deployedDrag : simpleDrag) * (0.008f * part.mass) * 0.5f * airDensity;
+                        t = part.mass / (minSpeed * dragTerm) - part.mass / (speed * dragTerm);
+                    }
+                    else
+                    {
+                        float AoA = smoothedAoA.Value;
+                        FloatCurve dragCurve = MissileGuidance.DefaultDragCurve;
+                        float dragCd = dragCurve.Evaluate(AoA);
+                        float dragMultiplier = BDArmorySettings.GLOBAL_DRAG_MULTIPLIER;
+                        dragTerm = 0.5f * airDensity * dragArea * dragMultiplier * dragCd;
+                        float dragTermMinSpeed = 0.5f * airDensity * dragArea * dragMultiplier * dragCurve.Evaluate(Mathf.Min(29f, maxAoA)); // Max AoA or 29 deg (at kink in drag curve)
+                        t = part.mass / (minSpeed * dragTermMinSpeed) - part.mass / (speed * dragTerm);
+                    }
+                    missileKinematicTime += t; // Add time for missile to slow down to min speed
+                }
+            }
+
+            return missileKinematicTime;
+        }
+
+        public override float GetKinematicSpeed()
+        {
+            if (vessel.InVacuum() || weaponClass != WeaponClasses.Missile) return 0f;
+
+            // Get speed at which the missile is only capable of pulling a 2G turn at maxAoA
+            float Gs = 2f;
+
+            FloatCurve liftCurve = MissileGuidance.DefaultLiftCurve;
+            float bodyGravity = (float)PhysicsGlobals.GravitationalAcceleration * (float)vessel.orbit.referenceBody.GeeASL;
+            float liftMultiplier = BDArmorySettings.GLOBAL_LIFT_MULTIPLIER;
+            float kinematicSpeed = BDAMath.Sqrt((Gs * part.mass * bodyGravity) / (0.5f * (float)vessel.atmDensity * liftArea * liftMultiplier * liftCurve.Evaluate(maxAoA)));
+
+            return Mathf.Min(kinematicSpeed, 0.5f * (float)vessel.speedOfSound);
         }
 
         protected override void PartDie(Part p)

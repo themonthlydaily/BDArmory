@@ -1697,7 +1697,7 @@ namespace BDArmory.Competition
                 Debug.LogWarning("[BDArmory.BDATournament]: " + message);
                 yield break;
             }
-            var up = VectorUtils.GetUpDirection(spawnProbe.transform.position);
+            var up = spawnProbe.up;
             var refDirection = Math.Abs(Vector3.Dot(Vector3.up, up)) < 0.71f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.
             spawnProbe.SetPosition(spawnProbe.transform.position - BodyUtils.GetRadarAltitudeAtPos(spawnProbe.transform.position) * up);
             if (spawnProbe.altitude > 0) spawnProbe.Landed = true;
@@ -1914,7 +1914,7 @@ namespace BDArmory.Competition
             }
             if (!(resumingEvolution || resumingTournament)) // Auto-Load To KSC
             {
-                if (!TryLoadCleanSlate()) yield break; // This shouldn't fail, but anyway...
+                if (!TryLoadCleanSlate()) yield break;
             }
             // Load saved game.
             var tic = Time.time;
@@ -2009,15 +2009,16 @@ namespace BDArmory.Competition
         bool TryLoadCleanSlate()
         {
             game = BDArmorySettings.LAST_USED_SAVEGAME;
+            if (string.IsNullOrEmpty(game)) game = "sandbox"; // Set the game to the default "sandbox" name if no previous name has been used.
             savegame = Path.Combine(savesDir, game, save + ".sfs");
-            return true;
+            return File.Exists(savegame) || BDArmorySettings.GENERATE_CLEAN_SAVE;
         }
 
         bool GenerateCleanGame()
         {
             // Grab the scenarios from the previous persistent game.
             HighLogic.CurrentGame = GamePersistence.LoadGame("persistent", game, true, false);
-            var scenarios = HighLogic.CurrentGame.scenarios;
+            var scenarios = HighLogic.CurrentGame?.scenarios;
 
             if (BDArmorySettings.GENERATE_CLEAN_SAVE)
             {
@@ -2026,7 +2027,7 @@ namespace BDArmory.Competition
                 HighLogic.CurrentGame.startScene = GameScenes.SPACECENTER;
                 HighLogic.CurrentGame.Mode = Game.Modes.SANDBOX;
                 HighLogic.SaveFolder = game;
-                foreach (var scenario in scenarios) { CheckForScenario(scenario.moduleName, scenario.targetScenes); }
+                if (scenarios != null) foreach (var scenario in scenarios) { CheckForScenario(scenario.moduleName, scenario.targetScenes); }
 
                 // Generate the default roster and make them all badass pilots.
                 HighLogic.CurrentGame.CrewRoster = KerbalRoster.GenerateInitialCrewRoster(HighLogic.CurrentGame.Mode);
