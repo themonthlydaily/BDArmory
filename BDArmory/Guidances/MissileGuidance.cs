@@ -898,7 +898,7 @@ namespace BDArmory.Guidances
 
             if (ml.vessel.InVacuum())
             {
-                if (thrust < gLim)
+                if (thrust < gLim || thrust == 0f)
                 {
                     currAoA = 90f;
                 }
