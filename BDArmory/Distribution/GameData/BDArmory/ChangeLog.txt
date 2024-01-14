@@ -1,34 +1,52 @@
--Radar stealth coatings - can now apply radar absorbent/reflective materials on a per part basis.
-	-Armor coatings less than 10mm thick will provide lessened benefits.
--Adds new radarReflectivity field to Armor materials so specify degree of radar absorbsion/reflectivity of the armor.
--Adds new radarMod field to Hull materials to set degree of radar return off unarmored parts.
--Adds new Radar Absorbent Coating armor type
--Adds new Radar Absorbent Foam hull material.
-v1.6.9.0
 ﻿IMPROVEMENTS / FIXES
 - General:
-	- Fix part filtering by search terms in the editors.
 	- Fix Krakensbane adjustments when the active vessel dies.
 	- Fix tracer visuals when the active vessel dies.
 	- Adjust timing and conditions for auto-camera switching to and away from missiles.
+	- Battle damage fuel leak rates now scale by (bullet caliber)^2, instead of (bullet caliber). Fuel leak rates for 20mm caliber remain the same, calibers higher and lower than 20mm will now have higher and lower leak rates, respectively.
+	- Make sure various pooled objects are disabled when leaving the flight scene.
+- UI:
+	- Fix part filtering by search terms in the editors.
+	- New Opacity option in BDA Team Icons to set icon opacity.
 - AI / WM:
+	- Add new "Kinematic Msl Evasion" toggle to Pilot AI under the evasion settings. When this is enabled the AI will evaluate the best maneuver to defeat a beyond-visual-range (BVR) missile using only kinematic maneuvers. The Time to Impact Before Evade setting on the weapons manager should be set to a high value when this evasion option is enabled. Maneuvers the AI will use are:
+		- Crank - Fly at an angle to the target, while still maintaining radar lock.
+		- Beam/Notch - Fly perpendicular to the missile.
+		- Turn away/Turn cold - Fly away from the missile.
+		- Notch & dive - This is the standard AI behavior if this toggle is disabled. It is also used if the toggle is enabled and the AI is within lethal range of the missile.
 	- Invert the roll target when the fly-to direction is below and behind the craft within the Immelmann turn angle.
 	- Fix automatic gun range adjustments in the WM again.
 	- Prevent Orbital AI from changing attitude while launched missile is still near spacecraft.
+	- Add Smoke CM timing/interal/repetition settings.
+- Armor/Hull:
+  -Radar stealth coatings - can now apply radar absorbent/reflective materials on a per-part basis.
+	  -Armor coatings less than 10mm thick will provide lessened benefits.
+  -Adds new radarReflectivity field to Armor materials so specify degree of radar absorbtion/reflectivity of the armor.
+  -Adds new radarMod field to Hull materials to set degree of radar return off unarmored parts.
+  -Adds new Radar Absorbent Coating armor type.
+  -Adds new Radar Absorbent Foam hull material.
 - Weapons:
-  	- Corrections to penetration and ricochet velocity changes and ricochet positions.
-    - Stop APS firing at dead missiles.
-  	- 'subProjectileCount' has been deprecated and replaced with 'projectileCount'; this specifies number of pellets per shot (for shotguns, etc) to make it more intuitive. Existing shotgun-type weapons will need to update their bulletDefs.
- 	  - The subMunitionType field for beehive ammo now uses the syntax of "ammotype; quantity" (e.g. subMunitionType = 35x228AHEADPellet; 30) with number of projectiles released on detonation set here instead of the subMunition's bulletDef.
-  	- Missiles:
-    		- Fix issue with Rotary Rails trying to use missiles that have previously been blown off from combat damage.
-    		- Fix issue with MultiMissilelauncher Turrets throwing an NRE when AI firing.
-       	- Fix mass changes of missiles that decouple boosters and add missile mass debug telemetry.
-		    - Fix radar and heat targeting leading targets excessively (most apparent in orbit)
-	    	- Change spacing missiles with continous rod warheads from Detonation Distance / 3 to  Min(Blast Radius / 3, Detonation Distance / 3)
-        - Fix missile RCS FX constantly displaying.
-		    - Missiles with RCS/Orbital homing types (i.e. HEKV) in vacuum now perform turn maneuver after launch to face target and only throttle up once facing target.
+	- Corrections to penetration and ricochet velocity changes and ricochet positions.
+	- Stop APS firing at dead missiles.
+	- 'subProjectileCount' has been deprecated and replaced with 'projectileCount'; this specifies number of pellets per shot (for shotguns, etc) to make it more intuitive. Existing shotgun-type weapons will need to update their bulletDefs.
+	- The subMunitionType field for beehive ammo now uses the syntax of "ammotype; quantity" (e.g. subMunitionType = 35x228AHEADPellet; 30) with number of projectiles released on detonation set here instead of the subMunition's bulletDef.
+	- Fix the aiming reticles of guns (fixed and turrets) and auto-proxy-tracking when using MouseAimFlight (again).
+	- Missiles:
+		- Fix issue with Rotary Rails trying to use missiles that have previously been blown off from combat damage.
+		- Fix issue with MultiMissilelauncher Turrets throwing an NRE when AI firing.
+		- Fix mass changes of missiles that decouple boosters and add missile mass debug telemetry.
+		- Fix radar and heat targeting leading targets excessively (most apparent in orbit).
+		- Fix missile drag curve having negative drag at ~25 deg AoA.
+		- Fix AI occasionally not firing radar missiles; Git Issue #573.
+		- Change target offset on missiles with continous rod warheads from Detonation Distance / 3 to  Min(Blast Radius / 3, Detonation Distance / 3).
+		- Fix missile RCS FX constantly displaying.
+		- Missiles with RCS/Orbital homing types (i.e. HEKV) in vacuum now perform turn maneuver after launch to face target and only throttle up once facing target.
+		- Fixes to anti-missile missile point-defense logic to support missile turret launched interceptors.
+		- Fix radar missiles not locking and firing until well within their max engagement range.
+		- Add new dragArea configuration variable for missiles to set reference area for drag independently from the lift area. If not set, this defaults to the liftArea setting in the missile configuration file.
+		- EMP warheads only detonate when armed and no longer do additional damage.
 
+v1.6.9.0
 IMPROVEMENTS / FIXES
 - UI:
 	- Fix the alternate (hidden UI) window locations (for scores and vessel switcher) not being saved correctly.

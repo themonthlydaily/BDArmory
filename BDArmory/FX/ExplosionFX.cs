@@ -636,13 +636,13 @@ namespace BDArmory.FX
             if (sortedLoSHits.Length < totalHitCount) Array.Resize(ref sortedLoSHits, totalHitCount);
             Array.Copy(forwardHits, sortedLoSHits, forwardHitCount);
             Array.Copy(reverseHits, 0, sortedLoSHits, forwardHitCount, reverseHitCount);
-            Array.Sort<RaycastHit>(sortedLoSHits, 0, totalHitCount, RaycastHitComparer.raycastHitComparer); // This generates garbage, but less than other methods using Linq or Lists.
+            Array.Sort(sortedLoSHits, 0, totalHitCount, RaycastHitComparer.raycastHitComparer); // This generates garbage, but less than other methods using Linq or Lists.
             return totalHitCount;
         }
 
         void Update()
         {
-            if (!gameObject.activeInHierarchy) return;
+            if (!HighLogic.LoadedSceneIsFlight || !gameObject.activeInHierarchy) return;
 
             if (LightFx != null) LightFx.intensity -= 12 * Time.deltaTime;
 
@@ -659,7 +659,7 @@ namespace BDArmory.FX
 
         public void FixedUpdate()
         {
-            if (!gameObject.activeInHierarchy) return;
+            if (!HighLogic.LoadedSceneIsFlight || !gameObject.activeInHierarchy) return;
 
             if (UI.BDArmorySetup.GameIsPaused)
             {
@@ -1229,6 +1229,21 @@ namespace BDArmory.FX
             if (BDArmorySettings.DEBUG_DAMAGE)
             {
                 Debug.Log($"[BDArmory.ExplosionFX]: Force Applied | Explosive : {Math.Round(force.magnitude, 2)}");
+            }
+        }
+
+        public static void DisableAllExplosionFX()
+        {
+            if (explosionFXPools == null) return;
+            if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.ExplosionFx]: Setting {explosionFXPools.Values.Where(pool => pool != null && pool.pool != null).Sum(pool => pool.pool.Count(fx => fx != null && fx.activeInHierarchy))} explosion FX inactive.");
+            foreach (var pool in explosionFXPools.Values)
+            {
+                if (pool == null || pool.pool == null) continue;
+                foreach (var fx in pool.pool)
+                {
+                    if (fx == null) continue;
+                    fx.SetActive(false);
+                }
             }
         }
     }

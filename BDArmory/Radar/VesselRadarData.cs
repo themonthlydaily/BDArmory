@@ -212,7 +212,7 @@ namespace BDArmory.Radar
                 else
                 {
                     if (displayedTargets[i].targetData.Team == mf.Team) continue;
-                    if (displayedTargets[i].targetData.signalStrength > targetMagnitude )
+                    if (displayedTargets[i].targetData.signalStrength > targetMagnitude)
                     {
                         targetMagnitude = displayedTargets[i].targetData.signalStrength;
                         brightestTarget = i;
@@ -875,6 +875,30 @@ namespace BDArmory.Radar
                         irst.Current.DisableIRST();
                     }
             }
+        }
+
+        public float GetCrankFOV()
+        {
+            // Get max FOV of radars onboard vessel, or the minimum FOV radars with target locks
+            
+            float fov = 0f;
+            var radars = VesselModuleRegistry.GetModules<ModuleRadar>(vessel);
+            if (radars != null)
+            {
+                using (var radar = radars.GetEnumerator())
+                    while (radar.MoveNext())
+                    {
+                        if (radar.Current == null) continue;
+                        if (radar.Current.omnidirectional) return 360f;
+                        fov = Mathf.Max(fov, radar.Current.directionalFieldOfView);
+                    }
+            }
+            for (int i = 0; i < lockedTargetIndexes.Count; i++)
+            {
+                fov = Mathf.Min(fov, displayedTargets[lockedTargetIndexes[i]].detectedByRadar.directionalFieldOfView);
+            }
+
+            return fov;
         }
 
         public void SlaveTurrets()
@@ -2066,7 +2090,7 @@ namespace BDArmory.Radar
                             if (weaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.Missile || weaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.SLW)
                             {
                                 MissileBase currMissile = weaponManager.CurrentMissile;
-                                if (currMissile.TargetingMode == MissileBase.TargetingModes.Radar || currMissile.TargetingMode == MissileBase.TargetingModes.Heat)
+                                if (currMissile && (currMissile.TargetingMode == MissileBase.TargetingModes.Radar || currMissile.TargetingMode == MissileBase.TargetingModes.Heat))
                                 {
                                     MissileLaunchParams dlz = MissileLaunchParams.GetDynamicLaunchParams(currMissile, lockedTarget.velocity, lockedTarget.predictedPosition);
                                     float rangeToPixels = (1 / rIncrements[rangeIndex]) * RadarDisplayRect.height;

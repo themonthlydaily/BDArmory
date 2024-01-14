@@ -15,6 +15,7 @@ using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.Weapons;
 using BDArmory.Weapons.Missiles;
+using BDArmory.Radar;
 
 namespace BDArmory.Control
 {
@@ -390,6 +391,11 @@ namespace BDArmory.Control
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
             UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
         public bool evasionIgnoreMyTargetTargetingMe = false;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionMissileKinematic", advancedTweakable = true,//Kinematic missile evasion
+            groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
+            UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
+        public bool evasionMissileKinematic = false;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CollisionAvoidanceThreshold", advancedTweakable = true, //Vessel collision avoidance threshold
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
@@ -1017,6 +1023,9 @@ namespace BDArmory.Control
         float evasiveTimer;
         float threatRating;
         Vector3 threatRelativePosition;
+        Vessel incomingMissileVessel;
+        enum KinematicEvasionStates { None, ToTarget, Crank, Notch, TurnAway, NotchDive }
+        KinematicEvasionStates kinematicEvasionState = KinematicEvasionStates.None;
         #endregion
 
         #region Speed Controller / Steering / Altitude
@@ -1085,6 +1094,7 @@ namespace BDArmory.Control
         Vector3 debugSquigglySquidDirection;
 #endif
         Vector3 angVelRollTarget;
+        Vector3 debugBreakDirection = default;
         #endregion
 
         #region Wing Command
@@ -1867,7 +1877,7 @@ namespace BDArmory.Control
                 return;
             }
 
-            upDirection = VectorUtils.GetUpDirection(vessel.transform.position);
+            upDirection = vessel.up;
 
             finalMaxSteer = 1f; // Reset finalMaxSteer, is adjusted in subsequent methods
             userSteerLimit = GetUserDefinedSteerLimit(); // Get the current user-defined steer limit.
@@ -1959,10 +1969,21 @@ namespace BDArmory.Control
             }
             if (weaponManager != null)
             {
-                if (weaponManager.incomingMissileTime <= weaponManager.evadeThreshold)
+                bool evadeMissile = weaponManager.incomingMissileTime <= weaponManager.evadeThreshold;
+                if (evadeMissile && evasionMissileKinematic && weaponManager.incomingMissileVessel) // Ignore missiles when they are post-thrust and we are turning back towards target
+                {
+                    MissileBase mb = VesselModuleRegistry.GetMissileBase(weaponManager.incomingMissileVessel);
+                    if (mb != null)
+                        evadeMissile = !(kinematicEvasionState == KinematicEvasionStates.ToTarget && incomingMissileVessel == weaponManager.incomingMissileVessel && mb.MissileState == MissileBase.MissileStates.PostThrust);
+                }
+                else
+                    kinematicEvasionState = KinematicEvasionStates.None; // Reset missile kinematic evasion state
+
+                if (evadeMissile)
                 {
                     threatRating = -1f; // Allow entering evasion code if we're under missile fire
                     minimumEvasionTime = 0f; //  Trying to evade missile threats when they don't exist will result in NREs
+                    incomingMissileVessel = weaponManager.incomingMissileVessel;
                 }
                 else if (weaponManager.underFire && !ramming) // If we're ramming, ignore gunfire.
                 {
@@ -3130,6 +3151,7 @@ namespace BDArmory.Control
             bool hasABEngines = speedController.multiModeEngines.Count > 0;
 
             collisionDetectionTicker += 2;
+            if (BDArmorySettings.DEBUG_LINES) debugBreakDirection = default;
 
             if (weaponManager)
             {
@@ -3163,16 +3185,25 @@ namespace BDArmory.Control
                     }
                     else // Fly at 90 deg to missile to put max distance between ourselves and dispensed flares/chaff
                     {
-                        if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Breaking from missile threat!");
-
                         // Break off at 90 deg to missile
                         Vector3 threatDirection = -1f * weaponManager.incomingMissileVessel.Velocity();
                         threatDirection = threatDirection.ProjectOnPlanePreNormalized(upDirection);
                         float sign = Vector3.SignedAngle(threatDirection, vessel.Velocity().ProjectOnPlanePreNormalized(upDirection), upDirection);
-                        Vector3 breakDirection = Vector3.Cross(Mathf.Sign(sign) * upDirection, threatDirection).ProjectOnPlanePreNormalized(upDirection);
+                        Vector3 breakDirection = Vector3.Cross(Mathf.Sign(sign) * upDirection, threatDirection).ProjectOnPlanePreNormalized(upDirection); // Break left or right depending on which side the missile is coming in on.
+
+                        // Missile kinematics check to see if alternate break directions are better (crank or turn around and run)
+                        bool dive = true;
+                        if (evasionMissileKinematic && !vessel.InNearVacuum())
+                        {
+                            breakDirection = MissileKinematicEvasion(breakDirection, threatDirection);
+                            if (kinematicEvasionState != KinematicEvasionStates.NotchDive)
+                                dive = false;
+                        }
+                        else
+                            if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine("Breaking from missile threat!");
 
                         // Dive to gain energy and hopefully lead missile into ground when not in space
-                        if (!vessel.InNearVacuum())
+                        if (!vessel.InNearVacuum() && dive)
                         {
                             float diveScale = Mathf.Max(1000f, 2f * turnRadius);
                             float angle = Mathf.Clamp((float)vessel.radarAltitude - minAltitude, 0, diveScale) / diveScale * 90;
@@ -3181,10 +3212,11 @@ namespace BDArmory.Control
                             angle = Mathf.Clamp(angle - angleAdjMissile, 0, 75) * Mathf.Deg2Rad;
                             breakDirection = Vector3.RotateTowards(breakDirection, -upDirection, angle, 0);
                         }
+                        if (BDArmorySettings.DEBUG_LINES) debugBreakDirection = breakDirection;
 
                         // Rotate target direction towards break direction, starting with 15 deg, and increasing to maxAllowedAoA as missile gets closer
-                        float rotAngle = Mathf.Deg2Rad * Mathf.Lerp(maxAllowedAoA, 15f, Mathf.Clamp01(weaponManager.incomingMissileTime / weaponManager.evadeThreshold));
-                        targetDirection = Vector3.RotateTowards(vessel.Velocity(), breakDirection, rotAngle, 0).normalized;
+                        float rotAngle = Mathf.Deg2Rad * Mathf.Lerp(Mathf.Min(maxAllowedAoA, 90), 15f, Mathf.Clamp01(weaponManager.incomingMissileTime / weaponManager.evadeThreshold));
+                        targetDirection = Vector3.RotateTowards(vesselTransform.up, breakDirection, rotAngle, 0).normalized;
 
                         if (weaponManager.isFlaring)
                             if (!hasABEngines)
@@ -3323,6 +3355,173 @@ namespace BDArmory.Control
             //+ (Mathf.Sin (Time.time/3) * upDirection * minAltitude/3);
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Evading unknown attacker");
             FlyToPosition(s, target);
+        }
+
+        Vector3 MissileKinematicEvasion(Vector3 breakDirection, Vector3 threatDirection)
+        {
+            breakDirection = breakDirection.normalized;
+            string missileEvasionStatus;
+
+            // Constants
+            float boostSpeedMult = 5f;
+            float safeDistMult = 10f;
+
+            // Get missile information
+            MissileBase missile = VesselModuleRegistry.GetMissileBase(weaponManager.incomingMissileVessel);
+            float missileKinematicTime = missile.GetKinematicTime();
+            float missileKinematicSpeed = missile.GetKinematicSpeed();
+            float missileSpeed = (float)weaponManager.incomingMissileVessel.srfSpeed;
+            float boostSpeed = boostSpeedMult * missileKinematicSpeed;
+            if (missile is MissileLauncher)
+                boostSpeed = Mathf.Max(boostSpeed, ((MissileLauncher)missile).optimumAirspeed);
+            missileSpeed = (missile.MissileState == MissileBase.MissileStates.Boost && missileSpeed < boostSpeed) ? boostSpeed : missileSpeed;
+            float missileAccel = (missileKinematicSpeed - missileSpeed) / (missileKinematicTime == 0 ? Mathf.Sign(missileKinematicTime) * 0.001f : missileKinematicTime);
+            float missileSafeDist = safeDistMult * missile.GetBlastRadius(); // Comfortable safe distance
+            float missileSafeDistSqr = missileSafeDist * missileSafeDist;
+            Vector3 missilePos = weaponManager.incomingMissileVessel.transform.position;
+            Vector3 missileVel = weaponManager.incomingMissileVessel.Velocity();
+            Vector3 missileDirNorm = missile.GetForwardTransform();
+            Vector3 missileAccelVec = missileAccel * missileDirNorm;
+
+            // Get current vessel information
+            Vector3 currentPos = vesselTransform.position;
+            float currentSpeed = (float)vessel.srfSpeed;
+
+            // Future position variables
+            Vector3 futurePos;
+            Vector3 futureVel;
+            Vector3 futureAccel;
+
+            // Set up maneuver directions
+            Vector3 crankDir = breakDirection;
+            Vector3 turnDir = breakDirection;
+            Vector3 targetDir = (targetVessel != null) ?
+                (targetVessel != missile.vessel ? (targetVessel.CoM - currentPos).normalized : (missile.SourceVessel.CoM - currentPos).normalized)
+                : (missilePos - currentPos).normalized;
+
+            // Calculate estimated time to impact if we execute no maneuvers
+            float timeToImpact;
+            float currentAccel = 0; // FIXME if speedController.GetPossibleAccel() is able to calculate acceleration reliably incorporating drag
+            float distToMissile = (currentPos - missilePos).magnitude;
+
+            // Turn to target / Turn hot
+            timeToImpact = distToMissile / (missileSpeed + currentSpeed);
+            futureVel = currentSpeed * targetDir;
+            futureAccel = currentAccel * targetDir;
+            futurePos = AIUtils.PredictPosition(currentPos, futureVel, futureAccel, timeToImpact);
+            missileDirNorm = (futurePos - missilePos).normalized;
+            missileVel = missileSpeed * missileDirNorm;
+            missileAccelVec = missileAccel * missileDirNorm;
+            float targetTime = AIUtils.TimeToCPA(currentPos - missilePos, futureVel - missileVel, futureAccel - missileAccelVec, missileKinematicTime + 5f);
+            //float targetDistSqr = (AIUtils.PredictPosition(currentPos, futureVel, futureAccel, targetTime) - AIUtils.PredictPosition(missilePos, missileVel, missileAccelVec, targetTime)).sqrMagnitude;
+            float targetDistSqr = AIUtils.PredictPosition(currentPos - missilePos, futureVel - missileVel, futureAccel - missileAccelVec, targetTime).sqrMagnitude;
+
+            // Crank
+            float crankTime = 0f;
+            float crankDistSqr = 0f;
+            if (kinematicEvasionState <= KinematicEvasionStates.Crank || BDArmorySettings.DEBUG_AI || BDArmorySettings.DEBUG_TELEMETRY)
+            {
+                // Set up maneuver direction
+                float crankAngle;
+                VesselRadarData vrd = vessel.gameObject.GetComponent<VesselRadarData>();
+                if (vrd)
+                    crankAngle = Mathf.Clamp(vrd.GetCrankFOV() / 2 - 5f, 5f, 85f);
+                else
+                    crankAngle = 60f;
+                crankDir = Vector3.RotateTowards(breakDirection, threatDirection, (90f - crankAngle) * Mathf.Deg2Rad, 0).normalized;
+
+                // Calculate time and distance of closest point of approach
+                timeToImpact = distToMissile / BDAMath.Sqrt(currentSpeed * currentSpeed + missileSpeed * missileSpeed); // Assumes missile/target are perpendicular at impact point, 60% of the time it works everytime
+                futureVel = currentSpeed * crankDir;
+                futureAccel = currentAccel * crankDir;
+                futurePos = AIUtils.PredictPosition(currentPos, futureVel, futureAccel, timeToImpact);
+                missileDirNorm = (futurePos - missilePos).normalized;
+                missileVel = missileSpeed * missileDirNorm;
+                missileAccelVec = missileAccel * missileDirNorm;
+                crankTime = AIUtils.TimeToCPA(currentPos - missilePos, futureVel - missileVel, futureAccel - missileAccelVec, missileKinematicTime + 5f);
+                crankDistSqr = AIUtils.PredictPosition(currentPos - missilePos, futureVel - missileVel, futureAccel - missileAccelVec, crankTime).sqrMagnitude;
+            }
+
+            // Notch
+            float notchTime = 0f;
+            float notchDistSqr = 0f;
+            if (kinematicEvasionState <= KinematicEvasionStates.Notch || BDArmorySettings.DEBUG_AI || BDArmorySettings.DEBUG_TELEMETRY)
+            {
+                float v1 = Mathf.Max(missileSpeed, currentSpeed);
+                float v2 = Mathf.Min(missileSpeed, currentSpeed);
+                timeToImpact = (v1 != v2) ? distToMissile / BDAMath.Sqrt(v1 * v1 - v2 * v2) : timeToImpact; // Assumes angle between start and impact point is 90 deg, 60% of the time it works everytime
+                futureVel = currentSpeed * breakDirection;
+                futureAccel = currentAccel * breakDirection;
+                futurePos = AIUtils.PredictPosition(currentPos, futureVel, futureAccel, timeToImpact);
+                missileDirNorm = (futurePos - missilePos).normalized;
+                missileVel = missileSpeed * missileDirNorm;
+                missileAccelVec = missileAccel * missileDirNorm;
+                notchTime = AIUtils.TimeToCPA(currentPos - missilePos, futureVel - missileVel, futureAccel - missileAccelVec, missileKinematicTime + 5f);
+                notchDistSqr = AIUtils.PredictPosition(currentPos - missilePos, futureVel - missileVel, futureAccel - missileAccelVec, notchTime).sqrMagnitude;
+            }
+
+            // Turn Away / Turn Cold
+            float turnTime = 0f;
+            float turnDistSqr = 0f;
+            if (kinematicEvasionState <= KinematicEvasionStates.TurnAway || BDArmorySettings.DEBUG_AI || BDArmorySettings.DEBUG_TELEMETRY)
+            {
+                turnDir = (currentPos - missilePos).ProjectOnPlanePreNormalized(upDirection).normalized;
+                futureVel = currentSpeed * turnDir;
+                futureAccel = currentAccel * turnDir;
+                futurePos = AIUtils.PredictPosition(currentPos, futureVel, futureAccel, missileKinematicTime);
+                futurePos = GetTerrainSurfacePosition(futurePos) + (minAltitude * upDirection); // Dive towards deck
+                turnDir = futurePos - currentPos;
+                missileDirNorm = (futurePos - missilePos).normalized;
+                missileVel = missileSpeed * missileDirNorm;
+                missileAccelVec = missileAccel * missileDirNorm;
+                turnTime = AIUtils.TimeToCPA(currentPos - missilePos, futureVel - missileVel, futureAccel - missileAccelVec, missileKinematicTime + 5f);
+                turnDistSqr = AIUtils.PredictPosition(currentPos - missilePos, futureVel - missileVel, futureAccel - missileAccelVec, turnTime).sqrMagnitude;
+            }
+
+            if (BDArmorySettings.DEBUG_AI || BDArmorySettings.DEBUG_TELEMETRY)
+            {
+                debugString.AppendLine($"Time to Impact; Notch: {notchTime}s; Crank: {crankTime}s; Flee: {turnTime}s; Target:{targetTime}s");
+                debugString.AppendLine($"Dist. @ Impact; Notch: {BDAMath.Sqrt(notchDistSqr)}m; Crank: {BDAMath.Sqrt(crankDistSqr)}m; Flee: {BDAMath.Sqrt(turnDistSqr)}m; Target: {BDAMath.Sqrt(targetDistSqr)}m");
+                debugString.AppendLine($"Msl Kin. Speed: {missileKinematicSpeed}m/s; Msl Kin. Time: {missileKinematicTime}s; Msl Safe Dist.: {missileSafeDist}m;");
+            }
+
+            float newEvasionStateMult = (kinematicEvasionState == KinematicEvasionStates.None) ? 1f : 3f;
+
+            if (targetDistSqr > (kinematicEvasionState == KinematicEvasionStates.ToTarget ? 1f : newEvasionStateMult) * missileSafeDistSqr)
+            {
+                // Missile is defeated or probably won't hit us, we can turn back towards/stay on target to exit evasion
+                breakDirection = targetDir;
+                missileEvasionStatus = "Turning back towards target!";
+                kinematicEvasionState = KinematicEvasionStates.ToTarget;
+            }
+            else if (kinematicEvasionState <= KinematicEvasionStates.Crank && (crankDistSqr > (kinematicEvasionState == KinematicEvasionStates.Crank ? 1f : newEvasionStateMult) * missileSafeDistSqr))
+            {
+                // Cranking will defeat missile, don't start cranking if we are executing a more conservative maneuver
+                breakDirection = crankDir;
+                missileEvasionStatus = "Cranking from missile threat!";
+                kinematicEvasionState = KinematicEvasionStates.Crank;
+            }
+            else if (kinematicEvasionState <= KinematicEvasionStates.Notch && (notchDistSqr > (kinematicEvasionState == KinematicEvasionStates.Notch ? 1f : newEvasionStateMult) * missileSafeDistSqr))
+            {
+                // Notching without a dive will defeat missile, don't start notching if we are executing a more conservative maneuver
+                missileEvasionStatus = "Notching from missile threat!";
+                kinematicEvasionState = KinematicEvasionStates.Notch;
+            }
+            else if (kinematicEvasionState <= KinematicEvasionStates.TurnAway && (turnDistSqr > (kinematicEvasionState == KinematicEvasionStates.TurnAway ? 1f : newEvasionStateMult) * missileSafeDistSqr))
+            {
+                // We need to turn away and dive, don't start turning away if we are executing a more conservative maneuver
+                breakDirection = turnDir;
+                missileEvasionStatus = "Turning away from missile threat!";
+                kinematicEvasionState = KinematicEvasionStates.TurnAway;
+            }
+            else //we need to dive and notch to have a chance against the missile
+            {
+                missileEvasionStatus = "Notching and diving from missile threat";
+                kinematicEvasionState = KinematicEvasionStates.NotchDive;
+            }
+
+            if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine(missileEvasionStatus);
+            return breakDirection;
         }
 
         public void RCSEvade(FlightCtrlState s, Vector3 EvadeDir)
@@ -3995,7 +4194,7 @@ namespace BDArmory.Control
             Vector3 projectedTargetDirection = targetDirection.ProjectOnPlanePreNormalized(upDirection);
             var cosAngle = Vector3.Dot(targetDirection, forwardDirection);
             invertRollTarget = false;
-            if (cosAngle < 0)
+            if (cosAngle < -1e-8f)
             {
                 if (canExtend && targetDistance > BankedTurnDistance) // For long-range turning, do a banked turn (horizontal) instead to conserve energy, but only if extending is allowed.
                 {
@@ -4005,13 +4204,15 @@ namespace BDArmory.Control
                 {
                     if (cosAngle < ImmelmannTurnCosAngle) // Otherwise, if the target is almost directly behind, do an Immelmann turn.
                     {
+                        // FIXME This condition needs improving. For low altitude inverted oscillations, we want to do an inverted Immelmann, but for most other cases, we want a stronger bias towards a standard Immelmann.
                         targetDirection = Vector3.RotateTowards(-vesselTransform.up, vessel.angularVelocity.x < 0.1f ? -vesselTransform.forward : vesselTransform.forward, Mathf.Deg2Rad * ImmelmannTurnAngle, 0); // If the target is in our blind spot, just pitch up (or down depending on pitch angular velocity) to get a better view. (Immelmann turn.)
                         invertRollTarget = Vector3.Dot(targetDirection, vesselTransform.forward) > 0; // Target is behind and below, pitch down first then roll up.
                     }
+                    // FIXME If the target isn't within the Immelmann angle, but is when only considering the pitch direction, then the direction should be skewed upwards, i.e, treat the negative Immelmann pitch angle as the horizontal.
                     targetPosition = vesselTransform.position + Vector3.Cross(Vector3.Cross(forwardDirection, targetDirection), forwardDirection).normalized * 200; // Make the target position 90° from vesselTransform.up.
                 }
             }
-            else if (steerMode != SteerModes.Aiming)
+            else if (steerMode == SteerModes.NormalFlight)
             {
                 float distance = (targetPosition - vesselTransform.position).magnitude;
                 if (vertFactor < 0)
@@ -4361,8 +4562,9 @@ namespace BDArmory.Control
 
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + rollTarget, 2, Color.blue);
 #if DEBUG
-            if (IsEvading || IsExtending) GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + debugSquigglySquidDirection.normalized * 10, 5, Color.cyan);
+            if (IsEvading || IsExtending) GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + debugSquigglySquidDirection.normalized * 10, 1, Color.cyan);
 #endif
+            if (IsEvading && debugBreakDirection != default) GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + debugBreakDirection.normalized * 20, 5, Color.cyan);
             GUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position + (0.05f * vesselTransform.right), vesselTransform.position + (0.05f * vesselTransform.right) + angVelRollTarget, 2, Color.green);
             if (avoidingTerrain)
             {

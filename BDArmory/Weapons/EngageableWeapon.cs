@@ -1,7 +1,6 @@
-using KSP.Localization;
-
 using BDArmory.Services;
 using BDArmory.Utils;
+using UnityEngine;
 
 namespace BDArmory.Weapons
 {
@@ -121,6 +120,9 @@ namespace BDArmory.Weapons
 
         protected void InitializeEngagementRange(float min, float max)
         {
+            min = Mathf.Max(min, 1f); // Avoid 0 min range for now. FIXME Remove these if the special value of 0 gets added to UI_FloatSemiLogRange.
+            max = Mathf.Max(max, 1f); // Avoid 0 max range for now.
+
             var rangeMin = (UI_FloatSemiLogRange)Fields["engageRangeMin"].uiControlEditor;
             rangeMin.UpdateLimits(min, max);
             rangeMin.onFieldChanged = OnRangeUpdated;
