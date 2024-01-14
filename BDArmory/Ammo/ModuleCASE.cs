@@ -467,20 +467,16 @@ UI_FloatRange(minValue = 0f, maxValue = 100, stepIncrement = 0.5f, scene = UI_Sc
         float blastTimeline = 0;
         float simTimer => Time.time - simStartTime;
         Color blastColor = Color.red;
-        public static FloatCurve blastCurve = null; //'close enough' approximation for the rather more complex geometry of the actual blast dmg equations
+        public static FloatCurve blastCurve = new([
+            new(0, 1640, -2922.85f, -2922.85f),
+            new(1, 128, -81.1f, -81.1f),
+            new(5, 20, 7.24f, 7.24f),
+            new(10, 10),
+            new(20, 7),
+            new(40, 1)]); //'close enough' approximation for the rather more complex geometry of the actual blast dmg equations
 
         void DrawDetonationVisualization()
         {
-            if (blastCurve == null)
-            {
-                blastCurve = new FloatCurve(); //1kg tntmass
-                blastCurve.Add(0, 1640, -2922.85f, -2922.85f);
-                blastCurve.Add(1, 128, -81.1f, -81.1f);
-                blastCurve.Add(5, 20, 7.24f, 7.24f);
-                blastCurve.Add(10, 10);
-                blastCurve.Add(20, 7);
-                blastCurve.Add(40, 1);
-            }
             Vector2 guiPos;
             GetBlastRadius();
             if (!BDArmorySetup.showCASESimulation) simStartTime = 0;
