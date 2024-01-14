@@ -37,6 +37,7 @@
 		- Fixes to anti-missile missile point-defense logic to support missile turret launched interceptors.
 		- Fix radar missiles not locking and firing until well within their max engagement range.
 		- Add new dragArea configuration variable for missiles to set reference area for drag independently from the lift area. If not set, this defaults to the liftArea setting in the missile configuration file.
+		- EMP warheads only detonate when armed and no longer do additional damage.
 
 v1.6.9.0
 IMPROVEMENTS / FIXES
