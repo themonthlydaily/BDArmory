@@ -18,7 +18,7 @@ namespace BDArmory.Guidances
             float leadTime = Mathf.Clamp(targetDistance / (targetVelocity - currVel).magnitude, 0f, 8f);
             targetPosition += targetVelocity * leadTime;
 
-            Vector3 upDirection = VectorUtils.GetUpDirection(missileVessel.CoM);
+            Vector3 upDirection = missileVessel.up;
             //-FlightGlobals.getGeeForceAtPosition(targetPosition).normalized;
             Vector3 surfacePos = missileVessel.CoM +
                                  Vector3.Project(targetPosition - missileVessel.CoM, upDirection);
@@ -50,7 +50,7 @@ namespace BDArmory.Guidances
         public static bool GetBallisticGuidanceTarget(Vector3 targetPosition, Vessel missileVessel, bool direct,
             out Vector3 finalTarget)
         {
-            Vector3 up = VectorUtils.GetUpDirection(missileVessel.CoM);
+            Vector3 up = missileVessel.up;
             Vector3 forward = (targetPosition - missileVessel.CoM).ProjectOnPlanePreNormalized(up);
             float speed = (float)missileVessel.srfSpeed;
             float sqrSpeed = speed * speed;

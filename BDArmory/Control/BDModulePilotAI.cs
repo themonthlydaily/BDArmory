@@ -1876,7 +1876,7 @@ namespace BDArmory.Control
                 return;
             }
 
-            upDirection = VectorUtils.GetUpDirection(vessel.transform.position);
+            upDirection = vessel.up;
 
             finalMaxSteer = 1f; // Reset finalMaxSteer, is adjusted in subsequent methods
             userSteerLimit = GetUserDefinedSteerLimit(); // Get the current user-defined steer limit.

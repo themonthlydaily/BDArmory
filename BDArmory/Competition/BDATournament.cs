@@ -1697,7 +1697,7 @@ namespace BDArmory.Competition
                 Debug.LogWarning("[BDArmory.BDATournament]: " + message);
                 yield break;
             }
-            var up = VectorUtils.GetUpDirection(spawnProbe.transform.position);
+            var up = spawnProbe.up;
             var refDirection = Math.Abs(Vector3.Dot(Vector3.up, up)) < 0.71f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.
             spawnProbe.SetPosition(spawnProbe.transform.position - BodyUtils.GetRadarAltitudeAtPos(spawnProbe.transform.position) * up);
             if (spawnProbe.altitude > 0) spawnProbe.Landed = true;
