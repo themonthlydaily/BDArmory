@@ -541,6 +541,9 @@ namespace BDArmory.Weapons.Missiles
             {
                 p.FindModuleImplementing<BDExplosivePart>().Armed = false;
             }
+
+            var emp = p.FindModuleImplementing<ModuleEMP>();
+            if (emp != null) emp.Armed = false;
         }
 
         protected void SetupExplosive(Part p)
@@ -557,6 +560,9 @@ namespace BDArmory.Weapons.Missiles
                 //    explosive.Shaped = true; //Now configed in the part's BDExplosivePart Module Node
                 //}
             }
+
+            var emp = p.FindModuleImplementing<ModuleEMP>();
+            if (emp != null) emp.Armed = true;
         }
 
         public abstract void Detonate();
@@ -1090,7 +1096,7 @@ namespace BDArmory.Weapons.Missiles
                             RadarWarningReceiver.PingRWR(new Ray(transform.position, radarTarget.predictedPosition - transform.position), lockedSensorFOV, RadarWarningReceiver.RWRThreatTypes.MissileLaunch, 2f);
 
                         //if (BDArmorySettings.DEBUG_MISSILES) 
-                            Debug.Log($"[BDArmory.MissileBase]: Pitbull! Radar missileBase has gone active.  Radar sig strength: {radarTarget.signalStrength:0.0}");
+                        Debug.Log($"[BDArmory.MissileBase]: Pitbull! Radar missileBase has gone active.  Radar sig strength: {radarTarget.signalStrength:0.0}");
                     }
                     return;
                 }
