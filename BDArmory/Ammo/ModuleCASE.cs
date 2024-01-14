@@ -446,12 +446,15 @@ UI_FloatRange(minValue = 0f, maxValue = 100, stepIncrement = 0.5f, scene = UI_Sc
         {
             if (HighLogic.LoadedSceneIsEditor)
             {
+                bool disableCASESimulation = false;
                 if (BDArmorySettings.BD_AMMOBINS) //having this on showWeaponAlignment could get really annoying if lots of ammo boxes on a craft and merely wanting to calibrate guns
                 {
                     if (BDArmorySetup.showCASESimulation || blastSim >= 1)
-                    DrawDetonationVisualization(BDArmorySetup.showCASESimulation); //though perhaps a per-box visualizer toggle would be smarter than a global one?
+                        DrawDetonationVisualization(); //though perhaps a per-box visualizer toggle would be smarter than a global one?
+                    else if (blastTimeline > 0) disableCASESimulation = true;
                 }
-                else if (simStartTime > 0)
+                else if (blastTimeline > 0) disableCASESimulation = true;
+                if (disableCASESimulation)
                 {
                     visSphere.SetActive(false);
                     visDome.SetActive(false);
@@ -466,7 +469,7 @@ UI_FloatRange(minValue = 0f, maxValue = 100, stepIncrement = 0.5f, scene = UI_Sc
         Color blastColor = Color.red;
         public static FloatCurve blastCurve = null; //'close enough' approximation for the rather more complex geometry of the actual blast dmg equations
 
-        void DrawDetonationVisualization(bool globalToggle)
+        void DrawDetonationVisualization()
         {
             if (blastCurve == null)
             {
@@ -480,8 +483,9 @@ UI_FloatRange(minValue = 0f, maxValue = 100, stepIncrement = 0.5f, scene = UI_Sc
             }
             Vector2 guiPos;
             GetBlastRadius();
-            if (simTimer > 5) simStartTime = Time.time; //another possible improvement would have a 'sim blast range' slider that would allow seeing damage at specific range instead of cycling the anim
-            blastTimeline = globalToggle ? Mathf.Clamp01(simTimer / 2) : blastSim / 100;
+            if (!BDArmorySetup.showCASESimulation) simStartTime = 0;
+            else if (simTimer > 5) simStartTime = Time.time; //another possible improvement would have a 'sim blast range' slider that would allow seeing damage at specific range instead of cycling the anim
+            blastTimeline = BDArmorySetup.showCASESimulation ? Mathf.Clamp01(simTimer / 2) : blastSim / 100;
             float blastDmg = Mathf.Clamp(blastCurve.Evaluate(blastRadius * blastTimeline) + (11 - (blastRadius * blastTimeline * 0.4f)) * (float)ammoExplosionYield, 0, 1200) / (CASELevel == 1 ? 2 : 1); //CASE I clamps to 600, so mult CAS 0 dmg to maintian color per x dmg value
             blastColor = Color.HSVToRGB((((CASELevel == 1 ? 600 : 1200) - (float)blastDmg) / (CASELevel == 1 ? 600 : 1200)) / 4, 1, 1); //yellow = 200dmg, green, less, orange-> , more
 
