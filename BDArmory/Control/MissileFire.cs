@@ -2630,7 +2630,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                 }
 
                 if (targetDist > radius
-                    || Vector3.Dot(VectorUtils.GetUpDirection(vessel.CoM), vessel.transform.forward) > 0) // roll check
+                    || Vector3.Dot(vessel.up, vessel.transform.forward) > 0) // roll check
                 {
                     if (targetDist < Mathf.Max(radius * 2, 800f) &&
                         Vector3.Dot(guardTarget.CoM - bombAimerPosition, guardTarget.CoM - transform.position) < 0)
