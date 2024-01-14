@@ -168,9 +168,36 @@ namespace BDArmory.Weapons
         float bulletTimeToCPA; // Time until the bullet is expected to reach the closest point to the target. Used for timing-based bullet detonation.
         public Vector3 finalAimTarget;
         Vector3 staleFinalAimTarget, staleTargetVelocity, staleTargetAcceleration, stalePartVelocity;
-        public Vessel visualTargetVessel;
-        public Vessel lastVisualTargetVessel;
-        public Part visualTargetPart;
+        public Vessel visualTargetVessel
+        {
+            get
+            {
+                if (_visualTargetVessel != null && !_visualTargetVessel.gameObject.activeInHierarchy) _visualTargetVessel = null;
+                return _visualTargetVessel;
+            }
+            set { _visualTargetVessel = value; }
+        }
+        Vessel _visualTargetVessel;
+        public Vessel lastVisualTargetVessel
+        {
+            get
+            {
+                if (_lastVisualTargetVessel != null && !_lastVisualTargetVessel.gameObject.activeInHierarchy) _lastVisualTargetVessel = null;
+                return _lastVisualTargetVessel;
+            }
+            set { _lastVisualTargetVessel = value; }
+        }
+        Vessel _lastVisualTargetVessel;
+        public Part visualTargetPart
+        {
+            get
+            {
+                if (_visualTargetPart != null && !_visualTargetPart.gameObject.activeInHierarchy) _visualTargetPart = null;
+                return _visualTargetPart;
+            }
+            set { _visualTargetPart = value; }
+        }
+        Part _visualTargetPart;
         public PooledBullet tgtShell = null;
         public PooledRocket tgtRocket = null;
         Vector3 closestTarget = Vector3.zero;
@@ -4895,8 +4922,6 @@ namespace BDArmory.Weapons
 
             if (weaponManager)
             {
-                if (visualTargetVessel && !visualTargetVessel.gameObject.activeInHierarchy) visualTargetVessel = null; // Stop firing at targets that are deactivated, but not null (e.g., missiles).
-                if (visualTargetPart && !visualTargetPart.gameObject.activeInHierarchy) visualTargetPart = null;
                 //legacy or visual range guard targeting
                 if (aiControlled && weaponManager && visualTargetVessel &&
                     (visualTargetVessel.transform.position - transform.position).sqrMagnitude < weaponManager.guardRange * weaponManager.guardRange)
@@ -5163,8 +5188,6 @@ namespace BDArmory.Weapons
             }
             if (weaponManager && weaponState == WeaponStates.Enabled)
             {
-                if (visualTargetVessel && !visualTargetVessel.gameObject.activeInHierarchy) visualTargetVessel = null; // Stop firing at targets that are deactivated, but not null (e.g., missiles).
-                if (visualTargetPart && !visualTargetPart.gameObject.activeInHierarchy) visualTargetPart = null;
                 if (tgtShell != null || tgtRocket != null || visualTargetPart != null)
                 {
                     visualTargetVessel = null;

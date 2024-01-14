@@ -282,7 +282,7 @@ namespace BDArmory.VesselSpawning
             }
 
             // Perform post-spawn stuff.
-            yield return PostSpawnMainSequence(vessel, true, false, false);
+            yield return PostSpawnMainSequence(vessel, true, BDArmorySettings.VESSEL_SPAWN_INITIAL_VELOCITY, false);
             if (spawnFailureReason != SpawnFailureReason.None)
             {
                 --currentlySpawningCount;
