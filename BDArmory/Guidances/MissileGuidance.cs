@@ -887,6 +887,11 @@ namespace BDArmory.Guidances
 
         public static float getGLimit(MissileLauncher ml, float thrust, float gLim, float margin)//, out bool gLimited)
         {
+            if (ml.vessel.InVacuum())
+            {
+                return 180f; // if in vacuum g-limiting should be done via throttle modulation
+            }
+            
             bool gLimited = false;
 
             // Force required to reach g-limit
@@ -895,23 +900,6 @@ namespace BDArmory.Guidances
             float maxAoA = ml.maxAoA;
 
             float currAoA = maxAoA;
-
-            if (ml.vessel.InVacuum())
-            {
-                if (thrust < gLim || thrust == 0f)
-                {
-                    currAoA = 90f;
-                }
-                else
-                {
-                    // If we're in vacuum, only consider engine thrust
-                    currAoA = Mathf.Asin(gLim / thrust) * Mathf.Rad2Deg;
-                }
-
-                // Are we gLimited?
-                gLimited = currAoA < maxAoA;
-                return gLimited ? currAoA : maxAoA;
-            }
 
             int interval = 0;
 
