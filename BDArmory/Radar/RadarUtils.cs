@@ -1970,8 +1970,9 @@ namespace BDArmory.Radar
         public static bool MissileIsThreat(MissileBase missile, MissileFire mf, bool threatToMeOnly = true)
         {
             if (missile == null || missile.part == null) return false;
-            Vector3 vectorFromMissile = mf.vessel.CoM - missile.part.transform.position;
+            Vector3 vectorFromMissile = mf.vessel.CoM - missile.part.transform.position;      
             if ((vectorFromMissile.sqrMagnitude > (mf.guardRange * mf.guardRange)) && (missile.TargetingMode != MissileBase.TargetingModes.Radar)) return false;
+            bool maneuverCapability = missile.vessel.InVacuum() ? true : missile.vessel.srfSpeed > missile.GetKinematicSpeed();  // Missiles with no ability to hit target are not a threat
             if (threatToMeOnly)
             {
                 Vector3 relV = missile.vessel.Velocity() - mf.vessel.Velocity();
@@ -1981,7 +1982,7 @@ namespace BDArmory.Radar
                 var missileBlastRadiusSqr = 3f * missile.GetBlastRadius();
                 missileBlastRadiusSqr *= missileBlastRadiusSqr;
 
-                return (missile.HasFired && missile.MissileState > MissileBase.MissileStates.Drop && approaching &&
+                return (missile.HasFired && missile.MissileState > MissileBase.MissileStates.Drop && approaching && maneuverCapability &&
                             (
                                 (missile.TargetPosition - (mf.vessel.CoM + (mf.vessel.Velocity() * Time.fixedDeltaTime))).sqrMagnitude < missileBlastRadiusSqr || // Target position is within blast radius of missile.
                                 mf.vessel.PredictClosestApproachSqrSeparation(missile.vessel, Mathf.Max(mf.cmThreshold, mf.evadeThreshold)) < missileBlastRadiusSqr || // Closest approach is within blast radius of missile. 
@@ -2007,7 +2008,7 @@ namespace BDArmory.Radar
                         var missileBlastRadiusSqr = 3f * missile.GetBlastRadius();
                         missileBlastRadiusSqr *= missileBlastRadiusSqr;
 
-                        return (missile.HasFired && missile.TimeIndex > 1f && approaching &&
+                        return (missile.HasFired && missile.TimeIndex > 1f && approaching && maneuverCapability &&
                                     (
                                         (missile.TargetPosition - (wms.vessel.CoM + (wms.vessel.Velocity() * Time.fixedDeltaTime))).sqrMagnitude < missileBlastRadiusSqr || // Target position is within blast radius of missile.
                                         wms.vessel.PredictClosestApproachSqrSeparation(missile.vessel, Mathf.Max(wms.evadeThreshold, wms.cmThreshold)) < missileBlastRadiusSqr || // Closest approach is within blast radius of missile. 

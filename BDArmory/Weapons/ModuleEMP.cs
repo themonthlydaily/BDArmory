@@ -14,6 +14,8 @@ namespace BDArmory.Weapons
         [KSPField]
         public bool AllowReboot = false;
 
+        public bool Armed = false;
+
         public override void OnStart(StartState state)
         {
             if (HighLogic.LoadedSceneIsFlight)
@@ -24,8 +26,14 @@ namespace BDArmory.Weapons
             base.OnStart(state);
         }
 
+        void OnDestroy()
+        {
+            if (part) part.OnJustAboutToBeDestroyed -= DetonateEMPRoutine;
+        }
+
         public void DetonateEMPRoutine()
         {
+            if (!Armed) return;
             foreach (Vessel v in FlightGlobals.Vessels)
             {
                 if (v == null || !v.loaded || v.packed) continue;

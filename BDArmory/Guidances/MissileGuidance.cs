@@ -817,7 +817,7 @@ namespace BDArmory.Guidances
             new(65, 0.6f),
             new(90, 0.7f)
             ]);
-
+      
         public static FloatCurve DefaultDragCurve = new([
             new(0, 0.00215f, 0.00014f, 0.00014f),
             new(5, .00285f, 0.0002775f, 0.0002775f),
@@ -826,7 +826,7 @@ namespace BDArmory.Guidances
             new(55, .3f, 0.008434067f, 0.008434067f),
             new(90, .5f, 0.005714285f, 0.005714285f)
         ]);
-
+      
         // The below curves and constants are derived from the lift and drag curves and will need to be re-calculated
         // if these are changed
 
@@ -1192,6 +1192,7 @@ namespace BDArmory.Guidances
 
             //lift
             float AoA = Mathf.Clamp(Vector3.Angle(ml.transform.forward, velocity.normalized), 0, 90);
+            ml.smoothedAoA.Update(AoA);
             if (AoA > 0)
             {
                 double liftForce = 0.5 * airDensity * airSpeed * airSpeed * liftArea * liftMultiplier * Mathf.Max(liftCurve.Evaluate(AoA), 0f);

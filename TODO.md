@@ -12,7 +12,7 @@
 
 - Add tooltips to settings.
 - Add thumbnails to the craft browser.
-- Figure out how to add a 0 value to UI_FloatSemiLogRange sliders.
+- Figure out how to add a 0 value and 1.5 sig.fig. to UI_FloatSemiLogRange sliders.
 - Stability of the targeting cam when slewing with the mouse (jitter).
 
 - Wiki entries
@@ -49,6 +49,7 @@
 
 - Reset things that the RWP slider changes when switching away from the rounds.
 	- RWP really shouldn't be setting the sliders, but should instead provide overrides for when accessing those values.
+- KerbalSafety - why are some kerbals not registering/deploying chutes
 - Fix the piñata spawning logic - spawn the piñata(s) separately after circular spawning has occured.
 - Add NPC and piñata support for single competitions as well (currently they're only supported in tournaments)
 	- Add "role" option in the VM for specifying PC, NPC, piñata, etc.
@@ -64,7 +65,6 @@
 - Adjust explosions to maintain velocity or not based on atmospheric density.
 - Proper 3-axis PID sliders + single PID with axis weighting
 - Memory for AI state so that it can resume once finished extending/evading instead of just scanning for new targets.
-- KerbalSafety - why are some kerbals not registering/deploying chutes
 - Tag mode should disable team icons to get colours right
 - Improve the VTOL AI:
 	- Terrain avoidance

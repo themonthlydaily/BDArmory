@@ -877,6 +877,30 @@ namespace BDArmory.Radar
             }
         }
 
+        public float GetCrankFOV()
+        {
+            // Get max FOV of radars onboard vessel, or the minimum FOV radars with target locks
+            
+            float fov = 0f;
+            var radars = VesselModuleRegistry.GetModules<ModuleRadar>(vessel);
+            if (radars != null)
+            {
+                using (var radar = radars.GetEnumerator())
+                    while (radar.MoveNext())
+                    {
+                        if (radar.Current == null) continue;
+                        if (radar.Current.omnidirectional) return 360f;
+                        fov = Mathf.Max(fov, radar.Current.directionalFieldOfView);
+                    }
+            }
+            for (int i = 0; i < lockedTargetIndexes.Count; i++)
+            {
+                fov = Mathf.Min(fov, displayedTargets[lockedTargetIndexes[i]].detectedByRadar.directionalFieldOfView);
+            }
+
+            return fov;
+        }
+
         public void SlaveTurrets()
         {
             var targetingCameras = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel);
