@@ -500,7 +500,8 @@ namespace BDArmory.Weapons
         [KSPField]
         public bool ChargeEachShot = true;
         bool hasCharged = false;
-
+        [KSPField]
+        public float chargeHoldLength = 1;
         [KSPField]
         public string bulletDragTypeName = "AnalyticEstimate";
         public BulletDragTypes bulletDragType;
@@ -4564,7 +4565,7 @@ namespace BDArmory.Weapons
                         roundsPerMinute = Mathf.Lerp(baseRPM, (baseRPM / 10), spooltime);
                     }
                 }
-                if (ChargeTime > 0 && hasCharged && timeSinceFired > ChargeTime * 2) hasCharged = false;
+                if (ChargeTime > 0 && hasCharged && timeSinceFired > chargeHoldLength) hasCharged = false;
             }
         }
 
