@@ -18,7 +18,7 @@ namespace BDArmory.Guidances
             float leadTime = Mathf.Clamp(targetDistance / (targetVelocity - currVel).magnitude, 0f, 8f);
             targetPosition += targetVelocity * leadTime;
 
-            Vector3 upDirection = VectorUtils.GetUpDirection(missileVessel.CoM);
+            Vector3 upDirection = missileVessel.up;
             //-FlightGlobals.getGeeForceAtPosition(targetPosition).normalized;
             Vector3 surfacePos = missileVessel.transform.position +
                                  Vector3.Project(targetPosition - missileVessel.transform.position, upDirection);
@@ -50,7 +50,7 @@ namespace BDArmory.Guidances
         public static bool GetBallisticGuidanceTarget(Vector3 targetPosition, Vessel missileVessel, bool direct,
             out Vector3 finalTarget)
         {
-            Vector3 up = VectorUtils.GetUpDirection(missileVessel.transform.position);
+            Vector3 up = missileVessel.up;
             Vector3 forward = (targetPosition - missileVessel.transform.position).ProjectOnPlanePreNormalized(up);
             float speed = (float)missileVessel.srfSpeed;
             float sqrSpeed = speed * speed;
@@ -175,7 +175,7 @@ namespace BDArmory.Guidances
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileGuidance]: Lofting");
 
                 // Get up direction
-                Vector3 upDirection = VectorUtils.GetUpDirection(missileVessel.CoM);
+                Vector3 upDirection = missileVessel.up;
 
                 // Use the gun aim-assist logic to determine ballistic angle (assuming no drag)
                 Vector3 missileRelativePosition, missileRelativeVelocity, missileAcceleration, missileRelativeAcceleration, targetPredictedPosition, missileDropOffset, lastVelDirection, ballisticTarget, targetHorVel, targetCompVel;
@@ -543,7 +543,7 @@ namespace BDArmory.Guidances
 
         public static Vector3 GetCruiseTarget(Vector3 targetPosition, Vessel missileVessel, float radarAlt)
         {
-            Vector3 upDirection = VectorUtils.GetUpDirection(missileVessel.transform.position);
+            Vector3 upDirection = missileVessel.up;
             float currentRadarAlt = GetRadarAltitude(missileVessel);
             float distanceSqr =
                 (targetPosition - (missileVessel.transform.position - (currentRadarAlt * upDirection))).sqrMagnitude;

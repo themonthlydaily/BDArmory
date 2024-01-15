@@ -325,7 +325,7 @@ namespace BDArmory.Control
 
         void InitialFrameUpdates()
         {
-            upDir = VectorUtils.GetUpDirection(vesselTransform.position);
+            upDir = vessel.up;
             CalculateAngularAcceleration();
             maxAcceleration = GetMaxAcceleration(vessel);
             debugPosition = Vector3.zero;
