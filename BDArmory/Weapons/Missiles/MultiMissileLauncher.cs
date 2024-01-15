@@ -546,6 +546,7 @@ namespace BDArmory.Weapons.Missiles
             missileLauncher.torpedo = MLConfig.torpedo;
             missileLauncher.loftState = 0;
             missileLauncher.TimeToImpact = float.PositiveInfinity;
+            missileLauncher.initMaxAoA = MLConfig.maxAoA;
             missileLauncher.homingModeTerminal = MLConfig.homingModeTerminal;
             missileLauncher.pronavGain = MLConfig.pronavGain;
             missileLauncher.kappaAngle = MLConfig.kappaAngle;
@@ -830,6 +831,7 @@ namespace BDArmory.Weapons.Missiles
                     ml.pronavGain = missileLauncher.pronavGain;
                     ml.loftState = 0;
                     ml.TimeToImpact = float.PositiveInfinity;
+                    ml.initMaxAoA = missileLauncher.maxAoA;
                 }
                 /*if (missileLauncher.GuidanceMode == GuidanceModes.AAMHybrid)
                 {
@@ -880,6 +882,7 @@ namespace BDArmory.Weapons.Missiles
                         ml.pronavGain = missileLauncher.pronavGain;
                         ml.loftState = 0;
                         ml.TimeToImpact = float.PositiveInfinity;
+                        ml.initMaxAoA = missileLauncher.maxAoA;
                     }
                     if (missileLauncher.homingModeTerminal == GuidanceModes.APN || missileLauncher.homingModeTerminal == GuidanceModes.PN)
                         ml.pronavGain = missileLauncher.pronavGain;
