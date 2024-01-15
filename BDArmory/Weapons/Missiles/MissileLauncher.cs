@@ -489,7 +489,6 @@ namespace BDArmory.Weapons.Missiles
 
             loftState = 0;
             TimeToImpact = float.PositiveInfinity;
-            initMaxAoA = maxAoA;
             terminalHomingActive = false;
 
             if (LoftTermRange > 0)
@@ -1225,7 +1224,6 @@ namespace BDArmory.Weapons.Missiles
                 ml.pronavGain = pronavGain;
                 ml.loftState = 0;
                 ml.TimeToImpact = float.PositiveInfinity;
-                ml.initMaxAoA = maxAoA;
             }
             /*            if (GuidanceMode == GuidanceModes.AAMHybrid)
                             ml.pronavGain = pronavGain;*/
@@ -1271,7 +1269,6 @@ namespace BDArmory.Weapons.Missiles
                     ml.pronavGain = pronavGain;
                     ml.loftState = 0;
                     ml.TimeToImpact = float.PositiveInfinity;
-                    ml.initMaxAoA = maxAoA;
                 }
                 if (homingModeTerminal == GuidanceModes.APN || homingModeTerminal == GuidanceModes.PN)
                     ml.pronavGain = pronavGain;
@@ -2513,7 +2510,7 @@ namespace BDArmory.Weapons.Missiles
 
                             float fac = (1 - (rangeToTarget - terminalHomingRange) / Mathf.Clamp(terminalHomingRange * 4f, 5000f, 25000f));
 
-                            maxAoA = Mathf.Clamp(initMaxAoA * fac, 4f, initMaxAoA);
+                            //maxAoA = Mathf.Clamp(initMaxAoA * fac, 4f, initMaxAoA);
 
                             TimeToImpact = currTimeToImpact;
 

@@ -390,6 +390,8 @@ namespace BDArmory.Guidances
                 Vector3 planarDirectionToTarget =
                     ((AIUtils.PredictPosition(targetPosition, targetVelocity, Vector3.zero, leadTime + TimeWarp.fixedDeltaTime) - missileVessel.CoM).ProjectOnPlanePreNormalized(upDirection)).normalized;
 
+                gLimit = 6f;
+
                 // Check if termination angle agrees with termAngle
                 if ((angle > -termAngle * Mathf.Deg2Rad) && (loftState < 2))
                 {
