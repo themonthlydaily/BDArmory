@@ -187,8 +187,10 @@ namespace BDArmory.Guidances
             // Set up PIP vector
             Vector3 predictedImpactPoint = AIUtils.PredictPosition(targetPosition, targetVelocity, Vector3.zero, leadTime + TimeWarp.fixedDeltaTime);
 
+            float sinTarget = Vector3.Dot((targetPosition - ml.vessel.CoM), -upDirection) / R;
+
             // If still in boost phase
-            if (loftState < 2 && R > midcourseRange && Vector3.Dot((targetPosition - ml.vessel.CoM) / R, -upDirection) < Mathf.Sin(loftTermAngle * Mathf.Deg2Rad))
+            if (loftState < 2 && R > midcourseRange && sinTarget < Mathf.Sin(loftTermAngle * Mathf.Deg2Rad) && -sinTarget < Mathf.Sin(loftAngle * Mathf.Deg2Rad))
             {
                 Vector3 planarDirectionToTarget = ((predictedImpactPoint - ml.vessel.CoM).ProjectOnPlanePreNormalized(upDirection)).normalized;
 
