@@ -33,6 +33,8 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static float VESSEL_SPAWNER_WINDOW_WIDTH = 480f;
         [BDAPersistentSettingsField] public static float EVOLUTION_WINDOW_WIDTH = 350f;
         [BDAPersistentSettingsField] public static float GUI_OPACITY = 1f;                   // Modify the GUI opacity.
+        [BDAPersistentSettingsField] public static float UI_SCALE = 1f; // Global UI scaling
+        public static float PREVIOUS_UI_SCALE = 1f; // For tracking changes
         #endregion
 
         #region General toggle settings

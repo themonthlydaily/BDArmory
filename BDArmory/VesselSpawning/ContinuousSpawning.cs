@@ -189,7 +189,7 @@ namespace BDArmory.VesselSpawning
                         BDACompetitionMode.Instance.StopCompetition();
                         break;
                     }
-                    { // Perform a "bubble shuffle" (randomly swap pairs of craft moving through the queue).
+                    {// Perform a "bubble shuffle" (randomly swap pairs of craft moving through the queue).
                         List<string> shufflePool = new();
                         Queue<string> bubbleShuffleQueue = new();
                         while (spawnQueue.Count > 0)

@@ -79,6 +79,7 @@ namespace BDArmory.Utils
 
             if (cam == null) return;
 
+            var guiMatrix = GUI.matrix;
             GUI.matrix = Matrix4x4.identity;
 
             bool aBehind = false;
@@ -129,7 +130,7 @@ namespace BDArmory.Utils
 
             GUIUtility.RotateAroundPivot(-angle + 180, screenPosA);
             DrawRectangle(upRect, color);
-            GUI.matrix = Matrix4x4.identity;
+            GUI.matrix = guiMatrix;
         }
 
         public static void DrawRectangle(Rect rect, Color color)
@@ -173,29 +174,41 @@ namespace BDArmory.Utils
             return rect;
         }
 
-        internal static void RepositionWindow(ref Rect windowPosition)
+        /// <summary>
+        /// Reposition the window, taking care to keep the window on the screen and attached to screen edges (if strict boundaries).
+        /// </summary>
+        /// <param name="windowRect">The window rect.</param>
+        /// <param name="previousWindowHeight">The previous height of the window, for auto-sizing windows.</param>
+        internal static void RepositionWindow(ref Rect windowRect, float previousWindowHeight = 0)
         {
+            var scaledWindowSize = BDArmorySettings.UI_SCALE * windowRect.size;
             if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES)
             {
-                // This method uses Gui point system.
-                if (windowPosition.x < 0) windowPosition.x = 0;
-                if (windowPosition.y < 0) windowPosition.y = 0;
+                if ((windowRect.height < previousWindowHeight && Mathf.RoundToInt(windowRect.y + BDArmorySettings.UI_SCALE * previousWindowHeight) >= Screen.height) || // Window shrunk while being at the bottom of screen.
+                    (BDArmorySettings.PREVIOUS_UI_SCALE > BDArmorySettings.UI_SCALE && Mathf.RoundToInt(windowRect.y + BDArmorySettings.PREVIOUS_UI_SCALE * windowRect.height) >= Screen.height))
+                    windowRect.y = Screen.height - scaledWindowSize.y;
+                if (BDArmorySettings.PREVIOUS_UI_SCALE > BDArmorySettings.UI_SCALE && Mathf.RoundToInt(windowRect.x + BDArmorySettings.PREVIOUS_UI_SCALE * windowRect.width) >= Screen.width) // Window shrunk while being at the right of screen.
+                    windowRect.x = Screen.width - scaledWindowSize.x;
 
-                if (windowPosition.xMax > Screen.width) // Don't go off the right of the screen.
-                    windowPosition.x = Screen.width - windowPosition.width;
-                if (windowPosition.height > Screen.height) // Don't go off the top of the screen.
-                    windowPosition.y = 0;
-                else if (windowPosition.yMax > Screen.height) // Don't go off the bottom of the screen.
-                    windowPosition.y = Screen.height - windowPosition.height;
+                // This method uses Gui point system.
+                if (windowRect.x < 0) windowRect.x = 0;
+                if (windowRect.y < 0) windowRect.y = 0;
+
+                if (windowRect.x + scaledWindowSize.x > Screen.width) // Don't go off the right of the screen.
+                    windowRect.x = Screen.width - scaledWindowSize.x;
+                if (scaledWindowSize.y > Screen.height) // Don't go off the top of the screen.
+                    windowRect.y = 0;
+                else if (windowRect.y + scaledWindowSize.y > Screen.height) // Don't go off the bottom of the screen.
+                    windowRect.y = Screen.height - scaledWindowSize.y;
             }
             else // If the window is completely off-screen, bring it just onto the screen.
             {
-                if (windowPosition.width == 0) windowPosition.width = 1;
-                if (windowPosition.height == 0) windowPosition.height = 1;
-                if (windowPosition.x >= Screen.width) windowPosition.x = Screen.width - 1;
-                if (windowPosition.y >= Screen.height) windowPosition.y = Screen.height - 1;
-                if (windowPosition.x + windowPosition.width < 1) windowPosition.x = 1 - windowPosition.width;
-                if (windowPosition.y + windowPosition.height < 1) windowPosition.y = 1 - windowPosition.height;
+                if (windowRect.width == 0) windowRect.width = 1;
+                if (windowRect.height == 0) windowRect.height = 1;
+                if (windowRect.x >= Screen.width) windowRect.x = Screen.width - 1;
+                if (windowRect.y >= Screen.height) windowRect.y = Screen.height - 1;
+                if (windowRect.x + scaledWindowSize.x < 1) windowRect.x = 1 - scaledWindowSize.x;
+                if (windowRect.y + scaledWindowSize.y < 1) windowRect.y = 1 - scaledWindowSize.y;
             }
             GUIUtilsInstance.Reset(); // Reset once-per-frame checks.
         }
