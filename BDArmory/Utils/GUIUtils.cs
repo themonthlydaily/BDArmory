@@ -1,5 +1,5 @@
+using System.Runtime.CompilerServices;
 using System.Collections.Generic;
-using System;
 using UniLinq;
 using UnityEngine;
 
@@ -299,10 +299,10 @@ namespace BDArmory.Utils
             Vector3 inverseMousePos = new Vector3(Input.mousePosition.x, Screen.height - Input.mousePosition.y, 0);
             Rect topGui = new Rect(0, 0, Screen.width, 65);
 
-            if (topGui.Contains(inverseMousePos)) return true;
-            if (BDArmorySetup.windowBDAToolBarEnabled && BDArmorySetup.WindowRectToolbar.Contains(inverseMousePos))
+            if (MouseIsInRect(topGui, inverseMousePos)) return true;
+            if (BDArmorySetup.windowBDAToolBarEnabled && MouseIsInRect(BDArmorySetup.WindowRectToolbar, inverseMousePos))
                 return true;
-            if (ModuleTargetingCamera.windowIsOpen && BDArmorySetup.WindowRectTargetingCam.Contains(inverseMousePos))
+            if (ModuleTargetingCamera.windowIsOpen && MouseIsInRect(BDArmorySetup.WindowRectTargetingCam, inverseMousePos))
                 return true;
             if (BDArmorySetup.Instance.ActiveWeaponManager)
             {
@@ -310,16 +310,16 @@ namespace BDArmory.Utils
 
                 if (wm.vesselRadarData && wm.vesselRadarData.guiEnabled)
                 {
-                    if (BDArmorySetup.WindowRectRadar.Contains(inverseMousePos)) return true;
-                    if (wm.vesselRadarData.linkWindowOpen && wm.vesselRadarData.linkWindowRect.Contains(inverseMousePos))
+                    if (MouseIsInRect(BDArmorySetup.WindowRectRadar, inverseMousePos)) return true;
+                    if (wm.vesselRadarData.linkWindowOpen && MouseIsInRect(wm.vesselRadarData.linkWindowRect, inverseMousePos))
                         return true;
                 }
-                if (wm.rwr && wm.rwr.rwrEnabled && wm.rwr.displayRWR && BDArmorySetup.WindowRectRwr.Contains(inverseMousePos))
+                if (wm.rwr && wm.rwr.rwrEnabled && wm.rwr.displayRWR && MouseIsInRect(BDArmorySetup.WindowRectRwr, inverseMousePos))
                     return true;
                 if (wm.wingCommander && wm.wingCommander.showGUI)
                 {
-                    if (BDArmorySetup.WindowRectWingCommander.Contains(inverseMousePos)) return true;
-                    if (wm.wingCommander.showAGWindow && wm.wingCommander.agWindowRect.Contains(inverseMousePos))
+                    if (MouseIsInRect(BDArmorySetup.WindowRectWingCommander, inverseMousePos)) return true;
+                    if (wm.wingCommander.showAGWindow && MouseIsInRect(wm.wingCommander.agWindowRect, inverseMousePos))
                         return true;
                 }
 
@@ -329,7 +329,7 @@ namespace BDArmory.Utils
                 foreach (var guiRect in extraGUIRects.Values)
                 {
                     if (!guiRect.visible) continue;
-                    if (guiRect.rect.Contains(inverseMousePos)) return true;
+                    if (MouseIsInRect(guiRect.rect, inverseMousePos)) return true;
                 }
             }
 
@@ -376,10 +376,18 @@ namespace BDArmory.Utils
             GUIUtilsInstance.Reset();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool MouseIsInRect(Rect rect)
         {
-            Vector3 inverseMousePos = new Vector3(Input.mousePosition.x, Screen.height - Input.mousePosition.y, 0);
-            return rect.Contains(inverseMousePos);
+            Vector2 inverseMousePos = new(Input.mousePosition.x, Screen.height - Input.mousePosition.y);
+            return MouseIsInRect(rect, inverseMousePos);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool MouseIsInRect(Rect rect, Vector2 inverseMousePos)
+        {
+            Rect scaledRect = new(rect.position, BDArmorySettings.UI_SCALE * rect.size);
+            return scaledRect.Contains(inverseMousePos);
         }
 
         //Thanks FlowerChild
