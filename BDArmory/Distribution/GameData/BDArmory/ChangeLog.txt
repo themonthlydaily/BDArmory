@@ -8,6 +8,8 @@
 - UI:
 	- Fix part filtering by search terms in the editors.
 	- New Opacity option in BDA Team Icons to set icon opacity.
+	- Add a UI scaling option for BDA's windows.
+	- Improve the logarithmic scaling in the radar windows.
 - AI / WM:
 	- Add new "Kinematic Msl Evasion" toggle to Pilot AI under the evasion settings. When this is enabled the AI will evaluate the best maneuver to defeat a beyond-visual-range (BVR) missile using only kinematic maneuvers. The Time to Impact Before Evade setting on the weapons manager should be set to a high value when this evasion option is enabled. Maneuvers the AI will use are:
 		- Crank - Fly at an angle to the target, while still maintaining radar lock.
@@ -18,6 +20,8 @@
 	- Fix automatic gun range adjustments in the WM again.
 	- Prevent Orbital AI from changing attitude while launched missile is still near spacecraft.
 	- Add Smoke CM timing/interal/repetition settings.
+	- Fix the missile evasion direction using the wrong reference frame.
+	- Automatically disable precision input mode when auto-tuning (UI element doesn't switch though).
 - Weapons:
 	- Corrections to penetration and ricochet velocity changes and ricochet positions.
 	- Stop APS firing at dead missiles.
@@ -44,6 +48,9 @@
 		- Fixed missile contact detonation logic, a bug was present which lead to inaccurate detection of missile contact
 		- Improved AAMLoft performance against maneuvering targets
 		- EMP warheads only detonate when armed and no longer do additional damage.
+- Competition:
+	- Add an option for the continuous spawn central point to follow the centroid of surviving craft (biased back towards the original spawn point).
+	- Add an option to automatically resume continuous spawn and to automatically shutdown KSP when continuous spawn ends due to having fewer than 2 craft left.
 
 v1.6.9.0
 IMPROVEMENTS / FIXES
