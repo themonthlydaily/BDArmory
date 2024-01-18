@@ -174,6 +174,13 @@ namespace BDArmory.VesselSpawning
                     {
                         LogMessage("Spawn queue is empty and not enough vessels are active, ending competition.", false);
                         BDACompetitionMode.Instance.StopCompetition();
+                        if (BDArmorySettings.AUTO_RESUME_CONTINUOUS_SPAWN && BDArmorySettings.AUTO_QUIT_AT_END_OF_TOURNAMENT && TournamentAutoResume.Instance != null)
+                        {
+                            TournamentAutoResume.AutoQuit(5);
+                            var message = "Quitting KSP in 5s due to reaching the end of a tournament.";
+                            BDACompetitionMode.Instance.competitionStatus.Add(message);
+                            Debug.LogWarning("[BDArmory.BDATournament]: " + message);
+                        }
                         break;
                     }
                     {// Perform a "bubble shuffle" (randomly swap pairs of craft moving through the queue).
