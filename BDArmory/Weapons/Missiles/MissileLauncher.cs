@@ -487,7 +487,7 @@ namespace BDArmory.Weapons.Missiles
                 dragArea = liftArea;
             }
 
-            loftState = 0;
+            loftState = loftStates.Boost;
             TimeToImpact = float.PositiveInfinity;
             initMaxAoA = maxAoA;
             terminalHomingActive = false;
@@ -1223,7 +1223,7 @@ namespace BDArmory.Weapons.Missiles
                 ml.terminalHomingRange = terminalHomingRange;
                 ml.homingModeTerminal = homingModeTerminal;
                 ml.pronavGain = pronavGain;
-                ml.loftState = 0;
+                ml.loftState = loftStates.Boost;
                 ml.TimeToImpact = float.PositiveInfinity;
                 ml.initMaxAoA = maxAoA;
             }
@@ -1236,7 +1236,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 ml.kappaAngle = kappaAngle;
                 ml.LoftAngle = LoftAngle;
-                ml.loftState = 0;
+                ml.loftState = loftStates.Boost;
                 ml.LoftTermAngle = LoftTermAngle;
                 ml.LoftMaxAltitude = LoftMaxAltitude;
                 ml.LoftRangeOverride = LoftRangeOverride;
@@ -1269,7 +1269,7 @@ namespace BDArmory.Weapons.Missiles
                     ml.LoftVertVelComp = LoftVertVelComp;
                     //ml.LoftAltComp = LoftAltComp;
                     ml.pronavGain = pronavGain;
-                    ml.loftState = 0;
+                    ml.loftState = loftStates.Boost;
                     ml.TimeToImpact = float.PositiveInfinity;
                     ml.initMaxAoA = maxAoA;
                 }
@@ -1280,7 +1280,7 @@ namespace BDArmory.Weapons.Missiles
                 {
                     ml.kappaAngle = kappaAngle;
                     ml.LoftAngle = LoftAngle;
-                    ml.loftState = 0;
+                    ml.loftState = loftStates.Boost;
                     ml.LoftTermAngle = LoftTermAngle;
                     ml.LoftMaxAltitude = LoftMaxAltitude;
                     ml.LoftRangeOverride = LoftRangeOverride;
@@ -2504,8 +2504,8 @@ namespace BDArmory.Weapons.Missiles
                             if (TimeToImpact == float.PositiveInfinity)
                             {
                                 // If the missile is not in a vaccuum, is above LoftMinAltitude and has an angle to target below the climb angle (or 90 - climb angle if climb angle > 45) (in this case, since it's angle from the vertical the check is if it's > 90f - LoftAngle) and is either is at a lower altitude than targetAlt + LoftAltitudeAdvMax or further than LoftRangeOverride, then loft.
-                                if (!vessel.InVacuum() && (vessel.altitude >= LoftMinAltitude) && Vector3.Angle(TargetPosition - vessel.transform.position, vessel.up) > Mathf.Min(LoftAngle, 90f - LoftAngle) && ((vessel.altitude - targetAlt <= LoftAltitudeAdvMax) || (TargetPosition - vessel.transform.position).sqrMagnitude > (LoftRangeOverride * LoftRangeOverride))) loftState = 0;
-                                else loftState = 3;
+                                if (!vessel.InVacuum() && (vessel.altitude >= LoftMinAltitude) && Vector3.Angle(TargetPosition - vessel.CoM, vessel.upAxis) > Mathf.Min(LoftAngle, 90f - LoftAngle) && ((vessel.altitude - targetAlt <= LoftAltitudeAdvMax) || (TargetPosition - vessel.CoM).sqrMagnitude > (LoftRangeOverride * LoftRangeOverride))) loftState = loftStates.Boost;
+                                else loftState = loftStates.Terminal;
                             }
 
                             //aamTarget = MissileGuidance.GetAirToAirLoftTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, targetAlt, LoftMaxAltitude, LoftRangeFac, LoftAltComp, LoftVelComp, LoftAngle, LoftTermAngle, terminalHomingRange, ref loftState, out float currTimeToImpact, out float rangeToTarget, optimumAirspeed);
@@ -2513,7 +2513,7 @@ namespace BDArmory.Weapons.Missiles
 
                             float fac = (1 - (rangeToTarget - terminalHomingRange - 100f) / Mathf.Clamp(terminalHomingRange * 4f, 5000f, 25000f));
 
-                            if (loftState > 1)
+                            if (loftState > loftStates.Boost)
                                 maxAoA = Mathf.Clamp(initMaxAoA * fac, 4f, initMaxAoA);
 
                             TimeToImpact = currTimeToImpact;

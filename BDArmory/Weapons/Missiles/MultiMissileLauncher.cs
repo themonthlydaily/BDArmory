@@ -544,7 +544,7 @@ namespace BDArmory.Weapons.Missiles
             missileLauncher.terminalGuidanceShouldActivate = MLConfig.terminalGuidanceShouldActivate;
             missileLauncher.terminalGuidanceType = MLConfig.terminalGuidanceType;
             missileLauncher.torpedo = MLConfig.torpedo;
-            missileLauncher.loftState = 0;
+            missileLauncher.loftState = loftStates.Boost;
             missileLauncher.TimeToImpact = float.PositiveInfinity;
             missileLauncher.initMaxAoA = MLConfig.maxAoA;
             missileLauncher.homingModeTerminal = MLConfig.homingModeTerminal;
@@ -829,7 +829,7 @@ namespace BDArmory.Weapons.Missiles
                     ml.terminalHomingRange = missileLauncher.terminalHomingRange;
                     ml.homingModeTerminal = missileLauncher.homingModeTerminal;
                     ml.pronavGain = missileLauncher.pronavGain;
-                    ml.loftState = 0;
+                    ml.loftState = loftStates.Boost;
                     ml.TimeToImpact = float.PositiveInfinity;
                     ml.initMaxAoA = missileLauncher.maxAoA;
                 }
@@ -848,7 +848,7 @@ namespace BDArmory.Weapons.Missiles
                     ml.LoftAngle = missileLauncher.LoftAngle;
                     ml.LoftMaxAltitude = missileLauncher.LoftMaxAltitude;
                     ml.LoftRangeOverride = missileLauncher.LoftRangeOverride;
-                    ml.loftState = 0;
+                    ml.loftState = loftStates.Boost;
                     ml.LoftTermAngle = missileLauncher.LoftTermAngle;
                 }
 
@@ -880,7 +880,7 @@ namespace BDArmory.Weapons.Missiles
                         ml.LoftVertVelComp = missileLauncher.LoftVertVelComp;
                         //ml.LoftAltComp = missileLauncher.LoftAltComp;
                         ml.pronavGain = missileLauncher.pronavGain;
-                        ml.loftState = 0;
+                        ml.loftState = loftStates.Boost;
                         ml.TimeToImpact = float.PositiveInfinity;
                         ml.initMaxAoA = missileLauncher.maxAoA;
                     }
@@ -893,7 +893,7 @@ namespace BDArmory.Weapons.Missiles
                         ml.LoftAngle = missileLauncher.LoftAngle;
                         ml.LoftMaxAltitude = missileLauncher.LoftMaxAltitude;
                         ml.LoftRangeOverride = missileLauncher.LoftRangeOverride;
-                        ml.loftState = 0;
+                        ml.loftState = loftStates.Boost;
                         ml.LoftTermAngle = missileLauncher.LoftTermAngle;
                     }
 
