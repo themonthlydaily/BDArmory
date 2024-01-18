@@ -544,11 +544,14 @@ namespace BDArmory.Weapons.Missiles
             missileLauncher.terminalGuidanceShouldActivate = MLConfig.terminalGuidanceShouldActivate;
             missileLauncher.terminalGuidanceType = MLConfig.terminalGuidanceType;
             missileLauncher.torpedo = MLConfig.torpedo;
-            missileLauncher.loftState = 0;
+            missileLauncher.loftState = LoftStates.Boost;
             missileLauncher.TimeToImpact = float.PositiveInfinity;
             missileLauncher.initMaxAoA = MLConfig.maxAoA;
             missileLauncher.homingModeTerminal = MLConfig.homingModeTerminal;
             missileLauncher.pronavGain = MLConfig.pronavGain;
+            missileLauncher.kappaAngle = MLConfig.kappaAngle;
+            missileLauncher.gLimit = MLConfig.gLimit;
+            missileLauncher.gMargin = MLConfig.gMargin;
             missileLauncher.terminalHoming = MLConfig.terminalHoming;
             missileLauncher.terminalHomingActive = false;
 
@@ -797,6 +800,9 @@ namespace BDArmory.Weapons.Missiles
                 ml.engageGround = missileLauncher.engageGround;
                 ml.engageMissile = missileLauncher.engageMissile;
                 ml.engageSLW = missileLauncher.engageSLW;
+                ml.gLimit = missileLauncher.gLimit;
+                ml.gMargin = missileLauncher.gMargin;
+
                 if (missileLauncher.GuidanceMode == GuidanceModes.AGMBallistic)
                 {
                     ml.BallisticOverShootFactor = missileLauncher.BallisticOverShootFactor;
@@ -823,7 +829,7 @@ namespace BDArmory.Weapons.Missiles
                     ml.terminalHomingRange = missileLauncher.terminalHomingRange;
                     ml.homingModeTerminal = missileLauncher.homingModeTerminal;
                     ml.pronavGain = missileLauncher.pronavGain;
-                    ml.loftState = 0;
+                    ml.loftState = LoftStates.Boost;
                     ml.TimeToImpact = float.PositiveInfinity;
                     ml.initMaxAoA = missileLauncher.maxAoA;
                 }
@@ -835,6 +841,17 @@ namespace BDArmory.Weapons.Missiles
                 }*/
                 if (missileLauncher.GuidanceMode == GuidanceModes.APN || missileLauncher.GuidanceMode == GuidanceModes.PN)
                     ml.pronavGain = missileLauncher.pronavGain;
+
+                if (missileLauncher.GuidanceMode == GuidanceModes.Kappa)
+                {
+                    ml.kappaAngle = missileLauncher.kappaAngle;
+                    ml.LoftAngle = missileLauncher.LoftAngle;
+                    ml.LoftMaxAltitude = missileLauncher.LoftMaxAltitude;
+                    ml.LoftRangeOverride = missileLauncher.LoftRangeOverride;
+                    ml.loftState = LoftStates.Boost;
+                    ml.LoftTermAngle = missileLauncher.LoftTermAngle;
+                }
+
 
                 ml.terminalHoming = missileLauncher.terminalHoming;
                 if (missileLauncher.terminalHoming)
@@ -863,12 +880,22 @@ namespace BDArmory.Weapons.Missiles
                         ml.LoftVertVelComp = missileLauncher.LoftVertVelComp;
                         //ml.LoftAltComp = missileLauncher.LoftAltComp;
                         ml.pronavGain = missileLauncher.pronavGain;
-                        ml.loftState = 0;
+                        ml.loftState = LoftStates.Boost;
                         ml.TimeToImpact = float.PositiveInfinity;
                         ml.initMaxAoA = missileLauncher.maxAoA;
                     }
                     if (missileLauncher.homingModeTerminal == GuidanceModes.APN || missileLauncher.homingModeTerminal == GuidanceModes.PN)
                         ml.pronavGain = missileLauncher.pronavGain;
+
+                    if (missileLauncher.homingModeTerminal == GuidanceModes.Kappa)
+                    {
+                        ml.kappaAngle = missileLauncher.kappaAngle;
+                        ml.LoftAngle = missileLauncher.LoftAngle;
+                        ml.LoftMaxAltitude = missileLauncher.LoftMaxAltitude;
+                        ml.LoftRangeOverride = missileLauncher.LoftRangeOverride;
+                        ml.loftState = LoftStates.Boost;
+                        ml.LoftTermAngle = missileLauncher.LoftTermAngle;
+                    }
 
                     ml.terminalHomingRange = missileLauncher.terminalHomingRange;
                     ml.homingModeTerminal = missileLauncher.homingModeTerminal;
