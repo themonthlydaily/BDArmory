@@ -717,8 +717,8 @@ namespace BDArmory.Radar
                     v.SetPosition(v.transform.position - presentationPosition);
                 }
             }
-            if (!BDArmorySettings.DEBUG_RADAR)
-            {
+            //if (!BDArmorySettings.DEBUG_RADAR)
+            //{
                 using (List<Part>.Enumerator parts = (HighLogic.LoadedSceneIsEditor ? EditorLogic.fetch.ship.Parts.GetEnumerator() : v.parts.GetEnumerator()))
                     while (parts.MoveNext())
                     {
@@ -764,7 +764,7 @@ namespace BDArmory.Radar
                             }
                         }
                     }
-            }
+            //}
             // If in editor, turn back on rendering of conformal decals
             if (!HighLogic.LoadedSceneIsFlight && CheckForConformalDecals())
                 SetConformalDecalRendering(true);
