@@ -1555,7 +1555,11 @@ namespace BDArmory.Control
             }
             pidAutoTuning.SetStartCoords();
             pidAutoTuning.ResetMeasurements();
-            FlightInputHandler.fetch.precisionMode = false; // If precision control mode is enabled, disable it.
+            if (FlightInputHandler.fetch.precisionMode)
+            {
+                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: Precision input mode is enabled, disabling it.");
+                FlightInputHandler.fetch.precisionMode = false; // If precision control mode is enabled, disable it.
+            }
 
             SetAutoTuneFields();
             CheatOptions.InfinitePropellant = autoTune || BDArmorySettings.INFINITE_FUEL; // Prevent fuel drain while auto-tuning.
