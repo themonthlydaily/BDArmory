@@ -20,6 +20,7 @@
 	- Fix automatic gun range adjustments in the WM again.
 	- Prevent Orbital AI from changing attitude while launched missile is still near spacecraft.
 	- Add Smoke CM timing/interal/repetition settings.
+	- Fix the missile evasion direction using the wrong reference frame.
 - Weapons:
 	- Corrections to penetration and ricochet velocity changes and ricochet positions.
 	- Stop APS firing at dead missiles.
