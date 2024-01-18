@@ -152,7 +152,7 @@ namespace BDArmory.Guidances
             MissileLauncher ml, float thrust, float shapingAngle,
             float terminalHomingRange, float loftAngle, float loftTermAngle, 
             float midcourseRange, float maxAltitude, out float ttgo, out float gLimit,
-            ref MissileBase.loftStates loftState)
+            ref MissileBase.LoftStates loftState)
         {
             // Get surface velocity direction
             Vector3 velDirection = ml.vessel.srf_vel_direction;
@@ -190,7 +190,7 @@ namespace BDArmory.Guidances
             float sinTarget = Vector3.Dot((targetPosition - ml.vessel.CoM), -upDirection) / R;
 
             // If still in boost phase
-            if ((loftState < MissileBase.loftStates.Midcourse) && (R > midcourseRange) && (sinTarget < Mathf.Sin(loftTermAngle * Mathf.Deg2Rad)) && (-sinTarget < Mathf.Sin(loftAngle * Mathf.Deg2Rad)))
+            if ((loftState < MissileBase.LoftStates.Midcourse) && (R > midcourseRange) && (sinTarget < Mathf.Sin(loftTermAngle * Mathf.Deg2Rad)) && (-sinTarget < Mathf.Sin(loftAngle * Mathf.Deg2Rad)))
             {
                 Vector3 planarDirectionToTarget = ((predictedImpactPoint - ml.vessel.CoM).ProjectOnPlanePreNormalized(upDirection)).normalized;
 
@@ -229,9 +229,9 @@ namespace BDArmory.Guidances
                 float K2;
 
                 // If we're above terminal homing range
-                if ((loftState < MissileBase.loftStates.Terminal) && (R > terminalHomingRange) && !ml.vessel.InVacuum())
+                if ((loftState < MissileBase.LoftStates.Terminal) && (R > terminalHomingRange) && !ml.vessel.InVacuum())
                 {
-                    loftState = MissileBase.loftStates.Midcourse;
+                    loftState = MissileBase.LoftStates.Midcourse;
 
                     if (shapingAngle != 0f)
                     {
@@ -279,7 +279,7 @@ namespace BDArmory.Guidances
                 }
                 else
                 {
-                    loftState = MissileBase.loftStates.Terminal;
+                    loftState = MissileBase.LoftStates.Terminal;
                     // Optimal gains if we ignore aerodynamic effects. In the terminal phase we can neglect these
                     K1 = -2f;
                     K2 = 6f;
@@ -305,7 +305,7 @@ namespace BDArmory.Guidances
         public static Vector3 GetAirToAirLoftTarget(Vector3 targetPosition, Vector3 targetVelocity,
             Vector3 targetAcceleration, Vessel missileVessel, float targetAlt, float maxAltitude,
             float rangeFactor, float vertVelComp, float velComp, float loftAngle, float termAngle,
-            float termDist, ref MissileBase.loftStates loftState, out float timeToImpact, out float gLimit,
+            float termDist, ref MissileBase.LoftStates loftState, out float timeToImpact, out float gLimit,
             out float targetDistance, MissileBase.GuidanceModes homingModeTerminal, float N,
             float minSpeed = 200)
         {
@@ -315,7 +315,7 @@ namespace BDArmory.Guidances
 
             float currSpeed;// = Mathf.Max((float)missileVessel.srfSpeed, minSpeed);
 
-            if (loftState < MissileBase.loftStates.Midcourse)
+            if (loftState < MissileBase.LoftStates.Midcourse)
                 currSpeed = Mathf.Max((float)missileVessel.srfSpeed, minSpeed);
             else
                 currSpeed = (float)missileVessel.srfSpeed;
@@ -334,7 +334,7 @@ namespace BDArmory.Guidances
             gLimit = -1f;
 
             // If loft is not terminal
-            if ((loftState < MissileBase.loftStates.Terminal) && (targetDistance > termDist))
+            if ((loftState < MissileBase.LoftStates.Terminal) && (targetDistance > termDist))
             {
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileGuidance]: Lofting");
 
@@ -395,7 +395,7 @@ namespace BDArmory.Guidances
                     ((AIUtils.PredictPosition(targetPosition, targetVelocity, Vector3.zero, leadTime + TimeWarp.fixedDeltaTime) - missileVessel.CoM).ProjectOnPlanePreNormalized(upDirection)).normalized;
 
                 // Check if termination angle agrees with termAngle
-                if ((loftState < MissileBase.loftStates.Midcourse) && (angle > -termAngle * Mathf.Deg2Rad))
+                if ((loftState < MissileBase.LoftStates.Midcourse) && (angle > -termAngle * Mathf.Deg2Rad))
                 {
                     /*// If not yet at termination, simple lead compensation
                     targetPosition += targetVelocity * leadTime + 0.5f * leadTime * leadTime * targetAcceleration;
@@ -461,7 +461,7 @@ namespace BDArmory.Guidances
                 }
                 else
                 {
-                    loftState = MissileBase.loftStates.Midcourse;
+                    loftState = MissileBase.LoftStates.Midcourse;
 
                     // Tried to do some kind of pro-nav method. Didn't work well, leaving it just in case I want to fix it.
                     /*
@@ -503,7 +503,7 @@ namespace BDArmory.Guidances
                         // Otherwise just fly towards the target according to velUp and velForwards
                         float spdUp = (float)missileVessel.srfSpeed * velUp, spdF = (float)missileVessel.srfSpeed * velForwards;
                         finalTargetPos = new Vector3(missileVessel.CoM.x + spdUp * upDirection.x + spdF * planarDirectionToTarget.x,
-                            missileVessel.CoM.y + spdUp * upDirection.y + spdF * planarDirectionToTarget.z,
+                            missileVessel.CoM.y + spdUp * upDirection.y + spdF * planarDirectionToTarget.y,
                             missileVessel.CoM.z + spdUp * upDirection.z + spdF * planarDirectionToTarget.z);
                     }
 
@@ -544,7 +544,7 @@ namespace BDArmory.Guidances
             else
             {
                 // If terminal just go straight for target + lead
-                loftState = MissileBase.loftStates.Terminal;
+                loftState = MissileBase.LoftStates.Terminal;
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileGuidance]: Terminal");
 
                 if (targetDistance < 2f * termDist)

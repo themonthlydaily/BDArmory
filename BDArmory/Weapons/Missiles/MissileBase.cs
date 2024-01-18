@@ -336,9 +336,9 @@ namespace BDArmory.Weapons.Missiles
 
         public float TimeToImpact { get; set; }
 
-        public enum loftStates { Boost, Midcourse, Terminal }
+        public enum LoftStates { Boost, Midcourse, Terminal }
 
-        public loftStates loftState = loftStates.Boost;
+        public LoftStates loftState = LoftStates.Boost;
 
         public bool TargetAcquired { get; set; }
 
