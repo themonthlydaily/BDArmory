@@ -1570,10 +1570,13 @@ namespace BDArmory.Damage
         }
         private void CalculateRCSreduction()
         {
-            float radarReflected = armorRadarReturnFactor < 10 ? 1 - (Mathf.Log(Mathf.Max(ArmorThickness, 1f), 10) * (1 - armorRadarReturnFactor)) : //armor < 10 will have reduced radar absorbsion
-            armorRadarReturnFactor;//reflector armor/ translucent armor reflecting subsurface structure/RAM thicker than it needs to be, no change;
             if (ArmorTypeNum > 1 && Armor > 0) //if ArmorType != None and armor thickness != 0
             {
+                //float radarReflected = 1 - (armorRadarReturnFactor * (1 + Mathf.Log(Mathf.Max(Armor, 1), 100f))) //FIXME - this is busted, needs review
+                //vv less than ideal, but works for v1.0
+                float radarReflected = Armor < 10 ? armorRadarReturnFactor + ((1 - armorRadarReturnFactor) / 10) * (10 - Armor) : armorRadarReturnFactor;//armor < 10 will have reduced radar absorbsion, else
+                //reflector armor/ translucent armor reflecting subsurface structure/RAM thicker than it needs to be, no change;
+                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.HitpointTracker] radarReflectivity for {part.name} is {armorRadarReturnFactor}; radarRefected {radarReflected}");
                 radarReflectivity = radarReflected; //radar return based on armor material
                 if (radarReflected > 1) //radar-translucent armor...
                 {
@@ -1587,7 +1590,7 @@ namespace BDArmory.Damage
             {
                 radarReflectivity = hullRadarReturnFactor;
             }
-            if (radarReflected > 2 || radarReflected < 0) // goes up to 2 in case of radar reflectors/anti-stealth coatings, etc
+            if (radarReflectivity > 2 || radarReflectivity < 0) // goes up to 2 in case of radar reflectors/anti-stealth coatings, etc
             {
                 radarReflectivity = Mathf.Clamp(radarReflectivity, 0, 2);
             }
