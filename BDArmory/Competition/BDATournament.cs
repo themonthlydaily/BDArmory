@@ -1913,7 +1913,7 @@ namespace BDArmory.Competition
             {
                 resumingTournament = TryLoadTournamentState(out generateNewTournament);
             }
-            if (!(resumingEvolution || resumingTournament))
+            if (!(resumingEvolution || resumingTournament) && BDArmorySettings.AUTO_RESUME_CONTINUOUS_SPAWN)
             {
                 resumingContinuousSpawn = TryResumingContinuousSpawn();
             }
