@@ -687,6 +687,13 @@ namespace BDArmory.UI
 
             VSEntryString.Clear();
             string vesselName = wm.vessel.vesselName;
+            if (ContinuousSpawning.Instance.vesselsSpawningContinuously && BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL > 0)
+            {
+                if (ContinuousSpawning.Instance.continuousSpawningScores.ContainsKey(vesselName))
+                {
+                    VSEntryString.Append($"(Lives:{(int)BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL - (ContinuousSpawning.Instance.continuousSpawningScores[vesselName].spawnCount - 1)}) ");
+                }
+            }
             VSEntryString.Append(vesselName);
             if (BDArmorySettings.HALL_OF_SHAME_LIST.Contains(vesselName))
             {

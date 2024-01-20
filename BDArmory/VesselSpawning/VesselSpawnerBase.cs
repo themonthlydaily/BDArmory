@@ -52,7 +52,7 @@ namespace BDArmory.VesselSpawning
     public abstract class VesselSpawnerBase : MonoBehaviour
     {
         protected static string AutoSpawnPath;
-        protected static readonly string AutoSpawnFolder = "AutoSpawn";
+        public static readonly string AutoSpawnFolder = "AutoSpawn";
         public bool vesselsSpawning { get { return _vesselsSpawning; } set { _vesselsSpawning = value; VesselSpawnerStatus.vesselsSpawning = value; } }
         bool _vesselsSpawning = false;
         public bool vesselSpawnSuccess { get { return _vesselSpawnSuccess; } set { _vesselSpawnSuccess = value; VesselSpawnerStatus.vesselSpawnSuccess = value; } }
