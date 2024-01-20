@@ -440,6 +440,40 @@ namespace BDArmory.Targeting
                         }
                     }
 
+                    if (radarLock)
+                    {
+                        UpdateRadarLock();
+                    }
+
+                    if (groundStabilized)
+                    {
+                        if (lockedVessel != null)
+                            groundTargetPosition = lockedVessel.CoM;
+                        else
+                            groundTargetPosition = VectorUtils.GetWorldSurfacePostion(bodyRelativeGTP, vessel.mainBody);//vessel.mainBody.GetWorldSurfacePosition(bodyRelativeGTP.x, bodyRelativeGTP.y, bodyRelativeGTP.z);
+
+                        Vector3 lookVector = groundTargetPosition - cameraParentTransform.position;
+                        //cameraParentTransform.rotation = Quaternion.LookRotation(lookVector);
+                        PointCameraModel(lookVector);
+                    }
+
+                    Vector3 lookDirection = cameraParentTransform.forward;
+                    if (Vector3.Angle(lookDirection, cameraParentTransform.parent.forward) > gimbalLimit)
+                    {
+                        lookDirection = Vector3.RotateTowards(cameraParentTransform.transform.parent.forward, lookDirection, gimbalLimit * Mathf.Deg2Rad, 0);
+                        gimbalLimitReached = true;
+                        lockedVessel = null;
+                    }
+                    else
+                    {
+                        gimbalLimitReached = false;
+                    }
+
+                    if (!groundStabilized || gimbalLimitReached)
+                    {
+                        PointCameraModel(lookDirection);
+                    }    
+
                     if (eyeHolderTransform)
                     {
                         Vector3 projectedForward = cameraParentTransform.forward.ProjectOnPlanePreNormalized(eyeHolderTransform.parent.up);
@@ -450,6 +484,7 @@ namespace BDArmory.Targeting
                     }
 
                     UpdateControls();
+                    UpdateSlaveData();
                 }
             }
         }
@@ -483,45 +518,7 @@ namespace BDArmory.Targeting
                     }
                     if (TargetingCamera.ReadyForUse && vessel.IsControllable)
                     {
-                        if (!TargetingCamera.Instance || FlightGlobals.currentMainBody == null)
-                        {
-                            return;
-                        }
-
-                        if (radarLock)
-                        {
-                            UpdateRadarLock();
-                        }
-
-                        if (groundStabilized)
-                        {
-                            if (lockedVessel != null)
-                                groundTargetPosition = lockedVessel.CoM;
-                            else
-                                groundTargetPosition = VectorUtils.GetWorldSurfacePostion(bodyRelativeGTP, vessel.mainBody);//vessel.mainBody.GetWorldSurfacePosition(bodyRelativeGTP.x, bodyRelativeGTP.y, bodyRelativeGTP.z);
-
-                            Vector3 lookVector = groundTargetPosition - cameraParentTransform.position;
-                            //cameraParentTransform.rotation = Quaternion.LookRotation(lookVector);
-                            PointCameraModel(lookVector);
-                        }
-
-                        Vector3 lookDirection = cameraParentTransform.forward;
-                        if (Vector3.Angle(lookDirection, cameraParentTransform.parent.forward) > gimbalLimit)
-                        {
-                            lookDirection = Vector3.RotateTowards(cameraParentTransform.transform.parent.forward, lookDirection, gimbalLimit * Mathf.Deg2Rad, 0);
-                            gimbalLimitReached = true;
-                            lockedVessel = null;
-                        }
-                        else
-                        {
-                            gimbalLimitReached = false;
-                        }
-
-                        if (!groundStabilized || gimbalLimitReached)
-                        {
-                            PointCameraModel(lookDirection);
-                        }
-                        UpdateSlaveData();
+                        
                     }
                 }
             }
@@ -1353,7 +1350,7 @@ namespace BDArmory.Targeting
                     {
                         if (pCheck && p.vessel.CoM != Vector3.zero)
                         {
-                            groundTargetPosition = p.vessel.CoM; // + (p.vessel.Velocity() * Time.fixedDeltaTime);
+                            groundTargetPosition = p.vessel.CoM + (p.vessel.Velocity() * Time.fixedDeltaTime);
                             StartCoroutine(StabilizeNextFrame());
                             lockedVessel = p.vessel;
                             //StartCoroutine(PointToPositionRoutine(p.vessel.CoM, p.vessel, false));
@@ -1518,7 +1515,7 @@ namespace BDArmory.Targeting
                 slewingToPosition = false;
                 yield break;
             }
-            while (!stopPTPR && Vector3.Angle(cameraParentTransform.transform.forward, position - (cameraParentTransform.transform.position)) > 0.1f)
+            while (!stopPTPR && Vector3.Angle(cameraParentTransform.transform.forward, (tgtVessel != null ? tgtVessel.CoM : position) - (cameraParentTransform.transform.position)) > 0.1f)
             {
                 if (tgtVessel != null)
                 {

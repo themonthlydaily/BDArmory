@@ -5,6 +5,7 @@
 	- Adjust timing and conditions for auto-camera switching to and away from missiles.
 	- Battle damage fuel leak rates now scale by (bullet caliber)^2, instead of (bullet caliber). Fuel leak rates for 20mm caliber remain the same, calibers higher and lower than 20mm will now have higher and lower leak rates, respectively.
 	- Make sure various pooled objects are disabled when leaving the flight scene.
+	- Fix targeting cameras not being able to track targets.
 - UI:
 	- Fix part filtering by search terms in the editors.
 	- New Opacity option in BDA Team Icons to set icon opacity.
