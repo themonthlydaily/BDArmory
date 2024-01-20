@@ -516,10 +516,6 @@ namespace BDArmory.Targeting
                     {
                         GetHitPoint();
                     }
-                    if (TargetingCamera.ReadyForUse && vessel.IsControllable)
-                    {
-                        
-                    }
                 }
             }
         }
