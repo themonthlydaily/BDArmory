@@ -1555,6 +1555,11 @@ namespace BDArmory.Control
             }
             pidAutoTuning.SetStartCoords();
             pidAutoTuning.ResetMeasurements();
+            if (FlightInputHandler.fetch.precisionMode)
+            {
+                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: Precision input mode is enabled, disabling it.");
+                FlightInputHandler.fetch.precisionMode = false; // If precision control mode is enabled, disable it.
+            }
 
             SetAutoTuneFields();
             CheatOptions.InfinitePropellant = autoTune || BDArmorySettings.INFINITE_FUEL; // Prevent fuel drain while auto-tuning.
@@ -2477,6 +2482,23 @@ namespace BDArmory.Control
 
         void FlyToPosition(FlightCtrlState s, Vector3 targetPosition, bool overrideThrottle = false)
         {
+            //test poststall (before FlightPosition is called so we're using the right steerMode)
+            float AoA = Vector3.Angle(vessel.ReferenceTransform.up, vessel.Velocity());
+            if (AoA > postStallAoA)
+            {
+                isPSM = true;
+                steerMode = SteerModes.Aiming; // Too far off-axis for the velocity direction to be relevant.
+            }
+            else
+            {
+                isPSM = false;
+            }
+            Vector3 targetDirection = (targetPosition - vesselTransform.position).normalized;
+            if (autoTune && (Vector3.Dot(targetDirection, vesselTransform.up) > 0.9397f)) // <20°
+            {
+                steerMode = SteerModes.Aiming; // Pretend to aim when on target.
+            }
+
             if (!belowMinAltitude) // Includes avoidingTerrain
             {
                 if (weaponManager && Time.time - weaponManager.timeBombReleased < 1.5f)
@@ -2486,7 +2508,8 @@ namespace BDArmory.Control
 
                 targetPosition = LongRangeAltitudeCorrection(targetPosition); //have this only trigger in atmo?
                 targetPosition = FlightPosition(targetPosition, minAltitude);
-                targetPosition = vesselTransform.position + ((targetPosition - vesselTransform.position).normalized * 100);
+                targetDirection = (targetPosition - vesselTransform.position).normalized;
+                targetPosition = vesselTransform.position + 100 * targetDirection;
             }
 
             Vector3d srfVel = vessel.Velocity();
@@ -2499,7 +2522,7 @@ namespace BDArmory.Control
             //ang vel
             Vector3 localAngVel = vessel.angularVelocity;
             //test
-            Vector3 currTargetDir = (targetPosition - vesselTransform.position).normalized;
+            Vector3 currTargetDir = targetDirection;
             if (evasionNonlinearity > 0 && (IsExtending || IsEvading || // If we're extending or evading, add a deviation to the fly-to direction to make us harder to hit.
                 (steerMode == SteerModes.NormalFlight && weaponManager && weaponManager.guardMode && // Also, if we know enemies are near, but they're beyond gun or visual range and we're not aiming.
                     BDATargetManager.TargetList(weaponManager.Team).Where(target =>
@@ -2510,42 +2533,24 @@ namespace BDArmory.Control
                     ))))
             {
                 var squigglySquidTime = 90f * (float)vessel.missionTime + 8f * Mathf.Sin((float)vessel.missionTime * 6.28f) + 16f * Mathf.Sin((float)vessel.missionTime * 3.14f); // Vary the rate around 90°/s to be more unpredictable.
-                var squigglySquidDirection = Quaternion.AngleAxis(evasionNonlinearityDirection * squigglySquidTime, currTargetDir) * upDirection.ProjectOnPlanePreNormalized(currTargetDir).normalized;
+                var squigglySquidDirection = Quaternion.AngleAxis(evasionNonlinearityDirection * squigglySquidTime, targetDirection) * upDirection.ProjectOnPlanePreNormalized(targetDirection).normalized;
 #if DEBUG
                 debugSquigglySquidDirection = squigglySquidDirection;
 #endif
-                if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Squiggly Squid: {Vector3.Angle(currTargetDir, Vector3.RotateTowards(currTargetDir, squigglySquidDirection, evasionNonlinearity * Mathf.Deg2Rad, 0f))}° at {((squigglySquidTime) % 360f).ToString("G3")}°");
-                currTargetDir = Vector3.RotateTowards(currTargetDir, squigglySquidDirection, evasionNonlinearity * Mathf.Deg2Rad, 0f);
+                if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) debugString.AppendLine($"Squiggly Squid: {Vector3.Angle(targetDirection, Vector3.RotateTowards(targetDirection, squigglySquidDirection, evasionNonlinearity * Mathf.Deg2Rad, 0f))}° at {(squigglySquidTime % 360f).ToString("G3")}°");
+                targetDirection = Vector3.RotateTowards(targetDirection, squigglySquidDirection, evasionNonlinearity * Mathf.Deg2Rad, 0f);
             }
-            Vector3 targetAngVel = Vector3.Cross(prevTargetDir, currTargetDir) / Time.fixedDeltaTime;
+            Vector3 targetAngVel = Vector3.Cross(prevTargetDir, targetDirection) / Time.fixedDeltaTime;
             Vector3 localTargetAngVel = vesselTransform.InverseTransformVector(targetAngVel);
-            prevTargetDir = currTargetDir;
-            targetPosition = vessel.transform.position + (currTargetDir * 100);
-
+            prevTargetDir = targetDirection;
+            targetPosition = vessel.transform.position + 100 * targetDirection;
             flyingToPosition = targetPosition;
-
-            //test poststall
-            float AoA = Vector3.Angle(vessel.ReferenceTransform.up, vessel.Velocity());
-            if (AoA > postStallAoA)
-            {
-                isPSM = true;
-                steerMode = SteerModes.Aiming; // Too far off-axis for the velocity direction to be relevant.
-            }
-            else
-            {
-                isPSM = false;
-            }
-
-            float angleToTarget = Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up);
-            if (autoTune && (Mathf.Abs(angleToTarget) < 20f))
-            {
-                steerMode = SteerModes.Aiming; // Pretend to aim when on target.
-            }
+            float angleToTarget = Vector3.Angle(targetDirection, vesselTransform.up);
 
             //slow down for tighter turns, unless we're already at high AoA, in which case we want more thrust
             float speedReductionFactor = 1.25f;
             float finalSpeed;
-            // float velAngleToTarget = Mathf.Clamp(Vector3.Angle(targetPosition - vesselTransform.position, vessel.Velocity()), 0, 90);
+            // float velAngleToTarget = Mathf.Clamp(Vector3.Angle(targetDirection, vessel.Velocity()), 0, 90);
             // if (vessel.atmDensity > 0.05f) finalSpeed = Mathf.Min(speedController.targetSpeed, Mathf.Clamp(maxSpeed - (speedReductionFactor * velAngleToTarget), idleSpeed, maxSpeed));
             if (!vessel.InNearVacuum()) finalSpeed = Mathf.Min(speedController.targetSpeed, Mathf.Clamp(maxSpeed - speedReductionFactor * (angleToTarget - AoA), idleSpeed, maxSpeed));
             else finalSpeed = Mathf.Min(speedController.targetSpeed, maxSpeed);
@@ -2561,32 +2566,30 @@ namespace BDArmory.Control
                 localAngVel -= localTargetAngVel;
             }
 
-            Vector3 targetDirection;
-            Vector3 targetDirectionYaw;
-            //float postYawFactor;
-            //float postPitchFactor;
+            Vector3 localTargetDirection;
+            Vector3 localTargetDirectionYaw;
             if (steerMode == SteerModes.NormalFlight || steerMode == SteerModes.Manoeuvering)
             {
-                targetDirection = velocityTransform.InverseTransformDirection(targetPosition - velocityTransform.position).normalized;
-                targetDirection = Vector3.RotateTowards(Vector3.up, targetDirection, 45 * Mathf.Deg2Rad, 0);
+                localTargetDirection = velocityTransform.InverseTransformDirection(targetPosition - velocityTransform.position).normalized;
+                localTargetDirection = Vector3.RotateTowards(Vector3.up, localTargetDirection, 45 * Mathf.Deg2Rad, 0);
 
                 if (useWaypointYawAuthority && IsRunningWaypoints)
                 {
-                    var refYawDir = Vector3.RotateTowards(Vector3.up, vesselTransform.InverseTransformDirection(targetPosition - vesselTransform.position), 25 * Mathf.Deg2Rad, 0).normalized;
+                    var refYawDir = Vector3.RotateTowards(Vector3.up, vesselTransform.InverseTransformDirection(targetDirection), 25 * Mathf.Deg2Rad, 0).normalized;
                     var velYawDir = Vector3.RotateTowards(Vector3.up, vesselTransform.InverseTransformDirection(vessel.Velocity()), 45 * Mathf.Deg2Rad, 0).normalized;
-                    targetDirectionYaw = waypointYawAuthorityStrength * refYawDir + (1f - waypointYawAuthorityStrength) * velYawDir;
+                    localTargetDirectionYaw = waypointYawAuthorityStrength * refYawDir + (1f - waypointYawAuthorityStrength) * velYawDir;
                 }
                 else
                 {
-                    targetDirectionYaw = vesselTransform.InverseTransformDirection(vessel.Velocity()).normalized;
-                    targetDirectionYaw = Vector3.RotateTowards(Vector3.up, targetDirectionYaw, 45 * Mathf.Deg2Rad, 0);
+                    localTargetDirectionYaw = vesselTransform.InverseTransformDirection(vessel.Velocity()).normalized;
+                    localTargetDirectionYaw = Vector3.RotateTowards(Vector3.up, localTargetDirectionYaw, 45 * Mathf.Deg2Rad, 0);
                 }
             }
             else//(steerMode == SteerModes.Aiming)
             {
-                targetDirection = vesselTransform.InverseTransformDirection(targetPosition - vesselTransform.position).normalized;
-                targetDirection = Vector3.RotateTowards(Vector3.up, targetDirection, 25 * Mathf.Deg2Rad, 0);
-                targetDirectionYaw = targetDirection;
+                localTargetDirection = vesselTransform.InverseTransformDirection(targetDirection).normalized;
+                localTargetDirection = Vector3.RotateTowards(Vector3.up, localTargetDirection, 25 * Mathf.Deg2Rad, 0);
+                localTargetDirectionYaw = localTargetDirection;
             }
 
             //// Adjust targetDirection based on ATTITUDE limits
@@ -2639,7 +2642,7 @@ namespace BDArmory.Control
                 }
                 if (postTerrainAvoidanceCoolDownTimer >= 0 && postTerrainAvoidanceCoolDownDuration > 0)
                 {
-                    targetDirection = Vector3.RotateTowards(targetDirection, Vector3.forward, (terrainAvoidanceRollCosAngle < terrainAvoidanceCriticalCosAngle ? 30f : -30f) * Mathf.Deg2Rad * Mathf.Clamp01(1f - postTerrainAvoidanceCoolDownTimer / postTerrainAvoidanceCoolDownDuration), 0);
+                    localTargetDirection = Vector3.RotateTowards(localTargetDirection, Vector3.forward, (terrainAvoidanceRollCosAngle < terrainAvoidanceCriticalCosAngle ? 30f : -30f) * Mathf.Deg2Rad * Mathf.Clamp01(1f - postTerrainAvoidanceCoolDownTimer / postTerrainAvoidanceCoolDownDuration), 0);
                 }
             }
             else if (belowMinAltitude && !gainAltInhibited)
@@ -2701,14 +2704,14 @@ namespace BDArmory.Control
                 rollTarget = Vector3.RotateTowards(horizonNormal, rollTarget, maxBank / 180 * Mathf.PI, 0.0f);
             bankAngle = Vector3.SignedAngle(horizonNormal, rollTarget, vesselTransform.up);
 
-            float pitchError = VectorUtils.SignedAngle(Vector3.up, targetDirection.ProjectOnPlanePreNormalized(Vector3.right), Vector3.back);
-            float yawError = VectorUtils.SignedAngle(Vector3.up, targetDirectionYaw.ProjectOnPlanePreNormalized(Vector3.forward), Vector3.right);
+            float pitchError = VectorUtils.SignedAngle(Vector3.up, localTargetDirection.ProjectOnPlanePreNormalized(Vector3.right), Vector3.back);
+            float yawError = VectorUtils.SignedAngle(Vector3.up, localTargetDirectionYaw.ProjectOnPlanePreNormalized(Vector3.forward), Vector3.right);
             float rollError = BDAMath.SignedAngle(currentRoll, rollTarget, vesselTransform.right);
 
             if (BDArmorySettings.DEBUG_LINES)
             {
-                debugTargetPosition = vessel.transform.position + (targetPosition - vesselTransform.position) * 1000; // The asked for target position
-                debugTargetDirection = vessel.transform.position + vesselTransform.TransformDirection(targetDirection) * 200; // The actual direction to match the "up" direction of the craft with for pitch (used for PID calculations).
+                debugTargetPosition = vessel.transform.position + targetDirection * 1000; // The asked for target position's direction
+                debugTargetDirection = vessel.transform.position + vesselTransform.TransformDirection(localTargetDirection) * 200; // The actual direction to match the "up" direction of the craft with for pitch (used for PID calculations).
             }
 
             #region PID calculations
@@ -4693,7 +4696,7 @@ namespace BDArmory.Control
 
             public void Update()
             {
-                rollRelevance = rollRelevanceMomentum * rollRelevance + (1f - rollRelevanceMomentum) * Mathf.Min(_rollRelevance.Average(), 0.5f); // Clamp roll relevance to at most 0.5 in case of freak measurements.
+                rollRelevance = rollRelevanceMomentum * rollRelevance + (1f - rollRelevanceMomentum) * Mathf.Min(_rollRelevance.Average(), 1f); // Clamp roll relevance to at most 1 in case of freak measurements.
                 _rollRelevance.Clear();
             }
 
