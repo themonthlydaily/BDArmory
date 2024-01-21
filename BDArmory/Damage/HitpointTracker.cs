@@ -455,7 +455,7 @@ namespace BDArmory.Damage
             //if (armorVolume < 0) //check already occurs 429, doubling it results in the PartSize vector3 returning null
             calcPartSize();
             SetupPrefab();
-            if (HighLogic.LoadedSceneIsEditor && !isProcWing)
+            if (!isProcWing)
             {
                 var r = part.GetComponentsInChildren<Renderer>();
                 {
