@@ -13,6 +13,7 @@ using BDArmory.Utils;
 using BDArmory.Weapons;
 using BDArmory.Weapons.Missiles;
 using BDArmory.Damage;
+using static UnityEngine.ParticleSystem;
 
 
 namespace BDArmory.Radar
@@ -1136,6 +1137,7 @@ namespace BDArmory.Radar
                             {
                                 if (r[i].material.shader.name.Contains("Alpha")) continue;
                                 if (r[i].material.shader.name.Contains("Waterfall")) continue;
+                                if (r[i].material.shader.name.Contains("KSP/Particles/Additive")) continue;
                                 r[i].material.shader = RCSshader;
                                 r[i].material.SetVector("_LIGHTDIR", -cameraDirection);
                                 r[i].material.SetColor("_RCSCOLOR", Color.white);
