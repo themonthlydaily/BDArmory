@@ -2167,6 +2167,7 @@ namespace BDArmory.Competition
         IEnumerator AutoQuitCoroutine(float delay = 1)
         {
             yield return new WaitForSeconds(delay);
+            SpawnUtils.CancelSpawning(); // Make sure any current spawning is stopped.
             HighLogic.LoadScene(GameScenes.MAINMENU);
             yield return new WaitForSeconds(0.5f); // Pause on the Main Menu a moment, then quit.
             Debug.Log("[BDArmory.BDATournament]: Quitting KSP.");
