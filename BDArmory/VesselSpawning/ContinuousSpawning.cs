@@ -205,6 +205,7 @@ namespace BDArmory.VesselSpawning
                     }
                     while (craftToSpawn.Count + currentlySpawningCount + currentlyActive < spawnSlots.Count && spawnQueue.Count > 0)
                         craftToSpawn.Enqueue(spawnQueue.Dequeue());
+#if DEBUG
                     if (BDArmorySettings.DEBUG_SPAWNING)
                     {
                         var missing = spawnConfig.craftFiles.Where(craftURL => craftURLToVesselName.ContainsKey(craftURL) && (!spawnCounts.ContainsKey(craftURL) || spawnCounts[craftURL] < BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL) && !craftToSpawn.Contains(craftURL) && !FlightGlobals.Vessels.Where(v => !VesselModuleRegistry.ignoredVesselTypes.Contains(v.vesselType) && VesselModuleRegistry.GetModuleCount<MissileFire>(v) > 0).Select(v => v.vesselName).Contains(craftURLToVesselName[craftURL])).ToList();
@@ -213,6 +214,7 @@ namespace BDArmory.VesselSpawning
                             LogMessage("MISSING vessels: " + string.Join(", ", craftURLToVesselName.Where(c => missing.Contains(c.Key)).Select(c => c.Value)), false);
                         }
                     }
+#endif
                     if (craftToSpawn.Count > 0)
                     {
                         VesselModuleRegistry.CleanRegistries(); // Clean out any old entries.
