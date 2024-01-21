@@ -121,6 +121,8 @@ namespace BDArmory.Damage
         [KSPField(isPersistant = true)]
         public float SafeUseTemp;
         [KSPField(isPersistant = true)]
+        public float radarReflectivity;
+        [KSPField(isPersistant = true)]
         public float Cost;
 
         [KSPField(isPersistant = true)]
@@ -164,6 +166,9 @@ namespace BDArmory.Damage
 
         AttachNode bottom;
         AttachNode top;
+
+        private float hullRadarReturnFactor = 1;
+        private float armorRadarReturnFactor = 1;
 
         public List<Shader> defaultShader;
         public List<Color> defaultColor;
@@ -1260,6 +1265,7 @@ namespace BDArmory.Damage
                 Hardness = armorInfo.Hardness;
                 Strength = armorInfo.Strength;
                 SafeUseTemp = armorInfo.SafeUseTemp;
+                armorRadarReturnFactor = 1;
 
                 vFactor = armorInfo.vFactor;
                 muParam1 = armorInfo.muParam1;
@@ -1370,6 +1376,7 @@ namespace BDArmory.Damage
                 part.skinInternalConductionMult = skinInternalConduction * BDAMath.Sqrt(Diffusivity / 237); //how well does the armor allow external heat to flow into the part internals?
                 part.skinSkinConductionMult = skinskinConduction * BDAMath.Sqrt(Diffusivity / 237); //how well does the armor conduct heat to connected part skins?
                 part.skinMassPerArea = (Density / 1000) * ArmorThickness;
+                armorRadarReturnFactor = armorInfo.radarReflectivity;
             }
             if (ArmorTypeNum == (ArmorInfo.armors.FindIndex(t => t.name == "None") + 1) && ArmorPanel)
             {
@@ -1380,7 +1387,9 @@ namespace BDArmory.Damage
                 part.skinInternalConductionMult = skinInternalConduction * BDAMath.Sqrt(Diffusivity / 237); //how well does the armor allow external heat to flow into the part internals?
                 part.skinSkinConductionMult = skinskinConduction * BDAMath.Sqrt(Diffusivity / 237); //how well does the armor conduct heat to connected part skins?
                 part.skinMassPerArea = (Density / 1000) * ArmorThickness;
+                armorRadarReturnFactor = armorInfo.radarReflectivity;
             }
+            CalculateRCSreduction();
             totalArmorQty = armorMass; //grabbing a copy of unmodified armorMAss so it can be used in armorMass' place for armor reduction without having to un/re-modify the mass before and after armor hits
             armorMass *= BDArmorySettings.ARMOR_MASS_MOD;
             //part.RefreshAssociatedWindows(); //having this fire every time a change happens prevents sliders from being used. Add delay timer?
@@ -1540,7 +1549,9 @@ namespace BDArmory.Damage
             part.breakingTorque = maxTorque;
             maxG = part.partInfo.partPrefab.gTolerance * hullInfo.ImpactMod;
             part.gTolerance = maxG;
+            hullRadarReturnFactor = hullInfo.radarMod; 
             hullType = hullInfo.name;
+            CalculateRCSreduction();
             float partCost = part.partInfo.cost + part.partInfo.variant.Cost;
             if (hullInfo.costMod < 1) HullCostAdjust = Mathf.Max((partCost - (float)resourceCost) * hullInfo.costMod, partCost - (1000 - (hullInfo.costMod * 1000))) - (partCost - (float)resourceCost);//max of 1000 funds discount on cheaper materials
             else HullCostAdjust = Mathf.Min((partCost - (float)resourceCost) * hullInfo.costMod, (partCost - (float)resourceCost) + (hullInfo.costMod * 1000)) - (partCost - (float)resourceCost); //Increase costs if costMod => 1                                                                                                                                                             
@@ -1556,6 +1567,34 @@ namespace BDArmory.Damage
                     GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
             }
             _hullConfigured = true;
+        }
+        private void CalculateRCSreduction()
+        {
+            if (ArmorTypeNum > 1 && Armor > 0) //if ArmorType != None and armor thickness != 0
+            {
+                //float radarReflected = 1 - (armorRadarReturnFactor * (1 + Mathf.Log(Mathf.Max(Armor, 1), 100f))) //FIXME - this is busted, needs review
+                //vv less than ideal, but works for v1.0
+                float radarReflected = Armor < 10 ? armorRadarReturnFactor + ((1 - armorRadarReturnFactor) / 10) * (10 - Armor) : armorRadarReturnFactor;//armor < 10 will have reduced radar absorbsion, else
+                //reflector armor/ translucent armor reflecting subsurface structure/RAM thicker than it needs to be, no change;
+                if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.HitpointTracker] radarReflectivity for {part.name} is {armorRadarReturnFactor}; radarRefected {radarReflected}");
+                radarReflectivity = radarReflected; //radar return based on armor material
+                if (radarReflected > 1) //radar-translucent armor...
+                {
+                    if (hullRadarReturnFactor < 1) // w/ radar absorbent structural elements
+                        radarReflectivity = 1 - (hullRadarReturnFactor * (radarReflected - 1));
+                    if (hullRadarReturnFactor < 1) // w/ radar reflective structural elements
+                        radarReflectivity = 1 - (hullRadarReturnFactor * (1 - radarReflected));
+                }
+            }
+            else //(ArmorTypeNum < 1 || Armor < 1) //no armor, radar return based on hull material
+            {
+                radarReflectivity = hullRadarReturnFactor;
+            }
+            if (radarReflectivity > 2 || radarReflectivity < 0) // goes up to 2 in case of radar reflectors/anti-stealth coatings, etc
+            {
+                radarReflectivity = Mathf.Clamp(radarReflectivity, 0, 2);
+            }
+            if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[ARMOR]: Radar return rating is " + radarReflectivity);
         }
         private List<PartResource> GetResources()
         {
