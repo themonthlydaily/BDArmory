@@ -34,6 +34,12 @@ namespace BDArmory.Weapons.Missiles
         public float pronavGain = 3f;
 
         [KSPField]
+        public float gLimit = -1;
+
+        [KSPField]
+        public float gMargin = -1;
+
+        [KSPField]
         public string targetingType = "none";
 
         [KSPField]
@@ -327,7 +333,6 @@ namespace BDArmory.Weapons.Missiles
         private float burnedFuelMass = 0;
 
         public bool SetupComplete => StartSetupComplete;
-        public int loftState = 0;
         public float initMaxAoA = 0;
         public SmoothingF smoothedAoA;
         #endregion Variable Declarations
@@ -482,7 +487,7 @@ namespace BDArmory.Weapons.Missiles
                 dragArea = liftArea;
             }
 
-            loftState = 0;
+            loftState = LoftStates.Boost;
             TimeToImpact = float.PositiveInfinity;
             initMaxAoA = maxAoA;
             terminalHomingActive = false;
@@ -1189,6 +1194,8 @@ namespace BDArmory.Weapons.Missiles
             ml.engageGround = engageGround;
             ml.engageMissile = engageMissile;
             ml.engageSLW = engageSLW;
+            ml.gLimit = gLimit;
+            ml.gMargin = gMargin;
 
             if (GuidanceMode == GuidanceModes.AGMBallistic)
             {
@@ -1216,7 +1223,7 @@ namespace BDArmory.Weapons.Missiles
                 ml.terminalHomingRange = terminalHomingRange;
                 ml.homingModeTerminal = homingModeTerminal;
                 ml.pronavGain = pronavGain;
-                ml.loftState = 0;
+                ml.loftState = LoftStates.Boost;
                 ml.TimeToImpact = float.PositiveInfinity;
                 ml.initMaxAoA = maxAoA;
             }
@@ -1224,6 +1231,16 @@ namespace BDArmory.Weapons.Missiles
                             ml.pronavGain = pronavGain;*/
             if (GuidanceMode == GuidanceModes.APN || GuidanceMode == GuidanceModes.PN)
                 ml.pronavGain = pronavGain;
+
+            if (GuidanceMode == GuidanceModes.Kappa)
+            {
+                ml.kappaAngle = kappaAngle;
+                ml.LoftAngle = LoftAngle;
+                ml.loftState = LoftStates.Boost;
+                ml.LoftTermAngle = LoftTermAngle;
+                ml.LoftMaxAltitude = LoftMaxAltitude;
+                ml.LoftRangeOverride = LoftRangeOverride;
+            }
 
             ml.terminalHoming = terminalHoming;
             if (terminalHoming)
@@ -1252,12 +1269,22 @@ namespace BDArmory.Weapons.Missiles
                     ml.LoftVertVelComp = LoftVertVelComp;
                     //ml.LoftAltComp = LoftAltComp;
                     ml.pronavGain = pronavGain;
-                    ml.loftState = 0;
+                    ml.loftState = LoftStates.Boost;
                     ml.TimeToImpact = float.PositiveInfinity;
                     ml.initMaxAoA = maxAoA;
                 }
                 if (homingModeTerminal == GuidanceModes.APN || homingModeTerminal == GuidanceModes.PN)
                     ml.pronavGain = pronavGain;
+
+                if (homingModeTerminal == GuidanceModes.Kappa)
+                {
+                    ml.kappaAngle = kappaAngle;
+                    ml.LoftAngle = LoftAngle;
+                    ml.loftState = LoftStates.Boost;
+                    ml.LoftTermAngle = LoftTermAngle;
+                    ml.LoftMaxAltitude = LoftMaxAltitude;
+                    ml.LoftRangeOverride = LoftRangeOverride;
+                }
 
                 ml.terminalHomingRange = terminalHomingRange;
                 ml.homingModeTerminal = homingModeTerminal;
@@ -1753,6 +1780,7 @@ namespace BDArmory.Weapons.Missiles
                         case GuidanceModes.PN:
                         case GuidanceModes.AAMLoft:
                         case GuidanceModes.AAMPure:
+                        case GuidanceModes.Kappa:
                             //GuidanceModes.AAMHybrid:
                             AAMGuidance();
                             break;
@@ -2443,6 +2471,8 @@ namespace BDArmory.Weapons.Missiles
         void AAMGuidance()
         {
             Vector3 aamTarget = TargetPosition;
+            float currgLimit = -1;
+
             if (TargetAcquired)
             {
                 if (warheadType == WarheadTypes.ContinuousRod) //Have CR missiles target slightly above target to ensure craft caught in planar blast AOE
@@ -2456,13 +2486,15 @@ namespace BDArmory.Weapons.Missiles
                 {
                     case GuidanceModes.APN:
                         {
-                            aamTarget = MissileGuidance.GetAPNTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, pronavGain, out timeToImpact);
+                            aamTarget = MissileGuidance.GetAPNTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, pronavGain, out timeToImpact, out currgLimit);
+                            TimeToImpact = timeToImpact;
                             break;
                         }
 
                     case GuidanceModes.PN: // Pro-Nav
                         {
-                            aamTarget = MissileGuidance.GetPNTarget(TargetPosition, TargetVelocity, vessel, pronavGain, out timeToImpact);
+                            aamTarget = MissileGuidance.GetPNTarget(TargetPosition, TargetVelocity, vessel, pronavGain, out timeToImpact, out currgLimit);
+                            TimeToImpact = timeToImpact;
                             break;
                         }
                     case GuidanceModes.AAMLoft:
@@ -2472,16 +2504,17 @@ namespace BDArmory.Weapons.Missiles
                             if (TimeToImpact == float.PositiveInfinity)
                             {
                                 // If the missile is not in a vaccuum, is above LoftMinAltitude and has an angle to target below the climb angle (or 90 - climb angle if climb angle > 45) (in this case, since it's angle from the vertical the check is if it's > 90f - LoftAngle) and is either is at a lower altitude than targetAlt + LoftAltitudeAdvMax or further than LoftRangeOverride, then loft.
-                                if (!vessel.InVacuum() && (vessel.altitude >= LoftMinAltitude) && Vector3.Angle(TargetPosition - vessel.transform.position, vessel.up) > Mathf.Min(LoftAngle, 90f - LoftAngle) && ((vessel.altitude - targetAlt <= LoftAltitudeAdvMax) || (TargetPosition - vessel.transform.position).sqrMagnitude > (LoftRangeOverride * LoftRangeOverride))) loftState = 0;
-                                else loftState = 3;
+                                if (!vessel.InVacuum() && (vessel.altitude >= LoftMinAltitude) && Vector3.Angle(TargetPosition - vessel.CoM, vessel.upAxis) > Mathf.Min(LoftAngle, 90f - LoftAngle) && ((vessel.altitude - targetAlt <= LoftAltitudeAdvMax) || (TargetPosition - vessel.CoM).sqrMagnitude > (LoftRangeOverride * LoftRangeOverride))) loftState = LoftStates.Boost;
+                                else loftState = LoftStates.Terminal;
                             }
 
                             //aamTarget = MissileGuidance.GetAirToAirLoftTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, targetAlt, LoftMaxAltitude, LoftRangeFac, LoftAltComp, LoftVelComp, LoftAngle, LoftTermAngle, terminalHomingRange, ref loftState, out float currTimeToImpact, out float rangeToTarget, optimumAirspeed);
-                            aamTarget = MissileGuidance.GetAirToAirLoftTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, targetAlt, LoftMaxAltitude, LoftRangeFac, LoftVertVelComp, LoftVelComp, LoftAngle, LoftTermAngle, terminalHomingRange, ref loftState, out float currTimeToImpact, out float rangeToTarget, homingModeTerminal, pronavGain, optimumAirspeed);
+                            aamTarget = MissileGuidance.GetAirToAirLoftTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, targetAlt, LoftMaxAltitude, LoftRangeFac, LoftVertVelComp, LoftVelComp, LoftAngle, LoftTermAngle, terminalHomingRange, ref loftState, out float currTimeToImpact, out currgLimit, out float rangeToTarget, homingModeTerminal, pronavGain, optimumAirspeed);
 
-                            float fac = (1 - (rangeToTarget - terminalHomingRange) / Mathf.Clamp(terminalHomingRange * 4f, 5000f, 25000f));
+                            float fac = (1 - (rangeToTarget - terminalHomingRange - 100f) / Mathf.Clamp(terminalHomingRange * 4f, 5000f, 25000f));
 
-                            maxAoA = Mathf.Clamp(initMaxAoA * fac, 4f, initMaxAoA);
+                            if (loftState > LoftStates.Boost)
+                                maxAoA = Mathf.Clamp(initMaxAoA * fac, 4f, initMaxAoA);
 
                             TimeToImpact = currTimeToImpact;
 
@@ -2504,6 +2537,14 @@ namespace BDArmory.Weapons.Missiles
                     case GuidanceModes.AAMLead:
                         {
                             aamTarget = MissileGuidance.GetAirToAirTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, out timeToImpact, optimumAirspeed);
+                            TimeToImpact = timeToImpact;
+                            break;
+                        }
+
+                    case GuidanceModes.Kappa:
+                        {
+                            aamTarget = MissileGuidance.GetKappaTarget(TargetPosition, TargetVelocity, this, MissileState == MissileStates.PostThrust ? 0f : currentThrust * Throttle, kappaAngle, terminalHomingRange, LoftAngle, LoftTermAngle, LoftRangeOverride, LoftMaxAltitude, out timeToImpact, out currgLimit, ref loftState);
+                            TimeToImpact = timeToImpact;
                             break;
                         }
                 }
@@ -2531,7 +2572,7 @@ namespace BDArmory.Weapons.Missiles
 
             if (TimeIndex > dropTime + 0.25f)
             {
-                DoAero(aamTarget);
+                DoAero(aamTarget, currgLimit);
                 CheckMiss();
             }
 
@@ -2604,9 +2645,22 @@ namespace BDArmory.Weapons.Missiles
 
         }
 
-        void DoAero(Vector3 targetPosition)
+        void DoAero(Vector3 targetPosition, float currgLimit = -1)
         {
-            aeroTorque = MissileGuidance.DoAeroForces(this, targetPosition, liftArea, dragArea, controlAuthority * steerMult, aeroTorque, finalMaxTorque, maxAoA, MissileGuidance.DefaultLiftCurve, MissileGuidance.DefaultDragCurve);
+            if (currgLimit < 0 || currgLimit > gLimit)
+            {
+                currgLimit = gLimit;
+            }
+
+            float currAoALimit = maxAoA;
+
+            if (currgLimit > 0)
+            {
+                currAoALimit = MissileGuidance.getGLimit(this, MissileState == MissileStates.PostThrust ? 0f : currentThrust * Throttle, currgLimit, gMargin);
+                if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher]: maxAoA: {maxAoA}, currAoALimit: {currAoALimit}, currgLimit: {currgLimit}");
+            }
+
+            aeroTorque = MissileGuidance.DoAeroForces(this, targetPosition, liftArea, dragArea, controlAuthority * steerMult, aeroTorque, finalMaxTorque, currAoALimit, MissileGuidance.DefaultLiftCurve, MissileGuidance.DefaultDragCurve);
         }
 
         void AGMBallisticGuidance()
@@ -3059,6 +3113,10 @@ namespace BDArmory.Weapons.Missiles
                     GuidanceMode = GuidanceModes.APN;
                     break;
 
+                case "kappa":
+                    GuidanceMode = GuidanceModes.Kappa;
+                    break;
+
                 default:
                     GuidanceMode = GuidanceModes.None;
                     break;
@@ -3185,6 +3243,10 @@ namespace BDArmory.Weapons.Missiles
 
                 case "augpronav":
                     homingModeTerminal = GuidanceModes.APN;
+                    break;
+
+                case "kappa":
+                    homingModeTerminal = GuidanceModes.Kappa;
                     break;
 
                 default:
