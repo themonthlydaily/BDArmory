@@ -1135,6 +1135,7 @@ namespace BDArmory.Radar
                             for (int i = 0; i < r.Length; i++)
                             {
                                 if (r[i].material.shader.name.Contains("Alpha")) continue;
+                                if (r[i].material.shader.name.Contains("Waterfall")) continue;
                                 r[i].material.shader = RCSshader;
                                 r[i].material.SetVector("_LIGHTDIR", -cameraDirection);
                                 r[i].material.SetColor("_RCSCOLOR", Color.white);
