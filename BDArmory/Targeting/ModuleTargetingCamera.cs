@@ -1296,23 +1296,6 @@ namespace BDArmory.Targeting
             //fov = zoomFovs[currentFovIndex];
         }
 
-        GameObject debugSphere;
-
-        void CreateDebugSphere()
-        {
-            debugSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            debugSphere.GetComponent<Collider>().enabled = false;
-        }
-
-        void MoveDebugSphere()
-        {
-            if (!debugSphere)
-            {
-                CreateDebugSphere();
-            }
-            debugSphere.transform.position = groundTargetPosition;
-        }
-
         public void GroundStabilize()
         {
             if (vessel.packed) return;
@@ -1386,11 +1369,6 @@ namespace BDArmory.Targeting
                         }
                     }
                 }
-            }
-
-            if (BDArmorySettings.DEBUG_RADAR)
-            {
-                MoveDebugSphere();
             }
         }
 

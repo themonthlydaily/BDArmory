@@ -420,6 +420,7 @@ namespace BDArmory.Radar
 
                     ti.radarBaseSignatureNeedsUpdate = false;
                     ti.radarSignatureMatrixNeedsUpdate = false;
+                    return ti;
                 }
             }
 

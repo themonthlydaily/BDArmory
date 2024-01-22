@@ -54,12 +54,16 @@ namespace BDArmory.GameModes
 
         public void EnableMutator(string name = "def") //FIXME - when using apply on timer and !apply global, this NREs
         {
+            Debug.Log("[BDArmory.BDAMutator]:starting EnableMutator (" + name + ") on " + part.vessel.GetName());
+            if (string.IsNullOrEmpty(name)) name = "def";
             if (mutatorEnabled) //replace current mutator with new one
             {
+                Debug.Log("[BDArmory.BDAMutator]:Mutator active! disabling");
                 DisableMutator();
             }
             if (name == "def") //mutator not specified, randomly choose from selected mutators
             {
+                if (BDArmorySettings.MUTATOR_LIST.Count == 0) return;
                 var indices = Enumerable.Range(0, BDArmorySettings.MUTATOR_LIST.Count).ToList();
                 indices.Shuffle();
                 name = string.Join("; ", indices.Take(BDArmorySettings.MUTATOR_APPLY_NUM).Select(i => MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name));
@@ -251,9 +255,9 @@ namespace BDArmory.GameModes
                 while (part.MoveNext())
                 {
                     var HPT = part.Current.FindModuleImplementing<HitpointTracker>();
-                    HPT.defenseMutator = 1;
+                    if (HPT != null) HPT.defenseMutator = 1;
                     var MM = part.Current.FindModuleImplementing<ModuleMassAdjust>();
-                    part.Current.RemoveModule(MM);
+                    if (MM != null) part.Current.RemoveModule(MM);
                 }
             if (Vengeance)
             {
@@ -313,9 +317,11 @@ namespace BDArmory.GameModes
                                 int Tax = ResourceTax.Count;
                                 if (Tax >= 1)
                                 {
+                                    Debug.Log("[BDArmory.BDAMutator]: Starting ResourceTax");
                                     for (int i = 0; i < Tax; i++)
                                     {
                                         part.RequestResource(ResourceTax[i], TaxRate, ResourceFlowMode.ALL_VESSEL);
+                                        Debug.Log($"[BDArmory.BDAMutator]: Taxing {ResourceTax[i]} to the tune of {TaxRate}");
                                     }
                                 }
                             }
@@ -326,7 +332,7 @@ namespace BDArmory.GameModes
                         }
                     }
                 }
-                if (Regen != 0 || TaxRate != 0)
+                if (hasTaxes || Regen != 0)
                 {
                     if (Accumulator > 5)
                     {

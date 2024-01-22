@@ -553,6 +553,17 @@ namespace BDArmory.Competition
                                             engine.Current.thrustPercentage = BDArmorySettings.HOS_THRUST;
                                         }
                                 }
+                                if (!string.IsNullOrEmpty(BDArmorySettings.HOS_MUTATOR))
+                                {
+                                    var MM = pilot.vessel.rootPart.FindModuleImplementing<BDAMutator>();
+                                    if (MM == null)
+                                    {
+                                        MM = (BDAMutator)pilot.vessel.rootPart.AddModule("BDAMutator");
+                                        if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode]: adding Mutator module {pilot.vessel.vesselName}");
+                                    }
+                                    if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode]: Applying ({BDArmorySettings.HOS_MUTATOR})");
+                                    MM.EnableMutator(BDArmorySettings.HOS_MUTATOR);
+                                }
                             }
                     }
                 }
@@ -980,9 +991,8 @@ namespace BDArmory.Competition
             if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: MutatorMode enabled; Mutator count = " + BDArmorySettings.MUTATOR_LIST.Count);
             var indices = Enumerable.Range(0, BDArmorySettings.MUTATOR_LIST.Count).ToList();
             indices.Shuffle();
-            currentMutator = string.Join("; ", indices.Take(BDArmorySettings.MUTATOR_APPLY_NUM).Select(i => MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name));
-
-            if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: current mutators: " + currentMutator);
+            currentMutator = string.Join("; ", indices.Take(BDArmorySettings.MUTATOR_APPLY_NUM).Select(i => MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name)); //no check if mutator_list contains a mutator not defined in the loaded mutatordefs
+            if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode: {CompetitionID.ToString()}: current mutators: {currentMutator}");
             MutatorResetTime = Planetarium.GetUniversalTime();
             if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //selected mutator applied globally
             {
@@ -1807,6 +1817,15 @@ namespace BDArmory.Competition
                                                         }
                                                     }
                                                 }
+                                            if (!string.IsNullOrEmpty(BDArmorySettings.HOS_MUTATOR))
+                                            {
+                                                var MM = pilot.vessel.rootPart.FindModuleImplementing<BDAMutator>();
+                                                if (MM == null)
+                                                {
+                                                    MM = (BDAMutator)pilot.vessel.rootPart.AddModule("BDAMutator");
+                                                }
+                                                    MM.EnableMutator(BDArmorySettings.HOS_MUTATOR);
+                                            }
                                         }
                                     }
                                 }

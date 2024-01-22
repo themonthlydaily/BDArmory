@@ -271,6 +271,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static float HOS_DMG = 0;
         [BDAPersistentSettingsField] public static float HOS_THRUST = 0;
         [BDAPersistentSettingsField] public static bool HOS_SAS = false;
+        [BDAPersistentSettingsField] public static string HOS_MUTATOR = "";
         [BDAPersistentSettingsField] public static string HOS_BADGE = "";
         #endregion
 
