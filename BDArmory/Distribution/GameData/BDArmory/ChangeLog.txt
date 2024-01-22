@@ -57,6 +57,7 @@
 	- Add an option to automatically resume continuous spawn and to automatically shutdown KSP when continuous spawn ends due to having fewer than 2 craft left.
 	- Update the continuous spawn log parser to handle multiple files, either separately or combined.
 	- Bias the continuous spawn's "bubble shuffle" to prioritise craft with fewer spawns.
+	- Hide the ALIVE / DEAD string in continuous spawn when the UI is hidden.
 
 v1.6.9.0
 IMPROVEMENTS / FIXES
