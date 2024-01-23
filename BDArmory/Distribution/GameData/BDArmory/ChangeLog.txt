@@ -25,6 +25,7 @@
 	- Add Smoke CM timing/interal/repetition settings.
   - Fix the missile evasion direction using the wrong reference frame.
   - Automatically disable precision input mode when auto-tuning (UI element doesn't switch though).
+	- Add a slider for priotizing using brakes to slow down when braking is allowed.
 - Armor/Hull:
   - Radar stealth coatings - can now apply radar absorbent/reflective materials on a per-part basis.
 	  - Armor coatings less than 10mm thick will provide lessened benefits.

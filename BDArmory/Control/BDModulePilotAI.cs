@@ -252,38 +252,43 @@ namespace BDArmory.Control
         #region Speeds
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MaxSpeed", //Max Speed
             groupName = "pilotAI_Speeds", groupDisplayName = "#LOC_BDArmory_PilotAI_Speeds", groupStartCollapsed = true),
-            UI_FloatRange(minValue = 50f, maxValue = 800f, stepIncrement = 5.0f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 50f, maxValue = 800f, stepIncrement = 5f, scene = UI_Scene.All)]
         public float maxSpeed = 350;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TakeOffSpeed", //TakeOff Speed
             groupName = "pilotAI_Speeds", groupDisplayName = "#LOC_BDArmory_PilotAI_Speeds", groupStartCollapsed = true),
-            UI_FloatRange(minValue = 10f, maxValue = 200f, stepIncrement = 1.0f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 10f, maxValue = 200f, stepIncrement = 1f, scene = UI_Scene.All)]
         public float takeOffSpeed = 60;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MinSpeed", //MinCombatSpeed
             groupName = "pilotAI_Speeds", groupDisplayName = "#LOC_BDArmory_PilotAI_Speeds", groupStartCollapsed = true),
-            UI_FloatRange(minValue = 10f, maxValue = 200, stepIncrement = 1.0f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 10f, maxValue = 200, stepIncrement = 1f, scene = UI_Scene.All)]
         public float minSpeed = 60f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_StrafingSpeed", //Strafing Speed
             groupName = "pilotAI_Speeds", groupDisplayName = "#LOC_BDArmory_PilotAI_Speeds", groupStartCollapsed = true),
-            UI_FloatRange(minValue = 10f, maxValue = 200, stepIncrement = 1.0f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 10f, maxValue = 200, stepIncrement = 1f, scene = UI_Scene.All)]
         public float strafingSpeed = 100f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_IdleSpeed", //Idle Speed
             groupName = "pilotAI_Speeds", groupDisplayName = "#LOC_BDArmory_PilotAI_Speeds", groupStartCollapsed = true),
-            UI_FloatRange(minValue = 10f, maxValue = 200f, stepIncrement = 1.0f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 10f, maxValue = 200f, stepIncrement = 1f, scene = UI_Scene.All)]
         public float idleSpeed = 200f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ABPriority", advancedTweakable = true, //Afterburner Priority
             groupName = "pilotAI_Speeds", groupDisplayName = "#LOC_BDArmory_PilotAI_Speeds", groupStartCollapsed = true),
-            UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1.0f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1f, scene = UI_Scene.All)]
         public float ABPriority = 50f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ABOverrideThreshold", advancedTweakable = true, //Afterburner Override Threshold
             groupName = "pilotAI_Speeds", groupDisplayName = "#LOC_BDArmory_PilotAI_Speeds", groupStartCollapsed = true),
-            UI_FloatRange(minValue = 0f, maxValue = 200f, stepIncrement = 1.0f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 0f, maxValue = 200f, stepIncrement = 1f, scene = UI_Scene.All)]
         public float ABOverrideThreshold = 0f;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_BrakingPriority", advancedTweakable = true, //Afterburner Priority
+            groupName = "pilotAI_Speeds", groupDisplayName = "#LOC_BDArmory_PilotAI_Speeds", groupStartCollapsed = true),
+            UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1f, scene = UI_Scene.All)]
+        public float brakingPriority = 50f;
         #endregion
 
         #region Control Limits
@@ -1396,15 +1401,24 @@ namespace BDArmory.Control
 
         public void SetOnImmelmannTurnAngleChanged()
         {
-            UI_FloatRange field = (UI_FloatRange)Fields["ImmelmannTurnAngle"].uiControlEditor;
-            field.onFieldChanged = OnImmelmannTurnAngleChanged;
-            field = (UI_FloatRange)Fields["ImmelmannTurnAngle"].uiControlFlight;
+            var field = (UI_FloatRange)Fields["ImmelmannTurnAngle"].uiControlFlight;
             field.onFieldChanged = OnImmelmannTurnAngleChanged;
             OnImmelmannTurnAngleChanged(null, null);
         }
         public void OnImmelmannTurnAngleChanged(BaseField field, object obj)
         {
             ImmelmannTurnCosAngle = -Mathf.Cos(ImmelmannTurnAngle * Mathf.Deg2Rad);
+        }
+
+        public void SetOnBrakingPriorityChanged()
+        {
+            var field = (UI_FloatRange)Fields["brakingPriority"].uiControlFlight;
+            field.onFieldChanged = OnBrakingPriorityChanged;
+            OnBrakingPriorityChanged(null, null);
+        }
+        public void OnBrakingPriorityChanged(BaseField field, object obj)
+        {
+            speedController.brakingPriority = brakingPriority / 100f;
         }
 
         public void SetOnMaxSpeedChanged()
@@ -1764,6 +1778,7 @@ namespace BDArmory.Control
             prevTargetDir = vesselTransform.up;
             if (initialTakeOff && !vessel.LandedOrSplashed) // In case we activate pilot after taking off manually.
                 initialTakeOff = false;
+            SetOnBrakingPriorityChanged(); // Has to be set after the speed controller exists.
 
             bodyGravity = (float)PhysicsGlobals.GravitationalAcceleration * (float)vessel.orbit.referenceBody.GeeASL; // Set gravity for calculations;
         }
