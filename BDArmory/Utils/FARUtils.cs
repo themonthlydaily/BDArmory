@@ -241,24 +241,18 @@ namespace BDArmory.Utils
                         (float)PWType.GetField("sharedEdgeWidthLeadingRoot", BindingFlags.Public | BindingFlags.Instance).GetValue(module)) : 0)     
                         + (edgeTrailingType >= 2 ? ((float)PWType.GetField("sharedEdgeWidthTrailingTip", BindingFlags.Public | BindingFlags.Instance).GetValue(module) +
                         (float)PWType.GetField("sharedEdgeWidthTrailingRoot", BindingFlags.Public | BindingFlags.Instance).GetValue(module)) : 0));
-                        float thickness = 0.36f;
-                        float adjustedThickness = 0.36f;
+                        float thickness = 0.18f;
+                        float adjustedThickness = 0.18f;
                         if (BDArmorySettings.RUNWAY_PROJECT || BDArmorySettings.PWING_THICKNESS_AFFECT_MASS_HP)
                         //if (BDArmorySettings.PWING_THICKNESS_AFFECT_MASS_HP)j
                         {
-                            thickness = Mathf.Max(((float)PWType.GetField("sharedBaseThicknessRoot", BindingFlags.Public | BindingFlags.Instance).GetValue(module) + (float)PWType.GetField("sharedBaseThicknessTip", BindingFlags.Public | BindingFlags.Instance).GetValue(module)), 0.2f);
-                            if (thickness >= 0.36f) //0.18 * 2
-                                adjustedThickness = (Mathf.Max(0.36f, (Mathf.Log(1.55f + (thickness * 0.5f)) * 0.66f)));
+                            thickness = ((float)PWType.GetField("sharedBaseThicknessRoot", BindingFlags.Public | BindingFlags.Instance).GetValue(module) + (float)PWType.GetField("sharedBaseThicknessTip", BindingFlags.Public | BindingFlags.Instance).GetValue(module)) / 2;
+                            if (thickness >= 0.18f)
+                                adjustedThickness = (Mathf.Max(0.18f, (Mathf.Log(1.05f + thickness) * 0.78f))); //Mathf.Log(1.131f + thickness) * 0.66f)));
                             else
-                                adjustedThickness = Mathf.Max(thickness, 0.1f);
-                            //thickness = 0.36f; //thickness doesn't add to pwing mass, so why should it add to HP? 
-                            //- because edge lift doesn't contribute to HP anymore, and past a certain thickness, the increased height of the collider is an issue
-                            //will also incentivise using a single thick wing instead of wing sandwiching 
-                            //look into making thickness add mass?
-                            //-that seems like a change that really should be part of pwings proper, not bolted on here, even if it really would help balance out pwings...
+                                adjustedThickness = Mathf.Max(thickness, 0.05f);
                         }
                         //float thickness = 0.36f;
-
 
                         float liftCoeff = (length * ((width + edgeWidth) / 2)) / 3.52f;
                         float aeroVolume = (0.786f * length * (width + edgeWidth) * adjustedThickness) / 4f; //original .7 was based on errorneous 2x4 wingboard dimensions; stock reference wing area is 1.875x3.75m
