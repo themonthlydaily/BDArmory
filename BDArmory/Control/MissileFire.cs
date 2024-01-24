@@ -542,7 +542,7 @@ namespace BDArmory.Control
             guardRange = 200000f;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_GunsRange"),//Guns Range
-            UI_FloatSemiLogRange(minValue = 10f, maxValue = 10000f, scene = UI_Scene.All)]
+            UI_FloatSemiLogRange(minValue = 10f, maxValue = 10000f, withZero = true, scene = UI_Scene.All)]
         public float
             gunRange = 2500f;
         public float maxGunRange = 10f;
@@ -3436,7 +3436,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                         if (engageableWeapon.GetEngageMissileTargets())
                         {
                             weaponTypesMissile.Add(weapon.Current);
-                            if(BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire] Adding {weapon.Current.GetShortName()}; {weapon.Current.GetPart().persistentId} to engageMissiles list...");
+                            if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileFire] Adding {weapon.Current.GetShortName()}; {weapon.Current.GetPart().persistentId} to engageMissiles list...");
                             targetMissiles = true;
                         }
                         if (engageableWeapon.GetEngageGroundTargets()) weaponTypesGround.Add(weapon.Current);
@@ -7942,7 +7942,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
         {
             if (EditorLogic.fetch.ship == null) return;
             List<WeaponClasses> gunLikeClasses = [WeaponClasses.Gun, WeaponClasses.DefenseLaser, WeaponClasses.Rocket];
-            maxGunRange = 10f;
+            var rangeEditor = (UI_FloatSemiLogRange)Fields["gunRange"].uiControlEditor;
+            maxGunRange = rangeEditor.minValue;
             foreach (var p in EditorLogic.fetch.ship.Parts)
             {
                 foreach (var weapon in p.FindModulesImplementing<ModuleWeapon>())
@@ -7954,8 +7955,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
                     }
                 }
             }
-            var rangeEditor = (UI_FloatSemiLogRange)Fields["gunRange"].uiControlEditor;
-            if (gunRange == 10 || gunRange > rangeEditor.maxValue - 1) { gunRange = maxGunRange; }
+            if (gunRange == 0 || gunRange > rangeEditor.maxValue - 1) { gunRange = maxGunRange; }
             rangeEditor.UpdateLimits(rangeEditor.minValue, maxGunRange);
             var oldGunRange = gunRange;
             gunRange = Mathf.Min(gunRange, maxGunRange);

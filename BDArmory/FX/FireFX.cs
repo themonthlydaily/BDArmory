@@ -400,6 +400,7 @@ namespace BDArmory.FX
 
         void Detonate()
         {
+            if (!HighLogic.LoadedSceneIsFlight) { Deactivate(); return; }
             if (surfaceFire) return;
             if (!BDArmorySettings.BD_FIRE_FUELEX) return;
             if (!parentPart.partName.Contains("exploding"))
