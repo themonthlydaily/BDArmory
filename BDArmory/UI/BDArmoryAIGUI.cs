@@ -371,7 +371,7 @@ namespace BDArmory.UI
                         { "evasionNonlinearity", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionNonlinearity, 0, 10) },
                         { "evasionThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionThreshold, 0, 100) },
                         { "evasionTimeThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionTimeThreshold, 0, 1) },
-                        { "evasionMinRangeThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionMinRangeThreshold, 10, 10000) },
+                        { "evasionMinRangeThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionMinRangeThreshold, 0, 10000) },
                         { "collisionAvoidanceThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.collisionAvoidanceThreshold, 0, 50) },
                         { "vesselCollisionAvoidanceLookAheadPeriod", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselCollisionAvoidanceLookAheadPeriod, 0, 3) },
                         { "vesselCollisionAvoidanceStrength", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselCollisionAvoidanceStrength, 0, 4) },
@@ -1906,11 +1906,11 @@ namespace BDArmory.UI
                             {
                                 if (ActivePilot.UpToEleven)
                                 {
-                                    ActivePilot.evasionMinRangeThreshold = UI_FloatSemiLogRange.ToSemiLogValue(Mathf.Round(GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth), UI_FloatSemiLogRange.FromSemiLogValue(ActivePilot.evasionMinRangeThreshold, 1), 1, UI_FloatSemiLogRange.FromSemiLogValue(1000000, 1))), 1, 1);
+                                    ActivePilot.evasionMinRangeThreshold = GUIUtils.HorizontalSemiLogSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth), ActivePilot.evasionMinRangeThreshold, 1, 1000000, 1, true);
                                 }
                                 else
                                 {
-                                    ActivePilot.evasionMinRangeThreshold = UI_FloatSemiLogRange.ToSemiLogValue(Mathf.Round(GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth), UI_FloatSemiLogRange.FromSemiLogValue(ActivePilot.evasionMinRangeThreshold, 10), 1, UI_FloatSemiLogRange.FromSemiLogValue(10000, 10))), 10, 1);
+                                    ActivePilot.evasionMinRangeThreshold = GUIUtils.HorizontalSemiLogSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth), ActivePilot.evasionMinRangeThreshold, 10, 10000, 1, true);
                                 }
                             }
                             else

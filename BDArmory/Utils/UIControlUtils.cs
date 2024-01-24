@@ -310,7 +310,7 @@ namespace BDArmory.Utils
     {
         private const string UIControlName = "FloatSemiLogRange";
         public int sigFig = 2; // 2 sig.fig. gives: ..., 9.8, 9.9, 10, 11, 12, ...
-        public bool withZero = false; // Include a special 0 value.
+        public bool withZero = false; // Include a special 0 value and lower the sigFig for the lowest values.
         public UI_FloatSemiLogRange() { }
 
         /// <summary>
@@ -340,10 +340,16 @@ namespace BDArmory.Utils
         /// <returns>The semi-log value.</returns>
         public static float ToSemiLogValue(float value, float minValue, int sigFig = 2, bool withZero = false)
         {
-            var minStepSize = Mathf.Pow(10, Mathf.Floor(Mathf.Log10(minValue)));
+            var minStepSize = Mathf.Pow(10, Mathf.Floor(Mathf.Log10(minValue)) + (withZero && sigFig > 1 ? 1 : 0));
+            if (withZero)
+            {
+                float sliderStepSize = Mathf.Pow(10, 1 - sigFig);
+                float sliderMinValue = BDAMath.RoundToUnit(sigFig > 1 ? 1 - (11 - 10 * minValue / minStepSize) * sliderStepSize : minValue / minStepSize - sliderStepSize, sliderStepSize);
+                if (value < sliderMinValue + sliderStepSize) return 0;
+                if (value < 1) return value * minStepSize;
+            }
             value = Mathf.Pow(10f, Mathf.Floor((value - 1f) / 9f)) * (1f + (value - 1f) % 9f) * minStepSize;
             if (Mathf.Log10(value) - (sigFig - 1) > 0) value = Mathf.Round(value); // Round whole numbers.
-            if (withZero && value < minValue) return 0;
             return value;
         }
         /// <summary>
@@ -354,11 +360,17 @@ namespace BDArmory.Utils
         /// <returns>The linear value.</returns>
         public static float FromSemiLogValue(float value, float minValue, int sigFig = 2, bool withZero = false)
         {
-            var minStepSize = Mathf.Pow(10, Mathf.Floor(Mathf.Log10(minValue)));
-            if (withZero && value == 0) return minValue / minStepSize - Mathf.Pow(10, 1 - sigFig);
+            var minStepSize = Mathf.Pow(10, Mathf.Floor(Mathf.Log10(minValue)) + (withZero && sigFig > 1 ? 1 : 0));
+            float sliderStepSize = Mathf.Pow(10, 1 - sigFig);
+            if (withZero)
+            {
+                float sliderMinValue = BDAMath.RoundToUnit(sigFig > 1 ? 1 - (11 - 10 * minValue / minStepSize) * sliderStepSize : minValue / minStepSize - sliderStepSize, sliderStepSize);
+                if (value < minValue) return sliderMinValue;
+                if (value < minStepSize) return BDAMath.RoundToUnit(value / minStepSize, sliderStepSize);
+            }
             value /= minStepSize;
             value = Mathf.Floor(Mathf.Log10(value)) * 9 + value / Mathf.Pow(10, Mathf.Floor(Mathf.Log10(value)));
-            return value;
+            return BDAMath.RoundToUnit(value, sliderStepSize);
         }
     }
 
@@ -480,8 +492,6 @@ namespace BDArmory.Utils
             float value = GetFieldValue();
             SetFieldValue(value);
             UpdateDisplay(value);
-            // Debug.Log($"DEBUG value is {value} with limits {semiLogFloatRange.minValue}—{semiLogFloatRange.maxValue}");
-            // Debug.Log($"DEBUG slider has value {slider.value} with limits {slider.minValue}—{slider.maxValue}");
             slider.onValueChanged.AddListener(OnValueChanged);
             inputField.onValueChanged.AddListener(OnNumericValueChanged);
             inputField.onSubmit.AddListener(OnNumericSubmitted);
@@ -500,21 +510,30 @@ namespace BDArmory.Utils
             var roundedValue = BDAMath.RoundToUnit(fromValue, sliderStepSize);
             var toValue = ToSemiLogValue(roundedValue);
             // Debug.Log($"DEBUG SemiLog: value {value} -> {fromValue} -> {roundedValue} -> {toValue}");
-            // Debug.Log($"DEBUG static FromSemiLog: {UI_FloatSemiLogRange.FromSemiLogValue(value, semiLogFloatRange.minValue, semiLogFloatRange.sigFig, semiLogFloatRange.withZero)}, ToSemiLog: {UI_FloatSemiLogRange.ToSemiLogValue(roundedValue, semiLogFloatRange.minValue, semiLogFloatRange.sigFig, semiLogFloatRange.withZero)}");
+            // Debug.Log($"DEBUG SemiLog: value {value} -> {fromValue} -> {roundedValue} -> {toValue}, static FromSemiLog: {UI_FloatSemiLogRange.FromSemiLogValue(value, semiLogFloatRange.minValue, semiLogFloatRange.sigFig, semiLogFloatRange.withZero)}, ToSemiLog: {UI_FloatSemiLogRange.ToSemiLogValue(roundedValue, semiLogFloatRange.minValue, semiLogFloatRange.sigFig, semiLogFloatRange.withZero)}");
             return toValue;
         }
         float ToSemiLogValue(float value)
         {
-            if (withZero && value < slider.minValue + sliderStepSize) return 0;
+            if (withZero)
+            {
+                if (value < slider.minValue + sliderStepSize) return 0;
+                if (value < 1) return value * minStepSize;
+            }
             value = Mathf.Pow(10f, Mathf.Floor((value - 1f) / 9f)) * (1f + (value - 1f) % 9f) * minStepSize;
             if (Mathf.Log10(value) - (semiLogFloatRange.sigFig - 1) > 0) value = Mathf.Round(value); // Round whole numbers.
             return value;
         }
         float FromSemiLogValue(float value)
         {
-            if (withZero && value == 0) return slider.minValue;
+            if (withZero)
+            {
+                if (value < semiLogFloatRange.minValue) return slider.minValue;
+                if (value < minStepSize) return value / minStepSize;
+            }
             value /= minStepSize;
-            return Mathf.Floor(Mathf.Log10(value)) * 9 + value / Mathf.Pow(10, Mathf.Floor(Mathf.Log10(value)));
+            var factor = Mathf.Floor(Mathf.Log10(value));
+            return factor * 9 + value / Mathf.Pow(10, factor);
         }
         private void UpdateDisplay(float value)
         {
@@ -577,18 +596,20 @@ namespace BDArmory.Utils
         public void UpdateLimits()
         {
             var value = GetFieldValue(); // Store the current value so it doesn't get clamped.
-            var minStepSizePower = Mathf.Floor(Mathf.Log10(semiLogFloatRange.minValue));
+            var minStepSizePower = Mathf.Floor(Mathf.Log10(semiLogFloatRange.minValue)) + (withZero && semiLogFloatRange.sigFig > 1 ? 1 : 0);
             var maxStepSizePower = Mathf.Floor(Mathf.Log10(semiLogFloatRange.maxValue));
             minStepSize = Mathf.Pow(10, minStepSizePower);
             maxStepSize = Mathf.Pow(10, maxStepSizePower);
             blockSliderUpdate = true; // Block the slider from updating while we adjust things (unblocks in UpdateDisplay).
             withZero = semiLogFloatRange.withZero;
             sliderStepSize = Mathf.Pow(10, 1 - semiLogFloatRange.sigFig);
-            slider.minValue = BDAMath.RoundToUnit(semiLogFloatRange.minValue / minStepSize, sliderStepSize) - (withZero ? sliderStepSize : 0);
+            slider.minValue = BDAMath.RoundToUnit(withZero && semiLogFloatRange.sigFig > 1 ? 1 - (11 - 10 * semiLogFloatRange.minValue / minStepSize) * sliderStepSize : semiLogFloatRange.minValue / minStepSize - (withZero ? sliderStepSize : 0), sliderStepSize);
             slider.maxValue = BDAMath.RoundToUnit(9f * (maxStepSizePower - minStepSizePower) + semiLogFloatRange.maxValue / maxStepSize, sliderStepSize);
             semiLogFloatRange.stepIncrement = sliderStepSize;
             SetFieldValue(value); // Restore the unclamped value.
             UpdateDisplay(value);
+            // Debug.Log($"DEBUG value is {value} with limits {semiLogFloatRange.minValue}—{semiLogFloatRange.maxValue}, with zero: {withZero}");
+            // Debug.Log($"DEBUG slider has value {slider.value} with limits {slider.minValue}—{slider.maxValue}");
         }
     }
 

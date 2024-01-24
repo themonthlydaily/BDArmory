@@ -383,8 +383,8 @@ namespace BDArmory.Control
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionMinRangeThreshold", advancedTweakable = true, // Evasion Min Range Threshold
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
-            UI_FloatSemiLogRange(minValue = 10f, maxValue = 10000f, sigFig = 1)]
-        public float evasionMinRangeThreshold = 10f;
+            UI_FloatSemiLogRange(minValue = 10f, maxValue = 10000f, sigFig = 1, withZero = true)]
+        public float evasionMinRangeThreshold = 0f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionNonlinearity", advancedTweakable = true, // Evasion/Extension Nonlinearity
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),

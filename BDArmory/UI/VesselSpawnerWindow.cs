@@ -298,7 +298,7 @@ namespace BDArmory.UI
                 if (BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE)
                 { // Absolute distance
                     GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_SpawnDistance")}:  ({(BDArmorySettings.VESSEL_SPAWN_DISTANCE < 1000 ? $"{BDArmorySettings.VESSEL_SPAWN_DISTANCE:G4}m" : $"{BDArmorySettings.VESSEL_SPAWN_DISTANCE / 1000:G4}km")})", leftLabel);//Spawn Distance
-                    BDArmorySettings.VESSEL_SPAWN_DISTANCE = UI_FloatSemiLogRange.ToSemiLogValue(Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), UI_FloatSemiLogRange.FromSemiLogValue(BDArmorySettings.VESSEL_SPAWN_DISTANCE, 10), 1, UI_FloatSemiLogRange.FromSemiLogValue(200000, 10))), 10, 1);
+                    BDArmorySettings.VESSEL_SPAWN_DISTANCE = GUIUtils.HorizontalSemiLogSlider(SRightSliderRect(line), BDArmorySettings.VESSEL_SPAWN_DISTANCE, 1, 200000, 1, false);
                 }
                 else
                 { // Distance factor

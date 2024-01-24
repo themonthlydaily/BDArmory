@@ -479,6 +479,21 @@ namespace BDArmory.Utils
             return newText;
         }
 
+        /// <summary>
+        /// Wrapper for HorizontalSlider for UI_FloatSemiLogRange fields.
+        /// </summary>
+        /// <param name="rect"></param>
+        /// <param name="value"></param>
+        /// <param name="minValue"></param>
+        /// <param name="maxValue"></param>
+        /// <param name="sigFig"></param>
+        /// <param name="withZero"></param>
+        /// <returns></returns>
+        public static float HorizontalSemiLogSlider(Rect rect, float value, float minValue, float maxValue, int sigFig, bool withZero)
+        {
+            return UI_FloatSemiLogRange.ToSemiLogValue(BDAMath.RoundToUnit(GUI.HorizontalSlider(rect, UI_FloatSemiLogRange.FromSemiLogValue(value, minValue, sigFig, withZero), withZero ? UI_FloatSemiLogRange.FromSemiLogValue(0, minValue, sigFig, withZero) : 1, UI_FloatSemiLogRange.FromSemiLogValue(maxValue, minValue, sigFig, withZero)), Mathf.Pow(10, 1 - sigFig)), minValue, sigFig, withZero);
+        }
+
         [KSPAddon(KSPAddon.Startup.EveryScene, false)]
         internal class GUIUtilsInstance : MonoBehaviour
         {
