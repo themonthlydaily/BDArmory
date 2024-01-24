@@ -1427,7 +1427,7 @@ namespace BDArmory.UI
                     GUI.Label(LabelRect(++guardLines, guardLabelWidth), StringUtils.Localize("#LOC_BDArmory_WMWindow_GunsRange"), leftLabel);//"Guns Range"
                     if (!NumFieldsEnabled)
                     {
-                        ActiveWeaponManager.gunRange = UI_FloatSemiLogRange.ToSemiLogValue(BDAMath.RoundToUnit(GUI.HorizontalSlider(SliderRect(guardLines, guardLabelWidth), UI_FloatSemiLogRange.FromSemiLogValue(ActiveWeaponManager.gunRange, 10), 1, UI_FloatSemiLogRange.FromSemiLogValue(ActiveWeaponManager.maxGunRange, 10)), 0.1f), 10);
+                        ActiveWeaponManager.gunRange = UI_FloatSemiLogRange.ToSemiLogValue(BDAMath.RoundToUnit(GUI.HorizontalSlider(SliderRect(guardLines, guardLabelWidth), UI_FloatSemiLogRange.FromSemiLogValue(ActiveWeaponManager.gunRange, 10, withZero: true), UI_FloatSemiLogRange.FromSemiLogValue(0, 10, withZero: true), UI_FloatSemiLogRange.FromSemiLogValue(ActiveWeaponManager.maxGunRange, 10, withZero: true)), 0.1f), 10, withZero: true);
                         GUI.Label(RightLabelRect(guardLines), ActiveWeaponManager.gunRange < 1000 ? $"{ActiveWeaponManager.gunRange:G4}m" : $"{ActiveWeaponManager.gunRange / 1000:G4}km", leftLabel);
                     }
                     else

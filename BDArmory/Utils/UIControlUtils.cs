@@ -310,6 +310,7 @@ namespace BDArmory.Utils
     {
         private const string UIControlName = "FloatSemiLogRange";
         public int sigFig = 2; // 2 sig.fig. gives: ..., 9.8, 9.9, 10, 11, 12, ...
+        public bool withZero = false; // Include a special 0 value.
         public UI_FloatSemiLogRange() { }
 
         /// <summary>
@@ -319,12 +320,13 @@ namespace BDArmory.Utils
         /// <param name="minValue"></param>
         /// <param name="maxValue"></param>
         /// <param name="sigFig"></param>
-        public void UpdateLimits(float minValue, float maxValue, int sigFig = 0)
+        public void UpdateLimits(float minValue, float maxValue, int sigFig = 0, Toggle withZero = Toggle.NoChange)
         {
             // Sanitise input.
             this.minValue = Mathf.Min(minValue, maxValue);
             this.maxValue = Mathf.Max(minValue, maxValue);
             if (sigFig > 0) this.sigFig = sigFig;
+            this.withZero = withZero switch { Toggle.On => true, Toggle.Off => false, Toggle.Toggle => !this.withZero, _ => this.withZero };
             var partActionFieldItem = (UIPartActionFloatSemiLogRange)partActionItem;
             if (partActionFieldItem != null) partActionFieldItem.UpdateLimits();
         }
@@ -336,11 +338,12 @@ namespace BDArmory.Utils
         /// <param name="minValue">The minimum value of the slider.</param>
         /// <param name="sigFig">The number of significant figures (for integer rounding). Default=2.</param>
         /// <returns>The semi-log value.</returns>
-        public static float ToSemiLogValue(float value, float minValue, int sigFig = 2)
+        public static float ToSemiLogValue(float value, float minValue, int sigFig = 2, bool withZero = false)
         {
             var minStepSize = Mathf.Pow(10, Mathf.Floor(Mathf.Log10(minValue)));
             value = Mathf.Pow(10f, Mathf.Floor((value - 1f) / 9f)) * (1f + (value - 1f) % 9f) * minStepSize;
             if (Mathf.Log10(value) - (sigFig - 1) > 0) value = Mathf.Round(value); // Round whole numbers.
+            if (withZero && value < minValue) return 0;
             return value;
         }
         /// <summary>
@@ -349,11 +352,13 @@ namespace BDArmory.Utils
         /// <param name="value">The value to convert.</param>
         /// <param name="minValue">The minimum value of the slider.</param>
         /// <returns>The linear value.</returns>
-        public static float FromSemiLogValue(float value, float minValue)
+        public static float FromSemiLogValue(float value, float minValue, int sigFig = 2, bool withZero = false)
         {
             var minStepSize = Mathf.Pow(10, Mathf.Floor(Mathf.Log10(minValue)));
+            if (withZero && value == 0) return minValue / minStepSize - Mathf.Pow(10, 1 - sigFig);
             value /= minStepSize;
-            return Mathf.Floor(Mathf.Log10(value)) * 9 + value / Mathf.Pow(10, Mathf.Floor(Mathf.Log10(value)));
+            value = Mathf.Floor(Mathf.Log10(value)) * 9 + value / Mathf.Pow(10, Mathf.Floor(Mathf.Log10(value)));
+            return value;
         }
     }
 
@@ -374,6 +379,7 @@ namespace BDArmory.Utils
         public TextMeshProUGUI fieldNameNumeric;
         public TMP_InputField inputField;
         private float lastDisplayedValue = 0;
+        private bool withZero = false;
 
         public static Type VersionTaggedType(Type baseClass)
         {
@@ -494,16 +500,19 @@ namespace BDArmory.Utils
             var roundedValue = BDAMath.RoundToUnit(fromValue, sliderStepSize);
             var toValue = ToSemiLogValue(roundedValue);
             // Debug.Log($"DEBUG SemiLog: value {value} -> {fromValue} -> {roundedValue} -> {toValue}");
+            // Debug.Log($"DEBUG static FromSemiLog: {UI_FloatSemiLogRange.FromSemiLogValue(value, semiLogFloatRange.minValue, semiLogFloatRange.sigFig, semiLogFloatRange.withZero)}, ToSemiLog: {UI_FloatSemiLogRange.ToSemiLogValue(roundedValue, semiLogFloatRange.minValue, semiLogFloatRange.sigFig, semiLogFloatRange.withZero)}");
             return toValue;
         }
         float ToSemiLogValue(float value)
         {
+            if (withZero && value < slider.minValue + sliderStepSize) return 0;
             value = Mathf.Pow(10f, Mathf.Floor((value - 1f) / 9f)) * (1f + (value - 1f) % 9f) * minStepSize;
             if (Mathf.Log10(value) - (semiLogFloatRange.sigFig - 1) > 0) value = Mathf.Round(value); // Round whole numbers.
             return value;
         }
         float FromSemiLogValue(float value)
         {
+            if (withZero && value == 0) return slider.minValue;
             value /= minStepSize;
             return Mathf.Floor(Mathf.Log10(value)) * 9 + value / Mathf.Pow(10, Mathf.Floor(Mathf.Log10(value)));
         }
@@ -538,7 +547,7 @@ namespace BDArmory.Utils
         {
             if (float.TryParse(str, out float value))
             {
-                value = Mathf.Clamp(value, semiLogFloatRange.minValue, semiLogFloatRange.maxValue); // Clamp, but don't round the value when in numeric mode.
+                value = Mathf.Clamp(value, withZero ? 0 : semiLogFloatRange.minValue, semiLogFloatRange.maxValue); // Clamp, but don't round the value when in numeric mode.
                 SetFieldValue(value);
                 UpdateDisplay(value);
             }
@@ -573,8 +582,9 @@ namespace BDArmory.Utils
             minStepSize = Mathf.Pow(10, minStepSizePower);
             maxStepSize = Mathf.Pow(10, maxStepSizePower);
             blockSliderUpdate = true; // Block the slider from updating while we adjust things (unblocks in UpdateDisplay).
+            withZero = semiLogFloatRange.withZero;
             sliderStepSize = Mathf.Pow(10, 1 - semiLogFloatRange.sigFig);
-            slider.minValue = BDAMath.RoundToUnit(semiLogFloatRange.minValue / minStepSize, sliderStepSize);
+            slider.minValue = BDAMath.RoundToUnit(semiLogFloatRange.minValue / minStepSize, sliderStepSize) - (withZero ? sliderStepSize : 0);
             slider.maxValue = BDAMath.RoundToUnit(9f * (maxStepSizePower - minStepSizePower) + semiLogFloatRange.maxValue / maxStepSize, sliderStepSize);
             semiLogFloatRange.stepIncrement = sliderStepSize;
             SetFieldValue(value); // Restore the unclamped value.
