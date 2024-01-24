@@ -54,11 +54,9 @@ namespace BDArmory.GameModes
 
         public void EnableMutator(string name = "def") //FIXME - when using apply on timer and !apply global, this NREs
         {
-            Debug.Log("[BDArmory.BDAMutator]:starting EnableMutator (" + name + ") on " + part.vessel.GetName());
             if (string.IsNullOrEmpty(name)) name = "def";
             if (mutatorEnabled) //replace current mutator with new one
             {
-                Debug.Log("[BDArmory.BDAMutator]:Mutator active! disabling");
                 DisableMutator();
             }
             if (name == "def") //mutator not specified, randomly choose from selected mutators
@@ -317,11 +315,11 @@ namespace BDArmory.GameModes
                                 int Tax = ResourceTax.Count;
                                 if (Tax >= 1)
                                 {
-                                    Debug.Log("[BDArmory.BDAMutator]: Starting ResourceTax");
+                                    //Debug.Log("[BDArmory.BDAMutator]: Starting ResourceTax");
                                     for (int i = 0; i < Tax; i++)
                                     {
                                         part.RequestResource(ResourceTax[i], TaxRate, ResourceFlowMode.ALL_VESSEL);
-                                        Debug.Log($"[BDArmory.BDAMutator]: Taxing {ResourceTax[i]} to the tune of {TaxRate}");
+                                        //Debug.Log($"[BDArmory.BDAMutator]: Taxing {ResourceTax[i]} to the tune of {TaxRate}");
                                     }
                                 }
                             }
