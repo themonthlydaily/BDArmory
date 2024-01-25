@@ -698,20 +698,12 @@ namespace BDArmory.UI
         {
             if (HighLogic.LoadedSceneIsFlight)
             {
-                if (missileWarning && Time.time - missileWarningTime > 1.5f)
-                {
-                    missileWarning = false;
-                }
-
-                if (BDInputUtils.GetKeyDown(BDInputSettingsFields.GUI_WM_TOGGLE))
-                {
-                    windowBDAToolBarEnabled = !windowBDAToolBarEnabled;
-                }
-
-                if (BDInputUtils.GetKeyDown(BDInputSettingsFields.TIME_SCALING))
-                {
-                    OtherUtils.SetTimeOverride(!BDArmorySettings.TIME_OVERRIDE);
-                }
+                if (missileWarning && Time.time - missileWarningTime > 1.5f) missileWarning = false;
+                if (BDInputUtils.GetKeyDown(BDInputSettingsFields.GUI_WM_TOGGLE)) windowBDAToolBarEnabled = !windowBDAToolBarEnabled;
+                if (BDInputUtils.GetKeyDown(BDInputSettingsFields.TIME_SCALING)) OtherUtils.SetTimeOverride(!BDArmorySettings.TIME_OVERRIDE);
+#if DEBUG
+                if (BDInputUtils.GetKeyDown(BDInputSettingsFields.DEBUG_CLEAR_DEV_CONSOLE)) Debug.ClearDeveloperConsole();
+#endif
             }
             else if (HighLogic.LoadedSceneIsEditor)
             {
@@ -4035,6 +4027,12 @@ namespace BDArmory.UI
             Rect scrollerRect = new Rect(0, 0, settingsWidth - GUI.skin.verticalScrollbar.fixedWidth - 1, inputFields != null ? (inputFields.Length + 13) * settingsLineHeight : settingsHeight);
 
             _displayViewerPosition = GUI.BeginScrollView(viewRect, _displayViewerPosition, scrollerRect, false, true);
+
+#if DEBUG
+            GUI.Label(SLineRect(line++), $"- {StringUtils.Localize("#LOC_BDArmory_Settings_DebugSettingsToggle")} -", centerLabel); //Debugging
+            InputSettingsList("DEBUG_", ref inputID, ref line);
+            ++line;
+#endif
 
             GUI.Label(SLineRect(line++), $"- {StringUtils.Localize("#LOC_BDArmory_InputSettings_GUI")} -", centerLabel); //GUI
             InputSettingsList("GUI_", ref inputID, ref line);
