@@ -538,26 +538,6 @@ namespace BDArmory.Weapons.Missiles
                 gauge = (BDStagingAreaGauge)part.AddModule("BDStagingAreaGauge");
                 part.force_activate();
 
-                if (!string.IsNullOrEmpty(exhaustPrefabPath))
-                {
-                    using (var t = part.FindModelTransforms("exhaustTransform").AsEnumerable().GetEnumerator())
-                        while (t.MoveNext())
-                        {
-                            if (t.Current == null) continue;
-                            AttachExhaustPrefab(exhaustPrefabPath, this, t.Current);
-                        }
-                }
-
-                if (!string.IsNullOrEmpty(boostExhaustPrefabPath) && !string.IsNullOrEmpty(boostExhaustTransformName))
-                {
-                    using (var t = part.FindModelTransforms(boostExhaustTransformName).AsEnumerable().GetEnumerator())
-                        while (t.MoveNext())
-                        {
-                            if (t.Current == null) continue;
-                            AttachExhaustPrefab(boostExhaustPrefabPath, this, t.Current);
-                        }
-                }
-
                 boosters = new List<GameObject>();
                 if (!string.IsNullOrEmpty(boostTransformName))
                 {
@@ -1370,6 +1350,26 @@ namespace BDArmory.Weapons.Missiles
                 part.crashTolerance = torpedo ? waterImpactTolerance : 9999; //to combat stresses of launch, missiles generate a lot of G Force
                 part.explosionPotential = 0; // Minimise the default part explosion FX that sometimes gets offset from the main explosion.
                 rcsClearanceState = (GuidanceMode == GuidanceModes.Orbital && hasRCS && vacuumSteerable && (vessel.InVacuum()) ? RCSClearanceStates.Clearing : RCSClearanceStates.Cleared); // Set up clearance check if missile hasRCS, is vacuumSteerable, and is in space
+
+                if (!string.IsNullOrEmpty(exhaustPrefabPath))
+                {
+                    using (var t = part.FindModelTransforms("exhaustTransform").AsEnumerable().GetEnumerator())
+                        while (t.MoveNext())
+                        {
+                            if (t.Current == null) continue;
+                            AttachExhaustPrefab(exhaustPrefabPath, this, t.Current);
+                        }
+                }
+
+                if (!string.IsNullOrEmpty(boostExhaustPrefabPath) && !string.IsNullOrEmpty(boostExhaustTransformName))
+                {
+                    using (var t = part.FindModelTransforms(boostExhaustTransformName).AsEnumerable().GetEnumerator())
+                        while (t.MoveNext())
+                        {
+                            if (t.Current == null) continue;
+                            AttachExhaustPrefab(boostExhaustPrefabPath, this, t.Current);
+                        }
+                }
 
                 StartCoroutine(MissileRoutine());
                 var tnt = part.FindModuleImplementing<BDExplosivePart>();

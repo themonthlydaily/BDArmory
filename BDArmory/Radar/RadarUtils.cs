@@ -600,7 +600,7 @@ namespace BDArmory.Radar
                 aspect = Vector3.RotateTowards(aspect, Vector3.Cross(t.right, t.up), -rcsAspects[i, 1] / 180f * Mathf.PI, 0);
 
                 // Render aspect
-                RenderSinglePass(v, t, false, aspect, vesselbounds, radarDistance, radarFOV, rcsRenderingVariable, drawTextureVariable, ti.MissileBaseModule);
+                RenderSinglePass(v, t, false, aspect, vesselbounds, radarDistance, radarFOV, rcsRenderingVariable, drawTextureVariable); //, ti.MissileBaseModule);
 
                 // Count pixel colors to determine radar returns
                 rcsVariable = 0;
@@ -1085,7 +1085,7 @@ namespace BDArmory.Radar
         /// <summary>
         /// Internal helpder method
         /// </summary>
-        private static void RenderSinglePass(Vessel v, Transform t, bool inEditorZoom, Vector3 cameraDirection, Bounds vesselbounds, float radarDistance, float radarFOV, RenderTexture rcsRendering, Texture2D rcsTexture, MissileBase msl = null)
+        private static void RenderSinglePass(Vessel v, Transform t, bool inEditorZoom, Vector3 cameraDirection, Bounds vesselbounds, float radarDistance, float radarFOV, RenderTexture rcsRendering, Texture2D rcsTexture) //, MissileBase msl = null)
         {
             // Render one snapshop pass:
             // setup camera FOV
@@ -1121,17 +1121,17 @@ namespace BDArmory.Radar
                     {
                         try
                         {
-                            if (parts.Current.name.Contains("B9.Aero.Wing.Procedural") || (msl != null && msl.HasFired))
+                            if (parts.Current.name.Contains("B9.Aero.Wing.Procedural")) // || (msl != null && msl.HasFired))
                             {
                                 if (!a.RegisterProcWingShader)
                                 {
                                     for (int s = 0; s < r.Length; s++)
                                     {
-                                        if (msl) //missiles have an exhaustPrefab added at launch, which wouldn't be registered in the missile's defaultShader list; clear and reset
-                                        {
-                                            a.defaultColor.Clear();
-                                            a.defaultColor.Clear();
-                                        }
+                                        //if (msl) //missiles have an exhaustPrefab added at launch, which wouldn't be registered in the missile's defaultShader list; clear and reset
+                                        //{
+                                        //    a.defaultColor.Clear();
+                                        //    a.defaultColor.Clear();
+                                        //}
                                         a.defaultShader.Add(r[s].material.shader);
                                         if (r[s].material.HasProperty("_Color"))
                                         {
@@ -1143,8 +1143,9 @@ namespace BDArmory.Radar
                             }
                             for (int i = 0; i < r.Length; i++)
                             {
+                                if (!a.defaultShader.Contains(r[i].material.shader)) continue;
+                                //instead of iterating though all shaders on the part - which will include battledamage FX/bulletholes/etc attached post spawn, we already have a list of all shaders the aprt uses compiled on spawn. Just use those.
                                 if (r[i].material.shader.name.Contains("Alpha")) continue;
-                                if (r[i].material.shader.name.Contains("Waterfall")) continue;
                                 if (r[i].material.shader.name.Contains("KSP/Particles")) continue;
                                 r[i].material.shader = RCSshader;
                                 r[i].material.SetVector("_LIGHTDIR", -cameraDirection);
