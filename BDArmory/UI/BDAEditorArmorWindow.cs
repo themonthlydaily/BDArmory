@@ -876,11 +876,11 @@ namespace BDArmory.UI
                                     {
                                         for (int s = 0; s < r.Length; s++)
                                         {
-                                            a.defaultShader.Add(r[s].material.shader);
+                                            a.defaultShader.Add(s, r[s].material.shader);
                                             //Debug.Log("[Visualizer] " + parts.Current.name + " shader is " + r[s].material.shader.name);
                                             if (r[s].material.HasProperty("_Color"))
                                             {
-                                                a.defaultColor.Add(r[s].material.color);
+                                                a.defaultColor.Add(s, r[s].material.color);
                                             }
                                         }
                                         a.RegisterProcWingShader = true;
@@ -919,11 +919,11 @@ namespace BDArmory.UI
                             {
                                 for (int s = 0; s < r.Length; s++)
                                 {
-                                    armor.defaultShader.Add(r[s].material.shader);
+                                    armor.defaultShader.Add(s, r[s].material.shader);
                                     //Debug.Log("[Visualizer] " + parts.Current.name + " shader is " + r[s].material.shader.name);
                                     if (r[s].material.HasProperty("_Color"))
                                     {
-                                        armor.defaultColor.Add(r[s].material.color);
+                                        armor.defaultColor.Add(s, r[s].material.color);
                                     }
                                 }
                                 armor.RegisterProcWingShader = true;
@@ -934,37 +934,41 @@ namespace BDArmory.UI
                         {
                             try
                             {
+                                if (!armor.defaultShader.ContainsKey(i)) continue;
                                 if (r[i].material.shader != armor.defaultShader[i])
                                 {
                                     if (armor.defaultShader[i] != null)
                                     {
                                         r[i].material.shader = armor.defaultShader[i];
                                     }
-                                    if (armor.defaultColor[i] != null)
+                                    if (armor.defaultColor.ContainsKey(i))
                                     {
-                                        if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
+                                        if (armor.defaultColor[i] != null)
                                         {
-                                            //r[i].material.SetColor("_Emissive", armor.defaultColor[i]); //?
-                                            r[i].material.SetColor("_MainTex", armor.defaultColor[i]); //this doesn't work either
-                                            //LayeredSpecular has _MainTex, _Emissive, _SpecColor,_RimColor, _TemperatureColor, and _BurnColor
-                                            // source: https://github.com/tetraflon/B9-PWings-Modified/blob/master/B9%20PWings%20Fork/shaders/SpecularLayered.shader
-                                            //This works.. occasionally. Sometimes it will properly reset pwing tex/color, most of the time it doesn't. need to test later
+                                            if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
+                                            {
+                                                //r[i].material.SetColor("_Emissive", armor.defaultColor[i]); //?
+                                                r[i].material.SetColor("_MainTex", armor.defaultColor[i]); //this doesn't work either
+                                                                                                           //LayeredSpecular has _MainTex, _Emissive, _SpecColor,_RimColor, _TemperatureColor, and _BurnColor
+                                                                                                           // source: https://github.com/tetraflon/B9-PWings-Modified/blob/master/B9%20PWings%20Fork/shaders/SpecularLayered.shader
+                                                                                                           //This works.. occasionally. Sometimes it will properly reset pwing tex/color, most of the time it doesn't. need to test later
+                                            }
+                                            else
+                                            {
+                                                r[i].material.SetColor("_Color", armor.defaultColor[i]);
+                                            }
                                         }
                                         else
                                         {
-                                            r[i].material.SetColor("_Color", armor.defaultColor[i]);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
-                                        {
-                                            //r[i].material.SetColor("_Emissive", Color.white);
-                                            r[i].material.SetColor("_MainTex", Color.white);
-                                        }
-                                        else
-                                        {
-                                            r[i].material.SetColor("_Color", Color.white);
+                                            if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
+                                            {
+                                                //r[i].material.SetColor("_Emissive", Color.white);
+                                                r[i].material.SetColor("_MainTex", Color.white);
+                                            }
+                                            else
+                                            {
+                                                r[i].material.SetColor("_Color", Color.white);
+                                            }
                                         }
                                     }
                                 }

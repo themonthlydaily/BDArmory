@@ -739,12 +739,15 @@ namespace BDArmory.Radar
                         {
                             try
                             {
-                                if (r[i].material.shader != a.defaultShader[i])
+                            if (!a.defaultShader.ContainsKey(i)) continue;
+                            if (r[i].material.shader != a.defaultShader[i])
                                 {
                                     if (a.defaultShader[i] != null)
                                     {
                                         r[i].material.shader = a.defaultShader[i];
                                     }
+                                if (a.defaultColor.ContainsKey(i))
+                                {
                                     if (a.defaultColor[i] != null)
                                     {
                                         if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
@@ -760,11 +763,12 @@ namespace BDArmory.Radar
                                             r[i].material.SetColor("_Color", Color.white);
                                     }
                                 }
+                                }
                             }
-                            catch
+                            catch (Exception e)
                             {
-                                Debug.Log("[RadarUtils]: material on " + parts.Current.name + "could not find default shader/color");
-                            }
+                            Debug.Log($"[RadarUtils]: material on {parts.Current.name} could not find default shader/color: {e.Message}\n{e.StackTrace}");
+                        }
                         }
                     }
             //}
@@ -1132,10 +1136,10 @@ namespace BDArmory.Radar
                                         //    a.defaultColor.Clear();
                                         //    a.defaultColor.Clear();
                                         //}
-                                        a.defaultShader.Add(r[s].material.shader);
+                                        a.defaultShader.Add(s, r[s].material.shader);
                                         if (r[s].material.HasProperty("_Color"))
                                         {
-                                            a.defaultColor.Add(r[s].material.color);
+                                            a.defaultColor.Add(s, r[s].material.color);
                                         }
                                     }
                                     a.RegisterProcWingShader = true;
@@ -1143,7 +1147,8 @@ namespace BDArmory.Radar
                             }
                             for (int i = 0; i < r.Length; i++)
                             {
-                                if (!a.defaultShader.Contains(r[i].material.shader)) continue;
+                                if (!a.defaultShader.ContainsKey(i)) continue;
+                                if (r[i].material.shader != a.defaultShader[i]) continue;
                                 //instead of iterating though all shaders on the part - which will include battledamage FX/bulletholes/etc attached post spawn, we already have a list of all shaders the aprt uses compiled on spawn. Just use those.
                                 if (r[i].material.shader.name.Contains("Alpha")) continue;
                                 if (r[i].material.shader.name.Contains("KSP/Particles")) continue;
