@@ -62,7 +62,16 @@ namespace BDArmory.Control
         }
 
         //wing commander
-        public ModuleWingCommander commandLeader { get; protected set; }
+        public ModuleWingCommander commandLeader
+        {
+            get
+            {
+                if (_commandLeader == null || _commandLeader.vessel == null || !_commandLeader.vessel.isActiveAndEnabled) return null; // Vessel's don't immediately become null on dying if they're the active vessel.
+                return _commandLeader;
+            }
+            protected set { _commandLeader = value; }
+        }
+        ModuleWingCommander _commandLeader;
 
         protected PilotCommands command;
         PilotCommands previousCommand;
