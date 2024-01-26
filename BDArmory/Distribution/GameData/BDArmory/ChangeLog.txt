@@ -3,6 +3,7 @@
 	- Fix Krakensbane adjustments when the active vessel dies.
 	- Make sure various pooled objects are disabled when leaving the flight scene.
 	- Battle damage fuel leak rates now scale by (bullet caliber)^2, instead of (bullet caliber). Fuel leak rates for 20mm caliber remain the same, calibers higher and lower than 20mm will now have higher and lower leak rates, respectively.
+	- Fixes for Kerbal Safety not always detecting EVA kerbals.
 - UI:
 	- Fix part filtering by search terms in the editors.
 	- Adjust timing and conditions for auto-camera switching to and away from missiles.
