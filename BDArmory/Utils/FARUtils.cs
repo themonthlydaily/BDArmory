@@ -1,7 +1,6 @@
 using System;
 using System.Reflection;
 using UnityEngine;
-
 using BDArmory.Settings;
 
 namespace BDArmory.Utils
@@ -248,23 +247,28 @@ namespace BDArmory.Utils
                         {
                             thickness = ((float)PWType.GetField("sharedBaseThicknessRoot", BindingFlags.Public | BindingFlags.Instance).GetValue(module) + (float)PWType.GetField("sharedBaseThicknessTip", BindingFlags.Public | BindingFlags.Instance).GetValue(module)) / 2;
                             if (thickness >= 0.18f)
-                                adjustedThickness = (Mathf.Max(0.18f, (Mathf.Log(1.05f + thickness) * 0.78f))); //Mathf.Log(1.131f + thickness) * 0.66f)));
+                            //adjustedThickness = (Mathf.Max(0.18f, (Mathf.Log(1.05f + thickness) * 0.78f))); //stock parts use exponential mass scalar, not linear - 25kg/s0, 125kg/s1, 500kg/s2, 4t/s3 for 1m long tanks
+                            {
+                                adjustedThickness = Mathf.Pow(thickness / 2.5f, 2.75f); //this follows stock mass scaling, up to about 3.75m parts
+                                if (adjustedThickness >= 0.15f) adjustedThickness += 0.45f;
+                                else adjustedThickness += (adjustedThickness * 1.66f) + 0.188f; 
+                            }
                             else
-                                adjustedThickness = Mathf.Max(thickness, 0.05f);
-                        }
+                                adjustedThickness = Mathf.Max(thickness, 0.05f);                //2.5x2.5x0.938 tank: .5t; pWing: .36t - needs adjustedThickness of 1.35 instead of 0.96
+                        }                                                                       //3.75x3.75x1.875 tank: 4t; pwing: 1.37t - needs adjustment of 3.6, not 1.19
                         //float thickness = 0.36f;
 
                         float liftCoeff = (length * ((width + edgeWidth) / 2)) / 3.52f;
-                        float aeroVolume = (0.786f * length * (width + edgeWidth) * adjustedThickness) / 4f; //original .7 was based on errorneous 2x4 wingboard dimensions; stock reference wing area is 1.875x3.75m
+                        float aeroVolume = (0.786f * length * ((width + edgeWidth) / 2) * adjustedThickness); //original .7 was based on errorneous 2x4 wingboard dimensions; stock reference wing area is 1.875x3.75m
                         if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FARUtils]: Found volume of {aeroVolume} for {part.name}.");
 
                         //if (PWAssyVersion != "0.44.0.0") //PWings now have edge colliders, unnecessary
                         if ((!BDArmorySettings.PWING_EDGE_LIFT) && !ctrlSrf) //if part !controlsurface, remove lift/mass from edges to bring inline with stock boards
                         {
-							aeroVolume = (0.786f * length * width * adjustedThickness) / 4f; //original .7 was based on errorneous 2x4 wingboard dimensions; stock reference wing area is 1.875x3.75m
+							aeroVolume = (0.786f * length * (width / 2) * adjustedThickness); //original .7 was based on errorneous 2x4 wingboard dimensions; stock reference wing area is 1.875x3.75m
 							liftCoeff = (length * (width / 2f)) / 3.52f;
                         }
-                        if (!FerramAerospace.CheckForFAR()) part.Modules.GetModule<ModuleLiftingSurface>().deflectionLiftCoeff = (float)Math.Round(liftCoeff, 2);
+                            if (!FerramAerospace.CheckForFAR()) part.Modules.GetModule<ModuleLiftingSurface>().deflectionLiftCoeff = (float)Math.Round(liftCoeff, 2);
                         if (!ctrlSrf && !WingctrlSrf)
                             PWType.GetField("aeroUIMass", BindingFlags.Public | BindingFlags.Instance).SetValue(module, ((float)liftCoeff / 10f) * (adjustedThickness * 5.6f)); //Adjust PWing GUI mass readout
                         else
@@ -273,6 +277,13 @@ namespace BDArmory.Utils
                         {
                             liftCoeff = Mathf.Clamp((float)liftCoeff, 0, BDArmorySettings.MAX_PWING_LIFT); //if Runway Project, check lift is within limit and clamp if not
                             if (!WingctrlSrf) PWType.GetField("sharedBaseOffsetRoot", BindingFlags.Public | BindingFlags.Instance).SetValue(module, 0); //Adjust PWing GUI mass readout
+                        }
+                        if (BDArmorySettings.RUNWAY_PROJECT || BDArmorySettings.PWING_THICKNESS_AFFECT_MASS_HP)
+                        {
+                            liftCoeff *= (1 - ((adjustedThickness - 0.188f) / ((width + BDArmorySettings.PWING_EDGE_LIFT ? edgeWidth : 0) / 2))); //adjust lift coeff based on Thickness to Chord Ratio. Loggins lift nerf for spherical/near-spherical wing crossections
+							if (liftCoeff < 0) liftCoeff = 0;
+                            if (HighLogic.LoadedSceneIsFlight) if (Mathf.Abs(Vector3.Dot(part.vessel.ReferenceTransform.up, part.transform.right)) > 0.85) liftCoeff /= 2; //something something a wing rotated 90deg would only be generating body lift due to airfoil now perpendicular to airflow. Loggins pWing body nerf
+                            if (HighLogic.LoadedSceneIsEditor) if (Mathf.Abs(Vector3.Dot(EditorLogic.fetch.vesselRotation * Vector3d.up, part.transform.right)) > 0.85) liftCoeff /= 2;
                         }
                         PWType.GetField("stockLiftCoefficient", BindingFlags.Public | BindingFlags.Instance).SetValue(module, isAeroSrf ? (float)liftCoeff : 0f); //adjust PWing GUI lift readout
                         if (part.name.Contains("B9.Aero.Wing.Procedural.Panel") || !isAeroSrf) //if Josue's noLift PWings PR never gets folded in, here's an alternative using an MM'ed PWing structural panel part

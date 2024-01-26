@@ -170,8 +170,8 @@ namespace BDArmory.Damage
         private float hullRadarReturnFactor = 1;
         private float armorRadarReturnFactor = 1;
 
-        public List<Shader> defaultShader;
-        public List<Color> defaultColor;
+        public Dictionary<int, Shader> defaultShader = [];
+        public Dictionary<int, Color> defaultColor = [];
         public bool RegisterProcWingShader = false;
 
         public float defenseMutator = 1;
@@ -455,21 +455,6 @@ namespace BDArmory.Damage
             //if (armorVolume < 0) //check already occurs 429, doubling it results in the PartSize vector3 returning null
             calcPartSize();
             SetupPrefab();
-            if (!isProcWing)
-            {
-                var r = part.GetComponentsInChildren<Renderer>();
-                {
-                    for (int i = 0; i < r.Length; i++)
-                    {
-                        defaultShader.Add(r[i].material.shader);
-                        if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.HitpointTracker]: ARMOR: part shader is " + r[i].material.shader.name);
-                        if (r[i].material.HasProperty("_Color"))
-                        {
-                            defaultColor.Add(r[i].material.color);
-                        }
-                    }
-                }
-            }
             Armour = Armor;
             StartCoroutine(DelayedOnStart()); // Delay updating mass, armour, hull and HP so mods like proc wings and tweakscale get the right values.
                                               //if (HighLogic.LoadedSceneIsFlight)
@@ -560,6 +545,21 @@ namespace BDArmory.Damage
                     partMass = part.mass;
                     calcPartSize(); // Re-calculate the size.
                     SetupPrefab(); // Re-setup the prefab.
+                }
+            }
+            if (!isProcWing) //moving this here so any dynamic texture adjustment post spawn (TURD/TUFX/etc) will be grabbed by the defaultShader census
+            {
+                var r = part.GetComponentsInChildren<Renderer>();
+                {
+                    for (int i = 0; i < r.Length; i++)
+                    {
+                        defaultShader.Add(i, r[i].material.shader);
+                        if (BDArmorySettings.DEBUG_ARMOR) Debug.Log("[BDArmory.HitpointTracker]: ARMOR: part shader is " + r[i].material.shader.name);
+                        if (r[i].material.HasProperty("_Color"))
+                        {
+                            defaultColor.Add(i, r[i].material.color);
+                        }
+                    }
                 }
             }
             if (part.partInfo != null && part.partInfo.partPrefab != null) partMass = part.partInfo.partPrefab.mass;
