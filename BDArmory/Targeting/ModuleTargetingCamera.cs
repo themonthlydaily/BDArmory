@@ -439,6 +439,7 @@ namespace BDArmory.Targeting
                             TargetingCamera.Instance.SetFOV(fov);
                         }
                     }
+
                     if (radarLock)
                     {
                         UpdateRadarLock();
@@ -515,7 +516,6 @@ namespace BDArmory.Targeting
                     {
                         GetHitPoint();
                     }
-
                 }
             }
         }

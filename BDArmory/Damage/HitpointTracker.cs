@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using KSP.Localization;
 using UnityEngine;
 
 using BDArmory.Armor;
@@ -430,14 +429,14 @@ namespace BDArmory.Damage
                     IgnoreForArmorSetup = true;
                     SetHullMass();
                 }
-                
+
                 if (ArmorThickness > 10 || ArmorPanel) //Mod part set to start with armor, or armor panel. > 10, since less than 10mm of armor can't be considered 'startsArmored'
                 {
                     startsArmored = true;
                     if (Armor < 0) // armor amount modified in SPH/VAB and does not = either the default nor the .cfg thickness
                         Armor = ArmorThickness;//set Armor amount to .cfg value
                     //See also ln 1183-1186
-                }                
+                }
                 else
                 {
                     if (Armor < 0) Armor = ArmorThickness; //10 for parts, 2 for missiles, from ln 347
@@ -517,7 +516,7 @@ namespace BDArmory.Damage
                     }
                 }
                 else
-                sizeAdjust = 0.5f; //armor on one side, otherwise will have armor thickness on both sides of the panel, nonsensical + double weight
+                    sizeAdjust = 0.5f; //armor on one side, otherwise will have armor thickness on both sides of the panel, nonsensical + double weight
             }
             if (armorVolume < 0 || HighLogic.LoadedSceneIsEditor && isProcPart) //make this persistant to get around diffeences in part bounds between SPH/Flight. Also reset if in editor and a procpart to account for resizing
             {
@@ -550,17 +549,15 @@ namespace BDArmory.Damage
             if (!isProcWing) //moving this here so any dynamic texture adjustment post spawn (TURD/TUFX/etc) will be grabbed by the defaultShader census
             {
                 var r = part.GetComponentsInChildren<Renderer>();
+                for (int i = 0; i < r.Length; i++)
                 {
-                    for (int i = 0; i < r.Length; i++)
+                    if (r[i].GetComponentInParent<Part>() != part) continue; // Don't recurse to child parts.
+                    int key = r[i].material.GetInstanceID(); // The instance ID is unique for each object (not just component or gameObject).
+                    defaultShader.Add(key, r[i].material.shader);
+                    if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.HitpointTracker]: ARMOR: part shader on {r[i].GetComponentInParent<Part>().partInfo.name} is {r[i].material.shader.name}");
+                    if (r[i].material.HasProperty("_Color"))
                     {
-                        if (r[i].GetComponentInParent<Part>() != part) continue; // Don't recurse to child parts.
-                        int key = r[i].material.GetInstanceID(); // The instance ID is unique for each object (not just component or gameObject).
-                        defaultShader.Add(key, r[i].material.shader);
-                        if (BDArmorySettings.DEBUG_ARMOR) Debug.Log($"[BDArmory.HitpointTracker]: ARMOR: part shader on {r[i].GetComponentInParent<Part>().partInfo.name} is {r[i].material.shader.name}");
-                        if (r[i].material.HasProperty("_Color"))
-                        {
-                            if (!defaultColor.ContainsKey(key)) defaultColor.Add(key, r[i].material.color);
-                        }
+                        if (!defaultColor.ContainsKey(key)) defaultColor.Add(key, r[i].material.color);
                     }
                 }
             }
@@ -1207,7 +1204,7 @@ namespace BDArmory.Damage
             {
                 if (part.IsAero())
                 {
-                    if (isProcWing) 
+                    if (isProcWing)
                         maxSupportedArmor = ProceduralWing.getPwingThickness(part);
                     else
                         maxSupportedArmor = 20;
@@ -1551,7 +1548,7 @@ namespace BDArmory.Damage
             part.breakingTorque = maxTorque;
             maxG = part.partInfo.partPrefab.gTolerance * hullInfo.ImpactMod;
             part.gTolerance = maxG;
-            hullRadarReturnFactor = hullInfo.radarMod; 
+            hullRadarReturnFactor = hullInfo.radarMod;
             hullType = hullInfo.name;
             CalculateRCSreduction();
             float partCost = part.partInfo.cost + part.partInfo.variant.Cost;

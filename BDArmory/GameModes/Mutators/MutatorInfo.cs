@@ -177,7 +177,7 @@ namespace BDArmory.GameModes
                     throw new ArgumentException("Field '" + field + "': '" + value + "' could not be parsed as '" + type.ToString() + "' | " + e.ToString(), field);
                 }
             }
-            catch (Exception e)
+            catch// (Exception e)
             {
                 if (defaultMutator != null)
                 {

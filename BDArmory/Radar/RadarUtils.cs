@@ -720,24 +720,24 @@ namespace BDArmory.Radar
             }
             //if (!BDArmorySettings.DEBUG_RADAR)
             //{
-                using (List<Part>.Enumerator parts = (HighLogic.LoadedSceneIsEditor ? EditorLogic.fetch.ship.Parts.GetEnumerator() : v.parts.GetEnumerator()))
-                    while (parts.MoveNext())
-                    {
-                        HitpointTracker a = parts.Current.GetComponent<HitpointTracker>();
-                        FlagDecal flag = parts.Current.GetComponent<FlagDecal>();
+            using (List<Part>.Enumerator parts = (HighLogic.LoadedSceneIsEditor ? EditorLogic.fetch.ship.Parts.GetEnumerator() : v.parts.GetEnumerator()))
+                while (parts.MoveNext())
+                {
+                    HitpointTracker a = parts.Current.GetComponent<HitpointTracker>();
+                    FlagDecal flag = parts.Current.GetComponent<FlagDecal>();
                     if (parts.Current.GetComponent<KerbalEVA>()) continue;
-                        if (flag != null)
+                    if (flag != null)
+                    {
+                        if (!flag.flagDisplayed)
                         {
-                            if (!flag.flagDisplayed)
-                            {
-                                flag.ToggleFlag();
-                            }
+                            flag.ToggleFlag();
                         }
-                        var r = parts.Current.GetComponentsInChildren<Renderer>();
-                        for (int i = 0; i < r.Length; i++)
+                    }
+                    var r = parts.Current.GetComponentsInChildren<Renderer>();
+                    for (int i = 0; i < r.Length; i++)
+                    {
+                        try
                         {
-                            try
-                            {
                             if (r[i].GetComponentInParent<Part>() != parts.Current) continue; // Don't recurse to child parts.
                             int key = r[i].material.GetInstanceID();
                             if (!a.defaultShader.ContainsKey(key))
@@ -768,14 +768,14 @@ namespace BDArmory.Radar
                                             r[i].material.SetColor("_Color", Color.white);
                                     }
                                 }
-                                }
                             }
-                            catch (Exception e)
-                            {
+                        }
+                        catch (Exception e)
+                        {
                             Debug.Log($"[RadarUtils]: material on {parts.Current.name} could not find default shader/color: {e.Message}\n{e.StackTrace}");
                         }
-                        }
                     }
+                }
             //}
             // If in editor, turn back on rendering of conformal decals
             if (!HighLogic.LoadedSceneIsFlight && CheckForConformalDecals())
@@ -1088,7 +1088,7 @@ namespace BDArmory.Radar
                     Debug.Log($"[BDArmory.RadarUtils]: - Vessel rcs is (frontal/lateral/ventral), (frontal45/lateral45/ventral45): {rcsFrontal}/{rcsLateral}/{rcsVentral}, {rcsFrontal45}/{rcsLateral45}/{rcsVentral45} = rcsTotal: {rcsTotal}");
                 }
             }
-            
+
             return rcsTotal;
         }
 
@@ -1128,47 +1128,45 @@ namespace BDArmory.Radar
                     }
                     if (parts.Current.GetComponent<KerbalEVA>()) continue; //ignore kerbals
                     var r = parts.Current.GetComponentsInChildren<Renderer>();
+                    try
                     {
-                        try
+                        if (!a.RegisterProcWingShader && parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
                         {
-                            if (!a.RegisterProcWingShader && parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
+                            for (int s = 0; s < r.Length; s++)
                             {
-                                    for (int s = 0; s < r.Length; s++)
-                                    {
-                                    if (r[s].GetComponentInParent<Part>() != parts.Current) continue; // Don't recurse to child parts.
-                                    int key = r[s].material.GetInstanceID();
-                                    a.defaultShader.Add(key, r[s].material.shader);
-                                    if (r[s].material.HasProperty("_Color"))
-                                        {
-                                        a.defaultColor.Add(key, r[s].material.color);
-                                    }
-                                    a.RegisterProcWingShader = true;
-                                }
-                            }
-                            for (int i = 0; i < r.Length; i++)
-                            {
-                                if (!a.defaultShader.ContainsKey(r[i].material.GetInstanceID())) continue; // Don't modify shaders that we don't have defaults for as we can't then replace them.
-                                if (r[i].GetComponentInParent<Part>() != parts.Current) continue; // Don't recurse to child parts.
-                                if (r[i].material.shader.name.Contains("Alpha")) continue;
-                                if (r[i].material.shader.name.Contains("Waterfall")) continue;
-                                if (r[i].material.shader.name.Contains("KSP/Particles")) continue;
-                                r[i].material.shader = RCSshader;
-                                r[i].material.SetVector("_LIGHTDIR", -cameraDirection);
-                                r[i].material.SetColor("_RCSCOLOR", Color.white);
-                                if (a != null)
+                                if (r[s].GetComponentInParent<Part>() != parts.Current) continue; // Don't recurse to child parts.
+                                int key = r[s].material.GetInstanceID();
+                                a.defaultShader.Add(key, r[s].material.shader);
+                                if (r[s].material.HasProperty("_Color"))
                                 {
-                                    StealthAdjust.r = a.radarReflectivity;
-                                    StealthAdjust.g = a.radarReflectivity;
-                                    StealthAdjust.b = a.radarReflectivity;
-                                    StealthAdjust.a = 1;
-                                    r[i].material.SetColor("_RCSCOLOR", StealthAdjust);
+                                    a.defaultColor.Add(key, r[s].material.color);
                                 }
                             }
+                            a.RegisterProcWingShader = true;
                         }
-                        catch
+                        for (int i = 0; i < r.Length; i++)
                         {
-                            Debug.Log("[RadarUtils]: material on " + parts.Current.name + "could not find set RCS shader/color");
+                            if (!a.defaultShader.ContainsKey(r[i].material.GetInstanceID())) continue; // Don't modify shaders that we don't have defaults for as we can't then replace them.
+                            if (r[i].GetComponentInParent<Part>() != parts.Current) continue; // Don't recurse to child parts.
+                            if (r[i].material.shader.name.Contains("Alpha")) continue;
+                            if (r[i].material.shader.name.Contains("Waterfall")) continue;
+                            if (r[i].material.shader.name.Contains("KSP/Particles")) continue;
+                            r[i].material.shader = RCSshader;
+                            r[i].material.SetVector("_LIGHTDIR", -cameraDirection);
+                            r[i].material.SetColor("_RCSCOLOR", Color.white);
+                            if (a != null)
+                            {
+                                StealthAdjust.r = a.radarReflectivity;
+                                StealthAdjust.g = a.radarReflectivity;
+                                StealthAdjust.b = a.radarReflectivity;
+                                StealthAdjust.a = 1;
+                                r[i].material.SetColor("_RCSCOLOR", StealthAdjust);
+                            }
                         }
+                    }
+                    catch
+                    {
+                        Debug.Log("[RadarUtils]: material on " + parts.Current.name + "could not find set RCS shader/color");
                     }
                 }
             /////////////////
