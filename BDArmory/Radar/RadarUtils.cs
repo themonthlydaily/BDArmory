@@ -13,8 +13,6 @@ using BDArmory.Utils;
 using BDArmory.Weapons;
 using BDArmory.Weapons.Missiles;
 using BDArmory.Damage;
-using static UnityEngine.ParticleSystem;
-
 
 namespace BDArmory.Radar
 {
