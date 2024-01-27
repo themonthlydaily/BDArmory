@@ -280,7 +280,7 @@ namespace BDArmory.Utils
                         }
                         if (BDArmorySettings.RUNWAY_PROJECT || BDArmorySettings.PWING_THICKNESS_AFFECT_MASS_HP)
                         {
-                            liftCoeff *= (1 - ((adjustedThickness - 0.188f) / ((width + BDArmorySettings.PWING_EDGE_LIFT ? edgeWidth : 0) / 2))); //adjust lift coeff based on Thickness to Chord Ratio. Loggins lift nerf for spherical/near-spherical wing crossections
+                            liftCoeff *= (1 - ((adjustedThickness - 0.188f) / ((width + (BDArmorySettings.PWING_EDGE_LIFT ? edgeWidth : 0)) / 2))); //adjust lift coeff based on Thickness to Chord Ratio. Loggins lift nerf for spherical/near-spherical wing crossections
 							if (liftCoeff < 0) liftCoeff = 0;
                             if (HighLogic.LoadedSceneIsFlight) if (Mathf.Abs(Vector3.Dot(part.vessel.ReferenceTransform.up, part.transform.right)) > 0.85) liftCoeff /= 2; //something something a wing rotated 90deg would only be generating body lift due to airfoil now perpendicular to airflow. Loggins pWing body nerf
                             if (HighLogic.LoadedSceneIsEditor) if (Mathf.Abs(Vector3.Dot(EditorLogic.fetch.vesselRotation * Vector3d.up, part.transform.right)) > 0.85) liftCoeff /= 2;

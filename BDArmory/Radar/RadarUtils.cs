@@ -600,7 +600,7 @@ namespace BDArmory.Radar
                 aspect = Vector3.RotateTowards(aspect, Vector3.Cross(t.right, t.up), -rcsAspects[i, 1] / 180f * Mathf.PI, 0);
 
                 // Render aspect
-                RenderSinglePass(v, t, false, aspect, vesselbounds, radarDistance, radarFOV, rcsRenderingVariable, drawTextureVariable); //, ti.MissileBaseModule);
+                RenderSinglePass(v, t, false, aspect, vesselbounds, radarDistance, radarFOV, rcsRenderingVariable, drawTextureVariable);
 
                 // Count pixel colors to determine radar returns
                 rcsVariable = 0;
@@ -726,7 +726,6 @@ namespace BDArmory.Radar
                         HitpointTracker a = parts.Current.GetComponent<HitpointTracker>();
                         FlagDecal flag = parts.Current.GetComponent<FlagDecal>();
                     if (parts.Current.GetComponent<KerbalEVA>()) continue;
-                    if (ti.isMissile) continue;
                         if (flag != null)
                         {
                             if (!flag.flagDisplayed)
@@ -739,21 +738,27 @@ namespace BDArmory.Radar
                         {
                             try
                             {
-                            if (!a.defaultShader.ContainsKey(i)) continue;
-                            if (r[i].material.shader != a.defaultShader[i])
+                            if (r[i].GetComponentInParent<Part>() != parts.Current) continue; // Don't recurse to child parts.
+                            int key = r[i].material.GetInstanceID();
+                            if (!a.defaultShader.ContainsKey(key))
+                            {
+                                if (BDArmorySettings.DEBUG_RADAR) Debug.Log($"[BDArmory.RadarUtils]: {r[i].material.name} ({key}) not found in defaultShader for part {parts.Current.partInfo.name} on {(HighLogic.LoadedSceneIsFlight ? v.vesselName : EditorLogic.fetch.ship.shipName)}"); // Enable this to see what materials aren't getting RCS shaders applied to them.
+                                continue;
+                            }
+                            if (r[i].material.shader != a.defaultShader[key])
+                            {
+                                if (a.defaultShader[key] != null)
                                 {
-                                    if (a.defaultShader[i] != null)
-                                    {
-                                        r[i].material.shader = a.defaultShader[i];
-                                    }
-                                if (a.defaultColor.ContainsKey(i))
+                                    r[i].material.shader = a.defaultShader[key];
+                                }
+                                if (a.defaultColor.ContainsKey(key))
                                 {
-                                    if (a.defaultColor[i] != null)
+                                    if (a.defaultColor[key] != null)
                                     {
                                         if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
-                                            r[i].material.SetColor("_MainTex", a.defaultColor[i]);
+                                            r[i].material.SetColor("_MainTex", a.defaultColor[key]);
                                         else
-                                            r[i].material.SetColor("_Color", a.defaultColor[i]);
+                                            r[i].material.SetColor("_Color", a.defaultColor[key]);
                                     }
                                     else
                                     {
@@ -823,6 +828,7 @@ namespace BDArmory.Radar
                             if (BDArmorySettings.DEBUG_RADAR) Debug.Log($"[BDArmory.RadarUtils]: Found {module.moduleName} for {parts.Current.name}.");
                             foreach (var r in parts.Current.GetComponentsInChildren<Renderer>())
                             {
+                                if (r.GetComponentInParent<Part>() != parts.Current) continue; // Don't recurse to child parts.
                                 r.enabled = renderEnabled;
                                 if (BDArmorySettings.DEBUG_RADAR) Debug.Log($"[BDArmory.RadarUtils]: Set rendering for {parts.Current.name} to {renderEnabled}.");
                             }
@@ -1089,7 +1095,7 @@ namespace BDArmory.Radar
         /// <summary>
         /// Internal helpder method
         /// </summary>
-        private static void RenderSinglePass(Vessel v, Transform t, bool inEditorZoom, Vector3 cameraDirection, Bounds vesselbounds, float radarDistance, float radarFOV, RenderTexture rcsRendering, Texture2D rcsTexture) //, MissileBase msl = null)
+        private static void RenderSinglePass(Vessel v, Transform t, bool inEditorZoom, Vector3 cameraDirection, Bounds vesselbounds, float radarDistance, float radarFOV, RenderTexture rcsRendering, Texture2D rcsTexture)
         {
             // Render one snapshop pass:
             // setup camera FOV
@@ -1125,32 +1131,26 @@ namespace BDArmory.Radar
                     {
                         try
                         {
-                            if (parts.Current.name.Contains("B9.Aero.Wing.Procedural")) // || (msl != null && msl.HasFired))
+                            if (!a.RegisterProcWingShader && parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
                             {
-                                if (!a.RegisterProcWingShader)
-                                {
                                     for (int s = 0; s < r.Length; s++)
                                     {
-                                        //if (msl) //missiles have an exhaustPrefab added at launch, which wouldn't be registered in the missile's defaultShader list; clear and reset
-                                        //{
-                                        //    a.defaultColor.Clear();
-                                        //    a.defaultColor.Clear();
-                                        //}
-                                        a.defaultShader.Add(s, r[s].material.shader);
-                                        if (r[s].material.HasProperty("_Color"))
+                                    if (r[s].GetComponentInParent<Part>() != parts.Current) continue; // Don't recurse to child parts.
+                                    int key = r[s].material.GetInstanceID();
+                                    a.defaultShader.Add(key, r[s].material.shader);
+                                    if (r[s].material.HasProperty("_Color"))
                                         {
-                                            a.defaultColor.Add(s, r[s].material.color);
-                                        }
+                                        a.defaultColor.Add(key, r[s].material.color);
                                     }
                                     a.RegisterProcWingShader = true;
                                 }
                             }
                             for (int i = 0; i < r.Length; i++)
                             {
-                                if (!a.defaultShader.ContainsKey(i)) continue;
-                                if (r[i].material.shader != a.defaultShader[i]) continue;
-                                //instead of iterating though all shaders on the part - which will include battledamage FX/bulletholes/etc attached post spawn, we already have a list of all shaders the aprt uses compiled on spawn. Just use those.
+                                if (!a.defaultShader.ContainsKey(r[i].material.GetInstanceID())) continue; // Don't modify shaders that we don't have defaults for as we can't then replace them.
+                                if (r[i].GetComponentInParent<Part>() != parts.Current) continue; // Don't recurse to child parts.
                                 if (r[i].material.shader.name.Contains("Alpha")) continue;
+                                if (r[i].material.shader.name.Contains("Waterfall")) continue;
                                 if (r[i].material.shader.name.Contains("KSP/Particles")) continue;
                                 r[i].material.shader = RCSshader;
                                 r[i].material.SetVector("_LIGHTDIR", -cameraDirection);
