@@ -184,7 +184,7 @@ namespace BDArmory.VesselSpawning
                         break;
                     }
                     {// Perform a "bubble shuffle" (randomly swap pairs of craft moving through the queue).
-                        List<string> shufflePool = new();
+                        List<string> shufflePool = [], shuffleSelection = [];
                         Queue<string> bubbleShuffleQueue = new();
                         while (spawnQueue.Count > 0)
                         {
@@ -192,8 +192,12 @@ namespace BDArmory.VesselSpawning
                             if (shufflePool.Count > 1) // Use a pool of size 2 for shuffling.
                             {
                                 shufflePool.Shuffle();
-                                bubbleShuffleQueue.Enqueue(shufflePool.First());
-                                shufflePool.RemoveAt(0);
+                                // Prioritise craft that have had fewer spawns/deaths.
+                                int fewestSpawns = shufflePool.Min(craftUrl => spawnCounts[craftUrl]);
+                                shuffleSelection = shufflePool.Where(craftUrl => spawnCounts[craftUrl] == fewestSpawns).ToList();
+                                string selected = shuffleSelection.First();
+                                bubbleShuffleQueue.Enqueue(selected);
+                                shufflePool.Remove(selected);
                             }
                         }
                         foreach (var craft in shufflePool) bubbleShuffleQueue.Enqueue(craft); // Add any remaining craft in the shuffle pool.
@@ -201,6 +205,7 @@ namespace BDArmory.VesselSpawning
                     }
                     while (craftToSpawn.Count + currentlySpawningCount + currentlyActive < spawnSlots.Count && spawnQueue.Count > 0)
                         craftToSpawn.Enqueue(spawnQueue.Dequeue());
+#if DEBUG
                     if (BDArmorySettings.DEBUG_SPAWNING)
                     {
                         var missing = spawnConfig.craftFiles.Where(craftURL => craftURLToVesselName.ContainsKey(craftURL) && (!spawnCounts.ContainsKey(craftURL) || spawnCounts[craftURL] < BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL) && !craftToSpawn.Contains(craftURL) && !FlightGlobals.Vessels.Where(v => !VesselModuleRegistry.ignoredVesselTypes.Contains(v.vesselType) && VesselModuleRegistry.GetModuleCount<MissileFire>(v) > 0).Select(v => v.vesselName).Contains(craftURLToVesselName[craftURL])).ToList();
@@ -209,6 +214,7 @@ namespace BDArmory.VesselSpawning
                             LogMessage("MISSING vessels: " + string.Join(", ", craftURLToVesselName.Where(c => missing.Contains(c.Key)).Select(c => c.Value)), false);
                         }
                     }
+#endif
                     if (craftToSpawn.Count > 0)
                     {
                         VesselModuleRegistry.CleanRegistries(); // Clean out any old entries.
@@ -230,7 +236,7 @@ namespace BDArmory.VesselSpawning
                         // Configure vessel spawn configs
                         foreach (var craftURL in craftToSpawn)
                         {
-                            if (BDArmorySettings.DEBUG_SPAWNING) LogMessage($"Spawning vessel from {Path.Combine(AutoSpawnFolder, craftURL.Substring(AutoSpawnPath.Length))}", false);
+                            if (BDArmorySettings.DEBUG_SPAWNING) LogMessage($"Spawning vessel from {craftURL.Substring(AutoSpawnPath.Length - AutoSpawnFolder.Length)} for the {spawnCounts[craftURL]}{spawnCounts[craftURL] switch { 1 => "st", 2 => "nd", 3 => "rd", _ => "th" }} time.", true);
                             var heading = 360f * spawnSlots[continuousSpawnedVesselCount] / spawnSlots.Count;
                             ++continuousSpawnedVesselCount;
                             continuousSpawnedVesselCount %= spawnSlots.Count;

@@ -472,6 +472,7 @@ namespace BDArmory.Targeting
                     {
                         PointCameraModel(lookDirection);
                     }
+
                     if (eyeHolderTransform)
                     {
                         Vector3 projectedForward = cameraParentTransform.forward.ProjectOnPlanePreNormalized(eyeHolderTransform.parent.up);
@@ -514,13 +515,7 @@ namespace BDArmory.Targeting
                     {
                         GetHitPoint();
                     }
-                    if (TargetingCamera.ReadyForUse && vessel.IsControllable)
-                    {
-                        if (!TargetingCamera.Instance || FlightGlobals.currentMainBody == null)
-                        {
-                            return;
-                        }
-                    }
+
                 }
             }
         }
@@ -1334,7 +1329,7 @@ namespace BDArmory.Targeting
                     {
                         if (pCheck && p.vessel.CoM != Vector3.zero)
                         {
-                            groundTargetPosition = p.vessel.CoM; // + (p.vessel.Velocity() * Time.fixedDeltaTime);
+                            groundTargetPosition = p.vessel.CoM + (p.vessel.Velocity() * Time.fixedDeltaTime);
                             StartCoroutine(StabilizeNextFrame());
                             lockedVessel = p.vessel;
                             //StartCoroutine(PointToPositionRoutine(p.vessel.CoM, p.vessel, false));

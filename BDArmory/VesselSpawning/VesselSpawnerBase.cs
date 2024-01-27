@@ -101,6 +101,9 @@ namespace BDArmory.VesselSpawning
                 BDACompetitionMode.Instance.StopCompetition(); // Stop any running competition.
                 BDACompetitionMode.Instance.ResetCompetitionStuff(); // Reset competition scores.
             }
+
+            // Reset the random seed as KSP restores the random seed from the previous save.
+            UnityEngine.Random.InitState((int)DateTime.Now.Ticks);
         }
         #endregion
 

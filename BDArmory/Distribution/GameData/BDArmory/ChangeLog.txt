@@ -1,18 +1,20 @@
 ﻿IMPROVEMENTS / FIXES
 - General:
 	- Fix Krakensbane adjustments when the active vessel dies.
-	- Fix tracer visuals when the active vessel dies.
-	- Adjust timing and conditions for auto-camera switching to and away from missiles.
-	- Battle damage fuel leak rates now scale by (bullet caliber)^2, instead of (bullet caliber). Fuel leak rates for 20mm caliber remain the same, calibers higher and lower than 20mm will now have higher and lower leak rates, respectively.
 	- Make sure various pooled objects are disabled when leaving the flight scene.
-	- Fix missing resource for the Bubble CM.
+	- Battle damage fuel leak rates now scale by (bullet caliber)^2, instead of (bullet caliber). Fuel leak rates for 20mm caliber remain the same, calibers higher and lower than 20mm will now have higher and lower leak rates, respectively.
+	- Fixes for Kerbal Safety not always detecting EVA kerbals.
 - UI:
 	- Fix part filtering by search terms in the editors.
+	- Adjust timing and conditions for auto-camera switching to and away from missiles.
+	- Fix tracer visuals when the active vessel dies.
 	- New Opacity option in BDA Team Icons to set icon opacity.
 	- Adds CASE ammo explosion radii visualizer, enable via F3.
 	- Continuous Spawn now shows lives remaining in the Vessel Switcher GUI.
 	- Add a UI scaling option for BDA's windows.
 	- Improve the logarithmic scaling in the radar windows.
+	- Add a 'withZero' parameter to semi-log sliders that allows them to include 0 and uses lower precision for the smallest range.
+	- Add a 'GUIUtils.HorizontalSemiLogSlider' for simplifying horizontal sliders for semi-log float ranges outside of PAWs.
 - AI / WM:
 	- Add new "Kinematic Msl Evasion" toggle to Pilot AI under the evasion settings. When this is enabled the AI will evaluate the best maneuver to defeat a beyond-visual-range (BVR) missile using only kinematic maneuvers. The Time to Impact Before Evade setting on the weapons manager should be set to a high value when this evasion option is enabled. Maneuvers the AI will use are:
 		- Crank - Fly at an angle to the target, while still maintaining radar lock.
@@ -25,13 +27,17 @@
 	- Add Smoke CM timing/interal/repetition settings.
   - Fix the missile evasion direction using the wrong reference frame.
   - Automatically disable precision input mode when auto-tuning (UI element doesn't switch though).
-- Armor/Hull:
-  -Radar stealth coatings - can now apply radar absorbent/reflective materials on a per-part basis.
-	  -Armor coatings less than 10mm thick will provide lessened benefits.
-  -Adds new radarReflectivity field to Armor materials so specify degree of radar absorbtion/reflectivity of the armor.
-  -Adds new radarMod field to Hull materials to set degree of radar return off unarmored parts.
-  -Adds new Radar Absorbent Coating armor type.
-  -Adds new Radar Absorbent Foam hull material.
+	- Add a slider for prioritizing using brakes to slow down when braking is allowed.
+- Armor / Hull:
+  - Radar stealth coatings - can now apply radar absorbent/reflective materials on a per-part basis.
+	  - Armor coatings less than 10mm thick will provide lessened benefits.
+  - Adds new radarReflectivity field to Armor materials so specify degree of radar absorbtion/reflectivity of the armor.
+  - Adds new radarMod field to Hull materials to set degree of radar return off unarmored parts.
+  - Adds new Radar Absorbent Coating armor type.
+  - Adds new Radar Absorbent Foam hull material.
+- Detectors / Countermeasures:
+	- Fix missing resource for the Bubble CM.
+	- Fix targeting cameras not being able to track targets.
 - Weapons:
 	- Corrections to penetration and ricochet velocity changes and ricochet positions.
 	- Stop APS firing at dead missiles.
@@ -63,6 +69,8 @@
 	- Add an option for the continuous spawn central point to follow the centroid of surviving craft (biased back towards the original spawn point).
 	- Add an option to automatically resume continuous spawn and to automatically shutdown KSP when continuous spawn ends due to having fewer than 2 craft left.
 	- Update the continuous spawn log parser to handle multiple files, either separately or combined.
+	- Bias the continuous spawn's "bubble shuffle" to prioritise craft with fewer spawns.
+	- Hide the ALIVE / DEAD string in continuous spawn when the UI is hidden.
 
 v1.6.9.0
 IMPROVEMENTS / FIXES

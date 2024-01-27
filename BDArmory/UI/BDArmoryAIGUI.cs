@@ -351,6 +351,7 @@ namespace BDArmory.UI
                         { "idleSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.idleSpeed, 10, 200) },
                         { "ABPriority", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.ABPriority, 0, 100) },
                         { "ABOverrideThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.ABOverrideThreshold, 0, 200) },
+                        { "brakingPriority", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.brakingPriority, 0, 100) },
 
                         { "maxSteer", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxSteer, 0.1, 1) },
                         { "lowSpeedSwitch", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.lowSpeedSwitch, 10, 500) },
@@ -370,7 +371,7 @@ namespace BDArmory.UI
                         { "evasionNonlinearity", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionNonlinearity, 0, 10) },
                         { "evasionThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionThreshold, 0, 100) },
                         { "evasionTimeThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionTimeThreshold, 0, 1) },
-                        { "evasionMinRangeThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionMinRangeThreshold, 10, 10000) },
+                        { "evasionMinRangeThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionMinRangeThreshold, 0, 10000) },
                         { "collisionAvoidanceThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.collisionAvoidanceThreshold, 0, 50) },
                         { "vesselCollisionAvoidanceLookAheadPeriod", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselCollisionAvoidanceLookAheadPeriod, 0, 3) },
                         { "vesselCollisionAvoidanceStrength", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselCollisionAvoidanceStrength, 0, 4) },
@@ -836,6 +837,7 @@ namespace BDArmory.UI
                                 GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_SpeedHelp_idle"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //idle speed
                                 GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_SpeedHelp_ABpriority"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //AB priority
                                 GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_SpeedHelp_ABOverrideThreshold"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //AB override threshold
+                                GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_SpeedHelp_BrakingPriority"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //Braking priority
                             }
                             if (showControl)
                             {
@@ -1592,6 +1594,20 @@ namespace BDArmory.UI
                             GUI.Label(SettinglabelRect(leftIndent, spdLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_ABOverrideThreshold") + ": " + ActivePilot.ABOverrideThreshold.ToString("0"), Label);//"AB Override Threshold"
                             if (contextTipsEnabled) GUI.Label(ContextLabelRect(leftIndent, ++spdLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_ABOverrideThreshold_Context"), contextLabel);//"AB priority context help"
 
+                            if (!NumFieldsEnabled)
+                            {
+                                ActivePilot.brakingPriority = GUI.HorizontalSlider(SettingSliderRect(leftIndent, ++spdLines, contentWidth), ActivePilot.brakingPriority, 0, 100);
+                                ActivePilot.brakingPriority = Mathf.Round(ActivePilot.brakingPriority);
+                            }
+                            else
+                            {
+                                var field = inputFields["brakingPriority"];
+                                field.tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ++spdLines, contentWidth), field.possibleValue, 8, field.style));
+                                ActivePilot.brakingPriority = (float)field.currentValue;
+                            }
+                            GUI.Label(SettinglabelRect(leftIndent, spdLines), StringUtils.Localize("#LOC_BDArmory_BrakingPriority") + ": " + ActivePilot.brakingPriority.ToString("0"), Label);//"Braking priority"
+                            if (contextTipsEnabled) GUI.Label(ContextLabelRect(leftIndent, ++spdLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_BrakingPriority"), contextLabel);//"Braking priority context help"
+
                             GUI.EndGroup();
                             speedHeight = Mathf.Lerp(speedHeight, ++spdLines, 0.15f);
                             spdLines += 0.1f;
@@ -1890,11 +1906,11 @@ namespace BDArmory.UI
                             {
                                 if (ActivePilot.UpToEleven)
                                 {
-                                    ActivePilot.evasionMinRangeThreshold = UI_FloatSemiLogRange.ToSemiLogValue(Mathf.Round(GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth), UI_FloatSemiLogRange.FromSemiLogValue(ActivePilot.evasionMinRangeThreshold, 1), 1, UI_FloatSemiLogRange.FromSemiLogValue(1000000, 1))), 1, 1);
+                                    ActivePilot.evasionMinRangeThreshold = GUIUtils.HorizontalSemiLogSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth), ActivePilot.evasionMinRangeThreshold, 1, 1000000, 1, true);
                                 }
                                 else
                                 {
-                                    ActivePilot.evasionMinRangeThreshold = UI_FloatSemiLogRange.ToSemiLogValue(Mathf.Round(GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth), UI_FloatSemiLogRange.FromSemiLogValue(ActivePilot.evasionMinRangeThreshold, 10), 1, UI_FloatSemiLogRange.FromSemiLogValue(10000, 10))), 10, 1);
+                                    ActivePilot.evasionMinRangeThreshold = GUIUtils.HorizontalSemiLogSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth), ActivePilot.evasionMinRangeThreshold, 10, 10000, 1, true);
                                 }
                             }
                             else
