@@ -871,23 +871,20 @@ namespace BDArmory.UI
                             }
                             var r = parts.Current.GetComponentsInChildren<Renderer>();
                             {
-                                if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
+                                if (!a.RegisterProcWingShader && parts.Current.name.Contains("B9.Aero.Wing.Procedural")) //procwing defaultshader left null on start so current shader setup can be grabbed at visualizer runtime
                                 {
-                                    if (!a.RegisterProcWingShader) //procwing defaultshader left null on start so current shader setup can be grabbed at visualizer runtime
+                                    for (int s = 0; s < r.Length; s++)
                                     {
-                                        for (int s = 0; s < r.Length; s++)
+                                        if (r[s].GetComponentInParent<Part>() != parts.Current) continue; // Don't recurse to child parts.
+                                        int key = r[s].material.GetInstanceID();
+                                        a.defaultShader.Add(key, r[s].material.shader);
+                                        //Debug.Log("[Visualizer] " + parts.Current.name + " shader is " + r[s].material.shader.name);
+                                        if (r[s].material.HasProperty("_Color"))
                                         {
-                                            if (r[s].GetComponentInParent<Part>() != parts.Current) continue; // Don't recurse to child parts.
-                                            int key = r[s].material.GetInstanceID();
-                                            a.defaultShader.Add(key, r[s].material.shader);
-                                            //Debug.Log("[Visualizer] " + parts.Current.name + " shader is " + r[s].material.shader.name);
-                                            if (r[s].material.HasProperty("_Color"))
-                                            {
-                                                a.defaultColor.Add(key, r[s].material.color);
-                                            }
+                                            a.defaultColor.Add(key, r[s].material.color);
                                         }
-                                        a.RegisterProcWingShader = true;
                                     }
+                                    a.RegisterProcWingShader = true;
                                 }
                                 for (int i = 0; i < r.Length; i++)
                                 {
@@ -918,23 +915,20 @@ namespace BDArmory.UI
                         //Procs wings turn orange at this point... oh. That's why: The visualizer reset is grabbing a list of shaders and colors at *part spawn!*
                         //pWings use dynamic shaders to paint themselves, so it's not reapplying the latest shader /color config, but the initial one, the one from the part icon  
                         var r = parts.Current.GetComponentsInChildren<Renderer>();
-                        if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
+                        if (!armor.RegisterProcWingShader && parts.Current.name.Contains("B9.Aero.Wing.Procedural")) //procwing defaultshader left null on start so current shader setup can be grabbed at visualizer runtime
                         {
-                            if (!armor.RegisterProcWingShader) //procwing defaultshader left null on start so current shader setup can be grabbed at visualizer runtime
+                            for (int s = 0; s < r.Length; s++)
                             {
-                                for (int s = 0; s < r.Length; s++)
+                                if (r[s].GetComponentInParent<Part>() != parts.Current) continue; // Don't recurse to child parts.
+                                int key = r[s].material.GetInstanceID();
+                                armor.defaultShader.Add(key, r[s].material.shader);
+                                //Debug.Log("[Visualizer] " + parts.Current.name + " shader is " + r[s].material.shader.name);
+                                if (r[s].material.HasProperty("_Color"))
                                 {
-                                    if (r[s].GetComponentInParent<Part>() != parts.Current) continue; // Don't recurse to child parts.
-                                    int key = r[s].material.GetInstanceID();
-                                    armor.defaultShader.Add(key, r[s].material.shader);
-                                    //Debug.Log("[Visualizer] " + parts.Current.name + " shader is " + r[s].material.shader.name);
-                                    if (r[s].material.HasProperty("_Color"))
-                                    {
-                                        armor.defaultColor.Add(key, r[s].material.color);
-                                    }
+                                    armor.defaultColor.Add(key, r[s].material.color);
                                 }
-                                armor.RegisterProcWingShader = true;
                             }
+                            armor.RegisterProcWingShader = true;
                         }
                         //Debug.Log("[VISUALIZER] applying shader to " + parts.Current.name);
                         for (int i = 0; i < r.Length; i++)
@@ -961,9 +955,9 @@ namespace BDArmory.UI
                                             if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
                                             {
                                                 r[i].material.SetColor("_MainTex", armor.defaultColor[key]);
-                                                                                                             //LayeredSpecular has _MainTex, _Emissive, _SpecColor,_RimColor, _TemperatureColor, and _BurnColor
-                                                                                                             // source: https://github.com/tetraflon/B9-PWings-Modified/blob/master/B9%20PWings%20Fork/shaders/SpecularLayered.shader
-                                                                                                             //This works.. occasionally. Sometimes it will properly reset pwing tex/color, most of the time it doesn't. need to test later
+                                                //LayeredSpecular has _MainTex, _Emissive, _SpecColor,_RimColor, _TemperatureColor, and _BurnColor
+                                                // source: https://github.com/tetraflon/B9-PWings-Modified/blob/master/B9%20PWings%20Fork/shaders/SpecularLayered.shader
+                                                //This works.. occasionally. Sometimes it will properly reset pwing tex/color, most of the time it doesn't. need to test later
                                             }
                                             else
                                             {
