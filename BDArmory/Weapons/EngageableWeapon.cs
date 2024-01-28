@@ -11,11 +11,11 @@ namespace BDArmory.Weapons
 
         // Weapon usage settings
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EngageRangeMin"),//Engage Range Min
-         UI_FloatSemiLogRange(minValue = 10f, maxValue = 5000f, scene = UI_Scene.Editor)]
+         UI_FloatPowerRange(minValue = 0f, maxValue = 5000f, power = 2, sigFig = 2, scene = UI_Scene.Editor)]
         public float engageRangeMin;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EngageRangeMax"),//Engage Range Max
-         UI_FloatSemiLogRange(minValue = 10f, maxValue = 5000f, scene = UI_Scene.Editor)]
+         UI_FloatPowerRange(minValue = 0f, maxValue = 5000f, power = 2, sigFig = 2, scene = UI_Scene.Editor)]
         public float engageRangeMax;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EngageAir"),//Engage Air
@@ -123,11 +123,11 @@ namespace BDArmory.Weapons
             min = Mathf.Max(min, 1f); // Avoid 0 min range for now. FIXME Remove these if the special value of 0 gets added to UI_FloatSemiLogRange.
             max = Mathf.Max(max, 1f); // Avoid 0 max range for now.
 
-            var rangeMin = (UI_FloatSemiLogRange)Fields["engageRangeMin"].uiControlEditor;
+            var rangeMin = (UI_FloatPowerRange)Fields["engageRangeMin"].uiControlEditor;
             rangeMin.UpdateLimits(min, max);
             rangeMin.onFieldChanged = OnRangeUpdated;
 
-            var rangeMax = (UI_FloatSemiLogRange)Fields["engageRangeMax"].uiControlEditor;
+            var rangeMax = (UI_FloatPowerRange)Fields["engageRangeMax"].uiControlEditor;
             rangeMax.UpdateLimits(min, max);
             rangeMax.onFieldChanged = OnRangeUpdated;
 

@@ -277,6 +277,7 @@ namespace BDArmory.UI
             GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectVesselSpawner, previousWindowHeight);
         }
 
+        (float, float)[] cacheVesselSpawnDistance;
         private void WindowVesselSpawner(int id)
         {
             GUI.DragWindow(new Rect(0, 0, _windowWidth - _buttonSize - _margin, _buttonSize + _margin));
@@ -298,7 +299,7 @@ namespace BDArmory.UI
                 if (BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE)
                 { // Absolute distance
                     GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_SpawnDistance")}:  ({(BDArmorySettings.VESSEL_SPAWN_DISTANCE < 1000 ? $"{BDArmorySettings.VESSEL_SPAWN_DISTANCE:G4}m" : $"{BDArmorySettings.VESSEL_SPAWN_DISTANCE / 1000:G4}km")})", leftLabel);//Spawn Distance
-                    BDArmorySettings.VESSEL_SPAWN_DISTANCE = GUIUtils.HorizontalSemiLogSlider(SRightSliderRect(line), BDArmorySettings.VESSEL_SPAWN_DISTANCE, 10, 200000, 1, false);
+                    BDArmorySettings.VESSEL_SPAWN_DISTANCE = GUIUtils.HorizontalSemiLogSlider(SRightSliderRect(line), BDArmorySettings.VESSEL_SPAWN_DISTANCE, 10, 200000, 1.5f, false, ref cacheVesselSpawnDistance);
                 }
                 else
                 { // Distance factor

@@ -488,15 +488,69 @@ namespace BDArmory.Utils
         /// <param name="maxValue"></param>
         /// <param name="sigFig"></param>
         /// <param name="withZero"></param>
+        /// <param name="cache">A cache of tuples to avoid needlessly recalculating semi-log values. Can initially be null.</param>
         /// <returns></returns>
-        public static float HorizontalSemiLogSlider(Rect rect, float value, float minValue, float maxValue, int sigFig, bool withZero)
+        public static float HorizontalSemiLogSlider(Rect rect, float value, float minValue, float maxValue, float sigFig, bool withZero, ref (float, float)[] cache)
         {
-            return UI_FloatSemiLogRange.FromSliderValue(BDAMath.RoundToUnit(GUI.HorizontalSlider(rect, UI_FloatSemiLogRange.ToSliderValue(value, minValue, sigFig, withZero), withZero ? UI_FloatSemiLogRange.ToSliderValue(0, minValue, sigFig, withZero) : 1, UI_FloatSemiLogRange.ToSliderValue(maxValue, minValue, sigFig, withZero)), Mathf.Pow(10, 1 - sigFig)), minValue, sigFig, withZero);
+            if (cache == null || cache.Length != 3)
+            {
+                cache = [
+                    (value, UI_FloatSemiLogRange.ToSliderValue(value, minValue, sigFig, withZero)),
+                    (minValue, withZero ? UI_FloatSemiLogRange.ToSliderValue(0, minValue, sigFig, withZero) : 1),
+                    (maxValue, UI_FloatSemiLogRange.ToSliderValue(maxValue, minValue, sigFig, withZero))
+                ];
+            }
+            else
+            {
+                if (value != cache[0].Item1) cache[0] = (value, UI_FloatSemiLogRange.ToSliderValue(value, minValue, sigFig, withZero));
+                if (minValue != cache[1].Item1) cache[1] = (minValue, withZero ? UI_FloatSemiLogRange.ToSliderValue(0, minValue, sigFig, withZero) : 1);
+                if (maxValue != cache[2].Item1) cache[2] = (maxValue, UI_FloatSemiLogRange.ToSliderValue(maxValue, minValue, sigFig, withZero));
+            }
+            float sliderValue = cache[0].Item2;
+            if (sliderValue != (sliderValue = GUI.HorizontalSlider(rect, sliderValue, cache[1].Item2, cache[2].Item2)))
+            {
+                cache[0] = (value, sliderValue);
+                return UI_FloatSemiLogRange.FromSliderValue(sliderValue, minValue, sigFig, withZero);
+            }
+            else return value;
+            // return UI_FloatSemiLogRange.FromSliderValue(GUI.HorizontalSlider(rect, UI_FloatSemiLogRange.ToSliderValue(value, minValue, sigFig, withZero), withZero ? UI_FloatSemiLogRange.ToSliderValue(0, minValue, sigFig, withZero) : 1, UI_FloatSemiLogRange.ToSliderValue(maxValue, minValue, sigFig, withZero)), minValue, sigFig, withZero);
         }
 
-        public static float HorizontalPowerSlider(Rect rect, float value, float minValue, float maxValue, float power, int sigFig)
+        /// <summary>
+        /// Wrapper for HorizontalSlider for UI_FloatPowerRange fields.
+        /// </summary>
+        /// <param name="rect"></param>
+        /// <param name="value"></param>
+        /// <param name="minValue"></param>
+        /// <param name="maxValue"></param>
+        /// <param name="power"></param>
+        /// <param name="sigFig"></param>
+        /// <param name="cache">A cache of tuples to avoid needlessly recalculating semi-log values. Can initially be null.</param>
+        /// <returns></returns>
+        public static float HorizontalPowerSlider(Rect rect, float value, float minValue, float maxValue, float power, int sigFig, ref (float, float)[] cache)
         {
-            return UI_FloatPowerRange.FromSliderValue(GUI.HorizontalSlider(rect, UI_FloatPowerRange.ToSliderValue(value, power), UI_FloatPowerRange.ToSliderValue(minValue, power), UI_FloatPowerRange.ToSliderValue(maxValue, power)), power, sigFig, maxValue);
+            if (cache == null || cache.Length != 3)
+            {
+                cache = [
+                    (value, UI_FloatPowerRange.ToSliderValue(value, power)),
+                    (minValue, UI_FloatPowerRange.ToSliderValue(minValue, power)),
+                    (maxValue, UI_FloatPowerRange.ToSliderValue(maxValue, power))
+                ];
+            }
+            else
+            {
+                if (value != cache[0].Item1) cache[0] = (value, UI_FloatPowerRange.ToSliderValue(value, power));
+                if (minValue != cache[1].Item1) cache[1] = (minValue, UI_FloatPowerRange.ToSliderValue(minValue, power));
+                if (maxValue != cache[2].Item1) cache[2] = (maxValue, UI_FloatPowerRange.ToSliderValue(maxValue, power));
+            }
+            float sliderValue = cache[0].Item2;
+            if (sliderValue != (sliderValue = GUI.HorizontalSlider(rect, sliderValue, cache[1].Item2, cache[2].Item2)))
+            {
+                cache[0] = (value, sliderValue);
+                return UI_FloatPowerRange.FromSliderValue(sliderValue, power, sigFig, maxValue);
+            }
+            else return value;
+            // return UI_FloatPowerRange.FromSliderValue(GUI.HorizontalSlider(rect, UI_FloatPowerRange.ToSliderValue(value, power), UI_FloatPowerRange.ToSliderValue(minValue, power), UI_FloatPowerRange.ToSliderValue(maxValue, power)), power, sigFig, maxValue);
         }
 
         [KSPAddon(KSPAddon.Startup.EveryScene, false)]

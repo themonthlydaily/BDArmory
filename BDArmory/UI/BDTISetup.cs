@@ -385,6 +385,7 @@ namespace BDArmory.UI
         public bool showTeamIconSelect = false;
         public bool showColorSelect = false;
 
+        (float, float)[] cacheMaxDistanceThreshold;
         void TeamIconGUI(int windowID)
         {
             float line = 0;
@@ -418,7 +419,7 @@ namespace BDArmory.UI
                 GUI.Label(new Rect(15, line++ * 25, toolWindowWidth - 20, 20), $"{StringUtils.Localize("#LOC_BDArmory_Icon_opacity")} {BDTISettings.OPACITY * 100f:0}%");
                 BDTISettings.OPACITY = BDAMath.RoundToUnit(GUI.HorizontalSlider(new Rect(10, line++ * 25, toolWindowWidth - 40, 20), BDTISettings.OPACITY, 0f, 1f), 0.01f);
                 GUI.Label(new Rect(15, line++ * 25, toolWindowWidth - 20, 20), $"{StringUtils.Localize("#LOC_BDArmory_Icon_max_distance_threshold")} {(BDTISettings.MAX_DISTANCE_THRESHOLD < BDArmorySettings.MAX_GUARD_VISUAL_RANGE ? $"{BDTISettings.MAX_DISTANCE_THRESHOLD / 1000f:0}km" : "Unlimited")}");
-                BDTISettings.MAX_DISTANCE_THRESHOLD = GUIUtils.HorizontalSemiLogSlider(new Rect(10, line++ * 25, toolWindowWidth - 40, 20), BDTISettings.MAX_DISTANCE_THRESHOLD / 1000f, 1f, BDArmorySettings.MAX_GUARD_VISUAL_RANGE / 1000f, 1, false) * 1000f;
+                BDTISettings.MAX_DISTANCE_THRESHOLD = GUIUtils.HorizontalSemiLogSlider(new Rect(10, line++ * 25, toolWindowWidth - 40, 20), BDTISettings.MAX_DISTANCE_THRESHOLD / 1000f, 1f, BDArmorySettings.MAX_GUARD_VISUAL_RANGE / 1000f, 1, false, ref cacheMaxDistanceThreshold) * 1000f;
                 GUI.EndGroup();
                 IconOptionsGroup.height = 25f * line;
 
