@@ -338,7 +338,7 @@ namespace BDArmory.Utils
         /// <param name="minValue">The minimum value of the slider.</param>
         /// <param name="sigFig">The number of significant figures (for integer rounding). Default=2.</param>
         /// <returns>The semi-log value.</returns>
-        public static float ToSemiLogValue(float value, float minValue, int sigFig = 2, bool withZero = false)
+        public static float FromSliderValue(float value, float minValue, int sigFig = 2, bool withZero = false)
         {
             var minStepSize = Mathf.Pow(10, Mathf.Floor(Mathf.Log10(minValue)) + (withZero && sigFig > 1 ? 1 : 0));
             if (withZero)
@@ -358,7 +358,7 @@ namespace BDArmory.Utils
         /// <param name="value">The value to convert.</param>
         /// <param name="minValue">The minimum value of the slider.</param>
         /// <returns>The linear value.</returns>
-        public static float FromSemiLogValue(float value, float minValue, int sigFig = 2, bool withZero = false)
+        public static float ToSliderValue(float value, float minValue, int sigFig = 2, bool withZero = false)
         {
             var minStepSize = Mathf.Pow(10, Mathf.Floor(Mathf.Log10(minValue)) + (withZero && sigFig > 1 ? 1 : 0));
             float sliderStepSize = Mathf.Pow(10, 1 - sigFig);
@@ -506,14 +506,14 @@ namespace BDArmory.Utils
         }
         private float UpdateSlider(float value)
         {
-            var fromValue = FromSemiLogValue(value);
+            var fromValue = ToSliderValue(value);
             var roundedValue = BDAMath.RoundToUnit(fromValue, sliderStepSize);
-            var toValue = ToSemiLogValue(roundedValue);
+            var toValue = FromSliderValue(roundedValue);
             // Debug.Log($"DEBUG SemiLog: value {value} -> {fromValue} -> {roundedValue} -> {toValue}");
             // Debug.Log($"DEBUG SemiLog: value {value} -> {fromValue} -> {roundedValue} -> {toValue}, static FromSemiLog: {UI_FloatSemiLogRange.FromSemiLogValue(value, semiLogFloatRange.minValue, semiLogFloatRange.sigFig, semiLogFloatRange.withZero)}, ToSemiLog: {UI_FloatSemiLogRange.ToSemiLogValue(roundedValue, semiLogFloatRange.minValue, semiLogFloatRange.sigFig, semiLogFloatRange.withZero)}");
             return toValue;
         }
-        float ToSemiLogValue(float value)
+        float FromSliderValue(float value)
         {
             if (withZero)
             {
@@ -524,7 +524,7 @@ namespace BDArmory.Utils
             if (Mathf.Log10(value) - (semiLogFloatRange.sigFig - 1) > 0) value = Mathf.Round(value); // Round whole numbers.
             return value;
         }
-        float FromSemiLogValue(float value)
+        float ToSliderValue(float value)
         {
             if (withZero)
             {
@@ -547,7 +547,7 @@ namespace BDArmory.Utils
             lastDisplayedValue = value;
             fieldValue.text = value.ToString(fieldFormatString);
             if (numericSliders) { inputField.text = fieldValue.text; }
-            else { slider.value = FromSemiLogValue(value); }
+            else { slider.value = ToSliderValue(value); }
             blockSliderUpdate = false;
         }
         private void OnValueChanged(float obj)
@@ -557,7 +557,7 @@ namespace BDArmory.Utils
             { if (!InputLockManager.IsUnlocked(ControlTypes.TWEAKABLES_FULLONLY)) return; }
             else
             { if (!InputLockManager.IsUnlocked(ControlTypes.TWEAKABLES_ANYCONTROL)) return; }
-            float value = ToSemiLogValue(slider.value);
+            float value = FromSliderValue(slider.value);
             value = UpdateSlider(value);
             SetFieldValue(value);
             UpdateDisplay(value);
@@ -606,6 +606,7 @@ namespace BDArmory.Utils
             slider.minValue = BDAMath.RoundToUnit(withZero && semiLogFloatRange.sigFig > 1 ? 1 - (11 - 10 * semiLogFloatRange.minValue / minStepSize) * sliderStepSize : semiLogFloatRange.minValue / minStepSize - (withZero ? sliderStepSize : 0), sliderStepSize);
             slider.maxValue = BDAMath.RoundToUnit(9f * (maxStepSizePower - minStepSizePower) + semiLogFloatRange.maxValue / maxStepSize, sliderStepSize);
             semiLogFloatRange.stepIncrement = sliderStepSize;
+            fieldFormatString = $"G{Mathf.Max(semiLogFloatRange.sigFig + 2, Mathf.CeilToInt(Mathf.Log10(semiLogFloatRange.maxValue)) + 1)}"; // Show at most 2 digits beyond the requested sig. fig. or enough for the largest number.
             SetFieldValue(value); // Restore the unclamped value.
             UpdateDisplay(value);
             // Debug.Log($"DEBUG value is {value} with limits {semiLogFloatRange.minValue}—{semiLogFloatRange.maxValue}, with zero: {withZero}");
@@ -657,6 +658,335 @@ namespace BDArmory.Utils
             // Register prefabs
             controller.fieldPrefabs.Add(UIPartActionFloatSemiLogRange.CreateTemplate());
             fieldPrefabTypes.Add(typeof(UI_FloatSemiLogRange));
+
+            isRunning = false;
+        }
+    }
+
+    /// <summary>
+    /// Power-scaling FloatRange slider.
+    /// Specify minValue, maxValue, power and sigFig. The stepIncrement is automatically calculated.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Property | AttributeTargets.Field)]
+    public class UI_FloatPowerRange : UI_FloatRange
+    {
+        private const string UIControlName = "FloatPowerRange";
+        public float power;
+        public int sigFig = 2;
+        public UI_FloatPowerRange() { }
+
+        /// <summary>
+        /// Update the limits.
+        /// Call this instead of directly setting min/max value or sigFig to properly update the slider.
+        /// </summary>
+        /// <param name="minValue"></param>
+        /// <param name="maxValue"></param>
+        /// <param name="sigFig"></param>
+        public void UpdateLimits(float minValue, float maxValue, float power = 0, int sigFig = 0)
+        {
+            // Sanitise input.
+            minValue = Mathf.Max(0, minValue); // Values can't be negative.
+            maxValue = Mathf.Max(0, maxValue);
+            this.minValue = Mathf.Min(minValue, maxValue);
+            this.maxValue = Mathf.Max(minValue, maxValue);
+            if (power > 0) this.power = power;
+            if (sigFig > 0) this.sigFig = sigFig;
+            var partActionFieldItem = (UIPartActionFloatPowerRange)partActionItem;
+            if (partActionFieldItem != null) partActionFieldItem.UpdateLimits();
+        }
+
+        /// <summary>
+        /// Static function for converting linear values to power values.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="power"></param>
+        /// <returns></returns>
+        public static float FromSliderValue(float value, float power, int sigFig, float maxValue)
+        {
+            if (value > 0)
+            {
+                value = Mathf.Pow(value, power);
+                var rounding = Mathf.Max(Mathf.Pow(10f, Mathf.CeilToInt(Mathf.Log10(value)) - sigFig), Mathf.Pow(10f, Mathf.CeilToInt(Mathf.Log10(maxValue)) - sigFig - 2));
+                return BDAMath.RoundToUnit(value, rounding);
+            }
+            else return 0;
+        }
+        /// <summary>
+        /// Static function for converting power values to linear values.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="power"></param>
+        /// <param name="sigFig"></param>
+        /// <returns></returns>
+        public static float ToSliderValue(float value, float power)
+        {
+            if (value > 0) return Mathf.Pow(value, 1 / power);
+            else return 0;
+        }
+    }
+
+    [UI_FloatPowerRange]
+    public class UIPartActionFloatPowerRange : UIPartActionFieldItem
+    {
+        protected UI_FloatPowerRange powerFloatRange { get { return (UI_FloatPowerRange)control; } }
+        public TextMeshProUGUI fieldName;
+        public TextMeshProUGUI fieldValue;
+        public Slider slider;
+        private float minValue, maxValue, power, sigFig, roundingLimit;
+        private bool blockSliderUpdate;
+        private bool numericSliders = false;
+        private string fieldFormatString = "G4";
+        public GameObject numericContainer;
+        public TextMeshProUGUI fieldNameNumeric;
+        public TMP_InputField inputField;
+        private float lastDisplayedValue = 0;
+
+        public static Type VersionTaggedType(Type baseClass)
+        {
+            var ass = baseClass.Assembly;
+            // FIXME The below works to prevent ReflectionTypeLoadException on KSP 1.9, there might be a better way other than OtherUtils.GetLoadableTypes though?
+            Type tagged = OtherUtils.GetLoadableTypes(ass).Where(t => t.BaseType == baseClass).Where(t => t.FullName.StartsWith(baseClass.FullName)).FirstOrDefault();
+            if (tagged != null)
+                return tagged;
+            return baseClass;
+        }
+
+        internal static T GetTaggedComponent<T>(GameObject gameObject) where T : Component
+        {
+            return (T)gameObject.GetComponent(VersionTaggedType(typeof(T)));
+        }
+
+        public static void InstantiateRecursive2(GameObject go, GameObject goc, ref Dictionary<GameObject, GameObject> list)
+        {
+            for (int i = 0; i < go.transform.childCount; i++)
+            {
+                list.Add(go.transform.GetChild(i).gameObject, goc.transform.GetChild(i).gameObject);
+                InstantiateRecursive2(go.transform.GetChild(i).gameObject, goc.transform.GetChild(i).gameObject, ref list);
+            }
+        }
+
+        public static void InstantiateRecursive(GameObject go, Transform trfp, ref Dictionary<GameObject, GameObject> list)
+        {
+            for (int i = 0; i < go.transform.childCount; i++)
+            {
+                GameObject goc = Instantiate(go.transform.GetChild(i).gameObject);
+                goc.transform.parent = trfp;
+                goc.transform.localPosition = go.transform.GetChild(i).localPosition;
+                if ((goc.transform is RectTransform) && (go.transform.GetChild(i) is RectTransform))
+                {
+                    RectTransform rtc = goc.transform as RectTransform;
+                    RectTransform rt = go.transform.GetChild(i) as RectTransform;
+
+                    rtc.offsetMax = rt.offsetMax;
+                    rtc.offsetMin = rt.offsetMin;
+                }
+                list.Add(go.transform.GetChild(i).gameObject, goc);
+                InstantiateRecursive2(go.transform.GetChild(i).gameObject, goc, ref list);
+            }
+        }
+
+        public static UIPartActionFloatPowerRange CreateTemplate()
+        {
+            // Create the control
+            GameObject gameObject = new GameObject("UIPartActionFloatPowerRange", VersionTaggedType(typeof(UIPartActionFloatPowerRange)));
+            UIPartActionFloatPowerRange partActionFloatPowerRange = GetTaggedComponent<UIPartActionFloatPowerRange>(gameObject);
+            gameObject.SetActive(false);
+
+            // Find the template for FloatRange
+            UIPartActionFloatRange partActionFloatRange = (UIPartActionFloatRange)UIPartActionController.Instance.fieldPrefabs.Find(cls => cls.GetType() == typeof(UIPartActionFloatRange));
+
+            // Copy UI elements
+            RectTransform rtc = gameObject.AddComponent<RectTransform>();
+            RectTransform rt = partActionFloatRange.transform as RectTransform;
+            rtc.offsetMin = rt.offsetMin;
+            rtc.offsetMax = rt.offsetMax;
+            rtc.anchorMin = rt.anchorMin;
+            rtc.anchorMax = rt.anchorMax;
+            LayoutElement lec = gameObject.AddComponent<LayoutElement>();
+            LayoutElement le = partActionFloatRange.GetComponent<LayoutElement>();
+            lec.flexibleHeight = le.flexibleHeight;
+            lec.flexibleWidth = le.flexibleWidth;
+            lec.minHeight = le.minHeight;
+            lec.minWidth = le.minWidth;
+            lec.preferredHeight = le.preferredHeight;
+            lec.preferredWidth = le.preferredWidth;
+            lec.layoutPriority = le.layoutPriority;
+
+            // Copy control elements
+            Dictionary<GameObject, GameObject> list = new Dictionary<GameObject, GameObject>();
+            InstantiateRecursive(partActionFloatRange.gameObject, gameObject.transform, ref list);
+            list.TryGetValue(partActionFloatRange.fieldName.gameObject, out GameObject fieldNameGO);
+            partActionFloatPowerRange.fieldName = fieldNameGO.GetComponent<TextMeshProUGUI>();
+            list.TryGetValue(partActionFloatRange.fieldAmount.gameObject, out GameObject fieldValueGO);
+            partActionFloatPowerRange.fieldValue = fieldValueGO.GetComponent<TextMeshProUGUI>();
+            list.TryGetValue(partActionFloatRange.slider.gameObject, out GameObject sliderGO);
+            partActionFloatPowerRange.slider = sliderGO.GetComponent<Slider>();
+            list.TryGetValue(partActionFloatRange.numericContainer, out partActionFloatPowerRange.numericContainer);
+            list.TryGetValue(partActionFloatRange.inputField.gameObject, out GameObject inputFieldGO);
+            partActionFloatPowerRange.inputField = inputFieldGO.GetComponent<TMP_InputField>();
+            list.TryGetValue(partActionFloatRange.fieldNameNumeric.gameObject, out GameObject fieldNameNumericGO);
+            partActionFloatPowerRange.fieldNameNumeric = fieldNameNumericGO.GetComponent<TextMeshProUGUI>();
+
+            return partActionFloatPowerRange;
+        }
+
+        public override void Setup(UIPartActionWindow window, Part part, PartModule partModule, UI_Scene scene, UI_Control control, BaseField field)
+        {
+            base.Setup(window, part, partModule, scene, control, field);
+            UpdateLimits();
+            fieldName.text = field.guiName;
+            fieldNameNumeric.text = field.guiName;
+            fieldFormatString = $"G{Mathf.Max(powerFloatRange.sigFig + 2, Mathf.CeilToInt(Mathf.Log10(powerFloatRange.maxValue)) + 1)}"; // Show at most 2 digits beyond the requested sig. fig. or enough for the largest number.
+            float value = GetFieldValue();
+            SetFieldValue(value);
+            UpdateDisplay(value);
+            slider.onValueChanged.AddListener(OnValueChanged);
+            inputField.onValueChanged.AddListener(OnNumericValueChanged);
+            inputField.onSubmit.AddListener(OnNumericSubmitted);
+            inputField.onSelect.AddListener(OnNumericSelected);
+            inputField.onDeselect.AddListener(OnNumericDeselected);
+        }
+
+        private float GetFieldValue()
+        {
+            float value = field.GetValue<float>(field.host);
+            return value;
+        }
+        float FromSliderValue(float value)
+        {
+            if (value > 0)
+            {
+                value = Mathf.Pow(value, power);
+                var rounding = Mathf.Max(Mathf.Pow(10f, Mathf.CeilToInt(Mathf.Log10(value)) - sigFig), roundingLimit);
+                return BDAMath.RoundToUnit(value, rounding);
+            }
+            else return 0;
+        }
+        float ToSliderValue(float value)
+        {
+            if (value > 0) return Mathf.Pow(value, 1 / power);
+            else return 0;
+        }
+        private void UpdateDisplay(float value)
+        {
+            if (numericSliders != Window.NumericSliders)
+            {
+                numericSliders = Window.NumericSliders;
+                slider.gameObject.SetActive(!numericSliders);
+                numericContainer.SetActive(numericSliders);
+            }
+            blockSliderUpdate = true;
+            lastDisplayedValue = value;
+            fieldValue.text = value.ToString(fieldFormatString);
+            if (numericSliders) { inputField.text = fieldValue.text; }
+            else { slider.value = ToSliderValue(value); }
+            blockSliderUpdate = false;
+        }
+        private void OnValueChanged(float obj)
+        {
+            if (blockSliderUpdate) return;
+            if (control is not null && control.requireFullControl)
+            { if (!InputLockManager.IsUnlocked(ControlTypes.TWEAKABLES_FULLONLY)) return; }
+            else
+            { if (!InputLockManager.IsUnlocked(ControlTypes.TWEAKABLES_ANYCONTROL)) return; }
+            float value = FromSliderValue(slider.value);
+            SetFieldValue(value);
+            UpdateDisplay(value);
+        }
+        private void OnNumericSubmitted(string str)
+        {
+            if (float.TryParse(str, out float value))
+            {
+                value = Mathf.Clamp(value, minValue, maxValue); // Clamp, but don't round the value when in numeric mode.
+                SetFieldValue(value);
+                UpdateDisplay(value);
+            }
+        }
+        void OnNumericValueChanged(string str)
+        {
+            if (inputField.wasCanceled) OnNumericSubmitted(str);
+        }
+        void OnNumericSelected(string str)
+        {
+            AddInputFieldLock(str);
+        }
+        void OnNumericDeselected(string str)
+        {
+            OnNumericSubmitted(str);
+            RemoveInputfieldLock();
+        }
+
+        public override void UpdateItem()
+        {
+            float value = GetFieldValue();
+            if (value == lastDisplayedValue && numericSliders == Window.NumericSliders) return; // Do nothing if the value hasn't changed or the # hasn't been toggled.
+            // fieldName.text = field.guiName; // Label doesn't update.
+            UpdateDisplay(value);
+        }
+
+        public void UpdateLimits()
+        {
+            var value = GetFieldValue(); // Store the current value so it doesn't get clamped.
+            minValue = powerFloatRange.minValue;
+            maxValue = powerFloatRange.maxValue;
+            power = powerFloatRange.power;
+            sigFig = powerFloatRange.sigFig;
+            roundingLimit = Mathf.Pow(10f, Mathf.CeilToInt(Mathf.Log10(maxValue)) - sigFig - 2);
+            blockSliderUpdate = true; // Block the slider from updating while we adjust things (unblocks in UpdateDisplay).
+            slider.minValue = Mathf.Pow(minValue, 1 / power);
+            slider.maxValue = Mathf.Pow(maxValue, 1 / power);
+            fieldFormatString = $"G{Mathf.Max(sigFig + 2, Mathf.CeilToInt(Mathf.Log10(maxValue)) + 1)}"; // Show at most 2 digits beyond the requested sig. fig. or enough for the largest number.
+            SetFieldValue(value); // Restore the unclamped value.
+            UpdateDisplay(value);
+            // Debug.Log($"DEBUG value is {value} with limits {minValue}—{maxValue}");
+            // Debug.Log($"DEBUG slider has value {slider.value} with limits {slider.minValue}—{slider.maxValue}");
+        }
+    }
+
+    [KSPAddon(KSPAddon.Startup.Instantly, true)]
+    internal class UIPartActionFloatPowerRangeRegistration : MonoBehaviour
+    {
+        private static bool loaded = false;
+        private static bool isRunning = false;
+        private Coroutine register = null;
+        public void Start()
+        {
+            if (loaded)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            loaded = true;
+            DontDestroyOnLoad(gameObject);
+            SceneManager.sceneLoaded += OnLevelFinishedLoading;
+        }
+
+        public void OnLevelFinishedLoading(Scene scene, LoadSceneMode mode)
+        {
+            if (isRunning) StopCoroutine("Register");
+            if (!(HighLogic.LoadedSceneIsEditor || HighLogic.LoadedSceneIsFlight)) return;
+            isRunning = true;
+            register = StartCoroutine(Register());
+        }
+
+        internal IEnumerator Register()
+        {
+            UIPartActionController controller;
+            while ((controller = UIPartActionController.Instance) is null) yield return null;
+
+            FieldInfo typesField = (from fld in controller.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
+                                    where fld.FieldType == typeof(List<Type>)
+                                    select fld).First();
+
+            List<Type> fieldPrefabTypes;
+            while ((fieldPrefabTypes = (List<Type>)typesField.GetValue(controller)) == null
+                || fieldPrefabTypes.Count == 0
+                || !UIPartActionController.Instance.fieldPrefabs.Find(cls => cls.GetType() == typeof(UIPartActionFloatRange)))
+                yield return false;
+
+            // Register prefabs
+            controller.fieldPrefabs.Add(UIPartActionFloatPowerRange.CreateTemplate());
+            fieldPrefabTypes.Add(typeof(UI_FloatPowerRange));
 
             isRunning = false;
         }

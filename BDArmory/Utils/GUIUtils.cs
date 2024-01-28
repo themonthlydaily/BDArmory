@@ -491,7 +491,12 @@ namespace BDArmory.Utils
         /// <returns></returns>
         public static float HorizontalSemiLogSlider(Rect rect, float value, float minValue, float maxValue, int sigFig, bool withZero)
         {
-            return UI_FloatSemiLogRange.ToSemiLogValue(BDAMath.RoundToUnit(GUI.HorizontalSlider(rect, UI_FloatSemiLogRange.FromSemiLogValue(value, minValue, sigFig, withZero), withZero ? UI_FloatSemiLogRange.FromSemiLogValue(0, minValue, sigFig, withZero) : 1, UI_FloatSemiLogRange.FromSemiLogValue(maxValue, minValue, sigFig, withZero)), Mathf.Pow(10, 1 - sigFig)), minValue, sigFig, withZero);
+            return UI_FloatSemiLogRange.FromSliderValue(BDAMath.RoundToUnit(GUI.HorizontalSlider(rect, UI_FloatSemiLogRange.ToSliderValue(value, minValue, sigFig, withZero), withZero ? UI_FloatSemiLogRange.ToSliderValue(0, minValue, sigFig, withZero) : 1, UI_FloatSemiLogRange.ToSliderValue(maxValue, minValue, sigFig, withZero)), Mathf.Pow(10, 1 - sigFig)), minValue, sigFig, withZero);
+        }
+
+        public static float HorizontalPowerSlider(Rect rect, float value, float minValue, float maxValue, float power, int sigFig)
+        {
+            return UI_FloatPowerRange.FromSliderValue(GUI.HorizontalSlider(rect, UI_FloatPowerRange.ToSliderValue(value, power), UI_FloatPowerRange.ToSliderValue(minValue, power), UI_FloatPowerRange.ToSliderValue(maxValue, power)), power, sigFig, maxValue);
         }
 
         [KSPAddon(KSPAddon.Startup.EveryScene, false)]
