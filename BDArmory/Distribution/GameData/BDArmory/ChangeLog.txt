@@ -15,7 +15,7 @@
 	- Improve the logarithmic scaling in the radar windows.
 	- Add a 'withZero' parameter to semi-log sliders that allows them to include 0 and uses lower precision for the smallest range.
 	- Add a 'GUIUtils.HorizontalSemiLogSlider' for simplifying horizontal sliders for semi-log float ranges outside of PAWs.
-	- Add a fractional component to the precision of semi-log sliders for rounding, e.g., sigFig = 1.5f gives '..., 8.5, 9, 9.5, 10, 15, 20, ...'.
+	- Add a fractional component to the precision of semi-log sliders for rounding, e.g., sigFig = 1.5f gives '..., 8.5, 9, 9.5, 10, 15, 20, ...'. Switch the spawn distance slider to use this.
 	- Add a power-law float range type and 'GUIUtils.HorizontalPowerSlider' for simplifying horizontal sliders for power-law float ranges outside of PAWs.
 - AI / WM:
 	- Add new "Kinematic Msl Evasion" toggle to Pilot AI under the evasion settings. When this is enabled the AI will evaluate the best maneuver to defeat a beyond-visual-range (BVR) missile using only kinematic maneuvers. The Time to Impact Before Evade setting on the weapons manager should be set to a high value when this evasion option is enabled. Maneuvers the AI will use are:
