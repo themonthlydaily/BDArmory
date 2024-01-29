@@ -492,6 +492,11 @@ namespace BDArmory.Competition
                 {
                     SpawnUtils.ActivateAllEngines(pilot.vessel, false);
                 }
+                if (BDArmorySettings.MUTATOR_MODE) SpawnUtils.ApplyMutators(pilot.vessel, true);
+                if (BDArmorySettings.ENABLE_HOS) SpawnUtils.ApplyHOS(pilot.vessel, true);
+                if (BDArmorySettings.HACK_INTAKES) SpawnUtils.HackIntakes(pilot.vessel, true);
+                if (BDArmorySettings.RUNWAY_PROJECT) SpawnUtils.ApplyRWP(pilot.vessel, true);
+                /*
                 if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
                 {
                     var MM = pilot.vessel.rootPart.FindModuleImplementing<BDAMutator>();
@@ -647,6 +652,7 @@ namespace BDArmory.Competition
                         }
                     }
                 }
+                */
             }
 
             //clear target database so pilots don't attack yet
@@ -1708,6 +1714,11 @@ namespace BDArmory.Competition
                                         pilot.weaponManager.ToggleGuardMode();
                                         if (!pilot.weaponManager.guardMode) pilot.weaponManager.SetTarget(null);
                                     }
+                                    if (BDArmorySettings.MUTATOR_MODE) SpawnUtils.ApplyMutators(pilot.vessel, true);
+                                    if (BDArmorySettings.ENABLE_HOS) SpawnUtils.ApplyHOS(pilot.vessel, true);
+                                    if (BDArmorySettings.HACK_INTAKES) SpawnUtils.HackIntakes(pilot.vessel, true);
+                                    if (BDArmorySettings.RUNWAY_PROJECT) SpawnUtils.ApplyRWP(pilot.vessel, true);
+                                    /*
                                     if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
                                     {
                                         var MM = pilot.vessel.rootPart.FindModuleImplementing<BDAMutator>();
@@ -1826,7 +1837,7 @@ namespace BDArmory.Competition
                                                     MM.EnableMutator(BDArmorySettings.HOS_MUTATOR, true);
                                             }
                                         }
-                                    }
+                                    }*/
                                 }
                             }
                             break;
