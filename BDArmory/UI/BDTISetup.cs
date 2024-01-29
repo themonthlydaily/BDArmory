@@ -205,8 +205,8 @@ namespace BDArmory.UI
             TILabel.font = BDArmorySetup.BDGuiSkin.window.font;
             TILabel.fontSize = BDArmorySetup.BDGuiSkin.window.fontSize;
             TILabel.fontStyle = BDArmorySetup.BDGuiSkin.window.fontStyle;
-            IconOptionsGroup = new Rect(15, 55, toolWindowWidth - 20, 290);
-            TeamColorsGroup = new Rect(15, IconOptionsGroup.height, toolWindowWidth - 20, 25);
+            IconOptionsGroup = new Rect(10, 55, toolWindowWidth - 20, 290);
+            TeamColorsGroup = new Rect(10, IconOptionsGroup.height, toolWindowWidth - 20, 25);
             WindowRectGUI = new Rect(Screen.width - BDArmorySettings.UI_SCALE * (toolWindowWidth + 40), 150, toolWindowWidth, toolWindowHeight);
         }
 
@@ -453,8 +453,8 @@ namespace BDArmory.UI
                 GUI.EndGroup();
                 TeamColorsGroup.height = Mathf.Lerp(TeamColorsGroup.height, (line * 25) + 5, 0.35f);
             }
-            toolWindowHeight = Mathf.Lerp(toolWindowHeight, (50 + (BDTISettings.TEAMICONS ? IconOptionsGroup.height + TeamColorsGroup.height : 0)) + 15, 0.35f);
-            WindowRectGUI.height = toolWindowHeight + 10;
+            toolWindowHeight = Mathf.Lerp(toolWindowHeight, 50 + (BDTISettings.TEAMICONS ? IconOptionsGroup.height + TeamColorsGroup.height : 0) + 15, 0.35f);
+            WindowRectGUI.height = toolWindowHeight;
         }
     }
 }
