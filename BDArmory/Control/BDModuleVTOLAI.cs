@@ -342,7 +342,7 @@ namespace BDArmory.Control
             targetDirection = vesselTransform.up;
             targetAltitude = defaultAltitude;
             aimingMode = false;
-            upDir = VectorUtils.GetUpDirection(vesselTransform.position);
+            upDir = vessel.up;
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI) DebugLine("");
 
             if (initialTakeOff)

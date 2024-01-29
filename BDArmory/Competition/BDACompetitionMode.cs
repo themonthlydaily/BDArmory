@@ -184,13 +184,12 @@ namespace BDArmory.Competition
                 }
                 if (!BDArmorySetup.GAME_UI_ENABLED)
                 {
-                    if (BDArmorySettings.DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI)
-                    {
-                        guiStatusString = deadOrAlive + "\n" + guiStatusString;
-                    }
+                    if (ContinuousSpawning.Instance.vesselsSpawningContinuously) // Don't do the ALIVE / DEAD string in continuous spawn.
+                    { if (!BDArmorySettings.DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI) guiStatusString = ""; }
                     else
                     {
-                        guiStatusString = deadOrAlive;
+                        if (BDArmorySettings.DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI) { guiStatusString = deadOrAlive + "\n" + guiStatusString; }
+                        else { guiStatusString = deadOrAlive; }
                     }
                 }
                 GUI.Label(statusRectShadow, guiStatusString, statusStyleShadow);
@@ -337,7 +336,7 @@ namespace BDArmory.Competition
         {
             if (LoadedVesselSwitcher.Instance is not null) LoadedVesselSwitcher.Instance.ResetDeadVessels(); // Reset the dead vessels in the LVS so that the final corrected results are shown.
             LogResults(tag: competitionTag);
-            if (competitionIsActive && ContinuousSpawning.Instance && ContinuousSpawning.Instance.vesselsSpawningContinuously)
+            if (competitionIsActive && ContinuousSpawning.Instance.vesselsSpawningContinuously)
             {
                 SpawnUtils.CancelSpawning();
             }
@@ -542,7 +541,7 @@ namespace BDArmory.Competition
                                         ModuleReactionWheel SAS;
                                         SAS = part.Current.GetComponent<ModuleReactionWheel>();
                                         //if (part.Current.CrewCapacity == 0)
-                                            part.Current.RemoveModule(SAS); //don't strip reaction wheels from cockpits, as those are allowed
+                                        part.Current.RemoveModule(SAS); //don't strip reaction wheels from cockpits, as those are allowed
                                     }
                                 }
                                 if (BDArmorySettings.HOS_THRUST != 100)
@@ -552,6 +551,17 @@ namespace BDArmory.Competition
                                         {
                                             engine.Current.thrustPercentage = BDArmorySettings.HOS_THRUST;
                                         }
+                                }
+                                if (!string.IsNullOrEmpty(BDArmorySettings.HOS_MUTATOR))
+                                {
+                                    var MM = pilot.vessel.rootPart.FindModuleImplementing<BDAMutator>();
+                                    if (MM == null)
+                                    {
+                                        MM = (BDAMutator)pilot.vessel.rootPart.AddModule("BDAMutator");
+                                        if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode]: adding Mutator module {pilot.vessel.vesselName}");
+                                    }
+                                    if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode]: Applying ({BDArmorySettings.HOS_MUTATOR})");
+                                    MM.EnableMutator(BDArmorySettings.HOS_MUTATOR);
                                 }
                             }
                     }
@@ -894,7 +904,7 @@ namespace BDArmory.Competition
             foreach (var pilot in allPilots) center += pilot.vessel.CoM;
             center /= allPilots.Count;
             centerGPS = VectorUtils.WorldPositionToGeoCoords(center, FlightGlobals.currentMainBody);
-            
+
             // Command attack
             foreach (var teamPilots in pilots)
                 foreach (var pilot in teamPilots.Value)
@@ -980,9 +990,8 @@ namespace BDArmory.Competition
             if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: MutatorMode enabled; Mutator count = " + BDArmorySettings.MUTATOR_LIST.Count);
             var indices = Enumerable.Range(0, BDArmorySettings.MUTATOR_LIST.Count).ToList();
             indices.Shuffle();
-            currentMutator = string.Join("; ", indices.Take(BDArmorySettings.MUTATOR_APPLY_NUM).Select(i => MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name));
-
-            if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: current mutators: " + currentMutator);
+            currentMutator = string.Join("; ", indices.Take(BDArmorySettings.MUTATOR_APPLY_NUM).Select(i => MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name)); //no check if mutator_list contains a mutator not defined in the loaded mutatordefs
+            if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode: {CompetitionID.ToString()}: current mutators: {currentMutator}");
             MutatorResetTime = Planetarium.GetUniversalTime();
             if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //selected mutator applied globally
             {
@@ -1104,7 +1113,7 @@ namespace BDArmory.Competition
             if (vessel == null || vessel.vesselName == null) return;
             if (BDArmorySettings.COMPETITION_GM_KILL_ENGINE)
             {
-                if (SpawnUtils.CountActiveEngines(vessel) == 0)
+                if (SpawnUtils.CountActiveEngines(vessel, true) == 0)
                     StartCoroutine(DelayedGMKill(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, " lost all engines. Terminated by GM."));
             }
             if (BDArmorySettings.COMPETITION_GM_KILL_WEAPON)
@@ -1125,14 +1134,14 @@ namespace BDArmory.Competition
                         StartCoroutine(DelayedGMKill(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, " lost all weapons or ammo. Terminated by GM."));
                     else // Check for engines first, then wheels for tanks/amphibious if needed 
                     {
-                        if (SpawnUtils.CountActiveEngines(vessel) == 0)
+                        if (SpawnUtils.CountActiveEngines(vessel, true) == 0)
                         {
                             var surfaceAI = VesselModuleRegistry.GetModule<BDModuleSurfaceAI>(vessel); // Get the surface AI if the vessel has one.
                             if (surfaceAI == null) // No engines on an AI that needs them, craft is disabled
                                 StartCoroutine(DelayedGMKill(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, " lost all engines. Terminated by GM."));
                             else if ((surfaceAI.SurfaceType & AIUtils.VehicleMovementType.Land) != 0) // Check for wheels on craft capable of moving on land
                             {
-                                if ((VesselModuleRegistry.GetModuleCount<ModuleWheelBase>(vessel) + 
+                                if ((VesselModuleRegistry.GetModuleCount<ModuleWheelBase>(vessel) +
                                         VesselModuleRegistry.GetModuleCount(vessel, "KSPWheelBase") +
                                         VesselModuleRegistry.GetModuleCount(vessel, "FSwheel")) == 0)
                                     StartCoroutine(DelayedGMKill(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, " lost wheels or tracks. Terminated by GM."));
@@ -1801,12 +1810,21 @@ namespace BDArmory.Competition
                                                     {
                                                         if (part.Current.GetComponent<ModuleReactionWheel>() != null)
                                                         {
-                                                            ModuleReactionWheel SAS; 
+                                                            ModuleReactionWheel SAS;
                                                             SAS = part.Current.GetComponent<ModuleReactionWheel>();
-                                                                part.Current.RemoveModule(SAS);
+                                                            part.Current.RemoveModule(SAS);
                                                         }
                                                     }
                                                 }
+                                            if (!string.IsNullOrEmpty(BDArmorySettings.HOS_MUTATOR))
+                                            {
+                                                var MM = pilot.vessel.rootPart.FindModuleImplementing<BDAMutator>();
+                                                if (MM == null)
+                                                {
+                                                    MM = (BDAMutator)pilot.vessel.rootPart.AddModule("BDAMutator");
+                                                }
+                                                    MM.EnableMutator(BDArmorySettings.HOS_MUTATOR);
+                                            }
                                         }
                                     }
                                 }
@@ -1823,7 +1841,7 @@ namespace BDArmory.Competition
                             foreach (var pilot in pilots)
                             {
                                 attackGPS = centerGPS;
-                                if (VesselModuleRegistry.GetBDModulePilotAI(pilot.vessel)!=null)
+                                if (VesselModuleRegistry.GetBDModulePilotAI(pilot.vessel) != null)
                                     attackGPS.z = (float)BodyUtils.GetTerrainAltitudeAtPos(center) + 1000; // Target 1km above the terrain at the center.
                                 pilot.ReleaseCommand();
                                 pilot.CommandAttack(attackGPS);

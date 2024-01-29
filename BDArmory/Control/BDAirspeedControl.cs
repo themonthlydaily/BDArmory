@@ -13,6 +13,7 @@ namespace BDArmory.Control
         public float targetSpeed = 0;
         public float throttleOverride = -1f;
         public bool useBrakes = true;
+        public float brakingPriority = 0.5f;
         public bool allowAfterburner = true;
         public bool forceAfterburner = false;
         public float afterburnerPriority = 50f;
@@ -127,7 +128,7 @@ namespace BDArmory.Control
             //use brakes if overspeeding too much
             if (useBrakes)
             {
-                if (requestThrottle < -0.5f)
+                if (requestThrottle < brakingPriority - 1f)
                 {
                     vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
                 }
@@ -554,6 +555,18 @@ namespace BDArmory.Control
             }
 
             ap.SAS.SetTargetOrientation(throttleLerped > 0 && lerpAttitude ? attitudeLerped : attitude, false);
+        }
+
+        public void Stability(bool enable)
+        {
+            if (lockAttitude == enable) return;
+            lockAttitude = enable;
+
+            var ap = vessel.Autopilot;
+            if (ap == null) return;
+
+            vessel.ActionGroups.SetGroup(KSPActionGroup.SAS, enable);
+            ap.SetMode(enable ? VesselAutopilot.AutopilotMode.StabilityAssist : VesselAutopilot.AutopilotMode.Normal);
         }
 
         /// <summary>

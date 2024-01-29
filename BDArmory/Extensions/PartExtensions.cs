@@ -417,6 +417,7 @@ namespace BDArmory.Extensions
 
         public static bool IsMissile(this Part part)
         {
+            if (part == null) return false;
             if (part.Modules.Contains("BDModularGuidance")) return true;
             if (part.Modules.Contains("MissileBase") || part.Modules.Contains("MissileLauncher"))
             {
@@ -426,7 +427,7 @@ namespace BDArmory.Extensions
                 {
                     if (partModules.Current.moduleName == "MultiMissileLauncher")
                     {
-                        return (((Weapons.Missiles.MultiMissileLauncher)partModules.Current).isClusterMissile);
+                        return ((Weapons.Missiles.MultiMissileLauncher)partModules.Current).isClusterMissile;
                     }
                 }
                 //return ((part.Modules.Contains("MissileBase") || part.Modules.Contains("MissileLauncher") ||

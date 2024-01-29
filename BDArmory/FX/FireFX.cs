@@ -59,7 +59,7 @@ namespace BDArmory.FX
         bool vacuum = false;
         void OnEnable()
         {
-            if (parentPart == null)
+            if (parentPart == null || !HighLogic.LoadedSceneIsFlight)
             {
                 gameObject.SetActive(false);
                 return;
@@ -84,8 +84,7 @@ namespace BDArmory.FX
             fireIntensity = burnRate;
             BDArmorySetup.numberOfParticleEmitters++;
             pEmitters = gameObject.GetComponentsInChildren<KSPParticleEmitter>();
-            vacuum = FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(transform.position),
-FlightGlobals.getExternalTemperature(), FlightGlobals.currentMainBody) < 0.05f;
+            vacuum = FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(transform.position), FlightGlobals.getExternalTemperature(), FlightGlobals.currentMainBody) < 0.05f;
 
             using (var pe = pEmitters.AsEnumerable().GetEnumerator())
                 while (pe.MoveNext())
@@ -241,7 +240,7 @@ FlightGlobals.getExternalTemperature(), FlightGlobals.currentMainBody) < 0.05f;
                     {
                         if (fuel != null)
                         {
-                            if (parentPart.vessel.atmDensity < 0.05 && ox == null)
+                            if (parentPart.vessel.InNearVacuum() && ox == null)
                             {
                                 hasFuel = false;
                             }
@@ -304,7 +303,7 @@ FlightGlobals.getExternalTemperature(), FlightGlobals.currentMainBody) < 0.05f;
                         ec = parentPart.Resources.Where(pr => pr.resourceName == "ElectricCharge").FirstOrDefault();
                         if (ec != null)
                         {
-                            if (parentPart.vessel.atmDensity < 0.05)
+                            if (parentPart.vessel.InNearVacuum())
                             {
                                 hasFuel = false;
                             }
@@ -401,6 +400,7 @@ FlightGlobals.getExternalTemperature(), FlightGlobals.currentMainBody) < 0.05f;
 
         void Detonate()
         {
+            if (!HighLogic.LoadedSceneIsFlight) { Deactivate(); return; }
             if (surfaceFire) return;
             if (!BDArmorySettings.BD_FIRE_FUELEX) return;
             if (!parentPart.partName.Contains("exploding"))
@@ -499,7 +499,7 @@ FlightGlobals.getExternalTemperature(), FlightGlobals.currentMainBody) < 0.05f;
                 }
                 if (tntMassEquivalent > 0) //don't explode if nothing to detonate if called from OnParentDestroy()
                 {
-                    ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivalent, explModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 120, null, parentPart.vessel != null ? parentPart.vessel.vesselName : null, null, "Fuel");
+                    ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivalent, explModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 120, null, parentPart.vessel != null ? parentPart.vessel.vesselName : null, null, "Fuel", sourceVelocity: parentPart.vessel.Velocity());
                     if (BDArmorySettings.RUNWAY_PROJECT_ROUND != 42)
                     {
                         if (tntFuel > 0 || tntMP > 0)

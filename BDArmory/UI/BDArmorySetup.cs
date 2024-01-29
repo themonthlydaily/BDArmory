@@ -107,6 +107,7 @@ namespace BDArmory.UI
 
         //editor alignment
         public static bool showWeaponAlignment;
+        public static bool showCASESimulation;
 
         //check for Apple Silicon
         public static bool AppleSilicon = false;
@@ -505,9 +506,9 @@ namespace BDArmory.UI
                 GameEvents.onShowUI.Add(ShowGameUI);
                 GameEvents.onVesselGoOffRails.Add(OnVesselGoOffRails);
                 GameEvents.OnGameSettingsApplied.Add(SaveVolumeSettings);
-
                 GameEvents.onVesselChange.Add(VesselChange);
             }
+            GameEvents.onGameSceneSwitchRequested.Add(OnGameSceneSwitchRequested);
 
             BulletInfo.Load();
             RocketInfo.Load();
@@ -697,26 +698,22 @@ namespace BDArmory.UI
         {
             if (HighLogic.LoadedSceneIsFlight)
             {
-                if (missileWarning && Time.time - missileWarningTime > 1.5f)
-                {
-                    missileWarning = false;
-                }
-
-                if (BDInputUtils.GetKeyDown(BDInputSettingsFields.GUI_WM_TOGGLE))
-                {
-                    windowBDAToolBarEnabled = !windowBDAToolBarEnabled;
-                }
-
-                if (BDInputUtils.GetKeyDown(BDInputSettingsFields.TIME_SCALING))
-                {
-                    OtherUtils.SetTimeOverride(!BDArmorySettings.TIME_OVERRIDE);
-                }
+                if (missileWarning && Time.time - missileWarningTime > 1.5f) missileWarning = false;
+                if (BDInputUtils.GetKeyDown(BDInputSettingsFields.GUI_WM_TOGGLE)) windowBDAToolBarEnabled = !windowBDAToolBarEnabled;
+                if (BDInputUtils.GetKeyDown(BDInputSettingsFields.TIME_SCALING)) OtherUtils.SetTimeOverride(!BDArmorySettings.TIME_OVERRIDE);
+#if DEBUG
+                if (BDInputUtils.GetKeyDown(BDInputSettingsFields.DEBUG_CLEAR_DEV_CONSOLE)) Debug.ClearDeveloperConsole();
+#endif
             }
             else if (HighLogic.LoadedSceneIsEditor)
             {
                 if (Input.GetKeyDown(KeyCode.F2))
                 {
                     showWeaponAlignment = !showWeaponAlignment;
+                }
+                if (Input.GetKeyDown(KeyCode.F3))
+                {
+                    showCASESimulation = !showCASESimulation;
                 }
             }
 
@@ -790,6 +787,7 @@ namespace BDArmory.UI
                     if (MouseAimFlight.IsMouseAimActive)
                     {
                         Cursor.visible = false;
+                        drawCursor = false;
                         return;
                     }
                 }
@@ -894,6 +892,7 @@ namespace BDArmory.UI
         {
             BDArmorySettings.PROC_ARMOR_ALT_LIMITS.y = Mathf.Min(BDArmorySettings.PROC_ARMOR_ALT_LIMITS.y, 1e5f); // Anything over this pretty much breaks KSP.
             BDArmorySettings.PROC_ARMOR_ALT_LIMITS.x = Mathf.Clamp(BDArmorySettings.PROC_ARMOR_ALT_LIMITS.x, BDArmorySettings.PROC_ARMOR_ALT_LIMITS.y * 1e-8f, BDArmorySettings.PROC_ARMOR_ALT_LIMITS.y); // More than 8 orders of magnitude breaks the mesh collider engine.
+            BDArmorySettings.PREVIOUS_UI_SCALE = BDArmorySettings.UI_SCALE;
         }
         #region GUI
 
@@ -903,7 +902,12 @@ namespace BDArmory.UI
             if (!stylesConfigured) ConfigureStyles();
             if (windowSettingsEnabled)
             {
+                var guiMatrix = GUI.matrix; // Store and restore the GUI.matrix so we can apply a different scaling for the WM window.
+                if (scalingUI && Mouse.Left.GetButtonUp()) scalingUI = false; // Don't rescale the settings window until the mouse is released otherwise it messes with the slider.
+                if (!scalingUI) { oldUIScale = BDArmorySettings.UI_SCALE; BDArmorySettings.PREVIOUS_UI_SCALE = BDArmorySettings.UI_SCALE; }
+                if (oldUIScale != 1) GUIUtility.ScaleAroundPivot(oldUIScale * Vector2.one, WindowRectSettings.position);
                 WindowRectSettings = GUI.Window(129419, WindowRectSettings, WindowSettings, GUIContent.none, settingsTitleStyle);
+                GUI.matrix = guiMatrix;
             }
 
             if (drawCursor)
@@ -920,6 +924,7 @@ namespace BDArmory.UI
 
             if (!windowBDAToolBarEnabled || !HighLogic.LoadedSceneIsFlight) return;
             SetGUIOpacity();
+            if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, WindowRectToolbar.position);
             WindowRectToolbar = GUI.Window(321, WindowRectToolbar, WindowBDAToolbar, "", BDGuiSkin.window);//"BDA Weapon Manager"
             SetGUIOpacity(false);
             GUIUtils.UseMouseEventInRect(WindowRectToolbar);
@@ -998,6 +1003,7 @@ namespace BDArmory.UI
         Rect RightLabelRect(float line) => new Rect(columnWidth - leftIndent - 3 - rightLabelWidth, line * entryHeight, rightLabelWidth, entryHeight);
         Rect ButtonRect(float line) => new Rect(leftIndent + 3, line * entryHeight, columnWidth - 2 * leftIndent - 16, entryHeight);
 
+        (float, float)[] cacheGuardRange, cacheGunRange;
         void WindowBDAToolbar(int windowID)
         {
             float line = 0;
@@ -1401,7 +1407,7 @@ namespace BDArmory.UI
                     GUI.Label(LabelRect(++guardLines, guardLabelWidth), StringUtils.Localize("#LOC_BDArmory_WMWindow_VisualRange"), leftLabel);//"Visual Range"
                     if (!NumFieldsEnabled)
                     {
-                        ActiveWeaponManager.guardRange = UI_FloatSemiLogRange.ToSemiLogValue(Mathf.Round(GUI.HorizontalSlider(SliderRect(guardLines, guardLabelWidth), UI_FloatSemiLogRange.FromSemiLogValue(ActiveWeaponManager.guardRange, 100), 1, UI_FloatSemiLogRange.FromSemiLogValue(BDArmorySettings.MAX_GUARD_VISUAL_RANGE, 100))), 100, 1);
+                        ActiveWeaponManager.guardRange = GUIUtils.HorizontalSemiLogSlider(SliderRect(guardLines, guardLabelWidth), ActiveWeaponManager.guardRange, 100, BDArmorySettings.MAX_GUARD_VISUAL_RANGE, 1, false, ref cacheGuardRange);
                         GUI.Label(RightLabelRect(guardLines), ActiveWeaponManager.guardRange < 1000 ? $"{ActiveWeaponManager.guardRange:G4}m" : $"{ActiveWeaponManager.guardRange / 1000:G4}km", leftLabel);
                     }
                     else
@@ -1414,7 +1420,7 @@ namespace BDArmory.UI
                     GUI.Label(LabelRect(++guardLines, guardLabelWidth), StringUtils.Localize("#LOC_BDArmory_WMWindow_GunsRange"), leftLabel);//"Guns Range"
                     if (!NumFieldsEnabled)
                     {
-                        ActiveWeaponManager.gunRange = UI_FloatSemiLogRange.ToSemiLogValue(BDAMath.RoundToUnit(GUI.HorizontalSlider(SliderRect(guardLines, guardLabelWidth), UI_FloatSemiLogRange.FromSemiLogValue(ActiveWeaponManager.gunRange, 10), 1, UI_FloatSemiLogRange.FromSemiLogValue(ActiveWeaponManager.maxGunRange, 10)), 0.1f), 10);
+                        ActiveWeaponManager.gunRange = GUIUtils.HorizontalPowerSlider(SliderRect(guardLines, guardLabelWidth), ActiveWeaponManager.gunRange, 0, ActiveWeaponManager.maxGunRange, 2, 2, ref cacheGunRange);
                         GUI.Label(RightLabelRect(guardLines), ActiveWeaponManager.gunRange < 1000 ? $"{ActiveWeaponManager.gunRange:G4}m" : $"{ActiveWeaponManager.gunRange / 1000:G4}km", leftLabel);
                     }
                     else
@@ -2086,15 +2092,13 @@ namespace BDArmory.UI
                 quitTimer = Time.realtimeSinceStartup;
             }
 #endif
+            var previousWindowHeight = toolWindowHeight;
             toolWindowWidth = Mathf.Lerp(toolWindowWidth, columnWidth * windowColumns, 0.15f);
             toolWindowHeight = Mathf.Lerp(toolWindowHeight, contentTop + (line * entryHeight) + 5, 1);
-            var previousWindowHeight = WindowRectToolbar.height;
             WindowRectToolbar.height = toolWindowHeight;
             WindowRectToolbar.width = toolWindowWidth;
             numberOfButtons = buttonNumber + 1;
-            if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES && toolWindowHeight < previousWindowHeight && Mathf.Round(WindowRectToolbar.y + previousWindowHeight) == Screen.height) // Window shrunk while being at edge of screen.
-                WindowRectToolbar.y = Screen.height - WindowRectToolbar.height;
-            GUIUtils.RepositionWindow(ref WindowRectToolbar);
+            GUIUtils.RepositionWindow(ref WindowRectToolbar, previousWindowHeight);
         }
 #if DEBUG
         float quitTimer = 0;
@@ -2324,6 +2328,8 @@ namespace BDArmory.UI
         public List<string> selectedMutators;
         float mutatorHeight = 25;
         bool editKeys;
+        bool scalingUI = false;
+        float oldUIScale = 1;
 #if DEBUG
         // int debug_numRaycasts = 4;
 #endif
@@ -2365,6 +2371,14 @@ namespace BDArmory.UI
             if (BDArmorySettings.GRAPHICS_UI_SETTINGS_TOGGLE)
             {
                 line += 0.2f;
+                GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_UIScale")}: {BDArmorySettings.UI_SCALE:0.00}x", leftLabel); // UI Scale
+                var previousUIScale = BDArmorySettings.UI_SCALE;
+                if (BDArmorySettings.UI_SCALE != (BDArmorySettings.UI_SCALE = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.UI_SCALE, 0.5f, 2f), 0.05f)))
+                {
+                    BDArmorySettings.PREVIOUS_UI_SCALE = previousUIScale;
+                    scalingUI = true;
+                }
+
                 BDArmorySettings.DRAW_AIMERS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.DRAW_AIMERS, StringUtils.Localize("#LOC_BDArmory_Settings_DrawAimers"));//"Draw Aimers"
 
                 if (!BDArmorySettings.ADVANCED_USER_SETTINGS)
@@ -2422,10 +2436,13 @@ namespace BDArmory.UI
                 { GUIUtils.EndDisableScrollZoom(); }
                 if (BDArmorySettings.VM_TOOLBAR_BUTTON != (BDArmorySettings.VM_TOOLBAR_BUTTON = GUI.Toggle(SRightRect(line), BDArmorySettings.VM_TOOLBAR_BUTTON, StringUtils.Localize("#LOC_BDArmory_Settings_VMToolbarButton")))) // VM Toobar Button
                 {
-                    if (BDArmorySettings.VM_TOOLBAR_BUTTON)
-                    { VesselMover.Instance.AddToolbarButton(); }
-                    else
-                    { VesselMover.Instance.RemoveToolbarButton(); }
+                    if (HighLogic.LoadedSceneIsFlight)
+                    {
+                        if (BDArmorySettings.VM_TOOLBAR_BUTTON)
+                        { VesselMover.Instance.AddToolbarButton(); }
+                        else
+                        { VesselMover.Instance.RemoveToolbarButton(); }
+                    }
                 }
                 BDArmorySettings.DISPLAY_COMPETITION_STATUS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.DISPLAY_COMPETITION_STATUS, StringUtils.Localize("#LOC_BDArmory_Settings_DisplayCompetitionStatus"));
                 BDArmorySettings.AUTO_DISABLE_UI = GUI.Toggle(SRightRect(line), BDArmorySettings.AUTO_DISABLE_UI, StringUtils.Localize("#LOC_BDArmory_Settings_AutoDisableUI")); // Auto-disable UI
@@ -2519,6 +2536,7 @@ namespace BDArmory.UI
                         // GUI.Label(SLeftSliderRect(++line), $"Initial correction: {(TestNumericalMethodsIC == 0 ? "None" : TestNumericalMethodsIC == 1 ? "All" : TestNumericalMethodsIC == 2 ? "Local" : "Gravity")}");
                         // TestNumericalMethodsIC = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), TestNumericalMethodsIC, 0, 3));
                         // if (GUI.Button(SLineRect(++line), $"Test Forward Euler vs Semi-Implicit Euler vs Leap-frog ({PROF_N * Time.fixedDeltaTime}s, {PROF_N / Math.Min(PROF_N / 2, PROF_n)} steps)")) StartCoroutine(TestNumericalMethods(PROF_N * Time.fixedDeltaTime, PROF_N / Math.Min(PROF_N / 2, PROF_n)));
+                        // if (GUI.Button(SLineRect(++line), "Test \"up\"")) TestUp();
                         // if (GUI.Button(SLineRect(++line), "Test inside vs on unit sphere")) TestInOnUnitSphere();
                         // if (GUI.Button(SLineRect(++line), "Test Sqr vs x*x")) TestMaxRelSpeed();
                         // if (GUI.Button(SLineRect(++line), "Test Sqr vs x*x")) TestSqrVsSqr();
@@ -2940,9 +2958,13 @@ namespace BDArmory.UI
                     BDArmorySettings.AUTO_LOAD_TO_KSC = GUI.Toggle(SLeftRect(++line), BDArmorySettings.AUTO_LOAD_TO_KSC, StringUtils.Localize("#LOC_BDArmory_Settings_AutoLoadToKSC")); // Auto-Load To KSC
                     BDArmorySettings.GENERATE_CLEAN_SAVE = GUI.Toggle(SRightRect(line), BDArmorySettings.GENERATE_CLEAN_SAVE, StringUtils.Localize("#LOC_BDArmory_Settings_GenerateCleanSave")); // Generate Clean Save
                     BDArmorySettings.AUTO_RESUME_TOURNAMENT = GUI.Toggle(SLeftRect(++line), BDArmorySettings.AUTO_RESUME_TOURNAMENT, StringUtils.Localize("#LOC_BDArmory_Settings_AutoResumeTournaments")); // Auto-Resume Tournaments
+                    BDArmorySettings.AUTO_RESUME_CONTINUOUS_SPAWN = GUI.Toggle(SRightRect(line), BDArmorySettings.AUTO_RESUME_CONTINUOUS_SPAWN, StringUtils.Localize("#LOC_BDArmory_Settings_AutoResumeContinuousSpawn")); // Auto-Resume Continuous Spawn
+                    if (BDArmorySettings.AUTO_RESUME_TOURNAMENT || BDArmorySettings.AUTO_RESUME_CONTINUOUS_SPAWN)
+                    {
+                        BDArmorySettings.AUTO_QUIT_AT_END_OF_TOURNAMENT = GUI.Toggle(SLeftRect(++line), BDArmorySettings.AUTO_QUIT_AT_END_OF_TOURNAMENT, StringUtils.Localize("#LOC_BDArmory_Settings_AutoQuitAtEndOfTournament")); // Auto Quit At End Of Tournament
+                    }
                     if (BDArmorySettings.AUTO_RESUME_TOURNAMENT)
                     {
-                        BDArmorySettings.AUTO_QUIT_AT_END_OF_TOURNAMENT = GUI.Toggle(SRightRect(line), BDArmorySettings.AUTO_QUIT_AT_END_OF_TOURNAMENT, StringUtils.Localize("#LOC_BDArmory_Settings_AutoQuitAtEndOfTournament")); // Auto Quit At End Of Tournament
                         GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_AutoQuitMemoryUsage")}:  ({(BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD > SystemMaxMemory ? StringUtils.Localize("#LOC_BDArmory_Generic_Off") : $"{BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD}GB")})", leftLabel); // Auto-Quit Memory Threshold
                         BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD, 1f, SystemMaxMemory + 1));
                         if (BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD <= SystemMaxMemory)
@@ -3643,8 +3665,8 @@ namespace BDArmory.UI
             {
                 line += 0.2f;
 
-                GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_TriggerHold")}: {BDArmorySettings.TRIGGER_HOLD_TIME: 0} s", leftLabel);//Trigger Hold
-                BDArmorySettings.TRIGGER_HOLD_TIME = GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.TRIGGER_HOLD_TIME, 0.02f, 1f);
+                GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_TriggerHold")}: {BDArmorySettings.TRIGGER_HOLD_TIME:0.00} s", leftLabel);//Trigger Hold
+                BDArmorySettings.TRIGGER_HOLD_TIME = BDAMath.RoundToUnit(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.TRIGGER_HOLD_TIME, 0.02f, 1f), 0.02f);
 
                 GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_UIVolume")}: {(BDArmorySettings.BDARMORY_UI_VOLUME * 100):0}", leftLabel);//UI Volume
                 float uiVol = BDArmorySettings.BDARMORY_UI_VOLUME;
@@ -3933,16 +3955,23 @@ namespace BDArmory.UI
                 editKeys = true;
             }
             line += 0.5f;
-            if (!BDKeyBinder.current && GUI.Button(SLineRect(++line), StringUtils.Localize("#LOC_BDArmory_Generic_SaveandClose")))//"Save and Close"
+            if (!BDKeyBinder.current)
             {
-                SaveConfig();
-                windowSettingsEnabled = false;
+                if (GUI.Button(SQuarterRect(++line, 0), StringUtils.Localize("#LOC_BDArmory_Generic_Reload"))) // Reload
+                {
+                    LoadConfig();
+                }
+                if (GUI.Button(SQuarterRect(line, 1, 3), StringUtils.Localize("#LOC_BDArmory_Generic_SaveandClose")))//"Save and Close"
+                {
+                    SaveConfig();
+                    windowSettingsEnabled = false;
+                }
             }
 
             line += 1.5f; // Bottom internal margin
             settingsHeight = (line * settingsLineHeight);
             WindowRectSettings.height = settingsHeight;
-            GUIUtils.RepositionWindow(ref WindowRectSettings);
+            if (!scalingUI) GUIUtils.RepositionWindow(ref WindowRectSettings);
             GUIUtils.UseMouseEventInRect(WindowRectSettings);
         }
 
@@ -3999,6 +4028,12 @@ namespace BDArmory.UI
             Rect scrollerRect = new Rect(0, 0, settingsWidth - GUI.skin.verticalScrollbar.fixedWidth - 1, inputFields != null ? (inputFields.Length + 13) * settingsLineHeight : settingsHeight);
 
             _displayViewerPosition = GUI.BeginScrollView(viewRect, _displayViewerPosition, scrollerRect, false, true);
+
+#if DEBUG
+            GUI.Label(SLineRect(line++), $"- {StringUtils.Localize("#LOC_BDArmory_Settings_DebugSettingsToggle")} -", centerLabel); //Debugging
+            InputSettingsList("DEBUG_", ref inputID, ref line);
+            ++line;
+#endif
 
             GUI.Label(SLineRect(line++), $"- {StringUtils.Localize("#LOC_BDArmory_InputSettings_GUI")} -", centerLabel); //GUI
             InputSettingsList("GUI_", ref inputID, ref line);
@@ -4173,6 +4208,7 @@ namespace BDArmory.UI
             GameEvents.onVesselGoOffRails.Remove(OnVesselGoOffRails);
             GameEvents.OnGameSettingsApplied.Remove(SaveVolumeSettings);
             GameEvents.onVesselChange.Remove(VesselChange);
+            GameEvents.onGameSceneSwitchRequested.Remove(OnGameSceneSwitchRequested);
         }
 
         void OnVesselGoOffRails(Vessel v)
@@ -4192,8 +4228,8 @@ namespace BDArmory.UI
         }
 
 #if DEBUG
-        // static int PROF_N_pow = 5, PROF_n_pow = 2;
-        static int PROF_N = 1000, PROF_n = 1000;
+        // static int PROF_N_pow = 4, PROF_n_pow = 4;
+        static int PROF_N = 10000, PROF_n = 10000;
         IEnumerator TestVesselPositionTiming()
         {
             var wait = new WaitForFixedUpdate();
@@ -4206,9 +4242,9 @@ namespace BDArmory.UI
             TimingManager.FixedUpdateAdd(TimingManager.TimingStage.FlightIntegrator, FlightIntegrator);
             TimingManager.FixedUpdateAdd(TimingManager.TimingStage.Late, Late);
             TimingManager.FixedUpdateAdd(TimingManager.TimingStage.BetterLateThanNever, BetterLateThanNever);
-            yield return wait;
-            yield return wait;
-            yield return wait;
+            yield return wait; Debug.Log($"DEBUG {Time.time} WaitForFixedUpdate");
+            yield return wait; Debug.Log($"DEBUG {Time.time} WaitForFixedUpdate");
+            yield return wait; Debug.Log($"DEBUG {Time.time} WaitForFixedUpdate");
             TimingManager.FixedUpdateRemove(TimingManager.TimingStage.ObscenelyEarly, ObscenelyEarly);
             TimingManager.FixedUpdateRemove(TimingManager.TimingStage.Early, Early);
             TimingManager.FixedUpdateRemove(TimingManager.TimingStage.Precalc, Precalc);
@@ -4219,15 +4255,15 @@ namespace BDArmory.UI
             TimingManager.FixedUpdateRemove(TimingManager.TimingStage.Late, Late);
             TimingManager.FixedUpdateRemove(TimingManager.TimingStage.BetterLateThanNever, BetterLateThanNever);
         }
-        void ObscenelyEarly() { Debug.Log($"DEBUG {Time.time} ObscenelyEarly, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
-        void Early() { Debug.Log($"DEBUG {Time.time} Early, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
-        void Precalc() { Debug.Log($"DEBUG {Time.time} Precalc, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
-        void Earlyish() { Debug.Log($"DEBUG {Time.time} Earlyish, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
-        void Normal() { Debug.Log($"DEBUG {Time.time} Normal, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
-        void FashionablyLate() { Debug.Log($"DEBUG {Time.time} FashionablyLate, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
-        void FlightIntegrator() { Debug.Log($"DEBUG {Time.time} FlightIntegrator, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
-        void Late() { Debug.Log($"DEBUG {Time.time} Late, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
-        void BetterLateThanNever() { Debug.Log($"DEBUG {Time.time} BetterLateThanNever, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void ObscenelyEarly() { Debug.Log($"DEBUG {Time.time} ObscenelyEarly, active vessel position: {FlightGlobals.ActiveVessel.CoM.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void Early() { Debug.Log($"DEBUG {Time.time} Early, active vessel position: {FlightGlobals.ActiveVessel.CoM.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void Precalc() { Debug.Log($"DEBUG {Time.time} Precalc, active vessel position: {FlightGlobals.ActiveVessel.CoM.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void Earlyish() { Debug.Log($"DEBUG {Time.time} Earlyish, active vessel position: {FlightGlobals.ActiveVessel.CoM.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void Normal() { Debug.Log($"DEBUG {Time.time} Normal, active vessel position: {FlightGlobals.ActiveVessel.CoM.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void FashionablyLate() { Debug.Log($"DEBUG {Time.time} FashionablyLate, active vessel position: {FlightGlobals.ActiveVessel.CoM.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void FlightIntegrator() { Debug.Log($"DEBUG {Time.time} FlightIntegrator, active vessel position: {FlightGlobals.ActiveVessel.CoM.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void Late() { Debug.Log($"DEBUG {Time.time} Late, active vessel position: {FlightGlobals.ActiveVessel.CoM.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
+        void BetterLateThanNever() { Debug.Log($"DEBUG {Time.time} BetterLateThanNever, active vessel position: {FlightGlobals.ActiveVessel.CoM.ToString("G6")}, KbFV: {Krakensbane.GetFrameVelocityV3f()}"); }
 
         IEnumerator TestYieldWaitLengths()
         {
@@ -4464,6 +4500,25 @@ namespace BDArmory.UI
             }
             x = vessel.transform.position;
             Debug.Log($"DEBUG {Time.time}: After {duration}s ({steps}*{dt}={steps * dt}), Actual x = {x}, Forward Euler predicts x = {x0} (Δ = {(x - x0).magnitude}), Semi-implicit Euler predicts x = {x1} (Δ = {(x - x1).magnitude}), Leap-frog predicts x = {x2} (Δ = {(x - x2).magnitude})");
+        }
+
+        public static void TestUp()
+        {
+            Vessel vessel = FlightGlobals.ActiveVessel;
+            Debug.Log($"DEBUG Vector3.up: {Vector3.up}, vessel.up: {vessel.up}, vessel.transform.up: {vessel.transform.up}, vessel.upAxis: {vessel.upAxis}, GetUpDir: {VectorUtils.GetUpDirection(vessel.CoM)}");
+            var watch = new System.Diagnostics.Stopwatch();
+            float µsResolution = 1e6f / System.Diagnostics.Stopwatch.Frequency;
+            Debug.Log($"DEBUG Clock resolution: {µsResolution}µs, {PROF_N} outer loops, {PROF_n} inner loops");
+            Vector3 up = default;
+            var func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { up = vessel.upAxis; } };
+            Debug.Log($"DEBUG vessel.upAxis took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {up}");
+            Vector3 pos = vessel.CoM;
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { up = VectorUtils.GetUpDirection(pos); } };
+            Debug.Log($"DEBUG GetUpDirection took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {up}");
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { up = vessel.up; } };
+            Debug.Log($"DEBUG vessel.up took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {up}");
+            func = [MethodImpl(MethodImplOptions.AggressiveInlining)] () => { for (int i = 0; i < PROF_n; ++i) { up = vessel.transform.up; } };
+            Debug.Log($"DEBUG vessel.transform.up took {ProfileFunc(func, PROF_N) / PROF_n:G3}µs to give {up}");
         }
 
         public static void TestInOnUnitSphere()
@@ -4753,5 +4808,22 @@ namespace BDArmory.UI
                 vector.z - planeNormal.z * dot);
         }
 #endif
+
+        /// <summary>
+        /// On leaving flight mode. Perform some clean-up of things that might still be active.
+        /// Not everything gets cleaned up by default for some reason.
+        /// </summary>
+        void OnGameSceneSwitchRequested(GameEvents.FromToAction<GameScenes, GameScenes> fromTo)
+        {
+            if (fromTo.from == GameScenes.FLIGHT && fromTo.to != GameScenes.FLIGHT)
+            {
+                SpawnUtils.DisableAllBulletsAndRockets();
+                ExplosionFx.DisableAllExplosionFX();
+                FXEmitter.DisableAllFX();
+                CMDropper.DisableAllCMs();
+                BulletHitFX.DisableAllFX();
+                // FIXME Add in any other things that may otherwise continue doing stuff on scene changes, e.g., various FX.
+            }
+        }
     }
 }

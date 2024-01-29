@@ -760,10 +760,12 @@ namespace BDArmory.Weapons.Missiles
             if (TargetAcquired)
             {
                 float timeToImpact;
+                float gLimit;
+
                 if (GuidanceIndex == 6) // Augmented Pro-Nav
-                    aamTarget = MissileGuidance.GetAPNTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, 3f, out timeToImpact);
+                    aamTarget = MissileGuidance.GetAPNTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, 3f, out timeToImpact, out gLimit);
                 else if (GuidanceIndex == 5) // Pro-Nav
-                    aamTarget = MissileGuidance.GetPNTarget(TargetPosition, TargetVelocity, vessel, 3f, out timeToImpact);
+                    aamTarget = MissileGuidance.GetPNTarget(TargetPosition, TargetVelocity, vessel, 3f, out timeToImpact, out gLimit);
                 else // AAM Lead
                     aamTarget = MissileGuidance.GetAirToAirTargetModular(TargetPosition, TargetVelocity, TargetAcceleration, vessel, out timeToImpact);
                 TimeToImpact = timeToImpact;
@@ -1067,7 +1069,7 @@ namespace BDArmory.Weapons.Missiles
             if (HasMissed) return;
             bool noProgress = MissileState == MissileStates.PostThrust &&
                 ((Vector3.Dot(vessel.Velocity() - TargetVelocity, TargetPosition - vessel.transform.position) < 0) ||
-                (vessel.LandedOrSplashed || vessel.Velocity().sqrMagnitude < 100f));
+                (vessel.LandedOrSplashed || vessel.Velocity().sqrMagnitude < GetKinematicSpeed() * GetKinematicSpeed()));
             if (noProgress)
             {
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.BDModularGuidance]: Missile CheckMiss showed miss for {vessel.vesselName}");
@@ -1424,7 +1426,7 @@ namespace BDArmory.Weapons.Missiles
 
                 HasFired = true;
                 DetonationDistanceState = DetonationDistanceStates.NotSafe;
-                if (vessel.atmDensity < 0.05)
+                if (vessel.InNearVacuum())
                 {
                     vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
                 }
@@ -1531,6 +1533,7 @@ namespace BDArmory.Weapons.Missiles
             AutoDestruction();
             BDATargetManager.FiredMissiles.Remove(this);
             GameEvents.onPartDie.Remove(PartDie);
+            Destroy(this); // If this is the active vessel, then KSP doesn't destroy it until we switch away, but we want to get rid of the MissileBase straight away.
         }
 
         private void AutoDestruction()
@@ -1575,6 +1578,30 @@ namespace BDArmory.Weapons.Missiles
         public override Vector3 GetForwardTransform()
         {
             return GetTransform(ForwardTransformAxis);
+        }
+
+        public override float GetKinematicTime()
+        {
+            if (!_missileIgnited) return -1f;
+
+            float missileKinematicTime = (float)vessel.VesselDeltaV.TotalBurnTime;
+            if (!vessel.InVacuum())
+            {
+                float drag = vessel.parts.Sum(x => x.dragScalar);
+                float speed = (float)vessel.srfSpeed;
+                float mass = (float)vessel.totalMass;
+                float dragTerm = 0.008f * mass * drag * 0.5f * (float)vessel.atmDensity;
+                float minSpeed = GetKinematicSpeed();
+                if (speed > minSpeed)
+                    missileKinematicTime += mass / (minSpeed * dragTerm) - mass / (speed * dragTerm); ; // Add time for missile to slow down to min speed
+            }
+
+            return missileKinematicTime;
+        }
+
+        public override float GetKinematicSpeed()
+        {
+            return vessel.InVacuum() ? 0f : Mathf.Max(MinSpeedGuidance, 100f);
         }
 
         public Vector3 GetTransform(TransformAxisVectors transformAxis)
@@ -1790,6 +1817,7 @@ namespace BDArmory.Weapons.Missiles
             {
                 editor.Unlock("BD_MN_GUILock");
             }
+            if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, guiWindowRect.position);
             guiWindowRect = GUILayout.Window(GUIUtility.GetControlID(FocusType.Passive), guiWindowRect, GUIWindow, "Weapon Name GUI", Styles.styleEditorPanel);
         }
 
