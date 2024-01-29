@@ -2903,7 +2903,7 @@ namespace BDArmory.Competition
                                             {
                                                 MM.EnableMutator(BDArmorySettings.MUTATOR_LIST[MM.progressionIndex]); //increment to next mutator on list
                                                 MM.progressionIndex++;
-                                                if (MM.progressionIndex == BDArmorySettings.MUTATOR_LIST.Count) MM.progressionIndex = BDArmorySettings.MUTATOR_LIST.Count - 1; //= 0 and have mutator lsit cycle instead??
+                                                if (MM.progressionIndex == BDArmorySettings.MUTATOR_LIST.Count) MM.progressionIndex = BDArmorySettings.MUTATOR_LIST.Count - 1; //= 0 and have mutator list cycle instead??
                                             }
                                             else MM.EnableMutator();//random mutator
                                             competitionStatus.Add(Scores.ScoreData[player].lastPersonWhoDamagedMe + " gains " + MM.mutatorName + (BDArmorySettings.MUTATOR_DURATION > 0 ? " for " + BDArmorySettings.MUTATOR_DURATION * 60 + " seconds!" : "!"));

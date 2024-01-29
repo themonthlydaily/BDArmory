@@ -318,7 +318,6 @@ namespace BDArmory.VesselSpawning
             SpaceFrictionOnNewVessels(false);
         }
 
-
         #region Post-Spawn
         public void OnVesselReady(Vessel vessel) => StartCoroutine(OnVesselReadyCoroutine(vessel));
         /// <summary>
@@ -334,7 +333,7 @@ namespace BDArmory.VesselSpawning
             foreach (var kerbal in VesselModuleRegistry.GetKerbalEVAs(vessel)) foreach (var crew in kerbal.part.protoModuleCrew) crew.rosterStatus = ProtoCrewMember.RosterStatus.Assigned;
         }
         #endregion
-
+        
         #region Vessel Removal
         public int removeVesselsPending = 0;
         // Remove a vessel and clean up any remaining parts. This fixes the case where the currently focussed vessel refuses to die properly.
@@ -467,7 +466,7 @@ namespace BDArmory.VesselSpawning
             }
         }
         #endregion
-
+        
         #region Camera Adjustment
         GameObject spawnLocationCamera;
         Transform originalCameraParentTransform;
@@ -599,7 +598,7 @@ namespace BDArmory.VesselSpawning
             spawnLocationCamera.SetActive(false);
         }
         #endregion
-
+        
         #region Intake hacks
         public void HackIntakesOnNewVessels(bool enable)
         {
@@ -662,6 +661,7 @@ namespace BDArmory.VesselSpawning
             }
         }
         #endregion
+        
         #region Control Surface Actuator hacks
         public void HackActuatorsOnNewVessels(bool enable)
         {
@@ -727,6 +727,7 @@ namespace BDArmory.VesselSpawning
             }
         }
         #endregion
+        
         #region Space hacks
         public void SpaceFrictionOnNewVessels(bool enable)
         {
@@ -758,6 +759,7 @@ namespace BDArmory.VesselSpawning
             ship.Parts[0].AddModule("ModuleSpaceFriction");
         }
         #endregion
+        
         #region KAL
         public void RestoreKAL(Vessel vessel, bool restore) => StartCoroutine(RestoreKALCoroutine(vessel, restore));
         /// <summary>
@@ -811,6 +813,7 @@ namespace BDArmory.VesselSpawning
                     }
         }
         #endregion
+        
         #region Mutators
         public void ApplyMutatorsOnNewVessels(bool enable)
         {
@@ -845,7 +848,7 @@ namespace BDArmory.VesselSpawning
                     {
                         MM.EnableMutator(); //random mutator
                     }
-                }    
+                }
                 else
                 {
                     var MM = vessel.rootPart.FindModuleImplementing<BDAMutator>();
@@ -857,6 +860,7 @@ namespace BDArmory.VesselSpawning
             }
         }
         #endregion
+        
         #region HOS
         public void ApplyHOSOnNewVessels(bool enable)
         {
@@ -934,7 +938,8 @@ namespace BDArmory.VesselSpawning
             }
         }
         #endregion
-        #region HOS
+        
+        #region RWP
         public void ApplyRWPonNewVessels(bool enable)
         {
             if (enable)
