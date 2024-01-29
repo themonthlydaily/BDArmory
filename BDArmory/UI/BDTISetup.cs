@@ -205,8 +205,9 @@ namespace BDArmory.UI
             TILabel.font = BDArmorySetup.BDGuiSkin.window.font;
             TILabel.fontSize = BDArmorySetup.BDGuiSkin.window.fontSize;
             TILabel.fontStyle = BDArmorySetup.BDGuiSkin.window.fontStyle;
-            IconOptionsGroup = new Rect(15, 55, toolWindowWidth - 20, 290);
-            TeamColorsGroup = new Rect(15, IconOptionsGroup.height, toolWindowWidth - 20, 25);
+            IconOptionsGroup = new Rect(10, 55, toolWindowWidth - 20, 290);
+            TeamColorsGroup = new Rect(10, IconOptionsGroup.height, toolWindowWidth - 20, 25);
+            WindowRectGUI = new Rect(Screen.width - BDArmorySettings.UI_SCALE * (toolWindowWidth + 40), 150, toolWindowWidth, toolWindowHeight);
         }
 
         private void MissileFireOnToggleTeam(MissileFire wm, BDTeam team)
@@ -365,7 +366,6 @@ namespace BDArmory.UI
                 {
                     maySavethisInstance = true;
                 }
-                WindowRectGUI = new Rect(Screen.width - toolWindowWidth - 40, 150, toolWindowWidth, toolWindowHeight);
                 if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, WindowRectGUI.position);
                 WindowRectGUI = GUI.Window(GUIUtility.GetControlID(FocusType.Passive), WindowRectGUI, TeamIconGUI, windowTitle, BDArmorySetup.BDGuiSkin.window);
             }
@@ -389,6 +389,7 @@ namespace BDArmory.UI
         void TeamIconGUI(int windowID)
         {
             float line = 0;
+            GUI.DragWindow(new Rect(0, 0, WindowRectGUI.width, 25));
             BDTISettings.TEAMICONS = GUI.Toggle(new Rect(5, 25, toolWindowWidth, 20), BDTISettings.TEAMICONS, StringUtils.Localize("#LOC_BDArmory_Enable_Icons"), BDArmorySetup.BDGuiSkin.toggle);
             if (BDTISettings.TEAMICONS)
             {
@@ -452,8 +453,8 @@ namespace BDArmory.UI
                 GUI.EndGroup();
                 TeamColorsGroup.height = Mathf.Lerp(TeamColorsGroup.height, (line * 25) + 5, 0.35f);
             }
-            toolWindowHeight = Mathf.Lerp(toolWindowHeight, (50 + (BDTISettings.TEAMICONS ? IconOptionsGroup.height + TeamColorsGroup.height : 0)) + 15, 0.35f);
-            WindowRectGUI.height = toolWindowHeight + 10;
+            toolWindowHeight = Mathf.Lerp(toolWindowHeight, 50 + (BDTISettings.TEAMICONS ? IconOptionsGroup.height + TeamColorsGroup.height : 0) + 15, 0.35f);
+            WindowRectGUI.height = toolWindowHeight;
         }
     }
 }
