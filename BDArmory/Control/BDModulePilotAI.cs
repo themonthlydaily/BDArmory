@@ -592,8 +592,8 @@ namespace BDArmory.Control
             { nameof(extendAngleAirToAir), -90f },
             { nameof(altitudeSteerLimiterFactor), -10f },
         };
-        Dictionary<string, (float, float, int)> altSemiLogValues = new Dictionary<string, (float, float, int)> {
-            { nameof(evasionMinRangeThreshold), (1f, 1000000f, 1) },
+        Dictionary<string, (float, float, float)> altSemiLogValues = new Dictionary<string, (float, float, float)> {
+            { nameof(evasionMinRangeThreshold), (1f, 1000000f, 1f) },
         };
 
         void TurnItUpToEleven(bool upToEleven)

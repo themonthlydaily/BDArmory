@@ -542,9 +542,8 @@ namespace BDArmory.Control
             guardRange = 200000f;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_GunsRange"),//Guns Range
-            UI_FloatSemiLogRange(minValue = 10f, maxValue = 10000f, withZero = true, scene = UI_Scene.All)]
-        public float
-            gunRange = 2500f;
+            UI_FloatPowerRange(minValue = 0f, maxValue = 10000f, power = 2f, sigFig = 2, scene = UI_Scene.All)]
+        public float gunRange = 2500f;
         public float maxGunRange = 10f;
         public float maxVisualGunRangeSqr;
 
@@ -1270,10 +1269,8 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
 
                 // Update the max visual gun range (sqr) whenever the gun range or guard range changes.
                 {
-                    var field = (UI_FloatSemiLogRange)Fields["guardRange"].uiControlFlight;
-                    field.onFieldChanged = UpdateVisualGunRangeSqr;
-                    field = (UI_FloatSemiLogRange)Fields["gunRange"].uiControlFlight;
-                    field.onFieldChanged = UpdateVisualGunRangeSqr;
+                    ((UI_FloatSemiLogRange)Fields["guardRange"].uiControlFlight).onFieldChanged = UpdateVisualGunRangeSqr;
+                    ((UI_FloatPowerRange)Fields["gunRange"].uiControlFlight).onFieldChanged = UpdateVisualGunRangeSqr;
                     UpdateVisualGunRangeSqr(null, null);
                 }
 
@@ -7942,7 +7939,7 @@ UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_
         {
             if (EditorLogic.fetch.ship == null) return;
             List<WeaponClasses> gunLikeClasses = [WeaponClasses.Gun, WeaponClasses.DefenseLaser, WeaponClasses.Rocket];
-            var rangeEditor = (UI_FloatSemiLogRange)Fields["gunRange"].uiControlEditor;
+            var rangeEditor = (UI_FloatPowerRange)Fields["gunRange"].uiControlEditor;
             maxGunRange = rangeEditor.minValue;
             foreach (var p in EditorLogic.fetch.ship.Parts)
             {
