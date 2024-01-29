@@ -177,13 +177,13 @@ namespace BDArmory.GameModes
                     throw new ArgumentException("Field '" + field + "': '" + value + "' could not be parsed as '" + type.ToString() + "' | " + e.ToString(), field);
                 }
             }
-            catch// (Exception e)
+            catch (Exception e)
             {
                 if (defaultMutator != null)
                 {
                     // Give a warning about the missing or invalid value, then use the default value using reflection to find the field.
                     var defaultValue = typeof(MutatorInfo).GetProperty(field, BindingFlags.Public | BindingFlags.Instance).GetValue(defaultMutator);
-                    //Debug.LogError("[BDArmory.MutatorInfo]: Using default value of " + defaultValue.ToString() + " for " + field + " | " + e.ToString());
+                    Debug.LogError("[BDArmory.MutatorInfo]: Using default value of " + defaultValue.ToString() + " for " + field + " | " + e.ToString());
 
                     return defaultValue;
                 }

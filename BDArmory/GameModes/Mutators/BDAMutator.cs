@@ -11,6 +11,7 @@ using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.Weapons;
+using static BDArmory.Weapons.ModuleWeapon;
 
 namespace BDArmory.GameModes
 {
@@ -39,8 +40,8 @@ namespace BDArmory.GameModes
         private Color iconColor;
         private Texture2D icon;
         public Material IconMat;
-
         private int ActiveMutators = 1;
+        public int progressionIndex = 0;
 
         public override void OnStart(StartState state)
         {
@@ -52,7 +53,7 @@ namespace BDArmory.GameModes
         }
 
 
-        public void EnableMutator(string name = "def") //FIXME - when using apply on timer and !apply global, this NREs
+        public void EnableMutator(string name = "def", bool HOS = false) 
         {
             if (string.IsNullOrEmpty(name)) name = "def";
             if (mutatorEnabled) //replace current mutator with new one
@@ -69,7 +70,7 @@ namespace BDArmory.GameModes
             }
             mutatorName = name;
             mutators = BDAcTools.ParseNames(name);
-            for (int r = 0; r < BDArmorySettings.MUTATOR_APPLY_NUM; r++)
+            for (int r = 0; r < (HOS ? mutators.Count : BDArmorySettings.MUTATOR_APPLY_NUM); r++)
             {
                 name = MutatorInfo.mutators[mutators[r]].name;
                 mutatorInfo = MutatorInfo.mutators[name];
@@ -96,6 +97,7 @@ namespace BDArmory.GameModes
                             if (mutatorInfo.RoF > 0)
                             {
                                 weapon.Current.roundsPerMinute = mutatorInfo.RoF;
+                                weapon.Current.baseRPM = mutatorInfo.RoF;
                             }
                             if (mutatorInfo.MaxDeviation > 0)
                             {
@@ -118,7 +120,7 @@ namespace BDArmory.GameModes
                             }
                             if (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Laser)
                             {
-                                if (!string.IsNullOrEmpty(mutatorInfo.bulletType) || mutatorInfo.bulletType != "def")
+                                if (!string.IsNullOrEmpty(mutatorInfo.bulletType) && mutatorInfo.bulletType != "def")
                                 {
                                     weapon.Current.projectileColor = BulletInfo.bullets[mutatorInfo.bulletType].projectileColor;
                                 }
@@ -229,10 +231,22 @@ namespace BDArmory.GameModes
                     {
                         weapon.Current.useCustomBelt = true;
                     }
-                    weapon.Current.roundsPerMinute = weapon.Current.baseRPM;
                     weapon.Current.maxDeviation = weapon.Current.baseDeviation;
                     weapon.Current.laserDamage = weapon.Current.baseLaserdamage;
                     weapon.Current.pulseLaser = weapon.Current.pulseInConfig;
+                    if (weapon.Current.eWeaponType != WeaponTypes.Laser || (weapon.Current.eWeaponType == WeaponTypes.Laser && weapon.Current.pulseLaser))
+                    {
+                        try
+                        {
+                            weapon.Current.baseRPM = float.Parse(ConfigNodeUtils.FindPartModuleConfigNodeValue(part.partInfo.partConfig, "ModuleWeapon", "roundsPerMinute", "fireTransformName", weapon.Current.fireTransformName)); //if multiple moduleWeapons, make sure this grabs the right one unsing fireTransformname as an ID
+                        }
+                        catch
+                        {
+                            weapon.Current.baseRPM = 3000;
+                        }
+                    }
+                    else weapon.Current.baseRPM = 3000;
+                    weapon.Current.roundsPerMinute = weapon.Current.baseRPM;
                     weapon.Current.instagib = false;
                     weapon.Current.strengthMutator = 1;
                     weapon.Current.SetupAmmo(null, null);
@@ -315,11 +329,9 @@ namespace BDArmory.GameModes
                                 int Tax = ResourceTax.Count;
                                 if (Tax >= 1)
                                 {
-                                    //Debug.Log("[BDArmory.BDAMutator]: Starting ResourceTax");
                                     for (int i = 0; i < Tax; i++)
                                     {
                                         part.RequestResource(ResourceTax[i], TaxRate, ResourceFlowMode.ALL_VESSEL);
-                                        //Debug.Log($"[BDArmory.BDAMutator]: Taxing {ResourceTax[i]} to the tune of {TaxRate}");
                                     }
                                 }
                             }

@@ -419,6 +419,13 @@ namespace BDArmory.Weapons
         AnimationState chargeState;
 
         [KSPField]
+        public bool hasChargeHoldAnimation = false;
+
+        [KSPField]
+        public string chargeHoldAnimName = "chargeHoldAnim";
+        AnimationState chargeHoldState;
+
+        [KSPField]
         public bool hasFireAnimation = false;
 
         [KSPField]
@@ -454,7 +461,7 @@ namespace BDArmory.Weapons
         public float maxTargetingRange = 2000; //max range for raycasting and sighting
 
         [KSPField]
-        public float SpoolUpTime = -1; //barrel spin-up period for electric-driven rotary cannon and similar
+        public float SpoolUpTime = -1; //barrel spin-up period for gas-driven rotary cannon and similar
         float spooltime = 0;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "Rate of Fire"),
@@ -1520,6 +1527,16 @@ namespace BDArmory.Weapons
                     Debug.LogWarning($"[BDArmory.ModuleWeapon]: {OriginalShortName} is missing charge anim");
                     hasChargeAnimation = false;
                 }
+                if (hasChargeHoldAnimation)
+                {
+                    chargeHoldState = GUIUtils.SetUpSingleAnimation(chargeHoldAnimName, part);
+                    if (chargeHoldState != null)
+                    {
+                        chargeHoldState.normalizedTime = 0;
+                        chargeHoldState.speed = 0;
+                        chargeHoldState.enabled = true;
+                    }
+                }
             }
             if (hasFireAnimation)
             {
@@ -1829,13 +1846,7 @@ namespace BDArmory.Weapons
 
                 if (spinningDown && spinDownAnimation)
                 {
-                    if (hasChargeAnimation)
-                    {
-                        if (chargeState.normalizedTime > 1) chargeState.normalizedTime = 0;
-                        chargeState.speed = fireAnimSpeed;
-                        fireAnimSpeed = Mathf.Lerp(fireAnimSpeed, 0, 0.04f);
-                    }
-                    else if (hasFireAnimation)
+                    if (hasFireAnimation)
                     {
                         for (int i = 0; i < fireState.Length; i++)
                         {
@@ -3130,6 +3141,12 @@ namespace BDArmory.Weapons
 
         void PlayFireAnim()
         {
+            if (hasCharged)
+            {
+                if (hasChargeHoldAnimation)
+                    chargeHoldState.enabled = false;
+                else if (hasChargeAnimation) chargeState.enabled = false;
+            }
             //Debug.Log("[BDArmory.ModuleWeapon]: fireState length = " + fireState.Length);
             for (int i = 0; i < fireState.Length; i++)
             {
@@ -3316,7 +3333,6 @@ namespace BDArmory.Weapons
         public void DisableWeapon()
         {
             if (dualModeAPS) isAPS = true;
-            hasCharged = false;
             if (isAPS)
             {
                 if (ammoCount > 0 || BDArmorySettings.INFINITE_AMMO)
@@ -4593,7 +4609,28 @@ namespace BDArmory.Weapons
                         roundsPerMinute = Mathf.Lerp(baseRPM, (baseRPM / 10), spooltime);
                     }
                 }
-                if (ChargeTime > 0 && hasCharged && timeSinceFired > chargeHoldLength) hasCharged = false;
+                if (hasCharged)
+                {
+                    if (hasChargeHoldAnimation)
+                    {
+                        chargeHoldState.enabled = true; //play chargedHold anim while weapon is charged but not firing - spooled gatling gun spin anims, etc
+                        if (chargeHoldState.normalizedTime > 1)
+                            chargeHoldState.normalizedTime = 0;
+                        chargeHoldState.speed = fireAnimSpeed;
+                    }
+                    else if (hasChargeAnimation)
+                    {
+                        chargeState.enabled = true;
+                        chargeState.speed = 0;
+                        chargeState.normalizedTime = 1; //else use final frame of he chargeAnim if no hold anim, so weapon doesn't immediately revert to default state moment firing stops
+                    }
+
+                    if (ChargeTime > 0 && timeSinceFired > chargeHoldLength)
+                    {
+                        hasCharged = false;
+                        if (hasChargeAnimation) chargeRoutine = StartCoroutine(ChargeRoutine(true));
+                    }
+                }
             }
         }
 
@@ -4800,6 +4837,7 @@ namespace BDArmory.Weapons
                 isOverheated = true;
                 autoFire = false;
                 hasCharged = false;
+                if (hasChargeAnimation) chargeRoutine = StartCoroutine(ChargeRoutine(true));
                 if (!oneShotSound) audioSource.Stop();
                 wasFiring = false;
                 audioSource2.PlayOneShot(overheatSound);
@@ -4827,7 +4865,6 @@ namespace BDArmory.Weapons
             {
                 isReloading = true;
                 autoFire = false;
-                hasCharged = false;
                 if (eWeaponType == WeaponTypes.Laser)
                 {
                     for (int i = 0; i < laserRenderers.Length; i++)
@@ -5431,6 +5468,11 @@ namespace BDArmory.Weapons
                 yield return new WaitForSecondsFixed(0.2f);
                 yield return new WaitWhileFixed(() => !turret.ReturnTurret()); //wait till turret has returned
             }
+            if (hasCharged)
+            {
+                if (hasChargeAnimation)
+                    yield return chargeRoutine = StartCoroutine(ChargeRoutine(true));
+            }
             if (hasDeployAnim)
             {
                 deployState.enabled = true;
@@ -5456,6 +5498,8 @@ namespace BDArmory.Weapons
                 fireState[i].speed = 0;
                 fireState[i].enabled = false;
             }
+            if (hasChargeAnimation) 
+                yield return chargeRoutine = StartCoroutine(ChargeRoutine(true));
             if (!oneShotSound) audioSource.Stop();
             if (!string.IsNullOrEmpty(reloadAudioPath))
             {
@@ -5471,21 +5515,27 @@ namespace BDArmory.Weapons
 
             UpdateGUIWeaponState();
         }
-        IEnumerator ChargeRoutine()
+        IEnumerator ChargeRoutine(bool decharge = false)
         {
             isCharging = true;
             guiStatusString = "Charging";
-            if (!string.IsNullOrEmpty(chargeSoundPath))
+            if (decharge)
+            {
+                if (hasChargeHoldAnimation) chargeHoldState.enabled = false;
+                if (hasChargeAnimation) chargeState.enabled = false;
+                hasCharged = false;
+            }
+            if (!string.IsNullOrEmpty(chargeSoundPath) && !decharge)
             {
                 audioSource.PlayOneShot(chargeSound);
             }
             if (hasChargeAnimation)
             {
-                chargeState.normalizedTime = 0;
+                chargeState.normalizedTime = decharge ? 1 : 0;
                 chargeState.enabled = true;
-                chargeState.speed = (chargeState.length / ChargeTime);//ensure relaod anim is not longer than reload time
-                yield return new WaitWhileFixed(() => chargeState.normalizedTime < 1); //wait for animation here
-                chargeState.normalizedTime = 1;
+                chargeState.speed = (chargeState.length / ChargeTime) * (decharge ? -1 : 1);//ensure relaod anim is not longer than reload time
+                yield return new WaitWhileFixed(() => decharge ? chargeState.normalizedTime > 0 : chargeState.normalizedTime < 1); //wait for animation here
+                chargeState.normalizedTime = decharge ? 0 : 1; 
                 chargeState.speed = 0;
                 chargeState.enabled = false;
             }
@@ -5495,34 +5545,37 @@ namespace BDArmory.Weapons
             }
             UpdateGUIWeaponState();
             isCharging = false;
-            if (!ChargeEachShot) hasCharged = true;
-            switch (eWeaponType)
+            if (!decharge)
             {
-                case WeaponTypes.Laser:
-                    if (FireLaser())
-                    {
-                        for (int i = 0; i < laserRenderers.Length; i++)
-                        {
-                            laserRenderers[i].enabled = true;
-                        }
-                    }
-                    else
-                    {
-                        if ((!pulseLaser && !BurstFire) || (!pulseLaser && BurstFire && (RoundsRemaining >= RoundsPerMag)) || (pulseLaser && timeSinceFired > beamDuration))
+                if (!ChargeEachShot) hasCharged = true;
+                switch (eWeaponType)
+                {
+                    case WeaponTypes.Laser:
+                        if (FireLaser())
                         {
                             for (int i = 0; i < laserRenderers.Length; i++)
                             {
-                                laserRenderers[i].enabled = false;
+                                laserRenderers[i].enabled = true;
                             }
                         }
-                    }
-                    break;
-                case WeaponTypes.Ballistic:
-                    Fire();
-                    break;
-                case WeaponTypes.Rocket:
-                    FireRocket();
-                    break;
+                        else
+                        {
+                            if ((!pulseLaser && !BurstFire) || (!pulseLaser && BurstFire && (RoundsRemaining >= RoundsPerMag)) || (pulseLaser && timeSinceFired > beamDuration))
+                            {
+                                for (int i = 0; i < laserRenderers.Length; i++)
+                                {
+                                    laserRenderers[i].enabled = false;
+                                }
+                            }
+                        }
+                        break;
+                    case WeaponTypes.Ballistic:
+                        Fire();
+                        break;
+                    case WeaponTypes.Rocket:
+                        FireRocket();
+                        break;
+                }
             }
         }
         IEnumerator StandbyRoutine()

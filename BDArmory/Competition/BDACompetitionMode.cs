@@ -561,7 +561,7 @@ namespace BDArmory.Competition
                                         if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode]: adding Mutator module {pilot.vessel.vesselName}");
                                     }
                                     if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode]: Applying ({BDArmorySettings.HOS_MUTATOR})");
-                                    MM.EnableMutator(BDArmorySettings.HOS_MUTATOR);
+                                    MM.EnableMutator(BDArmorySettings.HOS_MUTATOR, true);
                                 }
                             }
                     }
@@ -1823,7 +1823,7 @@ namespace BDArmory.Competition
                                                 {
                                                     MM = (BDAMutator)pilot.vessel.rootPart.AddModule("BDAMutator");
                                                 }
-                                                    MM.EnableMutator(BDArmorySettings.HOS_MUTATOR);
+                                                    MM.EnableMutator(BDArmorySettings.HOS_MUTATOR, true);
                                             }
                                         }
                                     }
@@ -2888,12 +2888,17 @@ namespace BDArmory.Competition
                                             {
                                                 MM = (BDAMutator)loadedVessels.Current.rootPart.AddModule("BDAMutator");
                                             }
-                                            MM.EnableMutator(); //random mutator    
+                                            if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 61) //gungame
+                                            {
+                                                MM.progressionIndex++;
+                                                if (MM.progressionIndex > BDArmorySettings.MUTATOR_LIST.Count) MM.progressionIndex = BDArmorySettings.MUTATOR_LIST.Count; //= 0 and have mutator lsit cycle instead??
+                                                MM.EnableMutator(BDArmorySettings.MUTATOR_LIST[MM.progressionIndex]); //increment to next mutator on list
+                                            }
+                                            else MM.EnableMutator();//random mutator
                                             competitionStatus.Add(Scores.ScoreData[player].lastPersonWhoDamagedMe + " gains " + MM.mutatorName + (BDArmorySettings.MUTATOR_DURATION > 0 ? " for " + BDArmorySettings.MUTATOR_DURATION * 60 + " seconds!" : "!"));
 
                                         }
                                     }
-
                             }
                             else
                             {
