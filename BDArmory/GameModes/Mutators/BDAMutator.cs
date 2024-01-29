@@ -234,7 +234,7 @@ namespace BDArmory.GameModes
                     weapon.Current.maxDeviation = weapon.Current.baseDeviation;
                     weapon.Current.laserDamage = weapon.Current.baseLaserdamage;
                     weapon.Current.pulseLaser = weapon.Current.pulseInConfig;
-                    if (weapon.Current.eWeaponType != WeaponTypes.Laser || (weapon.Current.eWeaponType == WeaponTypes.Laser && weapon.Current.pulseLaser))
+                    if (weapon.Current.eWeaponType != WeaponTypes.Laser || weapon.Current.pulseLaser)
                     {
                         try
                         {

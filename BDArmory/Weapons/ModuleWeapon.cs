@@ -5515,27 +5515,27 @@ namespace BDArmory.Weapons
 
             UpdateGUIWeaponState();
         }
-        IEnumerator ChargeRoutine(bool decharge = false)
+        IEnumerator ChargeRoutine(bool discharge = false)
         {
             isCharging = true;
             guiStatusString = "Charging";
-            if (decharge)
+            if (discharge)
             {
                 if (hasChargeHoldAnimation) chargeHoldState.enabled = false;
                 if (hasChargeAnimation) chargeState.enabled = false;
                 hasCharged = false;
             }
-            if (!string.IsNullOrEmpty(chargeSoundPath) && !decharge)
+            if (!string.IsNullOrEmpty(chargeSoundPath) && !discharge)
             {
                 audioSource.PlayOneShot(chargeSound);
             }
             if (hasChargeAnimation)
             {
-                chargeState.normalizedTime = decharge ? 1 : 0;
+                chargeState.normalizedTime = discharge ? 1 : 0;
                 chargeState.enabled = true;
-                chargeState.speed = (chargeState.length / ChargeTime) * (decharge ? -1 : 1);//ensure relaod anim is not longer than reload time
-                yield return new WaitWhileFixed(() => decharge ? chargeState.normalizedTime > 0 : chargeState.normalizedTime < 1); //wait for animation here
-                chargeState.normalizedTime = decharge ? 0 : 1; 
+                chargeState.speed = (chargeState.length / ChargeTime) * (discharge ? -1 : 1);//ensure relaod anim is not longer than reload time
+                yield return new WaitWhileFixed(() => discharge ? chargeState.normalizedTime > 0 : chargeState.normalizedTime < 1); //wait for animation here
+                chargeState.normalizedTime = discharge ? 0 : 1; 
                 chargeState.speed = 0;
                 chargeState.enabled = false;
             }
@@ -5545,7 +5545,7 @@ namespace BDArmory.Weapons
             }
             UpdateGUIWeaponState();
             isCharging = false;
-            if (!decharge)
+            if (!discharge)
             {
                 if (!ChargeEachShot) hasCharged = true;
                 switch (eWeaponType)
