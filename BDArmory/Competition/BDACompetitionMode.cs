@@ -2872,7 +2872,7 @@ namespace BDArmory.Competition
                                 //canAssignMutator = true;
                                 break;
                             case AliveState.AssistedKill: // Assist (not damaged recently or GM kill).
-                                canAssignMutator = false; //comment out if wanting last person to deal damage to be awarded a On Kill mutator
+                                //canAssignMutator = false; //comment out if wanting last person to deal damage to be awarded a On Kill mutator
                                 if (Scores.ScoreData[player].gmKillReason != GMKillReason.None)
                                 {
                                     Scores.ScoreData[player].everyoneWhoDamagedMe.Add(Scores.ScoreData[player].gmKillReason.ToString());
