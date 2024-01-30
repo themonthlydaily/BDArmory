@@ -2898,10 +2898,13 @@ namespace BDArmory.Competition
                                     {
                                         if (loadedVessels.Current == null || !loadedVessels.Current.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(loadedVessels.Current.vesselType))
                                             continue;
-                                        //if (loadedVessels.Current.GetName() == Scores.ScoreData[player].lastPersonWhoDamagedMe)
-                                        if (Scores.ScoreData[player].everyoneWhoDamagedMe.Contains(loadedVessels.Current.GetName()))
+                                        if (Scores.ScoreData[player].aliveState == AliveState.AssistedKill && Scores.ScoreData[player].everyoneWhoDamagedMe.Contains(loadedVessels.Current.GetName()))
                                         {
-                                            SpawnUtils.ApplyMutators(loadedVessels.Current, true);   
+                                            SpawnUtils.ApplyMutators(loadedVessels.Current, true);
+                                        }
+                                        else if (loadedVessels.Current.GetName() == Scores.ScoreData[player].lastPersonWhoDamagedMe)
+                                        {
+                                            SpawnUtils.ApplyMutators(loadedVessels.Current, true);
                                             break;
                                         }
                                     }
