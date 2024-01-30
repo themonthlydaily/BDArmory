@@ -934,7 +934,7 @@ namespace BDArmory.VesselSpawning
             }
         }
         #endregion
-        #region HOS
+        #region RWP Specific
         public void ApplyRWPonNewVessels(bool enable)
         {
             if (enable)
