@@ -2881,7 +2881,7 @@ namespace BDArmory.Competition
                         competitionStatus.Add(statusMessage);
                         if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode:{CompetitionID}]: " + statusMessage);
 
-                        if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_KILL)
+                        if ((BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_KILL) || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61))
                         {
                             if (BDArmorySettings.MUTATOR_LIST.Count > 0 && canAssignMutator)
                             {
@@ -2899,7 +2899,7 @@ namespace BDArmory.Competition
                                             {
                                                 MM = (BDAMutator)loadedVessels.Current.rootPart.AddModule("BDAMutator");
                                             }
-                                            if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 61) //gungame
+                                            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61) //gungame
                                             {
                                                 MM.EnableMutator(BDArmorySettings.MUTATOR_LIST[MM.progressionIndex]); //increment to next mutator on list
                                                 MM.progressionIndex++;
@@ -2907,7 +2907,7 @@ namespace BDArmory.Competition
                                             }
                                             else MM.EnableMutator();//random mutator
                                             competitionStatus.Add(Scores.ScoreData[player].lastPersonWhoDamagedMe + " gains " + MM.mutatorName + (BDArmorySettings.MUTATOR_DURATION > 0 ? " for " + BDArmorySettings.MUTATOR_DURATION * 60 + " seconds!" : "!"));
-
+                                            break;
                                         }
                                     }
                             }
