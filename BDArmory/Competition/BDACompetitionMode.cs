@@ -2898,7 +2898,8 @@ namespace BDArmory.Competition
                                     {
                                         if (loadedVessels.Current == null || !loadedVessels.Current.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(loadedVessels.Current.vesselType))
                                             continue;
-                                        if (loadedVessels.Current.GetName() == Scores.ScoreData[player].lastPersonWhoDamagedMe)
+                                        //if (loadedVessels.Current.GetName() == Scores.ScoreData[player].lastPersonWhoDamagedMe)
+                                        if (Scores.ScoreData[player].everyoneWhoDamagedMe.Contains(loadedVessels.Current.GetName()))
                                         {
                                             SpawnUtils.ApplyMutators(loadedVessels.Current, true);   
                                             break;
