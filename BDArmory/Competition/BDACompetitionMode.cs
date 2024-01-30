@@ -492,7 +492,7 @@ namespace BDArmory.Competition
                 {
                     SpawnUtils.ActivateAllEngines(pilot.vessel, false);
                 }
-                if (BDArmorySettings.MUTATOR_MODE) SpawnUtils.ApplyMutators(pilot.vessel, true);
+                if (BDArmorySettings.MUTATOR_MODE || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61)) SpawnUtils.ApplyMutators(pilot.vessel, true);
                 if (BDArmorySettings.ENABLE_HOS) SpawnUtils.ApplyHOS(pilot.vessel, true);
                 if (BDArmorySettings.HACK_INTAKES) SpawnUtils.HackIntakes(pilot.vessel, true);
                 if (BDArmorySettings.RUNWAY_PROJECT) SpawnUtils.ApplyRWP(pilot.vessel, true);
@@ -2835,7 +2835,7 @@ namespace BDArmory.Competition
                                 statusMessage += $" {Scores.ScoreData[player].gmKillReason}";
                                 break;
                         }
-                        bool canAssignMutator = false;
+                        bool canAssignMutator = true;
                         switch (Scores.ScoreData[player].aliveState)
                         {
                             case AliveState.CleanKill: // Damaged recently and only ever took damage from the killer.
@@ -2847,7 +2847,7 @@ namespace BDArmory.Competition
                                 {
                                     statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (NAILED 'EM! CLEAN KILL!)";
                                 }
-                                canAssignMutator = true;
+                                //canAssignMutator = true;
                                 break;
                             case AliveState.HeadShot: // Damaged recently, but took damage a while ago from someone else.
                                 if (BDArmorySettings.ENABLE_HOS && BDArmorySettings.HALL_OF_SHAME_LIST.Contains(Scores.ScoreData[player].lastPersonWhoDamagedMe) && !string.IsNullOrEmpty(BDArmorySettings.HOS_BADGE))
@@ -2858,7 +2858,7 @@ namespace BDArmory.Competition
                                 {
                                     statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (BOOM! HEAD SHOT!)";
                                 }
-                                canAssignMutator = true;
+                                //canAssignMutator = true;
                                 break;
                             case AliveState.KillSteal: // Damaged recently, but took damage from someone else recently too.
                                 if (BDArmorySettings.ENABLE_HOS && BDArmorySettings.HALL_OF_SHAME_LIST.Contains(Scores.ScoreData[player].lastPersonWhoDamagedMe) && !string.IsNullOrEmpty(BDArmorySettings.HOS_BADGE))
@@ -2869,13 +2869,19 @@ namespace BDArmory.Competition
                                 {
                                     statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (KILL STEAL!)";
                                 }
-                                canAssignMutator = true;
+                                //canAssignMutator = true;
                                 break;
                             case AliveState.AssistedKill: // Assist (not damaged recently or GM kill).
-                                if (Scores.ScoreData[player].gmKillReason != GMKillReason.None) Scores.ScoreData[player].everyoneWhoDamagedMe.Add(Scores.ScoreData[player].gmKillReason.ToString());
+                                //canAssignMutator = false; //comment out if wanting last person to deal damage to be awarded a On Kill mutator
+                                if (Scores.ScoreData[player].gmKillReason != GMKillReason.None)
+                                {
+                                    Scores.ScoreData[player].everyoneWhoDamagedMe.Add(Scores.ScoreData[player].gmKillReason.ToString());
+                                    canAssignMutator = false; //GM kill, no mutator, else award last player to deal damage
+                                }
                                 statusMessage += string.Join(", ", Scores.ScoreData[player].everyoneWhoDamagedMe) + " (" + string.Join(", ", Scores.ScoreData[player].damageTypesTaken) + ")";
                                 break;
                             case AliveState.Dead: // Suicide/Incompetance (never took damage from others).
+                                canAssignMutator = false;
                                 break;
                         }
                         competitionStatus.Add(statusMessage);
@@ -2894,7 +2900,7 @@ namespace BDArmory.Competition
                                             continue;
                                         if (loadedVessels.Current.GetName() == Scores.ScoreData[player].lastPersonWhoDamagedMe)
                                         {
-                                            SpawnUtils.ApplyMutators(loadedVessels.Current, true);
+                                            SpawnUtils.ApplyMutators(loadedVessels.Current, true);   
                                             break;
                                         }
                                     }

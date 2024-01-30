@@ -831,7 +831,7 @@ namespace BDArmory.VesselSpawning
         public void ApplyMutators(Vessel vessel, bool enable)
         {
             if (vessel == null || !vessel.loaded) return;
-            if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
+            if ((BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0) || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61))
             {
                 var MM = vessel.rootPart.FindModuleImplementing<BDAMutator>();
                 if (enable)
@@ -844,15 +844,18 @@ namespace BDArmory.VesselSpawning
                     {
                         MM.EnableMutator(BDArmorySettings.MUTATOR_LIST[MM.progressionIndex]); //increment to next mutator on list
                         MM.progressionIndex++;
-                        if (MM.progressionIndex > BDArmorySettings.MUTATOR_LIST.Count - 1) MM.progressionIndex = BDArmorySettings.MUTATOR_LIST.Count - 1; //= 0 and have mutator list cycle instead??
+                        if (MM.progressionIndex > BDArmorySettings.MUTATOR_LIST.Count - 1) MM.progressionIndex = BDArmorySettings.MUTATOR_LIST.Count - 1; //= 0 and have mutator lsit cycle instead??
                     }
-                    else if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //selected mutator applied globally
+                    else
                     {
-                        MM.EnableMutator(BDACompetitionMode.Instance.currentMutator);
-                    }
-                    else if (BDArmorySettings.MUTATOR_APPLY_TIMER) //mutator applied on a per-craft basis
-                    {
-                        MM.EnableMutator(); //random mutator
+                        if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //selected mutator applied globally
+                        {
+                            MM.EnableMutator(BDACompetitionMode.Instance.currentMutator);
+                        }
+                        else //mutator applied on a per-craft basis, APPLY_TIMER/APPLY_KILL
+                        {
+                            MM.EnableMutator(); //random mutator
+                        }
                     }
                     BDACompetitionMode.Instance.competitionStatus.Add($"{vessel.vesselName} gains {MM.mutatorName}{(BDArmorySettings.MUTATOR_DURATION > 0 ? $" for {BDArmorySettings.MUTATOR_DURATION * 60} seconds!" : "!")}");
                 }
@@ -1037,6 +1040,10 @@ namespace BDArmory.VesselSpawning
                         pilotAI.maxSpeed = Mathf.Min(250, pilotAI.maxSpeed);
                         if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMOde]: Setting SpaceMode Ai settings on " + vessel.GetName());
                     }
+                }
+                if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 61)
+                {
+                    BDArmorySettings.MUTATOR_DURATION = 0;
                 }
             }
         }

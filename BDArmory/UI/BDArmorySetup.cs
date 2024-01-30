@@ -3241,7 +3241,6 @@ namespace BDArmory.UI
 
                         GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_MutatorDuration")}: ({(BDArmorySettings.MUTATOR_DURATION > 0 ? BDArmorySettings.MUTATOR_DURATION + (BDArmorySettings.MUTATOR_DURATION > 1 ? " mins" : " min") : "Unlimited")})", leftLabel);
                         BDArmorySettings.MUTATOR_DURATION = (float)Math.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.MUTATOR_DURATION, 0f, BDArmorySettings.COMPETITION_DURATION > 0 ? BDArmorySettings.COMPETITION_DURATION : 15), 1);
-
                         GUI.Label(SLeftSliderRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_Settings_MutatorNum")}:  ({BDArmorySettings.MUTATOR_APPLY_NUM})", leftLabel);//Number of active mutators
                         BDArmorySettings.MUTATOR_APPLY_NUM = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.MUTATOR_APPLY_NUM, 1f, BDArmorySettings.MUTATOR_LIST.Count));
                         if (BDArmorySettings.MUTATOR_LIST.Count < BDArmorySettings.MUTATOR_APPLY_NUM)
@@ -3439,6 +3438,14 @@ namespace BDArmory.UI
                             BDArmorySettings.SF_FRICTION = true;
                             BDArmorySettings.SF_GRAVITY = true;
                             BDArmorySettings.SF_DRAGMULT = 30;
+                        }
+                        if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 61)
+                        {
+                            MutatorInfo.SetupGunGame();
+                            BDArmorySettings.MUTATOR_LIST.Clear();
+                            BDArmorySettings.MUTATOR_LIST = new List<string> { "Chainguns", "Vulcans", "Abrams", "Mausers", "GAU-22s", "Nudelmans", "Rocket Arena", "Railguns", "GAU-8s"}; //generally weaker to stronger, but with early abrams to give pooer performing planes a potential leg up
+                            //BDArmorySettings.MUTATOR_LIST = new List<string> { "GAU-8s", "Railguns", "Abrams", "Rocket Arena", "Nudelmans", "GAU-22s", "Mausers", "Vulcans", "Chainguns" }; //reverse gunGame, in case of runaway rich-get-richer scenario
+                            //as long as game is started on RWP_Round == 61, this should be editable in the settings.cfg to change it to whatever order is needed for the showrunner
                         }
                         //TODO - convert these to gamemode types - e.g. Firerate Increase on Kill, Rapid Deployment, Spacemode, etc, and clear out all the empty round values
 
