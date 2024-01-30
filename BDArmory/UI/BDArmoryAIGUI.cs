@@ -681,6 +681,7 @@ namespace BDArmory.UI
             return new Rect(indent + pos / of * (contentWidth - gap * (of - 1f) - 2f * indent) + pos * gap, lines * entryHeight, 1f / of * (contentWidth - gap * (of - 1f) - 2f * indent), entryHeight);
         }
 
+        (float, float)[] cacheEvasionMinRangeThreshold;
         void WindowRectAI(int windowID)
         {
             float line = 0;
@@ -1906,11 +1907,11 @@ namespace BDArmory.UI
                             {
                                 if (ActivePilot.UpToEleven)
                                 {
-                                    ActivePilot.evasionMinRangeThreshold = GUIUtils.HorizontalSemiLogSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth), ActivePilot.evasionMinRangeThreshold, 1, 1000000, 1, true);
+                                    ActivePilot.evasionMinRangeThreshold = GUIUtils.HorizontalSemiLogSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth), ActivePilot.evasionMinRangeThreshold, 1, 1000000, 1, true, ref cacheEvasionMinRangeThreshold);
                                 }
                                 else
                                 {
-                                    ActivePilot.evasionMinRangeThreshold = GUIUtils.HorizontalSemiLogSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth), ActivePilot.evasionMinRangeThreshold, 10, 10000, 1, true);
+                                    ActivePilot.evasionMinRangeThreshold = GUIUtils.HorizontalSemiLogSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth), ActivePilot.evasionMinRangeThreshold, 10, 10000, 1, true, ref cacheEvasionMinRangeThreshold);
                                 }
                             }
                             else

@@ -5,6 +5,7 @@
 	- Battle damage fuel leak rates now scale by (bullet caliber)^2, instead of (bullet caliber). Fuel leak rates for 20mm caliber remain the same, calibers higher and lower than 20mm will now have higher and lower leak rates, respectively.
 	- Fixes for Kerbal Safety not always detecting EVA kerbals.
 - UI:
+	- Updated Chinese localization thanks to user Marv1n-M.
 	- Fix part filtering by search terms in the editors.
 	- Adjust timing and conditions for auto-camera switching to and away from missiles.
 	- Fix tracer visuals when the active vessel dies.
@@ -15,6 +16,8 @@
 	- Improve the logarithmic scaling in the radar windows.
 	- Add a 'withZero' parameter to semi-log sliders that allows them to include 0 and uses lower precision for the smallest range.
 	- Add a 'GUIUtils.HorizontalSemiLogSlider' for simplifying horizontal sliders for semi-log float ranges outside of PAWs.
+	- Add a fractional component to the precision of semi-log sliders for rounding, e.g., sigFig = 1.5f gives '..., 8.5, 9, 9.5, 10, 15, 20, ...'. Switch the spawn distance slider to use this.
+	- Add a power-law float range type and 'GUIUtils.HorizontalPowerSlider' for simplifying horizontal sliders for power-law float ranges outside of PAWs.
 - AI / WM:
 	- Add new "Kinematic Msl Evasion" toggle to Pilot AI under the evasion settings. When this is enabled the AI will evaluate the best maneuver to defeat a beyond-visual-range (BVR) missile using only kinematic maneuvers. The Time to Impact Before Evade setting on the weapons manager should be set to a high value when this evasion option is enabled. Maneuvers the AI will use are:
 		- Crank - Fly at an angle to the target, while still maintaining radar lock.
@@ -44,6 +47,7 @@
 	- 'subProjectileCount' has been deprecated and replaced with 'projectileCount'; this specifies number of pellets per shot (for shotguns, etc) to make it more intuitive. Existing shotgun-type weapons will need to update their bulletDefs.
 	- The subMunitionType field for beehive ammo now uses the syntax of "ammotype; quantity" (e.g. subMunitionType = 35x228AHEADPellet; 30) with number of projectiles released on detonation set here instead of the subMunition's bulletDef.
 	- Fix the aiming reticles of guns (fixed and turrets) and auto-proxy-tracking when using MouseAimFlight (again).
+	- Switch the gun range sliders to use a power-law slider instead of a semi-log slider to keep typical ranges closer to the centre of the slider.
 	- Missiles:
 		- Fix issue with Rotary Rails trying to use missiles that have previously been blown off from combat damage.
 		- Fix issue with MultiMissilelauncher Turrets throwing an NRE when AI firing.

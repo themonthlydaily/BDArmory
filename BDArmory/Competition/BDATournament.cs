@@ -1529,7 +1529,7 @@ namespace BDArmory.Competition
                     message = "All heats in round " + roundIndex + " have been run.";
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
                     Debug.Log("[BDArmory.BDATournament]: " + message);
-                    if (tournamentState.tournamentType == TournamentType.Teams) LogTeamScores();
+                    LogScores(tournamentState.tournamentType == TournamentType.Teams);
                     if (BDArmorySettings.WAYPOINTS_MODE || (BDArmorySettings.RUNWAY_PROJECT && (BDArmorySettings.RUNWAY_PROJECT_ROUND == 50 || BDArmorySettings.RUNWAY_PROJECT_ROUND == 55)))
                     {
                         /* commented out until this is made functional
@@ -1805,14 +1805,14 @@ namespace BDArmory.Competition
             }
         }
 
-        void LogTeamScores()
+        void LogScores(bool teams)
         {
-            var teamScores = GetRankedTeamScores;
-            if (teamScores.Count == 0) return;
+            var scores = teams ? GetRankedTeamScores : GetRankedScores;
+            if (scores.Count == 0) return;
             var logsFolder = Path.GetFullPath(Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "BDArmory", "Logs"));
-            var fileName = Path.Combine(logsFolder, $"Tournament {tournamentID}", "team scores.log");
-            var maxTeamNameLength = teamScores.Max(kvp => kvp.Key.Length);
-            var lines = teamScores.Select((kvp, rank) => $"{rank + 1,3:D} - {kvp.Key} {new string(' ', maxTeamNameLength - kvp.Key.Length)}{kvp.Value,8:F3}").ToList();
+            var fileName = Path.Combine(logsFolder, $"Tournament {tournamentID}", teams ? "team scores.log" : "ranked scores.log");
+            var maxNameLength = scores.Max(kvp => kvp.Key.Length);
+            var lines = scores.Select((kvp, rank) => $"{rank + 1,3:D} - {kvp.Key} {new string(' ', maxNameLength - kvp.Key.Length)}{kvp.Value,8:F3}").ToList();
             if (tournamentState.tournamentRoundType == TournamentRoundType.Ranked)
                 lines.Insert(0, $"Tournament {tournamentID}, round {currentRound} / {BDArmorySettings.TOURNAMENT_ROUNDS}");  // Round 0 is the initial shuffled round.
             else
