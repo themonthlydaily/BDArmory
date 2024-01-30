@@ -2835,7 +2835,7 @@ namespace BDArmory.Competition
                                 statusMessage += $" {Scores.ScoreData[player].gmKillReason}";
                                 break;
                         }
-                        bool canAssignMutator = false;
+                        bool canAssignMutator = true;
                         switch (Scores.ScoreData[player].aliveState)
                         {
                             case AliveState.CleanKill: // Damaged recently and only ever took damage from the killer.
@@ -2847,7 +2847,7 @@ namespace BDArmory.Competition
                                 {
                                     statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (NAILED 'EM! CLEAN KILL!)";
                                 }
-                                canAssignMutator = true;
+                                //canAssignMutator = true;
                                 break;
                             case AliveState.HeadShot: // Damaged recently, but took damage a while ago from someone else.
                                 if (BDArmorySettings.ENABLE_HOS && BDArmorySettings.HALL_OF_SHAME_LIST.Contains(Scores.ScoreData[player].lastPersonWhoDamagedMe) && !string.IsNullOrEmpty(BDArmorySettings.HOS_BADGE))
@@ -2858,7 +2858,7 @@ namespace BDArmory.Competition
                                 {
                                     statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (BOOM! HEAD SHOT!)";
                                 }
-                                canAssignMutator = true;
+                                //canAssignMutator = true;
                                 break;
                             case AliveState.KillSteal: // Damaged recently, but took damage from someone else recently too.
                                 if (BDArmorySettings.ENABLE_HOS && BDArmorySettings.HALL_OF_SHAME_LIST.Contains(Scores.ScoreData[player].lastPersonWhoDamagedMe) && !string.IsNullOrEmpty(BDArmorySettings.HOS_BADGE))
@@ -2869,13 +2869,19 @@ namespace BDArmory.Competition
                                 {
                                     statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (KILL STEAL!)";
                                 }
-                                canAssignMutator = true;
+                                //canAssignMutator = true;
                                 break;
                             case AliveState.AssistedKill: // Assist (not damaged recently or GM kill).
-                                if (Scores.ScoreData[player].gmKillReason != GMKillReason.None) Scores.ScoreData[player].everyoneWhoDamagedMe.Add(Scores.ScoreData[player].gmKillReason.ToString());
+                                canAssignMutator = false; //comment out if wanting last person to deal damage to be awarded a On Kill mutator
+                                if (Scores.ScoreData[player].gmKillReason != GMKillReason.None)
+                                {
+                                    Scores.ScoreData[player].everyoneWhoDamagedMe.Add(Scores.ScoreData[player].gmKillReason.ToString());
+                                    canAssignMutator = false; //GM kill, no mutator, else award last player to deal damage
+                                }
                                 statusMessage += string.Join(", ", Scores.ScoreData[player].everyoneWhoDamagedMe) + " (" + string.Join(", ", Scores.ScoreData[player].damageTypesTaken) + ")";
                                 break;
                             case AliveState.Dead: // Suicide/Incompetance (never took damage from others).
+                                canAssignMutator = false;
                                 break;
                         }
                         competitionStatus.Add(statusMessage);
@@ -2894,19 +2900,7 @@ namespace BDArmory.Competition
                                             continue;
                                         if (loadedVessels.Current.GetName() == Scores.ScoreData[player].lastPersonWhoDamagedMe)
                                         {
-                                            var MM = loadedVessels.Current.rootPart.FindModuleImplementing<BDAMutator>(); //replace with vesselregistry?
-                                            if (MM == null)
-                                            {
-                                                MM = (BDAMutator)loadedVessels.Current.rootPart.AddModule("BDAMutator");
-                                            }
-                                            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61) //gungame
-                                            {
-                                                MM.EnableMutator(BDArmorySettings.MUTATOR_LIST[MM.progressionIndex]); //increment to next mutator on list
-                                                MM.progressionIndex++;
-                                                if (MM.progressionIndex == BDArmorySettings.MUTATOR_LIST.Count) MM.progressionIndex = BDArmorySettings.MUTATOR_LIST.Count - 1; //= 0 and have mutator lsit cycle instead??
-                                            }
-                                            else MM.EnableMutator();//random mutator
-                                            competitionStatus.Add(Scores.ScoreData[player].lastPersonWhoDamagedMe + " gains " + MM.mutatorName + (BDArmorySettings.MUTATOR_DURATION > 0 ? " for " + BDArmorySettings.MUTATOR_DURATION * 60 + " seconds!" : "!"));
+                                            SpawnUtils.ApplyMutators(loadedVessels.Current, true);   
                                             break;
                                         }
                                     }
