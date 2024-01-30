@@ -1044,6 +1044,7 @@ namespace BDArmory.VesselSpawning
                 if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 61)
                 {
                     BDArmorySettings.MUTATOR_DURATION = 0;
+                    SpawnUtils.ApplyMutators(vessel, true);
                 }
             }
         }
