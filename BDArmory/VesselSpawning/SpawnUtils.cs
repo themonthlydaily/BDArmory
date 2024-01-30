@@ -1036,7 +1036,7 @@ namespace BDArmory.VesselSpawning
                         if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMOde]: Setting SpaceMode Ai settings on " + vessel.GetName());
                     }
                 }
-                if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 59)
+                if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 61)
                 {
                     BDArmorySettings.MUTATOR_DURATION = 0;
                 }
