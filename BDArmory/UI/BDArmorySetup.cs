@@ -517,6 +517,12 @@ namespace BDArmory.UI
             HullInfo.Load();
             ProjectileUtils.SetUpPartsHashSets();
             ProjectileUtils.SetUpWeaponReporting();
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61) // Set this up in case the settings window doesn't get opened.
+            {
+                MutatorInfo.SetupGunGame();
+                BDArmorySettings.MUTATOR_LIST = ["Brownings", "Chainguns", "Vulcans", "Abrams", "Mausers", "GAU-22s", "N-37s", "Rocket Arena", "AT Guns", "Railguns", "GAU-8s"]; //generally weaker to stronger, but with early abrams to give pooer performing planes a potential leg up
+            }
+
 
             compDistGui = BDArmorySettings.COMPETITION_DISTANCE.ToString();
             compIntraTeamSeparationBase = BDArmorySettings.COMPETITION_INTRA_TEAM_SEPARATION_BASE.ToString();
@@ -893,11 +899,6 @@ namespace BDArmory.UI
             BDArmorySettings.PROC_ARMOR_ALT_LIMITS.y = Mathf.Min(BDArmorySettings.PROC_ARMOR_ALT_LIMITS.y, 1e5f); // Anything over this pretty much breaks KSP.
             BDArmorySettings.PROC_ARMOR_ALT_LIMITS.x = Mathf.Clamp(BDArmorySettings.PROC_ARMOR_ALT_LIMITS.x, BDArmorySettings.PROC_ARMOR_ALT_LIMITS.y * 1e-8f, BDArmorySettings.PROC_ARMOR_ALT_LIMITS.y); // More than 8 orders of magnitude breaks the mesh collider engine.
             BDArmorySettings.PREVIOUS_UI_SCALE = BDArmorySettings.UI_SCALE;
-            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61) // Set this up in case the settings window doesn't get opened.
-            {
-                    MutatorInfo.SetupGunGame();
-                    BDArmorySettings.MUTATOR_LIST = ["Brownings", "Chainguns", "Vulcans", "Abrams", "Mausers", "GAU-22s", "N-37s", "Rocket Arena", "AT Guns", "Railguns", "GAU-8s"]; //generally weaker to stronger, but with early abrams to give pooer performing planes a potential leg up
-            }
         }
         #region GUI
 

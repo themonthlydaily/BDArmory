@@ -220,7 +220,7 @@ namespace BDArmory.GameModes
             mutatorNames.Add("GAU-8s");
             mutators.Add(new MutatorInfo("Railguns", true, "ballistic", "37mmHVProjectile", 50, 0.01f, 0, 0, 0, 1, 1, false, 1, 0, false, "", 0, false, "IconLaser", "105,250,234,255"));
             mutatorNames.Add("Railguns");
-            mutators.Add(new MutatorInfo("Abrams", true, "ballistic", "120mmBulletHE", 10, 0.1f, 0, 0, 0, 1, 1, false, 1, 0, false, "", 0, false, "IconSkull", "175,175,24,255"));
+            mutators.Add(new MutatorInfo("Abrams", true, "ballistic", "130mmShell", 10, 0.1f, 0, 0, 0, 1, 1, false, 1, 0, false, "", 0, false, "IconSkull", "175,175,24,255"));
             mutatorNames.Add("Abrams");
             gunGameConfigured = true;
         }
