@@ -893,6 +893,11 @@ namespace BDArmory.UI
             BDArmorySettings.PROC_ARMOR_ALT_LIMITS.y = Mathf.Min(BDArmorySettings.PROC_ARMOR_ALT_LIMITS.y, 1e5f); // Anything over this pretty much breaks KSP.
             BDArmorySettings.PROC_ARMOR_ALT_LIMITS.x = Mathf.Clamp(BDArmorySettings.PROC_ARMOR_ALT_LIMITS.x, BDArmorySettings.PROC_ARMOR_ALT_LIMITS.y * 1e-8f, BDArmorySettings.PROC_ARMOR_ALT_LIMITS.y); // More than 8 orders of magnitude breaks the mesh collider engine.
             BDArmorySettings.PREVIOUS_UI_SCALE = BDArmorySettings.UI_SCALE;
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61) // Set this up in case the settings window doesn't get opened.
+            {
+                    MutatorInfo.SetupGunGame();
+                    BDArmorySettings.MUTATOR_LIST = ["Brownings", "Chainguns", "Vulcans", "Abrams", "Mausers", "GAU-22s", "N-37s", "Rocket Arena", "AT Guns", "Railguns", "GAU-8s"]; //generally weaker to stronger, but with early abrams to give pooer performing planes a potential leg up
+            }
         }
         #region GUI
 
@@ -1003,6 +1008,7 @@ namespace BDArmory.UI
         Rect RightLabelRect(float line) => new Rect(columnWidth - leftIndent - 3 - rightLabelWidth, line * entryHeight, rightLabelWidth, entryHeight);
         Rect ButtonRect(float line) => new Rect(leftIndent + 3, line * entryHeight, columnWidth - 2 * leftIndent - 16, entryHeight);
 
+        (float, float)[] cacheGuardRange, cacheGunRange;
         void WindowBDAToolbar(int windowID)
         {
             float line = 0;
@@ -1406,7 +1412,7 @@ namespace BDArmory.UI
                     GUI.Label(LabelRect(++guardLines, guardLabelWidth), StringUtils.Localize("#LOC_BDArmory_WMWindow_VisualRange"), leftLabel);//"Visual Range"
                     if (!NumFieldsEnabled)
                     {
-                        ActiveWeaponManager.guardRange = GUIUtils.HorizontalSemiLogSlider(SliderRect(guardLines, guardLabelWidth), ActiveWeaponManager.guardRange, 100, BDArmorySettings.MAX_GUARD_VISUAL_RANGE, 1, false);
+                        ActiveWeaponManager.guardRange = GUIUtils.HorizontalSemiLogSlider(SliderRect(guardLines, guardLabelWidth), ActiveWeaponManager.guardRange, 100, BDArmorySettings.MAX_GUARD_VISUAL_RANGE, 1, false, ref cacheGuardRange);
                         GUI.Label(RightLabelRect(guardLines), ActiveWeaponManager.guardRange < 1000 ? $"{ActiveWeaponManager.guardRange:G4}m" : $"{ActiveWeaponManager.guardRange / 1000:G4}km", leftLabel);
                     }
                     else
@@ -1419,7 +1425,7 @@ namespace BDArmory.UI
                     GUI.Label(LabelRect(++guardLines, guardLabelWidth), StringUtils.Localize("#LOC_BDArmory_WMWindow_GunsRange"), leftLabel);//"Guns Range"
                     if (!NumFieldsEnabled)
                     {
-                        ActiveWeaponManager.gunRange = GUIUtils.HorizontalSemiLogSlider(SliderRect(guardLines, guardLabelWidth), ActiveWeaponManager.gunRange, 10, ActiveWeaponManager.maxGunRange, 2, true);
+                        ActiveWeaponManager.gunRange = GUIUtils.HorizontalPowerSlider(SliderRect(guardLines, guardLabelWidth), ActiveWeaponManager.gunRange, 0, ActiveWeaponManager.maxGunRange, 2, 2, ref cacheGunRange);
                         GUI.Label(RightLabelRect(guardLines), ActiveWeaponManager.gunRange < 1000 ? $"{ActiveWeaponManager.gunRange:G4}m" : $"{ActiveWeaponManager.gunRange / 1000:G4}km", leftLabel);
                     }
                     else
@@ -3252,6 +3258,11 @@ namespace BDArmory.UI
                         }
                         BDArmorySettings.MUTATOR_ICONS = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.MUTATOR_ICONS, StringUtils.Localize("#LOC_BDArmory_Settings_MutatorIcons"));
                     }
+                    else if (HighLogic.LoadedSceneIsFlight)
+                    {
+                        foreach (var vessel in FlightGlobals.VesselsLoaded) SpawnUtils.ApplyMutators(vessel, false); // Clear mutators on existing vessels when disabling this.
+                        SpawnUtils.ApplyMutatorsOnNewVessels(false); // And prevent any new ones.
+                    }
                 }
                 BDArmorySettings.INFINITE_FUEL = CheatOptions.InfinitePropellant; // Sync with the Alt-F12 window if the checkbox was toggled there.
                 if (BDArmorySettings.INFINITE_FUEL != (BDArmorySettings.INFINITE_FUEL = GUI.Toggle(SRightRect(++line), BDArmorySettings.INFINITE_FUEL, StringUtils.Localize("#autoLOC_900349"))))//"Infinite Propellant"
@@ -3440,12 +3451,15 @@ namespace BDArmory.UI
                         }
                         if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 61)
                         {
-                            MutatorInfo.SetupGunGame();
-                            BDArmorySettings.MUTATOR_LIST.Clear();
-                            BDArmorySettings.MUTATOR_LIST = new List<string> { "Brownings", "Chainguns", "Vulcans", "Abrams", "Mausers", "GAU-22s", "N-37s", "Rocket Arena", "AT Guns", "Railguns", "GAU-8s"}; //generally weaker to stronger, but with early abrams to give poorer performing planes a potential leg up
+                            if (!MutatorInfo.gunGameConfigured)
+                            {
+                                MutatorInfo.SetupGunGame();
+                                BDArmorySettings.MUTATOR_LIST = ["Brownings", "Chainguns", "Vulcans", "Abrams", "Mausers", "GAU-22s", "N-37s", "Rocket Arena", "AT Guns", "Railguns", "GAU-8s"]; //generally weaker to stronger, but with early abrams to give pooer performing planes a potential leg up
+                            }
                             //BDArmorySettings.MUTATOR_LIST = new List<string> { "GAU-8s", "Railguns", "Abrams", "Rocket Arena", "Nudelmans", "GAU-22s", "Mausers", "Vulcans", "Chainguns" }; //reverse gunGame, in case of runaway rich-get-richer scenario
                             //as long as game is started on RWP_Round == 61, this should be editable in the settings.cfg to change it to whatever order is needed for the showrunner
                         }
+                        else MutatorInfo.gunGameConfigured = false;
                         //TODO - convert these to gamemode types - e.g. Firerate Increase on Kill, Rapid Deployment, Spacemode, etc, and clear out all the empty round values
 
                         // if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 46) BDArmorySettings.NO_ENGINES = true;

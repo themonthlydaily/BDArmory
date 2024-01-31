@@ -492,10 +492,10 @@ namespace BDArmory.Competition
                 {
                     SpawnUtils.ActivateAllEngines(pilot.vessel, false);
                 }
-                if (BDArmorySettings.MUTATOR_MODE) SpawnUtils.ApplyMutators(pilot.vessel, true);
-                if (BDArmorySettings.ENABLE_HOS) SpawnUtils.ApplyHOS(pilot.vessel, true);
                 if (BDArmorySettings.HACK_INTAKES) SpawnUtils.HackIntakes(pilot.vessel, true);
-                if (BDArmorySettings.RUNWAY_PROJECT) SpawnUtils.ApplyRWP(pilot.vessel, true);
+                if (BDArmorySettings.MUTATOR_MODE) SpawnUtils.ApplyMutators(pilot.vessel, true);
+                if (BDArmorySettings.ENABLE_HOS) SpawnUtils.ApplyHOS(pilot.vessel);
+                if (BDArmorySettings.RUNWAY_PROJECT) SpawnUtils.ApplyRWP(pilot.vessel);
                 /*
                 if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
                 {
@@ -1714,10 +1714,10 @@ namespace BDArmory.Competition
                                         pilot.weaponManager.ToggleGuardMode();
                                         if (!pilot.weaponManager.guardMode) pilot.weaponManager.SetTarget(null);
                                     }
-                                    if (BDArmorySettings.MUTATOR_MODE) SpawnUtils.ApplyMutators(pilot.vessel, true);
-                                    if (BDArmorySettings.ENABLE_HOS) SpawnUtils.ApplyHOS(pilot.vessel, true);
                                     if (BDArmorySettings.HACK_INTAKES) SpawnUtils.HackIntakes(pilot.vessel, true);
-                                    if (BDArmorySettings.RUNWAY_PROJECT) SpawnUtils.ApplyRWP(pilot.vessel, true);
+                                    if (BDArmorySettings.MUTATOR_MODE) SpawnUtils.ApplyMutators(pilot.vessel, true);
+                                    if (BDArmorySettings.ENABLE_HOS) SpawnUtils.ApplyHOS(pilot.vessel);
+                                    if (BDArmorySettings.RUNWAY_PROJECT) SpawnUtils.ApplyRWP(pilot.vessel);
                                     /*
                                     if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
                                     {
@@ -2898,11 +2898,13 @@ namespace BDArmory.Competition
                                     {
                                         if (loadedVessels.Current == null || !loadedVessels.Current.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(loadedVessels.Current.vesselType))
                                             continue;
-                                        //if (loadedVessels.Current.GetName() == Scores.ScoreData[player].lastPersonWhoDamagedMe)
-                                        if (Scores.ScoreData[player].everyoneWhoDamagedMe.Contains(loadedVessels.Current.GetName()))
+                                        if (Scores.ScoreData[player].aliveState == AliveState.AssistedKill && Scores.ScoreData[player].everyoneWhoDamagedMe.Contains(loadedVessels.Current.GetName()))
                                         {
-                                            SpawnUtils.ApplyMutators(loadedVessels.Current, true);   
-                                            break;
+                                            SpawnUtils.ApplyMutators(loadedVessels.Current, true); // Reward everyone on assists.
+                                        }
+                                        else if (Scores.ScoreData[player].lastPersonWhoDamagedMe == loadedVessels.Current.GetName() || (Scores.ScoreData[player].aliveState == AliveState.KillSteal && Scores.ScoreData[player].previousPersonWhoDamagedMe == loadedVessels.Current.GetName()))
+                                        {
+                                            SpawnUtils.ApplyMutators(loadedVessels.Current, true); // Reward clean kills and those whom have had their kills stolen.
                                         }
                                     }
                             }
