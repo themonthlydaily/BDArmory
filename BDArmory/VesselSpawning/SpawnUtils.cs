@@ -208,12 +208,12 @@ namespace BDArmory.VesselSpawning
 
         #region RWP Stuff
         public static void ApplyRWPonNewVessels(bool enable) => SpawnUtilsInstance.Instance.ApplyRWPonNewVessels(enable);
-        public static void ApplyRWP(Vessel vessel, bool enable) => SpawnUtilsInstance.Instance.ApplyRWP(vessel, enable);
+        public static void ApplyRWP(Vessel vessel) => SpawnUtilsInstance.Instance.ApplyRWP(vessel); // Applying RWP can't be undone
         #endregion
 
         #region HallOfShame
         public static void ApplyHOSOnNewVessels(bool enable) => SpawnUtilsInstance.Instance.ApplyHOSOnNewVessels(enable);
-        public static void ApplyHOS(Vessel vessel, bool enable) => SpawnUtilsInstance.Instance.ApplyHOS(vessel, enable);
+        public static void ApplyHOS(Vessel vessel) => SpawnUtilsInstance.Instance.ApplyHOS(vessel); // Applying HOS can't be undone.
         #endregion
 
         #region KAL
@@ -831,41 +831,36 @@ namespace BDArmory.VesselSpawning
         public void ApplyMutators(Vessel vessel, bool enable)
         {
             if (vessel == null || !vessel.loaded) return;
-            if ((BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0) || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61))
+            var MM = vessel.rootPart.FindModuleImplementing<BDAMutator>();
+            if (enable && ((BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0) || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61)))
             {
-                var MM = vessel.rootPart.FindModuleImplementing<BDAMutator>();
-                if (enable)
+                if (MM == null)
                 {
-                    if (MM == null)
-                    {
-                        MM = (BDAMutator)vessel.rootPart.AddModule("BDAMutator");
-                    }
-                    if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61) //gungame
-                    {
-                        MM.EnableMutator(BDArmorySettings.MUTATOR_LIST[MM.progressionIndex]); //increment to next mutator on list
-                        MM.progressionIndex++;
-                        if (MM.progressionIndex > BDArmorySettings.MUTATOR_LIST.Count - 1) MM.progressionIndex = BDArmorySettings.MUTATOR_LIST.Count - 1; //= 0 and have mutator lsit cycle instead??
-                    }
-                    else
-                    {
-                        if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //selected mutator applied globally
-                        {
-                            MM.EnableMutator(BDACompetitionMode.Instance.currentMutator);
-                        }
-                        else //mutator applied on a per-craft basis, APPLY_TIMER/APPLY_KILL
-                        {
-                            MM.EnableMutator(); //random mutator
-                        }
-                    }
-                    BDACompetitionMode.Instance.competitionStatus.Add($"{vessel.vesselName} gains {MM.mutatorName}{(BDArmorySettings.MUTATOR_DURATION > 0 ? $" for {BDArmorySettings.MUTATOR_DURATION * 60} seconds!" : "!")}");
+                    MM = (BDAMutator)vessel.rootPart.AddModule("BDAMutator");
+                }
+                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61) //gungame
+                {
+                    if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.SpawnUtils]: Applying mutator {BDArmorySettings.MUTATOR_LIST[MM.progressionIndex]} to {vessel.vesselName}");
+                    MM.EnableMutator(BDArmorySettings.MUTATOR_LIST[MM.progressionIndex]); //increment to next mutator on list
+                    MM.progressionIndex++;
+                    if (MM.progressionIndex > BDArmorySettings.MUTATOR_LIST.Count - 1) MM.progressionIndex = BDArmorySettings.MUTATOR_LIST.Count - 1; //= 0 and have mutator lsit cycle instead??
                 }
                 else
                 {
-                    if (MM != null)
+                    if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //selected mutator applied globally
                     {
-                        MM.DisableMutator();
+                        MM.EnableMutator(BDACompetitionMode.Instance.currentMutator);
+                    }
+                    else //mutator applied on a per-craft basis, APPLY_TIMER/APPLY_KILL
+                    {
+                        MM.EnableMutator(); //random mutator
                     }
                 }
+                BDACompetitionMode.Instance.competitionStatus.Add($"{vessel.vesselName} gains {MM.mutatorName}{(BDArmorySettings.MUTATOR_DURATION > 0 ? $" for {BDArmorySettings.MUTATOR_DURATION * 60} seconds!" : "!")}");
+            }
+            else if (MM != null)
+            {
+                MM.DisableMutator();
             }
         }
         #endregion
@@ -882,9 +877,9 @@ namespace BDArmory.VesselSpawning
                 GameEvents.onVesselLoaded.Remove(ApplyHOSEventHandler);
             }
         }
-        void ApplyHOSEventHandler(Vessel vessel) => ApplyHOS(vessel, true);
+        void ApplyHOSEventHandler(Vessel vessel) => ApplyHOS(vessel);
 
-        public void ApplyHOS(Vessel vessel, bool enable)
+        public void ApplyHOS(Vessel vessel)
         {
             if (vessel == null || !vessel.loaded) return;
             if (BDArmorySettings.ENABLE_HOS && BDArmorySettings.HALL_OF_SHAME_LIST.Count > 0)
@@ -960,9 +955,9 @@ namespace BDArmory.VesselSpawning
                 GameEvents.onVesselLoaded.Remove(ApplyRWPEventHandler);
             }
         }
-        void ApplyRWPEventHandler(Vessel vessel) => ApplyRWP(vessel, true);
+        void ApplyRWPEventHandler(Vessel vessel) => ApplyRWP(vessel);
 
-        public void ApplyRWP(Vessel vessel, bool enable)
+        public void ApplyRWP(Vessel vessel)
         {
             if (vessel == null || !vessel.loaded) return;
             if (BDArmorySettings.RUNWAY_PROJECT)
@@ -1044,7 +1039,8 @@ namespace BDArmory.VesselSpawning
                 if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 61)
                 {
                     BDArmorySettings.MUTATOR_DURATION = 0;
-                    SpawnUtils.ApplyMutators(vessel, true);
+                    if (!BDArmorySettings.MUTATOR_MODE) // If it's enabled then it's already been applied once.
+                        SpawnUtils.ApplyMutators(vessel, true);
                 }
             }
         }
