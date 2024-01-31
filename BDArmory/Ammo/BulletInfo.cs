@@ -26,6 +26,7 @@ namespace BDArmory.Bullets
         public string fuzeType { get; private set; }
         public int projectileCount { get; private set; }
         public float subProjectileDispersion { get; private set; }
+        public float projectileTTL { get; private set; }
         public float apBulletMod { get; private set; }
         public string bulletDragTypeName { get; private set; }
         public string projectileColor { get; private set; }
@@ -41,7 +42,7 @@ namespace BDArmory.Bullets
 
         public BulletInfo(string name, string DisplayName, float caliber, float bulletVelocity, float bulletMass,
                           string explosive, bool incendiary, float tntMass, bool EMP, bool nuclear, bool beehive, string subMunitionType, float massMod, float impulse, string fuzeType, float apBulletDmg,
-                          int projectileCount, float subProjectileDispersion, string bulletDragTypeName, string projectileColor, string startColor, bool fadeColor)
+                          int projectileCount, float subProjectileDispersion, float projectileTTL, string bulletDragTypeName, string projectileColor, string startColor, bool fadeColor)
         {
             this.name = name;
             this.DisplayName = DisplayName;
@@ -61,6 +62,7 @@ namespace BDArmory.Bullets
             this.apBulletMod = apBulletDmg;
             this.projectileCount = projectileCount;
             this.subProjectileDispersion = subProjectileDispersion;
+            this.projectileTTL = projectileTTL;
             this.bulletDragTypeName = bulletDragTypeName;
             this.projectileColor = projectileColor;
             this.startColor = startColor;
@@ -103,6 +105,7 @@ namespace BDArmory.Bullets
                         (float)ParseField(node, "apBulletMod", typeof(float)),
                         Math.Max((int)ParseField(node, "projectileCount", typeof(int)), 1),
                         -1,
+                        (float)ParseField(node, "projectileTTL", typeof(float)), 
                         (string)ParseField(node, "bulletDragTypeName", typeof(string)),
                         (string)ParseField(node, "projectileColor", typeof(string)),
                         (string)ParseField(node, "startColor", typeof(string)),
@@ -149,6 +152,7 @@ namespace BDArmory.Bullets
                         (float)ParseField(node, "apBulletMod", typeof(float)),
                         (int)ParseField(node, "projectileCount", typeof(int)),
                         (float)ParseField(node, "subProjectileDispersion", typeof(float)),
+                        (float)ParseField(node, "projectileTTL", typeof(float)),
                         (string)ParseField(node, "bulletDragTypeName", typeof(string)),
                         (string)ParseField(node, "projectileColor", typeof(string)),
                         (string)ParseField(node, "startColor", typeof(string)),
@@ -196,7 +200,7 @@ namespace BDArmory.Bullets
                     // Give a warning about the missing or invalid value, then use the default value using reflection to find the field.
                     if (field == "DisplayName") return string.Empty;
                     var defaultValue = typeof(BulletInfo).GetProperty(field == "DisplayName" ? "name" : field, BindingFlags.Public | BindingFlags.Instance).GetValue(defaultBullet); //this is returnin the def bullet name, not current bullet name
-                    if (field == "EMP" || field == "nuclear" || field == "beehive" || field == "subMunitionType" || field == "massMod" || field == "impulse" || field == "subProjectileDispersion")
+                    if (field == "EMP" || field == "nuclear" || field == "beehive" || field == "subMunitionType" || field == "massMod" || field == "impulse" || field == "subProjectileDispersion" || field == "projectileTTL")
                     {
                         //not having these throw an error message since these are all optional and default to false, prevents bullet defs from bloating like rockets did
                         //Future SI - apply this to rocket, mutator defs
