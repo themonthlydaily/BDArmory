@@ -76,6 +76,9 @@ IMPROVEMENTS / FIXES
 	- Update the continuous spawn log parser to handle multiple files, either separately or combined.
 	- Bias the continuous spawn's "bubble shuffle" to prioritise craft with fewer spawns.
 	- Hide the ALIVE / DEAD string in continuous spawn when the UI is hidden.
+	- Delay spawning craft in continuous spawning while the death cam is active to avoid lag during that shot.
+- RWP:
+	- Add RWP S6R1 specific overrides.
 
 v1.6.9.0
 IMPROVEMENTS / FIXES
