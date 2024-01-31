@@ -1215,7 +1215,7 @@ namespace BDArmory.Weapons.Missiles
                 var Template = GameDatabase.Instance.GetModel(modelpath);
                 if (Template == null)
                 {
-                    Debug.LogError("[BDArmory.MultiMissilelauncher]: model '" + modelpath + "' not found. Expect exceptions if trying to use this missile.");
+                    Debug.LogError("[BDArmory.MultiMissileLauncher]: model '" + modelpath + "' not found. Expect exceptions if trying to use this missile.");
                     return;
                 }
                 Template.SetActive(false);

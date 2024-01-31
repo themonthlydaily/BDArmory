@@ -843,7 +843,7 @@ namespace BDArmory.VesselSpawning
                     if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.SpawnUtils]: Applying mutator {BDArmorySettings.MUTATOR_LIST[MM.progressionIndex]} to {vessel.vesselName}");
                     MM.EnableMutator(BDArmorySettings.MUTATOR_LIST[MM.progressionIndex]); //increment to next mutator on list
                     MM.progressionIndex++;
-                    if (MM.progressionIndex > BDArmorySettings.MUTATOR_LIST.Count - 1) MM.progressionIndex = BDArmorySettings.MUTATOR_LIST.Count - 1; //= 0 and have mutator lsit cycle instead??
+                    if (MM.progressionIndex > BDArmorySettings.MUTATOR_LIST.Count - 1) MM.progressionIndex = BDArmorySettings.MUTATOR_LIST.Count - 1; //= 0 and have mutator list cycle instead??
                 }
                 else
                 {
