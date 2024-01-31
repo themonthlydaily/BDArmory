@@ -957,12 +957,12 @@ namespace BDArmory.VesselSpawning
                 ContinuousSpawning.Instance.UpdateCompetitionScores(vessel, true);
                 ++ContinuousSpawning.Instance.continuousSpawningScores[vesselName].spawnCount;
             }
-            if (competitionStartingOrStarted)
+            if (BDACompetitionMode.Instance.competitionIsActive) // For competitions that are starting these should already be applied.
             {
-                if (BDArmorySettings.MUTATOR_MODE) SpawnUtils.ApplyMutators(vessel, true);
-                if (BDArmorySettings.ENABLE_HOS) SpawnUtils.ApplyHOS(vessel, true);
                 if (BDArmorySettings.HACK_INTAKES) SpawnUtils.HackIntakes(vessel, true);
-                if (BDArmorySettings.RUNWAY_PROJECT) SpawnUtils.ApplyRWP(vessel, true);
+                if (BDArmorySettings.MUTATOR_MODE) SpawnUtils.ApplyMutators(vessel, true);
+                if (BDArmorySettings.ENABLE_HOS) SpawnUtils.ApplyHOS(vessel);
+                if (BDArmorySettings.RUNWAY_PROJECT) SpawnUtils.ApplyRWP(vessel);
             }
 
             // Update the ramming information for the new vessel.

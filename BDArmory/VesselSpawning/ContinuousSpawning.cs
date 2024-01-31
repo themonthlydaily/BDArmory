@@ -218,7 +218,8 @@ namespace BDArmory.VesselSpawning
                     if (craftToSpawn.Count > 0)
                     {
                         VesselModuleRegistry.CleanRegistries(); // Clean out any old entries.
-                        yield return new WaitForSeconds(1); // Wait 1s before spawning new vessels to give the death cam a little extra time.
+                        yield return new WaitWhileFixed(() => LoadedVesselSwitcher.Instance.currentVesselDied); // Wait for the death camera to finish so we don't cause lag for it, then give it an extra second.
+                        yield return new WaitForSecondsFixed(1);
 
                         // Get the spawning point in world position coordinates.
                         var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(spawnConfig.latitude, spawnConfig.longitude);

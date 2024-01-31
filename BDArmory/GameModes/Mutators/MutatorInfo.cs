@@ -197,9 +197,11 @@ namespace BDArmory.GameModes
         /// to not have to worry about, say, someone not using BDAe and not having some of the bulletTypes hadcoded here
         /// revise later
         /// </summary>
+        public static bool gunGameConfigured = false;
         public static void SetupGunGame()
         {
-            if (mutatorNames.Contains("Brownings")) return;
+            // if (mutatorNames.Contains("Brownings")) return; // This wasn't always working properly for some reason.
+            if (gunGameConfigured) return;
             mutators.Add(new MutatorInfo("Brownings", true, "ballistic", "12.7mmBullet", 1150, 0.32f, 0, 0, 0, 1, 1, false, 1, 0, false, "", 0, false, "IconTarget", "0,200,0,255"));
             mutatorNames.Add("Brownings");
             mutators.Add(new MutatorInfo("Vulcans", true, "ballistic", "20x102mmHEBullet", 5500, 0.8f, 0, 0, 0, 1, 1, false, 1, 0, false, "", 0, false, "IconAccuracy", "222,0,0,255"));
@@ -218,8 +220,9 @@ namespace BDArmory.GameModes
             mutatorNames.Add("GAU-8s");
             mutators.Add(new MutatorInfo("Railguns", true, "ballistic", "37mmHVProjectile", 50, 0.01f, 0, 0, 0, 1, 1, false, 1, 0, false, "", 0, false, "IconLaser", "105,250,234,255"));
             mutatorNames.Add("Railguns");
-            mutators.Add(new MutatorInfo("Abrams", true, "ballistic", "120mmBulletHE", 10, 0.1f, 0, 0, 0, 1, 1, false, 1, 0, false, "", 0, false, "IconSkull", "175,175,24,255"));
+            mutators.Add(new MutatorInfo("Abrams", true, "ballistic", "130mmShell", 10, 0.1f, 0, 0, 0, 1, 1, false, 1, 0, false, "", 0, false, "IconSkull", "175,175,24,255"));
             mutatorNames.Add("Abrams");
+            gunGameConfigured = true;
         }
     }
 
