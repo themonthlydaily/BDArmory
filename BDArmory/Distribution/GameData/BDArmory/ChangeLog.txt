@@ -1,6 +1,7 @@
 ﻿IMPROVEMENTS / FIXES
 - UI:
 	- Updated German localisation from EzBro.
+	- Fix some localisation tags and duplicates.
 
 v1.6.10.0
 IMPROVEMENTS / FIXES
