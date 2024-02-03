@@ -2,6 +2,8 @@
 - UI:
 	- Updated German localisation from EzBro.
 	- Fix some localisation tags and duplicates.
+- AI / WM:
+	- Don't reset PID values to stored auto-tuning ones when switching the clamped/unclamped toggle.
 
 v1.6.10.0
 IMPROVEMENTS / FIXES

@@ -105,7 +105,7 @@ namespace BDArmory.Bullets
                         (float)ParseField(node, "apBulletMod", typeof(float)),
                         Math.Max((int)ParseField(node, "projectileCount", typeof(int)), 1),
                         -1,
-                        (float)ParseField(node, "projectileTTL", typeof(float)), 
+                        (float)ParseField(node, "projectileTTL", typeof(float)),
                         (string)ParseField(node, "bulletDragTypeName", typeof(string)),
                         (string)ParseField(node, "projectileColor", typeof(string)),
                         (string)ParseField(node, "startColor", typeof(string)),
@@ -224,7 +224,9 @@ namespace BDArmory.Bullets
                     }
                     else
                     {
-                        Debug.LogError("[BDArmory.BulletInfo]: Using default value of " + defaultValue.ToString() + " for " + field + " | " + e.ToString());
+                        string name = "unknown";
+                        try { name = (string)ParseField(node, "name", typeof(string)); } catch { }
+                        Debug.LogError($"[BDArmory.BulletInfo]: Using default value of {defaultValue} for {field} of {name} | {e}");
                     }
                     return defaultValue;
                 }

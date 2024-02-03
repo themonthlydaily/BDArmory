@@ -2234,7 +2234,7 @@ namespace BDArmory.UI
                             }
                             if (ActivePilot.terrainAvoidanceCriticalAngle != oldTerrainAvoidanceCriticalAngle)
                             {
-                                ActivePilot.OnTerrainAvoidanceCriticalAngleChanged(null, null);
+                                ActivePilot.OnTerrainAvoidanceCriticalAngleChanged();
                             }
                             if (contextTipsEnabled)
                             {
