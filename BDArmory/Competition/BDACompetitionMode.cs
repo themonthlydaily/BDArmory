@@ -184,13 +184,12 @@ namespace BDArmory.Competition
                 }
                 if (!BDArmorySetup.GAME_UI_ENABLED)
                 {
-                    if (BDArmorySettings.DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI)
-                    {
-                        guiStatusString = deadOrAlive + "\n" + guiStatusString;
-                    }
+                    if (ContinuousSpawning.Instance.vesselsSpawningContinuously) // Don't do the ALIVE / DEAD string in continuous spawn.
+                    { if (!BDArmorySettings.DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI) guiStatusString = ""; }
                     else
                     {
-                        guiStatusString = deadOrAlive;
+                        if (BDArmorySettings.DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI) { guiStatusString = deadOrAlive + "\n" + guiStatusString; }
+                        else { guiStatusString = deadOrAlive; }
                     }
                 }
                 GUI.Label(statusRectShadow, guiStatusString, statusStyleShadow);
@@ -337,7 +336,7 @@ namespace BDArmory.Competition
         {
             if (LoadedVesselSwitcher.Instance is not null) LoadedVesselSwitcher.Instance.ResetDeadVessels(); // Reset the dead vessels in the LVS so that the final corrected results are shown.
             LogResults(tag: competitionTag);
-            if (competitionIsActive && ContinuousSpawning.Instance && ContinuousSpawning.Instance.vesselsSpawningContinuously)
+            if (competitionIsActive && ContinuousSpawning.Instance.vesselsSpawningContinuously)
             {
                 SpawnUtils.CancelSpawning();
             }
@@ -493,6 +492,11 @@ namespace BDArmory.Competition
                 {
                     SpawnUtils.ActivateAllEngines(pilot.vessel, false);
                 }
+                if (BDArmorySettings.HACK_INTAKES) SpawnUtils.HackIntakes(pilot.vessel, true);
+                if (BDArmorySettings.MUTATOR_MODE) SpawnUtils.ApplyMutators(pilot.vessel, true);
+                if (BDArmorySettings.ENABLE_HOS) SpawnUtils.ApplyHOS(pilot.vessel);
+                if (BDArmorySettings.RUNWAY_PROJECT) SpawnUtils.ApplyRWP(pilot.vessel);
+                /*
                 if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
                 {
                     var MM = pilot.vessel.rootPart.FindModuleImplementing<BDAMutator>();
@@ -542,7 +546,7 @@ namespace BDArmory.Competition
                                         ModuleReactionWheel SAS;
                                         SAS = part.Current.GetComponent<ModuleReactionWheel>();
                                         //if (part.Current.CrewCapacity == 0)
-                                            part.Current.RemoveModule(SAS); //don't strip reaction wheels from cockpits, as those are allowed
+                                        part.Current.RemoveModule(SAS); //don't strip reaction wheels from cockpits, as those are allowed
                                     }
                                 }
                                 if (BDArmorySettings.HOS_THRUST != 100)
@@ -552,6 +556,17 @@ namespace BDArmory.Competition
                                         {
                                             engine.Current.thrustPercentage = BDArmorySettings.HOS_THRUST;
                                         }
+                                }
+                                if (!string.IsNullOrEmpty(BDArmorySettings.HOS_MUTATOR))
+                                {
+                                    var MM = pilot.vessel.rootPart.FindModuleImplementing<BDAMutator>();
+                                    if (MM == null)
+                                    {
+                                        MM = (BDAMutator)pilot.vessel.rootPart.AddModule("BDAMutator");
+                                        if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode]: adding Mutator module {pilot.vessel.vesselName}");
+                                    }
+                                    if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode]: Applying ({BDArmorySettings.HOS_MUTATOR})");
+                                    MM.EnableMutator(BDArmorySettings.HOS_MUTATOR, true);
                                 }
                             }
                     }
@@ -637,6 +652,7 @@ namespace BDArmory.Competition
                         }
                     }
                 }
+                */
             }
 
             //clear target database so pilots don't attack yet
@@ -894,7 +910,7 @@ namespace BDArmory.Competition
             foreach (var pilot in allPilots) center += pilot.vessel.CoM;
             center /= allPilots.Count;
             centerGPS = VectorUtils.WorldPositionToGeoCoords(center, FlightGlobals.currentMainBody);
-            
+
             // Command attack
             foreach (var teamPilots in pilots)
                 foreach (var pilot in teamPilots.Value)
@@ -980,9 +996,8 @@ namespace BDArmory.Competition
             if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: MutatorMode enabled; Mutator count = " + BDArmorySettings.MUTATOR_LIST.Count);
             var indices = Enumerable.Range(0, BDArmorySettings.MUTATOR_LIST.Count).ToList();
             indices.Shuffle();
-            currentMutator = string.Join("; ", indices.Take(BDArmorySettings.MUTATOR_APPLY_NUM).Select(i => MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name));
-
-            if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: current mutators: " + currentMutator);
+            currentMutator = string.Join("; ", indices.Take(BDArmorySettings.MUTATOR_APPLY_NUM).Select(i => MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name)); //no check if mutator_list contains a mutator not defined in the loaded mutatordefs
+            if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode: {CompetitionID.ToString()}: current mutators: {currentMutator}");
             MutatorResetTime = Planetarium.GetUniversalTime();
             if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //selected mutator applied globally
             {
@@ -1104,7 +1119,7 @@ namespace BDArmory.Competition
             if (vessel == null || vessel.vesselName == null) return;
             if (BDArmorySettings.COMPETITION_GM_KILL_ENGINE)
             {
-                if (SpawnUtils.CountActiveEngines(vessel) == 0)
+                if (SpawnUtils.CountActiveEngines(vessel, true) == 0)
                     StartCoroutine(DelayedGMKill(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, " lost all engines. Terminated by GM."));
             }
             if (BDArmorySettings.COMPETITION_GM_KILL_WEAPON)
@@ -1125,14 +1140,14 @@ namespace BDArmory.Competition
                         StartCoroutine(DelayedGMKill(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, " lost all weapons or ammo. Terminated by GM."));
                     else // Check for engines first, then wheels for tanks/amphibious if needed 
                     {
-                        if (SpawnUtils.CountActiveEngines(vessel) == 0)
+                        if (SpawnUtils.CountActiveEngines(vessel, true) == 0)
                         {
                             var surfaceAI = VesselModuleRegistry.GetModule<BDModuleSurfaceAI>(vessel); // Get the surface AI if the vessel has one.
                             if (surfaceAI == null) // No engines on an AI that needs them, craft is disabled
                                 StartCoroutine(DelayedGMKill(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, " lost all engines. Terminated by GM."));
                             else if ((surfaceAI.SurfaceType & AIUtils.VehicleMovementType.Land) != 0) // Check for wheels on craft capable of moving on land
                             {
-                                if ((VesselModuleRegistry.GetModuleCount<ModuleWheelBase>(vessel) + 
+                                if ((VesselModuleRegistry.GetModuleCount<ModuleWheelBase>(vessel) +
                                         VesselModuleRegistry.GetModuleCount(vessel, "KSPWheelBase") +
                                         VesselModuleRegistry.GetModuleCount(vessel, "FSwheel")) == 0)
                                     StartCoroutine(DelayedGMKill(vessel, BDArmorySettings.COMPETITION_GM_KILL_TIME, " lost wheels or tracks. Terminated by GM."));
@@ -1699,6 +1714,11 @@ namespace BDArmory.Competition
                                         pilot.weaponManager.ToggleGuardMode();
                                         if (!pilot.weaponManager.guardMode) pilot.weaponManager.SetTarget(null);
                                     }
+                                    if (BDArmorySettings.HACK_INTAKES) SpawnUtils.HackIntakes(pilot.vessel, true);
+                                    if (BDArmorySettings.MUTATOR_MODE) SpawnUtils.ApplyMutators(pilot.vessel, true);
+                                    if (BDArmorySettings.ENABLE_HOS) SpawnUtils.ApplyHOS(pilot.vessel);
+                                    if (BDArmorySettings.RUNWAY_PROJECT) SpawnUtils.ApplyRWP(pilot.vessel);
+                                    /*
                                     if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
                                     {
                                         var MM = pilot.vessel.rootPart.FindModuleImplementing<BDAMutator>();
@@ -1801,14 +1821,23 @@ namespace BDArmory.Competition
                                                     {
                                                         if (part.Current.GetComponent<ModuleReactionWheel>() != null)
                                                         {
-                                                            ModuleReactionWheel SAS; 
+                                                            ModuleReactionWheel SAS;
                                                             SAS = part.Current.GetComponent<ModuleReactionWheel>();
-                                                                part.Current.RemoveModule(SAS);
+                                                            part.Current.RemoveModule(SAS);
                                                         }
                                                     }
                                                 }
+                                            if (!string.IsNullOrEmpty(BDArmorySettings.HOS_MUTATOR))
+                                            {
+                                                var MM = pilot.vessel.rootPart.FindModuleImplementing<BDAMutator>();
+                                                if (MM == null)
+                                                {
+                                                    MM = (BDAMutator)pilot.vessel.rootPart.AddModule("BDAMutator");
+                                                }
+                                                    MM.EnableMutator(BDArmorySettings.HOS_MUTATOR, true);
+                                            }
                                         }
-                                    }
+                                    }*/
                                 }
                             }
                             break;
@@ -1823,7 +1852,7 @@ namespace BDArmory.Competition
                             foreach (var pilot in pilots)
                             {
                                 attackGPS = centerGPS;
-                                if (VesselModuleRegistry.GetBDModulePilotAI(pilot.vessel)!=null)
+                                if (VesselModuleRegistry.GetBDModulePilotAI(pilot.vessel) != null)
                                     attackGPS.z = (float)BodyUtils.GetTerrainAltitudeAtPos(center) + 1000; // Target 1km above the terrain at the center.
                                 pilot.ReleaseCommand();
                                 pilot.CommandAttack(attackGPS);
@@ -2806,7 +2835,7 @@ namespace BDArmory.Competition
                                 statusMessage += $" {Scores.ScoreData[player].gmKillReason}";
                                 break;
                         }
-                        bool canAssignMutator = false;
+                        bool canAssignMutator = true;
                         switch (Scores.ScoreData[player].aliveState)
                         {
                             case AliveState.CleanKill: // Damaged recently and only ever took damage from the killer.
@@ -2818,7 +2847,7 @@ namespace BDArmory.Competition
                                 {
                                     statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (NAILED 'EM! CLEAN KILL!)";
                                 }
-                                canAssignMutator = true;
+                                //canAssignMutator = true;
                                 break;
                             case AliveState.HeadShot: // Damaged recently, but took damage a while ago from someone else.
                                 if (BDArmorySettings.ENABLE_HOS && BDArmorySettings.HALL_OF_SHAME_LIST.Contains(Scores.ScoreData[player].lastPersonWhoDamagedMe) && !string.IsNullOrEmpty(BDArmorySettings.HOS_BADGE))
@@ -2829,7 +2858,7 @@ namespace BDArmory.Competition
                                 {
                                     statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (BOOM! HEAD SHOT!)";
                                 }
-                                canAssignMutator = true;
+                                //canAssignMutator = true;
                                 break;
                             case AliveState.KillSteal: // Damaged recently, but took damage from someone else recently too.
                                 if (BDArmorySettings.ENABLE_HOS && BDArmorySettings.HALL_OF_SHAME_LIST.Contains(Scores.ScoreData[player].lastPersonWhoDamagedMe) && !string.IsNullOrEmpty(BDArmorySettings.HOS_BADGE))
@@ -2840,19 +2869,25 @@ namespace BDArmory.Competition
                                 {
                                     statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (KILL STEAL!)";
                                 }
-                                canAssignMutator = true;
+                                //canAssignMutator = true;
                                 break;
                             case AliveState.AssistedKill: // Assist (not damaged recently or GM kill).
-                                if (Scores.ScoreData[player].gmKillReason != GMKillReason.None) Scores.ScoreData[player].everyoneWhoDamagedMe.Add(Scores.ScoreData[player].gmKillReason.ToString());
+                                //canAssignMutator = false; //comment out if wanting last person to deal damage to be awarded a On Kill mutator
+                                if (Scores.ScoreData[player].gmKillReason != GMKillReason.None)
+                                {
+                                    Scores.ScoreData[player].everyoneWhoDamagedMe.Add(Scores.ScoreData[player].gmKillReason.ToString());
+                                    canAssignMutator = false; //GM kill, no mutator, else award last player to deal damage
+                                }
                                 statusMessage += string.Join(", ", Scores.ScoreData[player].everyoneWhoDamagedMe) + " (" + string.Join(", ", Scores.ScoreData[player].damageTypesTaken) + ")";
                                 break;
                             case AliveState.Dead: // Suicide/Incompetance (never took damage from others).
+                                canAssignMutator = false;
                                 break;
                         }
                         competitionStatus.Add(statusMessage);
                         if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode:{CompetitionID}]: " + statusMessage);
 
-                        if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_KILL)
+                        if ((BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_KILL) || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61))
                         {
                             if (BDArmorySettings.MUTATOR_LIST.Count > 0 && canAssignMutator)
                             {
@@ -2863,19 +2898,15 @@ namespace BDArmory.Competition
                                     {
                                         if (loadedVessels.Current == null || !loadedVessels.Current.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(loadedVessels.Current.vesselType))
                                             continue;
-                                        if (loadedVessels.Current.GetName() == Scores.ScoreData[player].lastPersonWhoDamagedMe)
+                                        if (Scores.ScoreData[player].aliveState == AliveState.AssistedKill && Scores.ScoreData[player].everyoneWhoDamagedMe.Contains(loadedVessels.Current.GetName()))
                                         {
-                                            var MM = loadedVessels.Current.rootPart.FindModuleImplementing<BDAMutator>(); //replace with vesselregistry?
-                                            if (MM == null)
-                                            {
-                                                MM = (BDAMutator)loadedVessels.Current.rootPart.AddModule("BDAMutator");
-                                            }
-                                            MM.EnableMutator(); //random mutator    
-                                            competitionStatus.Add(Scores.ScoreData[player].lastPersonWhoDamagedMe + " gains " + MM.mutatorName + (BDArmorySettings.MUTATOR_DURATION > 0 ? " for " + BDArmorySettings.MUTATOR_DURATION * 60 + " seconds!" : "!"));
-
+                                            SpawnUtils.ApplyMutators(loadedVessels.Current, true); // Reward everyone on assists.
+                                        }
+                                        else if (Scores.ScoreData[player].lastPersonWhoDamagedMe == loadedVessels.Current.GetName() || (Scores.ScoreData[player].aliveState == AliveState.KillSteal && Scores.ScoreData[player].previousPersonWhoDamagedMe == loadedVessels.Current.GetName()))
+                                        {
+                                            SpawnUtils.ApplyMutators(loadedVessels.Current, true); // Reward clean kills and those whom have had their kills stolen.
                                         }
                                     }
-
                             }
                             else
                             {

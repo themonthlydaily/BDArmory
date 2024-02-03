@@ -1,10 +1,9 @@
-using KSP.Localization;
 using System.Collections.Generic;
-using System;
 using UnityEngine;
 using static UnityEngine.GUILayout;
 
 using BDArmory.Bullets;
+using BDArmory.Settings;
 using BDArmory.Utils;
 using BDArmory.Weapons;
 
@@ -99,7 +98,7 @@ namespace BDArmory.UI
             {
                 bulletInfo = BulletInfo.bullets[AList[a].ToString()];
                 guiAmmoTypeString = "";
-                if (bulletInfo.subProjectileCount >= 2)
+                if (bulletInfo.projectileCount >= 2)
                 {
                     guiAmmoTypeString = StringUtils.Localize("#LOC_BDArmory_Ammo_Shot") + " ";
                 }
@@ -188,6 +187,7 @@ namespace BDArmory.UI
             }
             if (open)
             {
+                if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, windowRect.position);
 				windowRect = GUI.Window(GUIUtility.GetControlID(FocusType.Passive), windowRect, AmmoSelectorWindow, "", BDArmorySetup.BDGuiSkin.window);
             }
             PreventClickThrough();

@@ -73,7 +73,7 @@ namespace BDArmory.Settings
 			ConfigNode colors = fileNode.GetNode("TeamColors");
 			for (int i = 0; i < colors.CountValues; i++)
 			{
-				Debug.Log("[TEAMICONS] loading team " + colors.values[i].name + "; color: " + GUIUtils.ParseColor255(colors.values[i].value));
+				Debug.Log("[BDArmory.BDTISettingsField]: loading team " + colors.values[i].name + "; color: " + GUIUtils.ParseColor255(colors.values[i].value));
 				if (BDTISetup.Instance.ColorAssignments.ContainsKey(colors.values[i].name))
 				{
 					BDTISetup.Instance.ColorAssignments[colors.values[i].name] = GUIUtils.ParseColor255(colors.values[i].value);
@@ -98,7 +98,7 @@ namespace BDArmory.Settings
 			{
 				return value;
 			}
-			Debug.LogError("[BDArmory]: BDAPersistentSettingsField to parse settings field of type " + type +
+			Debug.LogError("[BDArmory.BDTISettingsField]: BDAPersistentSettingsField to parse settings field of type " + type +
 						   " and value " + value);
 
 			return null;

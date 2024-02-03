@@ -440,6 +440,40 @@ namespace BDArmory.Targeting
                         }
                     }
 
+                    if (radarLock)
+                    {
+                        UpdateRadarLock();
+                    }
+
+                    if (groundStabilized)
+                    {
+                        if (lockedVessel != null)
+                            groundTargetPosition = lockedVessel.CoM;
+                        else
+                            groundTargetPosition = VectorUtils.GetWorldSurfacePostion(bodyRelativeGTP, vessel.mainBody);//vessel.mainBody.GetWorldSurfacePosition(bodyRelativeGTP.x, bodyRelativeGTP.y, bodyRelativeGTP.z);
+
+                        Vector3 lookVector = groundTargetPosition - cameraParentTransform.position;
+                        //cameraParentTransform.rotation = Quaternion.LookRotation(lookVector);
+                        PointCameraModel(lookVector);
+                    }
+
+                    Vector3 lookDirection = cameraParentTransform.forward;
+                    if (Vector3.Angle(lookDirection, cameraParentTransform.parent.forward) > gimbalLimit)
+                    {
+                        lookDirection = Vector3.RotateTowards(cameraParentTransform.transform.parent.forward, lookDirection, gimbalLimit * Mathf.Deg2Rad, 0);
+                        gimbalLimitReached = true;
+                        lockedVessel = null;
+                    }
+                    else
+                    {
+                        gimbalLimitReached = false;
+                    }
+
+                    if (!groundStabilized || gimbalLimitReached)
+                    {
+                        PointCameraModel(lookDirection);
+                    }
+
                     if (eyeHolderTransform)
                     {
                         Vector3 projectedForward = cameraParentTransform.forward.ProjectOnPlanePreNormalized(eyeHolderTransform.parent.up);
@@ -450,6 +484,7 @@ namespace BDArmory.Targeting
                     }
 
                     UpdateControls();
+                    UpdateSlaveData();
                 }
             }
         }
@@ -480,48 +515,6 @@ namespace BDArmory.Targeting
                     if (cameraEnabled)
                     {
                         GetHitPoint();
-                    }
-                    if (TargetingCamera.ReadyForUse && vessel.IsControllable)
-                    {
-                        if (!TargetingCamera.Instance || FlightGlobals.currentMainBody == null)
-                        {
-                            return;
-                        }
-
-                        if (radarLock)
-                        {
-                            UpdateRadarLock();
-                        }
-
-                        if (groundStabilized)
-                        {
-                            if (lockedVessel != null)
-                                groundTargetPosition = lockedVessel.CoM;
-                            else
-                                groundTargetPosition = VectorUtils.GetWorldSurfacePostion(bodyRelativeGTP, vessel.mainBody);//vessel.mainBody.GetWorldSurfacePosition(bodyRelativeGTP.x, bodyRelativeGTP.y, bodyRelativeGTP.z);
-
-                            Vector3 lookVector = groundTargetPosition - cameraParentTransform.position;
-                            //cameraParentTransform.rotation = Quaternion.LookRotation(lookVector);
-                            PointCameraModel(lookVector);
-                        }
-
-                        Vector3 lookDirection = cameraParentTransform.forward;
-                        if (Vector3.Angle(lookDirection, cameraParentTransform.parent.forward) > gimbalLimit)
-                        {
-                            lookDirection = Vector3.RotateTowards(cameraParentTransform.transform.parent.forward, lookDirection, gimbalLimit * Mathf.Deg2Rad, 0);
-                            gimbalLimitReached = true;
-                            lockedVessel = null;
-                        }
-                        else
-                        {
-                            gimbalLimitReached = false;
-                        }
-
-                        if (!groundStabilized || gimbalLimitReached)
-                        {
-                            PointCameraModel(lookDirection);
-                        }
-                        UpdateSlaveData();
                     }
                 }
             }
@@ -710,6 +703,7 @@ namespace BDArmory.Targeting
                     //window
                     if (activeCam == this && TargetingCamera.ReadyForUse)
                     {
+                        if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, BDArmorySetup.WindowRectTargetingCam.position);
                         BDArmorySetup.WindowRectTargetingCam = GUI.Window(125452, BDArmorySetup.WindowRectTargetingCam, WindowTargetCam, "Target Camera", GUI.skin.window);
                         GUIUtils.UseMouseEventInRect(BDArmorySetup.WindowRectTargetingCam);
                     }
@@ -755,6 +749,7 @@ namespace BDArmory.Targeting
             }
 
             windowIsOpen = true;
+            var guiMatrix = GUI.matrix;
 
             GUI.DragWindow(new Rect(0, 0, BDArmorySetup.WindowRectTargetingCam.width - 18, 30));
             if (GUI.Button(new Rect(BDArmorySetup.WindowRectTargetingCam.width - 18, 2, 16, 16), "X", GUI.skin.button))
@@ -822,15 +817,15 @@ namespace BDArmory.Targeting
             Vector3 localUp = vessel.ReferenceTransform.InverseTransformDirection(upDirection);
             localUp = localUp.ProjectOnPlanePreNormalized(Vector3.up).normalized;
             float rollAngle = -BDAMath.SignedAngle(-Vector3.forward, localUp, Vector3.right);
-            GUIUtility.RotateAroundPivot(rollAngle, rollRect.center);
+            GUIUtility.RotateAroundPivot(rollAngle, guiMatrix * rollRect.center);
             GUI.DrawTexture(rollRect, rollIndicatorTexture, ScaleMode.StretchToFill, true);
-            GUI.matrix = Matrix4x4.identity;
+            GUI.matrix = guiMatrix;
 
             //target direction indicator
             float angleToTarget = BDAMath.SignedAngle(hForward, (targetPointPosition - transform.position).ProjectOnPlanePreNormalized(upDirection), Vector3.Cross(upDirection, hForward));
-            GUIUtility.RotateAroundPivot(angleToTarget, rollRect.center);
+            GUIUtility.RotateAroundPivot(angleToTarget, guiMatrix * rollRect.center);
             GUI.DrawTexture(rollRect, BDArmorySetup.Instance.targetDirectionTexture, ScaleMode.StretchToFill, true);
-            GUI.matrix = Matrix4x4.identity;
+            GUI.matrix = guiMatrix;
 
             //resizing
             Rect resizeRect =
@@ -845,22 +840,13 @@ namespace BDArmory.Targeting
             {
                 if (Mouse.delta.x != 0 || Mouse.delta.y != 0)
                 {
-                    float diff = Mouse.delta.x + Mouse.delta.y;
-                    UpdateTargetScale(diff);
+                    float diff = (Mathf.Abs(Mouse.delta.x) > Mathf.Abs(Mouse.delta.y) ? Mouse.delta.x : Mouse.delta.y) / BDArmorySettings.UI_SCALE;
+                    BDArmorySettings.TARGET_WINDOW_SCALE = Mathf.Clamp(BDArmorySettings.TARGET_WINDOW_SCALE + diff / camImageSize, BDArmorySettings.TARGET_WINDOW_SCALE_MIN, BDArmorySettings.TARGET_WINDOW_SCALE_MAX);
                     ResizeTargetWindow();
                 }
             }
             //ResetZoomKeys();
             GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectTargetingCam);
-        }
-
-        internal static void UpdateTargetScale(float diff)
-        {
-            float scaleDiff = ((diff / (BDArmorySetup.WindowRectTargetingCam.width + BDArmorySetup.WindowRectTargetingCam.height)) * 100 * .01f);
-            BDArmorySettings.TARGET_WINDOW_SCALE += Mathf.Abs(scaleDiff) > .01f ? scaleDiff : scaleDiff > 0 ? .01f : -.01f;
-            BDArmorySettings.TARGET_WINDOW_SCALE = Mathf.Clamp(BDArmorySettings.TARGET_WINDOW_SCALE,
-                BDArmorySettings.TARGET_WINDOW_SCALE_MIN,
-                BDArmorySettings.TARGET_WINDOW_SCALE_MAX);
         }
 
         private void DrawSlewButtons()
@@ -1305,23 +1291,6 @@ namespace BDArmory.Targeting
             //fov = zoomFovs[currentFovIndex];
         }
 
-        GameObject debugSphere;
-
-        void CreateDebugSphere()
-        {
-            debugSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            debugSphere.GetComponent<Collider>().enabled = false;
-        }
-
-        void MoveDebugSphere()
-        {
-            if (!debugSphere)
-            {
-                CreateDebugSphere();
-            }
-            debugSphere.transform.position = groundTargetPosition;
-        }
-
         public void GroundStabilize()
         {
             if (vessel.packed) return;
@@ -1360,7 +1329,7 @@ namespace BDArmory.Targeting
                     {
                         if (pCheck && p.vessel.CoM != Vector3.zero)
                         {
-                            groundTargetPosition = p.vessel.CoM; // + (p.vessel.Velocity() * Time.fixedDeltaTime);
+                            groundTargetPosition = p.vessel.CoM + (p.vessel.Velocity() * Time.fixedDeltaTime);
                             StartCoroutine(StabilizeNextFrame());
                             lockedVessel = p.vessel;
                             //StartCoroutine(PointToPositionRoutine(p.vessel.CoM, p.vessel, false));
@@ -1395,11 +1364,6 @@ namespace BDArmory.Targeting
                         }
                     }
                 }
-            }
-
-            if (BDArmorySettings.DEBUG_RADAR)
-            {
-                MoveDebugSphere();
             }
         }
 
@@ -1525,7 +1489,7 @@ namespace BDArmory.Targeting
                 slewingToPosition = false;
                 yield break;
             }
-            while (!stopPTPR && Vector3.Angle(cameraParentTransform.transform.forward, position - (cameraParentTransform.transform.position)) > 0.1f)
+            while (!stopPTPR && Vector3.Angle(cameraParentTransform.transform.forward, (tgtVessel != null ? tgtVessel.CoM : position) - (cameraParentTransform.transform.position)) > 0.1f)
             {
                 if (tgtVessel != null)
                 {

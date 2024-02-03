@@ -260,6 +260,7 @@ namespace BDArmory.UI
         {
             if (showArmorWindow)
             {
+                if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, windowRect.position);
                 windowRect = GUI.Window(GUIUtility.GetControlID(FocusType.Passive), windowRect, WindowArmor, windowTitle, BDArmorySetup.BDGuiSkin.window);
             }
             PreventClickThrough();
@@ -820,6 +821,7 @@ namespace BDArmory.UI
         {
             yield return new WaitForEndOfFrame();
             yield return new WaitForEndOfFrame();
+            if (!HighLogic.LoadedSceneIsEditor) yield break;
             totalArmorMass = 0;
             totalArmorCost = 0;
             using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator())
@@ -869,24 +871,25 @@ namespace BDArmory.UI
                             }
                             var r = parts.Current.GetComponentsInChildren<Renderer>();
                             {
-                                if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
+                                if (!a.RegisterProcWingShader && parts.Current.name.Contains("B9.Aero.Wing.Procedural")) //procwing defaultshader left null on start so current shader setup can be grabbed at visualizer runtime
                                 {
-                                    if (!a.RegisterProcWingShader) //procwing defaultshader left null on start so current shader setup can be grabbed at visualizer runtime
+                                    for (int s = 0; s < r.Length; s++)
                                     {
-                                        for (int s = 0; s < r.Length; s++)
+                                        if (r[s].GetComponentInParent<Part>() != parts.Current) continue; // Don't recurse to child parts.
+                                        int key = r[s].material.GetInstanceID();
+                                        a.defaultShader.Add(key, r[s].material.shader);
+                                        //Debug.Log("[Visualizer] " + parts.Current.name + " shader is " + r[s].material.shader.name);
+                                        if (r[s].material.HasProperty("_Color"))
                                         {
-                                            a.defaultShader.Add(r[s].material.shader);
-                                            //Debug.Log("[Visualizer] " + parts.Current.name + " shader is " + r[s].material.shader.name);
-                                            if (r[s].material.HasProperty("_Color"))
-                                            {
-                                                a.defaultColor.Add(r[s].material.color);
-                                            }
+                                            a.defaultColor.Add(key, r[s].material.color);
                                         }
-                                        a.RegisterProcWingShader = true;
                                     }
+                                    a.RegisterProcWingShader = true;
                                 }
                                 for (int i = 0; i < r.Length; i++)
                                 {
+                                    if (r[i].GetComponentInParent<Part>() != parts.Current) continue; // Don't recurse to child parts.
+                                    if (!a.defaultShader.ContainsKey(r[i].material.GetInstanceID())) continue; // Don't modify shaders that we don't have defaults for as we can't then replace them.
                                     if (r[i].material.shader.name.Contains("Alpha")) continue;
                                     r[i].material.shader = Shader.Find("KSP/Unlit");
                                     if (r[i].material.HasProperty("_Color"))
@@ -912,58 +915,66 @@ namespace BDArmory.UI
                         //Procs wings turn orange at this point... oh. That's why: The visualizer reset is grabbing a list of shaders and colors at *part spawn!*
                         //pWings use dynamic shaders to paint themselves, so it's not reapplying the latest shader /color config, but the initial one, the one from the part icon  
                         var r = parts.Current.GetComponentsInChildren<Renderer>();
-                        if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
+                        if (!armor.RegisterProcWingShader && parts.Current.name.Contains("B9.Aero.Wing.Procedural")) //procwing defaultshader left null on start so current shader setup can be grabbed at visualizer runtime
                         {
-                            if (!armor.RegisterProcWingShader) //procwing defaultshader left null on start so current shader setup can be grabbed at visualizer runtime
+                            for (int s = 0; s < r.Length; s++)
                             {
-                                for (int s = 0; s < r.Length; s++)
+                                if (r[s].GetComponentInParent<Part>() != parts.Current) continue; // Don't recurse to child parts.
+                                int key = r[s].material.GetInstanceID();
+                                armor.defaultShader.Add(key, r[s].material.shader);
+                                //Debug.Log("[Visualizer] " + parts.Current.name + " shader is " + r[s].material.shader.name);
+                                if (r[s].material.HasProperty("_Color"))
                                 {
-                                    armor.defaultShader.Add(r[s].material.shader);
-                                    //Debug.Log("[Visualizer] " + parts.Current.name + " shader is " + r[s].material.shader.name);
-                                    if (r[s].material.HasProperty("_Color"))
-                                    {
-                                        armor.defaultColor.Add(r[s].material.color);
-                                    }
+                                    armor.defaultColor.Add(key, r[s].material.color);
                                 }
-                                armor.RegisterProcWingShader = true;
                             }
+                            armor.RegisterProcWingShader = true;
                         }
                         //Debug.Log("[VISUALIZER] applying shader to " + parts.Current.name);
                         for (int i = 0; i < r.Length; i++)
                         {
                             try
                             {
-                                if (r[i].material.shader != armor.defaultShader[i])
+                                if (r[i].GetComponentInParent<Part>() != parts.Current) continue; // Don't recurse to child parts.
+                                int key = r[i].material.GetInstanceID();
+                                if (!armor.defaultShader.ContainsKey(key))
                                 {
-                                    if (armor.defaultShader[i] != null)
+                                    if (BDArmorySettings.DEBUG_RADAR) Debug.Log($"[BDArmory.BDAEditorArmorWindow]: {r[i].material.name} ({key}) not found in defaultShader for part {parts.Current.partInfo.name} on {parts.Current.vessel.vesselName}"); // Enable this to see what materials aren't getting RCS shaders applied to them.
+                                    continue;
+                                }
+                                if (r[i].material.shader != armor.defaultShader[key])
+                                {
+                                    if (armor.defaultShader[key] != null)
                                     {
-                                        r[i].material.shader = armor.defaultShader[i];
+                                        r[i].material.shader = armor.defaultShader[key];
                                     }
-                                    if (armor.defaultColor[i] != null)
+                                    if (armor.defaultColor.ContainsKey(key))
                                     {
-                                        if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
+                                        if (armor.defaultColor[key] != null)
                                         {
-                                            //r[i].material.SetColor("_Emissive", armor.defaultColor[i]); //?
-                                            r[i].material.SetColor("_MainTex", armor.defaultColor[i]); //this doesn't work either
-                                            //LayeredSpecular has _MainTex, _Emissive, _SpecColor,_RimColor, _TemperatureColor, and _BurnColor
-                                            // source: https://github.com/tetraflon/B9-PWings-Modified/blob/master/B9%20PWings%20Fork/shaders/SpecularLayered.shader
-                                            //This works.. occasionally. Sometimes it will properly reset pwing tex/color, most of the time it doesn't. need to test later
+                                            if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
+                                            {
+                                                r[i].material.SetColor("_MainTex", armor.defaultColor[key]);
+                                                //LayeredSpecular has _MainTex, _Emissive, _SpecColor,_RimColor, _TemperatureColor, and _BurnColor
+                                                // source: https://github.com/tetraflon/B9-PWings-Modified/blob/master/B9%20PWings%20Fork/shaders/SpecularLayered.shader
+                                                //This works.. occasionally. Sometimes it will properly reset pwing tex/color, most of the time it doesn't. need to test later
+                                            }
+                                            else
+                                            {
+                                                r[i].material.SetColor("_Color", armor.defaultColor[key]);
+                                            }
                                         }
                                         else
                                         {
-                                            r[i].material.SetColor("_Color", armor.defaultColor[i]);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
-                                        {
-                                            //r[i].material.SetColor("_Emissive", Color.white);
-                                            r[i].material.SetColor("_MainTex", Color.white);
-                                        }
-                                        else
-                                        {
-                                            r[i].material.SetColor("_Color", Color.white);
+                                            if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
+                                            {
+                                                //r[i].material.SetColor("_Emissive", Color.white);
+                                                r[i].material.SetColor("_MainTex", Color.white);
+                                            }
+                                            else
+                                            {
+                                                r[i].material.SetColor("_Color", Color.white);
+                                            }
                                         }
                                     }
                                 }
