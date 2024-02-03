@@ -1374,6 +1374,12 @@ namespace BDArmory.UI
 
                                 pidLines += autoTuneLines + 0.25f;
                             }
+                            else if (!string.IsNullOrEmpty(ActivePilot.autoTuningLossLabel)) // Not auto-tuning, but have been previously => show a summary of the last results.
+                            {
+                                float autoTuneLines = 0;
+                                GUI.Label(SettinglabelRect(leftIndent + labelWidth / 6, pidLines + autoTuneLines++), StringUtils.Localize("#LOC_BDArmory_AutoTuningSummary") + $":   Loss: {ActivePilot.autoTuningLossLabel}, {ActivePilot.autoTuningLossLabel2}", Label);
+                                pidLines += autoTuneLines + 0.25f;
+                            }
                             #endregion
 
                             GUI.EndGroup();
