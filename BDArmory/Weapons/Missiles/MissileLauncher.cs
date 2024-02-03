@@ -15,6 +15,7 @@ using BDArmory.Targeting;
 using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.WeaponMounts;
+using BDArmory.CounterMeasure;
 
 namespace BDArmory.Weapons.Missiles
 {
@@ -172,6 +173,9 @@ namespace BDArmory.Weapons.Missiles
 
         [KSPField]
         public string terminalGuidanceType = "";
+
+        [KSPField]
+        public bool dumbTerminalGuidance = true;
 
         [KSPField]
         public float terminalGuidanceDistance = 0.0f;
@@ -1850,8 +1854,6 @@ namespace BDArmory.Weapons.Missiles
             {
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher][Terminal Guidance]: missile {GetPartName()} updating targeting mode: {terminalGuidanceType}");
 
-                TargetingMode = TargetingModeTerminal;
-                terminalGuidanceActive = true;
                 TargetAcquired = false;
 
                 switch (TargetingModeTerminal)
@@ -1874,6 +1876,7 @@ namespace BDArmory.Weapons.Missiles
                             // Disable terminal guidance and switch to regular heat guidance for next update
                             terminalGuidanceShouldActivate = false;
                             TargetingMode = TargetingModes.Heat;
+                            terminalGuidanceActive = true;
 
                             // Adjust heat score based on distance missile will travel in the next update
                             if (heatTarget.signalStrength > 0)
@@ -1888,9 +1891,16 @@ namespace BDArmory.Weapons.Missiles
                         }
                         else
                         {
+                            if (!dumbTerminalGuidance)
+                            {
+                                TargetAcquired = true;
+                                TargetVelocity = Vector3.zero;
+                                TargetAcceleration = Vector3.zero;
+                                //continue towards primary guidance targetPosition until heat lock acquired
+                            }
                             if (BDArmorySettings.DEBUG_MISSILES)
                             {
-                                Debug.Log("[BDArmory.MissileLauncher][Terminal Guidance]: Missile heatseeker could not acquire a target lock.");
+                                Debug.Log("[BDArmory.MissileLauncher][Terminal Guidance]: Missile heatseeker could not acquire a target lock, reverting to default guidance.");
                             }
                         }
                         break;
@@ -1937,6 +1947,7 @@ namespace BDArmory.Weapons.Missiles
                                 RadarWarningReceiver.PingRWR(new Ray(transform.position, radarTarget.predictedPosition - transform.position), 45, RadarWarningReceiver.RWRThreatTypes.MissileLaunch, 2f);
 
                             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher][Terminal Guidance]: Pitbull! Radar missileBase has gone active.  Radar sig strength: {radarTarget.signalStrength:0.0} - target: {radarTarget.vessel.name}");
+                            terminalGuidanceActive = true;
                         }
                         else
                         {
@@ -1944,7 +1955,9 @@ namespace BDArmory.Weapons.Missiles
                             TargetPosition = VectorUtils.GetWorldSurfacePostion(UpdateGPSTarget(), vessel.mainBody); //putting back the GPS target if no radar target found
                             TargetVelocity = Vector3.zero;
                             TargetAcceleration = Vector3.zero;
-                            targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(TargetPosition, vessel.mainBody);
+                            targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(TargetPosition, vessel.mainBody); //tgtPos/tgtGPS should relly be not set here, so the last valid postion/coords are used, in case of non-GPS primary guidance
+                            if (radarLOAL || dumbTerminalGuidance)
+                                terminalGuidanceActive = true;
                             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher][Terminal Guidance]: Missile radar could not acquire a target lock - Defaulting to GPS Target");
                         }
                         break;
@@ -1961,7 +1974,8 @@ namespace BDArmory.Weapons.Missiles
                         TargetAcquired = true;
                         if (targetVessel != null) TargetPosition = VectorUtils.GetWorldSurfacePostion(MissileGuidance.GetAirToAirFireSolution(this, targetVessel.Vessel.CoM, TargetVelocity), vessel.mainBody);
                         TargetVelocity = Vector3.zero;
-                        TargetAcceleration = Vector3.zero;
+                        TargetAcceleration = Vector3.zero;                        
+                        terminalGuidanceActive = true;
                         break;
 
                     case TargetingModes.AntiRad:
@@ -1969,7 +1983,14 @@ namespace BDArmory.Weapons.Missiles
                         targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(TargetPosition, vessel.mainBody); // Set the GPS coordinates from the current target position.
                         SetAntiRadTargeting(); //should then already work automatically via OnReceiveRadarPing
                         if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher][Terminal Guidance]: Antiradiation mode set! Waiting for radar signals...");
+                        terminalGuidanceActive = true;
                         break;
+                }
+                if (dumbTerminalGuidance || terminalGuidanceActive)
+                {
+                    TargetingMode = TargetingModeTerminal;
+                    terminalGuidanceActive = true;
+                    terminalGuidanceShouldActivate = false;
                 }
             }
         }
