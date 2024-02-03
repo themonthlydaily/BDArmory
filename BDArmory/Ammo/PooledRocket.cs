@@ -630,7 +630,7 @@ namespace BDArmory.Bullets
             {
                 Detonate(currentPosition, true, airDetonation: true);
             }
-            if (Time.time - startTime >= (beehive ? timeToDetonation - 1 : timeToDetonation))
+            if (beehive && Time.time - startTime >= timeToDetonation - 1)
             {
                 Detonate(currentPosition, false, airDetonation: true);
             }

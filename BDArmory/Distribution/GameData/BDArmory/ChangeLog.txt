@@ -5,6 +5,8 @@
 - AI / WM:
 	- Don't reset PID values to stored auto-tuning ones when switching the clamped/unclamped toggle.
 	- Add an auto-tuning summary line to the AI GUI when auto-tuning is not running (when there's something to show).
+- Weapons:
+	- Fix rockets detonating too early.
 
 v1.6.10.0
 IMPROVEMENTS / FIXES
