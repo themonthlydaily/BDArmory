@@ -7,6 +7,8 @@
 	- Add an auto-tuning summary line to the AI GUI when auto-tuning is not running (when there's something to show).
 - Weapons:
 	- Fix rockets detonating too early.
+	- Missiles:
+		- Fix missiles not having their exhaust and boost FX.
 
 v1.6.10.0
 IMPROVEMENTS / FIXES
