@@ -413,12 +413,12 @@ namespace BDArmory.UI
             }
 
             // window position settings
-            WindowRectToolbar = new Rect(Screen.width - toolWindowWidth - 40, 150, toolWindowWidth, toolWindowHeight);
-            // Default, if not in file.
+            WindowRectToolbar = new Rect(Screen.width - toolWindowWidth - 40, 150, toolWindowWidth, toolWindowHeight); // Default, if not in file.
             WindowRectGps = new Rect(0, 0, WindowRectToolbar.width - 10, 0);
             SetupSettingsSize();
             BDAWindowSettingsField.Load();
             CheckIfWindowsSettingsAreWithinScreen();
+            toolWindowHeight = WindowRectToolbar.height;
 
             // Configure UI visibility and window rects
             GAME_UI_ENABLED = true;
@@ -684,7 +684,6 @@ namespace BDArmory.UI
 
         private void CheckIfWindowsSettingsAreWithinScreen()
         {
-            GUIUtils.RepositionWindow(ref WindowRectEvolution);
             GUIUtils.UseMouseEventInRect(WindowRectSettings);
             GUIUtils.RepositionWindow(ref WindowRectToolbar);
             GUIUtils.RepositionWindow(ref WindowRectSettings);
@@ -698,6 +697,7 @@ namespace BDArmory.UI
             GUIUtils.RepositionWindow(ref WindowRectScores);
             GUIUtils.RepositionWindow(ref _WindowRectScoresUIHidden);
             GUIUtils.RepositionWindow(ref _WindowRectScoresUIVisible);
+            GUIUtils.RepositionWindow(ref WindowRectEvolution);
         }
 
         void Update()

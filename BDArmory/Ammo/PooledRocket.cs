@@ -367,7 +367,7 @@ namespace BDArmory.Bullets
                         }
                         catch (NullReferenceException e)
                         {
-                            Debug.LogWarning("[BDArmory.BDArmory]:NullReferenceException for Kinetic Hit: " + e.Message);
+                            Debug.LogWarning("[BDArmory.PooledRocket]:NullReferenceException for Kinetic Hit: " + e.Message);
                             return;
                         }
 
@@ -469,7 +469,7 @@ namespace BDArmory.Bullets
                             int armorType = (int)Armor.ArmorTypeNum;
                             if (BDArmorySettings.DEBUG_ARMOR)
                             {
-                                Debug.Log("[BDArmory.PooledBUllet]: ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density);
+                                Debug.Log("[BDArmory.PooledRocket]: ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density);
                             }
                             float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(rocketMass * 1000, impactVelocity);
                             float armorStrength = ProjectileUtils.CalculateArmorStrength(caliber, thickness, Ductility, Strength, Density, safeTemp, hitPart);
@@ -787,10 +787,10 @@ namespace BDArmory.Bullets
                                         float distance = Vector3.Distance(currentPosition, hit.point);
                                         BulletHitFX.AttachFire(hit.point, p, caliber, sourceVesselName, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)), 1, true); //else apply fire to occluding part
                                         if (BDArmorySettings.DEBUG_WEAPONS)
-                                            Debug.Log("[BDArmory.Rocket]: Applying fire to " + p.name + " at distance " + distance + "m, for " + BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)) + " seconds"); ;
+                                            Debug.Log("[BDArmory.PooledRocket]: Applying fire to " + p.name + " at distance " + distance + "m, for " + BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)) + " seconds"); ;
                                     }
                                     if (BDArmorySettings.DEBUG_WEAPONS)
-                                        Debug.Log("[Rocket] incendiary raytrace: " + hit.point.x + "; " + hit.point.y + "; " + hit.point.z);
+                                        Debug.Log("[BDArmory.PooledRocket] incendiary raytrace: " + hit.point.x + "; " + hit.point.y + "; " + hit.point.z);
                                 }
                             }
                         }
