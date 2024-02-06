@@ -1,8 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
-using UniLinq;
 using UnityEngine;
 
 using BDArmory.Control;
@@ -502,14 +502,6 @@ namespace BDArmory.Weapons.Missiles
             ParseAntiRadTargetTypes();
             // extension for feature_engagementenvelope
 
-            using (var pEemitter = part.FindModelComponents<KSPParticleEmitter>().GetEnumerator())
-                while (pEemitter.MoveNext())
-                {
-                    if (pEemitter.Current == null) continue;
-                    EffectBehaviour.AddParticleEmitter(pEemitter.Current);
-                    pEemitter.Current.emit = false;
-                }
-
             if (HighLogic.LoadedSceneIsFlight)
             {
                 missileName = part.name;
@@ -541,32 +533,11 @@ namespace BDArmory.Weapons.Missiles
                 boosters = new List<GameObject>();
                 if (!string.IsNullOrEmpty(boostTransformName))
                 {
-                    using (var t = part.FindModelTransforms(boostTransformName).AsEnumerable().GetEnumerator())
-                        while (t.MoveNext())
-                        {
-                            if (t.Current == null) continue;
-                            boosters.Add(t.Current.gameObject);
-                            using (var be = t.Current.GetComponentsInChildren<KSPParticleEmitter>().AsEnumerable().GetEnumerator())
-                                while (be.MoveNext())
-                                {
-                                    if (be.Current == null) continue;
-                                    if (be.Current.useWorldSpace)
-                                    {
-                                        if (be.Current.GetComponent<BDAGaplessParticleEmitter>()) continue;
-                                        BDAGaplessParticleEmitter ge = be.Current.gameObject.AddComponent<BDAGaplessParticleEmitter>();
-                                        ge.part = part;
-                                        boostGaplessEmitters.Add(ge);
-                                    }
-                                    else
-                                    {
-                                        if (!boostEmitters.Contains(be.Current))
-                                        {
-                                            boostEmitters.Add(be.Current);
-                                        }
-                                        EffectBehaviour.AddParticleEmitter(be.Current);
-                                    }
-                                }
-                        }
+                    foreach (var t in part.FindModelTransforms(boostTransformName))
+                    {
+                        if (t == null) continue;
+                        boosters.Add(t.gameObject);
+                    }
                 }
 
                 fairings = new List<GameObject>();
@@ -580,34 +551,34 @@ namespace BDArmory.Weapons.Missiles
                         }
                 }
 
-                using (var pEmitter = part.partTransform.Find("model").GetComponentsInChildren<KSPParticleEmitter>().AsEnumerable().GetEnumerator())
-                    while (pEmitter.MoveNext())
+                // Add build-in emitters (which may include RCS). Note: this doesn't include the prefab emitters, which get added later.
+                foreach (var pEmitter in part.FindModelComponents<KSPParticleEmitter>())
+                {
+                    if (pEmitter == null) continue;
+                    if (pEmitter.GetComponent<BDAGaplessParticleEmitter>() || boostEmitters.Contains(pEmitter))
                     {
-                        if (pEmitter.Current == null) continue;
-                        if (pEmitter.Current.GetComponent<BDAGaplessParticleEmitter>() || boostEmitters.Contains(pEmitter.Current))
-                        {
-                            continue;
-                        }
+                        continue;
+                    }
 
-                        if (pEmitter.Current.useWorldSpace)
+                    if (pEmitter.useWorldSpace)
+                    {
+                        BDAGaplessParticleEmitter gaplessEmitter = pEmitter.gameObject.AddComponent<BDAGaplessParticleEmitter>();
+                        gaplessEmitter.part = part;
+                        gaplessEmitters.Add(gaplessEmitter);
+                    }
+                    else
+                    {
+                        if (pEmitter.transform.name != boostTransformName)
                         {
-                            BDAGaplessParticleEmitter gaplessEmitter = pEmitter.Current.gameObject.AddComponent<BDAGaplessParticleEmitter>();
-                            gaplessEmitter.part = part;
-                            gaplessEmitters.Add(gaplessEmitter);
+                            pEmitters.Add(pEmitter);
                         }
                         else
                         {
-                            if (pEmitter.Current.transform.name != boostTransformName)
-                            {
-                                pEmitters.Add(pEmitter.Current);
-                            }
-                            else
-                            {
-                                boostEmitters.Add(pEmitter.Current);
-                            }
-                            EffectBehaviour.AddParticleEmitter(pEmitter.Current);
+                            boostEmitters.Add(pEmitter);
                         }
+                        EffectBehaviour.AddParticleEmitter(pEmitter);
                     }
+                }
 
                 using (IEnumerator<Light> light = gameObject.GetComponentsInChildren<Light>().AsEnumerable().GetEnumerator())
                     while (light.MoveNext())
@@ -1002,9 +973,6 @@ namespace BDArmory.Weapons.Missiles
             if (gaplessEmitters is not null) // Make sure the gapless emitters get destroyed (they should anyway, but KSP holds onto part references, which may prevent this from happening automatically).
                 foreach (var gpe in gaplessEmitters)
                     if (gpe is not null) Destroy(gpe);
-            if (boostEmitters != null)
-                foreach (var pe in boostEmitters)
-                    if (pe) EffectBehaviour.RemoveParticleEmitter(pe);
             BDArmorySetup.OnVolumeChange -= UpdateVolume;
             GameEvents.onPartDie.Remove(PartDie);
             if (vesselReferenceTransform != null && vesselReferenceTransform.gameObject != null)
@@ -1351,24 +1319,30 @@ namespace BDArmory.Weapons.Missiles
                 part.explosionPotential = 0; // Minimise the default part explosion FX that sometimes gets offset from the main explosion.
                 rcsClearanceState = (GuidanceMode == GuidanceModes.Orbital && hasRCS && vacuumSteerable && (vessel.InVacuum()) ? RCSClearanceStates.Clearing : RCSClearanceStates.Cleared); // Set up clearance check if missile hasRCS, is vacuumSteerable, and is in space
 
+                var mml = part.GetComponent<MultiMissileLauncher>();
+                var isClusterMissile = mml && mml.isClusterMissile;
                 if (!string.IsNullOrEmpty(exhaustPrefabPath))
                 {
-                    using (var t = part.FindModelTransforms("exhaustTransform").AsEnumerable().GetEnumerator())
-                        while (t.MoveNext())
-                        {
-                            if (t.Current == null) continue;
-                            AttachExhaustPrefab(exhaustPrefabPath, this, t.Current);
-                        }
+                    HashSet<Transform> dummyTransforms = isClusterMissile ? part.GetComponentsInChildren<MissileDummy>().SelectMany(md => md.transform.parent.GetComponentsInChildren<Transform>().Where(t => t.name == "exhaustTransform")).ToHashSet() : [];
+                    foreach (var t in part.FindModelTransforms("exhaustTransform"))
+                    {
+                        if (t == null) continue;
+                        if (dummyTransforms.Contains(t)) continue; // Ignore exhausts for dummy transforms for MMLs, e.g., for submunitions of cluster missiles.
+                        var (exhaustEmitters, exhaustGaplessEmitters) = AttachExhaustPrefab(exhaustPrefabPath, this, t);
+                        pEmitters.AddRange(exhaustEmitters);
+                        gaplessEmitters.AddRange(exhaustGaplessEmitters);
+                    }
                 }
 
                 if (!string.IsNullOrEmpty(boostExhaustPrefabPath) && !string.IsNullOrEmpty(boostExhaustTransformName))
                 {
-                    using (var t = part.FindModelTransforms(boostExhaustTransformName).AsEnumerable().GetEnumerator())
-                        while (t.MoveNext())
-                        {
-                            if (t.Current == null) continue;
-                            AttachExhaustPrefab(boostExhaustPrefabPath, this, t.Current);
-                        }
+                    HashSet<Transform> dummyTransforms = isClusterMissile ? part.GetComponentsInChildren<MissileDummy>().SelectMany(md => md.transform.parent.GetComponentsInChildren<Transform>().Where(t => t.name == boostExhaustTransformName)).ToHashSet() : [];
+                    foreach (var t in part.FindModelTransforms(boostExhaustTransformName))
+                    {
+                        if (t == null) continue;
+                        if (dummyTransforms.Contains(t)) continue; // Ignore boost exhausts for dummy transforms for MMLs, e.g., for submunitions of cluster missiles.
+                        (boostEmitters, boostGaplessEmitters) = AttachExhaustPrefab(boostExhaustPrefabPath, this, t);
+                    }
                 }
 
                 StartCoroutine(MissileRoutine());
@@ -3474,17 +3448,35 @@ namespace BDArmory.Weapons.Missiles
         static Dictionary<string, ObjectPool> exhaustPrefabPool = new Dictionary<string, ObjectPool>();
         List<GameObject> exhaustPrefabs = new List<GameObject>();
 
-        static void AttachExhaustPrefab(string prefabPath, MissileLauncher missileLauncher, Transform exhaustTransform)
+        static (List<KSPParticleEmitter>, List<BDAGaplessParticleEmitter>) AttachExhaustPrefab(string prefabPath, MissileLauncher missileLauncher, Transform exhaustTransform)
         {
             CreateExhaustPool(prefabPath);
             var exhaustPrefab = exhaustPrefabPool[prefabPath].GetPooledObject();
             exhaustPrefab.SetActive(true);
-            using (var emitter = exhaustPrefab.GetComponentsInChildren<KSPParticleEmitter>().AsEnumerable().GetEnumerator())
-                while (emitter.MoveNext())
+            List<KSPParticleEmitter> emitters = [];
+            List<BDAGaplessParticleEmitter> gaplessEmitters = [];
+            foreach (var emitter in exhaustPrefab.GetComponentsInChildren<KSPParticleEmitter>())
+            {
+                if (emitter == null) continue;
+                if (emitter.GetComponentInParent<Part>() != missileLauncher.part) continue; // On a sub-part, e.g., a cluster missile.
+                if (emitter.useWorldSpace)
                 {
-                    if (emitter.Current == null) continue;
-                    emitter.Current.emit = false;
+                    var gaplessEmitter = emitter.GetComponent<BDAGaplessParticleEmitter>();
+                    if (!gaplessEmitter)
+                    {
+                        gaplessEmitter = emitter.gameObject.AddComponent<BDAGaplessParticleEmitter>();
+                        gaplessEmitter.part = missileLauncher.part;
+                        gaplessEmitter.emit = false;
+                    }
+                    gaplessEmitters.Add(gaplessEmitter);
                 }
+                else
+                {
+                    emitter.emit = false;
+                    emitters.Add(emitter);
+                    EffectBehaviour.AddParticleEmitter(emitter);
+                }
+            }
             exhaustPrefab.transform.parent = exhaustTransform;
             exhaustPrefab.transform.localPosition = Vector3.zero;
             exhaustPrefab.transform.localRotation = Quaternion.identity;
@@ -3492,6 +3484,7 @@ namespace BDArmory.Weapons.Missiles
             missileLauncher.part.OnJustAboutToDie += missileLauncher.DetachExhaustPrefabs;
             missileLauncher.part.OnJustAboutToBeDestroyed += missileLauncher.DetachExhaustPrefabs;
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: Exhaust prefab " + exhaustPrefab.name + " added to " + missileLauncher.shortName + " on " + (missileLauncher.vessel != null ? missileLauncher.vessel.vesselName : "unknown"));
+            return (emitters, gaplessEmitters);
         }
 
         static void CreateExhaustPool(string prefabPath)
@@ -3518,6 +3511,20 @@ namespace BDArmory.Weapons.Missiles
                 if (exhaustPrefab == null) continue;
                 exhaustPrefab.transform.parent = null;
                 exhaustPrefab.SetActive(false);
+                foreach (var emitter in exhaustPrefab.GetComponentsInChildren<KSPParticleEmitter>())
+                {
+                    if (emitter == null) continue;
+                    if (emitter.GetComponentInParent<Part>() != part) continue; // On a sub-part, e.g., a cluster missile.
+                    emitter.emit = false;
+                    EffectBehaviour.RemoveParticleEmitter(emitter);
+                    pEmitters.Remove(emitter); // Remove the emitter from the common list so it doesn't get destroyed.
+                }
+                foreach (var gaplessEmitter in exhaustPrefab.GetComponentsInChildren<BDAGaplessParticleEmitter>())
+                {
+                    if (gaplessEmitter == null) continue;
+                    gaplessEmitter.emit = false;
+                    gaplessEmitters.Remove(gaplessEmitter); // Remove the gapless emitter from the common list so it doesn't get destroyed.
+                }
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: Exhaust prefab " + exhaustPrefab.name + " removed from " + shortName + " on " + (vessel != null ? vessel.vesselName : "unknown"));
             }
             exhaustPrefabs.Clear();
