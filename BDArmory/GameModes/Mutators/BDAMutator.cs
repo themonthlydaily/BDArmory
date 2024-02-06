@@ -70,6 +70,7 @@ namespace BDArmory.GameModes
             }
             mutatorName = name;
             mutators = BDAcTools.ParseNames(name);
+            var mf = VesselModuleRegistry.GetMissileFire(vessel);
             for (int r = 0; r < (HOS ? mutators.Count : BDArmorySettings.MUTATOR_APPLY_NUM); r++)
             {
                 name = MutatorInfo.mutators[mutators[r]].name;
@@ -84,6 +85,7 @@ namespace BDArmory.GameModes
                             if (weapon.Current == null) continue;
                             weapon.Current.shortName = mutatorInfo.name;
                             weapon.Current.WeaponDisplayName = weapon.Current.shortName;
+                            if (vessel.isActiveVessel && mf && (IBDWeapon)weapon.Current == mf.selectedWeapon) mf.selectedWeaponString = mutatorInfo.name;
                             if (mutatorInfo.weaponType != "def")
                             {
                                 weapon.Current.ParseWeaponType(mutatorInfo.weaponType);
