@@ -82,6 +82,8 @@ namespace BDArmory.GameModes
                         while (weapon.MoveNext())
                         {
                             if (weapon.Current == null) continue;
+                            weapon.Current.shortName = mutatorInfo.name;
+                            weapon.Current.WeaponDisplayName = weapon.Current.shortName;
                             if (mutatorInfo.weaponType != "def")
                             {
                                 weapon.Current.ParseWeaponType(mutatorInfo.weaponType);
@@ -226,6 +228,8 @@ namespace BDArmory.GameModes
                 while (weapon.MoveNext())
                 {
                     if (weapon.Current == null) continue;
+                    weapon.Current.shortName = weapon.Current.OriginalShortName;
+                    weapon.Current.WeaponDisplayName = weapon.Current.shortName;
                     weapon.Current.ParseWeaponType(weapon.Current.weaponType);
                     if (!string.IsNullOrEmpty(weapon.Current.ammoBelt) && weapon.Current.ammoBelt != "def")
                     {
