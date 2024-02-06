@@ -1,8 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
-using UniLinq;
 using UnityEngine;
 
 using BDArmory.Control;
@@ -1319,15 +1319,15 @@ namespace BDArmory.Weapons.Missiles
                 part.explosionPotential = 0; // Minimise the default part explosion FX that sometimes gets offset from the main explosion.
                 rcsClearanceState = (GuidanceMode == GuidanceModes.Orbital && hasRCS && vacuumSteerable && (vessel.InVacuum()) ? RCSClearanceStates.Clearing : RCSClearanceStates.Cleared); // Set up clearance check if missile hasRCS, is vacuumSteerable, and is in space
 
-                // Debug.Log($"DEBUG FindModelTransforms {string.Join(", ", part.FindModelTransforms("exhaustTransform").Select(e => $"{e.name} on {e.transform} ({e.}) with parent {e.transform.parent}"))}");
                 var mml = part.GetComponent<MultiMissileLauncher>();
                 var isClusterMissile = mml && mml.isClusterMissile;
                 if (!string.IsNullOrEmpty(exhaustPrefabPath))
                 {
+                    HashSet<Transform> dummyTransforms = isClusterMissile ? part.GetComponentsInChildren<MissileDummy>().SelectMany(md => md.transform.parent.GetComponentsInChildren<Transform>().Where(t => t.name == "exhaustTransform")).ToHashSet() : [];
                     foreach (var t in part.FindModelTransforms("exhaustTransform"))
                     {
                         if (t == null) continue;
-                        if (isClusterMissile && t.parent.name == "Rocket") continue; // Skip sub-parts (e.g., cluster missiles). FIXME This is a poor check.
+                        if (dummyTransforms.Contains(t)) continue; // Ignore exhausts for dummy transforms for MMLs, e.g., for submunitions of cluster missiles.
                         var (exhaustEmitters, exhaustGaplessEmitters) = AttachExhaustPrefab(exhaustPrefabPath, this, t);
                         pEmitters.AddRange(exhaustEmitters);
                         gaplessEmitters.AddRange(exhaustGaplessEmitters);
@@ -1336,10 +1336,11 @@ namespace BDArmory.Weapons.Missiles
 
                 if (!string.IsNullOrEmpty(boostExhaustPrefabPath) && !string.IsNullOrEmpty(boostExhaustTransformName))
                 {
+                    HashSet<Transform> dummyTransforms = isClusterMissile ? part.GetComponentsInChildren<MissileDummy>().SelectMany(md => md.transform.parent.GetComponentsInChildren<Transform>().Where(t => t.name == boostExhaustTransformName)).ToHashSet() : [];
                     foreach (var t in part.FindModelTransforms(boostExhaustTransformName))
                     {
                         if (t == null) continue;
-                        if (isClusterMissile && t.parent.name == "Rocket") continue; // Skip sub-parts (e.g., cluster missiles). FIXME This is a poor check.
+                        if (dummyTransforms.Contains(t)) continue; // Ignore boost exhausts for dummy transforms for MMLs, e.g., for submunitions of cluster missiles.
                         (boostEmitters, boostGaplessEmitters) = AttachExhaustPrefab(boostExhaustPrefabPath, this, t);
                     }
                 }
