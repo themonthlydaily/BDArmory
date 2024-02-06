@@ -1319,12 +1319,11 @@ namespace BDArmory.Weapons.Missiles
                 part.explosionPotential = 0; // Minimise the default part explosion FX that sometimes gets offset from the main explosion.
                 rcsClearanceState = (GuidanceMode == GuidanceModes.Orbital && hasRCS && vacuumSteerable && (vessel.InVacuum()) ? RCSClearanceStates.Clearing : RCSClearanceStates.Cleared); // Set up clearance check if missile hasRCS, is vacuumSteerable, and is in space
 
-                var mml = part.GetComponent<MultiMissileLauncher>();
-                var isClusterMissile = mml && mml.isClusterMissile;
+                bool isClusterMissile = multiLauncher && multiLauncher.isClusterMissile;
                 if (!string.IsNullOrEmpty(exhaustPrefabPath))
                 {
-                    HashSet<Transform> dummyTransforms = isClusterMissile ? part.GetComponentsInChildren<MissileDummy>().SelectMany(md => md.transform.parent.GetComponentsInChildren<Transform>().Where(t => t.name == "exhaustTransform")).ToHashSet() : [];
-                    foreach (var t in part.FindModelTransforms("exhaustTransform"))
+                    HashSet<Transform> dummyTransforms = isClusterMissile ? part.GetComponentsInChildren<MissileDummy>().SelectMany(md => md.transform.parent.GetComponentsInChildren<Transform>().Where(t => t.name == multiLauncher.exhaustTransformName)).ToHashSet() : [];
+                    foreach (var t in part.FindModelTransforms(boostTransformName))
                     {
                         if (t == null) continue;
                         if (dummyTransforms.Contains(t)) continue; // Ignore exhausts for dummy transforms for MMLs, e.g., for submunitions of cluster missiles.
@@ -1336,7 +1335,7 @@ namespace BDArmory.Weapons.Missiles
 
                 if (!string.IsNullOrEmpty(boostExhaustPrefabPath) && !string.IsNullOrEmpty(boostExhaustTransformName))
                 {
-                    HashSet<Transform> dummyTransforms = isClusterMissile ? part.GetComponentsInChildren<MissileDummy>().SelectMany(md => md.transform.parent.GetComponentsInChildren<Transform>().Where(t => t.name == boostExhaustTransformName)).ToHashSet() : [];
+                    HashSet<Transform> dummyTransforms = isClusterMissile ? part.GetComponentsInChildren<MissileDummy>().SelectMany(md => md.transform.parent.GetComponentsInChildren<Transform>().Where(t => t.name == multiLauncher.boostTransformName)).ToHashSet() : [];
                     foreach (var t in part.FindModelTransforms(boostExhaustTransformName))
                     {
                         if (t == null) continue;
