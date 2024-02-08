@@ -53,7 +53,7 @@ namespace BDArmory.GameModes
         }
 
 
-        public void EnableMutator(string name = "def", bool HOS = false) 
+        public void EnableMutator(string name = "def", bool HOS = false)
         {
             if (string.IsNullOrEmpty(name)) name = "def";
             if (mutatorEnabled) //replace current mutator with new one

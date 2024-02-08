@@ -35,7 +35,7 @@ namespace BDArmory.UI
         private double lastCameraCheck = 0;
         double minCameraCheckInterval = 0.25;
         private Vessel lastActiveVessel = null;
-        private bool currentVesselDied = false;
+        public bool currentVesselDied = false;
         private double currentVesselDiedAt = 0;
 
         //gui params
