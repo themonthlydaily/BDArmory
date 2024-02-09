@@ -1026,7 +1026,7 @@ namespace BDArmory.UI
             GUI.Label(new Rect(_windowMargin + _buttonSize, _windowMargin, columnWidth - 2 * _windowMargin - numberOfButtons * _buttonSize, _windowMargin + _buttonSize), StringUtils.Localize("#LOC_BDArmory_WMWindow_title") + "          ", kspTitleLabel);
 
             // Version.
-            GUI.Label(new Rect(columnWidth - _windowMargin - (numberOfButtons - 1) * _buttonSize - 100, 23, 57, 10), "1.6.9.0.SI12/1/24", waterMarkStyle);
+            GUI.Label(new Rect(columnWidth - _windowMargin - (numberOfButtons - 1) * _buttonSize - 100, 23, 57, 10), "1.6.10_UT", waterMarkStyle);
 
             //SETTINGS BUTTON
             if (!BDKeyBinder.current &&
@@ -3457,6 +3457,10 @@ namespace BDArmory.UI
                                 MutatorInfo.SetupGunGame();
                                 BDArmorySettings.MUTATOR_LIST = ["Brownings", "Chainguns", "Vulcans", "Mausers", "GAU-22s", "N-37s", "AT Guns", "Railguns", "GAU-8s"]; //generally weaker to stronger
                             }
+
+                            BDArmorySettings.GG_PERSISTANT_PROGRESSION = GUI.Toggle(SLeftRect(++line), BDArmorySettings.GG_PERSISTANT_PROGRESSION, StringUtils.Localize("Keep progresson on respawn"));
+                            BDArmorySettings.GG_CYCLE_LIST = GUI.Toggle(SLeftRect(++line), BDArmorySettings.GG_CYCLE_LIST, StringUtils.Localize("Cycle List"));
+
                             //BDArmorySettings.MUTATOR_LIST = new List<string> { "GAU-8s", "Railguns", "Abrams", "Rocket Arena", "Nudelmans", "GAU-22s", "Mausers", "Vulcans", "Chainguns" }; //reverse gunGame, in case of runaway rich-get-richer scenario
                             //as long as game is started on RWP_Round == 61, this should be editable in the settings.cfg to change it to whatever order is needed for the showrunner
                         }

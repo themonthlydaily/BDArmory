@@ -974,6 +974,8 @@ namespace BDArmory.Competition
 
         #region Special
         public int partsLostToAsteroids = 0; // Number of parts lost due to crashing into asteroids.
+        public int gunGameProgress = 0;
+        public int killsThisLife = 0;
         #endregion
 
         #region Battle Damage
