@@ -38,6 +38,8 @@ namespace BDArmory.Weapons.Missiles
         [KSPField(isPersistant = true)] public string subMunitionPath; //model path for missile
         public float missileMass = 0.1f;
         [KSPField] public string launchTransformName; //name of transform launcTransforms are parented to - see Rocketlauncher transform hierarchy
+        public string exhaustTransformName;
+        public string boostTransformName;
         //[KSPField] public int salvoSize = 1; //leave blank to have salvoSize = launchTransforms.count
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_WMWindow_rippleText2"), UI_FloatRange(minValue = 1, maxValue = 10, stepIncrement = 1, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Salvo
         public float salvoSize = 1;
@@ -251,6 +253,16 @@ namespace BDArmory.Weapons.Missiles
                                 if (ML != null) loadedMissileName = ML.GetShortName();
                                 else Debug.LogError("[BDArmory.MultiMissileLauncher] submunition MissileLauncher module null! Check subMunitionName is correct");
                             }
+                            try
+                            {
+                                boostTransformName = ConfigNodeUtils.FindPartModuleConfigNodeValue(parts.Current.partPrefab.partInfo.partConfig, "MissileLauncher", "boostTransformName");
+                            }
+                            catch { boostTransformName = string.Empty; }
+                            try
+                            {
+                                exhaustTransformName = ConfigNodeUtils.FindPartModuleConfigNodeValue(parts.Current.partPrefab.partInfo.partConfig, "MissileLauncher", "boostExhaustTransformName ");
+                            }
+                            catch { exhaustTransformName = string.Empty; }
                             break;
                         }
                     if (bRadius == 0)

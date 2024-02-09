@@ -413,12 +413,12 @@ namespace BDArmory.UI
             }
 
             // window position settings
-            WindowRectToolbar = new Rect(Screen.width - toolWindowWidth - 40, 150, toolWindowWidth, toolWindowHeight);
-            // Default, if not in file.
+            WindowRectToolbar = new Rect(Screen.width - toolWindowWidth - 40, 150, toolWindowWidth, toolWindowHeight); // Default, if not in file.
             WindowRectGps = new Rect(0, 0, WindowRectToolbar.width - 10, 0);
             SetupSettingsSize();
             BDAWindowSettingsField.Load();
             CheckIfWindowsSettingsAreWithinScreen();
+            toolWindowHeight = WindowRectToolbar.height;
 
             // Configure UI visibility and window rects
             GAME_UI_ENABLED = true;
@@ -520,7 +520,7 @@ namespace BDArmory.UI
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61) // Set this up in case the settings window doesn't get opened.
             {
                 MutatorInfo.SetupGunGame();
-                BDArmorySettings.MUTATOR_LIST = ["Brownings", "Chainguns", "Vulcans", "Mausers", "GAU-22s", "N-37s", "Rocket Arena", "AT Guns", "Railguns", "GAU-8s"]; //generally weaker to stronger, but with early abrams to give pooer performing planes a potential leg up
+                BDArmorySettings.MUTATOR_LIST = ["Brownings", "Chainguns", "Vulcans", "Mausers", "GAU-22s", "N-37s", "AT Guns", "Railguns", "GAU-8s"]; //generally weaker to stronger
             }
 
 
@@ -684,7 +684,6 @@ namespace BDArmory.UI
 
         private void CheckIfWindowsSettingsAreWithinScreen()
         {
-            GUIUtils.RepositionWindow(ref WindowRectEvolution);
             GUIUtils.UseMouseEventInRect(WindowRectSettings);
             GUIUtils.RepositionWindow(ref WindowRectToolbar);
             GUIUtils.RepositionWindow(ref WindowRectSettings);
@@ -698,6 +697,7 @@ namespace BDArmory.UI
             GUIUtils.RepositionWindow(ref WindowRectScores);
             GUIUtils.RepositionWindow(ref _WindowRectScoresUIHidden);
             GUIUtils.RepositionWindow(ref _WindowRectScoresUIVisible);
+            GUIUtils.RepositionWindow(ref WindowRectEvolution);
         }
 
         void Update()
@@ -1026,7 +1026,7 @@ namespace BDArmory.UI
             GUI.Label(new Rect(_windowMargin + _buttonSize, _windowMargin, columnWidth - 2 * _windowMargin - numberOfButtons * _buttonSize, _windowMargin + _buttonSize), StringUtils.Localize("#LOC_BDArmory_WMWindow_title") + "          ", kspTitleLabel);
 
             // Version.
-            GUI.Label(new Rect(columnWidth - _windowMargin - (numberOfButtons - 1) * _buttonSize - 100, 23, 57, 10), Version, waterMarkStyle);
+            GUI.Label(new Rect(columnWidth - _windowMargin - (numberOfButtons - 1) * _buttonSize - 100, 23, 57, 10), "1.6.9.0.SI12/1/24", waterMarkStyle);
 
             //SETTINGS BUTTON
             if (!BDKeyBinder.current &&
@@ -3455,7 +3455,7 @@ namespace BDArmory.UI
                             if (!MutatorInfo.gunGameConfigured)
                             {
                                 MutatorInfo.SetupGunGame();
-                                BDArmorySettings.MUTATOR_LIST = ["Brownings", "Chainguns", "Vulcans", "Mausers", "GAU-22s", "N-37s", "Rocket Arena", "AT Guns", "Railguns", "GAU-8s"]; //generally weaker to stronger, but with early abrams to give pooer performing planes a potential leg up
+                                BDArmorySettings.MUTATOR_LIST = ["Brownings", "Chainguns", "Vulcans", "Mausers", "GAU-22s", "N-37s", "AT Guns", "Railguns", "GAU-8s"]; //generally weaker to stronger
                             }
                             //BDArmorySettings.MUTATOR_LIST = new List<string> { "GAU-8s", "Railguns", "Abrams", "Rocket Arena", "Nudelmans", "GAU-22s", "Mausers", "Vulcans", "Chainguns" }; //reverse gunGame, in case of runaway rich-get-richer scenario
                             //as long as game is started on RWP_Round == 61, this should be editable in the settings.cfg to change it to whatever order is needed for the showrunner

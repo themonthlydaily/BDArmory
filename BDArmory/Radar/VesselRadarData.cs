@@ -232,6 +232,21 @@ namespace BDArmory.Radar
             }
         }
 
+        public TargetSignatureData detectedRadarTarget() //passive sonar torpedoes, but could also be useful for LOAL missiles fired at detected but not locked targets ,etc.
+        {
+            TargetSignatureData data;
+            for (int i = 0; i < displayedTargets.Count; i++)
+            {
+                if (displayedTargets[i].vessel == weaponManager.currentTarget)
+                {
+                    data = displayedTargets[i].targetData;
+                    return data;
+                }
+            }
+            data = TargetSignatureData.noTarget;
+            return data;
+        }
+
         //turret slaving
         public bool slaveTurrets;
 
