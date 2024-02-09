@@ -87,6 +87,18 @@ namespace BDArmory.Competition
 
         // pilot actions
         private Dictionary<string, string> pilotActions = new Dictionary<string, string>();
+
+        AudioClip headshotClip;
+        AudioClip doubleKillClip;
+        AudioClip tripleKillClip;
+        AudioClip MultiKillClip;
+        AudioClip megaKillClip;
+        AudioClip ultraKillClip;
+        AudioClip mmmonsterKillClip;
+        AudioClip ludicrousKillClip;
+
+        AudioSource audioSource;
+        List<AudioClip> announcerBarks;
         #endregion
 
         #region GUI elements
@@ -118,6 +130,18 @@ namespace BDArmory.Competition
         void Start()
         {
             UpdateGUIElements();
+            headshotClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/Headshot");
+            doubleKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/DoubleKill");
+            tripleKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/TripleKill");
+            MultiKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/MultiKill");
+            megaKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/MegaKill");
+            ultraKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/UltraKill");
+            mmmonsterKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/MonsterKill");
+            ludicrousKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/Godlike");
+            audioSource = gameObject.AddComponent<AudioSource>();
+            announcerBarks = new List<AudioClip> { doubleKillClip, tripleKillClip, MultiKillClip, megaKillClip, ultraKillClip, mmmonsterKillClip, ludicrousKillClip };
+            //Headshot; doublekill; truipleKill; multikill; ultrakill megakill; monsterkill; luidcrous kill
+            //Killing Spree; Rampage; unstoppable; dominating; godlike; wicked sick; holy shit
         }
 
         void OnGUI()
@@ -1002,6 +1026,22 @@ namespace BDArmory.Competition
             if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //selected mutator applied globally
             {
                 ScreenMessages.PostScreenMessage(StringUtils.Localize("#LOC_BDArmory_UI_MutatorStart") + ": " + currentMutator + ". " + (BDArmorySettings.MUTATOR_APPLY_TIMER ? (BDArmorySettings.MUTATOR_DURATION > 0 ? BDArmorySettings.MUTATOR_DURATION * 60 : BDArmorySettings.COMPETITION_DURATION * 60) + " seconds left" : ""), 5, ScreenMessageStyle.UPPER_CENTER);
+            }
+        }
+
+        public void PlayAnnouncer(int killcount, bool headshot, string killerVessel)
+        {
+            if (FlightGlobals.ActiveVessel.vesselName != killerVessel) return;
+
+            killcount -= 1; //first bark is doublekill, adjust to account for that
+            if (headshot) audioSource.PlayOneShot(headshotClip);
+            else
+            {
+                if (killcount > announcerBarks.Count - 1) killcount = announcerBarks.Count - 1;
+                if (killcount >= 0)
+                {
+                    if (announcerBarks[killcount] != null) audioSource.PlayOneShot(announcerBarks[killcount]); //only play barks if killsThisLife > 1
+                }
             }
         }
 
@@ -2847,6 +2887,7 @@ namespace BDArmory.Competition
                                 {
                                     statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (NAILED 'EM! CLEAN KILL!)";
                                 }
+                                PlayAnnouncer(Scores.ScoreData[Scores.ScoreData[player].lastPersonWhoDamagedMe].killsThisLife, false, Scores.ScoreData[player].lastPersonWhoDamagedMe);
                                 //canAssignMutator = true;
                                 break;
                             case AliveState.HeadShot: // Damaged recently, but took damage a while ago from someone else.
@@ -2858,6 +2899,7 @@ namespace BDArmory.Competition
                                 {
                                     statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (BOOM! HEAD SHOT!)";
                                 }
+                                PlayAnnouncer(Scores.ScoreData[Scores.ScoreData[player].lastPersonWhoDamagedMe].killsThisLife, true, Scores.ScoreData[player].lastPersonWhoDamagedMe);
                                 //canAssignMutator = true;
                                 break;
                             case AliveState.KillSteal: // Damaged recently, but took damage from someone else recently too.
@@ -2869,6 +2911,7 @@ namespace BDArmory.Competition
                                 {
                                     statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (KILL STEAL!)";
                                 }
+                                PlayAnnouncer(Scores.ScoreData[Scores.ScoreData[player].lastPersonWhoDamagedMe].killsThisLife, false, Scores.ScoreData[player].lastPersonWhoDamagedMe);
                                 //canAssignMutator = true;
                                 break;
                             case AliveState.AssistedKill: // Assist (not damaged recently or GM kill).
@@ -2886,7 +2929,11 @@ namespace BDArmory.Competition
                         }
                         competitionStatus.Add(statusMessage);
                         if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode:{CompetitionID}]: " + statusMessage);
-
+                        if (canAssignMutator)
+                        {
+                            Scores.ScoreData[Scores.ScoreData[player].lastPersonWhoDamagedMe].gunGameProgress++;
+                            Scores.ScoreData[Scores.ScoreData[player].lastPersonWhoDamagedMe].killsThisLife++;
+                        }
                         if ((BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_KILL) || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61))
                         {
                             if (BDArmorySettings.MUTATOR_LIST.Count > 0 && canAssignMutator)

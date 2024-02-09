@@ -363,6 +363,7 @@ namespace BDArmory.VesselSpawning
                     BDACompetitionMode.Instance.Scores.AddPlayer(vessel);
                     BDACompetitionMode.Instance.Scores.ScoreData[vesselName].lastDamageTime = scoreData[spawnCount].lastDamageTime;
                     BDACompetitionMode.Instance.Scores.ScoreData[vesselName].lastPersonWhoDamagedMe = scoreData[spawnCount].lastPersonWhoDamagedMe;
+                    BDACompetitionMode.Instance.Scores.ScoreData[vesselName].gunGameProgress = scoreData[spawnCount].gunGameProgress;
                 }
             }
         }
