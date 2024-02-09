@@ -87,6 +87,7 @@ namespace BDArmory.Competition
 
         // pilot actions
         private Dictionary<string, string> pilotActions = new Dictionary<string, string>();
+
         #endregion
 
         #region GUI elements
@@ -2886,7 +2887,8 @@ namespace BDArmory.Competition
                         }
                         competitionStatus.Add(statusMessage);
                         if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode:{CompetitionID}]: " + statusMessage);
-
+                        if (canAssignMutator)
+                            Scores.ScoreData[Scores.ScoreData[player].lastPersonWhoDamagedMe].gunGameProgress++;
                         if ((BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_KILL) || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61))
                         {
                             if (BDArmorySettings.MUTATOR_LIST.Count > 0 && canAssignMutator)
