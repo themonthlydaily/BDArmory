@@ -41,6 +41,7 @@ namespace BDArmory.UI
         //gui params
         bool resizingWindow = false;
         Vector2 windowSize = new(350, 32); // Height is auto-adjusting
+        float previousWindowHeight = 32;
         private string camMode = "A";
         private int currentMode = 1;
         private SortedList<string, List<MissileFire>> weaponManagers = new SortedList<string, List<MissileFire>>();
@@ -305,6 +306,7 @@ namespace BDArmory.UI
 
                 BDArmorySetup.SetGUIOpacity();
                 if (BDArmorySettings.UI_SCALE != 1) GUIUtility.ScaleAroundPivot(BDArmorySettings.UI_SCALE * Vector2.one, BDArmorySetup.WindowRectVesselSwitcher.position);
+                previousWindowHeight = BDArmorySetup.WindowRectVesselSwitcher.height;
                 BDArmorySetup.WindowRectVesselSwitcher = GUI.Window(10293444, BDArmorySetup.WindowRectVesselSwitcher, WindowVesselSwitcher, windowTitle, BDArmorySetup.BDGuiSkin.window); //"BDA Vessel Switcher"
                 ResizeWindow();
                 BDArmorySetup.SetGUIOpacity(false);
@@ -324,7 +326,6 @@ namespace BDArmory.UI
         private void ResizeWindow()
         {
             if (resizingWindow) windowSize.x = Mathf.Clamp(windowSize.x, 350, Screen.width - BDArmorySetup.WindowRectVesselSwitcher.x);
-            var previousWindowHeight = BDArmorySetup.WindowRectVesselSwitcher.height;
             BDArmorySetup.WindowRectVesselSwitcher.size = windowSize;
             GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectVesselSwitcher, previousWindowHeight);
             GUIUtils.UpdateGUIRect(BDArmorySetup.WindowRectVesselSwitcher, _guiCheckIndex);
@@ -661,7 +662,7 @@ namespace BDArmory.UI
 
             height += _margin;
             #region Resizing
-            windowSize.y = Mathf.Max(height, _titleHeight + _buttonHeight);
+            windowSize.y = Mathf.Lerp(windowSize.y, Mathf.Max(height, _titleHeight + _buttonHeight), 0.15f);
             var resizeRect = new Rect(windowSize.x - 16, windowSize.y - 16, 16, 16);
             GUI.DrawTexture(resizeRect, GUIUtils.resizeTexture, ScaleMode.StretchToFill, true);
             if (Event.current.type == EventType.MouseDown && resizeRect.Contains(Event.current.mousePosition)) resizingWindow = true;
