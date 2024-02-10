@@ -520,7 +520,7 @@ namespace BDArmory.UI
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61) // Set this up in case the settings window doesn't get opened.
             {
                 MutatorInfo.SetupGunGame();
-                BDArmorySettings.MUTATOR_LIST = ["Brownings", "Chainguns", "Vulcans", "Mausers", "GAU-22s", "N-37s", "AT Guns", "Railguns", "GAU-8s"]; //generally weaker to stronger
+                BDArmorySettings.MUTATOR_LIST = ["Brownings", "Chainguns", "Vulcans", "Mausers", "GAU-22s", "N-37s", "AT Guns", "Railguns", "GAU-8s", "Rockets"]; //generally weaker to stronger
             }
 
 
@@ -3259,7 +3259,7 @@ namespace BDArmory.UI
                         }
                         BDArmorySettings.MUTATOR_ICONS = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.MUTATOR_ICONS, StringUtils.Localize("#LOC_BDArmory_Settings_MutatorIcons"));
                     }
-                    else if (HighLogic.LoadedSceneIsFlight)
+                    else if (oldMutators && HighLogic.LoadedSceneIsFlight && !(BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61))
                     {
                         foreach (var vessel in FlightGlobals.VesselsLoaded) SpawnUtils.ApplyMutators(vessel, false); // Clear mutators on existing vessels when disabling this.
                         SpawnUtils.ApplyMutatorsOnNewVessels(false); // And prevent any new ones.
@@ -3455,7 +3455,7 @@ namespace BDArmory.UI
                             if (!MutatorInfo.gunGameConfigured)
                             {
                                 MutatorInfo.SetupGunGame();
-                                BDArmorySettings.MUTATOR_LIST = ["Brownings", "Chainguns", "Vulcans", "Mausers", "GAU-22s", "N-37s", "AT Guns", "Railguns", "GAU-8s"]; //generally weaker to stronger
+                                BDArmorySettings.MUTATOR_LIST = ["Brownings", "Chainguns", "Vulcans", "Mausers", "GAU-22s", "N-37s", "AT Guns", "Railguns", "GAU-8s", "Rockets"]; //generally weaker to stronger
                             }
 
                             BDArmorySettings.GG_PERSISTANT_PROGRESSION = GUI.Toggle(SLeftRect(++line), BDArmorySettings.GG_PERSISTANT_PROGRESSION, StringUtils.Localize("Keep progresson on respawn"));
@@ -3470,30 +3470,44 @@ namespace BDArmory.UI
                         // if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 46) BDArmorySettings.NO_ENGINES = true;
                         if (CheatCodeGUI != (CheatCodeGUI = GUI.TextField(SLeftRect(++line, 1, true), CheatCodeGUI, textFieldStyle))) //if we need super-secret stuff
                         {
-                            if (CheatCodeGUI == "ZombieMode")
+                            switch (CheatCodeGUI)
                             {
-                                BDArmorySettings.ZOMBIE_MODE = !BDArmorySettings.ZOMBIE_MODE; //sticking this here until we figure out a better home for it
-                                CheatCodeGUI = "";
-                            }
-                            else if (CheatCodeGUI == "DiscoInferno")
+                                case "ZombieMode":
                             {
-                                BDArmorySettings.DISCO_MODE = !BDArmorySettings.DISCO_MODE;
-                                CheatCodeGUI = "";
-                            }
-                            else if (CheatCodeGUI == "NoEngines")
+                                        BDArmorySettings.ZOMBIE_MODE = !BDArmorySettings.ZOMBIE_MODE; //sticking this here until we figure out a better home for it
+                                        CheatCodeGUI = "";
+                                        break;
+                                    }
+                                case "UTDeathMatch":
+                                    {
+                                        BDArmorySettings.GG_ANNOUNCER = !BDArmorySettings.GG_ANNOUNCER; 
+                                        CheatCodeGUI = "";
+                                        break;
+                                    }
+                                case "DiscoInferno":
                             {
-                                BDArmorySettings.NO_ENGINES = !BDArmorySettings.NO_ENGINES;
-                                CheatCodeGUI = "";
-                            }
-                            else if (CheatCodeGUI == "HallOfShame")
+                                        BDArmorySettings.DISCO_MODE = !BDArmorySettings.DISCO_MODE;
+                                        CheatCodeGUI = "";
+                                        break;
+                                    }
+                                case "NoEngines":
                             {
-                                BDArmorySettings.ENABLE_HOS = !BDArmorySettings.ENABLE_HOS;
-                                CheatCodeGUI = "";
-                            }
-                            else if (CheatCodeGUI.ToLower() == "altitudehack") //until we figure out where to put this
+                                        BDArmorySettings.NO_ENGINES = !BDArmorySettings.NO_ENGINES;
+                                        CheatCodeGUI = "";
+                                        break;
+                                    }
+                                case "HallOfShame":
                             {
-                                BDArmorySettings.ALTITUDE_HACKS = !BDArmorySettings.ALTITUDE_HACKS;
-                                CheatCodeGUI = "";
+                                        BDArmorySettings.ENABLE_HOS = !BDArmorySettings.ENABLE_HOS;
+                                        CheatCodeGUI = "";
+                                        break;
+                                    }
+                                case "altitudehack": //until we figure out where to put this
+                            {
+                                        BDArmorySettings.ALTITUDE_HACKS = !BDArmorySettings.ALTITUDE_HACKS;
+                                        CheatCodeGUI = "";
+                                        break;
+                                    }
                             }
                         }
                         //BDArmorySettings.ZOMBIE_MODE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.ZOMBIE_MODE, StringUtils.Localize("#LOC_BDArmory_settings_ZombieMode"));

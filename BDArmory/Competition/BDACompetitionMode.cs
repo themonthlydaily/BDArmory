@@ -1030,7 +1030,7 @@ namespace BDArmory.Competition
         public void PlayAnnouncer(int killcount, bool headshot, string killerVessel)
         {
             if (FlightGlobals.ActiveVessel.vesselName != killerVessel) return;
-
+            if (!BDArmorySettings.GG_ANNOUNCER) return;
             killcount -= 1; //first bark is doublekill, adjust to account for that
             if (headshot) audioSource.PlayOneShot(headshotClip);
             else
