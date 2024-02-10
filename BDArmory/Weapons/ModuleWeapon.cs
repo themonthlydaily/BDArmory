@@ -5498,7 +5498,7 @@ namespace BDArmory.Weapons
                 fireState[i].speed = 0;
                 fireState[i].enabled = false;
             }
-            if (hasChargeAnimation) 
+            if (hasChargeAnimation)
                 yield return chargeRoutine = StartCoroutine(ChargeRoutine(true));
             if (!oneShotSound) audioSource.Stop();
             if (!string.IsNullOrEmpty(reloadAudioPath))
@@ -5535,7 +5535,7 @@ namespace BDArmory.Weapons
                 chargeState.enabled = true;
                 chargeState.speed = (chargeState.length / ChargeTime) * (discharge ? -1 : 1);//ensure relaod anim is not longer than reload time
                 yield return new WaitWhileFixed(() => discharge ? chargeState.normalizedTime > 0 : chargeState.normalizedTime < 1); //wait for animation here
-                chargeState.normalizedTime = discharge ? 0 : 1; 
+                chargeState.normalizedTime = discharge ? 0 : 1;
                 chargeState.speed = 0;
                 chargeState.enabled = false;
             }

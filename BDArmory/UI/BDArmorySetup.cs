@@ -3259,7 +3259,7 @@ namespace BDArmory.UI
                         }
                         BDArmorySettings.MUTATOR_ICONS = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.MUTATOR_ICONS, StringUtils.Localize("#LOC_BDArmory_Settings_MutatorIcons"));
                     }
-                    else if (HighLogic.LoadedSceneIsFlight)
+                    else if (oldMutators && HighLogic.LoadedSceneIsFlight && !(BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61))
                     {
                         foreach (var vessel in FlightGlobals.VesselsLoaded) SpawnUtils.ApplyMutators(vessel, false); // Clear mutators on existing vessels when disabling this.
                         SpawnUtils.ApplyMutatorsOnNewVessels(false); // And prevent any new ones.
