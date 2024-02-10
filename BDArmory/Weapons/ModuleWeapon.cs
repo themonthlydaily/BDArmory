@@ -2645,6 +2645,7 @@ namespace BDArmory.Weapons
                                 }
                                 var aName = vesselname;
                                 var tName = p.vessel.GetName();
+                                damage = Mathf.Abs(damage);
                                 if (BDACompetitionMode.Instance.Scores.RegisterBulletDamage(aName, tName, damage))
                                 {
                                     if (pulseLaser || (!pulseLaser && ScoreAccumulator > beamScoreTime)) // Score hits with pulse lasers or when the score accumulator is sufficient.
@@ -2786,7 +2787,7 @@ namespace BDArmory.Weapons
                         else
                         {
                             vessel.GetConnectedResourceTotals(AmmoID, out double ammoCurrent, out double ammoMax);
-                            rocketsLeft = Mathf.Clamp((int)(RoundsPerMag - RoundsRemaining), 0, Mathf.Clamp((int)ammoCurrent, 0, RoundsPerMag));
+                            rocketsLeft = rocketPod ? Mathf.Clamp((int)(RoundsPerMag - RoundsRemaining), 0, Mathf.Clamp((int)ammoCurrent, 0, RoundsPerMag)) : (int)ammoCurrent;
                         }
                     }
                     if (rocketsLeft >= 1)

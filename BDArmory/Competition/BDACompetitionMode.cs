@@ -140,8 +140,6 @@ namespace BDArmory.Competition
             ludicrousKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/Godlike");
             audioSource = gameObject.AddComponent<AudioSource>();
             announcerBarks = new List<AudioClip> { doubleKillClip, tripleKillClip, MultiKillClip, megaKillClip, ultraKillClip, mmmonsterKillClip, ludicrousKillClip };
-            //Headshot; doublekill; truipleKill; multikill; ultrakill megakill; monsterkill; luidcrous kill
-            //Killing Spree; Rampage; unstoppable; dominating; godlike; wicked sick; holy shit
         }
 
         void OnGUI()
