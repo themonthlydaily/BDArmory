@@ -223,7 +223,7 @@ namespace BDArmory.GameModes
             mutators.Add(new MutatorInfo("Abrams", true, "ballistic", "130mmShell", 10, 0.1f, 0, 0, 0, 1, 1, false, 1, 0, false, "", 0, false, "IconSkull", "175,175,24,255"));
             mutatorNames.Add("Abrams");
             mutators.Add(new MutatorInfo("Rockets", true, "rocket", "8KOMS", 450, -1, 0, 0, 0, 1, 1, false, 1, 0, false, "", 0, false, "IconRocket", "84,0,222,255"));
-            mutatorNames.Add("Abrams");
+            mutatorNames.Add("Rockets");
             gunGameConfigured = true;
         }
     }
