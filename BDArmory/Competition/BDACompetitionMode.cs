@@ -2873,12 +2873,10 @@ namespace BDArmory.Competition
                                 //canAssignMutator = true;
                                 break;
                             case AliveState.AssistedKill: // Assist (not damaged recently or GM kill).
+                                if (Scores.ScoreData[player].gmKillReason != GMKillReason.None) Scores.ScoreData[player].everyoneWhoDamagedMe.Add(Scores.ScoreData[player].gmKillReason.ToString()); // Log the GM kill reason.
                                 //canAssignMutator = false; //comment out if wanting last person to deal damage to be awarded a On Kill mutator
-                                if (Scores.ScoreData[player].gmKillReason != GMKillReason.None)
-                                {
-                                    Scores.ScoreData[player].everyoneWhoDamagedMe.Add(Scores.ScoreData[player].gmKillReason.ToString());
+                                if (Scores.ScoreData[player].gmKillReason != GMKillReason.None) // Note: LandedTooLong is handled separately.
                                     canAssignMutator = false; //GM kill, no mutator, else award last player to deal damage
-                                }
                                 statusMessage += string.Join(", ", Scores.ScoreData[player].everyoneWhoDamagedMe) + " (" + string.Join(", ", Scores.ScoreData[player].damageTypesTaken) + ")";
                                 break;
                             case AliveState.Dead: // Suicide/Incompetance (never took damage from others).
@@ -2891,29 +2889,8 @@ namespace BDArmory.Competition
                             Scores.ScoreData[Scores.ScoreData[player].lastPersonWhoDamagedMe].gunGameProgress++;
                         if ((BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_KILL) || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61))
                         {
-                            if (BDArmorySettings.MUTATOR_LIST.Count > 0 && canAssignMutator)
-                            {
-                                if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode:{CompetitionID}]: Assigning On Kill mutator to " + Scores.ScoreData[player].lastPersonWhoDamagedMe);
-
-                                using (var loadedVessels = BDATargetManager.LoadedVessels.GetEnumerator())
-                                    while (loadedVessels.MoveNext())
-                                    {
-                                        if (loadedVessels.Current == null || !loadedVessels.Current.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(loadedVessels.Current.vesselType))
-                                            continue;
-                                        if (Scores.ScoreData[player].aliveState == AliveState.AssistedKill && Scores.ScoreData[player].everyoneWhoDamagedMe.Contains(loadedVessels.Current.GetName()))
-                                        {
-                                            SpawnUtils.ApplyMutators(loadedVessels.Current, true); // Reward everyone on assists.
-                                        }
-                                        else if (Scores.ScoreData[player].lastPersonWhoDamagedMe == loadedVessels.Current.GetName() || (Scores.ScoreData[player].aliveState == AliveState.KillSteal && Scores.ScoreData[player].previousPersonWhoDamagedMe == loadedVessels.Current.GetName()))
-                                        {
-                                            SpawnUtils.ApplyMutators(loadedVessels.Current, true); // Reward clean kills and those whom have had their kills stolen.
-                                        }
-                                    }
-                            }
-                            else
-                            {
-                                Debug.Log($"[BDArmory.BDACompetitionMode]: Mutator mode, but no assigned mutators! Can't apply mutator on Kill!");
-                            }
+                            if (BDArmorySettings.MUTATOR_LIST.Count > 0 && canAssignMutator) ApplyOnKillMutator(player);
+                            else Debug.Log($"[BDArmory.BDACompetitionMode]: Mutator mode, but no assigned mutators! Can't apply mutator on Kill!");
                         }
                     }
                     deadOrAliveString += " :" + player + ": ";
@@ -2993,6 +2970,8 @@ namespace BDArmory.Competition
                     }
                     Scores.RegisterDeath(vesselName, GMKillReason.LandedTooLong);
                     competitionStatus.Add(vesselName + " was landed too long.");
+                    if ((BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_KILL && BDArmorySettings.MUTATOR_LIST.Count > 0) || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61))
+                        ApplyOnKillMutator(vesselName); // Apply mutators for LandedTooLong kills, which count as assists.
                 }
                 if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + vesselName + ":REMOVED:" + killerName);
                 if (KillTimer.ContainsKey(vesselName)) KillTimer.Remove(vesselName);
@@ -3050,6 +3029,23 @@ namespace BDArmory.Competition
                         }
                     }
                 }
+            }
+        }
+
+        void ApplyOnKillMutator(string player)
+        {
+            using var loadedVessels = BDATargetManager.LoadedVessels.GetEnumerator();
+            while (loadedVessels.MoveNext())
+            {
+                if (loadedVessels.Current == null || !loadedVessels.Current.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(loadedVessels.Current.vesselType))
+                    continue;
+                var craftName = loadedVessels.Current.GetName();
+                if (Scores.ScoreData[player].aliveState == AliveState.AssistedKill && Scores.ScoreData[player].everyoneWhoDamagedMe.Contains(craftName))
+                    SpawnUtils.ApplyMutators(loadedVessels.Current, true); // Reward everyone involved on assists.
+                else if (Scores.ScoreData[player].lastPersonWhoDamagedMe == craftName || (Scores.ScoreData[player].aliveState == AliveState.KillSteal && Scores.ScoreData[player].previousPersonWhoDamagedMe == craftName))
+                    SpawnUtils.ApplyMutators(loadedVessels.Current, true); // Reward clean kills and those whom have had their kills stolen.
+                else continue;
+                if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode:{CompetitionID}]: Assigning On Kill mutator for {player} to {craftName}");
             }
         }
 

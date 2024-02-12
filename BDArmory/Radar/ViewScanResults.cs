@@ -3,6 +3,7 @@ using UnityEngine;
 
 using BDArmory.Control;
 using BDArmory.Weapons.Missiles;
+using BDArmory.Weapons;
 
 namespace BDArmory.Radar
 {

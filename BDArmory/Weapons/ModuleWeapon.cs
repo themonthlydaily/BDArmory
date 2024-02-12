@@ -617,7 +617,7 @@ namespace BDArmory.Weapons
         public bool descendingOrder = true;
         public float thrustDeviation = 0.10f;
         [KSPField] public bool rocketPod = true; //is the RL a rocketpod, or a gyrojet gun?
-        [KSPField] public bool externalAmmo = true; // weapon is supplied by external ammo boxes isntead of internal supplly (e.g. guns vs rocket pods)
+        [KSPField] public bool externalAmmo = true; // weapon is supplied by external ammo boxes isntead of internal supply (e.g. guns vs rocket pods)
         Transform[] rockets;
         double rocketsMax;
         private RocketInfo rocketInfo;

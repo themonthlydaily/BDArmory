@@ -150,7 +150,7 @@ namespace BDArmory.Control
             groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
             UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All)]
         bool autoTune = false;
-        public bool AutoTune { get { return autoTune; } set { autoTune = value; OnAutoTuneChanged(null, null); } }
+        public bool AutoTune { get { return autoTune; } set { autoTune = value; OnAutoTuneChanged(); } }
         public PIDAutoTuning pidAutoTuning;
 
         [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_AutoTuningLoss", groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true), UI_Label(scene = UI_Scene.All)]
@@ -596,9 +596,9 @@ namespace BDArmory.Control
             { nameof(evasionMinRangeThreshold), (1f, 1000000f, 1f) },
         };
 
-        void TurnItUpToEleven(bool upToEleven)
+        void TurnItUpToEleven(BaseField _field = null, object _obj = null)
         {
-            if (pidAutoTuning is not null)
+            if (AutoTune && pidAutoTuning is not null)
             {
                 // Reset PID values and stop measurement before switching alt values so the correct PID values are used.
                 pidAutoTuning.RevertPIDValues();
@@ -607,8 +607,8 @@ namespace BDArmory.Control
             using (var s = altMaxValues.Keys.ToList().GetEnumerator())
                 while (s.MoveNext())
                 {
-                    UI_FloatRange euic = (UI_FloatRange)
-                        (HighLogic.LoadedSceneIsFlight ? Fields[s.Current].uiControlFlight : Fields[s.Current].uiControlEditor);
+                    UI_FloatRange euic = (UI_FloatRange)(HighLogic.LoadedSceneIsFlight ? Fields[s.Current].uiControlFlight : Fields[s.Current].uiControlEditor);
+                    if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: Swapping max value of {s.Current} from {euic.maxValue} to {altMaxValues[s.Current]}, current value is {(float)typeof(BDModulePilotAI).GetField(s.Current).GetValue(this)}");
                     float tempValue = euic.maxValue;
                     euic.maxValue = altMaxValues[s.Current];
                     altMaxValues[s.Current] = tempValue;
@@ -619,8 +619,8 @@ namespace BDArmory.Control
             using (var s = altMinValues.Keys.ToList().GetEnumerator())
                 while (s.MoveNext())
                 {
-                    UI_FloatRange euic = (UI_FloatRange)
-                        (HighLogic.LoadedSceneIsFlight ? Fields[s.Current].uiControlFlight : Fields[s.Current].uiControlEditor);
+                    UI_FloatRange euic = (UI_FloatRange)(HighLogic.LoadedSceneIsFlight ? Fields[s.Current].uiControlFlight : Fields[s.Current].uiControlEditor);
+                    if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: Swapping min value of {s.Current} from {euic.minValue} to {altMinValues[s.Current]}, current value is {(float)typeof(BDModulePilotAI).GetField(s.Current).GetValue(this)}");
                     float tempValue = euic.minValue;
                     euic.minValue = altMinValues[s.Current];
                     altMinValues[s.Current] = tempValue;
@@ -633,11 +633,11 @@ namespace BDArmory.Control
                 var field = (UI_FloatSemiLogRange)(HighLogic.LoadedSceneIsFlight ? Fields[fieldName].uiControlFlight : Fields[fieldName].uiControlEditor);
                 var temp = (field.minValue, field.maxValue, field.sigFig);
                 var altValues = altSemiLogValues[fieldName];
+                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI]: Swapping semiLog limits of {fieldName} from {temp} to {altValues}");
                 field.UpdateLimits(altValues.Item1, altValues.Item2, altValues.Item3);
                 altSemiLogValues[fieldName] = temp;
             }
-            toEleven = upToEleven;
-            OnAutoTuneOptionsChanged(null, null); // Reset auto-tuning again (including the gradient) so that the correct PID limits are used.
+            OnAutoTuneOptionsChanged(); // Reset auto-tuning again (including the gradient) so that the correct PID limits are used.
         }
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_StandbyMode"),//Standby Mode
@@ -843,7 +843,6 @@ namespace BDArmory.Control
         #endregion
 
         #region AI Internal Parameters
-        bool toEleven = false;
         Vector3 upDirection = Vector3.up;
 
         #region Status / Steer Mode
@@ -1177,17 +1176,13 @@ namespace BDArmory.Control
         protected void SetSliderPairClamps(string fieldNameMin, string fieldNameMax)
         {
             // Enforce min <= max for pairs of sliders
-            UI_FloatRange field = (UI_FloatRange)Fields[fieldNameMin].uiControlEditor;
+            UI_FloatRange field = (UI_FloatRange)(HighLogic.LoadedSceneIsFlight ? Fields[fieldNameMin].uiControlFlight : Fields[fieldNameMin].uiControlEditor);
             field.onFieldChanged = OnMinUpdated;
-            field = (UI_FloatRange)Fields[fieldNameMin].uiControlFlight;
-            field.onFieldChanged = OnMinUpdated;
-            field = (UI_FloatRange)Fields[fieldNameMax].uiControlEditor;
-            field.onFieldChanged = OnMaxUpdated;
-            field = (UI_FloatRange)Fields[fieldNameMax].uiControlFlight;
+            field = (UI_FloatRange)(HighLogic.LoadedSceneIsFlight ? Fields[fieldNameMax].uiControlFlight : Fields[fieldNameMax].uiControlEditor);
             field.onFieldChanged = OnMaxUpdated;
         }
 
-        public void OnMinUpdated(BaseField field, object obj)
+        public void OnMinUpdated(BaseField field = null, object obj = null)
         {
             if (turnRadiusTwiddleFactorMax < turnRadiusTwiddleFactorMin) { turnRadiusTwiddleFactorMax = turnRadiusTwiddleFactorMin; } // Enforce min < max for turn radius twiddle factor.
             // if (DynamicDampingMax < DynamicDampingMin) { DynamicDampingMax = DynamicDampingMin; } // Enforce min < max for dynamic steer damping.
@@ -1196,7 +1191,7 @@ namespace BDArmory.Control
             // if (DynamicDampingRollMax < DynamicDampingRollMin) { DynamicDampingRollMax = DynamicDampingRollMin; } // reversed roll dynamic damp behavior
         }
 
-        public void OnMaxUpdated(BaseField field, object obj)
+        public void OnMaxUpdated(BaseField field = null, object obj = null)
         {
             if (turnRadiusTwiddleFactorMin > turnRadiusTwiddleFactorMax) { turnRadiusTwiddleFactorMin = turnRadiusTwiddleFactorMax; } // Enforce min < max for turn radius twiddle factor.
             // if (DynamicDampingMin > DynamicDampingMax) { DynamicDampingMin = DynamicDampingMax; } // Enforce min < max for dynamic steer damping.
@@ -1332,7 +1327,7 @@ namespace BDArmory.Control
             DynamicDampingRollFactorField.guiActiveEditor = CustomDynamicAxisFields && dynamicSteerDamping;
 
             dirtyPAW_PID = true;
-            if (HighLogic.LoadedSceneIsFlight && autoTune) // Disable auto-tuning if the damping configuration is changed.
+            if (HighLogic.LoadedSceneIsFlight && AutoTune) // Disable auto-tuning if the damping configuration is changed.
             {
                 AutoTune = false;
             }
@@ -1356,7 +1351,13 @@ namespace BDArmory.Control
             maxAltitudeToggle = false;
             ToggleMaxAltitude();
         }
-        void ToggleMaxAltitude()
+        void SetOnMaxAltitudeChanged()
+        {
+            UI_Toggle field = (UI_Toggle)(HighLogic.LoadedSceneIsFlight ? Fields["maxAltitudeToggle"].uiControlFlight : Fields["maxAltitudeToggle"].uiControlEditor);
+            field.onFieldChanged = ToggleMaxAltitude;
+            ToggleMaxAltitude();
+        }
+        void ToggleMaxAltitude(BaseField field = null, object obj = null)
         {
             maxAltitudeEnabled = maxAltitudeToggle;
             var maxAltitudeField = Fields["maxAltitude"];
@@ -1379,9 +1380,9 @@ namespace BDArmory.Control
             field.onFieldChanged = OnExtendAngleA2AChanged;
             field = (UI_FloatRange)Fields["extendAngleAirToAir"].uiControlFlight;
             field.onFieldChanged = OnExtendAngleA2AChanged;
-            OnExtendAngleA2AChanged(null, null);
+            OnExtendAngleA2AChanged();
         }
-        void OnExtendAngleA2AChanged(BaseField field, object obj)
+        void OnExtendAngleA2AChanged(BaseField field = null, object obj = null)
         {
             _extendAngleAirToAir = Mathf.Sin(extendAngleAirToAir * Mathf.Deg2Rad);
         }
@@ -1392,9 +1393,9 @@ namespace BDArmory.Control
             field.onFieldChanged = OnTerrainAvoidanceCriticalAngleChanged;
             field = (UI_FloatRange)Fields["terrainAvoidanceCriticalAngle"].uiControlFlight;
             field.onFieldChanged = OnTerrainAvoidanceCriticalAngleChanged;
-            OnTerrainAvoidanceCriticalAngleChanged(null, null);
+            OnTerrainAvoidanceCriticalAngleChanged();
         }
-        public void OnTerrainAvoidanceCriticalAngleChanged(BaseField field, object obj)
+        public void OnTerrainAvoidanceCriticalAngleChanged(BaseField field = null, object obj = null)
         {
             terrainAvoidanceCriticalCosAngle = Mathf.Cos(terrainAvoidanceCriticalAngle * Mathf.Deg2Rad);
         }
@@ -1403,9 +1404,9 @@ namespace BDArmory.Control
         {
             var field = (UI_FloatRange)Fields["ImmelmannTurnAngle"].uiControlFlight;
             field.onFieldChanged = OnImmelmannTurnAngleChanged;
-            OnImmelmannTurnAngleChanged(null, null);
+            OnImmelmannTurnAngleChanged();
         }
-        public void OnImmelmannTurnAngleChanged(BaseField field, object obj)
+        public void OnImmelmannTurnAngleChanged(BaseField field = null, object obj = null)
         {
             ImmelmannTurnCosAngle = -Mathf.Cos(ImmelmannTurnAngle * Mathf.Deg2Rad);
         }
@@ -1414,9 +1415,9 @@ namespace BDArmory.Control
         {
             var field = (UI_FloatRange)Fields["brakingPriority"].uiControlFlight;
             field.onFieldChanged = OnBrakingPriorityChanged;
-            OnBrakingPriorityChanged(null, null);
+            OnBrakingPriorityChanged();
         }
-        public void OnBrakingPriorityChanged(BaseField field, object obj)
+        public void OnBrakingPriorityChanged(BaseField field = null, object obj = null)
         {
             speedController.brakingPriority = brakingPriority / 100f;
         }
@@ -1425,22 +1426,20 @@ namespace BDArmory.Control
         {
             UI_FloatRange field = (UI_FloatRange)Fields["maxSpeed"].uiControlFlight;
             field.onFieldChanged = OnMaxSpeedChanged;
-            OnMaxSpeedChanged(null, null);
+            OnMaxSpeedChanged();
         }
-        public void OnMaxSpeedChanged(BaseField field, object obj)
+        public void OnMaxSpeedChanged(BaseField field = null, object obj = null)
         {
             BankedTurnDistance = Mathf.Clamp(8f * maxSpeed, 1000f, 4000f);
         }
 
         public void SetOnAutoTuningRecenteringDistanceChanged()
         {
-            UI_FloatRange field = (UI_FloatRange)Fields["autoTuningRecenteringDistance"].uiControlEditor;
+            UI_FloatRange field = (UI_FloatRange)(HighLogic.LoadedSceneIsFlight ? Fields["autoTuningRecenteringDistance"].uiControlFlight : Fields["autoTuningRecenteringDistance"].uiControlEditor);
             field.onFieldChanged = OnAutoTuningRecenteringDistanceChanged;
-            field = (UI_FloatRange)Fields["autoTuningRecenteringDistance"].uiControlFlight;
-            field.onFieldChanged = OnAutoTuningRecenteringDistanceChanged;
-            OnAutoTuningRecenteringDistanceChanged(null, null);
+            OnAutoTuningRecenteringDistanceChanged();
         }
-        public void OnAutoTuningRecenteringDistanceChanged(BaseField field, object ob)
+        public void OnAutoTuningRecenteringDistanceChanged(BaseField field = null, object ob = null)
         {
             autoTuningRecenteringDistanceSqr = autoTuningRecenteringDistance * autoTuningRecenteringDistance * 1e6f;
         }
@@ -1457,11 +1456,9 @@ namespace BDArmory.Control
 
         protected void SetupSliderResolution()
         {
-            var sliderResolutionField = (UI_ChooseOption)Fields["sliderResolution"].uiControlEditor;
+            var sliderResolutionField = (UI_ChooseOption)(HighLogic.LoadedSceneIsFlight ? Fields["sliderResolution"].uiControlFlight : Fields["sliderResolution"].uiControlEditor);
             sliderResolutionField.onFieldChanged = OnSliderResolutionUpdated;
-            sliderResolutionField = (UI_ChooseOption)Fields["sliderResolution"].uiControlFlight;
-            sliderResolutionField.onFieldChanged = OnSliderResolutionUpdated;
-            OnSliderResolutionUpdated(null, null);
+            OnSliderResolutionUpdated();
         }
         public float sliderResolutionAsFloat(string res, float factor = 10f)
         {
@@ -1473,7 +1470,7 @@ namespace BDArmory.Control
                 default: return 1f;
             }
         }
-        void OnSliderResolutionUpdated(BaseField field, object obj)
+        void OnSliderResolutionUpdated(BaseField field = null, object obj = null)
         {
             if (previousSliderResolution != sliderResolution)
             {
@@ -1487,7 +1484,7 @@ namespace BDArmory.Control
                         if (uiControl.GetType() == typeof(UI_FloatRange))
                         {
                             var slider = (UI_FloatRange)uiControl;
-                            var alsoMinValue = (slider.minValue == slider.stepIncrement);
+                            var alsoMinValue = slider.minValue == slider.stepIncrement;
                             slider.stepIncrement *= factor;
                             slider.stepIncrement = BDAMath.RoundToUnit(slider.stepIncrement, slider.stepIncrement);
                             if (alsoMinValue) slider.minValue = slider.stepIncrement;
@@ -1499,7 +1496,7 @@ namespace BDArmory.Control
                         if (uiControl.GetType() == typeof(UI_FloatRange))
                         {
                             var slider = (UI_FloatRange)uiControl;
-                            var alsoMinValue = (slider.minValue == slider.stepIncrement);
+                            var alsoMinValue = slider.minValue == slider.stepIncrement;
                             slider.stepIncrement *= factor;
                             slider.stepIncrement = BDAMath.RoundToUnit(slider.stepIncrement, slider.stepIncrement);
                             if (alsoMinValue) slider.minValue = slider.stepIncrement;
@@ -1558,7 +1555,7 @@ namespace BDArmory.Control
             }
             SetAutoTuneFields();
         }
-        public void OnAutoTuneChanged(BaseField field, object obj)
+        public void OnAutoTuneChanged(BaseField field = null, object obj = null)
         {
             if (HighLogic.LoadedSceneIsEditor) SetAutoTuneFields();
             if (!HighLogic.LoadedSceneIsFlight) return;
@@ -1606,12 +1603,19 @@ namespace BDArmory.Control
             }
             dirtyPAW_PID = true;
         }
-        void OnAutoTuneOptionsChanged(BaseField field, object obj)
+        void OnAutoTuneOptionsChanged(BaseField field = null, object obj = null)
         {
-            if (pidAutoTuning is null) return;
+            if (!AutoTune || pidAutoTuning is null) return;
             pidAutoTuning.RevertPIDValues();
             pidAutoTuning.ResetMeasurements();
             pidAutoTuning.ResetGradient();
+        }
+
+        void SetOnUpToElevenChanged()
+        {
+            var field = (UI_Toggle)(HighLogic.LoadedSceneIsFlight ? Fields["UpToEleven"].uiControlFlight : Fields["UpToEleven"].uiControlEditor);
+            field.onFieldChanged = TurnItUpToEleven;
+            if (UpToEleven) TurnItUpToEleven(); // The initially loaded values are not the UpToEleven values.
         }
 
         bool fixFieldOrderingRunning = false;
@@ -1732,13 +1736,14 @@ namespace BDArmory.Control
             dynamicDamping = dynamicSteerDamping;
             CustomDynamicAxisField = CustomDynamicAxisFields;
             ToggleDynamicDampingFields();
-            ToggleMaxAltitude();
+            SetOnMaxAltitudeChanged();
             SetOnExtendAngleA2AChanged();
             SetOnTerrainAvoidanceCriticalAngleChanged();
             SetOnImmelmannTurnAngleChanged();
             SetOnMaxSpeedChanged();
             SetOnAutoTuningRecenteringDistanceChanged();
             SetupAutoTuneSliders();
+            SetOnUpToElevenChanged();
             if ((HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor) && storedSettings != null && storedSettings.ContainsKey(HighLogic.LoadedSceneIsFlight ? vessel.GetName() : EditorLogic.fetch.ship.shipName))
             {
                 Events["RestoreSettings"].active = true;
@@ -1804,12 +1809,6 @@ namespace BDArmory.Control
             }
             else { if (lr != null) { lr.enabled = false; } }
 
-            // switch up the alt values if up to eleven is toggled
-            if (UpToEleven != toEleven)
-            {
-                TurnItUpToEleven(UpToEleven);
-            }
-
             //hide dynamic steer damping fields if dynamic damping isn't toggled
             if (dynamicSteerDamping != dynamicDamping)
             {
@@ -1834,7 +1833,7 @@ namespace BDArmory.Control
 
         IEnumerator SetVar(string name, float value)
         {
-            yield return new WaitForFixedUpdate();
+            yield return null;
             typeof(BDModulePilotAI).GetField(name).SetValue(this, value);
         }
 
@@ -2509,7 +2508,7 @@ namespace BDArmory.Control
                 isPSM = false;
             }
             Vector3 targetDirection = (targetPosition - vesselTransform.position).normalized;
-            if (autoTune && (Vector3.Dot(targetDirection, vesselTransform.up) > 0.9397f)) // <20°
+            if (AutoTune && (Vector3.Dot(targetDirection, vesselTransform.up) > 0.9397f)) // <20°
             {
                 steerMode = SteerModes.Aiming; // Pretend to aim when on target.
             }
@@ -2762,7 +2761,7 @@ namespace BDArmory.Control
                 Mathf.Clamp(steerYaw, -finalMaxSteer, finalMaxSteer), // yaw
                 Mathf.Clamp(steerRoll, -userSteerLimit, userSteerLimit)); // roll
 
-            if (autoTune)
+            if (AutoTune)
             { pidAutoTuning.Update(pitchError, rollError, yawError); }
 
             if (BDArmorySettings.DEBUG_TELEMETRY || BDArmorySettings.DEBUG_AI)
@@ -4420,7 +4419,7 @@ namespace BDArmory.Control
             }
             else if (command == PilotCommands.FlyTo)
             {
-                if (autoTune) // Actually fly to the specified point.
+                if (AutoTune) // Actually fly to the specified point.
                 {
                     SetStatus("AutoTuning");
                     AdjustThrottle(autoTuningSpeed, true);

@@ -70,6 +70,7 @@ namespace BDArmory.GameModes
             }
             mutatorName = name;
             mutators = BDAcTools.ParseNames(name);
+            var mf = VesselModuleRegistry.GetMissileFire(vessel);
             for (int r = 0; r < (HOS ? mutators.Count : BDArmorySettings.MUTATOR_APPLY_NUM); r++)
             {
                 name = MutatorInfo.mutators[mutators[r]].name;
@@ -82,6 +83,9 @@ namespace BDArmory.GameModes
                         while (weapon.MoveNext())
                         {
                             if (weapon.Current == null) continue;
+                            weapon.Current.shortName = mutatorInfo.name;
+                            weapon.Current.WeaponDisplayName = weapon.Current.shortName;
+                            if (vessel.isActiveVessel && mf && (IBDWeapon)weapon.Current == mf.selectedWeapon) mf.selectedWeaponString = mutatorInfo.name;
                             if (mutatorInfo.weaponType != "def")
                             {
                                 weapon.Current.ParseWeaponType(mutatorInfo.weaponType);
@@ -222,10 +226,14 @@ namespace BDArmory.GameModes
             if (!mutatorEnabled) return;
             mutatorEnabled = false;
             if (BDArmorySettings.DEBUG_OTHER) Debug.Log("[BDArmory.BDAMutator]: Disabling " + mutatorInfo.name + "Mutator on " + part.vessel.vesselName);
+            var mf = VesselModuleRegistry.GetMissileFire(vessel);
             using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                 while (weapon.MoveNext())
                 {
                     if (weapon.Current == null) continue;
+                    weapon.Current.shortName = weapon.Current.OriginalShortName;
+                    weapon.Current.WeaponDisplayName = weapon.Current.shortName;
+                    if (vessel.isActiveVessel && mf && (IBDWeapon)weapon.Current == mf.selectedWeapon) mf.selectedWeaponString = weapon.Current.GetShortName();
                     weapon.Current.ParseWeaponType(weapon.Current.weaponType);
                     if (!string.IsNullOrEmpty(weapon.Current.ammoBelt) && weapon.Current.ammoBelt != "def")
                     {

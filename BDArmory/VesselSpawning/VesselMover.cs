@@ -47,6 +47,14 @@ namespace BDArmory.VesselSpawning
             ready = false;
             StartCoroutine(WaitForBdaSettings());
             ConfigureStyles();
+            SetUpMoveIndicator();
+            GameEvents.onVesselChange.Add(OnVesselChanged);
+
+            if (BDArmorySettings.VM_TOOLBAR_BUTTON) AddToolbarButton();
+        }
+
+        void SetUpMoveIndicator()
+        {
             moveIndicator = new GameObject().AddComponent<LineRenderer>();
             moveIndicator.material = new Material(Shader.Find("KSP/Emissive/Diffuse"));
             moveIndicator.material.SetColor("_EmissiveColor", Color.green);
@@ -54,9 +62,6 @@ namespace BDArmory.VesselSpawning
             moveIndicator.endWidth = 0.15f;
             moveIndicator.enabled = false;
             moveIndicator.positionCount = circleRes + 3;
-            GameEvents.onVesselChange.Add(OnVesselChanged);
-
-            if (BDArmorySettings.VM_TOOLBAR_BUTTON) AddToolbarButton();
         }
 
         private IEnumerator WaitForBdaSettings()
@@ -746,23 +751,10 @@ namespace BDArmory.VesselSpawning
         IEnumerator GetSpawnPoint()
         {
             messageState = Messages.ChoosingSpawnPoint;
-            // Use the same indicator as the original VesselMover for familiarity.
-            GameObject indicatorObject = new GameObject();
-            LineRenderer lr = indicatorObject.AddComponent<LineRenderer>();
-            lr.material = new Material(Shader.Find("KSP/Particles/Alpha Blended"));
-            lr.material.SetColor("_TintColor", Color.green);
-            lr.material.mainTexture = Texture2D.whiteTexture;
-            lr.useWorldSpace = false;
-
-            Vector3[] positions = new Vector3[] { Vector3.zero, 10 * Vector3.forward };
-            lr.SetPositions(positions);
-            lr.positionCount = positions.Length;
-            lr.startWidth = 0.1f;
-            lr.endWidth = 1f;
+            GameObject indicatorObject = SetUpSpawnPointIndicator();
 
             Vector3 mouseAim, point;
             Ray ray;
-            bool altitudeCorrection = false;
             var currentMainBody = FlightGlobals.currentMainBody;
             while (BDArmorySetup.showVesselMoverGUI)
             {
@@ -774,6 +766,7 @@ namespace BDArmory.VesselSpawning
 
                 mouseAim = new Vector3(Input.mousePosition.x / Screen.width, Input.mousePosition.y / Screen.height, 0);
                 ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(mouseAim);
+                bool altitudeCorrection;
                 if (Physics.Raycast(ray, out RaycastHit hit, (ray.origin - currentMainBody.transform.position).magnitude, (int)(LayerMasks.Scenery | LayerMasks.Parts | LayerMasks.Wheels | LayerMasks.EVA)))
                 {
                     point = hit.point;
@@ -802,6 +795,25 @@ namespace BDArmory.VesselSpawning
                 yield return null;
             }
             Destroy(indicatorObject);
+        }
+        
+        GameObject SetUpSpawnPointIndicator()
+        {
+            // Use the same indicator as the original VesselMover for familiarity.
+            GameObject indicatorObject = new();
+            LineRenderer lr = indicatorObject.AddComponent<LineRenderer>();
+            lr.material = new Material(Shader.Find("KSP/Particles/Alpha Blended"));
+            lr.material.SetColor("_TintColor", Color.green);
+            lr.material.mainTexture = Texture2D.whiteTexture;
+            lr.useWorldSpace = false;
+
+            Vector3[] positions = [Vector3.zero, 10 * Vector3.forward];
+            lr.SetPositions(positions);
+            lr.positionCount = positions.Length;
+            lr.startWidth = 0.1f;
+            lr.endWidth = 1f;
+
+            return indicatorObject;
         }
 
         bool SphereRayIntersect(Ray ray, Vector3 sphereCenter, float sphereRadius, out float distance)

@@ -45,6 +45,9 @@
 - Improve Immelmann angle / target behind logic.
 - Reset things that the RWP slider changes when switching away from the rounds.
 	- RWP really shouldn't be setting the sliders, but should instead provide overrides for when accessing those values.
+	- RWP shadow settings
+- Meteor Cannon: Summons a class A asteroid just in front of the vessel, then accelerates it to 1000m/s (massive recoil of 1% of acceleration needed to get asteroid up to speed)
+	- Meteor Cannon class has its own selection of meteors that it randomly selects from when instantiating it. Generate at start and replenish as necessary.
 - Add tooltips to settings.
 - Add thumbnails to the craft browser.
 - Fix the piñata spawning logic - spawn the piñata(s) separately after circular spawning has occured.
@@ -72,8 +75,6 @@
 
 
 ### Ideas (more general things / lower priority)
-- Meteor Cannon: Summons an asteroid just in front of the vessel, then accelerates it to ~1000m/s (10x force pushing asteroid, 1x force pushing back on vessel)
-	- Meteor Cannon class has its own selection of meteors that it randomly selects from when instantiating it. Generate at start and replenish as necessary.
 - Add a PID_NeuralCoprocessor — A small FC neural network with configurable depth to modify the PID by ±pid (separate scale per channel) that learns when enabled
 - AutoPilot:
 	- On takeoff, look diagonally down and turn if the terrain normal is too steep.
