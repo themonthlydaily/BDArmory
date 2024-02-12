@@ -407,7 +407,7 @@ namespace BDArmory.Competition
             if (BDArmorySettings.ASTEROID_RAIN) { AsteroidRain.Instance.Reset(); RemoveDebrisNow(); }
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41) BDArmorySettings.FIRE_RATE_OVERRIDE = BDArmorySettings.FIRE_RATE_OVERRIDE_CENTER;
             finalGracePeriodStart = -1;
-            competitiveTeamsAliveLimit = (BDArmorySettings.WAYPOINTS_MODE || (BDArmorySettings.RUNWAY_PROJECT && (BDArmorySettings.RUNWAY_PROJECT_ROUND == 50 || BDArmorySettings.RUNWAY_PROJECT_ROUND == 55))) ? 1 : 2;
+            competitiveTeamsAliveLimit = BDArmorySettings.WAYPOINTS_MODE ? 1 : 2;
             altitudeLimitGracePeriod = BDArmorySettings.COMPETITION_INITIAL_GRACE_PERIOD;
             competitionPreStartTime = Planetarium.GetUniversalTime();
             competitionStartTime = competitionIsActive ? Planetarium.GetUniversalTime() : -1;
@@ -2885,7 +2885,7 @@ namespace BDArmory.Competition
                         competitionStatus.Add(statusMessage);
                         if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode:{CompetitionID}]: " + statusMessage);
 
-                        if ((BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_KILL) || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61))
+                        if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_KILL)
                         {
                             if (BDArmorySettings.MUTATOR_LIST.Count > 0 && canAssignMutator) ApplyOnKillMutator(player);
                             else Debug.Log($"[BDArmory.BDACompetitionMode]: Mutator mode, but no assigned mutators! Can't apply mutator on Kill!");
@@ -2968,7 +2968,7 @@ namespace BDArmory.Competition
                     }
                     Scores.RegisterDeath(vesselName, GMKillReason.LandedTooLong);
                     competitionStatus.Add(vesselName + " was landed too long.");
-                    if ((BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_KILL && BDArmorySettings.MUTATOR_LIST.Count > 0) || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61))
+                    if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_KILL && BDArmorySettings.MUTATOR_LIST.Count > 0)
                         ApplyOnKillMutator(vesselName); // Apply mutators for LandedTooLong kills, which count as assists.
                 }
                 if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + vesselName + ":REMOVED:" + killerName);
