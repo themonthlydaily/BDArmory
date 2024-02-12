@@ -520,7 +520,7 @@ namespace BDArmory.UI
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61) // Set this up in case the settings window doesn't get opened.
             {
                 MutatorInfo.SetupGunGame();
-                BDArmorySettings.MUTATOR_LIST = ["Brownings", "Chainguns", "Vulcans", "Mausers", "GAU-22s", "N-37s", "AT Guns", "Railguns", "GAU-8s"]; //generally weaker to stronger
+                BDArmorySettings.MUTATOR_LIST = ["Brownings", "Chainguns", "Vulcans", "Mausers", "GAU-22s", "N-37s", "AT Guns", "Railguns", "GAU-8s", "Rockets"]; //generally weaker to stronger
             }
             compDistGui = BDArmorySettings.COMPETITION_DISTANCE.ToString();
             compIntraTeamSeparationBase = BDArmorySettings.COMPETITION_INTRA_TEAM_SEPARATION_BASE.ToString();
@@ -3453,7 +3453,7 @@ namespace BDArmory.UI
                             if (!MutatorInfo.gunGameConfigured)
                             {
                                 MutatorInfo.SetupGunGame();
-                                BDArmorySettings.MUTATOR_LIST = ["Brownings", "Chainguns", "Vulcans", "Mausers", "GAU-22s", "N-37s", "AT Guns", "Railguns", "GAU-8s"]; //generally weaker to stronger
+                                BDArmorySettings.MUTATOR_LIST = ["Brownings", "Chainguns", "Vulcans", "Mausers", "GAU-22s", "N-37s", "AT Guns", "Railguns", "GAU-8s", "Rockets"]; //generally weaker to stronger
                             }
 
                             BDArmorySettings.GG_PERSISTANT_PROGRESSION = GUI.Toggle(SLeftRect(++line), BDArmorySettings.GG_PERSISTANT_PROGRESSION, StringUtils.Localize("Keep progresson on respawn"));
