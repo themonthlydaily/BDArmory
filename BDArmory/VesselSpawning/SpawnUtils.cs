@@ -841,23 +841,24 @@ namespace BDArmory.VesselSpawning
                 }
                 if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61) //gungame
                 {
-                    if (BDArmorySettings.DEBUG_SPAWNING) Debug.Log($"[BDArmory.SpawnUtils]: Applying mutator {BDArmorySettings.MUTATOR_LIST[MM.progressionIndex]} to {vessel.vesselName}");
+					if (MM.progressionIndex > BDArmorySettings.MUTATOR_LIST.Count - 1) return; // Already at the end of the list.
+                    Debug.Log($"[BDArmory.SpawnUtils]: Applying mutator {BDArmorySettings.MUTATOR_LIST[MM.progressionIndex]} to {vessel.vesselName}");
                     if (BDArmorySettings.GG_PERSISTANT_PROGRESSION)
                     {
                         int index = BDACompetitionMode.Instance.Scores.ScoreData[vessel.vesselName].gunGameProgress;
                         if (index > BDArmorySettings.MUTATOR_LIST.Count - 1)
                         {
                             if (BDArmorySettings.GG_CYCLE_LIST) index %= BDArmorySettings.MUTATOR_LIST.Count;
-                            else index = BDArmorySettings.MUTATOR_LIST.Count - 1;
+                            else return; // Already at the end of the list.
                         }
                         MM.EnableMutator(BDArmorySettings.MUTATOR_LIST[index]); //increment to next mutator on list
                     }
                     else MM.EnableMutator(BDArmorySettings.MUTATOR_LIST[MM.progressionIndex]); //increment to next mutator on list
                         MM.progressionIndex++;
-                    if (MM.progressionIndex > BDArmorySettings.MUTATOR_LIST.Count - 1) //MM.progressionIndex = BDArmorySettings.MUTATOR_LIST.Count - 1; //= 0 and have mutator list cycle instead??
+                    if (MM.progressionIndex > BDArmorySettings.MUTATOR_LIST.Count - 1)
                     {
                         if (BDArmorySettings.GG_CYCLE_LIST) MM.progressionIndex = 0;
-                        else MM.progressionIndex = BDArmorySettings.MUTATOR_LIST.Count - 1;
+                        //else MM.progressionIndex = BDArmorySettings.MUTATOR_LIST.Count - 1;
                     }
                 }
                 else

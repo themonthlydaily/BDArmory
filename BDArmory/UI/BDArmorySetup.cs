@@ -522,8 +522,6 @@ namespace BDArmory.UI
                 MutatorInfo.SetupGunGame();
                 BDArmorySettings.MUTATOR_LIST = ["Brownings", "Chainguns", "Vulcans", "Mausers", "GAU-22s", "N-37s", "AT Guns", "Railguns", "GAU-8s", "Rockets"]; //generally weaker to stronger
             }
-
-
             compDistGui = BDArmorySettings.COMPETITION_DISTANCE.ToString();
             compIntraTeamSeparationBase = BDArmorySettings.COMPETITION_INTRA_TEAM_SEPARATION_BASE.ToString();
             compIntraTeamSeparationPerMember = BDArmorySettings.COMPETITION_INTRA_TEAM_SEPARATION_PER_MEMBER.ToString();

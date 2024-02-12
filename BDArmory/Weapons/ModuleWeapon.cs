@@ -2645,8 +2645,8 @@ namespace BDArmory.Weapons
                                 }
                                 var aName = vesselname;
                                 var tName = p.vessel.GetName();
-                                damage = Mathf.Abs(damage);
-                                if (BDACompetitionMode.Instance.Scores.RegisterBulletDamage(aName, tName, damage))
+
+                                if (BDACompetitionMode.Instance.Scores.RegisterBulletDamage(aName, tName, Mathf.Abs(damage)))
                                 {
                                     if (pulseLaser || (!pulseLaser && ScoreAccumulator > beamScoreTime)) // Score hits with pulse lasers or when the score accumulator is sufficient.
                                     {

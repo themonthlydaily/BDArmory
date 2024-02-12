@@ -99,6 +99,7 @@ namespace BDArmory.Competition
 
         AudioSource audioSource;
         List<AudioClip> announcerBarks;
+
         #endregion
 
         #region GUI elements
@@ -2930,6 +2931,7 @@ namespace BDArmory.Competition
                             Scores.ScoreData[Scores.ScoreData[player].lastPersonWhoDamagedMe].gunGameProgress++;
                             Scores.ScoreData[Scores.ScoreData[player].lastPersonWhoDamagedMe].killsThisLife++;
                         }
+
                         if ((BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_KILL) || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61))
                         {
                             if (BDArmorySettings.MUTATOR_LIST.Count > 0 && canAssignMutator) ApplyOnKillMutator(player);
