@@ -2337,8 +2337,8 @@ namespace BDArmory.Control
                                 if (curVesselMaxAccel > 0)
                                 {
                                     float timeToTurn = (float)vessel.srfSpeed * angleToTarget * Mathf.Deg2Rad / curVesselMaxAccel;
-                                    target += v.Velocity() * timeToTurn;
-                                    target += 0.5f * v.acceleration * timeToTurn * timeToTurn;
+                                    target += timeToTurn * v.Velocity();
+                                    target += 0.5f * timeToTurn * timeToTurn * v.acceleration;
                                 }
                             }
                         }
@@ -4189,23 +4189,18 @@ namespace BDArmory.Control
             float targetDistance = (targetPosition - vesselTransform.position).magnitude;
 
             float vertFactor = 0;
-            vertFactor += ((float)vessel.srfSpeed / minSpeed - 2f) * 0.3f;          //speeds greater than 2x minSpeed encourage going upwards; below encourages downwards
-            vertFactor += (targetDistance / 1000f - 1f) * 0.3f;    //distances greater than 1000m encourage going upwards; closer encourages going downwards
-            vertFactor -= Mathf.Clamp01(Vector3.Dot(vesselTransform.position - targetPosition, upDirection) / 1600f - 1f) * 0.5f;       //being higher than 1600m above a target encourages going downwards
+            vertFactor += ((float)vessel.srfSpeed / minSpeed - 2f) * 0.3f; //speeds greater than 2x minSpeed encourage going upwards; below encourages downwards
+            vertFactor += (targetDistance / 1000f - 1f) * 0.3f; //distances greater than 1000m encourage going upwards; closer encourages going downwards
+            vertFactor -= Mathf.Clamp01(Vector3.Dot(vesselTransform.position - targetPosition, upDirection) / 1600f - 1f) * 0.5f; //being higher than 1600m above a target encourages going downwards
             if (targetVessel)
-                vertFactor += Vector3.Dot(targetVessel.Velocity() / targetVessel.srfSpeed, (targetVessel.ReferenceTransform.position - vesselTransform.position).normalized) * 0.3f;   //the target moving away from us encourages upward motion, moving towards us encourages downward motion
+                vertFactor += Vector3.Dot(targetVessel.Velocity() / targetVessel.srfSpeed, (targetVessel.ReferenceTransform.position - vesselTransform.position).normalized) * 0.3f; //the target moving away from us encourages upward motion, moving towards us encourages downward motion
             else
                 vertFactor += 0.4f;
-            vertFactor -= (weaponManager != null && weaponManager.underFire) ? 0.5f : 0;   //being under fire encourages going downwards as well, to gain energy
+            vertFactor -= (weaponManager != null && weaponManager.underFire) ? 0.5f : 0; //being under fire encourages going downwards as well, to gain energy
 
             float alt = (float)vessel.radarAltitude;
-
-            if (vertFactor > 2)
-                vertFactor = 2;
-            if (vertFactor < -2)
-                vertFactor = -2;
-
-            vertFactor += 0.15f * Mathf.Sin((float)vessel.missionTime * 0.25f);     //some randomness in there
+            vertFactor = Mathf.Clamp(vertFactor, -2, 2);
+            vertFactor += 0.15f * Mathf.Sin((float)vessel.missionTime * 0.25f); //some randomness in there
 
             Vector3 projectedDirection = forwardDirection.ProjectOnPlanePreNormalized(upDirection);
             Vector3 projectedTargetDirection = targetDirection.ProjectOnPlanePreNormalized(upDirection);
@@ -4235,7 +4230,7 @@ namespace BDArmory.Control
                 if (vertFactor < 0)
                     distance = Math.Min(distance, Math.Abs((alt - minAlt) / vertFactor));
 
-                targetPosition += upDirection * Math.Min(distance, 1000) * vertFactor * Mathf.Clamp01(0.7f - Math.Abs(Vector3.Dot(projectedTargetDirection, projectedDirection)));
+                targetPosition += upDirection * Math.Min(distance, 1000) * Mathf.Clamp(vertFactor * Mathf.Clamp01(0.7f - Math.Abs(Vector3.Dot(projectedTargetDirection, projectedDirection))), -0.5f, 0.5f);
                 if (maxAltitudeEnabled)
                 {
                     var targetRadarAlt = BDArmorySettings.COMPETITION_ALTITUDE__LIMIT_ASL ? FlightGlobals.getAltitudeAtPos(targetPosition) : BodyUtils.GetRadarAltitudeAtPos(targetPosition);
