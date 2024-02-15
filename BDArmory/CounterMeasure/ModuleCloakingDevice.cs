@@ -39,8 +39,6 @@ namespace BDArmory.CounterMeasure
 
         bool disabling = false;
 
-        float cloakTimer = 0;
-
         float cooldownTimer = 0;
 
         private BDStagingAreaGauge gauge;
@@ -106,7 +104,7 @@ namespace BDArmory.CounterMeasure
         {
             GameEvents.onVesselCreate.Remove(OnVesselCreate);
             cloakEnabled = false;
-            if (opticalReductionFactor < 1) vesselCloak.UpdateVisuals(CloakTime, true);
+            if (opticalReductionFactor < 1) vesselCloak.cloakVisuals = StartCoroutine(vesselCloak.UpdateVisuals(CloakTime, true));
         }
 
         void OnVesselCreate(Vessel v)
@@ -122,8 +120,9 @@ namespace BDArmory.CounterMeasure
             EnsureVesselCloak();
 
             StopCloakDecloakRoutines();
-            if (opticalReductionFactor < 1) vesselCloak.UpdateVisuals(CloakTime, false);
-            cloakTimer = 0;
+            if (opticalReductionFactor < 1)
+                vesselCloak.cloakVisuals = StartCoroutine(vesselCloak.UpdateVisuals(CloakTime, false));
+            vesselCloak.cloakTimer = 0;
             cloakRoutine = StartCoroutine(CloakRoutine());
         }
 
@@ -136,8 +135,9 @@ namespace BDArmory.CounterMeasure
             cloakEnabled = false;
 
             StopCloakDecloakRoutines();
-            if (opticalReductionFactor < 1) vesselCloak.UpdateVisuals(CloakTime, true);
-            cloakTimer = CloakTime;
+            if (opticalReductionFactor < 1)
+                vesselCloak.cloakVisuals = StartCoroutine(vesselCloak.UpdateVisuals(CloakTime, true));
+            vesselCloak.cloakTimer = CloakTime;
             decloakRoutine = StartCoroutine(DecloakRoutine());
         }
 
@@ -146,12 +146,22 @@ namespace BDArmory.CounterMeasure
             if (decloakRoutine != null)
             {
                 StopCoroutine(DecloakRoutine());
+                if (vesselCloak.cloakVisuals != null)
+                {
+                    StopCoroutine(vesselCloak.cloakVisuals);
+                    vesselCloak.cloakVisuals = null;
+                }
                 decloakRoutine = null;
             }
 
             if (cloakRoutine != null)
             {
                 StopCoroutine(CloakRoutine());
+                if (vesselCloak.cloakVisuals != null)
+                {
+                    StopCoroutine(vesselCloak.cloakVisuals);
+                    vesselCloak.cloakVisuals = null;
+                }
                 cloakRoutine = null;
             }
         }
@@ -207,7 +217,7 @@ namespace BDArmory.CounterMeasure
         {
             var wait = new WaitForFixedUpdate();
             enabling = true;
-            while (cloakTimer < CloakTime)
+            while (vesselCloak.cloakTimer < CloakTime)
             {
                 yield return wait;
             }
@@ -219,7 +229,7 @@ namespace BDArmory.CounterMeasure
         {
             var wait = new WaitForFixedUpdate();
             disabling = true;
-            while (cloakTimer > 0)
+            while (vesselCloak.cloakTimer > 0)
             {
                 yield return wait;
             }

@@ -7,6 +7,7 @@ using BDArmory.Utils;
 using BDArmory.Damage;
 using BDArmory.Settings;
 using System;
+using BDArmory.UI;
 
 namespace BDArmory.CounterMeasure
 {
@@ -17,6 +18,10 @@ namespace BDArmory.CounterMeasure
 
         bool cEnabled;
         Shader cloakShader;
+
+        public Coroutine cloakVisuals;
+        public float cloakTimer = -1;
+        bool decloaking;
 
         public bool cloakEnabled
         {
@@ -50,6 +55,7 @@ namespace BDArmory.CounterMeasure
             GameEvents.onPartJointBreak.Add(OnPartJointBreak);
             GameEvents.onPartDie.Add(OnPartDie);
             cloakShader = Shader.Find("KSP/Alpha/Unlit Transparent");
+            Debug.Log("[BDArmory.VesselCloakInfo]: VesselCloakInfo set up");
         }
 
         void OnDestroy()
@@ -173,7 +179,10 @@ namespace BDArmory.CounterMeasure
         }
         public IEnumerator UpdateVisuals(float CloakTime, bool deactivateCloak)
         {
+            decloaking = deactivateCloak;
             yield return new WaitForFixedUpdate();
+            Debug.Log($"[BDArmory.VesselCloakInfo]: VesselCloakInfo modifying visibility, decloaking: {deactivateCloak}");
+
             if (!deactivateCloak)
             {
                 using (List<Part>.Enumerator parts = vessel.parts.GetEnumerator())
@@ -201,9 +210,7 @@ namespace BDArmory.CounterMeasure
                             {
                                 if (!a.defaultShader.ContainsKey(r[i].material.GetInstanceID())) continue; // Don't modify shaders that we don't have defaults for as we can't then replace them.
                                 if (r[i].GetComponentInParent<Part>() != parts.Current) continue; // Don't recurse to child parts.
-                                if (r[i].material.shader.name.Contains("Alpha")) continue;
                                 if (r[i].material.shader.name.Contains("Waterfall")) continue;
-                                if (r[i].material.shader.name.Contains("KSP/Particles")) continue;
                                 r[i].material.shader = cloakShader;
                             }
                         }
@@ -263,9 +270,9 @@ namespace BDArmory.CounterMeasure
                         }
                     }
             }
-            float cloakTimer = deactivateCloak? CloakTime: 0; 
             while (deactivateCloak ? cloakTimer > 0 : cloakTimer < CloakTime)
             {
+                Debug.Log($"[BDArmory.VesselCloakInfo]: VesselCloakInfo cloakTimer: {cloakTimer}");
                 using (var Part = vessel.Parts.GetEnumerator())
                     while (Part.MoveNext())
                     {
@@ -279,7 +286,18 @@ namespace BDArmory.CounterMeasure
                             r[i].material.SetFloat("_Opacity", Mathf.Lerp(1, opticalReductionFactor, (cloakTimer / CloakTime)));
                         }
                     }
-                if (deactivateCloak) cloakTimer-= TimeWarp.fixedDeltaTime; else cloakTimer+= TimeWarp.fixedDeltaTime;
+            }
+            cloakTimer = -1;
+            Debug.Log($"[BDArmory.VesselCloakInfo]: Cloak Complete");
+        }
+        void FixedUpdate()
+        {
+            if (!HighLogic.LoadedSceneIsFlight) return;
+            if (BDArmorySetup.GameIsPaused) return;
+
+            if (cloakTimer != -1)
+            {
+                if (decloaking) cloakTimer -= TimeWarp.fixedDeltaTime; else cloakTimer += TimeWarp.fixedDeltaTime;
             }
         }
     }
