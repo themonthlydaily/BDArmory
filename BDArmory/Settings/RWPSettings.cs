@@ -60,7 +60,20 @@ namespace BDArmory.Settings
         {"MUTATOR_APPLY_NUM", 1},
         {"MUTATOR_ICONS", true},
         {"MUTATOR_LIST", new List<string>{ "Brownings", "Chainguns", "Vulcans", "Mausers", "GAU-22s", "N-37s", "AT Guns", "Railguns", "GAU-8s", "Rocket Arena" }},
-      }}
+      }},
+      {62, new(){ // Retrofuturistic on Eve
+        {"ASTEROID_FIELD", true},
+        {"ASTEROID_FIELD_ALTITUDE", 20},
+        {"ASTEROID_FIELD_ANOMALOUS_ATTRACTION", true},
+        {"ASTEROID_FIELD_ANOMALOUS_ATTRACTION_STRENGTH", 1},
+        {"ASTEROID_FIELD_NUMBER", 200},
+        {"ASTEROID_FIELD_RADIUS", 7},
+        {"VESSEL_SPAWN_CS_FOLLOWS_CENTROID", false},
+        {"VESSEL_SPAWN_WORLDINDEX", 5}, // Eve
+        {"VESSEL_SPAWN_GEOCOORDS", new Vector2d(33.3616, -67.2242)}, // Poison Pond
+        {"VESSEL_SPAWN_ALTITUDE", 2500},
+      }
+      }
     };
     public static Dictionary<int, int> RWPRoundToIndex = new() { { 0, 0 } }, RWPIndexToRound = new() { { 0, 0 } }; // Helpers for the UI slider.
 
@@ -96,6 +109,7 @@ namespace BDArmory.Settings
       {
         if (field.Name.EndsWith("_SETTINGS_TOGGLE")) continue; // Don't toggle the section headers.
         if (field.Name.StartsWith("RUNWAY_PROJECT")) continue; // Skip settings beginning with RWP (toggle and slider) to avoid recursion.
+        if (field.Name.StartsWith("VESSEL_SPAWN_")) continue; // Skip spawn settings so they are the same between RWP and non-RWP.
         settings.Add(field.Name, field.GetValue(null));
       }
       if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.RWPSettings]: Stored settings: " + string.Join(", ", settings.Select(kvp => $"{kvp.Key}={kvp.Value}")));
