@@ -21,6 +21,7 @@ using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.Weapons.Missiles;
 using BDArmory.WeaponMounts;
+using VehiclePhysics;
 
 namespace BDArmory.Weapons
 {
@@ -2169,6 +2170,7 @@ namespace BDArmory.Weapons
                                         }
                                         pBullet.startColor.a *= 0.5f;
                                         pBullet.projectileColor.a *= 0.5f;
+                                        pBullet.tracerLuminance = 1;
                                     }
                                     pBullet.tracerDeltaFactor = tracerDeltaFactor;
                                     pBullet.bulletDrop = bulletDrop;
@@ -2529,12 +2531,12 @@ namespace BDArmory.Weapons
                                             float EMPDamage = 0;
                                             if (!pulseLaser)
                                             {
-                                                EMPDamage = ECPerShot / 1000;
+                                                EMPDamage = ECPerShot / 500;
                                                 emp.incomingDamage += EMPDamage;
                                             }
                                             else
                                             {
-                                                EMPDamage = ECPerShot / 20;
+                                                EMPDamage = ECPerShot / 10;
                                                 emp.incomingDamage += EMPDamage;
                                             }
                                             emp.softEMP = true;
@@ -2561,7 +2563,16 @@ namespace BDArmory.Weapons
                                                     if (hitP && hitP != p && hitP.vessel && hitP.vessel != vessel)
                                                     {
                                                         //p.AddDamage(damage);
-                                                        p.AddSkinThermalFlux(damage); //add modifier to adjust damage by armor diffusivity value
+                                                        if (Physics.Raycast(new Ray(tf.position, hitP.CenterOfDisplacement), out RaycastHit h, (tf.position - laserPoint).magnitude, (int)LayerMasks.Parts))
+                                                        {
+                                                            var hitPart = h.collider.gameObject.GetComponentInParent<Part>();
+                                                            var hitEVA = h.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+                                                            if (hitEVA != null) hitPart = hitEVA.part;
+                                                            if (hitPart != null && hitPart == hitP)
+                                                            {
+                                                                p.AddSkinThermalFlux(damage); //add modifier to adjust damage by armor diffusivity value
+                                                            }
+                                                        }
                                                     }
                                                 }
                                                 if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Heatray Applying {damage} heat to target");
@@ -2596,7 +2607,7 @@ namespace BDArmory.Weapons
                                         if (HEpulses)
                                         {
                                             ExplosionFx.CreateExplosion(hit.point,
-                                                           (laserDamage / 1000),
+                                                           (laserDamage / 10000),
                                                            explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName, null, Hitpart: p);
                                         }
                                         if (Impulse != 0)

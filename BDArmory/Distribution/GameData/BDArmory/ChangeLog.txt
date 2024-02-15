@@ -1,4 +1,8 @@
-﻿v1.6.10.1
+﻿-Reduce ECPerShot cost of electrolasers
+-Heatrays now check for part occlusion
+-fix non-damaging lasers (gravity guns, etc) from not scoring in competition
+
+v1.6.10.1
 IMPROVEMENTS / FIXES
 - UI:
 	- Updated German localisation from EzBro.
