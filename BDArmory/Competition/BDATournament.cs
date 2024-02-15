@@ -1971,6 +1971,7 @@ namespace BDArmory.Competition
                 BDArmorySetup.windowBDAToolBarEnabled = true;
                 LoadedVesselSwitcher.Instance.SetVisible(true);
                 VesselSpawnerWindow.Instance.SetVisible(true);
+                RWPSettings.SetRWP(BDArmorySettings.RUNWAY_PROJECT, BDArmorySettings.RUNWAY_PROJECT_ROUND); // Reapply the RWP settings if RWP is active as some may be overridden by the above.
                 BDATournament.Instance.RunTournament();
             }
             else if (resumingContinuousSpawn)
@@ -1981,6 +1982,7 @@ namespace BDArmory.Competition
                 BDArmorySetup.windowBDAToolBarEnabled = true;
                 LoadedVesselSwitcher.Instance.SetVisible(true);
                 VesselSpawnerWindow.Instance.SetVisible(true);
+                RWPSettings.SetRWP(BDArmorySettings.RUNWAY_PROJECT, BDArmorySettings.RUNWAY_PROJECT_ROUND); // Reapply the RWP settings if RWP is active as some may be overridden by the above.
                 ContinuousSpawning.Instance.SpawnVesselsContinuously(
                     new CircularSpawnConfig( // Spawn config that would be used by clicking the continuous spawn button.
                         new SpawnConfig(
