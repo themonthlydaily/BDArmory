@@ -2169,6 +2169,7 @@ namespace BDArmory.Weapons
                                         }
                                         pBullet.startColor.a *= 0.5f;
                                         pBullet.projectileColor.a *= 0.5f;
+                                        pBullet.tracerLuminance = 1;
                                     }
                                     pBullet.tracerDeltaFactor = tracerDeltaFactor;
                                     pBullet.bulletDrop = bulletDrop;
