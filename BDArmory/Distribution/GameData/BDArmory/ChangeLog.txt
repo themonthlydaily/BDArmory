@@ -4,6 +4,8 @@
 - AI / WM:
 	- Clamp the vertical adjustment of the fly-to position to at most half the distance to the target (should fix the issue of being unable to attack targets directly below).
 	- Add a slider for biasing the Immelmann pitch direction when not close to terrain/min altitude.
+- Competition:
+	- Add "Parts lost to asteroids" to the continuous spawn tournament score logs and parser.
 - RWP:
 	- Add RWP override settings (in RWP_settings.cfg) for automatically enabling/disabling RWP options when the RWP toggle is toggled or the RWP slider is adjusted.
 		- Settings adjusted when RWP is enabled aren't saved, but can be manually added to the RWP_settings.cfg file.
