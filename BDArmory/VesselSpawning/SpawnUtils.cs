@@ -833,7 +833,7 @@ namespace BDArmory.VesselSpawning
         {
             if (vessel == null || !vessel.loaded) return;
             var MM = vessel.rootPart.FindModuleImplementing<BDAMutator>();
-            if (enable && ((BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0) || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61)))
+            if (enable && BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
             {
                 if (MM == null)
                 {
@@ -992,9 +992,9 @@ namespace BDArmory.VesselSpawning
                             if (part.Current.CrewCapacity == 0 || BDArmorySettings.RUNWAY_PROJECT_ROUND == 60)
                             {
                                 torqueQuantity += ((SAS.PitchTorque + SAS.RollTorque + SAS.YawTorque) / 3) * (SAS.authorityLimiter / 100);
-                                if (torqueQuantity > (BDArmorySettings.RUNWAY_PROJECT_ROUND == 60 ? 10 : BDArmorySettings.MAX_SAS_TORQUE))
+                                if (torqueQuantity > BDArmorySettings.MAX_SAS_TORQUE)
                                 {
-                                    float excessTorque = torqueQuantity - (BDArmorySettings.RUNWAY_PROJECT_ROUND == 60 ? 10 : BDArmorySettings.MAX_SAS_TORQUE);
+                                    float excessTorque = torqueQuantity - BDArmorySettings.MAX_SAS_TORQUE;
                                     SAS.authorityLimiter = 100 - Mathf.Clamp(((excessTorque / ((SAS.PitchTorque + SAS.RollTorque + SAS.YawTorque) / 3)) * 100), 0, 100);
                                 }
                             }
@@ -1051,13 +1051,6 @@ namespace BDArmory.VesselSpawning
                         pilotAI.maxSpeed = Mathf.Min(250, pilotAI.maxSpeed);
                         if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log("[BDArmory.BDACompetitionMOde]: Setting SpaceMode Ai settings on " + vessel.GetName());
                     }
-                }
-                if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 61)
-                {
-                    BDArmorySettings.MUTATOR_DURATION = 0;
-                    if (!BDArmorySettings.MUTATOR_MODE) // If it's enabled then it's already been applied once.
-                        SpawnUtils.ApplyMutators(vessel, true);
-
                 }
             }
         }

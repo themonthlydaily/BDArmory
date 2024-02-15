@@ -84,7 +84,7 @@ namespace BDArmory.VesselSpawning
         public void SpawnVesselsContinuously(CircularSpawnConfig spawnConfig)
         {
             PreSpawnInitialisation(spawnConfig);
-            LogMessage("[BDArmory.VesselSpawner]: Triggering continuous vessel spawning at " + spawnConfig.latitude.ToString("G6") + ", " + spawnConfig.longitude.ToString("G6") + ", with altitude " + spawnConfig.altitude + "m.", false);
+            LogMessage($"[BDArmory.VesselSpawner]: Triggering continuous vessel spawning at {spawnConfig.latitude:G6}, {spawnConfig.longitude:G6} on {FlightGlobals.Bodies[spawnConfig.worldIndex].name}, with altitude {spawnConfig.altitude:0}m.", false);
             spawnVesselsContinuouslyCoroutine = StartCoroutine(SpawnVesselsContinuouslyCoroutine(spawnConfig));
         }
 
@@ -340,6 +340,7 @@ namespace BDArmory.VesselSpawning
             public int cumulativeDamagedPartsDueToRamming = 0;
             public int cumulativeDamagedPartsDueToRockets = 0;
             public int cumulativeDamagedPartsDueToMissiles = 0;
+            public int cumulativePartsLostToAsteroids = 0;
         };
         public Dictionary<string, ContinuousSpawningScores> continuousSpawningScores;
         public void UpdateCompetitionScores(Vessel vessel, bool newSpawn = false)
@@ -359,6 +360,7 @@ namespace BDArmory.VesselSpawning
                     continuousSpawningScores[vesselName].cumulativeDamagedPartsDueToRamming = scoreData.Sum(kvp => kvp.Value.totalDamagedPartsDueToRamming);
                     continuousSpawningScores[vesselName].cumulativeDamagedPartsDueToRockets = scoreData.Sum(kvp => kvp.Value.totalDamagedPartsDueToRockets);
                     continuousSpawningScores[vesselName].cumulativeDamagedPartsDueToMissiles = scoreData.Sum(kvp => kvp.Value.totalDamagedPartsDueToMissiles);
+                    continuousSpawningScores[vesselName].cumulativePartsLostToAsteroids = scoreData.Sum(kvp => kvp.Value.partsLostToAsteroids);
                     BDACompetitionMode.Instance.Scores.RemovePlayer(vesselName);
                     BDACompetitionMode.Instance.Scores.AddPlayer(vessel);
                     BDACompetitionMode.Instance.Scores.ScoreData[vesselName].lastDamageTime = scoreData[spawnCount].lastDamageTime;
@@ -410,6 +412,10 @@ namespace BDArmory.VesselSpawning
                 #region Rams
                 var whoRammedMeScores = string.Join(", ", scoreData.Where(kvp => kvp.Value.rammingPartLossCounts.Count > 0).Select(kvp => kvp.Key + ":" + string.Join(";", kvp.Value.rammingPartLossCounts.Select(kvp2 => kvp2.Value + ":" + kvp2.Key))));
                 if (whoRammedMeScores != "") logStrings.Add("[BDArmory.VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  WHORAMMEDME:" + whoRammedMeScores);
+                #endregion
+                #region Asteroids
+                var partsLostToAsteroids = string.Join(", ", scoreData.Where(kvp => kvp.Value.partsLostToAsteroids > 0).Select(kvp => $"{kvp.Key}:{kvp.Value.partsLostToAsteroids}"));
+                if (!string.IsNullOrEmpty(partsLostToAsteroids)) logStrings.Add($"[BDArmory.VesselSpawner:{BDACompetitionMode.Instance.CompetitionID}]:  PARTSLOSTTOASTEROIDS: {partsLostToAsteroids}");
                 #endregion
                 #region Kills
                 var GMKills = string.Join(", ", scoreData.Where(kvp => kvp.Value.gmKillReason != GMKillReason.None).Select(kvp => kvp.Key + ":" + kvp.Value.gmKillReason));

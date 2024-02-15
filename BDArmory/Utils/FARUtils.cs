@@ -242,8 +242,7 @@ namespace BDArmory.Utils
                         (float)PWType.GetField("sharedEdgeWidthTrailingRoot", BindingFlags.Public | BindingFlags.Instance).GetValue(module)) : 0));
                         float thickness = 0.18f;
                         float adjustedThickness = 0.18f;
-                        if (BDArmorySettings.RUNWAY_PROJECT || BDArmorySettings.PWING_THICKNESS_AFFECT_MASS_HP)
-                        //if (BDArmorySettings.PWING_THICKNESS_AFFECT_MASS_HP)j
+                        if (BDArmorySettings.PWING_THICKNESS_AFFECT_MASS_HP)
                         {
                             thickness = ((float)PWType.GetField("sharedBaseThicknessRoot", BindingFlags.Public | BindingFlags.Instance).GetValue(module) + (float)PWType.GetField("sharedBaseThicknessTip", BindingFlags.Public | BindingFlags.Instance).GetValue(module)) / 2;
                             if (thickness >= 0.18f)
@@ -278,7 +277,7 @@ namespace BDArmory.Utils
                             liftCoeff = Mathf.Clamp((float)liftCoeff, 0, BDArmorySettings.MAX_PWING_LIFT); //if Runway Project, check lift is within limit and clamp if not
                             if (!WingctrlSrf) PWType.GetField("sharedBaseOffsetRoot", BindingFlags.Public | BindingFlags.Instance).SetValue(module, 0); //Adjust PWing GUI mass readout
                         }
-                        if (BDArmorySettings.RUNWAY_PROJECT || BDArmorySettings.PWING_THICKNESS_AFFECT_MASS_HP)
+                        if (BDArmorySettings.PWING_THICKNESS_AFFECT_MASS_HP)
                         {
                             liftCoeff *= (1 - ((adjustedThickness - 0.188f) / ((width + (BDArmorySettings.PWING_EDGE_LIFT ? edgeWidth : 0)) / 2))); //adjust lift coeff based on Thickness to Chord Ratio. Loggins lift nerf for spherical/near-spherical wing crossections
 							if (liftCoeff < 0) liftCoeff = 0;
@@ -299,7 +298,7 @@ namespace BDArmory.Utils
                         }
                         else
                         {
-                            if ((BDArmorySettings.RUNWAY_PROJECT || BDArmorySettings.PWING_THICKNESS_AFFECT_MASS_HP) && FerramAerospace.CheckForFAR()) //PWings disables massMod if FAR, so need to re-add the additional mass from thickness
+                            if (BDArmorySettings.PWING_THICKNESS_AFFECT_MASS_HP && FerramAerospace.CheckForFAR()) //PWings disables massMod if FAR, so need to re-add the additional mass from thickness
                             {
                                 float massToAdd = 0;
                                 massToAdd = ((float)liftCoeff / ((!ctrlSrf && !WingctrlSrf) ? 10 : 5)) * (adjustedThickness * 2.8f) - 

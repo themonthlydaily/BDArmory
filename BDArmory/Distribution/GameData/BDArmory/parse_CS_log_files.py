@@ -6,12 +6,12 @@ import re
 import sys
 from pathlib import Path
 
-VERSION = "3.2"
+VERSION = "4.0"
 
 parser = argparse.ArgumentParser(description="Log file parser for continuous spawning logs.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("logs", nargs='*', help="Log files to parse. If none are given, the latest log file is parsed.")
 parser.add_argument("-n", "--no-file", action='store_true', help="Don't create a csv file.")
-parser.add_argument("-w", "--weights", type=str, default="3,1.5,-1,4e-3,1e-4,4e-5,0.035,6e-4,1.5e-4, 5e-5,0.15,2e-3,3e-5,1.5e-5,0.075,0,0", help="Score weights.")
+parser.add_argument("-w", "--weights", type=str, default="3,1.5,-1,4e-3,1e-4,4e-5,0.035,6e-4,1.5e-4, 5e-5,0.15,2e-3,3e-5,1.5e-5,0.075,0,0,0", help="Score weights.")
 parser.add_argument("--show-weights", action='store_true', help="Show the score weights.")
 parser.add_argument("-s", "--separately", action='store_true', help="Show the results of each log separately (for multiple logs).")
 parser.add_argument("--version", action='store_true', help="Show the script version, then exit.")
@@ -24,8 +24,8 @@ if args.version:
 log_dir = Path(__file__).parent / "Logs" if len(args.logs) == 0 else Path('.')
 
 fields = ["kills", "assists", "deaths", "hits", "bullet damage", "bullet damage taken", "rocket strikes", "rocket parts hit", "rocket damage",
-    "rocket damage taken", "missile strikes", "missile parts hit", "missile damage", "missile damage taken", "rammed parts", "accuracy", "rocket accuracy"]
-fields_short = {field: field_short for field, field_short in zip(fields, ["Kills", "Assists", "Deaths", "Hits", "Damage", "DmgTkn", "RktHits", "RktParts", "RktDmg", "RktDmgTkn", "MisHits", "MisParts", "MisDmg", "MisDmgTkn", "Ram", "Acc%", "RktAcc%"])}
+    "rocket damage taken", "missile strikes", "missile parts hit", "missile damage", "missile damage taken", "rammed parts", "parts lost to asteroids", "accuracy", "rocket accuracy"]
+fields_short = {field: field_short for field, field_short in zip(fields, ["Kills", "Assists", "Deaths", "Hits", "Damage", "DmgTkn", "RktHits", "RktParts", "RktDmg", "RktDmgTkn", "MisHits", "MisParts", "MisDmg", "MisDmgTkn", "Ram", "Asteroids", "Acc%", "RktAcc%"])}
 try:
     weights = {field: float(w) for field, w in zip(fields, args.weights.split(','))}
     if len(weights) != len(fields):
@@ -95,6 +95,8 @@ for filename in competition_files:
             elif " WHORAMMEDME:" in line:  # Counts up rams
                 data[filename][Craft_Name]["rammed by"] = {int(life): {by: int(parts) for parts, by in (entry.split(":", 1) for entry in partshitby.split(";"))}
                                                                     for life, partshitby in (entry.split(":", 1) for entry in line.split(":  WHORAMMEDME:")[-1].replace("\n", "").split(", "))}
+            elif " PARTSLOSTTOASTEROIDS:" in line:  # Count up parts
+                data[filename][Craft_Name]["parts lost to asteroids"] = {int(life): int(partsLost) for life, partsLost in (entry.split(":", 1) for entry in line.split(":  PARTSLOSTTOASTEROIDS:")[-1].replace("\n", "").split(", "))}
             elif " ACCURACY:" in line:
                 for item in line.split(" ACCURACY:")[-1].replace("\n", "").split(","):
                     _, hits, shots, rocketStrikes, rocketsFired = re.split('[:/]', item)
@@ -138,6 +140,7 @@ for filename in competition_files:
 
             data[filename][Craft_Name]["kills"] = sum(1 for kill in (data[filename][other]["killed by"] for other in data[filename] if other !=
                                                            Craft_Name and "killed by" in data[filename][other]) for life in kill if Craft_Name == kill[life])
+            data[filename][Craft_Name]["parts lost to asteroids"] = sum(data[filename][Craft_Name]["parts lost to asteroids"].values()) if "parts lost to asteroids" in data[filename][Craft_Name] else 0
 
             # Aggregate the damagers for computing assists later.
             data[filename][Craft_Name]['damaged by'] = {}

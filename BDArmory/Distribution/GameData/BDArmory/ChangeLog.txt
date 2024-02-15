@@ -1,6 +1,26 @@
+
 ﻿-Reduce ECPerShot cost of electrolasers
 -Heatrays now check for part occlusion
 -fix non-damaging lasers (gravity guns, etc) from not scoring in competition
+
+﻿IMPROVEMENTS / FIXES
+- General:
+	- Fix false positives of Krakensbane being active on vessel switches.
+- AI / WM:
+	- Clamp the vertical adjustment of the fly-to position to at most half the distance to the target (should fix the issue of being unable to attack targets directly below).
+	- Add a slider for biasing the Immelmann pitch direction when not close to terrain/min altitude.
+- Competition:
+	- Add "Parts lost to asteroids" to the continuous spawn tournament score logs and parser.
+	- Fix world switching for auto-resuming continuous spawn tournaments.
+- RWP:
+	- Add RWP override settings (in RWP_settings.cfg) for automatically enabling/disabling RWP options when the RWP toggle is toggled or the RWP slider is adjusted.
+		- Settings adjusted when RWP is enabled aren't saved, but can be manually added to the RWP_settings.cfg file.
+		- Settings adjusted when RWP is disabled are saved to settings.cfg as usual and serve as the base that the RWP settings override.
+		- Overrides for round 0 are global overrides and are applied first before round specific overrides are applied.
+		- The defaults for the RWP_settings.cfg file will be saved when settings are first saved and changes made to the file override the defaults.
+		- Add RWP settings for previous rounds and the upcoming S6R2.
+	- Restrict the RWP slider to only include rounds that have overrides and move it to the top of the section to avoid issues with layout changes while adjusting the slider.
+
 
 v1.6.10.1
 IMPROVEMENTS / FIXES
