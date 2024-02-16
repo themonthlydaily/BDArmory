@@ -178,6 +178,12 @@ namespace BDArmory.Control
             UI_FloatLogRange(minValue = 0.001f, maxValue = 1f, steps = 6, scene = UI_Scene.All)]
         public float autoTuningOptionInitialLearningRate = 1f;
 
+        //AutoTuning Initial Roll Relevance
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_PIDAutoTuningInitialRollRelevance", advancedTweakable = true,
+            groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
+            UI_FloatRange(minValue = 0f, maxValue = 1f, stepIncrement = 0.01f, scene = UI_Scene.All)]
+        public float autoTuningOptionInitialRollRelevance = 0.5f;
+
         //AutoTuning Altitude
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_PIDAutoTuningAltitude", //Auto-tuning Altitude
             groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
@@ -1088,7 +1094,7 @@ namespace BDArmory.Control
         Vector3 relativeVelocityDownDirection; // Down relative to current velocity and upDirection.
         Vector3 terrainAlertDebugPos, terrainAlertDebugDir; // Debug vector3's for drawing lines.
         Color terrainAlertNormalColour = Color.green; // Color of terrain alert normal indicator.
-        readonly List<Ray> terrainAlertDebugRays = new(); // Adjusted normals of terrain alerts used to get the final terrain alert normal.
+        List<Ray> terrainAlertDebugRays = []; // Adjusted normals of terrain alerts used to get the final terrain alert normal.
         RaycastHit[] terrainAvoidanceHits = new RaycastHit[10];
         float postTerrainAvoidanceCoolDownTimer = -1; // Timer to track how long since exiting terrain avoidance.
         #endregion
@@ -4707,7 +4713,6 @@ namespace BDArmory.Control
         class Optimiser
         {
             public float rollRelevance = 0.5f;
-            float initialRollRelevance = 0.5f;
             float rollRelevanceMomentum = 0.8f;
 
             public void Update()
@@ -4716,13 +4721,13 @@ namespace BDArmory.Control
                 _rollRelevance.Clear();
             }
 
-            public void Reset()
+            public void Reset(float initialRollRelevance = 0.5f)
             {
                 rollRelevance = initialRollRelevance;
                 _rollRelevance.Clear();
             }
 
-            List<float> _rollRelevance = new List<float>();
+            List<float> _rollRelevance = [];
             public void Accumulate(float rollRelevance)
             {
                 _rollRelevance.Add(rollRelevance);
@@ -4745,8 +4750,8 @@ namespace BDArmory.Control
         int sampleNumber = 0;
         float headingChange = 30f;
         float momentum = 0.7f;
-        LR lr = new LR();
-        Optimiser optimiser = new Optimiser();
+        LR lr = new();
+        Optimiser optimiser = new();
         #endregion
         #endregion
 
@@ -4905,14 +4910,14 @@ namespace BDArmory.Control
         {
             if (!HighLogic.LoadedSceneIsFlight) return;
             vesselName = AI.vessel.GetName();
-            fieldNames = new List<string> { "base" };
-            fields = new Dictionary<string, BaseField>();
-            fixedFields = new HashSet<string>();
-            baseValues = new Dictionary<string, float>();
-            gradient = new Dictionary<string, float>();
-            limits = new Dictionary<string, Tuple<float, float>>();
-            lossSamples = new Dictionary<string, List<List<float>>>();
-            baseLossSamples = new List<float>();
+            fieldNames = ["base"];
+            fields = [];
+            fixedFields = [];
+            baseValues = [];
+            gradient = [];
+            limits = [];
+            lossSamples = [];
+            baseLossSamples = [];
             bestValues = null;
 
             // Check which PID controls are in use and set up the required dictionaries.
@@ -4964,9 +4969,9 @@ namespace BDArmory.Control
                     limits.Add(field.name, new Tuple<float, float>(uiControl.minValue, uiControl.maxValue));
                 }
             }
+            optimiser.Reset(AI.autoTuningOptionInitialRollRelevance); // Reset the optimiser before resetting samples so that the RR is up-to-date in the strings.
             ResetSamples();
             lr.Reset(AI.autoTuningOptionInitialLearningRate);
-            optimiser.Reset();
         }
 
         /// <summary>
@@ -4987,6 +4992,7 @@ namespace BDArmory.Control
                     {
                         bestValues = baseValues.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
                         Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Updated best values: " + string.Join(", ", bestValues.Select(kvp => fields[kvp.Key].guiName + ":" + kvp.Value)) + $", LR: {lr.current}, RR: {optimiser.rollRelevance}, Loss: {loss}");
+                        bestValues["rollRelevance"] = optimiser.rollRelevance; // Store the roll relevance for the best PID settings too.
                     }
                     if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Current: " + string.Join(", ", baseValues.Select(kvp => fields[kvp.Key].guiName + ":" + kvp.Value)) + $", LR: {lr.current}, RR: {optimiser.rollRelevance}, Loss: {loss}");
                     var lrDecreased = lr.Update(loss); // Update learning rate based on the current loss.
@@ -5083,7 +5089,7 @@ namespace BDArmory.Control
             if (AI is null) return;
             if (bestValues is not null)
             {
-                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Reverting PID values to best values: {string.Join(", ", bestValues.Select(kvp => fields[kvp.Key].guiName + ":" + kvp.Value))}");
+                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Reverting PID values to best values: {string.Join(", ", fields.Keys.Where(fieldName => bestValues.ContainsKey(fieldName)).Select(fieldName => fields[fieldName].guiName + ":" + bestValues[fieldName]))}");
                 foreach (var fieldName in fields.Keys.ToList())
                     if (bestValues.ContainsKey(fieldName))
                     {
@@ -5091,6 +5097,7 @@ namespace BDArmory.Control
                         if (baseValues.ContainsKey(fieldName)) // Update the base values too.
                             baseValues[fieldName] = bestValues[fieldName];
                     }
+                if (bestValues.ContainsKey("rollRelevance")) AI.autoTuningOptionInitialRollRelevance = bestValues["rollRelevance"]; // Set the latest roll relevance as the AI's starting roll relevance for next time.
             }
             else if (baseValues is not null)
             {

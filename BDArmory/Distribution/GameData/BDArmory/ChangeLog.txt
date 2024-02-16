@@ -4,6 +4,7 @@
 - AI / WM:
 	- Clamp the vertical adjustment of the fly-to position to at most half the distance to the target (should fix the issue of being unable to attack targets directly below).
 	- Add a slider for biasing the Immelmann pitch direction when not close to terrain/min altitude.
+	- Add a slider for the initial roll-relevance and preserve the best roll-relevance between auto-tuning runs.
 - Competition:
 	- Add "Parts lost to asteroids" to the continuous spawn tournament score logs and parser.
 	- Fix world switching for auto-resuming continuous spawn tournaments.

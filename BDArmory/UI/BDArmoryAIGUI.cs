@@ -336,6 +336,7 @@ namespace BDArmory.UI
                         { "autoTuningOptionNumSamples", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.autoTuningOptionNumSamples, 1, 10) },
                         { "autoTuningOptionFastResponseRelevance", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.autoTuningOptionFastResponseRelevance, 0, 0.5) },
                         { "autoTuningOptionInitialLearningRate", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.autoTuningOptionInitialLearningRate, 1e-3, 1) },
+                        { "autoTuningOptionInitialRollRelevance", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.autoTuningOptionInitialRollRelevance, 0, 1) },
                         { "autoTuningAltitude", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.autoTuningAltitude, 50, 5000) },
                         { "autoTuningSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.autoTuningSpeed, 50, 800) },
                         { "autoTuningRecenteringDistance", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.autoTuningRecenteringDistance, 5, 100) },
@@ -1292,6 +1293,20 @@ namespace BDArmory.UI
                                 if (contextTipsEnabled)
                                 {
                                     GUI.Label(ContextLabelRect(leftIndent, pidLines + autoTuneLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_PIDAutoTuningInitialLearningRateContext"), Label);
+                                    ++autoTuneLines;
+                                }
+
+                                if (!NumFieldsEnabled) ActivePilot.autoTuningOptionInitialRollRelevance = BDAMath.RoundToUnit(GUI.HorizontalSlider(SettingSliderRect(leftIndent, pidLines + autoTuneLines, contentWidth), ActivePilot.autoTuningOptionInitialRollRelevance, 0f, 1f), 0.01f);
+                                else
+                                {
+                                    var field = inputFields["autoTuningOptionInitialRollRelevance"];
+                                    field.tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + autoTuneLines, contentWidth), field.possibleValue, 8, field.style));
+                                    ActivePilot.autoTuningOptionInitialRollRelevance = (float)field.currentValue;
+                                }
+                                GUI.Label(SettinglabelRect(leftIndent, pidLines + autoTuneLines++), StringUtils.Localize("#LOC_BDArmory_AIWindow_PIDAutoTuningInitialRollRelevance") + $": {ActivePilot.autoTuningOptionInitialRollRelevance:G3}", Label);
+                                if (contextTipsEnabled)
+                                {
+                                    GUI.Label(ContextLabelRect(leftIndent, pidLines + autoTuneLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_PIDAutoTuningInitialRollRelevanceContext"), Label);
                                     ++autoTuneLines;
                                 }
 
