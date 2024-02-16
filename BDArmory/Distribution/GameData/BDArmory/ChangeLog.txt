@@ -12,8 +12,10 @@
 		- Settings adjusted when RWP is enabled aren't saved, but can be manually added to the RWP_settings.cfg file.
 		- Settings adjusted when RWP is disabled are saved to settings.cfg as usual and serve as the base that the RWP settings override.
 		- Overrides for round 0 are global overrides and are applied first before round specific overrides are applied.
+		- Toggling the RWP toggle or moving the slider first reverts settings to the non-RWP values, then applies the global and round-specific RWP overrides.
+		- For convenience, a few settings are excluded from being reverted: settings section toggles and spawn settings. Also, inf fuel / inf EC currently aren't affected.
 		- The defaults for the RWP_settings.cfg file will be saved when settings are first saved and changes made to the file override the defaults.
-		- Add RWP settings for previous rounds and the upcoming S6R2.
+		- Default RWP settings for previous rounds and the upcoming S6R2 have been added.
 	- Restrict the RWP slider to only include rounds that have overrides and move it to the top of the section to avoid issues with layout changes while adjusting the slider.
 
 v1.6.10.1
