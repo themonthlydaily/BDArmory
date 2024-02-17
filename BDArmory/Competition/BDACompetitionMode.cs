@@ -3439,6 +3439,11 @@ namespace BDArmory.Competition
             var timeOfDeath = Planetarium.GetUniversalTime(); // In case they die.
             asteroidCollisions.Add(vesselName);
             yield return new WaitForSecondsFixed(potentialCollisionDetectionTime);
+            if (rammingInformation == null) // The competition is finished / KSP is changing scenes or exiting.
+            {
+                asteroidCollisions.Remove(vesselName);
+                yield break;
+            }
             if (vessel == null || VesselModuleRegistry.GetMissileFire(vessel) == null)
             {
                 rammingInformation[vesselName].partCount = 0;
