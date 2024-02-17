@@ -59,7 +59,7 @@ namespace BDArmory.Settings
         {"MUTATOR_APPLY_TIMER", false},
         {"MUTATOR_APPLY_NUM", 1},
         {"MUTATOR_ICONS", true},
-        {"MUTATOR_LIST", new List<string>{ "Brownings", "Chainguns", "Vulcans", "Mausers", "GAU-22s", "N-37s", "AT Guns", "Railguns", "GAU-8s", "Rocket Arena" }},
+        {"MUTATOR_LIST", new List<string>{ "Brownings", "Chainguns", "Vulcans", "Mausers", "GAU-22s", "N-37s", "AT Guns", "Railguns", "GAU-8s", "Rockets" }},
       }},
       {62, new(){ // Retrofuturistic on Eve
         {"ASTEROID_FIELD", true},

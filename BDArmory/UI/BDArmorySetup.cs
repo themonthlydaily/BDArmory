@@ -3158,33 +3158,51 @@ namespace BDArmory.UI
                             BDArmorySettings.FIRE_RATE_OVERRIDE_HIT_MULTIPLIER = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FIRE_RATE_OVERRIDE_HIT_MULTIPLIER, 1f, 4f) * 10f) / 10f;
                         }
                         //TODO - convert these to gamemode types - e.g. Firerate Increase on Kill, Rapid Deployment, Spacemode, etc, and clear out all the empty round values
-
+                        if(BDArmorySettings.RUNWAY_PROJECT_ROUND == 61)
+                        {
+                            BDArmorySettings.GG_PERSISTANT_PROGRESSION = GUI.Toggle(SLeftRect(++line), BDArmorySettings.GG_PERSISTANT_PROGRESSION, StringUtils.Localize("Keep progresson on respawn"));
+                            BDArmorySettings.GG_CYCLE_LIST = GUI.Toggle(SLeftRect(++line), BDArmorySettings.GG_CYCLE_LIST, StringUtils.Localize("Cycle List"));
+                        }
                         if (CheatCodeGUI != (CheatCodeGUI = GUI.TextField(SLeftRect(++line, 1, true), CheatCodeGUI, textFieldStyle))) //if we need super-secret stuff
                         {
-                            if (CheatCodeGUI == "ZombieMode")
+                            switch (CheatCodeGUI)
                             {
-                                BDArmorySettings.ZOMBIE_MODE = !BDArmorySettings.ZOMBIE_MODE; //sticking this here until we figure out a better home for it
-                                CheatCodeGUI = "";
-                            }
-                            else if (CheatCodeGUI == "DiscoInferno")
-                            {
-                                BDArmorySettings.DISCO_MODE = !BDArmorySettings.DISCO_MODE;
-                                CheatCodeGUI = "";
-                            }
-                            else if (CheatCodeGUI == "NoEngines")
-                            {
-                                BDArmorySettings.NO_ENGINES = !BDArmorySettings.NO_ENGINES;
-                                CheatCodeGUI = "";
-                            }
-                            else if (CheatCodeGUI == "HallOfShame")
-                            {
-                                BDArmorySettings.ENABLE_HOS = !BDArmorySettings.ENABLE_HOS;
-                                CheatCodeGUI = "";
-                            }
-                            else if (CheatCodeGUI.ToLower() == "altitudehack") //until we figure out where to put this
-                            {
-                                BDArmorySettings.ALTITUDE_HACKS = !BDArmorySettings.ALTITUDE_HACKS;
-                                CheatCodeGUI = "";
+                                case "ZombieMode":
+                                    {
+                                        BDArmorySettings.ZOMBIE_MODE = !BDArmorySettings.ZOMBIE_MODE; //sticking this here until we figure out a better home for it
+                                        CheatCodeGUI = "";
+                                        break;
+                                    }
+                                case "UTDeathMatch":
+                                    {
+                                        BDArmorySettings.GG_ANNOUNCER = !BDArmorySettings.GG_ANNOUNCER;
+                                        CheatCodeGUI = "";
+                                        break;
+                                    }
+                                case "DiscoInferno":
+                                    {
+                                        BDArmorySettings.DISCO_MODE = !BDArmorySettings.DISCO_MODE;
+                                        CheatCodeGUI = "";
+                                        break;
+                                    }
+                                case "NoEngines":
+                                    {
+                                        BDArmorySettings.NO_ENGINES = !BDArmorySettings.NO_ENGINES;
+                                        CheatCodeGUI = "";
+                                        break;
+                                    }
+                                case "HallOfShame":
+                                    {
+                                        BDArmorySettings.ENABLE_HOS = !BDArmorySettings.ENABLE_HOS;
+                                        CheatCodeGUI = "";
+                                        break;
+                                    }
+                                case "altitudehack": //until we figure out where to put this
+                                    {
+                                        BDArmorySettings.ALTITUDE_HACKS = !BDArmorySettings.ALTITUDE_HACKS;
+                                        CheatCodeGUI = "";
+                                        break;
+                                    }
                             }
                         }
                         //BDArmorySettings.ZOMBIE_MODE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.ZOMBIE_MODE, StringUtils.Localize("#LOC_BDArmory_settings_ZombieMode"));

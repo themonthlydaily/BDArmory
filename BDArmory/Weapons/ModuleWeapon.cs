@@ -1359,6 +1359,7 @@ namespace BDArmory.Weapons
                 fireTransforms = part.FindModelTransforms(fireTransformName);
                 if (fireTransforms.Length == 0) Debug.LogError("[BDArmory.ModuleWeapon] Weapon missing fireTransform [" + fireTransformName + "]! Please fix your model");
                 shellEjectTransforms = part.FindModelTransforms(shellEjectTransformName);
+                if (shellEjectTransforms.Length > 0 && shellPool == null) SetupShellPool();
 
                 //setup emitters
                 using (var pe = part.FindModelComponents<KSPParticleEmitter>().AsEnumerable().GetEnumerator())
@@ -1902,11 +1903,11 @@ namespace BDArmory.Weapons
                 }
                 else if (eWeaponType == WeaponTypes.Laser)
                 {
-                    for (int i = 0; i < laserRenderers.Length; i++)
-                    {
-                        laserRenderers[i].enabled = false;
-                    }
-                    //audioSource.Stop();
+                        for (int i = 0; i < laserRenderers.Length; i++)
+                        {
+                            laserRenderers[i].enabled = false;
+                        }
+                        //audioSource.Stop();
                 }
                 vessel.GetConnectedResourceTotals(AmmoID, out double ammoCurrent, out double ammoMax); //ammo count was originally updating only for active vessel, while reload can be called by any loaded vessel, and needs current ammo count
                 ammoCount = ammoCurrent;
@@ -2570,12 +2571,12 @@ namespace BDArmory.Weapons
                                                             if (hitEVA != null) hitPart = hitEVA.part;
                                                             if (hitPart != null && hitPart == hitP)
                                                             {
-                                                                p.AddSkinThermalFlux(damage); //add modifier to adjust damage by armor diffusivity value
+                                                                p.AddThermalFlux(damage); //add modifier to adjust damage by armor diffusivity value
+                                                                if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Heatray Applying {damage} heat to {p.name}");
                                                             }
                                                         }
                                                     }
                                                 }
-                                                if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Heatray Applying {damage} heat to target");
                                             }
                                         }
                                     }
@@ -2695,6 +2696,12 @@ namespace BDArmory.Weapons
                         else
                             laserPoint = lr.transform.InverseTransformPoint((targetDirectionLR * maxTargetingRange) + tf.position);
                         lr.SetPosition(1, laserPoint);
+                        if (HEpulses)
+                        {
+                            ExplosionFx.CreateExplosion(laserPoint,
+                                           (laserDamage / 10000),
+                                           explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName);
+                        }
                     }
                 }
                 if (BDArmorySettings.DISCO_MODE)
