@@ -198,7 +198,7 @@ namespace BDArmory.GameModes
             {
                 foreach (var asteroid in asteroidPool)
                 {
-                    if (asteroid == null) continue;
+                    if (asteroid == null || asteroid.gameObject == null) continue;
                     if (asteroid.gameObject.activeInHierarchy) { asteroid.gameObject.SetActive(false); }
                     if (destroyAsteroids) { Destroy(asteroid); }
                 }
@@ -667,7 +667,7 @@ namespace BDArmory.GameModes
             {
                 foreach (var asteroid in asteroidPool)
                 {
-                    if (asteroid == null) continue;
+                    if (asteroid == null || asteroid.gameObject == null) continue;
                     if (asteroid.gameObject.activeInHierarchy) { asteroid.gameObject.SetActive(false); }
                     if (destroyAsteroids) { Destroy(asteroid); }
                 }

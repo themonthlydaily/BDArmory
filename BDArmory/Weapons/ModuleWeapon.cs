@@ -1358,6 +1358,7 @@ namespace BDArmory.Weapons
                 fireTransforms = part.FindModelTransforms(fireTransformName);
                 if (fireTransforms.Length == 0) Debug.LogError("[BDArmory.ModuleWeapon] Weapon missing fireTransform [" + fireTransformName + "]! Please fix your model");
                 shellEjectTransforms = part.FindModelTransforms(shellEjectTransformName);
+                if (shellEjectTransforms.Length > 0 && shellPool == null) SetupShellPool();
 
                 //setup emitters
                 using (var pe = part.FindModelComponents<KSPParticleEmitter>().AsEnumerable().GetEnumerator())
