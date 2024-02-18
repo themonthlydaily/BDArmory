@@ -174,7 +174,7 @@ namespace BDArmory.VesselSpawning
                     {
                         LogMessage("Spawn queue is empty and not enough vessels are active, ending competition.", false);
                         BDACompetitionMode.Instance.StopCompetition();
-                        if (BDArmorySettings.AUTO_RESUME_CONTINUOUS_SPAWN && BDArmorySettings.AUTO_QUIT_AT_END_OF_TOURNAMENT && TournamentAutoResume.Instance != null)
+                        if ((BDArmorySettings.AUTO_RESUME_TOURNAMENT || BDArmorySettings.AUTO_RESUME_CONTINUOUS_SPAWN) && BDArmorySettings.AUTO_QUIT_AT_END_OF_TOURNAMENT && TournamentAutoResume.Instance != null)
                         {
                             TournamentAutoResume.AutoQuit(5);
                             var message = "Quitting KSP in 5s due to reaching the end of a tournament.";
@@ -377,7 +377,7 @@ namespace BDArmory.VesselSpawning
             if (continuousSpawningScores == null || continuousSpawningScores.Count == 0) return;
             foreach (var vesselName in continuousSpawningScores.Keys)
                 UpdateCompetitionScores(continuousSpawningScores[vesselName].vessel);
-            BDACompetitionMode.Instance.competitionStatus.Add("Dumping scores for competition " + BDACompetitionMode.Instance.CompetitionID.ToString() + (tag != "" ? " " + tag : ""));
+            if (BDArmorySettings.DEBUG_COMPETITION) BDACompetitionMode.Instance.competitionStatus.Add("Dumping scores for competition " + BDACompetitionMode.Instance.CompetitionID.ToString() + (tag != "" ? " " + tag : ""));
             logStrings.Add("[BDArmory.VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]: Dumping Results at " + (int)(Planetarium.GetUniversalTime() - BDACompetitionMode.Instance.competitionStartTime) + "s");
             foreach (var vesselName in continuousSpawningScores.Keys)
             {
