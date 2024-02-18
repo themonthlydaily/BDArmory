@@ -3063,7 +3063,7 @@ namespace BDArmory.Competition
                 return;
             }
 
-            competitionStatus.Add("Dumping scores for competition " + CompetitionID.ToString() + (tag != "" ? " " + tag : ""));
+            if (BDArmorySettings.DEBUG_COMPETITION) competitionStatus.Add("Dumping scores for competition " + CompetitionID.ToString() + (tag != "" ? " " + tag : ""));
             Scores.LogResults(CompetitionID.ToString(), message, tag);
         }
 
