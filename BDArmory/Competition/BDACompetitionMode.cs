@@ -2886,7 +2886,7 @@ namespace BDArmory.Competition
                                 {
                                     statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (NAILED 'EM! CLEAN KILL!)";
                                 }
-                                PlayAnnouncer(Scores.ScoreData[Scores.ScoreData[player].lastPersonWhoDamagedMe].killsThisLife, false, Scores.ScoreData[player].lastPersonWhoDamagedMe);
+                                if (Scores.ScoreData[player].gmKillReason == GMKillReason.None) PlayAnnouncer(Scores.ScoreData[Scores.ScoreData[player].lastPersonWhoDamagedMe].killsThisLife, false, Scores.ScoreData[player].lastPersonWhoDamagedMe);
                                 //canAssignMutator = true;
                                 break;
                             case AliveState.HeadShot: // Damaged recently, but took damage a while ago from someone else.
@@ -2898,7 +2898,7 @@ namespace BDArmory.Competition
                                 {
                                     statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (BOOM! HEAD SHOT!)";
                                 }
-                                PlayAnnouncer(Scores.ScoreData[Scores.ScoreData[player].lastPersonWhoDamagedMe].killsThisLife, true, Scores.ScoreData[player].lastPersonWhoDamagedMe);
+                                if (Scores.ScoreData[player].gmKillReason == GMKillReason.None) PlayAnnouncer(Scores.ScoreData[Scores.ScoreData[player].lastPersonWhoDamagedMe].killsThisLife, true, Scores.ScoreData[player].lastPersonWhoDamagedMe);
                                 //canAssignMutator = true;
                                 break;
                             case AliveState.KillSteal: // Damaged recently, but took damage from someone else recently too.
@@ -2910,7 +2910,7 @@ namespace BDArmory.Competition
                                 {
                                     statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (KILL STEAL!)";
                                 }
-                                PlayAnnouncer(Scores.ScoreData[Scores.ScoreData[player].lastPersonWhoDamagedMe].killsThisLife, false, Scores.ScoreData[player].lastPersonWhoDamagedMe);
+                                if (Scores.ScoreData[player].gmKillReason == GMKillReason.None) PlayAnnouncer(Scores.ScoreData[Scores.ScoreData[player].lastPersonWhoDamagedMe].killsThisLife, false, Scores.ScoreData[player].lastPersonWhoDamagedMe);
                                 //canAssignMutator = true;
                                 break;
                             case AliveState.AssistedKill: // Assist (not damaged recently or GM kill).

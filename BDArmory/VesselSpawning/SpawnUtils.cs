@@ -849,7 +849,8 @@ namespace BDArmory.VesselSpawning
                         if (index > BDArmorySettings.MUTATOR_LIST.Count - 1)
                         {
                             if (BDArmorySettings.GG_CYCLE_LIST) index %= BDArmorySettings.MUTATOR_LIST.Count;
-                            else return; // Already at the end of the list.
+                            else //return; // Already at the end of the list.
+                                index = BDArmorySettings.MUTATOR_LIST.Count - 1; //apply last mutator on the list if spawning in
                         }
                         MM.EnableMutator(BDArmorySettings.MUTATOR_LIST[index]); //increment to next mutator on list
                     }
