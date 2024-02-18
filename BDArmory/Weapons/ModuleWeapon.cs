@@ -21,7 +21,6 @@ using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.Weapons.Missiles;
 using BDArmory.WeaponMounts;
-using VehiclePhysics;
 
 namespace BDArmory.Weapons
 {
