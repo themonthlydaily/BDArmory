@@ -6,7 +6,7 @@ import re
 import sys
 from pathlib import Path
 
-VERSION = "4.0"
+VERSION = "4.1"
 
 parser = argparse.ArgumentParser(description="Log file parser for continuous spawning logs.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("logs", nargs='*', help="Log files to parse. If none are given, the latest log file is parsed.")
@@ -67,7 +67,7 @@ for filename in competition_files:
                 else:
                     data[filename][Craft_Name]["killed by"] = killedby  # {death_nr: killer}
             elif " GMKILL:" in line:  # GM kills
-                data[filename][Craft_Name]["GM kills"] = {int(nr): killer for nr, killer in (gmKill.split(":") for gmKill in line.split(":  GMKILL:")[-1].replace("\n", "").split(", ")) if killer != "LandedTooLong"}
+                data[filename][Craft_Name]["GM kills"] = {int(nr): killer for nr, killer in (gmKill.split(":") for gmKill in line.split(":  GMKILL:")[-1].replace("\n", "").split(", ")) if killer not in ("LandedTooLong", "Asteroids")}
             elif " WHOSHOTME:" in line:  # Counts up hits
                 data[filename][Craft_Name]["shot by"] = {int(life): {by: int(hits) for hits, by in (entry.split(":", 1) for entry in hitsby.split(";"))}
                                                                   for life, hitsby in (entry.split(":", 1) for entry in line.split(":  WHOSHOTME:")[-1].replace("\n", "").split(", "))}

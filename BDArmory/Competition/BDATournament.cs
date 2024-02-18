@@ -1574,7 +1574,7 @@ namespace BDArmory.Competition
             var partialStatePath = Path.ChangeExtension(Path.Combine(Path.GetDirectoryName(TournamentState.defaultStateFile), "Unfinished Tournaments", Path.GetFileName(stateFile)), $".state-{tournamentID}");
             if (File.Exists(partialStatePath)) File.Delete(partialStatePath); // Remove the now completed tournament state file.
 
-            if (BDArmorySettings.AUTO_RESUME_TOURNAMENT && BDArmorySettings.AUTO_QUIT_AT_END_OF_TOURNAMENT && TournamentAutoResume.Instance != null)
+            if ((BDArmorySettings.AUTO_RESUME_TOURNAMENT || BDArmorySettings.AUTO_RESUME_CONTINUOUS_SPAWN) && BDArmorySettings.AUTO_QUIT_AT_END_OF_TOURNAMENT && TournamentAutoResume.Instance != null)
             {
                 TournamentAutoResume.AutoQuit(5);
                 message = "Quitting KSP in 5s due to reaching the end of a tournament.";

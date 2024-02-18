@@ -3110,7 +3110,7 @@ namespace BDArmory.Competition
                 return;
             }
 
-            competitionStatus.Add("Dumping scores for competition " + CompetitionID.ToString() + (tag != "" ? " " + tag : ""));
+            if (BDArmorySettings.DEBUG_COMPETITION) competitionStatus.Add("Dumping scores for competition " + CompetitionID.ToString() + (tag != "" ? " " + tag : ""));
             Scores.LogResults(CompetitionID.ToString(), message, tag);
         }
 
@@ -3486,6 +3486,11 @@ namespace BDArmory.Competition
             var timeOfDeath = Planetarium.GetUniversalTime(); // In case they die.
             asteroidCollisions.Add(vesselName);
             yield return new WaitForSecondsFixed(potentialCollisionDetectionTime);
+            if (rammingInformation == null) // The competition is finished / KSP is changing scenes or exiting.
+            {
+                asteroidCollisions.Remove(vesselName);
+                yield break;
+            }
             if (vessel == null || VesselModuleRegistry.GetMissileFire(vessel) == null)
             {
                 rammingInformation[vesselName].partCount = 0;
