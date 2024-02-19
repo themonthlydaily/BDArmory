@@ -2697,9 +2697,9 @@ namespace BDArmory.Weapons
                         lr.SetPosition(1, laserPoint);
                         if (HEpulses)
                         {
-                            ExplosionFx.CreateExplosion(laserPoint,
+                            ExplosionFx.CreateExplosion(tf.position + rayDirection * raycastDistance,
                                            (laserDamage / 10000),
-                                           explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName);
+                                           explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName, null);
                         }
                     }
                 }
