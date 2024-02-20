@@ -79,6 +79,7 @@ namespace BDArmory.VesselSpawning
             BDACompetitionMode.Instance.LogResults("due to continuous spawning", "auto-dump-from-spawning"); // Log results first.
             BDACompetitionMode.Instance.StopCompetition();
             BDACompetitionMode.Instance.ResetCompetitionStuff(); // Reset competition scores.
+            SpawnUtilsInstance.Instance.gunGameProgress.Clear(); // Clear gun-game progress.
         }
 
         public void SpawnVesselsContinuously(CircularSpawnConfig spawnConfig)
@@ -365,7 +366,6 @@ namespace BDArmory.VesselSpawning
                     BDACompetitionMode.Instance.Scores.AddPlayer(vessel);
                     BDACompetitionMode.Instance.Scores.ScoreData[vesselName].lastDamageTime = scoreData[spawnCount].lastDamageTime;
                     BDACompetitionMode.Instance.Scores.ScoreData[vesselName].lastPersonWhoDamagedMe = scoreData[spawnCount].lastPersonWhoDamagedMe;
-                    BDACompetitionMode.Instance.Scores.ScoreData[vesselName].gunGameProgress = scoreData[spawnCount].gunGameProgress;
                 }
             }
         }

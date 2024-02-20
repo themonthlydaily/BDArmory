@@ -1450,7 +1450,7 @@ namespace BDArmory.Competition
                     message = $"Running heat {heatIndex} of round {roundIndex} of tournament {tournamentState.tournamentID} ({heatsRemaining} heats remaining in the tournament).";
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
                     Debug.Log("[BDArmory.BDATournament]: " + message);
-
+                    if (firstRun) SpawnUtilsInstance.Instance.gunGameProgress.Clear(); // Clear gun-game progress.
                     int attempts = 0;
                     bool unrecoverable = false;
                     competitionStarted = false;

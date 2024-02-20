@@ -375,6 +375,7 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static List<string> MUTATOR_LIST = new List<string>();
         [BDAPersistentSettingsField] public static int MUTATOR_APPLY_NUM = 1;
         [BDAPersistentSettingsField] public static bool MUTATOR_ICONS = false;
+        [BDAPersistentSettingsField] public static bool MUTATOR_APPLY_GUNGAME = false;
         #endregion
         #region GunGame
         [BDAPersistentSettingsField] public static bool GG_PERSISTANT_PROGRESSION = false;

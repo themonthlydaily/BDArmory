@@ -521,6 +521,7 @@ namespace BDArmory.Competition
                 else // Last hit from someone else was recent => Kill Steal
                 { ScoreData[vesselName].aliveState = AliveState.KillSteal; }
 
+                if (Players.Contains(ScoreData[vesselName].lastPersonWhoDamagedMe)) ++ScoreData[ScoreData[vesselName].lastPersonWhoDamagedMe].killsThisLife;
                 if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                 { BDAScoreService.Instance.TrackKill(ScoreData[vesselName].lastPersonWhoDamagedMe, vesselName); }
             }
@@ -531,7 +532,6 @@ namespace BDArmory.Competition
                 if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                 { BDAScoreService.Instance.ComputeAssists(vesselName, "", now - BDACompetitionMode.Instance.competitionStartTime); }
             }
-
             if (BDArmorySettings.VESSEL_SPAWN_DUMP_LOG_EVERY_SPAWN && ContinuousSpawning.Instance.vesselsSpawningContinuously) ContinuousSpawning.Instance.DumpContinuousSpawningScores();
 
             return true;
@@ -974,8 +974,7 @@ namespace BDArmory.Competition
 
         #region Special
         public int partsLostToAsteroids = 0; // Number of parts lost due to crashing into asteroids.
-        public int gunGameProgress = 0;
-        public int killsThisLife = 0;
+        public int killsThisLife = 0; //number of kills tracking for Announcer barks
 
         #endregion
 

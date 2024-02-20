@@ -1902,11 +1902,11 @@ namespace BDArmory.Weapons
                 }
                 else if (eWeaponType == WeaponTypes.Laser)
                 {
-                        for (int i = 0; i < laserRenderers.Length; i++)
-                        {
-                            laserRenderers[i].enabled = false;
-                        }
-                        //audioSource.Stop();
+                    for (int i = 0; i < laserRenderers.Length; i++)
+                    {
+                        laserRenderers[i].enabled = false;
+                    }
+                    //audioSource.Stop();
                 }
                 vessel.GetConnectedResourceTotals(AmmoID, out double ammoCurrent, out double ammoMax); //ammo count was originally updating only for active vessel, while reload can be called by any loaded vessel, and needs current ammo count
                 ammoCount = ammoCurrent;

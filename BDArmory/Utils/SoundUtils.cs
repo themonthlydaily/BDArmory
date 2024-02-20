@@ -18,12 +18,16 @@ namespace BDArmory.Utils
         /// </summary>
         /// <param name="soundPath">The path to a valid audioclip.</param>
         /// <returns>The AudioClip.</returns>
-        public static AudioClip GetAudioClip(string soundPath)
+        public static AudioClip GetAudioClip(string soundPath, bool allowMissing = false)
         {
             if (!audioClips.TryGetValue(soundPath, out AudioClip audioClip) || audioClip is null)
             {
                 audioClip = GameDatabase.Instance.GetAudioClip(soundPath);
-                if (audioClip is null) Debug.LogError($"[BDArmory.SoundUtils]: {soundPath} did not give a valid audioclip.");
+                if (audioClip is null)
+                {
+                    if (allowMissing) Debug.Log($"[BDArmory.SoundUtils]: {soundPath} did not give a valid audioclip.");
+                    else Debug.LogError($"[BDArmory.SoundUtils]: {soundPath} did not give a valid audioclip.");
+                }
                 else if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.SoundUtils]: Adding audioclip {soundPath} to the cache.");
                 audioClips[soundPath] = audioClip;
             }

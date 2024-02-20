@@ -2,6 +2,7 @@
 ﻿IMPROVEMENTS / FIXES
 - General:
 	- Fix false positives of Krakensbane being active on vessel switches.
+	- Add GUn Game game option to the Mutator GameMode - craft progress through a list of mutators (weapon changes or otherwise) every time they score a kill. Ideally used with Continuous Spawn.
 - AI / WM:
 	- Clamp the vertical adjustment of the fly-to position to at most half the distance to the target (should fix the issue of being unable to attack targets directly below).
 	- Add a slider for biasing the Immelmann pitch direction when not close to terrain/min altitude.
@@ -13,8 +14,6 @@
 ﻿	- Reduce ECPerShot cost of electrolasers.
 	- Heatrays now check for part occlusion.
 	- Fix non-damaging lasers (gravity guns, etc) from not scoring in competition.
-	- Missiles:
-		- Add dumbTerminalGuidance bool (default true) to missiles; setting dumbTerminalGuidance = false will have missiles continue to use primary guidance until terminal targeting mode has a lock, vs immediately switching to terminal guidance the moment the distance trigger is satisfied.
 - RWP:
 	- Add RWP override settings (in RWP_settings.cfg) for automatically enabling/disabling RWP options when the RWP toggle is toggled or the RWP slider is adjusted.
 		- Settings adjusted when RWP is enabled aren't saved, but can be manually added to the RWP_settings.cfg file.

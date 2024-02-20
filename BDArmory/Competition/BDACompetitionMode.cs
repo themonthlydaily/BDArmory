@@ -131,14 +131,14 @@ namespace BDArmory.Competition
         void Start()
         {
             UpdateGUIElements();
-            headshotClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/Headshot");
-            doubleKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/DoubleKill");
-            tripleKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/TripleKill");
-            MultiKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/MultiKill");
-            megaKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/MegaKill");
-            ultraKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/UltraKill");
-            mmmonsterKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/MonsterKill");
-            ludicrousKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/Godlike");
+            headshotClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/Headshot", true);
+            doubleKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/DoubleKill", true);
+            tripleKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/TripleKill", true);
+            MultiKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/MultiKill", true);
+            megaKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/MegaKill", true);
+            ultraKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/UltraKill", true);
+            mmmonsterKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/MonsterKill", true);
+            ludicrousKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/Godlike", true);
             audioSource = gameObject.AddComponent<AudioSource>();
             announcerBarks = new List<AudioClip> { doubleKillClip, tripleKillClip, MultiKillClip, megaKillClip, ultraKillClip, mmmonsterKillClip, ludicrousKillClip };
         }
@@ -2886,7 +2886,7 @@ namespace BDArmory.Competition
                                 {
                                     statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (NAILED 'EM! CLEAN KILL!)";
                                 }
-                                if (Scores.ScoreData[player].gmKillReason == GMKillReason.None) PlayAnnouncer(Scores.ScoreData[Scores.ScoreData[player].lastPersonWhoDamagedMe].killsThisLife, false, Scores.ScoreData[player].lastPersonWhoDamagedMe);
+                                PlayAnnouncer(Scores.ScoreData[Scores.ScoreData[player].lastPersonWhoDamagedMe].killsThisLife, false, Scores.ScoreData[player].lastPersonWhoDamagedMe);
                                 //canAssignMutator = true;
                                 break;
                             case AliveState.HeadShot: // Damaged recently, but took damage a while ago from someone else.
@@ -2898,7 +2898,7 @@ namespace BDArmory.Competition
                                 {
                                     statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (BOOM! HEAD SHOT!)";
                                 }
-                                if (Scores.ScoreData[player].gmKillReason == GMKillReason.None) PlayAnnouncer(Scores.ScoreData[Scores.ScoreData[player].lastPersonWhoDamagedMe].killsThisLife, true, Scores.ScoreData[player].lastPersonWhoDamagedMe);
+                                PlayAnnouncer(Scores.ScoreData[Scores.ScoreData[player].lastPersonWhoDamagedMe].killsThisLife, true, Scores.ScoreData[player].lastPersonWhoDamagedMe);
                                 //canAssignMutator = true;
                                 break;
                             case AliveState.KillSteal: // Damaged recently, but took damage from someone else recently too.
@@ -2910,7 +2910,7 @@ namespace BDArmory.Competition
                                 {
                                     statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (KILL STEAL!)";
                                 }
-                                if (Scores.ScoreData[player].gmKillReason == GMKillReason.None) PlayAnnouncer(Scores.ScoreData[Scores.ScoreData[player].lastPersonWhoDamagedMe].killsThisLife, false, Scores.ScoreData[player].lastPersonWhoDamagedMe);
+                                PlayAnnouncer(Scores.ScoreData[Scores.ScoreData[player].lastPersonWhoDamagedMe].killsThisLife, false, Scores.ScoreData[player].lastPersonWhoDamagedMe);
                                 //canAssignMutator = true;
                                 break;
                             case AliveState.AssistedKill: // Assist (not damaged recently or GM kill).
@@ -2926,11 +2926,6 @@ namespace BDArmory.Competition
                         }
                         competitionStatus.Add(statusMessage);
                         if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode:{CompetitionID}]: " + statusMessage);
-                        if (canAssignMutator)
-                        {
-                            Scores.ScoreData[Scores.ScoreData[player].lastPersonWhoDamagedMe].gunGameProgress++;
-                            Scores.ScoreData[Scores.ScoreData[player].lastPersonWhoDamagedMe].killsThisLife++;
-                        }
 
                         if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_KILL)
                         {
@@ -3085,7 +3080,7 @@ namespace BDArmory.Competition
                 if (loadedVessels.Current == null || !loadedVessels.Current.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(loadedVessels.Current.vesselType))
                     continue;
                 var craftName = loadedVessels.Current.GetName();
-                if (Scores.ScoreData[player].aliveState == AliveState.AssistedKill && Scores.ScoreData[player].everyoneWhoDamagedMe.Contains(craftName))
+                if (BDArmorySettings.MUTATOR_APPLY_GUNGAME && Scores.ScoreData[player].aliveState == AliveState.AssistedKill && Scores.ScoreData[player].everyoneWhoDamagedMe.Contains(craftName))
                     SpawnUtils.ApplyMutators(loadedVessels.Current, true); // Reward everyone involved on assists.
                 else if (Scores.ScoreData[player].lastPersonWhoDamagedMe == craftName || (Scores.ScoreData[player].aliveState == AliveState.KillSteal && Scores.ScoreData[player].previousPersonWhoDamagedMe == craftName))
                     SpawnUtils.ApplyMutators(loadedVessels.Current, true); // Reward clean kills and those whom have had their kills stolen.

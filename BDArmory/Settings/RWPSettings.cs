@@ -55,10 +55,13 @@ namespace BDArmory.Settings
         {"MUTATOR_MODE", true},
         {"MUTATOR_DURATION", 0},
         {"MUTATOR_APPLY_KILL", true},
+        {"MUTATOR_APPLY_GUNGAME", false},
         {"MUTATOR_APPLY_GLOBAL", false},
         {"MUTATOR_APPLY_TIMER", false},
         {"MUTATOR_APPLY_NUM", 1},
         {"MUTATOR_ICONS", true},
+        {"GG_PERSISTANT_PROGRESSION", false},
+        {"GG_CYCLE_LIST", false},
         {"MUTATOR_LIST", new List<string>{ "Brownings", "Chainguns", "Vulcans", "Mausers", "GAU-22s", "N-37s", "AT Guns", "Railguns", "GAU-8s", "Rockets" }},
       }},
       {62, new(){ // Retrofuturistic on Eve

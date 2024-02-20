@@ -16,7 +16,6 @@ using BDArmory.Weapons.Missiles;
 using BDArmory.Weapons;
 using BDArmory.Damage;
 using BDArmory.FX;
-using static UnityEngine.GUI;
 
 namespace BDArmory.VesselSpawning
 {
@@ -829,6 +828,7 @@ namespace BDArmory.VesselSpawning
         }
         void ApplyMutatorEventHandler(Vessel vessel) => ApplyMutators(vessel, true);
 
+        public Dictionary<string, int> gunGameProgress = [];
         public void ApplyMutators(Vessel vessel, bool enable)
         {
             if (vessel == null || !vessel.loaded) return;
@@ -839,28 +839,15 @@ namespace BDArmory.VesselSpawning
                 {
                     MM = (BDAMutator)vessel.rootPart.AddModule("BDAMutator");
                 }
-                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 61) //gungame
+                if (BDArmorySettings.MUTATOR_APPLY_GUNGAME) //gungame
                 {
-					if (MM.progressionIndex > BDArmorySettings.MUTATOR_LIST.Count - 1) return; // Already at the end of the list.
+                    if (!BDArmorySettings.GG_CYCLE_LIST && MM.progressionIndex > BDArmorySettings.MUTATOR_LIST.Count - 1) return; // Already at the end of the list.
+                    if (BDArmorySettings.GG_PERSISTANT_PROGRESSION) MM.progressionIndex = gunGameProgress.GetValueOrDefault(vessel.vesselName, 0);
+                    if (MM.progressionIndex > BDArmorySettings.MUTATOR_LIST.Count - 1) MM.progressionIndex = BDArmorySettings.GG_CYCLE_LIST ? 0 : BDArmorySettings.MUTATOR_LIST.Count - 1;
                     Debug.Log($"[BDArmory.SpawnUtils]: Applying mutator {BDArmorySettings.MUTATOR_LIST[MM.progressionIndex]} to {vessel.vesselName}");
-                    if (BDArmorySettings.GG_PERSISTANT_PROGRESSION)
-                    {
-                        int index = BDACompetitionMode.Instance.Scores.ScoreData[vessel.vesselName].gunGameProgress;
-                        if (index > BDArmorySettings.MUTATOR_LIST.Count - 1)
-                        {
-                            if (BDArmorySettings.GG_CYCLE_LIST) index %= BDArmorySettings.MUTATOR_LIST.Count;
-                            else //return; // Already at the end of the list.
-                                index = BDArmorySettings.MUTATOR_LIST.Count - 1; //apply last mutator on the list if spawning in
-                        }
-                        MM.EnableMutator(BDArmorySettings.MUTATOR_LIST[index]); //increment to next mutator on list
-                    }
-                    else MM.EnableMutator(BDArmorySettings.MUTATOR_LIST[MM.progressionIndex]); //increment to next mutator on list
-                        MM.progressionIndex++;
-                    if (MM.progressionIndex > BDArmorySettings.MUTATOR_LIST.Count - 1)
-                    {
-                        if (BDArmorySettings.GG_CYCLE_LIST) MM.progressionIndex = 0;
-                        //else MM.progressionIndex = BDArmorySettings.MUTATOR_LIST.Count - 1;
-                    }
+                    MM.EnableMutator(BDArmorySettings.MUTATOR_LIST[MM.progressionIndex]); // Apply the mutator.
+                    MM.progressionIndex++; //increment to next mutator on list
+                    if (BDArmorySettings.GG_PERSISTANT_PROGRESSION) gunGameProgress[vessel.vesselName] = MM.progressionIndex;
                 }
                 else
                 {
