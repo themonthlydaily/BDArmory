@@ -575,9 +575,16 @@ namespace BDArmory.Weapons.Missiles
                                     if (be.Current == null) continue;
                                     if (be.Current.useWorldSpace)
                                     {
-                                        if (be.Current.GetComponent<BDAGaplessParticleEmitter>()) continue;
+                                        var existingBE = be.Current.GetComponent<BDAGaplessParticleEmitter>();
+                                        if (existingBE)
+                                        {
+                                            existingBE.emit = false;
+                                            be.Current.emit = false;
+                                            continue;
+                                        }
                                         BDAGaplessParticleEmitter ge = be.Current.gameObject.AddComponent<BDAGaplessParticleEmitter>();
                                         ge.part = part;
+                                        ge.emit = false;
                                         boostGaplessEmitters.Add(ge);
                                     }
                                     else
@@ -607,15 +614,18 @@ namespace BDArmory.Weapons.Missiles
                     while (pEmitter.MoveNext())
                     {
                         if (pEmitter.Current == null) continue;
-                        if (pEmitter.Current.GetComponent<BDAGaplessParticleEmitter>() || boostEmitters.Contains(pEmitter.Current))
+                        var existingGE = pEmitter.Current.GetComponent<BDAGaplessParticleEmitter>();
+                        if (existingGE || boostEmitters.Contains(pEmitter.Current))
                         {
-                            continue;
+                            if (existingGE) existingGE.emit = false;
+                                continue;
                         }
 
                         if (pEmitter.Current.useWorldSpace)
                         {
                             BDAGaplessParticleEmitter gaplessEmitter = pEmitter.Current.gameObject.AddComponent<BDAGaplessParticleEmitter>();
                             gaplessEmitter.part = part;
+                            gaplessEmitter.emit = false;
                             gaplessEmitters.Add(gaplessEmitter);
                         }
                         else
