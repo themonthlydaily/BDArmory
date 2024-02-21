@@ -524,7 +524,7 @@ namespace BDArmory.Competition
                 /* //Announcer
                 if (Players.Contains(ScoreData[vesselName].lastPersonWhoDamagedMe))
                 {
-                    ScoreData[ScoreData[vesselName].lastPersonWhoDamagedMe].killsThisLife;
+                    ++ScoreData[ScoreData[vesselName].lastPersonWhoDamagedMe].killsThisLife;
                     BDACompetitionMode.Instance.PlayAnnouncer(ScoreData[ScoreData[vesselName].lastPersonWhoDamagedMe].killsThisLife, false, ScoreData[vesselName].lastPersonWhoDamagedMe);
                 }
                 */
@@ -980,7 +980,7 @@ namespace BDArmory.Competition
 
         #region Special
         public int partsLostToAsteroids = 0; // Number of parts lost due to crashing into asteroids.
-        public int killsThisLife = 0; //number of kills tracking for Announcer barks
+        // public int killsThisLife = 0; //number of kills tracking for Announcer barks
 
         #endregion
 
