@@ -3,8 +3,7 @@ IMPROVEMENTS / FIXES
 - General:
 	- Recompile the shaders on an older version of Unity so that they're compatible with KSP v1.9.1 and later.
 	- Fix false positives of Krakensbane being active on vessel switches.
-	- Add Gun Game game option to the Mutator GameMode - craft progress through a list of mutators (weapon changes or otherwise) every time they score a kill. Ideally used with Continuous Spawn.
-  - Add a part Tree Hierarchy visualizer to the BDA Craft Utilities Tool for checking part offset.
+	- Add a part Tree Hierarchy visualizer to the BDA Craft Utilities Tool for checking part offset.
 - UI:
 	- Make the time-scaling slider visible without needing to activate time override.
 	- Extend the camera-switch slider to up to 15s.
@@ -18,6 +17,7 @@ IMPROVEMENTS / FIXES
 	- Make the "Auto-Quit On Tournament End" option apply whenever it's visible.
 	- Suppress the "Dumping scores..." messages unless competition debugging is enabled.
 - Game Modes:
+	- Add Gun Game game option to the Mutator GameMode - craft progress through a list of mutators (weapon changes or otherwise) every time they score a kill. Ideally used with Continuous Spawn.
 	- Asteroid Field:
 		- Adjust the anomalous attraction strengths to scale better with typical asteroid radii.
 		- Add an inter-asteroid repulsion at close ranges to prevent asteroids clumping too much.
@@ -27,7 +27,7 @@ IMPROVEMENTS / FIXES
 	- Heatrays now check for part occlusion.
 	- Fix non-damaging lasers (gravity guns, etc.) from not scoring in competition.
 	- Fix the luminance of tracers on pooled bullets not being reset (not every bullet is a tracer now).
-  - Lasers now deal damage to buildings.
+	- Lasers now deal damage to buildings.
 - RWP:
 	- Add RWP override settings (in RWP_settings.cfg) for automatically enabling/disabling RWP options when the RWP toggle is toggled or the RWP slider is adjusted.
 		- Settings adjusted when RWP is enabled aren't saved, but can be manually added to the RWP_settings.cfg file.
