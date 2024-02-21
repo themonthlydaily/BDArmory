@@ -2687,6 +2687,12 @@ namespace BDArmory.Weapons
                                 var angularSpread = tanAngle * hit.distance; //Scales down the damage based on the increased surface area of the area being hit by the laser. Think flashlight on a wall.
                                 initialDamage = laserDamage / (1 + Mathf.PI * angularSpread * angularSpread) * 0.425f;
                                 if (!BDArmorySettings.PAINTBALL_MODE) ProjectileUtils.CheckBuildingHit(hit, initialDamage, pulseLaser);
+                                if (HEpulses)
+                                {
+                                    ExplosionFx.CreateExplosion(tf.position + rayDirection * raycastDistance,
+                                                   (laserDamage / 10000),
+                                                   explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName, null);
+                                }
                             }
                         }
                     }
