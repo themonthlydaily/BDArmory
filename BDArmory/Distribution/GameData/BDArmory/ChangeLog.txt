@@ -27,7 +27,9 @@ IMPROVEMENTS / FIXES
 	- Heatrays now check for part occlusion.
 	- Fix non-damaging lasers (gravity guns, etc.) from not scoring in competition.
 	- Fix the luminance of tracers on pooled bullets not being reset (not every bullet is a tracer now).
-  - Lasers now deal damage to buildings.
+	- Lasers now deal damage to buildings.
+	- Missiles:
+		- Fix Missile Exhaust FX issue.
 - RWP:
 	- Add RWP override settings (in RWP_settings.cfg) for automatically enabling/disabling RWP options when the RWP toggle is toggled or the RWP slider is adjusted.
 		- Settings adjusted when RWP is enabled aren't saved, but can be manually added to the RWP_settings.cfg file.
