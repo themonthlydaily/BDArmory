@@ -30,6 +30,7 @@ namespace BDArmory.Settings
         {"VESSEL_SPAWN_FILL_SEATS", 1},
         {"VESSEL_SPAWN_RANDOM_ORDER", true},
         {"VESSEL_SPAWN_REASSIGN_TEAMS", true},
+        {"OUT_OF_AMMO_KILL_TIME", 60},
       }},
       // Round specific overrides (also overrides global settings).
       {42, new(){ // Fly the Unfriendly Skies
@@ -68,7 +69,7 @@ namespace BDArmory.Settings
         {"ASTEROID_FIELD", true},
         {"ASTEROID_FIELD_ALTITUDE", 20},
         {"ASTEROID_FIELD_ANOMALOUS_ATTRACTION", true},
-        {"ASTEROID_FIELD_ANOMALOUS_ATTRACTION_STRENGTH", 1},
+        {"ASTEROID_FIELD_ANOMALOUS_ATTRACTION_STRENGTH", 0.5},
         {"ASTEROID_FIELD_NUMBER", 200},
         {"ASTEROID_FIELD_RADIUS", 7},
         {"VESSEL_SPAWN_CS_FOLLOWS_CENTROID", false},
