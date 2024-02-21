@@ -3,8 +3,8 @@ IMPROVEMENTS / FIXES
 - General:
 	- Recompile the shaders on an older version of Unity so that they're compatible with KSP v1.9.1 and later.
 	- Fix false positives of Krakensbane being active on vessel switches.
-- UI:
 	- Add a part Tree Hierarchy visualizer to the BDA Craft Utilities Tool for checking part offset.
+- UI:
 	- Make the time-scaling slider visible without needing to activate time override.
 	- Extend the camera-switch slider to up to 15s.
 - AI / WM:
@@ -26,8 +26,8 @@ IMPROVEMENTS / FIXES
 	- Reduce ECPerShot cost of electrolasers.
 	- Heatrays now check for part occlusion.
 	- Fix non-damaging lasers (gravity guns, etc.) from not scoring in competition.
-	- Lasers now deal damage to buildings.
 	- Fix the luminance of tracers on pooled bullets not being reset (not every bullet is a tracer now).
+	- Lasers now deal damage to buildings.
 - RWP:
 	- Add RWP override settings (in RWP_settings.cfg) for automatically enabling/disabling RWP options when the RWP toggle is toggled or the RWP slider is adjusted.
 		- Settings adjusted when RWP is enabled aren't saved, but can be manually added to the RWP_settings.cfg file.
