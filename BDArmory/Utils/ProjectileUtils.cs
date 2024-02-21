@@ -10,6 +10,8 @@ using BDArmory.FX;
 using BDArmory.GameModes;
 using BDArmory.Settings;
 using System.IO;
+using static FinePrint.ContractDefs;
+using static SphereBaseSO;
 
 namespace BDArmory.Utils
 {
@@ -1039,6 +1041,47 @@ namespace BDArmory.Utils
                              " Building Threshold : " + building.impactMomentumThreshold * 2);
 
                 return true;
+            }
+            return false;
+        }
+
+        public static bool CheckBuildingHit(RaycastHit hit, float laserDamage, bool pulselaser)
+        {
+            DestructibleBuilding building = null;
+            try
+            {
+                building = hit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
+                //if (building != null)
+                //   building.damageDecay = 600f; //check if new method is still subject to building regen
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[BDArmory.ProjectileUtils]: Exception thrown in CheckBuildingHit: " + e.Message + "\n" + e.StackTrace);
+            }
+
+            if (building != null && building.IsIntact)
+            {
+                if (BDArmorySettings.BUILDING_DMG_MULTIPLIER == 0) return true;
+                if (laserDamage > 0)
+                {
+                    float damageToBuilding = (laserDamage * (pulselaser ? 1 : TimeWarp.fixedDeltaTime)) * Mathf.Clamp((1 - (BDAMath.Sqrt(10 * 2.4f) * 200) / laserDamage), 0.005f, 1) //rough estimates of concrete at 10 Diffusivity, 2400kg/m3, and 20cm thick walls
+                    * (BDArmorySettings.DMG_MULTIPLIER / 100); //will probably need to goose the numbers, quick back-of-the-envelope calc has the ABL doing ~3.4 DPS, BDA-E plasma, ~ 85 DPS
+                    //damageToBuilding /= 8f;
+                    damageToBuilding *= BDArmorySettings.BUILDING_DMG_MULTIPLIER;
+                    BuildingDamage.RegisterDamage(building);
+                    building.FacilityDamageFraction += damageToBuilding;
+                    if (building.FacilityDamageFraction > (building.impactMomentumThreshold * 2))
+                    {
+                        if (BDArmorySettings.DEBUG_DAMAGE) Debug.Log("[BDArmory.ProjectileUtils]: Building demolished due to energy damage! Dmg to building: " + building.Damage);
+                        building.Demolish();
+                    }
+                    if (BDArmorySettings.DEBUG_DAMAGE)
+                        Debug.Log("[BDArmory.ProjectileUtils]: Ballistic hit destructible building " + building.name + "! Hitpoints Applied: " + damageToBuilding.ToString("F3") +
+                                 ", Building Damage : " + building.FacilityDamageFraction +
+                                 " Building Threshold : " + building.impactMomentumThreshold * 2);
+
+                    return true;
+                }
             }
             return false;
         }

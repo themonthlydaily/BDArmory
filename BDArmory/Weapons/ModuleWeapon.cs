@@ -2507,7 +2507,6 @@ namespace BDArmory.Weapons
 
                             KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
                             Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
-
                             if (p && p.vessel && p.vessel != vessel)
                             {
                                 float distance = hit.distance;
@@ -2681,6 +2680,13 @@ namespace BDArmory.Weapons
                                 {
                                     BulletHitFX.CreateBulletHit(p, hit.point, hit, hit.normal, false, 10, 0, weaponManager.Team.Name);
                                 }
+                            }
+                            else
+                            {
+                                if (electroLaser || HeatRay) continue;
+                                var angularSpread = tanAngle * hit.distance; //Scales down the damage based on the increased surface area of the area being hit by the laser. Think flashlight on a wall.
+                                initialDamage = laserDamage / (1 + Mathf.PI * angularSpread * angularSpread) * 0.425f;
+                                if (!BDArmorySettings.PAINTBALL_MODE) ProjectileUtils.CheckBuildingHit(hit, initialDamage, pulseLaser);
                             }
                         }
                     }
