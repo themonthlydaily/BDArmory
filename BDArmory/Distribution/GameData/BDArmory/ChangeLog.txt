@@ -1,6 +1,7 @@
 ﻿
 IMPROVEMENTS / FIXES
 - General:
+	- Recompile the shaders on an older version of Unity so that they're compatible with KSP v1.9.1 and later.
 	- Fix false positives of Krakensbane being active on vessel switches.
 	- Add Gun Game game option to the Mutator GameMode - craft progress through a list of mutators (weapon changes or otherwise) every time they score a kill. Ideally used with Continuous Spawn.
 - UI:
@@ -32,7 +33,6 @@ IMPROVEMENTS / FIXES
 		- The defaults for the RWP_settings.cfg file will be saved when settings are first saved and changes made to the file override the defaults.
 		- Default RWP settings for previous rounds and the upcoming S6R2 have been added.
 	- Restrict the RWP slider to only include rounds that have overrides and move it to the top of the section to avoid issues with layout changes while adjusting the slider.
-
 
 v1.6.10.1
 IMPROVEMENTS / FIXES
