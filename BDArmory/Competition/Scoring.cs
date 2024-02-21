@@ -521,7 +521,13 @@ namespace BDArmory.Competition
                 else // Last hit from someone else was recent => Kill Steal
                 { ScoreData[vesselName].aliveState = AliveState.KillSteal; }
 
-                if (Players.Contains(ScoreData[vesselName].lastPersonWhoDamagedMe)) ++ScoreData[ScoreData[vesselName].lastPersonWhoDamagedMe].killsThisLife;
+                /* //Announcer
+                if (Players.Contains(ScoreData[vesselName].lastPersonWhoDamagedMe))
+                {
+                    ScoreData[ScoreData[vesselName].lastPersonWhoDamagedMe].killsThisLife;
+                    BDACompetitionMode.Instance.PlayAnnouncer(ScoreData[ScoreData[vesselName].lastPersonWhoDamagedMe].killsThisLife, false, ScoreData[vesselName].lastPersonWhoDamagedMe);
+                }
+                */
                 if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                 { BDAScoreService.Instance.TrackKill(ScoreData[vesselName].lastPersonWhoDamagedMe, vesselName); }
             }

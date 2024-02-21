@@ -17,6 +17,7 @@ namespace BDArmory.Utils
         /// If it's not in the cache, then load the audioclip from the GameDatabase and cache it for future use.
         /// </summary>
         /// <param name="soundPath">The path to a valid audioclip.</param>
+        /// <param name="allowMissing">Don't log an error if the sound file doesn't exist, just log it instead.</param>
         /// <returns>The AudioClip.</returns>
         public static AudioClip GetAudioClip(string soundPath, bool allowMissing = false)
         {

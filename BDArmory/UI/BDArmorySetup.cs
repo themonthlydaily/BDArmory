@@ -3168,12 +3168,14 @@ namespace BDArmory.UI
                                         CheatCodeGUI = "";
                                         break;
                                     }
+                                    /* //Announcer
                                 case "UTDeathMatch":
                                     {
                                         BDArmorySettings.GG_ANNOUNCER = !BDArmorySettings.GG_ANNOUNCER;
                                         CheatCodeGUI = "";
                                         break;
                                     }
+                                    */
                                 case "DiscoInferno":
                                     {
                                         BDArmorySettings.DISCO_MODE = !BDArmorySettings.DISCO_MODE;
@@ -3379,12 +3381,12 @@ namespace BDArmory.UI
                         BDArmorySettings.MUTATOR_APPLY_KILL = GUI.Toggle(SRightRect(line, 1f), BDArmorySettings.MUTATOR_APPLY_KILL, StringUtils.Localize("#LOC_BDArmory_Settings_MutatorKill"));
                         if (BDArmorySettings.MUTATOR_APPLY_KILL) // if more than 1 mutator selected, will randomly assign mutator on kill
                         {
-                            BDArmorySettings.MUTATOR_APPLY_KILL = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.MUTATOR_APPLY_GUNGAME, StringUtils.Localize("#LOC_BDArmory_Settings_MutatorGungame"));
+                            BDArmorySettings.MUTATOR_APPLY_GUNGAME = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.MUTATOR_APPLY_GUNGAME, StringUtils.Localize("#LOC_BDArmory_Settings_MutatorGungame"));
                             BDArmorySettings.MUTATOR_APPLY_GLOBAL = false;
                             BDArmorySettings.MUTATOR_APPLY_TIMER = false;
-                                BDArmorySettings.GG_PERSISTANT_PROGRESSION = GUI.Toggle(SLeftRect(++line), BDArmorySettings.GG_PERSISTANT_PROGRESSION, StringUtils.Localize("#LOC_BDArmory_settings_gungame_progression"));
-                                BDArmorySettings.GG_CYCLE_LIST = GUI.Toggle(SRightRect(line), BDArmorySettings.GG_CYCLE_LIST, StringUtils.Localize("#LOC_BDArmory_settings_gungame_cycle"));
-                                if (GUI.Button(SLeftRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_reset")} {StringUtils.Localize("#LOC_BDArmory_Weapons")}")) SpawnUtilsInstance.Instance.gunGameProgress.Clear(); // Clear gun-game progress.
+                            BDArmorySettings.GG_PERSISTANT_PROGRESSION = GUI.Toggle(SLeftRect(++line), BDArmorySettings.GG_PERSISTANT_PROGRESSION, StringUtils.Localize("#LOC_BDArmory_settings_gungame_progression"));
+                            BDArmorySettings.GG_CYCLE_LIST = GUI.Toggle(SRightRect(line), BDArmorySettings.GG_CYCLE_LIST, StringUtils.Localize("#LOC_BDArmory_settings_gungame_cycle"));
+                            if (GUI.Button(SLeftRect(++line), $"{StringUtils.Localize("#LOC_BDArmory_reset")} {StringUtils.Localize("#LOC_BDArmory_Weapons")}")) SpawnUtilsInstance.Instance.gunGameProgress.Clear(); // Clear gun-game progress.
                             if (!MutatorInfo.gunGameConfigured) MutatorInfo.SetupGunGame();
                         }
 

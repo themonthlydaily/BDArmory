@@ -88,19 +88,22 @@ namespace BDArmory.Competition
         // pilot actions
         private Dictionary<string, string> pilotActions = new Dictionary<string, string>();
 
+        #endregion
+        /*
+        #region Competition Announcer //Competition on-kill soundclips, searchtag Announcer
         AudioClip headshotClip;
-        AudioClip doubleKillClip;
-        AudioClip tripleKillClip;
-        AudioClip MultiKillClip;
-        AudioClip megaKillClip;
-        AudioClip ultraKillClip;
-        AudioClip mmmonsterKillClip;
-        AudioClip ludicrousKillClip;
+        AudioClip 2KillClip 
+        AudioClip 3KillClip;
+        AudioClip 4KillClip;
+        AudioClip 5KillClip;
+        AudioClip 6KillClip;
+        AudioClip 7KillClip;
+        AudioClip 8KillClip;
 
         AudioSource audioSource;
         List<AudioClip> announcerBarks;
-
         #endregion
+        */
 
         #region GUI elements
         GUIStyle statusStyle;
@@ -131,16 +134,19 @@ namespace BDArmory.Competition
         void Start()
         {
             UpdateGUIElements();
+            /*
+            //Announcer
             headshotClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/Headshot", true);
-            doubleKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/DoubleKill", true);
-            tripleKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/TripleKill", true);
-            MultiKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/MultiKill", true);
-            megaKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/MegaKill", true);
-            ultraKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/UltraKill", true);
-            mmmonsterKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/MonsterKill", true);
-            ludicrousKillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/Godlike", true);
+            2KillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/2Kills", true);
+            3KillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/3Kills", true);
+            4KillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/4Kills", true);
+            5KillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/5Kills", true);
+            6KillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/6Kills", true);
+            7KillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/7Kills", true);
+            8KillClip = SoundUtils.GetAudioClip("BDArmory/Sounds/Announcer/8Kills", true);
             audioSource = gameObject.AddComponent<AudioSource>();
-            announcerBarks = new List<AudioClip> { doubleKillClip, tripleKillClip, MultiKillClip, megaKillClip, ultraKillClip, mmmonsterKillClip, ludicrousKillClip };
+            announcerBarks = [2KillClip, 3KillClip, 4KillClip, 5KillClip, 6KillClip, 7KillClip, 8KillClip];
+            */
         }
 
         void OnGUI()
@@ -1027,7 +1033,8 @@ namespace BDArmory.Competition
                 ScreenMessages.PostScreenMessage(StringUtils.Localize("#LOC_BDArmory_UI_MutatorStart") + ": " + currentMutator + ". " + (BDArmorySettings.MUTATOR_APPLY_TIMER ? (BDArmorySettings.MUTATOR_DURATION > 0 ? BDArmorySettings.MUTATOR_DURATION * 60 : BDArmorySettings.COMPETITION_DURATION * 60) + " seconds left" : ""), 5, ScreenMessageStyle.UPPER_CENTER);
             }
         }
-
+        /*
+        //Announcer function for playing sequential soundclips on kill
         public void PlayAnnouncer(int killcount, bool headshot, string killerVessel)
         {
             if (FlightGlobals.ActiveVessel.vesselName != killerVessel) return;
@@ -1043,7 +1050,7 @@ namespace BDArmory.Competition
                 }
             }
         }
-
+        */
         #region Vessel validity
         public enum InvalidVesselReason { None, NullVessel, NoAI, NoWeaponManager, NoCommand };
         public InvalidVesselReason IsValidVessel(Vessel vessel, bool attemptFix = true)
@@ -2886,7 +2893,6 @@ namespace BDArmory.Competition
                                 {
                                     statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (NAILED 'EM! CLEAN KILL!)";
                                 }
-                                PlayAnnouncer(Scores.ScoreData[Scores.ScoreData[player].lastPersonWhoDamagedMe].killsThisLife, false, Scores.ScoreData[player].lastPersonWhoDamagedMe);
                                 //canAssignMutator = true;
                                 break;
                             case AliveState.HeadShot: // Damaged recently, but took damage a while ago from someone else.
@@ -2898,7 +2904,6 @@ namespace BDArmory.Competition
                                 {
                                     statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (BOOM! HEAD SHOT!)";
                                 }
-                                PlayAnnouncer(Scores.ScoreData[Scores.ScoreData[player].lastPersonWhoDamagedMe].killsThisLife, true, Scores.ScoreData[player].lastPersonWhoDamagedMe);
                                 //canAssignMutator = true;
                                 break;
                             case AliveState.KillSteal: // Damaged recently, but took damage from someone else recently too.
@@ -2910,7 +2915,6 @@ namespace BDArmory.Competition
                                 {
                                     statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (KILL STEAL!)";
                                 }
-                                PlayAnnouncer(Scores.ScoreData[Scores.ScoreData[player].lastPersonWhoDamagedMe].killsThisLife, false, Scores.ScoreData[player].lastPersonWhoDamagedMe);
                                 //canAssignMutator = true;
                                 break;
                             case AliveState.AssistedKill: // Assist (not damaged recently or GM kill).
@@ -3080,9 +3084,10 @@ namespace BDArmory.Competition
                 if (loadedVessels.Current == null || !loadedVessels.Current.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(loadedVessels.Current.vesselType))
                     continue;
                 var craftName = loadedVessels.Current.GetName();
+                if (!Scores.Players.Contains(craftName)) continue;
                 if (BDArmorySettings.MUTATOR_APPLY_GUNGAME && Scores.ScoreData[player].aliveState == AliveState.AssistedKill && Scores.ScoreData[player].everyoneWhoDamagedMe.Contains(craftName))
                     SpawnUtils.ApplyMutators(loadedVessels.Current, true); // Reward everyone involved on assists.
-                else if (Scores.ScoreData[player].lastPersonWhoDamagedMe == craftName || (Scores.ScoreData[player].aliveState == AliveState.KillSteal && Scores.ScoreData[player].previousPersonWhoDamagedMe == craftName))
+                else if (Scores.ScoreData[player].lastPersonWhoDamagedMe == craftName || (BDArmorySettings.MUTATOR_APPLY_GUNGAME && Scores.ScoreData[player].aliveState == AliveState.KillSteal && Scores.ScoreData[player].previousPersonWhoDamagedMe == craftName))
                     SpawnUtils.ApplyMutators(loadedVessels.Current, true); // Reward clean kills and those whom have had their kills stolen.
                 else continue;
                 if (BDArmorySettings.DEBUG_COMPETITION) Debug.Log($"[BDArmory.BDACompetitionMode:{CompetitionID}]: Assigning On Kill mutator for {player} to {craftName}");

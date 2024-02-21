@@ -380,7 +380,7 @@ namespace BDArmory.Settings
         #region GunGame
         [BDAPersistentSettingsField] public static bool GG_PERSISTANT_PROGRESSION = false;
         [BDAPersistentSettingsField] public static bool GG_CYCLE_LIST = false;
-        [BDAPersistentSettingsField] public static bool GG_ANNOUNCER = false;
+        //[BDAPersistentSettingsField] public static bool GG_ANNOUNCER = false;
 
         #endregion
         #region Tournament settings

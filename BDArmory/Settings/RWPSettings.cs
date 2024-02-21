@@ -55,7 +55,7 @@ namespace BDArmory.Settings
         {"MUTATOR_MODE", true},
         {"MUTATOR_DURATION", 0},
         {"MUTATOR_APPLY_KILL", true},
-        {"MUTATOR_APPLY_GUNGAME", false},
+        {"MUTATOR_APPLY_GUNGAME", true},
         {"MUTATOR_APPLY_GLOBAL", false},
         {"MUTATOR_APPLY_TIMER", false},
         {"MUTATOR_APPLY_NUM", 1},

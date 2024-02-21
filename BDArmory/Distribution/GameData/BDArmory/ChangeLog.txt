@@ -2,7 +2,7 @@
 ﻿IMPROVEMENTS / FIXES
 - General:
 	- Fix false positives of Krakensbane being active on vessel switches.
-	- Add GUn Game game option to the Mutator GameMode - craft progress through a list of mutators (weapon changes or otherwise) every time they score a kill. Ideally used with Continuous Spawn.
+	- Add Gun Game game option to the Mutator GameMode - craft progress through a list of mutators (weapon changes or otherwise) every time they score a kill. Ideally used with Continuous Spawn.
 - AI / WM:
 	- Clamp the vertical adjustment of the fly-to position to at most half the distance to the target (should fix the issue of being unable to attack targets directly below).
 	- Add a slider for biasing the Immelmann pitch direction when not close to terrain/min altitude.
