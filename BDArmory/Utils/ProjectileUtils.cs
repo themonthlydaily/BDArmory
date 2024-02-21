@@ -10,8 +10,6 @@ using BDArmory.FX;
 using BDArmory.GameModes;
 using BDArmory.Settings;
 using System.IO;
-using static FinePrint.ContractDefs;
-using static SphereBaseSO;
 
 namespace BDArmory.Utils
 {
