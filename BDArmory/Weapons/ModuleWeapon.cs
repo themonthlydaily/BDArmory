@@ -692,6 +692,9 @@ namespace BDArmory.Weapons
         public float tracerLuminance = 1.75f;
 
         [KSPField]
+        public float bulletLuminance = 0.75f;
+
+        [KSPField]
         public bool tracerOverrideWidth = false;
 
         int tracerIntervalCounter;
@@ -2170,7 +2173,7 @@ namespace BDArmory.Weapons
                                         }
                                         pBullet.startColor.a *= 0.5f;
                                         pBullet.projectileColor.a *= 0.5f;
-                                        pBullet.tracerLuminance = 1;
+                                        pBullet.tracerLuminance = bulletLuminance; //set to -1 to have pooledBullet autoset this to 0.5
                                     }
                                     pBullet.tracerDeltaFactor = tracerDeltaFactor;
                                     pBullet.bulletDrop = bulletDrop;
@@ -2689,7 +2692,7 @@ namespace BDArmory.Weapons
                                 if (!BDArmorySettings.PAINTBALL_MODE) ProjectileUtils.CheckBuildingHit(hit, initialDamage, pulseLaser);
                                 if (HEpulses)
                                 {
-                                    ExplosionFx.CreateExplosion(tf.position + rayDirection * raycastDistance,
+                                    ExplosionFx.CreateExplosion(hit.point,
                                                    (laserDamage / 10000),
                                                    explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName, null);
                                 }
@@ -3150,18 +3153,21 @@ namespace BDArmory.Weapons
                 }
                 //else return true; //this is causing weapons thath have ECPerShot + standard ammo (railguns, etc) to not consume ammo, only EC
             }
-            if (externalAmmo)
+            if (ammoCount >= AmmoPerShot)
             {
-                if (part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot) > 0)
+                if (externalAmmo)
                 {
-                    return true;
+                    if (part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot) > 0)
+                    {
+                        return true;
+                    }
                 }
-            }
-            else //for guns with internal ammo supplies and no external, only draw from the weapon part
-            {
-                if (part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot, ResourceFlowMode.NO_FLOW) > 0)
+                else //for guns with internal ammo supplies and no external, only draw from the weapon part
                 {
-                    return true;
+                    if (part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot, ResourceFlowMode.NO_FLOW) > 0)
+                    {
+                        return true;
+                    }
                 }
             }
             StartCoroutine(IncrementRippleIndex(useRippleFire ? InitialFireDelay * TimeWarp.CurrentRate : 0)); //if out of ammo (howitzers, say, or other weapon with internal ammo, move on to next weapon; maybe it still has ammo
@@ -5998,13 +6004,13 @@ namespace BDArmory.Weapons
                 {
                     if (pulseLaser)
                     {
-                        output.AppendLine($"Electrolaser EMP damage: {Math.Round((ECPerShot / 20), 2)}/s");
+                        output.AppendLine($"Electrolaser EMP damage: {Math.Round((ECPerShot / 10), 2)}/shot");
                     }
                     else
                     {
-                        output.AppendLine($"Electrolaser EMP damage: {Math.Round((ECPerShot / 1000), 2)}/s");
+                        output.AppendLine($"Electrolaser EMP damage: {Math.Round((ECPerShot / 500), 2)}/s");
                     }
-                    output.AppendLine($"Power Required: {ECPerShot}/s");
+                    output.AppendLine($"Power Required: {ECPerShot * (pulseLaser ? roundsPerMinute / 60 : 50)}/s");
                 }
                 else
                 {
@@ -6025,7 +6031,7 @@ namespace BDArmory.Weapons
                             output.AppendLine($"Electric Charge: {ECPerShot}/s");
                         }
                     }
-                    else if (requestResourceAmount > 0)
+                    if (requestResourceAmount > 0)
                     {
                         if (pulseLaser)
                         {
@@ -6044,8 +6050,8 @@ namespace BDArmory.Weapons
                     if (HEpulses)
                     {
                         output.AppendLine($"Blast:");
-                        output.AppendLine($"- tnt mass:  {Math.Round((laserDamage / 1000), 2)} kg");
-                        output.AppendLine($"- radius:  {Math.Round(BlastPhysicsUtils.CalculateBlastRange(laserDamage / 1000), 2)} m");
+                        output.AppendLine($"- tnt mass:  {Math.Round((laserDamage / 10000), 2)} kg");
+                        output.AppendLine($"- radius:  {Math.Round(BlastPhysicsUtils.CalculateBlastRange(laserDamage / 10000), 2)} m");
                     }
                 }
 
