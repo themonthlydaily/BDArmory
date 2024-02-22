@@ -258,13 +258,13 @@ namespace BDArmory.Utils
                         //float thickness = 0.36f;
 
                         float liftCoeff = (length * ((width + edgeWidth) / 2)) / 3.52f;
-                        float aeroVolume = (0.786f * length * ((width + edgeWidth) / 2) * adjustedThickness); //original .7 was based on errorneous 2x4 wingboard dimensions; stock reference wing area is 1.875x3.75m
+                        float aeroVolume = (0.786f * length * ((width + edgeWidth) / 2) * Mathf.Clamp(adjustedThickness, 0, 0.275f)); //original .7 was based on errorneous 2x4 wingboard dimensions; stock reference wing area is 1.875x3.75m
                         if (BDArmorySettings.DEBUG_OTHER) Debug.Log($"[BDArmory.FARUtils]: Found volume of {aeroVolume} for {part.name}.");
 
                         //if (PWAssyVersion != "0.44.0.0") //PWings now have edge colliders, unnecessary
                         if ((!BDArmorySettings.PWING_EDGE_LIFT) && !ctrlSrf) //if part !controlsurface, remove lift/mass from edges to bring inline with stock boards
                         {
-							aeroVolume = (0.786f * length * (width / 2) * adjustedThickness); //original .7 was based on errorneous 2x4 wingboard dimensions; stock reference wing area is 1.875x3.75m
+							aeroVolume = (0.786f * length * (width / 2) * Mathf.Clamp(adjustedThickness, 0, 0.275f)); //original .7 was based on errorneous 2x4 wingboard dimensions; stock reference wing area is 1.875x3.75m
 							liftCoeff = (length * (width / 2f)) / 3.52f;
                         }
                             if (!FerramAerospace.CheckForFAR()) part.Modules.GetModule<ModuleLiftingSurface>().deflectionLiftCoeff = (float)Math.Round(liftCoeff, 2);
@@ -275,7 +275,7 @@ namespace BDArmory.Utils
                         if (BDArmorySettings.RUNWAY_PROJECT)
                         {
                             liftCoeff = Mathf.Clamp((float)liftCoeff, 0, BDArmorySettings.MAX_PWING_LIFT); //if Runway Project, check lift is within limit and clamp if not
-                            if (!WingctrlSrf) PWType.GetField("sharedBaseOffsetRoot", BindingFlags.Public | BindingFlags.Instance).SetValue(module, 0); //Adjust PWing GUI mass readout
+                            if (!WingctrlSrf && !ctrlSrf) PWType.GetField("sharedBaseOffsetRoot", BindingFlags.Public | BindingFlags.Instance).SetValue(module, 0); //Adjust PWing GUI mass readout
                         }
                         if (BDArmorySettings.PWING_THICKNESS_AFFECT_MASS_HP)
                         {
