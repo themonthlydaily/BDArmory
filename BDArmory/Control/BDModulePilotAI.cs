@@ -178,6 +178,12 @@ namespace BDArmory.Control
             UI_FloatLogRange(minValue = 0.001f, maxValue = 1f, steps = 6, scene = UI_Scene.All)]
         public float autoTuningOptionInitialLearningRate = 1f;
 
+        //AutoTuning Initial Roll Relevance
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_PIDAutoTuningInitialRollRelevance", advancedTweakable = true,
+            groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
+            UI_FloatRange(minValue = 0f, maxValue = 1f, stepIncrement = 0.01f, scene = UI_Scene.All)]
+        public float autoTuningOptionInitialRollRelevance = 0.5f;
+
         //AutoTuning Altitude
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_PIDAutoTuningAltitude", //Auto-tuning Altitude
             groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
@@ -363,6 +369,11 @@ namespace BDArmory.Control
         public float ImmelmannTurnAngle = 30f; // 30° from directly behind -> 150°
         float ImmelmannTurnCosAngle = -0.866f;
         float BankedTurnDistance = 2800f;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ImmelmannPitchUpBias", advancedTweakable = true, // Immelmann Pitch-Up Bias
+            groupName = "pilotAI_ControlLimits", groupDisplayName = "#LOC_BDArmory_PilotAI_ControlLimits", groupStartCollapsed = true),
+            UI_FloatRange(minValue = -90f, maxValue = 90f, stepIncrement = 5f, scene = UI_Scene.All)]
+        public float ImmelmannPitchUpBias = 10f; // °/s
         #endregion
 
         #region EvadeExtend
@@ -1083,7 +1094,7 @@ namespace BDArmory.Control
         Vector3 relativeVelocityDownDirection; // Down relative to current velocity and upDirection.
         Vector3 terrainAlertDebugPos, terrainAlertDebugDir; // Debug vector3's for drawing lines.
         Color terrainAlertNormalColour = Color.green; // Color of terrain alert normal indicator.
-        readonly List<Ray> terrainAlertDebugRays = new(); // Adjusted normals of terrain alerts used to get the final terrain alert normal.
+        List<Ray> terrainAlertDebugRays = []; // Adjusted normals of terrain alerts used to get the final terrain alert normal.
         RaycastHit[] terrainAvoidanceHits = new RaycastHit[10];
         float postTerrainAvoidanceCoolDownTimer = -1; // Timer to track how long since exiting terrain avoidance.
         #endregion
@@ -2337,8 +2348,8 @@ namespace BDArmory.Control
                                 if (curVesselMaxAccel > 0)
                                 {
                                     float timeToTurn = (float)vessel.srfSpeed * angleToTarget * Mathf.Deg2Rad / curVesselMaxAccel;
-                                    target += v.Velocity() * timeToTurn;
-                                    target += 0.5f * v.acceleration * timeToTurn * timeToTurn;
+                                    target += timeToTurn * v.Velocity();
+                                    target += 0.5f * timeToTurn * timeToTurn * v.acceleration;
                                 }
                             }
                         }
@@ -2663,7 +2674,7 @@ namespace BDArmory.Control
             {
                 rollTarget = Vector3.Lerp(BodyUtils.GetSurfaceNormal(vesselTransform.position), upDirection, (float)vessel.radarAltitude / minAltitude) * 100; // Adjust the roll target smoothly from the surface normal to upwards to avoid clipping wings into terrain on take-off.
             }
-            else if (!avoidingTerrain && Vector3.Dot(rollTarget, upDirection) < 0 && Vector3.Dot(rollTarget, vessel.Velocity()) < 0) // If we're not avoiding terrain and the roll target is behind us and downwards, check that a circle arc of radius "turn radius" (scaled by twiddle factor minimum) tilted at angle of rollTarget has enough room to avoid hitting the ground.
+            else if (!avoidingTerrain && Vector3.Dot(rollTarget, upDirection) < 0 && Vector3.Dot(rollTarget, vessel.Velocity()) < 0) // If we're not avoiding terrain and the roll target is behind us and downwards, check that a circle arc of radius "turn radius" (scaled by twiddle factor maximum) tilted at angle of rollTarget has enough room to avoid hitting the ground.
             {
                 if (belowMinAltitude) // Never do inverted loops below min altitude.
                 { requiresLowAltitudeRollTargetCorrection = true; }
@@ -2772,6 +2783,7 @@ namespace BDArmory.Control
                 debugString.AppendLine(string.Format("Pitch: P: {0,7:F4}, I: {1,7:F4}, D: {2,7:F4}", pitchProportional, pitchIntegral, pitchDamping));
                 debugString.AppendLine(string.Format("Yaw: P: {0,7:F4}, I: {1,7:F4}, D: {2,7:F4}", yawProportional, yawIntegral, yawDamping));
                 debugString.AppendLine(string.Format("Roll: P: {0,7:F4}, I: {1,7:F4}, D: {2,7:F4}", rollProportional, rollIntegral, rollDamping));
+                // debugString.AppendLine($"ω.x: {vessel.angularVelocity.x:F3} rad/s, I.x: {vessel.angularMomentum.x / vessel.angularVelocity.x:F3} kg•m²");
             }
         }
 
@@ -4189,23 +4201,18 @@ namespace BDArmory.Control
             float targetDistance = (targetPosition - vesselTransform.position).magnitude;
 
             float vertFactor = 0;
-            vertFactor += ((float)vessel.srfSpeed / minSpeed - 2f) * 0.3f;          //speeds greater than 2x minSpeed encourage going upwards; below encourages downwards
-            vertFactor += (targetDistance / 1000f - 1f) * 0.3f;    //distances greater than 1000m encourage going upwards; closer encourages going downwards
-            vertFactor -= Mathf.Clamp01(Vector3.Dot(vesselTransform.position - targetPosition, upDirection) / 1600f - 1f) * 0.5f;       //being higher than 1600m above a target encourages going downwards
+            vertFactor += ((float)vessel.srfSpeed / minSpeed - 2f) * 0.3f; //speeds greater than 2x minSpeed encourage going upwards; below encourages downwards
+            vertFactor += (targetDistance / 1000f - 1f) * 0.3f; //distances greater than 1000m encourage going upwards; closer encourages going downwards
+            vertFactor -= Mathf.Clamp01(Vector3.Dot(vesselTransform.position - targetPosition, upDirection) / 1600f - 1f) * 0.5f; //being higher than 1600m above a target encourages going downwards
             if (targetVessel)
-                vertFactor += Vector3.Dot(targetVessel.Velocity() / targetVessel.srfSpeed, (targetVessel.ReferenceTransform.position - vesselTransform.position).normalized) * 0.3f;   //the target moving away from us encourages upward motion, moving towards us encourages downward motion
+                vertFactor += Vector3.Dot(targetVessel.Velocity() / targetVessel.srfSpeed, (targetVessel.ReferenceTransform.position - vesselTransform.position).normalized) * 0.3f; //the target moving away from us encourages upward motion, moving towards us encourages downward motion
             else
                 vertFactor += 0.4f;
-            vertFactor -= (weaponManager != null && weaponManager.underFire) ? 0.5f : 0;   //being under fire encourages going downwards as well, to gain energy
+            vertFactor -= (weaponManager != null && weaponManager.underFire) ? 0.5f : 0; //being under fire encourages going downwards as well, to gain energy
 
             float alt = (float)vessel.radarAltitude;
-
-            if (vertFactor > 2)
-                vertFactor = 2;
-            if (vertFactor < -2)
-                vertFactor = -2;
-
-            vertFactor += 0.15f * Mathf.Sin((float)vessel.missionTime * 0.25f);     //some randomness in there
+            vertFactor = Mathf.Clamp(vertFactor, -2, 2);
+            vertFactor += 0.15f * Mathf.Sin((float)vessel.missionTime * 0.25f); //some randomness in there
 
             Vector3 projectedDirection = forwardDirection.ProjectOnPlanePreNormalized(upDirection);
             Vector3 projectedTargetDirection = targetDirection.ProjectOnPlanePreNormalized(upDirection);
@@ -4221,11 +4228,13 @@ namespace BDArmory.Control
                 {
                     if (cosAngle < ImmelmannTurnCosAngle) // Otherwise, if the target is almost directly behind, do an Immelmann turn.
                     {
-                        // FIXME This condition needs improving. For low altitude inverted oscillations, we want to do an inverted Immelmann, but for most other cases, we want a stronger bias towards a standard Immelmann.
-                        targetDirection = Vector3.RotateTowards(-vesselTransform.up, vessel.angularVelocity.x < 0.1f ? -vesselTransform.forward : vesselTransform.forward, Mathf.Deg2Rad * ImmelmannTurnAngle, 0); // If the target is in our blind spot, just pitch up (or down depending on pitch angular velocity) to get a better view. (Immelmann turn.)
+                        bool pitchUp = vessel.radarAltitude < minAltitude + 2f * turnRadiusTwiddleFactorMax * turnRadius ? vessel.angularVelocity.x < 0.05f : // Avoid oscillations at low altitude.
+                            Mathf.Abs(vessel.angularVelocity.x) < Mathf.Abs(Mathf.Deg2Rad * ImmelmannPitchUpBias) ? ImmelmannPitchUpBias > -0.1f : // Otherwise, if not rotating much, pitch up (or down if biased negatively).
+                            vessel.angularVelocity.x < 0; // Otherwise, go with the current pitching direction.
+
+                        targetDirection = Vector3.RotateTowards(-vesselTransform.up, pitchUp ? -vesselTransform.forward : vesselTransform.forward, Mathf.Deg2Rad * ImmelmannTurnAngle, 0); // If the target is in our blind spot, just pitch up (or down) to get a better view (initial part of an Immelmann turn).
                         invertRollTarget = Vector3.Dot(targetDirection, vesselTransform.forward) > 0; // Target is behind and below, pitch down first then roll up.
                     }
-                    // FIXME If the target isn't within the Immelmann angle, but is when only considering the pitch direction, then the direction should be skewed upwards, i.e, treat the negative Immelmann pitch angle as the horizontal.
                     targetPosition = vesselTransform.position + Vector3.Cross(Vector3.Cross(forwardDirection, targetDirection), forwardDirection).normalized * 200; // Make the target position 90° from vesselTransform.up.
                 }
             }
@@ -4235,7 +4244,7 @@ namespace BDArmory.Control
                 if (vertFactor < 0)
                     distance = Math.Min(distance, Math.Abs((alt - minAlt) / vertFactor));
 
-                targetPosition += upDirection * Math.Min(distance, 1000) * vertFactor * Mathf.Clamp01(0.7f - Math.Abs(Vector3.Dot(projectedTargetDirection, projectedDirection)));
+                targetPosition += upDirection * Math.Min(distance, 1000) * Mathf.Clamp(vertFactor * Mathf.Clamp01(0.7f - Math.Abs(Vector3.Dot(projectedTargetDirection, projectedDirection))), -0.5f, 0.5f);
                 if (maxAltitudeEnabled)
                 {
                     var targetRadarAlt = BDArmorySettings.COMPETITION_ALTITUDE__LIMIT_ASL ? FlightGlobals.getAltitudeAtPos(targetPosition) : BodyUtils.GetRadarAltitudeAtPos(targetPosition);
@@ -4433,8 +4442,7 @@ namespace BDArmory.Control
             }
             else if (command == PilotCommands.Attack)
             {
-                if (targetVessel != null) // && (BDArmorySettings.RUNWAY_PROJECT || (targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= weaponManager.gunRange * weaponManager.gunRange)
-                                          // && (targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= weaponManager.guardRange * weaponManager.guardRange) // If the vessel has a target within visual range, let it fight!
+                if (targetVessel != null)
                 {
                     ReleaseCommand(false);
                     return;
@@ -4705,7 +4713,6 @@ namespace BDArmory.Control
         class Optimiser
         {
             public float rollRelevance = 0.5f;
-            float initialRollRelevance = 0.5f;
             float rollRelevanceMomentum = 0.8f;
 
             public void Update()
@@ -4714,13 +4721,13 @@ namespace BDArmory.Control
                 _rollRelevance.Clear();
             }
 
-            public void Reset()
+            public void Reset(float initialRollRelevance = 0.5f)
             {
                 rollRelevance = initialRollRelevance;
                 _rollRelevance.Clear();
             }
 
-            List<float> _rollRelevance = new List<float>();
+            List<float> _rollRelevance = [];
             public void Accumulate(float rollRelevance)
             {
                 _rollRelevance.Add(rollRelevance);
@@ -4743,8 +4750,8 @@ namespace BDArmory.Control
         int sampleNumber = 0;
         float headingChange = 30f;
         float momentum = 0.7f;
-        LR lr = new LR();
-        Optimiser optimiser = new Optimiser();
+        LR lr = new();
+        Optimiser optimiser = new();
         #endregion
         #endregion
 
@@ -4903,14 +4910,14 @@ namespace BDArmory.Control
         {
             if (!HighLogic.LoadedSceneIsFlight) return;
             vesselName = AI.vessel.GetName();
-            fieldNames = new List<string> { "base" };
-            fields = new Dictionary<string, BaseField>();
-            fixedFields = new HashSet<string>();
-            baseValues = new Dictionary<string, float>();
-            gradient = new Dictionary<string, float>();
-            limits = new Dictionary<string, Tuple<float, float>>();
-            lossSamples = new Dictionary<string, List<List<float>>>();
-            baseLossSamples = new List<float>();
+            fieldNames = ["base"];
+            fields = [];
+            fixedFields = [];
+            baseValues = [];
+            gradient = [];
+            limits = [];
+            lossSamples = [];
+            baseLossSamples = [];
             bestValues = null;
 
             // Check which PID controls are in use and set up the required dictionaries.
@@ -4962,9 +4969,9 @@ namespace BDArmory.Control
                     limits.Add(field.name, new Tuple<float, float>(uiControl.minValue, uiControl.maxValue));
                 }
             }
+            optimiser.Reset(AI.autoTuningOptionInitialRollRelevance); // Reset the optimiser before resetting samples so that the RR is up-to-date in the strings.
             ResetSamples();
             lr.Reset(AI.autoTuningOptionInitialLearningRate);
-            optimiser.Reset();
         }
 
         /// <summary>
@@ -4985,6 +4992,7 @@ namespace BDArmory.Control
                     {
                         bestValues = baseValues.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
                         Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Updated best values: " + string.Join(", ", bestValues.Select(kvp => fields[kvp.Key].guiName + ":" + kvp.Value)) + $", LR: {lr.current}, RR: {optimiser.rollRelevance}, Loss: {loss}");
+                        bestValues["rollRelevance"] = optimiser.rollRelevance; // Store the roll relevance for the best PID settings too.
                     }
                     if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Current: " + string.Join(", ", baseValues.Select(kvp => fields[kvp.Key].guiName + ":" + kvp.Value)) + $", LR: {lr.current}, RR: {optimiser.rollRelevance}, Loss: {loss}");
                     var lrDecreased = lr.Update(loss); // Update learning rate based on the current loss.
@@ -5081,7 +5089,7 @@ namespace BDArmory.Control
             if (AI is null) return;
             if (bestValues is not null)
             {
-                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Reverting PID values to best values: {string.Join(", ", bestValues.Select(kvp => fields[kvp.Key].guiName + ":" + kvp.Value))}");
+                if (BDArmorySettings.DEBUG_AI) Debug.Log($"[BDArmory.BDModulePilotAI.PIDAutoTuning]: Reverting PID values to best values: {string.Join(", ", fields.Keys.Where(fieldName => bestValues.ContainsKey(fieldName)).Select(fieldName => fields[fieldName].guiName + ":" + bestValues[fieldName]))}");
                 foreach (var fieldName in fields.Keys.ToList())
                     if (bestValues.ContainsKey(fieldName))
                     {
@@ -5089,6 +5097,7 @@ namespace BDArmory.Control
                         if (baseValues.ContainsKey(fieldName)) // Update the base values too.
                             baseValues[fieldName] = bestValues[fieldName];
                     }
+                if (bestValues.ContainsKey("rollRelevance")) AI.autoTuningOptionInitialRollRelevance = bestValues["rollRelevance"]; // Set the latest roll relevance as the AI's starting roll relevance for next time.
             }
             else if (baseValues is not null)
             {

@@ -1387,7 +1387,7 @@ namespace BDArmory.Competition
                 }
             }
             if (stateFile != "") this.stateFile = stateFile;
-            if ((BDArmorySettings.WAYPOINTS_MODE || (BDArmorySettings.RUNWAY_PROJECT && (BDArmorySettings.RUNWAY_PROJECT_ROUND == 50 || BDArmorySettings.RUNWAY_PROJECT_ROUND == 55))) && BDArmorySettings.WAYPOINTS_ONE_AT_A_TIME) vesselsPerHeat = 1; // Override vessels per heat.
+            if (BDArmorySettings.WAYPOINTS_MODE && BDArmorySettings.WAYPOINTS_ONE_AT_A_TIME) vesselsPerHeat = 1; // Override vessels per heat.
             tournamentState = new TournamentState();
             if (numberOfTeams == 0) // FFA
             {
@@ -1450,14 +1450,15 @@ namespace BDArmory.Competition
                     message = $"Running heat {heatIndex} of round {roundIndex} of tournament {tournamentState.tournamentID} ({heatsRemaining} heats remaining in the tournament).";
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
                     Debug.Log("[BDArmory.BDATournament]: " + message);
-
+                    
+                    if (firstRun) SpawnUtilsInstance.Instance.gunGameProgress.Clear(); // Clear gun-game progress.
                     int attempts = 0;
                     bool unrecoverable = false;
                     competitionStarted = false;
                     while (!competitionStarted && attempts++ < 3) // 3 attempts is plenty
                     {
                         tournamentStatus = TournamentStatus.Running;
-                        if (BDArmorySettings.WAYPOINTS_MODE || (BDArmorySettings.RUNWAY_PROJECT && (BDArmorySettings.RUNWAY_PROJECT_ROUND == 50 || BDArmorySettings.RUNWAY_PROJECT_ROUND == 55)))
+                        if (BDArmorySettings.WAYPOINTS_MODE)
                             yield return ExecuteWaypointHeat(roundIndex, heatIndex);
                         else
                             yield return ExecuteHeat(roundIndex, heatIndex, attempts == 3 && BDArmorySettings.COMPETITION_START_DESPITE_FAILURES); // On the third attempt, start despite failures if the option is set.
@@ -1530,7 +1531,7 @@ namespace BDArmory.Competition
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
                     Debug.Log("[BDArmory.BDATournament]: " + message);
                     LogScores(tournamentState.tournamentType == TournamentType.Teams);
-                    if (BDArmorySettings.WAYPOINTS_MODE || (BDArmorySettings.RUNWAY_PROJECT && (BDArmorySettings.RUNWAY_PROJECT_ROUND == 50 || BDArmorySettings.RUNWAY_PROJECT_ROUND == 55)))
+                    if (BDArmorySettings.WAYPOINTS_MODE)
                     {
                         /* commented out until this is made functional
                         foreach (var tracer in WaypointFollowingStrategy.Ghosts) //clear and reset vessel ghosts each new Round
@@ -1574,7 +1575,7 @@ namespace BDArmory.Competition
             var partialStatePath = Path.ChangeExtension(Path.Combine(Path.GetDirectoryName(TournamentState.defaultStateFile), "Unfinished Tournaments", Path.GetFileName(stateFile)), $".state-{tournamentID}");
             if (File.Exists(partialStatePath)) File.Delete(partialStatePath); // Remove the now completed tournament state file.
 
-            if (BDArmorySettings.AUTO_RESUME_TOURNAMENT && BDArmorySettings.AUTO_QUIT_AT_END_OF_TOURNAMENT && TournamentAutoResume.Instance != null)
+            if ((BDArmorySettings.AUTO_RESUME_TOURNAMENT || BDArmorySettings.AUTO_RESUME_CONTINUOUS_SPAWN) && BDArmorySettings.AUTO_QUIT_AT_END_OF_TOURNAMENT && TournamentAutoResume.Instance != null)
             {
                 TournamentAutoResume.AutoQuit(5);
                 message = "Quitting KSP in 5s due to reaching the end of a tournament.";
@@ -1971,6 +1972,7 @@ namespace BDArmory.Competition
                 BDArmorySetup.windowBDAToolBarEnabled = true;
                 LoadedVesselSwitcher.Instance.SetVisible(true);
                 VesselSpawnerWindow.Instance.SetVisible(true);
+                RWPSettings.SetRWP(BDArmorySettings.RUNWAY_PROJECT, BDArmorySettings.RUNWAY_PROJECT_ROUND); // Reapply the RWP settings if RWP is active as some may be overridden by the above.
                 BDATournament.Instance.RunTournament();
             }
             else if (resumingContinuousSpawn)
@@ -1981,6 +1983,7 @@ namespace BDArmory.Competition
                 BDArmorySetup.windowBDAToolBarEnabled = true;
                 LoadedVesselSwitcher.Instance.SetVisible(true);
                 VesselSpawnerWindow.Instance.SetVisible(true);
+                RWPSettings.SetRWP(BDArmorySettings.RUNWAY_PROJECT, BDArmorySettings.RUNWAY_PROJECT_ROUND); // Reapply the RWP settings if RWP is active as some may be overridden by the above.
                 ContinuousSpawning.Instance.SpawnVesselsContinuously(
                     new CircularSpawnConfig( // Spawn config that would be used by clicking the continuous spawn button.
                         new SpawnConfig(

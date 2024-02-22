@@ -888,7 +888,7 @@ namespace BDArmory.Weapons
         public float timeFired; // Note: this is technically off by Time.fixedDeltaTime (since it's meant to be within the range [Time.time <—> Time.time + Time.fixedDeltaTime]), but so is Time.time in timeSinceFired, so we can skip adding the constant.
         public float timeSinceFired => Time.time - timeFired;
         public float initialFireDelay = 0; //used to ripple fire multiple weapons of this type
-        float InitialFireDelay => weaponManager.barrageStagger > 0 ? initialFireDelay * weaponManager.barrageStagger : initialFireDelay;
+        float InitialFireDelay => weaponManager && weaponManager.barrageStagger > 0 ? initialFireDelay * weaponManager.barrageStagger : initialFireDelay;
 
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Barrage")]//Barrage
@@ -1358,6 +1358,7 @@ namespace BDArmory.Weapons
                 fireTransforms = part.FindModelTransforms(fireTransformName);
                 if (fireTransforms.Length == 0) Debug.LogError("[BDArmory.ModuleWeapon] Weapon missing fireTransform [" + fireTransformName + "]! Please fix your model");
                 shellEjectTransforms = part.FindModelTransforms(shellEjectTransformName);
+                if (shellEjectTransforms.Length > 0 && shellPool == null) SetupShellPool();
 
                 //setup emitters
                 using (var pe = part.FindModelComponents<KSPParticleEmitter>().AsEnumerable().GetEnumerator())
@@ -2506,7 +2507,6 @@ namespace BDArmory.Weapons
 
                             KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
                             Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
-
                             if (p && p.vessel && p.vessel != vessel)
                             {
                                 float distance = hit.distance;
@@ -2530,12 +2530,12 @@ namespace BDArmory.Weapons
                                             float EMPDamage = 0;
                                             if (!pulseLaser)
                                             {
-                                                EMPDamage = ECPerShot / 1000;
+                                                EMPDamage = ECPerShot / 500;
                                                 emp.incomingDamage += EMPDamage;
                                             }
                                             else
                                             {
-                                                EMPDamage = ECPerShot / 20;
+                                                EMPDamage = ECPerShot / 10;
                                                 emp.incomingDamage += EMPDamage;
                                             }
                                             emp.softEMP = true;
@@ -2562,10 +2562,19 @@ namespace BDArmory.Weapons
                                                     if (hitP && hitP != p && hitP.vessel && hitP.vessel != vessel)
                                                     {
                                                         //p.AddDamage(damage);
-                                                        p.AddSkinThermalFlux(damage); //add modifier to adjust damage by armor diffusivity value
+                                                        if (Physics.Raycast(new Ray(tf.position, hitP.CenterOfDisplacement), out RaycastHit h, (tf.position - laserPoint).magnitude, (int)LayerMasks.Parts))
+                                                        {
+                                                            var hitPart = h.collider.gameObject.GetComponentInParent<Part>();
+                                                            var hitEVA = h.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+                                                            if (hitEVA != null) hitPart = hitEVA.part;
+                                                            if (hitPart != null && hitPart == hitP)
+                                                            {
+                                                                p.AddThermalFlux(damage); //add modifier to adjust damage by armor diffusivity value
+                                                                if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Heatray Applying {damage} heat to {p.name}");
+                                                            }
+                                                        }
                                                     }
                                                 }
-                                                if (BDArmorySettings.DEBUG_WEAPONS) Debug.Log($"[BDArmory.ModuleWeapon]: Heatray Applying {damage} heat to target");
                                             }
                                         }
                                     }
@@ -2597,7 +2606,7 @@ namespace BDArmory.Weapons
                                         if (HEpulses)
                                         {
                                             ExplosionFx.CreateExplosion(hit.point,
-                                                           (laserDamage / 1000),
+                                                           (laserDamage / 10000),
                                                            explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName, null, Hitpart: p);
                                         }
                                         if (Impulse != 0)
@@ -2646,6 +2655,7 @@ namespace BDArmory.Weapons
                                 }
                                 var aName = vesselname;
                                 var tName = p.vessel.GetName();
+
                                 if (BDACompetitionMode.Instance.Scores.RegisterBulletDamage(aName, tName, Mathf.Abs(damage)))
                                 {
                                     if (pulseLaser || (!pulseLaser && ScoreAccumulator > beamScoreTime)) // Score hits with pulse lasers or when the score accumulator is sufficient.
@@ -2671,6 +2681,19 @@ namespace BDArmory.Weapons
                                     BulletHitFX.CreateBulletHit(p, hit.point, hit, hit.normal, false, 10, 0, weaponManager.Team.Name);
                                 }
                             }
+                            else
+                            {
+                                if (electroLaser || HeatRay) continue;
+                                var angularSpread = tanAngle * hit.distance; //Scales down the damage based on the increased surface area of the area being hit by the laser. Think flashlight on a wall.
+                                initialDamage = laserDamage / (1 + Mathf.PI * angularSpread * angularSpread) * 0.425f;
+                                if (!BDArmorySettings.PAINTBALL_MODE) ProjectileUtils.CheckBuildingHit(hit, initialDamage, pulseLaser);
+                                if (HEpulses)
+                                {
+                                    ExplosionFx.CreateExplosion(tf.position + rayDirection * raycastDistance,
+                                                   (laserDamage / 10000),
+                                                   explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName, null);
+                                }
+                            }
                         }
                     }
                     else
@@ -2684,6 +2707,12 @@ namespace BDArmory.Weapons
                         else
                             laserPoint = lr.transform.InverseTransformPoint((targetDirectionLR * maxTargetingRange) + tf.position);
                         lr.SetPosition(1, laserPoint);
+                        if (HEpulses)
+                        {
+                            ExplosionFx.CreateExplosion(tf.position + rayDirection * raycastDistance,
+                                           (laserDamage / 10000),
+                                           explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName, null);
+                        }
                     }
                 }
                 if (BDArmorySettings.DISCO_MODE)
@@ -5499,7 +5528,7 @@ namespace BDArmory.Weapons
                 fireState[i].speed = 0;
                 fireState[i].enabled = false;
             }
-            if (hasChargeAnimation) 
+            if (hasChargeAnimation)
                 yield return chargeRoutine = StartCoroutine(ChargeRoutine(true));
             if (!oneShotSound) audioSource.Stop();
             if (!string.IsNullOrEmpty(reloadAudioPath))
@@ -5536,7 +5565,7 @@ namespace BDArmory.Weapons
                 chargeState.enabled = true;
                 chargeState.speed = (chargeState.length / ChargeTime) * (discharge ? -1 : 1);//ensure relaod anim is not longer than reload time
                 yield return new WaitWhileFixed(() => discharge ? chargeState.normalizedTime > 0 : chargeState.normalizedTime < 1); //wait for animation here
-                chargeState.normalizedTime = discharge ? 0 : 1; 
+                chargeState.normalizedTime = discharge ? 0 : 1;
                 chargeState.speed = 0;
                 chargeState.enabled = false;
             }

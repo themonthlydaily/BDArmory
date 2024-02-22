@@ -15,7 +15,6 @@ using BDArmory.Targeting;
 using BDArmory.UI;
 using BDArmory.Utils;
 using BDArmory.WeaponMounts;
-using BDArmory.CounterMeasure;
 
 namespace BDArmory.Weapons.Missiles
 {
@@ -576,9 +575,16 @@ namespace BDArmory.Weapons.Missiles
                                     if (be.Current == null) continue;
                                     if (be.Current.useWorldSpace)
                                     {
-                                        if (be.Current.GetComponent<BDAGaplessParticleEmitter>()) continue;
+                                        var existingBE = be.Current.GetComponent<BDAGaplessParticleEmitter>();
+                                        if (existingBE)
+                                        {
+                                            existingBE.emit = false;
+                                            be.Current.emit = false;
+                                            continue;
+                                        }
                                         BDAGaplessParticleEmitter ge = be.Current.gameObject.AddComponent<BDAGaplessParticleEmitter>();
                                         ge.part = part;
+                                        ge.emit = false;
                                         boostGaplessEmitters.Add(ge);
                                     }
                                     else
@@ -604,32 +610,35 @@ namespace BDArmory.Weapons.Missiles
                         }
                 }
 
-                // Add built-in emitters (which may include RCS). Note: this doesn't include the prefab emitters, which get added later.
-                foreach (var pEmitter in part.FindModelComponents<KSPParticleEmitter>())
+                using (var pEmitter = part.FindModelComponents<KSPParticleEmitter>().AsEnumerable().GetEnumerator())
+                    while (pEmitter.MoveNext())
                     {
-                        if (pEmitter == null) continue;
-                        if (pEmitter.GetComponent<BDAGaplessParticleEmitter>() || boostEmitters.Contains(pEmitter))
+                        if (pEmitter.Current == null) continue;
+                        var existingGE = pEmitter.Current.GetComponent<BDAGaplessParticleEmitter>();
+                        if (existingGE || boostEmitters.Contains(pEmitter.Current))
                         {
-                            continue;
+                            if (existingGE) existingGE.emit = false;
+                                continue;
                         }
 
-                        if (pEmitter.useWorldSpace)
+                        if (pEmitter.Current.useWorldSpace)
                         {
-                            BDAGaplessParticleEmitter gaplessEmitter = pEmitter.gameObject.AddComponent<BDAGaplessParticleEmitter>();
+                            BDAGaplessParticleEmitter gaplessEmitter = pEmitter.Current.gameObject.AddComponent<BDAGaplessParticleEmitter>();
                             gaplessEmitter.part = part;
+                            gaplessEmitter.emit = false;
                             gaplessEmitters.Add(gaplessEmitter);
                         }
                         else
                         {
-                            if (pEmitter.transform.name != boostTransformName)
+                            if (pEmitter.Current.transform.name != boostTransformName)
                             {
-                                pEmitters.Add(pEmitter);
+                                pEmitters.Add(pEmitter.Current);
                             }
                             else
                             {
-                                boostEmitters.Add(pEmitter);
+                                boostEmitters.Add(pEmitter.Current);
                             }
-                            EffectBehaviour.AddParticleEmitter(pEmitter);
+                            EffectBehaviour.AddParticleEmitter(pEmitter.Current);
                         }
                     }
 
@@ -1374,6 +1383,7 @@ namespace BDArmory.Weapons.Missiles
                 part.crashTolerance = torpedo ? waterImpactTolerance : 9999; //to combat stresses of launch, missiles generate a lot of G Force
                 part.explosionPotential = 0; // Minimise the default part explosion FX that sometimes gets offset from the main explosion.
                 rcsClearanceState = (GuidanceMode == GuidanceModes.Orbital && hasRCS && vacuumSteerable && (vessel.InVacuum()) ? RCSClearanceStates.Clearing : RCSClearanceStates.Cleared); // Set up clearance check if missile hasRCS, is vacuumSteerable, and is in space
+
                 StartCoroutine(MissileRoutine());
                 var tnt = part.FindModuleImplementing<BDExplosivePart>();
                 if (tnt)
@@ -2124,6 +2134,10 @@ namespace BDArmory.Weapons.Missiles
                         {
                             emitter.Current.sizeGrow = Mathf.Lerp(emitter.Current.sizeGrow, 0, 20 * Time.deltaTime);
                         }
+                        if (Throttle == 0)
+                            emitter.Current.emit = false;
+                        else
+                            emitter.Current.emit = true;
                     }
 
                 using (var gpe = boostGaplessEmitters.GetEnumerator())
@@ -2198,11 +2212,6 @@ namespace BDArmory.Weapons.Missiles
                     if (emitter.Current == null) continue;
                     emitter.Current.emit = true;
                 }
-
-            if (hasRCS)
-            {
-                forwardRCS.emit = true;
-            }
 
             if (!(thrust > 0)) return;
             sfAudioSource.PlayOneShot(SoundUtils.GetAudioClip("BDArmory/Sounds/launch"));
@@ -2493,12 +2502,12 @@ namespace BDArmory.Weapons.Missiles
         {
             Vector3 aamTarget = TargetPosition;
             float currgLimit = -1;
+
             if (TargetAcquired)
             {
                 if (warheadType == WarheadTypes.ContinuousRod) //Have CR missiles target slightly above target to ensure craft caught in planar blast AOE
                 {
                     TargetPosition += VectorUtils.GetUpDirection(TargetPosition) * (blastRadius > 0f ? Mathf.Min(blastRadius / 3f, DetonationDistance / 3f) : 5f);
-                    //TargetPosition += VectorUtils.GetUpDirection(TargetPosition) * (blastRadius < 10? (blastRadius / 2) : 10);
                 }
                 DrawDebugLine(transform.position + (part.rb.velocity * Time.fixedDeltaTime), TargetPosition);
 
@@ -2531,6 +2540,7 @@ namespace BDArmory.Weapons.Missiles
 
                             //aamTarget = MissileGuidance.GetAirToAirLoftTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, targetAlt, LoftMaxAltitude, LoftRangeFac, LoftAltComp, LoftVelComp, LoftAngle, LoftTermAngle, terminalHomingRange, ref loftState, out float currTimeToImpact, out float rangeToTarget, optimumAirspeed);
                             aamTarget = MissileGuidance.GetAirToAirLoftTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, targetAlt, LoftMaxAltitude, LoftRangeFac, LoftVertVelComp, LoftVelComp, LoftAngle, LoftTermAngle, terminalHomingRange, ref loftState, out float currTimeToImpact, out currgLimit, out float rangeToTarget, homingModeTerminal, pronavGain, optimumAirspeed);
+
                             float fac = (1 - (rangeToTarget - terminalHomingRange - 100f) / Mathf.Clamp(terminalHomingRange * 4f, 5000f, 25000f));
 
                             if (loftState > LoftStates.Boost)
@@ -2755,7 +2765,8 @@ namespace BDArmory.Weapons.Missiles
                     Throttle = 1f;
             }
 
-            part.transform.rotation = Quaternion.RotateTowards(part.transform.rotation, Quaternion.LookRotation(orbitalTarget - part.transform.position, TargetVelocity), turnRateDPS * Time.fixedDeltaTime); if (TimeIndex > dropTime + 0.25f)
+            part.transform.rotation = Quaternion.RotateTowards(part.transform.rotation, Quaternion.LookRotation(orbitalTarget - part.transform.position, TargetVelocity), turnRateDPS * Time.fixedDeltaTime);
+            if (TimeIndex > dropTime + 0.25f)
                 CheckMiss();
         }
 
@@ -2947,6 +2958,7 @@ namespace BDArmory.Weapons.Missiles
                 }
                 else // Kill relative velocity to target
                     relV = TargetVelocity - vessel.Velocity();
+
                 for (int i = 0; i < 4; i++)
                 {
                     //float giveThrust = Mathf.Clamp(-localRelV.z, 0, rcsThrust);
@@ -3266,6 +3278,7 @@ namespace BDArmory.Weapons.Missiles
                 case "kappa":
                     homingModeTerminal = GuidanceModes.Kappa;
                     break;
+
 
                 default:
                     homingModeTerminal = GuidanceModes.None;

@@ -4,10 +4,6 @@ using UnityEngine;
 
 using BDArmory.Modules;
 using BDArmory.Utils;
-using BDArmory.Damage;
-using BDArmory.Settings;
-using System;
-using BDArmory.UI;
 
 namespace BDArmory.CounterMeasure
 {
@@ -17,11 +13,6 @@ namespace BDArmory.CounterMeasure
         public Vessel vessel;
 
         bool cEnabled;
-        Shader cloakShader;
-
-        public Coroutine cloakVisuals;
-        public float cloakTimer = -1;
-        bool decloaking;
 
         public bool cloakEnabled
         {
@@ -54,8 +45,6 @@ namespace BDArmory.CounterMeasure
             GameEvents.onVesselCreate.Add(OnVesselCreate);
             GameEvents.onPartJointBreak.Add(OnPartJointBreak);
             GameEvents.onPartDie.Add(OnPartDie);
-            cloakShader = Shader.Find("KSP/Alpha/Unlit Transparent");
-            Debug.Log("[BDArmory.VesselCloakInfo]: VesselCloakInfo set up");
         }
 
         void OnDestroy()
@@ -92,14 +81,6 @@ namespace BDArmory.CounterMeasure
             if (gameObject.activeInHierarchy)
             {
                 StartCoroutine(DelayedCleanCloakListRoutine());
-            }
-            var r = j.Parent.GetComponentsInChildren<Renderer>();
-            for (int i = 0; i < r.Length; i++)
-            {
-                HitpointTracker a = j.Parent.GetComponent<HitpointTracker>();
-                if (!a.defaultShader.ContainsKey(r[i].material.GetInstanceID())) continue; // Don't modify shaders that we don't have defaults for as we can't then replace them.
-                if (r[i].GetComponentInParent<Part>() != j.Parent) continue; // Don't recurse to child parts.
-                r[i].material.SetFloat("_Opacity", 1);
             }
         }
 
@@ -176,129 +157,6 @@ namespace BDArmory.CounterMeasure
                     }
                 }
             UpdateCloakStrength();
-        }
-        public IEnumerator UpdateVisuals(float CloakTime, bool deactivateCloak)
-        {
-            decloaking = deactivateCloak;
-            yield return new WaitForFixedUpdate();
-            Debug.Log($"[BDArmory.VesselCloakInfo]: VesselCloakInfo modifying visibility, decloaking: {deactivateCloak}");
-
-            if (!deactivateCloak)
-            {
-                using (List<Part>.Enumerator parts = vessel.parts.GetEnumerator())
-                    while (parts.MoveNext())
-                    {
-                        HitpointTracker a = parts.Current.GetComponent<HitpointTracker>();
-                        var r = parts.Current.GetComponentsInChildren<Renderer>();
-                        try
-                        {
-                            if (!a.RegisterProcWingShader && parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
-                            {
-                                for (int s = 0; s < r.Length; s++)
-                                {
-                                    if (r[s].GetComponentInParent<Part>() != parts.Current) continue; // Don't recurse to child parts.
-                                    int key = r[s].material.GetInstanceID();
-                                    a.defaultShader.Add(key, r[s].material.shader);
-                                    if (r[s].material.HasProperty("_Color"))
-                                    {
-                                        a.defaultColor.Add(key, r[s].material.color);
-                                    }
-                                }
-                                a.RegisterProcWingShader = true;
-                            }
-                            for (int i = 0; i < r.Length; i++)
-                            {
-                                if (!a.defaultShader.ContainsKey(r[i].material.GetInstanceID())) continue; // Don't modify shaders that we don't have defaults for as we can't then replace them.
-                                if (r[i].GetComponentInParent<Part>() != parts.Current) continue; // Don't recurse to child parts.
-                                if (r[i].material.shader.name.Contains("Waterfall")) continue;
-                                r[i].material.shader = cloakShader;
-                            }
-                        }
-                        catch
-                        {
-                            Debug.Log("[RadarUtils]: material on " + parts.Current.name + "could not find set RCS shader/color");
-                        }
-                    }
-            }
-            else
-            {
-                using (List<Part>.Enumerator parts = (vessel.parts.GetEnumerator()))
-                    while (parts.MoveNext())
-                    {
-                        var r = parts.Current.GetComponentsInChildren<Renderer>();
-                        for (int i = 0; i < r.Length; i++)
-                        {
-                            HitpointTracker a = parts.Current.GetComponent<HitpointTracker>();
-                            try
-                            {
-                                if (r[i].GetComponentInParent<Part>() != parts.Current) continue; // Don't recurse to child parts.
-                                int key = r[i].material.GetInstanceID();
-                                if (!a.defaultShader.ContainsKey(key))
-                                {
-                                    if (BDArmorySettings.DEBUG_RADAR) Debug.Log($"[BDArmory.CloakingDevice]: {r[i].material.name} ({key}) not found in defaultShader for part {parts.Current.partInfo.name} on {vessel.vesselName}"); // Enable this to see what materials aren't getting cloak shader applied to them.
-                                    continue;
-                                }
-                                if (r[i].material.shader != a.defaultShader[key])
-                                {
-                                    if (a.defaultShader[key] != null)
-                                    {
-                                        r[i].material.shader = a.defaultShader[key];
-                                    }
-                                    if (a.defaultColor.ContainsKey(key))
-                                    {
-                                        if (a.defaultColor[key] != null)
-                                        {
-                                            if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
-                                                r[i].material.SetColor("_MainTex", a.defaultColor[key]);
-                                            else
-                                                r[i].material.SetColor("_Color", a.defaultColor[key]);
-                                        }
-                                        else
-                                        {
-                                            if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
-                                                r[i].material.SetColor("_MainTex", Color.white);
-                                            else
-                                                r[i].material.SetColor("_Color", Color.white);
-                                        }
-                                    }
-                                }
-                            }
-                            catch (Exception e)
-                            {
-                                Debug.Log($"[RadarUtils]: material on {parts.Current.name} could not find default shader/color: {e.Message}\n{e.StackTrace}");
-                            }
-                        }
-                    }
-            }
-            while (deactivateCloak ? cloakTimer > 0 : cloakTimer < CloakTime)
-            {
-                Debug.Log($"[BDArmory.VesselCloakInfo]: VesselCloakInfo cloakTimer: {cloakTimer}");
-                using (var Part = vessel.Parts.GetEnumerator())
-                    while (Part.MoveNext())
-                    {
-                        if (Part.Current == null) continue;
-                        var r = Part.Current.GetComponentsInChildren<Renderer>();
-                        for (int i = 0; i < r.Length; i++)
-                        {
-                            HitpointTracker a = Part.Current.GetComponent<HitpointTracker>();
-                            if (!a.defaultShader.ContainsKey(r[i].material.GetInstanceID())) continue; // Don't modify shaders that we don't have defaults for as we can't then replace them.
-                            if (r[i].GetComponentInParent<Part>() != Part.Current) continue; // Don't recurse to child parts.
-                            r[i].material.SetFloat("_Opacity", Mathf.Lerp(1, opticalReductionFactor, (cloakTimer / CloakTime)));
-                        }
-                    }
-            }
-            cloakTimer = -1;
-            Debug.Log($"[BDArmory.VesselCloakInfo]: Cloak Complete");
-        }
-        void FixedUpdate()
-        {
-            if (!HighLogic.LoadedSceneIsFlight) return;
-            if (BDArmorySetup.GameIsPaused) return;
-
-            if (cloakTimer != -1)
-            {
-                if (decloaking) cloakTimer -= TimeWarp.fixedDeltaTime; else cloakTimer += TimeWarp.fixedDeltaTime;
-            }
         }
     }
 }

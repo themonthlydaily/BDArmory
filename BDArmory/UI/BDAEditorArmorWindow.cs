@@ -375,7 +375,7 @@ namespace BDArmory.UI
                 line += 1.25f;
             }
 
-            if (BDArmorySettings.RUNWAY_PROJECT)
+            //if (BDArmorySettings.RUNWAY_PROJECT)
             {
                 if (GUI.Button(new Rect(10, line * lineHeight, 280, lineHeight), StringUtils.Localize("#LOC_BDArmory_partTreeVisualizer"), TreeVisualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
                 {

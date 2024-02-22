@@ -202,6 +202,7 @@ namespace BDArmory.GameModes
         {
             // if (mutatorNames.Contains("Brownings")) return; // This wasn't always working properly for some reason.
             if (gunGameConfigured) return;
+            if (mutators == null) Load(); // Load the mutators if they haven't been loaded yet.
             mutators.Add(new MutatorInfo("Brownings", true, "ballistic", "12.7mmBullet", 1150, 0.32f, 0, 0, 0, 1, 1, false, 1, 0, false, "", 0, false, "IconTarget", "0,200,0,255"));
             mutatorNames.Add("Brownings");
             mutators.Add(new MutatorInfo("Vulcans", true, "ballistic", "20x102mmHEBullet", 5500, 0.8f, 0, 0, 0, 1, 1, false, 1, 0, false, "", 0, false, "IconAccuracy", "222,0,0,255"));
@@ -224,6 +225,7 @@ namespace BDArmory.GameModes
             mutatorNames.Add("Abrams");
             mutators.Add(new MutatorInfo("Rockets", true, "rocket", "8KOMS", 450, -1, 0, 0, 0, 1, 1, false, 1, 0, false, "", 0, false, "IconRocket", "84,0,222,255"));
             mutatorNames.Add("Rockets");
+
             gunGameConfigured = true;
         }
     }
