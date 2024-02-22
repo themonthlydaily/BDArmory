@@ -336,6 +336,7 @@ namespace BDArmory.UI
                         { "autoTuningOptionNumSamples", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.autoTuningOptionNumSamples, 1, 10) },
                         { "autoTuningOptionFastResponseRelevance", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.autoTuningOptionFastResponseRelevance, 0, 0.5) },
                         { "autoTuningOptionInitialLearningRate", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.autoTuningOptionInitialLearningRate, 1e-3, 1) },
+                        { "autoTuningOptionInitialRollRelevance", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.autoTuningOptionInitialRollRelevance, 0, 1) },
                         { "autoTuningAltitude", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.autoTuningAltitude, 50, 5000) },
                         { "autoTuningSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.autoTuningSpeed, 50, 800) },
                         { "autoTuningRecenteringDistance", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.autoTuningRecenteringDistance, 5, 100) },
@@ -366,6 +367,7 @@ namespace BDArmory.UI
                         { "maxAllowedAoA", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAllowedAoA, 0, 90) },
                         { "postStallAoA", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.postStallAoA, 0, (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 55)? 0 : 90) },
                         { "ImmelmannTurnAngle", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.ImmelmannTurnAngle, 0, 90) },
+                        { "ImmelmannPitchUpBias", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.ImmelmannPitchUpBias, -90, 90) },
 
                         { "minEvasionTime", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.minEvasionTime, 0, 1) },
                         { "evasionNonlinearity", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionNonlinearity, 0, 10) },
@@ -847,7 +849,8 @@ namespace BDArmory.UI
                                 GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_ControlHelp_limiters"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //low + high speed limiters
                                 GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_ControlHelp_bank"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //max bank desc
                                 GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_ControlHelp_clamps"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //max G + max AoA
-                                GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_ControlHelp_modeSwitches"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //post-stall + Immelmann turn angle
+                                GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_ControlHelp_modeSwitches"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //post-stall
+                                GUILayout.Label(StringUtils.Localize("#LOC_BDArmory_AIWindow_ControlHelp_Immelmann"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //Immelmann turn angle + bias
                             }
                             if (showEvade)
                             {
@@ -1290,6 +1293,20 @@ namespace BDArmory.UI
                                 if (contextTipsEnabled)
                                 {
                                     GUI.Label(ContextLabelRect(leftIndent, pidLines + autoTuneLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_PIDAutoTuningInitialLearningRateContext"), Label);
+                                    ++autoTuneLines;
+                                }
+
+                                if (!NumFieldsEnabled) ActivePilot.autoTuningOptionInitialRollRelevance = BDAMath.RoundToUnit(GUI.HorizontalSlider(SettingSliderRect(leftIndent, pidLines + autoTuneLines, contentWidth), ActivePilot.autoTuningOptionInitialRollRelevance, 0f, 1f), 0.01f);
+                                else
+                                {
+                                    var field = inputFields["autoTuningOptionInitialRollRelevance"];
+                                    field.tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + autoTuneLines, contentWidth), field.possibleValue, 8, field.style));
+                                    ActivePilot.autoTuningOptionInitialRollRelevance = (float)field.currentValue;
+                                }
+                                GUI.Label(SettinglabelRect(leftIndent, pidLines + autoTuneLines++), StringUtils.Localize("#LOC_BDArmory_AIWindow_PIDAutoTuningInitialRollRelevance") + $": {ActivePilot.autoTuningOptionInitialRollRelevance:G3}", Label);
+                                if (contextTipsEnabled)
+                                {
+                                    GUI.Label(ContextLabelRect(leftIndent, pidLines + autoTuneLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_PIDAutoTuningInitialRollRelevanceContext"), Label);
                                     ++autoTuneLines;
                                 }
 
@@ -1827,7 +1844,7 @@ namespace BDArmory.UI
                                 }
                             }
 
-                            GUI.Label(SettinglabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_ImmelmannTurnAngle") + ": " + ActivePilot.ImmelmannTurnAngle.ToString("0"), Label);
+                            GUI.Label(SettinglabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_ImmelmannTurnAngle") + $": {ActivePilot.ImmelmannTurnAngle:0}°", Label);
                             if (!NumFieldsEnabled)
                             {
                                 ActivePilot.ImmelmannTurnAngle = Mathf.Round(GUI.HorizontalSlider(SettingSliderRect(leftIndent, ctrlLines, contentWidth), ActivePilot.ImmelmannTurnAngle, 0f, 90f));
@@ -1841,6 +1858,22 @@ namespace BDArmory.UI
                             if (contextTipsEnabled)
                             {
                                 GUI.Label(ContextLabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_ImmelmannTurnAngleContext"), contextLabel);
+                            }
+
+                            GUI.Label(SettinglabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_ImmelmannPitchUpBias") + $": {ActivePilot.ImmelmannPitchUpBias:0}°/s", Label);
+                            if (!NumFieldsEnabled)
+                            {
+                                ActivePilot.ImmelmannPitchUpBias = BDAMath.RoundToUnit(GUI.HorizontalSlider(SettingSliderRect(leftIndent, ctrlLines, contentWidth), ActivePilot.ImmelmannPitchUpBias, -90f, 90f), 5f);
+                            }
+                            else
+                            {
+                                var field = inputFields["ImmelmannPitchUpBias"];
+                                field.tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), field.possibleValue, 8, field.style));
+                                ActivePilot.ImmelmannPitchUpBias = (float)field.currentValue;
+                            }
+                            if (contextTipsEnabled)
+                            {
+                                GUI.Label(ContextLabelRect(leftIndent, ++ctrlLines), StringUtils.Localize("#LOC_BDArmory_AIWindow_ImmelmannPitchUpBiasContext"), contextLabel);
                             }
 
                             ++ctrlLines;
@@ -2818,7 +2851,7 @@ namespace BDArmory.UI
             {
                 WindowHeight += Mouse.delta.y / BDArmorySettings.UI_SCALE;
                 WindowHeight = Mathf.Max(WindowHeight, 305);
-                GUI.Label(new Rect(WindowWidth / 2, WindowHeight - 26, WindowWidth / 2 - 26, 26), $"Resizing: {WindowHeight * BDArmorySettings.UI_SCALE}", Label);
+                if (BDArmorySettings.DEBUG_OTHER) GUI.Label(new Rect(WindowWidth / 2, WindowHeight - 26, WindowWidth / 2 - 26, 26), $"Resizing: {Mathf.Round(WindowHeight * BDArmorySettings.UI_SCALE)}", Label);
             }
             #endregion
 

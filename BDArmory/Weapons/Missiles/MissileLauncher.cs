@@ -174,6 +174,9 @@ namespace BDArmory.Weapons.Missiles
         public string terminalGuidanceType = "";
 
         [KSPField]
+        public bool dumbTerminalGuidance = true;
+
+        [KSPField]
         public float terminalGuidanceDistance = 0.0f;
 
         private bool terminalGuidanceActive;
@@ -502,6 +505,14 @@ namespace BDArmory.Weapons.Missiles
             ParseAntiRadTargetTypes();
             // extension for feature_engagementenvelope
 
+            using (var pEemitter = part.FindModelComponents<KSPParticleEmitter>().GetEnumerator())
+                while (pEemitter.MoveNext())
+                {
+                    if (pEemitter.Current == null) continue;
+                    EffectBehaviour.AddParticleEmitter(pEemitter.Current);
+                    pEemitter.Current.emit = false;
+                }
+
             if (HighLogic.LoadedSceneIsFlight)
             {
                 missileName = part.name;
@@ -530,14 +541,55 @@ namespace BDArmory.Weapons.Missiles
                 gauge = (BDStagingAreaGauge)part.AddModule("BDStagingAreaGauge");
                 part.force_activate();
 
+                if (!string.IsNullOrEmpty(exhaustPrefabPath))
+                {
+                    using (var t = part.FindModelTransforms("exhaustTransform").AsEnumerable().GetEnumerator())
+                        while (t.MoveNext())
+                        {
+                            if (t.Current == null) continue;
+                            AttachExhaustPrefab(exhaustPrefabPath, this, t.Current);
+                        }
+                }
+
+                if (!string.IsNullOrEmpty(boostExhaustPrefabPath) && !string.IsNullOrEmpty(boostExhaustTransformName))
+                {
+                    using (var t = part.FindModelTransforms(boostExhaustTransformName).AsEnumerable().GetEnumerator())
+                        while (t.MoveNext())
+                        {
+                            if (t.Current == null) continue;
+                            AttachExhaustPrefab(boostExhaustPrefabPath, this, t.Current);
+                        }
+                }
+
                 boosters = new List<GameObject>();
                 if (!string.IsNullOrEmpty(boostTransformName))
                 {
-                    foreach (var t in part.FindModelTransforms(boostTransformName))
-                    {
-                        if (t == null) continue;
-                        boosters.Add(t.gameObject);
-                    }
+                    using (var t = part.FindModelTransforms(boostTransformName).AsEnumerable().GetEnumerator())
+                        while (t.MoveNext())
+                        {
+                            if (t.Current == null) continue;
+                            boosters.Add(t.Current.gameObject);
+                            using (var be = t.Current.GetComponentsInChildren<KSPParticleEmitter>().AsEnumerable().GetEnumerator())
+                                while (be.MoveNext())
+                                {
+                                    if (be.Current == null) continue;
+                                    if (be.Current.useWorldSpace)
+                                    {
+                                        if (be.Current.GetComponent<BDAGaplessParticleEmitter>()) continue;
+                                        BDAGaplessParticleEmitter ge = be.Current.gameObject.AddComponent<BDAGaplessParticleEmitter>();
+                                        ge.part = part;
+                                        boostGaplessEmitters.Add(ge);
+                                    }
+                                    else
+                                    {
+                                        if (!boostEmitters.Contains(be.Current))
+                                        {
+                                            boostEmitters.Add(be.Current);
+                                        }
+                                        EffectBehaviour.AddParticleEmitter(be.Current);
+                                    }
+                                }
+                        }
                 }
 
                 fairings = new List<GameObject>();
@@ -551,34 +603,34 @@ namespace BDArmory.Weapons.Missiles
                         }
                 }
 
-                // Add build-in emitters (which may include RCS). Note: this doesn't include the prefab emitters, which get added later.
-                foreach (var pEmitter in part.FindModelComponents<KSPParticleEmitter>())
-                {
-                    if (pEmitter == null) continue;
-                    if (pEmitter.GetComponent<BDAGaplessParticleEmitter>() || boostEmitters.Contains(pEmitter))
+                using (var pEmitter = part.FindModelComponents<KSPParticleEmitter>().AsEnumerable().GetEnumerator())
+                    while (pEmitter.MoveNext())
                     {
-                        continue;
-                    }
-
-                    if (pEmitter.useWorldSpace)
-                    {
-                        BDAGaplessParticleEmitter gaplessEmitter = pEmitter.gameObject.AddComponent<BDAGaplessParticleEmitter>();
-                        gaplessEmitter.part = part;
-                        gaplessEmitters.Add(gaplessEmitter);
-                    }
-                    else
-                    {
-                        if (pEmitter.transform.name != boostTransformName)
+                        if (pEmitter.Current == null) continue;
+                        if (pEmitter.Current.GetComponent<BDAGaplessParticleEmitter>() || boostEmitters.Contains(pEmitter.Current))
                         {
-                            pEmitters.Add(pEmitter);
+                            continue;
+                        }
+
+                        if (pEmitter.Current.useWorldSpace)
+                        {
+                            BDAGaplessParticleEmitter gaplessEmitter = pEmitter.Current.gameObject.AddComponent<BDAGaplessParticleEmitter>();
+                            gaplessEmitter.part = part;
+                            gaplessEmitters.Add(gaplessEmitter);
                         }
                         else
                         {
-                            boostEmitters.Add(pEmitter);
+                            if (pEmitter.Current.transform.name != boostTransformName)
+                            {
+                                pEmitters.Add(pEmitter.Current);
+                            }
+                            else
+                            {
+                                boostEmitters.Add(pEmitter.Current);
+                            }
+                            EffectBehaviour.AddParticleEmitter(pEmitter.Current);
                         }
-                        EffectBehaviour.AddParticleEmitter(pEmitter);
                     }
-                }
 
                 using (IEnumerator<Light> light = gameObject.GetComponentsInChildren<Light>().AsEnumerable().GetEnumerator())
                     while (light.MoveNext())
@@ -973,6 +1025,9 @@ namespace BDArmory.Weapons.Missiles
             if (gaplessEmitters is not null) // Make sure the gapless emitters get destroyed (they should anyway, but KSP holds onto part references, which may prevent this from happening automatically).
                 foreach (var gpe in gaplessEmitters)
                     if (gpe is not null) Destroy(gpe);
+            if (boostEmitters != null)
+                foreach (var pe in boostEmitters)
+                    if (pe) EffectBehaviour.RemoveParticleEmitter(pe);
             BDArmorySetup.OnVolumeChange -= UpdateVolume;
             GameEvents.onPartDie.Remove(PartDie);
             if (vesselReferenceTransform != null && vesselReferenceTransform.gameObject != null)
@@ -1318,32 +1373,6 @@ namespace BDArmory.Weapons.Missiles
                 part.crashTolerance = torpedo ? waterImpactTolerance : 9999; //to combat stresses of launch, missiles generate a lot of G Force
                 part.explosionPotential = 0; // Minimise the default part explosion FX that sometimes gets offset from the main explosion.
                 rcsClearanceState = (GuidanceMode == GuidanceModes.Orbital && hasRCS && vacuumSteerable && (vessel.InVacuum()) ? RCSClearanceStates.Clearing : RCSClearanceStates.Cleared); // Set up clearance check if missile hasRCS, is vacuumSteerable, and is in space
-
-                var mml = part.GetComponent<MultiMissileLauncher>(); // multiLauncher is still null at this point
-                var isClusterMissile = mml && mml.isClusterMissile;
-                if (!string.IsNullOrEmpty(exhaustPrefabPath))
-                {
-                    HashSet<Transform> dummyTransforms = isClusterMissile ? part.GetComponentsInChildren<MissileDummy>().SelectMany(md => md.transform.parent.GetComponentsInChildren<Transform>().Where(t => t.name == boostTransformName)).ToHashSet() : [];
-                    foreach (var t in part.FindModelTransforms(boostTransformName))
-                    {
-                        if (t == null) continue;
-                        if (dummyTransforms.Contains(t)) continue; // Ignore exhausts for dummy transforms for MMLs, e.g., for submunitions of cluster missiles.
-                        var (exhaustEmitters, exhaustGaplessEmitters) = AttachExhaustPrefab(exhaustPrefabPath, this, t);
-                        pEmitters.AddRange(exhaustEmitters);
-                        gaplessEmitters.AddRange(exhaustGaplessEmitters);
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(boostExhaustPrefabPath) && !string.IsNullOrEmpty(boostExhaustTransformName))
-                {
-                    HashSet<Transform> dummyTransforms = isClusterMissile ? part.GetComponentsInChildren<MissileDummy>().SelectMany(md => md.transform.parent.GetComponentsInChildren<Transform>().Where(t => t.name == boostExhaustTransformName)).ToHashSet() : [];
-                    foreach (var t in part.FindModelTransforms(boostExhaustTransformName))
-                    {
-                        if (t == null) continue;
-                        if (dummyTransforms.Contains(t)) continue; // Ignore boost exhausts for dummy transforms for MMLs, e.g., for submunitions of cluster missiles.
-                        (boostEmitters, boostGaplessEmitters) = AttachExhaustPrefab(boostExhaustPrefabPath, this, t);
-                    }
-                }
 
                 StartCoroutine(MissileRoutine());
                 var tnt = part.FindModuleImplementing<BDExplosivePart>();
@@ -1824,8 +1853,6 @@ namespace BDArmory.Weapons.Missiles
             {
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher][Terminal Guidance]: missile {GetPartName()} updating targeting mode: {terminalGuidanceType}");
 
-                TargetingMode = TargetingModeTerminal;
-                terminalGuidanceActive = true;
                 TargetAcquired = false;
 
                 switch (TargetingModeTerminal)
@@ -1848,6 +1875,7 @@ namespace BDArmory.Weapons.Missiles
                             // Disable terminal guidance and switch to regular heat guidance for next update
                             terminalGuidanceShouldActivate = false;
                             TargetingMode = TargetingModes.Heat;
+                            terminalGuidanceActive = true;
 
                             // Adjust heat score based on distance missile will travel in the next update
                             if (heatTarget.signalStrength > 0)
@@ -1862,9 +1890,16 @@ namespace BDArmory.Weapons.Missiles
                         }
                         else
                         {
+                            if (!dumbTerminalGuidance)
+                            {
+                                TargetAcquired = true;
+                                TargetVelocity = Vector3.zero;
+                                TargetAcceleration = Vector3.zero;
+                                //continue towards primary guidance targetPosition until heat lock acquired
+                            }
                             if (BDArmorySettings.DEBUG_MISSILES)
                             {
-                                Debug.Log("[BDArmory.MissileLauncher][Terminal Guidance]: Missile heatseeker could not acquire a target lock.");
+                                Debug.Log("[BDArmory.MissileLauncher][Terminal Guidance]: Missile heatseeker could not acquire a target lock, reverting to default guidance.");
                             }
                         }
                         break;
@@ -1911,6 +1946,7 @@ namespace BDArmory.Weapons.Missiles
                                 RadarWarningReceiver.PingRWR(new Ray(transform.position, radarTarget.predictedPosition - transform.position), 45, RadarWarningReceiver.RWRThreatTypes.MissileLaunch, 2f);
 
                             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log($"[BDArmory.MissileLauncher][Terminal Guidance]: Pitbull! Radar missileBase has gone active.  Radar sig strength: {radarTarget.signalStrength:0.0} - target: {radarTarget.vessel.name}");
+                            terminalGuidanceActive = true;
                         }
                         else
                         {
@@ -1918,7 +1954,9 @@ namespace BDArmory.Weapons.Missiles
                             TargetPosition = VectorUtils.GetWorldSurfacePostion(UpdateGPSTarget(), vessel.mainBody); //putting back the GPS target if no radar target found
                             TargetVelocity = Vector3.zero;
                             TargetAcceleration = Vector3.zero;
-                            targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(TargetPosition, vessel.mainBody);
+                            targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(TargetPosition, vessel.mainBody); //tgtPos/tgtGPS should relly be not set here, so the last valid postion/coords are used, in case of non-GPS primary guidance
+                            if (radarLOAL || dumbTerminalGuidance)
+                                terminalGuidanceActive = true;
                             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher][Terminal Guidance]: Missile radar could not acquire a target lock - Defaulting to GPS Target");
                         }
                         break;
@@ -1936,6 +1974,7 @@ namespace BDArmory.Weapons.Missiles
                         if (targetVessel != null) TargetPosition = VectorUtils.GetWorldSurfacePostion(MissileGuidance.GetAirToAirFireSolution(this, targetVessel.Vessel.CoM, TargetVelocity), vessel.mainBody);
                         TargetVelocity = Vector3.zero;
                         TargetAcceleration = Vector3.zero;
+                        terminalGuidanceActive = true;
                         break;
 
                     case TargetingModes.AntiRad:
@@ -1943,7 +1982,14 @@ namespace BDArmory.Weapons.Missiles
                         targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(TargetPosition, vessel.mainBody); // Set the GPS coordinates from the current target position.
                         SetAntiRadTargeting(); //should then already work automatically via OnReceiveRadarPing
                         if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher][Terminal Guidance]: Antiradiation mode set! Waiting for radar signals...");
+                        terminalGuidanceActive = true;
                         break;
+                }
+                if (dumbTerminalGuidance || terminalGuidanceActive)
+                {
+                    TargetingMode = TargetingModeTerminal;
+                    terminalGuidanceActive = true;
+                    terminalGuidanceShouldActivate = false;
                 }
             }
         }
@@ -2502,7 +2548,7 @@ namespace BDArmory.Weapons.Missiles
                             break;
                         }
                     /* Case GuidanceModes.AAMHybrid:
-                        {
+{
                             aamTarget = MissileGuidance.GetAirToAirHybridTarget(TargetPosition, TargetVelocity, TargetAcceleration, vessel, terminalHomingRange, out timeToImpact, homingModeTerminal, pronavGain, optimumAirspeed);
                             TimeToImpact = timeToImpact;
                             break;
@@ -2651,7 +2697,7 @@ namespace BDArmory.Weapons.Missiles
                 // orbitalTarget = TargetPosition is more accurate than the below for the HEKV, TO-DO: investigate whether the below works for 
                 // multiple different missile configurations, or if a more generalized OrbitalGuidance method is needed
                 /*(Vector3 targetVector = TargetPosition - vessel.CoM;
-                    Vector3 relVel = vessel.Velocity() - TargetVelocity;
+                Vector3 relVel = vessel.Velocity() - TargetVelocity;
                 Vector3 accel = currentThrust * Throttle / part.mass * Vector3.forward;
                 float timeToImpact = AIUtils.TimeToCPA(targetVector, relVel, TargetAcceleration - accel, 30f);
                 orbitalTarget = AIUtils.PredictPosition(targetVector, relVel, TargetAcceleration - 0.5f * accel, timeToImpact); */
@@ -3223,6 +3269,7 @@ namespace BDArmory.Weapons.Missiles
                     homingModeTerminal = GuidanceModes.Kappa;
                     break;
 
+
                 default:
                     homingModeTerminal = GuidanceModes.None;
                     break;
@@ -3448,35 +3495,17 @@ namespace BDArmory.Weapons.Missiles
         static Dictionary<string, ObjectPool> exhaustPrefabPool = new Dictionary<string, ObjectPool>();
         List<GameObject> exhaustPrefabs = new List<GameObject>();
 
-        static (List<KSPParticleEmitter>, List<BDAGaplessParticleEmitter>) AttachExhaustPrefab(string prefabPath, MissileLauncher missileLauncher, Transform exhaustTransform)
+        static void AttachExhaustPrefab(string prefabPath, MissileLauncher missileLauncher, Transform exhaustTransform)
         {
             CreateExhaustPool(prefabPath);
             var exhaustPrefab = exhaustPrefabPool[prefabPath].GetPooledObject();
             exhaustPrefab.SetActive(true);
-            List<KSPParticleEmitter> emitters = [];
-            List<BDAGaplessParticleEmitter> gaplessEmitters = [];
-            foreach (var emitter in exhaustPrefab.GetComponentsInChildren<KSPParticleEmitter>())
-            {
-                if (emitter == null) continue;
-                if (emitter.GetComponentInParent<Part>() != missileLauncher.part) continue; // On a sub-part, e.g., a cluster missile.
-                if (emitter.useWorldSpace)
+            using (var emitter = exhaustPrefab.GetComponentsInChildren<KSPParticleEmitter>().AsEnumerable().GetEnumerator())
+                while (emitter.MoveNext())
                 {
-                    var gaplessEmitter = emitter.GetComponent<BDAGaplessParticleEmitter>();
-                    if (!gaplessEmitter)
-                    {
-                        gaplessEmitter = emitter.gameObject.AddComponent<BDAGaplessParticleEmitter>();
-                        gaplessEmitter.part = missileLauncher.part;
-                        gaplessEmitter.emit = false;
-                    }
-                    gaplessEmitters.Add(gaplessEmitter);
+                    if (emitter.Current == null) continue;
+                    emitter.Current.emit = false;
                 }
-                else
-                {
-                    emitter.emit = false;
-                    emitters.Add(emitter);
-                    EffectBehaviour.AddParticleEmitter(emitter);
-                }
-            }
             exhaustPrefab.transform.parent = exhaustTransform;
             exhaustPrefab.transform.localPosition = Vector3.zero;
             exhaustPrefab.transform.localRotation = Quaternion.identity;
@@ -3484,7 +3513,6 @@ namespace BDArmory.Weapons.Missiles
             missileLauncher.part.OnJustAboutToDie += missileLauncher.DetachExhaustPrefabs;
             missileLauncher.part.OnJustAboutToBeDestroyed += missileLauncher.DetachExhaustPrefabs;
             if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: Exhaust prefab " + exhaustPrefab.name + " added to " + missileLauncher.shortName + " on " + (missileLauncher.vessel != null ? missileLauncher.vessel.vesselName : "unknown"));
-            return (emitters, gaplessEmitters);
         }
 
         static void CreateExhaustPool(string prefabPath)
@@ -3511,20 +3539,6 @@ namespace BDArmory.Weapons.Missiles
                 if (exhaustPrefab == null) continue;
                 exhaustPrefab.transform.parent = null;
                 exhaustPrefab.SetActive(false);
-                foreach (var emitter in exhaustPrefab.GetComponentsInChildren<KSPParticleEmitter>())
-                {
-                    if (emitter == null) continue;
-                    if (emitter.GetComponentInParent<Part>() != part) continue; // On a sub-part, e.g., a cluster missile.
-                    emitter.emit = false;
-                    EffectBehaviour.RemoveParticleEmitter(emitter);
-                    pEmitters.Remove(emitter); // Remove the emitter from the common list so it doesn't get destroyed.
-                }
-                foreach (var gaplessEmitter in exhaustPrefab.GetComponentsInChildren<BDAGaplessParticleEmitter>())
-                {
-                    if (gaplessEmitter == null) continue;
-                    gaplessEmitter.emit = false;
-                    gaplessEmitters.Remove(gaplessEmitter); // Remove the gapless emitter from the common list so it doesn't get destroyed.
-                }
                 if (BDArmorySettings.DEBUG_MISSILES) Debug.Log("[BDArmory.MissileLauncher]: Exhaust prefab " + exhaustPrefab.name + " removed from " + shortName + " on " + (vessel != null ? vessel.vesselName : "unknown"));
             }
             exhaustPrefabs.Clear();

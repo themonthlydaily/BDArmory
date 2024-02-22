@@ -43,9 +43,6 @@
 	- Multiple ammo types used per shot for weapons (other than just EC).
 
 - Improve Immelmann angle / target behind logic.
-- Reset things that the RWP slider changes when switching away from the rounds.
-	- RWP really shouldn't be setting the sliders, but should instead provide overrides for when accessing those values.
-	- RWP shadow settings
 - Meteor Cannon: Summons a class A asteroid just in front of the vessel, then accelerates it to 1000m/s (massive recoil of 1% of acceleration needed to get asteroid up to speed)
 	- Meteor Cannon class has its own selection of meteors that it randomly selects from when instantiating it. Generate at start and replenish as necessary.
 - Add tooltips to settings.
